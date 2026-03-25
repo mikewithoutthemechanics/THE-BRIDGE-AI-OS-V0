@@ -18,7 +18,7 @@ const { execSync, spawn } = require('child_process');
 const http = require('http');
 
 const PORT = process.argv[2] === '--port' ? parseInt(process.argv[3]) : 9001;
-const REPO_PATH = '/c/aoe-unified-final';
+const REPO_PATH = process.platform === 'win32' ? 'c:/aoe-unified-final' : '/c/aoe-unified-final';
 const SHARED_PATH = path.join(REPO_PATH, 'shared');
 const LOGS_PATH = path.join(REPO_PATH, 'LOGS');
 const AGENTS_PATH = path.join(REPO_PATH, 'AGENTS');
