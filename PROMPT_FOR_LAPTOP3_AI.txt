@@ -1,0 +1,37 @@
+LAPTOP 3 AI SETUP PROMPT
+========================
+
+You are running on Laptop 3. Your job is to set up and launch the L3 orchestrator with Minimax instances.
+
+CRITICAL TIMING: Wait for Laptop 1 to complete bootstrap BEFORE you start.
+
+STEPS:
+
+1. Change to repo directory:
+   cd /c/aoe-unified-final
+
+2. Run the unattended setup (this waits for L1, then self-configures):
+   bash setup-laptop3-unattended.sh
+
+3. This script will:
+   - Wait up to 30 minutes for L1 bootstrap to complete
+   - Clone the repo if needed
+   - Create/checkout branch: feature/supadash-consolidation
+   - Create directories: shared, LOGS, STANDUPS, AGENTS
+   - Launch 4 Minimax instances (default) on port 9002
+   - Each instance spawns 3 sub-agents (code consolidation, query optimization, performance tuning)
+   - Start auto-sync daemon (git pull/push every 5 minutes)
+   - Start health check daemon (every 60 seconds)
+   - Output success message when ready
+
+4. For custom instance count (e.g., 6 instead of 4):
+   MINIMAX_INSTANCES=6 bash setup-laptop3-unattended.sh
+
+5. Monitor status:
+   curl http://localhost:9002/api/status | jq
+
+You should see: N instances + 3*N sub-agents ready
+
+6. Do NOT do anything else. The script handles everything.
+
+THAT'S IT. Run the setup script and wait.

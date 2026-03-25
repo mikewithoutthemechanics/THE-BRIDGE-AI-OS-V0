@@ -29,7 +29,7 @@ verify_host() {
 # Clone repo on all laptops
 clone_repo() {
   local host=$1
-  ssh $host "mkdir -p /c && cd /c && [ -d aoe-unified-final ] || git clone <YOUR_REPO_URL> aoe-unified-final"
+  ssh $host "mkdir -p /c && cd /c && [ -d aoe-unified-final ] || git clone https://${GH_TOKEN}@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git aoe-unified-final"
 }
 
 # Setup feature branch on all laptops
