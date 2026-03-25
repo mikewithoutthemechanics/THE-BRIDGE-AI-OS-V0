@@ -183,7 +183,7 @@ function alertL1Conflict(conflict) {
 
   const options = {
     hostname: 'localhost',
-    port: 9000,
+    port: 9001,
     path: '/webhook/conflict',
     method: 'POST',
     headers: {
