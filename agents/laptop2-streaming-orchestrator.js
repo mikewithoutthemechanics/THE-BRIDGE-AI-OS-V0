@@ -206,26 +206,44 @@ function alertL1Conflict(conflict) {
   req.end();
 }
 
-// Sync with L1's contracts
+// Track last known contract set to detect new arrivals
+let knownContracts = new Set();
+
+// Sync with L1's contracts — reads shared/ directly, no git required
 function syncWithL1() {
   try {
-    log(`[SYNC] Pulling latest from L1...`);
-    execSync(`cd ${REPO_PATH} && git pull origin feature/supadash-consolidation`, {
-      stdio: 'pipe'
-    });
+    if (!fs.existsSync(SHARED_PATH)) return;
 
-    // Check for new contracts
     const contracts = fs.readdirSync(SHARED_PATH)
-      .filter(f => f.includes('-spec') || f.includes('-manifest'));
+      .filter(f => f.endsWith('.json') && (f.includes('-spec') || f.includes('-manifest') || f.includes('-schema')));
 
-    log(`[SYNC] Found ${contracts.length} contracts from L1`);
+    const newContracts = contracts.filter(f => !knownContracts.has(f));
+
+    if (newContracts.length > 0) {
+      log(`[SYNC] ${newContracts.length} new contract(s) found: ${newContracts.join(', ')}`);
+      newContracts.forEach(f => knownContracts.add(f));
+
+      // Auto-activate all agents with the new contracts
+      L2_AGENTS.forEach(agent => {
+        const agentKey = `Agent-${agent.id}`;
+        if (agentStatus[agentKey].status !== 'active') {
+          agentStatus[agentKey].status = 'active';
+          agentStatus[agentKey].progress_percent = 5;
+          agentStatus[agentKey].contracts_loaded = Array.from(knownContracts);
+          agentStatus[agentKey].last_heartbeat = new Date();
+          log(`[SYNC] ${agentKey} activated — contracts loaded`);
+        }
+      });
+    } else {
+      log(`[SYNC] ${contracts.length} contract(s) present, no changes`);
+    }
   } catch (error) {
-    log(`[SYNC] Sync with L1: ${error.message}`);
+    log(`[SYNC] Error reading shared/: ${error.message}`);
   }
 }
 
-// Auto-pull every 5 minutes
-setInterval(syncWithL1, 5 * 60 * 1000);
+// Auto-sync every 30 seconds
+setInterval(syncWithL1, 30 * 1000);
 
 // Startup sequence
 function startup() {
