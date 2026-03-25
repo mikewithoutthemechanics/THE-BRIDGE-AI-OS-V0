@@ -460,11 +460,11 @@ function startup() {
 
   setTimeout(() => {
     log('\n>>> STARTUP COMPLETE');
-    log(`✓ All 7 specialist agents running on port ${PORT}`);
+    log(`✓ All 6 specialist agents running on port ${PORT}`);
     log(`✓ Connected to L1 (http://localhost:9000)`);
-    log(`✓ Waiting for L1 to publish contracts at Day 1 Hour 4...\n`);
     log(`Monitor progress: curl http://localhost:${PORT}/api/status | jq`);
     log(`Check conflicts: curl http://localhost:${PORT}/api/conflicts | jq\n`);
+    startAgentWorkLoops();
   }, 3500);
 }
 
