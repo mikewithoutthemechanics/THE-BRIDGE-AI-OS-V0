@@ -1,0 +1,39 @@
+{
+  "contract_id": "auth-api-spec",
+  "published_by": "Agent-5A",
+  "published_at": "$TIMESTAMP",
+  "status": "specification",
+  "title": "Unified Authentication & Referral Specification",
+  "description": "Consolidate 3 auth systems + 3 referral systems into unified service",
+  "auth_sources": [
+    "aoe-unified auth",
+    "bridgeos auth",
+    "BRIDGE_AI_OS auth"
+  ],
+  "referral_sources": [
+    "aoe-unified referral",
+    "bridgeos referral",
+    "BRIDGE_AI_OS referral"
+  ],
+  "endpoints": [
+    {
+      "path": "/auth/login",
+      "method": "POST",
+      "description": "Unified login (migrates user from old system)",
+      "returns": "session-token"
+    },
+    {
+      "path": "/auth/logout",
+      "method": "POST"
+    },
+    {
+      "path": "/referral/claim",
+      "method": "POST",
+      "description": "Claim referral rewards (consolidated)"
+    }
+  ],
+  "gate_condition": "All users can authenticate, all referrals migrated, p95 < 200ms, 1000 concurrent users",
+  "depends_on": ["database-schema"],
+  "used_by": ["Agent-2A", "Agent-4A", "Agent-6A"],
+  "update_frequency": "once per day (Days 1-2, stable after)"
+}

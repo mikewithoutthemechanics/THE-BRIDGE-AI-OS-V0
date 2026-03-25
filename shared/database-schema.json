@@ -1,0 +1,25 @@
+{
+  "contract_id": "database-schema",
+  "published_by": "Agent-4A",
+  "published_at": "$TIMESTAMP",
+  "status": "schema-design",
+  "title": "Unified Database Schema",
+  "description": "Consolidate 3 separate databases (SQLite variants) into 1 PostgreSQL with namespace isolation",
+  "source_databases": [
+    "aoe-unified.db",
+    "bridgeos.db",
+    "BRIDGE_AI_OS.db"
+  ],
+  "target_database": "supadash-unified.db (PostgreSQL)",
+  "namespaces": [
+    "aoe_unified",
+    "bridgeos",
+    "bridge_ai_os"
+  ],
+  "migration_approach": "Zero-downtime migrations with rollback capability",
+  "tables_affected": "All existing tables mapped to new schema",
+  "gate_condition": "Zero data loss (checksums match), rollback < 5 minutes",
+  "depends_on": [],
+  "used_by": ["Agent-2A", "Agent-5A", "Agent-6A"],
+  "update_frequency": "daily as migrations written"
+}
