@@ -17,8 +17,13 @@ const path = require('path');
 const { execSync, spawn } = require('child_process');
 const http = require('http');
 
-const PORT = process.argv[2] === '--port' ? parseInt(process.argv[3]) : 9001;
-const REPO_PATH = process.platform === 'win32' ? 'c:/aoe-unified-final' : '/c/aoe-unified-final';
+const RAW_PORT = process.argv[2] === '--port' ? parseInt(process.argv[3]) : 9001;
+// Guard against typo (e.g. 900 instead of 9001)
+const PORT = RAW_PORT < 1000 ? 9001 : RAW_PORT;
+if (RAW_PORT !== PORT) console.warn(`[WARN] Port ${RAW_PORT} looks wrong — defaulting to ${PORT}`);
+const REPO_PATH = process.platform === 'win32'
+  ? (process.env.REPO_PATH || 'C:/aoe-unified-final')
+  : (process.env.REPO_PATH || '/c/aoe-unified-final');
 const SHARED_PATH = path.join(REPO_PATH, 'shared');
 const LOGS_PATH = path.join(REPO_PATH, 'LOGS');
 const AGENTS_PATH = path.join(REPO_PATH, 'AGENTS');
