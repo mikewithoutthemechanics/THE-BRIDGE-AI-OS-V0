@@ -1,0 +1,330 @@
+{
+  "risks": [
+    {
+      "RISK_LEVEL": "CRITICAL",
+      "COMPONENT_A": "system.js port 3000",
+      "COMPONENT_B": "Xcontainerx/server.js port 3000",
+      "ISSUE": "Port collision — both expose WebSocket /terminal on port 3000. topology.html expects system.js; Xcontainerx expects its own server. Only one can bind. The other silently fails.",
+      "MITIGATION": "Assign Xcontainerx to port 3001 or 3002. Update Xcontainerx client to use new port. Ensure topology.html explicitly targets system.js:3000 only."
+    },
+    {
+      "RISK_LEVEL": "CRITICAL",
+      "COMPONENT_A": "aoe-unified-final (consolidation target)",
+      "COMPONENT_B": "bridgeos SQLite + BridgeAI PostgreSQL",
+      "ISSUE": "No active database in consolidation target. Users/payments/commissions exist in SQLite (/c/bridgeos/bridgeos.db) AND PostgreSQL (bridge-postgres:5432) with separate schemas and overlapping entities. Data loss risk during merge.",
+      "MITIGATION": "Establish aoe-unified-final PostgreSQL database BEFORE consolidation. Export bridgeos SQLite → PostgreSQL. Reconcile user IDs across both databases. Use transaction rollback migration scripts."
+    },
+    {
+      "RISK_LEVEL": "CRITICAL",
+      "COMPONENT_A": "topology.html dashboard",
+      "COMPONENT_B": "system.js (port 3000)",
+      "ISSUE": "Hard dependency: topology.html requires 4 endpoints (/api/full, /api/audit, /api/economics + WebSocket /terminal) ALL on port 3000. If system.js crashes, entire topology UI fails with no fallback.",
+      "MITIGATION": "Cache /api/full responses. Implement exponential backoff for polling. Provide offline mode UI. Add explicit error toast to operator."
+    },
+    {
+      "RISK_LEVEL": "CRITICAL",
+      "COMPONENT_A": "gateway.js fallback logic",
+      "COMPONENT_B": "ainode:3001 (LLM inference)",
+      "ISSUE": "Silent fallback when ainode unavailable. Returns stub response instead of error. Operators are unaware LLM is offline — production queries silently degrade to stubs.",
+      "MITIGATION": "Remove silent fallback. Return explicit 503 when ainode is down. Add circuit breaker. Monitor ainode health and alert operators. Implement LLM readiness check on gateway startup."
+    },
+    {
+      "RISK_LEVEL": "HIGH",
+      "COMPONENT_A": "Xpayments:4000",
+      "COMPONENT_B": "bridge-postgres hardcoded connection",
+      "ISSUE": "Connection string hardcoded to Docker-specific hostname 'bridge-ai-os-aoe-dromedaries-db-1:5432'. Consolidation outside Docker breaks payment processing. No environment variable override.",
+      "MITIGATION": "Refactor to read DB_HOST from environment variable. Support both Docker internal DNS and standard hostnames. Test with local PostgreSQL before consolidation."
+    },
+    {
+      "RISK_LEVEL": "HIGH",
+      "COMPONENT_A": "immersive.html dashboard",
+      "COMPONENT_B": "port 4201 (DCI/dash-face)",
+      "ISSUE": "Broken dashboard: calls localhost:4201/api/dci/ws and /api/dash-face/twin-state. No server exists on port 4201. Dashboard entirely non-functional.",
+      "MITIGATION": "Remove immersive.html from consolidation (recommended) OR implement missing port 4201 server. No supporting backend identified."
+    },
+    {
+      "RISK_LEVEL": "HIGH",
+      "COMPONENT_A": "BridgeAI registry dashboards",
+      "COMPONENT_B": "file:// protocol reads",
+      "ISSUE": "4+ dashboards read local JSON via file:// (nodes.json, mesh.json, kernel_state.json, etc.). Works in local dev only. Breaks in any consolidated/hosted/Docker deployment. Source of JSON is unknown.",
+      "MITIGATION": "Identify current JSON source (write-server unknown). Implement HTTP API endpoints for registry data. Migrate all file:// reads to fetch(). Remove file:// dependency entirely."
+    },
+    {
+      "RISK_LEVEL": "HIGH",
+      "COMPONENT_A": "Port 8080",
+      "COMPONENT_B": "4-way collision",
+      "ISSUE": "Port 8080 claimed by: gateway.js (aoe-unified-final), BridgeAI mesh node, BRIDGE_AI_OS gateway, bridgeos gateway.js. Only one can bind.",
+      "MITIGATION": "Designate single gateway.js as the 8080 owner. Reassign or remove the others. Single Traefik/reverse-proxy in front is the cleanest solution per CONSOLIDATED_AUDIT.md."
+    },
+    {
+      "RISK_LEVEL": "MEDIUM",
+      "COMPONENT_A": "Orchestrator control plane",
+      "COMPONENT_B": "L1/L2/L3 (ports 9000-9002)",
+      "ISSUE": "Complete control plane exists but has zero dashboard interface. Conflict detection, verification, optimization endpoints never called by any UI. Invisible to operators.",
+      "MITIGATION": "Either create dashboard UI for orchestrator status, or remove if unused. Document whether L1/L2/L3 is critical dependency."
+    },
+    {
+      "RISK_LEVEL": "MEDIUM",
+      "COMPONENT_A": "Revenue endpoints",
+      "COMPONENT_B": "ainode:3001 (orphaned)",
+      "ISSUE": "8+ endpoints (/revenue/plans, /revenue/stats, /revenue/subscribe, /revenue/credits/purchase) exist on ainode but are never called by any dashboard. Orphaned functionality.",
+      "MITIGATION": "Audit whether revenue endpoints are used by external APIs or scripts. If unused, remove. If used, add dashboard UI or document integration points."
+    },
+    {
+      "RISK_LEVEL": "MEDIUM",
+      "COMPONENT_A": "Xcontainerx authentication",
+      "COMPONENT_B": "system.js terminal (no auth)",
+      "ISSUE": "Xcontainerx requires AUTH_TOKEN on WebSocket header. system.js has no auth. Incompatible terminal security models if both deployed.",
+      "MITIGATION": "Standardize terminal auth. Add token auth to system.js OR remove from Xcontainerx. Use secure environment variable (not hardcoded 'secure-token-change-me')."
+    },
+    {
+      "RISK_LEVEL": "MEDIUM",
+      "COMPONENT_A": "BRIDGE_AI_OS avatar",
+      "COMPONENT_B": "ws://localhost:8000",
+      "ISSUE": "Avatar connects to ws://localhost:8000 but BRIDGE_AI_OS FastAPI runs on port 8000 as HTTP (not a WebSocket terminal). Mismatch.",
+      "MITIGATION": "Clarify avatar's expected WebSocket server. Either add WebSocket support to FastAPI server or update avatar to use correct endpoint."
+    },
+    {
+      "RISK_LEVEL": "MEDIUM",
+      "COMPONENT_A": "File-based state files",
+      "COMPONENT_B": "Unknown writer",
+      "ISSUE": "mesh.json, nodes.json, kernel_state.json, telemetry.json, wallets.json, ledger.json polled every 2-5s by dashboards but NO server identified that writes them. State source completely unknown.",
+      "MITIGATION": "Audit file modification timestamps. Find the write source. If no source exists, data is stale/static — dashboards display meaningless data."
+    },
+    {
+      "RISK_LEVEL": "LOW",
+      "COMPONENT_A": "PM2 orchestration",
+      "COMPONENT_B": "Docker consolidation",
+      "ISSUE": "PM2 config exists but conflicts with Docker-based consolidation. Multiple orchestration frameworks competing.",
+      "MITIGATION": "Choose one: PM2 (local dev) or Docker (consolidated production). Remove PM2 scripts if Docker consolidation chosen."
+    }
+  ],
+  "critical_paths": [
+    {
+      "IF_BREAKS": "Port 3000 / system.js (GOD MODE)",
+      "THEN_BREAKS": [
+        "topology.html dashboard (ALL 4 endpoints + WebSocket)",
+        "Xcontainerx terminal (port conflict — will also fail)",
+        "Operator visibility into system topology",
+        "Terminal access for system commands"
+      ],
+      "SEVERITY": "CRITICAL"
+    },
+    {
+      "IF_BREAKS": "bridgeos SQLite or BridgeAI PostgreSQL",
+      "THEN_BREAKS": [
+        "User authentication (users table)",
+        "Payment processing (payments, commissions)",
+        "Session management",
+        "Billing history and credit tracking"
+      ],
+      "SEVERITY": "CRITICAL"
+    },
+    {
+      "IF_BREAKS": "gateway.js (port 8080)",
+      "THEN_BREAKS": [
+        "SSE event stream (/events/stream)",
+        "LLM inference forwarding (/ask endpoint)",
+        "All HTTP health checks routed through gateway",
+        "Single point of failure for external routing"
+      ],
+      "SEVERITY": "HIGH"
+    },
+    {
+      "IF_BREAKS": "Xpayments:4000",
+      "THEN_BREAKS": [
+        "Payment webhook processing",
+        "User activation (credits assignment)",
+        "Subscription creation"
+      ],
+      "SEVERITY": "HIGH"
+    },
+    {
+      "IF_BREAKS": "ainode:3001 (LLM inference)",
+      "THEN_BREAKS": [
+        "Real LLM responses degrade silently to stubs",
+        "Users receive low-quality AI responses without warning"
+      ],
+      "SEVERITY": "HIGH"
+    },
+    {
+      "IF_BREAKS": "Orchestrator L1 (port 9000)",
+      "THEN_BREAKS": [
+        "L2 orchestrator verification sync",
+        "L3 orchestrator optimization sync",
+        "Control plane coherence"
+      ],
+      "SEVERITY": "MEDIUM"
+    }
+  ],
+  "safe_to_remove": [
+    "/c/BridgeAI/immersive.html — broken, calls port 4201 which doesn't exist",
+    "/c/BridgeAI/registry/network_dashboard.html — file:// protocol only, won't work consolidated",
+    "/c/BridgeAI/observability/live_dashboard.html — file:// protocol only",
+    "/c/BridgeAI/api_scan/api_dashboard.html — file:// protocol only",
+    "Xcontainerx/server.js — IF system.js terminal is kept (choose one, not both)",
+    "PM2 orchestration scripts — IF Docker consolidation is chosen",
+    "/c/aoe-unified-final/ui.html — minimal 9-line stub, replace with real UI",
+    "Orphaned ainode revenue endpoints — IF confirmed unused by external systems"
+  ],
+  "requires_migration": [
+    {
+      "COMPONENT": "Xpayments:4000 database connection",
+      "REASON": "Hardcoded Docker hostname breaks if DB moves",
+      "ACTION": "Externalize DB_HOST to environment variable. Test with local PostgreSQL."
+    },
+    {
+      "COMPONENT": "User/payment data (SQLite + PostgreSQL)",
+      "REASON": "Split across bridgeos SQLite and BridgeAI PostgreSQL with schema mismatch",
+      "ACTION": "Establish unified PostgreSQL. Export+import SQLite data. Reconcile user IDs. Validate integrity."
+    },
+    {
+      "COMPONENT": "Port 3000 terminal server",
+      "REASON": "system.js and Xcontainerx both claim port 3000 /terminal",
+      "ACTION": "Choose ONE (system.js recommended). Assign other to port 3001. Update all client references."
+    },
+    {
+      "COMPONENT": "BridgeAI file-based registry",
+      "REASON": "file:// reads break in consolidated deployment",
+      "ACTION": "Identify JSON write source. Implement HTTP API endpoints. Migrate all file:// reads."
+    },
+    {
+      "COMPONENT": "gateway.js silent fallback",
+      "REASON": "Hides ainode service failure from operators",
+      "ACTION": "Replace with explicit 503. Add circuit breaker and health checks."
+    },
+    {
+      "COMPONENT": "BRIDGE_AI_OS avatar WebSocket",
+      "REASON": "Connects to ws://localhost:8000 but no WebSocket server on 8000",
+      "ACTION": "Clarify intended WS server. Add WS support to FastAPI or update avatar endpoint."
+    }
+  ],
+  "consolidation_phases": [
+    {
+      "PHASE": 1,
+      "NAME": "Port Conflict Resolution",
+      "ACTIONS": [
+        "Choose primary terminal: system.js (GOD MODE) or Xcontainerx",
+        "Assign secondary terminal to port 3001 or 3002",
+        "Update client code (topology.html, Xcontainerx/public/index.html)",
+        "Resolve port 8080 collision — designate single gateway owner",
+        "Verify port bindings with netstat before starting services"
+      ],
+      "RISK": "HIGH",
+      "PREREQUISITES": ["Identify which terminal server is mission-critical"]
+    },
+    {
+      "PHASE": 2,
+      "NAME": "Database Consolidation",
+      "ACTIONS": [
+        "Create aoe-unified-final PostgreSQL database (or adopt bridgedb)",
+        "Export bridgeos SQLite schema and data",
+        "Create migration scripts: SQLite → PostgreSQL with rollback",
+        "Reconcile user IDs across systems",
+        "Validate data integrity (count checks, constraint validation)",
+        "Update all DB connection strings",
+        "Test Xpayments:4000 and ainode:3001 connectivity"
+      ],
+      "RISK": "CRITICAL",
+      "PREREQUISITES": ["Full backup of all databases", "Migration scripts reviewed"]
+    },
+    {
+      "PHASE": 3,
+      "NAME": "File-Based State Migration",
+      "ACTIONS": [
+        "Identify source of registry JSON files (nodes.json, mesh.json, etc.)",
+        "Create HTTP API endpoints: GET /api/registry/nodes, /api/registry/mesh, etc.",
+        "Update all dashboards to fetch from HTTP instead of file://",
+        "Remove file:// protocol dependencies entirely",
+        "Establish single source of truth for registry state"
+      ],
+      "RISK": "MEDIUM",
+      "PREREQUISITES": ["Registry data write-source identified"]
+    },
+    {
+      "PHASE": 4,
+      "NAME": "Dashboard Cleanup",
+      "ACTIONS": [
+        "Archive and remove broken/file-only dashboards to /deprecated/",
+        "Fix BRIDGE_AI_OS avatar WebSocket endpoint",
+        "Fix or remove immersive.html",
+        "Consolidate duplicate topology.html files",
+        "Consolidate duplicate system-status-dashboard.html files"
+      ],
+      "RISK": "LOW",
+      "PREREQUISITES": ["Replacement dashboards functional"]
+    },
+    {
+      "PHASE": 5,
+      "NAME": "Gateway & Failure Mode Fixes",
+      "ACTIONS": [
+        "Remove silent fallback in gateway.js — explicit 503 when ainode unavailable",
+        "Add circuit breaker for ainode dependency",
+        "Add explicit error signaling to operators",
+        "Test all failure scenarios (ainode down, DB down)"
+      ],
+      "RISK": "MEDIUM",
+      "PREREQUISITES": ["Monitoring infrastructure in place"]
+    },
+    {
+      "PHASE": 6,
+      "NAME": "Orchestrator Visibility",
+      "ACTIONS": [
+        "Assess if L1/L2/L3 orchestrators are mission-critical",
+        "If critical: create dashboard UI for orchestrator status",
+        "If not: document and remove from consolidation",
+        "Expose conflict detection and optimization results to operators"
+      ],
+      "RISK": "MEDIUM",
+      "PREREQUISITES": ["Orchestrator criticality assessment completed"]
+    },
+    {
+      "PHASE": 7,
+      "NAME": "Validation & Smoke Tests",
+      "ACTIONS": [
+        "Verify no port collisions (netstat check)",
+        "Test DB connectivity from all services",
+        "Smoke test all critical dashboards",
+        "Verify WebSocket connections (/terminal, /events)",
+        "Test payment webhook end-to-end",
+        "Monitor error logs for 24 hours"
+      ],
+      "RISK": "LOW",
+      "PREREQUISITES": ["All prior phases complete"]
+    },
+    {
+      "PHASE": 8,
+      "NAME": "Cutover & Rollback Readiness",
+      "ACTIONS": [
+        "Create full backup before cutover",
+        "Execute consolidated system startup per CONSOLIDATED_AUDIT.md",
+        "Monitor for 24-48 hours",
+        "Keep legacy running alongside until confidence reached",
+        "Document and test rollback procedure"
+      ],
+      "RISK": "HIGH",
+      "PREREQUISITES": ["All smoke tests pass", "Rollback plan documented and tested"]
+    }
+  ],
+  "summary": {
+    "total_risks": 14,
+    "critical_count": 4,
+    "high_count": 4,
+    "medium_count": 5,
+    "low_count": 1,
+    "overall_consolidation_complexity": "HIGH",
+    "estimated_effort": "4-6 weeks: Phase 1 port resolution (3 days), Phase 2 DB consolidation (5-7 days), Phase 3 state migration (3-5 days), Phase 4 dashboard cleanup (2-3 days), Phase 5 gateway fixes (2 days), Phase 6 orchestrator (3 days), Phase 7 validation (5-7 days), Phase 8 cutover (5 days). Phases 3-6 can run in parallel. Total: ~25-35 work days.",
+    "top_3_blockers": [
+      "BLOCKER 1 (Port Collision): system.js vs Xcontainerx BOTH on port 3000. Must choose one and reassign before ANY dashboard testing works.",
+      "BLOCKER 2 (No Database): aoe-unified-final has no active database. Must establish unified PostgreSQL and migrate SQLite data BEFORE moving payment/auth systems.",
+      "BLOCKER 3 (Unknown State Source): registry JSON files (nodes.json, mesh.json, etc.) are polled by dashboards but NO server writes them. Must identify source or dashboards display stale/meaningless data."
+    ],
+    "consolidation_readiness": {
+      "aoe-unified-final": "NOT READY — No database, port conflicts, broken dashboards, missing state infrastructure",
+      "bridgeos": "PARTIAL — SQLite database exists, gateway has silent fallback flaw, PM2 orchestration works",
+      "BridgeAI": "LEGACY — File-based registry, broken immersive.html, multiple orphaned dashboards, ainode is functional",
+      "BRIDGE_AI_OS": "PARTIAL — Audit plan exists (CONSOLIDATED_AUDIT.md), Docker setup partially complete",
+      "OVERALL": "NOT READY FOR CONSOLIDATION — Resolve 3 blockers first"
+    }
+  }
+}

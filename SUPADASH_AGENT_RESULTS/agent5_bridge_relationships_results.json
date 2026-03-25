@@ -1,0 +1,131 @@
+{
+  "systems": [
+    {
+      "SYSTEM_NAME": "BRIDGE_AI_OS",
+      "PATH": "/c/BRIDGE_AI_OS/",
+      "PURPOSE": "Root unified OS with avatar UI, FastAPI backend, and runtime management",
+      "MAIN_ENTRY": "gateway.js (port 80), core/app/main.py (port 8000)",
+      "PORT": [80, 8000, 3000, 5173],
+      "DB_USED": "Redis (localhost:6379), services.json registry",
+      "FRAMEWORK": "FastAPI (Python) + Node.js gateway"
+    },
+    {
+      "SYSTEM_NAME": "bridgeos",
+      "PATH": "/c/bridgeos/",
+      "PURPOSE": "Unified topology/architecture mapping system with PM2 process management",
+      "MAIN_ENTRY": "unified/system.js (port 3000), unified/gateway.js (port 8080)",
+      "PORT": [3000, 8080, 4000],
+      "DB_USED": "SQLite (active), PostgreSQL (configured/inactive)",
+      "FRAMEWORK": "Express.js + Node.js + PM2"
+    },
+    {
+      "SYSTEM_NAME": "BridgeAI",
+      "PATH": "/c/BridgeAI/",
+      "PURPOSE": "Distributed mesh network with federation, AI nodes, and discovery",
+      "MAIN_ENTRY": "ainode/server.js (port 3001)",
+      "PORT": [3001, 8080],
+      "DB_USED": "PostgreSQL (bridge-postgres:5432)",
+      "FRAMEWORK": "Express.js"
+    },
+    {
+      "SYSTEM_NAME": "bridge-ubi",
+      "PATH": "/c/bridge-ubi/",
+      "PURPOSE": "Ethereum/blockchain Universal Basic Income system",
+      "MAIN_ENTRY": "Hardhat scripts (no HTTP server)",
+      "PORT": [],
+      "DB_USED": "Blockchain (on-chain state)",
+      "FRAMEWORK": "Hardhat, Solidity, Web3.js"
+    },
+    {
+      "SYSTEM_NAME": "bridge",
+      "PATH": "/c/bridge/",
+      "PURPOSE": "Legal app and React dashboard (bridge_dashboard)",
+      "MAIN_ENTRY": "bridge_dashboard/index.html (React/Vite)",
+      "PORT": [],
+      "DB_USED": "None",
+      "FRAMEWORK": "React + Vite"
+    }
+  ],
+  "relationships": [
+    {
+      "SYSTEM_A": "BRIDGE_AI_OS",
+      "SYSTEM_B": "bridgeos",
+      "RELATIONSHIP_TYPE": "calls-api",
+      "SHARED_DATA": "BRIDGE_AI_OS gateway routes to localhost:3000 (bridgeos frontend); bridgeos gateway forwards /health checks",
+      "CONFLICT_RISK": "HIGH — both use port 3000"
+    },
+    {
+      "SYSTEM_A": "bridgeos",
+      "SYSTEM_B": "BridgeAI",
+      "RELATIONSHIP_TYPE": "calls-api",
+      "SHARED_DATA": "bridgeos/unified/gateway.js forwards /ask requests to localhost:3001 (BridgeAI ainode for LLM inference)",
+      "CONFLICT_RISK": "MEDIUM — silent fallback if ainode unavailable; tight coupling"
+    },
+    {
+      "SYSTEM_A": "BRIDGE_AI_OS",
+      "SYSTEM_B": "bridgeos",
+      "RELATIONSHIP_TYPE": "duplicates-feature",
+      "SHARED_DATA": "Both have gateway.js with similar routing logic; both expose /health; both do process management",
+      "CONFLICT_RISK": "HIGH — redundant gateways, ambiguous ownership"
+    },
+    {
+      "SYSTEM_A": "BridgeAI",
+      "SYSTEM_B": "bridgeos",
+      "RELATIONSHIP_TYPE": "duplicates-feature",
+      "SHARED_DATA": "Both have port 8080 servers",
+      "CONFLICT_RISK": "HIGH — port 8080 collision"
+    },
+    {
+      "SYSTEM_A": "bridge-ubi",
+      "SYSTEM_B": "BridgeAI",
+      "RELATIONSHIP_TYPE": "unknown",
+      "SHARED_DATA": "No direct code references found; conceptually related (UBI payments via blockchain)",
+      "CONFLICT_RISK": "LOW"
+    }
+  ],
+  "overlap_analysis": {
+    "duplicate_features": [
+      "gateway.js present in: BRIDGE_AI_OS, bridgeos, aoe-unified-final — 3 separate gateway implementations",
+      "system.js present in both aoe-unified-final and bridgeos/unified/",
+      "/health endpoint defined in multiple systems",
+      "topology.html duplicated in aoe-unified-final and bridgeos",
+      "Process management: BRIDGE_AI_OS (runtime manager) vs bridgeos (PM2)"
+    ],
+    "shared_ports": {
+      "3000": ["BRIDGE_AI_OS (frontend)", "bridgeos (system.js)", "aoe-unified-final (system.js)", "Xcontainerx/server.js"],
+      "8080": ["BRIDGE_AI_OS (gateway)", "bridgeos (gateway.js)", "BridgeAI (mesh node)", "aoe-unified-final (gateway.js)"],
+      "8000": ["BRIDGE_AI_OS core/app/main.py (FastAPI)"]
+    },
+    "shared_databases": "NONE — each system maintains isolated data stores",
+    "data_store_summary": {
+      "BRIDGE_AI_OS": "Redis + services.json",
+      "bridgeos": "SQLite + PostgreSQL",
+      "BridgeAI": "PostgreSQL (Dockerized)",
+      "bridge-ubi": "Blockchain"
+    }
+  },
+  "consolidation_plan_reference": {
+    "existing_plan": "/c/BRIDGE_AI_OS/CONSOLIDATED_AUDIT.md",
+    "target_architecture": {
+      "gateway": "Single Traefik gateway (port 80/443)",
+      "backend": "aoe-backend-unified",
+      "ui": "Single consolidated UI",
+      "state": "Redis cluster for shared state",
+      "database": "unified dromedaries-db"
+    }
+  },
+  "summary": {
+    "total_systems": 5,
+    "high_conflict_count": 3,
+    "medium_conflict_count": 1,
+    "low_conflict_count": 1,
+    "critical_issues": [
+      "Port 3000 used by 4 different servers — cannot all run simultaneously",
+      "Port 8080 used by 3 different systems",
+      "3 separate gateway implementations doing similar routing — no single source of truth",
+      "No shared data layer — consolidation requires data migration strategy",
+      "BRIDGE_AI_OS avatar calls ws://localhost:8000 but FastAPI is on 8000 (not a WebSocket server for avatar use)"
+    ],
+    "consolidation_recommendation": "HIGH COMPLEXITY — recommend phased consolidation: (1) unify gateways behind Traefik, (2) migrate SQLite → PostgreSQL in bridgeos, (3) consolidate duplicate UIs, (4) establish shared Redis state layer"
+  }
+}

@@ -4,6 +4,10 @@ const WebSocket = require('ws');
 const pty = require('node-pty');
 const crypto = require('crypto');
 
+// Port resolution: use env var (set by port-mapper or .env) to avoid conflict
+// with system.js (GOD MODE) which also defaults to 3000.
+const PORT = parseInt(process.env.CONTAINERX_PORT, 10) || 3001;
+
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -138,6 +142,6 @@ app.get('/health', (req, res) => {
 // START SERVER
 // ==========================================
 
-server.listen(3000, () => {
-  console.log('ContainerX Hardened running on http://localhost:3000');
+server.listen(PORT, () => {
+  console.log(`ContainerX Hardened running on http://localhost:${PORT}`);
 });

@@ -209,8 +209,8 @@ app.get('/api/topology', async (req, res) => {
 
 // ── API: AVATAR ───────────────────────────────────────────────────────────────
 // Wildcard handler for avatar rendering endpoints.
-app.get('/api/avatar/*', (req, res) => {
-  const subpath = req.params[0] || 'default';
+app.get('/api/avatar/*path', (req, res) => {
+  const subpath = req.params.path || 'default';
   res.json({
     stub: true,
     endpoint: `/api/avatar/${subpath}`,
@@ -229,8 +229,8 @@ app.get('/api/avatar/*', (req, res) => {
 
 // ── API: REGISTRY ─────────────────────────────────────────────────────────────
 // Wildcard handler for registry data (kernel, network, security, etc.).
-app.get('/api/registry/*', (req, res) => {
-  const namespace = req.params[0] || 'root';
+app.get('/api/registry/*path', (req, res) => {
+  const namespace = req.params.path || 'root';
   const REGISTRY_STUBS = {
     kernel:   { version: '4.2.1', modules: ['scheduler', 'ipc', 'memory'], status: 'healthy' },
     network:  { interfaces: ['eth0', 'lo'], dns: ['8.8.8.8', '1.1.1.1'], status: 'healthy' },
@@ -242,8 +242,8 @@ app.get('/api/registry/*', (req, res) => {
 
 // ── API: MARKETPLACE ──────────────────────────────────────────────────────────
 // Wildcard handler for marketplace (tasks, DEX, wallet, skills, portfolio, stats).
-app.get('/api/marketplace/*', (req, res) => {
-  const section = req.params[0] || 'index';
+app.get('/api/marketplace/*path', (req, res) => {
+  const section = req.params.path || 'index';
   const MARKET_STUBS = {
     tasks: {
       open: 14, in_progress: 7, completed_today: 23,
@@ -309,32 +309,51 @@ app.get('/api/status', async (req, res) => {
   res.json({ overall, services: results, ts: Date.now() });
 });
 
-// ── API: AGENTS ───────────────────────────────────────────────────────────────
-// List all agents across L1 / L2 / L3 layers (stub).
-app.get('/api/agents', (req, res) => {
-  const layers = {
-    L1: ['alpha', 'beta', 'gamma'],
-    L2: ['delta', 'epsilon', 'zeta'],
-    L3: ['eta', 'theta'],
-  };
+// ── ORCHESTRATOR PORT MAP ─────────────────────────────────────────────────────
+const ORCHESTRATORS = {
+  L1: 'http://localhost:9001',
+  L2: 'http://localhost:9002',
+  L3: 'http://localhost:9003',
+};
 
-  const agents = [];
-  for (const [layer, names] of Object.entries(layers)) {
-    for (const name of names) {
-      agents.push({
-        id: `agent_${name}`,
-        name,
-        layer,
-        status: 'active',
-        capabilities: ['inference', 'task_exec', 'reporting'],
-        tasks_completed: Math.floor(Math.random() * 500),
-        uptime_s: Math.floor(Math.random() * 86400),
-        last_seen: new Date().toISOString(),
-      });
+// ── L1 / L2 / L3 PROXY ROUTES ────────────────────────────────────────────────
+// Proxy /api/l1/*, /api/l2/*, /api/l3/* to the correct orchestrator ports
+for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
+  const prefix = `/api/${layer.toLowerCase()}`;
+  app.all(`${prefix}/*`, async (req, res) => {
+    const subpath = req.path.slice(prefix.length) || '/';
+    const url = `${base}${subpath}`;
+    try {
+      const opts = { method: req.method, headers: { 'Content-Type': 'application/json' } };
+      if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+      const r = await fetch(url, opts);
+      const text = await r.text();
+      res.status(r.status).set('Content-Type', 'application/json').send(text);
+    } catch (e) {
+      res.status(502).json({ error: `${layer} unreachable`, details: e.message });
     }
-  }
+  });
+}
 
-  res.json({ stub: true, count: agents.length, agents, ts: Date.now() });
+// ── API: AGENTS ───────────────────────────────────────────────────────────────
+// Aggregates live agent status from all three orchestrators
+app.get('/api/agents', async (req, res) => {
+  const results = {};
+  await Promise.all(
+    Object.entries(ORCHESTRATORS).map(async ([layer, base]) => {
+      try {
+        const r = await fetch(`${base}/api/status`);
+        const j = await r.json();
+        results[layer] = { status: 'up', port: parseInt(base.split(':')[2]), agents: j.agents };
+      } catch (e) {
+        results[layer] = { status: 'down', error: e.message, agents: {} };
+      }
+    })
+  );
+  const allAgents = Object.entries(results).flatMap(([layer, d]) =>
+    Object.entries(d.agents || {}).map(([id, a]) => ({ ...a, id, layer, port: d.port }))
+  );
+  res.json({ count: allAgents.length, layers: results, agents: allAgents, ts: Date.now() });
 });
 
 // ── API: CONTRACTS ────────────────────────────────────────────────────────────

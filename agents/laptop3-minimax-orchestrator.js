@@ -19,7 +19,7 @@ const http = require('http');
 
 const PORT = process.argv[2] === '--port' ? parseInt(process.argv[3]) : 9002;
 const INSTANCE_COUNT = process.argv[4] === '--instances' ? parseInt(process.argv[5]) : 4;
-const REPO_PATH = '/c/aoe-unified-final';
+const REPO_PATH = process.platform === 'win32' ? 'c:/aoe-unified-final' : '/c/aoe-unified-final';
 const SHARED_PATH = path.join(REPO_PATH, 'shared');
 const LOGS_PATH = path.join(REPO_PATH, 'LOGS');
 const AGENTS_PATH = path.join(REPO_PATH, 'AGENTS');
@@ -158,40 +158,45 @@ app.post('/api/agent/:id/status', (req, res) => {
   res.json({ received: true });
 });
 
-// Sync with L1 & L2
+// Track known contracts
+let knownContracts = new Set();
+
+// Sync with L1 & L2 — reads shared/ directly, no git required
 function syncWithUpstream() {
   try {
-    log(`[SYNC] Pulling latest from L1/L2...`);
-    execSync(`cd ${REPO_PATH} && git pull origin feature/supadash-consolidation`, {
-      stdio: 'pipe'
-    });
+    if (!fs.existsSync(SHARED_PATH)) return;
 
-    // Check for optimization targets
-    const optimizations = fs.readdirSync(SHARED_PATH)
-      .filter(f => f.includes('optimization') || f.includes('consolidation'));
+    const contracts = fs.readdirSync(SHARED_PATH)
+      .filter(f => f.endsWith('.json') && (f.includes('-spec') || f.includes('-manifest') || f.includes('-schema')));
 
-    if (optimizations.length > 0) {
-      log(`[SYNC] Found ${optimizations.length} optimization targets`);
+    const newContracts = contracts.filter(f => !knownContracts.has(f));
+
+    if (newContracts.length > 0) {
+      log(`[SYNC] ${newContracts.length} new contract(s) found: ${newContracts.join(', ')}`);
+      newContracts.forEach(f => knownContracts.add(f));
+
+      // Auto-activate all Minimax agents
+      MINIMAX_AGENTS.forEach(agent => {
+        const agentKey = `Agent-${agent.id}`;
+        if (agentStatus[agentKey].status !== 'active') {
+          agentStatus[agentKey].status = 'active';
+          agentStatus[agentKey].progress_percent = 5;
+          agentStatus[agentKey].contracts_loaded = Array.from(knownContracts);
+          agentStatus[agentKey].last_heartbeat = new Date();
+          agentStatus[agentKey].sub_agents.forEach(sa => { sa.status = 'active'; });
+          log(`[SYNC] ${agentKey} activated with ${agentStatus[agentKey].sub_agents.length} sub-agents`);
+        }
+      });
+    } else {
+      log(`[SYNC] ${contracts.length} contract(s) present, no changes`);
     }
   } catch (error) {
-    log(`[SYNC] Sync with L1/L2: ${error.message}`);
+    log(`[SYNC] Error reading shared/: ${error.message}`);
   }
 }
 
-// Auto-pull every 5 minutes
-setInterval(syncWithUpstream, 5 * 60 * 1000);
-
-// Push optimizations every 10 minutes
-setInterval(() => {
-  try {
-    log(`[PUSH] Pushing optimization results...`);
-    execSync(`cd ${REPO_PATH} && git add shared/optimization-*.json && git commit -m "[AUTO] L3 optimization results" && git push origin feature/supadash-consolidation`, {
-      stdio: 'pipe'
-    });
-  } catch (error) {
-    // No changes to push, that's OK
-  }
-}, 10 * 60 * 1000);
+// Auto-sync every 30 seconds
+setInterval(syncWithUpstream, 30 * 1000);
 
 // Startup sequence
 function startup() {
@@ -201,7 +206,7 @@ function startup() {
   MINIMAX_AGENTS.forEach((agent, idx) => {
     setTimeout(() => {
       const agentKey = `Agent-${agent.id}`;
-      agentStatus[agentKey].status = 'running';
+      if (agentStatus[agentKey].status !== 'active') agentStatus[agentKey].status = 'running';
       log(`✓ Minimax Instance ${agent.id} initialized`);
       log(`  Task: ${agent.task}`);
       log(`  Sub-agents: ${agent.sub_agents} (code consolidation, query optimization, perf tuning)`);
@@ -216,7 +221,7 @@ function startup() {
   setTimeout(() => {
     log('\n>>> STARTUP COMPLETE');
     log(`✓ ${INSTANCE_COUNT} Minimax instances running (${TOTAL_SUB_AGENTS} total sub-agents)`);
-    log(`✓ Connected to L1 (http://localhost:9000) and L2 (http://localhost:9001)`);
+    log(`✓ Connected to L1 (http://localhost:9001) and L2 (http://localhost:9002)`);
     log(`✓ Waiting for L1 to publish contracts at Day 1 Hour 4...\n`);
     log(`Monitor progress: curl http://localhost:${PORT}/api/status | jq`);
     log(`View optimizations: curl http://localhost:${PORT}/api/optimization/\<component\> | jq\n`);
