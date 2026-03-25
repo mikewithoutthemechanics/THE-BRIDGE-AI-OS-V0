@@ -101,7 +101,7 @@ app.get('/api/agents', (req, res) => {
     total: L2_AGENTS.length,
     agents: L2_AGENTS,
     status_detail: agentStatus,
-    l1_endpoint: 'http://localhost:9000'
+    l1_endpoint: 'http://localhost:9001'
   });
 });
 
