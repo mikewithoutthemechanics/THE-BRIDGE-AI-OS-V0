@@ -1,8 +1,34 @@
+// =============================================================================
+// BRIDGE AI OS — UNIFIED GATEWAY
+// Port: 8080
+//
+// AVAILABLE ENDPOINTS
+// ─────────────────────────────────────────────────────────────────────────────
+// Core / Legacy
+//   GET  /health                  — gateway + core service liveness
+//   GET  /events/stream           — SSE live event stream
+//   GET  /orchestrator/status     — swarm agent status
+//   GET  /billing                 — treasury + subscription data
+//   POST /ask                     — LLM inference (proxies to :3001)
+//   GET  /                        — serve ui.html
+//
+// Unified API (v2 — added Day 2)
+//   GET  /api/topology            — network topology (proxies :3000, else stub)
+//   GET  /api/avatar/*            — avatar rendering endpoints (stub)
+//   GET  /api/registry/*          — registry data: kernel/network/security (stub)
+//   GET  /api/marketplace/*       — marketplace: tasks/DEX/wallet/skills (stub)
+//   GET  /api/status              — aggregate health of all services
+//   GET  /api/agents              — all agents across L1 / L2 / L3 (stub)
+//   GET  /api/contracts           — all JSON contract files from shared/
+// =============================================================================
+
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 
 const ROOT = __dirname;
+const SHARED_DIR = path.join(ROOT, 'shared');
 
 // ── CORS ────────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
@@ -14,6 +40,17 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
+// ── REQUEST LOGGING MIDDLEWARE ────────────────────────────────────────────────
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const ms = Date.now() - start;
+    console.log(`[GATEWAY] ${req.method} ${req.path} — ${res.statusCode} (${ms}ms)`);
+  });
+  next();
+});
+
 app.use(express.static(ROOT));
 
 // ── HEALTH ───────────────────────────────────────────────────────────────────
@@ -143,6 +180,183 @@ app.post('/ask', async (req, res) => {
   }
 });
 
+// ── API: TOPOLOGY ─────────────────────────────────────────────────────────────
+// Proxies to system.js on :3000 when available, else returns a stub topology.
+app.get('/api/topology', async (req, res) => {
+  try {
+    const r = await fetch('http://localhost:3000/topology');
+    const j = await r.json();
+    return res.json(j);
+  } catch (_) {
+    // Stub topology
+    return res.json({
+      stub: true,
+      nodes: [
+        { id: 'gateway',      label: 'Gateway',        port: 8080, status: 'up' },
+        { id: 'system',       label: 'System / Core',  port: 3000, status: 'unknown' },
+        { id: 'ainode',       label: 'AI Node',        port: 3001, status: 'unknown' },
+        { id: 'orchestrator', label: 'Orchestrator',   port: 3002, status: 'unknown' },
+      ],
+      edges: [
+        { source: 'gateway', target: 'system' },
+        { source: 'gateway', target: 'ainode' },
+        { source: 'gateway', target: 'orchestrator' },
+      ],
+      ts: Date.now(),
+    });
+  }
+});
+
+// ── API: AVATAR ───────────────────────────────────────────────────────────────
+// Wildcard handler for avatar rendering endpoints.
+app.get('/api/avatar/*', (req, res) => {
+  const subpath = req.params[0] || 'default';
+  res.json({
+    stub: true,
+    endpoint: `/api/avatar/${subpath}`,
+    scene: {
+      type: 'babylon-scene',
+      avatar_id: subpath,
+      mesh: 'humanoid_base_v1',
+      texture: 'default_skin',
+      animation: 'idle',
+      position: { x: 0, y: 0, z: 0 },
+      scale: 1.0,
+    },
+    ts: Date.now(),
+  });
+});
+
+// ── API: REGISTRY ─────────────────────────────────────────────────────────────
+// Wildcard handler for registry data (kernel, network, security, etc.).
+app.get('/api/registry/*', (req, res) => {
+  const namespace = req.params[0] || 'root';
+  const REGISTRY_STUBS = {
+    kernel:   { version: '4.2.1', modules: ['scheduler', 'ipc', 'memory'], status: 'healthy' },
+    network:  { interfaces: ['eth0', 'lo'], dns: ['8.8.8.8', '1.1.1.1'], status: 'healthy' },
+    security: { tls: true, firewall: 'active', last_scan: new Date().toISOString(), status: 'healthy' },
+  };
+  const data = REGISTRY_STUBS[namespace] || { namespace, status: 'unknown', entries: [] };
+  res.json({ stub: true, namespace, data, ts: Date.now() });
+});
+
+// ── API: MARKETPLACE ──────────────────────────────────────────────────────────
+// Wildcard handler for marketplace (tasks, DEX, wallet, skills, portfolio, stats).
+app.get('/api/marketplace/*', (req, res) => {
+  const section = req.params[0] || 'index';
+  const MARKET_STUBS = {
+    tasks: {
+      open: 14, in_progress: 7, completed_today: 23,
+      listings: [
+        { id: 't001', title: 'Lead enrichment run', reward: 120, status: 'open' },
+        { id: 't002', title: 'Sentiment analysis batch', reward: 85, status: 'open' },
+      ],
+    },
+    dex: {
+      pairs: ['USD/BRIDGE', 'ETH/BRIDGE'],
+      liquidity_usd: 480000,
+      volume_24h: 12350,
+    },
+    wallet: {
+      address: '0xSTUB000000000000000000000000000000000000',
+      balances: [{ token: 'BRIDGE', amount: 5000 }, { token: 'ETH', amount: 1.2 }],
+    },
+    skills: {
+      available: ['nlp', 'vision', 'forecasting', 'scraping', 'summarisation'],
+      installed: ['nlp', 'scraping'],
+    },
+    portfolio: {
+      total_value_usd: 62400,
+      assets: [{ name: 'BRIDGE', usd: 5000 }, { name: 'ETH', usd: 3200 }],
+    },
+    stats: {
+      total_tasks: 1482, total_agents: agentNames.length,
+      revenue_total: 138000, uptime_pct: 99.7,
+    },
+  };
+  const data = MARKET_STUBS[section] || { section, status: 'unknown', items: [] };
+  res.json({ stub: true, section, data, ts: Date.now() });
+});
+
+// ── API: STATUS ───────────────────────────────────────────────────────────────
+// Aggregate health of all known services.
+app.get('/api/status', async (req, res) => {
+  const services = [
+    { id: 'gateway',      url: null,                         port: 8080 },
+    { id: 'system',       url: 'http://localhost:3000/health', port: 3000 },
+    { id: 'ainode',       url: 'http://localhost:3001/health', port: 3001 },
+    { id: 'orchestrator', url: 'http://localhost:3002/health', port: 3002 },
+  ];
+
+  const results = await Promise.all(
+    services.map(async (svc) => {
+      if (!svc.url) return { id: svc.id, port: svc.port, status: 'up', latency_ms: 0 };
+      const t0 = Date.now();
+      try {
+        const r = await fetch(svc.url, { signal: AbortSignal.timeout(2000) });
+        const latency_ms = Date.now() - t0;
+        return { id: svc.id, port: svc.port, status: r.ok ? 'up' : 'degraded', latency_ms };
+      } catch (_) {
+        return { id: svc.id, port: svc.port, status: 'unreachable', latency_ms: Date.now() - t0 };
+      }
+    })
+  );
+
+  const overall = results.every(s => s.status === 'up') ? 'healthy'
+    : results.some(s => s.status === 'up') ? 'degraded'
+    : 'down';
+
+  res.json({ overall, services: results, ts: Date.now() });
+});
+
+// ── API: AGENTS ───────────────────────────────────────────────────────────────
+// List all agents across L1 / L2 / L3 layers (stub).
+app.get('/api/agents', (req, res) => {
+  const layers = {
+    L1: ['alpha', 'beta', 'gamma'],
+    L2: ['delta', 'epsilon', 'zeta'],
+    L3: ['eta', 'theta'],
+  };
+
+  const agents = [];
+  for (const [layer, names] of Object.entries(layers)) {
+    for (const name of names) {
+      agents.push({
+        id: `agent_${name}`,
+        name,
+        layer,
+        status: 'active',
+        capabilities: ['inference', 'task_exec', 'reporting'],
+        tasks_completed: Math.floor(Math.random() * 500),
+        uptime_s: Math.floor(Math.random() * 86400),
+        last_seen: new Date().toISOString(),
+      });
+    }
+  }
+
+  res.json({ stub: true, count: agents.length, agents, ts: Date.now() });
+});
+
+// ── API: CONTRACTS ────────────────────────────────────────────────────────────
+// Reads and returns all JSON files from the shared/ contracts directory.
+app.get('/api/contracts', (req, res) => {
+  try {
+    const files = fs.readdirSync(SHARED_DIR).filter(f => f.endsWith('.json'));
+    const contracts = {};
+    for (const file of files) {
+      try {
+        const raw = fs.readFileSync(path.join(SHARED_DIR, file), 'utf8');
+        contracts[file] = JSON.parse(raw);
+      } catch (parseErr) {
+        contracts[file] = { error: 'parse_failed', message: parseErr.message };
+      }
+    }
+    res.json({ count: files.length, files, contracts, ts: Date.now() });
+  } catch (err) {
+    res.status(500).json({ error: 'failed_to_read_contracts', message: err.message });
+  }
+});
+
 // ── UI ────────────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.sendFile(path.join(ROOT, 'ui.html'));
@@ -152,8 +366,10 @@ app.get('/', (req, res) => {
 // Bind to '::' so it covers both IPv6 (::1) and IPv4 (127.0.0.1) on Windows
 // This ensures 'localhost' resolves correctly regardless of OS preference
 const server = app.listen(8080, '::', () => {
-  console.log('[GATEWAY] Bridge AI OS gateway running on http://localhost:8080');
-  console.log('[GATEWAY] Endpoints: /health  /events/stream  /orchestrator/status  /billing  /ask');
+  console.log('[GATEWAY] Bridge AI OS unified gateway running on http://localhost:8080');
+  console.log('[GATEWAY] Core endpoints : /health  /events/stream  /orchestrator/status  /billing  /ask');
+  console.log('[GATEWAY] Unified API    : /api/topology  /api/avatar/*  /api/registry/*  /api/marketplace/*');
+  console.log('[GATEWAY]                  /api/status  /api/agents  /api/contracts');
 });
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
