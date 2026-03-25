@@ -283,7 +283,7 @@ async function runAgent1B() {
   const services = [
     { name: 'gateway', url: 'http://localhost:8080/health' },
     { name: 'system', url: 'http://localhost:3000/health' },
-    { name: 'l1-orchestrator', url: 'http://localhost:9000/health' },
+    { name: 'l1-orchestrator', url: 'http://localhost:9001/health' },
   ];
 
   for (const svc of services) {
@@ -406,7 +406,7 @@ async function runAgent6B() {
   const soakTargets = [
     'http://localhost:8080/health',
     'http://localhost:3000/health',
-    'http://localhost:9000/health',
+    'http://localhost:9001/health',
     'http://localhost:9001/health',
   ];
 
