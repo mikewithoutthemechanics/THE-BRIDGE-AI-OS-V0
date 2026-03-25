@@ -1,0 +1,19 @@
+CONTAINERX VIRTUAL TOPOLOGY SNAPSHOT
+Generated: 2026-03-24T19:21:00Z
+Runtime: Virtual ContainerX Engine
+
+NAMES                                IMAGE                    NETWORKS
+vx-aoe-gateway-001                  traefik:v3.0             bridge-global-net
+vx-aoe-spine-001                    python:3.11-slim         bridge-global-net
+vx-aoe-backend-001                  python:3.11-slim         bridge-global-net
+vx-aoe-ui-001                       node:20-alpine           bridge-global-net
+vx-aoe-executor-1-001               python:3.11-slim         bridge-global-net
+vx-aoe-executor-2-001               python:3.11-slim         bridge-global-net
+vx-aoe-executor-3-001               python:3.11-slim         bridge-global-net
+vx-aoe-dromedaries-db-001           python:3.11-slim         bridge-global-net
+vx-redis-master-001                 redis:7-alpine           bridge-global-net
+vx-redis-replica-1-001              redis:7-alpine           bridge-global-net
+vx-redis-replica-2-001              redis:7-alpine           bridge-global-net
+vx-aoe-telemetry-001                python:3.11-slim         bridge-global-net
+vx-aoe-supasoloc-001                python:3.11-slim         bridge-global-net
+vx-aoe-abaas-001                     python:3.11-slim         bridge-global-net

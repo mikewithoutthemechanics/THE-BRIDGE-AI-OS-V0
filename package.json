@@ -1,0 +1,64 @@
+{
+  "name": "god-mode-topology",
+  "version": "1.0.0",
+  "description": "GOD MODE VPS Architecture Mapping & Topology Visualization System",
+  "main": "system.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node system.js",
+    "dev": "nodemon system.js",
+    "start:80": "cross-env PORT=80  NODE_ENV=production node system.js",
+    "start:443": "cross-env PORT=443 NODE_ENV=production node system.js",
+    "start:prod": "cross-env NODE_ENV=production node system.js",
+    "certs": "node scripts/gen-certs.js",
+    "preflight": "node scripts/preflight.js",
+    "health": "node scripts/health-check.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:prod": "pm2 start ecosystem.config.js --env production",
+    "pm2:stop": "pm2 stop god-mode-topology",
+    "pm2:restart": "pm2 restart god-mode-topology",
+    "pm2:logs": "pm2 logs god-mode-topology",
+    "deploy": "node scripts/deploy.js",
+    "deploy:heroku": "node scripts/deploy.js heroku",
+    "deploy:railway": "node scripts/deploy.js railway",
+    "deploy:render": "node scripts/deploy.js render",
+    "deploy:fly": "node scripts/deploy.js fly",
+    "deploy:public": "powershell -ExecutionPolicy Bypass -File scripts/deploy-public.ps1",
+    "gateway": "node gateway.js",
+    "gateway:dev": "nodemon gateway.js"
+  },
+  "keywords": [
+    "topology",
+    "vps",
+    "architecture",
+    "p5js",
+    "monitoring"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "node-fetch": "^3.3.2",
+    "node-pty": "^1.1.0",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.1.14"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "system.js",
+      "public/"
+    ],
+    "ext": "js,html,css",
+    "ignore": [
+      "node_modules/",
+      "certs/"
+    ],
+    "delay": 500
+  }
+}

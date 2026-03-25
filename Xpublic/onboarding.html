@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#000;color:#0f0;font-family:Arial">
+<h2>BridgeOS Onboarding</h2>
+
+<form id="f">
+<input id="email" placeholder="email"><br><br>
+<button type="submit">Register</button>
+</form>
+
+<script>
+document.getElementById('f').onsubmit = async (e)=>{
+  e.preventDefault();
+
+  const res = await fetch('/api/auth/register',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      email: document.getElementById('email').value
+    })
+  });
+
+  const data = await res.json();
+  alert(JSON.stringify(data));
+};
+</script>
+</body>
+</html>

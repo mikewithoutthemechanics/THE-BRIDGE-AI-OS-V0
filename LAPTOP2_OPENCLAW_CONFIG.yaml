@@ -1,0 +1,295 @@
+# SUPADASH LAPTOP 2 - HANDS-FREE SETUP & EXECUTION
+# Configured for OpenClaw / Remote Automation
+#
+# This config sets up and runs Laptop 2 completely unattended
+# Deploys to: laptop2 (assumes SSH connectivity from L1)
+#
+# Usage:
+#   openclaw deploy LAPTOP2_OPENCLAW_CONFIG.yaml
+#   Or: ssh laptop2 "bash -s" < setup-laptop2.sh
+#
+
+---
+name: supadash-laptop2-streaming
+description: "SUPADASH Laptop 2 - Specialist agents + conflict detection + verification"
+version: "1.0"
+timeline: "8-day streaming execution"
+
+environment:
+  REPO_PATH: "/c/aoe-unified-final"
+  L2_PORT: "9001"
+  L1_HOST: "localhost"  # Change if L1 is on different network
+  L1_PORT: "9000"
+  NODE_ENV: "production"
+  LOG_DIR: "/c/aoe-unified-final/LOGS"
+  SHARED_DIR: "/c/aoe-unified-final/shared"
+
+# Phase 1: Pre-Flight Setup (runs immediately)
+pre_flight:
+  enabled: true
+  timeout: 600  # 10 minutes
+  steps:
+    - name: "Verify Node.js"
+      command: "node --version && npm --version"
+      required: true
+      retry: 1
+
+    - name: "Verify npm dependencies"
+      command: "npm list express cors body-parser 2>/dev/null | head -3"
+      required: true
+      retry: 1
+
+    - name: "Create directories"
+      command: "mkdir -p /c/aoe-unified-final/{shared,LOGS,STANDUPS,AGENTS}"
+      required: true
+
+    - name: "Verify git repo"
+      command: "cd /c/aoe-unified-final && git status"
+      required: true
+
+    - name: "Checkout feature branch"
+      command: "cd /c/aoe-unified-final && git checkout feature/supadash-consolidation 2>/dev/null || git checkout -b feature/supadash-consolidation"
+      required: true
+
+    - name: "Sync with L1"
+      command: "cd /c/aoe-unified-final && git pull origin feature/supadash-consolidation"
+      required: false
+      retry: 3
+
+    - name: "Verify orchestrator script exists"
+      command: "test -f /c/aoe-unified-final/agents/laptop2-streaming-orchestrator.js"
+      required: true
+
+    - name: "Make scripts executable"
+      command: "chmod +x /c/aoe-unified-final/agents/*.sh /c/aoe-unified-final/agents/*orchestrator.js"
+      required: true
+
+    - name: "Test L1 connectivity"
+      command: "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/9000' && echo 'L1 reachable' || echo 'L1 not yet running (OK)'"
+      required: false
+
+# Phase 2: Wait for L1 Bootstrap (runs at Day 1 Hour 0)
+wait_for_l1:
+  enabled: true
+  timeout: 1800  # 30 minutes
+  poll_interval: 10  # Check every 10 seconds
+  steps:
+    - name: "Wait for L1 orchestrator on port 9000"
+      command: |
+        for i in {1..180}; do
+          if curl -s http://localhost:9000/health > /dev/null 2>&1; then
+            echo "L1 ready after $((i*10)) seconds"
+            exit 0
+          fi
+          sleep 10
+        done
+        echo "ERROR: L1 did not start within 30 minutes"
+        exit 1
+      required: true
+
+    - name: "Verify L1 agents initialized"
+      command: "curl -s http://localhost:9000/api/agents | jq '.total' | grep -q '6' && echo 'L1 has 6 agents'"
+      required: true
+      retry: 3
+
+# Phase 3: Launch Laptop 2 Orchestrator (runs at Day 1 Hour 0, after L1 is ready)
+launch_orchestrator:
+  enabled: true
+  when: "l1_ready"
+  timeout: 120  # 2 minutes to start
+  steps:
+    - name: "Start L2 orchestrator process"
+      command: |
+        cd /c/aoe-unified-final
+        nohup node agents/laptop2-streaming-orchestrator.js --port 9001 \
+          > LOGS/LAPTOP_2_ORCHESTRATOR.log 2>&1 &
+        ORCHESTRATOR_PID=$!
+        echo $ORCHESTRATOR_PID > /tmp/laptop2-orchestrator.pid
+        echo "L2 orchestrator started (PID: $ORCHESTRATOR_PID)"
+      required: true
+
+    - name: "Wait for L2 orchestrator to be ready"
+      command: |
+        for i in {1..60}; do
+          if curl -s http://localhost:9001/health > /dev/null 2>&1; then
+            echo "L2 ready after $((i*2)) seconds"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "ERROR: L2 did not start within 2 minutes"
+        exit 1
+      required: true
+
+    - name: "Verify L2 agents initialized"
+      command: "curl -s http://localhost:9001/api/agents | jq '.total' | grep -q '7' && echo 'L2 has 7 agents'"
+      required: true
+      retry: 3
+
+    - name: "Create bootstrap status file"
+      command: |
+        cat > /c/aoe-unified-final/AGENTS/LAPTOP2_BOOTSTRAP_STATUS.json << 'EOF'
+        {
+          "bootstrap_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "l2_port": 9001,
+          "l2_status": "running",
+          "agents_count": 7,
+          "orchestrator_pid": "$(cat /tmp/laptop2-orchestrator.pid)",
+          "timeline_days": 8,
+          "mode": "streaming"
+        }
+        EOF
+      required: true
+
+# Phase 4: Continuous Operations (Days 1-8)
+operations:
+  enabled: true
+  monitoring:
+    health_check_interval: 300  # Every 5 minutes
+    health_check_command: "curl -s http://localhost:9001/health | jq '.status' | grep -q 'healthy'"
+
+    log_monitoring:
+      enabled: true
+      path: "/c/aoe-unified-final/LOGS/LAPTOP_2.log"
+      alert_patterns:
+        - pattern: "ERROR"
+          action: "log"
+        - pattern: "CONFLICT"
+          action: "escalate_to_l1"
+        - pattern: "GATE PASSED"
+          action: "notify"
+
+    git_sync:
+      enabled: true
+      interval: 300  # Every 5 minutes
+      commands:
+        - "cd /c/aoe-unified-final && git pull origin feature/supadash-consolidation"
+        - "cd /c/aoe-unified-final && git push origin feature/supadash-consolidation 2>/dev/null || true"
+
+  auto_recovery:
+    enabled: true
+    restart_on_failure: true
+    max_restarts: 3
+    restart_interval: 60  # Wait 60 seconds before restart
+    restart_command: |
+      pkill -f "laptop2-streaming-orchestrator" || true
+      sleep 2
+      cd /c/aoe-unified-final
+      nohup node agents/laptop2-streaming-orchestrator.js --port 9001 \
+        >> LOGS/LAPTOP_2_ORCHESTRATOR.log 2>&1 &
+
+  conflict_handling:
+    enabled: true
+    check_interval: 60  # Check every minute
+    alert_command: |
+      if [ -f /c/aoe-unified-final/shared/CONFLICTS_DETECTED.json ]; then
+        curl -X POST http://localhost:9000/webhook/conflict \
+          -H "Content-Type: application/json" \
+          -d "@/c/aoe-unified-final/shared/CONFLICTS_DETECTED.json"
+      fi
+
+# Phase 5: Daily Operations (09:00 UTC)
+daily_standup:
+  enabled: true
+  schedule: "0 9 * * *"  # Every day at 09:00 UTC
+  timezone: "UTC"
+  commands:
+    - name: "Collect status"
+      command: |
+        curl -s http://localhost:9001/api/status > /c/aoe-unified-final/STANDUPS/l2-status-$(date +%Y-%m-%d).json
+    - name: "Generate standup report"
+      command: |
+        cat > /c/aoe-unified-final/STANDUPS/standup-$(date +%Y-%m-%d).md << 'EOF'
+        # Daily Standup - $(date +%Y-%m-%d)
+
+        ## L2 Agent Status
+        $(curl -s http://localhost:9001/api/agents | jq -r '.agents[] | "- \(.id): \(.task)"')
+
+        ## Verification Results
+        $(curl -s http://localhost:9001/api/conflicts | jq '.conflicts | length') conflicts detected
+
+        ## Load Test Status
+        $(tail -1 /c/aoe-unified-final/LOGS/LAPTOP_2.log)
+        EOF
+        git add /c/aoe-unified-final/STANDUPS/
+        git commit -m "[AUTO] Daily standup: $(date +%Y-%m-%d)"
+        git push origin feature/supadash-consolidation || true
+
+# Phase 6: Final Status (Day 8)
+cutover_readiness:
+  enabled: true
+  when: "day_8_morning"
+  checks:
+    - name: "7-day soak test passed"
+      command: "curl -s http://localhost:9001/api/status | jq '.soak_test_days' | grep -q '[7-9]'"
+    - name: "Zero conflicts detected"
+      command: "curl -s http://localhost:9001/api/conflicts | jq '.conflicts | length' | grep -q '^0$'"
+    - name: "All agents healthy"
+      command: "curl -s http://localhost:9001/api/agents | jq '.agents | map(.status) | all(. == \"running\")'"
+
+# Notifications
+notifications:
+  enabled: true
+  channels:
+    - type: "log_file"
+      path: "/c/aoe-unified-final/LOGS/LAPTOP_2_NOTIFICATIONS.log"
+    - type: "git_commit"
+      trigger: "major_milestone"
+  events:
+    - event: "bootstrap_complete"
+      message: "L2 orchestrator started, streaming timeline active"
+    - event: "conflict_detected"
+      message: "Conflict detected, escalating to L1 Agent-1"
+    - event: "gate_passed"
+      message: "Verification gate passed, moving to next phase"
+    - event: "soak_test_complete"
+      message: "7-day load test passed, ready for production cutover"
+
+# Rollback Configuration
+rollback:
+  enabled: true
+  on_critical_failure:
+    - "Stop orchestrator"
+    - "Save logs to /c/aoe-unified-final/ROLLBACK_LOGS/$(date +%Y-%m-%d_%H-%M-%S)/"
+    - "Notify L1 with git commit"
+    - "Revert to last known good state from git"
+
+---
+# MANUAL EXECUTION FALLBACK
+# If openclaw is not available, run this directly on Laptop 2:
+
+manual_setup_command: |
+  #!/bin/bash
+  set -e
+
+  # Pre-flight
+  echo "► Pre-flight checks..."
+  node --version
+  npm list express > /dev/null || npm install express cors body-parser
+  mkdir -p /c/aoe-unified-final/{shared,LOGS,STANDUPS,AGENTS}
+  cd /c/aoe-unified-final
+  git checkout feature/supadash-consolidation || git checkout -b feature/supadash-consolidation
+  chmod +x agents/*.sh agents/*orchestrator.js
+
+  # Wait for L1
+  echo "► Waiting for L1 to be ready..."
+  for i in {1..180}; do
+    if curl -s http://localhost:9000/health > /dev/null 2>&1; then
+      echo "✓ L1 ready"
+      break
+    fi
+    echo "  Waiting... ($i/180)"
+    sleep 10
+  done
+
+  # Start L2
+  echo "► Starting L2 orchestrator..."
+  nohup node agents/laptop2-streaming-orchestrator.js --port 9001 \
+    > LOGS/LAPTOP_2_ORCHESTRATOR.log 2>&1 &
+
+  echo "✓ L2 setup complete"
+  echo "Waiting for L2 orchestrator..."
+  sleep 3
+  curl http://localhost:9001/api/status | jq .
+
+  echo "✓ Streaming timeline active"
