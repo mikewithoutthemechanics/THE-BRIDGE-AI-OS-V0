@@ -253,7 +253,7 @@ function startup() {
   L2_AGENTS.forEach((agent, idx) => {
     setTimeout(() => {
       const agentKey = `Agent-${agent.id}`;
-      agentStatus[agentKey].status = 'running';
+      if (agentStatus[agentKey].status !== 'active') agentStatus[agentKey].status = 'running';
       log(`✓ Agent ${agent.id} initialized (${agent.model})`);
       log(`  Task: ${agent.task}`);
     }, idx * 500);
