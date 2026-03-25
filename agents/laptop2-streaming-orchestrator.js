@@ -4,7 +4,7 @@
  * SUPADASH Laptop 2 Streaming Orchestrator
  *
  * Launches 7 Specialist agents (1B, 2B, 3B, 4B, 5B, 6B) on Port 9001
- * Models: Kimi, Nemotron, Xiaomi, Minimax
+ * Models: Nemotron, Xiaomi, Minimax
  * Role: Verification, optimization, stress testing, conflict detection
  *
  * Start: node agents/laptop2-streaming-orchestrator.js --port 9001
@@ -25,7 +25,7 @@ const AGENTS_PATH = path.join(REPO_PATH, 'AGENTS');
 
 // Agent definitions for L2
 const L2_AGENTS = [
-  { id: '1B', model: 'Kimi', task: 'Meta-Orchestrator + Conflict Detection', status: 'ready' },
+  { id: '1B', model: 'Minimax M2.5', task: 'Meta-Orchestrator + Conflict Detection', status: 'ready' },
   { id: '2B', model: 'Nemotron 3 Super', task: 'Gateway Stress Testing', status: 'ready' },
   { id: '3B', model: 'Xiaomi mimo v2 pro x2', task: 'UI/UX Optimization', status: 'ready' },
   { id: '4B', model: 'Minimax M2.5 x2', task: 'SQL Query Optimization', status: 'ready' },
@@ -67,7 +67,7 @@ log('═════════════════════════
 log('SUPADASH STREAMING ORCHESTRATOR - LAPTOP 2');
 log('═══════════════════════════════════════════════════════════');
 log(`Port: ${PORT}`);
-log(`Agents: 7 Specialist models (Kimi, Nemotron x2, Xiaomi x2, Minimax x2)`);
+log(`Agents: 6 Specialist models (Nemotron x2, Xiaomi x2, Minimax x3)`);
 log(`Role: Verification + Optimization + Conflict Detection`);
 log(`Timeline: 8 days (streaming, validation in parallel)`);
 log(`Timestamp: ${new Date().toISOString()}`);
