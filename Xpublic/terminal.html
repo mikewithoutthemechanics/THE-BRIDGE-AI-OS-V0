@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BRIDGE AI OS — Terminal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050a0f;
+      --surface: #0d1620;
+      --border: #1a2d40;
+      --accent: #00c8ff;
+      --green: #00e57b;
+      --red: #ff3c5a;
+      --yellow: #ffd166;
+      --text: #c8dce8;
+      --text-dim: #4d6678;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .toolbar a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      padding: 0.3rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .toolbar a:hover { color: var(--accent); border-color: var(--accent); }
+    .toolbar .title { font-size: 0.8rem; color: var(--accent); letter-spacing: 0.15em; flex: 1; }
+    .toolbar .status { font-size: 0.7rem; color: var(--text-dim); }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: #080e16;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      padding: 0.4rem 1rem;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-right: 1px solid var(--border);
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .tab.active { color: var(--accent); background: var(--surface); border-bottom: 2px solid var(--accent); }
+    .tab .close-btn {
+      font-size: 0.6rem;
+      cursor: pointer;
+      opacity: 0.5;
+    }
+    .tab .close-btn:hover { opacity: 1; color: var(--red); }
+
+    .btn-new {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.7rem;
+      color: var(--green);
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      border: none;
+      background: none;
+      font-family: inherit;
+    }
+    .btn-new:hover { text-shadow: 0 0 8px var(--green); }
+    .btn-new:disabled { color: var(--text-dim); cursor: not-allowed; }
+
+    .terminal-container {
+      flex: 1;
+      position: relative;
+    }
+    .term-wrapper {
+      position: absolute;
+      inset: 0;
+      display: none;
+      padding: 4px;
+    }
+    .term-wrapper.active { display: block; }
+
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    .reconnect-banner {
+      display: none;
+      padding: 0.4rem 1rem;
+      background: rgba(255, 60, 90, 0.15);
+      border-bottom: 1px solid var(--red);
+      font-size: 0.72rem;
+      color: var(--yellow);
+      text-align: center;
+    }
+    .reconnect-banner.show { display: block; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="toolbar">
+    <a href="/">&#8592; DASHBOARD</a>
+    <div class="title">TERMINAL</div>
+    <div class="status" id="conn-status">CONNECTING...</div>
+  </div>
+  <div id="reconnect-banner" class="reconnect-banner">Connection lost. Reconnecting...</div>
+  <div class="tabs" id="tab-bar">
+    <button class="btn-new" id="btn-new-tab">+ NEW TAB</button>
+  </div>
+  <div class="terminal-container" id="terminal-container"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<script>
+  const MAX_TABS = 4;
+  const WS_URL = `ws://${location.hostname}:5002`;
+  const tabs = [];
+  let activeTab = -1;
+
+  function createTab() {
+    if (tabs.length >= MAX_TABS) return;
+    const idx = tabs.length;
+    const id = `term-${idx}`;
+
+    // Terminal wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'term-wrapper';
+    wrapper.id = id;
+    document.getElementById('terminal-container').appendChild(wrapper);
+
+    // xterm instance
+    const term = new Terminal({
+      cursorBlink: true,
+      fontSize: 14,
+      fontFamily: "'Courier New', monospace",
+      theme: {
+        background: '#050a0f',
+        foreground: '#c8dce8',
+        cursor: '#00c8ff',
+        selectionBackground: '#1a2d40',
+        black: '#050a0f',
+        green: '#00e57b',
+        cyan: '#00c8ff',
+        red: '#ff3c5a',
+        yellow: '#ffd166',
+      }
+    });
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(wrapper);
+    fitAddon.fit();
+
+    // Tab button
+    const tabBtn = document.createElement('div');
+    tabBtn.className = 'tab';
+    tabBtn.innerHTML = `<span>TERM ${idx + 1}</span><span class="close-btn" data-idx="${idx}">x</span>`;
+    tabBtn.dataset.idx = idx;
+    const newBtn = document.getElementById('btn-new-tab');
+    newBtn.parentElement.insertBefore(tabBtn, newBtn);
+
+    tabBtn.addEventListener('click', (e) => {
+      if (e.target.classList.contains('close-btn')) {
+        closeTab(parseInt(e.target.dataset.idx));
+      } else {
+        switchTab(idx);
+      }
+    });
+
+    // WebSocket
+    const tab = { term, fitAddon, wrapper, tabBtn, ws: null, alive: true, retries: 0 };
+    tabs.push(tab);
+    connectTab(idx);
+    switchTab(idx);
+
+    // Input -> WS
+    term.onData(data => {
+      if (tab.ws && tab.ws.readyState === WebSocket.OPEN) {
+        tab.ws.send(data);
+      }
+    });
+
+    // Resize
+    window.addEventListener('resize', () => fitAddon.fit());
+
+    updateNewBtn();
+  }
+
+  function connectTab(idx) {
+    const tab = tabs[idx];
+    if (!tab) return;
+
+    const ws = new WebSocket(WS_URL);
+    tab.ws = ws;
+
+    ws.onopen = () => {
+      tab.retries = 0;
+      document.getElementById('conn-status').textContent = 'CONNECTED';
+      document.getElementById('conn-status').style.color = '#00e57b';
+      document.getElementById('reconnect-banner').classList.remove('show');
+    };
+
+    ws.onmessage = (e) => {
+      const data = e.data;
+      // Try parsing as JSON control message
+      try {
+        const msg = JSON.parse(data);
+        if (msg.type === 'error') {
+          tab.term.writeln(`\r\n\x1b[31m[ERROR] ${msg.message}\x1b[0m`);
+          return;
+        }
+        if (msg.type === 'connected') {
+          tab.term.writeln('\x1b[32m[Connected to PTY]\x1b[0m\r\n');
+          return;
+        }
+        if (msg.type === 'pty-closed') {
+          tab.term.writeln('\r\n\x1b[33m[PTY session ended]\x1b[0m');
+          return;
+        }
+        if (msg.type === 'session') return;
+      } catch (_) {}
+      // Raw terminal data
+      tab.term.write(data);
+    };
+
+    ws.onclose = () => {
+      document.getElementById('conn-status').textContent = 'DISCONNECTED';
+      document.getElementById('conn-status').style.color = '#ff3c5a';
+      document.getElementById('reconnect-banner').classList.add('show');
+      // Exponential backoff reconnect
+      const delay = Math.min(1000 * Math.pow(2, tab.retries), 30000);
+      tab.retries++;
+      setTimeout(() => {
+        if (tabs[idx] && tabs[idx] === tab) {
+          connectTab(idx);
+        }
+      }, delay);
+    };
+
+    ws.onerror = () => {};
+  }
+
+  function switchTab(idx) {
+    tabs.forEach((t, i) => {
+      t.wrapper.classList.toggle('active', i === idx);
+      t.tabBtn.classList.toggle('active', i === idx);
+    });
+    activeTab = idx;
+    if (tabs[idx]) tabs[idx].fitAddon.fit();
+  }
+
+  function closeTab(idx) {
+    const tab = tabs[idx];
+    if (!tab) return;
+    if (tabs.length <= 1) return; // keep at least one
+    try { tab.ws.close(); } catch (_) {}
+    tab.wrapper.remove();
+    tab.tabBtn.remove();
+    tabs[idx] = null;
+    // Switch to nearest live tab
+    const next = tabs.findIndex(t => t !== null);
+    if (next >= 0) switchTab(next);
+    updateNewBtn();
+  }
+
+  function updateNewBtn() {
+    const live = tabs.filter(t => t !== null).length;
+    document.getElementById('btn-new-tab').disabled = live >= MAX_TABS;
+  }
+
+  document.getElementById('btn-new-tab').addEventListener('click', createTab);
+
+  // Start with one tab
+  createTab();
+</script>
+</body>
+</html>

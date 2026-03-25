@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVATAR — BRIDGE AI OS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New',monospace;color:#0ff;overflow-x:hidden}
+
+/* HUD */
+#hud{
+  position:sticky;top:0;z-index:100;height:40px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;background:rgba(0,0,0,.92);
+  border-bottom:1px solid rgba(0,255,255,.2);
+}
+#hud-left{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:2px;color:#0ff;}
+#hud-right{display:flex;align-items:center;gap:14px;font-size:9px;color:#0f9;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#0f9;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+#clock{font-size:10px;letter-spacing:2px;color:#0f9;}
+.conn-badge{padding:2px 8px;border-radius:2px;font-size:8px;letter-spacing:1px;font-weight:bold;background:#003300;border:1px solid #0f93;color:#0f9;}
+.conn-badge.err{background:#330000;border-color:#f003;color:#f00;}
+.nav-links a{color:#0ac;font-size:9px;letter-spacing:1px;text-decoration:none;opacity:.7;margin-right:12px;transition:opacity .2s;}
+.nav-links a:hover{opacity:1;}
+
+/* MAIN */
+#main{padding:16px;}
+
+/* GLOBAL CONTROLS */
+#global-controls{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin-bottom:16px;padding:10px 14px;
+  background:rgba(0,10,20,.85);border:1px solid rgba(0,255,255,.15);border-radius:3px;
+}
+#global-controls .ctrl-label{font-size:9px;letter-spacing:2px;color:#0ac;margin-right:4px;}
+.mode-btn{
+  padding:5px 14px;font-size:9px;letter-spacing:1px;cursor:pointer;
+  background:#001a1a;border:1px solid #0ff2;color:#0ac;border-radius:2px;
+  font-family:monospace;transition:all .2s;
+}
+.mode-btn:hover{background:#002a2a;border-color:#0ff5;color:#0ff;}
+.mode-btn.active{background:#003333;border-color:#0ff;color:#0ff;box-shadow:0 0 8px rgba(0,255,255,0.2);}
+
+/* RENDER GRID */
+#render-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+@media(max-width:900px){#render-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){#render-grid{grid-template-columns:1fr;}}
+
+/* RENDER PANEL */
+.render-panel{
+  background:rgba(0,10,20,.85);
+  border:1px solid rgba(0,255,255,.15);
+  border-radius:3px;overflow:hidden;
+  transition:border-color .3s,box-shadow .3s;
+}
+.render-panel:hover{border-color:rgba(0,255,255,.4);}
+.render-panel.active-mode{
+  border-color:rgba(0,255,255,.8);
+  box-shadow:0 0 20px rgba(0,255,255,.15);
+}
+.render-panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 10px;background:rgba(0,255,255,.04);
+  border-bottom:1px solid rgba(0,255,255,.1);
+}
+.render-mode-label{font-size:8px;letter-spacing:2px;color:#0ff;text-transform:uppercase;}
+.render-status{font-size:7px;letter-spacing:1px;padding:1px 6px;border-radius:2px;}
+.render-status.loading{background:#001a1a;border:1px solid #0ff2;color:#0ac;animation:blink 1s infinite;}
+.render-status.ready{background:#001a00;border:1px solid #0f93;color:#0f9;}
+.render-status.error{background:#1a0000;border:1px solid #f003;color:#f44;}
+@keyframes blink{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* CANVAS CONTAINER */
+.canvas-wrap{position:relative;height:180px;background:#000;}
+.render-canvas{width:100%;height:100%;display:block;}
+
+/* OVERLAY INFO */
+.canvas-overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:6px 8px;background:linear-gradient(transparent,rgba(0,0,0,.8));
+  font-size:7px;color:#0ff4;letter-spacing:1px;
+}
+
+/* PANEL FOOTER */
+.render-footer{padding:6px 10px;display:flex;flex-direction:column;gap:3px;}
+.render-mode-info{font-size:9px;color:#0ac;letter-spacing:1px;}
+.render-ts{font-size:7px;color:#0ff3;}
+
+/* SKELETON LOADING */
+.skeleton-canvas{
+  width:100%;height:180px;
+  background:linear-gradient(90deg,#0a1a1a 25%,#0d2020 50%,#0a1a1a 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:#0ff3;border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div id="hud-left">
+    <div class="live-dot"></div>
+    <span>BRIDGE AI OS &mdash; AVATAR</span>
+    <div class="nav-links">
+      <a href="registry.html">REGISTRY</a>
+      <a href="marketplace.html">MARKETPLACE</a>
+      <a href="topology.html">TOPOLOGY</a>
+      <a href="system-status-dashboard.html">STATUS</a>
+    </div>
+  </div>
+  <div id="hud-right">
+    <span id="active-mode-label">MODE: —</span>
+    <span id="conn-badge" class="conn-badge">CONNECTING</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div id="main">
+
+  <div id="global-controls">
+    <span class="ctrl-label">RENDER MODE:</span>
+    <button class="mode-btn active" onclick="setGlobalMode('wireframe')">WIREFRAME</button>
+    <button class="mode-btn" onclick="setGlobalMode('textured')">TEXTURED</button>
+    <button class="mode-btn" onclick="setGlobalMode('anatomical')">ANATOMICAL</button>
+    <button class="mode-btn" onclick="setGlobalMode('neural')">NEURAL</button>
+    <button class="mode-btn" onclick="setGlobalMode('holographic')">HOLOGRAPHIC</button>
+    <button class="mode-btn" onclick="setGlobalMode('quantum')">QUANTUM</button>
+  </div>
+
+  <div id="render-grid">
+    <!-- Panels injected by JS -->
+  </div>
+
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock(){document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);}
+setInterval(updateClock,1000);updateClock();
+const ts=()=>new Date().toLocaleTimeString();
+
+const MODES=[
+  {id:'wireframe',label:'WIREFRAME',desc:'Structural mesh rendering — geometric edge display',color:'#0ff',accent:'rgba(0,255,255,'},
+  {id:'textured',label:'TEXTURED',desc:'Full PBR surface with material maps',color:'#8af',accent:'rgba(136,170,255,'},
+  {id:'anatomical',label:'ANATOMICAL',desc:'Biological subsystem visualization layer',color:'#f90',accent:'rgba(255,153,0,'},
+  {id:'neural',label:'NEURAL',desc:'Neural pathway activity heatmap overlay',color:'#0f9',accent:'rgba(0,255,153,'},
+  {id:'holographic',label:'HOLOGRAPHIC',desc:'Volumetric holographic projection mode',color:'#0af',accent:'rgba(0,170,255,'},
+  {id:'quantum',label:'QUANTUM',desc:'Quantum superposition state renderer',color:'#f0f',accent:'rgba(255,0,255,'},
+];
+
+let globalMode='wireframe';
+let panels={};
+
+// ── RENDER FUNCTIONS (canvas2d stubs) ──
+const renderers={
+  wireframe:(ctx,W,H,t)=>{
+    ctx.fillStyle='#000508';ctx.fillRect(0,0,W,H);
+    // Rotating wireframe sphere
+    const cx=W/2,cy=H/2,r=Math.min(W,H)*0.3;
+    ctx.strokeStyle='rgba(0,255,255,0.6)';ctx.lineWidth=0.5;
+    for(let a=0;a<Math.PI*2;a+=Math.PI/8){
+      const rot=a+t*0.5;
+      ctx.beginPath();
+      for(let i=0;i<=32;i++){
+        const phi=(i/32)*Math.PI*2;
+        const x=cx+r*Math.cos(phi)*Math.cos(rot);
+        const y=cy+r*Math.sin(phi);
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }ctx.stroke();
+    }
+    for(let a=0;a<Math.PI;a+=Math.PI/6){
+      ctx.beginPath();ctx.strokeStyle=`rgba(0,255,255,${0.2+0.3*Math.sin(t+a)})`;
+      for(let i=0;i<=32;i++){
+        const phi=(i/32)*Math.PI*2;
+        const x=cx+r*Math.sin(a)*Math.cos(phi+t*0.3);
+        const y=cy+r*Math.cos(a);
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }ctx.stroke();
+    }
+  },
+  textured:(ctx,W,H,t)=>{
+    ctx.fillStyle='#020508';ctx.fillRect(0,0,W,H);
+    const cx=W/2,cy=H/2,r=Math.min(W,H)*0.3;
+    for(let lat=-r;lat<r;lat+=4){
+      const latR=Math.sqrt(r*r-lat*lat);
+      const shade=Math.abs(lat)/r;
+      const grad=ctx.createLinearGradient(cx-latR,cy+lat,cx+latR,cy+lat);
+      grad.addColorStop(0,'rgba(30,50,120,0.8)');
+      grad.addColorStop(0.4+0.1*Math.sin(t+lat/20),'rgba(100,150,220,0.9)');
+      grad.addColorStop(1,'rgba(20,30,80,0.7)');
+      ctx.fillStyle=grad;
+      ctx.fillRect(cx-latR,cy+lat,latR*2,4);
+    }
+    // Specular highlight
+    const sg=ctx.createRadialGradient(cx-r*0.3,cy-r*0.3,2,cx,cy,r);
+    sg.addColorStop(0,'rgba(255,255,255,0.3)');
+    sg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sg;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+  },
+  anatomical:(ctx,W,H,t)=>{
+    ctx.fillStyle='#080200';ctx.fillRect(0,0,W,H);
+    const cx=W/2,cy=H/2,r=Math.min(W,H)*0.28;
+    // Organs / layers
+    const layers=[
+      {r:r,color:'rgba(200,80,80,0.15)'},
+      {r:r*0.85,color:'rgba(220,120,100,0.2)'},
+      {r:r*0.6,color:'rgba(180,60,60,0.3)'},
+      {r:r*0.3,color:'rgba(255,100,80,0.5)'},
+    ];
+    layers.forEach(l=>{
+      ctx.beginPath();ctx.arc(cx,cy,l.r,0,Math.PI*2);
+      ctx.fillStyle=l.color;ctx.fill();
+      ctx.strokeStyle=l.color.replace('0.','.8');ctx.lineWidth=0.5;ctx.stroke();
+    });
+    // Pulse
+    const pulse=Math.sin(t*3)*0.1+0.9;
+    ctx.beginPath();ctx.arc(cx,cy,r*0.3*pulse,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(255,80,80,${0.4+0.4*Math.sin(t*3)})`;ctx.lineWidth=2;ctx.stroke();
+    // Vessels
+    ctx.strokeStyle='rgba(255,60,60,0.4)';ctx.lineWidth=1;
+    for(let i=0;i<8;i++){
+      const a=i/8*Math.PI*2+t*0.1;
+      ctx.beginPath();ctx.moveTo(cx+r*0.3*Math.cos(a),cy+r*0.3*Math.sin(a));
+      ctx.bezierCurveTo(cx+r*0.6*Math.cos(a+0.3),cy+r*0.6*Math.sin(a+0.2),cx+r*0.8*Math.cos(a-0.2),cy+r*0.8*Math.sin(a+0.1),cx+r*Math.cos(a+0.1),cy+r*Math.sin(a+0.05));
+      ctx.stroke();
+    }
+    ctx.font='8px Courier New';ctx.fillStyle='rgba(255,150,100,0.5)';
+    ['CORTEX','LIMBIC','BRAIN STEM','SPINAL'].forEach((l,i)=>{const a=i/4*Math.PI*2+t*0.05;ctx.fillText(l,cx+r*0.65*Math.cos(a)-16,cy+r*0.65*Math.sin(a));});
+  },
+  neural:(ctx,W,H,t)=>{
+    ctx.fillStyle='#000a02';ctx.fillRect(0,0,W,H);
+    const nodes=[];const N=20;
+    for(let i=0;i<N;i++){
+      const a=i/N*Math.PI*2;
+      const r=Math.min(W,H)*0.3*(.4+.6*(i%3)/2);
+      nodes.push({x:W/2+r*Math.cos(a+t*0.1),y:H/2+r*Math.sin(a+t*0.1),active:Math.sin(t*2+i)>0.5});
+    }
+    // Connections
+    nodes.forEach((a,i)=>nodes.forEach((b,j)=>{
+      if(j<=i) return;
+      const d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(d<90){
+        const sig=Math.sin(t*3+i*0.5)*0.5+0.5;
+        ctx.strokeStyle=`rgba(0,255,153,${sig*(1-d/90)*0.4})`;
+        ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+      }
+    }));
+    // Nodes
+    nodes.forEach((n,i)=>{
+      const pulse=Math.sin(t*4+i*0.8)*0.4+0.6;
+      const g=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,8*pulse);
+      g.addColorStop(0,n.active?'rgba(0,255,153,0.9)':'rgba(0,100,60,0.5)');
+      g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(n.x,n.y,8*pulse,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=n.active?'#0f9':'#063';ctx.beginPath();ctx.arc(n.x,n.y,2,0,Math.PI*2);ctx.fill();
+    });
+  },
+  holographic:(ctx,W,H,t)=>{
+    ctx.fillStyle='#000510';ctx.fillRect(0,0,W,H);
+    const cx=W/2,cy=H/2;
+    // Scan lines
+    for(let y=0;y<H;y+=3){
+      const alpha=0.03+0.02*Math.sin(y*0.1+t*2);
+      ctx.fillStyle=`rgba(0,170,255,${alpha})`;
+      ctx.fillRect(0,y,W,1);
+    }
+    // Holographic rings
+    for(let i=1;i<=6;i++){
+      const r=i*Math.min(W,H)*0.05+Math.sin(t*2+i)*5;
+      const alpha=(1-i/7)*0.5;
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(0,200,255,${alpha})`;ctx.lineWidth=0.5;ctx.stroke();
+    }
+    // Central hologram form
+    const r2=Math.min(W,H)*0.28;
+    for(let a=0;a<Math.PI*2;a+=0.15){
+      const jit=Math.sin(t*3+a*5)*3;
+      const x=cx+(r2+jit)*Math.cos(a);
+      const y=cy+(r2+jit)*Math.sin(a)*0.7;
+      const alpha=0.3+0.4*Math.sin(t*2+a);
+      ctx.fillStyle=`rgba(0,200,255,${alpha})`;
+      ctx.fillRect(x-1,y-1,2,2);
+    }
+    // Projection lines
+    ctx.strokeStyle='rgba(0,200,255,0.1)';ctx.lineWidth=0.5;
+    [cx-r2,cx+r2].forEach(x=>{
+      ctx.beginPath();ctx.moveTo(x,cy);ctx.lineTo(cx,cy+H*0.4);ctx.stroke();
+    });
+    // Flicker
+    if(Math.random()<0.05){ctx.fillStyle='rgba(0,200,255,0.03)';ctx.fillRect(0,0,W,H);}
+  },
+  quantum:(ctx,W,H,t)=>{
+    ctx.fillStyle='#080008';ctx.fillRect(0,0,W,H);
+    const cx=W/2,cy=H/2;
+    // Probability clouds
+    for(let i=0;i<200;i++){
+      const a=Math.random()*Math.PI*2;
+      const r=(Math.random()*Math.min(W,H)*0.35)*Math.abs(Math.sin(t+Math.random()*Math.PI));
+      const x=cx+r*Math.cos(a);const y=cy+r*Math.sin(a);
+      const hue=Math.sin(t+a)*60+280;
+      ctx.fillStyle=`hsla(${hue},100%,70%,0.15)`;
+      ctx.beginPath();ctx.arc(x,y,Math.random()*3+1,0,Math.PI*2);ctx.fill();
+    }
+    // Superposition wave
+    ctx.strokeStyle='rgba(255,0,255,0.4)';ctx.lineWidth=1;
+    ctx.beginPath();
+    for(let x=0;x<W;x++){
+      const y=cy+Math.sin(x*0.05+t*2)*20*Math.sin(x*0.02-t)*Math.cos(x*0.03+t*1.5);
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }ctx.stroke();
+    // Entanglement pairs
+    for(let i=0;i<4;i++){
+      const a=i/4*Math.PI*2+t*0.2;
+      const r=Math.min(W,H)*0.2;
+      const x1=cx+r*Math.cos(a),y1=cy+r*Math.sin(a);
+      const x2=cx+r*Math.cos(a+Math.PI),y2=cy+r*Math.sin(a+Math.PI);
+      ctx.strokeStyle=`rgba(255,0,255,${0.2+0.3*Math.sin(t*3+i)})`;
+      ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+      [x1,y1,x2,y2].forEach((v,j)=>{if(j%2===0){ctx.beginPath();ctx.arc(v,[x1,y1,x2,y2][j+1],4,0,Math.PI*2);ctx.fillStyle='rgba(255,100,255,0.8)';ctx.fill();}});
+    }
+  }
+};
+
+// ── PANEL STATE ──
+let panelTimers={};
+let panelRAFs={};
+let panelData={};
+let panelTimes={};
+
+function createPanels(){
+  const grid=document.getElementById('render-grid');
+  grid.innerHTML='';
+  MODES.forEach(m=>{
+    const div=document.createElement('div');
+    div.className='render-panel'+(m.id===globalMode?' active-mode':'');
+    div.id='panel-'+m.id;
+    div.innerHTML=`
+      <div class="render-panel-header">
+        <span class="render-mode-label" style="color:${m.color};">${m.label}</span>
+        <span class="render-status loading" id="status-${m.id}">LOADING</span>
+      </div>
+      <div class="canvas-wrap">
+        <div class="skeleton-canvas" id="skel-${m.id}"></div>
+        <canvas class="render-canvas" id="canvas-${m.id}" style="display:none;position:absolute;top:0;left:0;"></canvas>
+        <div class="canvas-overlay" id="overlay-${m.id}">INITIALIZING...</div>
+      </div>
+      <div class="render-footer">
+        <div class="render-mode-info" style="color:${m.color};">RENDERING MODE: <b>${m.label}</b></div>
+        <div style="font-size:8px;color:#0ff4;">${m.desc}</div>
+        <div class="render-ts" id="ts-${m.id}">—</div>
+      </div>
+    `;
+    grid.appendChild(div);
+    loadMode(m);
+  });
+}
+
+function loadMode(m){
+  // Simulate API fetch to /api/avatar/:mode
+  const statusEl=document.getElementById('status-'+m.id);
+  const skelEl=document.getElementById('skel-'+m.id);
+  const canvasEl=document.getElementById('canvas-'+m.id);
+  const overlayEl=document.getElementById('overlay-'+m.id);
+  const tsEl=document.getElementById('ts-'+m.id);
+
+  statusEl.textContent='LOADING';
+  statusEl.className='render-status loading';
+
+  fetch(`/api/avatar/${m.id}`,{signal:AbortSignal.timeout(3000)})
+    .then(r=>{if(!r.ok) throw new Error(r.status);return r.json();})
+    .catch(()=>({mode:m.id,status:'stub',fps:60,resolution:'720p'}))
+    .then(data=>{
+      panelData[m.id]=data;
+      statusEl.textContent='READY';
+      statusEl.className='render-status ready';
+      skelEl.style.display='none';
+      canvasEl.style.display='block';
+      document.getElementById('conn-badge').textContent='CONNECTED';
+
+      // Size canvas
+      const wrap=canvasEl.parentElement;
+      canvasEl.width=wrap.offsetWidth;
+      canvasEl.height=180;
+
+      // Start animation loop
+      if(panelRAFs[m.id]) cancelAnimationFrame(panelRAFs[m.id]);
+      let startTime=performance.now();
+      function animate(now){
+        const t=(now-startTime)/1000;
+        const ctx2=canvasEl.getContext('2d');
+        renderers[m.id]?.(ctx2,canvasEl.width,canvasEl.height,t);
+        overlayEl.textContent=`FPS: ${data.fps||60} | RES: ${data.resolution||'720p'} | T: ${t.toFixed(1)}s`;
+        panelRAFs[m.id]=requestAnimationFrame(animate);
+      }
+      panelRAFs[m.id]=requestAnimationFrame(animate);
+
+      tsEl.textContent='last update: '+new Date().toLocaleTimeString();
+    });
+}
+
+// ── POLL EACH MODE ──
+function startPolling(){
+  MODES.forEach(m=>{
+    if(panelTimers[m.id]) clearInterval(panelTimers[m.id]);
+    panelTimers[m.id]=setInterval(()=>{
+      fetch(`/api/avatar/${m.id}`,{signal:AbortSignal.timeout(3000)})
+        .then(r=>{if(!r.ok)throw new Error();return r.json();})
+        .catch(()=>null)
+        .then(data=>{
+          if(data){
+            panelData[m.id]=data;
+            const tsEl=document.getElementById('ts-'+m.id);
+            if(tsEl) tsEl.textContent='last update: '+new Date().toLocaleTimeString();
+          }
+        });
+    },10000);
+  });
+}
+
+// ── GLOBAL MODE SWITCH ──
+function setGlobalMode(mode){
+  globalMode=mode;
+  document.getElementById('active-mode-label').textContent='MODE: '+mode.toUpperCase();
+  document.querySelectorAll('.mode-btn').forEach(b=>{
+    b.classList.toggle('active',b.textContent===mode.toUpperCase());
+  });
+  document.querySelectorAll('.render-panel').forEach(p=>{
+    p.classList.toggle('active-mode',p.id==='panel-'+mode);
+  });
+}
+window.setGlobalMode=setGlobalMode;
+
+// ── INIT ──
+createPanels();
+startPolling();
+setGlobalMode('wireframe');
+
+window.addEventListener('resize',()=>{
+  MODES.forEach(m=>{
+    const c=document.getElementById('canvas-'+m.id);
+    if(c&&c.style.display!=='none'){
+      c.width=c.parentElement.offsetWidth;
+      c.height=180;
+    }
+  });
+});
+</script>
+</body>
+</html>

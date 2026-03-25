@@ -103,36 +103,35 @@ describe('Contract files — required fields', () => {
       // Skip field checks when the file failed to load — already caught above
       if (error || !data) {
         test.skip('skipped — file failed to load', () => {});
-        continue;
+      } else {
+        test.each(REQUIRED_FIELDS)('has field "%s"', (field) => {
+          expect(data).toHaveProperty(field);
+        });
+
+        test('contract_id is a non-empty string', () => {
+          expect(typeof data.contract_id).toBe('string');
+          expect(data.contract_id.length).toBeGreaterThan(0);
+        });
+
+        test('status is a non-empty string', () => {
+          expect(typeof data.status).toBe('string');
+          expect(data.status.length).toBeGreaterThan(0);
+        });
+
+        test('title is a non-empty string', () => {
+          expect(typeof data.title).toBe('string');
+          expect(data.title.length).toBeGreaterThan(0);
+        });
+
+        test('depends_on is an array', () => {
+          expect(Array.isArray(data.depends_on)).toBe(true);
+        });
+
+        test('used_by is an array or string', () => {
+          const val = data.used_by;
+          expect(typeof val === 'string' || Array.isArray(val)).toBe(true);
+        });
       }
-
-      test.each(REQUIRED_FIELDS)('has field "%s"', (field) => {
-        expect(data).toHaveProperty(field);
-      });
-
-      test('contract_id is a non-empty string', () => {
-        expect(typeof data.contract_id).toBe('string');
-        expect(data.contract_id.length).toBeGreaterThan(0);
-      });
-
-      test('status is a non-empty string', () => {
-        expect(typeof data.status).toBe('string');
-        expect(data.status.length).toBeGreaterThan(0);
-      });
-
-      test('title is a non-empty string', () => {
-        expect(typeof data.title).toBe('string');
-        expect(data.title.length).toBeGreaterThan(0);
-      });
-
-      test('depends_on is an array', () => {
-        expect(Array.isArray(data.depends_on)).toBe(true);
-      });
-
-      test('used_by is an array or string', () => {
-        const val = data.used_by;
-        expect(typeof val === 'string' || Array.isArray(val)).toBe(true);
-      });
     });
   }
 });

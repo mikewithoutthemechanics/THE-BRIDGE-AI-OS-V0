@@ -29,6 +29,7 @@ const app = express();
 
 const ROOT = __dirname;
 const SHARED_DIR = path.join(ROOT, 'shared');
+const data = require('./data-service');
 
 // ── CORS ────────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
@@ -181,36 +182,27 @@ app.post('/ask', async (req, res) => {
 });
 
 // ── API: TOPOLOGY ─────────────────────────────────────────────────────────────
-// Proxies to system.js on :3000 when available, else returns a stub topology.
 app.get('/api/topology', async (req, res) => {
   try {
     const r = await fetch('http://localhost:3000/topology');
     const j = await r.json();
     return res.json(j);
   } catch (_) {
-    // Stub topology
-    return res.json({
-      stub: true,
-      nodes: [
-        { id: 'gateway',      label: 'Gateway',        port: 8080, status: 'up' },
-        { id: 'system',       label: 'System / Core',  port: 3000, status: 'unknown' },
-        { id: 'ainode',       label: 'AI Node',        port: 3001, status: 'unknown' },
-        { id: 'orchestrator', label: 'Orchestrator',   port: 3002, status: 'unknown' },
-      ],
-      edges: [
-        { source: 'gateway', target: 'system' },
-        { source: 'gateway', target: 'ainode' },
-        { source: 'gateway', target: 'orchestrator' },
-      ],
-      ts: Date.now(),
-    });
+    // Real topology from data-service (network interfaces + service probes)
+    const topo = await data.getTopology();
+    return res.json(topo);
   }
 });
+
+// Express 5: wildcard params come back as arrays — flatten to string
+function paramStr(p) {
+  return Array.isArray(p) ? p.join('/') : (p || '');
+}
 
 // ── API: AVATAR ───────────────────────────────────────────────────────────────
 // Wildcard handler for avatar rendering endpoints.
 app.get('/api/avatar/*path', (req, res) => {
-  const subpath = req.params.path || 'default';
+  const subpath = paramStr(req.params.path) || 'default';
   res.json({
     stub: true,
     endpoint: `/api/avatar/${subpath}`,
@@ -230,7 +222,7 @@ app.get('/api/avatar/*path', (req, res) => {
 // ── API: REGISTRY ─────────────────────────────────────────────────────────────
 // Wildcard handler for registry data (kernel, network, security, etc.).
 app.get('/api/registry/*path', (req, res) => {
-  const namespace = req.params.path || 'root';
+  const namespace = paramStr(req.params.path) || 'root';
   const REGISTRY_STUBS = {
     kernel:   { version: '4.2.1', modules: ['scheduler', 'ipc', 'memory'], status: 'healthy' },
     network:  { interfaces: ['eth0', 'lo'], dns: ['8.8.8.8', '1.1.1.1'], status: 'healthy' },
@@ -243,7 +235,7 @@ app.get('/api/registry/*path', (req, res) => {
 // ── API: MARKETPLACE ──────────────────────────────────────────────────────────
 // Wildcard handler for marketplace (tasks, DEX, wallet, skills, portfolio, stats).
 app.get('/api/marketplace/*path', (req, res) => {
-  const section = req.params.path || 'index';
+  const section = paramStr(req.params.path) || 'index';
   const MARKET_STUBS = {
     tasks: {
       open: 14, in_progress: 7, completed_today: 23,
@@ -312,7 +304,7 @@ app.get('/api/status', async (req, res) => {
 // ── ORCHESTRATOR PORT MAP ─────────────────────────────────────────────────────
 const ORCHESTRATORS = {
   L1: 'http://localhost:9001',
-  L2: 'http://localhost:9002',
+  L2: 'http://192.168.110.203:9001',  // L2 real LAN IP
   L3: 'http://localhost:9003',
 };
 
@@ -320,7 +312,7 @@ const ORCHESTRATORS = {
 // Proxy /api/l1/*, /api/l2/*, /api/l3/* to the correct orchestrator ports
 for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
   const prefix = `/api/${layer.toLowerCase()}`;
-  app.all(`${prefix}/*`, async (req, res) => {
+  app.all(`${prefix}/*path`, async (req, res) => {
     const subpath = req.path.slice(prefix.length) || '/';
     const url = `${base}${subpath}`;
     try {
@@ -336,24 +328,42 @@ for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
 }
 
 // ── API: AGENTS ───────────────────────────────────────────────────────────────
-// Aggregates live agent status from all three orchestrators
-app.get('/api/agents', async (req, res) => {
-  const results = {};
-  await Promise.all(
-    Object.entries(ORCHESTRATORS).map(async ([layer, base]) => {
-      try {
-        const r = await fetch(`${base}/api/status`);
-        const j = await r.json();
-        results[layer] = { status: 'up', port: parseInt(base.split(':')[2]), agents: j.agents };
-      } catch (e) {
-        results[layer] = { status: 'down', error: e.message, agents: {} };
-      }
-    })
-  );
-  const allAgents = Object.entries(results).flatMap(([layer, d]) =>
-    Object.entries(d.agents || {}).map(([id, a]) => ({ ...a, id, layer, port: d.port }))
-  );
-  res.json({ count: allAgents.length, layers: results, agents: allAgents, ts: Date.now() });
+// Polls L1 (localhost:9000) and L2 (192.168.110.203:9001), merges results.
+// Falls back gracefully if either is unreachable. 2-second timeout per call.
+const L1_AGENTS_URL = 'http://localhost:9000/api/agents';
+const L2_AGENTS_URL = 'http://192.168.110.203:9001/api/agents';
+
+async function fetchAgentsFrom(url, layer) {
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(2000) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    const agentList = Array.isArray(j.agents) ? j.agents
+      : Array.isArray(j) ? j
+      : Object.entries(j.agents || {}).map(([id, a]) => ({ id, ...a }));
+    return { status: 'up', layer, agents: agentList, count: agentList.length };
+  } catch (e) {
+    return { status: 'down', layer, agents: [], count: 0, error: e.message };
+  }
+}
+
+app.get('/api/agents', async (_req, res) => {
+  const [l1, l2] = await Promise.all([
+    fetchAgentsFrom(L1_AGENTS_URL, 'L1'),
+    fetchAgentsFrom(L2_AGENTS_URL, 'L2'),
+  ]);
+
+  const allAgents = [
+    ...l1.agents.map(a => ({ ...a, layer: 'L1' })),
+    ...l2.agents.map(a => ({ ...a, layer: 'L2' })),
+  ];
+
+  res.json({
+    count: allAgents.length,
+    layers: { L1: l1, L2: l2 },
+    agents: allAgents,
+    ts: Date.now(),
+  });
 });
 
 // ── API: CONTRACTS ────────────────────────────────────────────────────────────
@@ -376,27 +386,131 @@ app.get('/api/contracts', (req, res) => {
   }
 });
 
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+// Minimal in-process auth store (JWT via jsonwebtoken + bcryptjs).
+// A real deployment would delegate to a dedicated auth service.
+let jwt, bcrypt;
+try { jwt   = require('jsonwebtoken'); }  catch (_) { jwt   = null; }
+try { bcrypt = require('bcryptjs'); }      catch (_) { bcrypt = null; }
+
+const JWT_SECRET   = process.env.JWT_SECRET || 'bridge-ai-os-dev-secret-change-in-prod';
+const REFERRAL_CODES = { BRIDGE2025: 500, AILAUNCH: 250, BETA100: 100 };
+
+// In-memory user store (replace with DB in production)
+const authUsers = new Map();
+
+function makeToken(payload) {
+  if (!jwt) return `stub-token-${Date.now()}`;
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+}
+
+function verifyToken(token) {
+  if (!jwt) return null;
+  try { return jwt.verify(token, JWT_SECRET); } catch (_) { return null; }
+}
+
+async function hashPassword(pw) {
+  if (!bcrypt) return `hashed:${pw}`;
+  return bcrypt.hash(pw, 10);
+}
+
+async function checkPassword(pw, hash) {
+  if (!bcrypt) return hash === `hashed:${pw}`;
+  return bcrypt.compare(pw, hash);
+}
+
+// POST /auth/register
+app.post('/auth/register', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  if (authUsers.has(email)) return res.status(409).json({ error: 'email already registered' });
+  const password_hash = await hashPassword(password);
+  const user = { id: `usr_${Date.now()}`, email, password_hash, credits: 0, created_at: new Date().toISOString() };
+  authUsers.set(email, user);
+  const token = makeToken({ sub: user.id, email });
+  res.status(201).json({ token, user: { id: user.id, email: user.email, credits: user.credits } });
+});
+
+// POST /auth/login
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  const user = authUsers.get(email);
+  if (!user) return res.status(401).json({ error: 'invalid credentials' });
+  const ok = await checkPassword(password, user.password_hash);
+  if (!ok) return res.status(401).json({ error: 'invalid credentials' });
+  const token = makeToken({ sub: user.id, email });
+  res.json({ token, user: { id: user.id, email: user.email, credits: user.credits } });
+});
+
+// GET /auth/verify
+app.get('/auth/verify', (req, res) => {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  if (!token) return res.status(401).json({ error: 'no token provided' });
+  const payload = verifyToken(token);
+  if (!payload) return res.status(401).json({ error: 'invalid or expired token' });
+  res.json({ valid: true, user: { sub: payload.sub, email: payload.email } });
+});
+
+// ── REFERRAL ──────────────────────────────────────────────────────────────────
+// POST /referral/claim
+app.post('/referral/claim', (req, res) => {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  if (!token) return res.status(401).json({ error: 'authentication required' });
+  const payload = verifyToken(token);
+  if (!payload) return res.status(401).json({ error: 'invalid or expired token' });
+
+  const { code } = req.body || {};
+  if (!code) return res.status(400).json({ error: 'referral code required' });
+
+  const credits = REFERRAL_CODES[String(code).toUpperCase()];
+  if (!credits) return res.status(404).json({ error: 'invalid referral code' });
+
+  const user = authUsers.get(payload.email);
+  if (user) user.credits = (user.credits || 0) + credits;
+
+  res.json({ success: true, code, credits, message: `${credits} credits applied to your account` });
+});
+
+// ── STATIC HTML PAGES ─────────────────────────────────────────────────────────
+const XPUBLIC = path.join(ROOT, 'Xpublic');
+
+app.get('/topology.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'topology.html')));
+app.get('/registry.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'registry.html')));
+app.get('/marketplace.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'marketplace.html')));
+app.get('/avatar.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'avatar.html')));
+app.get('/system-status-dashboard.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'system-status-dashboard.html')));
+app.get('/terminal.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'terminal.html')));
+
 // ── UI ────────────────────────────────────────────────────────────────────────
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.sendFile(path.join(ROOT, 'ui.html'));
 });
 
-// ── START ─────────────────────────────────────────────────────────────────────
+// ── START (skipped when required by tests) ───────────────────────────────────
 // Bind to '::' so it covers both IPv6 (::1) and IPv4 (127.0.0.1) on Windows
 // This ensures 'localhost' resolves correctly regardless of OS preference
-const server = app.listen(8080, '::', () => {
-  console.log('[GATEWAY] Bridge AI OS unified gateway running on http://localhost:8080');
-  console.log('[GATEWAY] Core endpoints : /health  /events/stream  /orchestrator/status  /billing  /ask');
-  console.log('[GATEWAY] Unified API    : /api/topology  /api/avatar/*  /api/registry/*  /api/marketplace/*');
-  console.log('[GATEWAY]                  /api/status  /api/agents  /api/contracts');
-});
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error('[GATEWAY] Port 8080 in use — retrying on IPv4 only');
-    app.listen(8080, '0.0.0.0', () => {
-      console.log('[GATEWAY] Fallback: listening on 0.0.0.0:8080');
-    });
-  } else {
-    throw err;
-  }
-});
+if (require.main === module) {
+  const server = app.listen(8080, '::', () => {
+    console.log('[GATEWAY] Bridge AI OS unified gateway running on http://localhost:8080');
+    console.log('[GATEWAY] Core endpoints : /health  /events/stream  /orchestrator/status  /billing  /ask');
+    console.log('[GATEWAY] Unified API    : /api/topology  /api/avatar/*  /api/registry/*  /api/marketplace/*');
+    console.log('[GATEWAY]                  /api/status  /api/agents  /api/contracts');
+    console.log('[GATEWAY] Auth           : /auth/register  /auth/login  /auth/verify  /referral/claim');
+  });
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error('[GATEWAY] Port 8080 in use — retrying on IPv4 only');
+      app.listen(8080, '0.0.0.0', () => {
+        console.log('[GATEWAY] Fallback: listening on 0.0.0.0:8080');
+      });
+    } else {
+      throw err;
+    }
+  });
+}
+
+// ── EXPORT (for supertest) ────────────────────────────────────────────────────
+module.exports = app;

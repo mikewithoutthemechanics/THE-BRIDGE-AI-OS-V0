@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REGISTRY — BRIDGE AI OS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New',monospace;color:#0ff;overflow-x:hidden}
+
+/* HUD */
+#hud{
+  position:sticky;top:0;left:0;right:0;z-index:100;height:40px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;background:rgba(0,0,0,.92);
+  border-bottom:1px solid rgba(0,255,255,.2);
+}
+#hud-left{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:2px;color:#0ff;}
+#hud-right{display:flex;align-items:center;gap:14px;font-size:9px;color:#0f9;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#0f9;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+#clock{font-size:10px;letter-spacing:2px;color:#0f9;}
+.conn-badge{padding:2px 8px;border-radius:2px;font-size:8px;letter-spacing:1px;font-weight:bold;background:#003300;border:1px solid #0f93;color:#0f9;}
+.conn-badge.err{background:#330000;border-color:#f003;color:#f00;}
+.nav-links{display:flex;gap:12px;}
+.nav-links a{color:#0ac;font-size:9px;letter-spacing:1px;text-decoration:none;opacity:.7;transition:opacity .2s;}
+.nav-links a:hover{opacity:1;}
+
+/* MAIN GRID */
+#main{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;}
+
+/* PANEL */
+.panel{
+  background:rgba(0,10,20,.85);
+  border:1px solid rgba(0,255,255,.15);
+  border-radius:3px;
+  overflow:hidden;
+  min-height:220px;
+  display:flex;flex-direction:column;
+  transition:border-color .3s;
+}
+.panel:hover{border-color:rgba(0,255,255,.4);}
+.panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;
+  background:rgba(0,255,255,.04);
+  border-bottom:1px solid rgba(0,255,255,.1);
+}
+.panel-title{font-size:9px;letter-spacing:2px;color:#0ff;text-transform:uppercase;}
+.panel-badge{font-size:7px;letter-spacing:1px;padding:2px 6px;border-radius:2px;background:#001a1a;border:1px solid #0ff2;color:#0ac;}
+.panel-body{flex:1;padding:12px;overflow:auto;}
+.panel-footer{padding:4px 12px;font-size:7px;color:#0ff3;letter-spacing:1px;border-top:1px solid #0ff1;}
+
+/* DATA ROWS */
+.data-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #0ff1;font-size:10px;}
+.data-row:last-child{border-bottom:none;}
+.data-label{color:#0ac;letter-spacing:1px;}
+.data-val{color:#0ff;font-weight:bold;}
+.data-val.green{color:#0f9;}
+.data-val.red{color:#f44;}
+.data-val.yellow{color:#ff0;}
+.data-val.cyan{color:#0ff;}
+
+/* STATUS INDICATOR */
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:5px;}
+.status-dot.up{background:#0f9;box-shadow:0 0 6px #0f9;}
+.status-dot.down{background:#f44;box-shadow:0 0 6px #f44;}
+.status-dot.warn{background:#ff0;box-shadow:0 0 6px #ff0;}
+
+/* SKELETON / LOADING */
+.skeleton{background:linear-gradient(90deg,#0a1a1a 25%,#0d2020 50%,#0a1a1a 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:14px;border-radius:2px;margin:6px 0;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.loading-text{color:#0ff4;font-size:9px;letter-spacing:2px;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* NODE MAP CANVAS */
+#node-map-canvas{width:100%;height:180px;display:block;cursor:crosshair;}
+
+/* FEDERATION NODE GRID */
+.fed-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fed-node{
+  padding:8px;background:rgba(0,255,255,.03);border:1px solid #0ff2;border-radius:2px;
+  font-size:9px;
+}
+.fed-node-id{color:#0ac;letter-spacing:1px;margin-bottom:3px;}
+.fed-node-status{display:flex;align-items:center;gap:4px;}
+
+/* JOB LIST */
+.job-item{
+  display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px solid #0ff1;font-size:9px;
+}
+.job-item:last-child{border-bottom:none;}
+.job-type{color:#0ac;width:80px;flex-shrink:0;}
+.job-id{color:#0ff4;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.job-status{padding:1px 6px;border-radius:2px;font-size:7px;letter-spacing:1px;}
+.job-status.queued{background:#1a1a00;border:1px solid #ff03;color:#ff0;}
+.job-status.running{background:#001a00;border:1px solid #0f93;color:#0f9;}
+.job-status.done{background:#001a1a;border:1px solid #0ff3;color:#0ff;}
+.job-status.failed{background:#1a0000;border:1px solid #f003;color:#f44;}
+
+/* MARKET TABLE */
+.mkt-table{width:100%;border-collapse:collapse;font-size:9px;}
+.mkt-table th{color:#0ac;text-align:left;padding:4px 6px;border-bottom:1px solid #0ff2;letter-spacing:1px;font-size:7px;}
+.mkt-table td{padding:5px 6px;border-bottom:1px solid #0ff1;color:#0ff;}
+.mkt-table tr:last-child td{border-bottom:none;}
+.price-up{color:#0f9;}
+.price-dn{color:#f44;}
+
+/* BRIDGEOS */
+.bos-modules{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.bos-mod{
+  padding:3px 8px;font-size:8px;letter-spacing:1px;border-radius:2px;
+  background:#001a1a;border:1px solid #0ff2;color:#0ac;
+}
+.bos-mod.active{background:#003333;border-color:#0ff5;color:#0ff;}
+
+/* REFRESH INDICATOR */
+.refresh-ring{
+  width:12px;height:12px;border-radius:50%;
+  border:2px solid #0ff2;border-top-color:#0ff;
+  display:inline-block;
+}
+.refresh-ring.spin{animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:#0ff3;border-radius:2px;}
+::-webkit-scrollbar-thumb:hover{background:#0ff6;}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div id="hud-left">
+    <div class="live-dot"></div>
+    <span>BRIDGE AI OS &mdash; REGISTRY</span>
+    <div class="nav-links">
+      <a href="topology.html">TOPOLOGY</a>
+      <a href="marketplace.html">MARKETPLACE</a>
+      <a href="avatar.html">AVATAR</a>
+      <a href="system-status-dashboard.html">STATUS</a>
+    </div>
+  </div>
+  <div id="hud-right">
+    <span id="refresh-status">POLLING...</span>
+    <span id="conn-badge" class="conn-badge">CONNECTING</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div id="main">
+
+  <!-- KERNEL -->
+  <div class="panel" id="panel-kernel">
+    <div class="panel-header">
+      <span class="panel-title">KERNEL</span>
+      <span class="panel-badge" id="kernel-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="kernel-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:70%"></div><div class="skeleton" style="width:85%"></div>
+    </div>
+    <div class="panel-footer" id="kernel-ts">last update: —</div>
+  </div>
+
+  <!-- NETWORK -->
+  <div class="panel" id="panel-network">
+    <div class="panel-header">
+      <span class="panel-title">NETWORK INTERFACES</span>
+      <span class="panel-badge" id="net-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="net-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:60%"></div>
+    </div>
+    <div class="panel-footer" id="net-ts">last update: —</div>
+  </div>
+
+  <!-- SECURITY -->
+  <div class="panel" id="panel-security">
+    <div class="panel-header">
+      <span class="panel-title">SECURITY STATUS</span>
+      <span class="panel-badge" id="sec-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="sec-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:75%"></div>
+    </div>
+    <div class="panel-footer" id="sec-ts">last update: —</div>
+  </div>
+
+  <!-- FEDERATION -->
+  <div class="panel" id="panel-federation">
+    <div class="panel-header">
+      <span class="panel-title">FEDERATION NODES</span>
+      <span class="panel-badge" id="fed-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="fed-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:80%"></div>
+    </div>
+    <div class="panel-footer" id="fed-ts">last update: —</div>
+  </div>
+
+  <!-- JOBS -->
+  <div class="panel" id="panel-jobs">
+    <div class="panel-header">
+      <span class="panel-title">JOBS QUEUE</span>
+      <span class="panel-badge" id="jobs-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="jobs-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:90%"></div><div class="skeleton" style="width:65%"></div>
+    </div>
+    <div class="panel-footer" id="jobs-ts">last update: —</div>
+  </div>
+
+  <!-- MARKET -->
+  <div class="panel" id="panel-market">
+    <div class="panel-header">
+      <span class="panel-title">MARKET DATA</span>
+      <span class="panel-badge" id="mkt-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="mkt-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:70%"></div>
+    </div>
+    <div class="panel-footer" id="mkt-ts">last update: —</div>
+  </div>
+
+  <!-- NODE MAP (wide panel) -->
+  <div class="panel" style="grid-column:1/-1;">
+    <div class="panel-header">
+      <span class="panel-title">NODE MAP VISUALIZATION</span>
+      <span class="panel-badge" id="map-badge">LIVE</span>
+    </div>
+    <div class="panel-body" style="padding:8px;">
+      <canvas id="node-map-canvas"></canvas>
+    </div>
+    <div class="panel-footer" id="map-ts">rendering: canvas2d — auto-animating</div>
+  </div>
+
+  <!-- BRIDGEOS -->
+  <div class="panel" style="grid-column:1/-1;">
+    <div class="panel-header">
+      <span class="panel-title">BRIDGEOS STATUS</span>
+      <span class="panel-badge" id="bos-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="bos-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:60%"></div>
+    </div>
+    <div class="panel-footer" id="bos-ts">last update: —</div>
+  </div>
+
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    n.toTimeString().slice(0,8);
+}
+setInterval(updateClock,1000);updateClock();
+
+// ── HELPERS ──
+const ts=()=>new Date().toLocaleTimeString();
+function setLastUpdate(id,t){document.getElementById(id).textContent='last update: '+t;}
+
+function fakeFallback(endpoint){
+  // Generate plausible mock data when API is unreachable
+  const mocks={
+    '/api/registry/kernel':{version:'6.1.0-bridgeos',modules:['crypto','net','fs','vm','worker_threads','cluster'],uptime:Math.floor(Math.random()*86400+3600),arch:'x64',platform:'linux',pid:1,load:[0.12,0.18,0.22]},
+    '/api/registry/network':{interfaces:[{name:'eth0',ip:'10.0.1.1',mac:'aa:bb:cc:dd:ee:01',status:'up'},{name:'lo',ip:'127.0.0.1',mac:'00:00:00:00:00:00',status:'up'},{name:'bridge0',ip:'192.168.110.1',mac:'aa:bb:cc:dd:ee:02',status:'up'}],dns:['8.8.8.8','1.1.1.1'],gateway:'10.0.1.254'},
+    '/api/registry/security':{tls:{enabled:true,version:'TLSv1.3',cert_expires:'2026-12-01'},firewall:{enabled:true,rules:42,blocked_today:17},auth:{mfa:true,sessions:3},threat_level:'LOW'},
+    '/api/registry/federation':{nodes:[{id:'node-alpha',ip:'10.0.1.10',status:'online',latency:12},{id:'node-beta',ip:'10.0.1.11',status:'online',latency:8},{id:'node-gamma',ip:'10.0.1.12',status:'degraded',latency:145},{id:'node-delta',ip:'10.0.1.13',status:'offline',latency:null}]},
+    '/api/registry/jobs':{queue:[{id:'job-'+Math.random().toString(36).slice(2,8),type:'SYNC',status:'running'},{id:'job-'+Math.random().toString(36).slice(2,8),type:'BUILD',status:'queued'},{id:'job-'+Math.random().toString(36).slice(2,8),type:'DEPLOY',status:'done'},{id:'job-'+Math.random().toString(36).slice(2,8),type:'BACKUP',status:'failed'}],total:47,running:1,queued:12},
+    '/api/registry/market':{pairs:[{pair:'BTC/USDT',price:67234.10,change:+2.3},{pair:'ETH/USDT',price:3521.44,change:-0.8},{pair:'ARC/USDT',price:4.22,change:+11.2},{pair:'BNB/USDT',price:612.88,change:+0.4}]},
+    '/api/registry/bridgeos':{version:'2.4.1',status:'operational',modules:['kernel','registry','marketplace','avatar','dex','federation','auth','gateway'],uptime:'14d 6h 22m',memory:{used:2.1,total:8.0},cpu:23}
+  };
+  return mocks[endpoint]||{error:'no mock'};
+}
+
+async function poll(endpoint,callback,badgeId){
+  try{
+    const r=await fetch(endpoint,{signal:AbortSignal.timeout(4000)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    document.getElementById('conn-badge').textContent='CONNECTED';
+    document.getElementById('conn-badge').className='conn-badge';
+    callback(data,false);
+  }catch(e){
+    document.getElementById('conn-badge').textContent='OFFLINE';
+    document.getElementById('conn-badge').className='conn-badge err';
+    callback(fakeFallback(endpoint),true);
+  }
+}
+
+// ── KERNEL PANEL ──
+function renderKernel(d,mock){
+  const upH=Math.floor(d.uptime/3600),upM=Math.floor((d.uptime%3600)/60);
+  document.getElementById('kernel-body').innerHTML=`
+    <div class="data-row"><span class="data-label">VERSION</span><span class="data-val cyan">${d.version}</span></div>
+    <div class="data-row"><span class="data-label">PLATFORM</span><span class="data-val">${d.platform||'linux'} / ${d.arch||'x64'}</span></div>
+    <div class="data-row"><span class="data-label">UPTIME</span><span class="data-val green">${upH}h ${upM}m</span></div>
+    <div class="data-row"><span class="data-label">PID</span><span class="data-val">${d.pid||1}</span></div>
+    <div class="data-row"><span class="data-label">LOAD AVG</span><span class="data-val">${(d.load||[0,0,0]).map(x=>x.toFixed(2)).join(' / ')}</span></div>
+    <div class="data-row" style="flex-direction:column;align-items:flex-start;gap:5px;">
+      <span class="data-label">MODULES (${(d.modules||[]).length})</span>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;">
+        ${(d.modules||[]).map(m=>`<span style="padding:1px 6px;background:#001a1a;border:1px solid #0ff2;border-radius:2px;font-size:8px;color:#0ac;">${m}</span>`).join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('kernel-badge').textContent=mock?'MOCK':'LIVE';
+  setLastUpdate('kernel-ts',ts());
+}
+
+// ── NETWORK PANEL ──
+function renderNetwork(d,mock){
+  const ifaces=(d.interfaces||[]).map(i=>`
+    <div class="data-row">
+      <span class="data-label">${i.name}</span>
+      <span class="data-val">
+        <span class="status-dot ${i.status==='up'?'up':'down'}"></span>
+        ${i.ip} <span style="color:#0ff4;font-size:8px;">${i.mac||''}</span>
+      </span>
+    </div>`).join('');
+  document.getElementById('net-body').innerHTML=`
+    ${ifaces}
+    <div class="data-row"><span class="data-label">DNS</span><span class="data-val">${(d.dns||[]).join(', ')}</span></div>
+    <div class="data-row"><span class="data-label">GATEWAY</span><span class="data-val cyan">${d.gateway||'—'}</span></div>
+  `;
+  document.getElementById('net-badge').textContent=mock?'MOCK':'LIVE';
+  setLastUpdate('net-ts',ts());
+}
+
+// ── SECURITY PANEL ──
+function renderSecurity(d,mock){
+  const tl=d.threat_level||'UNKNOWN';
+  const tlColor=tl==='LOW'?'green':tl==='MEDIUM'?'yellow':'red';
+  document.getElementById('sec-body').innerHTML=`
+    <div class="data-row"><span class="data-label">TLS</span><span class="data-val green">${d.tls?.version||'TLSv1.3'} ${d.tls?.enabled?'ENABLED':'DISABLED'}</span></div>
+    <div class="data-row"><span class="data-label">CERT EXPIRES</span><span class="data-val">${d.tls?.cert_expires||'—'}</span></div>
+    <div class="data-row"><span class="data-label">FIREWALL</span><span class="data-val ${d.firewall?.enabled?'green':'red'}">${d.firewall?.enabled?'ACTIVE':'INACTIVE'}</span></div>
+    <div class="data-row"><span class="data-label">RULES</span><span class="data-val">${d.firewall?.rules||0}</span></div>
+    <div class="data-row"><span class="data-label">BLOCKED TODAY</span><span class="data-val yellow">${d.firewall?.blocked_today||0}</span></div>
+    <div class="data-row"><span class="data-label">MFA</span><span class="data-val ${d.auth?.mfa?'green':'red'}">${d.auth?.mfa?'ENABLED':'DISABLED'}</span></div>
+    <div class="data-row"><span class="data-label">ACTIVE SESSIONS</span><span class="data-val">${d.auth?.sessions||0}</span></div>
+    <div class="data-row"><span class="data-label">THREAT LEVEL</span><span class="data-val ${tlColor}">${tl}</span></div>
+  `;
+  document.getElementById('sec-badge').textContent=mock?'MOCK':'LIVE';
+  setLastUpdate('sec-ts',ts());
+}
+
+// ── FEDERATION PANEL ──
+function renderFederation(d,mock){
+  const nodes=(d.nodes||[]);
+  const online=nodes.filter(n=>n.status==='online').length;
+  document.getElementById('fed-body').innerHTML=`
+    <div style="margin-bottom:10px;font-size:9px;color:#0ac;">ONLINE: <span style="color:#0f9;font-weight:bold;">${online}/${nodes.length}</span></div>
+    <div class="fed-grid">
+      ${nodes.map(n=>`
+        <div class="fed-node">
+          <div class="fed-node-id">${n.id||'unknown'}</div>
+          <div class="fed-node-status">
+            <span class="status-dot ${n.status==='online'?'up':n.status==='degraded'?'warn':'down'}"></span>
+            <span style="color:${n.status==='online'?'#0f9':n.status==='degraded'?'#ff0':'#f44'};font-size:8px;">${n.status?.toUpperCase()||'UNKNOWN'}</span>
+          </div>
+          <div style="color:#0ff4;font-size:8px;margin-top:3px;">${n.ip||''} ${n.latency!=null?'/ '+n.latency+'ms':''}</div>
+        </div>`).join('')}
+    </div>
+  `;
+  document.getElementById('fed-badge').textContent=mock?'MOCK':`${online}/${nodes.length} UP`;
+  setLastUpdate('fed-ts',ts());
+}
+
+// ── JOBS PANEL ──
+function renderJobs(d,mock){
+  const queue=d.queue||[];
+  document.getElementById('jobs-body').innerHTML=`
+    <div style="display:flex;gap:16px;margin-bottom:10px;font-size:9px;">
+      <span style="color:#0ac;">TOTAL: <b style="color:#0ff;">${d.total||0}</b></span>
+      <span style="color:#0ac;">RUNNING: <b style="color:#0f9;">${d.running||0}</b></span>
+      <span style="color:#0ac;">QUEUED: <b style="color:#ff0;">${d.queued||0}</b></span>
+    </div>
+    ${queue.map(j=>`
+      <div class="job-item">
+        <span class="job-type">${j.type||'?'}</span>
+        <span class="job-id">${j.id||'?'}</span>
+        <span class="job-status ${j.status||'queued'}">${(j.status||'queued').toUpperCase()}</span>
+      </div>`).join('')}
+  `;
+  document.getElementById('jobs-badge').textContent=mock?'MOCK':queue.length+' JOBS';
+  setLastUpdate('jobs-ts',ts());
+}
+
+// ── MARKET PANEL ──
+function renderMarket(d,mock){
+  const pairs=d.pairs||[];
+  document.getElementById('mkt-body').innerHTML=`
+    <table class="mkt-table">
+      <thead><tr><th>PAIR</th><th>PRICE</th><th>24H CHANGE</th></tr></thead>
+      <tbody>
+        ${pairs.map(p=>{
+          const up=p.change>=0;
+          return`<tr>
+            <td style="color:#0ac;">${p.pair}</td>
+            <td>${typeof p.price==='number'?p.price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):p.price}</td>
+            <td class="${up?'price-up':'price-dn'}">${up?'+':''}${p.change}%</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+  document.getElementById('mkt-badge').textContent=mock?'MOCK':pairs.length+' PAIRS';
+  setLastUpdate('mkt-ts',ts());
+}
+
+// ── BRIDGEOS PANEL ──
+function renderBridgeOS(d,mock){
+  const memPct=d.memory?Math.round(d.memory.used/d.memory.total*100):0;
+  document.getElementById('bos-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div style="text-align:center;">
+        <div style="font-size:18px;color:#0f9;font-weight:bold;">${d.version||'—'}</div>
+        <div style="font-size:7px;color:#0ac;letter-spacing:1px;">VERSION</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:18px;color:${d.status==='operational'?'#0f9':'#f44'};font-weight:bold;">${(d.status||'unknown').toUpperCase()}</div>
+        <div style="font-size:7px;color:#0ac;letter-spacing:1px;">STATUS</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:18px;color:#0ff;font-weight:bold;">${d.cpu||0}%</div>
+        <div style="font-size:7px;color:#0ac;letter-spacing:1px;">CPU</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:18px;color:#0ff;font-weight:bold;">${memPct}%</div>
+        <div style="font-size:7px;color:#0ac;letter-spacing:1px;">MEMORY ${d.memory?d.memory.used+'/'+ d.memory.total+'GB':''}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:6px;font-size:8px;color:#0ac;letter-spacing:1px;">UPTIME: <span style="color:#0f9;">${d.uptime||'—'}</span></div>
+    <div style="font-size:8px;color:#0ac;letter-spacing:1px;margin-bottom:6px;">MODULES</div>
+    <div class="bos-modules">
+      ${(d.modules||[]).map(m=>`<span class="bos-mod active">${m.toUpperCase()}</span>`).join('')}
+    </div>
+  `;
+  document.getElementById('bos-badge').textContent=mock?'MOCK':d.status?.toUpperCase()||'LIVE';
+  setLastUpdate('bos-ts',ts());
+}
+
+// ── NODE MAP CANVAS ──
+const canvas=document.getElementById('node-map-canvas');
+const ctx=canvas.getContext('2d');
+let nodes2d=[];
+let animFrame=0;
+
+function initNodeMap(){
+  const W=canvas.offsetWidth;
+  const H=180;
+  canvas.width=W;
+  canvas.height=H;
+  nodes2d=[];
+  const names=['ALPHA','BETA','GAMMA','DELTA','REGISTRY','GATEWAY','AUTH','DEX','MARKET'];
+  const statuses=['online','online','online','degraded','online','online','online','offline','online'];
+  for(let i=0;i<names.length;i++){
+    const angle=(i/names.length)*Math.PI*2;
+    const r=Math.min(W,H)*0.33;
+    nodes2d.push({
+      x:W/2+r*Math.cos(angle)+Math.random()*20-10,
+      y:H/2+r*Math.sin(angle)+Math.random()*20-10,
+      vx:(Math.random()-.5)*.3,
+      vy:(Math.random()-.5)*.3,
+      name:names[i],
+      status:statuses[i],
+      pulse:Math.random()*Math.PI*2
+    });
+  }
+}
+
+function drawNodeMap(t){
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(0,5,10,0.95)';
+  ctx.fillRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle='rgba(0,255,255,0.04)';
+  ctx.lineWidth=1;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // Update positions (gentle float)
+  nodes2d.forEach(n=>{
+    n.x+=n.vx;n.y+=n.vy;
+    if(n.x<20||n.x>W-20)n.vx*=-1;
+    if(n.y<20||n.y>H-20)n.vy*=-1;
+    n.pulse+=0.04;
+  });
+
+  // Draw edges
+  for(let i=0;i<nodes2d.length;i++){
+    for(let j=i+1;j<nodes2d.length;j++){
+      const a=nodes2d[i],b=nodes2d[j];
+      const dist=Math.hypot(a.x-b.x,a.y-b.y);
+      if(dist<180){
+        const alpha=(1-dist/180)*0.25;
+        ctx.strokeStyle=`rgba(0,255,255,${alpha})`;
+        ctx.lineWidth=0.5;
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+      }
+    }
+  }
+
+  // Draw nodes
+  nodes2d.forEach(n=>{
+    const color=n.status==='online'?'#0f9':n.status==='degraded'?'#ff0':'#f44';
+    const glow=n.status==='online'?'rgba(0,255,153,':'rgba(255,68,68,';
+    const pulse=Math.sin(n.pulse)*0.4+0.6;
+
+    // Glow ring
+    const grad=ctx.createRadialGradient(n.x,n.y,2,n.x,n.y,16*pulse);
+    grad.addColorStop(0,color+'88');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();ctx.arc(n.x,n.y,16*pulse,0,Math.PI*2);ctx.fill();
+
+    // Core dot
+    ctx.fillStyle=color;
+    ctx.beginPath();ctx.arc(n.x,n.y,4,0,Math.PI*2);ctx.fill();
+
+    // Label
+    ctx.fillStyle='rgba(0,255,255,0.7)';
+    ctx.font='7px Courier New';
+    ctx.textAlign='center';
+    ctx.fillText(n.name,n.x,n.y-10);
+  });
+
+  // Scanline
+  const scanY=(t*0.5)%H;
+  const scanGrad=ctx.createLinearGradient(0,scanY-10,0,scanY+10);
+  scanGrad.addColorStop(0,'rgba(0,255,255,0)');
+  scanGrad.addColorStop(0.5,'rgba(0,255,255,0.06)');
+  scanGrad.addColorStop(1,'rgba(0,255,255,0)');
+  ctx.fillStyle=scanGrad;
+  ctx.fillRect(0,scanY-10,W,20);
+}
+
+let rafId;
+function animNodeMap(t){
+  drawNodeMap(t);
+  rafId=requestAnimationFrame(animNodeMap);
+}
+
+initNodeMap();
+requestAnimationFrame(animNodeMap);
+window.addEventListener('resize',()=>{initNodeMap();});
+
+// ── POLLING ──
+function startPolling(){
+  // Kernel — every 5s
+  const pollKernel=()=>poll('/api/registry/kernel',renderKernel,'kernel-badge');
+  pollKernel();setInterval(pollKernel,5000);
+
+  // Network — every 10s
+  const pollNet=()=>poll('/api/registry/network',renderNetwork,'net-badge');
+  pollNet();setInterval(pollNet,10000);
+
+  // Security — every 15s
+  const pollSec=()=>poll('/api/registry/security',renderSecurity,'sec-badge');
+  pollSec();setInterval(pollSec,15000);
+
+  // Federation — every 10s
+  const pollFed=()=>poll('/api/registry/federation',renderFederation,'fed-badge');
+  pollFed();setInterval(pollFed,10000);
+
+  // Jobs — every 5s
+  const pollJobs=()=>poll('/api/registry/jobs',renderJobs,'jobs-badge');
+  pollJobs();setInterval(pollJobs,5000);
+
+  // Market — every 10s
+  const pollMkt=()=>poll('/api/registry/market',renderMarket,'mkt-badge');
+  pollMkt();setInterval(pollMkt,10000);
+
+  // BridgeOS — every 10s
+  const pollBos=()=>poll('/api/registry/bridgeos',renderBridgeOS,'bos-badge');
+  pollBos();setInterval(pollBos,10000);
+
+  // Refresh indicator pulse
+  setInterval(()=>{
+    const el=document.getElementById('refresh-status');
+    el.textContent='POLLING...';
+    setTimeout(()=>{el.textContent='LIVE';},400);
+  },5000);
+}
+
+startPolling();
+</script>
+</body>
+</html>

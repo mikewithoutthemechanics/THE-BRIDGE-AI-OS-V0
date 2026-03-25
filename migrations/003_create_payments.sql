@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  email TEXT NOT NULL,
+  amount REAL NOT NULL,
+  currency TEXT DEFAULT 'ZAR',
+  source TEXT NOT NULL,
+  status TEXT DEFAULT 'COMPLETE',
+  transaction_id TEXT UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

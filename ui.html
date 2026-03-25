@@ -1,8 +1,456 @@
-﻿<!DOCTYPE html>
-<html>
-<head><title>Bridge AI OS</title></head>
-<body style="background:black;color:white;font-family:Arial">
-<h1>BRIDGE AI OS LIVE</h1>
-<p>System online</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BRIDGE AI OS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050a0f;
+      --surface:   #0d1620;
+      --border:    #1a2d40;
+      --accent:    #00c8ff;
+      --accent2:   #7b3ff5;
+      --green:     #00e57b;
+      --red:       #ff3c5a;
+      --yellow:    #ffd166;
+      --text:      #c8dce8;
+      --text-dim:  #4d6678;
+      --font:      'Courier New', Courier, monospace;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      overflow-x: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 3rem 2rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: relative;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .pulse-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 12px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--green); }
+      50%      { opacity: 0.4; box-shadow: 0 0 24px var(--green); }
+    }
+
+    .logo h1 {
+      font-size: 1.8rem;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      text-shadow: 0 0 18px var(--accent);
+    }
+
+    .header-sub {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      margin-top: 0.5rem;
+    }
+
+    #status-badge {
+      position: absolute;
+      top: 1.2rem;
+      right: 2rem;
+      font-size: 0.72rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: #0a1520;
+      letter-spacing: 0.1em;
+      transition: color 0.4s, border-color 0.4s;
+    }
+    #status-badge.ok    { color: var(--green);  border-color: var(--green); }
+    #status-badge.warn  { color: var(--yellow); border-color: var(--yellow); }
+    #status-badge.error { color: var(--red);    border-color: var(--red); }
+
+    /* ── NAV GRID ── */
+    .nav-grid {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .nav-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+    }
+
+    .nav-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(0, 200, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .nav-card .card-icon {
+      font-size: 1.8rem;
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: rgba(0, 200, 255, 0.06);
+      border: 1px solid var(--border);
+    }
+
+    .nav-card .card-body { flex: 1; }
+
+    .nav-card .card-title {
+      font-size: 0.9rem;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-card .card-desc {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* status dot */
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-up      { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+    .dot-down    { background: var(--red);    box-shadow: 0 0 6px var(--red); }
+    .dot-unknown { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+
+    /* ── SERVICE TABLE ── */
+    .section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 2rem 2rem;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .panel-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    th {
+      text-align: left;
+      color: var(--text-dim);
+      font-weight: normal;
+      letter-spacing: 0.1em;
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.45rem 0.5rem;
+      border-bottom: 1px solid #0f1e2a;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .tag-up   { color: var(--green); }
+    .tag-down { color: var(--red); }
+    .tag-unk  { color: var(--yellow); }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 2.5rem;
+      padding: 0.6rem 2rem;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      z-index: 100;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+    }
+
+    .stat-item .stat-val {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* pad bottom so content doesn't hide behind stats bar */
+    body { padding-bottom: 3rem; }
+
+    /* ── SCAN LINE OVERLAY ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.06) 2px,
+        rgba(0,0,0,0.06) 4px
+      );
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    @media (max-width: 700px) {
+      .nav-grid { grid-template-columns: 1fr; }
+      .logo h1 { font-size: 1.2rem; }
+      .stats-bar { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="pulse-dot"></div>
+    <h1>BRIDGE AI OS</h1>
+  </div>
+  <div class="header-sub">UNIFIED COMMAND CENTER</div>
+  <div id="status-badge" class="warn">POLLING...</div>
+</header>
+
+<div class="nav-grid">
+  <a class="nav-card" href="/topology.html">
+    <div class="card-icon">&#9678;</div>
+    <div class="card-body">
+      <div class="card-title">TOPOLOGY <span class="status-dot dot-unknown" id="dot-topology"></span></div>
+      <div class="card-desc">Live network graph of all nodes, agents, and inter-service connections across L1/L2/L3 layers.</div>
+    </div>
+  </a>
+
+  <a class="nav-card" href="/registry.html">
+    <div class="card-icon">&#9783;</div>
+    <div class="card-body">
+      <div class="card-title">REGISTRY <span class="status-dot dot-unknown" id="dot-registry"></span></div>
+      <div class="card-desc">Kernel modules, network interfaces, security policies, and system configuration registry.</div>
+    </div>
+  </a>
+
+  <a class="nav-card" href="/marketplace.html">
+    <div class="card-icon">&#9733;</div>
+    <div class="card-body">
+      <div class="card-title">MARKETPLACE <span class="status-dot dot-unknown" id="dot-marketplace"></span></div>
+      <div class="card-desc">Task listings, DEX trading pairs, agent skills, wallet balances, and portfolio overview.</div>
+    </div>
+  </a>
+
+  <a class="nav-card" href="/avatar.html">
+    <div class="card-icon">&#9823;</div>
+    <div class="card-body">
+      <div class="card-title">AVATAR <span class="status-dot dot-unknown" id="dot-avatar"></span></div>
+      <div class="card-desc">3D avatar rendering engine with Babylon.js scene, mesh customization, and animation controls.</div>
+    </div>
+  </a>
+
+  <a class="nav-card" href="/system-status-dashboard.html">
+    <div class="card-icon">&#9881;</div>
+    <div class="card-body">
+      <div class="card-title">SYSTEM STATUS <span class="status-dot dot-unknown" id="dot-status"></span></div>
+      <div class="card-desc">Aggregate health dashboard for all services, latency metrics, and uptime monitoring.</div>
+    </div>
+  </a>
+
+  <a class="nav-card" href="/terminal.html">
+    <div class="card-icon">&#9002;</div>
+    <div class="card-body">
+      <div class="card-title">TERMINAL <span class="status-dot dot-unknown" id="dot-terminal"></span></div>
+      <div class="card-desc">Browser-based PTY terminal with xterm.js. Execute commands directly on the Bridge AI OS host.</div>
+    </div>
+  </a>
+</div>
+
+<div class="section">
+  <div class="panel">
+    <div class="panel-label">SERVICE HEALTH</div>
+    <table>
+      <thead>
+        <tr><th>SERVICE</th><th>PORT</th><th>STATUS</th><th>LATENCY</th></tr>
+      </thead>
+      <tbody id="services-tbody">
+        <tr><td colspan="4" style="color:var(--text-dim);text-align:center">loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-item">L1 AGENTS: <span class="stat-val" id="stat-l1">--</span></div>
+  <div class="stat-item">L2 AGENTS: <span class="stat-val" id="stat-l2">--</span></div>
+  <div class="stat-item">CONTRACTS: <span class="stat-val" id="stat-contracts">--</span></div>
+  <div class="stat-item">UPTIME: <span class="stat-val" id="stat-uptime">--</span></div>
+  <div class="stat-item">LAST POLL: <span class="stat-val" id="stat-time">--</span></div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const startTime = Date.now();
+
+  function dotClass(s) {
+    if (s === 'up' || s === 'healthy' || s === 'running' || s === 'ok') return 'dot-up';
+    if (s === 'down' || s === 'unreachable') return 'dot-down';
+    return 'dot-unknown';
+  }
+
+  function statusClass(s) {
+    if (s === 'up' || s === 'healthy' || s === 'running') return 'tag-up';
+    if (s === 'down' || s === 'unreachable') return 'tag-down';
+    return 'tag-unk';
+  }
+
+  function formatUptime(ms) {
+    const s = Math.floor(ms / 1000);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m ${s % 60}s`;
+  }
+
+  async function pollHealth() {
+    try {
+      const r = await fetch('/health');
+      const j = await r.json();
+      const badge = $('status-badge');
+      badge.textContent = j.status === 'OK' ? 'GATEWAY OK' : 'DEGRADED';
+      badge.className = j.status === 'OK' ? 'ok' : 'warn';
+      // topology dot based on core reachability
+      $('dot-topology').className = 'status-dot ' + dotClass(j.core === 'unreachable' ? 'down' : 'up');
+    } catch {
+      $('status-badge').textContent = 'UNREACHABLE';
+      $('status-badge').className = 'error';
+    }
+  }
+
+  async function pollAgents() {
+    try {
+      const r = await fetch('/api/agents');
+      const j = await r.json();
+      const l1 = j.layers?.L1 || {};
+      const l2 = j.layers?.L2 || {};
+      $('stat-l1').textContent = l1.count ?? 0;
+      $('stat-l2').textContent = l2.count ?? 0;
+    } catch {
+      $('stat-l1').textContent = '?';
+      $('stat-l2').textContent = '?';
+    }
+  }
+
+  async function pollContracts() {
+    try {
+      const r = await fetch('/api/contracts');
+      const j = await r.json();
+      $('stat-contracts').textContent = j.count ?? 0;
+    } catch {
+      $('stat-contracts').textContent = '?';
+    }
+  }
+
+  async function pollStatus() {
+    try {
+      const r = await fetch('/api/status');
+      const j = await r.json();
+      const services = j.services || [];
+      $('services-tbody').innerHTML = services.map(s => `
+        <tr>
+          <td>${s.id}</td>
+          <td>${s.port}</td>
+          <td class="${statusClass(s.status)}">${s.status.toUpperCase()}</td>
+          <td>${s.latency_ms}ms</td>
+        </tr>`).join('');
+
+      // Update nav card dots based on service status
+      const svcMap = {};
+      services.forEach(s => svcMap[s.id] = s.status);
+      $('dot-status').className = 'status-dot ' + dotClass(j.overall);
+      $('dot-registry').className = 'status-dot ' + dotClass(svcMap['gateway'] || 'unknown');
+      $('dot-marketplace').className = 'status-dot ' + dotClass(svcMap['gateway'] || 'unknown');
+      $('dot-avatar').className = 'status-dot ' + dotClass(svcMap['gateway'] || 'unknown');
+    } catch {
+      $('services-tbody').innerHTML = '<tr><td colspan="4" style="color:var(--red)">failed to load</td></tr>';
+    }
+  }
+
+  async function pollTerminal() {
+    try {
+      const r = await fetch('http://localhost:5002/health');
+      const j = await r.json();
+      $('dot-terminal').className = 'status-dot ' + dotClass(j.status === 'ok' ? 'up' : 'down');
+    } catch {
+      $('dot-terminal').className = 'status-dot dot-unknown';
+    }
+  }
+
+  async function tick() {
+    await Promise.allSettled([pollHealth(), pollAgents(), pollContracts(), pollStatus(), pollTerminal()]);
+    $('stat-uptime').textContent = formatUptime(Date.now() - startTime);
+    $('stat-time').textContent = new Date().toLocaleTimeString();
+  }
+
+  tick();
+  setInterval(tick, 5000);
+</script>
 </body>
 </html>

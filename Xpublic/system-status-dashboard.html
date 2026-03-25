@@ -1,19 +1,470 @@
 <!DOCTYPE html>
-<html>
-<body style="background:#0a0a0a;color:#00ff88;font-family:Arial">
-<h1>BRIDGE AI OS</h1>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SYSTEM STATUS — BRIDGE AI OS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New',monospace;color:#0ff;overflow-x:hidden}
 
-<h3>Core</h3>
-<a href="/health">/health</a>
-<a href="/api/status">/api/status</a>
+/* HUD */
+#hud{
+  position:sticky;top:0;z-index:100;height:40px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;background:rgba(0,0,0,.92);
+  border-bottom:1px solid rgba(0,255,255,.2);
+}
+#hud-left{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:2px;color:#0ff;}
+#hud-right{display:flex;align-items:center;gap:14px;font-size:9px;color:#0f9;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#0f9;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+#clock{font-size:10px;letter-spacing:2px;color:#0f9;}
+.nav-links a{color:#0ac;font-size:9px;letter-spacing:1px;text-decoration:none;opacity:.7;margin-right:12px;transition:opacity .2s;}
+.nav-links a:hover{opacity:1;}
 
-<h3>Funnel</h3>
-<a href="/go">/go</a>
-<a href="/go/save.php">/go/save.php</a>
-<a href="/go/r.php">/go/r.php</a>
+/* HEALTH SCORE BAR */
+#health-banner{
+  margin:16px 16px 0;padding:14px 20px;
+  background:rgba(0,10,20,.85);border:1px solid rgba(0,255,255,.15);border-radius:3px;
+  display:flex;align-items:center;gap:20px;
+}
+.health-score-wrap{display:flex;align-items:center;gap:14px;}
+.health-score{font-size:42px;font-weight:bold;line-height:1;transition:color .5s;}
+.health-score.good{color:#0f9;}
+.health-score.warn{color:#ff0;}
+.health-score.bad{color:#f44;}
+.health-label{font-size:8px;letter-spacing:2px;color:#0ac;}
+.health-bar-wrap{flex:1;max-width:400px;}
+.health-bar-label{font-size:7px;color:#0ac;letter-spacing:1px;margin-bottom:4px;}
+.health-bar-track{height:6px;background:#001a1a;border-radius:3px;overflow:hidden;}
+.health-bar-fill{height:100%;border-radius:3px;transition:width .8s ease,background .5s;}
+.health-summary{font-size:10px;color:#0ff;}
+.health-last{font-size:8px;color:#0ff4;margin-top:2px;}
 
-<h3>Onboarding</h3>
-<a href="/onboarding.html">Start</a>
+/* MAIN GRID */
+#main{padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;}
 
+/* SERVICE CARD */
+.svc-card{
+  background:rgba(0,10,20,.85);
+  border:1px solid rgba(0,255,255,.12);
+  border-radius:3px;overflow:hidden;
+  transition:border-color .4s,box-shadow .4s;
+}
+.svc-card.up{border-color:rgba(0,255,153,.4);}
+.svc-card.down{border-color:rgba(255,68,68,.4);}
+.svc-card.warn{border-color:rgba(255,240,0,.3);}
+.svc-card.checking{border-color:rgba(0,255,255,.15);}
+
+/* CARD HEADER */
+.svc-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;
+}
+.svc-name{font-size:11px;letter-spacing:2px;color:#0ff;display:flex;align-items:center;gap:8px;}
+.status-indicator{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+  transition:background .4s,box-shadow .4s;
+}
+.status-indicator.up{background:#0f9;box-shadow:0 0 8px #0f9,0 0 16px rgba(0,255,153,0.3);}
+.status-indicator.down{background:#f44;box-shadow:0 0 8px #f44,0 0 16px rgba(255,68,68,0.3);animation:err-pulse 1s infinite;}
+@keyframes err-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-indicator.warn{background:#ff0;box-shadow:0 0 8px #ff0;}
+.status-indicator.checking{background:#0ff3;animation:checking-pulse 0.8s infinite;}
+@keyframes checking-pulse{0%,100%{opacity:.3}50%{opacity:.9}}
+
+.svc-badge{
+  font-size:8px;letter-spacing:1px;padding:3px 10px;border-radius:2px;font-weight:bold;
+  transition:all .4s;
+}
+.svc-badge.up{background:#001a00;border:1px solid #0f93;color:#0f9;}
+.svc-badge.down{background:#1a0000;border:1px solid #f003;color:#f44;}
+.svc-badge.warn{background:#1a1a00;border:1px solid #ff03;color:#ff0;}
+.svc-badge.checking{background:#001a1a;border:1px solid #0ff2;color:#0ac;}
+
+/* CARD BODY */
+.svc-body{padding:4px 14px 12px;}
+.svc-endpoint{font-size:8px;color:#0ff4;letter-spacing:1px;margin-bottom:10px;}
+
+.svc-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;}
+.metric{text-align:center;padding:6px 4px;background:rgba(0,255,255,.03);border:1px solid #0ff1;border-radius:2px;}
+.metric-val{font-size:14px;font-weight:bold;color:#0ff;transition:color .4s;}
+.metric-val.green{color:#0f9;}
+.metric-val.red{color:#f44;}
+.metric-val.yellow{color:#ff0;}
+.metric-label{font-size:6px;color:#0ac;letter-spacing:1px;margin-top:2px;}
+
+/* RESPONSE TIME BAR */
+.resp-bar-wrap{margin-bottom:8px;}
+.resp-bar-label{display:flex;justify-content:space-between;font-size:7px;color:#0ac;letter-spacing:1px;margin-bottom:3px;}
+.resp-bar-track{height:4px;background:#001a1a;border-radius:2px;overflow:hidden;}
+.resp-bar-fill{height:100%;border-radius:2px;transition:width .6s ease,background .4s;}
+
+/* HISTORY SPARKLINE */
+.history-label{font-size:7px;color:#0ac;letter-spacing:1px;margin-bottom:3px;}
+.sparkline{display:flex;align-items:flex-end;gap:2px;height:20px;}
+.spark-bar{flex:1;border-radius:1px 1px 0 0;transition:height .4s,background .4s;}
+
+/* CARD FOOTER */
+.svc-footer{
+  padding:5px 14px;border-top:1px solid #0ff1;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:7px;color:#0ff3;
+}
+.svc-uptime{color:#0ac;}
+
+/* LOGS PANEL */
+#logs-panel{
+  margin:0 16px 16px;
+  background:rgba(0,10,20,.85);border:1px solid rgba(0,255,255,.12);border-radius:3px;overflow:hidden;
+}
+.logs-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;background:rgba(0,255,255,.04);border-bottom:1px solid #0ff1;
+}
+.logs-title{font-size:9px;letter-spacing:2px;color:#0ff;}
+#log-entries{height:110px;overflow-y:auto;padding:6px 12px;font-size:8px;}
+.log-entry{padding:2px 0;border-bottom:1px solid #0ff1;display:flex;gap:10px;}
+.log-entry:last-child{border-bottom:none;}
+.log-time{color:#0ff4;flex-shrink:0;width:65px;}
+.log-svc{color:#0ac;flex-shrink:0;width:100px;overflow:hidden;text-overflow:ellipsis;}
+.log-msg{color:#0ff8;}
+.log-entry.ok .log-msg{color:#0f9;}
+.log-entry.err .log-msg{color:#f44;}
+.log-entry.warn .log-msg{color:#ff0;}
+
+/* QUICK LINKS */
+#links-section{
+  margin:0 16px 16px;
+  background:rgba(0,10,20,.85);border:1px solid rgba(0,255,255,.12);border-radius:3px;
+  padding:12px 14px;
+}
+.links-title{font-size:9px;letter-spacing:2px;color:#0ff;margin-bottom:10px;}
+.links-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.quick-link{
+  padding:5px 14px;font-size:8px;letter-spacing:1px;
+  background:#001a1a;border:1px solid #0ff2;color:#0ac;border-radius:2px;text-decoration:none;
+  transition:all .2s;
+}
+.quick-link:hover{background:#003333;border-color:#0ff;color:#0ff;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:#0ff3;border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div id="hud-left">
+    <div class="live-dot"></div>
+    <span>BRIDGE AI OS &mdash; SYSTEM STATUS</span>
+    <div class="nav-links">
+      <a href="registry.html">REGISTRY</a>
+      <a href="marketplace.html">MARKETPLACE</a>
+      <a href="avatar.html">AVATAR</a>
+      <a href="topology.html">TOPOLOGY</a>
+    </div>
+  </div>
+  <div id="hud-right">
+    <span id="poll-indicator">POLLING...</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</div>
+
+<!-- HEALTH SCORE BANNER -->
+<div id="health-banner">
+  <div class="health-score-wrap">
+    <div class="health-score good" id="health-score">—</div>
+    <div>
+      <div class="health-label">SYSTEM HEALTH SCORE</div>
+      <div class="health-summary" id="health-summary">Checking services...</div>
+    </div>
+  </div>
+  <div class="health-bar-wrap">
+    <div class="health-bar-label">OVERALL STATUS</div>
+    <div class="health-bar-track">
+      <div class="health-bar-fill" id="health-bar" style="width:0%;background:#0f9;"></div>
+    </div>
+  </div>
+  <div>
+    <div style="font-size:8px;color:#0ac;letter-spacing:1px;">LAST CHECKED</div>
+    <div class="health-last" id="health-last-ts">—</div>
+  </div>
+</div>
+
+<div id="main">
+  <!-- Cards injected by JS -->
+</div>
+
+<div id="logs-panel">
+  <div class="logs-header">
+    <span class="logs-title">HEALTH CHECK LOG</span>
+    <span style="font-size:8px;color:#0ac;">LIVE</span>
+  </div>
+  <div id="log-entries"></div>
+</div>
+
+<div id="links-section">
+  <div class="links-title">QUICK LINKS</div>
+  <div class="links-grid">
+    <a href="/health" class="quick-link">/health</a>
+    <a href="/api/status" class="quick-link">/api/status</a>
+    <a href="/go" class="quick-link">/go</a>
+    <a href="/go/save.php" class="quick-link">/go/save.php</a>
+    <a href="/go/r.php" class="quick-link">/go/r.php</a>
+    <a href="/onboarding.html" class="quick-link">ONBOARDING</a>
+    <a href="topology.html" class="quick-link">TOPOLOGY</a>
+    <a href="registry.html" class="quick-link">REGISTRY</a>
+    <a href="marketplace.html" class="quick-link">MARKETPLACE</a>
+    <a href="avatar.html" class="quick-link">AVATAR</a>
+  </div>
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock(){document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);}
+setInterval(updateClock,1000);updateClock();
+const tsNow=()=>new Date().toLocaleTimeString();
+
+// ── SERVICE DEFINITIONS ──
+const SERVICES=[
+  {
+    id:'gateway',name:'GATEWAY',host:'localhost',port:8080,
+    endpoint:'/health',method:'GET',
+    desc:'API Gateway — main entry point',icon:'[GW]'
+  },
+  {
+    id:'system',name:'SYSTEM',host:'localhost',port:3000,
+    endpoint:'/health',method:'GET',
+    desc:'Core system service',icon:'[SYS]'
+  },
+  {
+    id:'auth',name:'AUTH',host:'localhost',port:5001,
+    endpoint:'/health',method:'GET',
+    desc:'Authentication & authorization service',icon:'[AUTH]'
+  },
+  {
+    id:'l1-orch',name:'L1 ORCHESTRATOR',host:'localhost',port:9000,
+    endpoint:'/api/status',method:'GET',
+    desc:'Layer 1 orchestration engine',icon:'[L1]'
+  },
+  {
+    id:'l2-orch',name:'L2 ORCHESTRATOR',host:'192.168.110.203',port:9001,
+    endpoint:'/api/status',method:'GET',
+    desc:'Layer 2 distributed orchestrator',icon:'[L2]'
+  },
+];
+
+// ── STATE ──
+const state={};
+SERVICES.forEach(s=>{
+  state[s.id]={
+    status:'checking',
+    latency:null,
+    lastChecked:null,
+    history:[],
+    upChecks:0,
+    totalChecks:0,
+    lastBody:null,
+  };
+});
+
+// ── BUILD CARDS ──
+function buildCards(){
+  const main=document.getElementById('main');
+  main.innerHTML='';
+  SERVICES.forEach(s=>{
+    const div=document.createElement('div');
+    div.className='svc-card checking';
+    div.id='card-'+s.id;
+    const url=`http://${s.host}:${s.port}${s.endpoint}`;
+    div.innerHTML=`
+      <div class="svc-header">
+        <div class="svc-name">
+          <div class="status-indicator checking" id="ind-${s.id}"></div>
+          ${s.icon} ${s.name}
+        </div>
+        <span class="svc-badge checking" id="badge-${s.id}">CHECKING</span>
+      </div>
+      <div class="svc-body">
+        <div class="svc-endpoint">${url}</div>
+        <div style="font-size:8px;color:#0ff4;margin-bottom:10px;">${s.desc}</div>
+        <div class="svc-metrics">
+          <div class="metric">
+            <div class="metric-val" id="lat-${s.id}">—</div>
+            <div class="metric-label">LATENCY</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="upt-${s.id}">—</div>
+            <div class="metric-label">UPTIME %</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="chk-${s.id}">0</div>
+            <div class="metric-label">CHECKS</div>
+          </div>
+        </div>
+        <div class="resp-bar-wrap">
+          <div class="resp-bar-label">
+            <span>RESPONSE TIME</span>
+            <span id="resp-label-${s.id}">—</span>
+          </div>
+          <div class="resp-bar-track">
+            <div class="resp-bar-fill" id="resp-bar-${s.id}" style="width:0%;background:#0f9;"></div>
+          </div>
+        </div>
+        <div class="history-label">HEALTH HISTORY (last 20 checks)</div>
+        <div class="sparkline" id="spark-${s.id}"></div>
+      </div>
+      <div class="svc-footer">
+        <div class="svc-uptime" id="port-${s.id}">PORT: ${s.port}</div>
+        <div id="ts-${s.id}">last check: —</div>
+      </div>
+    `;
+    main.appendChild(div);
+  });
+}
+
+// ── CHECK A SERVICE ──
+async function checkService(s){
+  const url=`http://${s.host}:${s.port}${s.endpoint}`;
+  const st=state[s.id];
+  st.totalChecks++;
+  const t0=performance.now();
+  let status='down';
+  let latency=null;
+  let body=null;
+  try{
+    const r=await fetch(url,{signal:AbortSignal.timeout(5000),mode:'cors'});
+    latency=Math.round(performance.now()-t0);
+    status=r.ok?'up':(r.status>=500?'down':'warn');
+    try{body=await r.json();}catch(e){body=null;}
+  }catch(e){
+    latency=null;
+    status='down';
+    // If it's a local connection we might get CORS/network err — treat as down
+  }
+  if(status==='up') st.upChecks++;
+  st.status=status;
+  st.latency=latency;
+  st.lastChecked=new Date();
+  st.lastBody=body;
+  st.history.push(status);
+  if(st.history.length>20) st.history.shift();
+
+  updateCard(s,st);
+  addLog(s,status,latency);
+  updateHealthScore();
+}
+
+// ── UPDATE CARD ──
+function updateCard(s,st){
+  const card=document.getElementById('card-'+s.id);
+  const ind=document.getElementById('ind-'+s.id);
+  const badge=document.getElementById('badge-'+s.id);
+  const latEl=document.getElementById('lat-'+s.id);
+  const uptEl=document.getElementById('upt-'+s.id);
+  const chkEl=document.getElementById('chk-'+s.id);
+  const tsEl=document.getElementById('ts-'+s.id);
+  const respBar=document.getElementById('resp-bar-'+s.id);
+  const respLabel=document.getElementById('resp-label-'+s.id);
+  const spark=document.getElementById('spark-'+s.id);
+
+  const status=st.status;
+  card.className='svc-card '+status;
+  ind.className='status-indicator '+status;
+  badge.className='svc-badge '+status;
+  badge.textContent=status==='up'?'ONLINE':status==='warn'?'DEGRADED':'OFFLINE';
+
+  // Latency
+  if(st.latency!=null){
+    latEl.textContent=st.latency+'ms';
+    latEl.className='metric-val '+(st.latency<200?'green':st.latency<800?'yellow':'red');
+    const barPct=Math.min(100,st.latency/20);
+    const barColor=st.latency<200?'#0f9':st.latency<800?'#ff0':'#f44';
+    respBar.style.width=barPct+'%';
+    respBar.style.background=barColor;
+    respLabel.textContent=st.latency+'ms';
+  }else{
+    latEl.textContent='TIMEOUT';latEl.className='metric-val red';
+    respBar.style.width='100%';respBar.style.background='#f44';
+    respLabel.textContent='N/A';
+  }
+
+  // Uptime %
+  const uptPct=st.totalChecks>0?Math.round(st.upChecks/st.totalChecks*100):0;
+  uptEl.textContent=uptPct+'%';
+  uptEl.className='metric-val '+(uptPct>=99?'green':uptPct>=90?'yellow':'red');
+
+  // Checks
+  chkEl.textContent=st.totalChecks;
+  chkEl.className='metric-val cyan';
+
+  // Timestamp
+  tsEl.textContent='last check: '+tsNow();
+
+  // Sparkline
+  spark.innerHTML=st.history.map(h=>{
+    const col=h==='up'?'#0f9':h==='warn'?'#ff0':'#f44';
+    return`<div class="spark-bar" style="height:${h==='up'?'100':h==='warn'?'60':'20'}%;background:${col};opacity:0.8;"></div>`;
+  }).join('');
+}
+
+// ── LOG ──
+const MAX_LOGS=40;
+function addLog(s,status,latency){
+  const container=document.getElementById('log-entries');
+  const div=document.createElement('div');
+  div.className='log-entry '+(status==='up'?'ok':status==='warn'?'warn':'err');
+  div.innerHTML=`
+    <span class="log-time">${tsNow()}</span>
+    <span class="log-svc">${s.name} :${s.port}</span>
+    <span class="log-msg">${status==='up'?'OK':status==='warn'?'DEGRADED':'UNREACHABLE'} ${latency!=null?'('+latency+'ms)':''}</span>
+  `;
+  container.insertBefore(div,container.firstChild);
+  while(container.children.length>MAX_LOGS) container.removeChild(container.lastChild);
+}
+
+// ── HEALTH SCORE ──
+function updateHealthScore(){
+  const total=SERVICES.length;
+  const up=SERVICES.filter(s=>state[s.id].status==='up').length;
+  const warn=SERVICES.filter(s=>state[s.id].status==='warn').length;
+  const down=SERVICES.filter(s=>state[s.id].status==='down').length;
+  const unchecked=SERVICES.filter(s=>state[s.id].status==='checking').length;
+
+  if(unchecked===total){return;}// Still loading
+
+  const score=Math.round((up/total)*100+(warn/total)*50)/100;
+  const pct=Math.round((up+(warn*0.5))/total*100);
+
+  const scoreEl=document.getElementById('health-score');
+  scoreEl.textContent=pct;
+  scoreEl.className='health-score '+(pct>=90?'good':pct>=60?'warn':'bad');
+
+  document.getElementById('health-bar').style.width=pct+'%';
+  document.getElementById('health-bar').style.background=pct>=90?'#0f9':pct>=60?'#ff0':'#f44';
+
+  let summaryParts=[];
+  if(up>0) summaryParts.push(`${up} UP`);
+  if(warn>0) summaryParts.push(`${warn} DEGRADED`);
+  if(down>0) summaryParts.push(`${down} DOWN`);
+  document.getElementById('health-summary').textContent=summaryParts.join(' / ');
+  document.getElementById('health-last-ts').textContent=tsNow();
+
+  document.getElementById('poll-indicator').textContent=`POLLING (${pct}% HEALTHY)`;
+}
+
+// ── POLLING ──
+function pollAll(){
+  SERVICES.forEach(s=>checkService(s));
+}
+
+buildCards();
+pollAll();
+setInterval(pollAll,10000); // Poll all services every 10s
+</script>
 </body>
 </html>
