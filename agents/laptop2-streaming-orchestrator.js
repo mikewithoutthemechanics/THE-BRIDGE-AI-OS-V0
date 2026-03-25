@@ -447,7 +447,7 @@ function startAgentWorkLoops() {
 // Startup sequence
 function startup() {
   log('\n>>> STARTUP SEQUENCE BEGIN');
-  log('Initializing 7 specialist agents...\n');
+  log('Initializing 6 specialist agents...\n');
 
   L2_AGENTS.forEach((agent, idx) => {
     setTimeout(() => {
