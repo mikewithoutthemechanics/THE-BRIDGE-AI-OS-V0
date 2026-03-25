@@ -461,7 +461,7 @@ function startup() {
   setTimeout(() => {
     log('\n>>> STARTUP COMPLETE');
     log(`✓ All 6 specialist agents running on port ${PORT}`);
-    log(`✓ Connected to L1 (http://localhost:9000)`);
+    log(`✓ Connected to L1 (http://localhost:9001)`);
     log(`Monitor progress: curl http://localhost:${PORT}/api/status | jq`);
     log(`Check conflicts: curl http://localhost:${PORT}/api/conflicts | jq\n`);
     startAgentWorkLoops();
