@@ -544,6 +544,7 @@ app.get('/abaas.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'abaas.htm
 app.get('/aoe-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'aoe-dashboard.html'), res));
 app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
 app.get('/platforms.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'platforms.html'), res));
+app.get('/welcome.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'welcome.html'), res));
 // Serve static assets (logos, SVGs, documents)
 app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
 

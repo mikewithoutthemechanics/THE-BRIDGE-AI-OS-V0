@@ -1425,6 +1425,10 @@ app.get('/api/db/status', (_req, res) => {
 require('./brain-business.js')(app, state, broadcast);
 console.log('[BRAIN] Business suite loaded (17 domains, 49 endpoints)');
 
+// ── LOAD AGENT ECONOMY ──────────────────────────────────────────────────────
+require('./brain-agents.js')(app, state, broadcast);
+console.log('[BRAIN] Agent economy loaded (34 agents, wallets, payroll)');
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
