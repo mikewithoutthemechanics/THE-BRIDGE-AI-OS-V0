@@ -496,28 +496,48 @@ app.all('/ban', async (_req, res) => {
 const XPUBLIC = path.join(ROOT, 'Xpublic');
 
 // ── UNIVERSAL NAV (injected into every page) ────────────────────────────────
-const NAV_HTML = `<nav id="bridge-nav" style="background:#0a1520;border-bottom:2px solid #1a2d40;padding:5px 12px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-family:system-ui,monospace;font-size:10px;letter-spacing:.06em;position:sticky;top:0;z-index:9999">
-<a href="/" style="color:#00c8ff;text-decoration:none;font-weight:700;font-size:12px;margin-right:6px">BRIDGE AI</a>
-<span style="color:#1a2d40;margin:0 2px">|</span>
-<span style="color:#4d6678;font-size:8px;letter-spacing:.12em;margin-right:2px">SYSTEM</span>
-<a href="/topology.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">TOPOLOGY</a>
-<a href="/registry.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">REGISTRY</a>
-<a href="/system-status-dashboard.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">STATUS</a>
-<a href="/terminal.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">TERM</a>
-<a href="/control.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">CONTROL</a>
-<span style="color:#1a2d40;margin:0 2px">|</span>
-<span style="color:#4d6678;font-size:8px;letter-spacing:.12em;margin-right:2px">ECONOMY</span>
-<a href="/marketplace.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">MARKET</a>
-<a href="/ban" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">BAN</a>
-<span style="color:#1a2d40;margin:0 2px">|</span>
-<span style="color:#4d6678;font-size:8px;letter-spacing:.12em;margin-right:2px">AI</span>
-<a href="/avatar.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">AVATAR</a>
-<a href="/abaas.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">ABAAS</a>
-<a href="/aoe-dashboard.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">AOE</a>
-<span style="color:#1a2d40;margin:0 2px">|</span>
-<a href="/platforms.html" style="color:#fb923c;text-decoration:none;padding:2px 5px;border:1px solid #3a2a1a;border-radius:3px;background:rgba(251,146,60,.08)">NET</a>
-<a href="/sitemap.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">MAP</a>
-<a href="/onboarding.html" style="color:#00e57b;text-decoration:none;padding:2px 5px;border:1px solid #0d3a1a;border-radius:3px;background:rgba(0,229,123,.08)">JOIN</a>
+const NAV_HTML = `
+<style>
+#bridge-nav{background:#0a1520;border-bottom:2px solid #1a2d40;padding:5px 12px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-family:system-ui,monospace;font-size:10px;letter-spacing:.06em;position:sticky;top:0;z-index:9999}
+#bridge-nav a{color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px;white-space:nowrap}
+#bridge-nav a:hover{color:#00c8ff;border-color:#00c8ff}
+#bridge-nav .logo{color:#00c8ff;font-weight:700;font-size:12px;margin-right:6px;border:none;padding:0}
+#bridge-nav .sep{color:#1a2d40;margin:0 2px}
+#bridge-nav .cat{color:#4d6678;font-size:7px;letter-spacing:.12em;margin-right:2px}
+#bridge-nav .net{color:#fb923c;border-color:#3a2a1a;background:rgba(251,146,60,.08)}
+#bridge-nav .join{color:#00e57b;border-color:#0d3a1a;background:rgba(0,229,123,.08)}
+#bnav-toggle{display:none;background:none;border:1px solid #1a2d40;color:#00c8ff;font-size:16px;padding:2px 8px;border-radius:4px;cursor:pointer;margin-left:auto}
+#bnav-links{display:contents}
+@media(max-width:768px){
+  #bnav-toggle{display:block}
+  #bnav-links{display:none;width:100%;flex-direction:column;gap:4px;padding:8px 0}
+  #bnav-links.open{display:flex}
+  #bnav-links a{padding:6px 10px;font-size:12px}
+  #bridge-nav .sep,#bridge-nav .cat{display:none}
+}
+</style>
+<nav id="bridge-nav">
+<a href="/" class="logo">BRIDGE AI</a>
+<button id="bnav-toggle" onclick="document.getElementById('bnav-links').classList.toggle('open')">&#9776;</button>
+<div id="bnav-links">
+<span class="sep">|</span><span class="cat">SYSTEM</span>
+<a href="/topology.html">TOPOLOGY</a>
+<a href="/registry.html">REGISTRY</a>
+<a href="/system-status-dashboard.html">STATUS</a>
+<a href="/terminal.html">TERM</a>
+<a href="/control.html">CONTROL</a>
+<span class="sep">|</span><span class="cat">ECONOMY</span>
+<a href="/marketplace.html">MARKET</a>
+<a href="/ban">BAN</a>
+<span class="sep">|</span><span class="cat">AI</span>
+<a href="/avatar.html">AVATAR</a>
+<a href="/abaas.html">ABAAS</a>
+<a href="/aoe-dashboard.html">AOE</a>
+<span class="sep">|</span>
+<a href="/platforms.html" class="net">NET</a>
+<a href="/sitemap.html">MAP</a>
+<a href="/onboarding.html" class="join">JOIN</a>
+</div>
 </nav>`;
 
 function serveWithNav(filePath, res) {
