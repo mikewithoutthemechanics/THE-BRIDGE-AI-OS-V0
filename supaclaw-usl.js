@@ -87,6 +87,38 @@ function generateSystemSVG(type, data) {
       // Pulse effect
       inner += `<rect x="100" y="${y}" width="600" height="70" fill="none" stroke="${colors[i]}" stroke-width="0.5" rx="4"><animate attributeName="opacity" values="0.3;0.8;0.3" dur="${4 + i}s" repeatCount="indefinite"/></rect>`;
     });
+  } else if (type === 'brain') {
+    // HD Brain visualization — skill portfolio mapped to regions
+    const skills = data?.skills || [];
+    const typeColors = { core: '#4F46E5', cognitive: '#22D3EE', security: '#EC4899', business: '#0D9488', economy: '#F59E0B', trading: '#84CC16', infrastructure: '#3B82F6', visualization: '#A78BFA', interface: '#A78BFA', learning: '#A78BFA' };
+    const tierGlow = { free: 0.3, pro: 0.6, enterprise: 0.8, platform: 1.0 };
+    // Brain outline
+    inner += `<ellipse cx="400" cy="300" rx="350" ry="250" fill="none" stroke="#1a2d40" stroke-width="1"/>`;
+    inner += `<line x1="400" y1="50" x2="400" y2="550" stroke="#1a2d40" stroke-width="0.5" stroke-dasharray="4"/>`;
+    // Region labels
+    const regions = [['COGNITIVE',400,80],['CORE',300,180],['SECURITY',530,200],['BUSINESS',180,370],['ECONOMY',400,430],['TRADING',620,320],['INFRA',130,180]];
+    regions.forEach(([label, x, y]) => { inner += `<text x="${x}" y="${y}" fill="#1a2d40" font-family="monospace" font-size="8" text-anchor="middle">${label}</text>`; });
+    // Skill nodes
+    skills.forEach((s, i) => {
+      const x = s.position?.x || 400, y = s.position?.y || 300;
+      const color = typeColors[s.type] || C.cyan;
+      const glow = tierGlow[s.tier] || 0.5;
+      const r = 6 + (s.risk_score || 0.3) * 8;
+      inner += `<circle cx="${x}" cy="${y}" r="${r}" fill="${color}" opacity="${glow}"><animate attributeName="r" values="${r-1};${r+2};${r-1}" dur="${2+i*0.2}s" repeatCount="indefinite"/></circle>`;
+      inner += `<text x="${x}" y="${y+r+10}" fill="${C.dim}" font-family="monospace" font-size="6" text-anchor="middle">${s.name?.slice(0,15)||s.id}</text>`;
+    });
+    // Connection lines between dependencies
+    skills.forEach(s => {
+      (s.dependencies || []).forEach(depId => {
+        const dep = skills.find(d => d.id === depId);
+        if (dep && dep.position && s.position) {
+          inner += `<line x1="${s.position.x}" y1="${s.position.y}" x2="${dep.position.x}" y2="${dep.position.y}" stroke="${C.dim}" stroke-width="0.5" opacity="0.4"/>`;
+          inner += `<circle r="2" fill="${C.cyan}"><animateMotion dur="${3+Math.random()*2}s" repeatCount="indefinite" path="M${s.position.x},${s.position.y} L${dep.position.x},${dep.position.y}"/></circle>`;
+        }
+      });
+    });
+    // Central pulse
+    inner += `<circle cx="400" cy="300" r="15" fill="none" stroke="${C.cyan}" stroke-width="1"><animate attributeName="r" values="10;25;10" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0.2;0.8" dur="4s" repeatCount="indefinite"/></circle>`;
   } else {
     inner = `<text x="400" y="300" fill="${C.cyan}" font-family="monospace" font-size="14" text-anchor="middle">GLYPH: ${type}</text>`;
   }
@@ -187,13 +219,36 @@ module.exports = function registerUSL(app, state, broadcast) {
     let data = {};
     if (type === 'topology') data = { nodes: Array.from({ length: 15 }, (_, i) => ({ id: `n${i}`, name: `Node${i}`, status: i < 12 ? 'active' : 'idle' })) };
     if (type === 'layers') data = { layers: { L0: ['home', 'onboarding', 'platforms'], L1: ['marketplace', 'ban', 'avatar'], L2: ['topology', 'registry', 'aoe'], L3: ['terminal', 'control', 'logs'], L4: ['brain', 'auth'], L5: ['gateway', 'nginx', 'pm2'] } };
+    if (type === 'brain') {
+      // Pull ALL_SKILLS from brain.js global scope if available
+      try { data = { skills: require('./brain.js').ALL_SKILLS || [] }; } catch (_) {
+        // Fallback: generate sample skills
+        data = { skills: [
+          { id: 'bridge.decision', name: 'Decision Engine', type: 'core', tier: 'enterprise', risk_score: 0.3, position: { x: 350, y: 200 }, dependencies: [] },
+          { id: 'brain.reasoning', name: 'RAG Reasoning', type: 'cognitive', tier: 'pro', risk_score: 0.4, position: { x: 420, y: 140 }, dependencies: [] },
+          { id: 'bridge.economy', name: 'Economic Engine', type: 'economy', tier: 'enterprise', risk_score: 0.7, position: { x: 380, y: 400 }, dependencies: ['bridge.treasury', 'platform.ubi'] },
+          { id: 'bridge.treasury', name: 'Central Treasury', type: 'economy', tier: 'enterprise', risk_score: 0.5, position: { x: 450, y: 380 }, dependencies: [] },
+          { id: 'platform.ubi', name: 'UBI Distribution', type: 'economy', tier: 'platform', risk_score: 0.3, position: { x: 500, y: 420 }, dependencies: [] },
+          { id: 'quant.momentum', name: 'Momentum Alpha', type: 'trading', tier: 'platform', risk_score: 0.7, position: { x: 620, y: 280 }, dependencies: [] },
+          { id: 'quant.arbitrage', name: 'Arbitrage', type: 'trading', tier: 'platform', risk_score: 0.6, position: { x: 650, y: 320 }, dependencies: [] },
+          { id: 'biz.crm', name: 'CRM', type: 'business', tier: 'pro', risk_score: 0.2, position: { x: 180, y: 340 }, dependencies: [] },
+          { id: 'biz.marketing', name: 'Marketing', type: 'business', tier: 'pro', risk_score: 0.3, position: { x: 220, y: 380 }, dependencies: [] },
+          { id: 'biz.invoicing', name: 'Invoicing', type: 'business', tier: 'pro', risk_score: 0.2, position: { x: 160, y: 400 }, dependencies: [] },
+          { id: 'brain.keyforge', name: 'KeyForge Auth', type: 'security', tier: 'enterprise', risk_score: 0.2, position: { x: 520, y: 220 }, dependencies: [] },
+          { id: 'net.neurolink', name: 'NeuroLink', type: 'interface', tier: 'enterprise', risk_score: 0.4, position: { x: 550, y: 150 }, dependencies: [] },
+          { id: 'bridge.speech', name: 'Speech', type: 'core', tier: 'pro', risk_score: 0.3, position: { x: 280, y: 180 }, dependencies: [] },
+          { id: 'bridge.swarm', name: 'Swarm Health', type: 'core', tier: 'enterprise', risk_score: 0.3, position: { x: 340, y: 280 }, dependencies: [] },
+          { id: 'flow.basic', name: 'Flow Controller', type: 'core', tier: 'enterprise', risk_score: 0.2, position: { x: 400, y: 250 }, dependencies: [] },
+        ] };
+      }
+    }
     const svg = generateSystemSVG(type, data);
     if (req.query.format === 'json') return res.json({ ok: true, type, svg_length: svg.length });
     res.type('svg').send(svg);
   });
 
   // Available visual types
-  app.get('/api/glyph/catalog', (_req, res) => res.json({ ok: true, types: ['topology', 'sacred', 'economy', 'layers'], description: 'HD animated SVG visualization engine' }));
+  app.get('/api/glyph/catalog', (_req, res) => res.json({ ok: true, types: ['topology', 'sacred', 'economy', 'layers', 'brain'], description: 'HD animated SVG visualization engine' }));
 
   console.log('[USL] Universal Share Layer active (file-backed + memory cache)');
   console.log('[GLYPH] Visual engine active (4 HD animated SVG types)');

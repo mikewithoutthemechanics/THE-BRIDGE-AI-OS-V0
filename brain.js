@@ -1157,10 +1157,43 @@ const ALL_SKILLS = [
   { id: 'platform.defi', name: 'DeFi Protocol', tags: ['defi','staking','liquidity','governance'], version: '1.0.0', source: 'brain', type: 'economy', description: 'Staking, liquidity pools, governance proposals, token distribution' },
   { id: 'platform.dex', name: 'DEX Trading', tags: ['dex','swap','pairs','amm'], version: '1.0.0', source: 'brain', type: 'economy', description: 'Decentralized exchange: BRDG/ETH, BRDG/USDT, BRDG/SOL pairs with AMM' },
 ];
+// Normalize ALL_SKILLS into full SKILL_PORTFOLIO shape
+const LAYER_MAP = { 'bridge.decision': 'L3', 'bridge.economy': 'L2', 'bridge.speech': 'L1', 'bridge.swarm': 'L2', 'bridge.treasury': 'L2', 'bridge.twins': 'L2', 'bridge.youtube': 'L0', 'flow.basic': 'L3', 'brain.reasoning': 'L1', 'brain.keyforge': 'L3', 'brain.mfa': 'L3', 'brain.cosmic': 'L4', 'quant.momentum': 'L5', 'quant.arbitrage': 'L5', 'quant.sentiment': 'L5', 'quant.meanrevert': 'L5', 'biz.crm': 'L1', 'biz.invoicing': 'L1', 'biz.legal': 'L4', 'biz.marketing': 'L1', 'biz.support': 'L1', 'biz.debt': 'L2', 'net.scanner': 'L2', 'net.neurolink': 'L5', 'platform.ubi': 'L5', 'platform.defi': 'L5', 'platform.dex': 'L5' };
+const TIER_MAP = { 'bridge.youtube': 'free', 'brain.reasoning': 'pro', 'biz.crm': 'pro', 'biz.invoicing': 'pro', 'biz.support': 'pro', 'biz.marketing': 'pro', 'bridge.speech': 'pro', 'bridge.decision': 'enterprise', 'bridge.swarm': 'enterprise', 'bridge.twins': 'enterprise', 'bridge.economy': 'enterprise', 'bridge.treasury': 'enterprise', 'biz.legal': 'enterprise', 'biz.debt': 'enterprise', 'net.scanner': 'enterprise', 'net.neurolink': 'enterprise', 'brain.keyforge': 'enterprise', 'brain.mfa': 'enterprise', 'flow.basic': 'enterprise', 'brain.cosmic': 'enterprise', 'platform.ubi': 'platform', 'platform.defi': 'platform', 'platform.dex': 'platform', 'quant.momentum': 'platform', 'quant.arbitrage': 'platform', 'quant.sentiment': 'platform', 'quant.meanrevert': 'platform' };
+const IO_MAP = {
+  'bridge.decision': { inputs: ['environment_state','policy_rules','ethical_constraints'], outputs: ['decision','justification','silence_state'], deps: [], triggers: ['decision_required','conflict_detected'] },
+  'bridge.economy': { inputs: ['transactions','revenue_streams','payout_policies'], outputs: ['treasury_state','ubi_distribution','metrics'], deps: ['bridge.treasury','platform.ubi'], triggers: ['revenue_event','payout_cycle'] },
+  'brain.reasoning': { inputs: ['query','document_corpus','tools_registry'], outputs: ['answer','citations','tool_calls'], deps: [], triggers: ['user_query','agent_query'] },
+  'bridge.treasury': { inputs: ['revenue_events','payment_webhooks'], outputs: ['balance','ledger','distribution'], deps: [], triggers: ['payment_received','distribution_cycle'] },
+  'bridge.swarm': { inputs: ['agent_metrics','latency_data'], outputs: ['health_index','scaling_actions'], deps: [], triggers: ['health_check','threshold_breach'] },
+};
+ALL_SKILLS.forEach(s => {
+  s.layer = LAYER_MAP[s.id] || 'L2';
+  s.tier = TIER_MAP[s.id] || 'pro';
+  const io = IO_MAP[s.id] || {};
+  s.inputs = io.inputs || ['system_state'];
+  s.outputs = io.outputs || ['result'];
+  s.dependencies = io.deps || [];
+  s.trigger_conditions = io.triggers || ['on_demand'];
+  s.risk_score = s.type === 'trading' ? 0.7 : s.type === 'security' ? 0.2 : s.type === 'economy' ? 0.5 : 0.3;
+  // Position for brain SVG
+  const typePositions = { core: [300,200], cognitive: [400,150], security: [500,250], business: [200,350], economy: [400,400], trading: [600,300], infrastructure: [150,200], interface: [550,150], learning: [350,100], visualization: [450,100] };
+  const pos = typePositions[s.type] || [400,300];
+  s.position = { x: pos[0] + (Math.random() - 0.5) * 80, y: pos[1] + (Math.random() - 0.5) * 60 };
+});
 state.twin.skills = ALL_SKILLS.map(s => s.id);
 
 app.get('/skills', (_req, res) => res.json({ ok: true, skills: ALL_SKILLS, count: ALL_SKILLS.length }));
 app.get('/skills/definitions', (_req, res) => res.json({ ok: true, definitions: ALL_SKILLS, count: ALL_SKILLS.length }));
+app.get('/api/skills/portfolio', (_req, res) => {
+  const byLayer = {}, byTier = {}, byType = {};
+  ALL_SKILLS.forEach(s => {
+    byLayer[s.layer] = (byLayer[s.layer] || 0) + 1;
+    byTier[s.tier] = (byTier[s.tier] || 0) + 1;
+    byType[s.type] = (byType[s.type] || 0) + 1;
+  });
+  res.json({ ok: true, portfolio: ALL_SKILLS, count: ALL_SKILLS.length, by_layer: byLayer, by_tier: byTier, by_type: byType });
+});
 app.get('/graph', (_req, res) => res.json({ ok: true, nodes: state.twin.skills.length, edges: state.twin.skills.length - 1 }));
 app.get('/telemetry', (_req, res) => res.json({ ok: true, uptime: process.uptime(), skills_loaded: ALL_SKILLS.length, total_executions: 42 + Math.floor(process.uptime() / 10), latency_p50_ms: 12, latency_p95_ms: 45, cache_hits: 38 + Math.floor(process.uptime() / 5), cache_misses: 4 }));
 app.get('/run/:id', (req, res) => {
@@ -1590,4 +1623,4 @@ server.listen(PORT, () => {
   console.log(`[BRAIN] Skills: ${state.twin.skills.join(', ')}`);
 });
 
-module.exports = { app, server, state };
+module.exports = { app, server, state, ALL_SKILLS };
