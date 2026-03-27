@@ -1560,6 +1560,10 @@ console.log('[BRAIN] Compound economy engine ACTIVE — TPS control, tax, liquid
 require('./supaclaw-github.js')(app, state, broadcast);
 console.log('[BRAIN] GitHub + Docker MCP integration loaded');
 
+// ── LOAD AGENT FABRIC (9 autonomous agents) ─────────────────────────────────
+require('./supaclaw-fabric.js')(app, state, broadcast);
+console.log('[BRAIN] Agent fabric ACTIVE — 9 agents: atlas, weaver, forge, oracle, strata, horizon, architect, vector, foundry');
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
