@@ -1,28 +1,253 @@
 <!DOCTYPE html>
-<html>
-<body style="background:#000;color:#0f0;font-family:Arial">
-<h2>BridgeOS Onboarding</h2>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bridge AI OS — Join</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#050a0f;--surface:#0d1620;--surface2:#111d2b;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa}
+  body{background:var(--bg);color:var(--text);font-family:system-ui,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+  .page{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:440px;overflow:hidden}
+  .card-header{padding:2rem 2rem 1rem;text-align:center;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0d1620 0%,#0a1218 100%)}
+  .logo{font-size:1.8rem;font-weight:800;color:var(--accent);letter-spacing:.25em;margin-bottom:.3rem}
+  .logo span{color:var(--green)}
+  .tagline{font-size:.72rem;color:var(--dim);letter-spacing:.1em}
+  .card-body{padding:1.5rem 2rem 2rem}
+  .tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid var(--border)}
+  .tab{flex:1;padding:.6rem;text-align:center;font-size:.72rem;letter-spacing:.1em;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .form-panel{display:none}
+  .form-panel.active{display:block}
+  label{display:block;font-size:.68rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem;margin-top:.8rem}
+  label:first-child{margin-top:0}
+  input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.6rem .8rem;border-radius:6px;font-size:.82rem;outline:none;transition:border-color .2s}
+  input:focus{border-color:var(--accent)}
+  input::placeholder{color:#2a3a4a}
+  .btn{width:100%;padding:.7rem;border:none;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;letter-spacing:.08em;margin-top:1rem;transition:filter .2s}
+  .btn:hover{filter:brightness(1.15)}
+  .btn-primary{background:var(--accent);color:#050a0f}
+  .btn-google{background:#fff;color:#333;display:flex;align-items:center;justify-content:center;gap:.5rem;border:1px solid #ddd}
+  .btn-google svg{width:18px;height:18px}
+  .btn-github{background:#24292e;color:#fff;display:flex;align-items:center;justify-content:center;gap:.5rem}
+  .divider{display:flex;align-items:center;gap:.8rem;margin:1rem 0;font-size:.65rem;color:var(--dim);letter-spacing:.1em}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+  .referral-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.6rem .8rem;margin-top:.8rem}
+  .referral-box label{margin:0}
+  .msg{padding:.5rem .8rem;border-radius:6px;font-size:.72rem;margin-top:.8rem;display:none}
+  .msg.ok{display:block;background:rgba(0,229,123,.1);border:1px solid var(--green);color:var(--green)}
+  .msg.err{display:block;background:rgba(255,60,90,.1);border:1px solid var(--red);color:var(--red)}
+  .features{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+  .feat{font-size:.65rem;color:var(--dim);display:flex;align-items:center;gap:.3rem}
+  .feat .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+  .footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--dim)}
+  .footer a{color:var(--accent);text-decoration:none}
+  .pw-strength{height:3px;border-radius:2px;margin-top:.3rem;background:var(--border);overflow:hidden}
+  .pw-strength-bar{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="card">
+  <div class="card-header">
+    <div class="logo">BRIDGE <span>AI</span></div>
+    <div class="tagline">AI OPERATING SYSTEM — JOIN THE NETWORK</div>
+  </div>
+  <div class="card-body">
+    <div class="tabs">
+      <div class="tab active" data-panel="register">REGISTER</div>
+      <div class="tab" data-panel="login">LOGIN</div>
+    </div>
 
-<form id="f">
-<input id="email" placeholder="email"><br><br>
-<button type="submit">Register</button>
-</form>
+    <!-- REGISTER -->
+    <div class="form-panel active" id="panel-register">
+      <button class="btn btn-google" onclick="googleAuth()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
+
+      <button class="btn btn-github" onclick="githubAuth()">
+        <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        Continue with GitHub
+      </button>
+
+      <div class="divider">OR REGISTER WITH EMAIL</div>
+
+      <form id="register-form">
+        <label>FULL NAME</label>
+        <input id="reg-name" placeholder="Ryan Saunders" autocomplete="name">
+        <label>EMAIL</label>
+        <input id="reg-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>PASSWORD</label>
+        <input id="reg-password" type="password" placeholder="Min 8 characters" autocomplete="new-password" required minlength="8">
+        <div class="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
+
+        <div class="referral-box">
+          <label>REFERRAL CODE (optional)</label>
+          <input id="reg-referral" placeholder="e.g. BRIDGE2025" style="margin-top:.3rem;background:var(--bg)">
+        </div>
+
+        <button type="submit" class="btn btn-primary">CREATE ACCOUNT</button>
+      </form>
+      <div class="msg" id="reg-msg"></div>
+
+      <div class="features">
+        <div class="feat"><span class="dot"></span> 8 AI Agents</div>
+        <div class="feat"><span class="dot"></span> Task Marketplace</div>
+        <div class="feat"><span class="dot"></span> Digital Twin</div>
+        <div class="feat"><span class="dot"></span> Trading Bots</div>
+        <div class="feat"><span class="dot"></span> PTY Terminal</div>
+        <div class="feat"><span class="dot"></span> Revenue Sharing</div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="form-panel" id="panel-login">
+      <button class="btn btn-google" onclick="googleAuth()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+
+      <div class="divider">OR LOGIN WITH EMAIL</div>
+
+      <form id="login-form">
+        <label>EMAIL</label>
+        <input id="login-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>PASSWORD</label>
+        <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit" class="btn btn-primary">SIGN IN</button>
+      </form>
+      <div class="msg" id="login-msg"></div>
+    </div>
+  </div>
+  <div class="footer">
+    By joining you agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a><br>
+    <a href="/">Back to Dashboard</a>
+  </div>
+</div>
+</div>
 
 <script>
-document.getElementById('f').onsubmit = async (e)=>{
-  e.preventDefault();
-
-  const res = await fetch('/auth/register',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      email: document.getElementById('email').value
-    })
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
   });
+});
 
-  const data = await res.json();
-  alert(JSON.stringify(data));
-};
+// Password strength
+document.getElementById('reg-password').addEventListener('input', (e) => {
+  const pw = e.target.value;
+  const bar = document.getElementById('pw-bar');
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const pct = Math.min(100, score * 20);
+  const colors = ['var(--red)', 'var(--red)', 'var(--yellow)', 'var(--yellow)', 'var(--green)', 'var(--green)'];
+  bar.style.width = pct + '%';
+  bar.style.background = colors[score] || 'var(--red)';
+});
+
+function showMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+// Register
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    email: document.getElementById('reg-email').value,
+    password: document.getElementById('reg-password').value,
+    name: document.getElementById('reg-name').value,
+  };
+  try {
+    const res = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      localStorage.setItem('bridge_token', data.token);
+      showMsg('reg-msg', 'Account created! Redirecting...', true);
+      // Claim referral if provided
+      const ref = document.getElementById('reg-referral').value.trim();
+      if (ref) {
+        await fetch('/referral/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + data.token },
+          body: JSON.stringify({ code: ref }),
+        });
+      }
+      setTimeout(() => { location.href = '/'; }, 1500);
+    } else {
+      showMsg('reg-msg', data.error || 'Registration failed', false);
+    }
+  } catch (err) {
+    showMsg('reg-msg', 'Network error: ' + err.message, false);
+  }
+});
+
+// Login
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    email: document.getElementById('login-email').value,
+    password: document.getElementById('login-password').value,
+  };
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      localStorage.setItem('bridge_token', data.token);
+      showMsg('login-msg', 'Signed in! Redirecting...', true);
+      setTimeout(() => { location.href = '/'; }, 1000);
+    } else {
+      showMsg('login-msg', data.error || 'Login failed', false);
+    }
+  } catch (err) {
+    showMsg('login-msg', 'Network error: ' + err.message, false);
+  }
+});
+
+// Google OAuth (placeholder — needs Google Client ID)
+function googleAuth() {
+  const clientId = window.__GOOGLE_CLIENT_ID || '';
+  if (!clientId) {
+    showMsg('reg-msg', 'Google OAuth not configured yet. Use email registration.', false);
+    return;
+  }
+  const redirect = encodeURIComponent(location.origin + '/auth/google/callback');
+  location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirect}&response_type=code&scope=email%20profile&access_type=offline`;
+}
+
+// GitHub OAuth (placeholder — needs GitHub Client ID)
+function githubAuth() {
+  const clientId = window.__GITHUB_CLIENT_ID || '';
+  if (!clientId) {
+    showMsg('reg-msg', 'GitHub OAuth not configured yet. Use email registration.', false);
+    return;
+  }
+  const redirect = encodeURIComponent(location.origin + '/auth/github/callback');
+  location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirect}&scope=user:email`;
+}
+
+// Auto-fill referral from URL
+const urlRef = new URLSearchParams(location.search).get('ref');
+if (urlRef) document.getElementById('reg-referral').value = urlRef;
 </script>
 </body>
 </html>
