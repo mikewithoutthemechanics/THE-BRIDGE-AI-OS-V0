@@ -516,6 +516,7 @@ app.get('/system-status-dashboard.html', (_req, res) => serveWithNav(path.join(X
 app.get('/terminal.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'terminal.html'), res));
 app.get('/control.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'control.html'), res));
 app.get('/onboarding.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'onboarding.html'), res));
+app.get('/sitemap.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'sitemap.html'), res));
 
 // ── UI ────────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
