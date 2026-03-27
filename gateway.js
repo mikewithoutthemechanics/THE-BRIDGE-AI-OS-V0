@@ -563,13 +563,14 @@ app.get('/topology-layers.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 
 app.get('/abaas.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'abaas.html'), res));
 app.get('/aoe-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'aoe-dashboard.html'), res));
 app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
+app.get('/view-logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
 app.get('/platforms.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'platforms.html'), res));
 app.get('/welcome.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'welcome.html'), res));
 // Serve static assets (logos, SVGs, documents)
 app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
 
 // ── BRAIN NON-API ROUTES — proxy brain endpoints that don't start with /api ──
-const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/teach', '/econ', '/output', '/treasury', '/swarm', '/docs', '/share', '/index.json', '/manifest.json', '/auth/google', '/auth/microsoft', '/auth/github'];
+const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/teach', '/econ', '/output', '/treasury', '/swarm', '/docs', '/share', '/index.json', '/manifest.json', '/auth/google', '/auth/microsoft', '/auth/github', '/view-logs'];
 BRAIN_ROUTES.forEach(prefix => {
   app.all(prefix, async (req, res, next) => {
     try {
