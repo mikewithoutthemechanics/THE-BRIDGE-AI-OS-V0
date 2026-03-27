@@ -1543,6 +1543,10 @@ console.log('[BRAIN] Business suite loaded (17 domains, 49 endpoints)');
 require('./brain-agents.js')(app, state, broadcast);
 console.log('[BRAIN] Agent economy loaded (34 agents, wallets, payroll)');
 
+// ── LOAD SUPACLAW RUNTIME ───────────────────────────────────────────────────
+require('./supaclaw.js')(app, state, broadcast);
+console.log('[BRAIN] SUPACLAW SUPA GURU runtime ACTIVE — master loop running');
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
