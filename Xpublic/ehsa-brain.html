@@ -246,7 +246,7 @@ setInterval(()=>{neuroCompute()},1500);
 
 function animate(){
   requestAnimationFrame(animate);
-  brain.rotation.y+=0.002*cognition;
+  brain.rotation.y+=0.002*neuroState.cognition;
   brain.rotation.x+=0.001;
   renderer.render(scene,camera);
 }
