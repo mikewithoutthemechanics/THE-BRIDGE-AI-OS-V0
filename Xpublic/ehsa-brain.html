@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EHSA — Cognitive Brain</title>
+<style>
+body{margin:0;background:#02030a;color:#00ffd5;font-family:system-ui,monospace;overflow:hidden}
+#ui{position:absolute;left:0;top:0;width:280px;height:100vh;background:rgba(0,0,0,0.7);padding:15px;backdrop-filter:blur(12px);overflow-y:auto;z-index:10}
+.logo{font-size:1.2rem;font-weight:700;letter-spacing:.2em;margin-bottom:.5rem;text-shadow:0 0 12px #00ffd5}
+.sub{font-size:.6rem;color:#4d8878;margin-bottom:1rem}
+.metric{margin:5px 0;font-size:.72rem;display:flex;justify-content:space-between}
+.metric .v{color:#00ffd5;font-weight:700}
+.section{font-size:.6rem;color:#4d8878;letter-spacing:.12em;margin:1rem 0 .3rem;border-bottom:1px solid #1a3d28}
+.agent{padding:3px 0;font-size:.68rem;display:flex;justify-content:space-between}
+.agent .dot{width:6px;height:6px;border-radius:50%;background:#00ffd5;display:inline-block;margin-right:4px}
+.agent .dot.idle{background:#ffd166}
+button{width:100%;margin:4px 0;padding:8px;background:#00ffd5;border:none;color:#000;font-weight:700;font-size:.72rem;cursor:pointer;border-radius:4px;letter-spacing:.05em}
+button:hover{filter:brightness(1.2)}
+.btn-s{background:transparent;color:#00ffd5;border:1px solid #00ffd5}
+.funnel{font-size:.65rem;margin:.3rem 0}
+.funnel .bar{height:4px;background:#1a3d28;border-radius:2px;margin-top:2px}
+.funnel .fill{height:100%;background:#00ffd5;border-radius:2px}
+#links{margin-top:1rem;border-top:1px solid #1a3d28;padding-top:.5rem}
+#links a{display:block;padding:3px 0;font-size:.65rem;color:#4d8878;text-decoration:none}
+#links a:hover{color:#00ffd5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
+</head>
+<body>
+<div id="ui">
+  <div class="logo">EHSA BRAIN</div>
+  <div class="sub">EMPELENI HEALTH SERVICES AFRICA — COGNITIVE ENGINE</div>
+  <div class="metric">Treasury: <span class="v" id="treasury">$0</span></div>
+  <div class="metric">Cycle: <span class="v" id="cycle">0</span></div>
+  <div class="metric">Revenue: <span class="v" id="rev">$0</span></div>
+  <div class="metric">Leads: <span class="v" id="leads">0</span></div>
+  <div class="metric">Pipeline: <span class="v" id="pipeline">0</span></div>
+  <div class="metric">OSINT: <span class="v" id="osint">0</span></div>
+  <div class="section">AGENTS</div>
+  <div id="agents"></div>
+  <div class="section">FUNNEL</div>
+  <div id="funnel"></div>
+  <div class="section">CONTROLS</div>
+  <button onclick="boost()">BOOST COGNITION</button>
+  <button onclick="runAgents()">RUN AGENTS</button>
+  <button onclick="evolve()">EVOLVE</button>
+  <button class="btn-s" onclick="location='/ehsa-app.html'">EHSA APP</button>
+  <button class="btn-s" onclick="location='/'">DASHBOARD</button>
+  <div id="links">
+    <a href="/api/ehsa/dashboard">EHSA API</a>
+    <a href="/api/ehsa/funnel">Funnel Data</a>
+    <a href="/api/ehsa/osint">OSINT Feed</a>
+    <a href="/corporate.html">Corporate Suite</a>
+    <a href="/brain-live">Main Brain</a>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<script>
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,1000);
+camera.position.z=2.8;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+
+const geo=new THREE.SphereGeometry(1,128,128);
+const pos=geo.attributes.position;
+for(let i=0;i<pos.count;i++){
+  let x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  let n=Math.sin(x*8)*Math.cos(y*8)*Math.sin(z*8);
+  pos.setXYZ(i,x+n*0.08,y+n*0.08,z+n*0.08);
+}
+const colors=[];
+for(let i=0;i<pos.count;i++) colors.push(0,0.15,0.2);
+geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.3,metalness:0.2,emissive:0x001111});
+const brain=new THREE.Mesh(geo,mat);
+scene.add(brain);
+const light=new THREE.PointLight(0x00ffd5,2);
+light.position.set(2,2,2);
+scene.add(light);
+scene.add(new THREE.AmbientLight(0x002211,0.5));
+
+let cognition=1;
+function activateRegion(){
+  let r=Math.floor(Math.random()*pos.count);
+  for(let i=r;i<Math.min(r+300,pos.count);i++){
+    geo.attributes.color.setXYZ(i,0.2+Math.random()*0.8,Math.random()*0.5,0);
+  }
+  geo.attributes.color.needsUpdate=true;
+}
+function boost(){cognition+=0.3;activateRegion()}
+function evolve(){mat.emissiveIntensity+=0.3;cognition+=0.5;activateRegion()}
+async function runAgents(){
+  try{await fetch('/api/supaclaw/tick',{method:'POST'});await fetch('/api/ehsa/dashboard');activateRegion()}catch(_){}
+}
+
+// Live data polling
+async function poll(){
+  try{
+    const [ehsa,supaclaw,treasury]=await Promise.all([
+      fetch('/api/ehsa/dashboard').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/supaclaw/runtime').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/treasury/status').then(r=>r.json()).catch(()=>({})),
+    ]);
+    document.getElementById('treasury').textContent='$'+(treasury.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
+    document.getElementById('cycle').textContent=supaclaw.cycle||ehsa.cycle||0;
+    document.getElementById('rev').textContent='$'+(supaclaw.total_revenue||0).toFixed(0);
+    document.getElementById('leads').textContent=ehsa.leads?.total||0;
+    document.getElementById('pipeline').textContent=ehsa.pipeline?.total||0;
+    document.getElementById('osint').textContent=ehsa.osint?.findings||0;
+
+    const agents=(ehsa.agents||[]).map(a=>`<div class="agent"><span><span class="dot"></span>${a}</span></div>`).join('');
+    document.getElementById('agents').innerHTML=agents;
+
+    // Funnel
+    const funnel=await fetch('/api/ehsa/funnel').then(r=>r.json()).catch(()=>({funnel:[]}));
+    const maxF=Math.max(1,...(funnel.funnel||[]).map(f=>f.count));
+    document.getElementById('funnel').innerHTML=(funnel.funnel||[]).map(f=>`<div class="funnel">${f.stage}: ${f.count}<div class="bar"><div class="fill" style="width:${(f.count/maxF*100)}%"></div></div></div>`).join('');
+
+    if(Math.random()>0.6)activateRegion();
+  }catch(_){}
+}
+poll();
+setInterval(poll,5000);
+setInterval(()=>{if(Math.random()>0.7)activateRegion()},2000);
+
+function animate(){
+  requestAnimationFrame(animate);
+  brain.rotation.y+=0.002*cognition;
+  brain.rotation.x+=0.001;
+  renderer.render(scene,camera);
+}
+animate();
+onresize=()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};
+</script>
+</body>
+</html>
