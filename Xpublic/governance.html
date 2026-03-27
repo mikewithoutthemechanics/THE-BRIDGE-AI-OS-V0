@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Governance & Voting - Bridge AI OS</title>
+<style>
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
+.topnav{background:var(--bg2);border-bottom:1px solid #1a2a3a;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;overflow-x:auto;flex-shrink:0}
+.topnav .logo{font-weight:700;font-size:1.1rem;color:var(--a);white-space:nowrap}
+.topnav a{color:var(--t);font-size:.85rem;white-space:nowrap;padding:.35rem .6rem;border-radius:6px;transition:all .2s}
+.topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
+main{flex:1;padding:1.5rem;max-width:1400px;width:100%;margin:0 auto}
+h1{font-size:1.8rem;margin-bottom:.25rem}.subtitle{color:var(--t);margin-bottom:1.5rem}
+.grid{display:grid;gap:1rem}.grid-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}.grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.grid-5{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.25rem}
+.card h2{font-size:1.1rem;margin-bottom:.75rem}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600}
+.badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}.badge-red{background:#ff446622;color:var(--r)}.badge-yellow{background:#ffaa0022;color:var(--y)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;color:var(--t);font-weight:500;padding:.5rem;border-bottom:1px solid #1a2a3a}
+td{padding:.5rem;border-bottom:1px solid #0d1520}
+.btn{display:inline-block;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:all .2s;text-align:center}
+.btn-primary{background:var(--a);color:#000}.btn-green{background:var(--g);color:#000}.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}
+.btn:hover{opacity:.85;text-decoration:none}
+.auth-only{display:none}.upgrade-cta{display:block}
+.cta-box{background:linear-gradient(135deg,#00c8ff11,#00e57b11);border:1px solid #00c8ff33;border-radius:var(--radius);padding:1.5rem;text-align:center;margin:1rem 0}
+.cta-box h3{margin-bottom:.5rem}.cta-box p{color:var(--t);margin-bottom:1rem;font-size:.9rem}
+.tier-bar{display:flex;align-items:center;gap:0;margin:1rem 0;border-radius:8px;overflow:hidden}
+.tier-step{flex:1;padding:.6rem;text-align:center;font-size:.75rem;font-weight:600;position:relative}
+.loading{color:var(--t);font-size:.85rem;padding:1rem 0}
+.proposal{padding:.75rem;background:var(--bg3);border-radius:8px;margin-bottom:.5rem}
+.proposal-title{font-weight:600;margin-bottom:.25rem}
+.proposal-meta{color:var(--t);font-size:.8rem;display:flex;gap:1rem;flex-wrap:wrap}
+.vote-bar{height:6px;background:#1a2a3a;border-radius:3px;margin-top:.5rem;overflow:hidden}
+.vote-fill{height:100%;border-radius:3px}
+@media(max-width:600px){main{padding:1rem}.grid-2{grid-template-columns:1fr}h1{font-size:1.4rem}}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a href="/" class="logo">Bridge AI</a>
+  <a href="/">Dashboard</a>
+  <a href="/trading.html">Trading</a>
+  <a href="/defi.html">DeFi</a>
+  <a href="/wallet.html">Wallet</a>
+  <a href="/governance.html" class="active">Governance</a>
+  <a href="/intelligence.html">Intelligence</a>
+  <a href="/pricing.html">Pricing</a>
+  <a href="/corporate.html">Corporate</a>
+  <a href="/onboarding.html">Onboarding</a>
+</nav>
+<main>
+  <h1>Governance & Voting</h1>
+  <p class="subtitle">Proposals, policies, reputation, and community leadership</p>
+
+  <div class="grid grid-4" style="margin-bottom:1rem">
+    <div class="card" id="stat-proposals"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-voters"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-policies"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-rep"><div class="loading">Loading...</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <h2>Agent Tier Progression</h2>
+    <div class="tier-bar">
+      <div class="tier-step" style="background:#1a2a3a;color:var(--t)">JUNIOR<br><span style="font-size:.65rem;font-weight:400">0 pts</span></div>
+      <div class="tier-step" style="background:#00c8ff22;color:var(--a)">SENIOR<br><span style="font-size:.65rem;font-weight:400">100 pts</span></div>
+      <div class="tier-step" style="background:#00e57b22;color:var(--g)">LEAD<br><span style="font-size:.65rem;font-weight:400">500 pts</span></div>
+      <div class="tier-step" style="background:#ffaa0022;color:var(--y)">MASTER<br><span style="font-size:.65rem;font-weight:400">2,000 pts</span></div>
+      <div class="tier-step" style="background:#a78bfa22;color:#a78bfa">GURU<br><span style="font-size:.65rem;font-weight:400">10,000 pts</span></div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h2>Active Policies <span class="badge badge-green">PUBLIC</span></h2>
+      <div id="policies-list"><div class="loading">Loading policies...</div></div>
+    </div>
+    <div class="card">
+      <h2>Leaderboard <span class="badge badge-green">PUBLIC</span></h2>
+      <table>
+        <thead><tr><th>#</th><th>Agent</th><th>Tier</th><th>Rep</th></tr></thead>
+        <tbody id="leaderboard-body"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="auth-only">
+    <div class="card" style="margin-top:1rem">
+      <h2>Active Proposals <span class="badge badge-blue">Vote Now</span></h2>
+      <div id="proposals-list"><div class="loading">Loading proposals...</div></div>
+      <div style="margin-top:1rem">
+        <button class="btn btn-primary" onclick="alert('Submit proposal form coming soon')">Submit New Proposal</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h2>Your Reputation</h2>
+      <div id="my-rep"><div class="loading">Loading reputation...</div></div>
+    </div>
+  </div>
+
+  <div class="upgrade-cta">
+    <div class="cta-box">
+      <h3>Stake to Vote</h3>
+      <p>Participate in governance, vote on proposals, and build your reputation score. Requires an active account.</p>
+      <a href="/wallet.html" class="btn btn-green" style="margin-right:.5rem">Go to Wallet</a>
+      <a href="/onboarding.html?plan=pro" class="btn btn-primary">Upgrade to Pro</a>
+      <br><br><a href="/pricing.html" style="font-size:.85rem">View plans &rarr;</a>
+    </div>
+  </div>
+</main>
+<script>
+const token=localStorage.getItem('bridge_token'),isAuth=!!token;
+document.querySelectorAll('.auth-only').forEach(el=>el.style.display=isAuth?'':'none');
+document.querySelectorAll('.upgrade-cta').forEach(el=>el.style.display=isAuth?'none':'');
+const headers=token?{Authorization:'Bearer '+token}:{};
+async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;return await r.json()}catch{return null}}
+
+(async()=>{
+  const[dash,proposals,leaderboard,policies]=await Promise.all([
+    f('/api/governance/dashboard'),f('/api/governance/proposals'),f('/api/governance/leaderboard'),f('/api/governance/policies')
+  ]);
+
+  const d=dash||{};
+  document.getElementById('stat-proposals').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Proposals</div><div style="font-size:1.5rem;font-weight:700">${d.totalProposals||d.proposals||'--'}</div>`;
+  document.getElementById('stat-voters').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Active Voters</div><div style="font-size:1.5rem;font-weight:700">${d.activeVoters||d.voters||'--'}</div>`;
+  document.getElementById('stat-policies').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Policies</div><div style="font-size:1.5rem;font-weight:700">${d.totalPolicies||d.policies||'--'}</div>`;
+  document.getElementById('stat-rep').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Your Rep</div><div style="font-size:1.5rem;font-weight:700">${isAuth?(d.myReputation||d.reputation||'--'):'&#128274;'}</div>`;
+
+  // Policies
+  const pol=policies?.policies||policies?.data||[];
+  if(pol.length){
+    document.getElementById('policies-list').innerHTML=pol.slice(0,8).map(p=>`<div style="padding:.5rem;border-bottom:1px solid #1a2a3a"><div style="font-weight:600">${p.name||p.title||'Policy'}</div><div style="color:var(--t);font-size:.8rem">${p.description||p.summary||''}</div></div>`).join('');
+  }else{document.getElementById('policies-list').innerHTML='<div style="color:var(--t)">No policies loaded</div>';}
+
+  // Leaderboard
+  const lb=leaderboard?.leaderboard||leaderboard?.data||[];
+  if(lb.length){
+    document.getElementById('leaderboard-body').innerHTML=lb.slice(0,10).map((l,i)=>{
+      const tier=l.tier||l.rank||'JUNIOR';
+      const cls=tier==='GURU'?'badge-yellow':tier==='MASTER'?'badge-yellow':tier==='LEAD'?'badge-green':tier==='SENIOR'?'badge-blue':'badge-blue';
+      return `<tr><td>${i+1}</td><td><strong>${l.name||l.agent||'Agent'}</strong></td><td><span class="badge ${cls}">${tier}</span></td><td>${l.reputation||l.score||0}</td></tr>`;
+    }).join('');
+  }else{document.getElementById('leaderboard-body').innerHTML='<tr><td colspan="4" style="color:var(--t)">No leaderboard data</td></tr>';}
+
+  // Auth: proposals
+  if(isAuth){
+    const pr=proposals?.proposals||proposals?.data||[];
+    if(pr.length){
+      document.getElementById('proposals-list').innerHTML=pr.slice(0,10).map(p=>{
+        const yes=parseInt(p.votesFor||p.yes||0),no=parseInt(p.votesAgainst||p.no||0),total=yes+no||1;
+        return `<div class="proposal"><div class="proposal-title">${p.title||p.name||'Proposal'}</div><div class="proposal-meta"><span>By ${p.author||p.proposer||'--'}</span><span class="badge ${p.status==='active'?'badge-green':p.status==='passed'?'badge-blue':'badge-yellow'}">${p.status||'active'}</span><span>${yes} for / ${no} against</span></div><div class="vote-bar"><div class="vote-fill" style="width:${(yes/total*100).toFixed(0)}%;background:linear-gradient(90deg,var(--g),var(--a))"></div></div>${p.status==='active'?`<div style="margin-top:.5rem"><button class="btn btn-green" style="padding:.3rem .8rem;font-size:.75rem" onclick="alert('Vote recorded')">Vote For</button> <button class="btn btn-outline" style="padding:.3rem .8rem;font-size:.75rem" onclick="alert('Vote recorded')">Vote Against</button></div>`:''}</div>`;
+      }).join('');
+    }else{document.getElementById('proposals-list').innerHTML='<div style="color:var(--t)">No active proposals</div>';}
+
+    document.getElementById('my-rep').innerHTML=`<div class="grid grid-4"><div><div style="color:var(--t);font-size:.8rem">Score</div><div style="font-size:1.3rem;font-weight:700">${d.myReputation||d.reputation||0}</div></div><div><div style="color:var(--t);font-size:.8rem">Tier</div><div style="font-size:1.3rem;font-weight:700">${d.myTier||d.tier||'JUNIOR'}</div></div><div><div style="color:var(--t);font-size:.8rem">Votes Cast</div><div style="font-size:1.3rem;font-weight:700">${d.myVotes||d.votesCast||0}</div></div><div><div style="color:var(--t);font-size:.8rem">Proposals</div><div style="font-size:1.3rem;font-weight:700">${d.myProposals||d.proposalsSubmitted||0}</div></div></div>`;
+  }
+})();
+</script>
+</body>
+</html>
