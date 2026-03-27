@@ -180,6 +180,29 @@ module.exports = function registerIntelligence(app, state, broadcast) {
     });
   });
 
+  // Loading screen config (Intelligence-driven)
+  app.post('/api/intelligence/loading-screen', (req, res) => {
+    const { route, userId, tenantId } = req.body || {};
+    const layers = { '/': 'L0', '/onboarding.html': 'L0', '/marketplace.html': 'L1', '/ban': 'L1', '/avatar.html': 'L1', '/topology.html': 'L2', '/registry.html': 'L2', '/terminal.html': 'L3', '/control.html': 'L3' };
+    const layer = layers[route] || 'L0';
+    const themes = { L0: { id: 'cosmic_horizon', primary: '#4F46E5', accent: '#22D3EE', bg: '#020617' }, L1: { id: 'blueprint_grid', primary: '#0EA5E9', accent: '#38BDF8', bg: '#020617' }, L2: { id: 'telemetry_pulse', primary: '#22C55E', accent: '#A3E635', bg: '#020617' }, L3: { id: 'command_matrix', primary: '#F97316', accent: '#FDBA74', bg: '#111827' }, L4: { id: 'deep_core', primary: '#EC4899', accent: '#F472B6', bg: '#020617' }, L5: { id: 'grid_engine', primary: '#22C55E', accent: '#22D3EE', bg: '#020617' } };
+    const theme = themes[layer] || themes.L0;
+    const agentMap = { L0: ['horizon', 'foundry'], L1: ['forge', 'oracle'], L2: ['atlas', 'weaver', 'strata'], L3: ['oracle', 'vector', 'glyph'] };
+    const agents = (agentMap[layer] || []).map(id => ({ id, active: true }));
+    const tier = 'pro'; // TODO: resolve from userId
+    res.json({ ok: true, layer, theme, context: { section: route, route, userTier: tier }, agents, visual: { type: 'svg', assetId: theme.id }, copy: { title: `Entering ${layer}...`, meta: `Layer ${layer}` }, monetization: { tier, upsellMessage: tier === 'free' ? 'Upgrade to Pro for full animations' : null } });
+  });
+
+  // Theme catalog
+  app.get('/api/intelligence/themes', (_req, res) => res.json({ ok: true, themes: {
+    L0: { id: 'cosmic_horizon', primary: '#4F46E5', accent: '#22D3EE', bg: '#020617', font: 'Inter, system-ui', motion: 'cubic-bezier(0.4, 0.0, 0.2, 1)', duration: '600ms' },
+    L1: { id: 'blueprint_grid', primary: '#0EA5E9', accent: '#38BDF8', bg: '#020617', font: 'Inter, system-ui', motion: 'cubic-bezier(0.4, 0.0, 0.2, 1)', duration: '500ms' },
+    L2: { id: 'telemetry_pulse', primary: '#22C55E', accent: '#A3E635', bg: '#020617', font: 'Inter, system-ui', motion: 'cubic-bezier(0.4, 0.0, 0.2, 1)', duration: '400ms' },
+    L3: { id: 'command_matrix', primary: '#F97316', accent: '#FDBA74', bg: '#111827', font: 'Inter, system-ui', motion: 'cubic-bezier(0.4, 0.0, 0.2, 1)', duration: '300ms' },
+    L4: { id: 'deep_core', primary: '#EC4899', accent: '#F472B6', bg: '#020617', font: 'Inter, system-ui', motion: 'cubic-bezier(0.4, 0.0, 0.2, 1)', duration: '500ms' },
+    L5: { id: 'grid_engine', primary: '#22C55E', accent: '#22D3EE', bg: '#020617', font: 'Inter, system-ui', motion: 'cubic-bezier(0.4, 0.0, 0.2, 1)', duration: '400ms' },
+  } }));
+
   // Business model
   app.get('/api/intelligence/model', (_req, res) => res.json({ ok: true,
     revenue_sources: [
