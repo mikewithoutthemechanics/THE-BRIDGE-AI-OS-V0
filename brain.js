@@ -884,6 +884,169 @@ app.get('/api/marketing/campaigns', (_req, res) => res.json({ ok: true, campaign
 
 app.get('/api/marketing/leads', (_req, res) => res.json({ ok: true, total: 587, qualified: 234, converted: 85, pipeline_value: 47500 }));
 
+// ── CONSOLIDATED DIGITAL TWIN KERNEL ─────────────────────────────────────────
+// Central twin profile with avatar, identity, economy, and ops wired together
+app.get('/api/twin/full', (_req, res) => {
+  const twin = state.twin;
+  const hash = crypto.createHash('md5').update(JSON.stringify(state)).digest('hex').slice(0, 12);
+  res.json({
+    ok: true,
+    twin: {
+      ...twin,
+      avatar: {
+        model: '/models/MetaHuman.glb',
+        renderer: 'babylon',
+        modes: ['wireframe', 'textured', 'anatomical', 'neural', 'holographic', 'quantum'],
+        active_mode: 'neural',
+        lipsync: true,
+        emotion_driven: true,
+      },
+      identity: {
+        id: 'empe-001',
+        emails: { microsoft: 'supasoloc@yahoo.co.uk', google: '', notion: 'admin@ai-os.co.za', bridgeos: 'ryan@ai-os.co.za' },
+        tenants: { microsoft: ['NHCLTD'], google: ['default'], notion: ["BRIDGE AI OS's Space"] },
+        auth: { jwt: true, keyforge: true, siwe: false, clerk: false, google_oauth: 'pending' },
+      },
+    },
+    economy: {
+      treasury: state.treasury,
+      revenue_streams: [
+        { id: 'subscriptions', name: 'SaaS Subscriptions', mtd: 18500, arr: 222000 },
+        { id: 'marketplace', name: 'Marketplace Fees (15%)', mtd: 4200, arr: 50400 },
+        { id: 'trading', name: 'BossBot Trading Profits', mtd: 3800, arr: 45600 },
+        { id: 'api', name: 'API Usage Metering', mtd: 1200, arr: 14400 },
+        { id: 'consulting', name: 'Consulting & Custom', mtd: 750, arr: 9000 },
+      ],
+      payment_rails: {
+        active: [
+          { id: 'payfast', name: 'PayFast', region: 'ZA', currency: 'ZAR', type: 'fiat', status: 'active' },
+          { id: 'paystack', name: 'Paystack', region: 'NG/GH/ZA', currency: 'ZAR,NGN,USD,GHS', type: 'fiat', status: 'active' },
+          { id: 'crypto_eth', name: 'Ethereum', currency: 'ETH', type: 'crypto', status: 'active', address: '0x...' },
+          { id: 'crypto_btc', name: 'Bitcoin', currency: 'BTC', type: 'crypto', status: 'active' },
+          { id: 'crypto_sol', name: 'Solana', currency: 'SOL', type: 'crypto', status: 'active' },
+          { id: 'brdg_token', name: 'BRDG Token', currency: 'BRDG', type: 'defi', status: 'active' },
+        ],
+        pending: [
+          { id: 'stripe', name: 'Stripe', region: 'Global', currency: 'USD,EUR,GBP', type: 'fiat', status: 'pending' },
+          { id: 'paypal', name: 'PayPal', region: 'Global', currency: 'USD', type: 'fiat', status: 'pending' },
+          { id: 'iban_sepa', name: 'IBAN/SEPA', region: 'EU', currency: 'EUR', type: 'bank', status: 'pending' },
+          { id: 'wise', name: 'Wise (TransferWise)', region: 'Global', currency: 'multi', type: 'bank', status: 'planned' },
+        ],
+      },
+      dex: {
+        pairs: [
+          { pair: 'BRDG/ETH', price: 0.00042, volume_24h: 12500, change: 0.034 },
+          { pair: 'BRDG/USDT', price: 1.28, volume_24h: 34200, change: -0.012 },
+          { pair: 'BRDG/SOL', price: 0.0072, volume_24h: 8900, change: 0.056 },
+        ],
+        liquidity_pools: [
+          { pool: 'BRDG-ETH', tvl: 245000, apy: 0.18 },
+          { pool: 'BRDG-USDT', tvl: 180000, apy: 0.12 },
+        ],
+      },
+      defi: {
+        protocol: 'Bridge DeFi',
+        contracts: { treasury: '0xTreasury...', token: '0xBRDG...', staking: '0xStake...' },
+        staking: { total_staked: 2500000, apy: 0.15, stakers: 342 },
+        ubi: { pool_balance: 45000, distribution_rate: 'monthly', recipients: 156, last_distribution: '2026-03-01' },
+      },
+    },
+    ops: {
+      founder: { name: 'Ryan Saunders', email: 'ryan@ai-os.co.za', role: 'CEO/Founder' },
+      swarm: { agents: swarmAgents.length, active: swarmAgents.filter(a => a.status === 'active').length, strategies: swarmStrategies.length },
+      services: { gateway: ':8080', brain: ':8000', system: ':3000', terminal: ':5002', auth: ':5001' },
+      domain: 'go.ai-os.co.za',
+      vps: { ip: '102.208.228.44', provider: 'WebWay', ram: '6GB', disk: '200GB', region: 'ZA' },
+    },
+    state_version: stateVersion,
+    state_hash: `0x${hash}`,
+  });
+});
+
+// ── PAYMENT WEBHOOKS ────────────────────────────────────────────────────────
+app.post('/api/payments/webhook/payfast', (req, res) => {
+  const { pf_payment_id, payment_status, amount_gross, item_name } = req.body || {};
+  if (payment_status === 'COMPLETE') {
+    state.treasury.balance += parseFloat(amount_gross || 0);
+    state.treasury.earned += parseFloat(amount_gross || 0);
+    broadcast({ type: 'payment_received', rail: 'payfast', amount: amount_gross, item: item_name });
+  }
+  res.json({ ok: true });
+});
+app.post('/api/payments/webhook/paystack', (req, res) => {
+  const { event, data } = req.body || {};
+  if (event === 'charge.success') {
+    const amt = (data?.amount || 0) / 100;
+    state.treasury.balance += amt;
+    state.treasury.earned += amt;
+    broadcast({ type: 'payment_received', rail: 'paystack', amount: amt });
+  }
+  res.json({ ok: true });
+});
+app.post('/api/payments/webhook/crypto', (req, res) => {
+  const { amount, currency, tx_hash } = req.body || {};
+  state.treasury.balance += parseFloat(amount || 0);
+  state.treasury.earned += parseFloat(amount || 0);
+  broadcast({ type: 'payment_received', rail: 'crypto', amount, currency, tx_hash });
+  res.json({ ok: true });
+});
+app.post('/api/payments/webhook/:rail', (req, res) => {
+  broadcast({ type: 'payment_webhook', rail: req.params.rail, body: req.body });
+  res.json({ ok: true, rail: req.params.rail });
+});
+
+// ── DEX ENDPOINTS ───────────────────────────────────────────────────────────
+app.get('/api/dex/pairs', (_req, res) => res.json({ ok: true, pairs: [
+  { pair: 'BRDG/ETH', price: 0.00042, volume_24h: 12500, change: 0.034, high: 0.00045, low: 0.00039 },
+  { pair: 'BRDG/USDT', price: 1.28, volume_24h: 34200, change: -0.012, high: 1.32, low: 1.25 },
+  { pair: 'BRDG/SOL', price: 0.0072, volume_24h: 8900, change: 0.056, high: 0.0078, low: 0.0068 },
+] }));
+app.get('/api/dex/pools', (_req, res) => res.json({ ok: true, pools: [
+  { pool: 'BRDG-ETH', tvl: 245000, apy: 0.18, volume_24h: 15600, fees_24h: 23.4 },
+  { pool: 'BRDG-USDT', tvl: 180000, apy: 0.12, volume_24h: 28300, fees_24h: 42.45 },
+] }));
+app.post('/api/dex/swap', (req, res) => {
+  const { from, to, amount } = req.body || {};
+  const trade = { id: `swap_${Date.now()}`, from, to, amount, rate: 1.28, received: amount * 1.28, fee: amount * 0.003, ts: Date.now() };
+  broadcast({ type: 'dex_swap', data: trade });
+  res.json({ ok: true, trade });
+});
+
+// ── DEFI / UBI ──────────────────────────────────────────────────────────────
+app.get('/api/defi/status', (_req, res) => res.json({ ok: true,
+  staking: { total_staked: 2500000, apy: 0.15, stakers: 342, min_stake: 100 },
+  ubi: { pool: 45000, recipients: 156, rate: 'monthly', last: '2026-03-01', next: '2026-04-01' },
+  governance: { proposals: 3, active_votes: 1, quorum: 0.51 },
+}));
+app.get('/api/ubi/status', (_req, res) => res.json({ ok: true, pool: 45000, recipients: 156, rate: 'monthly', last_distribution: '2026-03-01' }));
+app.post('/api/ubi/claim', (req, res) => {
+  const { address } = req.body || {};
+  res.json({ ok: true, claimed: true, address, amount: 28.85, currency: 'BRDG', next_claim: '2026-04-01' });
+});
+
+// ── WALLET ──────────────────────────────────────────────────────────────────
+app.get('/api/wallet/balance', (_req, res) => res.json({ ok: true, balances: [
+  { currency: 'BRDG', amount: 125000, usd_value: 160000 },
+  { currency: 'ETH', amount: 2.4, usd_value: 8640 },
+  { currency: 'SOL', amount: 45, usd_value: 8010 },
+  { currency: 'BTC', amount: 0.15, usd_value: 10230 },
+  { currency: 'ZAR', amount: 92500, usd_value: 4930 },
+], total_usd: 191810 }));
+
+// ── FOUNDER / OPS ───────────────────────────────────────────────────────────
+app.get('/api/founder/profile', (_req, res) => res.json({ ok: true,
+  name: 'Ryan Saunders', email: 'ryan@ai-os.co.za', role: 'CEO/Founder',
+  companies: ['Bridge AI', 'SupAC', 'Taurus Global Star', 'EHSA', 'Empeleni'],
+  treasury_access: true, admin: true,
+}));
+app.get('/api/ops/overview', (_req, res) => res.json({ ok: true,
+  services_running: 5, pages_deployed: 15, endpoints_active: 99,
+  uptime: process.uptime(), memory_mb: Math.round(process.memoryUsage().heapUsed / 1048576),
+  vps: { ip: '102.208.228.44', domain: 'go.ai-os.co.za', ssl: true, provider: 'WebWay' },
+  git: { repo: 'bridgeaios/THE-BRIDGE-AI-OS-V0', branch: 'feature/supadash-consolidation' },
+  pm2: ['bridge-gateway', 'super-brain', 'god-mode-system', 'terminal-proxy', 'auth-service'],
+}));
+
 // ── DEPLOY ──────────────────────────────────────────────────────────────────
 app.post('/api/deploy/plan', (req, res) => {
   const { target, services } = req.body || {};
@@ -896,6 +1059,25 @@ app.post('/api/deploy/plan', (req, res) => {
     estimated_downtime: '0s (rolling restart)',
   } });
 });
+
+// ── INDEX.JSON (system manifest) ────────────────────────────────────────────
+app.get('/index.json', (_req, res) => res.json({
+  name: 'Bridge AI OS', version: '3.0.0', domain: 'go.ai-os.co.za',
+  pages: [
+    { path: '/', name: 'Dashboard' }, { path: '/topology.html', name: 'Topology' },
+    { path: '/registry.html', name: 'Registry' }, { path: '/marketplace.html', name: 'Marketplace' },
+    { path: '/avatar.html', name: 'Avatar' }, { path: '/system-status-dashboard.html', name: 'Status' },
+    { path: '/terminal.html', name: 'Terminal' }, { path: '/control.html', name: 'Control' },
+    { path: '/ban', name: 'BAN' }, { path: '/onboarding.html', name: 'Join' },
+    { path: '/sitemap.html', name: 'Sitemap' }, { path: '/abaas.html', name: 'ABAAS' },
+    { path: '/aoe-dashboard.html', name: 'AOE' }, { path: '/logs.html', name: 'Logs' },
+    { path: '/topology-layers.html', name: 'Topology Layers' },
+  ],
+  services: { gateway: 8080, brain: 8000, system: 3000, terminal: 5002, auth: 5001 },
+  capabilities: ['twin', 'speech', 'emotion', 'treasury', 'marketplace', 'swarm', 'quant', 'bossbots', 'keyforge', 'rag', 'mcp', 'defi', 'dex', 'ubi'],
+  payment_rails: ['payfast', 'paystack', 'crypto_eth', 'crypto_btc', 'crypto_sol', 'brdg_token', 'stripe_pending', 'paypal_pending', 'iban_pending'],
+  ts: Date.now(),
+}));
 
 // ── NON-PREFIXED ALIASES (for AOE dashboard compatibility) ──────────────────
 app.get('/treasury/summary', (_req, res) => res.json({ ok: true, ...state.treasury }));
