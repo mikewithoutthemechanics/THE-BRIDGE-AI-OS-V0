@@ -1556,6 +1556,10 @@ console.log('[BRAIN] ABAAS agent layer ACTIVE — 8 agents, 3 tiers, trust engin
 require('./supaclaw-economy.js')(app, state, broadcast);
 console.log('[BRAIN] Compound economy engine ACTIVE — TPS control, tax, liquidity, FinTech');
 
+// ── LOAD GITHUB + DOCKER MCP ────────────────────────────────────────────────
+require('./supaclaw-github.js')(app, state, broadcast);
+console.log('[BRAIN] GitHub + Docker MCP integration loaded');
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
