@@ -1160,6 +1160,7 @@ const ALL_SKILLS = [
 state.twin.skills = ALL_SKILLS.map(s => s.id);
 
 app.get('/skills', (_req, res) => res.json({ ok: true, skills: ALL_SKILLS, count: ALL_SKILLS.length }));
+app.get('/skills/definitions', (_req, res) => res.json({ ok: true, definitions: ALL_SKILLS, count: ALL_SKILLS.length }));
 app.get('/graph', (_req, res) => res.json({ ok: true, nodes: state.twin.skills.length, edges: state.twin.skills.length - 1 }));
 app.get('/telemetry', (_req, res) => res.json({ ok: true, uptime: process.uptime(), skills_loaded: ALL_SKILLS.length, total_executions: 42 + Math.floor(process.uptime() / 10), latency_p50_ms: 12, latency_p95_ms: 45, cache_hits: 38 + Math.floor(process.uptime() / 5), cache_misses: 4 }));
 app.get('/run/:id', (req, res) => {
