@@ -455,29 +455,40 @@ app.post('/referral/claim', (req, res) => {
 });
 
 // ── BAN PROXY ────────────────────────────────────────────────────────────────
-// Proxy /ban/* to the BAN FastAPI service on port 8000
-app.all('/ban', async (req, res) => {
+// Try BAN on 8001 (Python FastAPI), fall back to serving BAN frontend with brain on 8000
+app.all('/ban', async (_req, res) => {
+  // Try BAN FastAPI first
   try {
-    const r = await fetch('http://localhost:8001/', { signal: AbortSignal.timeout(5000) });
-    const html = await r.text();
-    res.status(r.status).set('Content-Type', 'text/html').send(html);
+    const r = await fetch('http://localhost:8001/', { signal: AbortSignal.timeout(2000) });
+    if (r.ok) { const html = await r.text(); return res.type('html').send(html); }
+  } catch (_) {}
+  // Fallback: serve BAN frontend pointing at brain (port 8000)
+  try {
+    let html = fs.readFileSync(path.join(ROOT, 'BAN', 'frontend', 'index.html'), 'utf8');
+    // Rewrite BAN frontend to use brain on 8000 instead of 8001
+    html = html.replace(/const BAN_PORT = \d+;/, 'const BAN_PORT = 8000;');
+    if (!html.includes('id="bridge-nav"')) html = html.replace(/<body[^>]*>/i, (m) => m + NAV_HTML);
+    res.type('html').send(html);
   } catch (e) {
-    res.status(502).json({ error: 'BAN service unreachable', details: e.message });
+    res.status(502).json({ error: 'BAN frontend not found', details: e.message });
   }
 });
+// BAN API endpoints — try 8001 first, fallback to brain on 8000
 ['health', 'tasks/add', 'tasks/list', 'tasks/execute', 'nodes', 'consensus/state', 'ledger', 'logs', 'ws'].forEach(ep => {
   app.all(`/ban/${ep}`, async (req, res) => {
-    const url = `http://localhost:8001/${ep}${req._parsedUrl.search || ''}`;
-    try {
-      const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(5000) };
-      if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
-      if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
-      const r = await fetch(url, opts);
-      const text = await r.text();
-      res.status(r.status).set('Content-Type', r.headers.get('content-type') || 'application/json').send(text);
-    } catch (e) {
-      res.status(502).json({ error: 'BAN unreachable', details: e.message });
+    // Try BAN on 8001, then brain on 8000
+    for (const port of [8001, 8000]) {
+      const url = `http://localhost:${port}/${ep}${req._parsedUrl.search || ''}`;
+      try {
+        const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(2000) };
+        if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+        if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+        const r = await fetch(url, opts);
+        const text = await r.text();
+        return res.status(r.status).set('Content-Type', r.headers.get('content-type') || 'application/json').send(text);
+      } catch (_) { continue; }
     }
+    res.status(502).json({ error: 'BAN unreachable on 8001 and 8000' });
   });
 });
 
