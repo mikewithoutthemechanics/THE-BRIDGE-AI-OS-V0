@@ -545,6 +545,23 @@ app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'
 // Serve static assets (logos, SVGs, documents)
 app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
 
+// ── BRAIN PROXY — forward unknown /api/* to brain on 8000 ────────────────────
+// This catches any /api/* route not handled above and proxies to the brain
+app.all('/api/*path', async (req, res) => {
+  const url = `http://localhost:8000${req.originalUrl}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(5000) };
+    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const ct = r.headers.get('content-type') || 'application/json';
+    const text = await r.text();
+    res.status(r.status).set('Content-Type', ct).send(text);
+  } catch (e) {
+    res.status(502).json({ error: 'brain unreachable', path: req.originalUrl, details: e.message });
+  }
+});
+
 // ── UI ────────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
   res.sendFile(path.join(ROOT, 'ui.html'));
