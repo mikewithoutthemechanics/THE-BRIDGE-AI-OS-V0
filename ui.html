@@ -331,7 +331,7 @@
       transition: opacity 1s ease-out;
     }
 
-    #boot-screen.hidden { opacity: 0; pointer-events: none; }
+    #boot-screen.hidden { opacity: 0; pointer-events: none; display: none !important; }
 
     .boot-text {
       font-size: 1.5rem;
@@ -618,7 +618,7 @@
     setTimeout(() => {
       bootText.classList.remove('typing');
       if (callback) callback();
-    }, 2000);
+    }, 400);
   }
 
   function updateProgress(percent) {
@@ -631,13 +631,15 @@
         bootModules[index].classList.add('loaded');
         document.getElementById(`status-${bootModules[index].dataset.module}`).textContent = 'ONLINE';
         loadModule(index + 1);
-      }, 500);
+      }, 150);
     } else {
       setTimeout(() => {
         bootScreen.classList.add('hidden');
         mainUI.classList.add('loaded');
         document.body.classList.add('loaded');
-      }, 1000);
+        // Ensure boot screen is fully removed
+        setTimeout(() => { try { bootScreen.remove(); } catch(_){} }, 500);
+      }, 300);
     }
   }
 
@@ -656,13 +658,13 @@
                   updateProgress(100);
                   setTimeout(() => {
                     typeText(messages[4]);
-                  }, 1000);
+                  }, 200);
                 });
-              }, 1500);
+              }, 300);
             });
-          }, 2000);
+          }, 300);
         });
-      }, 2000);
+      }, 300);
     });
   }
 

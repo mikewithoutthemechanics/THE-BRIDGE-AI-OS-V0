@@ -591,9 +591,9 @@ function serveWithNav(filePath, res) {
   try {
     let html = fs.readFileSync(filePath, 'utf8');
     if (!html.includes('id="bridge-nav"')) {
-      // Determine page path for theming
+      const hasOwnBoot = html.includes('id="boot-screen"');
       const pageName = '/' + path.basename(filePath);
-      const boot = getBootScreen(pageName);
+      const boot = hasOwnBoot ? '' : getBootScreen(pageName);
       html = html.replace(/<body[^>]*>/i, (m) => m + boot + NAV_HTML);
     }
     res.type('html').send(html);
