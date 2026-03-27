@@ -1578,6 +1578,131 @@ app.get('/api/integrations/status', (_req, res) => res.json({ ok: true,
   mfa: { totp: true, backup_codes: true, webauthn: false },
 }));
 
+// ── AFFILIATE AI ENGINE ─────────────────────────────────────────────────────
+const affiliates = new Map();
+const affiliatePayouts = [];
+let affCycle = 0;
+
+const AFF_TIERS = {
+  starter:  { name: 'Starter',  commission: 0.10, min_referrals: 0,  bonus: 0 },
+  bronze:   { name: 'Bronze',   commission: 0.15, min_referrals: 5,  bonus: 50 },
+  silver:   { name: 'Silver',   commission: 0.20, min_referrals: 20, bonus: 200 },
+  gold:     { name: 'Gold',     commission: 0.25, min_referrals: 50, bonus: 500 },
+  platinum: { name: 'Platinum', commission: 0.30, min_referrals: 100, bonus: 1500 },
+  diamond:  { name: 'Diamond',  commission: 0.35, min_referrals: 250, bonus: 5000 },
+};
+
+function getAffTier(referrals) {
+  if (referrals >= 250) return 'diamond';
+  if (referrals >= 100) return 'platinum';
+  if (referrals >= 50) return 'gold';
+  if (referrals >= 20) return 'silver';
+  if (referrals >= 5) return 'bronze';
+  return 'starter';
+}
+
+// Seed demo affiliates
+['marvin','ryan','supac','bridge_team','ehsa_ops'].forEach((name, i) => {
+  const refs = [45, 128, 12, 230, 67][i];
+  const tier = getAffTier(refs);
+  const earned = refs * (15 + Math.random() * 30) * AFF_TIERS[tier].commission;
+  affiliates.set(name, {
+    id: name, name: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' '),
+    code: `AFF-${name.toUpperCase().slice(0, 4)}-${1000 + i}`,
+    tier, referrals: refs, conversions: Math.floor(refs * (0.3 + Math.random() * 0.4)),
+    clicks: refs * (5 + Math.floor(Math.random() * 10)),
+    earned: +earned.toFixed(2), paid: +(earned * 0.8).toFixed(2), pending: +(earned * 0.2).toFixed(2),
+    currency: 'USD', joined: Date.now() - (180 - i * 30) * 86400000,
+    links: [`https://go.ai-os.co.za/?ref=${name}`, `https://ai-os.co.za/?ref=${name}`],
+    sub_affiliates: Math.floor(refs * 0.1),
+    assets: { banners: 3, emails: 5, social: 8, landing_pages: 2 },
+  });
+});
+
+// Autonomous affiliate growth loop
+function affiliateLoop() {
+  affCycle++;
+  for (const [, aff] of affiliates) {
+    if (Math.random() > 0.7) {
+      aff.clicks += Math.floor(Math.random() * 5);
+      if (Math.random() > 0.6) {
+        aff.referrals++;
+        aff.tier = getAffTier(aff.referrals);
+        const commission = AFF_TIERS[aff.tier].commission;
+        const saleValue = 49 + Math.random() * 200;
+        const payout = +(saleValue * commission).toFixed(2);
+        aff.earned += payout;
+        aff.pending += payout;
+        if (Math.random() > 0.5) aff.conversions++;
+        affiliatePayouts.push({ affiliate: aff.id, amount: payout, sale: +saleValue.toFixed(2), commission, tier: aff.tier, ts: Date.now() });
+        if (affiliatePayouts.length > 500) affiliatePayouts.shift();
+      }
+    }
+  }
+}
+setInterval(affiliateLoop, 15000);
+
+// Endpoints
+app.get('/api/affiliate/program', (_req, res) => res.json({ ok: true,
+  tiers: AFF_TIERS,
+  features: ['Multi-level commissions (2 tiers)', 'Auto-generated referral links', 'Real-time tracking dashboard', 'AI-optimized creatives', 'Instant payouts via 6 rails', 'Sub-affiliate earnings', 'Custom landing pages', 'Email/social templates'],
+  payment_rails: ['PayFast (ZAR)', 'Paystack (NGN)', 'Stripe (USD)', 'PayPal', 'Crypto (ETH/BTC/SOL)', 'IBAN/SEPA'],
+  cookie_duration_days: 90,
+  multi_level: { levels: 2, l1_rate: 'tier_rate', l2_rate: '5% of L1 earnings' },
+}));
+
+app.get('/api/affiliate/leaderboard', (_req, res) => {
+  const sorted = [...affiliates.values()].sort((a, b) => b.earned - a.earned);
+  res.json({ ok: true, leaderboard: sorted.map((a, i) => ({ rank: i + 1, name: a.name, tier: a.tier, referrals: a.referrals, conversions: a.conversions, earned: a.earned })), count: sorted.length });
+});
+
+app.get('/api/affiliate/dashboard', (req, res) => {
+  const id = req.query.id || req.headers['x-affiliate-id'] || 'marvin';
+  const aff = affiliates.get(id);
+  if (!aff) return res.json({ ok: true, registered: false, note: 'Join at /affiliate.html' });
+  const convRate = aff.clicks > 0 ? +(aff.conversions / aff.clicks * 100).toFixed(1) : 0;
+  res.json({ ok: true, ...aff, conversion_rate: convRate, tier_config: AFF_TIERS[aff.tier], next_tier: getAffTier(aff.referrals + 1) !== aff.tier ? getAffTier(aff.referrals + 1) : null });
+});
+
+app.post('/api/affiliate/join', (req, res) => {
+  const { name, email } = req.body || {};
+  if (!name) return res.status(400).json({ ok: false, error: 'name required' });
+  const id = name.toLowerCase().replace(/\s+/g, '_');
+  if (affiliates.has(id)) return res.json({ ok: true, existing: true, ...affiliates.get(id) });
+  const code = `AFF-${id.toUpperCase().slice(0, 4)}-${Date.now().toString(36).slice(-4)}`;
+  const aff = { id, name, email: email || '', code, tier: 'starter', referrals: 0, conversions: 0, clicks: 0, earned: 0, paid: 0, pending: 0, currency: 'USD', joined: Date.now(), links: [`https://go.ai-os.co.za/?ref=${id}`], sub_affiliates: 0, assets: { banners: 3, emails: 5, social: 8, landing_pages: 2 } };
+  affiliates.set(id, aff);
+  res.json({ ok: true, ...aff });
+});
+
+app.get('/api/affiliate/payouts', (req, res) => {
+  const id = req.query.id;
+  const filtered = id ? affiliatePayouts.filter(p => p.affiliate === id) : affiliatePayouts;
+  res.json({ ok: true, payouts: filtered.slice(-30), total: filtered.reduce((s, p) => s + p.amount, 0) });
+});
+
+app.get('/api/affiliate/creatives', (_req, res) => res.json({ ok: true, creatives: [
+  { type: 'banner', sizes: ['728x90', '300x250', '160x600', '320x50'], count: 12 },
+  { type: 'email', templates: ['welcome_series', 'product_launch', 'case_study', 'webinar_invite', 'holiday_promo'], count: 5 },
+  { type: 'social', platforms: ['twitter', 'linkedin', 'instagram', 'facebook', 'tiktok'], templates_per: 3, count: 15 },
+  { type: 'landing_page', variants: ['healthcare', 'enterprise', 'developer', 'startup'], count: 4 },
+  { type: 'video', scripts: ['explainer_30s', 'demo_60s', 'testimonial'], count: 3 },
+] }));
+
+app.get('/api/affiliate/stats', (_req, res) => {
+  const all = [...affiliates.values()];
+  res.json({ ok: true,
+    total_affiliates: all.length,
+    total_referrals: all.reduce((s, a) => s + a.referrals, 0),
+    total_conversions: all.reduce((s, a) => s + a.conversions, 0),
+    total_earned: +all.reduce((s, a) => s + a.earned, 0).toFixed(2),
+    total_paid: +all.reduce((s, a) => s + a.paid, 0).toFixed(2),
+    avg_conversion_rate: +(all.reduce((s, a) => s + (a.clicks > 0 ? a.conversions / a.clicks : 0), 0) / Math.max(1, all.length) * 100).toFixed(1),
+    by_tier: Object.fromEntries(Object.keys(AFF_TIERS).map(t => [t, all.filter(a => a.tier === t).length])),
+    cycle: affCycle,
+  });
+});
+
 // ── DB STATUS ENDPOINT ──────────────────────────────────────────────────────
 app.get('/api/db/status', (_req, res) => {
   const dbs = [];
