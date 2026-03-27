@@ -173,11 +173,11 @@
   </div>
   <div class="nav-section">
     <div class="nav-header">APPS</div>
-    <a class="nav-item" href="http://localhost:8000/docs" target="_blank"><span class="nav-ico">🔌</span>API Docs</a>
-    <a class="nav-item" href="http://localhost:7070" target="_blank"><span class="nav-ico">🎨</span>SVG Engine</a>
-    <a class="nav-item" href="http://localhost:3000" target="_blank"><span class="nav-ico">🌐</span>Frontend</a>
-    <a class="nav-item" href="http://localhost:8000/live-map" target="_blank"><span class="nav-ico">🗺</span>Live Map API</a>
-    <a class="nav-item" href="http://localhost:8002" target="_blank" title="Task Mesh scaffold (port 8002)"><span class="nav-ico">⚙</span>Task Mesh</a>
+    <a class="nav-item" href="/docs" target="_blank"><span class="nav-ico">🔌</span>API Docs</a>
+    <a class="nav-item" href="/api/svg" target="_blank"><span class="nav-ico">🎨</span>SVG Engine</a>
+    <a class="nav-item" href="/" target="_blank"><span class="nav-ico">🌐</span>Frontend</a>
+    <a class="nav-item" href="/live-map" target="_blank"><span class="nav-ico">🗺</span>Live Map API</a>
+    <a class="nav-item" href="/ban" target="_blank" title="Task Mesh scaffold (port 8002)"><span class="nav-ico">⚙</span>Task Mesh</a>
   </div>
   <div class="nav-section">
     <div class="nav-header">ECONOMY</div>
@@ -332,27 +332,27 @@
       <div id="detail-body">
         <div class="dsec">
           <h4>SERVICES</h4>
-          <div class="ditem"><span>Backend API</span><a href="http://localhost:8000" target="_blank">:8000</a></div>
-          <div class="ditem"><span>SVG Engine</span><a href="http://localhost:7070" target="_blank">:7070</a></div>
-          <div class="ditem"><span>Frontend</span><a href="http://localhost:3000" target="_blank">:3000</a></div>
-          <div class="ditem"><span>API Docs</span><a href="http://localhost:8000/docs" target="_blank">Swagger ↗</a></div>
+          <div class="ditem"><span>Backend API</span><a href="" target="_blank">:8000</a></div>
+          <div class="ditem"><span>SVG Engine</span><a href="/api/svg" target="_blank">:7070</a></div>
+          <div class="ditem"><span>Frontend</span><a href="/" target="_blank">:3000</a></div>
+          <div class="ditem"><span>API Docs</span><a href="/docs" target="_blank">Swagger ↗</a></div>
         </div>
         <div class="dsec">
           <h4>API ENDPOINTS</h4>
-          <div class="ditem"><a href="http://localhost:8000/health" target="_blank">health</a></div>
-          <div class="ditem"><a href="http://localhost:8000/live-map" target="_blank">live-map</a></div>
-          <div class="ditem"><a href="http://localhost:8000/skills/definitions" target="_blank">skill defs</a></div>
-          <div class="ditem"><a href="http://localhost:8000/treasury/summary" target="_blank">treasury</a></div>
-          <div class="ditem"><a href="http://localhost:8000/econ/circuit-breaker" target="_blank">circuit breaker</a></div>
-          <div class="ditem"><a href="http://localhost:8000/swarm/health" target="_blank">swarm health</a></div>
+          <div class="ditem"><a href="/health" target="_blank">health</a></div>
+          <div class="ditem"><a href="/live-map" target="_blank">live-map</a></div>
+          <div class="ditem"><a href="/skills/definitions" target="_blank">skill defs</a></div>
+          <div class="ditem"><a href="/treasury/summary" target="_blank">treasury</a></div>
+          <div class="ditem"><a href="/econ/circuit-breaker" target="_blank">circuit breaker</a></div>
+          <div class="ditem"><a href="/swarm/health" target="_blank">swarm health</a></div>
         </div>
         <div class="dsec">
           <h4>SVG ENGINE</h4>
-          <div class="ditem"><a href="http://localhost:7070/skills" target="_blank">skill list</a></div>
-          <div class="ditem"><a href="http://localhost:7070/graph" target="_blank">skill graph</a></div>
-          <div class="ditem"><a href="http://localhost:7070/telemetry" target="_blank">telemetry</a></div>
-          <div class="ditem"><a href="http://localhost:7070/teach/bridge.economy" target="_blank">economy SVG</a></div>
-          <div class="ditem"><a href="http://localhost:7070/teach/bridge.youtube" target="_blank">youtube SVG</a></div>
+          <div class="ditem"><a href="/api/svg/skills" target="_blank">skill list</a></div>
+          <div class="ditem"><a href="/api/svg/graph" target="_blank">skill graph</a></div>
+          <div class="ditem"><a href="/api/svg/telemetry" target="_blank">telemetry</a></div>
+          <div class="ditem"><a href="/api/svg/teach/bridge.economy" target="_blank">economy SVG</a></div>
+          <div class="ditem"><a href="/api/svg/teach/bridge.youtube" target="_blank">youtube SVG</a></div>
         </div>
         <div class="dsec">
           <h4>ASSETS · E:\A</h4>
@@ -372,7 +372,7 @@
 <div id="toast"></div>
 
 <script>
-const API='http://localhost:8000', SVG='http://localhost:7070';
+const API='', SVG='';
 let _tab='overview', _visSk='', _visMode='teach', _allSk=[];
 
 // CLOCK
