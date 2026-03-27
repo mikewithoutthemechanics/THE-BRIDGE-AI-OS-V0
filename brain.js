@@ -1112,6 +1112,15 @@ app.all('/api/*path', (req, res) => {
 require('./brain-business.js')(app, state, broadcast);
 console.log('[BRAIN] Business suite loaded (17 domains, 49 endpoints)');
 
+// ── DB STATUS ENDPOINT (report all databases) ───────────────────────────────
+app.get('/api/db/status', (_req, res) => {
+  const dbs = [];
+  try { const s = fs.statSync(path.join(__dirname, 'users.db')); dbs.push({ name: 'users.db', tables: ['users','referrals','payments','_migrations'], size_kb: Math.round(s.size/1024), engine: 'sqlite', managed_by: 'auth.js' }); } catch (_) {}
+  try { const s = fs.statSync(path.join(__dirname, 'empeleni.db')); dbs.push({ name: 'empeleni.db', tables: ['clients','payments'], size_kb: Math.round(s.size/1024), engine: 'sqlite', managed_by: 'server.js (PayFast)' }); } catch (_) {}
+  dbs.push({ name: 'brain-memory', tables: ['contacts','invoices','quotes','vendors','inventory','debts','tickets','customers','rules','legal','docs','tools','shares'], engine: 'in-memory', managed_by: 'brain.js + brain-business.js', note: 'Volatile — data lost on restart' });
+  res.json({ ok: true, databases: dbs, count: dbs.length });
+});
+
 // ── START ───────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`[BRAIN] Bridge AI Super Brain running on http://localhost:${PORT}`);
