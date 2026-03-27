@@ -1185,6 +1185,65 @@ state.twin.skills = ALL_SKILLS.map(s => s.id);
 
 app.get('/skills', (_req, res) => res.json({ ok: true, skills: ALL_SKILLS, count: ALL_SKILLS.length }));
 app.get('/skills/definitions', (_req, res) => res.json({ ok: true, definitions: ALL_SKILLS, count: ALL_SKILLS.length }));
+// ── LIVE BRAIN SVG FRONTEND (integrated from brain-live.js spec) ─────────────
+app.get('/brain-live', (_req, res) => {
+  res.type('html').send(`<!DOCTYPE html><html><body style="margin:0;background:black;color:white;overflow:hidden">
+<svg id="brain" viewBox="0 0 800 600" width="100%" height="100%"></svg>
+<div style="position:fixed;bottom:10px;left:10px;font-family:monospace;font-size:11px;color:#4d6678">
+  <span id="info">Connecting...</span>
+</div>
+<script>
+const WS=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws/brain');
+WS.onopen=()=>{document.getElementById('info').textContent='BRAIN LIVE — Connected';};
+WS.onmessage=(e)=>{try{render(JSON.parse(e.data))}catch(_){}};
+WS.onerror=()=>{document.getElementById('info').textContent='WS Error — retrying...'};
+// Also poll REST
+setInterval(async()=>{
+  try{
+    const [tasks,agents,treasury]=await Promise.all([
+      fetch('/api/supaclaw/runtime').then(r=>r.json()),
+      fetch('/api/abaas/trust').then(r=>r.json()),
+      fetch('/api/treasury/status').then(r=>r.json()),
+    ]);
+    render({supaclaw:tasks,agents:agents.trust||[],treasury});
+  }catch(_){}
+},3000);
+function render(state){
+  const svg=document.getElementById('brain');
+  let h='';
+  // Core pulse
+  h+='<circle cx="400" cy="300" r="80" stroke="#00c8ff" fill="none" stroke-width="1"><animate attributeName="r" values="70;100;70" dur="3s" repeatCount="indefinite"/></circle>';
+  h+='<text x="400" y="305" fill="#00c8ff" font-family="monospace" font-size="12" text-anchor="middle" font-weight="700">BRAIN</text>';
+  // Treasury
+  const bal=state.treasury?.balance||0;
+  h+='<text x="400" y="500" fill="#00e57b" font-family="monospace" font-size="14" text-anchor="middle">TREASURY: $'+bal.toLocaleString()+'</text>';
+  // Agents (trust leaderboard)
+  const agents=state.agents||[];
+  agents.slice(0,8).forEach((a,i)=>{
+    const x=80+i*90,y=100,r=8+a.trust*12;
+    const color=a.trust>0.9?'#00e57b':a.trust>0.7?'#00c8ff':'#ffd166';
+    h+='<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+color+'" opacity="0.7"><animate attributeName="r" values="'+(r-2)+';'+(r+3)+';'+(r-2)+'" dur="'+(2+i*0.3)+'s" repeatCount="indefinite"/></circle>';
+    h+='<text x="'+x+'" y="'+(y+r+12)+'" fill="#4d6678" font-family="monospace" font-size="7" text-anchor="middle">'+((a.name||a.id||'').slice(0,6))+'</text>';
+    // Connection to core
+    h+='<line x1="'+x+'" y1="'+y+'" x2="400" y2="300" stroke="#1a2d40" stroke-width="0.5"/>';
+    h+='<circle r="2" fill="'+color+'"><animateMotion dur="'+(3+i)+'s" repeatCount="indefinite" path="M'+x+','+y+' L400,300"/></circle>';
+  });
+  // Supaclaw cycle info
+  const sc=state.supaclaw||{};
+  h+='<text x="400" y="550" fill="#4d6678" font-family="monospace" font-size="9" text-anchor="middle">Cycle: '+(sc.cycle||0)+' | Executed: '+(sc.opportunities_executed||0)+' | Revenue: $'+(sc.total_revenue||0).toFixed(0)+'</text>';
+  // Skill regions
+  const regions=[{l:'COGNITIVE',x:400,y:80,c:'#22D3EE'},{l:'CORE',x:250,y:200,c:'#4F46E5'},{l:'BUSINESS',x:150,y:350,c:'#0D9488'},{l:'ECONOMY',x:400,y:420,c:'#F59E0B'},{l:'TRADING',x:650,y:300,c:'#84CC16'},{l:'SECURITY',x:550,y:180,c:'#EC4899'}];
+  regions.forEach(r=>{
+    h+='<circle cx="'+r.x+'" cy="'+r.y+'" r="30" fill="none" stroke="'+r.c+'" stroke-width="0.5" opacity="0.4"><animate attributeName="r" values="25;35;25" dur="5s" repeatCount="indefinite"/></circle>';
+    h+='<text x="'+r.x+'" y="'+(r.y+4)+'" fill="'+r.c+'" font-family="monospace" font-size="8" text-anchor="middle">'+r.l+'</text>';
+    h+='<line x1="'+r.x+'" y1="'+r.y+'" x2="400" y2="300" stroke="'+r.c+'" stroke-width="0.3" opacity="0.3"/>';
+  });
+  svg.innerHTML=h;
+  document.getElementById('info').textContent='BRAIN LIVE — Cycle '+(sc.cycle||0)+' | $'+bal.toLocaleString();
+}
+</script></body></html>`);
+});
+
 app.get('/api/skills/portfolio', (_req, res) => {
   const byLayer = {}, byTier = {}, byType = {};
   ALL_SKILLS.forEach(s => {
