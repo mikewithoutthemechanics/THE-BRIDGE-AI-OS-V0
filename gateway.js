@@ -626,6 +626,7 @@ ALL_PAGES.forEach(p => {
 // Gateway sub-page
 app.get('/gateway/index.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'gateway', 'index.html'), res));
 app.get('/platforms.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'platforms.html'), res));
+app.get('/brand.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'brand.html'), res));
 app.get('/welcome.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'welcome.html'), res));
 // Serve static assets (logos, SVGs, documents)
 app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
