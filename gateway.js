@@ -621,7 +621,7 @@ app.get('/view-logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.
 // All dynamic pages (subdomain homes + imported BridgeLiveWall + everything)
 const ALL_PAGES = [
   'bridge-home','ban-home','supac-home','ehsa-home','aurora-home','ubi-home','aid-home','abaas-home','hospital-home','rootedearth-home',
-  'applications','admin','agents','digital-twin-console','docs','executive-dashboard','landing','join','settings','twin-wall',
+  'applications','admin','agents','digital-twin-console','docs','executive-dashboard','landing','join','settings','twin-wall','ehsa-brain','ehsa-app',
   '50-applications','anatomical_face','anatomical_face_constrained_system','anatomical_face_embodied','anatomical_face_facs','anatomical_face_tension_balanced','anatomical_face_vector_muscle',
 ];
 ALL_PAGES.forEach(p => {
