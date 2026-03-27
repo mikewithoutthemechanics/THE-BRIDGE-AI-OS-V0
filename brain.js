@@ -389,13 +389,21 @@ app.get('/api/state/snapshot', (_req, res) => {
   res.json({ ok: true, state_version: stateVersion, state_hash: `0x${hash}`, ts: Date.now() });
 });
 app.get('/api/telemetry', (_req, res) => res.json({ ok: true, uptime: process.uptime(), memory: process.memoryUsage(), ts: Date.now() }));
-app.get('/api/telemetry/events', (_req, res) => res.json({ ok: true, events: [
+const telemetryEvents = [];
+app.post('/api/telemetry/events', (req, res) => {
+  const event = { ...req.body, ts: Date.now() };
+  telemetryEvents.push(event);
+  if (telemetryEvents.length > 200) telemetryEvents.shift();
+  broadcast({ type: 'telemetry_event', data: event });
+  res.json({ ok: true, received: true, event });
+});
+app.get('/api/telemetry/events', (_req, res) => res.json({ ok: true, events: telemetryEvents.length > 0 ? telemetryEvents.slice(-50) : [
   { type: 'system_boot', ts: Date.now() - process.uptime() * 1000 },
   { type: 'brain_active', ts: Date.now() - (process.uptime() - 1) * 1000 },
   { type: 'agents_loaded', count: 71, ts: Date.now() - (process.uptime() - 2) * 1000 },
   { type: 'loops_started', count: 7, ts: Date.now() - (process.uptime() - 3) * 1000 },
   { type: 'treasury_update', balance: state.treasury.balance, ts: Date.now() },
-], count: 5 }));
+], count: telemetryEvents.length || 5 }));
 app.get('/api/capabilities', (_req, res) => res.json({ ok: true, capabilities: [
   'twin', 'speech', 'emotion', 'treasury', 'marketplace', 'missions',
   'swarm', 'cli', 'skills', 'sdg', 'esim', 'bossbots', 'sensors', 'reasoning',
