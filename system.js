@@ -521,6 +521,40 @@ function handler(req, res) {
   if (url === '/api/swarms')          return json(orchestrator.swarms);
   if (url === '/api/economics')       return json(aggregateEconomics());
 
+  // ================= UNIVERSAL SHARE ENDPOINTS =================
+  if (url.startsWith('/share/')) {
+    const parts = url.split('/');
+    const shareId = parts[2];
+    const action = parts[3]; // context, history, or metadata
+
+    try {
+      const sharePath = path.join(ROOT, 'artifacts', 'share', `${shareId}.json`);
+      const shareData = JSON.parse(fs.readFileSync(sharePath, 'utf8'));
+
+      if (action === 'context') {
+        return json(shareData.context);
+      } else if (action === 'history') {
+        return json({
+          shareId,
+          created: new Date().toISOString(),
+          events: [{
+            timestamp: new Date().toISOString(),
+            action: "created",
+            agent: "bridgeos.operator.v3"
+          }]
+        });
+      } else if (action === 'metadata') {
+        const { context, ...metadata } = shareData;
+        // Remove base64 image data from context if present
+        const cleanContext = { ...context };
+        delete cleanContext.imageBase64;
+        return json({ ...metadata, context: cleanContext });
+      }
+    } catch (error) {
+      return json({ error: "Share not found" }, 404);
+    }
+  }
+
   fs.readFile(HTML, (err, buf) => {
     if (err) { res.writeHead(404); return res.end('topology.html not found'); }
     res.writeHead(200, {

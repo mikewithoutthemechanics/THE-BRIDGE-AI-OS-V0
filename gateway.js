@@ -200,74 +200,53 @@ function paramStr(p) {
 }
 
 // ── API: AVATAR ───────────────────────────────────────────────────────────────
-// Wildcard handler for avatar rendering endpoints.
+app.get('/api/avatar/modes', (_req, res) => {
+  res.json(data.getAvatarModes());
+});
 app.get('/api/avatar/*path', (req, res) => {
-  const subpath = paramStr(req.params.path) || 'default';
-  res.json({
-    stub: true,
-    endpoint: `/api/avatar/${subpath}`,
-    scene: {
-      type: 'babylon-scene',
-      avatar_id: subpath,
-      mesh: 'humanoid_base_v1',
-      texture: 'default_skin',
-      animation: 'idle',
-      position: { x: 0, y: 0, z: 0 },
-      scale: 1.0,
-    },
-    ts: Date.now(),
-  });
+  const mode = paramStr(req.params.path) || 'wireframe';
+  res.json(data.getAvatarScene(mode));
 });
 
 // ── API: REGISTRY ─────────────────────────────────────────────────────────────
-// Wildcard handler for registry data (kernel, network, security, etc.).
-app.get('/api/registry/*path', (req, res) => {
+const REGISTRY_HANDLERS = {
+  kernel:     () => data.getRegistryKernel(),
+  network:    () => data.getRegistryNetwork(),
+  security:   () => data.getRegistrySecurity(),
+  federation: () => data.getRegistryFederation(),
+  jobs:       () => data.getRegistryJobs(),
+  market:     () => data.getRegistryMarket(),
+  bridgeos:   () => data.getRegistryBridgeOS(),
+  nodemap:    () => data.getRegistryNodemap(),
+};
+app.get('/api/registry/*path', async (req, res) => {
   const namespace = paramStr(req.params.path) || 'root';
-  const REGISTRY_STUBS = {
-    kernel:   { version: '4.2.1', modules: ['scheduler', 'ipc', 'memory'], status: 'healthy' },
-    network:  { interfaces: ['eth0', 'lo'], dns: ['8.8.8.8', '1.1.1.1'], status: 'healthy' },
-    security: { tls: true, firewall: 'active', last_scan: new Date().toISOString(), status: 'healthy' },
-  };
-  const data = REGISTRY_STUBS[namespace] || { namespace, status: 'unknown', entries: [] };
-  res.json({ stub: true, namespace, data, ts: Date.now() });
+  const handler = REGISTRY_HANDLERS[namespace];
+  if (handler) {
+    const result = await handler();
+    return res.json({ namespace, data: result, ts: Date.now() });
+  }
+  // List available namespaces
+  res.json({ namespace, available: Object.keys(REGISTRY_HANDLERS), ts: Date.now() });
 });
 
 // ── API: MARKETPLACE ──────────────────────────────────────────────────────────
-// Wildcard handler for marketplace (tasks, DEX, wallet, skills, portfolio, stats).
-app.get('/api/marketplace/*path', (req, res) => {
+const MARKET_HANDLERS = {
+  tasks:     () => data.getMarketplaceTasks(),
+  dex:       () => data.getMarketplaceDex(),
+  wallet:    () => data.getMarketplaceWallet(),
+  skills:    () => data.getMarketplaceSkills(),
+  portfolio: () => data.getMarketplacePortfolio(),
+  stats:     () => data.getMarketplaceStats(),
+};
+app.get('/api/marketplace/*path', async (req, res) => {
   const section = paramStr(req.params.path) || 'index';
-  const MARKET_STUBS = {
-    tasks: {
-      open: 14, in_progress: 7, completed_today: 23,
-      listings: [
-        { id: 't001', title: 'Lead enrichment run', reward: 120, status: 'open' },
-        { id: 't002', title: 'Sentiment analysis batch', reward: 85, status: 'open' },
-      ],
-    },
-    dex: {
-      pairs: ['USD/BRIDGE', 'ETH/BRIDGE'],
-      liquidity_usd: 480000,
-      volume_24h: 12350,
-    },
-    wallet: {
-      address: '0xSTUB000000000000000000000000000000000000',
-      balances: [{ token: 'BRIDGE', amount: 5000 }, { token: 'ETH', amount: 1.2 }],
-    },
-    skills: {
-      available: ['nlp', 'vision', 'forecasting', 'scraping', 'summarisation'],
-      installed: ['nlp', 'scraping'],
-    },
-    portfolio: {
-      total_value_usd: 62400,
-      assets: [{ name: 'BRIDGE', usd: 5000 }, { name: 'ETH', usd: 3200 }],
-    },
-    stats: {
-      total_tasks: 1482, total_agents: agentNames.length,
-      revenue_total: 138000, uptime_pct: 99.7,
-    },
-  };
-  const data = MARKET_STUBS[section] || { section, status: 'unknown', items: [] };
-  res.json({ stub: true, section, data, ts: Date.now() });
+  const handler = MARKET_HANDLERS[section];
+  if (handler) {
+    const result = await handler();
+    return res.json({ section, data: result, ts: Date.now() });
+  }
+  res.json({ section, available: Object.keys(MARKET_HANDLERS), ts: Date.now() });
 });
 
 // ── API: STATUS ───────────────────────────────────────────────────────────────
@@ -278,6 +257,7 @@ app.get('/api/status', async (req, res) => {
     { id: 'system',       url: 'http://localhost:3000/health', port: 3000 },
     { id: 'ainode',       url: 'http://localhost:3001/health', port: 3001 },
     { id: 'orchestrator', url: 'http://localhost:3002/health', port: 3002 },
+    { id: 'ban',          url: 'http://localhost:8001/health', port: 8000 },
   ];
 
   const results = await Promise.all(
@@ -474,6 +454,33 @@ app.post('/referral/claim', (req, res) => {
   res.json({ success: true, code, credits, message: `${credits} credits applied to your account` });
 });
 
+// ── BAN PROXY ────────────────────────────────────────────────────────────────
+// Proxy /ban/* to the BAN FastAPI service on port 8000
+app.all('/ban', async (req, res) => {
+  try {
+    const r = await fetch('http://localhost:8001/', { signal: AbortSignal.timeout(5000) });
+    const html = await r.text();
+    res.status(r.status).set('Content-Type', 'text/html').send(html);
+  } catch (e) {
+    res.status(502).json({ error: 'BAN service unreachable', details: e.message });
+  }
+});
+['health', 'tasks/add', 'tasks/list', 'tasks/execute', 'nodes', 'consensus/state', 'ledger', 'logs', 'ws'].forEach(ep => {
+  app.all(`/ban/${ep}`, async (req, res) => {
+    const url = `http://localhost:8001/${ep}${req._parsedUrl.search || ''}`;
+    try {
+      const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(5000) };
+      if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+      if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+      const r = await fetch(url, opts);
+      const text = await r.text();
+      res.status(r.status).set('Content-Type', r.headers.get('content-type') || 'application/json').send(text);
+    } catch (e) {
+      res.status(502).json({ error: 'BAN unreachable', details: e.message });
+    }
+  });
+});
+
 // ── STATIC HTML PAGES ─────────────────────────────────────────────────────────
 const XPUBLIC = path.join(ROOT, 'Xpublic');
 
@@ -483,6 +490,7 @@ app.get('/marketplace.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'mar
 app.get('/avatar.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'avatar.html')));
 app.get('/system-status-dashboard.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'system-status-dashboard.html')));
 app.get('/terminal.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'terminal.html')));
+app.get('/control.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'control.html')));
 
 // ── UI ────────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {

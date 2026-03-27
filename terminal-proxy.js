@@ -1,24 +1,26 @@
 // =============================================================================
-// BRIDGE AI OS — Terminal WebSocket Proxy
+// BRIDGE AI OS — Local Terminal Server
 // Port: 5002
-// Proxies browser WebSocket connections to Xcontainerx PTY server on port 3001
+// Spawns local PTY shells via node-pty, streams to browser over WebSocket
 // =============================================================================
 
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const crypto = require('crypto');
+const os = require('os');
+const path = require('path');
+const pty = require('node-pty');
 
 const PORT = parseInt(process.env.TERMINAL_PROXY_PORT, 10) || 5002;
-const PTY_HOST = process.env.PTY_HOST || 'localhost';
-const PTY_PORT = parseInt(process.env.PTY_PORT, 10) || 3001;
-const PTY_TOKEN = process.env.CONTAINERX_TOKEN || 'secure-token-change-me';
 const MAX_SESSIONS = 10;
 const HEARTBEAT_MS = 30000;
 
+const shell = os.platform() === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/bash');
+
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ server, path: '/terminal' });
 
 const sessions = new Map();
 
@@ -27,6 +29,10 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   next();
 });
+
+// ── Static files ──
+app.use(express.static(path.join(__dirname, 'Xpublic')));
+app.get('/', (_req, res) => res.redirect('/terminal.html'));
 
 // ── Health ──
 app.get('/health', (_req, res) => {
@@ -42,26 +48,26 @@ wss.on('connection', (clientWs, req) => {
   }
 
   const sessionId = crypto.randomBytes(16).toString('hex');
-  let ptyWs = null;
   let alive = true;
 
-  // Connect to Xcontainerx PTY
-  try {
-    ptyWs = new WebSocket(`ws://${PTY_HOST}:${PTY_PORT}`, PTY_TOKEN);
-  } catch (err) {
-    clientWs.send(JSON.stringify({ type: 'error', message: 'Failed to connect to PTY server' }));
-    clientWs.close();
-    return;
-  }
+  // Spawn local PTY
+  const ptyProcess = pty.spawn(shell, [], {
+    name: 'xterm-256color',
+    cols: 80,
+    rows: 24,
+    cwd: process.env.HOME || process.env.USERPROFILE || '.',
+    env: process.env,
+  });
 
-  const session = { id: sessionId, clientWs, ptyWs, createdAt: Date.now() };
+  const session = { id: sessionId, clientWs, ptyProcess, createdAt: Date.now() };
   sessions.set(sessionId, session);
 
   // Send session info to client
   clientWs.send(JSON.stringify({ type: 'session', id: sessionId }));
+  clientWs.send(JSON.stringify({ type: 'connected' }));
 
   // PTY -> Browser
-  ptyWs.on('message', (data) => {
+  ptyProcess.onData((data) => {
     try {
       if (clientWs.readyState === WebSocket.OPEN) {
         clientWs.send(data);
@@ -69,20 +75,9 @@ wss.on('connection', (clientWs, req) => {
     } catch (_) {}
   });
 
-  ptyWs.on('open', () => {
-    clientWs.send(JSON.stringify({ type: 'connected' }));
-  });
-
-  ptyWs.on('error', (err) => {
+  ptyProcess.onExit(({ exitCode }) => {
     try {
-      clientWs.send(JSON.stringify({ type: 'error', message: 'PTY connection error' }));
-    } catch (_) {}
-    cleanup();
-  });
-
-  ptyWs.on('close', () => {
-    try {
-      clientWs.send(JSON.stringify({ type: 'pty-closed' }));
+      clientWs.send(JSON.stringify({ type: 'pty-closed', exitCode }));
     } catch (_) {}
     cleanup();
   });
@@ -90,11 +85,20 @@ wss.on('connection', (clientWs, req) => {
   // Browser -> PTY
   clientWs.on('message', (msg) => {
     const str = typeof msg === 'string' ? msg : msg.toString();
-    if (str.length > 1024) return;
 
-    if (ptyWs && ptyWs.readyState === WebSocket.OPEN) {
-      ptyWs.send(str);
+    // Handle resize messages
+    try {
+      const parsed = JSON.parse(str);
+      if (parsed.type === 'resize' && parsed.cols && parsed.rows) {
+        ptyProcess.resize(parsed.cols, parsed.rows);
+        return;
+      }
+    } catch (_) {
+      // Not JSON, treat as terminal input
     }
+
+    if (str.length > 1024) return;
+    ptyProcess.write(str);
   });
 
   // Heartbeat
@@ -117,7 +121,7 @@ wss.on('connection', (clientWs, req) => {
   function cleanup() {
     clearInterval(heartbeat);
     sessions.delete(sessionId);
-    try { if (ptyWs && ptyWs.readyState !== WebSocket.CLOSED) ptyWs.close(); } catch (_) {}
+    try { ptyProcess.kill(); } catch (_) {}
     try { if (clientWs.readyState !== WebSocket.CLOSED) clientWs.close(); } catch (_) {}
   }
 
@@ -127,7 +131,7 @@ wss.on('connection', (clientWs, req) => {
 
 // ── Start ──
 server.listen(PORT, () => {
-  console.log(`[TERMINAL-PROXY] Running on ws://localhost:${PORT}`);
-  console.log(`[TERMINAL-PROXY] Proxying to PTY server at ws://${PTY_HOST}:${PTY_PORT}`);
-  console.log(`[TERMINAL-PROXY] Max sessions: ${MAX_SESSIONS}`);
+  console.log(`[TERMINAL] Running on ws://localhost:${PORT}`);
+  console.log(`[TERMINAL] Shell: ${shell}`);
+  console.log(`[TERMINAL] Max sessions: ${MAX_SESSIONS}`);
 });
