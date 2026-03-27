@@ -623,6 +623,7 @@ const ALL_PAGES = [
   'bridge-home','ban-home','supac-home','ehsa-home','aurora-home','ubi-home','aid-home','abaas-home','hospital-home','rootedearth-home',
   'applications','admin','agents','digital-twin-console','docs','executive-dashboard','landing','join','settings','twin-wall','ehsa-brain','ehsa-app',
   '50-applications','anatomical_face','anatomical_face_constrained_system','anatomical_face_embodied','anatomical_face_facs','anatomical_face_tension_balanced','anatomical_face_vector_muscle',
+  'trading','defi','wallet','governance','intelligence','pricing','view-logs','corporate',
 ];
 ALL_PAGES.forEach(p => {
   app.get(`/${p}.html`, (_req, res) => serveWithNav(path.join(XPUBLIC, `${p}.html`), res));
