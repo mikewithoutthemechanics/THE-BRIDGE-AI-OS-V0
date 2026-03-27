@@ -515,6 +515,7 @@ const NAV_HTML = `<nav id="bridge-nav" style="background:#0a1520;border-bottom:2
 <a href="/abaas.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">ABAAS</a>
 <a href="/aoe-dashboard.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">AOE</a>
 <span style="color:#1a2d40;margin:0 2px">|</span>
+<a href="/platforms.html" style="color:#fb923c;text-decoration:none;padding:2px 5px;border:1px solid #3a2a1a;border-radius:3px;background:rgba(251,146,60,.08)">NET</a>
 <a href="/sitemap.html" style="color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px">MAP</a>
 <a href="/onboarding.html" style="color:#00e57b;text-decoration:none;padding:2px 5px;border:1px solid #0d3a1a;border-radius:3px;background:rgba(0,229,123,.08)">JOIN</a>
 </nav>`;
@@ -542,6 +543,7 @@ app.get('/topology-layers.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 
 app.get('/abaas.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'abaas.html'), res));
 app.get('/aoe-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'aoe-dashboard.html'), res));
 app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
+app.get('/platforms.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'platforms.html'), res));
 // Serve static assets (logos, SVGs, documents)
 app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
 

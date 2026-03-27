@@ -1079,6 +1079,45 @@ app.get('/index.json', (_req, res) => res.json({
   ts: Date.now(),
 }));
 
+// ── SUBDOMAIN ROUTING (for multi-platform) ──────────────────────────────────
+app.get('/api/subdomain/resolve', (req, res) => {
+  const host = req.query.host || req.hostname || '';
+  const routes = {
+    'go.ai-os.co.za': '/',
+    'bridge.ai-os.co.za': '/',
+    'ban.ai-os.co.za': '/ban',
+    'supac.ai-os.co.za': '/abaas.html',
+    'ehsa.ai-os.co.za': '/platforms.html#ehsa',
+    'aurora.ai-os.co.za': '/avatar.html',
+    'ubi.ai-os.co.za': '/platforms.html#ubi',
+    'aid.ai-os.co.za': '/platforms.html#aid',
+    'abaas.ai-os.co.za': '/abaas.html',
+    'hospitalinabox.ai-os.co.za': '/platforms.html#hospital',
+    'rootedearth.ai-os.co.za': '/platforms.html#rootedearth',
+  };
+  const dest = routes[host] || '/';
+  res.json({ ok: true, host, destination: dest, platforms: Object.keys(routes).length });
+});
+
+// ── NETWORK VALUE CALCULATOR ────────────────────────────────────────────────
+app.get('/api/network/value', (_req, res) => {
+  const platforms = 10;
+  const rails = 6;
+  const agents = 8;
+  const endpoints = 130;
+  const treasury = state.treasury.balance;
+  const metcalfe = Math.pow(platforms + agents, 2); // Metcalfe's law: value = n²
+  const network_value = treasury + (metcalfe * 100); // base + network effect
+  res.json({ ok: true,
+    platforms, rails, agents, endpoints, treasury,
+    metcalfe_n: platforms + agents,
+    metcalfe_value: metcalfe * 100,
+    network_value: +network_value.toFixed(2),
+    formula: 'treasury + (platforms + agents)² × 100',
+    motto: 'Your network is your net worth',
+  });
+});
+
 // ── NON-PREFIXED ALIASES (for AOE dashboard compatibility) ──────────────────
 app.get('/treasury/summary', (_req, res) => res.json({ ok: true, ...state.treasury }));
 app.get('/treasury/status', (_req, res) => res.json({ ok: true, ...state.treasury }));
