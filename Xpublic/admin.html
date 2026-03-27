@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRIDGE AI OS — Admin Keys</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #060810;
+            --bg-secondary: #0a0e17;
+            --bg-tertiary: #111827;
+            --bg-glass: rgba(10, 14, 23, 0.85);
+            --border-color: rgba(99, 255, 218, 0.12);
+            --border-glow: rgba(99, 255, 218, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #63ffda;
+            --accent-blue: #38bdf8;
+            --accent-purple: #a78bfa;
+            --accent-pink: #f472b6;
+            --accent-orange: #fb923c;
+            --accent-red: #f87171;
+            --accent-green: #4ade80;
+            --gradient-primary: linear-gradient(135deg, #63ffda 0%, #38bdf8 50%, #a78bfa 100%);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            font-family: 'Outfit', -apple-system, sans-serif;
+            color: var(--text-primary);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(99, 255, 218, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .shell {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 20px 60px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .back {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .header .back:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* Status banner */
+        .status-banner {
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+        .status-banner.success {
+            display: flex;
+            background: rgba(74, 222, 128, 0.08);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            color: var(--accent-green);
+        }
+        .status-banner.error {
+            display: flex;
+            background: rgba(248, 113, 113, 0.08);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            color: var(--accent-red);
+        }
+
+        /* Warning */
+        .warning-box {
+            padding: 16px 18px;
+            border-radius: 12px;
+            margin-bottom: 28px;
+            background: rgba(251, 146, 60, 0.06);
+            border: 1px solid rgba(251, 146, 60, 0.15);
+            font-size: 13px;
+            color: var(--accent-orange);
+            line-height: 1.6;
+        }
+        .warning-box strong { color: #fbbf24; }
+
+        /* Key groups */
+        .group {
+            margin-bottom: 32px;
+        }
+        .group-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+            padding-left: 2px;
+        }
+
+        /* Key row */
+        .key-row {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .key-row:hover {
+            border-color: var(--border-glow);
+        }
+        .key-row .top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .key-row .name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-cyan);
+            font-weight: 500;
+        }
+        .key-row .status {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-weight: 500;
+        }
+        .status.set {
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+        .status.missing {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--accent-red);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+        }
+        .status.placeholder {
+            background: rgba(251, 146, 60, 0.1);
+            color: var(--accent-orange);
+            border: 1px solid rgba(251, 146, 60, 0.2);
+        }
+        .key-row .desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .key-row .input-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .key-row input {
+            flex: 1;
+            height: 40px;
+            padding: 0 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .key-row input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(99, 255, 218, 0.08);
+        }
+        .key-row input::placeholder {
+            color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+        }
+        .key-row .link-btn {
+            height: 40px;
+            padding: 0 14px;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 10px;
+            color: var(--accent-blue);
+            font-size: 12px;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            white-space: nowrap;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .key-row .link-btn:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-blue);
+        }
+
+        /* Save button */
+        .save-section {
+            position: sticky;
+            bottom: 0;
+            padding: 16px 0;
+            background: linear-gradient(to top, var(--bg-primary) 60%, transparent);
+            z-index: 10;
+        }
+        .btn-save {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 14px;
+            background: var(--gradient-primary);
+            color: #060810;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 24px rgba(99, 255, 218, 0.15);
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(99, 255, 218, 0.25);
+        }
+        .btn-save:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .stat .num {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .stat .label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Focus visible */
+        input:focus-visible, button:focus-visible, a:focus-visible {
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .key-row .input-row { flex-direction: column; }
+            .key-row .link-btn { width: 100%; justify-content: center; }
+            .stats { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <div class="header">
+            <h1>API Key Management</h1>
+            <a href="/" class="back">Back to Dashboard</a>
+        </div>
+
+        <div class="warning-box">
+            <strong>Security:</strong> Keys are saved to the server's <code>.env</code> file via <code>/api/admin/keys</code>.
+            This page should only be accessible to the system operator. Never expose it publicly.
+            After saving, restart the backend for changes to take effect.
+        </div>
+
+        <div id="statusBanner" class="status-banner"></div>
+
+        <div class="stats" id="stats"></div>
+
+        <div id="keyGroups"></div>
+
+        <div class="save-section">
+            <button class="btn-save" id="saveBtn" onclick="saveKeys()">Save All Keys</button>
+        </div>
+    </div>
+
+    <script type="module" src="/src/admin.js"></script>
+</body>
+</html>

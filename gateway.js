@@ -564,6 +564,10 @@ app.get('/abaas.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'abaas.htm
 app.get('/aoe-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'aoe-dashboard.html'), res));
 app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
 app.get('/view-logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
+// Subdomain homepages
+['bridge-home','ban-home','supac-home','ehsa-home','aurora-home','ubi-home','aid-home','abaas-home','hospital-home','rootedearth-home','applications','admin'].forEach(p => {
+  app.get(`/${p}.html`, (_req, res) => serveWithNav(path.join(XPUBLIC, `${p}.html`), res));
+});
 app.get('/platforms.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'platforms.html'), res));
 app.get('/welcome.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'welcome.html'), res));
 // Serve static assets (logos, SVGs, documents)
@@ -607,8 +611,26 @@ app.all('/api/*path', async (req, res) => {
   }
 });
 
-// ── UI ────────────────────────────────────────────────────────────────────────
-app.get('/', (_req, res) => {
+// ── SUBDOMAIN ROUTING ────────────────────────────────────────────────────────
+const SUBDOMAIN_MAP = {
+  'bridge.ai-os.co.za': 'bridge-home.html',
+  'ban.ai-os.co.za': 'ban-home.html',
+  'supac.ai-os.co.za': 'supac-home.html',
+  'ehsa.ai-os.co.za': 'ehsa-home.html',
+  'aurora.ai-os.co.za': 'aurora-home.html',
+  'ubi.ai-os.co.za': 'ubi-home.html',
+  'aid.ai-os.co.za': 'aid-home.html',
+  'abaas.ai-os.co.za': 'abaas-home.html',
+  'hospitalinabox.ai-os.co.za': 'hospital-home.html',
+  'rootedearth.ai-os.co.za': 'rootedearth-home.html',
+};
+
+app.get('/', (req, res) => {
+  const host = req.hostname || req.headers.host?.split(':')[0] || '';
+  const subPage = SUBDOMAIN_MAP[host];
+  if (subPage) {
+    return serveWithNav(path.join(XPUBLIC, subPage), res);
+  }
   serveWithNav(path.join(ROOT, 'ui.html'), res);
 });
 
