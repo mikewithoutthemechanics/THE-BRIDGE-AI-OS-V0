@@ -534,6 +534,10 @@ const NAV_HTML = `
 <a href="/abaas.html">ABAAS</a>
 <a href="/aoe-dashboard.html">AOE</a>
 <span class="sep">|</span>
+<a href="/corporate.html">BIZ</a>
+<a href="/brand.html">BRAND</a>
+<a href="/brain-live">BRAIN</a>
+<span class="sep">|</span>
 <a href="/platforms.html" class="net">NET</a>
 <a href="/sitemap.html">MAP</a>
 <a href="/onboarding.html" class="join">JOIN</a>
