@@ -671,6 +671,7 @@ app.all('/api/*path', async (req, res) => {
 
 // ── SUBDOMAIN ROUTING ────────────────────────────────────────────────────────
 app.get('/home.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'home.html'), res));
+app.get('/corporate.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'corporate.html'), res));
 
 const SUBDOMAIN_MAP = {
   'ai-os.co.za': 'home.html',
