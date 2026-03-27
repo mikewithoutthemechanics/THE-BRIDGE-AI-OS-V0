@@ -484,14 +484,27 @@ app.all('/ban', async (req, res) => {
 // ── STATIC HTML PAGES ─────────────────────────────────────────────────────────
 const XPUBLIC = path.join(ROOT, 'Xpublic');
 
-app.get('/topology.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'topology.html')));
-app.get('/registry.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'registry.html')));
-app.get('/marketplace.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'marketplace.html')));
-app.get('/avatar.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'avatar.html')));
-app.get('/system-status-dashboard.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'system-status-dashboard.html')));
-app.get('/terminal.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'terminal.html')));
-app.get('/control.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'control.html')));
-app.get('/onboarding.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'onboarding.html')));
+// ── UNIVERSAL NAV (injected into every page) ────────────────────────────────
+const NAV_HTML = `<nav id="bridge-nav" style="background:#0a1520;border-bottom:2px solid #1a2d40;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:system-ui,monospace;font-size:11px;letter-spacing:.08em;position:sticky;top:0;z-index:9999"><a href="/" style="color:#00c8ff;text-decoration:none;font-weight:700;font-size:13px;margin-right:8px">BRIDGE AI</a><a href="/topology.html" style="color:#4d6678;text-decoration:none;padding:3px 7px;border:1px solid #1a2d40;border-radius:4px">TOPOLOGY</a><a href="/registry.html" style="color:#4d6678;text-decoration:none;padding:3px 7px;border:1px solid #1a2d40;border-radius:4px">REGISTRY</a><a href="/marketplace.html" style="color:#4d6678;text-decoration:none;padding:3px 7px;border:1px solid #1a2d40;border-radius:4px">MARKET</a><a href="/avatar.html" style="color:#4d6678;text-decoration:none;padding:3px 7px;border:1px solid #1a2d40;border-radius:4px">AVATAR</a><a href="/system-status-dashboard.html" style="color:#4d6678;text-decoration:none;padding:3px 7px;border:1px solid #1a2d40;border-radius:4px">STATUS</a><a href="/terminal.html" style="color:#4d6678;text-decoration:none;padding:3px 7px;border:1px solid #1a2d40;border-radius:4px">TERM</a><a href="/control.html" style="color:#4d6678;text-decoration:none;padding:3px 7px;border:1px solid #1a2d40;border-radius:4px">CONTROL</a><a href="/ban" style="color:#4d6678;text-decoration:none;padding:3px 7px;border:1px solid #1a2d40;border-radius:4px">BAN</a><a href="/onboarding.html" style="color:#4d6678;text-decoration:none;padding:3px 7px;border:1px solid #1a2d40;border-radius:4px">JOIN</a></nav>`;
+
+function serveWithNav(filePath, res) {
+  try {
+    let html = fs.readFileSync(filePath, 'utf8');
+    if (!html.includes('id="bridge-nav"')) {
+      html = html.replace(/<body[^>]*>/i, (m) => m + NAV_HTML);
+    }
+    res.type('html').send(html);
+  } catch (e) { res.status(404).send('Page not found'); }
+}
+
+app.get('/topology.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'topology.html'), res));
+app.get('/registry.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'registry.html'), res));
+app.get('/marketplace.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'marketplace.html'), res));
+app.get('/avatar.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'avatar.html'), res));
+app.get('/system-status-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'system-status-dashboard.html'), res));
+app.get('/terminal.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'terminal.html'), res));
+app.get('/control.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'control.html'), res));
+app.get('/onboarding.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'onboarding.html'), res));
 
 // ── UI ────────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
