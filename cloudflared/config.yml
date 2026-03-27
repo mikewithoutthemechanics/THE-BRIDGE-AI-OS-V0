@@ -1,0 +1,15 @@
+tunnel: 05a48265-7470-4f48-8161-31f218c7a99b
+credentials-file: /opt/bridge-ai-os/cloudflared/05a48265-7470-4f48-8161-31f218c7a99b.json
+
+ingress:
+  - hostname: dev.bridge-ai-os.com
+    service: http://127.0.0.1:8080
+    originRequest:
+      noTLSVerify: true
+  - hostname: brain.bridge-ai-os.com
+    service: http://127.0.0.1:8000
+  - hostname: ban.bridge-ai-os.com
+    service: http://127.0.0.1:8001
+  - hostname: terminal.bridge-ai-os.com
+    service: http://127.0.0.1:5002
+  - service: http_status:404

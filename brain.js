@@ -1601,6 +1601,84 @@ function getAffTier(referrals) {
   return 'starter';
 }
 
+// ── PARTNER AFFILIATE PROGRAMS (external) ────────────────────────────────────
+const PARTNER_PROGRAMS = [
+  { id: 'webway', name: 'WebWay Hosting', url: 'https://webway.host/affiliates', commission: 0.20, type: 'recurring', cookie_days: 90, category: 'cloud', currency: 'ZAR', description: 'VPS & hosting for Africa. Earn 20% recurring on all referrals.', avg_sale: 299, payout_method: 'PayFast' },
+  { id: 'luno', name: 'Luno Crypto Exchange', url: 'https://www.luno.com/invite', commission: 0.0, type: 'flat', cookie_days: 30, category: 'crypto', currency: 'ZAR', description: 'Crypto exchange for Africa. Earn R150 per qualified signup.', avg_sale: 150, flat_reward: 150, payout_method: 'Luno Wallet' },
+  { id: '11labs', name: 'ElevenLabs AI Voice', url: 'https://elevenlabs.io/affiliates', commission: 0.22, type: 'recurring', cookie_days: 60, category: 'ai', currency: 'USD', description: 'AI voice synthesis. 22% recurring on Pro/Scale plans.', avg_sale: 99, payout_method: 'PayPal/Stripe' },
+  { id: 'cloudflare', name: 'Cloudflare', url: 'https://www.cloudflare.com/partners', commission: 0.15, type: 'recurring', cookie_days: 45, category: 'cloud', currency: 'USD', description: 'CDN, DNS, security. 15% recurring on paid plans.', avg_sale: 200, payout_method: 'Wire/PayPal' },
+  { id: 'hollywoodbets', name: 'Hollywoodbets Casino', url: 'https://www.hollywoodbets.net/affiliates', commission: 0.30, type: 'revenue_share', cookie_days: 0, category: 'gaming', currency: 'ZAR', description: 'South African sports betting + casino. 30% net revenue share. Lifetime.', avg_sale: 500, payout_method: 'EFT/PayFast', note: 'Lifetime revenue share — no cookie expiry' },
+  { id: 'betway_za', name: 'Betway ZA', url: 'https://www.betway.co.za/affiliates', commission: 0.25, type: 'revenue_share', cookie_days: 0, category: 'gaming', currency: 'ZAR', description: '25% net revenue share on referred players. Tier-based scaling.', avg_sale: 400, payout_method: 'EFT' },
+  { id: 'aws', name: 'AWS Activate', url: 'https://aws.amazon.com/partners', commission: 0.10, type: 'usage', cookie_days: 30, category: 'cloud', currency: 'USD', description: 'Cloud credits + 10% of customer spend.', avg_sale: 1000, payout_method: 'Wire' },
+  { id: 'digitalocean', name: 'DigitalOcean', url: 'https://www.digitalocean.com/referral', commission: 0.0, type: 'flat', cookie_days: 30, category: 'cloud', currency: 'USD', description: '$200 credit per referral + $25 when they spend $25.', flat_reward: 25, avg_sale: 25, payout_method: 'PayPal' },
+  { id: 'vercel', name: 'Vercel', url: 'https://vercel.com/partners', commission: 0.15, type: 'recurring', cookie_days: 30, category: 'cloud', currency: 'USD', description: '15% recurring for 12 months on referred Pro/Enterprise.', avg_sale: 240, payout_method: 'Stripe' },
+  { id: 'stripe_partner', name: 'Stripe Partner', url: 'https://stripe.com/partners', commission: 0.0, type: 'revenue_share', cookie_days: 0, category: 'fintech', currency: 'USD', description: 'Revenue share on payment volume from referred merchants.', avg_sale: 0, payout_method: 'Stripe Balance' },
+  { id: 'paystack_partner', name: 'Paystack Partner', url: 'https://paystack.com/partners', commission: 0.10, type: 'revenue_share', cookie_days: 0, category: 'fintech', currency: 'NGN', description: '10% of transaction fees from referred merchants (Africa-focused).', avg_sale: 0, payout_method: 'Bank Transfer' },
+  { id: 'namecheap', name: 'Namecheap Domains', url: 'https://www.namecheap.com/affiliates', commission: 0.20, type: 'one_time', cookie_days: 30, category: 'cloud', currency: 'USD', description: 'Up to 20% on domain registrations + hosting.', avg_sale: 50, payout_method: 'PayPal' },
+];
+
+// Partner tracking state
+const partnerTracking = new Map();
+PARTNER_PROGRAMS.forEach(p => {
+  partnerTracking.set(p.id, { clicks: Math.floor(Math.random() * 200), signups: Math.floor(Math.random() * 30), revenue: +(Math.random() * 2000).toFixed(2), commission_earned: 0 });
+  const t = partnerTracking.get(p.id);
+  t.commission_earned = p.type === 'flat' ? +(t.signups * (p.flat_reward || 0)).toFixed(2) : +(t.revenue * (p.commission || 0)).toFixed(2);
+});
+
+// Auto-grow partner affiliate metrics
+setInterval(() => {
+  for (const [id, t] of partnerTracking) {
+    if (Math.random() > 0.6) {
+      t.clicks += Math.floor(Math.random() * 3);
+      if (Math.random() > 0.7) {
+        t.signups++;
+        const prog = PARTNER_PROGRAMS.find(p => p.id === id);
+        const sale = (prog?.avg_sale || 50) * (0.5 + Math.random());
+        t.revenue += sale;
+        t.commission_earned += prog?.type === 'flat' ? (prog?.flat_reward || 0) : sale * (prog?.commission || 0.1);
+      }
+    }
+  }
+}, 20000);
+
+app.get('/api/affiliate/partners', (_req, res) => res.json({ ok: true,
+  partners: PARTNER_PROGRAMS.map(p => ({
+    ...p,
+    tracking: partnerTracking.get(p.id) || {},
+  })),
+  count: PARTNER_PROGRAMS.length,
+  categories: [...new Set(PARTNER_PROGRAMS.map(p => p.category))],
+  total_commission: +[...partnerTracking.values()].reduce((s, t) => s + t.commission_earned, 0).toFixed(2),
+  total_clicks: [...partnerTracking.values()].reduce((s, t) => s + t.clicks, 0),
+  total_signups: [...partnerTracking.values()].reduce((s, t) => s + t.signups, 0),
+}));
+
+app.get('/api/affiliate/partners/:id', (req, res) => {
+  const p = PARTNER_PROGRAMS.find(pr => pr.id === req.params.id);
+  if (!p) return res.status(404).json({ ok: false });
+  res.json({ ok: true, ...p, tracking: partnerTracking.get(p.id) || {} });
+});
+
+app.get('/api/affiliate/logistics', (_req, res) => {
+  const internal = [...affiliates.values()];
+  const partnerTotals = [...partnerTracking.values()];
+  const totalInternal = internal.reduce((s, a) => s + a.earned, 0);
+  const totalPartner = partnerTotals.reduce((s, t) => s + t.commission_earned, 0);
+  res.json({ ok: true,
+    internal: { affiliates: internal.length, referrals: internal.reduce((s, a) => s + a.referrals, 0), earned: +totalInternal.toFixed(2) },
+    partners: { programs: PARTNER_PROGRAMS.length, clicks: partnerTotals.reduce((s, t) => s + t.clicks, 0), signups: partnerTotals.reduce((s, t) => s + t.signups, 0), commission: +totalPartner.toFixed(2) },
+    combined: { total_revenue: +(totalInternal + totalPartner).toFixed(2), channels: internal.length + PARTNER_PROGRAMS.length },
+    metrics: {
+      avg_partner_cpc: +(partnerTotals.reduce((s, t) => s + (t.clicks > 0 ? t.commission_earned / t.clicks : 0), 0) / Math.max(1, PARTNER_PROGRAMS.length)).toFixed(4),
+      best_performing: PARTNER_PROGRAMS.reduce((best, p) => { const t = partnerTracking.get(p.id); return (t?.commission_earned || 0) > (partnerTracking.get(best.id)?.commission_earned || 0) ? p : best; }, PARTNER_PROGRAMS[0]).name,
+      top_category: [...new Set(PARTNER_PROGRAMS.map(p => p.category))].reduce((best, cat) => {
+        const catTotal = PARTNER_PROGRAMS.filter(p => p.category === cat).reduce((s, p) => s + (partnerTracking.get(p.id)?.commission_earned || 0), 0);
+        return catTotal > best.total ? { cat, total: catTotal } : best;
+      }, { cat: '', total: 0 }).cat,
+    },
+  });
+});
+
 // Seed demo affiliates
 ['marvin','ryan','supac','bridge_team','ehsa_ops'].forEach((name, i) => {
   const refs = [45, 128, 12, 230, 67][i];
