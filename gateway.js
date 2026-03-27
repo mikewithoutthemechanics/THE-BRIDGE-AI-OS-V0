@@ -545,6 +545,27 @@ app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'
 // Serve static assets (logos, SVGs, documents)
 app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
 
+// ── BRAIN NON-API ROUTES — proxy brain endpoints that don't start with /api ──
+const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/teach', '/econ', '/output', '/treasury', '/swarm', '/docs', '/share'];
+BRAIN_ROUTES.forEach(prefix => {
+  app.all(prefix, async (req, res, next) => {
+    try {
+      const r = await fetch(`http://localhost:8000${req.originalUrl}`, { signal: AbortSignal.timeout(3000) });
+      const ct = r.headers.get('content-type') || 'application/json';
+      const text = await r.text();
+      res.status(r.status).set('Content-Type', ct).send(text);
+    } catch (_) { next(); }
+  });
+  app.all(`${prefix}/*path`, async (req, res, next) => {
+    try {
+      const r = await fetch(`http://localhost:8000${req.originalUrl}`, { signal: AbortSignal.timeout(3000) });
+      const ct = r.headers.get('content-type') || 'application/json';
+      const text = await r.text();
+      res.status(r.status).set('Content-Type', ct).send(text);
+    } catch (_) { next(); }
+  });
+});
+
 // ── BRAIN PROXY — forward unknown /api/* to brain on 8000 ────────────────────
 // This catches any /api/* route not handled above and proxies to the brain
 app.all('/api/*path', async (req, res) => {
