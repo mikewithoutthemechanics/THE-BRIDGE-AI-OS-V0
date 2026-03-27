@@ -157,18 +157,25 @@ exports.getRegistrySecurity = function() {
     }
   } catch (_) {}
 
+  // Count UFW rules
+  let fwRules = 0;
+  try {
+    if (os.platform() !== 'win32') {
+      const out = execSync('ufw status numbered 2>/dev/null | grep -c "\\[" || echo 0', { encoding: 'utf8', timeout: 3000 });
+      fwRules = parseInt(out.trim()) || 0;
+    }
+  } catch (_) {}
+
   return {
-    tls_enabled: tlsEnabled,
-    tls_provider: tlsEnabled ? 'Let\'s Encrypt' : 'none',
-    tls_rating: tlsEnabled ? 'A+' : 'none',
-    cert_expires: certExpires,
-    firewall: firewallStatus,
-    keyforge: 'active',
-    keyforge_epoch: Math.floor(Date.now() / 1000 / 600),
+    tls: { enabled: tlsEnabled, version: tlsEnabled ? 'TLSv1.3' : null, provider: tlsEnabled ? 'Let\'s Encrypt' : 'none', rating: tlsEnabled ? 'A+' : null, cert_expires: certExpires },
+    firewall: { enabled: firewallStatus === 'active', status: firewallStatus, rules: fwRules, blocked_today: 0 },
+    keyforge: { active: true, epoch: Math.floor(Date.now() / 1000 / 600) },
     auth_methods: ['JWT', 'KeyForge', 'Bearer'],
-    mfa: false,
+    mfa: { enabled: false, status: 'PENDING' },
+    active_sessions: 0,
+    threat_level: tlsEnabled && firewallStatus === 'active' ? 'LOW' : 'MEDIUM',
     last_scan: new Date().toISOString(),
-    status: tlsEnabled ? 'healthy' : 'warning',
+    status: tlsEnabled && firewallStatus === 'active' ? 'healthy' : 'warning',
     ts: Date.now(),
   };
 };
