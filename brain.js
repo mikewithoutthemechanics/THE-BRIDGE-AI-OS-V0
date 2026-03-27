@@ -1547,6 +1547,10 @@ console.log('[BRAIN] Agent economy loaded (34 agents, wallets, payroll)');
 require('./supaclaw.js')(app, state, broadcast);
 console.log('[BRAIN] SUPACLAW SUPA GURU runtime ACTIVE — master loop running');
 
+// ── LOAD ABAAS LAYER ────────────────────────────────────────────────────────
+require('./supaclaw-abaas.js')(app, state, broadcast);
+console.log('[BRAIN] ABAAS agent layer ACTIVE — 8 agents, 3 tiers, trust engine');
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
