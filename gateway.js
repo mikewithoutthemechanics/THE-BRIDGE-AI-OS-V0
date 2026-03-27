@@ -546,7 +546,7 @@ app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'
 app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
 
 // ── BRAIN NON-API ROUTES — proxy brain endpoints that don't start with /api ──
-const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/teach', '/econ', '/output', '/treasury', '/swarm', '/docs', '/share'];
+const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/teach', '/econ', '/output', '/treasury', '/swarm', '/docs', '/share', '/index.json'];
 BRAIN_ROUTES.forEach(prefix => {
   app.all(prefix, async (req, res, next) => {
     try {
