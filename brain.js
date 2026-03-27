@@ -897,6 +897,11 @@ app.post('/api/deploy/plan', (req, res) => {
   } });
 });
 
+// ── NON-PREFIXED ALIASES (for AOE dashboard compatibility) ──────────────────
+app.get('/treasury/summary', (_req, res) => res.json({ ok: true, ...state.treasury }));
+app.get('/treasury/status', (_req, res) => res.json({ ok: true, ...state.treasury }));
+app.get('/swarm/health', (_req, res) => res.json({ ok: true, ...state.swarm, ts: Date.now() }));
+
 // ── SVG ENGINE PROXY (replaces port 7070) ───────────────────────────────────
 app.get('/skills', (_req, res) => res.json({ ok: true, skills: state.twin.skills.map((s, i) => ({ id: `bridge.${s}`, name: s, tags: [s], version: '1.0.0' })) }));
 app.get('/graph', (_req, res) => res.json({ ok: true, nodes: state.twin.skills.length, edges: state.twin.skills.length - 1 }));
