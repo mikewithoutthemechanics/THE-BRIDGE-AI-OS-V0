@@ -1103,14 +1103,14 @@ app.get('/econ/circuit-breaker', (_req, res) => res.json({ ok: true, tripped: fa
 // ── OUTPUT DIR (for AOE builds) ─────────────────────────────────────────────
 app.get('/output/', (_req, res) => res.type('html').send('<html><body>No builds yet</body></html>'));
 
+// ── LOAD BUSINESS SUITE ─────────────────────────────────────────────────────
+require('./brain-business.js')(app, state, broadcast);
+console.log('[BRAIN] Business suite loaded (17 domains, 49 endpoints)');
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
 });
-
-// ── LOAD BUSINESS SUITE ─────────────────────────────────────────────────────
-require('./brain-business.js')(app, state, broadcast);
-console.log('[BRAIN] Business suite loaded (17 domains, 49 endpoints)');
 
 // ── DB STATUS ENDPOINT (report all databases) ───────────────────────────────
 app.get('/api/db/status', (_req, res) => {
