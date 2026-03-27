@@ -1675,6 +1675,10 @@ console.log('[BRAIN] Agent fabric ACTIVE — 9 agents: atlas, weaver, forge, ora
 require('./supaclaw-governance.js')(app, state, broadcast);
 console.log('[BRAIN] Swarm governance ACTIVE — 20 agents, 5 tiers, 5 clusters, governance loop');
 
+// ── LOAD EHSA REVENUE ENGINE ─────────────────────────────────────────────────
+require('./supaclaw-ehsa.js')(app, state, broadcast);
+console.log('[BRAIN] EHSA autonomous revenue engine ACTIVE (OSINT + leads + quotes + pipeline)');
+
 // ── LOAD USL + GLYPH VISUAL ENGINE ──────────────────────────────────────────
 require('./supaclaw-usl.js')(app, state, broadcast);
 console.log('[BRAIN] USL (Universal Share Layer) + Glyph (HD SVG engine) ACTIVE');
