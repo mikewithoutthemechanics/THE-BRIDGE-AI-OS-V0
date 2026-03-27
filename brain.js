@@ -1572,6 +1572,10 @@ console.log('[BRAIN] Swarm governance ACTIVE — 20 agents, 5 tiers, 5 clusters,
 require('./supaclaw-usl.js')(app, state, broadcast);
 console.log('[BRAIN] USL (Universal Share Layer) + Glyph (HD SVG engine) ACTIVE');
 
+// ── LOAD INTELLIGENCE LAYER (IL-0) ──────────────────────────────────────────
+require('./supaclaw-intelligence.js')(app, state, broadcast);
+console.log('[BRAIN] Intelligence Layer IL-0 ACTIVE — pricing, routing, scoring, monetization');
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
