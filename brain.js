@@ -1568,6 +1568,10 @@ console.log('[BRAIN] Agent fabric ACTIVE — 9 agents: atlas, weaver, forge, ora
 require('./supaclaw-governance.js')(app, state, broadcast);
 console.log('[BRAIN] Swarm governance ACTIVE — 20 agents, 5 tiers, 5 clusters, governance loop');
 
+// ── LOAD USL + GLYPH VISUAL ENGINE ──────────────────────────────────────────
+require('./supaclaw-usl.js')(app, state, broadcast);
+console.log('[BRAIN] USL (Universal Share Layer) + Glyph (HD SVG engine) ACTIVE');
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });

@@ -564,10 +564,17 @@ app.get('/abaas.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'abaas.htm
 app.get('/aoe-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'aoe-dashboard.html'), res));
 app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
 app.get('/view-logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
-// Subdomain homepages
-['bridge-home','ban-home','supac-home','ehsa-home','aurora-home','ubi-home','aid-home','abaas-home','hospital-home','rootedearth-home','applications','admin'].forEach(p => {
+// All dynamic pages (subdomain homes + imported BridgeLiveWall + everything)
+const ALL_PAGES = [
+  'bridge-home','ban-home','supac-home','ehsa-home','aurora-home','ubi-home','aid-home','abaas-home','hospital-home','rootedearth-home',
+  'applications','admin','agents','digital-twin-console','docs','executive-dashboard','landing','join','settings','twin-wall',
+  '50-applications','anatomical_face','anatomical_face_constrained_system','anatomical_face_embodied','anatomical_face_facs','anatomical_face_tension_balanced','anatomical_face_vector_muscle',
+];
+ALL_PAGES.forEach(p => {
   app.get(`/${p}.html`, (_req, res) => serveWithNav(path.join(XPUBLIC, `${p}.html`), res));
 });
+// Gateway sub-page
+app.get('/gateway/index.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'gateway', 'index.html'), res));
 app.get('/platforms.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'platforms.html'), res));
 app.get('/welcome.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'welcome.html'), res));
 // Serve static assets (logos, SVGs, documents)

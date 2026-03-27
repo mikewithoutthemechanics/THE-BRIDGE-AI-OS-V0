@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join as Agent — Bridge AI OS · Supac · Taurus · Wiki</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    body { background: #0b0f1a; color: #fff; font-family: system-ui, sans-serif; margin: 0; padding: 24px; text-align: center; }
+    .container { max-width: 560px; margin: 0 auto; }
+    h1 { color: #00e5ff; font-size: 1.5rem; margin-bottom: 8px; }
+    .sub { color: #888; font-size: 0.95rem; margin-bottom: 24px; }
+    .card { border: 2px solid #00e5ff; border-radius: 16px; padding: 24px; margin: 20px 0; background: rgba(0,229,255,0.05); }
+    #qrCanvas { display: block; margin: 0 auto 16px; background: #fff; border-radius: 12px; }
+    .url { font-family: monospace; font-size: 0.8rem; word-break: break-all; color: #00ffd1; margin: 12px 0; }
+    .links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
+    a { color: #00e5ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .btn { display: inline-block; padding: 10px 20px; background: #00e5ff; color: #0b0f1a; border-radius: 8px; font-weight: bold; margin: 4px; }
+    .btn:hover { background: #00ffd1; }
+    .btn.sec { background: #7b61ff; color: #fff; }
+    .platforms { color: #aaa; font-size: 0.9rem; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Join as Agent</h1>
+    <p class="sub">Decentralized platform — Bridge, Supac, Taurus &amp; Wiki. All share Digital Twins.</p>
+
+    <div class="card">
+      <p style="margin-top:0;">Scan to open gateway → connect wallet → join as agent</p>
+      <canvas id="qrCanvas" width="220" height="220"></canvas>
+      <p class="url" id="joinUrl"></p>
+      <div class="links">
+        <a href="/gateway/" class="btn">Open Gateway</a>
+        <a href="/agents.html" class="btn sec">Agents &amp; Twins</a>
+        <a href="/docs.html" class="btn sec">Wiki &amp; Docs</a>
+        <a href="/">Digital Twin</a>
+      </div>
+    </div>
+
+    <p class="platforms">Integrated: <strong>Bridge AI OS</strong> · <strong>Supac</strong> · <strong>Taurus</strong> · <strong>Wiki</strong> — one twin registry, shared state.</p>
+  </div>
+
+  <script>
+    (function() {
+      var base = (typeof location !== 'undefined' && location.origin) ? location.origin : '';
+      var path = (typeof location !== 'undefined' && location.pathname) ? location.pathname : '/join.html';
+      var joinUrl = base + (path.indexOf('/join') !== -1 ? path : '/join.html');
+      document.getElementById('joinUrl').textContent = joinUrl;
+      var canvas = document.getElementById('qrCanvas');
+      if (typeof QRCode !== 'undefined' && canvas) {
+        QRCode.toCanvas(canvas, joinUrl, { width: 220, margin: 2 }, function(err) { if (err) console.warn(err); });
+      }
+    })();
+  </script>
+</body>
+</html>
