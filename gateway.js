@@ -540,11 +540,61 @@ const NAV_HTML = `
 </div>
 </nav>`;
 
+// ── THEMED BOOT SCREEN ──────────────────────────────────────────────────────
+const BOOT_THEMES = {
+  // L0 PUBLIC
+  '/': { layer: 'L0', name: 'COMMAND CENTER', theme: 'cosmic', color: '#00c8ff', msg: 'Initializing Bridge AI OS...' },
+  '/onboarding.html': { layer: 'L0', name: 'ONBOARDING', theme: 'cosmic', color: '#00e57b', msg: 'Preparing registration...' },
+  '/welcome.html': { layer: 'L0', name: 'WELCOME', theme: 'cosmic', color: '#00e57b', msg: 'Loading your dashboard...' },
+  '/platforms.html': { layer: 'L0', name: 'NETWORK', theme: 'cosmic', color: '#fb923c', msg: 'Mapping platform network...' },
+  '/sitemap.html': { layer: 'L0', name: 'SYSTEM MAP', theme: 'cosmic', color: '#00c8ff', msg: 'Scanning full ecosystem...' },
+  '/landing.html': { layer: 'L0', name: 'BRIDGE AI', theme: 'cosmic', color: '#00c8ff', msg: 'Welcome to Bridge AI OS...' },
+  // L1 PRODUCT
+  '/marketplace.html': { layer: 'L1', name: 'MARKETPLACE', theme: 'blueprint', color: '#00c8ff', msg: 'Loading task marketplace...' },
+  '/ban': { layer: 'L1', name: 'BAN ENGINE', theme: 'blueprint', color: '#ffd166', msg: 'Activating task engine...' },
+  '/avatar.html': { layer: 'L1', name: 'AVATAR', theme: 'blueprint', color: '#a78bfa', msg: 'Rendering 3D avatar...' },
+  '/abaas.html': { layer: 'L1', name: 'ABAAS', theme: 'blueprint', color: '#00c8ff', msg: 'Deploying agent services...' },
+  // L2 OPERATIONS
+  '/topology.html': { layer: 'L2', name: 'TOPOLOGY', theme: 'telemetry', color: '#00e57b', msg: 'Scanning network topology...' },
+  '/registry.html': { layer: 'L2', name: 'REGISTRY', theme: 'telemetry', color: '#00c8ff', msg: 'Loading system registry...' },
+  '/system-status-dashboard.html': { layer: 'L2', name: 'STATUS', theme: 'telemetry', color: '#00e57b', msg: 'Polling 30+ services...' },
+  '/aoe-dashboard.html': { layer: 'L2', name: 'AOE ENGINE', theme: 'telemetry', color: '#00c8ff', msg: 'Loading skill engine...' },
+  // L3 CONTROL
+  '/terminal.html': { layer: 'L3', name: 'TERMINAL', theme: 'command', color: '#00e57b', msg: 'Connecting PTY shell...' },
+  '/control.html': { layer: 'L3', name: 'CONTROL', theme: 'command', color: '#ffd166', msg: 'Activating control plane...' },
+  '/logs.html': { layer: 'L3', name: 'LOGS', theme: 'command', color: '#4d6678', msg: 'Loading audit trail...' },
+};
+
+const THEME_COLORS = {
+  cosmic: { bg: 'radial-gradient(circle at center,#0a1a2a 0%,#050a0f 70%)', accent: '#00c8ff', svg: '<circle cx="50%" cy="50%" r="80" stroke="{COLOR}" fill="none" stroke-width="1"><animate attributeName="r" values="60;100;60" dur="3s" repeatCount="indefinite"/></circle><circle cx="50%" cy="50%" r="40" stroke="{COLOR}" fill="none" opacity="0.5"><animateTransform attributeName="transform" type="rotate" from="0 150 100" to="360 150 100" dur="8s" repeatCount="indefinite"/></circle>' },
+  blueprint: { bg: 'linear-gradient(135deg,#050a12 0%,#0a1525 100%)', accent: '#00c8ff', svg: '<rect x="40" y="40" width="220" height="120" fill="none" stroke="{COLOR}" stroke-width="0.5" stroke-dasharray="4 2"><animate attributeName="stroke-dashoffset" from="0" to="24" dur="2s" repeatCount="indefinite"/></rect><line x1="60" y1="100" x2="240" y2="100" stroke="{COLOR}" stroke-width="0.3"><animate attributeName="x2" values="60;240;60" dur="4s" repeatCount="indefinite"/></line>' },
+  telemetry: { bg: 'linear-gradient(180deg,#050a0f 0%,#0a1520 100%)', accent: '#00e57b', svg: '<polyline points="20,120 60,80 100,110 140,50 180,90 220,40 260,70" fill="none" stroke="{COLOR}" stroke-width="1.5"><animate attributeName="stroke-dashoffset" from="500" to="0" dur="2s" fill="freeze"/></polyline>' },
+  command: { bg: 'linear-gradient(180deg,#000 0%,#0a0f14 100%)', accent: '#00e57b', svg: '<text x="30" y="60" fill="{COLOR}" font-family="monospace" font-size="10" opacity="0.5">$ system boot<animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite"/></text><text x="30" y="80" fill="{COLOR}" font-family="monospace" font-size="10" opacity="0.3">$ agents online<animate attributeName="opacity" values="0;0.8;0" dur="2s" repeatCount="indefinite"/></text>' },
+};
+
+function getBootScreen(pagePath) {
+  const config = BOOT_THEMES[pagePath] || BOOT_THEMES['/'];
+  const theme = THEME_COLORS[config.theme] || THEME_COLORS.cosmic;
+  const svgContent = theme.svg.replace(/\{COLOR\}/g, config.color);
+  return `<div id="boot-screen" style="position:fixed;inset:0;z-index:99999;background:${theme.bg};display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,monospace;transition:opacity .6s">
+<svg viewBox="0 0 300 200" width="200" height="130" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>
+<div style="color:${config.color};font-size:1.2rem;font-weight:700;letter-spacing:.25em;margin-top:1rem">${config.name}</div>
+<div style="color:#4d6678;font-size:.65rem;letter-spacing:.1em;margin-top:.3rem">${config.layer} — ${config.msg}</div>
+<div style="width:120px;height:3px;background:#1a2d40;border-radius:2px;margin-top:1rem;overflow:hidden"><div style="height:100%;background:${config.color};border-radius:2px;animation:bootbar 1.8s ease-in-out forwards"></div></div>
+<div style="color:#1a2d40;font-size:.5rem;margin-top:1.5rem">BRIDGE AI OS v3</div>
+</div>
+<style>@keyframes bootbar{0%{width:0}50%{width:70%}100%{width:100%}}</style>
+<script>setTimeout(()=>{const b=document.getElementById('boot-screen');if(b){b.style.opacity='0';setTimeout(()=>b.remove(),600)}},2000)</script>`;
+}
+
 function serveWithNav(filePath, res) {
   try {
     let html = fs.readFileSync(filePath, 'utf8');
     if (!html.includes('id="bridge-nav"')) {
-      html = html.replace(/<body[^>]*>/i, (m) => m + NAV_HTML);
+      // Determine page path for theming
+      const pageName = '/' + path.basename(filePath);
+      const boot = getBootScreen(pageName);
+      html = html.replace(/<body[^>]*>/i, (m) => m + boot + NAV_HTML);
     }
     res.type('html').send(html);
   } catch (e) { res.status(404).send('Page not found'); }
