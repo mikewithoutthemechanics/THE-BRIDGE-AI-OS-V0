@@ -585,7 +585,7 @@ app.all('/api/*path', async (req, res) => {
 
 // ── UI ────────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(ROOT, 'ui.html'));
+  serveWithNav(path.join(ROOT, 'ui.html'), res);
 });
 
 // ── START (skipped when required by tests) ───────────────────────────────────
