@@ -255,9 +255,9 @@ app.get('/api/status', async (req, res) => {
   const services = [
     { id: 'gateway',      url: null,                         port: 8080 },
     { id: 'system',       url: 'http://localhost:3000/health', port: 3000 },
-    { id: 'ainode',       url: 'http://localhost:3001/health', port: 3001 },
-    { id: 'orchestrator', url: 'http://localhost:3002/health', port: 3002 },
-    { id: 'ban',          url: 'http://localhost:8001/health', port: 8000 },
+    { id: 'brain',        url: 'http://localhost:8000/health', port: 8000 },
+    { id: 'terminal',     url: 'http://localhost:5002/health', port: 5002 },
+    { id: 'auth',         url: 'http://localhost:5001/health', port: 5001 },
   ];
 
   const results = await Promise.all(
