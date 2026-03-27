@@ -1564,6 +1564,10 @@ console.log('[BRAIN] GitHub + Docker MCP integration loaded');
 require('./supaclaw-fabric.js')(app, state, broadcast);
 console.log('[BRAIN] Agent fabric ACTIVE — 9 agents: atlas, weaver, forge, oracle, strata, horizon, architect, vector, foundry');
 
+// ── LOAD SWARM ECONOMY GOVERNANCE ───────────────────────────────────────────
+require('./supaclaw-governance.js')(app, state, broadcast);
+console.log('[BRAIN] Swarm governance ACTIVE — 20 agents, 5 tiers, 5 clusters, governance loop');
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
