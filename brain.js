@@ -1108,6 +1108,10 @@ app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
 });
 
+// ── LOAD BUSINESS SUITE ─────────────────────────────────────────────────────
+require('./brain-business.js')(app, state, broadcast);
+console.log('[BRAIN] Business suite loaded (17 domains, 49 endpoints)');
+
 // ── START ───────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`[BRAIN] Bridge AI Super Brain running on http://localhost:${PORT}`);
