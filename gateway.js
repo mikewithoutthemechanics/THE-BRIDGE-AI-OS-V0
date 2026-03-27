@@ -538,6 +538,7 @@ app.get('/terminal.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'termin
 app.get('/control.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'control.html'), res));
 app.get('/onboarding.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'onboarding.html'), res));
 app.get('/sitemap.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'sitemap.html'), res));
+app.get('/topology-layers.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'topology-layers.html'), res));
 app.get('/abaas.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'abaas.html'), res));
 app.get('/aoe-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'aoe-dashboard.html'), res));
 app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
