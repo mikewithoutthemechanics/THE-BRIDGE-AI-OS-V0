@@ -491,6 +491,7 @@ app.get('/avatar.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'avatar.h
 app.get('/system-status-dashboard.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'system-status-dashboard.html')));
 app.get('/terminal.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'terminal.html')));
 app.get('/control.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'control.html')));
+app.get('/onboarding.html', (_req, res) => res.sendFile(path.join(XPUBLIC, 'onboarding.html')));
 
 // ── UI ────────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
