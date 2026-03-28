@@ -1,15 +1,47 @@
-tunnel: 05a48265-7470-4f48-8161-31f218c7a99b
-credentials-file: /opt/bridge-ai-os/cloudflared/05a48265-7470-4f48-8161-31f218c7a99b.json
-
+tunnel: db726f40-1426-4359-b21f-3e3935209ec4
+credentials-file: C:\Users\supas\.cloudflared\db726f40-1426-4359-b21f-3e3935209ec4.json
 ingress:
-  - hostname: dev.bridge-ai-os.com
-    service: http://127.0.0.1:8080
-    originRequest:
-      noTLSVerify: true
+  # Core services
+  - hostname: abaas.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: god.bridge-ai-os.com
+    service: http://127.0.0.1:3001
+  - hostname: live.bridge-ai-os.com
+    service: http://127.0.0.1:8001
+  - hostname: svg.bridge-ai-os.com
+    service: http://127.0.0.1:7070
+  - hostname: api.bridge-ai-os.com
+    service: http://127.0.0.1:8081
   - hostname: brain.bridge-ai-os.com
     service: http://127.0.0.1:8000
-  - hostname: ban.bridge-ai-os.com
-    service: http://127.0.0.1:8001
   - hostname: terminal.bridge-ai-os.com
     service: http://127.0.0.1:5002
+  - hostname: grafana.bridge-ai-os.com
+    service: http://127.0.0.1:3003
+  - hostname: dev.bridge-ai-os.com
+    service: http://127.0.0.1:8080
+  - hostname: revenue.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  # Sub-brand apps (all served from port 3000 static)
+  - hostname: ehsa.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: hospitalinabox.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: aid.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: ubi.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: aurora.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: supac.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: ban.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: rootedearth.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: affiliate.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  - hostname: marketplace.bridge-ai-os.com
+    service: http://127.0.0.1:3000
+  # Catch-all
   - service: http_status:404

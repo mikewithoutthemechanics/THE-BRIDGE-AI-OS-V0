@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";if(typeof window.__WS_BASE==="undefined")window.__WS_BASE="";</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.babylonjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: https: blob:; connect-src 'self' ws: wss: https: http:; frame-src https:;">
+    <title>BRIDGE AI OS Digital Twin</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #060810;
+            --bg-secondary: #0a0e17;
+            --bg-tertiary: #111827;
+            --bg-glass: rgba(10, 14, 23, 0.85);
+            --bg-glass-hover: rgba(15, 20, 30, 0.9);
+            --border-color: rgba(99, 255, 218, 0.12);
+            --border-glow: rgba(99, 255, 218, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #63ffda;
+            --accent-blue: #38bdf8;
+            --accent-purple: #a78bfa;
+            --accent-pink: #f472b6;
+            --accent-orange: #fb923c;
+            --gradient-primary: linear-gradient(135deg, #63ffda 0%, #38bdf8 50%, #a78bfa 100%);
+            --shadow-glow: 0 0 30px rgba(99, 255, 218, 0.15);
+            --shadow-panel: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+        * { box-sizing: border-box; }
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            overflow: hidden; 
+            background: var(--bg-primary);
+            font-family: 'Outfit', -apple-system, sans-serif;
+            color: var(--text-primary);
+        }
+        body::before { 
+            content: ''; 
+            position: fixed; 
+            inset: 0; 
+            background: 
+                radial-gradient(ellipse at 20% 80%, rgba(99, 255, 218, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(56, 189, 248, 0.04) 0%, transparent 70%);
+            pointer-events: none; 
+            z-index: 0; 
+        }
+        #app-container {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            grid-template-rows: 1fr 200px;
+            height: 100vh;
+            gap: 12px;
+            padding: 12px;
+            z-index: 1;
+        }
+        #renderCanvas { 
+            width: 100%; 
+            height: 100%; 
+            touch-action: none; 
+            display: block; 
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-panel), inset 0 0 60px rgba(99, 255, 218, 0.03);
+            overflow: hidden;
+        }
+        #side-panel { 
+            grid-row: 1 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+        }
+        .panel {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .panel:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-glow);
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .panel-header h4 {
+            margin: 0;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-cyan);
+        }
+        .panel-icon {
+            width: 18px;
+            height: 18px;
+            fill: var(--accent-cyan);
+        }
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .panel-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .panel-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .panel-content::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+        #missionBoard {
+            flex: 0 0 auto;
+            max-height: 220px;
+        }
+        #founderTodo {
+            flex: 0 0 auto;
+            max-height: 180px;
+        }
+        #twinPanel {
+            flex: 1;
+            min-height: 150px;
+        }
+        #skillsPanel {
+            flex: 0 0 auto;
+            max-height: 200px;
+        }
+        #terminal { 
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            overflow-y: auto; 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 12px;
+            color: #9effb8;
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow-panel);
+        }
+        #terminal::-webkit-scrollbar {
+            width: 4px;
+        }
+        #terminal::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #terminal::-webkit-scrollbar-thumb {
+            background: rgba(158, 255, 184, 0.3);
+            border-radius: 2px;
+        }
+        #loading {
+            position:fixed;
+            inset:0;
+            background: var(--bg-primary);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            z-index:9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .loading-logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 24px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .loading-logo svg {
+            width: 100%;
+            height: 100%;
+            fill: var(--accent-cyan);
+            filter: drop-shadow(0 0 20px rgba(99, 255, 218, 0.5));
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        .loading-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+        }
+        .loading-bar {
+            width: 200px;
+            height: 2px;
+            background: var(--bg-tertiary);
+            border-radius: 1px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .loading-bar-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 1px;
+            animation: loading 1.5s ease-in-out infinite;
+        }
+        @keyframes loading {
+            0% { width: 0%; margin-left: 0; }
+            50% { width: 60%; margin-left: 20%; }
+            100% { width: 0%; margin-left: 100%; }
+        }
+        .status-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: blink 2s infinite;
+        }
+        .status-dot.online {
+            background: #4ade80;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+        }
+        .status-dot.offline {
+            background: #f87171;
+            box-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @media (max-width: 900px) {
+            #app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 150px auto;
+            }
+            #side-panel {
+                grid-row: 3;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .panel { flex: 1 1 200px; }
+        }
+    </style>
+  <script type="module" crossorigin src="/assets/main-6EA444WO.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+</head>
+<body>
+    <div id="loading">
+        <div class="loading-logo">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#63ffda;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#38bdf8;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="45" fill="none" stroke="url(#grad1)" stroke-width="2" opacity="0.3"/>
+                <circle cx="50" cy="50" r="30" fill="none" stroke="url(#grad1)" stroke-width="2" opacity="0.5"/>
+                <circle cx="50" cy="50" r="15" fill="url(#grad1)" opacity="0.8"/>
+                <line x1="50" y1="5" x2="50" y2="20" stroke="url(#grad1)" stroke-width="2"/>
+                <line x1="50" y1="80" x2="50" y2="95" stroke="url(#grad1)" stroke-width="2"/>
+                <line x1="5" y1="50" x2="20" y2="50" stroke="url(#grad1)" stroke-width="2"/>
+                <line x1="80" y1="50" x2="95" y2="50" stroke="url(#grad1)" stroke-width="2"/>
+            </svg>
+        </div>
+        <div class="loading-text">BRIDGE AI OS</div>
+        <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+    </div>
+    <div id="app-container">
+        <canvas id="renderCanvas"></canvas>
+        <div id="terminal"></div>
+        <div id="side-panel">
+            <div class="panel" id="missionBoard">
+                <div class="panel-header">
+                    <svg class="panel-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <h4>Mission Board</h4>
+                </div>
+                <div class="panel-content"></div>
+            </div>
+            <div class="panel" id="founderTodo">
+                <div class="panel-header">
+                    <svg class="panel-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                    <h4>Objectives</h4>
+                </div>
+                <div class="panel-content"></div>
+            </div>
+            <div class="panel" id="twinPanel">
+                <div class="panel-header">
+                    <svg class="panel-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>
+                    <h4>Digital Twin</h4>
+                </div>
+                <div class="panel-content"></div>
+            </div>
+            <div class="panel" id="skillsPanel">
+                <div class="panel-header">
+                    <svg class="panel-icon" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    <h4>Skills</h4>
+                </div>
+                <div class="panel-content"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

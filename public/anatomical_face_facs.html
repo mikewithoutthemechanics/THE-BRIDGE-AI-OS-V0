@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Anatomical Face – FACS Morph System</title>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<style>
+html,body{width:100%;height:100%;margin:0;overflow:hidden;}
+canvas{width:100%;height:100%;}
+</style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+<script>
+
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
+
+const createScene = () => {
+
+const scene = new BABYLON.Scene(engine);
+scene.clearColor = new BABYLON.Color4(0.03,0.03,0.05,1);
+
+const camera = new BABYLON.ArcRotateCamera("cam",
+Math.PI/2, Math.PI/2.4, 5,
+BABYLON.Vector3.Zero(), scene);
+camera.attachControl(canvas,true);
+
+new BABYLON.HemisphericLight("h",
+new BABYLON.Vector3(0,1,0), scene).intensity = 0.9;
+
+// ==========================
+// BASE HEAD (SKIN SURFACE)
+// ==========================
+
+const head = BABYLON.MeshBuilder.CreateSphere("head",{
+diameterX:1.6,
+diameterY:2,
+diameterZ:1.6,
+segments:128
+},scene);
+
+const skinMat = new BABYLON.PBRMaterial("skin",scene);
+skinMat.albedoColor = new BABYLON.Color3(1.0,0.78,0.65);
+skinMat.roughness = 0.55;
+skinMat.metallic = 0;
+head.material = skinMat;
+
+// ==========================
+// MORPH TARGET SYSTEM
+// ==========================
+
+const morphManager = new BABYLON.MorphTargetManager();
+head.morphTargetManager = morphManager;
+
+const basePositions = head.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+
+// ---- SMILE TARGET ----
+
+const smileTarget = new BABYLON.MorphTarget("smile",0);
+
+let smilePositions = basePositions.slice();
+
+for(let i=0;i<smilePositions.length;i+=3){
+
+let x = smilePositions[i];
+let y = smilePositions[i+1];
+let z = smilePositions[i+2];
+
+// Lift corners of mouth (lower front hemisphere)
+if(y < 0 && z > 0.4){
+smilePositions[i+1] += 0.15 * Math.abs(x);
+}
+
+}
+
+smileTarget.setPositions(smilePositions);
+morphManager.addTarget(smileTarget);
+
+// ---- BLINK TARGET ----
+
+const blinkTarget = new BABYLON.MorphTarget("blink",0);
+let blinkPositions = basePositions.slice();
+
+for(let i=0;i<blinkPositions.length;i+=3){
+
+let y = blinkPositions[i+1];
+let z = blinkPositions[i+2];
+
+// Upper eyelid collapse
+if(y > 0.2 && z > 0.5){
+blinkPositions[i+1] -= 0.15;
+}
+
+}
+
+blinkTarget.setPositions(blinkPositions);
+morphManager.addTarget(blinkTarget);
+
+// ==========================
+// EYES
+// ==========================
+
+function createEye(offsetX,color){
+
+const sclera = BABYLON.MeshBuilder.CreateSphere("eye",{
+diameter:0.35,
+segments:64
+},scene);
+
+sclera.position = new BABYLON.Vector3(offsetX,0.3,0.75);
+
+const mat = new BABYLON.PBRMaterial("eyeMat",scene);
+mat.albedoColor = color;
+mat.roughness = 0.1;
+mat.metallic = 0;
+sclera.material = mat;
+
+return sclera;
+}
+
+const leftEye = createEye(-0.35,new BABYLON.Color3(0.1,0.4,0.8));
+const rightEye = createEye(0.35,new BABYLON.Color3(0.1,0.4,0.8));
+
+// ==========================
+// NOSE (Parametric)
+// ==========================
+
+const nose = BABYLON.MeshBuilder.CreateCylinder("nose",{
+height:0.6,
+diameterTop:0.05,
+diameterBottom:0.3,
+tessellation:64
+},scene);
+
+nose.rotation.x = Math.PI/2;
+nose.position = new BABYLON.Vector3(0,0,0.9);
+nose.material = skinMat;
+
+// ==========================
+// JAW (HINGE)
+// ==========================
+
+const jaw = BABYLON.MeshBuilder.CreateBox("jaw",{
+width:1.4,
+height:0.4,
+depth:1.2
+},scene);
+
+jaw.position = new BABYLON.Vector3(0,-0.9,0);
+jaw.material = skinMat;
+
+// ==========================
+// ANIMATION LOOP
+// ==========================
+
+scene.registerBeforeRender(()=>{
+
+let t = performance.now()*0.002;
+
+// Smile oscillation
+smileTarget.influence = (Math.sin(t)+1)/2;
+
+// Blink pulse
+blinkTarget.influence = Math.max(0,Math.sin(t*3));
+
+// Eye tracking
+leftEye.rotation.y = Math.sin(t)*0.4;
+rightEye.rotation.y = Math.sin(t)*0.4;
+
+// Jaw open/close
+jaw.rotation.x = Math.abs(Math.sin(t))*0.3;
+
+// Nose micro movement
+nose.scaling.x = 1 + Math.sin(t*2)*0.03;
+
+});
+
+return scene;
+};
+
+const scene = createScene();
+engine.runRenderLoop(()=>scene.render());
+window.addEventListener("resize",()=>engine.resize());
+
+</script>
+</body>
+</html>

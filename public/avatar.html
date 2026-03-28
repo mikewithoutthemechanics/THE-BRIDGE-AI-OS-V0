@@ -240,56 +240,162 @@ function buildWireframe(){
 function buildTextured(){
   disposeScene();
 
-  // Head
-  const head = BABYLON.MeshBuilder.CreateSphere('head', {diameter:1.2}, scene);
-  head.position.y = 2.2;
-
-  // Torso
-  const torso = BABYLON.MeshBuilder.CreateCylinder('torso', {height:2, diameterTop:1.2, diameterBottom:1.0, tessellation:16}, scene);
-  torso.position.y = 0.8;
-
-  // Arms
-  const lArm = BABYLON.MeshBuilder.CreateCylinder('lArm', {height:1.8, diameter:0.35}, scene);
-  lArm.position.set(-0.9, 0.9, 0);
-  lArm.rotation.z = 0.2;
-  const rArm = BABYLON.MeshBuilder.CreateCylinder('rArm', {height:1.8, diameter:0.35}, scene);
-  rArm.position.set(0.9, 0.9, 0);
-  rArm.rotation.z = -0.2;
-
-  // Legs
-  const lLeg = BABYLON.MeshBuilder.CreateCylinder('lLeg', {height:2, diameter:0.4}, scene);
-  lLeg.position.set(-0.3, -1.2, 0);
-  const rLeg = BABYLON.MeshBuilder.CreateCylinder('rLeg', {height:2, diameter:0.4}, scene);
-  rLeg.position.set(0.3, -1.2, 0);
-
-  const allParts = [head, torso, lArm, rArm, lLeg, rLeg];
   const parent = new BABYLON.TransformNode('humanoid', scene);
+  const allParts = [];
+
+  // Head (ellipsoid — taller than wide)
+  const head = BABYLON.MeshBuilder.CreateSphere('head', {diameterX:0.95, diameterY:1.15, diameterZ:1.0, segments:32}, scene);
+  head.position.y = 2.35;
+  allParts.push(head);
+
+  // Neck
+  const neck = BABYLON.MeshBuilder.CreateCylinder('neck', {height:0.35, diameterTop:0.38, diameterBottom:0.42, tessellation:16}, scene);
+  neck.position.y = 1.7;
+  allParts.push(neck);
+
+  // Torso (tapered — chest wider than waist)
+  const torso = BABYLON.MeshBuilder.CreateCylinder('torso', {height:1.6, diameterTop:1.2, diameterBottom:0.85, tessellation:24}, scene);
+  torso.position.y = 0.75;
+  allParts.push(torso);
+
+  // Shoulders (wider capsules)
+  const lShoulder = BABYLON.MeshBuilder.CreateSphere('lShoulder', {diameter:0.45, segments:12}, scene);
+  lShoulder.position.set(-0.75, 1.45, 0);
+  const rShoulder = BABYLON.MeshBuilder.CreateSphere('rShoulder', {diameter:0.45, segments:12}, scene);
+  rShoulder.position.set(0.75, 1.45, 0);
+  allParts.push(lShoulder, rShoulder);
+
+  // Upper arms
+  const lUpper = BABYLON.MeshBuilder.CreateCylinder('lUpper', {height:1.0, diameterTop:0.3, diameterBottom:0.25, tessellation:12}, scene);
+  lUpper.position.set(-0.85, 0.85, 0); lUpper.rotation.z = 0.15;
+  const rUpper = BABYLON.MeshBuilder.CreateCylinder('rUpper', {height:1.0, diameterTop:0.3, diameterBottom:0.25, tessellation:12}, scene);
+  rUpper.position.set(0.85, 0.85, 0); rUpper.rotation.z = -0.15;
+  allParts.push(lUpper, rUpper);
+
+  // Forearms
+  const lFore = BABYLON.MeshBuilder.CreateCylinder('lFore', {height:0.9, diameterTop:0.22, diameterBottom:0.18, tessellation:12}, scene);
+  lFore.position.set(-0.92, 0.0, 0.05); lFore.rotation.z = 0.08;
+  const rFore = BABYLON.MeshBuilder.CreateCylinder('rFore', {height:0.9, diameterTop:0.22, diameterBottom:0.18, tessellation:12}, scene);
+  rFore.position.set(0.92, 0.0, 0.05); rFore.rotation.z = -0.08;
+  allParts.push(lFore, rFore);
+
+  // Hands (small spheres)
+  const lHand = BABYLON.MeshBuilder.CreateSphere('lHand', {diameter:0.22, segments:8}, scene);
+  lHand.position.set(-0.95, -0.5, 0.05);
+  const rHand = BABYLON.MeshBuilder.CreateSphere('rHand', {diameter:0.22, segments:8}, scene);
+  rHand.position.set(0.95, -0.5, 0.05);
+  allParts.push(lHand, rHand);
+
+  // Hips
+  const hips = BABYLON.MeshBuilder.CreateCylinder('hips', {height:0.3, diameterTop:0.85, diameterBottom:0.9, tessellation:20}, scene);
+  hips.position.y = -0.15;
+  allParts.push(hips);
+
+  // Upper legs (thighs)
+  const lThigh = BABYLON.MeshBuilder.CreateCylinder('lThigh', {height:1.2, diameterTop:0.38, diameterBottom:0.3, tessellation:12}, scene);
+  lThigh.position.set(-0.28, -0.95, 0);
+  const rThigh = BABYLON.MeshBuilder.CreateCylinder('rThigh', {height:1.2, diameterTop:0.38, diameterBottom:0.3, tessellation:12}, scene);
+  rThigh.position.set(0.28, -0.95, 0);
+  allParts.push(lThigh, rThigh);
+
+  // Calves
+  const lCalf = BABYLON.MeshBuilder.CreateCylinder('lCalf', {height:1.1, diameterTop:0.28, diameterBottom:0.2, tessellation:12}, scene);
+  lCalf.position.set(-0.28, -2.1, 0);
+  const rCalf = BABYLON.MeshBuilder.CreateCylinder('rCalf', {height:1.1, diameterTop:0.28, diameterBottom:0.2, tessellation:12}, scene);
+  rCalf.position.set(0.28, -2.1, 0);
+  allParts.push(lCalf, rCalf);
+
+  // Feet
+  const lFoot = BABYLON.MeshBuilder.CreateBox('lFoot', {width:0.22, height:0.12, depth:0.35}, scene);
+  lFoot.position.set(-0.28, -2.7, 0.06);
+  const rFoot = BABYLON.MeshBuilder.CreateBox('rFoot', {width:0.22, height:0.12, depth:0.35}, scene);
+  rFoot.position.set(0.28, -2.7, 0.06);
+  allParts.push(lFoot, rFoot);
+
+  // Face details on head
+  // Eyes (dark insets)
+  const lEye = BABYLON.MeshBuilder.CreateSphere('lEye', {diameter:0.12, segments:8}, scene);
+  lEye.position.set(-0.18, 2.45, 0.42);
+  const rEye = BABYLON.MeshBuilder.CreateSphere('rEye', {diameter:0.12, segments:8}, scene);
+  rEye.position.set(0.18, 2.45, 0.42);
+  const eyeMat = new BABYLON.PBRMaterial('eyeMat', scene);
+  eyeMat.albedoColor = new BABYLON.Color3(0.15, 0.1, 0.08);
+  eyeMat.roughness = 0.2; eyeMat.metallic = 0.1;
+  lEye.material = eyeMat; rEye.material = eyeMat;
+  allParts.push(lEye, rEye);
+
+  // Nose
+  const nose = BABYLON.MeshBuilder.CreateCylinder('nose', {height:0.2, diameterTop:0.02, diameterBottom:0.1, tessellation:8}, scene);
+  nose.position.set(0, 2.3, 0.48); nose.rotation.x = -0.3;
+  allParts.push(nose);
+
+  // Mouth
+  const mouth = BABYLON.MeshBuilder.CreateBox('mouth', {width:0.25, height:0.04, depth:0.05}, scene);
+  mouth.position.set(0, 2.15, 0.44);
+  const mouthMat = new BABYLON.PBRMaterial('mouthMat', scene);
+  mouthMat.albedoColor = new BABYLON.Color3(0.6, 0.25, 0.25);
+  mouthMat.roughness = 0.4;
+  mouth.material = mouthMat;
+  allParts.push(mouth);
+
+  // Parent all
   allParts.forEach(p => { p.parent = parent; });
 
-  const pbr = new BABYLON.PBRMaterial('skinPBR', scene);
-  pbr.albedoColor = BABYLON.Color3.FromHexString('#c4956a');
-  pbr.roughness = 0.6;
-  pbr.metallic = 0.0;
-  allParts.forEach(p => { p.material = pbr; });
+  // Skin PBR material
+  const skin = new BABYLON.PBRMaterial('skinPBR', scene);
+  skin.albedoColor = BABYLON.Color3.FromHexString('#c4956a');
+  skin.roughness = 0.55;
+  skin.metallic = 0.0;
+  // Subsurface scattering hint
+  skin.subSurface.isTranslucencyEnabled = true;
+  skin.subSurface.translucencyIntensity = 0.3;
+  skin.subSurface.tintColor = new BABYLON.Color3(0.9, 0.5, 0.4);
 
+  // Apply skin to body parts (not eyes/mouth)
+  allParts.forEach(p => {
+    if(!p.material) p.material = skin;
+  });
+  nose.material = skin;
+
+  // Lighting
   const dirLight = new BABYLON.DirectionalLight('dir', new BABYLON.Vector3(-1,-2,-1), scene);
-  dirLight.intensity = 1.5;
+  dirLight.intensity = 1.8;
+  dirLight.diffuse = new BABYLON.Color3(1, 0.95, 0.9);
   const ambLight = new BABYLON.HemisphericLight('amb', new BABYLON.Vector3(0,1,0), scene);
-  ambLight.intensity = 0.4;
+  ambLight.intensity = 0.5;
+  ambLight.groundColor = new BABYLON.Color3(0.2, 0.15, 0.1);
+  const rimLight = new BABYLON.DirectionalLight('rim', new BABYLON.Vector3(1,0.5,1), scene);
+  rimLight.intensity = 0.4;
+  rimLight.diffuse = new BABYLON.Color3(0.6, 0.8, 1);
+
+  // Shadows
+  const sg = new BABYLON.ShadowGenerator(512, dirLight);
+  allParts.forEach(p => sg.addShadowCaster(p));
+
+  // Ground plane for shadow
+  const ground = BABYLON.MeshBuilder.CreateGround('ground', {width:6, height:6}, scene);
+  ground.position.y = -2.8;
+  const gMat = new BABYLON.PBRMaterial('gMat', scene);
+  gMat.albedoColor = new BABYLON.Color3(0.03, 0.05, 0.08);
+  gMat.roughness = 1; gMat.metallic = 0;
+  ground.material = gMat;
+  ground.receiveShadows = true;
 
   let t = 0;
-  const baseScale = parent.scaling.clone();
   sceneAnimations.push(()=>{
     if(!animPaused){
       t += 0.02 * animSpeed;
-      const breath = 1 + 0.02 * Math.sin(t);
-      parent.scaling.set(baseScale.x, baseScale.y * breath, baseScale.z);
+      // Breathing
+      const breath = 1 + 0.015 * Math.sin(t);
+      parent.scaling.set(1, breath, 1);
+      // Subtle idle sway
+      parent.rotation.y = Math.sin(t*0.3)*0.02;
     }
   });
 
   let totalVerts = 0;
   allParts.forEach(p => totalVerts += p.getTotalVertices());
-  updateInfo('textured', totalVerts, 'PBR (albedo/rough)');
+  updateInfo('textured', totalVerts, 'PBR Subsurface Skin');
 }
 
 function buildAnatomical(){
@@ -335,45 +441,100 @@ function buildNeural(){
   disposeScene();
 
   const gl = new BABYLON.GlowLayer('glow', scene);
-  gl.intensity = 1.0;
+  gl.intensity = 0.8;
 
   const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
-  light.intensity = 0.2;
+  light.intensity = 0.15;
+  const dl = new BABYLON.DirectionalLight('dl', new BABYLON.Vector3(-1,-1,-1), scene);
+  dl.intensity = 0.3;
 
-  const emitter = BABYLON.MeshBuilder.CreateSphere('emitter', {diameter:0.1}, scene);
-  emitter.isVisible = false;
+  // Brain mesh (deformed sphere)
+  const brainGeo = BABYLON.MeshBuilder.CreateSphere('brain', {diameter:3, segments:64}, scene);
+  const positions = brainGeo.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+  for(let i=0;i<positions.length;i+=3){
+    let x=positions[i],y=positions[i+1],z=positions[i+2];
+    const lobe=Math.sin(x*2)*0.15+Math.cos(z*3)*0.08;
+    const sulcus=Math.sin(x*8+y*6)*0.03;
+    positions[i]*=(1+lobe+sulcus);
+    positions[i+1]*=0.85+Math.abs(Math.sin(z*2))*0.08;
+    positions[i+2]*=1.05;
+    if(Math.abs(positions[i])<0.06) positions[i+1]-=0.06;
+  }
+  brainGeo.setVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
 
-  const ps = new BABYLON.ParticleSystem('particles', 5000, scene);
-  ps.particleTexture = new BABYLON.Texture('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAHlJREFUWEft1LERACAIBdDf+x/aBhzAARzAARzAARzAAXSg0UwWsvhv4q7qF5HVHBHV2f0HMDMBwCYA2AKAbQHArgCsAqxawN4A7A3AUQBwFADkAfCbBqGP4x+Pp9dB+AAAAABJRU5ErkJggg==', scene);
-  ps.emitter = emitter;
-  ps.color1 = new BABYLON.Color4(0.47, 0.27, 1, 1);
-  ps.color2 = new BABYLON.Color4(0.6, 0.3, 1, 0.8);
-  ps.colorDead = new BABYLON.Color4(0.2, 0, 0.5, 0);
-  ps.minSize = 0.05;
-  ps.maxSize = 0.15;
-  ps.minLifeTime = 1.5;
-  ps.maxLifeTime = 4;
-  ps.emitRate = 800;
-  ps.createSphereEmitter(3);
-  ps.minEmitPower = 0.5;
-  ps.maxEmitPower = 2;
-  ps.updateSpeed = 0.01;
-  ps.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-  ps.start();
+  const brainMat = new BABYLON.StandardMaterial('brainMat', scene);
+  brainMat.diffuseColor = new BABYLON.Color3(0.15, 0.05, 0.25);
+  brainMat.emissiveColor = new BABYLON.Color3(0.1, 0.02, 0.2);
+  brainMat.alpha = 0.4;
+  brainMat.backFaceCulling = false;
+  brainGeo.material = brainMat;
 
-  const pivot = new BABYLON.TransformNode('pivot', scene);
-  emitter.parent = pivot;
+  // Neural network nodes (200 neurons)
+  const neurons = [];
+  const neuronPositions = [];
+  for(let i=0;i<200;i++){
+    const theta=Math.random()*Math.PI*2, phi=Math.acos(2*Math.random()-1), r=Math.cbrt(Math.random())*1.3;
+    const x=r*Math.sin(phi)*Math.cos(theta), y=r*Math.sin(phi)*Math.sin(theta)*0.85, z=r*Math.cos(phi)*1.05;
+    const s = BABYLON.MeshBuilder.CreateSphere('n'+i, {diameter:0.06, segments:4}, scene);
+    s.position.set(x,y,z);
+    const m = new BABYLON.StandardMaterial('nm'+i, scene);
+    const region = y>0.3 ? '#00ffcc' : y<-0.3 ? '#ff66aa' : Math.abs(x)>0.6 ? '#ffaa00' : '#7766ff';
+    m.emissiveColor = BABYLON.Color3.FromHexString(region);
+    m.disableLighting = true;
+    s.material = m;
+    neurons.push(s);
+    neuronPositions.push(new BABYLON.Vector3(x,y,z));
+  }
+
+  // Synaptic connections (lines between nearby neurons)
+  const synapses = [];
+  for(let i=0;i<200;i++){
+    for(let j=i+1;j<200;j++){
+      if(BABYLON.Vector3.Distance(neuronPositions[i], neuronPositions[j]) < 0.5){
+        const line = BABYLON.MeshBuilder.CreateLines('syn'+i+'_'+j, {points:[neuronPositions[i], neuronPositions[j]]}, scene);
+        line.color = new BABYLON.Color3(0.3, 0.1, 0.5);
+        line.alpha = 0.15;
+        synapses.push(line);
+      }
+    }
+  }
+
+  // Firing pulses (particles along synapses)
+  const pulseCount = 30;
+  const pulses = [];
+  for(let i=0;i<pulseCount;i++){
+    const p = BABYLON.MeshBuilder.CreateSphere('pulse'+i, {diameter:0.04, segments:3}, scene);
+    const pm = new BABYLON.StandardMaterial('pm'+i, scene);
+    pm.emissiveColor = BABYLON.Color3.FromHexString(i%3===0?'#00ffcc':i%3===1?'#ff66aa':'#ffaa00');
+    pm.disableLighting = true;
+    p.material = pm;
+    const from = Math.floor(Math.random()*200), to = Math.floor(Math.random()*200);
+    pulses.push({mesh:p, from, to, progress:Math.random(), speed:0.005+Math.random()*0.01});
+  }
 
   let t = 0;
   sceneAnimations.push(()=>{
     if(!animPaused){
       t += 0.005 * animSpeed;
-      pivot.rotation.y = t;
-      pivot.rotation.x = Math.sin(t*0.5)*0.3;
+      brainGeo.rotation.y = t * 0.3;
+      // Pulse neurons (random firing)
+      if(Math.random()>0.95){
+        const idx=Math.floor(Math.random()*200);
+        const n=neurons[idx];
+        if(n&&n.material) n.material.emissiveColor=BABYLON.Color3.White();
+        setTimeout(()=>{if(n&&n.material){const c=n.position.y>0.3?'#00ffcc':n.position.y<-0.3?'#ff66aa':'#7766ff';n.material.emissiveColor=BABYLON.Color3.FromHexString(c);}},200);
+      }
+      // Move pulses along paths
+      pulses.forEach(p=>{
+        p.progress += p.speed * animSpeed;
+        if(p.progress > 1){p.progress=0;p.from=Math.floor(Math.random()*200);p.to=Math.floor(Math.random()*200);}
+        const a=neuronPositions[p.from]||BABYLON.Vector3.Zero(), b=neuronPositions[p.to]||BABYLON.Vector3.Zero();
+        p.mesh.position = BABYLON.Vector3.Lerp(a, b, p.progress);
+      });
     }
   });
 
-  updateInfo('neural', 5000, 'Particle Emissive');
+  updateInfo('neural', 200+pulseCount, 'Neural Network + Synaptic');
 }
 
 function buildHolographic(){

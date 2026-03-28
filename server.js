@@ -13,6 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve static files
 app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, "public")));
 
 // Rate limiting
 const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
@@ -197,6 +198,49 @@ app.post("/payfast/notify", async (req, res) => {
   const updatePayment = db.prepare("UPDATE payments SET status='paid', pf_payment_id=? WHERE reference=?");
   updatePayment.run(pfId, reference);
   res.sendStatus(200);
+});
+
+// ================= PAYMENT SUCCESS / CANCEL PAGES =================
+app.get("/payment/success", (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Payment Successful</title>
+<style>
+  body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f0fdf4}
+  .card{background:#fff;border-radius:12px;padding:3rem;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08);max-width:440px}
+  .icon{font-size:4rem;margin-bottom:1rem}
+  h1{color:#166534;margin:0 0 .5rem}
+  p{color:#4b5563;line-height:1.6}
+  a{display:inline-block;margin-top:1.5rem;padding:.75rem 2rem;background:#166534;color:#fff;border-radius:8px;text-decoration:none}
+</style></head><body>
+<div class="card">
+  <div class="icon">&#10003;</div>
+  <h1>Payment Successful</h1>
+  <p>Thank you! Your payment to <strong>Empeleni Health Services Africa</strong> has been received. You will receive confirmation shortly.</p>
+  <a href="/">Return Home</a>
+</div>
+</body></html>`);
+});
+
+app.get("/payment/cancel", (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Payment Cancelled</title>
+<style>
+  body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fef2f2}
+  .card{background:#fff;border-radius:12px;padding:3rem;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08);max-width:440px}
+  .icon{font-size:4rem;margin-bottom:1rem}
+  h1{color:#991b1b;margin:0 0 .5rem}
+  p{color:#4b5563;line-height:1.6}
+  a{display:inline-block;margin-top:1.5rem;padding:.75rem 2rem;background:#991b1b;color:#fff;border-radius:8px;text-decoration:none}
+</style></head><body>
+<div class="card">
+  <div class="icon">&#10007;</div>
+  <h1>Payment Cancelled</h1>
+  <p>Your payment was not completed. If this was a mistake, you can try again or contact us for assistance.</p>
+  <a href="/">Return Home</a>
+</div>
+</body></html>`);
 });
 
 // ================= WHATSAPP BOT (WEBHOOK READY) =================

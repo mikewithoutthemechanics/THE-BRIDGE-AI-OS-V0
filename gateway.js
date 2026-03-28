@@ -34,8 +34,10 @@ const data = require('./data-service');
 // ── CORS ────────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Cache-Control, Pragma, Accept, Origin, X-Forwarded-For, X-Real-IP, Upgrade, Connection');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, X-Request-Id');
+  res.setHeader('Access-Control-Max-Age', '86400');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
@@ -296,7 +298,16 @@ for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
     const subpath = req.path.slice(prefix.length) || '/';
     const url = `${base}${subpath}`;
     try {
-      const opts = { method: req.method, headers: { 'Content-Type': 'application/json' } };
+      const opts = {
+        method: req.method,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Forwarded-For': req.headers['x-forwarded-for'] || req.ip,
+          'X-Real-IP': req.headers['x-real-ip'] || req.ip,
+        },
+      };
+      if (req.headers['upgrade']) opts.headers['Upgrade'] = req.headers['upgrade'];
+      if (req.headers['connection']) opts.headers['Connection'] = req.headers['connection'];
       if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
       const r = await fetch(url, opts);
       const text = await r.text();

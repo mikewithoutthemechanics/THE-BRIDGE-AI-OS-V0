@@ -178,7 +178,8 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     const data = await res.json();
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
-      showMsg('reg-msg', 'Account created! Redirecting...', true);
+      showMsg('reg-msg', 'Account created! Loading your dashboard...', true);
+      localStorage.setItem('bridge_user', JSON.stringify(data.user || { email: body.email }));
       // Claim referral if provided
       const ref = document.getElementById('reg-referral').value.trim();
       if (ref) {
@@ -188,7 +189,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
           body: JSON.stringify({ code: ref }),
         });
       }
-      setTimeout(() => { location.href = '/'; }, 1500);
+      setTimeout(() => { location.href = '/welcome.html'; }, 1000);
     } else {
       showMsg('reg-msg', data.error || 'Registration failed', false);
     }
@@ -213,8 +214,9 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
-      showMsg('login-msg', 'Signed in! Redirecting...', true);
-      setTimeout(() => { location.href = '/'; }, 1000);
+      showMsg('login-msg', 'Signed in! Loading your dashboard...', true);
+      localStorage.setItem('bridge_user', JSON.stringify(data.user || { email: body.email }));
+      setTimeout(() => { location.href = '/welcome.html'; }, 1000);
     } else {
       showMsg('login-msg', data.error || 'Login failed', false);
     }

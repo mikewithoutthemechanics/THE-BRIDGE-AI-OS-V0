@@ -637,6 +637,7 @@
         bootScreen.classList.add('hidden');
         mainUI.classList.add('loaded');
         document.body.classList.add('loaded');
+        appState.bootComplete = true; // Mark boot as complete
         // Ensure boot screen is fully removed
         setTimeout(() => { try { bootScreen.remove(); } catch(_){} }, 500);
       }, 300);
@@ -676,6 +677,15 @@
   const $ = id => document.getElementById(id);
   const startTime = Date.now();
 
+  // Global state management
+  const appState = {
+    bootComplete: false,
+    apiConnectivity: 'unknown', // 'connected', 'degraded', 'disconnected'
+    retryCounts: new Map(),
+    lastSuccessfulPoll: null,
+    pollingActive: false
+  };
+
   function dotClass(s) {
     if (s === 'up' || s === 'healthy' || s === 'running' || s === 'ok') return 'dot-up';
     if (s === 'down' || s === 'unreachable') return 'dot-down';
@@ -695,18 +705,86 @@
     return h > 0 ? `${h}h ${m}m` : `${m}m ${s % 60}s`;
   }
 
-  async function pollHealth() {
+  // Exponential backoff utility
+  function getBackoffDelay(retryCount, baseDelay = 1000) {
+    return Math.min(baseDelay * Math.pow(2, retryCount), 30000); // Max 30s
+  }
+
+  // API connectivity assessment
+  function updateConnectivityStatus(results) {
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const total = results.length;
+    const wasDisconnected = appState.apiConnectivity === 'disconnected';
+
+    if (failed === 0) {
+      appState.apiConnectivity = 'connected';
+    } else if (failed < total) {
+      appState.apiConnectivity = 'degraded';
+    } else {
+      appState.apiConnectivity = 'disconnected';
+    }
+
+    // Connection recovery detection
+    if (wasDisconnected && appState.apiConnectivity !== 'disconnected') {
+      console.log('Connection recovered, resetting retry counts');
+      appState.retryCounts.clear();
+      // Trigger immediate full refresh
+      setTimeout(() => tick(), 100);
+    }
+
+    const badge = $('status-badge');
+    if (!appState.bootComplete) {
+      badge.textContent = 'BOOTING...';
+      badge.className = 'warn';
+    } else {
+      switch (appState.apiConnectivity) {
+        case 'connected':
+          badge.textContent = 'GATEWAY OK';
+          badge.className = 'ok';
+          break;
+        case 'degraded':
+          badge.textContent = 'DEGRADED';
+          badge.className = 'warn';
+          break;
+        case 'disconnected':
+          badge.textContent = 'UNREACHABLE';
+          badge.className = 'error';
+          break;
+      }
+    }
+  }
+
+  async function pollHealth(retryCount = 0) {
     try {
-      const r = await fetch('/health');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+      const r = await fetch('/health', {
+        signal: controller.signal,
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      clearTimeout(timeoutId);
+
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+
       const j = await r.json();
-      const badge = $('status-badge');
-      badge.textContent = j.status === 'OK' ? 'GATEWAY OK' : 'DEGRADED';
-      badge.className = j.status === 'OK' ? 'ok' : 'warn';
+      appState.retryCounts.delete('health');
+      appState.lastSuccessfulPoll = Date.now();
+
       // topology dot based on core reachability
       $('dot-topology').className = 'status-dot ' + dotClass(j.core === 'unreachable' ? 'down' : 'up');
-    } catch {
-      $('status-badge').textContent = 'UNREACHABLE';
-      $('status-badge').className = 'error';
+      return { success: true, data: j };
+
+    } catch (error) {
+      const currentRetries = appState.retryCounts.get('health') || 0;
+      appState.retryCounts.set('health', currentRetries + 1);
+
+      if (currentRetries < 3) { // Max 3 retries
+        const delay = getBackoffDelay(currentRetries);
+        console.warn(`Health check failed (attempt ${currentRetries + 1}), retrying in ${delay}ms...`, error.message);
+        setTimeout(() => pollHealth(currentRetries + 1), delay);
+      }
+      return { success: false, error: error.message };
     }
   }
 
@@ -739,13 +817,25 @@
       const r = await fetch('/api/status');
       const j = await r.json();
       const services = j.services || [];
-      $('services-tbody').innerHTML = services.map(s => `
-        <tr>
-          <td>${s.id}</td>
-          <td>${s.port}</td>
-          <td class="${statusClass(s.status)}">${s.status.toUpperCase()}</td>
-          <td>${s.latency_ms}ms</td>
-        </tr>`).join('');
+      const tbody = $('services-tbody');
+      tbody.innerHTML = '';
+      services.forEach(s => {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td');
+        td1.textContent = s.id;
+        const td2 = document.createElement('td');
+        td2.textContent = s.port;
+        const td3 = document.createElement('td');
+        td3.textContent = s.status.toUpperCase();
+        td3.className = statusClass(s.status);
+        const td4 = document.createElement('td');
+        td4.textContent = s.latency_ms + 'ms';
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tr.appendChild(td4);
+        tbody.appendChild(tr);
+      });
 
       // Update nav card dots based on service status
       const svcMap = {};
@@ -770,13 +860,23 @@
   }
 
   async function tick() {
-    await Promise.allSettled([pollHealth(), pollAgents(), pollContracts(), pollStatus(), pollTerminal()]);
+    if (!appState.bootComplete) return; // Don't poll during boot
+
+    const results = await Promise.allSettled([pollHealth(), pollAgents(), pollContracts(), pollStatus(), pollTerminal()]);
+    updateConnectivityStatus(results);
+
     $('stat-uptime').textContent = formatUptime(Date.now() - startTime);
     $('stat-time').textContent = new Date().toLocaleTimeString();
   }
 
-  tick();
-  setInterval(tick, 5000);
+  // Delay polling until boot completes to avoid race condition
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      tick();
+      appState.pollingActive = true;
+      setInterval(tick, 5000);
+    }, 1500);
+  });
 </script>
 </body>
 </html>
