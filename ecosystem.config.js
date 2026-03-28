@@ -27,19 +27,17 @@ module.exports = {
       },
     },
 
-    // ── System / GOD MODE (port 3000) ───────────────────────────────────────
+    // ── Unified Server (port 3000) — CRM + LeadGen + OSINT + Secrets + Notion ─
     {
-      name:         'god-mode-system',
-      script:       'system.js',
+      name:         'unified-server',
+      script:       'server.js',
       instances:    1,
       autorestart:  true,
       max_restarts: 10,
       restart_delay: 2000,
-      watch:        ['public'],
-      watch_delay:  500,
-      ignore_watch: ['node_modules', 'certs', '*.log'],
-      out_file:     './logs/system-out.log',
-      error_file:   './logs/system-error.log',
+      watch:        false,
+      out_file:     './logs/unified-out.log',
+      error_file:   './logs/unified-error.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       merge_logs:   true,
       env: {
@@ -49,7 +47,29 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 3000,
-        watch: false,
+      },
+    },
+
+    // ── GOD MODE Monitor (port 3001) — system topology dashboard ──────────
+    {
+      name:         'god-mode-system',
+      script:       'system.js',
+      instances:    1,
+      autorestart:  true,
+      max_restarts: 10,
+      restart_delay: 2000,
+      watch:        false,
+      out_file:     './logs/system-out.log',
+      error_file:   './logs/system-error.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss',
+      merge_logs:   true,
+      env: {
+        NODE_ENV: 'development',
+        PORT: 3001,
+      },
+      env_production: {
+        NODE_ENV: 'production',
+        PORT: 3001,
       },
     },
 

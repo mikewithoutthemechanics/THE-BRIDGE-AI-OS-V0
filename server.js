@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const sqlite3 = require("better-sqlite3");
@@ -66,7 +67,9 @@ function generateSignature(unsigned, passphrase) {
 }
 
 // ================= DATABASE =================
-const db = new sqlite3("./empeleni.db");
+const db = new sqlite3("./users.db");
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
 db.exec(`CREATE TABLE IF NOT EXISTS clients (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -318,7 +321,92 @@ app.get("/share/:id/metadata", (req, res) => {
   }
 });
 
+// ================= SECRETS MANAGEMENT API =================
+const secrets = require('./lib/secrets');
+
+// Seed env vars into DB on first boot
+secrets.seedFromEnv([
+  'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM',
+  'PAYFAST_MERCHANT_ID', 'PAYFAST_MERCHANT_KEY', 'PAYFAST_PASSPHRASE',
+  'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'OPENROUTER_API_KEY'
+]);
+
+// Internal-only secrets API — requires ADMIN_TOKEN header
+function requireAdmin(req, res, next) {
+  const token = req.headers['x-admin-token'];
+  const expected = secrets.getSecret('ADMIN_TOKEN') || process.env.ADMIN_TOKEN;
+  if (!expected) return res.status(503).json({ error: 'ADMIN_TOKEN not configured' });
+  if (!token || !crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected))) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  next();
+}
+
+app.get('/api/secrets', requireAdmin, (req, res) => {
+  res.json(secrets.listSecrets());
+});
+
+app.post('/api/secrets', requireAdmin, (req, res) => {
+  const { key_name, key_value, service } = req.body;
+  if (!key_name || !key_value) return res.status(400).json({ error: 'key_name and key_value required' });
+  secrets.setSecret(key_name, key_value, service || 'API', 'api');
+  res.json({ ok: true, key_name });
+});
+
+app.delete('/api/secrets/:key', requireAdmin, (req, res) => {
+  secrets.deleteSecret(req.params.key);
+  res.json({ ok: true });
+});
+
+// Webhook: Notion Secrets Vault → local DB sync
+app.post('/api/webhook/secrets-sync', (req, res) => {
+  const sig = req.headers['x-webhook-signature'];
+  const expected = secrets.getSecret('WEBHOOK_SECRET') || process.env.WEBHOOK_SECRET;
+  if (!expected) return res.status(503).json({ error: 'WEBHOOK_SECRET not configured' });
+  if (!sig || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  const result = secrets.syncFromNotion(req.body);
+  res.json(result);
+});
+
+// ================= LEADGEN + CRM + OSINT ENGINE =================
+const leadgenEngine = require('./leadgen-engine');
+leadgenEngine.mount(app);
+
+// ================= NOTION REPORTING LAYER =================
+const notionSync = require('./lib/notion-sync');
+
+app.post('/api/notion/init', async (req, res) => {
+  try {
+    const ok = await notionSync.init();
+    res.json({ ok, message: ok ? 'Notion databases initialized' : 'NOTION_TOKEN not set' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/notion/sync', async (req, res) => {
+  try {
+    const results = await notionSync.syncAll();
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/notion/stats', async (req, res) => {
+  try {
+    res.json(await notionSync.getStats());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Auto-init Notion on boot (non-blocking)
+notionSync.init().catch(() => {});
+
 // ================= SERVER =================
 app.listen(3000, () => {
-  console.log("SYSTEM LIVE → http://localhost:3000");
+  console.log("SYSTEM LIVE -> http://localhost:3000");
 });
