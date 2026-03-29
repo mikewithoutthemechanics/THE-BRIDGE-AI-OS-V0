@@ -106,7 +106,7 @@
   dot.className = 'bn-status';
   bar.appendChild(dot);
 
-  document.body.appendChild(bar);
+  document.body.insertBefore(bar, document.body.firstChild);
   document.body.style.paddingTop = '40px';
 
   document.addEventListener('click', function() {
