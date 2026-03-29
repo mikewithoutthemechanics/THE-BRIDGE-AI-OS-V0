@@ -64,10 +64,10 @@ function generateSignature(unsigned, passphrase) {
   let pfOutput = "";
   for (const key of Object.keys(unsigned)) {
     if (key !== "signature" && unsigned[key] !== undefined && unsigned[key] !== "") {
-      pfOutput += `${key}=${encodeURIComponent(String(unsigned[key]).trim()).replace(/%20/g, "+")}&`;
+      pfOutput += `${key}=${String(unsigned[key]).trim()}&`;
     }
   }
-  pfOutput += `passphrase=${encodeURIComponent(String(passphrase).trim()).replace(/%20/g, "+")}`;
+  pfOutput += `passphrase=${String(passphrase).trim()}`;
   return crypto.createHash("md5").update(pfOutput).digest("hex");
 }
 
