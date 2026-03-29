@@ -127,35 +127,58 @@ app.post("/auto-close", (req, res) => {
   res.json({ status: "deals closed", count: rows.length });
 });
 
-// ================= PAYFAST PAYMENT =================
+// ================= PAYMENT GATEWAY (BATCH POOL UNTIL PAYFAST VERIFIED) =================
 app.post("/create-payment", (req, res) => {
-  const { client, amount } = req.body;
-
+  const { client, amount, email } = req.body;
   const reference = `REF_${Date.now()}`;
+  const insertPayment = db.prepare("INSERT INTO payments(client, amount, status, reference) VALUES(?,?,?,?)");
+  insertPayment.run(client || 'Customer', amount || '0', "pending", reference);
+  // Redirect to internal checkout page instead of PayFast
+  res.json({ payment_url: `/checkout?ref=${reference}&amount=${amount || 10}&client=${encodeURIComponent(client || 'Customer')}&email=${encodeURIComponent(email || '')}` });
+});
 
-  const paymentData = {
-    merchant_id: CONFIG.payfast_merchant_id,
-    merchant_key: CONFIG.payfast_merchant_key,
-    return_url: CONFIG.return_url,
-    cancel_url: CONFIG.cancel_url,
-    notify_url: CONFIG.notify_url,
-    name_first: client,
-    amount: amount,
-    item_name: "Health Service",
-    m_payment_id: reference
-  };
+// Internal checkout page — collects to batch pool for later remittance
+app.get("/checkout", (req, res) => {
+  const { ref, amount, client, email } = req.query;
+  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bridge AI OS — Checkout</title><link rel="stylesheet" href="/bridge-tokens.css"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg-0);color:var(--text-primary);font-family:var(--font-ui);display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:420px;width:100%}h1{font-size:22px;font-weight:700;margin-bottom:4px}h1 span{color:var(--cyan)}.sub{color:var(--text-secondary);font-size:13px;margin-bottom:24px}.amount{font-size:36px;font-weight:800;color:var(--cyan);font-family:var(--font-mono);text-align:center;margin:20px 0}.detail{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05)}.detail-label{color:var(--text-secondary)}.methods{display:flex;flex-direction:column;gap:8px;margin:20px 0}.method{background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s}.method:hover,.method.selected{border-color:var(--cyan)}.method-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border)}.method.selected .method-dot{background:var(--cyan);border-color:var(--cyan)}.btn{width:100%;padding:14px;border-radius:8px;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s}.btn-pay{background:var(--cyan);color:#000}.btn-pay:hover{filter:brightness(1.1)}.btn-pay:disabled{opacity:0.5;cursor:not-allowed}.note{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px}.success{display:none;text-align:center}.success h2{color:var(--alive);font-size:20px;margin-bottom:8px}.success p{color:var(--text-secondary);font-size:13px}</style></head><body><div class="card" id="checkout-form"><h1>Bridge <span>AI OS</span></h1><div class="sub">Secure Checkout</div><div class="amount">R${amount || '0.00'}</div><div class="detail"><span class="detail-label">Reference</span><span style="font-family:var(--font-mono);font-size:12px">${ref || '—'}</span></div><div class="detail"><span class="detail-label">Customer</span><span>${decodeURIComponent(client || 'Customer')}</span></div><div class="detail"><span class="detail-label">Product</span><span>Bridge AI OS Pro</span></div><div class="methods"><div class="method selected" onclick="selectMethod(this,'eft')"><span class="method-dot"></span><div><strong>EFT / Bank Transfer</strong><div style="font-size:11px;color:var(--text-secondary)">Manual transfer — batch processed</div></div></div><div class="method" onclick="selectMethod(this,'card')"><span class="method-dot"></span><div><strong>Card Payment</strong><div style="font-size:11px;color:var(--text-secondary)">Available when PayFast verified</div></div></div><div class="method" onclick="selectMethod(this,'crypto')"><span class="method-dot"></span><div><strong>Crypto (ETH/BTC/SOL)</strong><div style="font-size:11px;color:var(--text-secondary)">Send to treasury wallet</div></div></div></div><button class="btn btn-pay" id="pay-btn" onclick="processPayment()">Confirm Payment — R${amount || '0.00'}</button><div class="note">Funds are held in a batch pool and processed within 24 hours.<br>Treasury splits: UBI 40% · Treasury 30% · Ops 20% · Founder 10%</div></div><div class="success" id="success"><h2>Payment Recorded</h2><p>Reference: ${ref}</p><p>Amount: R${amount} added to batch pool</p><p style="margin-top:12px">Treasury will be updated within 24 hours.</p><p style="margin-top:16px"><a href="/treasury-dash" style="color:var(--cyan)">View Treasury →</a> · <a href="/apps" style="color:var(--cyan)">Go to Apps →</a></p></div><script>var selectedMethod='eft';function selectMethod(el,m){document.querySelectorAll('.method').forEach(function(e){e.classList.remove('selected')});el.classList.add('selected');selectedMethod=m}function processPayment(){var btn=document.getElementById('pay-btn');btn.disabled=true;btn.textContent='Processing...';fetch('/api/checkout/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ref:'${ref}',amount:'${amount}',client:'${decodeURIComponent(client||"")}',email:'${decodeURIComponent(email||"")}',method:selectedMethod})}).then(function(r){return r.json()}).then(function(d){document.getElementById('checkout-form').style.display='none';document.getElementById('success').style.display='block'}).catch(function(){btn.disabled=false;btn.textContent='Retry'})}</script></body></html>`);
+});
 
+// Confirm checkout — records to batch pool + treasury
+app.post("/api/checkout/confirm", async (req, res) => {
+  const { ref, amount, client, email, method } = req.body;
+  try {
+    // Update payment status in SQLite
+    db.prepare("UPDATE payments SET status = 'batch_pool' WHERE reference = ?").run(ref);
+    // Record in PostgreSQL economy DB
+    if (typeof economyDb !== 'undefined') {
+      const payment = await economyDb.query(
+        'INSERT INTO payments_received (provider, payment_id, amount, currency, payer_email, item_name, raw_payload) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+        [method || 'batch', ref, parseFloat(amount) || 0, 'ZAR', email || '', 'Bridge AI OS Pro', JSON.stringify({ ref, client, method, batch: true })]
+      );
+      // Split revenue into treasury buckets
+      const splits = [{ bucket: 'ubi', pct: 40 }, { bucket: 'treasury', pct: 30 }, { bucket: 'ops', pct: 20 }, { bucket: 'founder', pct: 10 }];
+      for (const s of splits) {
+        const splitAmount = (parseFloat(amount) * s.pct / 100).toFixed(2);
+        await economyDb.query('INSERT INTO revenue_splits (payment_id, bucket, amount, percentage) VALUES ($1, $2, $3, $4)', [payment.rows[0].id, s.bucket, splitAmount, s.pct]);
+        await economyDb.query('UPDATE treasury_buckets SET balance = balance + $1, updated_at = NOW() WHERE name = $2', [splitAmount, s.bucket]);
+      }
+      await economyDb.query('INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference) VALUES ($1, $2, $3, $4, $5, $6)', ['deposit', method || 'batch', parseFloat(amount), 'ZAR', 'pool', ref]);
+    }
+    res.json({ ok: true, ref, status: 'batch_pool', treasury_updated: true });
+  } catch (err) {
+    res.json({ ok: true, ref, status: 'batch_pool', treasury_updated: false, note: err.message });
+  }
+});
+
+// Keep PayFast for when verified
+app.post("/create-payment-payfast", (req, res) => {
+  const { client, amount } = req.body;
+  const reference = `REF_${Date.now()}`;
+  const paymentData = { merchant_id: CONFIG.payfast_merchant_id, merchant_key: CONFIG.payfast_merchant_key, return_url: CONFIG.return_url, cancel_url: CONFIG.cancel_url, notify_url: CONFIG.notify_url, name_first: client, amount: amount, item_name: "Health Service", m_payment_id: reference };
   const signature = generateSignature(paymentData, CONFIG.passphrase);
   paymentData.signature = signature;
-
-  const insertPayment = db.prepare("INSERT INTO payments(client, amount, status, reference) VALUES(?,?,?,?)");
-  insertPayment.run(client, amount, "pending", reference);
-
-  const query = new URLSearchParams(paymentData).toString();
-
-  res.json({
-    payment_url: "https://www.payfast.co.za/eng/process?" + query
-  });
+  db.prepare("INSERT INTO payments(client, amount, status, reference) VALUES(?,?,?,?)").run(client, amount, "pending", reference);
+  res.json({ payment_url: "https://www.payfast.co.za/eng/process?" + new URLSearchParams(paymentData).toString() });
 });
 
 // ================= PAYFAST CALLBACK =================
