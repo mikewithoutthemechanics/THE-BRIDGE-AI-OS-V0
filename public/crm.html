@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CRM — Bridge AI OS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/bridge-tokens.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100vh; background: var(--bg-0); font-family: var(--font-ui); color: var(--text-primary); }
+        body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 80%, rgba(99,255,218,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+        .shell { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
+        .header h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); background: linear-gradient(135deg, var(--cyan) 0%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stats-bar { display: flex; gap: var(--gap); margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 22px; flex: 1; min-width: 150px; }
+        .stat-card .label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-family: var(--font-mono); margin-bottom: 6px; }
+        .stat-card .value { font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--cyan); }
+        .toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+        th, td { text-align: left; padding: 12px 16px; font-size: var(--text-sm); border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-2); color: var(--text-secondary); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-size: var(--text-xs); font-family: var(--font-mono); }
+        tr:hover td { background: rgba(99,255,218,0.03); }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: var(--text-xs); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
+        .loading, .error-msg { text-align: center; padding: 48px; color: var(--text-secondary); font-family: var(--font-mono); font-size: var(--text-sm); }
+        .error-msg { color: var(--signal-red); }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: var(--z-overlay); justify-content: center; align-items: center; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; width: 90%; max-width: 520px; max-height: 85vh; overflow-y: auto; }
+        .modal h2 { font-size: var(--text-lg); margin-bottom: 20px; color: var(--cyan); }
+        .modal label { display: block; font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: var(--tracking-wide); margin-bottom: 4px; margin-top: 12px; font-family: var(--font-mono); }
+        .modal input, .modal select, .modal textarea { width: 100%; padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-ui); font-size: var(--text-sm); outline: none; }
+        .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--cyan); }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+        tr { cursor: pointer; }
+        .badge.active { background: rgba(0,255,136,0.12); color: var(--alive); }
+        .badge.inactive { background: rgba(102,102,102,0.15); color: var(--text-muted); }
+        .badge.lead { background: rgba(99,255,218,0.12); color: var(--cyan); }
+        .badge.new-status { background: rgba(255,170,0,0.12); color: var(--degraded); }
+        .note-item { background: var(--bg-2); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 8px; font-size: var(--text-sm); color: var(--text-secondary); }
+        @media (max-width: 700px) { th:nth-child(3), td:nth-child(3) { display: none; } }
+    </style>
+</head>
+<body>
+
+<div class="shell">
+    <div class="header"><h1>CRM &#8212; Contact Management</h1></div>
+    <div class="stats-bar">
+        <div class="stat-card"><div class="label">Total Contacts</div><div class="value" id="stat-total">&#8212;</div></div>
+        <div class="stat-card"><div class="label">Active</div><div class="value" id="stat-active">&#8212;</div></div>
+        <div class="stat-card"><div class="label">New This Month</div><div class="value" id="stat-new">&#8212;</div></div>
+    </div>
+    <div class="toolbar"><button class="btn-primary" onclick="openAddModal()">+ Add Contact</button></div>
+    <div id="table-container"><div class="loading">Loading contacts...</div></div>
+</div>
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>Add Contact</h2>
+        <label>Name</label><input id="add-name" placeholder="Full name">
+        <label>Company</label><input id="add-company" placeholder="Company name">
+        <label>Email</label><input id="add-email" type="email" placeholder="email@example.com">
+        <label>Status</label>
+        <select id="add-status"><option value="active">Active</option><option value="lead">Lead</option><option value="inactive">Inactive</option></select>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal(&quot;addModal&quot;)">Cancel</button>
+            <button class="btn-primary" onclick="addContact()">Save</button>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <h2 id="detail-name"></h2>
+        <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:4px;" id="detail-company"></p>
+        <p style="color:var(--text-muted);font-size:var(--text-xs);font-family:var(--font-mono);" id="detail-email"></p>
+        <div style="margin-top:16px;"><label>Notes</label><div id="detail-notes"></div></div>
+        <div class="modal-actions"><button class="btn-secondary" onclick="closeModal(&quot;detailModal&quot;)">Close</button></div>
+    </div>
+</div>
+<script>
+
+var contacts = [];
+async function loadContacts() {
+    var container = document.getElementById("table-container");
+    try {
+        var res = await fetch("/api/crm/contacts");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        var data = await res.json();
+        contacts = Array.isArray(data) ? data : (data.contacts || data.data || []);
+        renderStats(); renderTable();
+    } catch (e) {
+        container.textContent = "";
+        var d = document.createElement("div"); d.className = "error-msg";
+        d.textContent = "Failed to load contacts: " + e.message;
+        container.appendChild(d);
+    }
+}
+function renderStats() {
+    var now = new Date();
+    document.getElementById("stat-total").textContent = contacts.length;
+    document.getElementById("stat-active").textContent = contacts.filter(function(c){return (c.status||"").toLowerCase()==="active";}).length;
+    document.getElementById("stat-new").textContent = contacts.filter(function(c){
+        if(!c.createdAt && !c.created_at) return false;
+        var d = new Date(c.createdAt || c.created_at);
+        return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+    }).length;
+}
+function renderTable() {
+    var container = document.getElementById("table-container");
+    container.textContent = "";
+    if (!contacts.length) { var m=document.createElement("div"); m.className="loading"; m.textContent="No contacts found."; container.appendChild(m); return; }
+    var table = document.createElement("table");
+    var thead = document.createElement("thead"); var hr = document.createElement("tr");
+    ["Name","Company","Email","Status","Last Contact"].forEach(function(h){ var th=document.createElement("th"); th.textContent=h; hr.appendChild(th); });
+    thead.appendChild(hr); table.appendChild(thead);
+    var tbody = document.createElement("tbody");
+    contacts.forEach(function(c, i) {
+        var tr = document.createElement("tr"); tr.onclick = function(){ showDetail(i); };
+        var t1=document.createElement("td"); t1.textContent=c.name||"\u2014"; tr.appendChild(t1);
+        var t2=document.createElement("td"); t2.textContent=c.company||"\u2014"; tr.appendChild(t2);
+        var t3=document.createElement("td"); t3.style.fontFamily="var(--font-mono)"; t3.style.fontSize="var(--text-xs)"; t3.textContent=c.email||"\u2014"; tr.appendChild(t3);
+        var t4=document.createElement("td"); var b=document.createElement("span"); var s=(c.status||"unknown").toLowerCase();
+        b.className="badge "+(s==="active"?"active":s==="lead"?"lead":s==="new"?"new-status":"inactive");
+        b.textContent=s; t4.appendChild(b); tr.appendChild(t4);
+        var t5=document.createElement("td"); t5.style.color="var(--text-muted)"; t5.style.fontSize="var(--text-xs)";
+        var lc=c.lastContact||c.last_contact||c.updatedAt||c.updated_at||"";
+        t5.textContent=lc?new Date(lc).toLocaleDateString():"\u2014"; tr.appendChild(t5);
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody); container.appendChild(table);
+}
+function openAddModal(){ document.getElementById("addModal").classList.add("open"); }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+async function addContact(){
+    var payload={name:document.getElementById("add-name").value,company:document.getElementById("add-company").value,email:document.getElementById("add-email").value,status:document.getElementById("add-status").value};
+    if(!payload.name) return alert("Name is required");
+    try {
+        var res=await fetch("/api/crm/contacts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        closeModal("addModal"); document.getElementById("add-name").value=""; document.getElementById("add-company").value=""; document.getElementById("add-email").value="";
+        loadContacts();
+    } catch(e){ alert("Failed to add contact: "+e.message); }
+}
+function showDetail(i){
+    var c=contacts[i];
+    document.getElementById("detail-name").textContent=c.name||"Unknown";
+    document.getElementById("detail-company").textContent=c.company||"";
+    document.getElementById("detail-email").textContent=c.email||"";
+    var ne=document.getElementById("detail-notes"); ne.textContent="";
+    var notes=c.notes||[];
+    if(notes.length){ notes.forEach(function(n){ var d=document.createElement("div"); d.className="note-item"; d.textContent=typeof n==="string"?n:(n.text||n.body||JSON.stringify(n)); ne.appendChild(d); }); }
+    else { var sp=document.createElement("span"); sp.style.color="var(--text-muted)"; sp.textContent="No notes yet."; ne.appendChild(sp); }
+    document.getElementById("detailModal").classList.add("open");
+}
+
+document.querySelectorAll(".modal-overlay").forEach(function(el){
+    el.addEventListener("click", function(e){ if(e.target===el) el.classList.remove("open"); });
+});
+loadContacts();
+</script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

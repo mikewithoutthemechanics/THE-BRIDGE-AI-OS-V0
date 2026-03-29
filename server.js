@@ -583,7 +583,10 @@ const shortRoutes = {
   '/registry': '/registry.html', '/sitemap': '/sitemap.html',
   '/status': '/system-status-dashboard.html', '/terminal': '/terminal.html',
   '/topology': '/topology.html', '/trading': '/trading.html',
-  '/twin-wall': '/twin-wall.html', '/welcome': '/welcome.html', '/face': '/anatomical_face.html'
+  '/twin-wall': '/twin-wall.html', '/welcome': '/welcome.html', '/face': '/anatomical_face.html',
+  '/crm': '/crm.html', '/invoicing': '/invoicing.html', '/tickets': '/tickets.html',
+  '/legal': '/legal.html', '/marketing': '/marketing.html', '/vendors': '/vendors.html',
+  '/quotes': '/quotes.html', '/customers': '/customers.html', '/workforce': '/workforce.html'
 };
 Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));

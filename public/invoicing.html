@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Invoicing — Bridge AI OS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/bridge-tokens.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100vh; background: var(--bg-0); font-family: var(--font-ui); color: var(--text-primary); }
+        body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 80%, rgba(99,255,218,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+        .shell { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
+        .header h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); background: linear-gradient(135deg, var(--cyan) 0%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stats-bar { display: flex; gap: var(--gap); margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 22px; flex: 1; min-width: 150px; }
+        .stat-card .label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-family: var(--font-mono); margin-bottom: 6px; }
+        .stat-card .value { font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--cyan); }
+        .toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+        th, td { text-align: left; padding: 12px 16px; font-size: var(--text-sm); border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-2); color: var(--text-secondary); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-size: var(--text-xs); font-family: var(--font-mono); }
+        tr:hover td { background: rgba(99,255,218,0.03); }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: var(--text-xs); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
+        .loading, .error-msg { text-align: center; padding: 48px; color: var(--text-secondary); font-family: var(--font-mono); font-size: var(--text-sm); }
+        .error-msg { color: var(--signal-red); }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: var(--z-overlay); justify-content: center; align-items: center; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; width: 90%; max-width: 520px; max-height: 85vh; overflow-y: auto; }
+        .modal h2 { font-size: var(--text-lg); margin-bottom: 20px; color: var(--cyan); }
+        .modal label { display: block; font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: var(--tracking-wide); margin-bottom: 4px; margin-top: 12px; font-family: var(--font-mono); }
+        .modal input, .modal select, .modal textarea { width: 100%; padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-ui); font-size: var(--text-sm); outline: none; }
+        .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--cyan); }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+        .stat-card .value.revenue { color: var(--alive); }
+        .badge.paid { background: rgba(0,255,136,0.12); color: var(--alive); }
+        .badge.pending { background: rgba(255,170,0,0.12); color: var(--degraded); }
+        .badge.overdue { background: rgba(255,0,51,0.12); color: var(--offline); }
+        .badge { cursor: pointer; }
+        .line-items { margin-top: 12px; }
+        .line-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        .line-item input { flex: 1; }
+        .line-item input:first-child { flex: 2; }
+        .add-line-btn { background: none; border: 1px dashed var(--border); color: var(--text-secondary); padding: 8px; border-radius: var(--radius-sm); width: 100%; cursor: pointer; font-family: var(--font-mono); font-size: var(--text-xs); margin-top: 4px; }
+        .add-line-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+        @media (max-width: 700px) { th:nth-child(5), td:nth-child(5) { display: none; } }
+    </style>
+</head>
+<body>
+
+<div class="shell">
+    <div class="header"><h1>Invoicing &#8212; Bridge AI OS</h1></div>
+    <div class="stats-bar">
+        <div class="stat-card"><div class="label">Total Invoices</div><div class="value" id="stat-total">&#8212;</div></div>
+        <div class="stat-card"><div class="label">Paid</div><div class="value" id="stat-paid">&#8212;</div></div>
+        <div class="stat-card"><div class="label">Pending</div><div class="value" id="stat-pending">&#8212;</div></div>
+        <div class="stat-card"><div class="label">Total Revenue</div><div class="value revenue" id="stat-revenue">&#8212;</div></div>
+    </div>
+    <div class="toolbar"><button class="btn-primary" onclick="openCreateModal()">+ Create Invoice</button></div>
+    <div id="table-container"><div class="loading">Loading invoices...</div></div>
+</div>
+<div class="modal-overlay" id="createModal">
+    <div class="modal">
+        <h2>Create Invoice</h2>
+        <label>Client</label><input id="inv-client" placeholder="Client name">
+        <label>Currency</label>
+        <select id="inv-currency"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="ZAR">ZAR</option></select>
+        <label>Line Items</label>
+        <div class="line-items" id="line-items">
+            <div class="line-item">
+                <input placeholder="Item name" class="li-name">
+                <input placeholder="Qty" type="number" min="1" value="1" class="li-qty">
+                <input placeholder="Rate" type="number" min="0" step="0.01" class="li-rate">
+            </div>
+        </div>
+        <button class="add-line-btn" onclick="addLineItem()">+ Add line item</button>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal(&quot;createModal&quot;)">Cancel</button>
+            <button class="btn-primary" onclick="createInvoice()">Create</button>
+        </div>
+    </div>
+</div>
+<script>
+
+var invoices = [];
+async function loadInvoices() {
+    var container = document.getElementById("table-container");
+    try {
+        var res = await fetch("/api/invoices");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        var data = await res.json();
+        invoices = Array.isArray(data) ? data : (data.invoices || data.data || []);
+        renderStats(); renderTable();
+    } catch (e) {
+        container.textContent = "";
+        var d = document.createElement("div"); d.className = "error-msg";
+        d.textContent = "Failed to load invoices: " + e.message;
+        container.appendChild(d);
+    }
+}
+function renderStats() {
+    document.getElementById("stat-total").textContent = invoices.length;
+    document.getElementById("stat-paid").textContent = invoices.filter(function(i){return (i.status||"").toLowerCase()==="paid";}).length;
+    document.getElementById("stat-pending").textContent = invoices.filter(function(i){return (i.status||"").toLowerCase()==="pending";}).length;
+    var revenue = invoices.filter(function(i){return (i.status||"").toLowerCase()==="paid";}).reduce(function(s,i){return s+parseFloat(i.amount||i.total||0);},0);
+    document.getElementById("stat-revenue").textContent = "$" + revenue.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function renderTable() {
+    var container = document.getElementById("table-container");
+    container.textContent = "";
+    if (!invoices.length) { var m=document.createElement("div"); m.className="loading"; m.textContent="No invoices found."; container.appendChild(m); return; }
+    var table = document.createElement("table");
+    var thead = document.createElement("thead"); var hr = document.createElement("tr");
+    ["Number","Client","Amount","Status","Date"].forEach(function(h){ var th=document.createElement("th"); th.textContent=h; hr.appendChild(th); });
+    thead.appendChild(hr); table.appendChild(thead);
+    var tbody = document.createElement("tbody");
+    invoices.forEach(function(inv) {
+        var tr = document.createElement("tr");
+        var t1=document.createElement("td"); t1.style.fontFamily="var(--font-mono)"; t1.textContent=inv.number||inv.invoiceNumber||inv.id||"\u2014"; tr.appendChild(t1);
+        var t2=document.createElement("td"); t2.textContent=inv.client||inv.clientName||"\u2014"; tr.appendChild(t2);
+        var t3=document.createElement("td"); t3.style.fontFamily="var(--font-mono)";
+        var amt=parseFloat(inv.amount||inv.total||0);
+        t3.textContent="$"+amt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); tr.appendChild(t3);
+        var t4=document.createElement("td"); var badge=document.createElement("span");
+        var status=(inv.status||"pending").toLowerCase();
+        badge.className="badge "+(status==="paid"?"paid":status==="overdue"?"overdue":"pending");
+        badge.textContent=status; badge.title="Click to toggle status";
+        badge.onclick=function(e){ e.stopPropagation(); toggleStatus(inv.id||inv._id, status); };
+        t4.appendChild(badge); tr.appendChild(t4);
+        var t5=document.createElement("td"); t5.style.color="var(--text-muted)"; t5.style.fontSize="var(--text-xs)";
+        var dt=inv.date||inv.createdAt||inv.created_at||"";
+        t5.textContent=dt?new Date(dt).toLocaleDateString():"\u2014"; tr.appendChild(t5);
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody); container.appendChild(table);
+}
+async function toggleStatus(id, current) {
+    if (!id) return;
+    var cycle = {pending:"paid", paid:"overdue", overdue:"pending"};
+    var next = cycle[current] || "pending";
+    try {
+        var res = await fetch("/api/invoices/"+id+"/status", {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:next})});
+        if (!res.ok) throw new Error("HTTP "+res.status);
+        loadInvoices();
+    } catch(e){ alert("Failed to update status: "+e.message); }
+}
+function openCreateModal(){ document.getElementById("createModal").classList.add("open"); }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+function addLineItem() {
+    var c = document.getElementById("line-items");
+    var div = document.createElement("div"); div.className = "line-item";
+    var n=document.createElement("input"); n.placeholder="Item name"; n.className="li-name";
+    var q=document.createElement("input"); q.placeholder="Qty"; q.type="number"; q.min="1"; q.value="1"; q.className="li-qty";
+    var r=document.createElement("input"); r.placeholder="Rate"; r.type="number"; r.min="0"; r.step="0.01"; r.className="li-rate";
+    div.appendChild(n); div.appendChild(q); div.appendChild(r); c.appendChild(div);
+}
+async function createInvoice() {
+    var client=document.getElementById("inv-client").value;
+    var currency=document.getElementById("inv-currency").value;
+    if(!client) return alert("Client is required");
+    var rows=document.querySelectorAll(".line-item"); var items=[];
+    rows.forEach(function(row){
+        var name=row.querySelector(".li-name").value;
+        var qty=parseInt(row.querySelector(".li-qty").value)||1;
+        var rate=parseFloat(row.querySelector(".li-rate").value)||0;
+        if(name) items.push({name:name,qty:qty,rate:rate});
+    });
+    if(!items.length) return alert("Add at least one line item");
+    try {
+        var res=await fetch("/api/invoices",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({client:client,items:items,currency:currency})});
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        closeModal("createModal"); document.getElementById("inv-client").value="";
+        var lic=document.getElementById("line-items"); lic.textContent="";
+        var div=document.createElement("div"); div.className="line-item";
+        var n2=document.createElement("input"); n2.placeholder="Item name"; n2.className="li-name";
+        var q2=document.createElement("input"); q2.placeholder="Qty"; q2.type="number"; q2.min="1"; q2.value="1"; q2.className="li-qty";
+        var r2=document.createElement("input"); r2.placeholder="Rate"; r2.type="number"; r2.min="0"; r2.step="0.01"; r2.className="li-rate";
+        div.appendChild(n2); div.appendChild(q2); div.appendChild(r2); lic.appendChild(div);
+        loadInvoices();
+    } catch(e){ alert("Failed to create invoice: "+e.message); }
+}
+
+document.querySelectorAll(".modal-overlay").forEach(function(el){
+    el.addEventListener("click", function(e){ if(e.target===el) el.classList.remove("open"); });
+});
+loadInvoices();
+</script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>
