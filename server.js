@@ -554,6 +554,46 @@ app.all('/api/{*path}', async (req, res) => {
   }
 });
 
+// ================= LEADGEN AI PIPELINE =================
+app.post('/api/leadgen/auto-prospect', async (req, res) => {
+  const { industry, region, count } = req.body;
+  try {
+    const resp = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: 'nousresearch/hermes-3-llama-3.1-405b:free',
+      messages: [{ role: 'user', content: `Generate ${count||5} business leads for ${industry||'technology'} in ${region||'South Africa'}. Each: company_name, contact_name, email, phone, budget, pain_points. Return JSON array only.` }],
+      max_tokens: 800
+    }, { headers: { 'Authorization': 'Bearer ' + (process.env.OPENROUTER_API_KEY||''), 'Content-Type': 'application/json' }, timeout: 30000 });
+    const text = resp.data.choices[0].message.content;
+    let leads = [];
+    try { leads = JSON.parse(text.match(/\[[\s\S]*\]/)?.[0] || '[]'); } catch(e) {}
+    res.json({ ok: true, leads_generated: leads.length, leads, raw: leads.length ? undefined : text });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/leadgen/auto-nurture', async (req, res) => {
+  try {
+    const camp = await axios.post('http://localhost:3000/api/crm/campaigns', { name: req.body.subject || 'AI Nurture', template_type: 'intro' }).then(r=>r.data).catch(()=>({}));
+    const queue = await axios.post('http://localhost:3000/api/outreach/leads', { filter: 'all', template: 'intro' }).then(r=>r.data).catch(()=>({}));
+    res.json({ ok: true, campaign: camp, queued: queue });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/leadgen/auto-close', async (req, res) => {
+  const { lead_id, offer } = req.body;
+  try {
+    const lead = await axios.get('http://localhost:3000/api/crm/leads/' + lead_id).then(r=>r.data).catch(()=>null);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    const resp = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: 'nousresearch/hermes-3-llama-3.1-405b:free',
+      messages: [{ role: 'user', content: `Write a 3-sentence sales email to ${lead.company||'a business'} about Bridge AI OS. Offer: ${offer||'Pro plan R299/mo'}. CTA: https://go.ai-os.co.za/landing. Professional, direct.` }],
+      max_tokens: 300
+    }, { headers: { 'Authorization': 'Bearer ' + (process.env.OPENROUTER_API_KEY||''), 'Content-Type': 'application/json' }, timeout: 30000 });
+    const email = resp.data.choices[0].message.content;
+    const queued = await axios.post('http://localhost:3000/api/outreach/queue', { to: lead.email, subject: offer||'AI for your business', body: email, lead_id }).then(r=>r.data).catch(()=>({}));
+    res.json({ ok: true, email_content: email, queued, lead_email: lead.email });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
 // ================= API INDEX =================
 app.get('/api', (req, res) => res.json({
   service: 'Bridge AI OS', version: '1.0.0',
@@ -584,7 +624,7 @@ const shortRoutes = {
   '/status': '/system-status-dashboard.html', '/terminal': '/terminal.html',
   '/topology': '/topology.html', '/trading': '/trading.html',
   '/twin-wall': '/twin-wall.html', '/welcome': '/welcome.html', '/face': '/anatomical_face.html',
-  '/crm': '/crm.html', '/invoicing': '/invoicing.html', '/tickets': '/tickets.html',
+  '/leadgen': '/leadgen.html', '/crm': '/crm.html', '/invoicing': '/invoicing.html', '/tickets': '/tickets.html',
   '/legal': '/legal.html', '/marketing': '/marketing.html', '/vendors': '/vendors.html',
   '/quotes': '/quotes.html', '/customers': '/customers.html', '/workforce': '/workforce.html'
 };
