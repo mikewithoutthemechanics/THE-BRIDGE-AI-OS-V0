@@ -572,7 +572,18 @@ const shortRoutes = {
   '/governance': '/governance.html', '/twins': '/digital-twin-console.html',
   '/wallet': '/wallet.html', '/docs': '/docs.html', '/pricing': '/pricing.html',
   '/settings': '/settings.html', '/affiliate': '/affiliate.html',
-  '/brand': '/brand.html', '/corporate': '/corporate.html', '/join': '/join.html'
+  '/brand': '/brand.html', '/corporate': '/corporate.html', '/join': '/join.html',
+  '/admin': '/admin.html', '/agents': '/agents.html', '/avatar': '/avatar.html',
+  '/control': '/control.html', '/dashboard': '/aoe-dashboard.html',
+  '/ehsa-app': '/ehsa-app.html', '/ehsa-brain': '/ehsa-brain.html',
+  '/executive': '/executive-dashboard.html', '/home': '/home.html',
+  '/intelligence': '/intelligence.html', '/landing': '/landing.html',
+  '/logs': '/logs.html', '/marketplace': '/marketplace.html',
+  '/onboarding': '/onboarding.html', '/platforms': '/platforms.html',
+  '/registry': '/registry.html', '/sitemap': '/sitemap.html',
+  '/status': '/system-status-dashboard.html', '/terminal': '/terminal.html',
+  '/topology': '/topology.html', '/trading': '/trading.html',
+  '/twin-wall': '/twin-wall.html', '/welcome': '/welcome.html', '/face': '/anatomical_face.html'
 };
 Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));
