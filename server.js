@@ -538,23 +538,7 @@ app.post('/referral/claim', async (req, res) => {
   }
 });
 
-// ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE =================
-app.all('/api/{*path}', async (req, res) => {
-  try {
-    const resp = await axios({
-      method: req.method,
-      url: BRAIN_URL + req.originalUrl,
-      data: req.body,
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 10000
-    });
-    res.status(resp.status).json(resp.data);
-  } catch (err) {
-    res.status(err.response?.status || 502).json(err.response?.data || { error: 'Service unavailable' });
-  }
-});
-
-// ================= LEADGEN AI PIPELINE =================
+// ================= LEADGEN AI PIPELINE (must be before catch-all proxy) =================
 app.post('/api/leadgen/auto-prospect', async (req, res) => {
   const { industry, region, count } = req.body;
   try {
@@ -569,7 +553,6 @@ app.post('/api/leadgen/auto-prospect', async (req, res) => {
     res.json({ ok: true, leads_generated: leads.length, leads, raw: leads.length ? undefined : text });
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/leadgen/auto-nurture', async (req, res) => {
   try {
     const camp = await axios.post('http://localhost:3000/api/crm/campaigns', { name: req.body.subject || 'AI Nurture', template_type: 'intro' }).then(r=>r.data).catch(()=>({}));
@@ -577,7 +560,6 @@ app.post('/api/leadgen/auto-nurture', async (req, res) => {
     res.json({ ok: true, campaign: camp, queued: queue });
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
-
 app.post('/api/leadgen/auto-close', async (req, res) => {
   const { lead_id, offer } = req.body;
   try {
@@ -592,6 +574,22 @@ app.post('/api/leadgen/auto-close', async (req, res) => {
     const queued = await axios.post('http://localhost:3000/api/outreach/queue', { to: lead.email, subject: offer||'AI for your business', body: email, lead_id }).then(r=>r.data).catch(()=>({}));
     res.json({ ok: true, email_content: email, queued, lead_email: lead.email });
   } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE =================
+app.all('/api/{*path}', async (req, res) => {
+  try {
+    const resp = await axios({
+      method: req.method,
+      url: BRAIN_URL + req.originalUrl,
+      data: req.body,
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+    res.status(resp.status).json(resp.data);
+  } catch (err) {
+    res.status(err.response?.status || 502).json(err.response?.data || { error: 'Service unavailable' });
+  }
 });
 
 // ================= API INDEX =================
