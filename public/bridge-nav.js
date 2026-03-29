@@ -1,34 +1,43 @@
 (function() {
   'use strict';
 
-  var base = 'https://abaas.bridge-ai-os.com';
+  // Auto-detect: use VPS domains when on ai-os.co.za, tunnel when on bridge-ai-os.com, relative when same origin
+  var h = window.location.hostname;
+  var isVPS = h.indexOf('ai-os.co.za') !== -1;
+  var isTunnel = h.indexOf('bridge-ai-os.com') !== -1;
+  var svcBase = isVPS ? 'https://go.ai-os.co.za' : (isTunnel ? 'https://abaas.bridge-ai-os.com' : '');
+  var godUrl = isVPS ? 'https://god.ai-os.co.za' : 'https://god.bridge-ai-os.com';
+  var svgUrl = isVPS ? 'https://svg.ai-os.co.za' : 'https://svg.bridge-ai-os.com';
+  var termUrl = isVPS ? 'https://terminal.ai-os.co.za' : 'https://terminal.bridge-ai-os.com';
+  var authUrl = isVPS ? 'https://auth.ai-os.co.za' : 'https://auth.bridge-ai-os.com';
+  var gwUrl = isVPS ? 'https://gateway.ai-os.co.za' : 'https://gateway.bridge-ai-os.com';
   var sections = {
     'SERVICES': [
-      { name: 'CONTROL', subdomain: 'abaas', port: '3000', url: 'https://abaas.bridge-ai-os.com' },
-      { name: 'GOD MODE', subdomain: 'god', port: '3001', url: 'https://god.bridge-ai-os.com' },
-      { name: 'LIVE WALL', subdomain: 'live', port: '8001', url: 'https://live.bridge-ai-os.com' },
-      { name: 'SVG ENGINE', subdomain: 'svg', port: '7070', url: 'https://svg.bridge-ai-os.com' },
-      { name: 'BRAIN', subdomain: 'brain', port: '8000', url: 'https://brain.bridge-ai-os.com' },
-      { name: 'TERMINAL', subdomain: 'terminal', port: '5002', url: 'https://terminal.bridge-ai-os.com' },
-      { name: 'GRAFANA', subdomain: 'grafana', port: '3003', url: 'https://grafana.bridge-ai-os.com' }
+      { name: 'CONTROL', subdomain: 'abaas', port: '3000', url: svcBase || '/' },
+      { name: 'GOD MODE', subdomain: 'god', port: '3001', url: godUrl },
+      { name: 'LIVE WALL', subdomain: 'live', port: '8001', url: isVPS ? svcBase : 'https://live.bridge-ai-os.com' },
+      { name: 'SVG ENGINE', subdomain: 'svg', port: '7070', url: svgUrl },
+      { name: 'BRAIN', subdomain: 'brain', port: '8000', url: svcBase + '/api' },
+      { name: 'TERMINAL', subdomain: 'terminal', port: '5002', url: termUrl },
+      { name: 'GRAFANA', subdomain: 'grafana', port: '3003', url: isVPS ? 'https://go.ai-os.co.za/status' : 'https://grafana.bridge-ai-os.com' }
     ],
     'PLATFORMS': [
-      { name: 'EHSA', url: base+'/ehsa' }, { name: 'HOSPITAL', url: base+'/hospital' },
-      { name: 'AID', url: base+'/aid' }, { name: 'UBI', url: base+'/ubi' },
-      { name: 'SUPAC', url: base+'/supac' }, { name: 'BAN', url: base+'/ban' },
-      { name: 'AURORA', url: base+'/aurora' }, { name: 'ROOTED EARTH', url: base+'/rootedearth' }
+      { name: 'EHSA', url: svcBase+'/ehsa' }, { name: 'HOSPITAL', url: svcBase+'/hospital' },
+      { name: 'AID', url: svcBase+'/aid' }, { name: 'UBI', url: svcBase+'/ubi' },
+      { name: 'SUPAC', url: svcBase+'/supac' }, { name: 'BAN', url: svcBase+'/ban' },
+      { name: 'AURORA', url: svcBase+'/aurora' }, { name: 'ROOTED EARTH', url: svcBase+'/rootedearth' }
     ],
     'BUSINESS': [
-      { name: 'CRM', url: base+'/crm' }, { name: 'INVOICING', url: base+'/invoicing' },
-      { name: 'QUOTES', url: base+'/quotes' }, { name: 'LEGAL', url: base+'/legal' },
-      { name: 'MARKETING', url: base+'/marketing' }, { name: 'TICKETS', url: base+'/tickets' },
-      { name: 'VENDORS', url: base+'/vendors' }, { name: 'CUSTOMERS', url: base+'/customers' },
-      { name: 'WORKFORCE', url: base+'/workforce' }
+      { name: 'CRM', url: svcBase+'/crm' }, { name: 'INVOICING', url: svcBase+'/invoicing' },
+      { name: 'QUOTES', url: svcBase+'/quotes' }, { name: 'LEGAL', url: svcBase+'/legal' },
+      { name: 'MARKETING', url: svcBase+'/marketing' }, { name: 'TICKETS', url: svcBase+'/tickets' },
+      { name: 'VENDORS', url: svcBase+'/vendors' }, { name: 'CUSTOMERS', url: svcBase+'/customers' },
+      { name: 'WORKFORCE', url: svcBase+'/workforce' }
     ],
     'MORE': [
-      { name: 'APPS', url: base+'/apps' }, { name: 'MARKETPLACE', url: base+'/marketplace' },
-      { name: 'DEFI', url: base+'/defi' }, { name: 'TRADING', url: base+'/trading' },
-      { name: 'PRICING', url: base+'/pricing' }, { name: 'DOCS', url: base+'/docs' }
+      { name: 'APPS', url: svcBase+'/apps' }, { name: 'MARKETPLACE', url: svcBase+'/marketplace' },
+      { name: 'DEFI', url: svcBase+'/defi' }, { name: 'TRADING', url: svcBase+'/trading' },
+      { name: 'PRICING', url: svcBase+'/pricing' }, { name: 'DOCS', url: svcBase+'/docs' }
     ]
   };
 
