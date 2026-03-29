@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeadGen Pipeline — Bridge AI</title>
+  <link rel="stylesheet" href="/bridge-tokens.css">
+  <style>
+    body { background: var(--bg, #0a0a0f); color: var(--text, #e0e0e0); font-family: system-ui, sans-serif; margin: 0; padding: 0; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+    h1 { color: var(--accent, #00e5ff); margin-bottom: 0.5rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+    .card { background: var(--card-bg, #13131a); border: 1px solid var(--border, #222); border-radius: 12px; padding: 1.5rem; }
+    .card h2 { margin: 0 0 1rem; font-size: 1.1rem; color: var(--accent, #00e5ff); }
+    .stat-row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #1a1a24; }
+    .stat-val { font-weight: 700; color: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #1a1a24; }
+    th { color: var(--accent, #00e5ff); font-weight: 600; }
+    button { background: var(--accent, #00e5ff); color: #000; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 600; margin: 0.3rem; }
+    button:hover { opacity: 0.85; }
+    button.secondary { background: #333; color: #fff; }
+    .actions { margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    input, select { background: #1a1a24; border: 1px solid #333; color: #fff; padding: 0.5rem; border-radius: 6px; }
+    .log { background: #0d0d14; border: 1px solid #222; border-radius: 8px; padding: 1rem; margin-top: 1rem; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <script src="/bridge-nav.js"></script>
+  <div class="container">
+    <h1>LeadGen Pipeline</h1>
+    <p style="color:#888;">AI-powered prospecting, nurture, and close automation</p>
+
+    <div class="grid">
+      <div class="card" id="stats-card">
+        <h2>Pipeline Stats</h2>
+        <div id="stats-content"><em>Loading...</em></div>
+      </div>
+
+      <div class="card">
+        <h2>Outreach Stats</h2>
+        <div id="outreach-content"><em>Loading...</em></div>
+      </div>
+
+      <div class="card">
+        <h2>Actions</h2>
+        <div style="margin-bottom:0.8rem;">
+          <label>Industry: <input id="inp-industry" value="technology" style="width:120px;"></label>
+          <label>Region: <input id="inp-region" value="South Africa" style="width:120px;"></label>
+          <label>Count: <input id="inp-count" type="number" value="5" style="width:50px;"></label>
+        </div>
+        <div class="actions">
+          <button onclick="autoProspect()">Auto-Prospect</button>
+          <button onclick="autoNurture()">Launch Nurture</button>
+          <button onclick="autoCloseAll()" class="secondary">Auto-Close All</button>
+        </div>
+        <div class="log" id="action-log">Ready.</div>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Leads</h2>
+        <table>
+          <thead><tr><th>Company</th><th>Email</th><th>Source</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="leads-body"><tr><td colspan="5"><em>Loading...</em></td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Campaigns</h2>
+        <table>
+          <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Created</th></tr></thead>
+          <tbody id="campaigns-body"><tr><td colspan="4"><em>Loading...</em></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '';
+    function log(msg) {
+      const el = document.getElementById('action-log');
+      el.textContent += '\n' + new Date().toLocaleTimeString() + ' ' + msg;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.textContent;
+    }
+
+    function renderStats(data, containerId) {
+      const el = document.getElementById(containerId);
+      el.textContent = '';
+      if (data && typeof data === 'object') {
+        Object.entries(data).forEach(function(entry) {
+          const row = document.createElement('div');
+          row.className = 'stat-row';
+          const label = document.createElement('span');
+          label.textContent = entry[0];
+          const val = document.createElement('span');
+          val.className = 'stat-val';
+          val.textContent = typeof entry[1] === 'object' ? JSON.stringify(entry[1]) : entry[1];
+          row.appendChild(label);
+          row.appendChild(val);
+          el.appendChild(row);
+        });
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const r = await fetch(API + '/api/crm/stats').then(function(r) { return r.json(); });
+        renderStats(r, 'stats-content');
+      } catch(e) { document.getElementById('stats-content').textContent = 'Failed to load stats'; }
+    }
+
+    async function loadOutreach() {
+      try {
+        const r = await fetch(API + '/api/outreach/stats').then(function(r) { return r.json(); });
+        renderStats(r, 'outreach-content');
+      } catch(e) { document.getElementById('outreach-content').textContent = 'No outreach stats available'; }
+    }
+
+    async function loadLeads() {
+      try {
+        const r = await fetch(API + '/api/crm/leads').then(function(r) { return r.json(); });
+        const tbody = document.getElementById('leads-body');
+        const leads = Array.isArray(r) ? r : (r.leads || []);
+        tbody.textContent = '';
+        if (!leads.length) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.colSpan = 5; td.textContent = 'No leads yet';
+          tr.appendChild(td); tbody.appendChild(tr);
+          return;
+        }
+        leads.forEach(function(l) {
+          const tr = document.createElement('tr');
+          var fields = [l.company || '-', l.email || '-', l.source || '-'];
+          fields.forEach(function(f) {
+            var td = document.createElement('td');
+            td.textContent = f;
+            tr.appendChild(td);
+          });
+          var statusTd = document.createElement('td');
+          var badge = document.createElement('span');
+          badge.textContent = l.status || 'new';
+          badge.style.cssText = 'display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;background:#1a3a2a;color:#4ade80;';
+          statusTd.appendChild(badge);
+          tr.appendChild(statusTd);
+          var actionTd = document.createElement('td');
+          var btn = document.createElement('button');
+          btn.textContent = 'Close';
+          btn.addEventListener('click', function() { autoClose(l.id || l.lead_id); });
+          actionTd.appendChild(btn);
+          tr.appendChild(actionTd);
+          tbody.appendChild(tr);
+        });
+      } catch(e) {
+        var tbody = document.getElementById('leads-body');
+        tbody.textContent = '';
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.colSpan = 5; td.textContent = 'Failed to load';
+        tr.appendChild(td); tbody.appendChild(tr);
+      }
+    }
+
+    async function loadCampaigns() {
+      try {
+        const r = await fetch(API + '/api/crm/campaigns').then(function(r) { return r.json(); });
+        const tbody = document.getElementById('campaigns-body');
+        const camps = Array.isArray(r) ? r : (r.campaigns || []);
+        tbody.textContent = '';
+        if (!camps.length) {
+          var tr = document.createElement('tr');
+          var td = document.createElement('td');
+          td.colSpan = 4; td.textContent = 'No campaigns yet';
+          tr.appendChild(td); tbody.appendChild(tr);
+          return;
+        }
+        camps.forEach(function(c) {
+          var tr = document.createElement('tr');
+          [c.name || '-', c.template_type || '-', c.status || 'draft', c.created_at || '-'].forEach(function(f) {
+            var td = document.createElement('td');
+            td.textContent = f;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      } catch(e) {
+        var tbody = document.getElementById('campaigns-body');
+        tbody.textContent = '';
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.colSpan = 4; td.textContent = 'Failed to load';
+        tr.appendChild(td); tbody.appendChild(tr);
+      }
+    }
+
+    async function autoProspect() {
+      log('Prospecting...');
+      try {
+        const r = await fetch(API + '/api/leadgen/auto-prospect', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ industry: document.getElementById('inp-industry').value, region: document.getElementById('inp-region').value, count: parseInt(document.getElementById('inp-count').value) || 5 })
+        }).then(function(r) { return r.json(); });
+        log('Generated ' + (r.leads_generated || 0) + ' leads');
+        if (r.note) log(r.note);
+        setTimeout(function() { loadLeads(); loadStats(); }, 1500);
+      } catch(e) { log('Error: ' + e.message); }
+    }
+
+    async function autoNurture() {
+      log('Launching nurture campaign...');
+      try {
+        const r = await fetch(API + '/api/leadgen/auto-nurture', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject: 'AI Nurture -- ' + new Date().toLocaleDateString() })
+        }).then(function(r) { return r.json(); });
+        log('Campaign created. Queued: ' + JSON.stringify(r.queued));
+        setTimeout(function() { loadCampaigns(); loadOutreach(); }, 1000);
+      } catch(e) { log('Error: ' + e.message); }
+    }
+
+    async function autoClose(leadId) {
+      log('Closing lead ' + leadId + '...');
+      try {
+        const r = await fetch(API + '/api/leadgen/auto-close', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lead_id: leadId })
+        }).then(function(r) { return r.json(); });
+        log('Sent to: ' + (r.lead || 'unknown'));
+        setTimeout(function() { loadLeads(); loadStats(); }, 1000);
+      } catch(e) { log('Error: ' + e.message); }
+    }
+
+    async function autoCloseAll() {
+      log('Auto-closing all leads...');
+      try {
+        const r = await fetch(API + '/api/crm/leads').then(function(r) { return r.json(); });
+        const leads = Array.isArray(r) ? r : (r.leads || []);
+        for (var i = 0; i < leads.length; i++) {
+          await autoClose(leads[i].id || leads[i].lead_id);
+        }
+        log('Done -- processed ' + leads.length + ' leads');
+      } catch(e) { log('Error: ' + e.message); }
+    }
+
+    loadStats(); loadOutreach(); loadLeads(); loadCampaigns();
+    setInterval(function() { loadStats(); loadOutreach(); }, 30000);
+  </script>
+</body>
+</html>
