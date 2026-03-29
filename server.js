@@ -61,15 +61,14 @@ async function validateWithPayfastServer(originalBody) {
 
 // Generate PayFast signature
 function generateSignature(unsigned, passphrase) {
-  const keys = Object.keys(unsigned).sort();
-  let string = "";
-  for (const key of keys) {
-    if (key !== "signature") {
-      string += `${key}=${unsigned[key]}&`;
+  let pfOutput = "";
+  for (const key of Object.keys(unsigned)) {
+    if (key !== "signature" && unsigned[key] !== undefined && unsigned[key] !== "") {
+      pfOutput += `${key}=${encodeURIComponent(String(unsigned[key]).trim()).replace(/%20/g, "+")}&`;
     }
   }
-  string += `passphrase=${passphrase}`;
-  return crypto.createHash("md5").update(string).digest("hex");
+  pfOutput += `passphrase=${encodeURIComponent(String(passphrase).trim()).replace(/%20/g, "+")}`;
+  return crypto.createHash("md5").update(pfOutput).digest("hex");
 }
 
 // ================= DATABASE =================
