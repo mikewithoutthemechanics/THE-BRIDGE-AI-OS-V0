@@ -521,6 +521,20 @@ function handler(req, res) {
   if (url === '/api/swarms')          return json(orchestrator.swarms);
   if (url === '/api/economics')       return json(aggregateEconomics());
   if (url === '/api/marketplace/stats') return json(aggregateEconomics());
+  if (url === '/api/treasury/summary') {
+    return new Promise(resolve => {
+      require('http').get('http://localhost:8000/api/treasury/status', r => {
+        let body = '';
+        r.on('data', c => body += c);
+        r.on('end', () => {
+          try {
+            const d = JSON.parse(body);
+            resolve(json({ balance: d.balance || 0, earned: d.earned || 0, spent: d.spent || 0, currency: d.currency || 'USD', subscriptions: 0, plans: [] }));
+          } catch { resolve(json({ balance: 0, earned: 0, spent: 0, currency: 'USD', subscriptions: 0, plans: [] })); }
+        });
+      }).on('error', () => resolve(json({ balance: 0, earned: 0, spent: 0, currency: 'USD', subscriptions: 0, plans: [] })));
+    });
+  }
 
   // ================= UNIVERSAL SHARE ENDPOINTS =================
   if (url.startsWith('/share/')) {
