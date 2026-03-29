@@ -211,7 +211,7 @@ const STATUS_COLORS = { green: "#22c55e", yellow: "#facc15", orange: "#fb923c", 
 const TYPE_COLORS = { Server: "#38bdf8", Container: "#a855f7", API: "#22c55e", Database: "#f97316", Network: "#0ea5e9", Cache: "#facc15", Queue: "#e5e7eb", "AI/ML": "#ec4899" };
 
 /* id must match nodes[].id for poll updates */
-const _origin = location.origin;
+const _origin = location.port === '3001' ? 'http://localhost:3000' : location.origin;
 const HEALTH_ENDPOINTS = [
   { id: "gateway",      url: _origin + "/health" },
   { id: "core-brain",   url: _origin + "/api/health" },
