@@ -554,6 +554,30 @@ app.all('/api/{*path}', async (req, res) => {
   }
 });
 
+// ================= API INDEX =================
+app.get('/api', (req, res) => res.json({
+  service: 'Bridge AI OS', version: '1.0.0',
+  endpoints: {
+    health: 'GET /health', treasury: 'GET /api/treasury', payments: 'GET /api/treasury/payments',
+    create_payment: 'POST /create-payment', share: 'GET /share/:id/context'
+  }
+}));
+
+// ================= SHORT URL REDIRECTS =================
+const shortRoutes = {
+  '/ban': '/ban-home.html', '/ehsa': '/ehsa-home.html', '/aid': '/aid-home.html',
+  '/ubi': '/ubi-home.html', '/aurora': '/aurora-home.html', '/supac': '/supac-home.html',
+  '/hospital': '/hospital-home.html', '/rootedearth': '/rootedearth-home.html',
+  '/abaas': '/abaas.html', '/apps': '/50-applications.html', '/defi': '/defi.html',
+  '/governance': '/governance.html', '/twins': '/digital-twin-console.html',
+  '/wallet': '/wallet.html', '/docs': '/docs.html', '/pricing': '/pricing.html',
+  '/settings': '/settings.html', '/affiliate': '/affiliate.html',
+  '/brand': '/brand.html', '/corporate': '/corporate.html', '/join': '/join.html'
+};
+Object.entries(shortRoutes).forEach(([short, target]) => {
+  app.get(short, (req, res) => res.redirect(target));
+});
+
 // ================= SERVER =================
 app.listen(3000, () => {
   console.log("SYSTEM LIVE -> http://localhost:3000");
