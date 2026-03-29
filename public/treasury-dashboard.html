@@ -119,21 +119,28 @@
     async function refresh() {
       try {
         var results = await Promise.all([
-          fetch('/api/status').then(function(r) { return r.json(); }),
-          fetch('/api/analytics/summary').then(function(r) { return r.json(); }),
-          fetch('/api/audit').then(function(r) { return r.json(); })
+          fetch('/api/treasury').then(function(r) { return r.json(); }).catch(function() { return {}; }),
+          fetch('/api/analytics/summary').then(function(r) { return r.json(); }).catch(function() { return {}; }),
+          fetch('/api/treasury/payments').then(function(r) { return r.json(); }).catch(function() { return []; })
         ]);
-        var tRes = results[0], aRes = results[1], auditRes = results[2];
+        var tRes = results[0], aRes = results[1], payments = results[2];
 
-        var t = tRes.treasury || {};
-        animateValue(document.getElementById('totalBalance'), t.totalBalance || 0);
-        animateValue(document.getElementById('operations'), t.accounts ? t.accounts.operations : 0);
-        animateValue(document.getElementById('reserve'), t.accounts ? t.accounts.reserve : 0);
-        animateValue(document.getElementById('distributed'), t.totalDistributed || 0);
-        animateValue(document.getElementById('fees'), t.totalFees || 0);
-        document.getElementById('velocity').textContent = (t.velocity || 0) + ' tx/s';
+        var buckets = tRes.buckets || [];
+        var total = parseFloat(tRes.total) || 0;
+        var ubi = buckets.find(function(b){return b.name==='ubi'}) || {balance:0};
+        var treasury = buckets.find(function(b){return b.name==='treasury'}) || {balance:0};
+        var ops = buckets.find(function(b){return b.name==='ops'}) || {balance:0};
+        var founder = buckets.find(function(b){return b.name==='founder'}) || {balance:0};
 
-        if (aRes.ok) {
+        animateValue(document.getElementById('totalBalance'), total);
+        animateValue(document.getElementById('operations'), parseFloat(ops.balance) || 0);
+        animateValue(document.getElementById('reserve'), parseFloat(treasury.balance) || 0);
+        animateValue(document.getElementById('distributed'), parseFloat(ubi.balance) || 0);
+        animateValue(document.getElementById('fees'), parseFloat(founder.balance) || 0);
+        var payArr = Array.isArray(payments) ? payments : (payments.rows || []);
+        document.getElementById('velocity').textContent = payArr.length + ' tx';
+
+        if (aRes.ok || aRes.last_24h) {
           document.getElementById('totalEvents').textContent = aRes.last_24h ? aRes.last_24h.total : '0';
           document.getElementById('uniqueRoutes').textContent = aRes.last_24h ? aRes.last_24h.routes : '0';
           var topTbody = document.getElementById('topPages');
@@ -146,14 +153,17 @@
           }
         }
 
-        if (auditRes.entries) {
-          var auditTbody = document.getElementById('auditTable');
-          clearChildren(auditTbody);
-          auditRes.entries.slice(-20).reverse().forEach(function(e) {
+        var recent = tRes.recent || [];
+        var auditTbody = document.getElementById('auditTable');
+        clearChildren(auditTbody);
+        if (recent.length === 0) {
+          addRow(auditTbody, ['—', 'No transactions', '']);
+        } else {
+          recent.forEach(function(e) {
             addRow(auditTbody, [
-              new Date(e.ts).toLocaleTimeString(),
-              e.action,
-              JSON.stringify(e.detail).slice(0, 80)
+              new Date(e.timestamp).toLocaleTimeString(),
+              e.type + ' (' + e.source + ')',
+              'R' + e.amount + ' → ' + (e.bucket || 'pool')
             ]);
           });
         }
