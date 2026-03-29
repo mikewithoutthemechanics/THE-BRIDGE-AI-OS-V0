@@ -8,107 +8,94 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/bridge-tokens.css"></head>
-<body class="bg-slate-50 font-sans antialiased">
-
-  <nav class="bg-slate-800 text-white p-4 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-lg">
-    <a href="/" class="text-xl font-bold hover:text-amber-300">Bridge AI OS</a>
-    <ul class="flex flex-wrap gap-4 mt-2 md:mt-0">
-      <li><a href="/" class="hover:text-amber-300">Digital Twin</a></li>
-      <li><a href="/executive-dashboard.html" class="hover:text-amber-300">Dashboard</a></li>
-      <li><a href="/50-applications.html" class="hover:text-amber-300">50 Applications</a></li>
-      <li><a href="/agents.html" class="hover:text-amber-300">Agents</a></li>
-      <li><a href="/landing.html" class="hover:text-amber-300">Landing</a></li>
-      <li><a href="/settings.html" class="hover:text-amber-300">Settings</a></li>
-      <li><a href="/docs.html" class="text-amber-300 font-semibold">Docs</a></li>
-    </ul>
-  </nav>
+<body class="font-sans antialiased" style="background:var(--bg-0,#060810);color:var(--text-primary,#fff)">
 
   <main class="p-4 md:p-6 max-w-4xl mx-auto space-y-8">
     <header>
-      <h1 class="text-3xl font-bold text-slate-800">Documentation</h1>
-      <p class="text-slate-600 mt-1">Bridge AI OS — API, frontend routes, and references. Updated to match current app.</p>
+      <h1 class="text-3xl font-bold" style="color:var(--cyan,#63ffda)">Documentation</h1>
+      <p style="color:var(--text-secondary,#94a3b8)" class="mt-1">Bridge AI OS — API, frontend routes, and references. Updated to match current app.</p>
     </header>
 
     <!-- Backend API -->
-    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Backend API</h2>
+    <section style="background:var(--bg-1,#0a0e17);border:1px solid var(--border,#2a2a2a)" class="rounded-lg overflow-hidden">
+      <h2 class="text-lg font-semibold p-4" style="color:var(--cyan,#63ffda);border-bottom:1px solid var(--border,#2a2a2a)">Backend API</h2>
       <div class="p-4 space-y-3 text-sm">
-        <p class="text-slate-600">Interactive API docs (Swagger UI) and OpenAPI spec are served by the backend.</p>
+        <p style="color:var(--text-secondary,#94a3b8)">Interactive API docs (Swagger UI) and OpenAPI spec are served by the backend.</p>
         <ul class="list-disc pl-5 space-y-1">
-          <li><a id="api-docs-link" href="#" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-medium">API Docs (Swagger)</a> — try endpoints interactively</li>
-          <li><a id="openapi-link" href="#" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-medium">OpenAPI JSON</a> — machine-readable spec</li>
+          <li><a id="api-docs-link" href="#" target="_blank" rel="noopener" style="color:var(--cyan,#63ffda)" class="hover:underline font-medium">API Docs (Swagger)</a> — try endpoints interactively</li>
+          <li><a id="openapi-link" href="#" target="_blank" rel="noopener" style="color:var(--cyan,#63ffda)" class="hover:underline font-medium">OpenAPI JSON</a> — machine-readable spec</li>
         </ul>
-        <p class="text-slate-500 mt-2">Base URL: <code id="api-base-display" class="bg-slate-100 px-1 rounded">—</code></p>
+        <p style="color:var(--text-muted,#666)" class="mt-2">Base URL: <code id="api-base-display" style="background:var(--bg-2,#111827);padding:1px 6px;border-radius:4px">—</code></p>
       </div>
     </section>
 
     <!-- Frontend routes -->
-    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Frontend routes</h2>
+    <section style="background:var(--bg-1,#0a0e17);border:1px solid var(--border,#2a2a2a)" class="rounded-lg overflow-hidden">
+      <h2 class="text-lg font-semibold p-4" style="color:var(--cyan,#63ffda);border-bottom:1px solid var(--border,#2a2a2a)">Frontend routes</h2>
       <div class="p-4 overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead>
-            <tr class="border-b border-slate-200">
-              <th class="text-left py-2 pr-4 text-slate-700">Path</th>
-              <th class="text-left py-2 text-slate-700">Description</th>
+            <tr class="border-b border-slate-700">
+              <th class="text-left py-2 pr-4 text-slate-300">Path</th>
+              <th class="text-left py-2 text-slate-300">Description</th>
             </tr>
           </thead>
-          <tbody class="text-slate-600">
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/" class="text-blue-600 hover:underline">/</a></td><td>Digital Twin (main app)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/executive-dashboard.html" class="text-blue-600 hover:underline">/executive-dashboard.html</a></td><td>Executive Dashboard (swarm, heatmap, pipeline, agents, mission, marketplace)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/50-applications.html" class="text-blue-600 hover:underline">/50-applications.html</a></td><td>50 Applications showcase</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/agents.html" class="text-blue-600 hover:underline">/agents.html</a></td><td>Agents &amp; Digital Twins (replication, leaderboard)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/landing.html" class="text-blue-600 hover:underline">/landing.html</a></td><td>Landing (redirects to 50 Applications)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/settings.html" class="text-blue-600 hover:underline">/settings.html</a></td><td>Settings (shared per user across domains)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/gateway/" class="text-blue-600 hover:underline">/gateway/</a></td><td>Sovereign Gateway — QR scan to join; wallet, SIWE; Bridge · Supac · Taurus · Wiki</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/join.html" class="text-blue-600 hover:underline">/join.html</a></td><td>Join as Agent — QR + decentralized platform entry</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/docs.html" class="text-blue-600 hover:underline">/docs.html</a></td><td>This documentation page</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-blue-600 hover:underline">System Map (4201)</a></td><td>All systems linked — Bridge API, Frontend, Gateway, Join, Next.js (3032), Taurus, Console 3022, Production</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-blue-600 hover:underline">Next.js App (3032)</a></td><td>Next.js root app — synced with system; linked from System Map</td></tr>
+          <tbody class="text-slate-400">
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/" class="text-cyan-400 hover:underline">/</a></td><td>Digital Twin (main app)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/executive-dashboard.html" class="text-cyan-400 hover:underline">/executive-dashboard.html</a></td><td>Executive Dashboard (swarm, heatmap, pipeline, agents, mission, marketplace)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/50-applications.html" class="text-cyan-400 hover:underline">/50-applications.html</a></td><td>50 Applications showcase</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/agents.html" class="text-cyan-400 hover:underline">/agents.html</a></td><td>Agents &amp; Digital Twins (replication, leaderboard)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/landing.html" class="text-cyan-400 hover:underline">/landing.html</a></td><td>Landing (redirects to 50 Applications)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/settings.html" class="text-cyan-400 hover:underline">/settings.html</a></td><td>Settings (shared per user across domains)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/gateway/" class="text-cyan-400 hover:underline">/gateway/</a></td><td>Sovereign Gateway — QR scan to join; wallet, SIWE; Bridge · Supac · Taurus · Wiki</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/join.html" class="text-cyan-400 hover:underline">/join.html</a></td><td>Join as Agent — QR + decentralized platform entry</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/docs.html" class="text-cyan-400 hover:underline">/docs.html</a></td><td>This documentation page</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">System Map (4201)</a></td><td>All systems linked — Bridge API, Frontend, Gateway, Join, Next.js (3032), Taurus, Console 3022, Production</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">Next.js App (3032)</a></td><td>Next.js root app — synced with system; linked from System Map</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <!-- Key API endpoints -->
-    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Key API endpoints</h2>
+    <section class="bg-transparent rounded-lg shadow-md border border-slate-700 overflow-hidden">
+      <h2 class="text-lg font-semibold text-slate-200 p-4 border-b border-slate-700">Key API endpoints</h2>
       <div class="p-4 overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead>
-            <tr class="border-b border-slate-200">
-              <th class="text-left py-2 pr-4 text-slate-700">Method</th>
-              <th class="text-left py-2 pr-4 text-slate-700">Path</th>
-              <th class="text-left py-2 text-slate-700">Description</th>
+            <tr class="border-b border-slate-700">
+              <th class="text-left py-2 pr-4 text-slate-300">Method</th>
+              <th class="text-left py-2 pr-4 text-slate-300">Path</th>
+              <th class="text-left py-2 text-slate-300">Description</th>
             </tr>
           </thead>
-          <tbody class="text-slate-600">
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/health</td><td>Health check</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/capabilities</td><td>Capability registry</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/user/settings</td><td>User settings (X-User-Id optional)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">PUT</td><td class="pr-4 font-mono">/api/user/settings</td><td>Save user settings</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins</td><td>List twins</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins/leaderboard</td><td>Leaderboard</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/status</td><td>Replication status</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/nodes</td><td>Replication nodes</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/live/report</td><td>Live report (dashboard, heatmap)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/founder-todo</td><td>Mission board</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">PATCH</td><td class="pr-4 font-mono">/api/founder-todo/:id/complete</td><td>Complete objective</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/marketplace/tasks</td><td>Marketplace tasks</td></tr>
+          <tbody class="text-slate-400">
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/health</td><td>Health check</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/capabilities</td><td>Capability registry</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/user/settings</td><td>User settings (X-User-Id optional)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">PUT</td><td class="pr-4 font-mono">/api/user/settings</td><td>Save user settings</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins</td><td>List twins</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins/leaderboard</td><td>Leaderboard</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/status</td><td>Replication status</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/nodes</td><td>Replication nodes</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/live/report</td><td>Live report (dashboard, heatmap)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/founder-todo</td><td>Mission board</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">PATCH</td><td class="pr-4 font-mono">/api/founder-todo/:id/complete</td><td>Complete objective</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/marketplace/tasks</td><td>Marketplace tasks</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <!-- Ports -->
-    <section class="bg-slate-100 rounded-lg p-4 text-sm text-slate-600">
-      <h2 class="font-semibold text-slate-800 mb-2">Ports (typical)</h2>
+    <section class="bg-slate-900 rounded-lg p-4 text-sm text-slate-400">
+      <h2 class="font-semibold text-slate-200 mb-2">Ports (typical)</h2>
       <ul class="list-disc pl-5 space-y-1">
         <li><strong>3020</strong> — Frontend (Vite)</li>
-        <li><strong>3032</strong> — Next.js App (root) — <a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-blue-600 hover:underline">open</a></li>
+        <li><strong>3032</strong> — Next.js App (root) — <a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">open</a></li>
         <li><strong>3000</strong> — Dashboard / frontend alt</li>
         <li><strong>8000</strong> — Backend API</li>
-        <li><strong>4201</strong> — Determinator Boot Agent, System Map — <a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-blue-600 hover:underline">System Map</a></li>
+        <li><strong>4201</strong> — Determinator Boot Agent, System Map — <a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">System Map</a></li>
         <li><strong>4202</strong> — Taurus Showcase</li>
         <li><strong>3022</strong> — Console sync</li>
       </ul>

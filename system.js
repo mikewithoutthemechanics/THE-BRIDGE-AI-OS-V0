@@ -520,6 +520,7 @@ function handler(req, res) {
   if (url === '/api/agents')          return json(orchestrator.status());
   if (url === '/api/swarms')          return json(orchestrator.swarms);
   if (url === '/api/economics')       return json(aggregateEconomics());
+  if (url === '/api/marketplace/stats') return json(aggregateEconomics());
 
   // ================= UNIVERSAL SHARE ENDPOINTS =================
   if (url.startsWith('/share/')) {

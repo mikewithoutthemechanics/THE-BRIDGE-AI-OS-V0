@@ -511,6 +511,49 @@ app.get('/api/treasury/payments', async (req, res) => {
   }
 });
 
+// ================= PROXY AUTH ROUTES TO BRAIN SERVICE =================
+const BRAIN_URL = 'http://localhost:8000';
+app.post('/auth/register', async (req, res) => {
+  try {
+    const resp = await axios.post(BRAIN_URL + '/auth/register', req.body);
+    res.status(resp.status).json(resp.data);
+  } catch (err) {
+    res.status(err.response?.status || 502).json(err.response?.data || { error: 'Brain service unavailable' });
+  }
+});
+app.post('/auth/login', async (req, res) => {
+  try {
+    const resp = await axios.post(BRAIN_URL + '/auth/login', req.body);
+    res.status(resp.status).json(resp.data);
+  } catch (err) {
+    res.status(err.response?.status || 502).json(err.response?.data || { error: 'Brain service unavailable' });
+  }
+});
+app.post('/referral/claim', async (req, res) => {
+  try {
+    const resp = await axios.post(BRAIN_URL + '/referral/claim', req.body);
+    res.status(resp.status).json(resp.data);
+  } catch (err) {
+    res.status(err.response?.status || 502).json(err.response?.data || { error: 'Brain service unavailable' });
+  }
+});
+
+// ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE =================
+app.all('/api/{*path}', async (req, res) => {
+  try {
+    const resp = await axios({
+      method: req.method,
+      url: BRAIN_URL + req.originalUrl,
+      data: req.body,
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+    res.status(resp.status).json(resp.data);
+  } catch (err) {
+    res.status(err.response?.status || 502).json(err.response?.data || { error: 'Service unavailable' });
+  }
+});
+
 // ================= SERVER =================
 app.listen(3000, () => {
   console.log("SYSTEM LIVE -> http://localhost:3000");

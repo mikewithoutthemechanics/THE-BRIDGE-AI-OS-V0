@@ -16,6 +16,7 @@
 // Every module the BridgeLiveWall frontend expects on :8000
 // =============================================================================
 
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { WebSocket, WebSocketServer } = require('ws');
@@ -23,6 +24,9 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const axios = require('axios');
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 const PORT = parseInt(process.env.BRAIN_PORT, 10) || 8000;
 const app = express();
@@ -298,10 +302,48 @@ app.get('/api/status', (_req, res) => res.json({ ok: true, status: 'running', ts
 
 // ── TWIN ────────────────────────────────────────────────────────────────────
 app.get('/api/twin/profile', (_req, res) => res.json({ ok: true, ...state.twin }));
-app.post('/api/twin/decide', (req, res) => {
+app.post('/api/twin/decide', async (req, res) => {
   const { prompt, context } = req.body || {};
-  const result = twinReason(prompt || '');
-  res.json({ ok: true, decision: result.text, topic: result.topic, reasoning: result.reasoning, emotion: state.twin.emotion });
+  const userPrompt = prompt || 'What should I focus on?';
+
+  try {
+    const aiResp = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: 'stepfun/step-3.5-flash:free',
+      messages: [
+        { role: 'system', content: 'You are a Bridge AI digital twin. You help make decisions for the Bridge AI OS platform. Be concise, strategic, and action-oriented.' },
+        { role: 'user', content: userPrompt }
+      ],
+      max_tokens: 500
+    }, {
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    res.json({
+      ok: true,
+      decision: aiResp.data.choices[0].message.content || aiResp.data.choices[0].message.reasoning || 'No response',
+      model: aiResp.data.model,
+      confidence: 0.85,
+      source: 'openrouter',
+      emotion: state.twin.emotion,
+      ts: Date.now()
+    });
+  } catch (err) {
+    // Fallback to hardcoded if AI fails
+    const result = twinReason(userPrompt);
+    res.json({
+      ok: true,
+      decision: result.text,
+      topic: result.topic,
+      reasoning: result.reasoning,
+      confidence: 0.5,
+      source: 'fallback',
+      error: err.message,
+      emotion: state.twin.emotion
+    });
+  }
 });
 app.get('/api/twin/shared-xml', (_req, res) => res.json({ ok: true, xml: '<twin><state>active</state></twin>', ts: Date.now() }));
 app.post('/api/twin/shared-xml', (req, res) => { res.json({ ok: true, saved: true }); });
@@ -608,46 +650,78 @@ app.delete('/api/tools/:id', (req, res) => {
 });
 
 // ── RAG-Enhanced Twin Reasoning ─────────────────────────────────────────────
-app.post('/api/brain/ask', (req, res) => {
+app.post('/api/brain/ask', async (req, res) => {
   const { question } = req.body || {};
   if (!question) return res.status(400).json({ ok: false, error: 'question required' });
 
-  // 1. Search docs for context
+  // 1. Search docs for context (RAG)
   const q = question.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-  const context = [];
+  const contextDocs = [];
   for (const [, doc] of docs) {
     let score = 0;
     for (const term of q) {
       score += doc.words.filter(w => w.includes(term)).length;
     }
-    if (score > 0) context.push({ title: doc.title, snippet: doc.content.slice(0, 300), score });
+    if (score > 0) contextDocs.push({ title: doc.title, snippet: doc.content.slice(0, 300), score });
   }
-  context.sort((a, b) => b.score - a.score);
-  const topDocs = context.slice(0, 5);
+  contextDocs.sort((a, b) => b.score - a.score);
+  const topDocs = contextDocs.slice(0, 5);
 
   // 2. Search tools for relevant capabilities
   const relevantTools = [...tools.values()].filter(t =>
     q.some(term => t.name.toLowerCase().includes(term) || t.description.toLowerCase().includes(term))
   ).slice(0, 3);
 
-  // 3. Reason with context
-  const twinResult = twinReason(question);
+  // 3. Real AI reasoning with RAG context
+  const ragContext = topDocs.length > 0
+    ? `\n\nRelevant context from knowledge base:\n${topDocs.map(d => `- ${d.title}: ${d.snippet}`).join('\n')}`
+    : '';
 
-  // 4. Build enriched response
-  const enriched = topDocs.length > 0
-    ? `${twinResult.text}\n\n[Context from ${topDocs.length} docs: ${topDocs.map(d => d.title).join(', ')}]`
-    : twinResult.text;
+  try {
+    const aiResp = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: 'stepfun/step-3.5-flash:free',
+      messages: [
+        { role: 'system', content: `You are a Bridge AI digital twin brain. You answer questions about the Bridge AI OS platform using available context. Be concise and helpful.${ragContext}` },
+        { role: 'user', content: question }
+      ],
+      max_tokens: 500
+    }, {
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-  res.json({
-    ok: true,
-    answer: enriched,
-    topic: twinResult.topic,
-    reasoning: { ...twinResult.reasoning, rag_docs: topDocs.length, tools_found: relevantTools.length },
-    context: topDocs,
-    tools: relevantTools,
-    emotion: state.twin.emotion,
-    ts: Date.now(),
-  });
+    res.json({
+      ok: true,
+      answer: aiResp.data.choices[0].message.content || aiResp.data.choices[0].message.reasoning || 'No response',
+      model: aiResp.data.model,
+      source: 'openrouter',
+      context: topDocs,
+      tools: relevantTools,
+      emotion: state.twin.emotion,
+      ts: Date.now(),
+    });
+  } catch (err) {
+    // Fallback to local reasoning
+    const twinResult = twinReason(question);
+    const enriched = topDocs.length > 0
+      ? `${twinResult.text}\n\n[Context from ${topDocs.length} docs: ${topDocs.map(d => d.title).join(', ')}]`
+      : twinResult.text;
+
+    res.json({
+      ok: true,
+      answer: enriched,
+      topic: twinResult.topic,
+      reasoning: { ...twinResult.reasoning, rag_docs: topDocs.length, tools_found: relevantTools.length },
+      source: 'fallback',
+      error: err.message,
+      context: topDocs,
+      tools: relevantTools,
+      emotion: state.twin.emotion,
+      ts: Date.now(),
+    });
+  }
 });
 
 // ── Auto-register built-in tools on startup ─────────────────────────────────
