@@ -55,7 +55,7 @@ input:focus{border-color:var(--a);outline:none}
 .triage-result{margin-top:1rem;padding:1rem;border-radius:8px;font-size:.8rem;display:none}
 .triage-result.show{display:block}
 </style>
-</head>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
 <body>
 <button class="mob-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
 <div class="app">
@@ -291,5 +291,5 @@ async function loadSection(id) {
 }
 loadSection('dashboard');
 </script>
-</body>
+<script src="/bridge-nav.js"></script></body>
 </html>

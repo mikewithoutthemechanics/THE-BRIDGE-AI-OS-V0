@@ -39,7 +39,7 @@ body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,san
 .footer a{color:var(--a);text-decoration:none}
 @media(max-width:600px){.logo{font-size:2rem}.tagline{font-size:1rem}.stat .v{font-size:1.5rem}}
 </style>
-</head>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
 <body>
 <div class="hero">
   <svg class="svg-bg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
@@ -106,5 +106,5 @@ fetch('/api/treasury/status').then(r=>r.json()).then(d=>{
   document.getElementById('s-treasury').textContent='$'+(d.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
 }).catch(()=>{});
 </script>
-</body>
+<script src="/bridge-nav.js"></script></body>
 </html>

@@ -35,7 +35,7 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
 .action-bar{display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap}
 @media(max-width:600px){main{padding:1rem}.grid-2,.grid-3{grid-template-columns:1fr}h1{font-size:1.4rem}}
 </style>
-</head>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
 <body>
 <nav class="topnav">
   <a href="/" class="logo">Bridge AI</a>
@@ -162,5 +162,5 @@ if(isAuth)(async()=>{
   document.getElementById('debts-body').innerHTML=db.length?db.slice(0,10).map(d=>`<tr><td>${d.description||d.name||'--'}</td><td style="color:var(--r)">$${parseFloat(d.amount||0).toLocaleString()}</td><td>${d.due||d.dueDate||'--'}</td><td><span class="badge ${d.status==='paid'?'badge-green':'badge-red'}">${d.status||'--'}</span></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--t)">No outstanding debts</td></tr>';
 })();
 </script>
-</body>
+<script src="/bridge-nav.js"></script></body>
 </html>

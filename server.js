@@ -6,6 +6,11 @@ const axios = require("axios");
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const path = require("path");
+const { Pool } = require('pg');
+
+const economyDb = new Pool({
+  connectionString: process.env.ECONOMY_DB_URL || 'postgresql://postgres:password@localhost:5432/bridgeai_economy'
+});
 
 const app = express();
 app.use(bodyParser.json());
@@ -197,6 +202,41 @@ app.post("/payfast/notify", async (req, res) => {
 
   const updatePayment = db.prepare("UPDATE payments SET status='paid', pf_payment_id=? WHERE reference=?");
   updatePayment.run(pfId, reference);
+
+  // === BridgeAI Economy: record payment and split revenue ===
+  try {
+    const paymentRec = await economyDb.query(
+      'INSERT INTO payments_received (provider, payment_id, amount, currency, payer_email, item_name, raw_payload) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      ['payfast', pfId, gross, 'ZAR', String(unsigned.email_address || ''), String(unsigned.item_name || ''), JSON.stringify(unsigned)]
+    );
+
+    const splits = [
+      { bucket: 'ubi', pct: 40 },
+      { bucket: 'treasury', pct: 30 },
+      { bucket: 'ops', pct: 20 },
+      { bucket: 'founder', pct: 10 }
+    ];
+    for (const s of splits) {
+      const splitAmount = (gross * s.pct / 100).toFixed(2);
+      await economyDb.query(
+        'INSERT INTO revenue_splits (payment_id, bucket, amount, percentage) VALUES ($1, $2, $3, $4)',
+        [paymentRec.rows[0].id, s.bucket, splitAmount, s.pct]
+      );
+      await economyDb.query(
+        'UPDATE treasury_buckets SET balance = balance + $1, updated_at = NOW() WHERE name = $2',
+        [splitAmount, s.bucket]
+      );
+    }
+
+    // Ledger entry
+    await economyDb.query(
+      'INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      ['income', 'payfast', gross, 'ZAR', 'all', reference, JSON.stringify({ pf_payment_id: pfId, splits: splits.map(s => ({ ...s, amount: (gross * s.pct / 100).toFixed(2) })) })]
+    );
+  } catch (econErr) {
+    console.error('[economy] Failed to record payment split:', econErr.message);
+  }
+
   res.sendStatus(200);
 });
 
@@ -449,6 +489,27 @@ app.get('/api/notion/stats', async (req, res) => {
 
 // Auto-init Notion on boot (non-blocking)
 notionSync.init().catch(() => {});
+
+// ================= BRIDGEAI ECONOMY API =================
+app.get('/api/treasury', async (req, res) => {
+  try {
+    const buckets = await economyDb.query('SELECT name, balance, percentage FROM treasury_buckets ORDER BY percentage DESC');
+    const recent = await economyDb.query('SELECT * FROM treasury_ledger ORDER BY timestamp DESC LIMIT 20');
+    const total = buckets.rows.reduce((sum, b) => sum + parseFloat(b.balance), 0);
+    res.json({ total, buckets: buckets.rows, recent: recent.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/treasury/payments', async (req, res) => {
+  try {
+    const payments = await economyDb.query('SELECT * FROM payments_received ORDER BY received_at DESC LIMIT 50');
+    res.json(payments.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ================= SERVER =================
 app.listen(3000, () => {

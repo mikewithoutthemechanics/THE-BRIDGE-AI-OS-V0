@@ -265,6 +265,32 @@ function twinReason(input) {
   return { text, topic, reasoning };
 }
 
+// ── ROOT ───────────────────────────────────────────────────────────────────
+app.get('/', (_req, res) => res.json({
+  service: 'Bridge AI Super Brain',
+  version: '1.0.0',
+  status: 'online',
+  endpoints: [
+    'GET  /',
+    'GET  /health',
+    'GET  /api/health',
+    'GET  /api/status',
+    'GET  /api/twin/profile',
+    'POST /api/twin/decide',
+    'GET  /api/emotion/status',
+    'GET  /api/economy/treasury',
+    'GET  /api/governance/missions',
+    'GET  /share',
+    'GET  /share/:id',
+    'POST /share',
+    'GET  /api/docs/search',
+    'POST /api/docs/ingest',
+    'GET  /api/tools',
+    'GET  /ws/<channel>  (WebSocket)',
+  ],
+  ts: Date.now(),
+}));
+
 // ── HEALTH ──────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ ok: true, status: 'ok', service: 'brain', ts: Date.now() }));
 app.get('/api/health', (_req, res) => res.json({ ok: true, status: 'ok', service: 'brain', ts: Date.now() }));
@@ -419,7 +445,45 @@ app.get('/api/identity/:id', (req, res) => res.json({
   status: { microsoft: 'external_required', google: 'ok', notion: 'ok', bridgeos: 'root' },
 }));
 
-// ── SHARE LAYER ─────────────────────────────────────────────────────────────
+// ── SHARE FILES (artifacts/share/*.json) ────────────────────────────────────
+const SHARE_DIR = path.join('C:', 'aoe-unified-final', 'artifacts', 'share');
+
+app.get('/share', (req, res) => {
+  try {
+    const files = fs.readdirSync(SHARE_DIR).filter(f => f.endsWith('.json'));
+    const items = files.map(f => {
+      const id = f.replace(/\.json$/, '');
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(SHARE_DIR, f), 'utf-8'));
+        return { id, title: data.title || id, file: f };
+      } catch { return { id, file: f }; }
+    });
+    res.json({ ok: true, shares: items, count: items.length });
+  } catch (err) {
+    res.json({ ok: true, shares: [], count: 0, note: 'share directory not found' });
+  }
+});
+
+app.get('/share/:id', (req, res, next) => {
+  // Skip sub-routes handled below (context, metadata)
+  if (req.params.id === 'undefined' || req.path.includes('/context') || req.path.includes('/metadata')) return next();
+  const id = path.basename(req.params.id);
+  const filePath = path.join(SHARE_DIR, `${id}.json`);
+  const resolvedPath = path.resolve(filePath);
+  if (!resolvedPath.startsWith(path.resolve(SHARE_DIR) + path.sep)) {
+    return res.status(400).json({ error: 'invalid share id' });
+  }
+  try {
+    if (!fs.existsSync(resolvedPath)) return res.status(404).json({ error: 'share not found', id: req.params.id });
+    const data = JSON.parse(fs.readFileSync(resolvedPath, 'utf-8'));
+    res.setHeader('Content-Type', 'application/json');
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'failed to read share', detail: err.message });
+  }
+});
+
+// ── SHARE LAYER (in-memory) ─────────────────────────────────────────────────
 const shares = new Map();
 app.get('/share/:id/context', (req, res) => {
   const share = shares.get(req.params.id);
