@@ -205,9 +205,9 @@ textarea{resize:vertical;min-height:40px;}
   </div>
   <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
   <div class="plan-row" id="planCards">
-    <div class="plan-card"><div class="plan-name">Starter</div><div class="plan-subs">64 subs</div><div class="plan-rev">$3,136.00</div></div>
-    <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-subs">51 subs</div><div class="plan-rev">$7,599.00</div></div>
-    <div class="plan-card"><div class="plan-name">Enterprise</div><div class="plan-subs">27 subs</div><div class="plan-rev">$13,473.00</div></div>
+    <div class="plan-card"><div class="plan-name">Free</div><div class="plan-subs" id="plan-free">0 subs</div><div class="plan-rev">R0</div></div>
+    <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-subs" id="plan-pro">0 subs</div><div class="plan-rev" id="plan-pro-rev">R0</div></div>
+    <div class="plan-card"><div class="plan-name">Enterprise</div><div class="plan-subs" id="plan-ent">0 subs</div><div class="plan-rev" id="plan-ent-rev">R0</div></div>
   </div>
   <div class="panel-header">TRANSACTION LEDGER</div>
   <div class="scroll-table" id="ledgerWrap">
@@ -688,15 +688,19 @@ function renderServices() {
   }).join('');
 }
 
-function updateGauges() {
-  const cpu = 30 + Math.floor(Math.random() * 40);
-  const mem = 55 + Math.floor(Math.random() * 25);
-  const disk = 28 + Math.floor(Math.random() * 10);
-  const net = 10 + Math.floor(Math.random() * 30);
-  setGauge('cpu', cpu, cpu > 70 ? 'var(--red)' : 'var(--accent)');
-  setGauge('mem', mem, mem > 80 ? 'var(--red)' : 'var(--accent2)');
-  setGauge('disk', disk, 'var(--green)');
-  setGauge('net', net, 'var(--yellow)');
+async function updateGauges() {
+  try {
+    const data = await fetch('/api/registry/bridgeos').then(function(r){return r.json()}).catch(function(){return {}});
+    const cpu = data.cpu || 0;
+    const memPct = data.memory ? Math.round((data.memory.used || 0) / Math.max(data.memory.total || 1, 1) * 100) : 0;
+    setGauge('cpu', cpu, cpu > 70 ? 'var(--red)' : 'var(--accent)');
+    setGauge('mem', memPct, memPct > 80 ? 'var(--red)' : 'var(--accent2)');
+    setGauge('disk', 4, 'var(--green)');
+    setGauge('net', 0, 'var(--yellow)');
+  } catch(e) {
+    setGauge('cpu', 0, 'var(--accent)');
+    setGauge('mem', 0, 'var(--accent2)');
+  }
 }
 
 function setGauge(id, val, color) {
@@ -950,15 +954,17 @@ async function init() {
   renderServices();
   updateGauges();
 
-  // Seed some initial events
-  if (events.length === 0) {
-    for (let i = 0; i < 15; i++) addEvent();
-  }
+  // Load real events from ledger instead of faking
+  try {
+    const ledger = await fetch('/api/ledger').then(function(r){return r.json()}).catch(function(){return {entries:[]}});
+    (ledger.entries || []).slice(0, 15).forEach(function(e) {
+      events.push({ ts: new Date(e.time || Date.now()), type: 'TREASURY', msg: (e.type||'payment') + ': R' + (e.amount||0) });
+    });
+    renderEvents();
+  } catch(e) {}
 
-  // Polling
-  setInterval(() => addEvent(), 3000);
-  setInterval(() => { renderServices(); updateGauges(); }, 10000);
-  setInterval(simulateTasks, 5000);
+  // Real polling — no fake events
+  setInterval(() => { renderServices(); updateGauges(); }, 15000);
 }
 
 init();
