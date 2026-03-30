@@ -57,8 +57,8 @@
             <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/gateway/" class="text-cyan-400 hover:underline">/gateway/</a></td><td>Sovereign Gateway — QR scan to join; wallet, SIWE; Bridge · Supac · Taurus · Wiki</td></tr>
             <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/join.html" class="text-cyan-400 hover:underline">/join.html</a></td><td>Join as Agent — QR + decentralized platform entry</td></tr>
             <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/docs.html" class="text-cyan-400 hover:underline">/docs.html</a></td><td>This documentation page</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">System Map (4201)</a></td><td>All systems linked — Bridge API, Frontend, Gateway, Join, Next.js (3032), Taurus, Console 3022, Production</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">Next.js App (3032)</a></td><td>Next.js root app — synced with system; linked from System Map</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/apps" class="text-cyan-400 hover:underline">System Map</a></td><td>50+ Applications — all systems linked with navigation</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/sitemap" class="text-cyan-400 hover:underline">Full Sitemap</a></td><td>Complete system map — pages, APIs, WebSockets, subdomains</td></tr>
           </tbody>
         </table>
       </div>
@@ -96,15 +96,20 @@
 
     <!-- Ports -->
     <section class="bg-slate-900 rounded-lg p-4 text-sm text-slate-400">
-      <h2 class="font-semibold text-slate-200 mb-2">Ports (typical)</h2>
+      <h2 class="font-semibold text-slate-200 mb-2">Services (Production)</h2>
       <ul class="list-disc pl-5 space-y-1">
-        <li><strong>3020</strong> — Frontend (Vite)</li>
-        <li><strong>3032</strong> — Next.js App (root) — <a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">open</a></li>
-        <li><strong>3000</strong> — Dashboard / frontend alt</li>
-        <li><strong>8000</strong> — Backend API</li>
-        <li><strong>4201</strong> — Determinator Boot Agent, System Map — <a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">System Map</a></li>
-        <li><strong>4202</strong> — Taurus Showcase</li>
-        <li><strong>3022</strong> — Console sync</li>
+        <li><strong>:3000</strong> — <a href="/" class="text-cyan-400">Bridge OS</a> (main server, 65+ pages, 80+ APIs)</li>
+        <li><strong>:3001</strong> — <a href="https://god.ai-os.co.za" class="text-cyan-400">GOD MODE</a> (topology + terminals)</li>
+        <li><strong>:3030</strong> — <a href="https://auth.ai-os.co.za" class="text-cyan-400">Bridge Auth</a> (SIWE/JWT)</li>
+        <li><strong>:5001</strong> — Auth Service</li>
+        <li><strong>:5002</strong> — <a href="https://terminal.ai-os.co.za" class="text-cyan-400">Terminal</a> (xterm.js PTY)</li>
+        <li><strong>:7070</strong> — <a href="https://svg.ai-os.co.za" class="text-cyan-400">SVG Engine</a> (1,266 skills)</li>
+        <li><strong>:8000</strong> — Super Brain (163 API endpoints + AI)</li>
+        <li><strong>:8080</strong> — <a href="https://gateway.ai-os.co.za" class="text-cyan-400">Gateway</a> (routing + CORS + SSE)</li>
+        <li><strong>:8001</strong> — LiveWall Frontend (Docker)</li>
+        <li><strong>:8081</strong> — FastAPI Backend (Docker)</li>
+        <li><strong>:3003</strong> — Grafana Monitoring</li>
+        <li><strong>:5432</strong> — PostgreSQL (economy database)</li>
       </ul>
     </section>
   </main>
