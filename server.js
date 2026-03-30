@@ -402,7 +402,7 @@ app.get('/api/registry/market', (req, res) => {
 });
 
 app.get('/api/registry/bridgeos', async (req, res) => {
-  const mem = { used: Math.round((os.totalmem() - os.freemem()) / 1073741824 * 10) / 10, total: Math.round(os.totalmem() / 1073741824 * 10) / 10 };
+  const mem = { used: os.totalmem() - os.freemem(), total: os.totalmem(), free: os.freemem() };
   const upSec = os.uptime();
   const days = Math.floor(upSec / 86400);
   const hrs = Math.floor((upSec % 86400) / 3600);
