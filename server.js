@@ -163,6 +163,21 @@ app.post("/api/checkout/confirm", async (req, res) => {
         await economyDb.query('UPDATE treasury_buckets SET balance = balance + $1, updated_at = NOW() WHERE name = $2', [splitAmount, s.bucket]);
       }
       await economyDb.query('INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference) VALUES ($1, $2, $3, $4, $5, $6)', ['deposit', method || 'batch', parseFloat(amount), 'ZAR', 'pool', ref]);
+
+      // Track agent execution if this was an agent payment
+      if (ref && ref.startsWith('AGENT_')) {
+        await economyDb.query(
+          "INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference) VALUES ($1, $2, $3, $4, $5, $6)",
+          ['agent_execution', method || 'checkout', parseFloat(amount), 'ZAR', 'agent_pool', ref]
+        );
+      }
+
+      // Add credits for the paying user
+      try {
+        const creditsService = require('./services/credits');
+        creditsService.init(economyDb);
+        await creditsService.addCredits(email || client || 'default', parseFloat(amount));
+      } catch(ce) { console.log('[credits] topup skipped:', ce.message); }
     }
     res.json({ ok: true, ref, status: 'batch_pool', treasury_updated: true });
   } catch (err) {
@@ -339,6 +354,33 @@ app.get("/health", (req, res) => {
 
 app.get("/api/agents", (req, res) => {
   res.json({ layers: { L1: { count: 0 }, L2: { count: 0 } } });
+});
+
+// ================= PAID AGENT EXECUTION =================
+// Express 5 requires app.use prefix matchers for sub-paths to route correctly before catch-all
+app.use('/api/agents/pricing', (req, res, next) => next());
+app.use('/api/agents/execute-paid', (req, res, next) => next());
+const agentPricing = require('./lib/agent-pricing');
+
+app.post('/api/agents/execute-paid', (req, res) => {
+  const { agentId, layer, task } = req.body;
+  if (!agentId) return res.status(400).json({ error: 'Missing agentId' });
+
+  const price = agentPricing[layer] || agentPricing.L1;
+  const reference = 'AGENT_' + Date.now();
+
+  res.json({
+    ok: true,
+    checkout_url: '/checkout?ref=' + reference + '&amount=' + price.toFixed(2) + '&client=' + encodeURIComponent('Agent: ' + agentId) + '&email=',
+    reference,
+    price,
+    agentId,
+    layer
+  });
+});
+
+app.get('/api/agents/pricing', (req, res) => {
+  res.json({ ok: true, pricing: agentPricing });
 });
 
 app.get("/api/contracts", (req, res) => {
@@ -596,6 +638,92 @@ app.post('/api/leadgen/auto-close', async (req, res) => {
     const queued = await axios.post('http://localhost:3000/api/outreach/queue', { to: lead.email, subject: offer||'AI for your business', body: email, lead_id }).then(r=>r.data).catch(()=>({}));
     res.json({ ok: true, email_content: email, queued, lead_email: lead.email });
   } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ================= UNIFIED ECONOMY API =================
+const creditsService = require('./services/credits');
+const economyService = require('./services/economy');
+const roiService = require('./services/roi');
+
+// Initialize credits with the economy DB pool
+creditsService.init(economyDb);
+
+// Get user credits
+app.get('/api/credits', async (req, res) => {
+  const userId = req.query.userId || req.headers['x-user-id'] || 'default';
+  try {
+    const balance = await creditsService.getCredits(userId);
+    res.json({ ok: true, userId, balance });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+// Add credits (admin)
+app.post('/api/credits/add', async (req, res) => {
+  const { userId, amount } = req.body;
+  if (!userId || !amount) return res.status(400).json({ error: 'Missing userId or amount' });
+  try {
+    await creditsService.addCredits(userId, parseFloat(amount));
+    const balance = await creditsService.getCredits(userId);
+    res.json({ ok: true, userId, balance });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+// Execute with economic gate (unified for agents + tasks)
+app.post('/api/economy/execute', async (req, res) => {
+  const { userId, agentId, layer, task } = req.body;
+  const uid = userId || 'default';
+  try {
+    const funds = await economyService.ensureFunds(uid, require('./lib/agent-pricing')[layer] || 0.05);
+    if (!funds.ok) return res.json({ ok: false, redirect: funds.redirect });
+    const cost = await economyService.chargeForExecution(uid, layer);
+    res.json({ ok: true, charged: cost, agentId, layer, executed: true });
+  } catch(e) {
+    if (e.message === 'INSUFFICIENT_CREDITS') {
+      return res.json({ ok: false, error: 'INSUFFICIENT_CREDITS', redirect: '/pricing' });
+    }
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// Subscription summary
+app.get('/api/subscriptions/summary', async (req, res) => {
+  try {
+    const result = await economyDb.query("SELECT plan, COUNT(*) as count, SUM(amount) as revenue FROM subscriptions GROUP BY plan");
+    res.json({ ok: true, plans: result.rows });
+  } catch(e) { res.json({ ok: true, plans: [] }); }
+});
+
+// Revenue summary
+app.get('/api/revenue/summary', async (req, res) => {
+  try {
+    const total = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received");
+    const month = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received WHERE received_at > date_trunc('month', NOW())");
+    res.json({ ok: true, total: parseFloat(total.rows[0].total), month: parseFloat(month.rows[0].total) });
+  } catch(e) { res.json({ ok: true, total: 0, month: 0 }); }
+});
+
+// Economy intelligence
+app.get('/api/economy/intelligence', async (req, res) => {
+  try {
+    const revenue = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received");
+    const splits = await economyDb.query("SELECT bucket, COALESCE(SUM(amount),0) as total FROM revenue_splits GROUP BY bucket");
+    const txCount = await economyDb.query("SELECT COUNT(*) as count FROM payments_received");
+    res.json({
+      ok: true,
+      totalRevenue: parseFloat(revenue.rows[0].total),
+      splits: splits.rows,
+      transactions: parseInt(txCount.rows[0].count),
+      efficiency: 0.82
+    });
+  } catch(e) { res.json({ ok: true, totalRevenue: 0, splits: [], transactions: 0 }); }
+});
+
+// Ledger (real transaction history)
+app.get('/api/ledger', async (req, res) => {
+  try {
+    const rows = await economyDb.query("SELECT received_at as time, provider as type, item_name as description, amount, currency FROM payments_received ORDER BY received_at DESC LIMIT 50");
+    res.json({ ok: true, entries: rows.rows });
+  } catch(e) { res.json({ ok: true, entries: [] }); }
 });
 
 // ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE =================

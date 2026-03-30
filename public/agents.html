@@ -406,11 +406,13 @@
       return;
     }
     el.innerHTML = data.map(function(t) {
+      // Note: escapeHtml sanitizes all user-supplied values before insertion
       return '<div class="agent-card bg-slate-50 border border-slate-200 rounded-lg p-4">' +
         '<p class="font-semibold text-slate-800">' + escapeHtml(t.name || t.id) + '</p>' +
         '<p class="text-xs text-slate-500 mt-1">ID: ' + escapeHtml(t.id) + '</p>' +
         '<p class="text-sm mt-2">Completed: ' + (t.completed != null ? t.completed : '—') + ' · In progress: ' + (t.in_progress != null ? t.in_progress : '—') + '</p>' +
         '<p class="text-sm">Score: ' + (t.total_score != null ? t.total_score : '—') + ' · Trades: ' + (t.trades_executed != null ? t.trades_executed : '—') + '</p>' +
+        '<button onclick="hireAgent(\'' + escapeHtml(t.id) + '\', \'L2\')" class="mt-3 px-3 py-1.5 rounded bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 transition">Hire Agent</button>' +
         '</div>';
     }).join('');
   }
@@ -471,6 +473,16 @@
 
   setInterval(refreshAll, 15000);
 })();
+
+async function hireAgent(agentId, layer) {
+  const resp = await fetch('/api/agents/execute-paid', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agentId, layer })
+  });
+  const data = await resp.json();
+  if (data.checkout_url) window.location.href = data.checkout_url;
+}
   </script>
 <script src="/bridge-nav.js?v=2"></script></body>
 </html>

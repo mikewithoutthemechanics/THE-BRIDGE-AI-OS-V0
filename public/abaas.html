@@ -71,14 +71,14 @@ async function load() {
 
     // Stats
     const health = await fetch((BRAIN || '') + '/api/swarm/health').then(r=>r.json()).catch(()=>({}));
-    const treasury = await fetch((BRAIN || '') + '/api/treasury/status').then(r=>r.json()).catch(()=>({}));
+    const treasury = await fetch('/api/treasury').then(r=>r.json()).catch(()=>({}));
     const tools = await fetch((BRAIN || '') + '/api/tools').then(r=>r.json()).catch(()=>({count:0}));
 
     document.getElementById('stats').innerHTML = `
       <div class="stat"><div class="val">${agents.length}</div><div class="label">AGENTS</div></div>
       <div class="stat"><div class="val">${agents.filter(a=>a.status==='active').length}</div><div class="label">ACTIVE</div></div>
       <div class="stat"><div class="val">${tools.count || 0}</div><div class="label">TOOLS</div></div>
-      <div class="stat"><div class="val">$${(treasury.balance||0).toLocaleString()}</div><div class="label">TREASURY</div></div>
+      <div class="stat"><div class="val">R${(treasury.total||0).toLocaleString()}</div><div class="label">TREASURY</div></div>
     `;
 
     document.getElementById('agent-list').innerHTML = agents.map(a => `

@@ -422,22 +422,28 @@ function tsDate() {
 // =========== SEED DATA ===========
 const AGENT_NAMES = ['alpha','beta','gamma','delta','epsilon','zeta','eta','theta'];
 
-const defaultTreasury = {
-  balance: 137284.50,
-  revenueMtd: 28450.00,
-  costsMtd: 4210.50,
-  ledger: [
-    { time: '2026-03-26 08:15:22', type: 'subscription', desc: 'Pro plan - user#4421', amount: 149, balance: 137284.50 },
-    { time: '2026-03-26 07:42:10', type: 'subscription', desc: 'Enterprise plan - org#812', amount: 499, balance: 137135.50 },
-    { time: '2026-03-26 06:30:55', type: 'cost', desc: 'GPU compute - inference cluster', amount: -84.20, balance: 136636.50 },
-    { time: '2026-03-25 23:10:08', type: 'referral', desc: 'Referral bonus - user#3301', amount: 25, balance: 136720.70 },
-    { time: '2026-03-25 21:44:33', type: 'reward', desc: 'Marketplace task completion', amount: -15, balance: 136695.70 },
-    { time: '2026-03-25 18:22:11', type: 'subscription', desc: 'Starter plan - user#5590', amount: 49, balance: 136710.70 },
-    { time: '2026-03-25 14:05:47', type: 'cost', desc: 'CDN bandwidth overage', amount: -32.50, balance: 136661.70 },
-  ],
-  monthlyRevenue: [8200,9100,10400,11800,14200,16500,18900,20100,22400,24800,26300,28450],
-  monthlyCosts:   [1200,1400,1600,1800,2100,2400,2700,2900,3100,3400,3800,4210],
-};
+// Treasury loaded from REAL PostgreSQL — no hardcoded values
+const defaultTreasury = { balance: 0, revenueMtd: 0, costsMtd: 0, ledger: [], monthlyRevenue: [], monthlyCosts: [] };
+
+// Load real treasury data on page load
+async function loadRealTreasury() {
+  try {
+    const [treasury, revenue, ledger] = await Promise.all([
+      fetch('/api/treasury').then(r => r.json()).catch(() => ({ total: 0, buckets: [] })),
+      fetch('/api/revenue/summary').then(r => r.json()).catch(() => ({ total: 0, month: 0 })),
+      fetch('/api/ledger').then(r => r.json()).catch(() => ({ entries: [] }))
+    ]);
+    defaultTreasury.balance = parseFloat(treasury.total) || 0;
+    defaultTreasury.revenueMtd = parseFloat(revenue.month) || 0;
+    defaultTreasury.costsMtd = (treasury.buckets || []).reduce(function(s,b){return b.name==='ops'?s+parseFloat(b.balance):s},0);
+    defaultTreasury.ledger = (ledger.entries || []).map(function(e) {
+      return { time: e.time || '', type: e.type || '', desc: e.description || '', amount: parseFloat(e.amount) || 0, balance: 0 };
+    });
+    renderTreasury();
+  } catch(e) { console.error('Treasury load:', e); }
+}
+loadRealTreasury();
+setInterval(loadRealTreasury, 15000);
 
 const defaultAgents = AGENT_NAMES.map((name, i) => ({
   name,
