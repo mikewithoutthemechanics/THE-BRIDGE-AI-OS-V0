@@ -345,7 +345,7 @@ app.post("/whatsapp", (req, res) => {
 
 // ================= SYSTEM HEALTH ENDPOINTS =================
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/ui.html");
+  res.redirect("/landing");
 });
 
 app.get("/health", (req, res) => {
