@@ -670,6 +670,42 @@ BRAIN_ROUTES.forEach(prefix => {
   });
 });
 
+// ── REAL TREASURY (PostgreSQL via server on :3000) ────────────────────────────
+const os = require('os');
+const http = require('http');
+
+function fetchJSON(url) {
+  return new Promise((resolve, reject) => {
+    http.get(url, { timeout: 5000 }, r => {
+      let body = '';
+      r.on('data', c => body += c);
+      r.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(new Error('parse')); } });
+    }).on('error', reject);
+  });
+}
+
+app.get('/api/treasury/summary', async (req, res) => {
+  try {
+    const data = await fetchJSON('http://localhost:3000/api/treasury');
+    const total = (data.buckets || []).reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+    res.json({
+      balance: total, earned: total, spent: 0, currency: 'ZAR',
+      subscriptions: 0, plans: [],
+      source: 'postgresql', buckets: data.buckets || []
+    });
+  } catch { res.json({ balance: 0, earned: 0, spent: 0, currency: 'ZAR', subscriptions: 0, plans: [] }); }
+});
+
+app.get('/api/system/metrics', (req, res) => {
+  const upSec = os.uptime();
+  res.json({
+    cpu: Math.round(os.loadavg()[0] * 100 / Math.max(os.cpus().length, 1)),
+    memory: Math.round((os.totalmem() - os.freemem()) / 1048576) + 'MB',
+    uptime: Math.floor(upSec) + 's',
+    load: os.loadavg().map(l => l.toFixed(2)).join(' ')
+  });
+});
+
 // ── BRAIN PROXY — forward unknown /api/* to brain on 8000 ────────────────────
 // This catches any /api/* route not handled above and proxies to the brain
 app.all('/api/*path', async (req, res) => {
