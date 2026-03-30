@@ -155,10 +155,17 @@ app.post("/api/checkout/confirm", async (req, res) => {
         'INSERT INTO payments_received (provider, payment_id, amount, currency, payer_email, item_name, raw_payload) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
         [method || 'batch', ref, parseFloat(amount) || 0, 'ZAR', email || '', 'Bridge AI OS Pro', JSON.stringify({ ref, client, method, batch: true })]
       );
-      // Split revenue into treasury buckets
+      // Apply founder tax first, then split remainder
+      const founderTax = parseFloat(amount) * (founderTaxRate / 100);
+      const remaining = parseFloat(amount) - founderTax;
       const splits = [{ bucket: 'ubi', pct: 40 }, { bucket: 'treasury', pct: 30 }, { bucket: 'ops', pct: 20 }, { bucket: 'founder', pct: 10 }];
+      // Add founder tax as separate entry
+      if (founderTax > 0) {
+        await economyDb.query('INSERT INTO revenue_splits (payment_id, bucket, amount, percentage) VALUES ($1, $2, $3, $4)', [payment.rows[0].id, 'founder_tax', founderTax.toFixed(2), founderTaxRate]);
+        await economyDb.query('UPDATE treasury_buckets SET balance = balance + $1, updated_at = NOW() WHERE name = $2', [founderTax.toFixed(2), 'founder']);
+      }
       for (const s of splits) {
-        const splitAmount = (parseFloat(amount) * s.pct / 100).toFixed(2);
+        const splitAmount = (remaining * s.pct / 100).toFixed(2);
         await economyDb.query('INSERT INTO revenue_splits (payment_id, bucket, amount, percentage) VALUES ($1, $2, $3, $4)', [payment.rows[0].id, s.bucket, splitAmount, s.pct]);
         await economyDb.query('UPDATE treasury_buckets SET balance = balance + $1, updated_at = NOW() WHERE name = $2', [splitAmount, s.bucket]);
       }
@@ -724,6 +731,37 @@ app.get('/api/ledger', async (req, res) => {
     const rows = await economyDb.query("SELECT received_at as time, provider as type, item_name as description, amount, currency FROM payments_received ORDER BY received_at DESC LIMIT 50");
     res.json({ ok: true, entries: rows.rows });
   } catch(e) { res.json({ ok: true, entries: [] }); }
+});
+
+// ================= FOUNDER TAX CONTROL =================
+let founderTaxRate = 0; // Additional % extracted before standard split (0-20%)
+
+app.get('/api/founder/tax', (req, res) => {
+  res.json({ ok: true, taxRate: founderTaxRate, note: 'Additional founder extraction before standard split' });
+});
+
+app.post('/api/founder/tax', (req, res) => {
+  const { rate } = req.body;
+  const r = parseFloat(rate);
+  if (isNaN(r) || r < 0 || r > 20) return res.status(400).json({ error: 'Rate must be 0-20%' });
+  founderTaxRate = r;
+  res.json({ ok: true, taxRate: founderTaxRate });
+});
+
+app.get('/api/founder/balance', async (req, res) => {
+  try {
+    const founder = await economyDb.query("SELECT balance FROM treasury_buckets WHERE name = 'founder'");
+    const founderTax = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM revenue_splits WHERE bucket = 'founder_tax'");
+    const totalEarned = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM revenue_splits WHERE bucket = 'founder' OR bucket = 'founder_tax'");
+    res.json({
+      ok: true,
+      currentBalance: parseFloat(founder.rows[0]?.balance) || 0,
+      totalTaxCollected: parseFloat(founderTax.rows[0]?.total) || 0,
+      totalEarned: parseFloat(totalEarned.rows[0]?.total) || 0,
+      taxRate: founderTaxRate,
+      currency: 'ZAR'
+    });
+  } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 // ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE =================

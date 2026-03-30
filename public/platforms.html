@@ -123,28 +123,35 @@ document.getElementById('platforms').innerHTML = platforms.map(p => `
   </div>
 `).join('');
 
-// Load live data
+// Load live data from PostgreSQL treasury
 async function loadStats() {
   try {
-    const [treasury, wallet, swarm, analytics] = await Promise.all([
-      fetch(BRAIN + '/api/treasury/status').then(r=>r.json()).catch(()=>({})),
-      fetch(BRAIN + '/api/wallet/balance').then(r=>r.json()).catch(()=>({total_usd:0})),
+    const [treasury, swarm] = await Promise.all([
+      fetch('/api/treasury').then(r=>r.json()).catch(()=>({total:0,buckets:[]})),
       fetch(BRAIN + '/api/swarm/agents').then(r=>r.json()).catch(()=>({count:0})),
-      fetch(BRAIN + '/api/analytics/overview').then(r=>r.json()).catch(()=>({})),
     ]);
-    document.getElementById('stats').innerHTML = `
-      <div class="stat"><div class="v">10</div><div class="l">PLATFORMS</div></div>
-      <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
-      <div class="stat"><div class="v">$${((wallet.total_usd||0)/1000).toFixed(0)}K</div><div class="l">WALLET</div></div>
-      <div class="stat"><div class="v">${swarm.count||8}</div><div class="l">AGENTS</div></div>
-      <div class="stat"><div class="v">6</div><div class="l">PAYMENT RAILS</div></div>
-    `;
-    const netWorth = (treasury.balance||0) + (wallet.total_usd||0);
-    document.getElementById('net-worth').innerHTML = `
-      <h3>NETWORK NET WORTH</h3>
-      <div class="val">$${netWorth.toLocaleString()}</div>
-      <div class="sub">Treasury + Wallet + Token Value | 10 platforms × 6 rails × 8 agents</div>
-    `;
+    const total = parseFloat(treasury.total) || 0;
+    const statsEl = document.getElementById('stats');
+    statsEl.textContent = '';
+    const statsData = [
+      {v:'10', l:'PLATFORMS'},
+      {v:'R'+total.toLocaleString('en-ZA',{minimumFractionDigits:2}), l:'TREASURY (ZAR)'},
+      {v:'R0', l:'WALLET'},
+      {v:String(swarm.count||8), l:'AGENTS'},
+      {v:'6', l:'PAYMENT RAILS'}
+    ];
+    statsData.forEach(function(s){
+      var d=document.createElement('div');d.className='stat';
+      var vEl=document.createElement('div');vEl.className='v';vEl.textContent=s.v;
+      var lEl=document.createElement('div');lEl.className='l';lEl.textContent=s.l;
+      d.appendChild(vEl);d.appendChild(lEl);statsEl.appendChild(d);
+    });
+    var nw = document.getElementById('net-worth');
+    nw.textContent = '';
+    var h3=document.createElement('h3');h3.textContent='NETWORK NET WORTH';
+    var val=document.createElement('div');val.className='val';val.textContent='R'+total.toLocaleString('en-ZA',{minimumFractionDigits:2});
+    var sub=document.createElement('div');sub.className='sub';sub.textContent='Real PostgreSQL treasury total | 10 platforms \u00d7 6 rails \u00d7 8 agents';
+    nw.appendChild(h3);nw.appendChild(val);nw.appendChild(sub);
   } catch(e) { console.error(e); }
 }
 loadStats();
