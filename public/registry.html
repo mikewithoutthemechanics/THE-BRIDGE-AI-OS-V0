@@ -145,14 +145,7 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
   <div id="hud-left">
     <div class="live-dot"></div>
     <span>BRIDGE AI OS &mdash; REGISTRY</span>
-    <div class="nav-links">
-      <a href="/ui.html">HOME</a>
-      <a href="/topology.html">TOPOLOGY</a>
-      <a href="/marketplace.html">MARKETPLACE</a>
-      <a href="/avatar.html">AVATAR</a>
-      <a href="/system-status-dashboard.html">STATUS</a>
-      <a href="/control.html">CONTROL</a>
-    </div>
+    <!-- Old nav removed — mega-nav (bridge-nav.js) handles navigation -->
   </div>
   <div id="hud-right">
     <span id="refresh-status">POLLING...</span>
@@ -300,9 +293,12 @@ async function poll(endpoint,callback,badgeId){
     const r=await fetch(endpoint,{signal:AbortSignal.timeout(4000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const json=await r.json();
+    // Detect stub/empty responses from brain proxy — use mock instead
+    if(json.stub||json.error||(json.ok===true&&!json.data&&Object.keys(json).length<=3)){
+      throw new Error('stub response');
+    }
     document.getElementById('conn-badge').textContent='CONNECTED';
     document.getElementById('conn-badge').className='conn-badge';
-    // API returns {namespace, data, ts} — unwrap to pass inner data
     const data=(json&&json.data!==undefined)?json.data:json;
     callback(data,false);
   }catch(e){
