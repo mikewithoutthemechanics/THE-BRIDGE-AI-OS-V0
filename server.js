@@ -432,7 +432,19 @@ app.get('/api/registry/treasury', async (req, res) => {
 });
 
 // ================= SYSTEM HEALTH ENDPOINTS =================
+// Domain-aware root router
 app.get("/", (req, res) => {
+  const host = (req.headers.host || '').toLowerCase();
+  const routes = {
+    'rootedearth': '/rootedearth', 'ehsa': '/ehsa', 'supac': '/supac',
+    'ban.': '/ban', 'aid.': '/aid', 'ubi.': '/ubi', 'aurora': '/aurora',
+    'hospitalinabox': '/hospital', 'abaas.': '/abaas',
+    'marketplace': '/marketplace', 'affiliate': '/affiliate',
+    'god.': '/topology', 'svg.': '/api'
+  };
+  for (const [key, path] of Object.entries(routes)) {
+    if (host.includes(key)) return res.redirect(path);
+  }
   res.redirect("/landing");
 });
 
