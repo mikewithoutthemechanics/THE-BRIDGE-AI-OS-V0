@@ -1,4 +1,15 @@
 require("dotenv").config();
+
+// TLS security check
+if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
+  throw new Error('TLS verification is DISABLED — REFUSING TO START');
+}
+
+// JWT secret validation
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  throw new Error('Weak or missing JWT_SECRET');
+}
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const sqlite3 = require("better-sqlite3");
@@ -7,6 +18,11 @@ const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const path = require("path");
 const { Pool } = require('pg');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
+const csrf = require('csurf');
+const { requireAuth } = require('./middleware/auth');
 
 const economyDb = new Pool({
   connectionString: process.env.ECONOMY_DB_URL || 'postgresql://postgres:password@localhost:5432/bridgeai_economy'
@@ -15,6 +31,17 @@ const economyDb = new Pool({
 const app = express();
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(cors({ origin: ['https://wall.bridge-ai-os.com', 'http://localhost:3000'] }));
+app.use(csrf({ cookie: true }));
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; object-src 'none';");
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  next();
+});
 
 // Serve static files
 app.use(express.static(path.join(__dirname)));
@@ -25,6 +52,9 @@ const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
 const maxReq = Number(process.env.RATE_LIMIT_MAX || 1000);
 app.use(rateLimit({ windowMs, max: maxReq, standardHeaders: true, legacyHeaders: false }));
 app.use("/payfast/notify", rateLimit({ windowMs, max: Math.min(maxReq, 30), standardHeaders: true, legacyHeaders: false }));
+
+// Authentication middleware
+app.use('/api', requireAuth());
 
 // IP allowlist helpers
 function getClientIp(req) {

@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const os = require('os');
 const path = require('path');
 const pty = require('node-pty');
+const jwt = require('jsonwebtoken');
 
 const PORT = parseInt(process.env.TERMINAL_PROXY_PORT, 10) || 5002;
 const MAX_SESSIONS = 10;
@@ -25,9 +26,23 @@ const wss = new WebSocket.Server({ server });
 
 const sessions = new Map();
 
+// Parse cookies
+function parseCookie(cookieHeader) {
+  if (!cookieHeader) return {};
+  return cookieHeader.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {});
+}
+
 // ── CORS ──
+const allowedOrigins = ['https://wall.bridge-ai-os.com', 'http://localhost:3000'];
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (!allowedOrigins.includes(req.headers.origin)) {
+    return res.status(403).json({ error: 'Invalid origin' });
+  }
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
   next();
 });
 
@@ -42,11 +57,18 @@ app.get('/health', (_req, res) => {
 
 // ── WebSocket handler ──
 wss.on('connection', (clientWs, req) => {
-  // Basic authentication check
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const token = url.searchParams.get('token');
-  if (!token || token !== process.env.TERMINAL_AUTH_TOKEN) {
+  const cookies = parseCookie(req.headers.cookie);
+  const token = cookies.access_token;
+  if (!token) {
     clientWs.send(JSON.stringify({ type: 'error', message: 'Unauthorized' }));
+    clientWs.close();
+    return;
+  }
+
+  try {
+    jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    clientWs.send(JSON.stringify({ type: 'error', message: 'Invalid token' }));
     clientWs.close();
     return;
   }
@@ -72,7 +94,6 @@ wss.on('connection', (clientWs, req) => {
       env: {
         PATH: process.env.PATH,
         HOME: process.env.HOME || process.env.USERPROFILE,
-        SHELL: process.env.SHELL,
         TERM: 'xterm-256color'
       },
     });
