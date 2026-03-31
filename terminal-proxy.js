@@ -1,4 +1,5 @@
 // =============================================================================
+
 // BRIDGE AI OS — Local Terminal Server
 // Port: 5002
 // Spawns local PTY shells via node-pty, streams to browser over WebSocket
@@ -20,7 +21,7 @@ const shell = os.platform() === 'win32' ? 'powershell.exe' : (process.env.SHELL 
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server, path: '/terminal' });
+const wss = new WebSocket.Server({ server });
 
 const sessions = new Map();
 
@@ -31,7 +32,7 @@ app.use((req, res, next) => {
 });
 
 // ── Static files ──
-app.use(express.static(path.join(__dirname, 'Xpublic')));
+app.use('/terminal', express.static(path.join(__dirname, 'Xpublic')));
 app.get('/', (_req, res) => res.redirect('/terminal.html'));
 
 // ── Health ──
@@ -41,6 +42,15 @@ app.get('/health', (_req, res) => {
 
 // ── WebSocket handler ──
 wss.on('connection', (clientWs, req) => {
+  // Basic authentication check
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const token = url.searchParams.get('token');
+  if (!token || token !== process.env.TERMINAL_AUTH_TOKEN) {
+    clientWs.send(JSON.stringify({ type: 'error', message: 'Unauthorized' }));
+    clientWs.close();
+    return;
+  }
+
   if (sessions.size >= MAX_SESSIONS) {
     clientWs.send(JSON.stringify({ type: 'error', message: 'Max sessions reached' }));
     clientWs.close();
@@ -49,15 +59,29 @@ wss.on('connection', (clientWs, req) => {
 
   const sessionId = crypto.randomBytes(16).toString('hex');
   let alive = true;
+  console.log(`[TERMINAL] New session: ${sessionId} from ${req.socket.remoteAddress}`);
 
   // Spawn local PTY
-  const ptyProcess = pty.spawn(shell, [], {
-    name: 'xterm-256color',
-    cols: 80,
-    rows: 24,
-    cwd: process.env.HOME || process.env.USERPROFILE || '.',
-    env: process.env,
-  });
+  let ptyProcess;
+  try {
+    ptyProcess = pty.spawn(shell, [], {
+      name: 'xterm-256color',
+      cols: 80,
+      rows: 24,
+      cwd: process.env.HOME || process.env.USERPROFILE || '.',
+      env: {
+        PATH: process.env.PATH,
+        HOME: process.env.HOME || process.env.USERPROFILE,
+        SHELL: process.env.SHELL,
+        TERM: 'xterm-256color'
+      },
+    });
+  } catch (error) {
+    console.error(`Failed to spawn PTY: ${error.message}`);
+    clientWs.send(JSON.stringify({ type: 'error', message: 'Failed to start terminal session' }));
+    clientWs.close();
+    return;
+  }
 
   const session = { id: sessionId, clientWs, ptyProcess, createdAt: Date.now() };
   sessions.set(sessionId, session);
@@ -98,7 +122,9 @@ wss.on('connection', (clientWs, req) => {
     }
 
     if (str.length > 1024) return;
-    ptyProcess.write(str);
+    // Sanitize input to prevent shell injection
+    const sanitized = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+    ptyProcess.write(sanitized);
   });
 
   // Heartbeat
@@ -119,6 +145,7 @@ wss.on('connection', (clientWs, req) => {
 
   // Cleanup
   function cleanup() {
+    console.log(`[TERMINAL] Session ended: ${sessionId}`);
     clearInterval(heartbeat);
     sessions.delete(sessionId);
     try { ptyProcess.kill(); } catch (_) {}
