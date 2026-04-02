@@ -616,6 +616,77 @@ module.exports = async (req, res) => {
     return json(res, { users: seedUsers, count: seedUsers.length, ts: ts() });
   }
 
+  // ── /api/treasury (alias for treasury/summary) ──
+  if (p === '/api/treasury') {
+    return json(res, {
+      total: +treasuryBalance.toFixed(2), balance: +treasuryBalance.toFixed(2), currency: 'USD',
+      buckets: [
+        { name: 'Operations', pct: 40, value: +(treasuryBalance * 0.4).toFixed(2) },
+        { name: 'Growth', pct: 25, value: +(treasuryBalance * 0.25).toFixed(2) },
+        { name: 'Reserve', pct: 20, value: +(treasuryBalance * 0.2).toFixed(2) },
+        { name: 'Founder', pct: 15, value: +(treasuryBalance * 0.15).toFixed(2) },
+      ],
+      payments_today: Math.floor(Math.random() * 10) + 2,
+      status: 'healthy', ts: ts()
+    });
+  }
+
+  // ── /api/treasury/payments ──
+  if (p === '/api/treasury/payments') {
+    const payments = Array.from({ length: 8 }, (_, i) => ({
+      id: `pay_${1000 + i}`, amount: +(Math.random() * 500 + 50).toFixed(2), currency: 'ZAR',
+      status: ['completed', 'completed', 'pending', 'completed'][i % 4],
+      method: ['PayFast', 'EFT', 'Crypto', 'PayFast'][i % 4],
+      date: new Date(Date.now() - i * 86400000).toISOString().slice(0, 10),
+    }));
+    return json(res, { payments, count: payments.length, ts: ts() });
+  }
+
+  // ── /api/health ──
+  if (p === '/api/health') {
+    return json(res, { status: 'ok', uptime: process.uptime(), env: 'serverless', ts: ts() });
+  }
+
+  // ── /api/swarm/agents ──
+  if (p === '/api/swarm/agents') {
+    const agents = agentNames.map((n, i) => ({
+      id: `agent_${i}`, name: n, status: 'active',
+      layer: i < 3 ? 'L1' : i < 6 ? 'L2' : 'L3',
+      tasks_completed: Math.floor(Math.random() * 100) + 10,
+      uptime_pct: +(95 + Math.random() * 5).toFixed(1),
+    }));
+    return json(res, { agents, count: agents.length, swarms: 2, ts: ts() });
+  }
+
+  // ── /api/swarm/* (health, matrix, strategies, orchestrate) ──
+  if (p.startsWith('/api/swarm/')) {
+    const sub = p.split('/api/swarm/')[1];
+    if (sub === 'health') return json(res, { status: 'healthy', agents: 8, active: 8, ts: ts() });
+    if (sub === 'matrix') return json(res, { L1: { count: 3, role: 'streaming' }, L2: { count: 3, role: 'processing' }, L3: { count: 2, role: 'minimax' }, ts: ts() });
+    if (sub === 'strategies') return json(res, { strategies: ['round-robin', 'priority-weighted', 'consensus', 'auction'], active: 'priority-weighted', ts: ts() });
+    if (sub === 'orchestrate' && req.method === 'POST') return json(res, { status: 'dispatched', task_id: `task_${ts()}`, ts: ts() });
+    return json(res, { error: 'unknown_swarm_endpoint', path: p }, 404);
+  }
+
+  // ── /api/ehsa/dashboard ──
+  if (p === '/api/ehsa/dashboard') {
+    return json(res, { patients: 1247, facilities: 8, compliance_pct: 94, active_cases: 23, ts: ts() });
+  }
+
+  // ── /api/economics ──
+  if (p === '/api/economics') {
+    return json(res, {
+      revenue: { monthly: +(treasuryBalance * 0.08).toFixed(2), annual: +(treasuryBalance * 0.96).toFixed(2), currency: 'USD' },
+      costs: { monthly: +(treasuryBalance * 0.03).toFixed(2), breakdown: { infra: 40, agents: 35, marketing: 25 } },
+      margin_pct: 62.5, mrr_growth_pct: 12.3, ts: ts()
+    });
+  }
+
+  // ── /api/credits ──
+  if (p === '/api/credits') {
+    return json(res, { balance: 5000, used_today: 127, limit: 10000, ts: ts() });
+  }
+
   // ── 404 ──
-  return json(res, { error: 'not_found', path: p, available: ['/health', '/api/topology', '/api/avatar/{mode}', '/api/registry/{ns}', '/api/marketplace/{section}', '/api/status', '/api/agents', '/api/contracts', '/api/treasury/ledger', '/api/treasury/summary', '/api/events/recent', '/api/agents/dispatch', '/api/agents/queue', '/api/marketplace/tasks/create', '/api/users', '/orchestrator/status', '/billing', '/auth/register', '/auth/login', '/auth/verify', '/referral/claim'] }, 404);
+  return json(res, { error: 'not_found', path: p, available: ['/health', '/api/health', '/api/topology', '/api/avatar/{mode}', '/api/registry/{ns}', '/api/marketplace/{section}', '/api/status', '/api/agents', '/api/contracts', '/api/treasury', '/api/treasury/ledger', '/api/treasury/summary', '/api/treasury/payments', '/api/swarm/agents', '/api/swarm/health', '/api/swarm/matrix', '/api/economics', '/api/credits', '/api/ehsa/dashboard', '/api/events/recent', '/api/agents/dispatch', '/api/agents/queue', '/api/marketplace/tasks/create', '/api/users', '/orchestrator/status', '/billing', '/auth/register', '/auth/login', '/auth/verify', '/referral/claim'] }, 404);
 };
