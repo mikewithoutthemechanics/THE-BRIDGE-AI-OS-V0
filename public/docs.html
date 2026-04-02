@@ -57,8 +57,16 @@
             <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/gateway/" class="text-cyan-400 hover:underline">/gateway/</a></td><td>Sovereign Gateway — QR scan to join; wallet, SIWE; Bridge · Supac · Taurus · Wiki</td></tr>
             <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/join.html" class="text-cyan-400 hover:underline">/join.html</a></td><td>Join as Agent — QR + decentralized platform entry</td></tr>
             <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/docs.html" class="text-cyan-400 hover:underline">/docs.html</a></td><td>This documentation page</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/apps" class="text-cyan-400 hover:underline">System Map</a></td><td>50+ Applications — all systems linked with navigation</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/sitemap" class="text-cyan-400 hover:underline">Full Sitemap</a></td><td>Complete system map — pages, APIs, WebSockets, subdomains</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/applications.html" class="text-cyan-400 hover:underline">/applications.html</a></td><td>System Map — all applications linked with navigation</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/sitemap.html" class="text-cyan-400 hover:underline">/sitemap.html</a></td><td>Complete system map — pages, APIs, WebSockets, subdomains</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/topology.html" class="text-cyan-400 hover:underline">/topology.html</a></td><td>Network topology visualization (p5.js)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/registry.html" class="text-cyan-400 hover:underline">/registry.html</a></td><td>Registry explorer (kernel, network, security, federation)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/system-status-dashboard.html" class="text-cyan-400 hover:underline">/system-status-dashboard.html</a></td><td>System status — D3 force graph, 30+ services</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/terminal.html" class="text-cyan-400 hover:underline">/terminal.html</a></td><td>Terminal — xterm.js PTY (multi-tab)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/corporate.html" class="text-cyan-400 hover:underline">/corporate.html</a></td><td>Corporate suite — quotes, invoices, CRM, vendors, legal</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/platforms.html" class="text-cyan-400 hover:underline">/platforms.html</a></td><td>Platform network — 10 platforms, payment rails</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/brand.html" class="text-cyan-400 hover:underline">/brand.html</a></td><td>Brand assets — logos, SVGs, metrics</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/logs.html" class="text-cyan-400 hover:underline">/logs.html</a></td><td>Log viewer — system activity &amp; audit logs</td></tr>
           </tbody>
         </table>
       </div>
@@ -77,18 +85,23 @@
             </tr>
           </thead>
           <tbody class="text-slate-400">
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/health</td><td>Health check</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/capabilities</td><td>Capability registry</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/user/settings</td><td>User settings (X-User-Id optional)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">PUT</td><td class="pr-4 font-mono">/api/user/settings</td><td>Save user settings</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins</td><td>List twins</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins/leaderboard</td><td>Leaderboard</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/status</td><td>Replication status</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/nodes</td><td>Replication nodes</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/live/report</td><td>Live report (dashboard, heatmap)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/founder-todo</td><td>Mission board</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">PATCH</td><td class="pr-4 font-mono">/api/founder-todo/:id/complete</td><td>Complete objective</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/marketplace/tasks</td><td>Marketplace tasks</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/health</td><td>Gateway + core liveness check</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/status</td><td>Aggregate service health</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/agents</td><td>L1+L2 agent federation</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/economics</td><td>Economic system overview</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/treasury</td><td>Treasury status + allocations</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/contracts</td><td>Shared contracts (13)</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/logs</td><td>System log files</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/full</td><td>Full system state dump</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/kernel</td><td>Kernel registry</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/network</td><td>Network registry</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/security</td><td>Security registry</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/federation</td><td>Federation registry</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/jobs</td><td>Jobs registry</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/market</td><td>Market registry</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/treasury</td><td>Treasury registry</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">POST</td><td class="pr-4 font-mono">/lead</td><td>Submit lead</td></tr>
+            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">POST</td><td class="pr-4 font-mono">/api/leadgen/auto-prospect</td><td>Auto-prospecting engine</td></tr>
           </tbody>
         </table>
       </div>

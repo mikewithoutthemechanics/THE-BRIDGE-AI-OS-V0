@@ -102,12 +102,27 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
       <h2>Active Proposals <span class="badge badge-blue">Vote Now</span></h2>
       <div id="proposals-list"><div class="loading">Loading proposals...</div></div>
       <div style="margin-top:1rem">
-        <button class="btn btn-primary" onclick="alert('Submit proposal form coming soon')">Submit New Proposal</button>
+        <button class="btn btn-primary" id="submit-proposal-btn">Submit New Proposal</button>
       </div>
     </div>
     <div class="card" style="margin-top:1rem">
       <h2>Your Reputation</h2>
       <div id="my-rep"><div class="loading">Loading reputation...</div></div>
+    </div>
+  </div>
+
+  <div class="auth-only" id="proposal-form-section" style="display:none;margin-top:1rem">
+    <div class="card">
+      <h2>Submit Proposal</h2>
+      <div style="margin-top:.75rem">
+        <input id="proposal-title" type="text" placeholder="Proposal title" style="width:100%;padding:.5rem;background:var(--bg3);color:var(--w);border:1px solid #1a2a3a;border-radius:6px;margin-bottom:.5rem;font-size:.9rem">
+        <textarea id="proposal-desc" placeholder="Description of your proposal..." style="width:100%;padding:.5rem;background:var(--bg3);color:var(--w);border:1px solid #1a2a3a;border-radius:6px;min-height:80px;font-size:.85rem;resize:vertical;margin-bottom:.5rem"></textarea>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-green" id="proposal-submit-confirm">Submit</button>
+          <button class="btn btn-outline" id="proposal-cancel">Cancel</button>
+        </div>
+        <div id="proposal-result" style="margin-top:.5rem;font-size:.85rem"></div>
+      </div>
     </div>
   </div>
 
@@ -161,12 +176,64 @@ async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;re
     if(pr.length){
       document.getElementById('proposals-list').innerHTML=pr.slice(0,10).map(p=>{
         const yes=parseInt(p.votesFor||p.yes||0),no=parseInt(p.votesAgainst||p.no||0),total=yes+no||1;
-        return `<div class="proposal"><div class="proposal-title">${p.title||p.name||'Proposal'}</div><div class="proposal-meta"><span>By ${p.author||p.proposer||'--'}</span><span class="badge ${p.status==='active'?'badge-green':p.status==='passed'?'badge-blue':'badge-yellow'}">${p.status||'active'}</span><span>${yes} for / ${no} against</span></div><div class="vote-bar"><div class="vote-fill" style="width:${(yes/total*100).toFixed(0)}%;background:linear-gradient(90deg,var(--g),var(--a))"></div></div>${p.status==='active'?`<div style="margin-top:.5rem"><button class="btn btn-green" style="padding:.3rem .8rem;font-size:.75rem" onclick="alert('Vote recorded')">Vote For</button> <button class="btn btn-outline" style="padding:.3rem .8rem;font-size:.75rem" onclick="alert('Vote recorded')">Vote Against</button></div>`:''}</div>`;
+        return `<div class="proposal"><div class="proposal-title">${p.title||p.name||'Proposal'}</div><div class="proposal-meta"><span>By ${p.author||p.proposer||'--'}</span><span class="badge ${p.status==='active'?'badge-green':p.status==='passed'?'badge-blue':'badge-yellow'}">${p.status||'active'}</span><span>${yes} for / ${no} against</span></div><div class="vote-bar"><div class="vote-fill" style="width:${(yes/total*100).toFixed(0)}%;background:linear-gradient(90deg,var(--g),var(--a))"></div></div>${p.status==='active'?`<div style="margin-top:.5rem"><button class="btn btn-green" style="padding:.3rem .8rem;font-size:.75rem" onclick="castVote(this)">Vote For</button> <button class="btn btn-outline" style="padding:.3rem .8rem;font-size:.75rem" onclick="castVote(this)">Vote Against</button></div>`:''}</div>`;
       }).join('');
     }else{document.getElementById('proposals-list').innerHTML='<div style="color:var(--t)">No active proposals</div>';}
 
     document.getElementById('my-rep').innerHTML=`<div class="grid grid-4"><div><div style="color:var(--t);font-size:.8rem">Score</div><div style="font-size:1.3rem;font-weight:700">${d.myReputation||d.reputation||0}</div></div><div><div style="color:var(--t);font-size:.8rem">Tier</div><div style="font-size:1.3rem;font-weight:700">${d.myTier||d.tier||'JUNIOR'}</div></div><div><div style="color:var(--t);font-size:.8rem">Votes Cast</div><div style="font-size:1.3rem;font-weight:700">${d.myVotes||d.votesCast||0}</div></div><div><div style="color:var(--t);font-size:.8rem">Proposals</div><div style="font-size:1.3rem;font-weight:700">${d.myProposals||d.proposalsSubmitted||0}</div></div></div>`;
   }
+})();
+
+// Vote casting
+function castVote(btn){
+  var proposalEl=btn.closest('.proposal');
+  var titleEl=proposalEl?proposalEl.querySelector('.proposal-title'):null;
+  var title=titleEl?titleEl.textContent:'';
+  var vote=btn.textContent.trim().indexOf('For')!==-1?'for':'against';
+  btn.disabled=true;btn.textContent='Voting...';
+  fetch('/api/governance/vote',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(localStorage.getItem('bridge_token')||'')},body:JSON.stringify({proposal:title,vote:vote})})
+  .then(function(r){return r.json()})
+  .then(function(d){btn.textContent='Voted '+vote.charAt(0).toUpperCase()+vote.slice(1);btn.style.opacity='0.6';})
+  .catch(function(){btn.disabled=false;btn.textContent=vote==='for'?'Vote For':'Vote Against';});
+}
+
+// Proposal form handling
+(function(){
+  var formSection=document.getElementById('proposal-form-section');
+  var submitBtn=document.getElementById('submit-proposal-btn');
+  var confirmBtn=document.getElementById('proposal-submit-confirm');
+  var cancelBtn=document.getElementById('proposal-cancel');
+  var resultEl=document.getElementById('proposal-result');
+  if(submitBtn) submitBtn.addEventListener('click',function(){
+    if(formSection) formSection.style.display='';
+  });
+  if(cancelBtn) cancelBtn.addEventListener('click',function(){
+    if(formSection) formSection.style.display='none';
+    document.getElementById('proposal-title').value='';
+    document.getElementById('proposal-desc').value='';
+    if(resultEl) resultEl.textContent='';
+  });
+  if(confirmBtn) confirmBtn.addEventListener('click',async function(){
+    var title=document.getElementById('proposal-title').value.trim();
+    var desc=document.getElementById('proposal-desc').value.trim();
+    if(!title){if(resultEl){resultEl.style.color='var(--r)';resultEl.textContent='Title is required.';}return;}
+    confirmBtn.disabled=true;confirmBtn.textContent='Submitting...';
+    try{
+      var r=await fetch('/api/governance/proposals',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(localStorage.getItem('bridge_token')||'')},body:JSON.stringify({title:title,description:desc})});
+      var data=await r.json();
+      if(r.ok){
+        if(resultEl){resultEl.style.color='var(--g)';resultEl.textContent='Proposal submitted successfully!';}
+        document.getElementById('proposal-title').value='';
+        document.getElementById('proposal-desc').value='';
+        setTimeout(function(){if(formSection)formSection.style.display='none';if(resultEl)resultEl.textContent='';},2000);
+      }else{
+        if(resultEl){resultEl.style.color='var(--r)';resultEl.textContent=data.error||'Failed to submit proposal.';}
+      }
+    }catch(e){
+      if(resultEl){resultEl.style.color='var(--r)';resultEl.textContent='Network error. Try again.';}
+    }
+    confirmBtn.disabled=false;confirmBtn.textContent='Submit';
+  });
 })();
 </script>
 <script src="/bridge-nav.js?v=2"></script></body>

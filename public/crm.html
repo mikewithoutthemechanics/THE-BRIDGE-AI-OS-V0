@@ -166,6 +166,19 @@ document.querySelectorAll(".modal-overlay").forEach(function(el){
     el.addEventListener("click", function(e){ if(e.target===el) el.classList.remove("open"); });
 });
 loadContacts();
+
+// Also load CRM stats from dedicated endpoint
+(async function() {
+    try {
+        var res = await fetch("/api/crm/stats");
+        if (res.ok) {
+            var stats = await res.json();
+            if (stats.total != null) document.getElementById("stat-total").textContent = stats.total;
+            if (stats.active != null) document.getElementById("stat-active").textContent = stats.active;
+            if (stats.new_this_month != null) document.getElementById("stat-new").textContent = stats.new_this_month;
+        }
+    } catch(e) {}
+})();
 </script>
 <script src="/bridge-nav.js?v=2"></script>
 </body>

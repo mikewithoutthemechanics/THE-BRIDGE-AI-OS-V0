@@ -103,6 +103,7 @@
 <div class="shell">
     <div class="header">
         <h1><span>Workforce</span> — Bridge AI OS</h1>
+        <button class="btn-primary" id="addAgentBtn" style="padding:8px 16px;background:var(--cyan);color:var(--bg-0);border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;">Add Agent</button>
     </div>
 
     <div class="stats-row">
@@ -264,6 +265,20 @@
             document.getElementById('s-util').textContent = '0%';
         }
     }
+
+    document.getElementById('addAgentBtn').addEventListener('click', function() {
+        var name = prompt('Agent/Employee name:');
+        if (!name) return;
+        var role = prompt('Role:') || 'Agent';
+        var dept = prompt('Department:') || 'Operations';
+        fetch('/api/agents/workforce', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, role: role, department: dept, status: 'active', performance: 50 })
+        }).then(function(r) { return r.json(); }).then(function() {
+            load();
+        }).catch(function() { alert('Failed to add agent'); });
+    });
 
     load();
 })();

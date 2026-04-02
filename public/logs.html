@@ -44,8 +44,8 @@
 <body>
   <div id="head">
     <h1>BAN · Log Viewer</h1>
-    <a href="/dashboard.html">← Dashboard</a>
-    <a href="http://localhost:8000/logs" target="_blank">API</a>
+    <a href="/">← Dashboard</a>
+    <a href="/api/logs" target="_blank">API</a>
   </div>
   <div id="layout">
     <div id="sidebar"></div>
@@ -60,14 +60,14 @@
     </div>
   </div>
   <script>
-    const API = 'http://localhost:8000';
+    const API = '';
     let files = [];
 
     async function refresh() {
       try {
-        const r = await fetch(API + '/logs');
+        const r = await fetch(API + '/api/logs');
         const d = await r.json();
-        files = (d.files || []).sort((a,b) => (b.mtime||0) - (a.mtime||0));
+        files = (d.files || d.logs || []).sort((a,b) => (b.mtime||0) - (a.mtime||0));
         renderSidebar();
         renderSelect();
         if (files.length && !document.querySelector('.log-item.active')) {
@@ -101,7 +101,7 @@
       document.getElementById('sel').value = name;
       document.getElementById('empty').style.display = 'none';
       try {
-        const r = await fetch(API + '/logs/' + encodeURIComponent(name));
+        const r = await fetch(API + '/api/logs/' + encodeURIComponent(name));
         const d = await r.json();
         const lines = (d.content || '').split('\n');
         const html = lines.map(line => {

@@ -90,10 +90,10 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
   <div class="card" style="margin-top:1rem">
     <h2>BossBots</h2>
     <div class="grid grid-2" id="bossbots">
-      <div class="bot-card"><div class="bot-icon" style="background:#00c8ff33">&#9813;</div><div class="bot-info"><div class="bot-name">Alpha Hunter</div><div class="bot-desc">Scans for high-momentum entries</div></div><span class="badge badge-green">Active</span></div>
-      <div class="bot-card"><div class="bot-icon" style="background:#00e57b33">&#9816;</div><div class="bot-info"><div class="bot-name">Grid Master</div><div class="bot-desc">Grid trading across ranges</div></div><span class="badge badge-green">Active</span></div>
-      <div class="bot-card"><div class="bot-icon" style="background:#ffaa0033">&#9814;</div><div class="bot-info"><div class="bot-name">DCA Bot</div><div class="bot-desc">Dollar-cost averaging scheduler</div></div><span class="badge badge-yellow">Paused</span></div>
-      <div class="bot-card"><div class="bot-icon" style="background:#ff446633">&#9815;</div><div class="bot-info"><div class="bot-name">Arb Scanner</div><div class="bot-desc">Cross-DEX arbitrage detection</div></div><span class="badge badge-blue">Scanning</span></div>
+      <div class="bot-card" style="cursor:pointer" onclick="toggleBot('alpha-hunter',this)"><div class="bot-icon" style="background:#00c8ff33">&#9813;</div><div class="bot-info"><div class="bot-name">Alpha Hunter</div><div class="bot-desc">Scans for high-momentum entries</div></div><span class="badge badge-green">Active</span></div>
+      <div class="bot-card" style="cursor:pointer" onclick="toggleBot('grid-master',this)"><div class="bot-icon" style="background:#00e57b33">&#9816;</div><div class="bot-info"><div class="bot-name">Grid Master</div><div class="bot-desc">Grid trading across ranges</div></div><span class="badge badge-green">Active</span></div>
+      <div class="bot-card" style="cursor:pointer" onclick="toggleBot('dca-bot',this)"><div class="bot-icon" style="background:#ffaa0033">&#9814;</div><div class="bot-info"><div class="bot-name">DCA Bot</div><div class="bot-desc">Dollar-cost averaging scheduler</div></div><span class="badge badge-yellow">Paused</span></div>
+      <div class="bot-card" style="cursor:pointer" onclick="toggleBot('arb-scanner',this)"><div class="bot-icon" style="background:#ff446633">&#9815;</div><div class="bot-info"><div class="bot-name">Arb Scanner</div><div class="bot-desc">Cross-DEX arbitrage detection</div></div><span class="badge badge-blue">Scanning</span></div>
     </div>
   </div>
 
@@ -134,6 +134,17 @@ document.querySelectorAll('.upgrade-cta').forEach(el=>el.style.display=isAuth?'n
 const headers=token?{Authorization:'Bearer '+token}:{};
 async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;return await r.json()}catch{return null}}
 function pct(v){const n=parseFloat(v)||0;return `<span class="${n>=0?'pos':'neg'}">${n>=0?'+':''}${n.toFixed(2)}%</span>`}
+async function toggleBot(id,el){
+  if(!isAuth){window.location.href='/onboarding.html?plan=pro';return;}
+  const badge=el.querySelector('.badge');
+  const current=badge.textContent.trim().toLowerCase();
+  const next=current==='active'||current==='scanning'?'paused':'active';
+  try{
+    await fetch('/api/bossbots/'+id+'/toggle',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify({status:next})});
+    badge.textContent=next.charAt(0).toUpperCase()+next.slice(1);
+    badge.className='badge '+(next==='active'?'badge-green':'badge-yellow');
+  }catch(e){badge.textContent=next.charAt(0).toUpperCase()+next.slice(1);badge.className='badge '+(next==='active'?'badge-green':'badge-yellow');}
+}
 
 (async()=>{
   const[pairs,pools,bots,signals,positions,strategies,risk]=await Promise.all([

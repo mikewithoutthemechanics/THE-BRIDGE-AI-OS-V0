@@ -276,6 +276,7 @@ document.getElementById('campaign-form').addEventListener('submit', async functi
     if (!r.ok) throw new Error(r.statusText);
     closeModal();
     e.target.reset();
+    loadFunnel(); loadEmail(); loadSocial();
     alert('Campaign launched successfully!');
   } catch(err) { alert('Failed to launch campaign: ' + err.message); }
 });

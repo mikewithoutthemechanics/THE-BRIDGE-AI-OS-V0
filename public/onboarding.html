@@ -258,6 +258,13 @@ function githubAuth() {
 // Auto-fill referral from URL
 const urlRef = new URLSearchParams(location.search).get('ref');
 if (urlRef) document.getElementById('reg-referral').value = urlRef;
+
+// Auto-select plan from URL param
+const urlPlan = new URLSearchParams(location.search).get('plan');
+if (urlPlan) {
+  const planLabel = document.querySelector('.tagline');
+  if (planLabel) planLabel.textContent = 'AI OPERATING SYSTEM \u2014 ' + urlPlan.toUpperCase() + ' PLAN';
+}
 </script>
 <script src="/bridge-nav.js?v=2"></script></body>
 </html>

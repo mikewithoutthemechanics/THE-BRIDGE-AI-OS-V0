@@ -91,7 +91,7 @@ h1{font-size:2rem;text-align:center;margin-bottom:.25rem}
         <li>Basic invoicing</li>
         <li>Community support</li>
       </ul>
-      <a href="/onboarding" class="btn btn-outline">Get Started</a>
+      <a href="/onboarding.html?plan=free" class="btn btn-outline">Get Started</a>
     </div>
 
     <!-- PRO -->
@@ -177,13 +177,20 @@ h1{font-size:2rem;text-align:center;margin-bottom:.25rem}
 <script>
 // Pro upgrade — PayFast payment
 document.getElementById('btn-pro').onclick = async () => {
-  const resp = await fetch('/create-payment', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ client: 'Pro Upgrade', amount: '299.00', email: '' })
-  });
-  const data = await resp.json();
-  if (data.payment_url) window.location.href = data.payment_url;
+  const user = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+  const email = user.email || prompt('Enter your email for payment:');
+  if (!email) return;
+  try {
+    const resp = await fetch('/create-payment', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ client: 'Pro Upgrade', amount: '299.00', email: email })
+    });
+    const data = await resp.json();
+    if (data.payment_url) window.location.href = data.payment_url;
+    else if (data.error) alert('Payment error: ' + data.error);
+    else alert('Payment initiated. Check your email for confirmation.');
+  } catch(e) { alert('Payment failed: ' + e.message); }
 };
 </script>
 <script src="/bridge-nav.js?v=2"></script>

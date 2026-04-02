@@ -7,6 +7,7 @@
 <meta name="description" content="Bridge AI OS — Sovereign Web3 Entry Protocol. Wallet, chain, contract, owner, gas, block, SIWE-style auth.">
 <title>Bridge AI OS Sovereign Gateway</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/bridge-tokens.css">
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.min.js"></script>
 <style>
 body {
@@ -15,6 +16,7 @@ body {
   font-family: Arial, sans-serif;
   text-align: center;
   padding: 40px;
+  padding-top: 60px;
   margin: 0;
 }
 .container { max-width: 900px; margin: auto; }
@@ -300,6 +302,6 @@ if (window.ethereum) {
   window.ethereum.on("accountsChanged", () => location.reload());
 }
 </script>
-
+<script src="/bridge-nav.js?v=2"></script>
 </body>
 </html>

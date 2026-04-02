@@ -22,22 +22,30 @@
       { name: 'GRAFANA', subdomain: 'grafana', port: '3003', url: isVPS ? 'https://go.ai-os.co.za/status' : 'https://grafana.bridge-ai-os.com' }
     ],
     'PLATFORMS': [
-      { name: 'EHSA', url: svcBase+'/ehsa' }, { name: 'HOSPITAL', url: svcBase+'/hospital' },
-      { name: 'AID', url: svcBase+'/aid' }, { name: 'UBI', url: svcBase+'/ubi' },
-      { name: 'SUPAC', url: svcBase+'/supac' }, { name: 'BAN', url: svcBase+'/ban' },
-      { name: 'AURORA', url: svcBase+'/aurora' }, { name: 'ROOTED EARTH', url: svcBase+'/rootedearth' }
+      { name: 'EHSA', url: svcBase+'/ehsa-home.html' }, { name: 'HOSPITAL', url: svcBase+'/hospital-home.html' },
+      { name: 'AID', url: svcBase+'/aid-home.html' }, { name: 'UBI', url: svcBase+'/ubi-home.html' },
+      { name: 'SUPAC', url: svcBase+'/supac-home.html' }, { name: 'BAN', url: svcBase+'/ban-home.html' },
+      { name: 'AURORA', url: svcBase+'/aurora-home.html' }, { name: 'ROOTED EARTH', url: svcBase+'/rootedearth-home.html' },
+      { name: 'PLATFORMS', url: svcBase+'/platforms.html' }
     ],
     'BUSINESS': [
-      { name: 'CRM', url: svcBase+'/crm' }, { name: 'INVOICING', url: svcBase+'/invoicing' },
-      { name: 'QUOTES', url: svcBase+'/quotes' }, { name: 'LEGAL', url: svcBase+'/legal' },
-      { name: 'MARKETING', url: svcBase+'/marketing' }, { name: 'TICKETS', url: svcBase+'/tickets' },
-      { name: 'VENDORS', url: svcBase+'/vendors' }, { name: 'CUSTOMERS', url: svcBase+'/customers' },
-      { name: 'WORKFORCE', url: svcBase+'/workforce' }
+      { name: 'CRM', url: svcBase+'/crm.html' }, { name: 'INVOICING', url: svcBase+'/invoicing.html' },
+      { name: 'QUOTES', url: svcBase+'/quotes.html' }, { name: 'LEGAL', url: svcBase+'/legal.html' },
+      { name: 'MARKETING', url: svcBase+'/marketing.html' }, { name: 'TICKETS', url: svcBase+'/tickets.html' },
+      { name: 'VENDORS', url: svcBase+'/vendors.html' }, { name: 'CUSTOMERS', url: svcBase+'/customers.html' },
+      { name: 'WORKFORCE', url: svcBase+'/workforce.html' }
+    ],
+    'SYSTEM': [
+      { name: 'TOPOLOGY', url: svcBase+'/topology.html' }, { name: 'LAYERS', url: svcBase+'/topology-layers.html' },
+      { name: 'STATUS', url: svcBase+'/system-status-dashboard.html' }, { name: 'REGISTRY', url: svcBase+'/registry.html' },
+      { name: 'LOGS', url: svcBase+'/logs.html' }, { name: 'TERMINAL', url: svcBase+'/terminal.html' }
     ],
     'MORE': [
-      { name: 'APPS', url: svcBase+'/apps' }, { name: 'MARKETPLACE', url: svcBase+'/marketplace' },
-      { name: 'DEFI', url: svcBase+'/defi' }, { name: 'TRADING', url: svcBase+'/trading' },
-      { name: 'PRICING', url: svcBase+'/pricing' }, { name: 'DOCS', url: svcBase+'/docs' }
+      { name: 'APPS', url: svcBase+'/applications.html' }, { name: 'MARKETPLACE', url: svcBase+'/marketplace.html' },
+      { name: 'DEFI', url: svcBase+'/defi.html' }, { name: 'TRADING', url: svcBase+'/trading.html' },
+      { name: 'PRICING', url: svcBase+'/pricing.html' }, { name: 'DOCS', url: svcBase+'/docs.html' },
+      { name: 'BRAND', url: svcBase+'/brand.html' }, { name: 'CORPORATE', url: svcBase+'/corporate.html' },
+      { name: 'SITEMAP', url: svcBase+'/sitemap.html' }, { name: 'JOIN', url: svcBase+'/join.html' }
     ]
   };
 
@@ -48,7 +56,10 @@
 
   function isActive(item) {
     if (item.subdomain) return isLocalhost ? item.port === currentPort : currentHost.indexOf(item.subdomain) !== -1;
-    try { var u = new URL(item.url); return currentPath === u.pathname || currentPath === u.pathname + '.html'; } catch(e) { return false; }
+    try {
+      var u = new URL(item.url, window.location.origin);
+      return currentPath === u.pathname || currentPath === u.pathname + '.html';
+    } catch(e) { return currentPath === item.url; }
   }
 
   var css = [
@@ -77,7 +88,7 @@
   var logo = document.createElement('span');
   logo.className = 'bn-logo';
   logo.textContent = 'BRIDGE AI';
-  logo.onclick = function() { window.location.href = base + '/apps'; };
+  logo.onclick = function() { window.location.href = svcBase + '/applications.html'; };
   bar.appendChild(logo);
 
   var sectionsDiv = document.createElement('div');

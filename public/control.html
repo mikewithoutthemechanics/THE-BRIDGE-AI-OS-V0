@@ -958,9 +958,9 @@ async function init() {
   try {
     const ledger = await fetch('/api/ledger').then(function(r){return r.json()}).catch(function(){return {entries:[]}});
     (ledger.entries || []).slice(0, 15).forEach(function(e) {
-      events.push({ ts: new Date(e.time || Date.now()), type: 'TREASURY', msg: (e.type||'payment') + ': R' + (e.amount||0) });
+      events.push({ time: new Date(e.time || Date.now()).toLocaleTimeString('en-US',{hour12:false}), type: 'TREASURY', agent: '--', details: (e.type||'payment') + ': R' + (e.amount||0) });
     });
-    renderEvents();
+    renderFeed();
   } catch(e) {}
 
   // Real polling — no fake events
