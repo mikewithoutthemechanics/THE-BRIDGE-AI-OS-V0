@@ -37,7 +37,7 @@
       { name: 'AFFILIATE', url: svcBase+'/affiliate.html' }, { name: 'GOVERNANCE', url: svcBase+'/governance.html' }
     ],
     'SYSTEM': [
-      { name: 'TOPOLOGY', url: svcBase+'/topology.html' }, { name: 'LAYERS', url: svcBase+'/topology-layers.html' },
+      { name: 'AGENTS', url: svcBase+'/agents.html' }, { name: 'TOPOLOGY', url: svcBase+'/topology.html' }, { name: 'LAYERS', url: svcBase+'/topology-layers.html' },
       { name: 'STATUS', url: svcBase+'/system-status-dashboard.html' }, { name: 'REGISTRY', url: svcBase+'/registry.html' },
       { name: 'LOGS', url: svcBase+'/logs.html' }, { name: 'TERMINAL', url: svcBase+'/terminal.html' },
       { name: 'TREASURY', url: svcBase+'/treasury-dashboard.html' }, { name: 'DASHBOARD', url: svcBase+'/aoe-dashboard.html' }
@@ -45,7 +45,7 @@
     'MORE': [
       { name: 'APPS', url: svcBase+'/applications.html' }, { name: 'MARKETPLACE', url: svcBase+'/marketplace.html' },
       { name: 'DEFI', url: svcBase+'/defi.html' }, { name: 'TRADING', url: svcBase+'/trading.html' },
-      { name: 'PRICING', url: svcBase+'/pricing.html' }, { name: 'DOCS', url: svcBase+'/docs.html' },
+      { name: 'PRICING', url: svcBase+'/pricing.html' }, { name: 'PAYMENT', url: svcBase+'/payment.html' }, { name: 'DOCS', url: svcBase+'/docs.html' },
       { name: 'AVATAR', url: svcBase+'/avatar.html' }, { name: 'BRAND', url: svcBase+'/brand.html' },
       { name: 'CORPORATE', url: svcBase+'/corporate.html' }, { name: 'SITEMAP', url: svcBase+'/sitemap.html' },
       { name: 'JOIN', url: svcBase+'/join.html' }

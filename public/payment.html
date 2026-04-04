@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscribe | Bridge AI-OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/bridge-tokens.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#060810;color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .container{max-width:860px;width:100%}
+    h1{font-size:2rem;font-weight:800;color:#63ffda;margin-bottom:8px;text-align:center}
+    .sub{text-align:center;color:#94a3b8;font-size:0.95rem;margin-bottom:40px}
+    .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+    .plan{background:#0a0e17;border:1px solid #1a2a3a;border-radius:14px;padding:28px 24px;transition:all 0.2s;cursor:pointer;position:relative}
+    .plan:hover,.plan.selected{border-color:#63ffda;box-shadow:0 0 20px rgba(99,255,218,0.1)}
+    .plan.popular{border-color:rgba(99,255,218,0.4)}
+    .badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#63ffda;color:#060810;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;letter-spacing:1px}
+    .plan-name{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+    .plan-price{font-size:2.2rem;font-weight:800;color:#63ffda;margin-bottom:4px}
+    .plan-price span{font-size:1rem;color:#94a3b8;font-weight:400}
+    .plan-desc{font-size:0.82rem;color:#94a3b8;margin-bottom:16px;line-height:1.5}
+    .plan-features{list-style:none;font-size:0.82rem;color:#cbd5e1}
+    .plan-features li{padding:4px 0;padding-left:16px;position:relative}
+    .plan-features li::before{content:'✓';position:absolute;left:0;color:#63ffda}
+    .pay-section{margin-top:32px;background:#0a0e17;border:1px solid #1a2a3a;border-radius:14px;padding:28px}
+    .pay-section h2{font-size:1rem;font-weight:700;color:#63ffda;margin-bottom:16px;letter-spacing:1px;text-transform:uppercase}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+    .form-row.single{grid-template-columns:1fr}
+    label{font-size:0.78rem;color:#94a3b8;display:block;margin-bottom:4px;letter-spacing:0.5px}
+    input{width:100%;padding:10px 14px;background:#111827;border:1px solid #1a2a3a;border-radius:8px;color:#fff;font-size:0.9rem;outline:none;transition:border-color 0.2s}
+    input:focus{border-color:#63ffda}
+    .selected-plan-display{background:#111827;border:1px solid #1a2a3a;border-radius:8px;padding:12px 16px;font-size:0.88rem;color:#cbd5e1;margin-bottom:16px}
+    .pay-btn{width:100%;padding:14px;background:#63ffda;color:#060810;border:none;border-radius:10px;font-size:1rem;font-weight:800;cursor:pointer;letter-spacing:0.5px;transition:background 0.2s}
+    .pay-btn:hover{background:#00dda8}
+    .pay-btn:disabled{background:#2a3a4a;color:#94a3b8;cursor:not-allowed}
+    .msg{font-size:0.82rem;color:#f87171;margin-top:8px;min-height:1.2em}
+    .msg.ok{color:#4ade80}
+    .secure-note{text-align:center;font-size:0.75rem;color:#4a5568;margin-top:12px}
+    @media(max-width:640px){
+      .form-row{grid-template-columns:1fr}
+      h1{font-size:1.5rem}
+      .plans{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <script src="/bridge-nav.js?v=2"></script>
+  <div class="container">
+    <h1>Choose Your Plan</h1>
+    <p class="sub">Autonomous AI operations — activate in under 60 seconds</p>
+
+    <div class="plans">
+      <div class="plan" data-plan="starter" data-amount="49" data-name="Starter" onclick="selectPlan(this)">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">R49 <span>/mo</span></div>
+        <div class="plan-desc">Perfect for small businesses automating their first workflows.</div>
+        <ul class="plan-features">
+          <li>3 AI agents</li>
+          <li>500 tasks/month</li>
+          <li>CRM + LeadGen</li>
+          <li>Email support</li>
+        </ul>
+      </div>
+
+      <div class="plan popular selected" data-plan="pro" data-amount="299" data-name="Pro" onclick="selectPlan(this)">
+        <div class="badge">MOST POPULAR</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">R299 <span>/mo</span></div>
+        <div class="plan-desc">Full agent swarm — finance, growth, support, and more.</div>
+        <ul class="plan-features">
+          <li>10 AI agents</li>
+          <li>5,000 tasks/month</li>
+          <li>Full business suite</li>
+          <li>Treasury dashboard</li>
+          <li>Priority support</li>
+        </ul>
+      </div>
+
+      <div class="plan" data-plan="enterprise" data-amount="2499" data-name="Enterprise" onclick="selectPlan(this)">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">R2,499 <span>/mo</span></div>
+        <div class="plan-desc">Unlimited agents, custom workflows, dedicated onboarding.</div>
+        <ul class="plan-features">
+          <li>Unlimited agents</li>
+          <li>Unlimited tasks</li>
+          <li>Custom integrations</li>
+          <li>SLA + dedicated support</li>
+          <li>VPS deployment</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pay-section">
+      <h2>Payment Details</h2>
+      <div class="selected-plan-display" id="planDisplay">Selected: Pro — R299/mo</div>
+      <div class="form-row">
+        <div>
+          <label>First Name</label>
+          <input type="text" id="firstName" placeholder="Sipho" required>
+        </div>
+        <div>
+          <label>Last Name</label>
+          <input type="text" id="lastName" placeholder="Ndlovu">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div>
+          <label>Email Address</label>
+          <input type="email" id="email" placeholder="you@company.co.za" required>
+        </div>
+      </div>
+      <button class="pay-btn" id="payBtn" onclick="initiatePayment()">Pay with PayFast</button>
+      <div class="msg" id="msg"></div>
+      <div class="secure-note">Secured by PayFast · South Africa's #1 payment gateway · PCI DSS compliant</div>
+    </div>
+  </div>
+
+  <script>
+    var selectedPlan = { plan: 'pro', amount: 299, name: 'Pro' };
+
+    function selectPlan(el) {
+      document.querySelectorAll('.plan').forEach(function(p) { p.classList.remove('selected'); });
+      el.classList.add('selected');
+      selectedPlan = {
+        plan:   el.dataset.plan,
+        amount: parseFloat(el.dataset.amount),
+        name:   el.dataset.name,
+      };
+      var display = document.getElementById('planDisplay');
+      display.textContent = 'Selected: ' + selectedPlan.name + ' — R' + selectedPlan.amount + '/mo';
+    }
+
+    async function initiatePayment() {
+      var btn       = document.getElementById('payBtn');
+      var msg       = document.getElementById('msg');
+      var email     = document.getElementById('email').value.trim();
+      var firstName = document.getElementById('firstName').value.trim();
+
+      msg.textContent = '';
+      msg.className   = 'msg';
+
+      if (!email || email.indexOf('@') === -1) { msg.textContent = 'Enter a valid email address.'; return; }
+      if (!firstName) { msg.textContent = 'Enter your first name.'; return; }
+
+      btn.disabled    = true;
+      btn.textContent = 'Preparing payment…';
+
+      try {
+        var res = await fetch('/api/create-payment', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            amount:    selectedPlan.amount,
+            email:     email,
+            firstName: firstName,
+            itemName:  'Bridge AI-OS ' + selectedPlan.name + ' Subscription',
+            meta:      selectedPlan.plan,
+          }),
+        });
+        var data = await res.json();
+        if (!data.ok || !data.url) throw new Error(data.error || 'No redirect URL returned');
+        msg.className   = 'msg ok';
+        msg.textContent = 'Redirecting to PayFast…';
+        window.location.href = data.url;
+      } catch (e) {
+        msg.textContent = 'Error: ' + e.message;
+        btn.disabled    = false;
+        btn.textContent = 'Pay with PayFast';
+      }
+    }
+  </script>
+</body>
+</html>
