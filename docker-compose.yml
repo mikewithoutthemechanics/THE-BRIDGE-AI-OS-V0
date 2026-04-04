@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: .
+    container_name: bridge_gateway
+    command: node gateway.js
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      - ./shared:/app/shared
+      - ./logs:/app/logs
+    networks:
+      - bridge_net
+    restart: unless-stopped
+
+  brain:
+    build: .
+    container_name: bridge_brain
+    command: node brain.js
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - BRAIN_PORT=8000
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - JWT_SECRET=${JWT_SECRET:-bridge_secure_key}
+      - KEYFORGE_MASTER=${KEYFORGE_MASTER:-bridge_keyforge_master}
+    volumes:
+      - ./shared:/app/shared
+      - ./logs:/app/logs
+    networks:
+      - bridge_net
+    restart: unless-stopped
+
+  system:
+    build: .
+    container_name: bridge_system
+    command: node system.js
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - ./public:/app/public
+      - ./logs:/app/logs
+    networks:
+      - bridge_net
+    restart: unless-stopped
+
+  terminal:
+    build: .
+    container_name: bridge_terminal
+    command: node terminal-proxy.js
+    ports:
+      - "5002:5002"
+    environment:
+      - TERMINAL_PROXY_PORT=5002
+    networks:
+      - bridge_net
+    restart: unless-stopped
+
+  auth:
+    build: .
+    container_name: bridge_auth
+    command: node auth.js
+    ports:
+      - "5001:5001"
+    environment:
+      - AUTH_PORT=5001
+      - JWT_SECRET=${JWT_SECRET:-bridge_secure_key}
+    volumes:
+      - ./users.db:/app/users.db
+    networks:
+      - bridge_net
+    restart: unless-stopped
+
+  ban:
+    build:
+      context: ./BAN
+      dockerfile: ../Dockerfile.ban
+    container_name: bridge_ban
+    ports:
+      - "8001:8001"
+    networks:
+      - bridge_net
+    restart: unless-stopped
+
+networks:
+  bridge_net:
+    driver: bridge

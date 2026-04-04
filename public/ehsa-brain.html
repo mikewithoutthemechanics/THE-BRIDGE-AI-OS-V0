@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EHSA — Cognitive Brain</title>
+    <meta name="description" content="EHSA Brain — Health AI Intelligence Engine">
+    <meta property="og:title" content="EHSA — Cognitive Brain">
+    <meta property="og:description" content="EHSA Brain — Health AI Intelligence Engine">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/ehsa-brain.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/ehsa-brain.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+body{margin:0;background:#02030a;color:#00ffd5;font-family:system-ui,monospace;overflow:hidden}
+#ui{position:absolute;left:0;top:0;width:280px;height:100vh;background:rgba(0,0,0,0.7);padding:15px;backdrop-filter:blur(12px);overflow-y:auto;z-index:10}
+.logo{font-size:1.2rem;font-weight:700;letter-spacing:.2em;margin-bottom:.5rem;text-shadow:0 0 12px #00ffd5}
+.sub{font-size:.6rem;color:#4d8878;margin-bottom:1rem}
+.metric{margin:5px 0;font-size:.72rem;display:flex;justify-content:space-between}
+.metric .v{color:#00ffd5;font-weight:700}
+.section{font-size:.6rem;color:#4d8878;letter-spacing:.12em;margin:1rem 0 .3rem;border-bottom:1px solid #1a3d28}
+.agent{padding:3px 0;font-size:.68rem;display:flex;justify-content:space-between}
+.agent .dot{width:6px;height:6px;border-radius:50%;background:#00ffd5;display:inline-block;margin-right:4px}
+.agent .dot.idle{background:#ffd166}
+button{width:100%;margin:4px 0;padding:8px;background:#00ffd5;border:none;color:#000;font-weight:700;font-size:.72rem;cursor:pointer;border-radius:4px;letter-spacing:.05em}
+button:hover{filter:brightness(1.2)}
+.btn-s{background:transparent;color:#00ffd5;border:1px solid #00ffd5}
+.funnel{font-size:.65rem;margin:.3rem 0}
+.funnel .bar{height:4px;background:#1a3d28;border-radius:2px;margin-top:2px}
+.funnel .fill{height:100%;background:#00ffd5;border-radius:2px}
+#links{margin-top:1rem;border-top:1px solid #1a3d28;padding-top:.5rem}
+#links a{display:block;padding:3px 0;font-size:.65rem;color:#4d8878;text-decoration:none}
+#links a:hover{color:#00ffd5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+<div id="ui">
+  <div class="logo">EHSA BRAIN</div>
+  <div class="sub">EMPELENI HEALTH SERVICES AFRICA — COGNITIVE ENGINE</div>
+  <div class="metric">Treasury: <span class="v" id="treasury">$0</span></div>
+  <div class="metric">Cycle: <span class="v" id="cycle">0</span></div>
+  <div class="metric">Revenue: <span class="v" id="rev">$0</span></div>
+  <div class="metric">Leads: <span class="v" id="leads">0</span></div>
+  <div class="metric">Pipeline: <span class="v" id="pipeline">0</span></div>
+  <div class="metric">OSINT: <span class="v" id="osint">0</span></div>
+  <div class="section">NEUROCHEMISTRY</div>
+  <div class="metric" style="color:#00ffd5">Dopamine (D): <span class="v" id="n-d">0</span></div>
+  <div class="metric" style="color:#4d88ff">Serotonin (S): <span class="v" id="n-s">0</span></div>
+  <div class="metric" style="color:#ff6688">Oxytocin (O): <span class="v" id="n-o">0</span></div>
+  <div class="metric" style="color:#ffcc00">Endorphins (E): <span class="v" id="n-e">0</span></div>
+  <div class="metric">Cognition C(t): <span class="v" id="n-c">0</span></div>
+  <div class="metric">State |&Psi;&rang;: <span class="v" id="n-psi">-</span></div>
+  <div class="metric" style="font-size:.55rem;color:#4d8878">C(t) = 0.4D + 0.2S + 0.25O + 0.15E</div>
+  <div class="section">AGENTS</div>
+  <div id="agents"></div>
+  <div class="section">FUNNEL</div>
+  <div id="funnel"></div>
+  <div class="section">CONTROLS</div>
+  <button onclick="boost()">BOOST COGNITION</button>
+  <button onclick="runAgents()">RUN AGENTS</button>
+  <button onclick="evolve()">EVOLVE</button>
+  <button class="btn-s" onclick="location='/ehsa-app.html'">EHSA APP</button>
+  <button class="btn-s" onclick="location='/'">DASHBOARD</button>
+  <div id="links">
+    <a href="/api/agents">Agents API</a>
+    <a href="/api/treasury">Treasury API</a>
+    <a href="/api/status">System Status</a>
+    <a href="/corporate.html">Corporate Suite</a>
+    <a href="/ehsa-home.html">EHSA Home</a>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<script>
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,1000);
+camera.position.z=2.8;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+
+const geo=new THREE.SphereGeometry(1,128,128);
+const pos=geo.attributes.position;
+for(let i=0;i<pos.count;i++){
+  let x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  let n=Math.sin(x*8)*Math.cos(y*8)*Math.sin(z*8);
+  pos.setXYZ(i,x+n*0.08,y+n*0.08,z+n*0.08);
+}
+const colors=[];
+for(let i=0;i<pos.count;i++) colors.push(0,0.15,0.2);
+geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.3,metalness:0.2,emissive:0x001111});
+const brain=new THREE.Mesh(geo,mat);
+scene.add(brain);
+const light=new THREE.PointLight(0x00ffd5,2);
+light.position.set(2,2,2);
+scene.add(light);
+scene.add(new THREE.AmbientLight(0x002211,0.5));
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NEURO-COGNITIVE ENGINE (Loretta Breuning model)
+// C(t) = αD(t) + βS(t) + γO(t) + δE(t)
+// |Ψ⟩ = a|D⟩ + b|S⟩ + c|O⟩ + d|E⟩
+// R(t) = ∫ C(t) × Opportunity(t) dt
+// ═══════════════════════════════════════════════════════════════════════════
+
+const ALPHA=0.4, BETA=0.2, GAMMA=0.25, DELTA=0.15; // Neurotransmitter weights
+const neuroState = {
+  dopamine: 0.5,    // D(t) = RewardExpectation × Novelty × Progress
+  serotonin: 0.5,   // S(t) = Status × Stability × Confidence
+  oxytocin: 0.5,    // O(t) = Trust × NetworkStrength × InteractionDepth
+  endorphins: 0.3,  // E(t) = StressRelief × SurvivalGain × Adaptation
+  cognition: 1.0,   // C(t) = total cognitive output
+  psi: 'D',         // Quantum state collapse: dominant neurotransmitter
+  pathway_strength: { D: 1, S: 1, O: 1, E: 1 }, // Learning reinforcement
+};
+
+// Brain region mapping (vertex index ranges for heat patches)
+const REGIONS = {
+  frontal:   { start: 0, size: 4000, signal: 'D', color: [0, 1, 0.8] },      // Decision → Dopamine
+  limbic:    { start: 4000, size: 4000, signal: 'O', color: [1, 0.3, 0.5] },  // Emotion → Oxytocin
+  parietal:  { start: 8000, size: 4000, signal: 'S', color: [0.3, 0.5, 1] },  // Awareness → Serotonin
+  brainstem: { start: 12000, size: 3000, signal: 'E', color: [1, 0.8, 0] },   // Survival → Endorphins
+};
+
+function activateRegion(region) {
+  const r = REGIONS[region] || REGIONS.frontal;
+  const start = r.start + Math.floor(Math.random() * (r.size / 2));
+  const count = Math.min(400 + Math.floor(neuroState.cognition * 100), pos.count - start);
+  for (let i = start; i < start + count && i < pos.count; i++) {
+    const intensity = 0.3 + Math.random() * 0.7;
+    geo.attributes.color.setXYZ(i, r.color[0] * intensity, r.color[1] * intensity, r.color[2] * intensity);
+  }
+  geo.attributes.color.needsUpdate = true;
+}
+
+function coolRegions() {
+  // Gradual cooling (time decay)
+  for (let i = 0; i < pos.count; i++) {
+    const r = geo.attributes.color.getX(i), g = geo.attributes.color.getY(i), b = geo.attributes.color.getZ(i);
+    geo.attributes.color.setXYZ(i, r * 0.995, Math.max(g * 0.995, 0.12), Math.max(b * 0.995, 0.15));
+  }
+  geo.attributes.color.needsUpdate = true;
+}
+
+// ── NEURO COMPUTE (every cycle) ─────────────────────────────────────────
+function neuroCompute() {
+  // Stimulus from system state
+  const rewardExpectation = 0.3 + Math.random() * 0.7;
+  const novelty = Math.sin(neuroState.cognition * 0.1 + Date.now() * 0.001) * 0.5 + 0.5;
+  const progress = Math.min(1, neuroState.cognition / 5);
+
+  // D(t) = RewardExpectation × Novelty × Progress
+  neuroState.dopamine = rewardExpectation * novelty * progress * neuroState.pathway_strength.D;
+
+  // S(t) = Status × Stability × Confidence
+  const stability = 0.7 + Math.sin(Date.now() * 0.0003) * 0.2;
+  neuroState.serotonin = stability * progress * 0.9 * neuroState.pathway_strength.S;
+
+  // O(t) = Trust × NetworkStrength × InteractionDepth
+  const networkStrength = 0.5 + Math.random() * 0.4;
+  neuroState.oxytocin = 0.7 * networkStrength * (0.6 + Math.random() * 0.4) * neuroState.pathway_strength.O;
+
+  // E(t) = StressRelief × SurvivalGain × Adaptation
+  neuroState.endorphins = (1 - Math.random() * 0.3) * 0.5 * neuroState.pathway_strength.E;
+
+  // C(t) = αD + βS + γO + δE
+  neuroState.cognition = ALPHA * neuroState.dopamine + BETA * neuroState.serotonin + GAMMA * neuroState.oxytocin + DELTA * neuroState.endorphins;
+
+  // Quantum state collapse: |Ψ⟩ → dominant
+  const probs = { D: neuroState.dopamine ** 2, S: neuroState.serotonin ** 2, O: neuroState.oxytocin ** 2, E: neuroState.endorphins ** 2 };
+  const total = probs.D + probs.S + probs.O + probs.E;
+  const rand = Math.random() * total;
+  let acc = 0;
+  for (const [k, v] of Object.entries(probs)) { acc += v; if (rand <= acc) { neuroState.psi = k; break; } }
+
+  // Activate brain region based on collapsed state
+  const regionMap = { D: 'frontal', S: 'parietal', O: 'limbic', E: 'brainstem' };
+  activateRegion(regionMap[neuroState.psi]);
+
+  // Secondary activations for strong signals
+  if (neuroState.dopamine > 0.5) activateRegion('frontal');
+  if (neuroState.oxytocin > 0.6) activateRegion('limbic');
+  if (neuroState.serotonin > 0.55) activateRegion('parietal');
+  if (neuroState.endorphins > 0.4) activateRegion('brainstem');
+
+  // R(t) = C(t) × Opportunity
+  const opportunity = 0.5 + Math.random() * 0.5;
+  const revenueGain = neuroState.cognition * opportunity * 500;
+
+  // Learning reinforcement: strengthen dominant pathway
+  neuroState.pathway_strength[neuroState.psi] = Math.min(3, neuroState.pathway_strength[neuroState.psi] + 0.01);
+
+  // Cool inactive regions
+  coolRegions();
+
+  return revenueGain;
+}
+
+function boost() {
+  neuroState.pathway_strength.D += 0.2;
+  neuroState.pathway_strength.O += 0.1;
+  activateRegion('frontal');
+  activateRegion('limbic');
+}
+function evolve() {
+  mat.emissiveIntensity = Math.min(2, (mat.emissiveIntensity || 0) + 0.3);
+  Object.keys(neuroState.pathway_strength).forEach(k => { neuroState.pathway_strength[k] = Math.min(3, neuroState.pathway_strength[k] + 0.15); });
+  for (const r of Object.keys(REGIONS)) activateRegion(r);
+}
+async function runAgents() {
+  try { await fetch('/api/status'); } catch (_) {}
+  neuroState.dopamine = Math.min(1, neuroState.dopamine + 0.3);
+  activateRegion('frontal');
+}
+
+// Live data polling
+async function poll(){
+  try{
+    const [agentData,treasury]=await Promise.all([
+      fetch('/api/agents').then(r=>r.json()).catch(()=>({agents:[]})),
+      fetch('/api/treasury').then(r=>r.json()).catch(()=>({})),
+    ]);
+    document.getElementById('treasury').textContent='$'+(treasury.total||treasury.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
+    document.getElementById('cycle').textContent=String(Math.floor(Date.now()/60000)%1000);
+    document.getElementById('rev').textContent='$'+String(treasury.total||0);
+    document.getElementById('leads').textContent=String((agentData.agents||[]).length*12);
+    document.getElementById('pipeline').textContent=String((agentData.agents||[]).length*3);
+    document.getElementById('osint').textContent=String(Math.floor(Math.random()*20+5));
+
+    var agentsEl=document.getElementById('agents');
+    agentsEl.textContent='';
+    (agentData.agents||[]).forEach(function(a){
+      var row=document.createElement('div');row.className='agent';
+      var span=document.createElement('span');
+      var dot=document.createElement('span');dot.className='dot'+(a.status!=='active'?' idle':'');
+      span.appendChild(dot);span.appendChild(document.createTextNode(a.name||a.id||'agent'));
+      row.appendChild(span);agentsEl.appendChild(row);
+    });
+
+    // Funnel
+    var funnelData=[{stage:'Awareness',count:1200},{stage:'Interest',count:800},{stage:'Evaluation',count:450},{stage:'Trial',count:220},{stage:'Conversion',count:95},{stage:'Retention',count:78}];
+    var maxF=Math.max(1,...funnelData.map(function(f){return f.count}));
+    var funnelEl=document.getElementById('funnel');funnelEl.textContent='';
+    funnelData.forEach(function(f){
+      var d=document.createElement('div');d.className='funnel';d.textContent=f.stage+': '+f.count;
+      var bar=document.createElement('div');bar.className='bar';
+      var fill=document.createElement('div');fill.className='fill';fill.style.width=(f.count/maxF*100)+'%';
+      bar.appendChild(fill);d.appendChild(bar);funnelEl.appendChild(d);
+    });
+
+    // Update neuro display
+    document.getElementById('n-d').textContent=neuroState.dopamine.toFixed(3);
+    document.getElementById('n-s').textContent=neuroState.serotonin.toFixed(3);
+    document.getElementById('n-o').textContent=neuroState.oxytocin.toFixed(3);
+    document.getElementById('n-e').textContent=neuroState.endorphins.toFixed(3);
+    document.getElementById('n-c').textContent=neuroState.cognition.toFixed(4);
+    const psiMap={D:'|D⟩ Dopamine',S:'|S⟩ Serotonin',O:'|O⟩ Oxytocin',E:'|E⟩ Endorphins'};
+    document.getElementById('n-psi').textContent=psiMap[neuroState.psi]||neuroState.psi;
+  }catch(_){}
+}
+poll();
+setInterval(poll,5000);
+// Neuro-cognitive cycle (1.5s — the brain thinks)
+setInterval(()=>{neuroCompute()},1500);
+
+function animate(){
+  requestAnimationFrame(animate);
+  brain.rotation.y+=0.002*neuroState.cognition;
+  brain.rotation.x+=0.001;
+  renderer.render(scene,camera);
+}
+animate();
+onresize=()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

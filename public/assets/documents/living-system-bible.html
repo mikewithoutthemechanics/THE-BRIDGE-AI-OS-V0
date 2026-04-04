@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHRONICLE — Product Bible</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --paper: #f5f0e8;
+    --amber: #e8a020;
+    --amber-dim: #c47d0a;
+    --teal: #1a6b6b;
+    --teal-light: #2a9494;
+    --rust: #c94a2a;
+    --mist: #e0ddd5;
+    --code-bg: #1a1a1a;
+    --code-green: #4ec994;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── GRAIN OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999; opacity: 0.4;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 80px 60px;
+    position: relative;
+    border-bottom: 2px solid var(--ink);
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 30%, rgba(232,160,32,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(26,107,107,0.1) 0%, transparent 50%);
+  }
+
+  .hero-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--amber-dim);
+    margin-bottom: 24px;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(56px, 9vw, 120px);
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero h1 span.accent {
+    color: var(--amber);
+    font-style: italic;
+    font-family: 'Fraunces', serif;
+  }
+
+  .hero-sub {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(18px, 2.5vw, 26px);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--teal);
+    margin-top: 32px;
+    max-width: 640px;
+    line-height: 1.4;
+    position: relative; z-index: 1;
+  }
+
+  .hero-meta {
+    display: flex; gap: 40px; margin-top: 48px;
+    position: relative; z-index: 1;
+    flex-wrap: wrap;
+  }
+
+  .hero-meta-item { display: flex; flex-direction: column; gap: 4px; }
+  .hero-meta-item .label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: #888; }
+  .hero-meta-item .value { font-size: 15px; font-weight: 600; color: var(--ink); }
+
+  .corner-decoration {
+    position: absolute; bottom: 40px; right: 60px;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #bbb; writing-mode: vertical-rl;
+  }
+
+  /* ── NAV ── */
+  .nav-strip {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--ink);
+    display: flex; overflow-x: auto;
+    border-bottom: 3px solid var(--amber);
+  }
+
+  .nav-strip::-webkit-scrollbar { display: none; }
+
+  .nav-btn {
+    flex-shrink: 0;
+    background: none; border: none;
+    color: #888;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 16px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-right: 1px solid #222;
+    white-space: nowrap;
+  }
+
+  .nav-btn:hover, .nav-btn.active {
+    color: var(--amber);
+    background: rgba(232,160,32,0.08);
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    display: none;
+    padding: 80px 60px;
+    min-height: 80vh;
+    animation: fadeUp 0.4s ease forwards;
+  }
+
+  .section.visible { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-label {
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--amber-dim); margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 64px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 48px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 24px;
+  }
+
+  /* ── VISION ── */
+  .vision-statement {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(22px, 3vw, 32px);
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.5;
+    color: var(--teal);
+    max-width: 820px;
+    margin-bottom: 60px;
+    padding-left: 24px;
+    border-left: 4px solid var(--amber);
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 48px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  .card {
+    background: white;
+    border: 1.5px solid #ddd;
+    border-radius: 2px;
+    padding: 32px;
+    position: relative;
+  }
+
+  .card-label {
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--amber-dim); margin-bottom: 12px;
+  }
+
+  .card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px; font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .card p { color: #444; font-size: 13px; line-height: 1.7; }
+
+  .card.dark {
+    background: var(--ink); color: white;
+    border-color: var(--ink);
+  }
+  .card.dark p { color: #aaa; }
+  .card.dark h3 { color: white; }
+  .card.dark .card-label { color: var(--amber); }
+
+  .pitch-box {
+    background: var(--ink);
+    color: white;
+    padding: 48px;
+    border-radius: 2px;
+    margin-top: 40px;
+  }
+
+  .pitch-box .pitch-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--amber); margin-bottom: 20px;
+  }
+
+  .pitch-box p {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(17px, 2vw, 22px);
+    font-weight: 300; font-style: italic;
+    line-height: 1.6; color: #e8e8e8;
+  }
+
+  /* ── MVP FEATURES ── */
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+  .feature-card {
+    border: 1.5px solid #ccc;
+    padding: 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: white;
+  }
+
+  .feature-card:hover {
+    border-color: var(--amber);
+    transform: translateY(-3px);
+    box-shadow: 4px 4px 0 var(--amber);
+  }
+
+  .feature-card .phase-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block; margin-right: 8px;
+  }
+
+  .dot-1 { background: var(--teal); }
+  .dot-2 { background: var(--amber); }
+  .dot-3 { background: var(--rust); }
+
+  .feature-card .phase-tag {
+    font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: #888; margin-bottom: 12px;
+    display: flex; align-items: center;
+  }
+
+  .feature-card h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px; font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .feature-card p { font-size: 12px; color: #555; line-height: 1.6; }
+
+  .feature-card .complexity {
+    position: absolute; top: 16px; right: 16px;
+    font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+
+  .c-low { background: #e8f5e9; color: #2e7d32; }
+  .c-med { background: #fff8e1; color: #f57f17; }
+  .c-high { background: #fce4ec; color: #c62828; }
+
+  /* ── ARCHITECTURE ── */
+  .arch-diagram {
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 48px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+    color: #ccc;
+    overflow-x: auto;
+    margin-bottom: 40px;
+  }
+
+  .arch-diagram .layer-title { color: var(--amber); font-weight: 600; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; }
+  .arch-diagram .component { color: var(--code-green); }
+  .arch-diagram .arrow { color: #555; }
+  .arch-diagram .note { color: #666; font-style: italic; }
+  .arch-diagram .highlight { color: white; }
+
+  .tech-stack { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+
+  .tech-item {
+    border: 1.5px solid #ddd;
+    padding: 20px;
+    background: white;
+  }
+
+  .tech-item .tech-layer { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--amber-dim); margin-bottom: 6px; }
+  .tech-item .tech-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .tech-item .tech-why { font-size: 11px; color: #666; }
+
+  /* ── DIAGRAM ── */
+  .diagram-container {
+    background: white;
+    border: 1.5px solid #ccc;
+    padding: 40px;
+    overflow-x: auto;
+    margin-bottom: 40px;
+  }
+
+  svg.concept-map { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+  /* ── ROADMAP ── */
+  .roadmap-timeline { position: relative; padding-left: 40px; }
+
+  .roadmap-timeline::before {
+    content: '';
+    position: absolute; left: 14px; top: 0; bottom: 0;
+    width: 2px; background: linear-gradient(to bottom, var(--teal), var(--amber), var(--rust));
+  }
+
+  .roadmap-phase {
+    position: relative;
+    margin-bottom: 56px;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .roadmap-phase:nth-child(1) { animation-delay: 0.1s; }
+  .roadmap-phase:nth-child(2) { animation-delay: 0.2s; }
+  .roadmap-phase:nth-child(3) { animation-delay: 0.3s; }
+  .roadmap-phase:nth-child(4) { animation-delay: 0.4s; }
+  .roadmap-phase:nth-child(5) { animation-delay: 0.5s; }
+
+  .phase-node {
+    position: absolute; left: -33px; top: 4px;
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid var(--paper);
+    z-index: 1;
+  }
+
+  .phase-header {
+    display: flex; align-items: baseline; gap: 16px;
+    margin-bottom: 16px; flex-wrap: wrap;
+  }
+
+  .phase-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 40px; font-weight: 800;
+    line-height: 1; color: #e0ddd5;
+    user-select: none;
+  }
+
+  .phase-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 700;
+  }
+
+  .phase-timeline {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #888; padding: 3px 10px;
+    border: 1px solid #ddd; border-radius: 20px;
+  }
+
+  .phase-goal {
+    font-family: 'Fraunces', serif;
+    font-size: 15px; font-style: italic;
+    color: var(--teal); margin-bottom: 16px;
+  }
+
+  .milestone-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+  .milestone-list li {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 13px; color: #444;
+  }
+
+  .milestone-list li::before {
+    content: '→';
+    color: var(--amber);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .success-metric {
+    display: inline-block;
+    margin-top: 16px;
+    background: var(--ink);
+    color: var(--amber);
+    font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .hero, .section { padding: 48px 24px; }
+    .nav-btn { padding: 14px 16px; font-size: 10px; }
+    .arch-diagram { padding: 24px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-tag">// Product Bible v1.0 — Confidential</div>
+  <h1>CHRON<span class="accent">icle</span></h1>
+  <p class="hero-sub">The living, AI-guided system where anyone can understand, reuse, and build — at any point in time.</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <span class="label">Stage</span>
+      <span class="value">Pre-seed / Concept</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="label">Category</span>
+      <span class="value">Dev Infrastructure + AI</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="label">Target</span>
+      <span class="value">All Builders</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="label">Horizon</span>
+      <span class="value">24-Month Roadmap</span>
+    </div>
+  </div>
+  <div class="corner-decoration">scroll to explore ↓</div>
+</header>
+
+<!-- NAV -->
+<nav class="nav-strip">
+  <button class="nav-btn active" onclick="show('vision', this)">01 — Vision &amp; Pitch</button>
+  <button class="nav-btn" onclick="show('mvp', this)">02 — MVP Features</button>
+  <button class="nav-btn" onclick="show('arch', this)">03 — Architecture</button>
+  <button class="nav-btn" onclick="show('diagram', this)">04 — Concept Diagram</button>
+  <button class="nav-btn" onclick="show('roadmap', this)">05 — Roadmap to Success</button>
+</nav>
+
+<!-- ══════════════════ 01 VISION ══════════════════ -->
+<section id="vision" class="section visible">
+  <div class="section-label">// 01</div>
+  <h2 class="section-title">Vision &amp; Pitch</h2>
+
+  <div class="vision-statement">
+    "What if every project came with its own living Wikipedia — where AI could guide anyone, regardless of skill, through every decision ever made, every line ever written, and every reason it exists?"
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-label">The Problem</div>
+      <h3>Knowledge Dies With the Developer</h3>
+      <p>Today's codebases are graveyards. Comments rot, wikis get stale, and Git commits are cryptic. A new team member — or even the original developer six months later — has no idea what anything does or why. Beginners are completely locked out. The knowledge lives only in the heads that built it.</p>
+    </div>
+    <div class="card dark">
+      <div class="card-label">The Insight</div>
+      <h3>Projects Should Teach Themselves</h3>
+      <p>Every change to a system is a story. If we capture that story in human-readable, AI-searchable form — not as dry commits but as an evolving narrative — then any person, at any skill level, can open the system and understand it instantly. The project becomes self-explaining.</p>
+    </div>
+    <div class="card dark">
+      <div class="card-label">The Shift</div>
+      <h3>From Version Control → Guided Evolution</h3>
+      <p>We're not replacing Git. We're layering human meaning on top of technical change. Chronicle records the "why" and the "how" alongside the "what" — and AI makes it all navigable. Think Wikipedia, not diff logs.</p>
+    </div>
+    <div class="card">
+      <div class="card-label">The Promise</div>
+      <h3>Anyone Can Reach Their Goal</h3>
+      <p>A non-technical founder, a junior dev, a future collaborator — they open Chronicle, describe what they want to achieve, and AI walks them there. No gatekeeping. No tribal knowledge. Just guided, purposeful building.</p>
+    </div>
+  </div>
+
+  <div class="pitch-box">
+    <div class="pitch-title">// Elevator Pitch — 30 seconds</div>
+    <p>Chronicle is the first living project intelligence platform. It turns every codebase into a self-explaining, AI-navigable history — so anyone can understand what was built, why it was built, and how to use any piece of it to reach their goal. It's not version control. It's guided evolution. And it's the first development tool designed so that even a complete beginner can walk in, understand everything, and ship something real.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ 02 MVP FEATURES ══════════════════ -->
+<section id="mvp" class="section">
+  <div class="section-label">// 02</div>
+  <h2 class="section-title">MVP Feature List</h2>
+
+  <p style="margin-bottom:32px; color:#555; max-width:640px;">Three phases of build. Each phase ships real value. Phase 1 is your proof of concept; Phase 2 makes it sticky; Phase 3 makes it a platform.</p>
+
+  <div style="display:flex; gap:24px; margin-bottom:32px; flex-wrap:wrap;">
+    <span style="display:flex;align-items:center;gap:8px;font-size:12px;"><span class="phase-dot dot-1"></span> Phase 1 — Foundation</span>
+    <span style="display:flex;align-items:center;gap:8px;font-size:12px;"><span class="phase-dot dot-2"></span> Phase 2 — Intelligence</span>
+    <span style="display:flex;align-items:center;gap:8px;font-size:12px;"><span class="phase-dot dot-3"></span> Phase 3 — Platform</span>
+  </div>
+
+  <div class="feature-grid">
+
+    <div class="feature-card">
+      <span class="complexity c-low">Low</span>
+      <div class="phase-tag"><span class="phase-dot dot-1"></span>Phase 1</div>
+      <h4>Living Timeline View</h4>
+      <p>Every project change rendered as a human-readable timeline entry — not a commit hash, but a plain-English story of what changed and why.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-low">Low</span>
+      <div class="phase-tag"><span class="phase-dot dot-1"></span>Phase 1</div>
+      <h4>AI Change Narrator</h4>
+      <p>Auto-generates a plain-language description for every change pushed, using the diff + context. The "commit message" writes itself — in prose.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-med">Medium</span>
+      <div class="phase-tag"><span class="phase-dot dot-1"></span>Phase 1</div>
+      <h4>Snapshot Explorer</h4>
+      <p>Navigate to any point in the project's history and see the full system state — code, documentation, and AI explanation — as it existed then.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-med">Medium</span>
+      <div class="phase-tag"><span class="phase-dot dot-1"></span>Phase 1</div>
+      <h4>Cloud Root Sync</h4>
+      <p>One-click sync with GitHub / GitLab. Chronicle layers meaning on top of existing repos. No migration required — it reads what's already there.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-med">Medium</span>
+      <div class="phase-tag"><span class="phase-dot dot-2"></span>Phase 2</div>
+      <h4>Goal-Based AI Navigator</h4>
+      <p>User states a goal ("I want to add payments"). AI maps the goal to existing code, explains what's relevant, and guides step-by-step. No manual searching.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-med">Medium</span>
+      <div class="phase-tag"><span class="phase-dot dot-2"></span>Phase 2</div>
+      <h4>Code Reuse Engine</h4>
+      <p>AI identifies reusable patterns from anywhere in the project history. "You solved something similar in Month 3 — here it is, adapted for now."</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-high">High</span>
+      <div class="phase-tag"><span class="phase-dot dot-2"></span>Phase 2</div>
+      <h4>Beginner Mode</h4>
+      <p>A jargon-free, visual layer for non-technical users. They see the system as building blocks, not code. AI translates every concept on demand.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-med">Medium</span>
+      <div class="phase-tag"><span class="phase-dot dot-2"></span>Phase 2</div>
+      <h4>Decision Log</h4>
+      <p>Captures the reasoning behind architectural decisions — automatically or via prompt. "Why did we choose Postgres?" AI can answer from the log.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-high">High</span>
+      <div class="phase-tag"><span class="phase-dot dot-3"></span>Phase 3</div>
+      <h4>Multi-User Knowledge Graph</h4>
+      <p>The entire team's understanding is mapped. See who knows what, where knowledge gaps exist, and how to onboard new members in hours, not weeks.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-high">High</span>
+      <div class="phase-tag"><span class="phase-dot dot-3"></span>Phase 3</div>
+      <h4>Chronicle Marketplace</h4>
+      <p>Teams publish reusable system components — with full histories intact. Buy, fork, and deploy proven systems, not just raw libraries.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-high">High</span>
+      <div class="phase-tag"><span class="phase-dot dot-3"></span>Phase 3</div>
+      <h4>AI Pair Historian</h4>
+      <p>An agent that lives inside the IDE and knows the entire project history. It doesn't just suggest code — it explains why the current approach fits the project's evolution.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="complexity c-med">Medium</span>
+      <div class="phase-tag"><span class="phase-dot dot-3"></span>Phase 3</div>
+      <h4>Public Project Pages</h4>
+      <p>Teams can publish a beautiful, Wikipedia-style public page for any open-source project — its history, decisions, and live AI navigator included.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════ 03 ARCHITECTURE ══════════════════ -->
+<section id="arch" class="section">
+  <div class="section-label">// 03</div>
+  <h2 class="section-title">Technical Architecture</h2>
+
+  <div class="arch-diagram">
+    <div class="layer-title">┌─ USER LAYER ──────────────────────────────────────────────────────┐</div>
+    <div>&nbsp; <span class="component">Web App</span> (React/Next.js) &nbsp;·&nbsp; <span class="component">IDE Extension</span> (VS Code) &nbsp;·&nbsp; <span class="component">Mobile</span> (PWA)</div>
+    <div class="layer-title">└───────────────────────────────────────────────────────────────────┘</div>
+    <div class="arrow">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↕  REST + WebSocket</div>
+    <div>&nbsp;</div>
+    <div class="layer-title">┌─ API GATEWAY ─────────────────────────────────────────────────────┐</div>
+    <div>&nbsp; <span class="component">Auth Service</span> &nbsp;·&nbsp; <span class="component">Rate Limiter</span> &nbsp;·&nbsp; <span class="component">Request Router</span></div>
+    <div class="layer-title">└───────────────────────────────────────────────────────────────────┘</div>
+    <div class="arrow">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↕</div>
+    <div>&nbsp;</div>
+    <div class="layer-title">┌─ CORE SERVICES ───────────────────────────────────────────────────┐</div>
+    <div>&nbsp; <span class="component">Chronicle Engine</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note">// ingests changes, builds narrative timeline</span></div>
+    <div>&nbsp; <span class="component">AI Narrative Service</span> &nbsp;&nbsp;<span class="note">// LLM layer — Claude/GPT-4 + fine-tuned models</span></div>
+    <div>&nbsp; <span class="component">Goal Navigator</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note">// maps user intent → relevant code &amp; history</span></div>
+    <div>&nbsp; <span class="component">Snapshot Manager</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note">// point-in-time system state reconstruction</span></div>
+    <div>&nbsp; <span class="component">Reuse Engine</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note">// semantic search across all project history</span></div>
+    <div class="layer-title">└───────────────────────────────────────────────────────────────────┘</div>
+    <div class="arrow">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↕</div>
+    <div>&nbsp;</div>
+    <div class="layer-title">┌─ DATA LAYER ──────────────────────────────────────────────────────┐</div>
+    <div>&nbsp; <span class="component">PostgreSQL</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note">// structured project metadata &amp; timelines</span></div>
+    <div>&nbsp; <span class="component">Vector DB</span> (Pinecone) &nbsp;<span class="note">// semantic embeddings of all code &amp; narratives</span></div>
+    <div>&nbsp; <span class="component">Object Storage</span> (S3) &nbsp;&nbsp;<span class="note">// full snapshots, file history, media</span></div>
+    <div>&nbsp; <span class="component">Redis</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note">// caching, real-time collaboration state</span></div>
+    <div class="layer-title">└───────────────────────────────────────────────────────────────────┘</div>
+    <div class="arrow">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↕</div>
+    <div>&nbsp;</div>
+    <div class="layer-title">┌─ INTEGRATIONS ────────────────────────────────────────────────────┐</div>
+    <div>&nbsp; <span class="highlight">GitHub / GitLab</span> &nbsp;·&nbsp; <span class="highlight">Jira / Linear</span> &nbsp;·&nbsp; <span class="highlight">Slack / Notion</span> &nbsp;·&nbsp; <span class="highlight">CI/CD Pipelines</span></div>
+    <div class="layer-title">└───────────────────────────────────────────────────────────────────┘</div>
+  </div>
+
+  <div class="tech-stack">
+    <div class="tech-item">
+      <div class="tech-layer">Frontend</div>
+      <div class="tech-name">Next.js + React</div>
+      <div class="tech-why">SSR for fast page loads, great DX ecosystem</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-layer">Backend</div>
+      <div class="tech-name">Node.js + tRPC</div>
+      <div class="tech-why">Type-safe API layer, easy to scale</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-layer">AI / LLM</div>
+      <div class="tech-name">Anthropic Claude API</div>
+      <div class="tech-why">Best-in-class long context + reasoning</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-layer">Vector Search</div>
+      <div class="tech-name">Pinecone</div>
+      <div class="tech-why">Semantic search across code history</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-layer">Database</div>
+      <div class="tech-name">PostgreSQL + Prisma</div>
+      <div class="tech-why">Rock-solid, great ORM, audit-trail native</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-layer">Infra</div>
+      <div class="tech-name">Vercel + AWS</div>
+      <div class="tech-why">Fast deploys + reliable object storage</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ 04 CONCEPT DIAGRAM ══════════════════ -->
+<section id="diagram" class="section">
+  <div class="section-label">// 04</div>
+  <h2 class="section-title">Concept Diagram</h2>
+
+  <div class="diagram-container">
+    <svg class="concept-map" viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#e8a020"/>
+        </marker>
+        <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a6b6b"/>
+        </marker>
+      </defs>
+
+      <!-- CENTER: CHRONICLE -->
+      <rect x="290" y="220" width="220" height="110" rx="2" fill="#0d0d0d"/>
+      <text x="400" y="263" text-anchor="middle" font-family="Syne, sans-serif" font-size="20" font-weight="800" fill="#e8a020">CHRONICLE</text>
+      <text x="400" y="285" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#888">Living Project Intelligence</text>
+      <text x="400" y="305" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#555">AI · Timeline · Memory</text>
+
+      <!-- TOP: CODE INPUTS -->
+      <rect x="100" y="30" width="160" height="60" rx="2" fill="#e8f5f5" stroke="#1a6b6b" stroke-width="1.5"/>
+      <text x="180" y="56" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="700" fill="#1a6b6b">Git Commits</text>
+      <text x="180" y="74" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#555">Code Changes</text>
+
+      <rect x="320" y="30" width="160" height="60" rx="2" fill="#e8f5f5" stroke="#1a6b6b" stroke-width="1.5"/>
+      <text x="400" y="56" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="700" fill="#1a6b6b">Decisions</text>
+      <text x="400" y="74" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#555">Why &amp; How</text>
+
+      <rect x="540" y="30" width="160" height="60" rx="2" fill="#e8f5f5" stroke="#1a6b6b" stroke-width="1.5"/>
+      <text x="620" y="56" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="700" fill="#1a6b6b">Integrations</text>
+      <text x="620" y="74" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#555">Jira · Slack · Notion</text>
+
+      <!-- Arrows: inputs → chronicle -->
+      <line x1="180" y1="90" x2="340" y2="220" stroke="#1a6b6b" stroke-width="1.5" marker-end="url(#arrow-teal)" stroke-dasharray="4,3"/>
+      <line x1="400" y1="90" x2="400" y2="220" stroke="#1a6b6b" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
+      <line x1="620" y1="90" x2="460" y2="220" stroke="#1a6b6b" stroke-width="1.5" marker-end="url(#arrow-teal)" stroke-dasharray="4,3"/>
+
+      <!-- LEFT: AI NARRATOR -->
+      <rect x="30" y="240" width="180" height="70" rx="2" fill="#fff8e8" stroke="#e8a020" stroke-width="1.5"/>
+      <text x="120" y="265" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="700" fill="#c47d0a">AI Narrator</text>
+      <text x="120" y="283" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#555">Turns diffs into stories</text>
+      <text x="120" y="298" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#555">anyone can read</text>
+
+      <line x1="210" y1="275" x2="290" y2="275" stroke="#e8a020" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <!-- RIGHT: GOAL NAVIGATOR -->
+      <rect x="590" y="240" width="180" height="70" rx="2" fill="#fff8e8" stroke="#e8a020" stroke-width="1.5"/>
+      <text x="680" y="265" text-anchor="middle" font-family="Syne, sans-serif" font-size="13" font-weight="700" fill="#c47d0a">Goal Navigator</text>
+      <text x="680" y="283" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#555">Maps intent to code</text>
+      <text x="680" y="298" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#555">&amp; guides the user</text>
+
+      <line x1="510" y1="275" x2="590" y2="275" stroke="#e8a020" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <!-- BOTTOM OUTPUTS -->
+      <rect x="60" y="420" width="160" height="70" rx="2" fill="#0d0d0d"/>
+      <text x="140" y="448" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="700" fill="white">Wikipedia</text>
+      <text x="140" y="466" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="700" fill="#e8a020">-Style Docs</text>
+      <text x="140" y="481" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#666">Human-readable history</text>
+
+      <rect x="250" y="420" width="160" height="70" rx="2" fill="#0d0d0d"/>
+      <text x="330" y="448" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="700" fill="white">Snapshot</text>
+      <text x="330" y="466" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="700" fill="#e8a020">Explorer</text>
+      <text x="330" y="481" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#666">Travel to any moment</text>
+
+      <rect x="440" y="420" width="160" height="70" rx="2" fill="#0d0d0d"/>
+      <text x="520" y="448" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="700" fill="white">Reuse</text>
+      <text x="520" y="466" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="700" fill="#e8a020">Engine</text>
+      <text x="520" y="481" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#666">Extract &amp; adapt logic</text>
+
+      <rect x="630" y="420" width="160" height="70" rx="2" fill="#0d0d0d"/>
+      <text x="710" y="448" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="700" fill="white">Beginner</text>
+      <text x="710" y="466" text-anchor="middle" font-family="Syne, sans-serif" font-size="12" font-weight="700" fill="#e8a020">Mode</text>
+      <text x="710" y="481" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#666">Zero jargon layer</text>
+
+      <!-- Arrows: chronicle → outputs -->
+      <line x1="340" y1="330" x2="175" y2="420" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
+      <line x1="370" y1="330" x2="340" y2="420" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
+      <line x1="430" y1="330" x2="490" y2="420" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
+      <line x1="460" y1="330" x2="670" y2="420" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
+
+      <!-- USERS at bottom -->
+      <text x="400" y="530" text-anchor="middle" font-family="DM Mono, monospace" font-size="11" fill="#aaa">→ Beginners · Developers · Teams · Investors · Future-You</text>
+    </svg>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-label">Core Loop</div>
+      <h3>Change → Story → Navigate → Build</h3>
+      <p>Every code change enters Chronicle, gets narrated by AI, is stored as a searchable story, and becomes navigable by anyone with a goal. The loop continuously enriches the project's knowledge base.</p>
+    </div>
+    <div class="card dark">
+      <div class="card-label">Key Differentiator</div>
+      <h3>Intent-First, Not Code-First</h3>
+      <p>Most dev tools start with code. Chronicle starts with intent. You tell it what you want to achieve, and it maps your goal to the existing system — telling you exactly what to use, change, or build.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ 05 ROADMAP ══════════════════ -->
+<section id="roadmap" class="section">
+  <div class="section-label">// 05</div>
+  <h2 class="section-title">Roadmap to Success</h2>
+  <p style="max-width:640px; color:#555; margin-bottom:56px;">Five phases. Each one builds on the last. Success is defined not just by shipping features — but by measurable real-world outcomes at every stage.</p>
+
+  <div class="roadmap-timeline">
+
+    <div class="roadmap-phase">
+      <div class="phase-node" style="background:var(--teal)"></div>
+      <div class="phase-header">
+        <span class="phase-number">01</span>
+        <span class="phase-name">Proof of Concept</span>
+        <span class="phase-timeline">Months 1–3</span>
+      </div>
+      <p class="phase-goal">"Can we make a codebase explain itself?"</p>
+      <ul class="milestone-list">
+        <li>Build the Chronicle Engine: ingest a GitHub repo and generate a plain-English timeline</li>
+        <li>Ship the Snapshot Explorer — navigate to any moment in history</li>
+        <li>Integrate Claude API for narrative generation</li>
+        <li>Deploy a private beta for 5–10 teams; collect brutal feedback</li>
+        <li>Validate: can a non-technical person understand a real project using Chronicle?</li>
+      </ul>
+      <span class="success-metric">✓ Success: 10 beta users, 80% say "I understood the project"</span>
+    </div>
+
+    <div class="roadmap-phase">
+      <div class="phase-node" style="background:#6aab6a"></div>
+      <div class="phase-header">
+        <span class="phase-number">02</span>
+        <span class="phase-name">Core Product Launch</span>
+        <span class="phase-timeline">Months 4–8</span>
+      </div>
+      <p class="phase-goal">"Make it indispensable to at least one team."</p>
+      <ul class="milestone-list">
+        <li>Launch public beta with GitHub integration and waitlist</li>
+        <li>Ship the Goal Navigator — user states intent, AI guides them</li>
+        <li>Build Beginner Mode with visual, jargon-free layer</li>
+        <li>Release VS Code extension with inline Chronicle access</li>
+        <li>Reach 500 active projects on the platform</li>
+        <li>Start content marketing: "The end of tribal knowledge"</li>
+      </ul>
+      <span class="success-metric">✓ Success: 500 projects, 3 teams paying, NPS &gt; 50</span>
+    </div>
+
+    <div class="roadmap-phase">
+      <div class="phase-node" style="background:var(--amber)"></div>
+      <div class="phase-header">
+        <span class="phase-number">03</span>
+        <span class="phase-name">Revenue &amp; Retention</span>
+        <span class="phase-timeline">Months 9–14</span>
+      </div>
+      <p class="phase-goal">"Turn usage into a sustainable business."</p>
+      <ul class="milestone-list">
+        <li>Launch paid tiers: Solo ($9/mo), Team ($49/mo), Enterprise (custom)</li>
+        <li>Ship Decision Log + multi-user Knowledge Graph</li>
+        <li>Build onboarding automation that replaces 80% of manual onboarding</li>
+        <li>Partner with 2–3 dev bootcamps / no-code communities as distribution</li>
+        <li>Raise pre-seed or seed round using traction data</li>
+        <li>Hire first 2 engineers + 1 growth hire</li>
+      </ul>
+      <span class="success-metric">✓ Success: $10k MRR, 60-day retention &gt; 70%</span>
+    </div>
+
+    <div class="roadmap-phase">
+      <div class="phase-node" style="background:var(--rust)"></div>
+      <div class="phase-header">
+        <span class="phase-number">04</span>
+        <span class="phase-name">Platform Expansion</span>
+        <span class="phase-timeline">Months 15–20</span>
+      </div>
+      <p class="phase-goal">"Become the standard for living documentation."</p>
+      <ul class="milestone-list">
+        <li>Launch Chronicle Marketplace — reusable system components with full histories</li>
+        <li>Ship AI Pair Historian (IDE agent with full project memory)</li>
+        <li>Open public API for third-party integrations</li>
+        <li>Launch Public Project Pages for open-source communities</li>
+        <li>Enterprise pilot with 3–5 large engineering teams</li>
+        <li>10,000 active projects on platform</li>
+      </ul>
+      <span class="success-metric">✓ Success: $75k MRR, enterprise pipeline &gt; $500k ARR</span>
+    </div>
+
+    <div class="roadmap-phase">
+      <div class="phase-node" style="background:#222"></div>
+      <div class="phase-header">
+        <span class="phase-number">05</span>
+        <span class="phase-name">Category Leadership</span>
+        <span class="phase-timeline">Months 21–24</span>
+      </div>
+      <p class="phase-goal">"Own the 'guided project intelligence' category."</p>
+      <ul class="milestone-list">
+        <li>Series A raise; scale team to 15+ people</li>
+        <li>Launch Chronicle for Education — the standard for teaching software development</li>
+        <li>Deeply integrate with GitHub, Notion, Linear as a native layer</li>
+        <li>50,000+ projects; brand becomes synonymous with living documentation</li>
+        <li>Publish independent research: "The cost of undocumented knowledge in engineering"</li>
+      </ul>
+      <span class="success-metric">✓ Success: $500k MRR, Series A closed, category defined</span>
+    </div>
+
+  </div>
+
+  <div class="pitch-box" style="margin-top:40px">
+    <div class="pitch-title">// The North Star</div>
+    <p>In 24 months, when any developer, founder, or beginner opens a codebase for the first time — they open Chronicle first. Not Google. Not Stack Overflow. Chronicle. Because the answer is already there, waiting to be understood.</p>
+  </div>
+</section>
+
+<script>
+  function show(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('visible');
+    btn.classList.add('active');
+    window.scrollTo({ top: document.querySelector('.nav-strip').offsetTop - 1, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>

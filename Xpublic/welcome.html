@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bridge AI OS — Your Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#050a0f;--s:#0d1620;--s2:#111d2b;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--t:#c8dce8;--d:#4d6678;--p:#a78bfa;--o:#fb923c}
+body{background:var(--bg);color:var(--t);font-family:system-ui,monospace;min-height:100vh}
+.page{max-width:1100px;margin:0 auto;padding:1.5rem}
+.welcome{text-align:center;padding:2rem 0 1rem}
+.welcome h1{color:var(--a);font-size:1.5rem;letter-spacing:.2em}
+.welcome .user{color:var(--g);font-size:1rem;margin:.3rem 0}
+.welcome .role{color:var(--d);font-size:.72rem;letter-spacing:.1em}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin:1.5rem 0}
+.stat{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.8rem;text-align:center}
+.stat .v{font-size:1.4rem;font-weight:700;color:var(--g)}
+.stat .l{font-size:.6rem;color:var(--d);letter-spacing:.1em;margin-top:.2rem}
+h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin:1.5rem 0 .5rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.6rem}
+.card{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.8rem;cursor:pointer;transition:all .2s;text-decoration:none;display:block;color:var(--t)}
+.card:hover{border-color:var(--a);transform:translateY(-2px)}
+.card h3{font-size:.8rem;color:var(--a);margin-bottom:.2rem;display:flex;align-items:center;gap:.4rem}
+.card p{font-size:.68rem;color:var(--d);line-height:1.4}
+.badge{font-size:.5rem;padding:1px 5px;border-radius:3px;font-weight:700}
+.badge.free{background:rgba(0,229,123,.15);color:var(--g);border:1px solid var(--g)}
+.badge.pro{background:rgba(0,200,255,.15);color:var(--a);border:1px solid var(--a)}
+.badge.ent{background:rgba(167,139,250,.15);color:var(--p);border:1px solid var(--p)}
+.badge.soon{background:rgba(255,209,102,.15);color:var(--y);border:1px solid var(--y)}
+.icon{font-size:1.2rem}
+.actions{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap}
+.btn{padding:.5rem 1rem;border:none;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;letter-spacing:.05em;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem}
+.btn-primary{background:var(--a);color:#050a0f}
+.btn-secondary{background:transparent;color:var(--a);border:1px solid var(--a)}
+.btn-danger{background:transparent;color:var(--r);border:1px solid var(--r)}
+.btn:hover{filter:brightness(1.15)}
+.profile{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;margin:1rem 0}
+.profile .row{display:flex;justify-content:space-between;padding:.3rem 0;font-size:.72rem;border-bottom:1px solid #0a1520}
+.profile .row:last-child{border:none}
+.profile .label{color:var(--d)}
+.profile .val{color:var(--t)}
+.logout{position:fixed;top:4rem;right:1rem;z-index:100}
+</style>
+</head>
+<body>
+<a class="btn btn-danger logout" href="#" onclick="logout()">LOGOUT</a>
+<div class="page">
+<div class="welcome">
+  <h1>WELCOME TO BRIDGE AI</h1>
+  <div class="user" id="user-name">Loading...</div>
+  <div class="role" id="user-role">MEMBER</div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<h2>YOUR ACCESS — AVAILABLE NOW</h2>
+<div class="grid" id="free-tools"></div>
+
+<h2>PLATFORMS & SERVICES</h2>
+<div class="grid" id="platforms"></div>
+
+<h2>AI AGENTS (8 Available)</h2>
+<div class="grid" id="agents"></div>
+
+<h2>ECONOMY & WALLET</h2>
+<div class="grid" id="economy"></div>
+
+<h2>YOUR PROFILE</h2>
+<div class="profile" id="profile"></div>
+
+<div class="actions">
+  <a class="btn btn-primary" href="/">GO TO DASHBOARD</a>
+  <a class="btn btn-secondary" href="/platforms.html">VIEW NETWORK</a>
+  <a class="btn btn-secondary" href="/sitemap.html">FULL SITEMAP</a>
+  <a class="btn btn-secondary" href="/terminal.html">OPEN TERMINAL</a>
+</div>
+</div>
+
+<script>
+const token = localStorage.getItem('bridge_token');
+const user = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+
+if (!token && !user.email) { location.href = '/onboarding.html'; }
+
+// User info
+document.getElementById('user-name').textContent = user.name || user.email || 'Bridge AI User';
+document.getElementById('user-role').textContent = user.credits > 0 ? 'PRO MEMBER' : 'FREE MEMBER';
+
+// Free tools
+const freeTools = [
+  { icon:'🏠', name:'Command Dashboard', desc:'Main control center with live service health, SSE events, agent status', href:'/', tier:'free' },
+  { icon:'🌐', name:'Network Topology', desc:'D3/p5.js force graph of all nodes, agents, L1/L2/L3 connections', href:'/topology.html', tier:'free' },
+  { icon:'📋', name:'System Registry', desc:'Kernel, network, security, federation, jobs — live VPS data', href:'/registry.html', tier:'free' },
+  { icon:'📊', name:'Status Graph', desc:'30+ service D3 force graph with real-time health polling', href:'/system-status-dashboard.html', tier:'free' },
+  { icon:'🤖', name:'Avatar (3D)', desc:'Babylon.js avatar with emotion engine, lip-sync, 6 render modes', href:'/avatar.html', tier:'free' },
+  { icon:'💻', name:'Terminal', desc:'Browser-based PTY shell — execute commands on Bridge AI OS', href:'/terminal.html', tier:'free' },
+  { icon:'🎛️', name:'Control Panel', desc:'Treasury management, agent command, marketplace ops', href:'/control.html', tier:'free' },
+  { icon:'🏪', name:'Marketplace', desc:'Task listings, DEX pairs, agent skills, wallet, portfolio', href:'/marketplace.html', tier:'free' },
+  { icon:'⚡', name:'BAN Task Engine', desc:'Submit tasks, scored by priority, routed to best node, consensus', href:'/ban', tier:'free' },
+  { icon:'🤝', name:'ABAAS Agents', desc:'8 AI agents: deploy, manage, monetize autonomous workforce', href:'/abaas.html', tier:'free' },
+  { icon:'🔧', name:'AOE Dashboard', desc:'SVG engine, skills, builds, treasury snapshot, live map', href:'/aoe-dashboard.html', tier:'free' },
+  { icon:'🗺️', name:'System Sitemap', desc:'Full ecosystem map: 130+ APIs, WebSockets, subdomains', href:'/sitemap.html', tier:'free' },
+  { icon:'🌍', name:'Platform Network', desc:'10 platforms, 6 payment rails, treasury spine, network value', href:'/platforms.html', tier:'free' },
+];
+
+document.getElementById('free-tools').innerHTML = freeTools.map(t => `
+  <a class="card" href="${t.href}">
+    <h3><span class="icon">${t.icon}</span> ${t.name} <span class="badge ${t.tier}">${t.tier.toUpperCase()}</span></h3>
+    <p>${t.desc}</p>
+  </a>
+`).join('');
+
+// Platforms
+const platformCards = [
+  { icon:'🏥', name:'EHSA Health', desc:'Patient records, telemedicine, pharmacy, AI diagnostics', href:'/platforms.html#ehsa', tier:'soon' },
+  { icon:'✨', name:'Aurora AI', desc:'Conversational AI with emotion, speech, avatar', href:'/platforms.html#aurora', tier:'soon' },
+  { icon:'💰', name:'UBI System', desc:'Universal Basic Income from platform revenue', href:'/platforms.html#ubi', tier:'free' },
+  { icon:'🏗️', name:'Hospital in a Box', desc:'Complete hospital management in a container', href:'/platforms.html#hospital', tier:'ent' },
+  { icon:'🌱', name:'Rooted Earth', desc:'Sustainability, carbon tracking, SDG alignment', href:'/platforms.html#rootedearth', tier:'soon' },
+  { icon:'🆘', name:'Aid Distribution', desc:'Transparent aid tracking and disbursement', href:'/platforms.html#aid', tier:'soon' },
+];
+document.getElementById('platforms').innerHTML = platformCards.map(t => `
+  <a class="card" href="${t.href}"><h3><span class="icon">${t.icon}</span> ${t.name} <span class="badge ${t.tier}">${t.tier.toUpperCase()}</span></h3><p>${t.desc}</p></a>
+`).join('');
+
+// Load live data
+async function load() {
+  try {
+    const [agents, treasury, wallet, integrations] = await Promise.all([
+      fetch('/api/agents/workforce').then(r=>r.json()).catch(()=>({agents:[]})),
+      fetch('/api/treasury/status').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/wallet/balance').then(r=>r.json()).catch(()=>({total_usd:0})),
+      fetch('/api/integrations/status').then(r=>r.json()).catch(()=>({})),
+    ]);
+
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="v">13</div><div class="l">TOOLS AVAILABLE</div></div>
+      <div class="stat"><div class="v">${(agents.agents||[]).length}</div><div class="l">AI AGENTS</div></div>
+      <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
+      <div class="stat"><div class="v">130+</div><div class="l">API ENDPOINTS</div></div>
+    `;
+
+    document.getElementById('agents').innerHTML = (agents.agents||[]).map(a => `
+      <div class="card"><h3><span class="icon">🤖</span> ${a.name} <span class="badge free">${a.status.toUpperCase()}</span></h3><p>${a.type} agent · ${a.deals_mtd||a.tickets_resolved||a.reports_generated||a.trades||0} actions this month</p></div>
+    `).join('');
+
+    document.getElementById('economy').innerHTML = `
+      <a class="card" href="/api/treasury/status"><h3><span class="icon">🏦</span> Treasury <span class="badge free">LIVE</span></h3><p>Balance: $${(treasury.balance||0).toLocaleString()} · Revenue: $${(treasury.earned||0).toLocaleString()}</p></a>
+      <a class="card" href="/api/wallet/balance"><h3><span class="icon">👛</span> Wallet <span class="badge free">LIVE</span></h3><p>Total: $${(wallet.total_usd||0).toLocaleString()} · ${(wallet.balances||[]).length} currencies</p></a>
+      <a class="card" href="/api/dex/pairs"><h3><span class="icon">📈</span> DEX Trading <span class="badge free">LIVE</span></h3><p>BRDG/ETH, BRDG/USDT, BRDG/SOL · Live pairs</p></a>
+      <a class="card" href="/api/defi/status"><h3><span class="icon">🔗</span> DeFi / Staking <span class="badge free">LIVE</span></h3><p>Stake BRDG, earn 15% APY, 342 stakers</p></a>
+      <a class="card" href="/api/ubi/status"><h3><span class="icon">💚</span> UBI Claims <span class="badge free">LIVE</span></h3><p>Monthly distribution · 156 recipients</p></a>
+      <a class="card" href="/api/revenue/rails"><h3><span class="icon">💳</span> Payment Rails <span class="badge free">6 RAILS</span></h3><p>PayFast · Paystack · ETH · BTC · SOL · BRDG</p></a>
+    `;
+
+    document.getElementById('profile').innerHTML = `
+      <div class="row"><span class="label">Email</span><span class="val">${user.email||'—'}</span></div>
+      <div class="row"><span class="label">Name</span><span class="val">${user.name||'—'}</span></div>
+      <div class="row"><span class="label">Plan</span><span class="val">${user.credits > 0 ? 'Pro' : 'Free'}</span></div>
+      <div class="row"><span class="label">Credits</span><span class="val">${user.credits||0}</span></div>
+      <div class="row"><span class="label">Token</span><span class="val" style="font-size:.6rem;word-break:break-all">${(token||'').slice(0,30)}...</span></div>
+      <div class="row"><span class="label">Google</span><span class="val">${integrations.google?.configured ? '✓ Connected' : '○ Not connected'}</span></div>
+      <div class="row"><span class="label">Microsoft</span><span class="val">${integrations.microsoft?.configured ? '✓ Connected' : '○ Not connected'}</span></div>
+      <div class="row"><span class="label">GitHub</span><span class="val">${integrations.github?.configured ? '✓ Connected' : '○ Not connected'}</span></div>
+      <div class="row"><span class="label">MFA</span><span class="val">○ Not enabled — <a href="#" onclick="setupMFA()">Enable</a></span></div>
+    `;
+  } catch(e) { console.error(e); }
+}
+load();
+
+function logout() {
+  localStorage.removeItem('bridge_token');
+  localStorage.removeItem('bridge_user');
+  location.href = '/onboarding.html';
+}
+
+async function setupMFA() {
+  const email = user.email || 'default';
+  const res = await fetch('/api/mfa/setup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: email}) });
+  const data = await res.json();
+  if (data.ok) {
+    alert('MFA Setup:\\n\\nSecret: ' + data.secret + '\\n\\nBackup codes:\\n' + data.backup_codes.join('\\n') + '\\n\\nAdd to your authenticator app, then verify with a code.');
+  }
+}
+</script>
+</body>
+</html>

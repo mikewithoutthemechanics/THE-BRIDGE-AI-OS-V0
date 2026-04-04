@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVATAR — BRIDGE AI OS</title>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@6.0.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-materials@6.0.0/babylonjs.materials.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#050a10;font-family:'Courier New',monospace;color:#0ff;overflow:hidden}
+
+/* HUD */
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:40px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;background:rgba(0,0,0,.92);
+  border-bottom:1px solid rgba(0,255,255,.2);
+}
+#hud-left{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:2px;color:#0ff;}
+#hud-right{display:flex;align-items:center;gap:14px;font-size:9px;color:#0f9;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#0f9;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+#clock{font-size:10px;letter-spacing:2px;color:#0f9;}
+.conn-badge{padding:2px 8px;border-radius:2px;font-size:8px;letter-spacing:1px;font-weight:bold;background:#003300;border:1px solid #0f93;color:#0f9;}
+.nav-links a{color:#0ac;font-size:9px;letter-spacing:1px;text-decoration:none;opacity:.7;margin-right:12px;transition:opacity .2s;}
+.nav-links a:hover{opacity:1;color:#0ff;}
+
+/* CANVAS */
+#renderCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;outline:none;}
+
+/* SCENE INFO PANEL */
+#scene-info{
+  position:fixed;top:50px;right:16px;z-index:101;
+  padding:12px 16px;min-width:200px;
+  background:rgba(0,10,20,.9);border:1px solid rgba(0,255,255,.2);border-radius:3px;
+  font-size:10px;letter-spacing:1px;
+}
+#scene-info .info-title{color:#0ff;font-size:11px;letter-spacing:2px;margin-bottom:8px;border-bottom:1px solid rgba(0,255,255,.15);padding-bottom:4px;}
+#scene-info .info-row{display:flex;justify-content:space-between;margin-bottom:4px;color:#0ac;}
+#scene-info .info-row span:last-child{color:#0f9;}
+
+/* ANIMATION CONTROLS */
+#anim-controls{
+  position:fixed;top:50px;left:16px;z-index:101;
+  padding:10px 14px;
+  background:rgba(0,10,20,.9);border:1px solid rgba(0,255,255,.2);border-radius:3px;
+  font-size:9px;letter-spacing:1px;
+  display:flex;align-items:center;gap:10px;
+}
+#anim-controls button{
+  padding:4px 12px;font-size:9px;letter-spacing:1px;cursor:pointer;
+  background:#001a1a;border:1px solid #0ff3;color:#0ff;border-radius:2px;
+  font-family:monospace;transition:all .2s;
+}
+#anim-controls button:hover{background:#002a2a;border-color:#0ff;}
+#anim-controls label{color:#0ac;}
+#speed-slider{width:80px;accent-color:#0ff;}
+#speed-val{color:#0f9;min-width:30px;}
+
+/* MODE BAR */
+#mode-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 16px;background:rgba(0,0,0,.92);
+  border-top:1px solid rgba(0,255,255,.2);
+}
+.mode-btn{
+  padding:8px 18px;font-size:10px;letter-spacing:2px;cursor:pointer;
+  background:#001a1a;border:1px solid #0ff2;color:#0ac;border-radius:2px;
+  font-family:'Courier New',monospace;transition:all .2s;text-transform:uppercase;
+}
+.mode-btn:hover{background:#002a2a;border-color:#0ff5;color:#0ff;}
+.mode-btn.active{background:#003333;border-color:#0ff;color:#0ff;box-shadow:0 0 12px rgba(0,255,255,0.3);}
+
+/* LAYER TOGGLE (anatomical) */
+#layer-toggle{
+  position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:101;
+  display:none;gap:8px;
+  padding:8px 14px;background:rgba(0,10,20,.9);border:1px solid rgba(0,255,255,.2);border-radius:3px;
+}
+#layer-toggle button{
+  padding:4px 10px;font-size:8px;letter-spacing:1px;cursor:pointer;
+  background:#1a0a0a;border:1px solid #f003;color:#f90;border-radius:2px;
+  font-family:monospace;transition:all .2s;
+}
+#layer-toggle button.on{background:#2a1a00;border-color:#f90;color:#ff0;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:#0ff3;border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div id="hud-left">
+    <div class="live-dot"></div>
+    <span>BRIDGE AI OS &mdash; AVATAR</span>
+    <div class="nav-links">
+      <a href="/ui.html">HOME</a>
+      <a href="/control.html">CONTROL</a>
+      <a href="/registry.html">REGISTRY</a>
+      <a href="/marketplace.html">MARKETPLACE</a>
+      <a href="/topology.html">TOPOLOGY</a>
+      <a href="/system-status-dashboard.html">STATUS</a>
+    </div>
+  </div>
+  <div id="hud-right">
+    <span id="active-mode-label">MODE: WIREFRAME</span>
+    <span id="conn-badge" class="conn-badge">CONNECTED</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</div>
+
+<canvas id="renderCanvas"></canvas>
+
+<div id="scene-info">
+  <div class="info-title">SCENE DATA</div>
+  <div class="info-row"><span>MODE</span><span id="info-mode">WIREFRAME</span></div>
+  <div class="info-row"><span>VERTICES</span><span id="info-verts">0</span></div>
+  <div class="info-row"><span>MATERIAL</span><span id="info-mat">—</span></div>
+  <div class="info-row"><span>FPS</span><span id="info-fps">0</span></div>
+</div>
+
+<div id="anim-controls">
+  <button id="play-pause-btn" onclick="toggleAnim()">PAUSE</button>
+  <label>SPEED</label>
+  <input type="range" id="speed-slider" min="0.5" max="3" step="0.1" value="1">
+  <span id="speed-val">1.0x</span>
+</div>
+
+<div id="layer-toggle">
+  <button class="on" onclick="toggleLayer(0,this)">SKELETON</button>
+  <button class="on" onclick="toggleLayer(1,this)">MUSCLE</button>
+  <button class="on" onclick="toggleLayer(2,this)">SKIN</button>
+</div>
+
+<div id="mode-bar">
+  <button class="mode-btn active" onclick="switchMode('wireframe')">WIREFRAME</button>
+  <button class="mode-btn" onclick="switchMode('textured')">TEXTURED</button>
+  <button class="mode-btn" onclick="switchMode('anatomical')">ANATOMICAL</button>
+  <button class="mode-btn" onclick="switchMode('neural')">NEURAL</button>
+  <button class="mode-btn" onclick="switchMode('holographic')">HOLOGRAPHIC</button>
+  <button class="mode-btn" onclick="switchMode('quantum')">QUANTUM</button>
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock(){document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);}
+setInterval(updateClock,1000);updateClock();
+
+// ── GLOBALS ──
+let currentMode = 'wireframe';
+let animPaused = false;
+let animSpeed = 1.0;
+let engine, scene, camera;
+let sceneAnimations = [];
+let anatomicalLayers = [];
+let apiModeData = {};
+
+const canvas = document.getElementById('renderCanvas');
+engine = new BABYLON.Engine(canvas, true, {preserveDrawingBuffer:true, stencil:true});
+
+// ── SPEED SLIDER ──
+document.getElementById('speed-slider').addEventListener('input', function(){
+  animSpeed = parseFloat(this.value);
+  document.getElementById('speed-val').textContent = animSpeed.toFixed(1)+'x';
+});
+
+// ── PLAY/PAUSE ──
+function toggleAnim(){
+  animPaused = !animPaused;
+  document.getElementById('play-pause-btn').textContent = animPaused ? 'PLAY' : 'PAUSE';
+}
+
+// ── LAYER TOGGLE (anatomical) ──
+function toggleLayer(idx, btn){
+  if(!anatomicalLayers[idx]) return;
+  const mesh = anatomicalLayers[idx];
+  mesh.isVisible = !mesh.isVisible;
+  btn.classList.toggle('on', mesh.isVisible);
+}
+
+// ── CAMERA SETUP ──
+function setupCamera(){
+  camera = new BABYLON.ArcRotateCamera('cam', -Math.PI/2, Math.PI/2.5, 8, BABYLON.Vector3.Zero(), scene);
+  camera.lowerRadiusLimit = 2;
+  camera.upperRadiusLimit = 25;
+  camera.wheelPrecision = 30;
+  camera.attachControl(canvas, true);
+}
+
+// ── DISPOSE SCENE ──
+function disposeScene(){
+  sceneAnimations = [];
+  anatomicalLayers = [];
+  if(scene){ scene.dispose(); }
+  scene = new BABYLON.Scene(engine);
+  scene.clearColor = new BABYLON.Color4(5/255, 10/255, 16/255, 1);
+  setupCamera();
+}
+
+// ── UPDATE INFO PANEL ──
+function updateInfo(mode, verts, matType){
+  document.getElementById('info-mode').textContent = mode.toUpperCase();
+  document.getElementById('info-verts').textContent = verts;
+  document.getElementById('info-mat').textContent = matType;
+}
+
+// ── MODE BUILDERS ──
+
+function buildWireframe(){
+  disposeScene();
+
+  const gl = new BABYLON.GlowLayer('glow', scene);
+  gl.intensity = 0.6;
+
+  const sphere = BABYLON.MeshBuilder.CreateIcoSphere('ico', {radius:2, subdivisions:4}, scene);
+  const mat = new BABYLON.StandardMaterial('wireMat', scene);
+  mat.emissiveColor = BABYLON.Color3.FromHexString('#00ffcc');
+  mat.wireframe = true;
+  sphere.material = mat;
+  sphere.enableEdgesRendering();
+  sphere.edgesWidth = 1.0;
+  sphere.edgesColor = new BABYLON.Color4(0, 1, 0.8, 0.5);
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.3;
+
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){ t += 0.01 * animSpeed; sphere.rotation.y = t; }
+  });
+
+  updateInfo('wireframe', sphere.getTotalVertices(), 'Wireframe / Emissive');
+}
+
+function buildTextured(){
+  disposeScene();
+
+  const parent = new BABYLON.TransformNode('humanoid', scene);
+  const allParts = [];
+
+  // Head (ellipsoid — taller than wide)
+  const head = BABYLON.MeshBuilder.CreateSphere('head', {diameterX:0.95, diameterY:1.15, diameterZ:1.0, segments:32}, scene);
+  head.position.y = 2.35;
+  allParts.push(head);
+
+  // Neck
+  const neck = BABYLON.MeshBuilder.CreateCylinder('neck', {height:0.35, diameterTop:0.38, diameterBottom:0.42, tessellation:16}, scene);
+  neck.position.y = 1.7;
+  allParts.push(neck);
+
+  // Torso (tapered — chest wider than waist)
+  const torso = BABYLON.MeshBuilder.CreateCylinder('torso', {height:1.6, diameterTop:1.2, diameterBottom:0.85, tessellation:24}, scene);
+  torso.position.y = 0.75;
+  allParts.push(torso);
+
+  // Shoulders (wider capsules)
+  const lShoulder = BABYLON.MeshBuilder.CreateSphere('lShoulder', {diameter:0.45, segments:12}, scene);
+  lShoulder.position.set(-0.75, 1.45, 0);
+  const rShoulder = BABYLON.MeshBuilder.CreateSphere('rShoulder', {diameter:0.45, segments:12}, scene);
+  rShoulder.position.set(0.75, 1.45, 0);
+  allParts.push(lShoulder, rShoulder);
+
+  // Upper arms
+  const lUpper = BABYLON.MeshBuilder.CreateCylinder('lUpper', {height:1.0, diameterTop:0.3, diameterBottom:0.25, tessellation:12}, scene);
+  lUpper.position.set(-0.85, 0.85, 0); lUpper.rotation.z = 0.15;
+  const rUpper = BABYLON.MeshBuilder.CreateCylinder('rUpper', {height:1.0, diameterTop:0.3, diameterBottom:0.25, tessellation:12}, scene);
+  rUpper.position.set(0.85, 0.85, 0); rUpper.rotation.z = -0.15;
+  allParts.push(lUpper, rUpper);
+
+  // Forearms
+  const lFore = BABYLON.MeshBuilder.CreateCylinder('lFore', {height:0.9, diameterTop:0.22, diameterBottom:0.18, tessellation:12}, scene);
+  lFore.position.set(-0.92, 0.0, 0.05); lFore.rotation.z = 0.08;
+  const rFore = BABYLON.MeshBuilder.CreateCylinder('rFore', {height:0.9, diameterTop:0.22, diameterBottom:0.18, tessellation:12}, scene);
+  rFore.position.set(0.92, 0.0, 0.05); rFore.rotation.z = -0.08;
+  allParts.push(lFore, rFore);
+
+  // Hands (small spheres)
+  const lHand = BABYLON.MeshBuilder.CreateSphere('lHand', {diameter:0.22, segments:8}, scene);
+  lHand.position.set(-0.95, -0.5, 0.05);
+  const rHand = BABYLON.MeshBuilder.CreateSphere('rHand', {diameter:0.22, segments:8}, scene);
+  rHand.position.set(0.95, -0.5, 0.05);
+  allParts.push(lHand, rHand);
+
+  // Hips
+  const hips = BABYLON.MeshBuilder.CreateCylinder('hips', {height:0.3, diameterTop:0.85, diameterBottom:0.9, tessellation:20}, scene);
+  hips.position.y = -0.15;
+  allParts.push(hips);
+
+  // Upper legs (thighs)
+  const lThigh = BABYLON.MeshBuilder.CreateCylinder('lThigh', {height:1.2, diameterTop:0.38, diameterBottom:0.3, tessellation:12}, scene);
+  lThigh.position.set(-0.28, -0.95, 0);
+  const rThigh = BABYLON.MeshBuilder.CreateCylinder('rThigh', {height:1.2, diameterTop:0.38, diameterBottom:0.3, tessellation:12}, scene);
+  rThigh.position.set(0.28, -0.95, 0);
+  allParts.push(lThigh, rThigh);
+
+  // Calves
+  const lCalf = BABYLON.MeshBuilder.CreateCylinder('lCalf', {height:1.1, diameterTop:0.28, diameterBottom:0.2, tessellation:12}, scene);
+  lCalf.position.set(-0.28, -2.1, 0);
+  const rCalf = BABYLON.MeshBuilder.CreateCylinder('rCalf', {height:1.1, diameterTop:0.28, diameterBottom:0.2, tessellation:12}, scene);
+  rCalf.position.set(0.28, -2.1, 0);
+  allParts.push(lCalf, rCalf);
+
+  // Feet
+  const lFoot = BABYLON.MeshBuilder.CreateBox('lFoot', {width:0.22, height:0.12, depth:0.35}, scene);
+  lFoot.position.set(-0.28, -2.7, 0.06);
+  const rFoot = BABYLON.MeshBuilder.CreateBox('rFoot', {width:0.22, height:0.12, depth:0.35}, scene);
+  rFoot.position.set(0.28, -2.7, 0.06);
+  allParts.push(lFoot, rFoot);
+
+  // Face details on head
+  // Eyes (dark insets)
+  const lEye = BABYLON.MeshBuilder.CreateSphere('lEye', {diameter:0.12, segments:8}, scene);
+  lEye.position.set(-0.18, 2.45, 0.42);
+  const rEye = BABYLON.MeshBuilder.CreateSphere('rEye', {diameter:0.12, segments:8}, scene);
+  rEye.position.set(0.18, 2.45, 0.42);
+  const eyeMat = new BABYLON.PBRMaterial('eyeMat', scene);
+  eyeMat.albedoColor = new BABYLON.Color3(0.15, 0.1, 0.08);
+  eyeMat.roughness = 0.2; eyeMat.metallic = 0.1;
+  lEye.material = eyeMat; rEye.material = eyeMat;
+  allParts.push(lEye, rEye);
+
+  // Nose
+  const nose = BABYLON.MeshBuilder.CreateCylinder('nose', {height:0.2, diameterTop:0.02, diameterBottom:0.1, tessellation:8}, scene);
+  nose.position.set(0, 2.3, 0.48); nose.rotation.x = -0.3;
+  allParts.push(nose);
+
+  // Mouth
+  const mouth = BABYLON.MeshBuilder.CreateBox('mouth', {width:0.25, height:0.04, depth:0.05}, scene);
+  mouth.position.set(0, 2.15, 0.44);
+  const mouthMat = new BABYLON.PBRMaterial('mouthMat', scene);
+  mouthMat.albedoColor = new BABYLON.Color3(0.6, 0.25, 0.25);
+  mouthMat.roughness = 0.4;
+  mouth.material = mouthMat;
+  allParts.push(mouth);
+
+  // Parent all
+  allParts.forEach(p => { p.parent = parent; });
+
+  // Skin PBR material
+  const skin = new BABYLON.PBRMaterial('skinPBR', scene);
+  skin.albedoColor = BABYLON.Color3.FromHexString('#c4956a');
+  skin.roughness = 0.55;
+  skin.metallic = 0.0;
+  // Subsurface scattering hint
+  skin.subSurface.isTranslucencyEnabled = true;
+  skin.subSurface.translucencyIntensity = 0.3;
+  skin.subSurface.tintColor = new BABYLON.Color3(0.9, 0.5, 0.4);
+
+  // Apply skin to body parts (not eyes/mouth)
+  allParts.forEach(p => {
+    if(!p.material) p.material = skin;
+  });
+  nose.material = skin;
+
+  // Lighting
+  const dirLight = new BABYLON.DirectionalLight('dir', new BABYLON.Vector3(-1,-2,-1), scene);
+  dirLight.intensity = 1.8;
+  dirLight.diffuse = new BABYLON.Color3(1, 0.95, 0.9);
+  const ambLight = new BABYLON.HemisphericLight('amb', new BABYLON.Vector3(0,1,0), scene);
+  ambLight.intensity = 0.5;
+  ambLight.groundColor = new BABYLON.Color3(0.2, 0.15, 0.1);
+  const rimLight = new BABYLON.DirectionalLight('rim', new BABYLON.Vector3(1,0.5,1), scene);
+  rimLight.intensity = 0.4;
+  rimLight.diffuse = new BABYLON.Color3(0.6, 0.8, 1);
+
+  // Shadows
+  const sg = new BABYLON.ShadowGenerator(512, dirLight);
+  allParts.forEach(p => sg.addShadowCaster(p));
+
+  // Ground plane for shadow
+  const ground = BABYLON.MeshBuilder.CreateGround('ground', {width:6, height:6}, scene);
+  ground.position.y = -2.8;
+  const gMat = new BABYLON.PBRMaterial('gMat', scene);
+  gMat.albedoColor = new BABYLON.Color3(0.03, 0.05, 0.08);
+  gMat.roughness = 1; gMat.metallic = 0;
+  ground.material = gMat;
+  ground.receiveShadows = true;
+
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.02 * animSpeed;
+      // Breathing
+      const breath = 1 + 0.015 * Math.sin(t);
+      parent.scaling.set(1, breath, 1);
+      // Subtle idle sway
+      parent.rotation.y = Math.sin(t*0.3)*0.02;
+    }
+  });
+
+  let totalVerts = 0;
+  allParts.forEach(p => totalVerts += p.getTotalVertices());
+  updateInfo('textured', totalVerts, 'PBR Subsurface Skin');
+}
+
+function buildAnatomical(){
+  disposeScene();
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.8;
+
+  const layers = [
+    {name:'skeleton', radius:1.5, color:'#ffffff', alpha:1.0},
+    {name:'muscle',   radius:2.0, color:'#cc3333', alpha:0.6},
+    {name:'skin',     radius:2.4, color:'#deb887', alpha:0.3},
+  ];
+
+  anatomicalLayers = [];
+  let totalVerts = 0;
+
+  layers.forEach((l, i) => {
+    const sphere = BABYLON.MeshBuilder.CreateSphere(l.name, {diameter:l.radius*2, segments:24}, scene);
+    const mat = new BABYLON.StandardMaterial(l.name+'Mat', scene);
+    mat.diffuseColor = BABYLON.Color3.FromHexString(l.color);
+    mat.alpha = l.alpha;
+    mat.backFaceCulling = false;
+    sphere.material = mat;
+    anatomicalLayers.push(sphere);
+    totalVerts += sphere.getTotalVertices();
+  });
+
+  document.getElementById('layer-toggle').style.display = 'flex';
+
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.01 * animSpeed;
+      anatomicalLayers.forEach((m,i) => { m.rotation.y = t * (0.5 + i*0.2); });
+    }
+  });
+
+  updateInfo('anatomical', totalVerts, 'Layered Transparent');
+}
+
+function buildNeural(){
+  disposeScene();
+
+  const gl = new BABYLON.GlowLayer('glow', scene);
+  gl.intensity = 0.8;
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.15;
+  const dl = new BABYLON.DirectionalLight('dl', new BABYLON.Vector3(-1,-1,-1), scene);
+  dl.intensity = 0.3;
+
+  // Brain mesh (deformed sphere)
+  const brainGeo = BABYLON.MeshBuilder.CreateSphere('brain', {diameter:3, segments:64}, scene);
+  const positions = brainGeo.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+  for(let i=0;i<positions.length;i+=3){
+    let x=positions[i],y=positions[i+1],z=positions[i+2];
+    const lobe=Math.sin(x*2)*0.15+Math.cos(z*3)*0.08;
+    const sulcus=Math.sin(x*8+y*6)*0.03;
+    positions[i]*=(1+lobe+sulcus);
+    positions[i+1]*=0.85+Math.abs(Math.sin(z*2))*0.08;
+    positions[i+2]*=1.05;
+    if(Math.abs(positions[i])<0.06) positions[i+1]-=0.06;
+  }
+  brainGeo.setVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
+
+  const brainMat = new BABYLON.StandardMaterial('brainMat', scene);
+  brainMat.diffuseColor = new BABYLON.Color3(0.15, 0.05, 0.25);
+  brainMat.emissiveColor = new BABYLON.Color3(0.1, 0.02, 0.2);
+  brainMat.alpha = 0.4;
+  brainMat.backFaceCulling = false;
+  brainGeo.material = brainMat;
+
+  // Neural network nodes (200 neurons)
+  const neurons = [];
+  const neuronPositions = [];
+  for(let i=0;i<200;i++){
+    const theta=Math.random()*Math.PI*2, phi=Math.acos(2*Math.random()-1), r=Math.cbrt(Math.random())*1.3;
+    const x=r*Math.sin(phi)*Math.cos(theta), y=r*Math.sin(phi)*Math.sin(theta)*0.85, z=r*Math.cos(phi)*1.05;
+    const s = BABYLON.MeshBuilder.CreateSphere('n'+i, {diameter:0.06, segments:4}, scene);
+    s.position.set(x,y,z);
+    const m = new BABYLON.StandardMaterial('nm'+i, scene);
+    const region = y>0.3 ? '#00ffcc' : y<-0.3 ? '#ff66aa' : Math.abs(x)>0.6 ? '#ffaa00' : '#7766ff';
+    m.emissiveColor = BABYLON.Color3.FromHexString(region);
+    m.disableLighting = true;
+    s.material = m;
+    neurons.push(s);
+    neuronPositions.push(new BABYLON.Vector3(x,y,z));
+  }
+
+  // Synaptic connections (lines between nearby neurons)
+  const synapses = [];
+  for(let i=0;i<200;i++){
+    for(let j=i+1;j<200;j++){
+      if(BABYLON.Vector3.Distance(neuronPositions[i], neuronPositions[j]) < 0.5){
+        const line = BABYLON.MeshBuilder.CreateLines('syn'+i+'_'+j, {points:[neuronPositions[i], neuronPositions[j]]}, scene);
+        line.color = new BABYLON.Color3(0.3, 0.1, 0.5);
+        line.alpha = 0.15;
+        synapses.push(line);
+      }
+    }
+  }
+
+  // Firing pulses (particles along synapses)
+  const pulseCount = 30;
+  const pulses = [];
+  for(let i=0;i<pulseCount;i++){
+    const p = BABYLON.MeshBuilder.CreateSphere('pulse'+i, {diameter:0.04, segments:3}, scene);
+    const pm = new BABYLON.StandardMaterial('pm'+i, scene);
+    pm.emissiveColor = BABYLON.Color3.FromHexString(i%3===0?'#00ffcc':i%3===1?'#ff66aa':'#ffaa00');
+    pm.disableLighting = true;
+    p.material = pm;
+    const from = Math.floor(Math.random()*200), to = Math.floor(Math.random()*200);
+    pulses.push({mesh:p, from, to, progress:Math.random(), speed:0.005+Math.random()*0.01});
+  }
+
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.005 * animSpeed;
+      brainGeo.rotation.y = t * 0.3;
+      // Pulse neurons (random firing)
+      if(Math.random()>0.95){
+        const idx=Math.floor(Math.random()*200);
+        const n=neurons[idx];
+        if(n&&n.material) n.material.emissiveColor=BABYLON.Color3.White();
+        setTimeout(()=>{if(n&&n.material){const c=n.position.y>0.3?'#00ffcc':n.position.y<-0.3?'#ff66aa':'#7766ff';n.material.emissiveColor=BABYLON.Color3.FromHexString(c);}},200);
+      }
+      // Move pulses along paths
+      pulses.forEach(p=>{
+        p.progress += p.speed * animSpeed;
+        if(p.progress > 1){p.progress=0;p.from=Math.floor(Math.random()*200);p.to=Math.floor(Math.random()*200);}
+        const a=neuronPositions[p.from]||BABYLON.Vector3.Zero(), b=neuronPositions[p.to]||BABYLON.Vector3.Zero();
+        p.mesh.position = BABYLON.Vector3.Lerp(a, b, p.progress);
+      });
+    }
+  });
+
+  updateInfo('neural', 200+pulseCount, 'Neural Network + Synaptic');
+}
+
+function buildHolographic(){
+  disposeScene();
+
+  const gl = new BABYLON.GlowLayer('glow', scene);
+  gl.intensity = 0.5;
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.3;
+
+  const knot = BABYLON.MeshBuilder.CreateTorusKnot('knot', {radius:1.5, tube:0.4, radialSegments:128, tubularSegments:64}, scene);
+  const mat = new BABYLON.StandardMaterial('holoMat', scene);
+  mat.diffuseColor = BABYLON.Color3.FromHexString('#00ccff');
+  mat.emissiveColor = new BABYLON.Color3(0, 0.3, 0.5);
+  mat.alpha = 0.6;
+  mat.backFaceCulling = false;
+
+  mat.diffuseFresnelParameters = new BABYLON.FresnelParameters();
+  mat.diffuseFresnelParameters.leftColor = BABYLON.Color3.White();
+  mat.diffuseFresnelParameters.rightColor = BABYLON.Color3.FromHexString('#00ccff');
+  mat.diffuseFresnelParameters.bias = 0.1;
+  mat.diffuseFresnelParameters.power = 2;
+
+  mat.emissiveFresnelParameters = new BABYLON.FresnelParameters();
+  mat.emissiveFresnelParameters.leftColor = BABYLON.Color3.FromHexString('#00ccff');
+  mat.emissiveFresnelParameters.rightColor = BABYLON.Color3.Black();
+  mat.emissiveFresnelParameters.bias = 0.2;
+  mat.emissiveFresnelParameters.power = 3;
+
+  mat.opacityFresnelParameters = new BABYLON.FresnelParameters();
+  mat.opacityFresnelParameters.leftColor = BABYLON.Color3.White();
+  mat.opacityFresnelParameters.rightColor = new BABYLON.Color3(0.3,0.3,0.3);
+
+  knot.material = mat;
+
+  // Scanline plane overlay
+  const scanPlane = BABYLON.MeshBuilder.CreatePlane('scan', {size:8}, scene);
+  scanPlane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+  const scanMat = new BABYLON.StandardMaterial('scanMat', scene);
+  // Procedural scanline texture
+  const scanTex = new BABYLON.DynamicTexture('scanTex', {width:4, height:256}, scene);
+  const stCtx = scanTex.getContext();
+  for(let y=0;y<256;y++){
+    stCtx.fillStyle = y%4<2 ? 'rgba(0,204,255,0.04)' : 'rgba(0,0,0,0)';
+    stCtx.fillRect(0,y,4,1);
+  }
+  scanTex.update();
+  scanMat.diffuseTexture = scanTex;
+  scanMat.opacityTexture = scanTex;
+  scanMat.emissiveColor = new BABYLON.Color3(0, 0.4, 0.6);
+  scanMat.backFaceCulling = false;
+  scanMat.alpha = 0.3;
+  scanPlane.material = scanMat;
+
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.01 * animSpeed;
+      knot.rotation.y = t;
+      knot.rotation.x = t * 0.3;
+      if(scanMat.diffuseTexture) scanMat.diffuseTexture.vOffset = t * 0.5;
+    }
+  });
+
+  updateInfo('holographic', knot.getTotalVertices(), 'Fresnel Holographic');
+}
+
+function buildQuantum(){
+  disposeScene();
+
+  const gl = new BABYLON.GlowLayer('glow', scene);
+  gl.intensity = 0.8;
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.2;
+
+  const N = 200;
+  const spheres = [];
+  const origins = [];
+  const threshold = 2.5;
+
+  for(let i=0;i<N;i++){
+    // Random position in sphere volume
+    const theta = Math.random()*Math.PI*2;
+    const phi = Math.acos(2*Math.random()-1);
+    const r = Math.cbrt(Math.random())*4;
+    const x = r*Math.sin(phi)*Math.cos(theta);
+    const y = r*Math.sin(phi)*Math.sin(theta);
+    const z = r*Math.cos(phi);
+
+    const s = BABYLON.MeshBuilder.CreateSphere('q'+i, {diameter:0.1, segments:4}, scene);
+    s.position.set(x,y,z);
+    const mat = new BABYLON.StandardMaterial('qm'+i, scene);
+    mat.emissiveColor = BABYLON.Color3.FromHexString(i%2===0 ? '#ff00ff' : '#00ffff');
+    mat.disableLighting = true;
+    s.material = mat;
+
+    spheres.push(s);
+    origins.push(new BABYLON.Vector3(x,y,z));
+  }
+
+  // Lines connecting nearby spheres
+  let lines = [];
+  function rebuildLines(){
+    lines.forEach(l => l.dispose());
+    lines = [];
+    for(let i=0;i<N;i++){
+      for(let j=i+1;j<N;j++){
+        const d = BABYLON.Vector3.Distance(spheres[i].position, spheres[j].position);
+        if(d < threshold){
+          const line = BABYLON.MeshBuilder.CreateLines('ln'+i+'_'+j, {
+            points:[spheres[i].position.clone(), spheres[j].position.clone()],
+            updatable:false
+          }, scene);
+          line.color = new BABYLON.Color3(0.5, 0, 0.5);
+          line.alpha = 0.3;
+          lines.push(line);
+        }
+      }
+    }
+  }
+  rebuildLines();
+
+  let t = 0;
+  let lineTimer = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.016 * animSpeed;
+      lineTimer += 0.016 * animSpeed;
+      for(let i=0;i<N;i++){
+        const jitter = 0.03 * animSpeed;
+        spheres[i].position.x = origins[i].x + (Math.random()-0.5)*jitter;
+        spheres[i].position.y = origins[i].y + (Math.random()-0.5)*jitter;
+        spheres[i].position.z = origins[i].z + (Math.random()-0.5)*jitter;
+      }
+      if(lineTimer > 0.5){
+        lineTimer = 0;
+        rebuildLines();
+      }
+    }
+  });
+
+  let totalVerts = 0;
+  spheres.forEach(s => totalVerts += s.getTotalVertices());
+  updateInfo('quantum', totalVerts, 'Emissive Particle');
+}
+
+// ── MODE SWITCH ──
+const builders = {
+  wireframe: buildWireframe,
+  textured: buildTextured,
+  anatomical: buildAnatomical,
+  neural: buildNeural,
+  holographic: buildHolographic,
+  quantum: buildQuantum
+};
+
+function switchMode(mode){
+  currentMode = mode;
+  document.getElementById('active-mode-label').textContent = 'MODE: '+mode.toUpperCase();
+
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === mode);
+  });
+
+  // Hide layer toggle unless anatomical
+  document.getElementById('layer-toggle').style.display = mode==='anatomical' ? 'flex' : 'none';
+
+  // Fetch API data then build
+  fetch('/api/avatar/'+mode, {signal:AbortSignal.timeout(3000)})
+    .then(r => {if(!r.ok) throw new Error(); return r.json();})
+    .catch(() => ({mode:mode, status:'local', vertices:0, material:'default'}))
+    .then(data => {
+      apiModeData[mode] = data;
+      builders[mode]();
+    });
+}
+
+// ── RENDER LOOP ──
+engine.runRenderLoop(function(){
+  if(scene && scene.activeCamera){
+    sceneAnimations.forEach(fn => fn());
+    scene.render();
+    document.getElementById('info-fps').textContent = engine.getFps().toFixed(0);
+  }
+});
+
+window.addEventListener('resize', () => engine.resize());
+
+// ── INIT ──
+fetch('/api/avatar/modes', {signal:AbortSignal.timeout(3000)})
+  .then(r => r.json())
+  .catch(() => ['wireframe','textured','anatomical','neural','holographic','quantum'])
+  .then(() => { switchMode('wireframe'); });
+</script>
+</body>
+</html>

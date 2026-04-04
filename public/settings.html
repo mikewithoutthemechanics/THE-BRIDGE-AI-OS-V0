@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Bridge AI OS</title>
+    <meta name="description" content="Settings — Bridge AI OS Configuration">
+    <meta property="og:title" content="Settings — Bridge AI OS">
+    <meta property="og:description" content="Settings — Bridge AI OS Configuration">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/settings.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/settings.html">
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body class="font-sans antialiased" style="background:var(--bg-0,#060810);color:var(--text-primary,#fff)">
+
+  <main class="p-4 md:p-6 max-w-2xl mx-auto space-y-8">
+    <header>
+      <h1 class="text-3xl font-bold" style="color:var(--cyan,#63ffda)">Settings</h1>
+      <p style="color:var(--text-secondary,#94a3b8)" class="mt-1">Shared per user across all domains. Stored on the backend.</p>
+    </header>
+
+    <div id="message" class="hidden p-3 rounded-lg text-sm"></div>
+
+    <section style="background:var(--bg-1,#0a0e17);border:1px solid var(--border,#2a2a2a)" class="rounded-lg overflow-hidden">
+      <h2 class="text-lg font-semibold p-4" style="color:var(--cyan,#63ffda);border-bottom:1px solid var(--border,#2a2a2a)">Preferences</h2>
+      <form id="settings-form" class="p-4 space-y-5">
+        <div>
+          <label class="block text-sm font-medium mb-1" style="color:var(--text-secondary,#94a3b8)">Theme</label>
+          <select id="theme" name="theme" class="w-full max-w-xs rounded-lg px-3 py-2" style="background:var(--bg-2,#111827);color:var(--text-primary,#fff);border:1px solid var(--border,#2a2a2a)">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="system">System</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" style="color:var(--text-secondary,#94a3b8)">API base (optional)</label>
+          <input type="text" id="apiBase" name="apiBase" placeholder="Leave empty for same origin" class="w-full rounded-lg px-3 py-2" style="background:var(--bg-2,#111827);color:var(--text-primary,#fff);border:1px solid var(--border,#2a2a2a)">
+          <p class="text-xs mt-1" style="color:var(--text-muted,#666)">Override for backend URL. Shared across all apps when saved.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="notifications" name="notifications" class="rounded" style="accent-color:var(--cyan,#63ffda)">
+          <label for="notifications" class="text-sm" style="color:var(--text-secondary,#94a3b8)">Enable notifications</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="liveRefresh" name="liveRefresh" class="rounded" style="accent-color:var(--cyan,#63ffda)" checked>
+          <label for="liveRefresh" class="text-sm" style="color:var(--text-secondary,#94a3b8)">Live refresh (dashboard / agents)</label>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" style="color:var(--text-secondary,#94a3b8)">User ID (for cross-device sync)</label>
+          <input type="text" id="userId" name="userId" placeholder="default" class="w-full max-w-xs rounded-lg px-3 py-2" style="background:var(--bg-2,#111827);color:var(--text-primary,#fff);border:1px solid var(--border,#2a2a2a)">
+          <p class="text-xs mt-1" style="color:var(--text-muted,#666)">Set to share settings across devices; send as X-User-Id header.</p>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="submit" class="px-4 py-2 rounded-lg font-medium" style="background:var(--cyan,#63ffda);color:#060810">Save</button>
+          <button type="button" id="reset-btn" class="px-4 py-2 rounded-lg" style="border:1px solid var(--border,#2a2a2a);color:var(--text-secondary,#94a3b8)">Reset to defaults</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+(function() {
+  const API_BASE = (typeof window !== 'undefined' && window.__API_BASE) ? String(window.__API_BASE).replace(/\/$/, '') : '';
+
+  function api(path) {
+    return (API_BASE ? API_BASE + path : path);
+  }
+
+  var STORAGE_USER_ID_KEY = 'bridge_user_id';
+
+  function getUserId() {
+    var el = document.getElementById('userId');
+    if (el && el.value && el.value.trim()) return el.value.trim().slice(0, 128);
+    try { return localStorage.getItem(STORAGE_USER_ID_KEY); } catch (_) {}
+    return null;
+  }
+
+  function setStoredUserId(uid) {
+    try { if (uid) localStorage.setItem(STORAGE_USER_ID_KEY, uid); else localStorage.removeItem(STORAGE_USER_ID_KEY); } catch (_) {}
+  }
+
+  function headers() {
+    var h = { 'Content-Type': 'application/json' };
+    var uid = getUserId();
+    if (uid) h['X-User-Id'] = uid;
+    return h;
+  }
+
+  async function load() {
+    try {
+      var r = await fetch(api('/api/user/settings'), { headers: headers() });
+      var data = r.ok ? await r.json() : null;
+      if (data && data.settings) {
+        var s = data.settings;
+        setField('theme', s.theme);
+        setField('apiBase', s.apiBase);
+        setField('notifications', s.notifications);
+        setField('liveRefresh', s.liveRefresh !== false);
+        if (s.userId != null) setField('userId', s.userId);
+        else {
+          var stored = null;
+          try { stored = localStorage.getItem(STORAGE_USER_ID_KEY); } catch (_) {}
+          if (stored) setField('userId', stored);
+        }
+      }
+    } catch (e) {
+      showMessage('Could not load settings', true);
+    }
+  }
+
+  function setField(name, value) {
+    var el = document.getElementById(name) || document.querySelector('[name="' + name + '"]');
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!value;
+    else el.value = value == null ? '' : value;
+  }
+
+  function getField(name) {
+    var el = document.getElementById(name) || document.querySelector('[name="' + name + '"]');
+    if (!el) return undefined;
+    if (el.type === 'checkbox') return el.checked;
+    return el.value;
+  }
+
+  function getSettings() {
+    return {
+      theme: getField('theme') || 'light',
+      apiBase: getField('apiBase') || '',
+      notifications: !!getField('notifications'),
+      liveRefresh: getField('liveRefresh') !== false,
+      userId: getField('userId') || ''
+    };
+  }
+
+  function showMessage(text, isError) {
+    var el = document.getElementById('message');
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'p-3 rounded-lg text-sm';
+    el.style.background = isError ? 'rgba(255,0,51,0.15)' : 'rgba(99,255,218,0.1)';
+    el.style.color = isError ? '#ff4466' : '#63ffda';
+    el.classList.remove('hidden');
+    setTimeout(function() { el.classList.add('hidden'); }, 4000);
+  }
+
+  document.getElementById('settings-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var payload = getSettings();
+    try {
+      var r = await fetch(api('/api/user/settings'), {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify({ settings: payload })
+      });
+      if (r.ok) {
+        setStoredUserId(payload.userId || null);
+        showMessage('Settings saved. They are shared across all domains for this user.');
+        if (payload.apiBase && typeof window !== 'undefined') {
+          var base = payload.apiBase.replace(/\/$/, '');
+          window.__API_BASE = base;
+        }
+      } else {
+        showMessage('Failed to save settings', true);
+      }
+    } catch (err) {
+      showMessage('Failed to save settings', true);
+    }
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', function() {
+    setField('theme', 'light');
+    setField('apiBase', '');
+    setField('notifications', false);
+    setField('liveRefresh', true);
+    setField('userId', '');
+    showMessage('Form reset to defaults. Click Save to persist.');
+  });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
+})();
+  </script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

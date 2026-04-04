@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Intelligence Layer - Bridge AI OS</title>
+    <meta name="description" content="Intelligence — AI Analytics & Insights Engine">
+    <meta property="og:title" content="Intelligence Layer - Bridge AI OS">
+    <meta property="og:description" content="Intelligence — AI Analytics & Insights Engine">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/intelligence.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/intelligence.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
+.topnav{background:var(--bg2);border-bottom:1px solid #1a2a3a;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;overflow-x:auto;flex-shrink:0}
+.topnav .logo{font-weight:700;font-size:1.1rem;color:var(--a);white-space:nowrap}
+.topnav a{color:var(--t);font-size:.85rem;white-space:nowrap;padding:.35rem .6rem;border-radius:6px;transition:all .2s}
+.topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
+main{flex:1;padding:1.5rem;max-width:1400px;width:100%;margin:0 auto}
+h1{font-size:1.8rem;margin-bottom:.25rem}.subtitle{color:var(--t);margin-bottom:1.5rem}
+.grid{display:grid;gap:1rem}.grid-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}.grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.25rem}
+.card h2{font-size:1.1rem;margin-bottom:.75rem}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600}
+.badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}.badge-red{background:#ff446622;color:var(--r)}.badge-yellow{background:#ffaa0022;color:var(--y)}
+.btn{display:inline-block;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:all .2s;text-align:center}
+.btn-primary{background:var(--a);color:#000}.btn-green{background:var(--g);color:#000}.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}
+.btn:hover{opacity:.85;text-decoration:none}
+.auth-only{display:none}.upgrade-cta{display:block}
+.cta-box{background:linear-gradient(135deg,#00c8ff11,#00e57b11);border:1px solid #00c8ff33;border-radius:var(--radius);padding:1.5rem;text-align:center;margin:1rem 0}
+.cta-box h3{margin-bottom:.5rem}.cta-box p{color:var(--t);margin-bottom:1rem;font-size:.9rem}
+.loading{color:var(--t);font-size:.85rem;padding:1rem 0}
+/* Pricing table */
+.ptable{width:100%;border-collapse:collapse;font-size:.85rem}
+.ptable th{padding:.75rem .5rem;text-align:center;border-bottom:2px solid #1a2a3a;font-size:.9rem}
+.ptable td{padding:.6rem .5rem;text-align:center;border-bottom:1px solid #0d1520}
+.ptable td:first-child{text-align:left;color:var(--t)}
+.ptable tr:hover{background:#0d151f}
+.check{color:var(--g)}.cross{color:#334}
+.plan-highlight{background:#00c8ff08;border:1px solid var(--a);border-radius:var(--radius)}
+@media(max-width:600px){main{padding:1rem}.grid-2{grid-template-columns:1fr}h1{font-size:1.4rem}.ptable{font-size:.75rem}}
+</style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+<nav class="topnav">
+  <a href="/" class="logo">Bridge AI</a>
+  <a href="/">Dashboard</a>
+  <a href="/trading.html">Trading</a>
+  <a href="/defi.html">DeFi</a>
+  <a href="/wallet.html">Wallet</a>
+  <a href="/governance.html">Governance</a>
+  <a href="/intelligence.html" class="active">Intelligence</a>
+  <a href="/pricing.html">Pricing</a>
+  <a href="/corporate.html">Corporate</a>
+  <a href="/onboarding.html">Onboarding</a>
+</nav>
+<main>
+  <h1>Intelligence Layer</h1>
+  <p class="subtitle">Cognitive routing, business model, opportunity scanner, and pricing</p>
+
+  <div class="grid grid-4" style="margin-bottom:1rem">
+    <div class="card" id="stat-models"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-routes"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-opps"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-revenue"><div class="loading">Loading...</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <h2>Business Model</h2>
+    <div id="model-section"><div class="loading">Loading business model...</div></div>
+  </div>
+
+  <!-- Pricing Comparison - THE conversion section -->
+  <div class="card" style="margin-bottom:1rem">
+    <h2>Plan Comparison</h2>
+    <div style="overflow-x:auto">
+    <table class="ptable">
+      <thead>
+        <tr>
+          <th style="text-align:left">Feature</th>
+          <th>Free<br><span style="font-weight:400;font-size:.8rem;color:var(--t)">$0/mo</span></th>
+          <th style="color:var(--a)">Pro<br><span style="font-weight:400;font-size:.8rem">$49/mo</span></th>
+          <th>Enterprise<br><span style="font-weight:400;font-size:.8rem;color:var(--t)">$499/mo</span></th>
+          <th>Platform<br><span style="font-weight:400;font-size:.8rem;color:var(--t)">$2,499/mo</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>API Calls / day</td><td>100</td><td>10,000</td><td>100,000</td><td>Unlimited</td></tr>
+        <tr><td>AI Agents</td><td>1</td><td>5</td><td>50</td><td>Unlimited</td></tr>
+        <tr><td>Trading Signals</td><td class="check">&#10003;</td><td class="check">&#10003;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>Live Execution</td><td class="cross">&#10007;</td><td class="check">&#10003;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>BossBots</td><td class="cross">&#10007;</td><td>2 bots</td><td>10 bots</td><td>Unlimited</td></tr>
+        <tr><td>DeFi Yield Farming</td><td class="cross">&#10007;</td><td class="check">&#10003;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>Governance Voting</td><td>Read-only</td><td class="check">&#10003;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>Cognitive Routing</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>Opportunity Scanner</td><td class="cross">&#10007;</td><td>Basic</td><td>Advanced</td><td>Full</td></tr>
+        <tr><td>White-label</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td></tr>
+        <tr><td>Dedicated Support</td><td class="cross">&#10007;</td><td>Email</td><td>Priority</td><td>24/7 Dedicated</td></tr>
+        <tr><td>Custom Integrations</td><td class="cross">&#10007;</td><td class="cross">&#10007;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div style="display:flex;justify-content:center;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap">
+      <a href="/onboarding.html?plan=free" class="btn btn-outline">Free</a>
+      <a href="/onboarding.html?plan=pro" class="btn btn-primary">Get Pro</a>
+      <a href="/onboarding.html?plan=enterprise" class="btn btn-green">Enterprise</a>
+      <a href="/onboarding.html?plan=platform" class="btn btn-outline">Platform</a>
+    </div>
+  </div>
+
+  <div class="auth-only">
+    <div class="grid grid-2" style="margin-bottom:1rem">
+      <div class="card">
+        <h2>Cognitive Routing</h2>
+        <div id="routing-panel"><div class="loading">Loading routing data...</div></div>
+      </div>
+      <div class="card">
+        <h2>Opportunity Scanner</h2>
+        <div id="opportunities"><div class="loading">Loading opportunities...</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Billing History</h2>
+      <div id="billing-history"><div class="loading">Loading billing...</div></div>
+    </div>
+  </div>
+
+  <div class="upgrade-cta">
+    <div class="cta-box">
+      <h3>Unlock the Full Intelligence Layer</h3>
+      <p>Get cognitive routing, AI opportunity scanning, advanced analytics, and priority support.</p>
+      <a href="/onboarding.html?plan=pro" class="btn btn-primary" style="margin-right:.5rem">Start Pro - $49/mo</a>
+      <a href="/onboarding.html?plan=enterprise" class="btn btn-green">Enterprise - $499/mo</a>
+      <br><br><a href="/pricing.html" style="font-size:.85rem">Full pricing details &rarr;</a>
+    </div>
+  </div>
+</main>
+<script>
+const token=localStorage.getItem('bridge_token'),isAuth=!!token;
+document.querySelectorAll('.auth-only').forEach(el=>el.style.display=isAuth?'':'none');
+document.querySelectorAll('.upgrade-cta').forEach(el=>el.style.display=isAuth?'none':'');
+const headers=token?{Authorization:'Bearer '+token}:{};
+async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;return await r.json()}catch{return null}}
+
+(async()=>{
+  const[dash,model,opps]=await Promise.all([
+    f('/api/intelligence/dashboard'),f('/api/intelligence/model'),isAuth?f('/api/intelligence/opportunities'):null
+  ]);
+
+  const d=dash||{};
+  document.getElementById('stat-models').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Active Models</div><div style="font-size:1.5rem;font-weight:700">${d.activeModels||d.models||'--'}</div>`;
+  document.getElementById('stat-routes').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Routes / day</div><div style="font-size:1.5rem;font-weight:700">${d.dailyRoutes||d.routes||'--'}</div>`;
+  document.getElementById('stat-opps').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Opportunities</div><div style="font-size:1.5rem;font-weight:700">${d.opportunities||'--'}</div>`;
+  document.getElementById('stat-revenue').innerHTML=`<div style="font-size:.75rem;color:var(--t)">MRR</div><div style="font-size:1.5rem;font-weight:700;color:var(--g)">$${parseInt(d.mrr||d.revenue||0).toLocaleString()}</div>`;
+
+  // Business model
+  const m=model||{};
+  const streams=m.revenueStreams||m.streams||[];
+  document.getElementById('model-section').innerHTML=`<p style="color:var(--t);margin-bottom:1rem">${m.description||m.summary||'Bridge AI operates a multi-tier SaaS model with API monetization, trading fees, and enterprise licensing.'}</p>${streams.length?'<div class="grid grid-4">'+streams.map(s=>`<div style="padding:.75rem;background:var(--bg3);border-radius:8px"><div style="font-weight:600;font-size:.9rem">${s.name||s.stream||'--'}</div><div style="color:var(--g);font-size:1.1rem;font-weight:700">$${parseInt(s.revenue||s.amount||0).toLocaleString()}</div><div style="color:var(--t);font-size:.75rem">${s.type||s.model||''}</div></div>`).join('')+'</div>':''}`;
+
+  if(isAuth){
+    // Routing
+    document.getElementById('routing-panel').innerHTML=`<div class="grid grid-2" style="gap:.75rem"><div style="padding:.5rem;background:var(--bg3);border-radius:6px"><div style="color:var(--t);font-size:.8rem">Active Routes</div><div style="font-size:1.2rem;font-weight:600">${d.activeRoutes||d.cognitiveRoutes||'--'}</div></div><div style="padding:.5rem;background:var(--bg3);border-radius:6px"><div style="color:var(--t);font-size:.8rem">Avg Latency</div><div style="font-size:1.2rem;font-weight:600">${d.avgLatency||'--'}ms</div></div><div style="padding:.5rem;background:var(--bg3);border-radius:6px"><div style="color:var(--t);font-size:.8rem">Success Rate</div><div style="font-size:1.2rem;font-weight:600;color:var(--g)">${d.successRate||'--'}%</div></div><div style="padding:.5rem;background:var(--bg3);border-radius:6px"><div style="color:var(--t);font-size:.8rem">Cost / route</div><div style="font-size:1.2rem;font-weight:600">$${d.costPerRoute||'0.003'}</div></div></div>`;
+
+    // Opportunities
+    const ol=opps?.opportunities||opps?.data||[];
+    document.getElementById('opportunities').innerHTML=ol.length?ol.slice(0,6).map(o=>`<div style="padding:.5rem;border-bottom:1px solid #1a2a3a;display:flex;justify-content:space-between"><div><strong>${o.title||o.name||'Opportunity'}</strong><div style="color:var(--t);font-size:.8rem">${o.type||o.category||''}</div></div><div style="text-align:right"><div style="color:var(--g);font-weight:600">$${parseInt(o.value||o.potential||0).toLocaleString()}</div><div style="font-size:.75rem"><span class="badge badge-blue">${o.confidence||o.score||'--'}%</span></div></div></div>`).join(''):'<div style="color:var(--t)">No opportunities detected</div>';
+
+    // Billing
+    const billing=d.billing||d.billingHistory||[];
+    document.getElementById('billing-history').innerHTML=billing.length?`<table style="width:100%;border-collapse:collapse;font-size:.85rem"><thead><tr><th style="text-align:left;color:var(--t);padding:.5rem;border-bottom:1px solid #1a2a3a">Date</th><th style="text-align:left;color:var(--t);padding:.5rem;border-bottom:1px solid #1a2a3a">Description</th><th style="text-align:left;color:var(--t);padding:.5rem;border-bottom:1px solid #1a2a3a">Amount</th><th style="text-align:left;color:var(--t);padding:.5rem;border-bottom:1px solid #1a2a3a">Status</th></tr></thead><tbody>${billing.map(b=>`<tr><td style="padding:.5rem;border-bottom:1px solid #0d1520">${b.date||'--'}</td><td style="padding:.5rem;border-bottom:1px solid #0d1520">${b.description||'--'}</td><td style="padding:.5rem;border-bottom:1px solid #0d1520">$${parseFloat(b.amount||0).toLocaleString()}</td><td style="padding:.5rem;border-bottom:1px solid #0d1520"><span class="badge badge-green">${b.status||'paid'}</span></td></tr>`).join('')}</tbody></table>`:'<div style="color:var(--t)">No billing history</div>';
+  }
+})();
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

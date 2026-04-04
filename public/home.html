@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bridge AI OS — AI Operating System</title>
+    <meta name="description" content="Home — Bridge AI OS Central Hub">
+    <meta property="og:title" content="Bridge AI OS — AI Operating System">
+    <meta property="og:description" content="Home — Bridge AI OS Central Hub">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/home.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/home.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#020617;--s:#0d1620;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--t:#e5e7eb;--d:#4d6678}
+body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,sans-serif;overflow-x:hidden}
+.hero{min-height:90vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;position:relative}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,#0a1a2a 0%,#020617 70%);z-index:0}
+.hero>*{position:relative;z-index:1}
+.logo{font-size:3rem;font-weight:800;color:var(--a);letter-spacing:.3em;margin-bottom:.5rem}
+.logo span{color:var(--g)}
+.tagline{font-size:1.2rem;color:var(--d);max-width:600px;line-height:1.6;margin:.5rem auto 2rem}
+.cta{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem;letter-spacing:.05em;transition:all .2s}
+.btn-p{background:var(--a);color:#020617}
+.btn-p:hover{filter:brightness(1.2);transform:translateY(-2px)}
+.btn-s{border:1px solid var(--a);color:var(--a)}
+.btn-s:hover{background:rgba(0,200,255,.1)}
+.btn-g{background:var(--g);color:#020617}
+.stats{display:flex;gap:2rem;margin:3rem 0;flex-wrap:wrap;justify-content:center}
+.stat{text-align:center}
+.stat .v{font-size:2rem;font-weight:800;color:var(--a)}
+.stat .l{font-size:.7rem;color:var(--d);letter-spacing:.1em}
+.svg-bg{position:absolute;inset:0;z-index:0;opacity:.15}
+.section{padding:4rem 2rem;max-width:1000px;margin:0 auto}
+.section h2{color:var(--a);font-size:1.5rem;letter-spacing:.15em;margin-bottom:1.5rem;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.card{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:1.2rem;transition:all .2s;cursor:pointer;text-decoration:none;color:var(--t);display:block}
+.card:hover{border-color:var(--a);transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,200,255,.1)}
+.card h3{color:var(--a);font-size:.9rem;margin-bottom:.3rem}
+.card p{font-size:.75rem;color:var(--d);line-height:1.5}
+.domains{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin:2rem 0}
+.domain{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.4rem .8rem;font-size:.7rem;color:var(--a);text-decoration:none}
+.domain:hover{border-color:var(--g);color:var(--g)}
+.footer{text-align:center;padding:3rem;border-top:1px solid var(--b);font-size:.7rem;color:var(--d)}
+.footer a{color:var(--a);text-decoration:none}
+@media(max-width:600px){.logo{font-size:2rem}.tagline{font-size:1rem}.stat .v{font-size:1.5rem}}
+</style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+<div class="hero">
+  <svg class="svg-bg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="400" cy="300" r="200" stroke="#00c8ff" fill="none" stroke-width="0.5" opacity="0.3"><animateTransform attributeName="transform" type="rotate" from="0 400 300" to="360 400 300" dur="30s" repeatCount="indefinite"/></circle>
+    <circle cx="400" cy="300" r="120" stroke="#00e57b" fill="none" stroke-width="0.3" opacity="0.2"><animate attributeName="r" values="100;150;100" dur="8s" repeatCount="indefinite"/></circle>
+    <polygon points="400,100 530,375 270,375" stroke="#4d6678" fill="none" stroke-width="0.3" opacity="0.15"><animateTransform attributeName="transform" type="rotate" from="0 400 300" to="-360 400 300" dur="20s" repeatCount="indefinite"/></polygon>
+  </svg>
+  <div class="logo">BRIDGE <span>AI</span></div>
+  <div class="tagline">The AI Operating System that thinks, trades, governs, and grows autonomously. 71 agents. 150+ APIs. 11 domains. One brain.</div>
+  <div class="stats" id="stats">
+    <div class="stat"><div class="v" id="s-treasury">$0</div><div class="l">TREASURY</div></div>
+    <div class="stat"><div class="v">71+</div><div class="l">AGENTS</div></div>
+    <div class="stat"><div class="v">150+</div><div class="l">ENDPOINTS</div></div>
+    <div class="stat"><div class="v">11</div><div class="l">DOMAINS</div></div>
+    <div class="stat"><div class="v">27</div><div class="l">SKILLS</div></div>
+  </div>
+  <div class="cta">
+    <a class="btn btn-p" href="/welcome.html">GET STARTED</a>
+    <a class="btn btn-g" href="/aoe-dashboard.html">LIVE BRAIN</a>
+    <a class="btn btn-s" href="/platforms.html">NETWORK</a>
+    <a class="btn btn-s" href="/pricing.html">PRICING</a>
+  </div>
+</div>
+
+<div class="section">
+  <h2>PLATFORM ECOSYSTEM</h2>
+  <div class="grid">
+    <a class="card" href="/topology.html"><h3>Network Topology</h3><p>Live D3 force graph of all nodes, agents, and inter-service connections across L1/L2/L3 layers.</p></a>
+    <a class="card" href="/marketplace.html"><h3>Task Marketplace</h3><p>Post tasks, bid agents, dynamic pricing. 15% platform fee flows to treasury.</p></a>
+    <a class="card" href="/avatar.html"><h3>3D AI Avatar</h3><p>Babylon.js avatar with emotion engine, lip-sync, 6 render modes. Your digital twin.</p></a>
+    <a class="card" href="/ban"><h3>BAN Task Engine</h3><p>Multi-objective scoring: impact, revenue, risk, latency, trust. 3 execution nodes.</p></a>
+    <a class="card" href="/abaas.html"><h3>Agent-as-a-Service</h3><p>Deploy 8 specialized AI agents. Sales, Support, Trading, Legal, Dev, and more.</p></a>
+    <a class="card" href="/system-status-dashboard.html"><h3>30+ Service Graph</h3><p>Real-time D3 force graph with health polling, CPU/memory metrics.</p></a>
+    <a class="card" href="/control.html"><h3>Control Panel</h3><p>Treasury management, agent command, marketplace ops, system controls.</p></a>
+    <a class="card" href="/terminal.html"><h3>PTY Terminal</h3><p>Browser-based shell. Execute commands directly on Bridge AI OS.</p></a>
+    <a class="card" href="/brand.html"><h3>Brand & Visuals</h3><p>Logos, animated SVGs, HD visualizations, live metrics dashboard.</p></a>
+  </div>
+</div>
+
+<div class="section">
+  <h2>11 LIVE DOMAINS</h2>
+  <div class="domains">
+    <a class="domain" href="https://ai-os.co.za">ai-os.co.za</a>
+    <a class="domain" href="https://go.ai-os.co.za">go.ai-os.co.za</a>
+    <a class="domain" href="https://bridge.ai-os.co.za">bridge</a>
+    <a class="domain" href="https://ban.ai-os.co.za">ban</a>
+    <a class="domain" href="https://supac.ai-os.co.za">supac</a>
+    <a class="domain" href="https://ehsa.ai-os.co.za">ehsa</a>
+    <a class="domain" href="https://aurora.ai-os.co.za">aurora</a>
+    <a class="domain" href="https://ubi.ai-os.co.za">ubi</a>
+    <a class="domain" href="https://aid.ai-os.co.za">aid</a>
+    <a class="domain" href="https://hospitalinabox.ai-os.co.za">hospitalinabox</a>
+    <a class="domain" href="https://rootedearth.ai-os.co.za">rootedearth</a>
+  </div>
+</div>
+
+<div class="footer">
+  <a href="/sitemap.html">Sitemap</a> | <a href="/onboarding.html">Join</a> | <a href="/api/v3/spec">V3 Spec</a> | <a href="/brand.html">Brand</a><br><br>
+  Bridge AI OS v3 | Powered by SUPACLAW SUPA GURU | <a href="https://github.com/bridgeaios">GitHub</a>
+</div>
+
+<script>
+fetch('/api/treasury/status').then(r=>r.json()).then(d=>{
+  document.getElementById('s-treasury').textContent='$'+(d.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
+}).catch(()=>{});
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

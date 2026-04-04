@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bridge AI OS — Platform Network</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#050a0f;--s:#0d1620;--s2:#111d2b;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--t:#c8dce8;--d:#4d6678;--p:#a78bfa;--o:#fb923c}
+body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}
+.c{max-width:1200px;margin:0 auto;padding:1.5rem}
+h1{color:var(--a);font-size:1.3rem;letter-spacing:.2em}
+.sub{color:var(--d);font-size:.72rem;margin-bottom:.5rem}
+.motto{color:var(--g);font-size:.85rem;font-style:italic;margin-bottom:1.5rem;border-left:3px solid var(--g);padding-left:.8rem}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;margin-bottom:1.5rem}
+.stat{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.7rem;text-align:center}
+.stat .v{font-size:1.3rem;font-weight:700;color:var(--g)}
+.stat .l{font-size:.6rem;color:var(--d);letter-spacing:.1em;margin-top:.2rem}
+h2{color:var(--a);font-size:.85rem;letter-spacing:.12em;margin:1.5rem 0 .6rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:.8rem}
+.card{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;transition:border-color .2s;cursor:pointer}
+.card:hover{border-color:var(--a)}
+.card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.card h3{font-size:.9rem;color:var(--a)}
+.badge{font-size:.55rem;padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:.05em}
+.badge.live{background:rgba(0,229,123,.15);color:var(--g);border:1px solid var(--g)}
+.badge.ready{background:rgba(0,200,255,.15);color:var(--a);border:1px solid var(--a)}
+.badge.plan{background:rgba(255,209,102,.15);color:var(--y);border:1px solid var(--y)}
+.card .desc{font-size:.72rem;color:var(--d);line-height:1.5;margin-bottom:.5rem}
+.card .domain{font-size:.65rem;color:var(--p);margin-bottom:.4rem}
+.card .rails{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.4rem}
+.rail{font-size:.55rem;padding:1px 5px;border-radius:3px;background:rgba(0,229,123,.08);color:var(--g);border:1px solid rgba(0,229,123,.2)}
+.rail.fiat{color:var(--a);border-color:rgba(0,200,255,.2);background:rgba(0,200,255,.08)}
+.rail.crypto{color:var(--o);border-color:rgba(251,146,60,.2);background:rgba(251,146,60,.08)}
+.card .pool{font-size:.65rem;color:var(--d);display:flex;gap:.5rem;flex-wrap:wrap}
+.pool span{color:var(--t)}
+.spine{background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:1rem;margin:1.5rem 0}
+.spine h3{color:var(--g);font-size:.85rem;margin-bottom:.5rem}
+.spine .flow{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;font-size:.7rem}
+.spine .node{background:var(--s);border:1px solid var(--b);padding:3px 8px;border-radius:4px;color:var(--a)}
+.spine .arrow{color:var(--d)}
+.net{background:var(--s);border:1px solid var(--g);border-radius:8px;padding:1rem;margin-top:1rem;text-align:center}
+.net h3{color:var(--g);margin-bottom:.3rem}
+.net .val{font-size:2rem;font-weight:800;color:var(--g)}
+.net .sub{font-size:.7rem;color:var(--d)}
+</style>
+</head>
+<body>
+<div class="c">
+<h1>BRIDGE AI NETWORK</h1>
+<div class="sub">10 PLATFORMS · 6 PAYMENT RAILS · 1 UNIFIED TREASURY · INFINITE VALUE</div>
+<div class="motto">"Your network is your net worth"</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="spine">
+  <h3>UNIFIED TREASURY SPINE</h3>
+  <div class="flow">
+    <span class="node">Platform Revenue</span><span class="arrow">→</span>
+    <span class="node">Payment Rails</span><span class="arrow">→</span>
+    <span class="node">Treasury Pool</span><span class="arrow">→</span>
+    <span class="node">UBI (30%)</span><span class="arrow">|</span>
+    <span class="node">Ops (40%)</span><span class="arrow">|</span>
+    <span class="node">Reserve (20%)</span><span class="arrow">|</span>
+    <span class="node">Evolution (10%)</span>
+  </div>
+</div>
+
+<h2>PLATFORMS</h2>
+<div class="grid" id="platforms"></div>
+
+<div class="spine">
+  <h3>PAYMENT RAIL MESH</h3>
+  <div class="flow">
+    <span class="node">PayFast (ZAR)</span><span class="arrow">↔</span>
+    <span class="node">Paystack (NGN/GHS)</span><span class="arrow">↔</span>
+    <span class="node">Stripe (USD/EUR)</span><span class="arrow">↔</span>
+    <span class="node">ETH/BTC/SOL</span><span class="arrow">↔</span>
+    <span class="node">BRDG Token</span><span class="arrow">↔</span>
+    <span class="node">IBAN/SEPA</span>
+  </div>
+</div>
+
+<div class="net" id="net-worth"></div>
+</div>
+
+<script>
+const BRAIN = location.port === '8000' ? '' : (location.port === '8080' || location.port === '443' || !location.port ? '' : `${location.protocol}//${location.hostname}:8000`);
+
+const platforms = [
+  { id:'bridge', name:'Bridge AI OS', domain:'go.ai-os.co.za', subdomain:'bridge.ai-os.co.za', status:'live', desc:'Core AI operating system. Dashboard, topology, registry, marketplace, avatar, terminal, control panel. The central nervous system.', rails:['payfast','paystack','crypto','brdg'], pools:['treasury','ubi','reserve'], revenue:'SaaS subscriptions + API metering', spine:'brain:8000' },
+  { id:'ban', name:'BAN Task Engine', domain:'go.ai-os.co.za/ban', subdomain:'ban.ai-os.co.za', status:'live', desc:'Multi-objective task orchestration. Priority scoring, economic filtering, node routing (Ryan/Mike/Marvin), consensus engine.', rails:['brdg','crypto'], pools:['marketplace','execution'], revenue:'Task fees (15% commission)', spine:'brain:8000/api/marketplace' },
+  { id:'supac', name:'SupAC Unified Agents', domain:'go.ai-os.co.za/abaas.html', subdomain:'supac.ai-os.co.za', status:'live', desc:'8 AI agents: Sales, Support, Research, Marketing, Legal, Finance, Dev, Trading. Deploy, manage, monetize autonomous workforce.', rails:['payfast','paystack','brdg'], pools:['agent_pool','ubi'], revenue:'Agent rental + task completion', spine:'brain:8000/api/agents/workforce' },
+  { id:'ehsa', name:'EHSA Health System', domain:'#', subdomain:'ehsa.ai-os.co.za', status:'ready', desc:'Electronic Health System for Africa. Patient records, appointment scheduling, treatment optimization, pharmacy management, telemedicine.', rails:['payfast','paystack','iban'], pools:['health_pool','ubi'], revenue:'Per-patient SaaS + government contracts', spine:'brain:8000/api/neurolink' },
+  { id:'aurora', name:'Aurora AI Assistant', domain:'#', subdomain:'aurora.ai-os.co.za', status:'ready', desc:'Conversational AI with emotion engine, speech synthesis, lip-sync avatar. Personal and enterprise assistant.', rails:['payfast','stripe','crypto'], pools:['ai_pool','ubi'], revenue:'Per-conversation + subscription', spine:'brain:8000/api/twin' },
+  { id:'ubi', name:'Universal Basic Income', domain:'#', subdomain:'ubi.ai-os.co.za', status:'live', desc:'Automated UBI distribution from all platform revenue. 30% of treasury flows to community. Activity-based + network-value rewards.', rails:['crypto','brdg','payfast'], pools:['ubi_main'], revenue:'30% of all platform revenue', spine:'brain:8000/api/ubi' },
+  { id:'aid', name:'Aid Distribution', domain:'#', subdomain:'aid.ai-os.co.za', status:'ready', desc:'Transparent aid distribution platform. Track donations, verify recipients, automate disbursement. NGO + government integration.', rails:['payfast','paystack','crypto','iban'], pools:['aid_pool','ubi'], revenue:'Platform fee (2%) + grants', spine:'brain:8000/api/defi' },
+  { id:'abaas', name:'Agent-as-a-Service', domain:'go.ai-os.co.za/abaas.html', subdomain:'abaas.ai-os.co.za', status:'live', desc:'Enterprise API for deploying AI agents. White-label, custom SLAs, dedicated capacity. Competitive marketplace for agent skills.', rails:['stripe','payfast','crypto'], pools:['enterprise_pool','agent_pool'], revenue:'API usage + enterprise contracts', spine:'brain:8000/api/business/manifest' },
+  { id:'hospital', name:'Hospital in a Box', domain:'#', subdomain:'hospitalinabox.ai-os.co.za', status:'plan', desc:'Complete hospital management system in a container. EMR, pharmacy, billing, telemedicine, AI diagnostics. Deploy anywhere.', rails:['payfast','iban','crypto'], pools:['health_pool'], revenue:'License + per-bed SaaS', spine:'brain:8000/api/analytics' },
+  { id:'rootedearth', name:'Rooted Earth', domain:'#', subdomain:'rootedearth.ai-os.co.za', status:'plan', desc:'Sustainability platform. Carbon tracking, regenerative agriculture, supply chain transparency, impact investing, SDG alignment.', rails:['crypto','brdg','paystack'], pools:['earth_pool','ubi'], revenue:'Impact credits + certification', spine:'brain:8000/api/sdg/metrics' },
+];
+
+const railColors = { payfast:'fiat', paystack:'fiat', stripe:'fiat', iban:'fiat', crypto:'crypto', brdg:'crypto' };
+const railNames = { payfast:'PayFast (ZA)', paystack:'Paystack (NG)', stripe:'Stripe (US)', iban:'IBAN/SEPA', crypto:'ETH/BTC/SOL', brdg:'BRDG Token' };
+
+document.getElementById('platforms').innerHTML = platforms.map(p => `
+  <div class="card" onclick="${p.domain !== '#' ? `location='${p.domain.startsWith('http') ? p.domain : 'https://'+p.domain}'` : ''}">
+    <div class="top">
+      <h3>${p.name}</h3>
+      <span class="badge ${p.status}">${p.status.toUpperCase()}</span>
+    </div>
+    <div class="domain">${p.subdomain}</div>
+    <div class="desc">${p.desc}</div>
+    <div class="rails">${p.rails.map(r => `<span class="rail ${railColors[r]}">${railNames[r]}</span>`).join('')}</div>
+    <div class="pool">Pools: ${p.pools.map(pl => `<span>${pl}</span>`).join(' · ')} | Revenue: <span>${p.revenue}</span></div>
+  </div>
+`).join('');
+
+// Load live data
+async function loadStats() {
+  try {
+    const [treasury, wallet, swarm, analytics] = await Promise.all([
+      fetch(BRAIN + '/api/treasury/status').then(r=>r.json()).catch(()=>({})),
+      fetch(BRAIN + '/api/wallet/balance').then(r=>r.json()).catch(()=>({total_usd:0})),
+      fetch(BRAIN + '/api/swarm/agents').then(r=>r.json()).catch(()=>({count:0})),
+      fetch(BRAIN + '/api/analytics/overview').then(r=>r.json()).catch(()=>({})),
+    ]);
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="v">10</div><div class="l">PLATFORMS</div></div>
+      <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
+      <div class="stat"><div class="v">$${((wallet.total_usd||0)/1000).toFixed(0)}K</div><div class="l">WALLET</div></div>
+      <div class="stat"><div class="v">${swarm.count||8}</div><div class="l">AGENTS</div></div>
+      <div class="stat"><div class="v">6</div><div class="l">PAYMENT RAILS</div></div>
+    `;
+    const netWorth = (treasury.balance||0) + (wallet.total_usd||0);
+    document.getElementById('net-worth').innerHTML = `
+      <h3>NETWORK NET WORTH</h3>
+      <div class="val">$${netWorth.toLocaleString()}</div>
+      <div class="sub">Treasury + Wallet + Token Value | 10 platforms × 6 rails × 8 agents</div>
+    `;
+  } catch(e) { console.error(e); }
+}
+loadStats();
+</script>
+</body>
+</html>

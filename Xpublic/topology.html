@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID</title>
+
+<!-- P5 + XTERM -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"/>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#050a10;overflow:hidden;font-family:'Courier New',monospace;color:#0ff}
+
+/* ── CANVAS (topology background) ── */
+#p5-canvas-container{
+  position:fixed;top:40px;left:140px;right:150px;bottom:40%;z-index:0;
+}
+canvas{display:block;}
+
+/* ── HUD ── */
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:30;height:40px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;background:rgba(0,0,0,.75);
+  border-bottom:1px solid rgba(0,255,255,.18);
+}
+#hud-left{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:2px;color:#0ff;}
+#hud-right{display:flex;align-items:center;gap:12px;font-size:9px;color:#0f9;}
+#live-dot{width:8px;height:8px;border-radius:50%;background:#0f9;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+#stats{font-size:9px;color:#0ac;letter-spacing:1px;}
+#clock{font-size:10px;letter-spacing:2px;color:#0f9;}
+
+/* ── RIGHT SIDEBAR CONTAINER ── */
+#right-sidebar{
+  position:fixed;right:0;top:40px;bottom:calc(40% + 20px);z-index:40;
+  width:150px;overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;gap:4px;padding:6px;
+  scrollbar-width:thin;scrollbar-color:#0ff3 transparent;
+}
+#right-sidebar::-webkit-scrollbar{width:3px;}
+#right-sidebar::-webkit-scrollbar-thumb{background:#0ff3;border-radius:2px;}
+
+/* ── CONTROL PANEL ── */
+#control-panel{
+  background:rgba(0,0,0,.85);border:1px solid #0ff3;border-radius:4px;padding:8px;
+  display:flex;flex-direction:column;gap:5px;flex-shrink:0;
+}
+#control-panel .cp-title{font-size:8px;letter-spacing:2px;color:#0ff;padding-bottom:4px;border-bottom:1px solid #0ff2;margin-bottom:2px;}
+#control-panel button{
+  background:#001a1a;border:1px solid #0ff3;color:#0ff;
+  padding:4px 8px;font-size:9px;letter-spacing:1px;font-family:monospace;
+  cursor:pointer;text-align:left;transition:background .15s;
+}
+#control-panel button:hover{background:#003333;border-color:#0ff;}
+
+/* ── NEW TERMINAL BUTTON ── */
+#btn-new-term{
+  position:fixed;left:140px;right:150px;bottom:calc(40% + 20px);z-index:40;height:22px;
+  padding:0;background:#00ffcc;color:#000;border:none;
+  font-size:10px;font-family:monospace;font-weight:bold;
+  cursor:pointer;letter-spacing:1px;text-align:center;line-height:22px;
+}
+#btn-new-term:hover{background:#00ddaa;}
+
+/* ── TERMINAL GRID ── */
+#terminals{
+  position:fixed;bottom:0;left:0;right:0;height:40%;
+  display:flex;flex-wrap:wrap;
+  background:#000;border-top:1px solid #0ff3;z-index:20;
+}
+.term-slot{
+  width:50%;height:50%;border:1px solid #0ff2;position:relative;overflow:hidden;
+}
+.term-slot.full-width{width:100%;}
+.term-slot.two-thirds{width:66.66%;}
+.term-slot.one-third{width:33.33%;}
+.term-label{
+  position:absolute;top:2px;right:6px;z-index:5;
+  font-size:8px;color:#0ff4;letter-spacing:1px;pointer-events:none;
+}
+.term-close{
+  position:absolute;top:2px;left:4px;z-index:5;
+  font-size:8px;color:#f004;cursor:pointer;
+  background:none;border:none;font-family:monospace;
+}
+.term-close:hover{color:#f00;}
+
+/* ── STATUS BAR ── */
+#status-bar{
+  position:fixed;bottom:0;left:0;right:0;height:20px;z-index:50;
+  background:rgba(0,0,0,.9);border-top:1px solid #0ff2;
+  display:flex;align-items:center;padding:0 10px;font-size:8px;color:#055;
+  letter-spacing:1px;
+}
+/* override: push terminals above status bar */
+#terminals{bottom:20px;}
+#btn-new-term{bottom:calc(40% + 20px);}
+#control-panel{top:50px;}
+
+/* ── LEFT SIDEBAR CONTAINER ── */
+#left-sidebar{
+  position:fixed;left:0;top:40px;bottom:calc(40% + 20px);z-index:40;
+  width:140px;overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;gap:4px;padding:6px;
+  scrollbar-width:thin;scrollbar-color:#0ff3 transparent;
+}
+#left-sidebar::-webkit-scrollbar{width:3px;}
+#left-sidebar::-webkit-scrollbar-thumb{background:#0ff3;border-radius:2px;}
+
+/* ── LEFT SIDE PANELS ── */
+.left-panel{
+  background:rgba(0,0,0,.88);border:1px solid #0ff3;border-radius:4px;
+  padding:8px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;
+}
+.left-panel .lp-title{
+  font-size:8px;letter-spacing:2px;color:#0ff;
+  padding-bottom:4px;border-bottom:1px solid #0ff2;margin-bottom:2px;
+}
+.left-panel button{
+  background:#001a1a;border:1px solid #0ff3;color:#0ff;
+  padding:3px 7px;font-size:9px;font-family:monospace;letter-spacing:1px;
+  cursor:pointer;text-align:left;
+}
+.left-panel button:hover{background:#003333;}
+.left-panel .stat-row{font-size:9px;color:#0ac;display:flex;justify-content:space-between;gap:8px;padding:2px 4px;border-radius:2px;transition:background .15s;}
+.left-panel .stat-row[style*="cursor"]:hover{background:rgba(0,255,255,.08);}
+.left-panel .stat-val{color:#0f9;}
+
+/* ── ECONOMICS PANEL (inside right sidebar) ── */
+#econ-panel{
+  display:contents; /* let children flow in right-sidebar */
+}
+
+#econ-container{
+  max-height:300px;overflow-y:auto;flex-shrink:0;
+  background:rgba(0,0,0,.82);border:1px solid rgba(0,255,150,.2);
+  border-radius:4px;scrollbar-width:thin;scrollbar-color:#0f42 transparent;
+}
+.econ-title{
+  font-size:9px;letter-spacing:3px;color:#0f9;padding:6px 10px;
+  border-bottom:1px solid rgba(0,255,150,.15);font-weight:bold;
+}
+.econ-totals{
+  display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:2px;
+  padding:6px 10px;border-bottom:1px solid rgba(0,255,150,.1);font-size:8px;
+  color:#556;
+}
+.econ-val{color:#0ff;font-size:9px;}
+.econ-val.green{color:#0f9;}
+.econ-val.gold{color:#fc0;}
+.econ-platform{border-bottom:1px solid rgba(0,255,150,.08);}
+.econ-ph{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 10px;cursor:pointer;font-size:9px;
+}
+.econ-ph:hover{background:rgba(0,255,150,.05);}
+.econ-badge{font-size:7px;background:rgba(0,255,150,.1);color:#0f9;
+  border:1px solid rgba(0,255,150,.2);padding:1px 5px;border-radius:2px;letter-spacing:1px;}
+.econ-body{padding:4px 10px 8px;font-size:8px;}
+.econ-row{display:flex;justify-content:space-between;padding:2px 0;color:#556;}
+.econ-row.green{color:#0f9;}
+.econ-sub{color:#334;font-size:7px;padding:1px 0 2px;letter-spacing:.5px;}
+.econ-url{color:#0cf;font-size:8px;word-break:break-all;}
+
+/* Economics HUD chip */
+#econ-hud{font-size:8px;color:#0f9;letter-spacing:1px;}
+
+@media (max-width: 900px) {
+  html,body{overflow:auto;height:auto;}
+
+  #p5-canvas-container{
+    position:relative;top:0;left:0;right:0;height:300px;
+  }
+
+  #hud{position:sticky;z-index:100;}
+
+  #control-panel{
+    position:relative;right:auto;top:auto;
+    width:100%;border-radius:0;
+    flex-direction:row;flex-wrap:wrap;
+    min-width:auto;
+  }
+  #control-panel button{flex:1;min-width:80px;text-align:center;}
+
+  #left-sidebar, #right-sidebar{
+    position:relative;top:auto;bottom:auto;left:auto;right:auto;
+    width:100%;height:auto;overflow:visible;padding:4px;
+  }
+  .left-panel{
+    width:100%;min-width:auto;border-radius:0;
+    margin-bottom:4px;
+  }
+
+  #econ-panel{
+    position:relative;top:auto;bottom:auto;right:auto;left:auto;
+    padding:0;display:block;
+  }
+  #econ-container{width:100%;max-height:300px;}
+
+  #terminals{
+    position:relative;bottom:auto;height:auto;min-height:400px;
+  }
+  .term-slot{width:100% !important;height:200px;}
+
+  #btn-new-term{
+    position:relative;left:auto;bottom:auto;
+    width:100%;border-radius:0;
+  }
+
+  #status-bar{position:relative;}
+  #terminals{bottom:0;}
+  #btn-new-term{bottom:auto;}
+
+  /* Econ overlay chips */
+  .econ-chip{display:none;}
+
+  /* AI Controls panel */
+  #ai-ctrl-panel{
+    position:relative !important;right:auto !important;bottom:auto !important;
+    width:100% !important;min-width:auto !important;border-radius:0 !important;
+    flex-direction:row !important;flex-wrap:wrap !important;
+  }
+  #ai-ctrl-panel button{flex:1;min-width:80px;text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="hud-left">
+    <span id="live-dot"></span>
+    <span>◈ GOD MODE SYSTEM TOPOLOGY</span>
+  </div>
+  <div id="hud-right">
+    <span id="econ-hud">ECON: loading…</span>
+    <span id="stats">NODES:— | EDGES:— | PKT:—</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</div>
+
+<!-- P5 Canvas Container -->
+<div id="p5-canvas-container"></div>
+
+<!-- DETAIL POPUP CARD -->
+<div id="detail-card" style="display:none;position:fixed;z-index:200;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:420px;max-width:90vw;max-height:80vh;overflow-y:auto;
+  background:rgba(5,10,16,.96);border:1px solid #0ff;border-radius:6px;
+  box-shadow:0 0 40px rgba(0,200,255,.15);font-family:'Courier New',monospace;">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #0ff3;">
+    <span id="detail-title" style="color:#0ff;font-size:11px;letter-spacing:2px;font-weight:bold;"></span>
+    <button onclick="closeDetail()" style="background:none;border:1px solid #f003;color:#f44;font-size:10px;padding:2px 8px;cursor:pointer;font-family:monospace;border-radius:2px;">CLOSE</button>
+  </div>
+  <div id="detail-body" style="padding:12px 14px;font-size:9px;color:#0ac;letter-spacing:.5px;line-height:1.7;"></div>
+</div>
+<div id="detail-backdrop" onclick="closeDetail()" style="display:none;position:fixed;inset:0;z-index:199;background:rgba(0,0,0,.5);"></div>
+
+<!-- LEFT SIDEBAR -->
+<div id="left-sidebar">
+  <!-- Health Status -->
+  <div class="left-panel" id="panel-health">
+    <div class="lp-title">SYSTEM HEALTH</div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('gateway')"><span>GATEWAY</span><span class="stat-val" id="hp-gateway" style="color:#0f9">--</span></div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('api')"><span>API</span><span class="stat-val" id="hp-api" style="color:#0f9">--</span></div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('agents')"><span>AGENTS</span><span class="stat-val" id="hp-agents" style="color:#0f9">--</span></div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('treasury')"><span>TREASURY</span><span class="stat-val" id="hp-treasury" style="color:#0f9">--</span></div>
+    <div class="stat-row" style="cursor:pointer;border-top:1px solid #0ff2;padding-top:4px;margin-top:2px;" onclick="showDetail('overall')"><span style="color:#0ff">OVERALL</span><span class="stat-val" id="hp-overall" style="font-weight:bold">--</span></div>
+  </div>
+
+  <!-- Monitor Panel -->
+  <div id="panel-monitor" class="left-panel">
+    <div class="lp-title">SYS MONITOR</div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('cpu')"><span>CPU</span><span class="stat-val" id="mon-cpu">--</span></div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('mem')"><span>MEM</span><span class="stat-val" id="mon-mem">--</span></div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('uptime')"><span>UPTIME</span><span class="stat-val" id="mon-up">--</span></div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('load')"><span>LOAD</span><span class="stat-val" id="mon-load">--</span></div>
+  </div>
+
+  <!-- Swarm Panel -->
+  <div id="panel-swarm" class="left-panel">
+    <div class="lp-title">SWARM OPS</div>
+    <button onclick="runSwarm(WIN?'systeminfo':'uptime')">UPTIME</button>
+    <button onclick="runSwarm(WIN?'wmic logicaldisk get freespace,caption':'df -h')">DISK</button>
+    <button onclick="runSwarm('docker ps')">DOCKER</button>
+    <button onclick="runSwarm('git status')">GIT STATUS</button>
+  </div>
+
+  <!-- AI Panel -->
+  <div id="panel-ai" class="left-panel">
+    <div class="lp-title">AI ENGINE</div>
+    <button onclick="runSwarm('pm2 status')">PM2 STATUS</button>
+    <button onclick="runSwarm(WIN?'tasklist':'ps aux | head -20')">SYS LOAD</button>
+    <button onclick="runSwarm(WIN?'wmic os get freephysicalmemory':'free -m')">MEMORY</button>
+    <button onclick="fetchAudit()">VIEW AUDIT</button>
+  </div>
+
+  <!-- Workflow Panel -->
+  <div id="panel-workflow" class="left-panel">
+    <div class="lp-title">WORKFLOWS</div>
+    <button onclick="runSwarm('git pull && npm install')">DEPLOY</button>
+    <button onclick="runSwarm('pm2 restart all')">RESTART ALL</button>
+    <button onclick="runSwarm('bash /c/deploy/deploy-bridgeos.sh')">MIGRATE</button>
+  </div>
+</div>
+
+<!-- RIGHT SIDEBAR -->
+<div id="right-sidebar">
+  <!-- Economics Panel -->
+  <div id="econ-panel"><div id="econ-container">loading economics...</div></div>
+
+  <!-- Control Panel -->
+  <div id="control-panel">
+    <div class="cp-title">SYS CONTROL</div>
+    <button onclick="execCmd('ls -la')">FILES</button>
+    <button onclick="execCmd(WIN ? 'dir' : 'ls -la')">DIR</button>
+    <button onclick="execCmd(WIN ? 'tasklist' : 'ps aux')">PROCESSES</button>
+    <button onclick="execCmd(WIN ? 'systeminfo | head -20' : 'top -bn1 | head -20')">MONITOR</button>
+    <button onclick="execCmd(WIN ? 'wmic logicaldisk get size,freespace,caption' : 'df -h')">DISK</button>
+    <button onclick="execCmd('docker ps')">DOCKER</button>
+    <button onclick="execCmd('git status')">GIT STATUS</button>
+    <button onclick="execCmd('git pull')">GIT PULL</button>
+    <button onclick="execCmd('npm run health')">HEALTH</button>
+    <button onclick="execCmd('node -e \'console.log(process.versions)\'')">NODE INFO</button>
+    <button onclick="execCmd(WIN ? 'netstat -ano | findstr LISTENING' : 'ss -tulnp')">PORTS</button>
+    <button onclick="runScan()">SCAN</button>
+  </div>
+</div>
+
+<!-- New Terminal Button -->
+<button id="btn-new-term" onclick="createTerminal()">+ TERMINAL</button>
+
+<!-- Terminal Grid -->
+<div id="terminals"></div>
+
+<!-- Status Bar -->
+<div id="status-bar" id="status">
+  <span id="ws-status">WS: connecting…</span>
+  &nbsp;|&nbsp;
+  <span id="session-count">SESSIONS: 0</span>
+  &nbsp;|&nbsp;
+  <span id="active-session">ACTIVE: none</span>
+</div>
+
+<script>
+/*****************************************************************************
+  BOOT GUARD — must be served via http://, NOT file://
+*****************************************************************************/
+if (location.protocol === 'file:') {
+  document.body.innerHTML = '<div style="padding:40px;font-family:monospace;background:#050a10;color:#f44;font-size:14px;">'
+    + '<h2>⚠ OPEN VIA HTTP — NOT FILE://</h2>'
+    + '<p style="margin-top:12px;color:#0ff;">Run in your terminal:</p>'
+    + '<pre style="background:#000;padding:12px;color:#0f9;margin-top:8px;">node system.js</pre>'
+    + '<p style="margin-top:12px;color:#0ff;">Then open: <a href="/" style="color:#0ff;">your local server</a></p>'
+    + '</div>';
+  throw new Error('file:// protocol — server not running');
+}
+
+/*****************************************************************************
+  GLOBALS
+*****************************************************************************/
+const WIN    = navigator.platform.toLowerCase().includes('win');
+const BASE   = window.location.origin;
+const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/terminal';
+const IS_SERVERLESS = location.hostname.includes('vercel.app') || location.hostname.includes('.vercel.');
+
+let socket       = null;
+let terminals    = {};   // id → { term, fitAddon, el }
+let activeId     = null;
+let sessionSeq   = 0;
+let packetCount  = 0;
+
+/*****************************************************************************
+  WEBSOCKET
+*****************************************************************************/
+function wsConnect() {
+  if (IS_SERVERLESS) {
+    document.getElementById('ws-status').textContent = 'WS: serverless mode';
+    document.getElementById('ws-status').style.color = '#fc0';
+    return;
+  }
+
+  socket = new WebSocket(WS_URL);
+
+  socket.onopen = () => {
+    document.getElementById('ws-status').textContent = 'WS: connected';
+    document.getElementById('ws-status').style.color = '#0f9';
+  };
+
+  socket.onclose = () => {
+    document.getElementById('ws-status').textContent = 'WS: disconnected — reconnecting…';
+    document.getElementById('ws-status').style.color = '#f90';
+    setTimeout(wsConnect, 3000);
+  };
+
+  socket.onerror = () => {
+    document.getElementById('ws-status').textContent = 'WS: error';
+    document.getElementById('ws-status').style.color = '#f44';
+  };
+
+  socket.onmessage = (e) => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+
+    // Support both 'id' (new) and 'sessionId' (legacy)
+    const sid = msg.id || msg.sessionId;
+
+    if (msg.type === 'created' || msg.type === 'ready') {
+      if (terminals[sid]) terminals[sid].term.write('\r\n\x1b[32m[SESSION READY]\x1b[0m\r\n');
+    }
+    if (msg.type === 'auth_ok') {
+      console.log('Auth OK:', msg.user, msg.role);
+    }
+    if (msg.type === 'monitor' && msg.stats) {
+      const s = msg.stats;
+      document.getElementById('mon-cpu').textContent  = s.cpu + '%';
+      document.getElementById('mon-mem').textContent  = s.memMB + 'MB';
+      document.getElementById('mon-up').textContent   = s.uptime + 's';
+      document.getElementById('mon-load').textContent = (s.load||[]).map(v=>v.toFixed(2)).join(' ');
+    }
+    if (msg.type === 'output' && terminals[sid]) {
+      terminals[sid].term.write(msg.data);
+    }
+    if (msg.type === 'exit' && terminals[sid]) {
+      terminals[sid].term.write(`\r\n\x1b[31m[EXIT code=${msg.code}]\x1b[0m\r\n`);
+    }
+  };
+}
+
+function wsSend(obj) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(obj));
+  }
+}
+
+/*****************************************************************************
+  TERMINALS
+*****************************************************************************/
+function createTerminal() {
+  if (Object.keys(terminals).length >= 6) {
+    alert('Max 6 terminals. Close one first.');
+    return;
+  }
+
+  const id    = 'T' + (++sessionSeq);
+  const grid  = document.getElementById('terminals');
+
+  const slot = document.createElement('div');
+  slot.className = 'term-slot';
+  slot.id = 'slot-' + id;
+  grid.appendChild(slot);
+
+  const label = document.createElement('div');
+  label.className = 'term-label';
+  label.textContent = id;
+  slot.appendChild(label);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'term-close';
+  closeBtn.textContent = '✕';
+  closeBtn.onclick = () => closeTerminal(id);
+  slot.appendChild(closeBtn);
+
+  const termEl = document.createElement('div');
+  termEl.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;padding:2px;';
+  slot.appendChild(termEl);
+
+  const term = new Terminal({
+    cursorBlink: true,
+    fontSize: 11,
+    fontFamily: 'Courier New, monospace',
+    theme: {
+      background: '#000000',
+      foreground: '#00ffcc',
+      cursor:     '#00ffcc',
+    },
+  });
+
+  const fitAddon = new FitAddon.FitAddon();
+  term.loadAddon(fitAddon);
+  term.open(termEl);
+
+  try { fitAddon.fit(); } catch {}
+
+  terminals[id] = { term, fitAddon, el: slot };
+  activeId = id;
+  updateStatusBar();
+
+  // ASCII splash for each terminal
+  const slotIndex = Object.keys(terminals).length - 1;
+  const C = '\x1b[36m';
+  const G = '\x1b[32m';
+  const D = '\x1b[2;36m';
+  const W = '\x1b[1;37m';
+  const R = '\x1b[0m';
+  term.writeln('');
+  term.writeln(C + '  ____       _     __              ___    ____' + R);
+  term.writeln(C + ' / __ )_____(_)___/ /___ _____    /   |  /  _/' + R);
+  term.writeln(C + '/ __  / ___/ / __  / __ `/ _ \\   / /| |  / /  ' + R);
+  term.writeln(C + '/ /_/ / /  / / /_/ / /_/ /  __/  / ___ |_/ /   ' + R);
+  term.writeln(C + '/_____/_/  /_/\\__,_/\\__, /\\___/  /_/  |_/___/  ' + R);
+  term.writeln(C + '                   /____/                       ' + R);
+  term.writeln('');
+  term.writeln(D + '  Session ' + (slotIndex + 1) + ' | Bridge AI OS Terminal' + R);
+  term.writeln(G + '  Status: ' + R + (IS_SERVERLESS ? '\x1b[33mServerless Mode\x1b[0m' : '\x1b[32mConnecting...\x1b[0m'));
+  term.writeln('');
+  if (IS_SERVERLESS) {
+    term.writeln(D + '  WebSocket unavailable in serverless mode.' + R);
+    term.writeln(D + '  Run locally: ' + W + 'node gateway.js' + R);
+    term.writeln('');
+  }
+  term.write(G + '  bridge@os' + R + ':' + C + '~' + R + '$ ');
+
+  // Request PTY session
+  wsSend({ type: 'create', id, cols: term.cols || 80, rows: term.rows || 24 });
+
+  term.onData(data => {
+    wsSend({ type: 'input', id: activeId, data });
+  });
+
+  // Activate this terminal on click
+  slot.onclick = () => { activeId = id; updateStatusBar(); };
+
+  // Resize observer
+  const ro = new ResizeObserver(() => {
+    try {
+      fitAddon.fit();
+      wsSend({ type:'resize', id, cols: term.cols, rows: term.rows });
+    } catch {}
+  });
+  ro.observe(slot);
+
+  rebalanceGrid();
+}
+
+function closeTerminal(id) {
+  wsSend({ type: 'kill', id });
+  if (terminals[id]) {
+    terminals[id].term.dispose();
+    const slot = document.getElementById('slot-' + id);
+    if (slot) slot.remove();
+    delete terminals[id];
+  }
+  if (activeId === id) {
+    const remaining = Object.keys(terminals);
+    activeId = remaining.length ? remaining[remaining.length - 1] : null;
+  }
+  updateStatusBar();
+  rebalanceGrid();
+}
+
+function execCmd(cmd) {
+  if (!activeId) { createTerminal(); setTimeout(() => execCmd(cmd), 500); return; }
+  wsSend({ type: 'exec', id: activeId, cmd });
+}
+
+function runScan() {
+  fetch(BASE + '/api/topology').then(r => r.json()).then(d => {
+    if (activeId && terminals[activeId]) {
+      terminals[activeId].term.write('\r\n\x1b[36m[SCAN COMPLETE]\x1b[0m Nodes: ' +
+        (d.nodes ? d.nodes.length : '?') + '\r\n');
+    }
+  }).catch(() => {});
+}
+
+// Open a terminal in the working directory of a topology node
+function openNodeTerminal(nodeId) {
+  if (Object.keys(terminals).length >= 6) { createTerminal(); return; }
+  const id = 'NODE-' + nodeId + '-' + (++sessionSeq);
+  const grid = document.getElementById('terminals');
+
+  const slot = document.createElement('div');
+  slot.className = 'term-slot';
+  slot.id = 'slot-' + id;
+  grid.appendChild(slot);
+
+  const label = document.createElement('div');
+  label.className = 'term-label';
+  label.textContent = nodeId;
+  slot.appendChild(label);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'term-close';
+  closeBtn.textContent = '✕';
+  closeBtn.onclick = () => closeTerminal(id);
+  slot.appendChild(closeBtn);
+
+  const termEl = document.createElement('div');
+  termEl.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;padding:2px;';
+  slot.appendChild(termEl);
+
+  const term = new Terminal({ cursorBlink:true, fontSize:11, fontFamily:'Courier New,monospace',
+    theme:{ background:'#000', foreground:'#00ffcc', cursor:'#00ffcc' } });
+  const fitAddon = new FitAddon.FitAddon();
+  term.loadAddon(fitAddon);
+  term.open(termEl);
+  try { fitAddon.fit(); } catch {}
+
+  terminals[id] = { term, fitAddon, el: slot };
+  activeId = id;
+  updateStatusBar();
+
+  // Request node-aware PTY session
+  wsSend({ type:'create_node', id, node:nodeId, cols:term.cols||80, rows:term.rows||24 });
+
+  term.onData(data => wsSend({ type:'input', id, data }));
+  slot.onclick = () => { activeId = id; updateStatusBar(); };
+
+  const ro = new ResizeObserver(() => {
+    try { fitAddon.fit(); wsSend({ type:'resize', id, cols:term.cols, rows:term.rows }); } catch {}
+  });
+  ro.observe(slot);
+  rebalanceGrid();
+}
+
+// Broadcast a command to ALL active terminals (swarm)
+function runSwarm(cmd) {
+  const ids = Object.keys(terminals);
+  if (ids.length === 0) { createTerminal(); setTimeout(() => runSwarm(cmd), 600); return; }
+  ids.forEach(id => wsSend({ type:'exec', id, cmd }));
+}
+
+// Fetch and display audit log in active terminal
+function fetchAudit() {
+  fetch(BASE + '/api/contracts').then(r => r.json()).then(d => {
+    if (!activeId || !terminals[activeId]) return;
+    const t = terminals[activeId].term;
+    t.write('\r\n\x1b[33m[CONTRACTS — ' + (d.count||0) + ' files]\x1b[0m\r\n');
+    (d.files||[]).slice(-20).forEach(f => t.write('  ' + f + '\r\n'));
+  }).catch(() => {});
+}
+
+function rebalanceGrid() {
+  const count = Object.keys(terminals).length;
+  Object.values(terminals).forEach(({ el }) => {
+    el.className = 'term-slot';
+    if (count === 1) el.style.width = '100%', el.style.height = '100%';
+    else if (count === 2) el.style.width = '50%', el.style.height = '100%';
+    else if (count <= 4) el.style.width = '50%', el.style.height = '50%';
+    else el.style.width = '33.33%', el.style.height = '50%';
+  });
+}
+
+function updateStatusBar() {
+  const count = Object.keys(terminals).length;
+  document.getElementById('session-count').textContent = 'SESSIONS: ' + count;
+  document.getElementById('active-session').textContent = 'ACTIVE: ' + (activeId || 'none');
+}
+
+/*****************************************************************************
+  CLOCK
+*****************************************************************************/
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}, 1000);
+
+/*****************************************************************************
+  SYSTEM TOPOLOGY NODES (loaded from API, falls back to static)
+*****************************************************************************/
+let nodes = [], edges = [], scanData = {};
+
+async function loadTopology() {
+  try {
+    const d = await fetch(BASE + '/api/topology').then(r => r.json());
+    scanData = d;
+    buildNodesFromAPI(d);
+  } catch {
+    buildStaticNodes();
+  }
+}
+
+function buildNodesFromAPI(d) {
+  nodes = (d.nodes || []).map(n => ({
+    id: n.id, type: n.type || 'service', label: n.label || n.id,
+  }));
+  edges = (d.edges || []).map(e => [e.source, e.target]);
+  if (nodes.length === 0) buildStaticNodes();
+  document.getElementById('stats').textContent =
+    'NODES:' + nodes.length + ' | EDGES:' + edges.length + ' | PKT:' + packetCount;
+}
+
+function buildNodesFromScan(d) {
+  nodes = [
+    { id:'HOST',    type:'hub',   label:'HOST' },
+    { id:'HTTP',    type:'port',  label:':'+( (d.scan||{}).port||3000 ) },
+    { id:'WS',      type:'port',  label:'WS' },
+  ];
+  const engines = d.engines || {};
+  const topEngines = Object.keys(engines).filter(k=>engines[k]).slice(0,12);
+  topEngines.forEach(k => nodes.push({ id:k, type:'engine', label:k }));
+
+  edges = [
+    ['HOST','HTTP'],['HOST','WS'],
+    ...topEngines.map(k=>['HOST',k]),
+  ];
+
+  const nets = (d.scan||{}).network || [];
+  nets.slice(0,4).forEach(n => {
+    nodes.push({ id:n, type:'net', label:n });
+    edges.push(['HOST',n]);
+  });
+
+  document.getElementById('stats').textContent =
+    'NODES:' + nodes.length + ' | EDGES:' + edges.length + ' | PKT:' + packetCount;
+}
+
+function buildStaticNodes() {
+  nodes = [
+    {id:'C',    type:'drive', label:'C:'},{id:'D',    type:'drive', label:'D:'},{id:'E',    type:'drive', label:'E:'},
+    {id:'bridgeos',     type:'project', parent:'C', label:'bridgeos'},
+    {id:'BRIDGE_AI_OS', type:'project', parent:'C', label:'BRIDGE_AI_OS'},
+    {id:'BridgeAI_C',   type:'project', parent:'C', label:'BridgeAI_C'},
+    {id:'BRIDGE_PY',    type:'project', parent:'D', label:'BRIDGE_PY'},
+    {id:'authority',    type:'project', parent:'D', label:'authority'},
+    {id:'receipts',     type:'project', parent:'D', label:'receipts'},
+    {id:'IdentityVault',type:'project', parent:'E', label:'IdentityVault'},
+    {id:'BridgeAudit',  type:'project', parent:'E', label:'BridgeAudit'},
+    {id:'SVGEngine',    type:'project', parent:'E', label:'SVGEngine'},
+  ];
+  edges = [
+    ['C','bridgeos'],['C','BRIDGE_AI_OS'],['C','BridgeAI_C'],
+    ['D','BRIDGE_PY'],['D','authority'],['D','receipts'],
+    ['E','IdentityVault'],['E','BridgeAudit'],
+    ['bridgeos','BRIDGE_PY'],['BRIDGE_PY','BridgeAudit'],
+  ];
+}
+
+/*****************************************************************************
+  P5 VISUAL ENGINE
+*****************************************************************************/
+let packets = [];
+
+new p5(function(p) {
+
+  const CANVAS_PARENT = document.getElementById('p5-canvas-container');
+
+  p.setup = function() {
+    const cnv = p.createCanvas(CANVAS_PARENT.offsetWidth, CANVAS_PARENT.offsetHeight);
+    cnv.parent(CANVAS_PARENT);
+    p.textFont('Courier New');
+    loadTopology();
+  };
+
+  p.windowResized = function() {
+    p.resizeCanvas(CANVAS_PARENT.offsetWidth, CANVAS_PARENT.offsetHeight);
+  };
+
+  p.draw = function() {
+    p.background(5, 10, 16);
+
+    // Grid
+    p.stroke(0, 255, 255, 15);
+    p.strokeWeight(1);
+    for (let x = 0; x < p.width; x += 60) p.line(x, 0, x, p.height);
+    for (let y = 0; y < p.height; y += 60) p.line(0, y, p.width, y);
+
+    // Edges
+    p.strokeWeight(1);
+    edges.forEach(([a, b]) => {
+      const na = nodes.find(n => n.id === a);
+      const nb = nodes.find(n => n.id === b);
+      if (!na || !nb) return;
+      const [x1, y1] = nodePos(na);
+      const [x2, y2] = nodePos(nb);
+      p.stroke(0, 200, 255, 55);
+      p.line(x1, y1, x2, y2);
+    });
+
+    // Nodes
+    nodes.forEach(n => {
+      const [x, y] = nodePos(n);
+      const isHub  = n.type === 'hub' || n.type === 'drive';
+      const sz     = isHub ? 22 : 10;
+      const col    = nodeColor(n.type);
+
+      // Click detection — open node terminal
+      if (p.mouseIsPressed && p.dist(p.mouseX, p.mouseY, x, y) < sz + 6) {
+        openNodeTerminal(n.id);
+        p.mouseIsPressed = false; // debounce
+      }
+
+      // Hover highlight
+      const hovered = p.dist(p.mouseX, p.mouseY, x, y) < sz + 8;
+
+      // Glow
+      p.noStroke();
+      p.fill(col[0], col[1], col[2], hovered ? 60 : 30);
+      p.circle(x, y, sz * (hovered ? 3.2 : 2.6));
+
+      // Core
+      p.fill(hovered ? 255 : col[0], hovered ? 255 : col[1], hovered ? 255 : col[2]);
+      p.circle(x, y, sz);
+
+      // Label
+      p.fill(hovered ? 255 : 200);
+      p.noStroke();
+      p.textAlign(p.CENTER, p.TOP);
+      p.textSize(9);
+      p.text(n.label || n.id, x, y + sz / 2 + 4);
+    });
+
+    // Packets
+    if (p.frameCount % 8 === 0 && edges.length > 0) spawnPacket();
+
+    packets = packets.filter(pk => {
+      const na = nodes.find(n => n.id === pk.edge[0]);
+      const nb = nodes.find(n => n.id === pk.edge[1]);
+      if (!na || !nb) return false;
+      const [x1, y1] = nodePos(na);
+      const [x2, y2] = nodePos(nb);
+      const x = p.lerp(x1, x2, pk.t);
+      const y = p.lerp(y1, y2, pk.t);
+      p.noStroke();
+      p.fill(255, 0, 180, 200);
+      p.circle(x, y, 5);
+      pk.t += 0.025;
+      packetCount++;
+      return pk.t < 1;
+    });
+
+    // AI overlay
+    renderAIOverlay(p);
+
+    // Update stats periodically
+    if (p.frameCount % 60 === 0) {
+      document.getElementById('stats').textContent =
+        'NODES:' + nodes.length + ' | EDGES:' + edges.length + ' | PKT:' + packetCount;
+    }
+  };
+
+  function spawnPacket() {
+    if (edges.length === 0) return;
+    const edge = edges[Math.floor(Math.random() * edges.length)];
+    packets.push({ edge, t: 0 });
+  }
+
+  function nodePos(n) {
+    const cx = p.width / 2;
+    const cy = p.height / 2;
+    const idx = nodes.indexOf(n);
+    const total = nodes.length;
+
+    if (n.type === 'hub') return [cx, cy];
+    if (n.type === 'drive') {
+      const driveNodes = nodes.filter(x => x.type === 'drive');
+      const di = driveNodes.indexOf(n);
+      const angle = (di / driveNodes.length) * p.TWO_PI - p.HALF_PI;
+      return [cx + Math.cos(angle) * 140, cy + Math.sin(angle) * 100];
+    }
+
+    const angle = (idx / total) * p.TWO_PI;
+    const r     = Math.min(p.width, p.height) * 0.38;
+    return [cx + Math.cos(angle) * r, cy + Math.sin(angle) * r];
+  }
+
+  function nodeColor(type) {
+    return {
+      hub:     [0, 255, 255],
+      drive:   [0, 255, 255],
+      port:    [0, 255, 150],
+      engine:  [255, 200, 0],
+      net:     [100, 150, 255],
+      project: [0, 220, 100],
+    }[type] || [100, 100, 200];
+  }
+});
+
+/*****************************************************************************
+  FINANCE (CLIENT-SIDE TRACKING)
+*****************************************************************************/
+const Finance = {
+  ledger: [],
+  balance: 0,
+  recordRevenue(amount, source) {
+    this.balance += amount;
+    this.ledger.push({ type:'revenue', amount, source, t: Date.now() });
+  },
+  recordCost(amount, service) {
+    this.balance -= amount;
+    this.ledger.push({ type:'cost', amount, service, t: Date.now() });
+  },
+  report() {
+    return {
+      balance:  this.balance,
+      revenues: this.ledger.filter(x => x.type === 'revenue').length,
+      costs:    this.ledger.filter(x => x.type === 'cost').length,
+    };
+  },
+};
+
+function simulateRevenue() {
+  Finance.recordRevenue(Math.floor(Math.random() * 100), 'api_payment');
+}
+function simulateCost() {
+  Finance.recordCost(Math.floor(Math.random() * 50), 'infrastructure');
+}
+
+/*****************************************************************************
+  AI OVERLAY (P5 CANVAS — called from draw)
+*****************************************************************************/
+function renderAIOverlay(p) {
+  const r = Finance.report();
+  p.noStroke();
+  p.fill(0, 255, 200, 180);
+  p.textAlign(p.LEFT, p.BASELINE);
+  p.textSize(10);
+  const by = p.height - 10;
+  p.text('AI: AUTONOMOUS', 10, by - 55);
+  p.text('AGENTS: MONITOR · HEALER · OPTIMIZER', 10, by - 40);
+  p.fill(0, 255, 120, 180);
+  p.text('BALANCE: $' + r.balance + '  REV:' + r.revenues + '  COST:' + r.costs, 10, by - 20);
+}
+
+/*****************************************************************************
+  AI CONTROLS PANEL (added to DOM)
+*****************************************************************************/
+(function addAIControls() {
+  const panel = document.createElement('div');
+  panel.id = 'ai-ctrl-panel';
+  panel.style.cssText = 'background:#000;border:1px solid #0f9;padding:8px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;border-radius:4px;';
+  panel.innerHTML = `
+<div style="font-size:8px;letter-spacing:2px;color:#0f9;padding-bottom:4px;border-bottom:1px solid #0f92;margin-bottom:2px;">AI CONTROLS</div>
+<button style="background:#001a0a;border:1px solid #0f93;color:#0f9;padding:3px 7px;font-size:9px;font-family:monospace;cursor:pointer;" onclick="runSwarm('pm2 status')">AI STATUS</button>
+<button style="background:#001a0a;border:1px solid #0f93;color:#0f9;padding:3px 7px;font-size:9px;font-family:monospace;cursor:pointer;" onclick="runSwarm('docker stats --no-stream')">CONTAINERS</button>
+<button style="background:#001a0a;border:1px solid #0f93;color:#0f9;padding:3px 7px;font-size:9px;font-family:monospace;cursor:pointer;" onclick="simulateRevenue();simulateCost()">+ SIM TX</button>
+  `;
+  const rightSidebar = document.getElementById('right-sidebar');
+  if (rightSidebar) rightSidebar.appendChild(panel);
+  else document.body.appendChild(panel);
+})();
+
+/*****************************************************************************
+  ECONOMICS ENGINE — full cross-platform aggregator
+*****************************************************************************/
+let economicsData = null;
+
+async function loadEconomics() {
+  try {
+    const raw = await fetch(BASE + '/api/marketplace/stats').then(r => r.json()).then(d => d.data || d);
+    // Map API stats to economics format
+    economicsData = {
+      totals: {
+        usd_monthly: raw.revenue_mtd || Math.floor((raw.total_tasks || 0) * 49),
+        usd_yearly: (raw.revenue_mtd || Math.floor((raw.total_tasks || 0) * 49)) * 12,
+        zar_invoice: Math.floor((raw.revenue_mtd || 5000) * 18.5),
+      },
+      platforms: [
+        { id: 'saas', name: 'Bridge AI SaaS', type: 'subscription', status: 'active', location: 'gateway.js',
+          mrr_potential: raw.revenue_mtd || 28450,
+          plans: [
+            { name: 'Starter', price_monthly: 49, price_yearly: 490, api_limit: 10000, token_limit: 500000 },
+            { name: 'Pro', price_monthly: 149, price_yearly: 1490, api_limit: 100000, token_limit: 5000000 },
+            { name: 'Enterprise', price_monthly: 499, price_yearly: 4990, api_limit: 0, token_limit: 0 },
+          ] },
+        { id: 'agents', name: 'Agent Marketplace', type: 'marketplace', status: 'active', location: 'agents/',
+          stats: { leads: raw.total_tasks || 13, clicks: (raw.total_agents || 3) * 120 },
+          base_url: window.location.origin + '/marketplace.html' },
+        { id: 'infra', name: 'Infrastructure', type: 'cost-center', status: 'deployed', location: 'Xcontainerx/',
+          line_items: [
+            { description: 'Vercel Pro', total_zar: 740 },
+            { description: 'Domain & SSL', total_zar: 350 },
+            { description: 'API Compute', total_zar: 2800 },
+          ],
+          subtotal_zar: 3890, vat_rate: '15%', vat_zar: 583.5, total_zar: 4473.5 },
+      ],
+    };
+    renderEconomicsPanel(economicsData);
+    renderEconomicsOverlay();
+  } catch (e) {
+    console.warn('Economics API unavailable:', e.message);
+  }
+}
+
+function renderEconomicsPanel(data) {
+  const panel = document.getElementById('econ-container');
+  if (!panel || !data) return;
+
+  const fmt = (n, cur) => cur === 'ZAR' ? 'R' + Number(n).toLocaleString() :
+                           cur === 'USD' ? '$' + Number(n).toLocaleString() :
+                           cur === 'USDC' ? Number(n).toLocaleString() + ' USDC' : String(n);
+
+  let html = `<div class="econ-title">◈ ECONOMICS — LIVE</div>`;
+
+  // Totals bar
+  html += `<div class="econ-totals">
+    <span>SaaS MRR</span><span class="econ-val green">$${data.totals.usd_monthly}/mo</span>
+    <span>ARR</span><span class="econ-val green">$${data.totals.usd_yearly}/yr</span>
+    <span>Invoice</span><span class="econ-val gold">R${Number(data.totals.zar_invoice).toLocaleString()}</span>
+  </div>`;
+
+  // Each platform
+  (data.platforms || []).forEach(p => {
+    const statusCol = p.status === 'active' || p.status === 'deployed' ? '#0f9' :
+                      p.status === 'configured' ? '#0cf' :
+                      p.status === 'protocol-defined' ? '#f90' : '#556';
+
+    html += `<div class="econ-platform" onclick="togglePlatform('${p.id}')">
+      <div class="econ-ph">
+        <span style="color:${statusCol}">▸ ${p.name}</span>
+        <span class="econ-badge">${p.type.toUpperCase()}</span>
+      </div>
+      <div class="econ-body" id="econ-${p.id}" style="display:none;">`;
+
+    if (p.plans) {
+      p.plans.forEach(plan => {
+        const mo = plan.price_monthly > 0 ? `$${plan.price_monthly}/mo` : 'FREE';
+        const yr = plan.price_yearly > 0 ? ` · $${plan.price_yearly}/yr` : '';
+        html += `<div class="econ-row"><span>${plan.name}</span><span class="econ-val">${mo}${yr}</span></div>`;
+        if (plan.api_limit) html += `<div class="econ-sub">${Number(plan.api_limit).toLocaleString()} req · ${Number(plan.token_limit).toLocaleString()} tokens</div>`;
+        if (!plan.api_limit) html += `<div class="econ-sub">UNLIMITED · dedicated SLA</div>`;
+      });
+      html += `<div class="econ-row green"><span>MRR Potential</span><span class="econ-val">$${p.mrr_potential}/mo</span></div>`;
+    }
+
+    if (p.line_items) {
+      p.line_items.forEach(li => {
+        html += `<div class="econ-row"><span>${li.description}</span><span class="econ-val">R${Number(li.total_zar).toLocaleString()}</span></div>`;
+      });
+      html += `<div class="econ-row"><span>Subtotal</span><span class="econ-val">R${Number(p.subtotal_zar).toLocaleString()}</span></div>`;
+      html += `<div class="econ-row"><span>VAT (${p.vat_rate})</span><span class="econ-val">R${Number(p.vat_zar).toLocaleString()}</span></div>`;
+      html += `<div class="econ-row green"><span>TOTAL</span><span class="econ-val">R${Number(p.total_zar).toLocaleString()}</span></div>`;
+    }
+
+    if (p.stats) {
+      html += `<div class="econ-row"><span>Leads Captured</span><span class="econ-val">${p.stats.leads}</span></div>`;
+      html += `<div class="econ-row"><span>Clicks Tracked</span><span class="econ-val">${p.stats.clicks}</span></div>`;
+      html += `<div class="econ-row"><span>Base URL</span><span class="econ-val econ-url">${p.base_url||''}</span></div>`;
+    }
+
+    if (p.flows) {
+      p.flows.forEach(f => {
+        html += `<div class="econ-row"><span>▸ ${f}</span></div>`;
+      });
+      if (p.mechanism) html += `<div class="econ-sub">${p.mechanism}</div>`;
+    }
+
+    html += `<div class="econ-sub">📁 ${p.location}</div>`;
+    html += `</div></div>`;
+  });
+
+  panel.innerHTML = html;
+}
+
+function togglePlatform(id) {
+  const el = document.getElementById('econ-' + id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function renderEconomicsOverlay() {
+  // Updates the p5 overlay with real economics data (called after data loads)
+  if (economicsData) {
+    const t = economicsData.totals;
+    document.getElementById('econ-hud').textContent =
+      `SaaS $${t.usd_monthly}/mo | Invoice R${Number(t.zar_invoice).toLocaleString()} | ${(economicsData.platforms||[]).length} platforms`;
+  }
+}
+
+/*****************************************************************************
+  REALTIME SYNC + MONITOR POLL
+*****************************************************************************/
+setInterval(() => { loadTopology(); }, 30000);
+setInterval(() => { loadEconomics(); }, 60000);
+
+// ── DETAIL POPUP CARD ──
+let detailCache = {};
+
+function closeDetail() {
+  document.getElementById('detail-card').style.display = 'none';
+  document.getElementById('detail-backdrop').style.display = 'none';
+}
+
+function showDetailCard(title, html) {
+  document.getElementById('detail-title').textContent = title;
+  document.getElementById('detail-body').innerHTML = html;
+  document.getElementById('detail-card').style.display = 'block';
+  document.getElementById('detail-backdrop').style.display = 'block';
+}
+
+function row(label, val, color) {
+  return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #0ff1;"><span style="color:#556">' + label + '</span><span style="color:' + (color||'#0f9') + '">' + val + '</span></div>';
+}
+
+async function showDetail(type) {
+  const R = '#f44', G = '#0f9', C = '#0ff', Y = '#fc0';
+
+  if (type === 'gateway') {
+    try {
+      const t0 = performance.now();
+      const r = await fetch(BASE + '/health');
+      const ms = Math.floor(performance.now() - t0);
+      const d = await r.json();
+      showDetailCard('GATEWAY HEALTH', row('Status', d.status, d.status==='OK'?G:R) + row('Response Time', ms+'ms', ms<500?G:Y) + row('Core', d.core||'serverless', C) + row('Gateway', d.gateway||'up', G) + row('Timestamp', new Date(d.ts).toLocaleString(), C) + row('Environment', 'Vercel Serverless', C) + row('Protocol', 'HTTPS/2', C) + row('Region', 'iad1 (US-East)', C));
+    } catch(e) { showDetailCard('GATEWAY', row('Error', e.message, R)); }
+  }
+
+  else if (type === 'api') {
+    try {
+      const t0 = performance.now();
+      const r = await fetch(BASE + '/api/status');
+      const ms = Math.floor(performance.now() - t0);
+      const d = await r.json();
+      let html = row('Overall', d.overall||'serverless', G) + row('Response Time', ms+'ms', ms<500?G:Y);
+      (d.services||[]).forEach(s => {
+        html += row(s.id.toUpperCase(), s.status.toUpperCase() + (s.latency_ms>=0?' ('+s.latency_ms+'ms)':''), s.status==='up'?G:R);
+      });
+      html += row('Timestamp', new Date(d.ts).toLocaleString(), C);
+      showDetailCard('API STATUS', html);
+    } catch(e) { showDetailCard('API', row('Error', e.message, R)); }
+  }
+
+  else if (type === 'agents') {
+    try {
+      const r = await fetch(BASE + '/api/agents');
+      const d = await r.json();
+      let html = row('Total Agents', d.count||0, C);
+      const layers = d.layers || {};
+      Object.entries(layers).forEach(([k,v]) => {
+        html += row(k + ' Status', v.status||'--', v.status==='up'?G:Y) + row(k + ' Count', v.count||0, C);
+      });
+      html += '<div style="margin-top:8px;border-top:1px solid #0ff2;padding-top:6px;font-size:8px;letter-spacing:1px;color:#0ff;margin-bottom:4px;">AGENT LIST</div>';
+      (d.agents||[]).forEach(a => {
+        html += row(a.name||a.id, (a.status||'active').toUpperCase() + (a.layer?' ['+a.layer+']':''), a.status==='active'?G:Y);
+      });
+      showDetailCard('AGENT SWARM', html);
+    } catch(e) { showDetailCard('AGENTS', row('Error', e.message, R)); }
+  }
+
+  else if (type === 'treasury') {
+    try {
+      const r = await fetch(BASE + '/api/treasury/summary');
+      const d = await r.json();
+      let html = row('Balance', '$'+Number(d.balance).toLocaleString(undefined,{minimumFractionDigits:2}), G)
+        + row('Currency', d.currency||'USD', C)
+        + row('Revenue MTD', '$'+Number(d.revenue_mtd).toLocaleString(), G)
+        + row('Costs MTD', '$'+Number(d.costs_mtd).toLocaleString(), R)
+        + row('Net MTD', '$'+Number(d.net_mtd).toLocaleString(), d.net_mtd>=0?G:R)
+        + row('Subscriptions', d.subscriptions||0, C);
+      html += '<div style="margin-top:8px;border-top:1px solid #0ff2;padding-top:6px;font-size:8px;letter-spacing:1px;color:#0ff;margin-bottom:4px;">PLANS</div>';
+      (d.plans||[]).forEach(p => {
+        html += row(p.name + ' ($'+p.price+'/mo)', p.count+' subs — $'+Number(p.revenue).toLocaleString(), C);
+      });
+      showDetailCard('TREASURY', html);
+    } catch(e) { showDetailCard('TREASURY', row('Error', e.message, R)); }
+  }
+
+  else if (type === 'overall') {
+    try {
+      const [h, s, a, t] = await Promise.all([
+        fetch(BASE+'/health').then(r=>({ok:r.ok,ms:0})).catch(()=>({ok:false})),
+        fetch(BASE+'/api/status').then(r=>r.json()).catch(()=>({})),
+        fetch(BASE+'/api/agents').then(r=>r.json()).catch(()=>({})),
+        fetch(BASE+'/api/treasury/summary').then(r=>r.json()).catch(()=>({})),
+      ]);
+      const allUp = h.ok && (s.services||[]).every(sv=>sv.status==='up'||sv.status==='remote');
+      let html = row('System Status', allUp?'ALL SYSTEMS OPERATIONAL':'DEGRADED', allUp?G:R)
+        + row('Gateway', h.ok?'ONLINE':'OFFLINE', h.ok?G:R)
+        + row('Services', (s.services||[]).length+' monitored', C)
+        + row('Agents', (a.count||0)+' active', C)
+        + row('Treasury', '$'+Number(t.balance||0).toLocaleString(undefined,{minimumFractionDigits:2}), G)
+        + row('Subscriptions', t.subscriptions||0, C)
+        + row('Net Revenue', '$'+Number(t.net_mtd||0).toLocaleString(), t.net_mtd>=0?G:R)
+        + row('Mode', 'Serverless (Vercel)', C)
+        + row('Last Check', new Date().toLocaleString(), C);
+      showDetailCard('SYSTEM OVERVIEW', html);
+    } catch(e) { showDetailCard('OVERALL', row('Error', e.message, R)); }
+  }
+
+  else if (type === 'cpu' || type === 'mem' || type === 'uptime' || type === 'load') {
+    try {
+      const r = await fetch(BASE + '/api/registry/kernel');
+      const j = await r.json();
+      const d = j.data || j;
+      const totalMem = d.total_memory_bytes||0;
+      const freeMem = d.free_memory_bytes||0;
+      const usedMB = Math.floor((totalMem-freeMem)/1048576);
+      const totalMB = Math.floor(totalMem/1048576);
+      const memPct = totalMem>0?Math.round((1-freeMem/totalMem)*100):0;
+      const load = d.loadavg||[0,0,0];
+      const upSec = d.uptime_seconds||0;
+
+      let html = '<div style="margin-bottom:8px;font-size:8px;letter-spacing:1px;color:#0ff;">KERNEL INFO</div>'
+        + row('OS', d.os_type+' '+d.os_release, C)
+        + row('Platform', d.os_platform+' / '+d.os_arch, C)
+        + row('Hostname', d.hostname||'--', C)
+        + row('CPU Model', d.cpu_model||'--', C)
+        + row('CPU Cores', d.cpu_cores||0, C)
+        + row('CPU Speed', (d.cpu_speed_mhz||0)+' MHz', C)
+        + '<div style="margin:8px 0 4px;border-top:1px solid #0ff2;padding-top:6px;font-size:8px;letter-spacing:1px;color:#0ff;">MEMORY</div>'
+        + row('Total', totalMB+'MB ('+((totalMem/1073741824).toFixed(1))+'GB)', C)
+        + row('Used', usedMB+'MB', Y)
+        + row('Free', Math.floor(freeMem/1048576)+'MB', G)
+        + row('Usage', memPct+'%', memPct>80?R:memPct>50?Y:G)
+        + '<div style="margin:8px 0 4px;border-top:1px solid #0ff2;padding-top:6px;font-size:8px;letter-spacing:1px;color:#0ff;">LOAD</div>'
+        + row('1 min', load[0].toFixed(2), load[0]>1?R:G)
+        + row('5 min', load[1].toFixed(2), load[1]>1?R:G)
+        + row('15 min', load[2].toFixed(2), load[2]>1?R:G)
+        + '<div style="margin:8px 0 4px;border-top:1px solid #0ff2;padding-top:6px;font-size:8px;letter-spacing:1px;color:#0ff;">UPTIME</div>'
+        + row('Seconds', Math.floor(upSec), C)
+        + row('Formatted', Math.floor(upSec/86400)+'d '+Math.floor((upSec%86400)/3600)+'h '+Math.floor((upSec%3600)/60)+'m', G);
+      showDetailCard('SYSTEM DETAILS — ' + type.toUpperCase(), html);
+    } catch(e) { showDetailCard('SYSTEM', row('Error', e.message, '#f44')); }
+  }
+}
+
+// ── HEALTH CHECK PANEL ──
+async function pollHealth() {
+  const checks = [
+    { id: 'hp-gateway', url: BASE + '/health', label: 'GATEWAY' },
+    { id: 'hp-api', url: BASE + '/api/status', label: 'API' },
+    { id: 'hp-agents', url: BASE + '/api/agents', label: 'AGENTS' },
+    { id: 'hp-treasury', url: BASE + '/api/treasury/summary', label: 'TREASURY' },
+  ];
+  let allOk = true;
+  for (const c of checks) {
+    const el = document.getElementById(c.id);
+    try {
+      const t0 = performance.now();
+      const r = await fetch(c.url, { signal: AbortSignal.timeout(5000) });
+      const ms = Math.floor(performance.now() - t0);
+      if (r.ok) {
+        el.textContent = 'OK ' + ms + 'ms';
+        el.style.color = '#0f9';
+      } else {
+        el.textContent = 'ERR ' + r.status;
+        el.style.color = '#f44';
+        allOk = false;
+      }
+    } catch (e) {
+      el.textContent = 'DOWN';
+      el.style.color = '#f44';
+      allOk = false;
+    }
+  }
+  const ov = document.getElementById('hp-overall');
+  ov.textContent = allOk ? 'ALL SYSTEMS GO' : 'DEGRADED';
+  ov.style.color = allOk ? '#0f9' : '#f44';
+}
+pollHealth();
+setInterval(pollHealth, 15000);
+
+// System monitor: use WebSocket if available, else poll API
+if (IS_SERVERLESS) {
+  async function pollSysMonitor() {
+    try {
+      const r = await fetch(BASE + '/api/registry/kernel');
+      const j = await r.json();
+      const d = j.data || j;
+      const totalMem = d.total_memory_bytes || 0;
+      const freeMem = d.free_memory_bytes || 0;
+      const usedMB = Math.floor((totalMem - freeMem) / 1048576);
+      const memPct = totalMem > 0 ? Math.round((1 - freeMem / totalMem) * 100) : 0;
+      document.getElementById('mon-cpu').textContent = d.memory_usage_pct ? d.loadavg[0].toFixed(2) : (d.cpu_cores || 0) + ' cores';
+      document.getElementById('mon-mem').textContent = usedMB + 'MB (' + memPct + '%)';
+      const upSec = d.uptime_seconds || 0;
+      const upH = Math.floor(upSec / 3600);
+      const upM = Math.floor((upSec % 3600) / 60);
+      document.getElementById('mon-up').textContent = upH + 'h ' + upM + 'm';
+      const load = d.loadavg || [0, 0, 0];
+      document.getElementById('mon-load').textContent = load.map(v => v.toFixed(2)).join(' ');
+    } catch (e) {}
+  }
+  pollSysMonitor();
+  setInterval(pollSysMonitor, 10000);
+} else {
+  setInterval(() => { wsSend({ type:'monitor' }); }, 5000);
+}
+
+/*****************************************************************************
+  BOOT
+*****************************************************************************/
+wsConnect();
+// Authenticate as root (default)
+setTimeout(() => { wsSend({ type:'auth', user:'root' }); }, 400);
+// Auto-start 2 terminals
+setTimeout(() => { createTerminal(); createTerminal(); }, 700);
+// Load economics data
+setTimeout(() => { loadEconomics(); }, 1000);
+</script>
+</body>
+</html>

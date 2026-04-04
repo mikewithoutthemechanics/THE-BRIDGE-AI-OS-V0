@@ -1,0 +1,726 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+<defs>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- TURBULENCE PRIMITIVES                        -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!-- Aurora atmospheric turbulence — organic wave -->
+  <filter id="fAurora" x="-80%" y="-80%" width="260%" height="260%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.055" numOctaves="4" seed="12" result="noise">
+      <animate attributeName="seed" values="12;88;34;67;12" dur="14s" repeatCount="indefinite"/>
+      <animate attributeName="baseFrequency" values="0.008 0.055;0.012 0.04;0.006 0.07;0.008 0.055" dur="18s" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="28" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+    <feGaussianBlur in="displaced" stdDeviation="16" result="blurred"/>
+    <feColorMatrix type="matrix"
+      values="0 1.8 0.5 0 0
+              0 1.4 0.8 0 0
+              0 0.3 1.6 0 0
+              0 0   0   1 0" in="blurred" result="tinted"/>
+    <feMerge><feMergeNode in="tinted"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Omega plasma distortion — violent field -->
+  <filter id="fOmega" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB">
+    <feTurbulence type="turbulence" baseFrequency="0.022 0.018" numOctaves="3" seed="7" result="plasma">
+      <animate attributeName="baseFrequency" values="0.022 0.018;0.035 0.012;0.018 0.028;0.022 0.018" dur="9s" repeatCount="indefinite"/>
+      <animate attributeName="seed" values="7;42;19;7" dur="12s" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="plasma" scale="22" xChannelSelector="R" yChannelSelector="B" result="warp"/>
+    <feGaussianBlur in="warp" stdDeviation="14" result="glow"/>
+    <feColorMatrix type="matrix"
+      values="1.2 0   1.4 0 0
+              0   0   0.6 0 0
+              0.8 0   2.0 0 0
+              0   0   0   1 0" in="glow" result="violet"/>
+    <feMerge><feMergeNode in="violet"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Halo crystalline — sharp ice diffraction -->
+  <filter id="fHalo" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+    <feGaussianBlur stdDeviation="9" result="ice"/>
+    <feColorMatrix type="matrix"
+      values="0.6 0.4 0.9 0 0.04
+              0.4 0.7 1.0 0 0.04
+              0.5 0.5 1.3 0 0.08
+              0   0   0   1 0" in="ice" result="crystal"/>
+    <feMerge><feMergeNode in="crystal"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Atlas forge — molten heat shimmer -->
+  <filter id="fAtlas" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.04 0.02" numOctaves="2" seed="3" result="heat">
+      <animate attributeName="baseFrequency" values="0.04 0.02;0.055 0.015;0.035 0.025;0.04 0.02" dur="7s" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="heat" scale="12" xChannelSelector="R" yChannelSelector="G" result="shimmer"/>
+    <feGaussianBlur in="shimmer" stdDeviation="11" result="forge"/>
+    <feColorMatrix type="matrix"
+      values="2.0 0.5 0   0 0
+              0.9 1.1 0   0 0
+              0   0.1 0.1 0 0
+              0   0   0   1 0" in="forge" result="molten"/>
+    <feMerge><feMergeNode in="molten"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Core cyan plasma -->
+  <filter id="fCore" x="-80%" y="-80%" width="260%" height="260%">
+    <feGaussianBlur stdDeviation="32" result="halo"/>
+    <feColorMatrix type="matrix"
+      values="0   1.5 1.0 0 0
+              0   1.0 1.2 0 0
+              0.5 0.5 1.8 0 0
+              0   0   0   1 0" in="halo" result="cyan"/>
+    <feMerge><feMergeNode in="cyan"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Soft glow variants -->
+  <filter id="fGlow" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="10" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="fText" x="-15%" y="-50%" width="130%" height="200%">
+    <feGaussianBlur stdDeviation="6" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="fStar" x="-300%" y="-300%" width="700%" height="700%">
+    <feGaussianBlur stdDeviation="3.5"/>
+  </filter>
+  <filter id="fLine" x="-8%" y="-25%" width="116%" height="150%">
+    <feGaussianBlur stdDeviation="2.5" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- GRADIENTS                                   -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <radialGradient id="gBg" cx="50%" cy="46%" r="65%">
+    <stop offset="0%"   stop-color="#040e22"/>
+    <stop offset="45%"  stop-color="#020810"/>
+    <stop offset="100%" stop-color="#000000"/>
+  </radialGradient>
+
+  <!-- Aurora: living teal-cyan-violet sky -->
+  <linearGradient id="gAuroraB1" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#00ff9d" stop-opacity="0"/>
+    <stop offset="18%"  stop-color="#00ffcc" stop-opacity="0.75"/>
+    <stop offset="42%"  stop-color="#00e5ff" stop-opacity="0.95"/>
+    <stop offset="65%"  stop-color="#7c3aed" stop-opacity="0.80"/>
+    <stop offset="88%"  stop-color="#00ff9d" stop-opacity="0.55"/>
+    <stop offset="100%" stop-color="#00ffcc" stop-opacity="0"/>
+    <animateTransform attributeName="gradientTransform" type="translate"
+      values="-0.3 0;0.3 0;-0.3 0" dur="11s" repeatCount="indefinite"/>
+  </linearGradient>
+  <linearGradient id="gAuroraB2" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#4fffb0" stop-opacity="0"/>
+    <stop offset="25%"  stop-color="#00e5ff" stop-opacity="0.60"/>
+    <stop offset="55%"  stop-color="#a855f7" stop-opacity="0.70"/>
+    <stop offset="80%"  stop-color="#00ffcc" stop-opacity="0.45"/>
+    <stop offset="100%" stop-color="#4fffb0" stop-opacity="0"/>
+    <animateTransform attributeName="gradientTransform" type="translate"
+      values="0.2 0;-0.2 0;0.2 0" dur="15s" repeatCount="indefinite"/>
+  </linearGradient>
+  <linearGradient id="gAuroraB3" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#00ff9d" stop-opacity="0"/>
+    <stop offset="35%"  stop-color="#00ffaa" stop-opacity="0.45"/>
+    <stop offset="70%"  stop-color="#6366f1" stop-opacity="0.50"/>
+    <stop offset="100%" stop-color="#00ff9d" stop-opacity="0"/>
+  </linearGradient>
+
+  <!-- Omega plasma -->
+  <radialGradient id="gOmegaCore" cx="50%" cy="50%" r="50%">
+    <stop offset="0%"   stop-color="#ff00dd" stop-opacity="0.90"/>
+    <stop offset="35%"  stop-color="#8800ff" stop-opacity="0.65"/>
+    <stop offset="75%"  stop-color="#330066" stop-opacity="0.28"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="gOmegaArc" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#ff00cc" stop-opacity="0"/>
+    <stop offset="28%"  stop-color="#dd00ff"/>
+    <stop offset="65%"  stop-color="#6600ff"/>
+    <stop offset="100%" stop-color="#ff00cc" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="gOmegaRing" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#ff00cc"/>
+    <stop offset="50%"  stop-color="#7700ff"/>
+    <stop offset="100%" stop-color="#ff00cc"/>
+  </linearGradient>
+
+  <!-- Halo crystalline -->
+  <linearGradient id="gHaloRing" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#c8eeff" stop-opacity="0"/>
+    <stop offset="22%"  stop-color="#a8d8ff"/>
+    <stop offset="50%"  stop-color="#ffffff"/>
+    <stop offset="78%"  stop-color="#a8d8ff"/>
+    <stop offset="100%" stop-color="#c8eeff" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="gHaloNode" cx="50%" cy="50%" r="50%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="55%"  stop-color="#88ccff"/>
+    <stop offset="100%" stop-color="#224466"/>
+  </radialGradient>
+
+  <!-- Atlas forge -->
+  <linearGradient id="gAtlasForge" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#ff9500" stop-opacity="0"/>
+    <stop offset="22%"  stop-color="#ffd200"/>
+    <stop offset="52%"  stop-color="#ff6600"/>
+    <stop offset="78%"  stop-color="#cc1100"/>
+    <stop offset="100%" stop-color="#ff9500" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="gAtlasNode" cx="50%" cy="50%" r="50%">
+    <stop offset="0%"   stop-color="#ffe566"/>
+    <stop offset="50%"  stop-color="#ff8800"/>
+    <stop offset="100%" stop-color="#660000"/>
+  </radialGradient>
+
+  <!-- SupaC core -->
+  <radialGradient id="gCorePlasma" cx="50%" cy="50%" r="50%">
+    <stop offset="0%"   stop-color="#00ffee" stop-opacity="0.40"/>
+    <stop offset="38%"  stop-color="#0077ff" stop-opacity="0.20"/>
+    <stop offset="75%"  stop-color="#002266" stop-opacity="0.08"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="gCArc" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#ffd200"/>
+    <stop offset="28%"  stop-color="#00e5ff"/>
+    <stop offset="65%"  stop-color="#0077ff"/>
+    <stop offset="100%" stop-color="#0033bb"/>
+  </linearGradient>
+
+  <!-- Wordmark -->
+  <linearGradient id="gSupa" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="42%"  stop-color="#7df9ff"/>
+    <stop offset="100%" stop-color="#0099ee"/>
+  </linearGradient>
+  <linearGradient id="gC" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#ffe566"/>
+    <stop offset="48%"  stop-color="#ff8800"/>
+    <stop offset="100%" stop-color="#ff1100"/>
+  </linearGradient>
+
+  <!-- Agent node fills -->
+  <radialGradient id="gnA" cx="40%" cy="40%" r="55%">
+    <stop offset="0%"   stop-color="#88fff0"/>
+    <stop offset="100%" stop-color="#004433"/>
+  </radialGradient>
+  <radialGradient id="gnO" cx="40%" cy="40%" r="55%">
+    <stop offset="0%"   stop-color="#ff88ee"/>
+    <stop offset="100%" stop-color="#440066"/>
+  </radialGradient>
+  <radialGradient id="gnH" cx="40%" cy="40%" r="55%">
+    <stop offset="0%"   stop-color="#eef8ff"/>
+    <stop offset="100%" stop-color="#224466"/>
+  </radialGradient>
+  <radialGradient id="gnAt" cx="40%" cy="40%" r="55%">
+    <stop offset="0%"   stop-color="#ffe566"/>
+    <stop offset="100%" stop-color="#661100"/>
+  </radialGradient>
+
+  <!-- Tag fade -->
+  <linearGradient id="gTagFade" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#00e5ff" stop-opacity="0"/>
+    <stop offset="20%"  stop-color="#00e5ff"/>
+    <stop offset="80%"  stop-color="#00e5ff"/>
+    <stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+  </linearGradient>
+
+</defs>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 0. VOID — deep space canvas                         -->
+<!-- ═══════════════════════════════════════════════════ -->
+<rect width="1000" height="1000" fill="url(#gBg)"/>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 1. STAR FIELD                                       -->
+<!-- ═══════════════════════════════════════════════════ -->
+<g>
+  <circle cx="55"  cy="40"  r="0.9" fill="#aac8ff" opacity="0.40"/>
+  <circle cx="140" cy="115" r="1.1" fill="#fff"    opacity="0.33"/>
+  <circle cx="224" cy="66"  r="0.8" fill="#cce0ff" opacity="0.38"/>
+  <circle cx="316" cy="24"  r="1.0" fill="#fff"    opacity="0.26"/>
+  <circle cx="410" cy="80"  r="1.2" fill="#aac8ff" opacity="0.42"/>
+  <circle cx="516" cy="33"  r="0.9" fill="#fff"    opacity="0.36"/>
+  <circle cx="626" cy="60"  r="1.0" fill="#cce0ff" opacity="0.28"/>
+  <circle cx="733" cy="26"  r="1.1" fill="#fff"    opacity="0.40"/>
+  <circle cx="826" cy="86"  r="0.8" fill="#aac8ff" opacity="0.33"/>
+  <circle cx="910" cy="46"  r="1.0" fill="#fff"    opacity="0.26"/>
+  <circle cx="963" cy="113" r="1.1" fill="#cce0ff" opacity="0.40"/>
+  <circle cx="46"  cy="183" r="0.9" fill="#fff"    opacity="0.22"/>
+  <circle cx="176" cy="230" r="1.2" fill="#cce0ff" opacity="0.33"/>
+  <circle cx="284" cy="190" r="1.0" fill="#fff"    opacity="0.40"/>
+  <circle cx="470" cy="206" r="1.1" fill="#fff"    opacity="0.36"/>
+  <circle cx="680" cy="140" r="1.0" fill="#fff"    opacity="0.22"/>
+  <circle cx="770" cy="200" r="1.2" fill="#aac8ff" opacity="0.40"/>
+  <circle cx="863" cy="170" r="0.9" fill="#fff"    opacity="0.33"/>
+  <circle cx="30"  cy="310" r="1.0" fill="#fff"    opacity="0.22"/>
+  <circle cx="116" cy="373" r="1.2" fill="#cce0ff" opacity="0.40"/>
+  <circle cx="976" cy="300" r="1.1" fill="#aac8ff" opacity="0.36"/>
+  <circle cx="920" cy="370" r="0.9" fill="#fff"    opacity="0.30"/>
+  <circle cx="43"  cy="710" r="1.0" fill="#fff"    opacity="0.22"/>
+  <circle cx="146" cy="766" r="1.1" fill="#cce0ff" opacity="0.33"/>
+  <circle cx="246" cy="726" r="0.8" fill="#aac8ff" opacity="0.36"/>
+  <circle cx="853" cy="740" r="1.0" fill="#aac8ff" opacity="0.40"/>
+  <circle cx="950" cy="773" r="1.1" fill="#fff"    opacity="0.26"/>
+  <circle cx="60"  cy="856" r="1.2" fill="#aac8ff" opacity="0.36"/>
+  <circle cx="266" cy="870" r="1.0" fill="#cce0ff" opacity="0.26"/>
+  <circle cx="838" cy="890" r="0.9" fill="#aac8ff" opacity="0.33"/>
+  <circle cx="956" cy="960" r="1.2" fill="#fff"    opacity="0.40"/>
+  <!-- Bright accents -->
+  <circle cx="170" cy="140" r="1.9" fill="#00ffcc" opacity="0.75" filter="url(#fStar)"/>
+  <circle cx="826" cy="160" r="1.7" fill="#7df9ff" opacity="0.70" filter="url(#fStar)"/>
+  <circle cx="86"  cy="603" r="1.8" fill="#fff"    opacity="0.62" filter="url(#fStar)"/>
+  <circle cx="910" cy="580" r="1.6" fill="#fff"    opacity="0.58" filter="url(#fStar)"/>
+  <circle cx="146" cy="1050" r="1.7" fill="#7df9ff" opacity="0.68" filter="url(#fStar)"/>
+  <circle cx="850" cy="1056" r="1.9" fill="#ffd200" opacity="0.72" filter="url(#fStar)"/>
+  <!-- Agent signature stars -->
+  <circle cx="178" cy="446" r="1.5" fill="#00ffcc" opacity="0.60" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.60;0.10;0.60" dur="5.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="818" cy="428" r="1.5" fill="#cc00ff" opacity="0.55" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.55;0.08;0.55" dur="4.6s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="498" cy="126" r="1.6" fill="#dff4ff" opacity="0.58" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.58;0.10;0.58" dur="6.1s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="498" cy="858" r="1.6" fill="#ffd200" opacity="0.58" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.58;0.10;0.58" dur="5.5s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Twinklers -->
+  <circle cx="336" cy="110" r="1.8" fill="#fff" opacity="0.88" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.88;0.08;0.88" dur="2.8s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="860" cy="126" r="1.5" fill="#00ffcc" opacity="0.82" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.82;0.08;0.82" dur="3.6s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="106" cy="506" r="1.9" fill="#7df9ff" opacity="0.82" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.82;0.08;0.82" dur="4.4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="890" cy="486" r="1.7" fill="#7df9ff" opacity="0.75" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.75;0.15;0.75" dur="3.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="223" cy="896" r="1.6" fill="#fff" opacity="0.82" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.82;0.12;0.82" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="773" cy="880" r="1.8" fill="#ffd200" opacity="0.72" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.72;0.06;0.72" dur="3.9s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="486" cy="956" r="1.5" fill="#7df9ff" opacity="0.78" filter="url(#fStar)">
+    <animate attributeName="opacity" values="0.78;0.18;0.78" dur="5.2s" repeatCount="indefinite"/>
+  </circle>
+</g>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 2A. AURORA ENGINE — atmospheric curtain waves       -->
+<!-- Teal / cyan / violet — sky intelligence layer       -->
+<!-- ═══════════════════════════════════════════════════ -->
+<g filter="url(#fAurora)">
+  <!-- Band 1 — primary curtain sweep -->
+  <ellipse cx="500" cy="248" rx="435" ry="62" fill="url(#gAuroraB1)" opacity="0.52">
+    <animate attributeName="ry"  values="62;88;52;76;62"       dur="10s" repeatCount="indefinite"/>
+    <animate attributeName="cy"  values="248;222;265;235;248"  dur="13s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.52;0.22;0.48;0.18;0.52" dur="11s" repeatCount="indefinite"/>
+  </ellipse>
+  <!-- Band 2 — secondary shimmer -->
+  <ellipse cx="500" cy="188" rx="370" ry="40" fill="url(#gAuroraB2)" opacity="0.42">
+    <animate attributeName="ry"  values="40;60;32;52;40"       dur="13s" repeatCount="indefinite"/>
+    <animate attributeName="cy"  values="188;166;202;175;188"  dur="17s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.42;0.12;0.38;0.10;0.42" dur="14s" repeatCount="indefinite"/>
+  </ellipse>
+  <!-- Band 3 — high faint ribbon -->
+  <ellipse cx="500" cy="138" rx="295" ry="25" fill="url(#gAuroraB3)" opacity="0.32">
+    <animate attributeName="ry"  values="25;40;18;34;25"       dur="16s" repeatCount="indefinite"/>
+    <animate attributeName="cy"  values="138;118;150;128;138"  dur="20s" repeatCount="indefinite"/>
+  </ellipse>
+  <!-- Mirrored lower aurora (reflection in compute depths) -->
+  <ellipse cx="500" cy="752" rx="380" ry="48" fill="url(#gAuroraB1)" opacity="0.22">
+    <animate attributeName="ry"  values="48;68;38;58;48"       dur="12s" repeatCount="indefinite"/>
+    <animate attributeName="cy"  values="752;775;738;762;752"  dur="15s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.22;0.06;0.18;0.05;0.22" dur="13s" repeatCount="indefinite"/>
+  </ellipse>
+</g>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 2B. OMEGA AGENT — plasma field, violet distortion   -->
+<!-- Violet / magenta — power & frequency layer          -->
+<!-- ═══════════════════════════════════════════════════ -->
+<g filter="url(#fOmega)">
+  <!-- Omega plasma sphere — breathes and warps -->
+  <circle cx="500" cy="455" r="325" fill="url(#gOmegaCore)" opacity="0.40">
+    <animate attributeName="r"       values="325;355;308;340;325"       dur="9s"  repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.40;0.18;0.35;0.14;0.40" dur="11s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Omega lateral arcs — W and E -->
+  <path d="M 215 242 Q 118 455 215 668" fill="none"
+    stroke="url(#gOmegaArc)" stroke-width="4.5" stroke-linecap="round" opacity="0.60">
+    <animate attributeName="d"
+      values="M 215 242 Q 118 455 215 668;M 195 272 Q 95 455 195 638;M 215 242 Q 118 455 215 668"
+      dur="8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.60;0.20;0.55;0.18;0.60" dur="10s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 785 242 Q 882 455 785 668" fill="none"
+    stroke="url(#gOmegaArc)" stroke-width="4.5" stroke-linecap="round" opacity="0.50">
+    <animate attributeName="d"
+      values="M 785 242 Q 882 455 785 668;M 805 272 Q 905 455 805 638;M 785 242 Q 882 455 785 668"
+      dur="8s" begin="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.50;0.15;0.45;0.12;0.50" dur="10s" begin="4s" repeatCount="indefinite"/>
+  </path>
+</g>
+<!-- Omega Ω orbital ring — slow counter-rotate -->
+<circle cx="500" cy="455" r="305" fill="none"
+  stroke="url(#gOmegaRing)" stroke-width="2" stroke-dasharray="22 30"
+  opacity="0.35" filter="url(#fLine)">
+  <animateTransform attributeName="transform" type="rotate"
+    from="360 500 455" to="0 500 455" dur="35s" repeatCount="indefinite"/>
+</circle>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 2C. HALO AGENT — crystalline boundary rings         -->
+<!-- Ice / white / silver — precision boundary layer     -->
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- Halo ring 1 — outermost slow drift -->
+<circle cx="500" cy="455" r="356" fill="none"
+  stroke="url(#gHaloRing)" stroke-width="3.5" opacity="0.40" filter="url(#fHalo)">
+  <animate attributeName="r" values="356;366;350;360;356" dur="13s" repeatCount="indefinite"/>
+  <animateTransform attributeName="transform" type="rotate"
+    from="0 500 455" to="360 500 455" dur="60s" repeatCount="indefinite"/>
+</circle>
+<!-- Halo ring 2 — inner dashed crystal -->
+<circle cx="500" cy="455" r="330" fill="none"
+  stroke="#c0e8ff" stroke-width="2" stroke-dasharray="30 9"
+  opacity="0.30" filter="url(#fHalo)">
+  <animateTransform attributeName="transform" type="rotate"
+    from="360 500 455" to="0 500 455" dur="42s" repeatCount="indefinite"/>
+</circle>
+<!-- Halo ring 3 — ultra-fine shimmer -->
+<circle cx="500" cy="455" r="268" fill="none"
+  stroke="#dff4ff" stroke-width="1" stroke-dasharray="6 22"
+  opacity="0.22" filter="url(#fHalo)">
+  <animateTransform attributeName="transform" type="rotate"
+    from="0 500 455" to="360 500 455" dur="28s" repeatCount="indefinite"/>
+</circle>
+<!-- Halo arc glints — quadrant shimmer pulses -->
+<g filter="url(#fHalo)">
+  <path d="M 315 198 A 215 215 0 0 1 685 198" fill="none"
+    stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0">
+    <animate attributeName="opacity" values="0;0.65;0.20;0.55;0" dur="8s"  repeatCount="indefinite"/>
+  </path>
+  <path d="M 315 712 A 215 215 0 0 0 685 712" fill="none"
+    stroke="#b8e8ff" stroke-width="2.5" stroke-linecap="round" opacity="0">
+    <animate attributeName="opacity" values="0;0.50;0.15;0.42;0" dur="8s" begin="4s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 152 315 A 215 215 0 0 1 152 595" fill="none"
+    stroke="#c8f0ff" stroke-width="2" stroke-linecap="round" opacity="0">
+    <animate attributeName="opacity" values="0;0.40;0.10;0.35;0" dur="10s" begin="2s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 848 315 A 215 215 0 0 0 848 595" fill="none"
+    stroke="#c8f0ff" stroke-width="2" stroke-linecap="round" opacity="0">
+    <animate attributeName="opacity" values="0;0.40;0.10;0.35;0" dur="10s" begin="7s" repeatCount="indefinite"/>
+  </path>
+</g>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 2D. ATLAS ENGINE — tectonic forge plates            -->
+<!-- Gold / amber / ember — infrastructure weight layer  -->
+<!-- ═══════════════════════════════════════════════════ -->
+<g filter="url(#fAtlas)">
+  <!-- Primary forge arc, south -->
+  <path d="M 298 626 Q 500 736 702 626" fill="none"
+    stroke="url(#gAtlasForge)" stroke-width="5" stroke-linecap="round" opacity="0.62">
+    <animate attributeName="d"
+      values="M 298 626 Q 500 736 702 626;M 278 648 Q 500 762 722 648;M 298 626 Q 500 736 702 626"
+      dur="10s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.62;0.22;0.55;0.18;0.62" dur="12s" repeatCount="indefinite"/>
+  </path>
+  <!-- Secondary inner forge arc -->
+  <path d="M 332 662 Q 500 758 668 662" fill="none"
+    stroke="#ffd200" stroke-width="3" stroke-linecap="round" opacity="0.42">
+    <animate attributeName="opacity" values="0.42;0.10;0.38;0.08;0.42" dur="5s" repeatCount="indefinite"/>
+  </path>
+  <!-- Tectonic taper — NW and NE shards -->
+  <polygon points="500,455 285,668 316,712 500,572" fill="url(#gAtlasForge)" opacity="0.18">
+    <animate attributeName="opacity" values="0.18;0.06;0.15;0.05;0.18" dur="9s" repeatCount="indefinite"/>
+  </polygon>
+  <polygon points="500,455 715,668 684,712 500,572" fill="url(#gAtlasForge)" opacity="0.14">
+    <animate attributeName="opacity" values="0.14;0.04;0.12;0.03;0.14" dur="9s" begin="4.5s" repeatCount="indefinite"/>
+  </polygon>
+</g>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 3. SUPAC CORE SYSTEM                                -->
+<!-- ═══════════════════════════════════════════════════ -->
+
+<!-- Outer grid spokes (subtle intelligence grid) -->
+<g stroke="#0a2a5a" stroke-width="0.8" opacity="0.42">
+  <line x1="500" y1="455" x2="500" y2="100"/>
+  <line x1="500" y1="455" x2="500" y2="810"/>
+  <line x1="500" y1="455" x2="145" y2="455"/>
+  <line x1="500" y1="455" x2="855" y2="455"/>
+  <line x1="500" y1="455" x2="246" y2="201"/>
+  <line x1="500" y1="455" x2="754" y2="201"/>
+  <line x1="500" y1="455" x2="246" y2="709"/>
+  <line x1="500" y1="455" x2="754" y2="709"/>
+  <line x1="500" y1="455" x2="145" y2="300"/>
+  <line x1="500" y1="455" x2="855" y2="300"/>
+  <line x1="500" y1="455" x2="145" y2="610"/>
+  <line x1="500" y1="455" x2="855" y2="610"/>
+</g>
+
+<!-- Core orbital ring — primary rotation -->
+<circle cx="500" cy="455" r="252" fill="none"
+  stroke="#00e5ff" stroke-width="2.2" stroke-dasharray="20 13"
+  opacity="0.45" filter="url(#fLine)">
+  <animateTransform attributeName="transform" type="rotate"
+    from="0 500 455" to="360 500 455" dur="20s" repeatCount="indefinite"/>
+</circle>
+<!-- Core inner solid boundary -->
+<circle cx="500" cy="455" r="218" fill="none"
+  stroke="#00e5ff" stroke-width="1.8" opacity="0.28"/>
+<circle cx="500" cy="455" r="216" fill="none"
+  stroke="#ffffff" stroke-width="0.6" opacity="0.10"/>
+
+<!-- Core plasma aura — breathes -->
+<circle cx="500" cy="455" r="195" fill="url(#gCorePlasma)" opacity="0.92"
+  filter="url(#fCore)">
+  <animate attributeName="r"       values="195;212;185;205;195"         dur="5s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="0.92;0.44;0.82;0.36;0.92"   dur="5s" repeatCount="indefinite"/>
+</circle>
+
+<!-- Cardinal tick marks — precision instrument detail -->
+<g stroke="#00e5ff" stroke-width="1.5" opacity="0.42">
+  <line x1="500" y1="246" x2="500" y2="263"/>
+  <line x1="500" y1="647" x2="500" y2="664"/>
+  <line x1="302" y1="455" x2="319" y2="455"/>
+  <line x1="681" y1="455" x2="698" y2="455"/>
+  <line x1="354" y1="309" x2="365" y2="320"/>
+  <line x1="646" y1="309" x2="635" y2="320"/>
+  <line x1="354" y1="601" x2="365" y2="590"/>
+  <line x1="646" y1="601" x2="635" y2="590"/>
+</g>
+
+<!-- Orbital satellite — cyan, primary -->
+<circle cx="500" cy="246" r="8" fill="#00e5ff" opacity="0.92" filter="url(#fGlow)">
+  <animateTransform attributeName="transform" type="rotate"
+    from="0 500 455" to="360 500 455" dur="20s" repeatCount="indefinite"/>
+</circle>
+<!-- Orbital satellite — gold, secondary (offset) -->
+<circle cx="500" cy="703" r="6" fill="#ffd200" opacity="0.85" filter="url(#fGlow)">
+  <animateTransform attributeName="transform" type="rotate"
+    from="180 500 455" to="540 500 455" dur="20s" repeatCount="indefinite"/>
+</circle>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 4. AGENT NETWORK — orbit nodes + connector lines    -->
+<!-- Each node is all three things simultaneously:       -->
+<!--   AI agent / rendering engine / network node        -->
+<!-- ═══════════════════════════════════════════════════ -->
+
+<!-- Connector lines — data flows in to the core -->
+<g stroke-linecap="round" opacity="0.42">
+  <!-- Aurora NW -->
+  <line x1="188" y1="295" x2="390" y2="415"
+    stroke="#00ffcc" stroke-width="1.4" stroke-dasharray="6 9">
+    <animate attributeName="stroke-dashoffset" values="0;-60" dur="2.8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.42;0.12;0.42" dur="5s" repeatCount="indefinite"/>
+  </line>
+  <!-- Omega NE -->
+  <line x1="802" y1="295" x2="614" y2="415"
+    stroke="#cc00ff" stroke-width="1.4" stroke-dasharray="6 9">
+    <animate attributeName="stroke-dashoffset" values="0;-60" dur="2.8s" begin="0.7s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.42;0.12;0.42" dur="5s" begin="0.7s" repeatCount="indefinite"/>
+  </line>
+  <!-- Halo N top -->
+  <line x1="500" y1="100" x2="500" y2="284"
+    stroke="#b8e8ff" stroke-width="1.2" stroke-dasharray="6 9">
+    <animate attributeName="stroke-dashoffset" values="0;-60" dur="2.8s" begin="1.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.42;0.12;0.42" dur="5s" begin="1.4s" repeatCount="indefinite"/>
+  </line>
+  <!-- Atlas S -->
+  <line x1="500" y1="808" x2="500" y2="626"
+    stroke="#ffd200" stroke-width="1.4" stroke-dasharray="6 9">
+    <animate attributeName="stroke-dashoffset" values="0;-60" dur="2.8s" begin="2.1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.42;0.12;0.42" dur="5s" begin="2.1s" repeatCount="indefinite"/>
+  </line>
+</g>
+
+<!-- ─── AURORA NODE — NW ──────────────────────────── -->
+<g transform="translate(188,295)" filter="url(#fAurora)">
+  <!-- Node glow ring -->
+  <circle cx="0" cy="0" r="28" fill="none" stroke="#00ffcc" stroke-width="2" opacity="0.55">
+    <animate attributeName="r"       values="28;36;28"       dur="5.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.55;0.12;0.55" dur="5.5s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Node body -->
+  <circle cx="0" cy="0" r="20" fill="url(#gnA)" opacity="0.95">
+    <animate attributeName="r"       values="20;25;20"       dur="5.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="0" cy="0" r="20" fill="none" stroke="#00ffcc" stroke-width="2.5" opacity="0.80"/>
+  <!-- Label -->
+  <text x="30" y="-10" font-family="'Courier New',monospace" font-size="14" font-weight="700"
+    letter-spacing="3" fill="#00ffcc" opacity="0.92" filter="url(#fText)">AURORA</text>
+  <text x="30" y="6"  font-family="'Courier New',monospace" font-size="9.5"
+    letter-spacing="2.5" fill="#00ffcc" opacity="0.55">GRAPHICS ENGINE</text>
+  <text x="30" y="20" font-family="'Courier New',monospace" font-size="8.5"
+    letter-spacing="2" fill="#00ffcc" opacity="0.38">AI · LAYER · NODE</text>
+</g>
+
+<!-- ─── OMEGA NODE — NE ───────────────────────────── -->
+<g transform="translate(802,295)" filter="url(#fOmega)">
+  <circle cx="0" cy="0" r="28" fill="none" stroke="#cc00ff" stroke-width="2" opacity="0.55">
+    <animate attributeName="r"       values="28;37;28"       dur="6.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.55;0.10;0.55" dur="6.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="0" cy="0" r="20" fill="url(#gnO)" opacity="0.95">
+    <animate attributeName="r"       values="20;26;20"       dur="6.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="0" cy="0" r="20" fill="none" stroke="#cc00ff" stroke-width="2.5" opacity="0.80"/>
+  <!-- Ω symbol inside node -->
+  <text x="-8" y="8" font-family="Georgia,serif" font-size="16" font-weight="900"
+    fill="#ff88ee" opacity="0.92">Ω</text>
+  <!-- Label right-anchored -->
+  <text x="-32" y="-10" text-anchor="end" font-family="'Courier New',monospace" font-size="14" font-weight="700"
+    letter-spacing="3" fill="#cc00ff" opacity="0.92" filter="url(#fText)">OMEGA</text>
+  <text x="-32" y="6"  text-anchor="end" font-family="'Courier New',monospace" font-size="9.5"
+    letter-spacing="2.5" fill="#cc00ff" opacity="0.55">PRIME AGENT</text>
+  <text x="-32" y="20" text-anchor="end" font-family="'Courier New',monospace" font-size="8.5"
+    letter-spacing="2" fill="#cc00ff" opacity="0.38">AI · LAYER · NODE</text>
+</g>
+
+<!-- ─── HALO NODE — top centre ────────────────────── -->
+<g transform="translate(500,100)" filter="url(#fHalo)">
+  <circle cx="0" cy="0" r="28" fill="none" stroke="#c0e8ff" stroke-width="2" opacity="0.50">
+    <animate attributeName="r"       values="28;34;28"       dur="4.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.50;0.10;0.50" dur="4.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="0" cy="0" r="20" fill="url(#gnH)" opacity="0.95">
+    <animate attributeName="r"       values="20;24;20"       dur="4.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="0" cy="0" r="20" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.75"/>
+  <text x="28" y="-10" font-family="'Courier New',monospace" font-size="14" font-weight="700"
+    letter-spacing="3" fill="#dff4ff" opacity="0.92" filter="url(#fText)">HALO</text>
+  <text x="28" y="6"  font-family="'Courier New',monospace" font-size="9.5"
+    letter-spacing="2.5" fill="#b8e8ff" opacity="0.55">BOUNDARY LAYER</text>
+  <text x="28" y="20" font-family="'Courier New',monospace" font-size="8.5"
+    letter-spacing="2" fill="#b8e8ff" opacity="0.38">AI · LAYER · NODE</text>
+</g>
+
+<!-- ─── ATLAS NODE — bottom centre ───────────────── -->
+<g transform="translate(500,808)" filter="url(#fAtlas)">
+  <circle cx="0" cy="0" r="28" fill="none" stroke="#ffd200" stroke-width="2" opacity="0.55">
+    <animate attributeName="r"       values="28;38;28"       dur="7.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.55;0.12;0.55" dur="7.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="0" cy="0" r="20" fill="url(#gnAt)" opacity="0.95">
+    <animate attributeName="r"       values="20;26;20"       dur="7.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="0" cy="0" r="20" fill="none" stroke="#ffd200" stroke-width="2.5" opacity="0.80"/>
+  <text x="28" y="-10" font-family="'Courier New',monospace" font-size="14" font-weight="700"
+    letter-spacing="3" fill="#ffd200" opacity="0.92" filter="url(#fText)">ATLAS</text>
+  <text x="28" y="6"  font-family="'Courier New',monospace" font-size="9.5"
+    letter-spacing="2.5" fill="#ff9500" opacity="0.55">FORGE ENGINE</text>
+  <text x="28" y="20" font-family="'Courier New',monospace" font-size="8.5"
+    letter-spacing="2" fill="#ff9500" opacity="0.38">AI · LAYER · NODE</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 5. C-ARC — SupaC defining mark                      -->
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- Shadow depth -->
+<path d="M 650 228 A 204 204 0 1 0 650 682"
+  fill="none" stroke="#001133" stroke-width="52" stroke-linecap="round" opacity="0.52"/>
+<!-- Main C arc -->
+<path d="M 650 228 A 204 204 0 1 0 650 682"
+  fill="none" stroke="url(#gCArc)" stroke-width="38" stroke-linecap="round"
+  opacity="0.96" filter="url(#fCore)"/>
+<!-- Highlight edge -->
+<path d="M 650 228 A 204 204 0 1 0 650 682"
+  fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.14"/>
+
+<!-- C tip terminal nodes -->
+<circle cx="650" cy="228" r="13" fill="#ffd200" opacity="0.94" filter="url(#fAtlas)"/>
+<circle cx="650" cy="682" r="13" fill="#ffd200" opacity="0.94" filter="url(#fAtlas)"/>
+
+<!-- Pulse rings on tips -->
+<circle cx="650" cy="228" r="13" fill="none" stroke="#ffd200" stroke-width="2.5" opacity="0">
+  <animate attributeName="r"       values="13;30;13"  dur="3.4s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="0.9;0;0.9" dur="3.4s" repeatCount="indefinite"/>
+</circle>
+<circle cx="650" cy="682" r="13" fill="none" stroke="#ff8800" stroke-width="2.5" opacity="0">
+  <animate attributeName="r"       values="13;30;13"  dur="3.4s" begin="1.7s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="0.9;0;0.9" dur="3.4s" begin="1.7s" repeatCount="indefinite"/>
+</circle>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 6. WORDMARK                                         -->
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- "SUPA" -->
+<text x="468" y="508" text-anchor="end"
+  font-family="'Arial Black','Helvetica Neue',sans-serif"
+  font-size="118" font-weight="900" letter-spacing="-2"
+  fill="url(#gSupa)" filter="url(#fText)">SUPA</text>
+
+<!-- "C" — gold fire, dominant -->
+<text x="478" y="508" text-anchor="start"
+  font-family="'Arial Black','Helvetica Neue',sans-serif"
+  font-size="140" font-weight="900"
+  fill="url(#gC)" filter="url(#fAtlas)">C</text>
+
+<!-- Underline separator -->
+<line x1="248" y1="530" x2="662" y2="530"
+  stroke="url(#gTagFade)" stroke-width="1.5" opacity="0.48"/>
+
+<!-- Tagline -->
+<text x="455" y="560" text-anchor="middle"
+  font-family="'Courier New',monospace"
+  font-size="17.5" font-weight="700" letter-spacing="7"
+  fill="#00e5ff" opacity="0.62">SUPER COMPUTE CORE</text>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 7. AGENT STATUS STRIP                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<rect x="188" y="882" width="624" height="52" rx="14"
+  fill="#030d1e" stroke="#00e5ff" stroke-width="1.2" opacity="0.80"/>
+<line x1="344" y1="882" x2="344" y2="934" stroke="#00e5ff" stroke-width="0.8" opacity="0.22"/>
+<line x1="500" y1="882" x2="500" y2="934" stroke="#00e5ff" stroke-width="0.8" opacity="0.22"/>
+<line x1="656" y1="882" x2="656" y2="934" stroke="#00e5ff" stroke-width="0.8" opacity="0.22"/>
+
+<!-- Aurora status -->
+<circle cx="218" cy="908" r="5.5" fill="#00ffcc" opacity="0.90">
+  <animate attributeName="opacity" values="0.90;0.25;0.90" dur="2.6s" repeatCount="indefinite"/>
+</circle>
+<text x="230" y="912" font-family="'Courier New',monospace" font-size="11.5" font-weight="700"
+  letter-spacing="2" fill="#00ffcc" opacity="0.85">AURORA</text>
+
+<!-- Omega status -->
+<circle cx="374" cy="908" r="5.5" fill="#cc00ff" opacity="0.90">
+  <animate attributeName="opacity" values="0.90;0.25;0.90" dur="3.1s" begin="0.65s" repeatCount="indefinite"/>
+</circle>
+<text x="386" y="912" font-family="'Courier New',monospace" font-size="11.5" font-weight="700"
+  letter-spacing="2" fill="#cc00ff" opacity="0.85">OMEGA</text>
+
+<!-- Halo status -->
+<circle cx="530" cy="908" r="5.5" fill="#dff4ff" opacity="0.90">
+  <animate attributeName="opacity" values="0.90;0.25;0.90" dur="3.7s" begin="1.3s" repeatCount="indefinite"/>
+</circle>
+<text x="542" y="912" font-family="'Courier New',monospace" font-size="11.5" font-weight="700"
+  letter-spacing="2" fill="#dff4ff" opacity="0.85">HALO</text>
+
+<!-- Atlas status -->
+<circle cx="686" cy="908" r="5.5" fill="#ffd200" opacity="0.90">
+  <animate attributeName="opacity" values="0.90;0.25;0.90" dur="4.2s" begin="1.95s" repeatCount="indefinite"/>
+</circle>
+<text x="698" y="912" font-family="'Courier New',monospace" font-size="11.5" font-weight="700"
+  letter-spacing="2" fill="#ffd200" opacity="0.85">ATLAS</text>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 8. SYSTEM SIGNATURE                                 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<text x="500" y="958" text-anchor="middle"
+  font-family="'Courier New',monospace"
+  font-size="11.5" letter-spacing="5"
+  fill="#00e5ff" opacity="0.30">● INTELLIGENCE AT SCALE ●</text>
+
+</svg>

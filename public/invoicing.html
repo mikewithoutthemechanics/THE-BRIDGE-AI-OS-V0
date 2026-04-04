@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Smart Invoicing — Bridge AI OS</title>
+    <meta name="description" content="CRM-integrated invoicing with AI generation, email sending, and payment tracking">
+    <meta property="og:title" content="Smart Invoicing — Bridge AI OS">
+    <meta property="og:description" content="CRM-integrated invoicing with AI generation and payment tracking">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/invoicing.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/invoicing.html">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/bridge-tokens.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100vh; background: var(--bg-0); font-family: var(--font-ui); color: var(--text-primary); }
+        body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 80%, rgba(99,255,218,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+        .shell { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
+        .header h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); background: linear-gradient(135deg, var(--cyan) 0%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .stats-bar { display: flex; gap: var(--gap); margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 22px; flex: 1; min-width: 140px; }
+        .stat-card .label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-family: var(--font-mono); margin-bottom: 6px; }
+        .stat-card .value { font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--cyan); }
+        .stat-card .value.revenue { color: var(--alive); }
+        .stat-card .value.overdue { color: var(--offline); }
+
+        .create-section { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px; }
+        .create-section h2 { font-size: var(--text-lg); color: var(--cyan); margin-bottom: 16px; }
+        .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; }
+        .form-group label { display: block; font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: var(--tracking-wide); margin-bottom: 4px; font-family: var(--font-mono); }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-ui); font-size: var(--text-sm); outline: none; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--cyan); }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+        .crm-info { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; font-size: var(--text-sm); color: var(--text-secondary); display: none; }
+        .crm-info.visible { display: block; }
+        .crm-info .crm-name { color: var(--cyan); font-weight: var(--weight-semibold); }
+
+        .line-items-section { margin-top: 12px; }
+        .line-items-section h3 { font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
+        .line-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        .line-item input { flex: 1; padding: 8px 10px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-ui); font-size: var(--text-sm); outline: none; }
+        .line-item input:first-child { flex: 2; }
+        .line-item input:focus { border-color: var(--cyan); }
+        .line-item .remove-line { background: none; border: none; color: var(--signal-red); cursor: pointer; font-size: 16px; padding: 4px 8px; opacity: 0.6; }
+        .line-item .remove-line:hover { opacity: 1; }
+        .add-line-btn { background: none; border: 1px dashed var(--border); color: var(--text-secondary); padding: 8px; border-radius: var(--radius-sm); width: 100%; cursor: pointer; font-family: var(--font-mono); font-size: var(--text-xs); margin-top: 4px; }
+        .add-line-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+        .form-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .btn { padding: 10px 20px; border: none; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: var(--text-sm); font-weight: var(--weight-semibold); cursor: pointer; transition: all 0.15s; }
+        .btn-primary { background: var(--cyan); color: var(--bg-0); }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-secondary { background: var(--bg-2); color: var(--text-primary); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--cyan); }
+        .btn-ai { background: linear-gradient(135deg, #a78bfa, #38bdf8); color: var(--bg-0); }
+        .btn-ai:hover { filter: brightness(1.1); }
+        .btn-danger { background: rgba(255,0,51,0.15); color: var(--offline); border: 1px solid rgba(255,0,51,0.3); }
+        .btn-danger:hover { background: rgba(255,0,51,0.25); }
+        .btn-sm { padding: 6px 12px; font-size: var(--text-xs); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+        .toolbar-left { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+        th, td { text-align: left; padding: 12px 16px; font-size: var(--text-sm); border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-2); color: var(--text-secondary); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-size: var(--text-xs); font-family: var(--font-mono); }
+        tr:hover td { background: rgba(99,255,218,0.03); }
+
+        .badge { display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: var(--text-xs); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
+        .badge.paid { background: rgba(0,255,136,0.12); color: var(--alive); }
+        .badge.pending { background: rgba(255,170,0,0.12); color: var(--degraded); }
+        .badge.sent { background: rgba(56,189,248,0.12); color: #38bdf8; }
+        .badge.overdue { background: rgba(255,0,51,0.12); color: var(--offline); }
+        .badge.draft { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+
+        .actions-cell { display: flex; gap: 4px; flex-wrap: wrap; }
+        .crm-link { color: var(--cyan); text-decoration: none; font-size: var(--text-xs); }
+        .crm-link:hover { text-decoration: underline; }
+
+        .loading, .error-msg { text-align: center; padding: 48px; color: var(--text-secondary); font-family: var(--font-mono); font-size: var(--text-sm); }
+        .error-msg { color: var(--signal-red); }
+        .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-1); border: 1px solid var(--cyan); border-radius: var(--radius-md); padding: 14px 20px; color: var(--cyan); font-size: var(--text-sm); z-index: 9999; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.error { border-color: var(--offline); color: var(--offline); }
+
+        @media (max-width: 700px) {
+            .form-row { flex-direction: column; }
+            .form-group { min-width: 100%; }
+            th:nth-child(6), td:nth-child(6) { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="shell">
+    <div class="header">
+        <h1>Smart Invoicing</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary btn-sm" onclick="toggleCreateSection()">+ New Invoice</button>
+            <button class="btn btn-ai btn-sm" onclick="followUpAll()">Follow Up Unpaid</button>
+            <button class="btn btn-secondary btn-sm" onclick="sendAllPending()">Send All Pending</button>
+        </div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-card"><div class="label">Total Invoices</div><div class="value" id="stat-total">--</div></div>
+        <div class="stat-card"><div class="label">Paid</div><div class="value" id="stat-paid">--</div></div>
+        <div class="stat-card"><div class="label">Pending</div><div class="value" id="stat-pending">--</div></div>
+        <div class="stat-card"><div class="label">Overdue</div><div class="value overdue" id="stat-overdue">--</div></div>
+        <div class="stat-card"><div class="label">Revenue</div><div class="value revenue" id="stat-revenue">--</div></div>
+    </div>
+
+    <div class="create-section" id="create-section" style="display:none;">
+        <h2>Create Smart Invoice</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Client Email *</label>
+                <input id="inv-email" placeholder="client@company.com" oninput="lookupCRM()">
+            </div>
+            <div class="form-group">
+                <label>Client Name</label>
+                <input id="inv-name" placeholder="Auto-filled from CRM">
+            </div>
+            <div class="form-group">
+                <label>Company</label>
+                <input id="inv-company" placeholder="Auto-filled from CRM">
+            </div>
+        </div>
+        <div class="crm-info" id="crm-info">
+            CRM Contact: <span class="crm-name" id="crm-name"></span> — <a href="/crm.html" class="crm-link" id="crm-profile-link">View Profile</a>
+        </div>
+        <div class="form-row">
+            <div class="form-group" style="flex:2;">
+                <label>AI Description (optional — generates line items)</label>
+                <textarea id="inv-description" placeholder="e.g. Website redesign with 5 pages, SEO setup, and monthly maintenance for 3 months"></textarea>
+            </div>
+            <div class="form-group" style="flex:0 0 auto; display:flex; align-items:flex-end;">
+                <button class="btn btn-ai" id="btn-ai-generate" onclick="aiGenerate()">AI Generate</button>
+            </div>
+        </div>
+        <div class="line-items-section">
+            <h3>Line Items</h3>
+            <div id="line-items">
+                <div class="line-item">
+                    <input placeholder="Item name" class="li-name">
+                    <input placeholder="Qty" type="number" min="1" value="1" class="li-qty" style="max-width:80px;">
+                    <input placeholder="Rate (ZAR)" type="number" min="0" step="0.01" class="li-rate" style="max-width:120px;">
+                    <button class="remove-line" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+            </div>
+            <button class="add-line-btn" onclick="addLineItem()">+ Add line item</button>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Notes</label>
+                <input id="inv-notes" placeholder="Optional notes">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-primary" onclick="smartCreate()">Create Invoice</button>
+            <button class="btn btn-secondary" onclick="toggleCreateSection()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="table-container"><div class="loading">Loading invoices...</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var invoices = [];
+var crmLookupTimeout = null;
+
+function showToast(msg, isError) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(function() { t.className = 'toast'; }, 3500);
+}
+
+function toggleCreateSection() {
+    var s = document.getElementById('create-section');
+    s.style.display = s.style.display === 'none' ? 'block' : 'none';
+}
+
+function addLineItem() {
+    var c = document.getElementById('line-items');
+    var div = document.createElement('div'); div.className = 'line-item';
+    div.innerHTML = '<input placeholder="Item name" class="li-name">' +
+        '<input placeholder="Qty" type="number" min="1" value="1" class="li-qty" style="max-width:80px;">' +
+        '<input placeholder="Rate (ZAR)" type="number" min="0" step="0.01" class="li-rate" style="max-width:120px;">' +
+        '<button class="remove-line" onclick="this.parentElement.remove()">&times;</button>';
+    c.appendChild(div);
+}
+
+function lookupCRM() {
+    clearTimeout(crmLookupTimeout);
+    var email = document.getElementById('inv-email').value.trim();
+    if (!email || email.indexOf('@') < 0) {
+        document.getElementById('crm-info').className = 'crm-info';
+        return;
+    }
+    crmLookupTimeout = setTimeout(async function() {
+        try {
+            var res = await fetch('/api/crm/contacts');
+            var data = await res.json();
+            var contacts = data.contacts || data || [];
+            var match = contacts.find(function(c) { return c.email === email; });
+            if (match) {
+                document.getElementById('crm-info').className = 'crm-info visible';
+                document.getElementById('crm-name').textContent = match.name + (match.company ? ' (' + match.company + ')' : '');
+                document.getElementById('inv-name').value = match.name || '';
+                document.getElementById('inv-company').value = match.company || '';
+            } else {
+                document.getElementById('crm-info').className = 'crm-info';
+            }
+        } catch(e) {}
+    }, 500);
+}
+
+async function aiGenerate() {
+    var desc = document.getElementById('inv-description').value.trim();
+    if (!desc) return showToast('Enter a description for AI to generate items', true);
+    var btn = document.getElementById('btn-ai-generate');
+    btn.disabled = true; btn.textContent = 'Generating...';
+    try {
+        var res = await fetch('/api/invoices/ai-generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                description: desc,
+                client_email: document.getElementById('inv-email').value.trim() || 'client@example.com',
+                client_name: document.getElementById('inv-name').value.trim(),
+                company: document.getElementById('inv-company').value.trim()
+            })
+        });
+        var data = await res.json();
+        if (data.ok && data.ai_items && data.ai_items.length) {
+            var container = document.getElementById('line-items');
+            container.innerHTML = '';
+            data.ai_items.forEach(function(item) {
+                var div = document.createElement('div'); div.className = 'line-item';
+                div.innerHTML = '<input placeholder="Item name" class="li-name" value="' + (item.name || '').replace(/"/g, '&quot;') + '">' +
+                    '<input placeholder="Qty" type="number" min="1" value="' + (item.qty || 1) + '" class="li-qty" style="max-width:80px;">' +
+                    '<input placeholder="Rate (ZAR)" type="number" min="0" step="0.01" value="' + (item.rate || 0) + '" class="li-rate" style="max-width:120px;">' +
+                    '<button class="remove-line" onclick="this.parentElement.remove()">&times;</button>';
+                container.appendChild(div);
+            });
+            showToast('AI generated ' + data.ai_items.length + ' line items');
+        } else {
+            showToast('AI generation failed: ' + (data.error || 'unknown'), true);
+        }
+    } catch(e) { showToast('AI generation error: ' + e.message, true); }
+    btn.disabled = false; btn.textContent = 'AI Generate';
+}
+
+async function smartCreate() {
+    var email = document.getElementById('inv-email').value.trim();
+    if (!email) return showToast('Client email is required', true);
+    var rows = document.querySelectorAll('.line-item');
+    var items = [];
+    rows.forEach(function(row) {
+        var name = row.querySelector('.li-name').value;
+        var qty = parseInt(row.querySelector('.li-qty').value) || 1;
+        var rate = parseFloat(row.querySelector('.li-rate').value) || 0;
+        if (name) items.push({ name: name, qty: qty, rate: rate });
+    });
+    if (!items.length) return showToast('Add at least one line item', true);
+    try {
+        var res = await fetch('/api/invoices/smart-create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_email: email,
+                client_name: document.getElementById('inv-name').value.trim(),
+                company: document.getElementById('inv-company').value.trim(),
+                items: items,
+                notes: document.getElementById('inv-notes').value.trim()
+            })
+        });
+        var data = await res.json();
+        if (data.ok) {
+            showToast('Invoice created! Payment ref: ' + (data.payment?.reference || ''));
+            toggleCreateSection();
+            resetForm();
+            loadInvoices();
+        } else {
+            showToast('Failed: ' + (data.error || 'unknown'), true);
+        }
+    } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+function resetForm() {
+    document.getElementById('inv-email').value = '';
+    document.getElementById('inv-name').value = '';
+    document.getElementById('inv-company').value = '';
+    document.getElementById('inv-description').value = '';
+    document.getElementById('inv-notes').value = '';
+    document.getElementById('crm-info').className = 'crm-info';
+    var c = document.getElementById('line-items');
+    c.innerHTML = '<div class="line-item">' +
+        '<input placeholder="Item name" class="li-name">' +
+        '<input placeholder="Qty" type="number" min="1" value="1" class="li-qty" style="max-width:80px;">' +
+        '<input placeholder="Rate (ZAR)" type="number" min="0" step="0.01" class="li-rate" style="max-width:120px;">' +
+        '<button class="remove-line" onclick="this.parentElement.remove()">&times;</button></div>';
+}
+
+async function sendInvoice(inv) {
+    var email = inv.email || inv.client_email || prompt('Enter email for ' + (inv.client || 'client') + ':');
+    if (!email) return;
+    try {
+        var res = await fetch('/api/invoices/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoice_id: inv.id || inv._id, to_email: email, client_name: inv.client })
+        });
+        var data = await res.json();
+        if (data.ok) { showToast('Invoice sent to ' + email); loadInvoices(); }
+        else showToast('Send failed: ' + (data.error || 'unknown'), true);
+    } catch(e) { showToast('Send error: ' + e.message, true); }
+}
+
+async function sendAllPending() {
+    var pending = invoices.filter(function(i) { var s = (i.status || '').toLowerCase(); return s === 'pending' || s === 'draft'; });
+    if (!pending.length) return showToast('No pending invoices to send');
+    var sent = 0;
+    for (var i = 0; i < pending.length; i++) {
+        var inv = pending[i];
+        var email = inv.email || inv.client_email;
+        if (!email) continue;
+        try {
+            await fetch('/api/invoices/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ invoice_id: inv.id || inv._id, to_email: email, client_name: inv.client })
+            });
+            sent++;
+        } catch(e) {}
+    }
+    showToast('Sent ' + sent + ' of ' + pending.length + ' pending invoices');
+    loadInvoices();
+}
+
+async function followUpAll() {
+    showToast('Generating AI follow-ups...');
+    try {
+        var res = await fetch('/api/invoices/follow-up', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        var data = await res.json();
+        if (data.ok) showToast('Followed up on ' + data.followed + ' of ' + data.pending + ' unpaid invoices');
+        else showToast('Follow-up failed: ' + (data.error || 'unknown'), true);
+    } catch(e) { showToast('Follow-up error: ' + e.message, true); }
+}
+
+async function markPaid(id) {
+    if (!id) return;
+    try {
+        var res = await fetch('/api/invoices/' + id + '/status', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'paid' })
+        });
+        if (res.ok) { showToast('Marked as paid'); loadInvoices(); }
+        else showToast('Failed to update status', true);
+    } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+async function toggleStatus(id, current) {
+    if (!id) return;
+    var cycle = { draft: 'pending', pending: 'sent', sent: 'paid', paid: 'overdue', overdue: 'draft' };
+    var next = cycle[current] || 'pending';
+    try {
+        var res = await fetch('/api/invoices/' + id + '/status', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: next })
+        });
+        if (res.ok) loadInvoices();
+        else showToast('Failed to update status', true);
+    } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+async function loadInvoices() {
+    var container = document.getElementById('table-container');
+    try {
+        var res = await fetch('/api/invoices');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var data = await res.json();
+        invoices = Array.isArray(data) ? data : (data.invoices || data.data || []);
+        renderStats();
+        renderTable();
+    } catch(e) {
+        container.innerHTML = '<div class="error-msg">Failed to load invoices: ' + e.message + '</div>';
+    }
+}
+
+function renderStats() {
+    document.getElementById('stat-total').textContent = invoices.length;
+    var paid = invoices.filter(function(i) { return (i.status || '').toLowerCase() === 'paid'; });
+    var pending = invoices.filter(function(i) { var s = (i.status || '').toLowerCase(); return s === 'pending' || s === 'sent' || s === 'draft'; });
+    var overdue = invoices.filter(function(i) { return (i.status || '').toLowerCase() === 'overdue'; });
+    document.getElementById('stat-paid').textContent = paid.length;
+    document.getElementById('stat-pending').textContent = pending.length;
+    document.getElementById('stat-overdue').textContent = overdue.length;
+    var revenue = paid.reduce(function(s, i) { return s + parseFloat(i.amount || i.total || 0); }, 0);
+    document.getElementById('stat-revenue').textContent = 'R' + revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function renderTable() {
+    var container = document.getElementById('table-container');
+    container.innerHTML = '';
+    if (!invoices.length) { container.innerHTML = '<div class="loading">No invoices yet. Create your first smart invoice above.</div>'; return; }
+    var html = '<table><thead><tr><th>Number</th><th>Client</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
+    invoices.forEach(function(inv) {
+        var id = inv.id || inv._id || '';
+        var status = (inv.status || 'pending').toLowerCase();
+        var amt = parseFloat(inv.amount || inv.total || 0);
+        var dt = inv.date || inv.createdAt || inv.created_at || '';
+        var dateStr = dt ? new Date(dt).toLocaleDateString() : '--';
+        var badgeClass = status === 'paid' ? 'paid' : status === 'overdue' ? 'overdue' : status === 'sent' ? 'sent' : status === 'draft' ? 'draft' : 'pending';
+
+        html += '<tr>';
+        html += '<td style="font-family:var(--font-mono)">' + (inv.number || inv.invoiceNumber || id || '--') + '</td>';
+        html += '<td>' + (inv.client || inv.clientName || '--');
+        if (inv.email || inv.client_email) html += '<br><span style="font-size:var(--text-xs);color:var(--text-muted)">' + (inv.email || inv.client_email) + '</span>';
+        html += '</td>';
+        html += '<td style="font-family:var(--font-mono)">R' + amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>';
+        html += '<td><span class="badge ' + badgeClass + '" style="cursor:pointer" onclick="toggleStatus(\'' + id + '\',\'' + status + '\')" title="Click to cycle status">' + status + '</span></td>';
+        html += '<td style="color:var(--text-muted);font-size:var(--text-xs)">' + dateStr + '</td>';
+        html += '<td class="actions-cell">';
+        if (status !== 'paid') {
+            html += '<button class="btn btn-secondary btn-sm" onclick=\'sendInvoice(' + JSON.stringify({ id: id, client: inv.client, email: inv.email || inv.client_email }) + ')\'>Send</button>';
+            html += '<button class="btn btn-sm" style="background:rgba(0,255,136,0.12);color:var(--alive);border:1px solid rgba(0,255,136,0.3)" onclick="markPaid(\'' + id + '\')">Mark Paid</button>';
+        }
+        if (inv.client) html += '<a href="/crm.html" class="crm-link" style="padding:6px 8px;display:inline-block">CRM</a>';
+        html += '</td>';
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+loadInvoices();
+</script>
+<script src="/bridge-nav.js?v=2"></script>
+</body>
+</html>

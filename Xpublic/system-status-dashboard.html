@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>System Status Dashboard - Full Ecosystem</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+      --bg: #05070b;
+      --bg-panel: #0c1018;
+      --bg-panel-soft: #111827;
+      --border-soft: #1f2937;
+      --accent: #38bdf8;
+      --accent-soft: #0ea5e9;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --danger: #f97373;
+      --warning: #facc15;
+      --degraded: #fb923c;
+      --healthy: #22c55e;
+      --idle: #6b7280;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; }
+    .app-shell { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+    header { padding: 12px 20px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: space-between; background: linear-gradient(to right, #020617, #020617 40%, #020617); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); position: relative; z-index: 10; flex-wrap: wrap; gap: 10px; }
+    .title-block { display: flex; flex-direction: column; gap: 2px; }
+    .title-block h1 { margin: 0; font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-main); }
+    .title-block span { font-size: 11px; color: var(--text-muted); }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; }
+    .status-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--healthy); box-shadow: 0 0 10px rgba(34, 197, 94, 0.8); }
+    .header-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .boot-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid; }
+    .boot-pill.ready { background: rgba(34, 197, 94, 0.15); border-color: var(--healthy); color: var(--healthy); }
+    .boot-pill.waiting { background: rgba(250, 204, 21, 0.15); border-color: var(--warning); color: var(--warning); }
+    #boot-dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: currentColor; box-shadow: 0 0 8px currentColor; }
+    .boot-section { background: var(--bg-panel-soft); border-radius: 8px; border: 1px solid var(--border-soft); padding: 8px; font-size: 10px; }
+    .boot-section .boot-message { margin-bottom: 6px; color: var(--text-muted); }
+    .boot-section .boot-endpoints { display: flex; flex-wrap: wrap; gap: 6px; }
+    .boot-section .boot-ep { padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border-soft); background: rgba(15, 23, 42, 0.9); }
+    .boot-section .boot-ep.online { border-color: var(--healthy); color: var(--healthy); }
+    .boot-section .boot-ep.offline { border-color: var(--danger); color: var(--danger); }
+    .polling-control { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-muted); }
+    .polling-control input[type="range"] { width: 160px; }
+    .polling-value { font-size: 11px; color: var(--accent-soft); }
+    .search-filter-row { display: flex; align-items: center; gap: 10px; }
+    .search-input { background: rgba(15, 23, 42, 0.9); border-radius: 999px; border: 1px solid var(--border-soft); padding: 4px 10px; display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-main); }
+    .search-input input { background: transparent; border: none; outline: none; color: inherit; font-size: inherit; width: 140px; }
+    .search-input span { color: var(--text-muted); }
+    .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { border-radius: 999px; padding: 3px 8px; font-size: 10px; border: 1px solid var(--border-soft); background: rgba(15, 23, 42, 0.9); color: var(--text-muted); cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; }
+    .chip.active { border-color: var(--accent-soft); color: var(--accent-soft); background: rgba(8, 47, 73, 0.7); }
+    main { display: grid; grid-template-columns: 2.4fr 1.1fr; gap: 0; height: 100%; overflow: hidden; }
+    .graph-panel { position: relative; min-height: 320px; background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%); border-right: 1px solid var(--border-soft); overflow: hidden; }
+    .graph-toolbar { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; z-index: 5; }
+    .toolbar-btn { border-radius: 999px; padding: 4px 8px; font-size: 10px; border: 1px solid var(--border-soft); background: rgba(15, 23, 42, 0.9); color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+    .toolbar-btn:hover { border-color: var(--accent-soft); color: var(--accent-soft); }
+    .graph-svg { width: 100%; height: 100%; display: block; background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%); }
+    .drilldown-panel { background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 100%); display: flex; flex-direction: column; border-left: 1px solid var(--border-soft); }
+    .drill-header { padding: 10px 14px; border-bottom: 1px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; }
+    .drill-header h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
+    .drill-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+    .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .metric-card { background: var(--bg-panel-soft); border-radius: 8px; padding: 8px; border: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 4px; }
+    .metric-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .metric-value { font-size: 14px; font-weight: 500; }
+    .metric-bar { width: 100%; height: 4px; border-radius: 999px; background: #020617; overflow: hidden; }
+    .metric-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(to right, var(--accent-soft), #22c55e); }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; }
+    .tag { padding: 3px 7px; border-radius: 999px; border: 1px solid var(--border-soft); background: rgba(15, 23, 42, 0.9); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .tag.status-green { border-color: var(--healthy); color: var(--healthy); }
+    .tag.status-yellow { border-color: var(--warning); color: var(--warning); }
+    .tag.status-orange { border-color: var(--degraded); color: var(--degraded); }
+    .tag.status-red { border-color: var(--danger); color: var(--danger); }
+    .tag.status-gray { border-color: var(--idle); color: var(--idle); }
+    .timeline { background: var(--bg-panel-soft); border-radius: 8px; border: 1px solid var(--border-soft); padding: 8px; font-size: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .timeline-header { display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .timeline-events { max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+    .timeline-event { display: flex; justify-content: space-between; gap: 8px; color: var(--text-muted); }
+    .timeline-event span:first-child { color: var(--text-main); }
+    .dependencies { background: var(--bg-panel-soft); border-radius: 8px; border: 1px solid var(--border-soft); padding: 8px; font-size: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .dependencies-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .endpoint { font-size: 11px; color: var(--text-muted); }
+    .endpoint strong { color: var(--text-main); }
+    .node circle { stroke-width: 1.5px; cursor: pointer; }
+    .node text { font-size: 9px; pointer-events: none; fill: #e5e7eb; }
+    .link { stroke: rgba(148, 163, 184, 0.4); stroke-width: 1.2px; }
+    .link-particle { fill: var(--accent-soft); pointer-events: none; }
+    .hidden { display: none; }
+    .legend { position: absolute; bottom: 10px; right: 10px; background: rgba(12, 16, 24, 0.9); border: 1px solid var(--border-soft); border-radius: 8px; padding: 8px; font-size: 9px; z-index: 5; }
+    .legend-item { display: flex; align-items: center; gap: 4px; margin: 2px 0; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+        <header>
+    <div class="title-block">
+      <h1>SYSTEM STATUS GRAPH</h1>
+      <span>Bridge AI OS · Super Brain + Business Suite · 30 Services · 130+ APIs</span>
+                </div>
+    <div class="header-right">
+      <div class="boot-pill waiting" id="boot-pill">
+        <span id="boot-dot"></span>
+        <span id="boot-text">Boot: …</span>
+                    </div>
+      <div class="polling-control">
+        <span>Polling interval</span>
+        <input id="polling-slider" type="range" min="1" max="30" value="5" />
+        <span class="polling-value"><span id="polling-value">5</span> seconds</span>
+                    </div>
+      <div class="search-filter-row">
+        <div class="search-input">
+          <span>🔍</span>
+          <input id="search-input" type="text" placeholder="Search node…" />
+                    </div>
+        <div class="filters">
+          <button class="chip active" data-filter-type="status" data-filter-value="all">All</button>
+          <button class="chip" data-filter-type="status" data-filter-value="green">Green</button>
+          <button class="chip" data-filter-type="status" data-filter-value="yellow">Yellow</button>
+          <button class="chip" data-filter-type="status" data-filter-value="orange">Orange</button>
+          <button class="chip" data-filter-type="status" data-filter-value="red">Red</button>
+          <button class="chip" data-filter-type="status" data-filter-value="gray">Idle</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+  <main>
+    <section class="graph-panel">
+      <div class="graph-toolbar">
+        <button class="toolbar-btn" id="fit-to-screen">⤢ Fit</button>
+        <button class="toolbar-btn" id="reset-zoom">⟳ Reset</button>
+                </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#38bdf8"></div>Server</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Container</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>API</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Database</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#0ea5e9"></div>Network</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#facc15"></div>Cache</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e5e7eb"></div>Queue</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ec4899"></div>AI/ML</div>
+                    </div>
+      <svg id="graph-svg" class="graph-svg"></svg>
+            </section>
+
+    <aside class="drilldown-panel">
+      <div class="drill-header">
+        <h2>Node details</h2>
+        <div class="status-pill">
+          <span class="status-dot" id="global-status-dot"></span>
+          <span id="global-status-text">Overall: Healthy</span>
+                </div>
+                        </div>
+      <div class="drill-body">
+        <div class="endpoint" id="endpoint-info">
+          <strong>Selected:</strong> None · Click a node to inspect metrics.
+                        </div>
+
+        <div class="metric-grid">
+                                <div class="metric-card">
+            <div class="metric-label">CPU</div>
+            <div class="metric-value" id="metric-cpu">–</div>
+            <div class="metric-bar"><div class="metric-bar-fill" id="metric-cpu-bar" style="width:0%"></div></div>
+                                </div>
+                                <div class="metric-card">
+            <div class="metric-label">Memory</div>
+            <div class="metric-value" id="metric-mem">–</div>
+            <div class="metric-bar"><div class="metric-bar-fill" id="metric-mem-bar" style="width:0%"></div></div>
+                                </div>
+                                <div class="metric-card">
+            <div class="metric-label">Disk</div>
+            <div class="metric-value" id="metric-disk">–</div>
+            <div class="metric-bar"><div class="metric-bar-fill" id="metric-disk-bar" style="width:0%"></div></div>
+                                </div>
+                                <div class="metric-card">
+            <div class="metric-label">Network</div>
+            <div class="metric-value" id="metric-net">–</div>
+            <div class="metric-bar"><div class="metric-bar-fill" id="metric-net-bar" style="width:0%"></div></div>
+                                </div>
+                                </div>
+
+        <div class="tag-row" id="tag-row"></div>
+
+        <div class="boot-section" id="boot-section">
+          <div class="boot-message" id="boot-message">Checking boot status…</div>
+          <div class="boot-endpoints" id="boot-endpoints"></div>
+                        </div>
+
+        <div class="dependencies">
+          <div class="timeline-header"><span>Dependencies</span></div>
+                            <div class="dependencies-list" id="dependencies-list"></div>
+                        </div>
+
+        <div class="timeline">
+          <div class="timeline-header">
+            <span>Timeline</span>
+            <span id="timeline-node-name">–</span>
+                        </div>
+          <div class="timeline-events" id="timeline-events"></div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script>
+const STATUS_COLORS = { green: "#22c55e", yellow: "#facc15", orange: "#fb923c", red: "#f97373", gray: "#6b7280" };
+const TYPE_COLORS = { Server: "#38bdf8", Container: "#a855f7", API: "#22c55e", Database: "#f97316", Network: "#0ea5e9", Cache: "#facc15", Queue: "#e5e7eb", "AI/ML": "#ec4899" };
+
+/* id must match nodes[].id for poll updates */
+const _origin = location.origin;
+const HEALTH_ENDPOINTS = [
+  { id: "gateway",      url: _origin + "/health" },
+  { id: "core-brain",   url: _origin + "/api/health" },
+  { id: "system",       url: _origin + "/api/status" },
+  { id: "treasury",     url: _origin + "/api/treasury/status" },
+  { id: "business",     url: _origin + "/api/business/manifest" },
+  { id: "swarm",        url: _origin + "/api/swarm/health" },
+  { id: "quant",        url: _origin + "/api/quant/positions" },
+  { id: "twin",         url: _origin + "/api/twin/profile" },
+  { id: "defi",         url: _origin + "/api/defi/status" },
+  { id: "crm",          url: _origin + "/api/crm/contacts" },
+  { id: "marketing",    url: _origin + "/api/marketing/funnel" },
+  { id: "neurolink",    url: _origin + "/api/neurolink/status" },
+];
+
+const nodes = [
+  // ── RUNNING SERVICES (PM2) ──
+  { id: "gateway",     name: "Gateway",       type: "Server",  endpoint: ":8080", status: "green", cpu: 12, mem: 55, disk: 4, net: 30 },
+  { id: "core-brain",  name: "Super Brain",   type: "AI/ML",   endpoint: ":8000", status: "green", cpu: 15, mem: 58, disk: 4, net: 45 },
+  { id: "system",      name: "GOD MODE",      type: "Server",  endpoint: ":3000", status: "green", cpu: 8,  mem: 56, disk: 4, net: 20 },
+  { id: "terminal",    name: "Terminal PTY",   type: "Server",  endpoint: ":5002", status: "green", cpu: 5,  mem: 57, disk: 4, net: 15 },
+  { id: "auth",        name: "Auth Service",   type: "API",     endpoint: ":5001", status: "green", cpu: 3,  mem: 50, disk: 4, net: 10 },
+  // ── BRAIN MODULES (virtual services inside brain) ──
+  { id: "twin",        name: "Digital Twin",   type: "AI/ML",   endpoint: "/api/twin",      status: "green", cpu: 20, mem: 40, disk: 2, net: 35 },
+  { id: "treasury",    name: "Treasury",       type: "API",     endpoint: "/api/treasury",   status: "green", cpu: 10, mem: 25, disk: 2, net: 20 },
+  { id: "quant",       name: "Quant Engine",   type: "AI/ML",   endpoint: "/api/quant",      status: "green", cpu: 25, mem: 35, disk: 2, net: 40 },
+  { id: "swarm",       name: "Swarm Orch",     type: "AI/ML",   endpoint: "/api/swarm",      status: "green", cpu: 18, mem: 30, disk: 2, net: 35 },
+  { id: "bossbots",    name: "BossBots",       type: "AI/ML",   endpoint: "/api/bossbots",   status: "green", cpu: 22, mem: 32, disk: 2, net: 38 },
+  { id: "marketplace", name: "Marketplace",    type: "API",     endpoint: "/api/marketplace", status: "green", cpu: 8, mem: 20, disk: 2, net: 15 },
+  { id: "defi",        name: "DeFi / DEX",     type: "API",     endpoint: "/api/defi",       status: "green", cpu: 12, mem: 25, disk: 2, net: 30 },
+  { id: "ubi",         name: "UBI System",     type: "API",     endpoint: "/api/ubi",        status: "green", cpu: 5,  mem: 15, disk: 2, net: 10 },
+  { id: "keyforge",    name: "KeyForge Auth",  type: "API",     endpoint: "/api/keyforge",   status: "green", cpu: 3,  mem: 10, disk: 1, net: 8 },
+  { id: "rag",         name: "RAG Engine",     type: "AI/ML",   endpoint: "/api/docs",       status: "green", cpu: 15, mem: 30, disk: 5, net: 20 },
+  { id: "mcp",         name: "MCP Bridge",     type: "API",     endpoint: "/api/mcp",        status: "green", cpu: 5,  mem: 15, disk: 1, net: 25 },
+  // ── BUSINESS SUITE ──
+  { id: "crm",         name: "CRM",            type: "API",     endpoint: "/api/crm",        status: "green", cpu: 8,  mem: 20, disk: 2, net: 15 },
+  { id: "invoicing",   name: "Invoicing",      type: "API",     endpoint: "/api/invoices",   status: "green", cpu: 5,  mem: 15, disk: 2, net: 10 },
+  { id: "business",    name: "Business Suite",  type: "API",     endpoint: "/api/business",   status: "green", cpu: 10, mem: 25, disk: 3, net: 20 },
+  { id: "legal",       name: "Legal Suite",     type: "API",     endpoint: "/api/legal",      status: "green", cpu: 4,  mem: 12, disk: 2, net: 8 },
+  { id: "marketing",   name: "Marketing",       type: "API",     endpoint: "/api/marketing",  status: "green", cpu: 8,  mem: 18, disk: 2, net: 15 },
+  { id: "tickets",     name: "Support Tickets", type: "API",     endpoint: "/api/tickets",    status: "green", cpu: 5,  mem: 12, disk: 2, net: 10 },
+  { id: "neurolink",   name: "NeuroLink",       type: "AI/ML",   endpoint: "/api/neurolink",  status: "green", cpu: 30, mem: 40, disk: 2, net: 50 },
+  // ── PAYMENT RAILS ──
+  { id: "payfast",     name: "PayFast (ZA)",    type: "API",     endpoint: "payfast.co.za",   status: "green", cpu: 0, mem: 0, disk: 0, net: 5 },
+  { id: "paystack",    name: "Paystack",        type: "API",     endpoint: "paystack.com",    status: "green", cpu: 0, mem: 0, disk: 0, net: 5 },
+  { id: "crypto",      name: "Crypto Rails",    type: "Network", endpoint: "ETH/BTC/SOL",     status: "green", cpu: 0, mem: 0, disk: 0, net: 10 },
+  { id: "dex",         name: "BRDG DEX",        type: "Network", endpoint: "/api/dex",        status: "green", cpu: 10, mem: 20, disk: 2, net: 30 },
+  // ── INFRASTRUCTURE ──
+  { id: "nginx",       name: "Nginx + SSL",     type: "Network", endpoint: ":443",            status: "green", cpu: 2, mem: 10, disk: 1, net: 60 },
+  { id: "pm2",         name: "PM2 Manager",     type: "Server",  endpoint: "pm2",             status: "green", cpu: 3, mem: 15, disk: 1, net: 5 },
+  { id: "vps",         name: "VPS (WebWay)",    type: "Server",  endpoint: "102.208.228.44",  status: "green", cpu: 8, mem: 10, disk: 4, net: 100 },
+];
+
+const links = [
+  // Gateway → Services
+  { source: "nginx", target: "gateway" },
+  { source: "gateway", target: "core-brain" },
+  { source: "gateway", target: "system" },
+  { source: "gateway", target: "terminal" },
+  { source: "gateway", target: "auth" },
+  // Brain → Modules
+  { source: "core-brain", target: "twin" },
+  { source: "core-brain", target: "treasury" },
+  { source: "core-brain", target: "quant" },
+  { source: "core-brain", target: "swarm" },
+  { source: "core-brain", target: "bossbots" },
+  { source: "core-brain", target: "marketplace" },
+  { source: "core-brain", target: "defi" },
+  { source: "core-brain", target: "ubi" },
+  { source: "core-brain", target: "keyforge" },
+  { source: "core-brain", target: "rag" },
+  { source: "core-brain", target: "mcp" },
+  { source: "core-brain", target: "neurolink" },
+  // Business Suite
+  { source: "core-brain", target: "business" },
+  { source: "business", target: "crm" },
+  { source: "business", target: "invoicing" },
+  { source: "business", target: "legal" },
+  { source: "business", target: "marketing" },
+  { source: "business", target: "tickets" },
+  // Economy → Payment Rails
+  { source: "treasury", target: "payfast" },
+  { source: "treasury", target: "paystack" },
+  { source: "treasury", target: "crypto" },
+  { source: "defi", target: "dex" },
+  { source: "dex", target: "crypto" },
+  // Infrastructure
+  { source: "vps", target: "nginx" },
+  { source: "vps", target: "pm2" },
+  { source: "pm2", target: "gateway" },
+];
+
+const nodeById = new Map();
+const nodesByStatus = new Map();
+const nodesByType = new Map();
+
+for (const n of nodes) {
+  nodeById.set(n.id, n);
+  if (!nodesByStatus.has(n.status)) nodesByStatus.set(n.status, []);
+  nodesByStatus.get(n.status).push(n);
+  if (!nodesByType.has(n.type)) nodesByType.set(n.type, []);
+  nodesByType.get(n.type).push(n);
+}
+
+const svg = d3.select("#graph-svg");
+
+function svgSize() {
+  const el = svg.node();
+  const w = el.clientWidth || el.getBoundingClientRect().width || 1200;
+  const h = el.clientHeight || el.getBoundingClientRect().height || 700;
+  return { width: Math.max(320, w), height: Math.max(320, h) };
+}
+let { width, height } = svgSize();
+svg.attr("viewBox", [0, 0, width, height]);
+
+const zoomLayer = svg.append("g");
+const linkLayer = zoomLayer.append("g").attr("class", "links");
+const particleLayer = zoomLayer.append("g").attr("class", "particles");
+const nodeLayer = zoomLayer.append("g").attr("class", "nodes");
+
+const simulation = d3.forceSimulation(nodes)
+  .force("link", d3.forceLink(links).id(d => d.id).distance(100).strength(0.8))
+  .force("charge", d3.forceManyBody().strength(-200))
+  .force("center", d3.forceCenter(width / 2, height / 2))
+  .force("collision", d3.forceCollide().radius(d => 22 + d.cpu * 0.15));
+
+const link = linkLayer.selectAll("line").data(links).enter().append("line").attr("class", "link");
+const linkParticles = particleLayer.selectAll("circle").data(links).enter().append("circle").attr("class", "link-particle").attr("r", 3).attr("opacity", 0);
+
+const node = nodeLayer.selectAll("g").data(nodes).enter().append("g").attr("class", "node").call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended)).on("click", (_, d) => selectNode(d));
+
+node.append("circle").attr("r", d => 10 + d.cpu * 0.15).attr("fill", d => TYPE_COLORS[d.type] || "#64748b").attr("stroke", d => STATUS_COLORS[d.status] || "#6b7280").attr("stroke-width", 1.5);
+node.append("text").attr("dy", 2).attr("x", d => 12 + d.cpu * 0.15).text(d => d.name);
+
+simulation.on("tick", () => {
+  link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+  linkParticles.each(function(d, i) {
+    const t = (Date.now() / 1000 + i * 0.2) % 1;
+    const x = d.source.x + (d.target.x - d.source.x) * t;
+    const y = d.source.y + (d.target.y - d.source.y) * t;
+    d3.select(this).attr("cx", x).attr("cy", y).attr("opacity", 0.4 + 0.3 * Math.sin(t * Math.PI));
+  });
+});
+
+const zoom = d3.zoom().scaleExtent([0.3, 3]).on("zoom", (event) => zoomLayer.attr("transform", event.transform));
+svg.call(zoom);
+document.getElementById("reset-zoom").addEventListener("click", () => svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity));
+document.getElementById("fit-to-screen").addEventListener("click", fitToScreen);
+
+function fitToScreen() {
+  const bounds = zoomLayer.node().getBBox();
+  const fullWidth = svg.node().clientWidth || width;
+  const fullHeight = svg.node().clientHeight || height;
+  const midX = bounds.x + bounds.width / 2;
+  const midY = bounds.y + bounds.height / 2;
+  const scale = 0.85 / Math.max(bounds.width / fullWidth, bounds.height / fullHeight, 0.01);
+  const translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
+  svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
+}
+
+function resizeSvg() {
+  const s = svgSize();
+  width = s.width;
+  height = s.height;
+  svg.attr("viewBox", [0, 0, width, height]);
+  simulation.force("center", d3.forceCenter(width / 2, height / 2));
+  simulation.alpha(0.35).restart();
+}
+window.addEventListener("resize", () => { resizeSvg(); setTimeout(fitToScreen, 200); });
+const graphPanelEl = document.querySelector(".graph-panel");
+if (typeof ResizeObserver !== "undefined" && graphPanelEl) {
+  new ResizeObserver(() => resizeSvg()).observe(graphPanelEl);
+}
+
+function dragstarted(event, d) { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
+function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+function dragended(event, d) { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }
+
+const pollingSlider = document.getElementById("polling-slider");
+const pollingValue = document.getElementById("polling-value");
+let pollingTimer = null;
+
+function fetchWithTimeout(url, ms) {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), ms);
+  return fetch(url, { signal: ac.signal }).finally(() => clearTimeout(t));
+}
+
+async function pollHealth() {
+  const results = await Promise.allSettled(HEALTH_ENDPOINTS.map(async (ep) => {
+    try {
+      const r = await fetchWithTimeout(ep.url, 2500);
+      return { id: ep.id, ok: r.ok };
+    } catch (_) {
+      return { id: ep.id, ok: false };
+    }
+  }));
+  results.forEach((res) => {
+    if (res.status === "fulfilled" && res.value) {
+      const n = nodeById.get(res.value.id);
+      if (n) n.status = res.value.ok ? "green" : "red";
+    }
+  });
+  node.select("circle").attr("stroke", d => STATUS_COLORS[d.status] || "#6b7280");
+  if (selectedNode) selectNode(selectedNode, true);
+  updateGlobalStatus();
+  updateBootUI(results);
+}
+
+function updatePollingInterval() {
+  const seconds = Number(pollingSlider.value);
+  pollingValue.textContent = seconds;
+  if (pollingTimer) clearInterval(pollingTimer);
+  pollHealth();
+  pollingTimer = setInterval(() => { pollHealth(); simulateMetricsUpdate(); }, seconds * 1000);
+}
+
+pollingSlider.addEventListener("input", updatePollingInterval);
+updatePollingInterval();
+
+function simulateMetricsUpdate() {
+  nodes.forEach(n => {
+    const jitter = (v) => Math.max(5, Math.min(95, v + (Math.random() * 10 - 5)));
+    n.cpu = jitter(n.cpu);
+    n.mem = jitter(n.mem);
+    n.disk = jitter(n.disk);
+    n.net = jitter(n.net);
+    if (!HEALTH_ENDPOINTS.some(e => e.id === n.id)) {
+      if (n.cpu < 50) n.status = "green";
+      else if (n.cpu < 65) n.status = "yellow";
+      else if (n.cpu < 80) n.status = "orange";
+      else n.status = "red";
+    }
+  });
+  node.select("circle").attr("r", d => 10 + d.cpu * 0.15).attr("stroke", d => STATUS_COLORS[d.status] || "#6b7280");
+  if (selectedNode) selectNode(selectedNode, true);
+  updateGlobalStatus();
+}
+
+let activeStatusFilter = "all";
+document.querySelectorAll(".chip[data-filter-type='status']").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll(".chip[data-filter-type='status']").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    activeStatusFilter = chip.dataset.filterValue;
+    applyFilters();
+  });
+});
+
+const searchInput = document.getElementById("search-input");
+let searchTerm = "";
+searchInput.addEventListener("input", () => { searchTerm = searchInput.value.trim().toLowerCase(); applyFilters(); });
+
+function applyFilters() {
+  node.classed("hidden", d => {
+    const statusMatch = activeStatusFilter === "all" || d.status === activeStatusFilter;
+    const searchMatch = !searchTerm || d.name.toLowerCase().includes(searchTerm) || d.id.toLowerCase().includes(searchTerm);
+    return !(statusMatch && searchMatch);
+  });
+  function endpointHidden(id) {
+    const sel = node.filter((d) => d.id === id);
+    return sel.size() > 0 && sel.classed("hidden");
+  }
+  function linkHidden(d) {
+    const srcId = typeof d.source === "object" && d.source !== null ? d.source.id : d.source;
+    const tgtId = typeof d.target === "object" && d.target !== null ? d.target.id : d.target;
+    return endpointHidden(srcId) || endpointHidden(tgtId);
+  }
+  link.classed("hidden", linkHidden);
+  linkParticles.classed("hidden", linkHidden);
+}
+
+const bootPill = document.getElementById("boot-pill");
+const bootText = document.getElementById("boot-text");
+const bootMessage = document.getElementById("boot-message");
+const bootEndpoints = document.getElementById("boot-endpoints");
+
+function updateBootUI(results) {
+  let up = 0;
+  const rows = [];
+  results.forEach((res) => {
+    if (res.status !== "fulfilled" || !res.value) return;
+    const v = res.value;
+    const ok = v.ok === true;
+    if (ok) up++;
+    rows.push({ id: v.id, ok });
+  });
+  const total = HEALTH_ENDPOINTS.length;
+  const allUp = total > 0 && up === total;
+  bootPill.classList.toggle("ready", allUp);
+  bootPill.classList.toggle("waiting", !allUp);
+  bootText.textContent = allUp ? "Boot: Ready" : "Boot: Partial (" + up + "/" + total + ")";
+  bootMessage.textContent = allUp
+    ? "All probed health endpoints responded OK."
+    : "Some services offline or not exposing /health — graph uses last known status.";
+  bootEndpoints.innerHTML = "";
+  rows.forEach((r) => {
+    const el = document.createElement("span");
+    el.className = "boot-ep " + (r.ok ? "online" : "offline");
+    el.textContent = r.id;
+    bootEndpoints.appendChild(el);
+  });
+}
+
+let selectedNode = null;
+const endpointInfo = document.getElementById("endpoint-info");
+const metricCpu = document.getElementById("metric-cpu");
+const metricMem = document.getElementById("metric-mem");
+const metricDisk = document.getElementById("metric-disk");
+const metricNet = document.getElementById("metric-net");
+const metricCpuBar = document.getElementById("metric-cpu-bar");
+const metricMemBar = document.getElementById("metric-mem-bar");
+const metricDiskBar = document.getElementById("metric-disk-bar");
+const metricNetBar = document.getElementById("metric-net-bar");
+const tagRow = document.getElementById("tag-row");
+const dependenciesList = document.getElementById("dependencies-list");
+const timelineEvents = document.getElementById("timeline-events");
+const timelineNodeName = document.getElementById("timeline-node-name");
+
+function selectNode(nodeData, keepTimeline = false) {
+  selectedNode = nodeData;
+  endpointInfo.innerHTML = `<strong>${nodeData.name}</strong> · ${nodeData.type} · <span>${nodeData.endpoint}</span>`;
+  metricCpu.textContent = `${nodeData.cpu.toFixed(0)}%`;
+  metricMem.textContent = `${nodeData.mem.toFixed(0)}%`;
+  metricDisk.textContent = `${nodeData.disk.toFixed(0)}%`;
+  metricNet.textContent = `${nodeData.net.toFixed(0)}%`;
+  metricCpuBar.style.width = `${nodeData.cpu}%`;
+  metricMemBar.style.width = `${nodeData.mem}%`;
+  metricDiskBar.style.width = `${nodeData.disk}%`;
+  metricNetBar.style.width = `${nodeData.net}%`;
+  
+  function endpointHint(ep) {
+    if (/^https?:\/\//i.test(ep)) {
+      try {
+        const u = new URL(ep);
+        return u.port ? "Port " + u.port : "Port default";
+      } catch (_) {
+        return ep;
+      }
+    }
+    return ep;
+  }
+  tagRow.innerHTML = "";
+  const statusTag = document.createElement("div");
+  statusTag.className = "tag status-" + nodeData.status;
+  statusTag.textContent = "Status: " + nodeData.status.toUpperCase();
+  tagRow.appendChild(statusTag);
+  const typeTag = document.createElement("div");
+  typeTag.className = "tag";
+  typeTag.textContent = "Type: " + nodeData.type;
+  tagRow.appendChild(typeTag);
+  const epTag = document.createElement("div");
+  epTag.className = "tag";
+  epTag.textContent = endpointHint(nodeData.endpoint);
+  tagRow.appendChild(epTag);
+
+  dependenciesList.innerHTML = "";
+  const deps = links.filter(l => (l.source.id || l.source) === nodeData.id || (l.target.id || l.target) === nodeData.id).map(l => (l.source.id || l.source) === nodeData.id ? (l.target.id || l.target) : (l.source.id || l.source)).map(id => nodeById.get(id));
+  if (deps.length === 0) { const none = document.createElement("div"); none.className = "tag"; none.textContent = "No direct dependencies"; dependenciesList.appendChild(none); }
+  else { deps.forEach(dep => { const depTag = document.createElement("div"); depTag.className = "tag"; depTag.textContent = dep.name; dependenciesList.appendChild(depTag); }); }
+
+  timelineNodeName.textContent = nodeData.name;
+  if (!keepTimeline) {
+    timelineEvents.innerHTML = "";
+    const now = new Date();
+    [{ t: -60, msg: "Metrics stable" }, { t: -45, msg: "Health check OK" }, { t: -30, msg: "Latency within SLO" }, { t: -15, msg: "CPU jitter observed" }, { t: 0, msg: "Status: " + nodeData.status.toUpperCase() }].forEach(e => {
+      const ts = new Date(now.getTime() + e.t * 1000);
+      const row = document.createElement("div");
+      row.className = "timeline-event";
+      row.innerHTML = `<span>${ts.toLocaleTimeString()}</span><span>${e.msg}</span>`;
+      timelineEvents.appendChild(row);
+    });
+  }
+}
+
+const globalStatusDot = document.getElementById("global-status-dot");
+const globalStatusText = document.getElementById("global-status-text");
+
+function updateGlobalStatus() {
+  const order = ["green", "yellow", "orange", "red"];
+  let worstIndex = 0;
+  nodes.forEach(n => { const idx = order.indexOf(n.status); if (idx > worstIndex) worstIndex = idx; });
+  const worst = order[worstIndex];
+  globalStatusDot.style.background = STATUS_COLORS[worst];
+  globalStatusDot.style.boxShadow = `0 0 10px ${STATUS_COLORS[worst]}80`;
+  globalStatusText.textContent = "Overall: " + { green: "Healthy", yellow: "Warning", orange: "Degraded", red: "Critical" }[worst] || "Unknown";
+}
+
+updateGlobalStatus();
+setTimeout(fitToScreen, 500);
+
+const dashboardNode = nodeById.get("dashboard");
+if (dashboardNode) selectNode(dashboardNode);
+    </script>
+</body>
+</html>

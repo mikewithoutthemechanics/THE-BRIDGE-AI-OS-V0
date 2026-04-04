@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Support — Bridge AI OS</title>
+    <meta name="description" content="Tickets — Support Ticket Management">
+    <meta property="og:title" content="Support — Bridge AI OS">
+    <meta property="og:description" content="Tickets — Support Ticket Management">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/tickets.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/tickets.html">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/bridge-tokens.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100vh; background: var(--bg-0); font-family: var(--font-ui); color: var(--text-primary); }
+        body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 80%, rgba(99,255,218,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+        .shell { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
+        .header h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); background: linear-gradient(135deg, var(--cyan) 0%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stats-bar { display: flex; gap: var(--gap); margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 22px; flex: 1; min-width: 150px; }
+        .stat-card .label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-family: var(--font-mono); margin-bottom: 6px; }
+        .stat-card .value { font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--cyan); }
+        .toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+        th, td { text-align: left; padding: 12px 16px; font-size: var(--text-sm); border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-2); color: var(--text-secondary); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-size: var(--text-xs); font-family: var(--font-mono); }
+        tr:hover td { background: rgba(99,255,218,0.03); }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: var(--text-xs); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
+        .loading, .error-msg { text-align: center; padding: 48px; color: var(--text-secondary); font-family: var(--font-mono); font-size: var(--text-sm); }
+        .error-msg { color: var(--signal-red); }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: var(--z-overlay); justify-content: center; align-items: center; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; width: 90%; max-width: 520px; max-height: 85vh; overflow-y: auto; }
+        .modal h2 { font-size: var(--text-lg); margin-bottom: 20px; color: var(--cyan); }
+        .modal label { display: block; font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: var(--tracking-wide); margin-bottom: 4px; margin-top: 12px; font-family: var(--font-mono); }
+        .modal input, .modal select, .modal textarea { width: 100%; padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-ui); font-size: var(--text-sm); outline: none; }
+        .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--cyan); }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+        tr { cursor: pointer; }
+        .stat-card .value.open-val { color: var(--degraded); }
+        .stat-card .value.closed-val { color: var(--alive); }
+        .badge.open { background: rgba(255,170,0,0.12); color: var(--degraded); }
+        .badge.in-progress { background: rgba(99,255,218,0.12); color: var(--cyan); }
+        .badge.closed { background: rgba(0,255,136,0.12); color: var(--alive); }
+        .priority-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+        .priority-dot.high { background: var(--signal-red); box-shadow: 0 0 6px var(--signal-glow); }
+        .priority-dot.medium { background: var(--degraded); }
+        .priority-dot.low { background: var(--alive); }
+        .modal textarea { resize: vertical; }
+        .reply-item { background: var(--bg-2); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 8px; font-size: var(--text-sm); color: var(--text-secondary); }
+        .reply-meta { font-size: var(--text-xs); color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 4px; }
+        @media (max-width: 700px) { th:nth-child(5), td:nth-child(5) { display: none; } }
+    </style>
+</head>
+<body>
+
+<div class="shell">
+    <div class="header"><h1>Support &#8212; Bridge AI OS</h1></div>
+    <div class="stats-bar">
+        <div class="stat-card"><div class="label">Open</div><div class="value open-val" id="stat-open">&#8212;</div></div>
+        <div class="stat-card"><div class="label">In Progress</div><div class="value" id="stat-progress">&#8212;</div></div>
+        <div class="stat-card"><div class="label">Closed</div><div class="value closed-val" id="stat-closed">&#8212;</div></div>
+    </div>
+    <div class="toolbar"><button class="btn-primary" onclick="openNewModal()">+ New Ticket</button></div>
+    <div id="table-container"><div class="loading">Loading tickets...</div></div>
+</div>
+<div class="modal-overlay" id="newModal">
+    <div class="modal">
+        <h2>New Ticket</h2>
+        <label>Subject</label><input id="tk-subject" placeholder="Brief description">
+        <label>Body</label><textarea id="tk-body" rows="4" placeholder="Describe the issue..."></textarea>
+        <label>Priority</label>
+        <select id="tk-priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal(&quot;newModal&quot;)">Cancel</button>
+            <button class="btn-primary" onclick="createTicket()">Submit</button>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <h2 id="detail-subject"></h2>
+        <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:12px;" id="detail-body"></p>
+        <div style="display:flex;gap:12px;font-size:var(--text-xs);color:var(--text-muted);font-family:var(--font-mono);">
+            <span id="detail-status"></span><span id="detail-priority"></span><span id="detail-assigned"></span>
+        </div>
+        <div style="margin-top:16px;"><label>Replies</label><div id="detail-replies"></div></div>
+        <div style="margin-top:12px;">
+            <label>Reply</label><textarea id="reply-body" rows="3" placeholder="Type your reply..."></textarea>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal(&quot;detailModal&quot;)">Close</button>
+                <button class="btn-primary" onclick="sendReply()">Send Reply</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+
+var tickets = [];
+var activeTicketId = null;
+async function loadTickets() {
+    var container = document.getElementById("table-container");
+    try {
+        var res = await fetch("/api/tickets");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        var data = await res.json();
+        tickets = Array.isArray(data) ? data : (data.tickets || data.data || []);
+        renderStats(); renderTable();
+    } catch (e) {
+        container.textContent = "";
+        var d = document.createElement("div"); d.className = "error-msg";
+        d.textContent = "Failed to load tickets: " + e.message;
+        container.appendChild(d);
+    }
+}
+function renderStats() {
+    var count = function(v){ return tickets.filter(function(t){ return (t.status||"").toLowerCase().replace(/[\s_]/g,"-")===v; }).length; };
+    document.getElementById("stat-open").textContent = count("open");
+    document.getElementById("stat-progress").textContent = count("in-progress");
+    document.getElementById("stat-closed").textContent = count("closed");
+}
+function renderTable() {
+    var container = document.getElementById("table-container");
+    container.textContent = "";
+    if (!tickets.length) { var m=document.createElement("div"); m.className="loading"; m.textContent="No tickets found."; container.appendChild(m); return; }
+    var table = document.createElement("table");
+    var thead = document.createElement("thead"); var hr = document.createElement("tr");
+    ["ID","Subject","Priority","Status","Assigned"].forEach(function(h){ var th=document.createElement("th"); th.textContent=h; hr.appendChild(th); });
+    thead.appendChild(hr); table.appendChild(thead);
+    var tbody = document.createElement("tbody");
+    tickets.forEach(function(t, i) {
+        var tr = document.createElement("tr"); tr.onclick = function(){ showDetail(i); };
+        var t1=document.createElement("td"); t1.style.fontFamily="var(--font-mono)"; t1.style.color="var(--text-muted)"; t1.textContent=t.id||t._id||(i+1); tr.appendChild(t1);
+        var t2=document.createElement("td"); t2.textContent=t.subject||t.title||"\u2014"; tr.appendChild(t2);
+        var t3=document.createElement("td"); var priority=(t.priority||"medium").toLowerCase();
+        var dot=document.createElement("span"); dot.className="priority-dot "+priority;
+        t3.appendChild(dot); t3.appendChild(document.createTextNode(priority)); tr.appendChild(t3);
+        var t4=document.createElement("td"); var status=(t.status||"open").toLowerCase().replace(/[\s_]/g,"-");
+        var badge=document.createElement("span"); badge.className="badge "+(status==="closed"?"closed":status==="in-progress"?"in-progress":"open");
+        badge.textContent=status; t4.appendChild(badge); tr.appendChild(t4);
+        var t5=document.createElement("td"); t5.style.color="var(--text-secondary)"; t5.textContent=t.assigned||t.assignedTo||t.assignee||"\u2014"; tr.appendChild(t5);
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody); container.appendChild(table);
+}
+function openNewModal(){ document.getElementById("newModal").classList.add("open"); }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+async function createTicket(){
+    var subject=document.getElementById("tk-subject").value;
+    var body=document.getElementById("tk-body").value;
+    var priority=document.getElementById("tk-priority").value;
+    if(!subject) return alert("Subject is required");
+    try {
+        var res=await fetch("/api/tickets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject:subject,body:body,priority:priority})});
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        closeModal("newModal"); document.getElementById("tk-subject").value=""; document.getElementById("tk-body").value="";
+        loadTickets();
+    } catch(e){ alert("Failed to create ticket: "+e.message); }
+}
+function showDetail(i){
+    var t=tickets[i]; activeTicketId=t.id||t._id;
+    document.getElementById("detail-subject").textContent=t.subject||t.title||"Ticket";
+    document.getElementById("detail-body").textContent=t.body||t.description||"";
+    document.getElementById("detail-status").textContent="Status: "+(t.status||"open");
+    document.getElementById("detail-priority").textContent="Priority: "+(t.priority||"medium");
+    document.getElementById("detail-assigned").textContent="Assigned: "+(t.assigned||t.assignedTo||t.assignee||"Unassigned");
+    var re=document.getElementById("detail-replies"); re.textContent="";
+    var replies=t.replies||[];
+    if(replies.length){
+        replies.forEach(function(r){
+            var div=document.createElement("div"); div.className="reply-item";
+            var text=typeof r==="string"?r:(r.body||r.text||r.message||"");
+            var author=(typeof r==="object"&&(r.author||r.from))||"";
+            var date=(typeof r==="object"&&(r.date||r.createdAt))||"";
+            if(author||date){ var meta=document.createElement("div"); meta.className="reply-meta"; meta.textContent=author+(date?" \u2014 "+new Date(date).toLocaleString():""); div.appendChild(meta); }
+            div.appendChild(document.createTextNode(text)); re.appendChild(div);
+        });
+    } else { var sp=document.createElement("span"); sp.style.color="var(--text-muted)"; sp.textContent="No replies yet."; re.appendChild(sp); }
+    document.getElementById("reply-body").value="";
+    document.getElementById("detailModal").classList.add("open");
+}
+async function sendReply(){
+    if(!activeTicketId) return;
+    var body=document.getElementById("reply-body").value;
+    if(!body.trim()) return alert("Reply cannot be empty");
+    try {
+        var res=await fetch("/api/tickets/"+activeTicketId+"/reply",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({body:body})});
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        closeModal("detailModal"); loadTickets();
+    } catch(e){ alert("Failed to send reply: "+e.message); }
+}
+
+document.querySelectorAll(".modal-overlay").forEach(function(el){
+    el.addEventListener("click", function(e){ if(e.target===el) el.classList.remove("open"); });
+});
+loadTickets();
+</script>
+<script src="/bridge-nav.js?v=2"></script>
+</body>
+</html>

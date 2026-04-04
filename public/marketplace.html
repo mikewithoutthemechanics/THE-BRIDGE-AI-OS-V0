@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARKETPLACE — BRIDGE AI OS</title>
+    <meta name="description" content="Marketplace — Bridge AI OS Service Marketplace">
+    <meta property="og:title" content="MARKETPLACE — BRIDGE AI OS">
+    <meta property="og:description" content="Marketplace — Bridge AI OS Service Marketplace">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/marketplace.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/marketplace.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New',monospace;color:#0ff;overflow-x:hidden}
+
+/* HUD */
+#hud{
+  position:sticky;top:0;z-index:100;height:40px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;background:rgba(0,0,0,.92);
+  border-bottom:1px solid rgba(0,255,255,.2);
+}
+#hud-left{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:2px;color:#0ff;}
+#hud-right{display:flex;align-items:center;gap:14px;font-size:9px;color:#0f9;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#0f9;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+#clock{font-size:10px;letter-spacing:2px;color:#0f9;}
+.conn-badge{padding:2px 8px;border-radius:2px;font-size:8px;letter-spacing:1px;font-weight:bold;background:#003300;border:1px solid #0f93;color:#0f9;}
+.conn-badge.err{background:#330000;border-color:#f003;color:#f00;}
+.nav-links{display:flex;gap:12px;}
+.nav-links a{color:#0ac;font-size:9px;letter-spacing:1px;text-decoration:none;opacity:.7;transition:opacity .2s;}
+.nav-links a:hover{opacity:1;}
+
+/* MAIN GRID */
+#main{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:14px;}
+
+/* PANEL */
+.panel{
+  background:rgba(0,10,20,.85);
+  border:1px solid rgba(0,255,255,.15);
+  border-radius:3px;overflow:hidden;
+  min-height:240px;display:flex;flex-direction:column;
+  transition:border-color .3s;
+}
+.panel:hover{border-color:rgba(0,255,255,.35);}
+.panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;background:rgba(0,255,255,.04);
+  border-bottom:1px solid rgba(0,255,255,.1);
+}
+.panel-title{font-size:9px;letter-spacing:2px;color:#0ff;text-transform:uppercase;}
+.panel-badge{font-size:7px;letter-spacing:1px;padding:2px 6px;border-radius:2px;background:#001a1a;border:1px solid #0ff2;color:#0ac;}
+.panel-body{flex:1;padding:12px;overflow:auto;}
+.panel-footer{padding:4px 12px;font-size:7px;color:#0ff3;letter-spacing:1px;border-top:1px solid #0ff1;}
+
+/* DATA ROWS */
+.data-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #0ff1;font-size:10px;}
+.data-row:last-child{border-bottom:none;}
+.data-label{color:#0ac;letter-spacing:1px;}
+.data-val{color:#0ff;font-weight:bold;}
+.data-val.green{color:#0f9;}
+.data-val.red{color:#f44;}
+.data-val.yellow{color:#ff0;}
+.data-val.cyan{color:#0ff;}
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:5px;}
+.status-dot.up{background:#0f9;box-shadow:0 0 6px #0f9;}
+.status-dot.down{background:#f44;box-shadow:0 0 6px #f44;}
+
+/* SKELETON */
+.skeleton{background:linear-gradient(90deg,#0a1a1a 25%,#0d2020 50%,#0a1a1a 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;height:14px;border-radius:2px;margin:6px 0;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.loading-text{color:#0ff4;font-size:9px;letter-spacing:2px;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* TASKS BOARD */
+.tasks-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.task-col-header{font-size:7px;letter-spacing:2px;color:#0ac;text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #0ff2;}
+.task-card{
+  padding:6px 8px;background:rgba(0,255,255,.03);border:1px solid #0ff2;border-radius:2px;
+  margin-bottom:5px;font-size:8px;
+}
+.task-card-title{color:#0ff;margin-bottom:2px;}
+.task-card-meta{color:#0ff4;font-size:7px;}
+.task-col-open .task-col-header{color:#ff0;}
+.task-col-open .task-card{border-color:#ff03;}
+.task-col-progress .task-col-header{color:#0ac;}
+.task-col-progress .task-card{border-color:#0ac3;}
+.task-col-done .task-col-header{color:#0f9;}
+.task-col-done .task-card{border-color:#0f93;}
+
+/* DEX */
+.dex-pair-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.dex-pair-name{font-size:14px;color:#0ff;font-weight:bold;letter-spacing:2px;}
+.dex-price{font-size:20px;font-weight:bold;}
+.dex-change{font-size:10px;padding:2px 6px;border-radius:2px;}
+.dex-chart-wrap{height:100px;position:relative;margin-bottom:8px;}
+.dex-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.dex-tab{
+  padding:3px 10px;font-size:8px;letter-spacing:1px;cursor:pointer;
+  background:#001a1a;border:1px solid #0ff2;color:#0ac;border-radius:2px;
+  transition:all .2s;
+}
+.dex-tab.active{background:#003333;border-color:#0ff;color:#0ff;}
+.dex-tab:hover{border-color:#0ff5;}
+
+/* WALLET */
+.wallet-address{
+  font-size:8px;color:#0ac;letter-spacing:1px;
+  padding:6px 8px;background:#001a1a;border:1px solid #0ff2;border-radius:2px;
+  margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.balance-card{padding:8px;background:rgba(0,255,255,.03);border:1px solid #0ff2;border-radius:2px;text-align:center;}
+.balance-amount{font-size:16px;color:#0ff;font-weight:bold;}
+.balance-symbol{font-size:8px;color:#0ac;letter-spacing:1px;}
+.txn-header{font-size:7px;color:#0ac;letter-spacing:2px;margin-bottom:5px;}
+.txn-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #0ff1;font-size:8px;}
+.txn-row:last-child{border-bottom:none;}
+.txn-hash{color:#0ff4;overflow:hidden;text-overflow:ellipsis;max-width:120px;}
+.txn-dir{padding:1px 5px;border-radius:2px;font-size:7px;}
+.txn-dir.in{background:#001a00;border:1px solid #0f93;color:#0f9;}
+.txn-dir.out{background:#1a0000;border:1px solid #f003;color:#f44;}
+
+/* SKILLS */
+.skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.skill-card{
+  padding:10px;background:rgba(0,255,255,.03);border:1px solid #0ff2;border-radius:2px;
+}
+.skill-name{font-size:10px;color:#0ff;margin-bottom:3px;}
+.skill-desc{font-size:8px;color:#0ac;margin-bottom:8px;}
+.skill-meta{display:flex;justify-content:space-between;align-items:center;}
+.skill-version{font-size:7px;color:#0ff3;}
+.skill-btn{
+  padding:3px 8px;font-size:7px;letter-spacing:1px;cursor:pointer;
+  border-radius:2px;font-family:monospace;transition:all .2s;
+}
+.skill-btn.install{background:#001a1a;border:1px solid #0ff3;color:#0ac;}
+.skill-btn.install:hover{background:#003333;border-color:#0ff;color:#0ff;}
+.skill-btn.installed{background:#001a00;border:1px solid #0f93;color:#0f9;cursor:default;}
+
+/* PORTFOLIO PIE */
+.portfolio-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}
+.pie-wrap{position:relative;height:160px;}
+.pie-legend{font-size:8px;}
+.pie-legend-item{display:flex;align-items:center;gap:6px;padding:3px 0;}
+.pie-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.portfolio-total{font-size:22px;color:#0ff;font-weight:bold;margin-bottom:4px;}
+.portfolio-label{font-size:8px;color:#0ac;letter-spacing:1px;margin-bottom:12px;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.stat-card{
+  text-align:center;padding:14px 8px;
+  background:rgba(0,255,255,.03);border:1px solid #0ff2;border-radius:2px;
+}
+.stat-val{font-size:24px;font-weight:bold;color:#0ff;margin-bottom:3px;transition:all .3s;}
+.stat-val.green{color:#0f9;}
+.stat-val.yellow{color:#ff0;}
+.stat-val.cyan{color:#0ff;}
+.stat-label{font-size:7px;color:#0ac;letter-spacing:1px;}
+.stat-trend{font-size:8px;margin-top:4px;}
+.stat-trend.up{color:#0f9;}
+.stat-trend.dn{color:#f44;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:#0ff3;border-radius:2px;}
+::-webkit-scrollbar-thumb:hover{background:#0ff6;}
+</style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+
+<div id="hud">
+  <div id="hud-left">
+    <div class="live-dot"></div>
+    <span>BRIDGE AI OS &mdash; MARKETPLACE</span>
+    <div class="nav-links">
+      <a href="/ui.html">HOME</a>
+      <a href="/registry.html">REGISTRY</a>
+      <a href="/topology.html">TOPOLOGY</a>
+      <a href="/avatar.html">AVATAR</a>
+      <a href="/system-status-dashboard.html">STATUS</a>
+      <a href="/control.html">CONTROL</a>
+    </div>
+  </div>
+  <div id="hud-right">
+    <span id="refresh-status">LIVE</span>
+    <span id="conn-badge" class="conn-badge">CONNECTING</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div id="main">
+
+  <!-- TASKS BOARD -->
+  <div class="panel" style="grid-column:1/-1;">
+    <div class="panel-header">
+      <span class="panel-title">TASKS BOARD</span>
+      <span class="panel-badge" id="tasks-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="tasks-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:70%"></div>
+    </div>
+    <div class="panel-footer" id="tasks-ts">last update: —</div>
+  </div>
+
+  <!-- DEX CHART -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">DEX TRADING</span>
+      <span class="panel-badge" id="dex-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="dex-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton" style="height:80px;"></div>
+    </div>
+    <div class="panel-footer" id="dex-ts">last update: —</div>
+  </div>
+
+  <!-- WALLET -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">WALLET</span>
+      <span class="panel-badge" id="wallet-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="wallet-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:60%"></div>
+    </div>
+    <div class="panel-footer" id="wallet-ts">last update: —</div>
+  </div>
+
+  <!-- SKILLS STORE -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">SKILLS STORE</span>
+      <span class="panel-badge" id="skills-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="skills-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div><div class="skeleton" style="width:80%"></div>
+    </div>
+    <div class="panel-footer" id="skills-ts">last update: —</div>
+  </div>
+
+  <!-- PORTFOLIO -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">PORTFOLIO</span>
+      <span class="panel-badge" id="port-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="port-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton" style="height:100px;"></div>
+    </div>
+    <div class="panel-footer" id="port-ts">last update: —</div>
+  </div>
+
+  <!-- PLATFORM STATS -->
+  <div class="panel" style="grid-column:1/-1;">
+    <div class="panel-header">
+      <span class="panel-title">PLATFORM STATISTICS</span>
+      <span class="panel-badge" id="stats-badge">LOADING</span>
+    </div>
+    <div class="panel-body" id="stats-body">
+      <div class="loading-text">CONNECTING...</div>
+      <div class="skeleton"></div>
+    </div>
+    <div class="panel-footer" id="stats-ts">last update: —</div>
+  </div>
+
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock(){document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);}
+setInterval(updateClock,1000);updateClock();
+const ts=()=>new Date().toLocaleTimeString();
+function setTS(id){document.getElementById(id).textContent='last update: '+ts();}
+
+// ── ANIMATED COUNTER ──
+function animCounter(el,target,prefix='',suffix='',decimals=0){
+  const start=parseFloat(el.dataset.current||0);
+  el.dataset.current=target;
+  const dur=600,steps=30,inc=(target-start)/steps;
+  let cur=start,i=0;
+  const t=setInterval(()=>{
+    cur+=inc;i++;
+    if(i>=steps){cur=target;clearInterval(t);}
+    el.textContent=prefix+(decimals?cur.toFixed(decimals):Math.round(cur).toLocaleString())+suffix;
+  },dur/steps);
+}
+
+// ── MOCK DATA ──
+function fakeFallback(ep){
+  const mocks={
+    '/api/marketplace/tasks':{
+      open:[
+        {id:'T-001',title:'Integrate DEX oracle feed',priority:'HIGH',age:'2h'},
+        {id:'T-002',title:'Fix auth token refresh',priority:'MED',age:'5h'},
+      ],
+      in_progress:[
+        {id:'T-003',title:'Build skills registry API',priority:'HIGH',age:'1h'},
+        {id:'T-004',title:'Optimize federation sync',priority:'LOW',age:'30m'},
+      ],
+      completed:[
+        {id:'T-005',title:'Deploy BridgeOS 2.4.1',priority:'HIGH',age:'1d'},
+        {id:'T-006',title:'Setup node monitoring',priority:'MED',age:'2d'},
+      ]
+    },
+    '/api/marketplace/dex':{
+      pairs:[
+        {pair:'ARC/USDT',price:4.22,change:+11.2,volume:1245000,prices:[3.8,3.9,4.0,3.95,4.1,4.18,4.22]},
+        {pair:'BTC/USDT',price:67234,change:+2.3,volume:89200000,prices:[65100,65800,66200,66900,67000,67100,67234]},
+        {pair:'ETH/USDT',price:3521,change:-0.8,volume:34500000,prices:[3550,3540,3530,3520,3515,3518,3521]},
+        {pair:'SOL/USDT',price:188.4,change:+4.1,volume:5600000,prices:[180,182,183,185,186,188,188.4]},
+      ],
+      activePair:'ARC/USDT'
+    },
+    '/api/marketplace/wallet':{
+      address:'0x3f4A...C9bE',
+      balances:[
+        {symbol:'ARC',amount:12450.5},
+        {symbol:'ETH',amount:4.82},
+        {symbol:'USDT',amount:8320.00},
+        {symbol:'BTC',amount:0.14},
+      ],
+      txns:[
+        {hash:'0xab12...ef34',dir:'in',amount:'+500 ARC',time:'2m ago'},
+        {hash:'0xcd56...ab78',dir:'out',amount:'-0.01 ETH',time:'15m ago'},
+        {hash:'0xef90...cd12',dir:'in',amount:'+1200 USDT',time:'1h ago'},
+      ]
+    },
+    '/api/marketplace/skills':[
+      {id:'sk-001',name:'ImageAnalyzer',desc:'Vision AI for image classification',version:'1.2.0',installed:true},
+      {id:'sk-002',name:'SentimentAI',desc:'NLP sentiment scoring module',version:'2.0.1',installed:false},
+      {id:'sk-003',name:'DataSyncer',desc:'Cross-chain data synchronization',version:'0.9.4',installed:true},
+      {id:'sk-004',name:'VoiceCodec',desc:'Audio processing and transcription',version:'1.1.0',installed:false},
+    ],
+    '/api/marketplace/portfolio':{
+      total:24850.33,
+      assets:[
+        {name:'ARC',value:12450,pct:50.1,color:'#0ff'},
+        {name:'ETH',value:16961,pct:34.3,color:'#8844ff'},
+        {name:'USDT',value:8320,pct:33.5,color:'#0f9'},
+        {name:'BTC',value:9413,pct:12.1,color:'#ff8c00'},
+      ]
+    },
+    '/api/marketplace/stats':{
+      tasks:{value:1247,trend:'+12%',up:true},
+      agents:{value:38,trend:'+3',up:true},
+      revenue:{value:84320,trend:'+8.4%',up:true,prefix:'$'},
+      uptime:{value:99.94,trend:'',up:true,suffix:'%',decimals:2},
+      volume:{value:128500000,trend:'+22%',up:true,prefix:'$'},
+      skills:{value:94,trend:'+7',up:true},
+    }
+  };
+  return mocks[ep]||{};
+}
+
+async function poll(endpoint,callback){
+  try{
+    const r=await fetch(endpoint,{signal:AbortSignal.timeout(4000)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const raw=await r.json();
+    document.getElementById('conn-badge').textContent='CONNECTED';
+    document.getElementById('conn-badge').className='conn-badge';
+    // API wraps responses as {section, data, ts} — unwrap if present
+    const data=(raw && raw.section && raw.data)?raw.data:raw;
+    callback(data,false);
+  }catch(e){
+    document.getElementById('conn-badge').textContent='OFFLINE';
+    document.getElementById('conn-badge').className='conn-badge err';
+    callback(fakeFallback(endpoint),true);
+  }
+}
+
+// ── TASKS BOARD ──
+function renderTasks(d,mock){
+  // API returns {open:N, in_progress:N, completed:N, listings:[...]}
+  // Mock returns {open:[...], in_progress:[...], completed:[...]}
+  const listings=d.listings||[];
+  const openItems=Array.isArray(d.open)?d.open:listings.filter(t=>t.status==='pending'||t.status==='open');
+  const progressItems=Array.isArray(d.in_progress)?d.in_progress:listings.filter(t=>t.status==='in_progress');
+  const doneItems=Array.isArray(d.completed)?d.completed:listings.filter(t=>t.status==='completed');
+
+  const col=(items,cls,label)=>`
+    <div class="task-col ${cls}">
+      <div class="task-col-header">${label} (${items.length})</div>
+      ${items.map(t=>`
+        <div class="task-card">
+          <div class="task-card-title">${t.id}: ${t.title}</div>
+          <div class="task-card-meta">${t.priority||t.status||''} &bull; ${t.age||t.reward?t.reward+' ARC':''}</div>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('tasks-body').innerHTML=`
+    <div class="tasks-cols">
+      ${col(openItems,'task-col-open','OPEN')}
+      ${col(progressItems,'task-col-progress','IN PROGRESS')}
+      ${col(doneItems,'task-col-done','COMPLETED')}
+    </div>`;
+  const tot=openItems.length+progressItems.length+doneItems.length;
+  document.getElementById('tasks-badge').textContent=mock?'MOCK':tot+' TASKS';
+  setTS('tasks-ts');
+}
+
+// ── DEX CHART ──
+let dexChart=null;
+let currentPair=null;
+let dexData=null;
+
+function renderDex(d,mock){
+  dexData=d;
+  const pairs=d.pairs||[];
+  if(!currentPair) currentPair=d.activePair||pairs[0]?.pair;
+  const pair=pairs.find(p=>p.pair===currentPair)||pairs[0];
+  if(!pair) return;
+
+  // API pairs have {pair, ports, active} — mock pairs have {pair, price, change, volume, prices}
+  const hasPrice=typeof pair.price==='number';
+  const up=hasPrice?(pair.change>=0):pair.active;
+  const changeColor=up?'#0f9':'#f44';
+  const tabs=pairs.map(p=>`
+    <div class="dex-tab ${p.pair===currentPair?'active':''}" onclick="switchPair('${p.pair}')">${p.pair}</div>
+  `).join('');
+
+  const priceDisplay=hasPrice?'$'+pair.price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})
+    :(pair.ports?pair.ports.join(' ↔ '):'—');
+  const changeDisplay=hasPrice?((up?'+':'')+pair.change+'%'):(pair.active?'ACTIVE':'INACTIVE');
+
+  document.getElementById('dex-body').innerHTML=`
+    <div class="dex-tabs">${tabs}</div>
+    <div class="dex-pair-header">
+      <span class="dex-pair-name">${pair.pair}</span>
+      <div style="text-align:right;">
+        <div class="dex-price" style="color:${changeColor}">${priceDisplay}</div>
+        <span class="dex-change" style="background:${up?'#001a00':'#1a0000'};border:1px solid ${up?'#0f93':'#f003'};color:${changeColor}">${changeDisplay}</span>
+      </div>
+    </div>
+    <div class="dex-chart-wrap"><canvas id="dex-chart"></canvas></div>
+    <div class="data-row"><span class="data-label">${hasPrice?'24H VOLUME':'TOTAL SERVICES'}</span><span class="data-val">${hasPrice?'$'+(pair.volume||0).toLocaleString():(d.total_services||0)}</span></div>
+  `;
+
+  const chartEl=document.getElementById('dex-chart');
+  if(dexChart){dexChart.destroy();dexChart=null;}
+  const prices=pair.prices||[pair.price];
+  const labels=prices.map((_,i)=>`-${(prices.length-1-i)*5}m`);
+  const grad=chartEl.getContext('2d').createLinearGradient(0,0,0,100);
+  grad.addColorStop(0,up?'rgba(0,255,153,0.3)':'rgba(255,68,68,0.3)');
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+  dexChart=new Chart(chartEl,{
+    type:'line',
+    data:{labels,datasets:[{
+      data:prices,borderColor:changeColor,borderWidth:2,
+      backgroundColor:grad,fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:changeColor
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'rgba(0,10,20,0.9)',borderColor:'rgba(0,255,255,0.3)',borderWidth:1,titleColor:'#0ac',bodyColor:'#0ff'}},
+      scales:{
+        x:{ticks:{color:'#0ac',font:{size:8,family:'Courier New'}},grid:{color:'rgba(0,255,255,0.06)'}},
+        y:{ticks:{color:'#0ac',font:{size:8,family:'Courier New'}},grid:{color:'rgba(0,255,255,0.06)'}}
+      }
+    }
+  });
+
+  document.getElementById('dex-badge').textContent=mock?'MOCK':pairs.length+' PAIRS';
+  setTS('dex-ts');
+}
+
+function switchPair(p){
+  currentPair=p;
+  if(dexData) renderDex(dexData,false);
+}
+window.switchPair=switchPair;
+
+// ── WALLET ──
+function renderWallet(d,mock){
+  // API returns {balances:[{token,amount,unit,...}], system_value_score}
+  // Mock returns {address, balances:[{symbol,amount}], txns:[...]}
+  const balances=d.balances||[];
+  const address=d.address||(d.system_value_score?'SYSTEM RESOURCE WALLET':'—');
+  const txns=d.txns||[];
+
+  document.getElementById('wallet-body').innerHTML=`
+    <div class="wallet-address">${address}</div>
+    <div class="balance-grid">
+      ${balances.map(b=>`
+        <div class="balance-card">
+          <div class="balance-amount">${typeof b.amount==='number'?b.amount.toLocaleString(undefined,{maximumFractionDigits:4}):b.amount}</div>
+          <div class="balance-symbol">${b.symbol||b.token||''}${b.unit?' ('+b.unit+')':''}</div>
+          ${b.usage_pct!=null?'<div style="font-size:7px;color:#ff0;margin-top:2px;">'+b.usage_pct+'% used</div>':''}
+          ${b.utilization_pct!=null?'<div style="font-size:7px;color:#ff0;margin-top:2px;">'+b.utilization_pct+'% util</div>':''}
+        </div>`).join('')}
+    </div>
+    ${d.system_value_score?'<div class="data-row"><span class="data-label">SYSTEM VALUE SCORE</span><span class="data-val green">'+d.system_value_score+'</span></div>':''}
+    ${txns.length?'<div class="txn-header">RECENT TRANSACTIONS</div>':''}
+    ${txns.map(t=>`
+      <div class="txn-row">
+        <span class="txn-hash">${t.hash}</span>
+        <span class="txn-dir ${t.dir}">${t.dir.toUpperCase()}</span>
+        <span style="color:#0ff;font-size:9px;">${t.amount}</span>
+        <span style="color:#0ff4;font-size:8px;">${t.time}</span>
+      </div>`).join('')}
+  `;
+  document.getElementById('wallet-badge').textContent=mock?'MOCK':(d.system_value_score?'SCORE: '+d.system_value_score:'CONNECTED');
+  setTS('wallet-ts');
+}
+
+// ── SKILLS ──
+function renderSkills(d,mock){
+  // API returns {installed:['pkg1','pkg2',...], count, categories:{...}}
+  // Mock returns [{id,name,desc,version,installed},...] or {skills:[...]}
+  let skills;
+  if(Array.isArray(d)){
+    skills=d;
+  }else if(d.skills&&Array.isArray(d.skills)){
+    skills=d.skills;
+  }else if(d.installed&&Array.isArray(d.installed)){
+    // Real API: convert package list to skill cards
+    const cats=d.categories||{};
+    const categorize=(name)=>{
+      if(cats.runtime&&cats.runtime.includes(name)) return 'runtime';
+      if(cats.security&&cats.security.includes(name)) return 'security';
+      if(cats.testing&&cats.testing.includes(name)) return 'testing';
+      return 'utility';
+    };
+    skills=d.installed.slice(0,12).map((name,i)=>({
+      id:'sk-'+i,name,desc:categorize(name),version:'—',installed:true
+    }));
+  }else{
+    skills=[];
+  }
+  const installedCount=skills.filter(s=>s.installed).length;
+  document.getElementById('skills-body').innerHTML=`
+    <div style="font-size:8px;color:#0ac;margin-bottom:10px;">INSTALLED: <span style="color:#0f9;">${installedCount}/${skills.length}</span>${d.count?' &bull; TOTAL PACKAGES: '+d.count:''}</div>
+    <div class="skills-grid">
+      ${skills.map(s=>`
+        <div class="skill-card">
+          <div class="skill-name">${s.name}</div>
+          <div class="skill-desc">${s.desc||''}</div>
+          <div class="skill-meta">
+            <span class="skill-version">${s.version!=='—'?'v'+s.version:''}</span>
+            <button class="skill-btn ${s.installed?'installed':'install'}" ${s.installed?'disabled':''} onclick="installSkill('${s.id}',this)">
+              ${s.installed?'INSTALLED':'INSTALL'}
+            </button>
+          </div>
+        </div>`).join('')}
+    </div>
+  `;
+  document.getElementById('skills-badge').textContent=mock?'MOCK':(d.count||skills.length)+' PACKAGES';
+  setTS('skills-ts');
+}
+
+function installSkill(id,btn){
+  btn.textContent='INSTALLING...';btn.disabled=true;
+  setTimeout(()=>{btn.className='skill-btn installed';btn.textContent='INSTALLED';},1500);
+}
+window.installSkill=installSkill;
+
+// ── PORTFOLIO ──
+let portChart=null;
+const PORT_COLORS=['#0ff','#8844ff','#0f9','#ff8c00','#f44','#ff0','#0ac'];
+function renderPortfolio(d,mock){
+  // API returns {total_value, health_pct, assets:[{id,port,status,value},...]}
+  // Mock returns {total, assets:[{name,value,pct,color},...]}
+  const total=d.total_value||d.total||0;
+  const assets=(d.assets||[]).map((a,i)=>({
+    name:a.name||a.id||('Asset-'+i),
+    value:a.value||0,
+    pct:a.pct||(total?+((a.value/total)*100).toFixed(1):0),
+    color:a.color||PORT_COLORS[i%PORT_COLORS.length],
+    status:a.status||null,
+  }));
+
+  document.getElementById('port-body').innerHTML=`
+    <div class="portfolio-total">$${total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+    <div class="portfolio-label">TOTAL PORTFOLIO VALUE${d.health_pct!=null?' &bull; HEALTH: '+d.health_pct+'%':''}</div>
+    <div class="portfolio-grid">
+      <div class="pie-wrap"><canvas id="port-chart"></canvas></div>
+      <div class="pie-legend">
+        ${assets.map(a=>`
+          <div class="pie-legend-item">
+            <div class="pie-dot" style="background:${a.color}"></div>
+            <span style="color:#0ac;">${a.name}${a.status?(' <span class="status-dot '+(a.status==='up'?'up':'down')+'"></span>'):''}</span>
+            <span style="color:#0ff;margin-left:auto;">$${(a.value||0).toLocaleString()}</span>
+            <span style="color:#0ff4;font-size:7px;margin-left:6px;">${a.pct}%</span>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+  if(portChart){portChart.destroy();portChart=null;}
+  const chartEl=document.getElementById('port-chart');
+  if(chartEl&&assets.length){
+    portChart=new Chart(chartEl,{
+      type:'doughnut',
+      data:{
+        labels:assets.map(a=>a.name),
+        datasets:[{data:assets.map(a=>a.value),backgroundColor:assets.map(a=>a.color+'99'),borderColor:assets.map(a=>a.color),borderWidth:1}]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,cutout:'65%',
+        plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(0,10,20,0.9)',borderColor:'rgba(0,255,255,0.3)',borderWidth:1,titleColor:'#0ac',bodyColor:'#0ff'}}
+      }
+    });
+  }
+  document.getElementById('port-badge').textContent=mock?'MOCK':'$'+(total/1000).toFixed(1)+'K';
+  setTS('port-ts');
+}
+
+// ── PLATFORM STATS ──
+const STAT_DEFS={
+  total_tasks:  {label:'TOTAL TASKS',    color:'cyan',  prefix:'',suffix:''},
+  total_agents: {label:'ACTIVE AGENTS',  color:'green', prefix:'',suffix:''},
+  contracts:    {label:'CONTRACTS',       color:'yellow',prefix:'',suffix:''},
+  uptime_hours: {label:'UPTIME',         color:'green', prefix:'',suffix:' hrs',decimals:1},
+  memory_usage_pct:{label:'MEMORY USAGE',color:'cyan',  prefix:'',suffix:'%',decimals:1},
+  cpu_cores:    {label:'CPU CORES',      color:'cyan',  prefix:'',suffix:''},
+  // Mock-style keys
+  tasks:   {label:'TOTAL TASKS',   color:'cyan'},
+  agents:  {label:'ACTIVE AGENTS', color:'green'},
+  revenue: {label:'REVENUE',       color:'green'},
+  uptime:  {label:'UPTIME',        color:'green'},
+  volume:  {label:'24H VOLUME',    color:'cyan'},
+  skills:  {label:'SKILLS DEPLOYED',color:'yellow'},
+};
+
+function renderStats(d,mock){
+  // Normalize: API returns flat {total_tasks:N,...}; mock returns {tasks:{value,trend,up},...}
+  // Convert both to uniform [{key,value,label,color,prefix,suffix,decimals,trend,up},...]
+  const skip=new Set(['ts','platform','uptime_seconds']);
+  const items=[];
+  for(const [k,v] of Object.entries(d)){
+    if(skip.has(k)) continue;
+    const def=STAT_DEFS[k]||{label:k.replace(/_/g,' ').toUpperCase(),color:'cyan'};
+    if(typeof v==='object'&&v!==null&&'value' in v){
+      // Mock format
+      items.push({key:k,value:v.value,label:def.label,color:def.color,prefix:v.prefix||def.prefix||'',suffix:v.suffix||def.suffix||'',decimals:v.decimals||def.decimals||0,trend:v.trend||'',up:v.up!==false});
+    }else if(typeof v==='number'){
+      // API flat format
+      items.push({key:k,value:v,label:def.label,color:def.color,prefix:def.prefix||'',suffix:def.suffix||'',decimals:def.decimals||0,trend:'',up:true});
+    }
+  }
+
+  if(!document.getElementById('stats-body').querySelector('.stats-grid')){
+    document.getElementById('stats-body').innerHTML=`
+      <div class="stats-grid">
+        ${items.map(s=>`
+          <div class="stat-card">
+            <div class="stat-val ${s.color}" id="stat-${s.key}" data-current="0">${s.prefix}0${s.suffix}</div>
+            <div class="stat-label">${s.label}</div>
+            <div class="stat-trend ${s.up?'up':'dn'}">${s.trend}</div>
+          </div>`).join('')}
+      </div>`;
+  }
+  items.forEach(s=>{
+    const el=document.getElementById('stat-'+s.key);
+    if(el) animCounter(el,s.value,s.prefix,s.suffix,s.decimals);
+  });
+  document.getElementById('stats-badge').textContent=mock?'MOCK':'LIVE';
+  setTS('stats-ts');
+}
+
+// ── POLLING ──
+(()=>{
+  const pollTasks=()=>poll('/api/marketplace/tasks',renderTasks);
+  const pollDex=()=>poll('/api/marketplace/dex',renderDex);
+  const pollWallet=()=>poll('/api/marketplace/wallet',renderWallet);
+  const pollSkills=()=>poll('/api/marketplace/skills',renderSkills);
+  const pollPort=()=>poll('/api/marketplace/portfolio',renderPortfolio);
+  const pollStats=()=>poll('/api/marketplace/stats',renderStats);
+
+  pollTasks();setInterval(pollTasks,5000);
+  pollDex();setInterval(pollDex,3000);
+  pollWallet();setInterval(pollWallet,10000);
+  pollSkills();setInterval(pollSkills,30000);
+  pollPort();setInterval(pollPort,10000);
+  pollStats();setInterval(pollStats,5000);
+})();
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

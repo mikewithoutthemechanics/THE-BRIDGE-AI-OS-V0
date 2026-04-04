@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bridge AI OS — Operations Hub</title>
+<meta name="description" content="Bridge AI OS operations dashboard — live services, treasury, agents, skills.">
+<meta property="og:title" content="Bridge AI OS — Operations Hub">
+<meta property="og:description" content="Live operations dashboard for Bridge AI OS">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://abaas.bridge-ai-os.com/aoe-dashboard.html">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/bridge-tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg-0);color:var(--text-primary);font-family:var(--font-ui);padding-top:40px}
+  .container{max-width:1100px;margin:0 auto;padding:20px}
+  h1{font-size:24px;font-weight:800;margin-bottom:4px}
+  h1 span{color:var(--cyan)}
+  .subtitle{color:var(--text-secondary);font-size:13px;margin-bottom:24px}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+  .metric{background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center}
+  .metric-val{font-size:22px;font-weight:800;color:var(--cyan);font-family:var(--font-mono)}
+  .metric-label{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+  .section{margin-bottom:24px}
+  .section-title{font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .card{background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:center;gap:10px;transition:all 0.2s;text-decoration:none;color:inherit}
+  .card:hover{border-color:var(--cyan);transform:translateY(-2px)}
+  .card-icon{font-size:20px}
+  .card-name{font-size:13px;font-weight:600}
+  .card-sub{font-size:10px;color:var(--text-secondary);font-family:var(--font-mono)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--alive);box-shadow:0 0 6px var(--alive-glow);margin-left:auto;flex-shrink:0}
+  .api-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+  .api-item{background:var(--bg-1);border:1px solid var(--border);border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;font-family:var(--font-mono)}
+  .api-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .api-ms{margin-left:auto;color:var(--text-secondary);font-size:11px}
+  @media(max-width:640px){.container{padding:12px}.metrics{grid-template-columns:repeat(2,1fr)}.grid,.api-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Operations <span>Hub</span></h1>
+  <div class="subtitle">Live services, treasury, agents, skills — real-time overview</div>
+
+  <div class="metrics">
+    <div class="metric"><div class="metric-val" id="m-svc">—</div><div class="metric-label">Services</div></div>
+    <div class="metric"><div class="metric-val" id="m-treasury">—</div><div class="metric-label">Treasury</div></div>
+    <div class="metric"><div class="metric-val" id="m-agents">—</div><div class="metric-label">Agents</div></div>
+    <div class="metric"><div class="metric-val" id="m-skills">—</div><div class="metric-label">Skills</div></div>
+    <div class="metric"><div class="metric-val" id="m-pages">—</div><div class="metric-label">Routes (24h)</div></div>
+    <div class="metric"><div class="metric-val" id="m-events">—</div><div class="metric-label">Events (24h)</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Services</div>
+    <div class="grid" id="svc-grid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Quick Access</div>
+    <div class="grid" id="quick-grid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">API Health</div>
+    <div class="api-grid" id="api-grid"></div>
+  </div>
+</div>
+
+<script src="/bridge-nav.js"></script>
+<script>
+(function(){
+  var svcs = [
+    {n:'ABAAS Control',i:'🏠',p:':3000',u:'https://abaas.bridge-ai-os.com'},
+    {n:'GOD MODE',i:'🔮',p:':3001',u:'https://god.bridge-ai-os.com'},
+    {n:'Super Brain',i:'🧠',p:':8000',u:'https://brain.bridge-ai-os.com'},
+    {n:'Gateway',i:'🌐',p:':8080',u:'https://dev.bridge-ai-os.com'},
+    {n:'SVG Engine',i:'🎨',p:':7070',u:'https://svg.bridge-ai-os.com'},
+    {n:'LiveWall',i:'🖼',p:':8001',u:'https://live.bridge-ai-os.com'},
+    {n:'Terminal',i:'💻',p:':5002',u:'https://terminal.bridge-ai-os.com'},
+    {n:'Grafana',i:'📊',p:':3003',u:'https://grafana.bridge-ai-os.com'},
+    {n:'Auth',i:'🔐',p:':3030',u:'https://auth.bridge-ai-os.com'},
+    {n:'FastAPI',i:'⚡',p:':8081',u:'https://api.bridge-ai-os.com'}
+  ];
+  var links = [
+    {n:'CRM',i:'👥',u:'/crm.html'},{n:'Invoicing',i:'📄',u:'/invoicing.html'},{n:'Marketing',i:'📈',u:'/marketing.html'},
+    {n:'Legal',i:'⚖️',u:'/legal.html'},{n:'Support',i:'🎫',u:'/tickets.html'},{n:'Treasury',i:'💰',u:'/treasury-dashboard.html'},
+    {n:'Agents',i:'🤖',u:'/agents.html'},{n:'50 Apps',i:'📱',u:'/50-applications.html'},{n:'Pricing',i:'💎',u:'/pricing.html'},
+    {n:'Docs',i:'📚',u:'/docs.html'},{n:'Status',i:'✅',u:'/system-status-dashboard.html'},{n:'Landing',i:'🚀',u:'/landing.html'}
+  ];
+  var apis = [
+    '/api/health','/api/treasury','/api/swarm/agents','/api/ehsa/dashboard',
+    '/api/crm/contacts','/api/invoices','/api/marketing/funnel','/api/analytics/summary',
+    '/api/tools','/api/intelligence/route','/api/pricing','/api/compliance/status'
+  ];
+
+  function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt)e.textContent=txt;return e}
+
+  // Render services
+  var sg=document.getElementById('svc-grid');
+  svcs.forEach(function(s){
+    var a=document.createElement('a');a.className='card';a.href=s.u;a.target='_blank';
+    a.appendChild(el('span','card-icon',s.i));
+    var info=el('div','');
+    info.appendChild(el('div','card-name',s.n));
+    info.appendChild(el('div','card-sub',s.p));
+    a.appendChild(info);
+    a.appendChild(el('span','dot'));
+    sg.appendChild(a);
+  });
+
+  // Render quick links
+  var qg=document.getElementById('quick-grid');
+  links.forEach(function(l){
+    var a=document.createElement('a');a.className='card';a.href=l.u;
+    a.appendChild(el('span','card-icon',l.i));
+    a.appendChild(el('div','card-name',l.n));
+    qg.appendChild(a);
+  });
+
+  // Fetch metrics
+  function load(){
+    fetch('/api/treasury/status').then(function(r){return r.json()}).then(function(d){
+      document.getElementById('m-treasury').textContent='$'+Math.round(d.balance||0).toLocaleString();
+    }).catch(function(){});
+    fetch('/api/swarm/agents').then(function(r){return r.json()}).then(function(d){
+      document.getElementById('m-agents').textContent=(d.agents||[]).length;
+    }).catch(function(){});
+    fetch('/api/analytics/summary').then(function(r){return r.json()}).then(function(d){
+      document.getElementById('m-pages').textContent=d.last_24h?d.last_24h.routes:'0';
+      document.getElementById('m-events').textContent=d.last_24h?d.last_24h.total:'0';
+    }).catch(function(){});
+    fetch('/api/tools').then(function(r){return r.json()}).then(function(d){
+      document.getElementById('m-skills').textContent=d.tools?(d.tools.length||d.count||0):0;
+    }).catch(function(){});
+    document.getElementById('m-svc').textContent=svcs.length;
+  }
+
+  // Test APIs
+  function testAPIs(){
+    var grid=document.getElementById('api-grid');
+    grid.textContent='';
+    apis.forEach(function(path){
+      var item=el('div','api-item');
+      var dot=el('span','api-dot');
+      dot.style.background='var(--degraded)';
+      item.appendChild(dot);
+      item.appendChild(el('span','',path));
+      var ms=el('span','api-ms','...');
+      item.appendChild(ms);
+      grid.appendChild(item);
+      var start=Date.now();
+      fetch(path,{signal:AbortSignal.timeout(5000)}).then(function(r){
+        var t=Date.now()-start;
+        dot.style.background=r.ok?'var(--alive)':'var(--offline)';
+        ms.textContent=t+'ms';
+      }).catch(function(){
+        dot.style.background='var(--offline)';
+        ms.textContent='ERR';
+      });
+    });
+  }
+
+  load();testAPIs();
+  setInterval(load,15000);
+  setInterval(testAPIs,30000);
+})();
+</script>
+</body>
+</html>

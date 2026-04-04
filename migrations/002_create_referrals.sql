@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS referrals (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  referrer_id INTEGER REFERENCES users(id),
+  referred_email TEXT NOT NULL,
+  code TEXT UNIQUE NOT NULL,
+  claimed INTEGER DEFAULT 0,
+  reward_credits INTEGER DEFAULT 50,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  claimed_at DATETIME
+);

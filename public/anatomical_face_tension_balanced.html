@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Tension Balanced Face</title>
+    <meta name="description" content="Anatomical Face — Tension Balanced Model">
+    <meta property="og:title" content="Tension Balanced Face">
+    <meta property="og:description" content="Anatomical Face — Tension Balanced Model">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/anatomical_face_tension_balanced.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/anatomical_face_tension_balanced.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<style>
+html,body{width:100%;height:100%;margin:0;overflow:hidden;}
+canvas{width:100%;height:100%;}
+</style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+<canvas id="renderCanvas"></canvas>
+<script>
+
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas,true);
+
+const createScene = () => {
+
+const scene = new BABYLON.Scene(engine);
+scene.clearColor = new BABYLON.Color4(0.02,0.02,0.05,1);
+
+const camera = new BABYLON.ArcRotateCamera("cam",
+Math.PI/2,Math.PI/2.3,5,
+BABYLON.Vector3.Zero(),scene);
+camera.attachControl(canvas,true);
+
+new BABYLON.HemisphericLight("light",
+new BABYLON.Vector3(0,1,0),scene).intensity = 1;
+
+// =========================
+// HEAD
+// =========================
+
+const head = BABYLON.MeshBuilder.CreateSphere("head",{
+diameterX:1.6,
+diameterY:2,
+diameterZ:1.6,
+segments:128
+},scene);
+
+const mat = new BABYLON.PBRMaterial("skin",scene);
+mat.albedoColor = new BABYLON.Color3(1,0.78,0.65);
+mat.roughness = 0.5;
+head.material = mat;
+
+const base = head.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+let working = base.slice();
+
+// =========================
+// MUSCLE SYSTEM
+// =========================
+
+function applyMuscle(anchor,dir,radius,strength){
+
+for(let i=0;i<working.length;i+=3){
+
+let vx = base[i];
+let vy = base[i+1];
+let vz = base[i+2];
+
+let dx = vx-anchor.x;
+let dy = vy-anchor.y;
+let dz = vz-anchor.z;
+
+let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+
+if(dist<radius){
+
+let falloff = Math.exp(-(dist*dist)/(radius*radius));
+
+let pullX = dir.x * strength * falloff;
+let pullY = dir.y * strength * falloff;
+let pullZ = dir.z * strength * falloff;
+
+// Volume preservation bias (push inward slightly)
+let normal = new BABYLON.Vector3(vx,vy,vz).normalize();
+let resistance = normal.scale(-strength*0.05*falloff);
+
+working[i] += pullX + resistance.x;
+working[i+1] += pullY + resistance.y;
+working[i+2] += pullZ + resistance.z;
+
+}
+
+}
+
+}
+
+// =========================
+// ANATOMICAL LANDMARKS
+// =========================
+
+const zygLeft  = new BABYLON.Vector3(-0.4,-0.2,0.6);
+const zygRight = new BABYLON.Vector3(0.4,-0.2,0.6);
+const orbitLeft  = new BABYLON.Vector3(-0.35,0.3,0.7);
+const orbitRight = new BABYLON.Vector3(0.35,0.3,0.7);
+
+// =========================
+// EYES
+// =========================
+
+function eye(x){
+const e = BABYLON.MeshBuilder.CreateSphere("eye",{diameter:0.35},scene);
+e.position = new BABYLON.Vector3(x,0.3,0.75);
+const m = new BABYLON.PBRMaterial("eyeMat",scene);
+m.albedoColor = new BABYLON.Color3(0.2,0.5,0.9);
+m.roughness = 0.1;
+e.material = m;
+return e;
+}
+
+const leftEye = eye(-0.35);
+const rightEye = eye(0.35);
+
+// =========================
+// JAW
+// =========================
+
+const jaw = BABYLON.MeshBuilder.CreateBox("jaw",{
+width:1.4,height:0.4,depth:1.2
+},scene);
+
+jaw.position = new BABYLON.Vector3(0,-0.9,0);
+jaw.material = mat;
+
+// =========================
+// LOOP
+// =========================
+
+scene.registerBeforeRender(()=>{
+
+let t = performance.now()*0.002;
+
+working = base.slice();
+
+// Smile strength
+let smile = (Math.sin(t)+1)/2;
+
+// Zygomaticus
+applyMuscle(zygLeft,new BABYLON.Vector3(-0.2,0.3,0),0.6,0.25*smile);
+applyMuscle(zygRight,new BABYLON.Vector3(0.2,0.3,0),0.6,0.25*smile);
+
+// Orbicularis (blink)
+let blink = Math.max(0,Math.sin(t*3));
+applyMuscle(orbitLeft,new BABYLON.Vector3(0,-0.2,0),0.4,0.2*blink);
+applyMuscle(orbitRight,new BABYLON.Vector3(0,-0.2,0),0.4,0.2*blink);
+
+// Update mesh
+head.updateVerticesData(
+BABYLON.VertexBuffer.PositionKind,
+working
+);
+
+// Eye tracking
+leftEye.rotation.y = Math.sin(t)*0.4;
+rightEye.rotation.y = Math.sin(t)*0.4;
+
+// Jaw hinge
+jaw.rotation.x = Math.abs(Math.sin(t))*0.3;
+
+});
+
+return scene;
+};
+
+const scene = createScene();
+engine.runRenderLoop(()=>scene.render());
+window.addEventListener("resize",()=>engine.resize());
+
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

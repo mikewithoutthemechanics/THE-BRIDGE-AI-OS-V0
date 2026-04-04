@@ -1,0 +1,219 @@
+═══════════════════════════════════════════════════════════════════════════════
+                 SUPADASH 8-DAY STREAMING: QUICK START
+═══════════════════════════════════════════════════════════════════════════════
+
+TIMING: This is CRITICAL. Follow exact order and timing.
+
+═══════════════════════════════════════════════════════════════════════════════
+PREP (Before Day 1 Hour 0)
+═══════════════════════════════════════════════════════════════════════════════
+
+On BOTH Laptop 1 (L1) and Laptop 2 (L2):
+────────────────────────────────────────────
+
+  cd /c/aoe-unified-final
+  mkdir -p shared LOGS STANDUPS AGENTS
+  git checkout feature/supadash-consolidation || git checkout -b feature/supadash-consolidation
+  git status    # Should be clean
+
+  # Verify network (L1 only):
+  ping laptop2
+  ssh laptop2 "echo OK"
+
+═══════════════════════════════════════════════════════════════════════════════
+DAY 1, HOUR 0: BOOTSTRAP
+═══════════════════════════════════════════════════════════════════════════════
+
+On L1 (Terminal 1):
+───────────────────
+
+  cd /c/aoe-unified-final
+  ./agents/bootstrap-day1.sh
+
+  # Wait ~30-60 seconds for output:
+  # ✓ BOOTSTRAP COMPLETE
+  # ✓ L1 (Port 9000): 6 Claude agents ready
+  # ✓ L2 (Port 9001): 7 Specialist agents ready
+
+
+On L2 (Terminal 2, from L1):
+────────────────────────────
+
+  # OPTION A: OpenClaw (if you have it)
+  openclaw deploy LAPTOP2_OPENCLAW_CONFIG.yaml
+
+  # OPTION B: SSH Direct (no extra tools needed)
+  ssh laptop2 "bash -s" < /c/aoe-unified-final/setup-laptop2-unattended.sh &
+
+  # L2 will wait for L1 to be ready, then auto-start
+  # Setup takes ~2-3 minutes total
+  # Keep the SSH session open (it stays active)
+
+
+Monitor (Terminal 3):
+─────────────────────
+
+  watch -n 5 'git log --oneline | head -10'
+
+═══════════════════════════════════════════════════════════════════════════════
+DAY 1, HOUR 4: PUBLISH CONTRACTS (4 hours after bootstrap)
+═══════════════════════════════════════════════════════════════════════════════
+
+On L1:
+──────
+
+  cd /c/aoe-unified-final
+  ./agents/publish-contracts-day1.sh
+
+  # Wait for output:
+  # ✓ CONTRACTS PUBLISHED
+  # ✓ 5 contracts now live
+
+  # L2 auto-pulls within 5 minutes
+  # All agents can NOW start real work
+
+═══════════════════════════════════════════════════════════════════════════════
+DAYS 2-8: STREAMING EXECUTION (AUTOMATIC)
+═══════════════════════════════════════════════════════════════════════════════
+
+What to Do: NOTHING. Everything runs automatically.
+
+What Happens:
+─────────────
+
+  Days 2-5:    All 6 streams develop in parallel
+               L2 validates L1's work in real-time
+               Tests run continuously (bugs found in hours)
+
+  Day 5:       ✓ All 43 features verified (GATE PASSES)
+               Systems ready for hardening
+
+  Days 6-7:    Edge case handling, performance tuning
+               7-day load test clean
+
+  Day 8:       Dry-run cutover
+               Production cutover (if dry-run passes)
+
+Daily Check (Optional, 09:00 UTC):
+──────────────────────────────────
+
+  # From L1, view status:
+  curl http://localhost:9000/api/status | jq '.agents'
+  curl http://localhost:9001/api/status | jq '.agents'
+
+  # Check for conflicts:
+  curl http://localhost:9001/api/conflicts | jq
+
+  # View logs:
+  tail -20 LOGS/LAPTOP_1.log
+  ssh laptop2 "tail -20 /c/aoe-unified-final/LOGS/LAPTOP_2.log"
+
+═══════════════════════════════════════════════════════════════════════════════
+MONITORING URLS
+═══════════════════════════════════════════════════════════════════════════════
+
+L1 Status:         http://localhost:9000/api/status
+L1 Agents:         http://localhost:9000/api/agents
+L2 Status:         http://localhost:9001/api/status  (or http://laptop2:9001/)
+L2 Agents:         http://localhost:9001/api/agents
+Conflicts:         http://localhost:9001/api/conflicts
+Feature Matrix:    cat SUPADASH_FEATURE_MATRIX.md | grep "✓"
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL GATES (Must All Pass Before Production)
+═══════════════════════════════════════════════════════════════════════════════
+
+Gate                  | By Day | Check
+──────────────────────┼────────┼──────────────────────────────────────────
+Gateway Stable        | 2      | curl http://localhost:9000/api/status
+Features All ✓        | 5      | grep "✓" SUPADASH_FEATURE_MATRIX.md
+Data Zero Loss        | 4      | curl http://localhost:9001/api/verification/data
+Load Test 7 Days      | 8      | tail LOGS/LAPTOP_2.log | grep load-test
+
+═══════════════════════════════════════════════════════════════════════════════
+TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════════════
+
+Issue: L2 stuck waiting
+───────────────────────
+  Check: Is L1 running?
+  Fix: curl http://localhost:9000/health
+       If error: go back and run bootstrap on L1 first
+
+Issue: No contracts showing (after Hour 4)
+──────────────────────────────────────────
+  Check: Did you run publish-contracts-day1.sh?
+  Fix: ./agents/publish-contracts-day1.sh
+
+Issue: Orchestrator crashed
+────────────────────────────
+  Check: cat LOGS/LAPTOP_1.log (or LAPTOP_2.log)
+  Fix: Kill old process, restart
+       pkill -f "orchestrator"
+       node agents/laptop*-streaming-orchestrator.js --port 9000/9001 &
+
+Issue: Git sync failing
+───────────────────────
+  Check: cd /c/aoe-unified-final && git status
+  Fix: git pull origin feature/supadash-consolidation
+       git push origin feature/supadash-consolidation
+
+═══════════════════════════════════════════════════════════════════════════════
+SUCCESS CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+Day 1 Hour 0:
+  ✓ L1 orchestrator running (port 9000)
+  ✓ 6 Claude agents initialized
+  ✓ L2 orchestrator running (port 9001)
+  ✓ 7 specialist agents initialized
+
+Day 1 Hour 4:
+  ✓ 5 contracts published
+  ✓ All agents can see contracts
+  ✓ No blockers reported
+
+Days 2-5:
+  ✓ Code commits flowing (git log shows activity)
+  ✓ Tests running (test count increasing)
+  ✓ No critical conflicts
+
+Day 5:
+  ✓ GATE PASSED: All 43 features verified
+  ✓ Load test 4 days clean
+  ✓ Systems stable
+
+Day 8:
+  ✓ Dry-run cutover successful
+  ✓ Production cutover executed
+  ✓ L2 monitoring active
+
+═══════════════════════════════════════════════════════════════════════════════
+FINAL TIMELINE
+═══════════════════════════════════════════════════════════════════════════════
+
+  Hour 0:   Bootstrap L1 + L2
+  Hour 4:   Publish contracts
+  Days 2-5: Parallel development + real-time validation
+  Day 5:    Feature gate passes, ready for hardening
+  Days 6-7: Hardening + 7-day load test clean
+  Day 8:    Production cutover
+
+TOTAL: 8 DAYS (vs 16 sequential, vs 18 single-laptop parallel)
+
+═══════════════════════════════════════════════════════════════════════════════
+THAT'S IT. YOU'RE READY.
+═══════════════════════════════════════════════════════════════════════════════
+
+When you're ready:
+
+1. Run bootstrap on L1
+2. Deploy L2 (via OpenClaw or SSH)
+3. Wait 4 hours
+4. Publish contracts
+5. Do nothing for 8 days
+6. Cutover to production
+
+The rest is automatic.
+
+🚀

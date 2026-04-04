@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BAN — Bridge AI Network</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050a0f; --surface: #0d1620; --surface2: #111d2b;
+      --border: #1a2d40; --accent: #00c8ff; --green: #00e57b;
+      --red: #ff3c5a; --yellow: #ffd166; --orange: #ff9b50;
+      --text: #c8dce8; --dim: #4d6678; --purple: #a78bfa;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', 'Courier New', monospace; }
+    .app { display: grid; grid-template-rows: auto 1fr; grid-template-columns: 1fr 320px; height: 100vh; gap: 1px; background: var(--border); }
+
+    /* Header */
+    .header {
+      grid-column: 1 / -1; background: var(--surface); padding: 0.6rem 1.2rem;
+      display: flex; align-items: center; gap: 1rem; border-bottom: 2px solid var(--accent);
+    }
+    .header .logo { color: var(--accent); font-size: 1.1rem; font-weight: 700; letter-spacing: 0.2em; }
+    .header .subtitle { color: var(--dim); font-size: 0.72rem; letter-spacing: 0.1em; }
+    .header .health { margin-left: auto; display: flex; gap: 1rem; font-size: 0.72rem; }
+    .health .stat { display: flex; align-items: center; gap: 0.3rem; }
+    .health .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.up { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.down { background: var(--red); }
+
+    /* Main area */
+    .main { display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; background: var(--surface); border-bottom: 1px solid var(--border); }
+    .tab {
+      padding: 0.5rem 1.2rem; font-size: 0.72rem; color: var(--dim); cursor: pointer;
+      letter-spacing: 0.1em; border-bottom: 2px solid transparent; user-select: none;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface2); }
+
+    /* Panels */
+    .panel { flex: 1; overflow-y: auto; padding: 0.8rem; display: none; }
+    .panel.active { display: block; }
+
+    /* Task table */
+    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    th { text-align: left; color: var(--dim); padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); letter-spacing: 0.08em; }
+    td { padding: 0.4rem 0.6rem; border-bottom: 1px solid #0a1520; }
+    tr:hover { background: rgba(0,200,255,0.03); }
+    .status { padding: 2px 8px; border-radius: 3px; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; }
+    .status.pending { color: var(--yellow); background: rgba(255,209,102,0.1); }
+    .status.queued { color: var(--orange); background: rgba(255,155,80,0.1); }
+    .status.running { color: var(--accent); background: rgba(0,200,255,0.1); }
+    .status.completed { color: var(--green); background: rgba(0,229,123,0.1); }
+    .status.failed { color: var(--red); background: rgba(255,60,90,0.1); }
+    .status.retrying { color: var(--purple); background: rgba(167,139,250,0.1); }
+
+    /* Sidebar */
+    .sidebar { background: var(--surface); display: flex; flex-direction: column; overflow: hidden; }
+    .sidebar-section { padding: 0.8rem; border-bottom: 1px solid var(--border); }
+    .sidebar-section h3 { font-size: 0.7rem; color: var(--accent); letter-spacing: 0.15em; margin-bottom: 0.5rem; }
+
+    /* Nodes */
+    .node-card {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.5rem 0.7rem; margin-bottom: 0.4rem;
+    }
+    .node-card .name { font-weight: 600; font-size: 0.8rem; }
+    .node-card .meta { font-size: 0.65rem; color: var(--dim); margin-top: 0.2rem; }
+    .node-card .trust-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 0.3rem; }
+    .node-card .trust-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.5s; }
+
+    /* Consensus */
+    .consensus-info { font-size: 0.75rem; }
+    .consensus-info .leader { color: var(--green); font-weight: 700; font-size: 0.9rem; }
+    .consensus-info .round { color: var(--dim); }
+
+    /* Ledger */
+    .ledger-info { font-size: 0.75rem; }
+    .ledger-info .balance { color: var(--green); font-size: 1.1rem; font-weight: 700; }
+
+    /* Log */
+    .log-feed { flex: 1; overflow-y: auto; padding: 0.5rem 0.8rem; font-size: 0.68rem; font-family: 'Courier New', monospace; }
+    .log-entry { padding: 0.15rem 0; border-bottom: 1px solid #0a1520; display: flex; gap: 0.5rem; }
+    .log-entry .ts { color: var(--dim); min-width: 60px; }
+    .log-entry .action { color: var(--accent); min-width: 55px; }
+    .log-entry .detail { color: var(--text); flex: 1; }
+    .log-entry.fail .action { color: var(--red); }
+    .log-entry.ok .action { color: var(--green); }
+
+    /* Add task form */
+    .add-form { padding: 0.8rem; background: var(--surface2); border-radius: 6px; }
+    .add-form input, .add-form select {
+      background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      padding: 0.35rem 0.5rem; border-radius: 4px; font-size: 0.75rem; width: 100%;
+      margin-bottom: 0.4rem;
+    }
+    .add-form input:focus { border-color: var(--accent); outline: none; }
+    .add-form label { font-size: 0.65rem; color: var(--dim); letter-spacing: 0.08em; display: block; margin-bottom: 0.15rem; }
+    .add-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+    .btn {
+      background: var(--accent); color: var(--bg); border: none; padding: 0.5rem 1rem;
+      border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 0.75rem;
+      letter-spacing: 0.1em; width: 100%; margin-top: 0.4rem;
+    }
+    .btn:hover { filter: brightness(1.15); }
+    .btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Priority bar */
+    .priority-bar { display: inline-block; width: 50px; height: 6px; background: var(--border); border-radius: 3px; vertical-align: middle; }
+    .priority-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--yellow), var(--green)); }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="logo">BAN</div>
+      <div class="subtitle">BRIDGE AI NETWORK — TASK ENGINE</div>
+    </div>
+    <div class="health">
+      <div class="stat"><span class="dot up" id="ws-dot"></span> <span id="ws-status">CONNECTING</span></div>
+      <div class="stat">TASKS: <b id="h-tasks">0</b></div>
+      <div class="stat">NODES: <b id="h-nodes">0</b></div>
+      <div class="stat">LEADER: <b id="h-leader" style="color:var(--green)">—</b></div>
+      <div class="stat">BALANCE: <b id="h-balance" style="color:var(--green)">$0</b></div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="tabs">
+      <div class="tab active" data-tab="tasks">TASKS</div>
+      <div class="tab" data-tab="add">+ ADD TASK</div>
+      <div class="tab" data-tab="logs">EXECUTION LOG</div>
+    </div>
+
+    <!-- Tasks panel -->
+    <div class="panel active" id="panel-tasks">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>NAME</th><th>PRIORITY</th><th>EV</th><th>NODE</th><th>STATUS</th><th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="task-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Add task panel -->
+    <div class="panel" id="panel-add">
+      <div class="add-form">
+        <label>TASK NAME</label>
+        <input id="f-name" placeholder="e.g., Deploy microservice v2" />
+        <label>DESCRIPTION</label>
+        <input id="f-desc" placeholder="Optional description" />
+        <div class="row">
+          <div><label>IMPACT (0-1)</label><input id="f-impact" type="number" min="0" max="1" step="0.1" value="0.7" /></div>
+          <div><label>REVENUE (0-1)</label><input id="f-revenue" type="number" min="0" max="1" step="0.1" value="0.6" /></div>
+        </div>
+        <div class="row">
+          <div><label>RISK (0-1)</label><input id="f-risk" type="number" min="0" max="1" step="0.1" value="0.2" /></div>
+          <div><label>LATENCY (0-1)</label><input id="f-latency" type="number" min="0" max="1" step="0.1" value="0.4" /></div>
+        </div>
+        <div class="row">
+          <div><label>TRUST REQ (0-1)</label><input id="f-trust" type="number" min="0" max="1" step="0.1" value="0.5" /></div>
+          <div><label>COST</label><input id="f-cost" type="number" min="0" step="0.1" value="0.5" /></div>
+        </div>
+        <div class="row">
+          <div><label>REWARD</label><input id="f-reward" type="number" min="0" step="0.1" value="2.0" /></div>
+          <div><label>MAX RETRIES</label><input id="f-retries" type="number" min="0" max="10" value="3" /></div>
+        </div>
+        <button class="btn" onclick="submitTask()">SUBMIT TASK</button>
+        <button class="btn secondary" style="margin-top:0.3rem" onclick="submitRandom()">RANDOM TASK</button>
+      </div>
+    </div>
+
+    <!-- Logs panel -->
+    <div class="panel" id="panel-logs">
+      <div class="log-feed" id="log-feed"></div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>NODES</h3>
+      <div id="node-list"></div>
+    </div>
+    <div class="sidebar-section">
+      <h3>CONSENSUS</h3>
+      <div class="consensus-info">
+        <div>Round: <span class="round" id="c-round">0</span></div>
+        <div>Leader: <span class="leader" id="c-leader">—</span></div>
+        <div>Trust: <span id="c-trust">0</span></div>
+        <div style="margin-top:0.4rem;font-size:0.65rem;color:var(--dim)" id="c-votes"></div>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>LEDGER</h3>
+      <div class="ledger-info">
+        <div>Balance: <span class="balance" id="l-balance">$10,000</span></div>
+        <div style="color:var(--dim);font-size:0.65rem;margin-top:0.2rem">
+          Earned: <span id="l-earned" style="color:var(--green)">$0</span> &nbsp;
+          Spent: <span id="l-spent" style="color:var(--red)">$0</span>
+        </div>
+        <div style="color:var(--dim);font-size:0.65rem">Transactions: <span id="l-tx">0</span></div>
+      </div>
+    </div>
+    <div class="log-feed" id="sidebar-log" style="flex:1;border-top:1px solid var(--border)"></div>
+  </div>
+</div>
+
+<script>
+// When accessed directly on :8000, use origin. When proxied via gateway, point to :8000.
+const BAN_PORT = 8001;
+const IS_PROXIED = location.port !== String(BAN_PORT);
+const API = IS_PROXIED ? `${location.protocol}//${location.hostname}:${BAN_PORT}` : location.origin;
+const WS_URL = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.hostname}:${BAN_PORT}/ws`;
+
+let tasks = {};
+let nodes = [];
+let ws;
+
+// ── Tab switching ───────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── WebSocket ───────────────────────────────────────────────────────────────
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => {
+    document.getElementById('ws-dot').className = 'dot up';
+    document.getElementById('ws-status').textContent = 'LIVE';
+  };
+  ws.onclose = () => {
+    document.getElementById('ws-dot').className = 'dot down';
+    document.getElementById('ws-status').textContent = 'OFFLINE';
+    setTimeout(connect, 2000);
+  };
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    switch (msg.type) {
+      case 'init':
+        msg.tasks.forEach(t => tasks[t.id] = t);
+        nodes = msg.nodes;
+        updateConsensus(msg.consensus);
+        updateLedger(msg.ledger);
+        msg.logs.forEach(l => addLogEntry(l));
+        renderTasks(); renderNodes();
+        break;
+      case 'task_new':
+      case 'task_update':
+        tasks[msg.data.id] = msg.data;
+        renderTasks();
+        break;
+      case 'log':
+        addLogEntry(msg.data);
+        break;
+      case 'consensus':
+        updateConsensus(msg.data);
+        break;
+    }
+    updateHeader();
+  };
+}
+connect();
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function renderTasks() {
+  const tbody = document.getElementById('task-tbody');
+  const sorted = Object.values(tasks).sort((a, b) => b.priority_score - a.priority_score);
+  tbody.innerHTML = sorted.map(t => `
+    <tr>
+      <td style="color:var(--dim);font-size:0.68rem">${t.id}</td>
+      <td><b>${t.name}</b></td>
+      <td>
+        <div class="priority-bar"><div class="priority-fill" style="width:${t.priority_score * 100}%"></div></div>
+        <span style="font-size:0.65rem;color:var(--dim);margin-left:4px">${t.priority_score.toFixed(3)}</span>
+      </td>
+      <td style="color:${t.economic_value > 0 ? 'var(--green)' : 'var(--red)'}">$${t.economic_value.toFixed(2)}</td>
+      <td>${t.assigned_node || '—'}</td>
+      <td><span class="status ${t.status}">${t.status.toUpperCase()}</span></td>
+      <td>${t.status === 'failed' ? `<button class="btn secondary" style="padding:2px 8px;font-size:0.6rem" onclick="retryTask('${t.id}')">RETRY</button>` : ''}</td>
+    </tr>
+  `).join('');
+}
+
+function renderNodes() {
+  const el = document.getElementById('node-list');
+  el.innerHTML = nodes.map(n => `
+    <div class="node-card">
+      <div class="name" style="color:${n.online ? 'var(--text)' : 'var(--dim)'}">${n.online ? '●' : '○'} ${n.name}</div>
+      <div class="meta">
+        Cap: ${n.active_tasks}/${n.capacity} &nbsp; Lat: ${n.latency_ms}ms &nbsp;
+        Done: ${n.completed_tasks} &nbsp; Fail: ${n.failed_tasks}
+      </div>
+      <div class="trust-bar"><div class="trust-fill" style="width:${n.trust_score * 100}%"></div></div>
+      <div class="meta">Trust: ${(n.trust_score * 100).toFixed(1)}%</div>
+    </div>
+  `).join('');
+}
+
+function updateConsensus(c) {
+  document.getElementById('c-round').textContent = c.round;
+  document.getElementById('c-leader').textContent = c.leader || '—';
+  document.getElementById('c-trust').textContent = (c.leader_trust * 100).toFixed(1) + '%';
+  const votes = Object.entries(c.votes || {}).map(([k, v]) => `${k.replace('node-','')} → ${v.replace('node-','')}`).join(', ');
+  document.getElementById('c-votes').textContent = votes;
+}
+
+function updateLedger(l) {
+  if (!l) return;
+  document.getElementById('l-balance').textContent = '$' + l.balance.toLocaleString();
+  document.getElementById('l-earned').textContent = '$' + l.total_earned.toLocaleString();
+  document.getElementById('l-spent').textContent = '$' + l.total_spent.toLocaleString();
+  document.getElementById('l-tx').textContent = l.tx_count;
+  document.getElementById('h-balance').textContent = '$' + l.balance.toLocaleString();
+}
+
+function updateHeader() {
+  document.getElementById('h-tasks').textContent = Object.keys(tasks).length;
+  document.getElementById('h-nodes').textContent = nodes.filter(n => n.online).length;
+  const leader = document.getElementById('c-leader').textContent;
+  document.getElementById('h-leader').textContent = leader;
+}
+
+function addLogEntry(log) {
+  const feed = document.getElementById('log-feed');
+  const sidebar = document.getElementById('sidebar-log');
+  const ts = log.timestamp ? log.timestamp.split('T')[1]?.slice(0, 8) : '';
+  const cls = log.status === 'fail' ? 'fail' : 'ok';
+  const html = `<div class="log-entry ${cls}">
+    <span class="ts">${ts}</span>
+    <span class="action">${log.action}</span>
+    <span class="detail">${log.task_name} → ${log.node_name} : ${log.detail}</span>
+  </div>`;
+  feed.insertAdjacentHTML('afterbegin', html);
+  sidebar.insertAdjacentHTML('afterbegin', html);
+
+  // Update nodes from logs
+  fetch(API + '/nodes').then(r => r.json()).then(d => { nodes = d; renderNodes(); });
+  fetch(API + '/ledger').then(r => r.json()).then(d => updateLedger(d));
+}
+
+// ── Submit task ─────────────────────────────────────────────────────────────
+async function submitTask() {
+  const body = {
+    name: document.getElementById('f-name').value || 'Unnamed Task',
+    description: document.getElementById('f-desc').value,
+    impact: parseFloat(document.getElementById('f-impact').value),
+    revenue: parseFloat(document.getElementById('f-revenue').value),
+    risk: parseFloat(document.getElementById('f-risk').value),
+    latency: parseFloat(document.getElementById('f-latency').value),
+    trust: parseFloat(document.getElementById('f-trust').value),
+    cost: parseFloat(document.getElementById('f-cost').value),
+    reward: parseFloat(document.getElementById('f-reward').value),
+    max_retries: parseInt(document.getElementById('f-retries').value),
+  };
+  await fetch(API + '/tasks/add', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-desc').value = '';
+  // Switch to tasks tab
+  document.querySelector('.tab[data-tab="tasks"]').click();
+}
+
+const RANDOM_NAMES = [
+  'Deploy Auth Service', 'Optimize Query Cache', 'Scale Worker Pool',
+  'Patch CVE-2024-1234', 'Migrate DB Schema', 'Train Sentiment Model',
+  'Rebalance Load', 'Audit Access Logs', 'Generate API Keys',
+  'Sync Replica Set', 'Build Docker Image', 'Run Integration Tests',
+  'Compress Backup', 'Update SSL Certs', 'Profile Memory Usage',
+];
+
+async function submitRandom() {
+  const name = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+  const body = {
+    name, description: 'Auto-generated task',
+    impact: +(Math.random() * 0.8 + 0.2).toFixed(2),
+    revenue: +(Math.random() * 0.8 + 0.1).toFixed(2),
+    risk: +(Math.random() * 0.5).toFixed(2),
+    latency: +(Math.random() * 0.6 + 0.1).toFixed(2),
+    trust: +(Math.random() * 0.5 + 0.3).toFixed(2),
+    cost: +(Math.random() * 1.5 + 0.1).toFixed(2),
+    reward: +(Math.random() * 4 + 0.5).toFixed(2),
+    max_retries: Math.floor(Math.random() * 4) + 1,
+  };
+  await fetch(API + '/tasks/add', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+}
+
+async function retryTask(id) {
+  await fetch(API + '/tasks/execute?task_id=' + id, { method: 'POST' });
+}
+
+// Auto-poll for initial data if WS is slow
+setTimeout(() => {
+  if (Object.keys(tasks).length === 0) {
+    fetch(API + '/tasks/list').then(r => r.json()).then(d => { d.forEach(t => tasks[t.id] = t); renderTasks(); });
+    fetch(API + '/nodes').then(r => r.json()).then(d => { nodes = d; renderNodes(); });
+    fetch(API + '/consensus/state').then(r => r.json()).then(d => updateConsensus(d));
+    fetch(API + '/ledger').then(r => r.json()).then(d => updateLedger(d));
+  }
+}, 1500);
+</script>
+</body>
+</html>

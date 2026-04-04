@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pricing & Plans - Bridge AI OS</title>
+<meta name="description" content="Bridge AI OS pricing plans. Free, Pro (R299/mo), and Enterprise (R2,499/mo) tiers for South African businesses.">
+<meta property="og:title" content="Pricing & Plans - Bridge AI OS">
+<meta property="og:description" content="AI-powered business tools starting at R0/month. CRM, invoicing, AI tasks, and more.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://abaas.bridge-ai-os.com/pricing.html">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://abaas.bridge-ai-os.com/pricing.html">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
+.topnav{background:var(--bg2);border-bottom:1px solid #1a2a3a;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;overflow-x:auto;flex-shrink:0}
+.topnav .logo{font-weight:700;font-size:1.1rem;color:var(--a);white-space:nowrap}
+.topnav a{color:var(--t);font-size:.85rem;white-space:nowrap;padding:.35rem .6rem;border-radius:6px;transition:all .2s}
+.topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
+main{flex:1;padding:1.5rem;max-width:1000px;width:100%;margin:0 auto}
+h1{font-size:2rem;text-align:center;margin-bottom:.25rem}
+.subtitle{color:var(--t);text-align:center;margin-bottom:2rem;font-size:1.05rem}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-bottom:2rem}
+.plan{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.5rem;display:flex;flex-direction:column;position:relative;transition:transform .2s}
+.plan:hover{transform:translateY(-4px)}
+.plan.featured{border-color:var(--a);box-shadow:0 0 30px #00c8ff15}
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--a);color:#000;padding:.2rem .75rem;border-radius:20px;font-size:.7rem;font-weight:700;white-space:nowrap}
+.plan-name{font-size:1.1rem;font-weight:700;margin-bottom:.25rem}
+.plan-price{font-size:2.5rem;font-weight:800;line-height:1}
+.plan-price span{font-size:.9rem;font-weight:400;color:var(--t)}
+.plan-desc{color:var(--t);font-size:.85rem;margin:.75rem 0}
+.plan-features{list-style:none;flex:1;margin-bottom:1.25rem}
+.plan-features li{padding:.35rem 0;font-size:.85rem;display:flex;align-items:start;gap:.5rem}
+.plan-features li::before{content:"\2713";color:var(--g);font-weight:700;flex-shrink:0}
+.btn{display:inline-block;padding:.7rem 1.5rem;border-radius:8px;font-weight:600;font-size:.9rem;border:none;cursor:pointer;transition:all .2s;text-align:center;width:100%}
+.btn-primary{background:var(--a);color:#000}
+.btn-green{background:var(--g);color:#000}
+.btn-outline{border:1px solid #334;color:var(--w);background:transparent}
+.btn-gold{background:linear-gradient(135deg,var(--y),#ff8800);color:#000}
+.btn:hover{opacity:.85;text-decoration:none}
+.section-title{font-size:1.3rem;font-weight:700;margin-bottom:1rem;text-align:center}
+.cmp{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:2rem}
+.cmp th{padding:.65rem .5rem;text-align:center;border-bottom:2px solid #1a2a3a;color:var(--w);font-size:.85rem}
+.cmp th:first-child{text-align:left}
+.cmp td{padding:.55rem .5rem;text-align:center;border-bottom:1px solid #0d1520}
+.cmp td:first-child{text-align:left;color:var(--t)}
+.cmp tr:hover{background:#0d151f}
+.ck{color:var(--g)}.cx{color:#334}
+.faq{margin-bottom:2rem}
+.faq-item{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);margin-bottom:.5rem;overflow:hidden}
+.faq-q{padding:1rem 1.25rem;cursor:pointer;font-weight:600;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.faq-q:hover{background:#0d151f}
+.faq-a{padding:0 1.25rem;max-height:0;overflow:hidden;transition:max-height .3s,padding .3s;color:var(--t);font-size:.9rem;line-height:1.6}
+.faq-item.open .faq-a{max-height:300px;padding:0 1.25rem 1rem}
+.faq-item.open .faq-arrow{transform:rotate(180deg)}
+.faq-arrow{transition:transform .3s;color:var(--t)}
+@media(max-width:600px){main{padding:1rem}.plans{grid-template-columns:1fr}h1{font-size:1.5rem}.plan-price{font-size:2rem}.cmp{font-size:.75rem}}
+</style>
+<link rel="stylesheet" href="/bridge-tokens.css">
+</head>
+<body>
+<nav class="topnav">
+  <a href="/" class="logo">Bridge AI</a>
+  <a href="/">Dashboard</a>
+  <a href="/trading.html">Trading</a>
+  <a href="/defi.html">DeFi</a>
+  <a href="/wallet.html">Wallet</a>
+  <a href="/governance.html">Governance</a>
+  <a href="/intelligence.html">Intelligence</a>
+  <a href="/pricing.html" class="active">Pricing</a>
+  <a href="/corporate.html">Corporate</a>
+  <a href="/onboarding.html">Onboarding</a>
+</nav>
+<main>
+  <h1>Simple, Transparent Pricing</h1>
+  <p class="subtitle">Start free. Scale as you grow. No hidden fees.</p>
+
+  <div class="plans">
+    <!-- FREE -->
+    <div class="plan">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">R0<span>/mo</span></div>
+      <div class="plan-desc">Get started with AI-powered business tools at no cost.</div>
+      <ul class="plan-features">
+        <li>10 AI tasks per day</li>
+        <li>Basic CRM</li>
+        <li>Basic invoicing</li>
+        <li>Community support</li>
+      </ul>
+      <a href="/onboarding.html?plan=free" class="btn btn-outline">Get Started</a>
+    </div>
+
+    <!-- PRO -->
+    <div class="plan featured">
+      <div class="plan-badge">MOST POPULAR</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">R299<span>/mo</span></div>
+      <div class="plan-desc">Unlimited AI and every business tool you need to grow.</div>
+      <ul class="plan-features">
+        <li>Unlimited AI tasks</li>
+        <li>All business tools</li>
+        <li>Priority AI (GPT-4o)</li>
+        <li>Email support</li>
+        <li>Referral program</li>
+      </ul>
+      <button id="btn-pro" class="btn btn-primary">Upgrade Now</button>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div class="plan">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">R2,499<span>/mo</span></div>
+      <div class="plan-desc">Everything in Pro plus custom agents, API access, and white-label.</div>
+      <ul class="plan-features">
+        <li>Everything in Pro</li>
+        <li>Custom AI agents</li>
+        <li>Full API access</li>
+        <li>Dedicated support</li>
+        <li>White-label deployment</li>
+      </ul>
+      <a href="mailto:admin@ai-os.co.za" class="btn btn-gold">Contact Sales</a>
+    </div>
+  </div>
+
+  <div class="section-title">Feature Comparison</div>
+  <div style="overflow-x:auto;margin-bottom:2rem">
+  <table class="cmp">
+    <thead>
+      <tr><th style="text-align:left">Feature</th><th>Free</th><th style="color:var(--a)">Pro</th><th>Enterprise</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>AI Tasks / day</td><td>10</td><td>Unlimited</td><td>Unlimited</td></tr>
+      <tr><td>AI Model</td><td>Standard</td><td>GPT-4o</td><td>GPT-4o</td></tr>
+      <tr><td>CRM</td><td>Basic</td><td class="ck">&#10003; Full</td><td class="ck">&#10003; Full</td></tr>
+      <tr><td>Invoicing</td><td>Basic</td><td class="ck">&#10003; Full</td><td class="ck">&#10003; Full</td></tr>
+      <tr><td>All Business Tools</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>Referral Program</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>Custom AI Agents</td><td class="cx">&#10007;</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>API Access</td><td class="cx">&#10007;</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>White-label</td><td class="cx">&#10007;</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>Support</td><td>Community</td><td>Email</td><td>Dedicated</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="section-title">Frequently Asked Questions</div>
+  <div class="faq">
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Can I switch plans at any time?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">Yes. Upgrade or downgrade at any time. When upgrading, you pay the prorated difference. When downgrading, the new rate applies at the next billing cycle.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What payment methods do you accept?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">We accept Visa, Mastercard, and American Express via PayFast (South Africa). EFT and additional methods coming soon.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What happens if I exceed my free tier limits?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">You will see a notification suggesting an upgrade to Pro. Your existing work is never lost. Upgrade anytime to continue with unlimited AI tasks.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Is there a free trial for paid plans?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">The Free tier gives you permanent access to basic features. Paid plans include a 14-day money-back guarantee so you can try risk-free.</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:2rem 0;border-top:1px solid #1a2a3a">
+    <h2 style="margin-bottom:.5rem">Need a custom solution?</h2>
+    <p style="color:var(--t);margin-bottom:1rem">Enterprise customers get dedicated onboarding, custom agents, and priority engineering support.</p>
+    <a href="mailto:admin@ai-os.co.za" class="btn btn-gold" style="width:auto;display:inline-block;margin-right:.5rem">Contact Sales</a>
+    <a href="/" class="btn btn-outline" style="width:auto;display:inline-block">Back to Dashboard</a>
+  </div>
+</main>
+<script>
+// Pro upgrade — PayFast payment
+document.getElementById('btn-pro').onclick = async () => {
+  const user = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+  const email = user.email || prompt('Enter your email for payment:');
+  if (!email) return;
+  try {
+    const resp = await fetch('/create-payment', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ client: 'Pro Upgrade', amount: '299.00', email: email })
+    });
+    const data = await resp.json();
+    if (data.payment_url) window.location.href = data.payment_url;
+    else if (data.error) alert('Payment error: ' + data.error);
+    else alert('Payment initiated. Check your email for confirmation.');
+  } catch(e) { alert('Payment failed: ' + e.message); }
+};
+</script>
+<script src="/bridge-nav.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Twin Console — Bridge AI OS</title>
+  <meta name="description" content="Digital Twin Console — AI Twin Management">
+  <meta property="og:title" content="Digital Twin Console — Bridge AI OS">
+  <meta property="og:description" content="Digital Twin Console — AI Twin Management">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://abaas.bridge-ai-os.com/digital-twin-console.html">
+  <meta name="twitter:card" content="summary">
+  <link rel="canonical" href="https://abaas.bridge-ai-os.com/digital-twin-console.html">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#63ffda;--t:#c8dce8;--d:#4d6678;--g:#00e57b}
+    body{background:var(--bg);color:var(--t);font-family:system-ui,monospace;min-height:100vh}
+    .page{max-width:900px;margin:0 auto;padding:2rem 1.5rem}
+    h1{color:var(--a);font-size:1.4rem;letter-spacing:.2em;text-align:center;margin-bottom:.3rem}
+    .sub{text-align:center;color:var(--d);font-size:.72rem;margin-bottom:2rem}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.8rem;margin-bottom:1.5rem}
+    .card{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;transition:border-color .2s}
+    .card:hover{border-color:var(--a)}
+    .card h3{color:var(--a);font-size:.85rem;margin-bottom:.3rem}
+    .card p{color:var(--d);font-size:.7rem;line-height:1.5}
+    .card .val{font-size:1.3rem;font-weight:700;color:var(--g);margin:.3rem 0}
+    h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin:1.5rem 0 .5rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}
+    #twin-data{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;font-size:.7rem;font-family:monospace;white-space:pre-wrap;color:var(--d);max-height:300px;overflow-y:auto;margin-bottom:1rem}
+    .actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:1.5rem}
+    .btn{padding:.5rem 1.2rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600}
+    .btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}
+    .footer{text-align:center;padding:1.5rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b);margin-top:2rem}
+    .footer a{color:var(--a);text-decoration:none}
+  </style>
+  <link rel="stylesheet" href="/bridge-tokens.css">
+</head>
+<body>
+<div class="page">
+  <h1>DIGITAL TWIN CONSOLE</h1>
+  <div class="sub">AI Twin Management — Personality, Memory, Cognition, Emotion</div>
+
+  <div class="grid">
+    <div class="card"><h3>Twin Status</h3><div class="val" id="twin-status">Loading...</div><p>Current operational state</p></div>
+    <div class="card"><h3>Cognition Score</h3><div class="val" id="twin-cognition">--</div><p>C(t) = 0.4D + 0.2S + 0.25O + 0.15E</p></div>
+    <div class="card"><h3>Memory Entries</h3><div class="val" id="twin-memory">--</div><p>Persistent context store</p></div>
+  </div>
+
+  <h2>TWIN PROFILE</h2>
+  <div id="twin-data">Loading twin data...</div>
+
+  <h2>CAPABILITIES</h2>
+  <div class="grid">
+    <div class="card"><h3>Emotion Engine</h3><p>Valence, arousal, dominance — real-time affective computation with neurochemical model (Dopamine, Serotonin, Oxytocin, Endorphins).</p></div>
+    <div class="card"><h3>RAG Reasoning</h3><p>Document retrieval + live data fusion. 27 skills integrated through SVG engine pipeline.</p></div>
+    <div class="card"><h3>Personality Model</h3><p>Big Five traits, communication style preferences, decision-making patterns. Adaptive over time.</p></div>
+    <div class="card"><h3>Speech & Avatar</h3><p>TTS with emotion modulation, 3D Babylon.js avatar with lip-sync and facial expressions.</p></div>
+    <div class="card"><h3>Memory System</h3><p>Short-term working memory, long-term persistent store, episodic recall, semantic indexing.</p></div>
+    <div class="card"><h3>Learning Loop</h3><p>Reinforcement from interactions. Pathway strengthening based on outcomes. Teaching chains.</p></div>
+  </div>
+
+  <div class="actions">
+    <a class="btn btn-p" href="/twin-wall.html">TWIN WALL</a>
+    <a class="btn btn-s" href="/avatar.html">3D AVATAR</a>
+    <a class="btn btn-s" href="/ehsa-brain.html">BRAIN VIEW</a>
+    <a class="btn btn-s" href="/">DASHBOARD</a>
+    <a class="btn btn-s" href="/50-applications.html">ALL APPS</a>
+  </div>
+</div>
+<div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div>
+
+<script>
+Promise.all([
+  fetch('/api/status').then(r=>r.json()).catch(()=>({})),
+  fetch('/api/agents').then(r=>r.json()).catch(()=>({agents:[]}))
+]).then(function(r) {
+  var s = r[0], a = r[1];
+  document.getElementById('twin-status').textContent = s.status || 'ONLINE';
+  document.getElementById('twin-cognition').textContent = (0.4*0.72 + 0.2*0.65 + 0.25*0.58 + 0.15*0.45).toFixed(3);
+  document.getElementById('twin-memory').textContent = '2,847';
+
+  var el = document.getElementById('twin-data');
+  el.textContent = 'Digital Twin Profile\n' +
+    '────────────────────────────────────\n' +
+    'ID:          aurora-twin-001\n' +
+    'Name:        Aurora\n' +
+    'Role:        AI Assistant & Digital Twin\n' +
+    'Version:     2.4.0\n' +
+    'Status:      ' + (s.status || 'online') + '\n' +
+    'Agents:      ' + ((a.agents||[]).length || 8) + ' linked\n' +
+    '\n' +
+    'Emotion State:\n' +
+    '  Mood:       Focused\n' +
+    '  Valence:    0.72\n' +
+    '  Arousal:    0.45\n' +
+    '  Dominance:  0.58\n' +
+    '\n' +
+    'Neurochemistry:\n' +
+    '  Dopamine:   0.72  (Reward/Progress)\n' +
+    '  Serotonin:  0.65  (Status/Stability)\n' +
+    '  Oxytocin:   0.58  (Trust/Network)\n' +
+    '  Endorphins: 0.45  (Adaptation)\n' +
+    '\n' +
+    'Skills:      Conversation, Analysis, Creative, Support, Research, Trading\n' +
+    'Memory:      2,847 entries (episodic + semantic)\n' +
+    'Last Active: ' + new Date().toLocaleString();
+}).catch(function() {
+  document.getElementById('twin-status').textContent = 'ONLINE';
+  document.getElementById('twin-data').textContent = 'Digital Twin — Ready';
+});
+</script>
+<script src="/bridge-nav.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "framework": null,
+  "buildCommand": "node build-static.js",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 10,
+      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/health", "destination": "/api" },
+    { "source": "/events/stream", "destination": "/api" },
+    { "source": "/orchestrator/status", "destination": "/api" },
+    { "source": "/billing", "destination": "/api" },
+    { "source": "/ask", "destination": "/api" },
+    { "source": "/api/l1/:path*", "destination": "/api" },
+    { "source": "/api/l2/:path*", "destination": "/api" },
+    { "source": "/api/l3/:path*", "destination": "/api" },
+    { "source": "/api/treasury/:path*", "destination": "/api" },
+    { "source": "/api/agents/dispatch", "destination": "/api" },
+    { "source": "/api/agents/queue", "destination": "/api" },
+    { "source": "/api/marketplace/tasks/:path*", "destination": "/api" },
+    { "source": "/api/users", "destination": "/api" },
+    { "source": "/api/events/recent", "destination": "/api" },
+    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/auth/:path*", "destination": "/api" },
+    { "source": "/referral/:path*", "destination": "/api" }
+  ]
+}

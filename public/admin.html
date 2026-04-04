@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRIDGE AI OS — Admin Keys</title>
+    <meta name="description" content="Admin — Bridge AI OS Administration Panel">
+    <meta property="og:title" content="BRIDGE AI OS — Admin Keys">
+    <meta property="og:description" content="Admin — Bridge AI OS Administration Panel">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/admin.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/admin.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #060810;
+            --bg-secondary: #0a0e17;
+            --bg-tertiary: #111827;
+            --bg-glass: rgba(10, 14, 23, 0.85);
+            --border-color: rgba(99, 255, 218, 0.12);
+            --border-glow: rgba(99, 255, 218, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #63ffda;
+            --accent-blue: #38bdf8;
+            --accent-purple: #a78bfa;
+            --accent-pink: #f472b6;
+            --accent-orange: #fb923c;
+            --accent-red: #f87171;
+            --accent-green: #4ade80;
+            --gradient-primary: linear-gradient(135deg, #63ffda 0%, #38bdf8 50%, #a78bfa 100%);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            font-family: 'Outfit', -apple-system, sans-serif;
+            color: var(--text-primary);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(99, 255, 218, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .shell {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 20px 60px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .back {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .header .back:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* Status banner */
+        .status-banner {
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+        .status-banner.success {
+            display: flex;
+            background: rgba(74, 222, 128, 0.08);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            color: var(--accent-green);
+        }
+        .status-banner.error {
+            display: flex;
+            background: rgba(248, 113, 113, 0.08);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            color: var(--accent-red);
+        }
+
+        /* Warning */
+        .warning-box {
+            padding: 16px 18px;
+            border-radius: 12px;
+            margin-bottom: 28px;
+            background: rgba(251, 146, 60, 0.06);
+            border: 1px solid rgba(251, 146, 60, 0.15);
+            font-size: 13px;
+            color: var(--accent-orange);
+            line-height: 1.6;
+        }
+        .warning-box strong { color: #fbbf24; }
+
+        /* Key groups */
+        .group {
+            margin-bottom: 32px;
+        }
+        .group-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+            padding-left: 2px;
+        }
+
+        /* Key row */
+        .key-row {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .key-row:hover {
+            border-color: var(--border-glow);
+        }
+        .key-row .top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .key-row .name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-cyan);
+            font-weight: 500;
+        }
+        .key-row .status {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-weight: 500;
+        }
+        .status.set {
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+        .status.missing {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--accent-red);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+        }
+        .status.placeholder {
+            background: rgba(251, 146, 60, 0.1);
+            color: var(--accent-orange);
+            border: 1px solid rgba(251, 146, 60, 0.2);
+        }
+        .key-row .desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .key-row .input-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .key-row input {
+            flex: 1;
+            height: 40px;
+            padding: 0 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .key-row input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(99, 255, 218, 0.08);
+        }
+        .key-row input::placeholder {
+            color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+        }
+        .key-row .link-btn {
+            height: 40px;
+            padding: 0 14px;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 10px;
+            color: var(--accent-blue);
+            font-size: 12px;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            white-space: nowrap;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .key-row .link-btn:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-blue);
+        }
+
+        /* Save button */
+        .save-section {
+            position: sticky;
+            bottom: 0;
+            padding: 16px 0;
+            background: linear-gradient(to top, var(--bg-primary) 60%, transparent);
+            z-index: 10;
+        }
+        .btn-save {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 14px;
+            background: var(--gradient-primary);
+            color: #060810;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 24px rgba(99, 255, 218, 0.15);
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(99, 255, 218, 0.25);
+        }
+        .btn-save:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .stat .num {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .stat .label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Focus visible */
+        input:focus-visible, button:focus-visible, a:focus-visible {
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .key-row .input-row { flex-direction: column; }
+            .key-row .link-btn { width: 100%; justify-content: center; }
+            .stats { flex-direction: column; }
+        }
+    </style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+    <div class="shell">
+        <div class="header">
+            <h1>API Key Management</h1>
+            <a href="/" class="back">Back to Dashboard</a>
+        </div>
+
+        <div class="warning-box">
+            <strong>Security:</strong> Keys are saved to the server's <code>.env</code> file via <code>/api/admin/keys</code>.
+            This page should only be accessible to the system operator. Never expose it publicly.
+            After saving, restart the backend for changes to take effect.
+        </div>
+
+        <div id="statusBanner" class="status-banner"></div>
+
+        <div class="stats" id="stats"></div>
+
+        <div id="keyGroups"></div>
+
+        <div class="save-section">
+            <button class="btn-save" id="saveBtn" onclick="saveKeys()">Save All Keys</button>
+        </div>
+    </div>
+
+    <script>
+(function() {
+  var API_BASE = '';
+  var KEY_GROUPS = [
+    { title: 'AI / LLM', keys: [
+      { key: 'OPENAI_API_KEY', label: 'OpenAI API Key', desc: 'GPT-4 / Embeddings', link: 'https://platform.openai.com/api-keys' },
+      { key: 'ANTHROPIC_API_KEY', label: 'Anthropic API Key', desc: 'Claude models', link: 'https://console.anthropic.com/settings/keys' },
+      { key: 'GOOGLE_AI_KEY', label: 'Google AI Key', desc: 'Gemini models', link: 'https://aistudio.google.com/apikey' },
+    ]},
+    { title: 'Payments', keys: [
+      { key: 'PAYFAST_MERCHANT_ID', label: 'PayFast Merchant ID', desc: 'PayFast payment gateway', link: 'https://www.payfast.co.za' },
+      { key: 'PAYFAST_MERCHANT_KEY', label: 'PayFast Merchant Key', desc: 'PayFast payment gateway' },
+      { key: 'PAYFAST_PASSPHRASE', label: 'PayFast Passphrase', desc: 'Signature verification' },
+      { key: 'STRIPE_SECRET_KEY', label: 'Stripe Secret Key', desc: 'International payments', link: 'https://dashboard.stripe.com/apikeys' },
+    ]},
+    { title: 'Infrastructure', keys: [
+      { key: 'JWT_SECRET', label: 'JWT Secret', desc: 'Auth token signing (min 32 chars)' },
+      { key: 'ECONOMY_DB_URL', label: 'Economy DB URL', desc: 'PostgreSQL connection string' },
+      { key: 'NOTION_TOKEN', label: 'Notion Token', desc: 'Notion integration', link: 'https://www.notion.so/my-integrations' },
+    ]},
+    { title: 'Communication', keys: [
+      { key: 'TWILIO_SID', label: 'Twilio SID', desc: 'SMS / WhatsApp', link: 'https://console.twilio.com' },
+      { key: 'TWILIO_AUTH_TOKEN', label: 'Twilio Auth Token', desc: 'Twilio authentication' },
+      { key: 'SENDGRID_API_KEY', label: 'SendGrid API Key', desc: 'Transactional email', link: 'https://app.sendgrid.com/settings/api_keys' },
+    ]},
+  ];
+
+  function escText(s) { var d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML; }
+
+  async function loadKeys() {
+    try {
+      var r = await fetch(API_BASE + '/api/twin/env-keys');
+      if (!r.ok) throw new Error('Failed to load');
+      var data = await r.json();
+      renderKeys(data);
+    } catch (e) {
+      renderKeys({ keys: [], summary: { configured: 0, missing: 0, criticalMissing: 0 } });
+    }
+  }
+
+  function renderKeys(data) {
+    var container = document.getElementById('keyGroups');
+    var statsEl = document.getElementById('stats');
+    var keyMap = {};
+    (data.keys || []).forEach(function(k) { keyMap[k.key] = k; });
+
+    var s = data.summary || {};
+    // Build stats via DOM
+    statsEl.textContent = '';
+    [{ num: s.configured || 0, label: 'Configured', color: 'var(--accent-green)' },
+     { num: s.missing || s.criticalMissing || 0, label: 'Missing', color: 'var(--accent-red)' },
+     { num: (data.keys || []).length || KEY_GROUPS.reduce(function(a,g){return a+g.keys.length},0), label: 'Total Keys', color: 'var(--accent-cyan)' }
+    ].forEach(function(st) {
+      var div = document.createElement('div'); div.className = 'stat';
+      var num = document.createElement('div'); num.className = 'num'; num.style.color = st.color; num.textContent = st.num;
+      var lab = document.createElement('div'); lab.className = 'label'; lab.textContent = st.label;
+      div.appendChild(num); div.appendChild(lab); statsEl.appendChild(div);
+    });
+
+    container.textContent = '';
+    KEY_GROUPS.forEach(function(group) {
+      var gDiv = document.createElement('div'); gDiv.className = 'group';
+      var title = document.createElement('div'); title.className = 'group-title'; title.textContent = group.title;
+      gDiv.appendChild(title);
+
+      group.keys.forEach(function(k) {
+        var info = keyMap[k.key] || {};
+        var status = info.status || 'missing';
+        var statusClass = status === 'configured' ? 'set' : status === 'placeholder' ? 'placeholder' : 'missing';
+        var statusLabel = status === 'configured' ? 'SET' : status === 'placeholder' ? 'PLACEHOLDER' : 'MISSING';
+
+        var row = document.createElement('div'); row.className = 'key-row';
+        var top = document.createElement('div'); top.className = 'top';
+        var nameSpan = document.createElement('span'); nameSpan.className = 'name'; nameSpan.textContent = k.key;
+        var statusSpan = document.createElement('span'); statusSpan.className = 'status ' + statusClass; statusSpan.textContent = statusLabel;
+        top.appendChild(nameSpan); top.appendChild(statusSpan); row.appendChild(top);
+
+        var descDiv = document.createElement('div'); descDiv.className = 'desc'; descDiv.textContent = k.desc || '';
+        row.appendChild(descDiv);
+
+        var inputRow = document.createElement('div'); inputRow.className = 'input-row';
+        var input = document.createElement('input'); input.type = 'password'; input.name = k.key; input.placeholder = 'Enter ' + k.label + '...';
+        inputRow.appendChild(input);
+        if (k.link) {
+          var linkBtn = document.createElement('a'); linkBtn.className = 'link-btn'; linkBtn.href = k.link; linkBtn.target = '_blank'; linkBtn.textContent = 'Get Key';
+          inputRow.appendChild(linkBtn);
+        }
+        row.appendChild(inputRow);
+        gDiv.appendChild(row);
+      });
+      container.appendChild(gDiv);
+    });
+  }
+
+  window.saveKeys = async function() {
+    var btn = document.getElementById('saveBtn');
+    var banner = document.getElementById('statusBanner');
+    btn.disabled = true;
+    btn.textContent = 'SAVING...';
+
+    var inputs = document.querySelectorAll('.key-row input[name]');
+    var keys = {};
+    inputs.forEach(function(input) {
+      if (input.value.trim()) keys[input.name] = input.value.trim();
+    });
+
+    if (Object.keys(keys).length === 0) {
+      banner.className = 'status-banner error';
+      banner.textContent = 'No keys to save. Enter at least one key value.';
+      btn.disabled = false;
+      btn.textContent = 'SAVE ALL KEYS';
+      return;
+    }
+
+    try {
+      var r = await fetch(API_BASE + '/api/admin/keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keys: keys })
+      });
+      if (r.ok) {
+        banner.className = 'status-banner success';
+        banner.textContent = 'Keys saved successfully. Restart the backend for changes to take effect.';
+        inputs.forEach(function(input) { if (input.value.trim()) input.value = ''; });
+        await loadKeys();
+      } else {
+        banner.className = 'status-banner error';
+        banner.textContent = 'Failed to save keys. Server returned an error.';
+      }
+    } catch (e) {
+      banner.className = 'status-banner error';
+      banner.textContent = 'Network error — could not reach server.';
+    }
+    btn.disabled = false;
+    btn.textContent = 'SAVE ALL KEYS';
+    setTimeout(function() { banner.className = 'status-banner'; }, 5000);
+  };
+
+  loadKeys();
+})();
+    </script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

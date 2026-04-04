@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join — Bridge AI Network</title>
+  <meta name="description" content="Join the Bridge AI Network. Access AI agents, execute tasks, earn rewards in a live digital economy.">
+  <meta property="og:title" content="Join the Bridge AI Network">
+  <meta property="og:description" content="AI agents that work for you. Create an account and start automating.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://go.ai-os.co.za/join.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/bridge-tokens.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg-0);color:var(--text-primary);font-family:var(--font-ui);min-height:100vh;padding-top:40px}
+    .hero{text-align:center;padding:60px 20px 40px;max-width:700px;margin:0 auto}
+    .hero-badge{display:inline-block;font-size:11px;color:var(--cyan);border:1px solid rgba(99,255,218,0.3);padding:4px 14px;border-radius:20px;margin-bottom:16px;font-family:var(--font-mono);letter-spacing:1px}
+    .hero h1{font-size:clamp(28px,5vw,44px);font-weight:800;line-height:1.1;margin-bottom:12px}
+    .hero h1 span{color:var(--cyan)}
+    .hero p{font-size:16px;color:var(--text-secondary);max-width:500px;margin:0 auto 24px;line-height:1.6}
+    .cta{display:inline-block;background:var(--cyan);color:#000;padding:14px 36px;border-radius:8px;font-weight:700;font-size:16px;text-decoration:none;transition:all 0.2s}
+    .cta:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(99,255,218,0.3)}
+    .cta-sub{font-size:12px;color:var(--text-muted);margin-top:10px}
+    .stats{display:flex;justify-content:center;gap:32px;padding:30px 20px;flex-wrap:wrap}
+    .stat{text-align:center}
+    .stat-val{font-size:22px;font-weight:700;color:var(--cyan);font-family:var(--font-mono)}
+    .stat-label{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+    .section{max-width:900px;margin:0 auto;padding:40px 20px}
+    .section-title{font-size:22px;font-weight:700;margin-bottom:20px;text-align:center}
+    .section-title span{color:var(--cyan)}
+    .what-card{background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:16px;display:flex;gap:16px;align-items:flex-start}
+    .what-icon{font-size:28px;flex-shrink:0}
+    .what-title{font-size:16px;font-weight:700;margin-bottom:4px}
+    .what-desc{font-size:13px;color:var(--text-secondary);line-height:1.5}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    @media(max-width:640px){.steps{grid-template-columns:1fr}.tiers{grid-template-columns:1fr !important}}
+    .step{background:var(--bg-1);border:1px solid var(--border);border-radius:10px;padding:24px;text-align:center}
+    .step-num{width:40px;height:40px;border-radius:50%;background:rgba(99,255,218,0.1);border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--cyan);margin:0 auto 12px;font-family:var(--font-mono)}
+    .step h3{font-size:15px;margin-bottom:6px}
+    .step p{font-size:12px;color:var(--text-secondary)}
+    .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .tier{background:var(--bg-1);border:1px solid var(--border);border-radius:10px;padding:24px;text-align:center;transition:all 0.2s}
+    .tier:hover{border-color:var(--cyan)}
+    .tier.featured{border-color:var(--cyan);box-shadow:0 0 20px rgba(99,255,218,0.08)}
+    .tier-name{font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:2px}
+    .tier-price{font-size:28px;font-weight:800;margin:8px 0}
+    .tier-price small{font-size:12px;color:var(--text-secondary)}
+    .tier-features{list-style:none;text-align:left;margin:16px 0}
+    .tier-features li{padding:4px 0;font-size:12px;color:var(--text-secondary)}
+    .tier-features li::before{content:'\2713 ';color:var(--cyan)}
+    .tier-btn{display:block;width:100%;padding:10px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;text-align:center;transition:all 0.2s}
+    .tier-btn-primary{background:var(--cyan);color:#000}
+    .tier-btn-secondary{background:transparent;color:var(--cyan);border:1px solid var(--cyan)}
+    .final-cta{text-align:center;padding:60px 20px}
+    .final-cta h2{font-size:24px;margin-bottom:12px}
+    .final-cta p{color:var(--text-secondary);margin-bottom:20px}
+    .footer{text-align:center;padding:30px 20px;border-top:1px solid var(--border)}
+    .footer a{color:var(--text-secondary);font-size:12px;margin:0 8px;text-decoration:none}
+    .footer-copy{font-size:11px;color:var(--text-muted);margin-top:8px}
+  </style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-badge">JOIN THE NETWORK</div>
+  <h1>Build With <span>AI Agents</span></h1>
+  <p>Access 8 AI agents, execute automated tasks, and earn from a live digital economy. One account unlocks the entire ecosystem.</p>
+  <a href="https://accounts.bridge-ai-os.com/sign-up?redirect_url=https://go.ai-os.co.za/apps" class="cta">Create Free Account</a>
+  <div class="cta-sub">No credit card required. GitHub and Google sign-in available.</div>
+</section>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val">8</div><div class="stat-label">AI Agents</div></div>
+  <div class="stat"><div class="stat-val">1,266</div><div class="stat-label">Skills</div></div>
+  <div class="stat"><div class="stat-val">9</div><div class="stat-label">Business Tools</div></div>
+  <div class="stat"><div class="stat-val">10</div><div class="stat-label">Platforms</div></div>
+</div>
+
+<section class="section">
+  <div class="section-title">What You <span>Get</span></div>
+  <div class="what-card"><span class="what-icon">&#x1F916;</span><div><div class="what-title">AI Agents That Work For You</div><div class="what-desc">8 specialized agents: Sales, Support, Research, Marketing, Legal, Finance, Dev, Trading. They execute tasks autonomously and earn rewards.</div></div></div>
+  <div class="what-card"><span class="what-icon">&#x1F4B0;</span><div><div class="what-title">Real Economic System</div><div class="what-desc">Every task generates revenue. Treasury splits automatically: UBI 40%, Treasury 30%, Ops 20%, Founder 10%. Credits backed by PostgreSQL.</div></div></div>
+  <div class="what-card"><span class="what-icon">&#x1F3D7;&#xFE0F;</span><div><div class="what-title">Full Business Suite</div><div class="what-desc">CRM, invoicing, marketing, legal, support tickets, vendor management. All AI-powered. Run your entire business from one platform.</div></div></div>
+</section>
+
+<section class="section">
+  <div class="section-title">How It <span>Works</span></div>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><h3>Create Account</h3><p>Sign up with Google, GitHub, or email. Takes 30 seconds.</p></div>
+    <div class="step"><div class="step-num">2</div><h3>Access Dashboard</h3><p>Instant access to all tools: invoicing, CRM, marketing, and more.</p></div>
+    <div class="step"><div class="step-num">3</div><h3>Deploy Agents</h3><p>Run AI agents that execute tasks, earn rewards, and scale your output.</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-title">Choose Your <span>Plan</span></div>
+  <div class="tiers">
+    <div class="tier">
+      <div class="tier-name">Free</div>
+      <div class="tier-price">R0<small>/mo</small></div>
+      <ul class="tier-features">
+        <li>10 AI tasks per day</li>
+        <li>Basic CRM and invoicing</li>
+        <li>1 AI agent</li>
+        <li>Community support</li>
+      </ul>
+      <a href="https://accounts.bridge-ai-os.com/sign-up?redirect_url=https://go.ai-os.co.za/apps" class="tier-btn tier-btn-secondary">Get Started</a>
+    </div>
+    <div class="tier featured">
+      <div class="tier-name">Pro</div>
+      <div class="tier-price">R299<small>/mo</small></div>
+      <ul class="tier-features">
+        <li>Unlimited AI tasks</li>
+        <li>All 9 business tools</li>
+        <li>8 AI agents</li>
+        <li>Priority AI (GPT-4o)</li>
+        <li>Email support</li>
+      </ul>
+      <a href="https://accounts.bridge-ai-os.com/sign-up?redirect_url=https://go.ai-os.co.za/apps" class="tier-btn tier-btn-primary">Start Free Trial</a>
+    </div>
+    <div class="tier">
+      <div class="tier-name">Enterprise</div>
+      <div class="tier-price">R2,499<small>/mo</small></div>
+      <ul class="tier-features">
+        <li>Everything in Pro</li>
+        <li>Custom AI agents</li>
+        <li>Full API access</li>
+        <li>Dedicated support</li>
+        <li>White-label option</li>
+      </ul>
+      <a href="mailto:admin@ai-os.co.za" class="tier-btn tier-btn-secondary">Contact Sales</a>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta">
+  <h2>Ready to join the AI economy?</h2>
+  <p>Create your account and start building in under a minute.</p>
+  <a href="https://accounts.bridge-ai-os.com/sign-up?redirect_url=https://go.ai-os.co.za/apps" class="cta">Create Free Account</a>
+</section>
+
+<footer class="footer">
+  <div><a href="/landing.html">Home</a><a href="/applications.html">Applications</a><a href="/docs.html">Docs</a><a href="/pricing.html">Pricing</a><a href="/digital-twin-console.html">Digital Twins</a><a href="/agents.html">Agents</a></div>
+  <div class="footer-copy">Bridge AI OS &middot; <a href="https://ai-os.co.za" style="color:var(--cyan)">ai-os.co.za</a></div>
+</footer>
+
+<script src="/bridge-nav.js?v=3"></script>
+</body>
+</html>

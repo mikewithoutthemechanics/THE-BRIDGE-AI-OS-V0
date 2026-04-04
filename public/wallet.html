@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wallet & Payments - Bridge AI OS</title>
+    <meta name="description" content="Wallet — Payments & Crypto Management">
+    <meta property="og:title" content="Wallet & Payments - Bridge AI OS">
+    <meta property="og:description" content="Wallet — Payments & Crypto Management">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/wallet.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/wallet.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
+.topnav{background:var(--bg2);border-bottom:1px solid #1a2a3a;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;overflow-x:auto;flex-shrink:0}
+.topnav .logo{font-weight:700;font-size:1.1rem;color:var(--a);white-space:nowrap}
+.topnav a{color:var(--t);font-size:.85rem;white-space:nowrap;padding:.35rem .6rem;border-radius:6px;transition:all .2s}
+.topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
+main{flex:1;padding:1.5rem;max-width:1400px;width:100%;margin:0 auto}
+h1{font-size:1.8rem;margin-bottom:.25rem}.subtitle{color:var(--t);margin-bottom:1.5rem}
+.grid{display:grid;gap:1rem}.grid-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}.grid-3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}.grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.25rem}
+.card h2{font-size:1.1rem;margin-bottom:.75rem}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600}
+.badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}.badge-red{background:#ff446622;color:var(--r)}.badge-yellow{background:#ffaa0022;color:var(--y)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;color:var(--t);font-weight:500;padding:.5rem;border-bottom:1px solid #1a2a3a}
+td{padding:.5rem;border-bottom:1px solid #0d1520}
+.btn{display:inline-block;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:all .2s;text-align:center}
+.btn-primary{background:var(--a);color:#000}.btn-green{background:var(--g);color:#000}.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}
+.btn:hover{opacity:.85;text-decoration:none}
+.auth-only{display:none}.upgrade-cta{display:block}
+.cta-box{background:linear-gradient(135deg,#00c8ff11,#00e57b11);border:1px solid #00c8ff33;border-radius:var(--radius);padding:1.5rem;text-align:center;margin:1rem 0}
+.cta-box h3{margin-bottom:.5rem}.cta-box p{color:var(--t);margin-bottom:1rem;font-size:.9rem}
+.rail{display:flex;align-items:center;gap:.75rem;padding:.75rem;background:var(--bg3);border-radius:8px}
+.rail-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:.85rem}
+.loading{color:var(--t);font-size:.85rem;padding:1rem 0}
+.action-bar{display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap}
+@media(max-width:600px){main{padding:1rem}.grid-2,.grid-3{grid-template-columns:1fr}h1{font-size:1.4rem}}
+</style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+<nav class="topnav">
+  <a href="/" class="logo">Bridge AI</a>
+  <a href="/">Dashboard</a>
+  <a href="/trading.html">Trading</a>
+  <a href="/defi.html">DeFi</a>
+  <a href="/wallet.html" class="active">Wallet</a>
+  <a href="/governance.html">Governance</a>
+  <a href="/intelligence.html">Intelligence</a>
+  <a href="/pricing.html">Pricing</a>
+  <a href="/corporate.html">Corporate</a>
+  <a href="/onboarding.html">Onboarding</a>
+</nav>
+<main>
+  <h1>Wallet & Payments</h1>
+  <p class="subtitle">Manage balances, transactions, invoices, and payment methods</p>
+
+  <div class="card" style="margin-bottom:1rem">
+    <h2>Payment Rails</h2>
+    <div class="grid grid-3" id="rails">
+      <div class="rail"><div class="rail-icon" style="background:#00c8ff22;color:var(--a)">PF</div><div style="flex:1"><div style="font-weight:600">PayFast</div><div style="color:var(--t);font-size:.75rem">ZAR - South Africa</div></div><span class="badge badge-green">Active</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#00e57b22;color:var(--g)">PS</div><div style="flex:1"><div style="font-weight:600">Paystack</div><div style="color:var(--t);font-size:.75rem">NGN, GHS, KES - Africa</div></div><span class="badge badge-green">Active</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#6366f122;color:#818cf8">ST</div><div style="flex:1"><div style="font-weight:600">Stripe</div><div style="color:var(--t);font-size:.75rem">USD, EUR, GBP - Global</div></div><span class="badge badge-green">Active</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#ffaa0022;color:var(--y)">&#8383;</div><div style="flex:1"><div style="font-weight:600">Crypto</div><div style="color:var(--t);font-size:.75rem">BTC, ETH, USDT, SOL</div></div><span class="badge badge-green">Active</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#ff446622;color:var(--r)">IB</div><div style="flex:1"><div style="font-weight:600">IBAN</div><div style="color:var(--t);font-size:.75rem">EUR - EU Bank Transfer</div></div><span class="badge badge-blue">Available</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#a78bfa22;color:#a78bfa">MO</div><div style="flex:1"><div style="font-weight:600">Mobile Money</div><div style="color:var(--t);font-size:.75rem">M-Pesa, Airtel Money</div></div><span class="badge badge-blue">Available</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <h2>Pricing Tiers</h2>
+    <div class="grid grid-4">
+      <div style="padding:.75rem;background:var(--bg3);border-radius:8px;text-align:center"><div style="font-weight:700;margin-bottom:.25rem">Free</div><div style="font-size:1.5rem;font-weight:700">$0</div><div style="color:var(--t);font-size:.8rem">/month</div><a href="/onboarding.html?plan=free" class="btn btn-outline" style="margin-top:.5rem;font-size:.75rem;padding:.4rem .8rem;display:block">Get Started</a></div>
+      <div style="padding:.75rem;background:var(--bg3);border-radius:8px;text-align:center;border:1px solid var(--a)"><div style="font-weight:700;margin-bottom:.25rem">Pro</div><div style="font-size:1.5rem;font-weight:700">$49</div><div style="color:var(--t);font-size:.8rem">/month</div><a href="/onboarding.html?plan=pro" class="btn btn-primary" style="margin-top:.5rem;font-size:.75rem;padding:.4rem .8rem;display:block">Upgrade</a></div>
+      <div style="padding:.75rem;background:var(--bg3);border-radius:8px;text-align:center"><div style="font-weight:700;margin-bottom:.25rem">Enterprise</div><div style="font-size:1.5rem;font-weight:700">$499</div><div style="color:var(--t);font-size:.8rem">/month</div><a href="/onboarding.html?plan=enterprise" class="btn btn-outline" style="margin-top:.5rem;font-size:.75rem;padding:.4rem .8rem;display:block">Contact</a></div>
+      <div style="padding:.75rem;background:var(--bg3);border-radius:8px;text-align:center"><div style="font-weight:700;margin-bottom:.25rem">Platform</div><div style="font-size:1.5rem;font-weight:700">$2,499</div><div style="color:var(--t);font-size:.8rem">/month</div><a href="/onboarding.html?plan=platform" class="btn btn-outline" style="margin-top:.5rem;font-size:.75rem;padding:.4rem .8rem;display:block">Contact</a></div>
+    </div>
+  </div>
+
+  <div class="auth-only">
+    <div class="grid grid-2" style="margin-bottom:1rem">
+      <div class="card">
+        <h2>Balance</h2>
+        <div id="balance-display"><div class="loading">Loading...</div></div>
+        <div class="action-bar">
+          <a href="/onboarding.html?plan=pro" class="btn btn-green">Add Funds</a>
+          <button class="btn btn-primary" onclick="sendFunds()">Send</button>
+          <button class="btn btn-outline" onclick="receiveAddress()">Receive</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Treasury</h2>
+        <div id="treasury-display"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <h2>Transaction History</h2>
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody id="tx-body"><tr><td colspan="4" class="loading">Loading transactions...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:1rem">
+      <div class="card">
+        <h2>Invoices</h2>
+        <table>
+          <thead><tr><th>Invoice</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead>
+          <tbody id="invoices-body"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h2>Debts & Obligations</h2>
+        <table>
+          <thead><tr><th>Description</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead>
+          <tbody id="debts-body"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="upgrade-cta">
+    <div class="cta-box">
+      <h3>Unlock Full Wallet Access</h3>
+      <p>View balances, send and receive payments, manage invoices, and track all transactions.</p>
+      <a href="/onboarding.html?plan=pro" class="btn btn-green" style="margin-right:.5rem">Subscribe - $49/mo</a>
+      <a href="/onboarding.html?plan=enterprise" class="btn btn-outline">Enterprise</a>
+      <br><br><a href="/pricing.html" style="font-size:.85rem">View all plans &rarr;</a>
+    </div>
+  </div>
+</main>
+<script>
+const token=localStorage.getItem('bridge_token'),isAuth=!!token;
+document.querySelectorAll('.auth-only').forEach(el=>el.style.display=isAuth?'':'none');
+document.querySelectorAll('.upgrade-cta').forEach(el=>el.style.display=isAuth?'none':'');
+const headers=token?{Authorization:'Bearer '+token}:{};
+async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;return await r.json()}catch{return null}}
+
+async function sendFunds(){
+  const to=prompt('Recipient email or wallet address:');
+  if(!to)return;
+  const amt=prompt('Amount (USD):');
+  if(!amt||isNaN(amt))return;
+  try{
+    const r=await fetch('/create-payment',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify({client:to,amount:amt,email:to})});
+    const d=await r.json();
+    if(d.payment_url)window.location.href=d.payment_url;
+    else alert('Payment initiated. Reference: '+(d.reference||d.id||'pending'));
+  }catch(e){alert('Send failed: '+e.message);}
+}
+function receiveAddress(){
+  const addr='bridge-'+Math.random().toString(36).slice(2,10)+'.pay';
+  const user=JSON.parse(localStorage.getItem('bridge_user')||'{}');
+  const display=user.email||addr;
+  navigator.clipboard.writeText(display).then(()=>alert('Your receive address copied to clipboard: '+display)).catch(()=>prompt('Your receive address:',display));
+}
+
+if(isAuth)(async()=>{
+  const[wallet,treasury,rails,invoices,debts]=await Promise.all([
+    f('/api/wallet/balance'),f('/api/treasury/status'),f('/api/revenue/rails'),f('/api/invoices'),f('/api/debts')
+  ]);
+
+  if(wallet){
+    const w=wallet.balance||wallet;
+    document.getElementById('balance-display').innerHTML=`<div style="font-size:2.5rem;font-weight:700;margin-bottom:.25rem">$${parseFloat(w.total||w.usd||0).toLocaleString()}</div><div style="color:var(--t)">${w.currency||'USD'} &bull; ${w.accounts||1} account(s)</div>`;
+  }
+  if(treasury){
+    const t=treasury.treasury||treasury;
+    document.getElementById('treasury-display').innerHTML=`<div style="font-size:2rem;font-weight:700;margin-bottom:.5rem">$${parseInt(t.total||t.balance||0).toLocaleString()}</div><div class="grid grid-2" style="gap:.5rem"><div><div style="color:var(--t);font-size:.8rem">Revenue (MTD)</div><div style="font-weight:600;color:var(--g)">$${parseInt(t.revenue||t.monthlyRevenue||0).toLocaleString()}</div></div><div><div style="color:var(--t);font-size:.8rem">Expenses (MTD)</div><div style="font-weight:600;color:var(--r)">$${parseInt(t.expenses||t.monthlyExpenses||0).toLocaleString()}</div></div></div>`;
+  }
+
+  // Transactions from wallet
+  const txs=wallet?.transactions||wallet?.history||[];
+  if(txs.length){
+    document.getElementById('tx-body').innerHTML=txs.slice(0,15).map(t=>`<tr><td>${t.date||t.timestamp||'--'}</td><td>${t.type||'--'}</td><td style="font-weight:600">${t.amount||'--'}</td><td><span class="badge ${t.status==='completed'||t.status==='success'?'badge-green':t.status==='pending'?'badge-yellow':'badge-blue'}">${t.status||'--'}</span></td></tr>`).join('');
+  }else{document.getElementById('tx-body').innerHTML='<tr><td colspan="4" style="color:var(--t)">No recent transactions</td></tr>';}
+
+  const inv=invoices?.invoices||invoices?.data||[];
+  document.getElementById('invoices-body').innerHTML=inv.length?inv.slice(0,10).map(i=>`<tr><td>${i.id||i.number||'--'}</td><td>$${parseFloat(i.amount||0).toLocaleString()}</td><td>${i.due||i.dueDate||'--'}</td><td><span class="badge ${i.status==='paid'?'badge-green':'badge-yellow'}">${i.status||'--'}</span></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--t)">No invoices</td></tr>';
+
+  const db=debts?.debts||debts?.data||[];
+  document.getElementById('debts-body').innerHTML=db.length?db.slice(0,10).map(d=>`<tr><td>${d.description||d.name||'--'}</td><td style="color:var(--r)">$${parseFloat(d.amount||0).toLocaleString()}</td><td>${d.due||d.dueDate||'--'}</td><td><span class="badge ${d.status==='paid'?'badge-green':'badge-red'}">${d.status||'--'}</span></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--t)">No outstanding debts</td></tr>';
+})();
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

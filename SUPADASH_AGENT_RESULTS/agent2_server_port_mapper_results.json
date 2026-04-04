@@ -1,0 +1,43 @@
+{
+  "servers": [
+    { "SERVER_NAME": "server.js", "PORT": 5000, "FILE_PATH": "/c/aoe-unified-final/server.js", "FRAMEWORK": "Express.js" },
+    { "SERVER_NAME": "gateway.js", "PORT": 8080, "FILE_PATH": "/c/aoe-unified-final/gateway.js", "FRAMEWORK": "Express.js with SSE" },
+    { "SERVER_NAME": "system.js", "PORT": 3000, "FILE_PATH": "/c/aoe-unified-final/system.js", "FRAMEWORK": "Node.js HTTP/HTTPS" },
+    { "SERVER_NAME": "Xpayments/server.js", "PORT": 4000, "FILE_PATH": "/c/aoe-unified-final/Xpayments/server.js", "FRAMEWORK": "Express.js" },
+    { "SERVER_NAME": "Xcontainerx/server.js", "PORT": 3000, "FILE_PATH": "/c/aoe-unified-final/Xcontainerx/server.js", "FRAMEWORK": "Express.js + WebSocket" },
+    { "SERVER_NAME": "laptop1-streaming-orchestrator.js", "PORT": 9000, "FILE_PATH": "/c/aoe-unified-final/agents/laptop1-streaming-orchestrator.js", "FRAMEWORK": "Express.js" },
+    { "SERVER_NAME": "laptop2-streaming-orchestrator.js", "PORT": 9001, "FILE_PATH": "/c/aoe-unified-final/agents/laptop2-streaming-orchestrator.js", "FRAMEWORK": "Express.js" },
+    { "SERVER_NAME": "laptop3-minimax-orchestrator.js", "PORT": 9002, "FILE_PATH": "/c/aoe-unified-final/agents/laptop3-minimax-orchestrator.js", "FRAMEWORK": "Express.js" }
+  ],
+  "endpoints": [
+    { "SERVER_NAME": "server.js", "PORT": 5000, "FILE_PATH": "/c/aoe-unified-final/server.js", "ENDPOINT": "/health", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "server.js", "PORT": 5000, "FILE_PATH": "/c/aoe-unified-final/server.js", "ENDPOINT": "/api/status", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "server.js", "PORT": 5000, "FILE_PATH": "/c/aoe-unified-final/server.js", "ENDPOINT": "/api/auth/register", "METHOD": "POST", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "server.js", "PORT": 5000, "FILE_PATH": "/c/aoe-unified-final/server.js", "ENDPOINT": "/api/auth/*", "METHOD": "POST", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "server.js", "PORT": 5000, "FILE_PATH": "/c/aoe-unified-final/server.js", "ENDPOINT": "/api/agents", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "gateway.js", "PORT": 8080, "FILE_PATH": "/c/aoe-unified-final/gateway.js", "ENDPOINT": "/events/stream", "METHOD": "GET", "RESPONSE_TYPE": "SSE", "WEBSOCKET": false },
+    { "SERVER_NAME": "gateway.js", "PORT": 8080, "FILE_PATH": "/c/aoe-unified-final/gateway.js", "ENDPOINT": "/ask", "METHOD": "POST", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "system.js", "PORT": 3000, "FILE_PATH": "/c/aoe-unified-final/system.js", "ENDPOINT": "/api/scan", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "system.js", "PORT": 3000, "FILE_PATH": "/c/aoe-unified-final/system.js", "ENDPOINT": "/api/engines", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "system.js", "PORT": 3000, "FILE_PATH": "/c/aoe-unified-final/system.js", "ENDPOINT": "/api/economic", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "system.js", "PORT": 3000, "FILE_PATH": "/c/aoe-unified-final/system.js", "ENDPOINT": "/api/recommendations", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "system.js", "PORT": 3000, "FILE_PATH": "/c/aoe-unified-final/system.js", "ENDPOINT": "/terminal", "METHOD": "WS", "RESPONSE_TYPE": "WebSocket PTY", "WEBSOCKET": true },
+    { "SERVER_NAME": "Xcontainerx/server.js", "PORT": 3000, "FILE_PATH": "/c/aoe-unified-final/Xcontainerx/server.js", "ENDPOINT": "/terminal", "METHOD": "WS", "RESPONSE_TYPE": "WebSocket", "WEBSOCKET": true },
+    { "SERVER_NAME": "Xpayments/server.js", "PORT": 4000, "FILE_PATH": "/c/aoe-unified-final/Xpayments/server.js", "ENDPOINT": "/api/webhooks/payfast", "METHOD": "POST", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "Xpayments/server.js", "PORT": 4000, "FILE_PATH": "/c/aoe-unified-final/Xpayments/server.js", "ENDPOINT": "/billing", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "laptop1-streaming-orchestrator.js", "PORT": 9000, "FILE_PATH": "/c/aoe-unified-final/agents/laptop1-streaming-orchestrator.js", "ENDPOINT": "/orchestrator/status", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "laptop2-streaming-orchestrator.js", "PORT": 9001, "FILE_PATH": "/c/aoe-unified-final/agents/laptop2-streaming-orchestrator.js", "ENDPOINT": "/api/verification/*", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "laptop2-streaming-orchestrator.js", "PORT": 9001, "FILE_PATH": "/c/aoe-unified-final/agents/laptop2-streaming-orchestrator.js", "ENDPOINT": "/api/conflicts", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "laptop2-streaming-orchestrator.js", "PORT": 9001, "FILE_PATH": "/c/aoe-unified-final/agents/laptop2-streaming-orchestrator.js", "ENDPOINT": "/api/conflict/detect", "METHOD": "POST", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "laptop3-minimax-orchestrator.js", "PORT": 9002, "FILE_PATH": "/c/aoe-unified-final/agents/laptop3-minimax-orchestrator.js", "ENDPOINT": "/api/optimization/*", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false },
+    { "SERVER_NAME": "server.js", "PORT": 5000, "FILE_PATH": "/c/aoe-unified-final/server.js", "ENDPOINT": "/healthz", "METHOD": "GET", "RESPONSE_TYPE": "JSON", "WEBSOCKET": false }
+  ],
+  "summary": {
+    "total_servers": 8,
+    "total_endpoints": 21,
+    "port_conflicts": ["3000 (system.js AND Xcontainerx/server.js)"],
+    "websocket_count": 2,
+    "sse_count": 1,
+    "notes": "PORT CONFLICT on 3000 between system.js (GOD MODE) and Xcontainerx/server.js (ContainerX Terminal) — both expose /terminal WebSocket"
+  }
+}

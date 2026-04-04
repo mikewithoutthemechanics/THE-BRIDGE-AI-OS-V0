@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bridge AI OS - Topology Layers</title>
+    <meta name="description" content="Topology Layers — Network Architecture View">
+    <meta property="og:title" content="Bridge AI OS - Topology Layers">
+    <meta property="og:description" content="Topology Layers — Network Architecture View">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/topology-layers.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/topology-layers.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@6.0.0/babylon.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #050a10;
+  --surface: #0d1620;
+  --border: #1a2d40;
+  --accent: #00c8ff;
+  --green: #00e57b;
+  --red: #ff3c5a;
+  --yellow: #ffd700;
+  --purple: #a855f7;
+  --gold: #f0b030;
+  --dim: #4a6a80;
+  --text: #c0d8e8;
+}
+html, body { height:100%; background:var(--bg); color:var(--text); font-family:'Courier New',monospace; overflow:hidden; }
+
+/* HEADER */
+#header {
+  position:fixed; top:0; left:0; right:0; height:44px; z-index:100;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 16px; gap:16px;
+}
+#header .logo { color:var(--accent); font-weight:bold; font-size:14px; white-space:nowrap; display:flex; align-items:center; gap:8px; }
+.pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 4px var(--green)} 50%{opacity:.4;box-shadow:0 0 8px var(--green)} }
+#header .breadcrumb { color:var(--dim); font-size:12px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#header .breadcrumb span { color:var(--accent); }
+.layer-badges { display:flex; gap:4px; }
+.layer-badge { font-size:10px; padding:2px 6px; border:1px solid var(--border); border-radius:3px; color:var(--dim); }
+.layer-badge.active { color:var(--accent); border-color:var(--accent); box-shadow:0 0 6px rgba(0,200,255,.3); }
+.nav-links { display:flex; gap:12px; }
+.nav-links a { color:var(--dim); text-decoration:none; font-size:11px; transition:color .2s; }
+.nav-links a:hover, .nav-links a.active { color:var(--accent); }
+#clock { color:var(--dim); font-size:11px; min-width:55px; text-align:right; }
+
+/* LAYER NAV */
+#layer-nav {
+  position:fixed; top:44px; left:0; right:0; height:36px; z-index:100;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 16px; gap:8px;
+}
+.layer-btn {
+  font-family:inherit; font-size:11px; padding:4px 12px; background:transparent;
+  border:1px solid var(--border); color:var(--dim); cursor:pointer; border-radius:3px; transition:all .2s;
+}
+.layer-btn:hover { border-color:var(--accent); color:var(--text); }
+.layer-btn.active { border-color:var(--accent); color:var(--accent); box-shadow:0 0 8px rgba(0,200,255,.25); background:rgba(0,200,255,.05); }
+#back-btn {
+  font-family:inherit; font-size:11px; padding:4px 10px; background:transparent;
+  border:1px solid var(--border); color:var(--dim); cursor:pointer; border-radius:3px; margin-left:auto;
+}
+#back-btn:hover { border-color:var(--accent); color:var(--text); }
+#back-btn:disabled { opacity:.3; cursor:default; }
+#layer-path { font-size:11px; color:var(--dim); margin-left:8px; }
+
+/* VIEWPORT */
+#viewport { position:fixed; top:80px; left:0; right:0; bottom:0; background:var(--bg); }
+#p5-canvas, #babylon-canvas, #three-canvas { position:absolute; top:0; left:0; width:100%; height:100%; display:none; }
+#babylon-canvas { outline:none; }
+
+/* TOOLTIP */
+#tooltip {
+  position:fixed; display:none; background:var(--surface); border:1px solid var(--accent);
+  padding:8px 12px; border-radius:4px; font-size:11px; z-index:200; pointer-events:none;
+  box-shadow:0 0 12px rgba(0,200,255,.2);
+}
+#tooltip .tt-name { color:var(--accent); font-weight:bold; margin-bottom:4px; }
+#tooltip .tt-line { color:var(--dim); }
+
+/* CODE PREVIEW PANEL */
+#code-panel {
+  position:fixed; bottom:0; left:0; right:0; height:0; z-index:150;
+  background:var(--surface); border-top:2px solid var(--accent); transition:height .3s;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+#code-panel.open { height:30%; }
+#code-panel-header {
+  display:flex; align-items:center; padding:8px 16px; border-bottom:1px solid var(--border); gap:12px;
+}
+#code-panel-header .file-path { color:var(--accent); font-size:12px; flex:1; }
+#code-panel-header .line-range { color:var(--dim); font-size:11px; }
+#code-panel-close {
+  background:transparent; border:1px solid var(--border); color:var(--dim);
+  font-family:inherit; font-size:11px; padding:2px 8px; cursor:pointer; border-radius:3px;
+}
+#code-panel-close:hover { border-color:var(--red); color:var(--red); }
+#code-content { flex:1; overflow:auto; padding:12px 16px; font-size:12px; line-height:1.6; }
+#code-content .kw { color:var(--accent); }
+#code-content .str { color:var(--green); }
+#code-content .cmt { color:#4a5568; font-style:italic; }
+#code-content .fn { color:var(--yellow); }
+#code-content .num { color:var(--purple); }
+#code-content .ln { color:#3a4a5a; display:inline-block; width:40px; text-align:right; margin-right:12px; user-select:none; }
+
+/* TRANSITION OVERLAY */
+#transition-overlay {
+  position:fixed; top:80px; left:0; right:0; bottom:0; background:var(--bg);
+  z-index:90; opacity:0; pointer-events:none; transition:opacity .3s;
+}
+#transition-overlay.active { opacity:1; pointer-events:all; }
+
+/* MOBILE */
+@media (max-width:900px) {
+  .nav-links { display:none; }
+  #header .breadcrumb { display:none; }
+  .layer-badges { display:none; }
+  #layer-nav { flex-wrap:wrap; height:auto; padding:6px 8px; gap:4px; }
+  .layer-btn { font-size:10px; padding:3px 8px; }
+}
+</style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo"><span class="pulse-dot"></span> BRIDGE AI OS</div>
+  <div class="breadcrumb" id="breadcrumb-text"><span>SYSTEM</span></div>
+  <div class="layer-badges">
+    <div class="layer-badge active" id="badge-l1">L1</div>
+    <div class="layer-badge" id="badge-l2">L2</div>
+    <div class="layer-badge" id="badge-l3">L3</div>
+  </div>
+  <div class="nav-links">
+    <a href="/">HOME</a>
+    <a href="/topology-layers.html" class="active">TOPOLOGY</a>
+    <a href="/control.html">CONTROL</a>
+    <a href="/registry.html">REGISTRY</a>
+  </div>
+  <div id="clock">--:--:--</div>
+</div>
+
+<!-- LAYER NAV -->
+<div id="layer-nav">
+  <button class="layer-btn active" id="btn-l1" onclick="switchLayer(1)">L1: SYSTEM MAP</button>
+  <button class="layer-btn" id="btn-l2" onclick="switchLayer(2)">L2: NODE DETAIL</button>
+  <button class="layer-btn" id="btn-l3" onclick="switchLayer(3)">L3: SOURCE VIEW</button>
+  <span id="layer-path"></span>
+  <button id="back-btn" onclick="drillUp()" disabled>BACK</button>
+</div>
+
+<!-- VIEWPORT -->
+<div id="viewport">
+  <div id="p5-canvas"></div>
+  <canvas id="babylon-canvas"></canvas>
+  <canvas id="three-canvas"></canvas>
+</div>
+
+<!-- TOOLTIP -->
+<div id="tooltip">
+  <div class="tt-name"></div>
+  <div class="tt-line"></div>
+</div>
+
+<!-- CODE PREVIEW -->
+<div id="code-panel">
+  <div id="code-panel-header">
+    <span class="file-path" id="cp-filepath">--</span>
+    <span class="line-range" id="cp-lines">--</span>
+    <button id="code-panel-close" onclick="closeCodePanel()">CLOSE</button>
+  </div>
+  <div id="code-content"></div>
+</div>
+
+<!-- TRANSITION -->
+<div id="transition-overlay"></div>
+
+<script>
+// ===========================================================================
+// STATE
+// ===========================================================================
+let currentLayer = 1;
+let selectedNode = null;
+let selectedComponent = null;
+let breadcrumb = ['SYSTEM'];
+
+let p5Instance = null;
+let babylonEngine = null;
+let babylonScene = null;
+let threeRenderer = null;
+let threeScene = null;
+let threeCamera = null;
+let threeAnimId = null;
+
+// ===========================================================================
+// TOPOLOGY DATA (defaults, overridden by API)
+// ===========================================================================
+const DEFAULT_NODES = [
+  { id:'gateway', name:'Gateway (Vercel)', type:'gateway', port:3000, color:'#00c8ff', size:38, status:'up' },
+  { id:'system', name:'System / Core', type:'system', port:3001, color:'#00e57b', size:30, status:'up' },
+  { id:'ai', name:'AI Node', type:'ai', port:3002, color:'#a855f7', size:30, status:'up' },
+  { id:'l1-orch', name:'L1 Orchestrator', type:'orchestrator', port:3010, color:'#ffd700', size:20, status:'up' },
+  { id:'l2-orch', name:'L2 Orchestrator', type:'orchestrator', port:3011, color:'#ffd700', size:20, status:'up' },
+  { id:'l3-orch', name:'L3 Orchestrator', type:'orchestrator', port:3012, color:'#ffd700', size:20, status:'up' },
+  { id:'server', name:'Server', type:'server', port:3003, color:'#00c8ff', size:28, status:'up' },
+  { id:'payments', name:'Payments', type:'payments', port:3004, color:'#00e57b', size:28, status:'up' },
+  { id:'auth', name:'Auth', type:'auth', port:3005, color:'#00e57b', size:20, status:'up' },
+  { id:'treasury', name:'Treasury', type:'treasury', port:3006, color:'#f0b030', size:22, status:'up' },
+];
+
+const DEFAULT_EDGES = [
+  ['gateway','system'],['gateway','ai'],['gateway','server'],['gateway','auth'],
+  ['gateway','payments'],['gateway','treasury'],
+  ['system','l1-orch'],['system','l2-orch'],['system','l3-orch'],
+  ['system','ai'],['ai','l1-orch'],['ai','l2-orch'],['ai','l3-orch'],
+  ['server','auth'],['payments','treasury'],['system','auth'],
+];
+
+let topoNodes = [...DEFAULT_NODES];
+let topoEdges = [...DEFAULT_EDGES];
+
+// ===========================================================================
+// SOURCE MAP
+// ===========================================================================
+const SOURCE_MAP = {
+  'gateway': { file:'gateway.js', sections:[
+    {name:'CORS',lines:8,type:'middleware',start:35},
+    {name:'Request Logger',lines:8,type:'middleware',start:46},
+    {name:'Health',lines:7,type:'route',start:58},
+    {name:'SSE Stream',lines:20,type:'route',start:69},
+    {name:'Event Generator',lines:18,type:'handler',start:90},
+    {name:'Orchestrator Status',lines:12,type:'route',start:127},
+    {name:'Billing',lines:18,type:'route',start:148},
+    {name:'LLM Ask',lines:16,type:'route',start:167},
+    {name:'Topology',lines:12,type:'route',start:185},
+    {name:'Avatar',lines:8,type:'route',start:203},
+    {name:'Registry',lines:20,type:'route',start:212},
+    {name:'Marketplace',lines:18,type:'route',start:233},
+    {name:'Status',lines:28,type:'route',start:254},
+    {name:'Auth Register',lines:10,type:'route',start:402},
+    {name:'Auth Login',lines:10,type:'route',start:414},
+    {name:'Auth Verify',lines:8,type:'route',start:426},
+    {name:'Referral Claim',lines:18,type:'route',start:437},
+  ]},
+  'api': { file:'api/index.js', sections:[
+    {name:'Shared Helpers',lines:30,type:'util',start:1},
+    {name:'Avatar Modes',lines:45,type:'handler',start:44},
+    {name:'CORS + Router',lines:15,type:'middleware',start:115},
+    {name:'Health',lines:4,type:'route',start:142},
+    {name:'Orchestrator',lines:8,type:'route',start:148},
+    {name:'Billing',lines:12,type:'route',start:157},
+    {name:'Ask (LLM)',lines:5,type:'route',start:171},
+    {name:'Topology',lines:25,type:'route',start:178},
+    {name:'Avatar Routes',lines:10,type:'route',start:207},
+    {name:'Registry',lines:80,type:'route',start:219},
+    {name:'Marketplace',lines:90,type:'route',start:307},
+    {name:'Treasury',lines:30,type:'route',start:489},
+    {name:'Events',lines:15,type:'route',start:510},
+    {name:'Users',lines:10,type:'route',start:560},
+    {name:'Auth',lines:50,type:'route',start:432},
+  ]},
+  'auth': { file:'auth.js', sections:[
+    {name:'DB Setup',lines:30,type:'util',start:1},
+    {name:'Password Hashing',lines:10,type:'handler',start:50},
+    {name:'JWT Token',lines:20,type:'handler',start:80},
+    {name:'Register',lines:30,type:'route',start:120},
+    {name:'Login',lines:25,type:'route',start:160},
+    {name:'Verify',lines:15,type:'route',start:200},
+    {name:'Refresh',lines:20,type:'route',start:230},
+    {name:'Referral System',lines:40,type:'route',start:300},
+  ]},
+  'system': { file:'system.js', sections:[
+    {name:'Server Setup',lines:40,type:'util',start:1},
+    {name:'CSP Headers',lines:15,type:'middleware',start:530},
+    {name:'Static Serve',lines:10,type:'middleware',start:550},
+    {name:'Health Route',lines:8,type:'route',start:100},
+    {name:'Topology Route',lines:30,type:'route',start:150},
+    {name:'Full API',lines:50,type:'route',start:200},
+    {name:'WebSocket Terminal',lines:120,type:'handler',start:646},
+  ]},
+  'server': { file:'server.js', sections:[
+    {name:'Express Setup',lines:10,type:'util',start:1},
+    {name:'Auth Proxy',lines:50,type:'middleware',start:18},
+    {name:'Funnel Routes',lines:5,type:'route',start:84},
+    {name:'Health',lines:3,type:'route',start:92},
+    {name:'Status',lines:20,type:'route',start:94},
+  ]},
+};
+
+// Node -> source map key mapping
+const NODE_SOURCE_KEY = {
+  'gateway':'gateway','system':'system','ai':'api','server':'server',
+  'auth':'auth','payments':'api','treasury':'api',
+  'l1-orch':'system','l2-orch':'system','l3-orch':'system',
+};
+
+// Node -> component panels for L2
+const NODE_COMPONENTS = {
+  'gateway': ['Routes','Middleware','CORS','SSE','Auth Proxy'],
+  'system': ['Kernel','Network','Security','Registry'],
+  'ai': ['Inference','Model Pool','Queue','Embeddings'],
+  'l1-orch': ['Task Queue','Scheduler','Workers'],
+  'l2-orch': ['Task Queue','Scheduler','Workers'],
+  'l3-orch': ['Task Queue','Scheduler','Workers'],
+  'server': ['Express','Static','Proxy','Health'],
+  'payments': ['Stripe','Invoices','Webhooks','Plans'],
+  'auth': ['JWT','Sessions','OAuth','Permissions'],
+  'treasury': ['Ledger','Wallets','Transactions','Reports'],
+};
+
+// ===========================================================================
+// CLOCK
+// ===========================================================================
+function updateClock() {
+  const d = new Date();
+  document.getElementById('clock').textContent =
+    d.toTimeString().slice(0,8);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===========================================================================
+// UI HELPERS
+// ===========================================================================
+function updateBreadcrumb() {
+  const el = document.getElementById('breadcrumb-text');
+  el.innerHTML = breadcrumb.map((b,i) =>
+    i === breadcrumb.length-1 ? `<span>${b}</span>` : b
+  ).join(' &gt; ');
+}
+
+function updateLayerBadges() {
+  for (let i = 1; i <= 3; i++) {
+    const badge = document.getElementById('badge-l'+i);
+    const btn = document.getElementById('btn-l'+i);
+    badge.classList.toggle('active', i === currentLayer);
+    btn.classList.toggle('active', i === currentLayer);
+  }
+  document.getElementById('back-btn').disabled = currentLayer === 1;
+}
+
+function showTooltip(x, y, name, lines) {
+  const tt = document.getElementById('tooltip');
+  tt.style.display = 'block';
+  tt.style.left = (x+12)+'px';
+  tt.style.top = (y-10)+'px';
+  tt.querySelector('.tt-name').textContent = name;
+  tt.querySelector('.tt-line').innerHTML = lines.join('<br>');
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+// ===========================================================================
+// LAYER SWITCHING
+// ===========================================================================
+function switchLayer(layer) {
+  if (layer === currentLayer) return;
+  if (layer === 2 && !selectedNode) return;
+  if (layer === 3 && !selectedComponent) return;
+  transitionTo(layer);
+}
+
+function transitionTo(layer) {
+  const overlay = document.getElementById('transition-overlay');
+  overlay.classList.add('active');
+  setTimeout(() => {
+    disposeCurrentLayer();
+    currentLayer = layer;
+    updateLayerBadges();
+    initLayer(layer);
+    setTimeout(() => overlay.classList.remove('active'), 100);
+  }, 300);
+}
+
+function drillDown(layer, target) {
+  if (layer === 2) {
+    selectedNode = target;
+    breadcrumb = ['SYSTEM', target.name || target];
+  } else if (layer === 3) {
+    selectedComponent = target;
+    breadcrumb.push(target);
+  }
+  updateBreadcrumb();
+  transitionTo(layer);
+}
+
+function drillUp() {
+  if (currentLayer === 1) return;
+  if (currentLayer === 3) {
+    selectedComponent = null;
+    breadcrumb.pop();
+    updateBreadcrumb();
+    transitionTo(2);
+  } else if (currentLayer === 2) {
+    selectedNode = null;
+    breadcrumb = ['SYSTEM'];
+    updateBreadcrumb();
+    transitionTo(1);
+  }
+}
+
+function disposeCurrentLayer() {
+  closeCodePanel();
+  if (p5Instance) { p5Instance.remove(); p5Instance = null; }
+  if (babylonEngine) { babylonEngine.dispose(); babylonEngine = null; babylonScene = null; }
+  if (threeAnimId) { cancelAnimationFrame(threeAnimId); threeAnimId = null; }
+  if (threeRenderer) { threeRenderer.dispose(); threeRenderer.domElement.remove(); threeRenderer = null; threeScene = null; threeCamera = null; }
+  document.getElementById('p5-canvas').style.display = 'none';
+  document.getElementById('p5-canvas').innerHTML = '';
+  document.getElementById('babylon-canvas').style.display = 'none';
+  document.getElementById('three-canvas').style.display = 'none';
+}
+
+function initLayer(layer) {
+  if (layer === 1) initL1();
+  else if (layer === 2) initL2();
+  else if (layer === 3) initL3();
+}
+
+// ===========================================================================
+// DATA FETCHING
+// ===========================================================================
+async function fetchTopology() {
+  try {
+    const r = await fetch('/api/topology');
+    if (r.ok) {
+      const d = await r.json();
+      if (d.nodes && d.nodes.length) {
+        topoNodes = d.nodes.map(n => ({
+          ...n,
+          color: n.color || '#00c8ff',
+          size: n.size || 24,
+          status: n.status || 'up',
+        }));
+      }
+      if (d.edges && d.edges.length) topoEdges = d.edges;
+    }
+  } catch(e) { /* use defaults */ }
+  try {
+    const r2 = await fetch('/api/status');
+    if (r2.ok) {
+      const st = await r2.json();
+      if (st.services) {
+        for (const svc of st.services) {
+          const n = topoNodes.find(x => x.id === svc.id || x.name === svc.name);
+          if (n) n.status = svc.status || 'up';
+        }
+      }
+    }
+  } catch(e) {}
+}
+
+// ===========================================================================
+// LAYER 1 : P5.js System Map
+// ===========================================================================
+function initL1() {
+  const container = document.getElementById('p5-canvas');
+  container.style.display = 'block';
+
+  const sketch = (p) => {
+    let nodes = [];
+    let edges = [];
+    let dragging = null;
+    let hovered = null;
+    let zoom = 1;
+    let panX = 0, panY = 0;
+    let particles = [];
+
+    class TopoNode {
+      constructor(data, x, y) {
+        this.data = data;
+        this.x = x; this.y = y;
+        this.vx = 0; this.vy = 0;
+        this.size = data.size || 24;
+        this.col = p.color(data.color || '#00c8ff');
+        this.pinned = false;
+      }
+    }
+
+    class Particle {
+      constructor(e) {
+        this.edge = e;
+        this.t = Math.random();
+        this.speed = 0.002 + Math.random()*0.003;
+      }
+      update() {
+        this.t += this.speed;
+        if (this.t > 1) this.t = 0;
+      }
+    }
+
+    p.setup = function() {
+      const cv = p.createCanvas(container.clientWidth, container.clientHeight);
+      cv.parent(container);
+      panX = p.width/2;
+      panY = p.height/2;
+
+      // Create nodes in circle layout
+      const cx = 0, cy = 0;
+      topoNodes.forEach((nd, i) => {
+        const angle = (i / topoNodes.length) * p.TWO_PI - p.HALF_PI;
+        const r = 180;
+        nodes.push(new TopoNode(nd, cx + Math.cos(angle)*r, cy + Math.sin(angle)*r));
+      });
+
+      // Edges
+      topoEdges.forEach(e => {
+        const a = Array.isArray(e) ? e[0] : e.from;
+        const b = Array.isArray(e) ? e[1] : e.to;
+        const nA = nodes.find(n => n.data.id === a);
+        const nB = nodes.find(n => n.data.id === b);
+        if (nA && nB) edges.push([nA, nB]);
+      });
+
+      // Particles on edges
+      edges.forEach(e => {
+        for (let i = 0; i < 2; i++) particles.push(new Particle(e));
+      });
+    };
+
+    p.draw = function() {
+      p.background(5, 10, 16);
+
+      p.push();
+      p.translate(panX, panY);
+      p.scale(zoom);
+
+      // Grid
+      p.stroke(26, 45, 64, 40);
+      p.strokeWeight(0.5);
+      for (let gx = -600; gx <= 600; gx += 60) p.line(gx, -600, gx, 600);
+      for (let gy = -600; gy <= 600; gy += 60) p.line(-600, gy, 600, gy);
+
+      // Physics
+      applyPhysics();
+
+      // Edges
+      edges.forEach(([a,b]) => {
+        p.stroke(26, 45, 64, 120);
+        p.strokeWeight(1.2);
+        p.line(a.x, a.y, b.x, b.y);
+      });
+
+      // Particles
+      particles.forEach(pt => {
+        pt.update();
+        const a = pt.edge[0], b = pt.edge[1];
+        const px = p.lerp(a.x, b.x, pt.t);
+        const py = p.lerp(a.y, b.y, pt.t);
+        p.noStroke();
+        p.fill(0, 200, 255, 180);
+        p.circle(px, py, 3);
+      });
+
+      // Detect hover
+      const mx = (p.mouseX - panX) / zoom;
+      const my = (p.mouseY - panY) / zoom;
+      hovered = null;
+      nodes.forEach(n => {
+        if (p.dist(mx, my, n.x, n.y) < n.size) hovered = n;
+      });
+
+      // Nodes
+      nodes.forEach(n => {
+        const statusCol = n.data.status === 'up' ? p.color(0,229,123) :
+                          n.data.status === 'down' ? p.color(255,60,90) : p.color(255,215,0);
+        const isHov = hovered === n;
+
+        // Glow
+        if (isHov) {
+          p.noStroke();
+          for (let g = 3; g > 0; g--) {
+            p.fill(p.red(n.col), p.green(n.col), p.blue(n.col), 15*g);
+            p.circle(n.x, n.y, n.size*2 + g*12);
+          }
+        }
+
+        // Body
+        p.fill(13, 22, 32);
+        p.stroke(p.red(n.col), p.green(n.col), p.blue(n.col), isHov ? 255 : 150);
+        p.strokeWeight(isHov ? 2.5 : 1.5);
+        p.circle(n.x, n.y, n.size*2);
+
+        // Status dot
+        p.noStroke();
+        p.fill(statusCol);
+        p.circle(n.x + n.size*0.7, n.y - n.size*0.7, 7);
+
+        // Label
+        p.fill(192, 216, 232);
+        p.noStroke();
+        p.textAlign(p.CENTER, p.TOP);
+        p.textSize(10);
+        p.text(n.data.name, n.x, n.y + n.size + 6);
+      });
+
+      p.pop();
+
+      // Tooltip
+      if (hovered && !dragging) {
+        showTooltip(p.mouseX, p.mouseY, hovered.data.name, [
+          'Port: '+(hovered.data.port||'--'),
+          'Status: '+(hovered.data.status||'--'),
+          'Type: '+(hovered.data.type||'--'),
+        ]);
+      } else {
+        hideTooltip();
+      }
+    };
+
+    function applyPhysics() {
+      const centerForce = 0.001;
+      const repel = 5000;
+      const edgeForce = 0.005;
+      const damping = 0.92;
+
+      nodes.forEach(n => {
+        if (n.pinned) return;
+        // Attract to center
+        n.vx -= n.x * centerForce;
+        n.vy -= n.y * centerForce;
+        // Repel other nodes
+        nodes.forEach(m => {
+          if (m === n) return;
+          let dx = n.x - m.x, dy = n.y - m.y;
+          let d2 = dx*dx + dy*dy;
+          if (d2 < 100) d2 = 100;
+          n.vx += (dx / d2) * repel;
+          n.vy += (dy / d2) * repel;
+        });
+      });
+      // Edge attraction
+      edges.forEach(([a,b]) => {
+        let dx = b.x - a.x, dy = b.y - a.y;
+        if (!a.pinned) { a.vx += dx * edgeForce; a.vy += dy * edgeForce; }
+        if (!b.pinned) { b.vx -= dx * edgeForce; b.vy -= dy * edgeForce; }
+      });
+      nodes.forEach(n => {
+        if (n.pinned) return;
+        n.vx *= damping; n.vy *= damping;
+        n.x += n.vx; n.y += n.vy;
+      });
+    }
+
+    p.mousePressed = function() {
+      if (p.mouseY < 80) return; // ignore header area clicks
+      const mx = (p.mouseX - panX) / zoom;
+      const my = (p.mouseY - panY) / zoom;
+      nodes.forEach(n => {
+        if (p.dist(mx, my, n.x, n.y) < n.size) {
+          dragging = n;
+          n.pinned = true;
+        }
+      });
+    };
+
+    p.mouseReleased = function() {
+      if (dragging) {
+        const mx = (p.mouseX - panX) / zoom;
+        const my = (p.mouseY - panY) / zoom;
+        if (p.dist(mx, my, dragging.x, dragging.y) < 5) {
+          // Click: drill down
+          hideTooltip();
+          drillDown(2, dragging.data);
+          return;
+        }
+        dragging.pinned = false;
+        dragging = null;
+      }
+    };
+
+    p.mouseDragged = function() {
+      if (dragging) {
+        dragging.x = (p.mouseX - panX) / zoom;
+        dragging.y = (p.mouseY - panY) / zoom;
+      }
+    };
+
+    p.mouseWheel = function(event) {
+      zoom *= event.delta > 0 ? 0.95 : 1.05;
+      zoom = p.constrain(zoom, 0.3, 3);
+    };
+
+    p.windowResized = function() {
+      p.resizeCanvas(container.clientWidth, container.clientHeight);
+      panX = p.width/2;
+      panY = p.height/2;
+    };
+  };
+
+  p5Instance = new p5(sketch);
+}
+
+// ===========================================================================
+// LAYER 2 : Babylon.js Node Detail
+// ===========================================================================
+function initL2() {
+  const canvas = document.getElementById('babylon-canvas');
+  canvas.style.display = 'block';
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+
+  babylonEngine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer:true, stencil:true });
+  babylonScene = new BABYLON.Scene(babylonEngine);
+  babylonScene.clearColor = new BABYLON.Color4(0.02, 0.04, 0.063, 1);
+
+  const camera = new BABYLON.ArcRotateCamera('cam', -Math.PI/2, Math.PI/3, 14, BABYLON.Vector3.Zero(), babylonScene);
+  camera.attachControl(canvas, true);
+  camera.lowerRadiusLimit = 6;
+  camera.upperRadiusLimit = 30;
+  camera.wheelPrecision = 30;
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0.3), babylonScene);
+  light.intensity = 0.7;
+  light.diffuse = new BABYLON.Color3(0.6, 0.8, 1);
+  const light2 = new BABYLON.PointLight('pt', new BABYLON.Vector3(-4,4,-4), babylonScene);
+  light2.intensity = 0.4;
+  light2.diffuse = new BABYLON.Color3(0, 0.8, 1);
+
+  const nodeData = typeof selectedNode === 'object' ? selectedNode : topoNodes.find(n => n.id === selectedNode) || topoNodes[0];
+  const nodeId = nodeData.id;
+  const nodeColor = BABYLON.Color3.FromHexString(nodeData.color || '#00c8ff');
+
+  // Central shape
+  let centralMesh;
+  const mat = new BABYLON.StandardMaterial('cmat', babylonScene);
+  mat.diffuseColor = nodeColor;
+  mat.emissiveColor = nodeColor.scale(0.3);
+  mat.specularColor = new BABYLON.Color3(0.3,0.3,0.3);
+
+  switch(nodeData.type) {
+    case 'gateway':
+      centralMesh = BABYLON.MeshBuilder.CreateTorus('center', {diameter:3, thickness:0.8, tessellation:48}, babylonScene);
+      break;
+    case 'system':
+      centralMesh = BABYLON.MeshBuilder.CreateIcoSphere('center', {radius:1.5, subdivisions:3}, babylonScene);
+      break;
+    case 'ai':
+      centralMesh = BABYLON.MeshBuilder.CreateIcoSphere('center', {radius:1.5, subdivisions:2}, babylonScene);
+      // Particle effect
+      const ps = new BABYLON.ParticleSystem('ps', 200, babylonScene);
+      ps.createPointEmitter(new BABYLON.Vector3(-0.5,-0.5,-0.5), new BABYLON.Vector3(0.5,0.5,0.5));
+      ps.emitter = centralMesh;
+      ps.minSize = 0.03; ps.maxSize = 0.08;
+      ps.minLifeTime = 0.5; ps.maxLifeTime = 1.5;
+      ps.emitRate = 80;
+      ps.color1 = new BABYLON.Color4(0.66,0.33,0.97,0.8);
+      ps.color2 = new BABYLON.Color4(0,0.8,1,0.6);
+      ps.colorDead = new BABYLON.Color4(0,0,0,0);
+      ps.minEmitPower = 0.5; ps.maxEmitPower = 1.5;
+      ps.updateSpeed = 0.01;
+      ps.start();
+      break;
+    case 'orchestrator':
+      centralMesh = BABYLON.MeshBuilder.CreateBox('center', {size:1.2}, babylonScene);
+      for (let ci = 0; ci < 5; ci++) {
+        const cb = BABYLON.MeshBuilder.CreateBox('cb'+ci, {size:0.6}, babylonScene);
+        cb.position = new BABYLON.Vector3(
+          (Math.random()-0.5)*2.5,
+          (Math.random()-0.5)*2.5,
+          (Math.random()-0.5)*2.5
+        );
+        cb.material = mat;
+      }
+      break;
+    case 'server':
+      centralMesh = BABYLON.MeshBuilder.CreateCylinder('center', {height:3, diameterTop:1.8, diameterBottom:2.2, tessellation:24}, babylonScene);
+      break;
+    case 'payments':
+      centralMesh = BABYLON.MeshBuilder.CreateIcoSphere('center', {radius:1.5, subdivisions:1}, babylonScene);
+      break;
+    case 'treasury':
+      centralMesh = BABYLON.MeshBuilder.CreateIcoSphere('center', {radius:1.5, subdivisions:1}, babylonScene);
+      centralMesh.scaling = new BABYLON.Vector3(1, 1.4, 1);
+      break;
+    default:
+      centralMesh = BABYLON.MeshBuilder.CreateSphere('center', {diameter:3, segments:16}, babylonScene);
+  }
+  centralMesh.material = mat;
+
+  // Slow rotation
+  babylonScene.registerBeforeRender(() => {
+    centralMesh.rotation.y += 0.003;
+    centralMesh.rotation.x += 0.001;
+  });
+
+  // Info panels
+  const components = NODE_COMPONENTS[nodeId] || ['Info'];
+  const panelMeshes = [];
+  components.forEach((comp, i) => {
+    const angle = (i / components.length) * Math.PI * 2;
+    const radius = 5;
+    const plane = BABYLON.MeshBuilder.CreatePlane('panel'+i, {width:2.4, height:1.4}, babylonScene);
+    plane.position = new BABYLON.Vector3(
+      Math.cos(angle) * radius,
+      0.5 * Math.sin(i * 1.3),
+      Math.sin(angle) * radius
+    );
+    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+
+    const dt = new BABYLON.DynamicTexture('dt'+i, {width:512, height:300}, babylonScene);
+    const ctx = dt.getContext();
+    ctx.fillStyle = '#0d1620';
+    ctx.fillRect(0,0,512,300);
+    ctx.strokeStyle = '#1a2d40';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(2,2,508,296);
+    // Top accent line
+    ctx.strokeStyle = nodeData.color || '#00c8ff';
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(2,2); ctx.lineTo(510,2); ctx.stroke();
+    // Title
+    ctx.font = 'bold 28px Courier New';
+    ctx.fillStyle = '#00c8ff';
+    ctx.fillText(comp, 20, 50);
+    // Subtitle
+    ctx.font = '18px Courier New';
+    ctx.fillStyle = '#4a6a80';
+    ctx.fillText(nodeData.name, 20, 85);
+    // Fake stats
+    ctx.font = '16px Courier New';
+    ctx.fillStyle = '#c0d8e8';
+    ctx.fillText('Status: ACTIVE', 20, 130);
+    ctx.fillText('Latency: '+(Math.floor(Math.random()*30)+5)+'ms', 20, 160);
+    ctx.fillText('Reqs/s: '+(Math.floor(Math.random()*500)+50), 20, 190);
+    ctx.fillText('Uptime: 99.'+(Math.floor(Math.random()*9)+1)+'%', 20, 220);
+    // Click hint
+    ctx.font = '14px Courier New';
+    ctx.fillStyle = '#00c8ff';
+    ctx.fillText('[CLICK TO DRILL DOWN]', 20, 270);
+    dt.update();
+
+    const pmat = new BABYLON.StandardMaterial('pmat'+i, babylonScene);
+    pmat.diffuseTexture = dt;
+    pmat.emissiveColor = new BABYLON.Color3(0.15,0.15,0.15);
+    pmat.backFaceCulling = false;
+    plane.material = pmat;
+
+    plane.metadata = { component: comp, nodeId: nodeId };
+    plane.isPickable = true;
+    panelMeshes.push(plane);
+
+    // Orbit animation
+    const startAngle = angle;
+    babylonScene.registerBeforeRender(() => {
+      const t = performance.now() * 0.0002;
+      plane.position.x = Math.cos(startAngle + t) * radius;
+      plane.position.z = Math.sin(startAngle + t) * radius;
+      plane.position.y = 0.5 * Math.sin(t * 2 + i);
+    });
+  });
+
+  // Click handling
+  babylonScene.onPointerObservable.add((pointerInfo) => {
+    if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERPICK) {
+      const mesh = pointerInfo.pickInfo.pickedMesh;
+      if (mesh && mesh.metadata && mesh.metadata.component) {
+        hideTooltip();
+        drillDown(3, mesh.metadata.component);
+      }
+    }
+    if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
+      const pick = babylonScene.pick(babylonScene.pointerX, babylonScene.pointerY);
+      if (pick.hit && pick.pickedMesh && pick.pickedMesh.metadata && pick.pickedMesh.metadata.component) {
+        canvas.style.cursor = 'pointer';
+        pick.pickedMesh.material.emissiveColor = new BABYLON.Color3(0.25,0.35,0.4);
+      } else {
+        canvas.style.cursor = 'default';
+        panelMeshes.forEach(pm => { pm.material.emissiveColor = new BABYLON.Color3(0.15,0.15,0.15); });
+      }
+    }
+  });
+
+  babylonEngine.runRenderLoop(() => babylonScene.render());
+  window.addEventListener('resize', onBabylonResize);
+}
+
+function onBabylonResize() {
+  if (babylonEngine) babylonEngine.resize();
+}
+
+// ===========================================================================
+// LAYER 3 : Three.js Source View
+// ===========================================================================
+function initL3() {
+  const container = document.getElementById('viewport');
+  const w = container.clientWidth;
+  const h = container.clientHeight - 0; // full height
+
+  threeScene = new THREE.Scene();
+  threeScene.background = new THREE.Color(0x050a10);
+  threeScene.fog = new THREE.FogExp2(0x050a10, 0.012);
+
+  threeCamera = new THREE.PerspectiveCamera(60, w/h, 0.1, 200);
+  threeCamera.position.set(15, 18, 25);
+  threeCamera.lookAt(0, 0, 0);
+
+  threeRenderer = new THREE.WebGLRenderer({ antialias:true });
+  threeRenderer.setSize(w, h);
+  threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  threeRenderer.domElement.style.position = 'absolute';
+  threeRenderer.domElement.style.top = '0';
+  threeRenderer.domElement.style.left = '0';
+  container.appendChild(threeRenderer.domElement);
+
+  // Lights
+  const amb = new THREE.AmbientLight(0x1a2d40, 0.6);
+  threeScene.add(amb);
+  const dir = new THREE.DirectionalLight(0x00c8ff, 0.5);
+  dir.position.set(10, 20, 10);
+  threeScene.add(dir);
+  const pt = new THREE.PointLight(0x00e57b, 0.3, 50);
+  pt.position.set(-10, 10, -10);
+  threeScene.add(pt);
+
+  // Ground grid
+  const gridHelper = new THREE.GridHelper(40, 40, 0x1a2d40, 0x0d1620);
+  threeScene.add(gridHelper);
+
+  // Determine source data
+  const nodeId = typeof selectedNode === 'object' ? selectedNode.id : selectedNode;
+  const sourceKey = NODE_SOURCE_KEY[nodeId] || 'gateway';
+  const sourceData = SOURCE_MAP[sourceKey] || SOURCE_MAP['gateway'];
+
+  const TYPE_COLORS = {
+    route: 0x00c8ff,
+    middleware: 0x00e57b,
+    handler: 0xffd700,
+    util: 0xa855f7,
+  };
+
+  const blocks = [];
+  const cols = Math.ceil(Math.sqrt(sourceData.sections.length));
+  const spacing = 3.2;
+
+  sourceData.sections.forEach((sec, i) => {
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    const height = Math.max(sec.lines * 0.12, 0.5);
+    const width = 2;
+    const depth = 2;
+    const color = TYPE_COLORS[sec.type] || 0x00c8ff;
+
+    const geo = new THREE.BoxGeometry(width, height, depth);
+    const mat = new THREE.MeshPhongMaterial({
+      color: color,
+      emissive: color,
+      emissiveIntensity: 0.15,
+      transparent: true,
+      opacity: 0.85,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(
+      col * spacing - (cols * spacing)/2 + spacing/2,
+      height / 2,
+      row * spacing - (Math.ceil(sourceData.sections.length/cols) * spacing)/2 + spacing/2
+    );
+    mesh.userData = { section: sec, sourceKey: sourceKey, file: sourceData.file };
+    threeScene.add(mesh);
+    blocks.push(mesh);
+
+    // Wireframe overlay
+    const wf = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geo),
+      new THREE.LineBasicMaterial({ color: color, transparent:true, opacity:0.5 })
+    );
+    wf.position.copy(mesh.position);
+    threeScene.add(wf);
+
+    // Label sprite
+    const canvas2d = document.createElement('canvas');
+    canvas2d.width = 256; canvas2d.height = 64;
+    const ctx2d = canvas2d.getContext('2d');
+    ctx2d.fillStyle = 'transparent';
+    ctx2d.fillRect(0,0,256,64);
+    ctx2d.font = 'bold 18px Courier New';
+    ctx2d.fillStyle = '#c0d8e8';
+    ctx2d.textAlign = 'center';
+    ctx2d.fillText(sec.name, 128, 24);
+    ctx2d.font = '14px Courier New';
+    ctx2d.fillStyle = '#4a6a80';
+    ctx2d.fillText(sec.lines + ' lines', 128, 48);
+    const tex = new THREE.CanvasTexture(canvas2d);
+    const spriteMat = new THREE.SpriteMaterial({ map:tex, transparent:true });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(3, 0.75, 1);
+    sprite.position.set(mesh.position.x, height + 0.8, mesh.position.z);
+    threeScene.add(sprite);
+  });
+
+  // Camera orbit controls (manual)
+  let isDragging = false;
+  let prevMouse = { x:0, y:0 };
+  let camAngle = -0.6;
+  let camPitch = 0.8;
+  let camDist = 28;
+
+  function updateCam() {
+    threeCamera.position.x = Math.sin(camAngle) * Math.cos(camPitch) * camDist;
+    threeCamera.position.y = Math.sin(camPitch) * camDist;
+    threeCamera.position.z = Math.cos(camAngle) * Math.cos(camPitch) * camDist;
+    threeCamera.lookAt(0, 1, 0);
+  }
+  updateCam();
+
+  const rendererEl = threeRenderer.domElement;
+
+  rendererEl.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    prevMouse = { x:e.clientX, y:e.clientY };
+  });
+  rendererEl.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      camAngle += (e.clientX - prevMouse.x) * 0.005;
+      camPitch += (e.clientY - prevMouse.y) * 0.005;
+      camPitch = Math.max(0.1, Math.min(1.4, camPitch));
+      prevMouse = { x:e.clientX, y:e.clientY };
+      updateCam();
+    }
+
+    // Hover detection via raycaster
+    const rect = rendererEl.getBoundingClientRect();
+    const mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(mx, my), threeCamera);
+    const hits = raycaster.intersectObjects(blocks);
+
+    // Reset all
+    blocks.forEach(b => { b.material.emissiveIntensity = 0.15; });
+
+    if (hits.length > 0 && !isDragging) {
+      const hit = hits[0].object;
+      hit.material.emissiveIntensity = 0.5;
+      rendererEl.style.cursor = 'pointer';
+      const sec = hit.userData.section;
+      showTooltip(e.clientX, e.clientY, sec.name, [
+        'Type: ' + sec.type,
+        'Lines: ' + sec.lines,
+        'Start: line ' + sec.start,
+      ]);
+    } else {
+      rendererEl.style.cursor = isDragging ? 'grabbing' : 'grab';
+      hideTooltip();
+    }
+  });
+  rendererEl.addEventListener('mouseup', () => { isDragging = false; });
+  rendererEl.addEventListener('wheel', (e) => {
+    camDist += e.deltaY * 0.02;
+    camDist = Math.max(8, Math.min(60, camDist));
+    updateCam();
+  });
+
+  // Click to show code panel
+  rendererEl.addEventListener('click', (e) => {
+    const rect = rendererEl.getBoundingClientRect();
+    const mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(mx, my), threeCamera);
+    const hits = raycaster.intersectObjects(blocks);
+    if (hits.length > 0) {
+      const ud = hits[0].object.userData;
+      openCodePanel(ud.file, ud.section);
+    }
+  });
+
+  // Animate
+  function animate() {
+    threeAnimId = requestAnimationFrame(animate);
+    threeRenderer.render(threeScene, threeCamera);
+  }
+  animate();
+
+  window.addEventListener('resize', onThreeResize);
+}
+
+function onThreeResize() {
+  if (!threeRenderer || !threeCamera) return;
+  const container = document.getElementById('viewport');
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  threeCamera.aspect = w/h;
+  threeCamera.updateProjectionMatrix();
+  threeRenderer.setSize(w, h);
+}
+
+// ===========================================================================
+// CODE PREVIEW PANEL
+// ===========================================================================
+function openCodePanel(file, section) {
+  const panel = document.getElementById('code-panel');
+  document.getElementById('cp-filepath').textContent = file;
+  document.getElementById('cp-lines').textContent = 'Lines ' + section.start + '-' + (section.start + section.lines - 1);
+
+  const code = generateCodeSnippet(file, section);
+  document.getElementById('code-content').innerHTML = code;
+  panel.classList.add('open');
+}
+
+function closeCodePanel() {
+  document.getElementById('code-panel').classList.remove('open');
+}
+
+function generateCodeSnippet(file, section) {
+  const snippets = {
+    'route': [
+      { code: '<span class="cmt">// {NAME} route handler</span>' },
+      { code: '<span class="kw">app</span>.<span class="fn">get</span>(<span class="str">\'/api/{LOWER}\'</span>, <span class="kw">async</span> (req, res) => {' },
+      { code: '  <span class="kw">try</span> {' },
+      { code: '    <span class="kw">const</span> data = <span class="kw">await</span> <span class="fn">fetchData</span>(req.params);' },
+      { code: '    <span class="kw">const</span> result = <span class="fn">processResponse</span>(data);' },
+      { code: '    res.<span class="fn">json</span>({ <span class="str">status</span>: <span class="str">\'ok\'</span>, data: result });' },
+      { code: '  } <span class="kw">catch</span> (err) {' },
+      { code: '    console.<span class="fn">error</span>(<span class="str">`[{NAME}]`</span>, err.message);' },
+      { code: '    res.<span class="fn">status</span>(<span class="num">500</span>).<span class="fn">json</span>({ error: err.message });' },
+      { code: '  }' },
+      { code: '});' },
+    ],
+    'middleware': [
+      { code: '<span class="cmt">// {NAME} middleware</span>' },
+      { code: '<span class="kw">app</span>.<span class="fn">use</span>((<span class="kw">req</span>, <span class="kw">res</span>, <span class="kw">next</span>) => {' },
+      { code: '  <span class="kw">const</span> start = <span class="fn">Date</span>.<span class="fn">now</span>();' },
+      { code: '  res.<span class="fn">setHeader</span>(<span class="str">\'X-Request-Id\'</span>, <span class="fn">crypto</span>.<span class="fn">randomUUID</span>());' },
+      { code: '  res.<span class="fn">on</span>(<span class="str">\'finish\'</span>, () => {' },
+      { code: '    <span class="kw">const</span> ms = <span class="fn">Date</span>.<span class="fn">now</span>() - start;' },
+      { code: '    console.<span class="fn">log</span>(<span class="str">`${req.method} ${req.url} ${res.statusCode} ${ms}ms`</span>);' },
+      { code: '  });' },
+      { code: '  <span class="fn">next</span>();' },
+      { code: '});' },
+    ],
+    'handler': [
+      { code: '<span class="cmt">// {NAME} handler</span>' },
+      { code: '<span class="kw">async function</span> <span class="fn">handle{CAMEL}</span>(payload) {' },
+      { code: '  <span class="kw">const</span> config = <span class="fn">loadConfig</span>();' },
+      { code: '  <span class="kw">const</span> validated = <span class="fn">validate</span>(payload, config.schema);' },
+      { code: '  <span class="kw">if</span> (!validated.ok) <span class="kw">throw new</span> <span class="fn">Error</span>(validated.error);' },
+      { code: '' },
+      { code: '  <span class="kw">const</span> result = <span class="kw">await</span> <span class="fn">process</span>(validated.data);' },
+      { code: '  <span class="fn">emit</span>(<span class="str">\'completed\'</span>, { id: payload.id, result });' },
+      { code: '  <span class="kw">return</span> result;' },
+      { code: '}' },
+    ],
+    'util': [
+      { code: '<span class="cmt">// {NAME} utilities</span>' },
+      { code: '<span class="kw">const</span> <span class="fn">crypto</span> = <span class="fn">require</span>(<span class="str">\'crypto\'</span>);' },
+      { code: '<span class="kw">const</span> <span class="fn">path</span> = <span class="fn">require</span>(<span class="str">\'path\'</span>);' },
+      { code: '' },
+      { code: '<span class="kw">const</span> CONFIG = {' },
+      { code: '  port: <span class="kw">process</span>.env.PORT || <span class="num">3000</span>,' },
+      { code: '  host: <span class="kw">process</span>.env.HOST || <span class="str">\'0.0.0.0\'</span>,' },
+      { code: '  env: <span class="kw">process</span>.env.NODE_ENV || <span class="str">\'development\'</span>,' },
+      { code: '};' },
+      { code: '' },
+      { code: '<span class="kw">module</span>.exports = { CONFIG };' },
+    ],
+  };
+
+  const template = snippets[section.type] || snippets['route'];
+  const name = section.name;
+  const lower = name.toLowerCase().replace(/\s+/g, '-');
+  const camel = name.replace(/\s+/g, '');
+
+  let lines = '';
+  template.forEach((l, i) => {
+    const lineNum = section.start + i;
+    const code = l.code.replace(/\{NAME\}/g, name).replace(/\{LOWER\}/g, lower).replace(/\{CAMEL\}/g, camel);
+    lines += `<span class="ln">${lineNum}</span>${code}\n`;
+  });
+
+  // Pad with extra lines if section has more
+  const extra = section.lines - template.length;
+  if (extra > 0) {
+    for (let i = 0; i < Math.min(extra, 8); i++) {
+      const lineNum = section.start + template.length + i;
+      const filler = i % 3 === 0 ? '  <span class="cmt">// ...</span>' :
+                     i % 3 === 1 ? '  <span class="kw">const</span> v' + i + ' = <span class="fn">compute</span>();' :
+                     '';
+      lines += `<span class="ln">${lineNum}</span>${filler}\n`;
+    }
+  }
+
+  return '<pre style="margin:0">' + lines + '</pre>';
+}
+
+// ===========================================================================
+// INIT
+// ===========================================================================
+async function boot() {
+  await fetchTopology();
+  updateBreadcrumb();
+  updateLayerBadges();
+  initLayer(1);
+}
+
+boot();
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bridge AI OS — Corporate Suite</title>
+    <meta name="description" content="Corporate — Bridge AI OS Enterprise Solutions">
+    <meta property="og:title" content="Bridge AI OS — Corporate Suite">
+    <meta property="og:description" content="Corporate — Bridge AI OS Enterprise Solutions">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/corporate.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/corporate.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#050a0f;--s:#0d1620;--s2:#111d2b;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--t:#c8dce8;--d:#4d6678;--p:#a78bfa;--o:#fb923c}
+body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}
+.app{display:grid;grid-template-columns:220px 1fr;height:100vh;overflow:hidden}
+.sidebar{background:var(--s);border-right:1px solid var(--b);overflow-y:auto;padding:.5rem 0}
+.sidebar h2{color:var(--a);font-size:.7rem;letter-spacing:.15em;padding:.8rem 1rem .3rem}
+.nav-item{display:block;padding:.5rem 1rem;font-size:.72rem;color:var(--d);cursor:pointer;border-left:3px solid transparent;text-decoration:none}
+.nav-item:hover,.nav-item.active{color:var(--a);background:rgba(0,200,255,.03);border-left-color:var(--a)}
+.nav-item .badge{float:right;font-size:.55rem;padding:1px 5px;border-radius:3px;background:rgba(0,200,255,.1);color:var(--a)}
+.main{overflow-y:auto;padding:1.5rem}
+.main h1{color:var(--a);font-size:1.2rem;letter-spacing:.15em;margin-bottom:.3rem}
+.sub{color:var(--d);font-size:.72rem;margin-bottom:1.5rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:1.5rem}
+.stat{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.8rem;text-align:center}
+.stat .v{font-size:1.3rem;font-weight:700;color:var(--g)}
+.stat .l{font-size:.6rem;color:var(--d);letter-spacing:.1em;margin-top:.2rem}
+h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin:1.2rem 0 .5rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}
+.panel{display:none}.panel.active{display:block}
+table{width:100%;border-collapse:collapse;font-size:.72rem;margin-bottom:1rem}
+th{text-align:left;color:var(--d);padding:.4rem .6rem;border-bottom:1px solid var(--b);letter-spacing:.06em;font-size:.65rem}
+td{padding:.4rem .6rem;border-bottom:1px solid #0a1520}
+tr:hover{background:rgba(0,200,255,.02)}
+.status{padding:2px 6px;border-radius:3px;font-size:.6rem;font-weight:600}
+.status.paid,.status.active{color:var(--g);background:rgba(0,229,123,.1)}
+.status.pending,.status.draft{color:var(--y);background:rgba(255,209,102,.1)}
+.status.overdue,.status.inactive{color:var(--r);background:rgba(255,60,90,.1)}
+.status.sent{color:var(--a);background:rgba(0,200,255,.1)}
+.btn{padding:.4rem .8rem;border:none;border-radius:4px;font-size:.7rem;font-weight:600;cursor:pointer;letter-spacing:.05em}
+.btn-p{background:var(--a);color:#050a0f}
+.btn-s{background:transparent;color:var(--a);border:1px solid var(--a)}
+.btn-d{background:transparent;color:var(--r);border:1px solid var(--r)}
+.btn:hover{filter:brightness(1.15)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem}
+.form-row.full{grid-template-columns:1fr}
+label{font-size:.65rem;color:var(--d);letter-spacing:.08em;display:block;margin-bottom:.2rem}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--b);color:var(--t);padding:.4rem .6rem;border-radius:4px;font-size:.72rem}
+input:focus,select:focus{border-color:var(--a);outline:none}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.modal-body{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1.5rem;max-width:600px;width:90%;max-height:80vh;overflow-y:auto}
+.modal-body h3{color:var(--a);font-size:.9rem;margin-bottom:1rem}
+.actions{display:flex;gap:.5rem;margin-top:1rem}
+@media(max-width:768px){.app{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+<div class="app">
+<div class="sidebar">
+  <h2>CORPORATE SUITE</h2>
+  <a class="nav-item active" onclick="show('dashboard')">Dashboard</a>
+  <a class="nav-item" onclick="show('quotes')">Quotes <span class="badge" id="b-quotes">0</span></a>
+  <a class="nav-item" onclick="show('invoices')">Invoices <span class="badge" id="b-invoices">0</span></a>
+  <a class="nav-item" onclick="show('creditors')">Creditors</a>
+  <a class="nav-item" onclick="show('debtors')">Debtors <span class="badge" id="b-debtors">0</span></a>
+  <a class="nav-item" onclick="show('vendors')">Vendors/Suppliers</a>
+  <a class="nav-item" onclick="show('customers')">Customers</a>
+  <a class="nav-item" onclick="show('crm')">CRM Contacts</a>
+  <a class="nav-item" onclick="show('tickets')">Support Tickets</a>
+  <a class="nav-item" onclick="show('legal')">Legal/Compliance</a>
+  <a class="nav-item" onclick="show('hr')">HR/Team</a>
+  <a class="nav-item" onclick="show('inventory')">Inventory</a>
+  <a class="nav-item" onclick="show('marketing')">Marketing</a>
+  <a class="nav-item" onclick="show('analytics')">Analytics</a>
+  <h2>SYSTEM</h2>
+  <a class="nav-item" href="/">Back to Dashboard</a>
+  <a class="nav-item" href="/brand.html">Brand Assets</a>
+  <a class="nav-item" href="/platforms.html">Network</a>
+</div>
+<div class="main">
+
+<!-- DASHBOARD -->
+<div class="panel active" id="p-dashboard">
+  <h1>CORPORATE DASHBOARD</h1>
+  <div class="sub">Quoting, Invoicing, Creditors, Debtors, Supply Chain, CRM</div>
+  <div class="stats" id="dash-stats"></div>
+  <h2>RECENT ACTIVITY</h2>
+  <div id="recent-activity" style="font-size:.7rem;color:var(--d)">Loading...</div>
+</div>
+
+<!-- QUOTES -->
+<div class="panel" id="p-quotes">
+  <h1>QUOTES & PROPOSALS</h1>
+  <div class="actions" style="margin-bottom:1rem"><button class="btn btn-p" onclick="openModal('quote')">+ NEW QUOTE</button></div>
+  <table><thead><tr><th>NUMBER</th><th>CLIENT</th><th>TOTAL</th><th>STATUS</th><th>VALID UNTIL</th><th>ACTIONS</th></tr></thead><tbody id="quotes-tbody"></tbody></table>
+</div>
+
+<!-- INVOICES -->
+<div class="panel" id="p-invoices">
+  <h1>INVOICES & BILLING</h1>
+  <div class="actions" style="margin-bottom:1rem"><button class="btn btn-p" onclick="openModal('invoice')">+ NEW INVOICE</button></div>
+  <table><thead><tr><th>NUMBER</th><th>CLIENT</th><th>TOTAL</th><th>TAX</th><th>STATUS</th><th>DUE</th><th>ACTIONS</th></tr></thead><tbody id="invoices-tbody"></tbody></table>
+</div>
+
+<!-- CREDITORS -->
+<div class="panel" id="p-creditors">
+  <h1>CREDITORS (What we owe)</h1>
+  <table><thead><tr><th>VENDOR</th><th>AMOUNT</th><th>CURRENCY</th><th>STATUS</th><th>DUE</th></tr></thead><tbody id="creditors-tbody"></tbody></table>
+</div>
+
+<!-- DEBTORS -->
+<div class="panel" id="p-debtors">
+  <h1>DEBTORS (What they owe us)</h1>
+  <div class="actions" style="margin-bottom:1rem"><button class="btn btn-p" onclick="openModal('debt')">+ LOG DEBT</button></div>
+  <table><thead><tr><th>DEBTOR</th><th>AMOUNT</th><th>STATUS</th><th>REMINDERS</th><th>ACTIONS</th></tr></thead><tbody id="debtors-tbody"></tbody></table>
+</div>
+
+<!-- VENDORS -->
+<div class="panel" id="p-vendors">
+  <h1>VENDORS & SUPPLIERS</h1>
+  <table><thead><tr><th>NAME</th><th>TYPE</th><th>CONTACT</th><th>STATUS</th><th>SPEND MTD</th></tr></thead><tbody id="vendors-tbody"></tbody></table>
+</div>
+
+<!-- CUSTOMERS -->
+<div class="panel" id="p-customers">
+  <h1>CUSTOMER PROFILES</h1>
+  <table><thead><tr><th>NAME</th><th>PLAN</th><th>LTV</th><th>TICKETS</th></tr></thead><tbody id="customers-tbody"></tbody></table>
+</div>
+
+<!-- CRM -->
+<div class="panel" id="p-crm">
+  <h1>CRM CONTACTS</h1>
+  <div class="actions" style="margin-bottom:1rem"><button class="btn btn-p" onclick="openModal('contact')">+ ADD CONTACT</button></div>
+  <table><thead><tr><th>NAME</th><th>EMAIL</th><th>COMPANY</th><th>TYPE</th><th>TAGS</th></tr></thead><tbody id="crm-tbody"></tbody></table>
+</div>
+
+<!-- TICKETS -->
+<div class="panel" id="p-tickets">
+  <h1>SUPPORT TICKETS</h1>
+  <table><thead><tr><th>ID</th><th>SUBJECT</th><th>PRIORITY</th><th>STATUS</th><th>ASSIGNEE</th></tr></thead><tbody id="tickets-tbody"></tbody></table>
+</div>
+
+<!-- LEGAL -->
+<div class="panel" id="p-legal">
+  <h1>LEGAL & COMPLIANCE</h1>
+  <div id="legal-content"></div>
+</div>
+
+<!-- HR -->
+<div class="panel" id="p-hr">
+  <h1>HR & TEAM</h1>
+  <div id="hr-content"></div>
+</div>
+
+<!-- INVENTORY -->
+<div class="panel" id="p-inventory">
+  <h1>INVENTORY</h1>
+  <table><thead><tr><th>SKU</th><th>NAME</th><th>QTY</th><th>UNIT COST</th><th>VALUE</th><th>LOCATION</th></tr></thead><tbody id="inventory-tbody"></tbody></table>
+</div>
+
+<!-- MARKETING -->
+<div class="panel" id="p-marketing">
+  <h1>MARKETING</h1>
+  <div id="marketing-content"></div>
+</div>
+
+<!-- ANALYTICS -->
+<div class="panel" id="p-analytics">
+  <h1>ANALYTICS</h1>
+  <div id="analytics-content"></div>
+</div>
+
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-body" id="modal-body"></div>
+</div>
+
+<script>
+const API = '';
+
+function show(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('p-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.target.classList.add('active');
+  loadSection(id);
+}
+
+function openModal(type) {
+  const m = document.getElementById('modal');
+  const b = document.getElementById('modal-body');
+  if (type === 'quote') {
+    b.innerHTML = `<h3>NEW QUOTE</h3>
+      <div class="form-row"><div><label>CLIENT</label><input id="mq-client" placeholder="Client name"></div><div><label>VALID DAYS</label><input id="mq-days" type="number" value="14"></div></div>
+      <div class="form-row full"><div><label>ITEMS (one per line: description | qty | rate)</label><textarea id="mq-items" rows="4" placeholder="Web Development | 1 | 5000&#10;Hosting Setup | 1 | 500"></textarea></div></div>
+      <div class="actions"><button class="btn btn-p" onclick="submitQuote()">CREATE QUOTE</button><button class="btn btn-s" onclick="closeModal()">CANCEL</button></div>`;
+  } else if (type === 'invoice') {
+    b.innerHTML = `<h3>NEW INVOICE</h3>
+      <div class="form-row"><div><label>CLIENT</label><input id="mi-client" placeholder="Client name"></div><div><label>DUE DAYS</label><input id="mi-days" type="number" value="30"></div></div>
+      <div class="form-row full"><div><label>ITEMS (one per line: description | qty | rate)</label><textarea id="mi-items" rows="4" placeholder="AI Agent Setup | 1 | 2500&#10;Monthly License | 1 | 499"></textarea></div></div>
+      <div class="form-row full"><div><label>NOTES</label><input id="mi-notes" placeholder="Payment terms, references..."></div></div>
+      <div class="actions"><button class="btn btn-p" onclick="submitInvoice()">CREATE INVOICE</button><button class="btn btn-s" onclick="closeModal()">CANCEL</button></div>`;
+  } else if (type === 'debt') {
+    b.innerHTML = `<h3>LOG DEBT</h3>
+      <div class="form-row"><div><label>DEBTOR</label><input id="md-debtor" placeholder="Company/person name"></div><div><label>AMOUNT</label><input id="md-amount" type="number" placeholder="0.00"></div></div>
+      <div class="form-row"><div><label>CURRENCY</label><select id="md-currency"><option>ZAR</option><option>USD</option><option>EUR</option><option>BRDG</option></select></div><div><label>DUE DATE</label><input id="md-due" type="date"></div></div>
+      <div class="actions"><button class="btn btn-p" onclick="submitDebt()">LOG DEBT</button><button class="btn btn-s" onclick="closeModal()">CANCEL</button></div>`;
+  } else if (type === 'contact') {
+    b.innerHTML = `<h3>ADD CONTACT</h3>
+      <div class="form-row"><div><label>NAME</label><input id="mc-name" placeholder="Full name"></div><div><label>EMAIL</label><input id="mc-email" type="email" placeholder="email@company.com"></div></div>
+      <div class="form-row"><div><label>COMPANY</label><input id="mc-company" placeholder="Company name"></div><div><label>TYPE</label><select id="mc-type"><option>client</option><option>partner</option><option>vendor</option><option>lead</option></select></div></div>
+      <div class="actions"><button class="btn btn-p" onclick="submitContact()">ADD</button><button class="btn btn-s" onclick="closeModal()">CANCEL</button></div>`;
+  }
+  m.classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+function parseItems(text) {
+  return text.split('\n').filter(l => l.trim()).map(l => {
+    const parts = l.split('|').map(p => p.trim());
+    return { description: parts[0] || 'Item', qty: parseInt(parts[1]) || 1, rate: parseFloat(parts[2]) || 0 };
+  });
+}
+
+async function submitQuote() {
+  const items = parseItems(document.getElementById('mq-items').value);
+  await fetch(API + '/api/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client: document.getElementById('mq-client').value, items }) });
+  closeModal(); loadSection('quotes');
+}
+async function submitInvoice() {
+  const items = parseItems(document.getElementById('mi-items').value);
+  await fetch(API + '/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client: document.getElementById('mi-client').value, items, notes: document.getElementById('mi-notes').value }) });
+  closeModal(); loadSection('invoices');
+}
+async function submitDebt() {
+  await fetch(API + '/api/debts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ debtor: document.getElementById('md-debtor').value, amount: parseFloat(document.getElementById('md-amount').value), currency: document.getElementById('md-currency').value, due_date: document.getElementById('md-due').value }) });
+  closeModal(); loadSection('debtors');
+}
+async function submitContact() {
+  await fetch(API + '/api/crm/contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('mc-name').value, email: document.getElementById('mc-email').value, company: document.getElementById('mc-company').value, type: document.getElementById('mc-type').value }) });
+  closeModal(); loadSection('crm');
+}
+
+async function acceptQuote(id) {
+  await fetch(API + '/api/quotes/' + id + '/accept', { method: 'POST' });
+  loadSection('quotes'); loadSection('invoices');
+}
+async function markPaid(id) {
+  await fetch(API + '/api/invoices/' + id + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'paid' }) });
+  loadSection('invoices');
+}
+async function sendReminder(id) {
+  await fetch(API + '/api/debts/' + id + '/remind', { method: 'POST' });
+  loadSection('debtors');
+}
+async function collectDebt(id) {
+  await fetch(API + '/api/debts/' + id + '/pay', { method: 'POST' });
+  loadSection('debtors');
+}
+
+async function loadSection(id) {
+  try {
+    if (id === 'dashboard') {
+      const [treasury, invoices, debts, quotes, analytics] = await Promise.all([
+        fetch(API + '/api/treasury').then(r => r.json()).catch(()=>({})),
+        fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({})),
+        fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({})),
+        fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({})),
+        fetch(API + '/api/economics').then(r => r.json()).catch(()=>({})),
+      ]);
+      var bal = treasury.total || treasury.balance || 0;
+      var invList = invoices.invoices || invoices.contracts || [];
+      var debtList = debts.debts || debts.contracts || [];
+      var quoteList = quotes.quotes || quotes.contracts || [];
+      var statsEl = document.getElementById('dash-stats');
+      statsEl.textContent = '';
+      [
+        ['$' + (Number(bal) / 1000).toFixed(0) + 'K', 'TREASURY'],
+        [String(invList.length), 'CONTRACTS'],
+        ['$' + Number(invoices.total || 0).toLocaleString(), 'INVOICED'],
+        [String(debtList.length), 'DEBTORS'],
+        ['$' + Number(debts.total_outstanding || 0).toLocaleString(), 'OUTSTANDING'],
+        [String(quoteList.length), 'QUOTES']
+      ].forEach(function(pair) {
+        var d = document.createElement('div'); d.className = 'stat';
+        var v = document.createElement('div'); v.className = 'v'; v.textContent = pair[0];
+        var l = document.createElement('div'); l.className = 'l'; l.textContent = pair[1];
+        d.appendChild(v); d.appendChild(l); statsEl.appendChild(d);
+      });
+      document.getElementById('b-invoices').textContent = invList.length;
+      document.getElementById('b-quotes').textContent = quoteList.length;
+      document.getElementById('b-debtors').textContent = debtList.length;
+      document.getElementById('recent-activity').textContent = 'System active. Treasury: $' + Number(bal).toLocaleString();
+    } else if (id === 'quotes') {
+      const d = await fetch(API + '/api/quotes').then(r => r.json());
+      document.getElementById('quotes-tbody').innerHTML = (d.quotes || []).map(q => `<tr><td>${q.number || q.id}</td><td>${q.client}</td><td>$${(q.total || 0).toFixed(2)}</td><td><span class="status ${q.status}">${q.status}</span></td><td>${q.valid_until || '-'}</td><td>${q.status === 'draft' ? `<button class="btn btn-p" onclick="acceptQuote('${q.id}')">ACCEPT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" style="color:var(--d);text-align:center">No quotes yet</td></tr>';
+    } else if (id === 'invoices') {
+      const d = await fetch(API + '/api/invoices').then(r => r.json());
+      document.getElementById('invoices-tbody').innerHTML = (d.invoices || []).map(i => `<tr><td>${i.number || i.id}</td><td>${i.client}</td><td>$${(i.total || 0).toFixed(2)}</td><td>$${(i.tax || 0).toFixed(2)}</td><td><span class="status ${i.status}">${i.status}</span></td><td>${i.due_date || '-'}</td><td>${i.status !== 'paid' ? `<button class="btn btn-p" onclick="markPaid('${i.id}')">PAID</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--d);text-align:center">No invoices yet</td></tr>';
+    } else if (id === 'debtors') {
+      const d = await fetch(API + '/api/debts').then(r => r.json());
+      document.getElementById('debtors-tbody').innerHTML = (d.debts || []).map(db => `<tr><td>${db.debtor}</td><td>$${(db.amount || 0).toFixed(2)} ${db.currency || ''}</td><td><span class="status ${db.status}">${db.status}</span></td><td>${db.reminders_sent || 0}</td><td>${db.status !== 'paid' ? `<button class="btn btn-s" onclick="sendReminder('${db.id}')">REMIND</button> <button class="btn btn-p" onclick="collectDebt('${db.id}')">COLLECT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No debts</td></tr>';
+    } else if (id === 'vendors') {
+      const d = await fetch(API + '/api/vendors').then(r => r.json());
+      document.getElementById('vendors-tbody').innerHTML = (d.vendors || []).map(v => `<tr><td>${v.name}</td><td>${v.type}</td><td>${v.contact}</td><td><span class="status ${v.status}">${v.status}</span></td><td>$${(v.spend_mtd || 0)} ${v.currency || ''}</td></tr>`).join('');
+    } else if (id === 'customers') {
+      const d = await fetch(API + '/api/customers').then(r => r.json());
+      document.getElementById('customers-tbody').innerHTML = (d.customers || []).map(c => `<tr><td>${c.name || c.id}</td><td>${c.plan || 'free'}</td><td>$${c.ltv || 0}</td><td>${c.tickets || 0}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--d);text-align:center">No customers yet</td></tr>';
+    } else if (id === 'crm') {
+      const d = await fetch(API + '/api/crm/contacts').then(r => r.json());
+      document.getElementById('crm-tbody').innerHTML = (d.contacts || []).map(c => `<tr><td>${c.name}</td><td>${c.email || '-'}</td><td>${c.company || '-'}</td><td>${c.type || '-'}</td><td>${(c.tags || []).join(', ')}</td></tr>`).join('');
+    } else if (id === 'tickets') {
+      const d = await fetch(API + '/api/tickets').then(r => r.json());
+      document.getElementById('tickets-tbody').innerHTML = (d.tickets || []).map(t => `<tr><td>${t.id}</td><td>${t.subject}</td><td>${t.priority}</td><td><span class="status ${t.status}">${t.status}</span></td><td>${t.assignee}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No tickets</td></tr>';
+    } else if (id === 'legal') {
+      const [docs, compliance] = await Promise.all([fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({})), fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({}))]);
+      docs.documents = docs.documents || docs.contracts || [];
+      compliance.frameworks = compliance.frameworks || [];
+      document.getElementById('legal-content').innerHTML = `<h2>COMPLIANCE</h2>` + (compliance.frameworks || []).map(f => `<div style="margin:.3rem 0;font-size:.72rem"><span class="status ${f.status === 'compliant' ? 'paid' : 'pending'}">${f.status}</span> ${f.name}</div>`).join('') + `<h2>DOCUMENTS</h2>` + (docs.documents || []).map(d => `<div style="margin:.3rem 0;font-size:.72rem">${d.name} (${d.type}) — ${d.jurisdiction}</div>`).join('');
+    } else if (id === 'hr') {
+      const d = await fetch(API + '/api/agents').then(r => r.json()).catch(()=>({}));
+      document.getElementById('hr-content').innerHTML = (d.team || []).map(t => `<div style="margin:.5rem 0;font-size:.75rem"><b>${t.name}</b> — ${t.role} (${t.type})</div>`).join('') + `<div style="margin-top:1rem;font-size:.7rem;color:var(--d)">AI Agents: ${d.ai_agents || 0} | Human: ${d.human || 0}</div>`;
+    } else if (id === 'inventory') {
+      const d = await fetch(API + '/api/inventory').then(r => r.json());
+      document.getElementById('inventory-tbody').innerHTML = (d.items || []).map(i => `<tr><td>${i.sku}</td><td>${i.name}</td><td>${i.qty}</td><td>$${i.unit_cost}</td><td>$${(i.qty * i.unit_cost).toFixed(2)}</td><td>${i.location}</td></tr>`).join('');
+    } else if (id === 'marketing') {
+      const [funnel, seo, social] = await Promise.all([fetch(API + '/api/economics').then(r => r.json()).catch(()=>({})), fetch(API + '/api/status').then(r => r.json()).catch(()=>({})), fetch(API + '/api/agents').then(r => r.json()).catch(()=>({}))]);
+      document.getElementById('marketing-content').innerHTML = `<h2>FUNNEL</h2>` + (funnel.stages || []).map(s => `<div style="margin:.3rem 0;font-size:.72rem">${s.stage}: <b>${s.count}</b></div>`).join('') + `<h2>SEO</h2><div style="font-size:.72rem">DA: ${seo.da} | Pages: ${seo.pages_indexed} | Keywords: ${seo.keywords_ranking} | Traffic: ${seo.organic_traffic_mtd}</div>` + `<h2>SOCIAL</h2>` + (social.channels || []).map(c => `<div style="margin:.3rem 0;font-size:.72rem">${c.platform}: ${c.followers} followers, ${c.engagement * 100}% engagement</div>`).join('');
+    } else if (id === 'analytics') {
+      const d = await fetch(API + '/api/economics').then(r => r.json()).catch(()=>({}));
+      document.getElementById('analytics-content').innerHTML = `<div class="stats"><div class="stat"><div class="v">$${(d.revenue?.mtd || 0).toLocaleString()}</div><div class="l">REVENUE MTD</div></div><div class="stat"><div class="v">${d.customers?.total || 0}</div><div class="l">CUSTOMERS</div></div><div class="stat"><div class="v">${d.support?.open_tickets || 0}</div><div class="l">OPEN TICKETS</div></div><div class="stat"><div class="v">${d.agents?.total || 0}</div><div class="l">AGENTS</div></div><div class="stat"><div class="v">${(d.agents?.efficiency * 100 || 0).toFixed(0)}%</div><div class="l">EFFICIENCY</div></div><div class="stat"><div class="v">${d.marketing?.conversion || 0}</div><div class="l">CONVERSION</div></div></div>`;
+    }
+  } catch (e) { console.error(e); }
+}
+
+// Initial load
+loadSection('dashboard');
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

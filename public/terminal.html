@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BRIDGE AI OS — Terminal</title>
+    <meta name="description" content="Terminal — Bridge AI OS Command Interface">
+    <meta property="og:title" content="BRIDGE AI OS — Terminal">
+    <meta property="og:description" content="Terminal — Bridge AI OS Command Interface">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/terminal.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/terminal.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050a0f;
+      --surface: #0d1620;
+      --border: #1a2d40;
+      --accent: #00c8ff;
+      --green: #00e57b;
+      --red: #ff3c5a;
+      --yellow: #ffd166;
+      --text: #c8dce8;
+      --text-dim: #4d6678;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .toolbar a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      padding: 0.3rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .toolbar a:hover { color: var(--accent); border-color: var(--accent); }
+    .toolbar .title { font-size: 0.8rem; color: var(--accent); letter-spacing: 0.15em; flex: 1; }
+    .toolbar .status { font-size: 0.7rem; color: var(--text-dim); }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: #080e16;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      padding: 0.4rem 1rem;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-right: 1px solid var(--border);
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .tab.active { color: var(--accent); background: var(--surface); border-bottom: 2px solid var(--accent); }
+    .tab .close-btn {
+      font-size: 0.6rem;
+      cursor: pointer;
+      opacity: 0.5;
+    }
+    .tab .close-btn:hover { opacity: 1; color: var(--red); }
+
+    .btn-new {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.7rem;
+      color: var(--green);
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      border: none;
+      background: none;
+      font-family: inherit;
+    }
+    .btn-new:hover { text-shadow: 0 0 8px var(--green); }
+    .btn-new:disabled { color: var(--text-dim); cursor: not-allowed; }
+
+    .terminal-container {
+      flex: 1;
+      position: relative;
+    }
+    .term-wrapper {
+      position: absolute;
+      inset: 0;
+      display: none;
+      padding: 4px;
+    }
+    .term-wrapper.active { display: block; }
+
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    .reconnect-banner {
+      display: none;
+      padding: 0.4rem 1rem;
+      background: rgba(255, 60, 90, 0.15);
+      border-bottom: 1px solid var(--red);
+      font-size: 0.72rem;
+      color: var(--yellow);
+      text-align: center;
+    }
+    .reconnect-banner.show { display: block; }
+  </style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+<div class="app">
+  <div class="toolbar">
+    <a href="/" style="text-decoration:none">&#8592; DASHBOARD</a>
+    <div class="title">TERMINAL</div>
+    <div class="status" id="conn-status">CONNECTING...</div>
+  </div>
+  <div id="reconnect-banner" class="reconnect-banner">Connection lost. Reconnecting...</div>
+  <div class="tabs" id="tab-bar">
+    <button class="btn-new" id="btn-new-tab">+ NEW TAB</button>
+  </div>
+  <div class="terminal-container" id="terminal-container"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<script>
+  const MAX_TABS = 4;
+  const WS_PROTO = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const WS_URL = `${WS_PROTO}//${location.host}/terminal`;
+  const IS_SERVERLESS = location.hostname.includes('vercel.app') || location.hostname.includes('.vercel.');
+  const tabs = [];
+  let activeTab = -1;
+
+  function createTab() {
+    if (tabs.length >= MAX_TABS) return;
+    const idx = tabs.length;
+    const id = `term-${idx}`;
+
+    // Terminal wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'term-wrapper';
+    wrapper.id = id;
+    document.getElementById('terminal-container').appendChild(wrapper);
+
+    // xterm instance
+    const term = new Terminal({
+      cursorBlink: true,
+      fontSize: 14,
+      fontFamily: "'Courier New', monospace",
+      theme: {
+        background: '#050a0f',
+        foreground: '#c8dce8',
+        cursor: '#00c8ff',
+        selectionBackground: '#1a2d40',
+        black: '#050a0f',
+        green: '#00e57b',
+        cyan: '#00c8ff',
+        red: '#ff3c5a',
+        yellow: '#ffd166',
+      }
+    });
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(wrapper);
+    fitAddon.fit();
+
+    // Tab button
+    const tabBtn = document.createElement('div');
+    tabBtn.className = 'tab';
+    tabBtn.innerHTML = `<span>TERM ${idx + 1}</span><span class="close-btn" data-idx="${idx}">x</span>`;
+    tabBtn.dataset.idx = idx;
+    const newBtn = document.getElementById('btn-new-tab');
+    newBtn.parentElement.insertBefore(tabBtn, newBtn);
+
+    tabBtn.addEventListener('click', (e) => {
+      if (e.target.classList.contains('close-btn')) {
+        closeTab(parseInt(e.target.dataset.idx));
+      } else {
+        switchTab(idx);
+      }
+    });
+
+    // WebSocket
+    const tab = { term, fitAddon, wrapper, tabBtn, ws: null, alive: true, retries: 0 };
+    tabs.push(tab);
+
+    if (IS_SERVERLESS) {
+      const C = '\x1b[36m';   // cyan
+      const G = '\x1b[32m';   // green
+      const Y = '\x1b[1;33m'; // bold yellow
+      const W = '\x1b[1;37m'; // bold white
+      const M = '\x1b[35m';   // magenta
+      const D = '\x1b[2;36m'; // dim cyan
+      const R = '\x1b[0m';    // reset
+
+      term.writeln('');
+      term.writeln(`${C}    ____       _     __              ___    ____   ____  _____${R}`);
+      term.writeln(`${C}   / __ )_____(_)___/ /___ ____     /   |  /  _/  / __ \\/ ___/${R}`);
+      term.writeln(`${C}  / __  / ___/ / __  / __ \`/ _ \\   / /| |  / /   / / / /\\__ \\ ${R}`);
+      term.writeln(`${C} / /_/ / /  / / /_/ / /_/ /  __/  / ___ |_/ /   / /_/ /___/ / ${R}`);
+      term.writeln(`${C}/_____/_/  /_/\\__,_/\\__, /\\___/  /_/  |_/___/   \\____//____/  ${R}`);
+      term.writeln(`${C}                   /____/                                      ${R}`);
+      term.writeln('');
+      term.writeln(`${D}  ┌─────────────────────────────────────────────────────────┐${R}`);
+      term.writeln(`${D}  │${R}  ${Y}UNIFIED COMMAND CENTER${R}        ${G}v2.4.1${R}   ${D}│${R}`);
+      term.writeln(`${D}  │${R}  ${W}Multi-Agent Orchestration Framework${R}               ${D}│${R}`);
+      term.writeln(`${D}  └─────────────────────────────────────────────────────────┘${R}`);
+      term.writeln('');
+      term.writeln(`${G}  SYSTEM${R}  ${D}........${R}  ${W}Serverless Mode (Vercel)${R}`);
+      term.writeln(`${G}  AGENTS${R}  ${D}........${R}  ${W}8 active (alpha-theta)${R}`);
+      term.writeln(`${G}  LAYERS${R}  ${D}........${R}  ${W}L1 Orchestrator / L2 Verifier / L3 Optimizer${R}`);
+      term.writeln(`${G}  AUTH${R}    ${D}........${R}  ${W}JWT + bcrypt (SQLite)${R}`);
+      term.writeln(`${G}  EVENTS${R}  ${D}........${R}  ${W}SSE 5-event stream${R}`);
+      term.writeln(`${G}  TREASURY${R} ${D}.......${R}  ${W}$137,284.50 balance${R}`);
+      term.writeln('');
+      term.writeln(`${D}  ─────────────────────────────────────────────────────────${R}`);
+      term.writeln('');
+      term.writeln(`${M}  [!]${R}  PTY terminal requires a persistent server.`);
+      term.writeln(`${M}  [!]${R}  WebSocket not available in serverless mode.`);
+      term.writeln('');
+      term.writeln(`${G}  To connect locally:${R}`);
+      term.writeln(`${W}    $ node gateway.js${R}`);
+      term.writeln(`${W}    $ node terminal-proxy.js${R}`);
+      term.writeln('');
+      term.writeln(`${D}  ─────────────────────────────────────────────────────────${R}`);
+      term.writeln('');
+
+      // Animated typing effect for the prompt
+      const promptLine = `${G}  bridge@os${R}:${C}~${R}$ `;
+      const cmdText = 'echo "Welcome to Bridge AI OS"';
+      let charIdx = 0;
+      term.write(promptLine);
+      const typeInterval = setInterval(() => {
+        if (charIdx < cmdText.length) {
+          term.write(cmdText[charIdx]);
+          charIdx++;
+        } else {
+          clearInterval(typeInterval);
+          setTimeout(() => {
+            term.writeln('');
+            term.writeln(`${W}  Welcome to Bridge AI OS${R}`);
+            term.writeln('');
+            term.write(`${G}  bridge@os${R}:${C}~${R}$ `);
+            // Blinking cursor simulation
+            let cursorOn = true;
+            setInterval(() => {
+              term.write(cursorOn ? '\x1b[?25l' : '\x1b[?25h');
+              cursorOn = !cursorOn;
+            }, 600);
+          }, 200);
+        }
+      }, 45);
+
+      document.getElementById('conn-status').textContent = 'SERVERLESS';
+      document.getElementById('conn-status').style.color = '#ffd166';
+    } else {
+      connectTab(idx);
+    }
+    switchTab(idx);
+
+    // Input -> WS
+    term.onData(data => {
+      if (tab.ws && tab.ws.readyState === WebSocket.OPEN) {
+        tab.ws.send(data);
+      }
+    });
+
+    // Resize
+    term.onResize(({ cols, rows }) => {
+      if (tab.ws && tab.ws.readyState === WebSocket.OPEN) {
+        tab.ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+      }
+    });
+    window.addEventListener('resize', () => fitAddon.fit());
+
+    updateNewBtn();
+  }
+
+  function connectTab(idx) {
+    const tab = tabs[idx];
+    if (!tab) return;
+
+    const ws = new WebSocket(WS_URL);
+    tab.ws = ws;
+
+    ws.onopen = () => {
+      tab.retries = 0;
+      document.getElementById('conn-status').textContent = 'CONNECTED';
+      document.getElementById('conn-status').style.color = '#00e57b';
+      document.getElementById('reconnect-banner').classList.remove('show');
+    };
+
+    ws.onmessage = (e) => {
+      const data = e.data;
+      // Try parsing as JSON control message
+      try {
+        const msg = JSON.parse(data);
+        if (msg.type === 'error') {
+          tab.term.writeln(`\r\n\x1b[31m[ERROR] ${msg.message}\x1b[0m`);
+          return;
+        }
+        if (msg.type === 'connected') {
+          tab.term.writeln('\x1b[32m[Connected to PTY]\x1b[0m\r\n');
+          return;
+        }
+        if (msg.type === 'pty-closed') {
+          tab.term.writeln('\r\n\x1b[33m[PTY session ended]\x1b[0m');
+          return;
+        }
+        if (msg.type === 'session') return;
+      } catch (_) {}
+      // Raw terminal data
+      tab.term.write(data);
+    };
+
+    ws.onclose = () => {
+      document.getElementById('conn-status').textContent = 'DISCONNECTED';
+      document.getElementById('conn-status').style.color = '#ff3c5a';
+      document.getElementById('reconnect-banner').classList.add('show');
+      // Exponential backoff reconnect
+      const delay = Math.min(1000 * Math.pow(2, tab.retries), 30000);
+      tab.retries++;
+      setTimeout(() => {
+        if (tabs[idx] && tabs[idx] === tab) {
+          connectTab(idx);
+        }
+      }, delay);
+    };
+
+    ws.onerror = () => {};
+  }
+
+  function switchTab(idx) {
+    tabs.forEach((t, i) => {
+      t.wrapper.classList.toggle('active', i === idx);
+      t.tabBtn.classList.toggle('active', i === idx);
+    });
+    activeTab = idx;
+    if (tabs[idx]) tabs[idx].fitAddon.fit();
+  }
+
+  function closeTab(idx) {
+    const tab = tabs[idx];
+    if (!tab) return;
+    if (tabs.length <= 1) return; // keep at least one
+    try { tab.ws.close(); } catch (_) {}
+    tab.wrapper.remove();
+    tab.tabBtn.remove();
+    tabs[idx] = null;
+    // Switch to nearest live tab
+    const next = tabs.findIndex(t => t !== null);
+    if (next >= 0) switchTab(next);
+    updateNewBtn();
+  }
+
+  function updateNewBtn() {
+    const live = tabs.filter(t => t !== null).length;
+    document.getElementById('btn-new-tab').disabled = live >= MAX_TABS;
+  }
+
+  document.getElementById('btn-new-tab').addEventListener('click', createTab);
+
+  // Start with one tab
+  createTab();
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>

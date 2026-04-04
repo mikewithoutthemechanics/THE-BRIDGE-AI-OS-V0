@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treasury Dashboard | Bridge AI</title>
+    <meta name="description" content="Treasury Dashboard — Bridge AI OS">
+    <meta property="og:title" content="Treasury Dashboard | Bridge AI">
+    <meta property="og:description" content="Treasury Dashboard — Bridge AI OS">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/treasury-dashboard.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/treasury-dashboard.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/bridge-tokens.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0f; color: #e0e0e0; font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+    .dashboard { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 1.8rem; margin-bottom: 24px; color: #00ffc8; }
+    h2 { font-size: 1.1rem; margin-bottom: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .card { background: #14141f; border: 1px solid #222; border-radius: 12px; padding: 20px; }
+    .card .label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .card .value { font-size: 1.8rem; font-weight: 700; color: #00ffc8; font-variant-numeric: tabular-nums; }
+    .card .value.secondary { color: #7b8cff; }
+    .card .value.warn { color: #ffb347; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #1a1a2a; font-size: 0.85rem; }
+    th { color: #666; font-weight: 500; }
+    td { color: #ccc; }
+    .subscribe-form { display: flex; gap: 8px; margin-top: 16px; }
+    .subscribe-form input { flex: 1; padding: 10px 14px; background: #1a1a2a; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 0.9rem; }
+    .subscribe-form button { padding: 10px 20px; background: #00ffc8; color: #000; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .subscribe-form button:hover { background: #00dda8; }
+    .msg { font-size: 0.8rem; margin-top: 6px; color: #00ffc8; min-height: 1.2em; }
+    .pulse { animation: pulse 1.5s ease-in-out infinite alternate; }
+    @keyframes pulse { from { opacity: 0.7; } to { opacity: 1; } }
+    .refresh-bar { font-size: 0.7rem; color: #555; text-align: right; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <script src="/bridge-nav.js?v=2"></script>
+  <div class="dashboard">
+    <h1>Treasury Dashboard</h1>
+    <div class="refresh-bar">Auto-refresh: <span id="countdown">10</span>s | Last: <span id="lastRefresh">--</span></div>
+
+    <h2>Treasury Balances</h2>
+    <div class="grid" id="balances">
+      <div class="card"><div class="label">Total Balance</div><div class="value" id="totalBalance">--</div></div>
+      <div class="card"><div class="label">Operations</div><div class="value secondary" id="operations">--</div></div>
+      <div class="card"><div class="label">Reserve</div><div class="value secondary" id="reserve">--</div></div>
+      <div class="card"><div class="label">Total Distributed</div><div class="value warn" id="distributed">--</div></div>
+      <div class="card"><div class="label">Total Fees</div><div class="value warn" id="fees">--</div></div>
+      <div class="card"><div class="label">Velocity</div><div class="value" id="velocity">--</div></div>
+    </div>
+
+    <h2>Analytics (24h)</h2>
+    <div class="grid" id="analyticsCards">
+      <div class="card"><div class="label">Total Events</div><div class="value" id="totalEvents">--</div></div>
+      <div class="card"><div class="label">Unique Routes</div><div class="value secondary" id="uniqueRoutes">--</div></div>
+    </div>
+    <div class="card" style="margin-bottom:32px">
+      <h2>Top Pages</h2>
+      <table>
+        <thead><tr><th>Route</th><th>Hits</th></tr></thead>
+        <tbody id="topPages"><tr><td colspan="2">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <h2>Recent Audit</h2>
+    <div class="card" style="margin-bottom:32px; max-height:300px; overflow-y:auto;">
+      <table>
+        <thead><tr><th>Time</th><th>Action</th><th>Detail</th></tr></thead>
+        <tbody id="auditTable"><tr><td colspan="3">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <h2>Subscribe for Updates</h2>
+    <div class="card">
+      <div class="subscribe-form">
+        <input type="email" id="emailInput" placeholder="you@example.com">
+        <button onclick="subscribe()">Subscribe</button>
+      </div>
+      <div class="msg" id="subMsg"></div>
+    </div>
+  </div>
+
+  <script>
+    function animateValue(el, end) {
+      const start = parseFloat(el.dataset.current || '0');
+      const diff = end - start;
+      const duration = 600;
+      const startTime = performance.now();
+      function step(now) {
+        const t = Math.min((now - startTime) / duration, 1);
+        const current = start + diff * t;
+        el.textContent = '$' + current.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (t < 1) requestAnimationFrame(step);
+      }
+      el.dataset.current = end;
+      requestAnimationFrame(step);
+    }
+
+    function clearChildren(el) {
+      while (el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    function addRow(tbody, cells) {
+      var tr = document.createElement('tr');
+      cells.forEach(function(text) {
+        var td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
+
+    async function refresh() {
+      try {
+        var results = await Promise.all([
+          fetch('/api/treasury').then(function(r) { return r.json(); }).catch(function() { return {}; }),
+          fetch('/api/analytics/summary').then(function(r) { return r.json(); }).catch(function() { return {}; }),
+          fetch('/api/treasury/payments').then(function(r) { return r.json(); }).catch(function() { return []; })
+        ]);
+        var tRes = results[0], aRes = results[1], payments = results[2];
+
+        var buckets = tRes.buckets || [];
+        var total = parseFloat(tRes.total) || 0;
+        var ubi = buckets.find(function(b){return b.name==='ubi'}) || {balance:0};
+        var treasury = buckets.find(function(b){return b.name==='treasury'}) || {balance:0};
+        var ops = buckets.find(function(b){return b.name==='ops'}) || {balance:0};
+        var founder = buckets.find(function(b){return b.name==='founder'}) || {balance:0};
+
+        animateValue(document.getElementById('totalBalance'), total);
+        animateValue(document.getElementById('operations'), parseFloat(ops.balance) || 0);
+        animateValue(document.getElementById('reserve'), parseFloat(treasury.balance) || 0);
+        animateValue(document.getElementById('distributed'), parseFloat(ubi.balance) || 0);
+        animateValue(document.getElementById('fees'), parseFloat(founder.balance) || 0);
+        var payArr = Array.isArray(payments) ? payments : (payments.rows || []);
+        document.getElementById('velocity').textContent = payArr.length + ' tx';
+
+        if (aRes.ok || aRes.last_24h) {
+          document.getElementById('totalEvents').textContent = aRes.last_24h ? aRes.last_24h.total : '0';
+          document.getElementById('uniqueRoutes').textContent = aRes.last_24h ? aRes.last_24h.routes : '0';
+          var topTbody = document.getElementById('topPages');
+          clearChildren(topTbody);
+          var pages = aRes.top_pages || [];
+          if (pages.length === 0) {
+            addRow(topTbody, ['No data yet', '']);
+          } else {
+            pages.forEach(function(p) { addRow(topTbody, [p.route, String(p.hits)]); });
+          }
+        }
+
+        var recent = tRes.recent || [];
+        var auditTbody = document.getElementById('auditTable');
+        clearChildren(auditTbody);
+        if (recent.length === 0) {
+          addRow(auditTbody, ['—', 'No transactions', '']);
+        } else {
+          recent.forEach(function(e) {
+            addRow(auditTbody, [
+              new Date(e.timestamp).toLocaleTimeString(),
+              e.type + ' (' + e.source + ')',
+              'R' + e.amount + ' → ' + (e.bucket || 'pool')
+            ]);
+          });
+        }
+
+        document.getElementById('lastRefresh').textContent = new Date().toLocaleTimeString();
+      } catch (err) { console.error('Refresh error:', err); }
+    }
+
+    var countdown = 10;
+    setInterval(function() {
+      countdown--;
+      document.getElementById('countdown').textContent = countdown;
+      if (countdown <= 0) { countdown = 10; refresh(); }
+    }, 1000);
+    refresh();
+
+    async function subscribe() {
+      var email = document.getElementById('emailInput').value;
+      var msg = document.getElementById('subMsg');
+      if (!email || email.indexOf('@') === -1) { msg.textContent = 'Enter a valid email.'; return; }
+      try {
+        var res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: 'treasury-dashboard' }) });
+        var data = await res.json();
+        msg.textContent = data.ok ? 'Subscribed!' : (data.error || 'Error');
+        if (data.ok) document.getElementById('emailInput').value = '';
+      } catch(e) { msg.textContent = 'Network error'; }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{
+  "contract_id": "dashboard-manifest",
+  "published_by": "Agent-3A",
+  "published_at": "$TIMESTAMP",
+  "status": "inventory",
+  "title": "Dashboard Consolidation Manifest",
+  "description": "Inventory of 43 features across original HTML files, mapping to 4 consolidated dashboards",
+  "total_features": 43,
+  "dashboards": [
+    {
+      "name": "TOPOLOGY",
+      "description": "Network visualization + system monitor",
+      "features_count": 12,
+      "source_files": ["aoe-unified/Xpublic/topology.html", "bridgeos/unified/public/topology.html"],
+      "libraries": ["p5.js", "xterm.js"]
+    },
+    {
+      "name": "AVATAR",
+      "description": "Avatar rendering with 6 different rendering modes",
+      "features_count": 12,
+      "source_files": ["BRIDGE_AI_OS/avatar/public/anatomical_face*.html"],
+      "libraries": ["babylon.js"]
+    },
+    {
+      "name": "REGISTRY",
+      "description": "Registry data (kernel, network, security, federation, jobs, market, node map, bridge OS)",
+      "features_count": 8,
+      "source_files": ["BridgeAI/registry/*.html"],
+      "libraries": ["Three.js", "vis.js"]
+    },
+    {
+      "name": "MARKETPLACE",
+      "description": "Marketplace components (tasks, DEX, wallet, skills, portfolio, stats)",
+      "features_count": 11,
+      "source_files": ["Various marketplace HTML"],
+      "libraries": ["React", "Chart.js"]
+    }
+  ],
+  "gate_condition": "All 43 features preserved and tested, zero feature loss",
+  "depends_on": ["gateway-api-spec"],
+  "used_by": ["Agent-6A", "Agent-1B"],
+  "update_frequency": "daily as features discovered during merge"
+}

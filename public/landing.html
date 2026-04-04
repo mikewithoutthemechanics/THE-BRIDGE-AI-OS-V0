@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Business Automation — Bridge AI</title>
+  <meta name="description" content="AI agents that run your business. Automate invoicing, CRM, marketing, support — 24/7. No coding required. Start free today.">
+  <meta property="og:title" content="AI Agents That Run Your Business — Bridge AI">
+  <meta property="og:description" content="Automate invoicing, CRM, marketing, support — 24/7. No coding required. 9 AI-powered tools, 1,266 skills. Start free.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://go.ai-os.co.za/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://go.ai-os.co.za/">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/bridge-tokens.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg-0);
+      color: var(--text-primary);
+      line-height: var(--leading-normal);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Layout ─────────────────────────────────── */
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 80px 0; }
+
+    /* ── Hero ───────────────────────────────────── */
+    .hero {
+      padding: 120px 0 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, var(--cyan-glow) 0%, transparent 70%);
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: var(--cyan-muted);
+      color: var(--cyan);
+      border: 1px solid rgba(99, 255, 218, 0.2);
+      border-radius: 100px;
+      font-size: var(--text-sm);
+      font-weight: var(--weight-medium);
+      letter-spacing: var(--tracking-wide);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 800;
+      line-height: var(--leading-tight);
+      letter-spacing: var(--tracking-tight);
+      margin-bottom: 20px;
+    }
+    .hero h1 .accent { color: var(--cyan); }
+    .hero .sub {
+      font-size: clamp(18px, 2.5vw, 22px);
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 36px;
+      line-height: var(--leading-relaxed);
+    }
+    .hero .trust {
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      margin-top: 16px;
+    }
+
+    /* ── Buttons ────────────────────────────────── */
+    .btn {
+      display: inline-block;
+      padding: 16px 36px;
+      font-family: var(--font-ui);
+      font-size: var(--text-lg);
+      font-weight: var(--weight-bold);
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--cyan);
+      color: var(--bg-0);
+      box-shadow: 0 0 30px var(--cyan-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px var(--cyan-glow);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--cyan);
+      border: 2px solid var(--cyan);
+    }
+    .btn-secondary:hover {
+      background: var(--cyan-muted);
+    }
+    .btn-sm {
+      padding: 12px 24px;
+      font-size: var(--text-base);
+    }
+
+    /* ── Social Proof Bar ──────────────────────── */
+    .proof-bar {
+      background: var(--bg-2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 0;
+    }
+    .proof-bar .container {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+    .proof-item {
+      text-align: center;
+    }
+    .proof-item .num {
+      font-size: var(--text-2xl);
+      font-weight: var(--weight-bold);
+      color: var(--cyan);
+      font-family: var(--font-mono);
+    }
+    .proof-item .label {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Demo Cards ─────────────────────────────── */
+    .demo { background: var(--bg-1); }
+    .section-title {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .section-title h2 {
+      font-size: var(--text-3xl);
+      font-weight: var(--weight-bold);
+      margin-bottom: 12px;
+    }
+    .section-title p {
+      color: var(--text-secondary);
+      font-size: var(--text-lg);
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      border-color: var(--cyan-soft);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--cyan-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    .card h3 {
+      font-size: var(--text-xl);
+      font-weight: var(--weight-semibold);
+      margin-bottom: 8px;
+    }
+    .card p {
+      color: var(--text-secondary);
+      font-size: var(--text-base);
+      margin-bottom: 20px;
+      line-height: var(--leading-relaxed);
+    }
+    .card-link {
+      color: var(--cyan);
+      font-weight: var(--weight-semibold);
+      font-size: var(--text-base);
+      transition: gap 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-link:hover { gap: 12px; }
+
+    /* ── How It Works ──────────────────────────── */
+    .how { background: var(--bg-0); }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 32px;
+      text-align: center;
+    }
+    .step-num {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--cyan-muted);
+      border: 2px solid var(--cyan);
+      color: var(--cyan);
+      font-family: var(--font-mono);
+      font-size: var(--text-xl);
+      font-weight: var(--weight-bold);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .step h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--weight-semibold);
+      margin-bottom: 8px;
+    }
+    .step p {
+      color: var(--text-secondary);
+      font-size: var(--text-base);
+    }
+
+    /* ── Pricing ────────────────────────────────── */
+    .pricing { background: var(--bg-1); }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .tier {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 28px;
+      text-align: center;
+      position: relative;
+      transition: all 0.25s ease;
+    }
+    .tier:hover {
+      border-color: rgba(99,255,218,0.3);
+    }
+    .tier.featured {
+      border-color: var(--cyan);
+      box-shadow: 0 0 40px var(--cyan-glow);
+    }
+    .tier.featured::before {
+      content: 'MOST POPULAR';
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--cyan);
+      color: var(--bg-0);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 100px;
+      letter-spacing: 0.08em;
+    }
+    .tier-name {
+      font-size: var(--text-lg);
+      font-weight: var(--weight-semibold);
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-wide);
+    }
+    .tier-price {
+      font-size: var(--text-4xl);
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .tier-price .currency { font-size: var(--text-xl); vertical-align: top; }
+    .tier-price .period { font-size: var(--text-sm); color: var(--text-muted); font-weight: 400; }
+    .tier-features {
+      list-style: none;
+      margin: 24px 0 32px;
+      text-align: left;
+    }
+    .tier-features li {
+      padding: 8px 0;
+      color: var(--text-secondary);
+      font-size: var(--text-base);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .tier-features li::before {
+      content: '\2713';
+      color: var(--cyan);
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .tier .btn { width: 100%; text-align: center; }
+
+    /* ── Final CTA ─────────────────────────────── */
+    .final-cta {
+      text-align: center;
+      background: var(--bg-0);
+      padding: 100px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .final-cta::before {
+      content: '';
+      position: absolute;
+      bottom: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--cyan-glow) 0%, transparent 70%);
+      opacity: 0.1;
+      pointer-events: none;
+    }
+    .final-cta h2 {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      margin-bottom: 24px;
+    }
+    .final-cta .sub {
+      color: var(--text-muted);
+      margin-top: 16px;
+      font-size: var(--text-sm);
+    }
+
+    /* ── Footer ─────────────────────────────────── */
+    footer {
+      background: var(--bg-2);
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--cyan); }
+    .footer-brand {
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+
+    /* ── Mobile ─────────────────────────────────── */
+    @media (max-width: 640px) {
+      section { padding: 56px 0; }
+      .hero { padding: 80px 0 56px; }
+      .proof-bar .container { gap: 24px; }
+      .cards { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; gap: 40px; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .btn { width: 100%; text-align: center; }
+      .footer-inner { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════ HERO ════ -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">AI-Powered Business Automation</div>
+      <h1>AI Agents That <span class="accent">Run Your Business</span></h1>
+      <p class="sub">Automate invoicing, CRM, marketing, support &mdash; 24/7. No coding required.</p>
+      <a href="/invoicing.html" class="btn btn-primary">Try Free &mdash; Generate an Invoice Now</a>
+      <p class="trust">No signup required. See results in 30 seconds.</p>
+    </div>
+  </section>
+
+  <!-- ════ SOCIAL PROOF BAR ════ -->
+  <div class="proof-bar">
+    <div class="container">
+      <div class="proof-item">
+        <div class="num">9</div>
+        <div class="label">AI-powered business tools</div>
+      </div>
+      <div class="proof-item">
+        <div class="num">1,266</div>
+        <div class="label">Skills available</div>
+      </div>
+      <div class="proof-item">
+        <div class="num">R0</div>
+        <div class="label">To start</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ DEMO SECTION ════ -->
+  <section class="demo" id="tools">
+    <div class="container">
+      <div class="section-title">
+        <h2>See It Work</h2>
+        <p>Pick a tool. Get results instantly. No setup needed.</p>
+      </div>
+      <div class="cards">
+        <a href="/invoicing.html" class="card">
+          <div class="card-icon">&#128451;</div>
+          <h3>AI Invoice Generator</h3>
+          <p>Create a professional invoice in 10 seconds. Line items, tax, branding &mdash; done.</p>
+          <span class="card-link">Try Now &rarr;</span>
+        </a>
+        <a href="/crm.html" class="card">
+          <div class="card-icon">&#128101;</div>
+          <h3>AI CRM</h3>
+          <p>Manage contacts, track leads, close deals &mdash; your AI sales assistant.</p>
+          <span class="card-link">Try Now &rarr;</span>
+        </a>
+        <a href="/legal.html" class="card">
+          <div class="card-icon">&#9878;</div>
+          <h3>AI Legal</h3>
+          <p>Generate contracts, check compliance, protect your business in minutes.</p>
+          <span class="card-link">Try Now &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ HOW IT WORKS ════ -->
+  <section class="how" id="how">
+    <div class="container">
+      <div class="section-title">
+        <h2>How It Works</h2>
+        <p>Three steps. Zero complexity.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Choose a Tool</h3>
+          <p>Pick from invoicing, CRM, legal, marketing, support, and more.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>AI Does the Work</h3>
+          <p>Our agents process your request using 1,266 trained skills.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Get Results Instantly</h3>
+          <p>Download, share, or integrate. Professional output in seconds.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ PRICING ════ -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-title">
+        <h2>Simple Pricing</h2>
+        <p>Start free. Scale when you're ready.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="tier">
+          <div class="tier-name">Free</div>
+          <div class="tier-price"><span class="currency">R</span>0</div>
+          <ul class="tier-features">
+            <li>10 AI tasks per day</li>
+            <li>Basic business tools</li>
+            <li>Invoice generator</li>
+            <li>Community support</li>
+          </ul>
+          <a href="/onboarding.html" class="btn btn-secondary btn-sm">Start Free</a>
+        </div>
+        <div class="tier featured">
+          <div class="tier-name">Pro</div>
+          <div class="tier-price"><span class="currency">R</span>299<span class="period">/mo</span></div>
+          <ul class="tier-features">
+            <li>Unlimited AI tasks</li>
+            <li>All 9 business tools</li>
+            <li>Priority AI processing</li>
+            <li>Custom branding</li>
+            <li>Email support</li>
+          </ul>
+          <a href="/onboarding.html" class="btn btn-primary btn-sm">Start Free</a>
+        </div>
+        <div class="tier">
+          <div class="tier-name">Enterprise</div>
+          <div class="tier-price"><span class="currency">R</span>2,499<span class="period">/mo</span></div>
+          <ul class="tier-features">
+            <li>Everything in Pro</li>
+            <li>Custom AI agents</li>
+            <li>Full API access</li>
+            <li>Dedicated support</li>
+            <li>SLA guarantee</li>
+          </ul>
+          <a href="/onboarding.html" class="btn btn-secondary btn-sm">Start Free</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ FINAL CTA ════ -->
+  <section class="final-cta">
+    <div class="container">
+      <h2>Ready to automate your business?</h2>
+      <a href="/onboarding.html" class="btn btn-primary">Get Started Free</a>
+      <p class="sub">No credit card required</p>
+    </div>
+  </section>
+
+  <!-- ════ FOOTER ════ -->
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-links">
+        <a href="/docs.html">Docs</a>
+        <a href="/pricing.html">Pricing</a>
+        <a href="/affiliate.html">Affiliate</a>
+        <a href="/join.html">Join</a>
+      </div>
+      <div class="footer-brand">Part of Bridge AI OS</div>
+    </div>
+  </footer>
+
+<script src="/bridge-nav.js?v=2"></script>
+</body>
+</html>

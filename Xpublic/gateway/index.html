@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="description" content="Bridge AI OS — Sovereign Web3 Entry Protocol. Wallet, chain, contract, owner, gas, block, SIWE-style auth.">
+<title>Bridge AI OS Sovereign Gateway</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.min.js"></script>
+<style>
+body {
+  background: #0b0f1a;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 40px;
+  margin: 0;
+}
+.container { max-width: 900px; margin: auto; }
+h1 { color: #00e5ff; margin-bottom: 8px; }
+h2 { color: #00ffd1; font-size: 1.1em; margin-top: 0; }
+.card {
+  border: 2px solid #00e5ff;
+  border-radius: 16px;
+  padding: 25px;
+  margin: 20px 0;
+  background: rgba(0,229,255,0.03);
+}
+button {
+  background: #00e5ff;
+  color: #0b0f1a;
+  border: none;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 8px;
+  margin: 5px;
+}
+button:hover { background: #00ffd1; }
+button.secondary { background: #7b61ff; color: #fff; }
+button.secondary:hover { background: #9b81ff; }
+a { text-decoration: none; color: inherit; }
+.status-good { color: #00ffb2; }
+.status-bad { color: #ff4d4d; }
+.mono { font-family: monospace; word-break: break-all; font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>Bridge AI OS Sovereign Gateway</h1>
+<p style="color:#888;margin-bottom:24px;">Sovereign entry protocol · Chain · Contract · Owner · Gas · Block · SIWE</p>
+
+<div class="card">
+<h2>Wallet</h2>
+<p id="walletStatus">Not Connected</p>
+<button onclick="connectWallet()">Connect</button>
+</div>
+
+<div class="card">
+<h2>Network</h2>
+<p id="networkStatus">Awaiting connection...</p>
+</div>
+
+<div class="card">
+<h2>Live Chain Data</h2>
+<p>Gas Price: <span id="gasPrice">--</span></p>
+<p>Block Height: <span id="blockHeight">--</span></p>
+</div>
+
+<div class="card">
+<h2>Contract</h2>
+<p class="mono" id="contractAddress">0x0000000000000000000000000000000000000000</p>
+<p>Owner: <span class="mono" id="contractOwner">--</span></p>
+<p id="contractBadge" style="margin-top:12px;"></p>
+<button onclick="copyContract()">Copy Contract</button>
+</div>
+
+<div class="card">
+<h2>Audit Hash</h2>
+<p class="mono" id="auditHash">SHA256: (configure CONFIG.AUDIT_HASH)</p>
+</div>
+
+<div class="card">
+<h2>Signature Login (SIWE)</h2>
+<p id="loginStatus">Not authenticated</p>
+<button onclick="signIn()">Sign Message</button>
+<p style="color:#888;font-size:0.85em;margin-top:12px;">Backend verify → JWT → nonce DB. Token stored for API calls.</p>
+</div>
+
+<div class="card">
+<h2>Scan to join as agent</h2>
+<p style="color:#888;font-size:0.9em;margin-bottom:12px;">Decentralized platform — Bridge, Supac, Taurus &amp; Wiki share Digital Twins. Scan to join.</p>
+<canvas id="qrJoin" width="200" height="200" style="display:block;margin:0 auto 12px;background:#fff;border-radius:8px;"></canvas>
+<p class="mono" id="joinUrl" style="font-size:0.75em;word-break:break-all;"></p>
+<a href="/agents.html"><button class="secondary">Agents &amp; Twins</button></a>
+<a href="/docs.html"><button class="secondary">Wiki &amp; Docs</button></a>
+</div>
+
+<div class="card">
+<h2>Actions</h2>
+<a href="/"><button>Enter Digital Twin</button></a>
+<a href="/#marketplace"><button class="secondary">Marketplace</button></a>
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+const CONFIG = {
+  EXPECTED_CHAIN_ID: 59144,
+  CHAIN_ID_HEX: "0xe708",
+  CONTRACT_ADDRESS: "0x0000000000000000000000000000000000000000",
+  AUDIT_HASH: "(configure CONFIG.AUDIT_HASH)",
+  RPC_URL: "https://rpc.linea.build",
+  AUTH_URL: "/api/auth/siwe",
+  JWT_KEY: "bridge_siwe_jwt"
+};
+
+let provider;
+let signer;
+
+document.getElementById("contractAddress").textContent = CONFIG.CONTRACT_ADDRESS;
+document.getElementById("auditHash").textContent = "SHA256: " + CONFIG.AUDIT_HASH;
+
+var joinUrl = (typeof location !== 'undefined' && location.origin) ? (location.origin + (location.pathname || '/gateway/') + (location.search || '') + '#join') : 'https://api.bridge-ai-os.tech/gateway/#join';
+document.getElementById("joinUrl").textContent = joinUrl;
+if (typeof QRCode !== 'undefined') {
+  QRCode.toCanvas(document.getElementById("qrJoin"), joinUrl, { width: 200, margin: 1 }, function(err) { if (err) console.warn('QR render:', err); });
+} else {
+  document.getElementById("qrJoin").getContext('2d').fillStyle = '#111';
+  document.getElementById("qrJoin").getContext('2d').fillText('QR', 90, 100);
+}
+
+async function connectWallet() {
+  if (!window.ethereum) {
+    document.getElementById("walletStatus").innerHTML = "<span class='status-bad'>Web3 wallet not detected.</span>";
+    return;
+  }
+  try {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = await provider.getSigner();
+    const address = await signer.getAddress();
+    document.getElementById("walletStatus").innerHTML =
+      "<span class='status-good'>Connected:</span> <span class='mono'>" + address + "</span>";
+    await enforceNetwork();
+    await loadChainData();
+    await verifyContract();
+  } catch (e) {
+    document.getElementById("walletStatus").innerHTML =
+      "<span class='status-bad'>" + (e.message || "Connection failed") + "</span>";
+  }
+}
+
+async function enforceNetwork() {
+  const network = await provider.getNetwork();
+  if (Number(network.chainId) !== CONFIG.EXPECTED_CHAIN_ID) {
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: CONFIG.CHAIN_ID_HEX }]
+      });
+      document.getElementById("networkStatus").innerHTML =
+        "<span class='status-good'>Switched to Linea Mainnet</span>";
+    } catch (err) {
+      if (err.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: CONFIG.CHAIN_ID_HEX,
+              chainName: "Linea Mainnet",
+              rpcUrls: [CONFIG.RPC_URL]
+            }]
+          });
+          document.getElementById("networkStatus").innerHTML =
+            "<span class='status-good'>Linea Mainnet Added & Connected</span>";
+        } catch (_) {
+          document.getElementById("networkStatus").innerHTML =
+            "<span class='status-bad'>Please add Linea Mainnet manually</span>";
+        }
+      } else {
+        document.getElementById("networkStatus").innerHTML =
+          "<span class='status-bad'>Please switch to Linea Mainnet</span>";
+      }
+      return;
+    }
+  } else {
+    document.getElementById("networkStatus").innerHTML =
+      "<span class='status-good'>Linea Mainnet Connected</span>";
+  }
+}
+
+async function loadChainData() {
+  try {
+    const feeData = await provider.getFeeData();
+    const gasGwei = ethers.formatUnits(feeData.gasPrice || 0n, "gwei");
+    document.getElementById("gasPrice").textContent = gasGwei + " Gwei";
+  } catch (_) {
+    document.getElementById("gasPrice").textContent = "--";
+  }
+  try {
+    const block = await provider.getBlockNumber();
+    document.getElementById("blockHeight").textContent = block;
+  } catch (_) {
+    document.getElementById("blockHeight").textContent = "--";
+  }
+  setInterval(async () => {
+    try {
+      const blockNow = await provider.getBlockNumber();
+      document.getElementById("blockHeight").textContent = blockNow;
+    } catch (_) {}
+  }, 10000);
+}
+
+async function verifyContract() {
+  if (CONFIG.CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") {
+    document.getElementById("contractBadge").innerHTML = "<span style='color:#888'>Configure CONTRACT_ADDRESS</span>";
+    return;
+  }
+  try {
+    const code = await provider.getCode(CONFIG.CONTRACT_ADDRESS);
+    if (code && code !== "0x") {
+      document.getElementById("contractBadge").innerHTML =
+        "<span class='status-good'>Verified On-Chain</span>";
+      const abi = ["function owner() view returns (address)"];
+      const contract = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, abi, provider);
+      try {
+        const owner = await contract.owner();
+        document.getElementById("contractOwner").textContent = owner;
+      } catch (_) {
+        document.getElementById("contractOwner").textContent = "Owner function not available";
+      }
+    } else {
+      document.getElementById("contractBadge").innerHTML =
+        "<span class='status-bad'>Contract Not Found</span>";
+    }
+  } catch (_) {
+    document.getElementById("contractBadge").innerHTML =
+      "<span class='status-bad'>Verification failed</span>";
+  }
+}
+
+function copyContract() {
+  navigator.clipboard.writeText(CONFIG.CONTRACT_ADDRESS);
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = "Copied";
+  setTimeout(() => { btn.textContent = orig; }, 1500);
+}
+
+async function signIn() {
+  if (!signer) {
+    document.getElementById("loginStatus").innerHTML =
+      "<span class='status-bad'>Connect wallet first.</span>";
+    return;
+  }
+  try {
+    const address = await signer.getAddress();
+    const message = `
+Bridge AI OS Login
+Domain: ${window.location.host}
+Address: ${address}
+Nonce: ${Date.now()}
+`;
+    const signature = await signer.signMessage(message);
+    const res = await fetch(CONFIG.AUTH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, signature })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      let err = data.detail || data.error || "Auth failed";
+      if (Array.isArray(err)) err = err.map(e => e.msg || e).join("; ");
+      if (typeof err !== "string") err = JSON.stringify(err);
+      document.getElementById("loginStatus").innerHTML =
+        "<span class='status-bad'>" + err + "</span>";
+      return;
+    }
+    const token = data.data?.token || data.token;
+    if (token) {
+      localStorage.setItem(CONFIG.JWT_KEY, token);
+      document.getElementById("loginStatus").innerHTML =
+        "<span class='status-good'>Authenticated. JWT stored.</span>";
+    } else {
+      document.getElementById("loginStatus").innerHTML =
+        "<span class='status-bad'>No token in response</span>";
+    }
+  } catch (e) {
+    document.getElementById("loginStatus").innerHTML =
+      "<span class='status-bad'>" + (e.message || "Sign failed") + "</span>";
+  }
+}
+
+if (window.ethereum) {
+  window.ethereum.on("chainChanged", () => location.reload());
+  window.ethereum.on("accountsChanged", () => location.reload());
+}
+</script>
+
+</body>
+</html>

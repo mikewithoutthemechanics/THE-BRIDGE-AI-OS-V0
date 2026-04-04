@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BRIDGE AI OS — Full System Sitemap</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#050a0f;--surface:#0d1620;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa;--orange:#fb923c}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,'Segoe UI',monospace;padding:0}
+    .container{max-width:1200px;margin:0 auto;padding:1.5rem}
+    h1{color:var(--accent);font-size:1.4rem;letter-spacing:.2em;margin-bottom:.5rem}
+    h2{color:var(--accent);font-size:.9rem;letter-spacing:.15em;margin:1.5rem 0 .5rem;border-bottom:1px solid var(--border);padding-bottom:.3rem}
+    h3{color:var(--text);font-size:.8rem;margin:.8rem 0 .3rem}
+    .subtitle{color:var(--dim);font-size:.75rem;letter-spacing:.1em;margin-bottom:1.5rem}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:1rem}
+    .section{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem}
+    .section-title{font-size:.75rem;color:var(--accent);letter-spacing:.12em;margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+    .badge{font-size:.6rem;padding:2px 6px;border-radius:3px;letter-spacing:.05em;font-weight:600}
+    .badge.live{background:rgba(0,229,123,.15);color:var(--green);border:1px solid var(--green)}
+    .badge.auth{background:rgba(167,139,250,.15);color:var(--purple);border:1px solid var(--purple)}
+    .badge.ws{background:rgba(0,200,255,.15);color:var(--accent);border:1px solid var(--accent)}
+    .badge.sse{background:rgba(255,209,102,.15);color:var(--yellow);border:1px solid var(--yellow)}
+    .badge.oauth{background:rgba(251,146,60,.15);color:var(--orange);border:1px solid var(--orange)}
+    .badge.brain{background:rgba(0,229,123,.15);color:var(--green);border:1px solid var(--green)}
+    .badge.stub{background:rgba(77,102,120,.15);color:var(--dim);border:1px solid var(--dim)}
+    a{color:var(--accent);text-decoration:none;font-size:.78rem}
+    a:hover{text-decoration:underline}
+    .link-row{display:flex;align-items:center;gap:.5rem;padding:.25rem 0;border-bottom:1px solid #0a1520}
+    .link-row:last-child{border:none}
+    .method{font-size:.65rem;font-weight:700;min-width:35px;text-align:center;padding:1px 4px;border-radius:3px}
+    .method.get{color:var(--green)}
+    .method.post{color:var(--yellow)}
+    .method.ws{color:var(--accent)}
+    .method.sse{color:var(--orange)}
+    .desc{color:var(--dim);font-size:.7rem;flex:1}
+    .domain-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem;margin-top:.5rem}
+    .domain-card{background:#0a1520;border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem}
+    .domain-card .name{font-size:.8rem;font-weight:600}
+    .domain-card .url{font-size:.65rem;color:var(--dim);margin-top:.15rem}
+    .domain-card .ip{font-size:.6rem;color:var(--dim)}
+    .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+    .dot-green{background:var(--green);box-shadow:0 0 6px var(--green)}
+    .dot-yellow{background:var(--yellow)}
+    .dot-gray{background:var(--dim)}
+  </style>
+</head>
+<body>
+<div class="container">
+<h1>BRIDGE AI OS — SYSTEM SITEMAP</h1>
+<div class="subtitle">Full ecosystem map: pages, APIs, WebSockets, subdomains, auth, brain spine</div>
+
+<h2>PAGES (All linked via universal nav)</h2>
+<div class="grid">
+  <div class="section">
+    <div class="section-title">CORE INTERFACES <span class="badge live">LIVE</span></div>
+    <div class="link-row"><a href="/">/ — Dashboard</a> <span class="desc">Main command center, 9 nav cards</span></div>
+    <div class="link-row"><a href="/topology.html">Topology</a> <span class="desc">D3/p5.js network graph, L1/L2/L3</span></div>
+    <div class="link-row"><a href="/registry.html">Registry</a> <span class="desc">Kernel, network, security, federation</span></div>
+    <div class="link-row"><a href="/marketplace.html">Marketplace</a> <span class="desc">Tasks, DEX, wallet, skills, portfolio</span></div>
+    <div class="link-row"><a href="/avatar.html">Avatar</a> <span class="desc">Babylon.js 3D avatar + animations</span></div>
+    <div class="link-row"><a href="/system-status-dashboard.html">Status Graph</a> <span class="desc">30+ service D3 force graph</span></div>
+    <div class="link-row"><a href="/terminal.html">Terminal</a> <span class="desc">xterm.js PTY terminal</span> <span class="badge ws">WS</span></div>
+    <div class="link-row"><a href="/control.html">Control Panel</a> <span class="desc">Treasury, agent command, ops</span></div>
+    <div class="link-row"><a href="/ban">BAN Task Engine</a> <span class="desc">Priority scoring, node routing, consensus</span> <span class="badge ws">WS</span></div>
+    <div class="link-row"><a href="/onboarding.html">Onboarding</a> <span class="desc">Registration + referral codes</span> <span class="badge oauth">OAUTH</span></div>
+    <div class="link-row"><a href="/sitemap.html">Sitemap</a> <span class="desc">This page — full system map</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">AUTH & IDENTITY <span class="badge oauth">OAUTH</span></div>
+    <div class="link-row"><span class="method post">POST</span> <a href="#">/auth/register</a> <span class="desc">Email + password registration</span></div>
+    <div class="link-row"><span class="method post">POST</span> <a href="#">/auth/login</a> <span class="desc">JWT token issuance (24h)</span></div>
+    <div class="link-row"><span class="method get">GET</span> <a href="#">/auth/verify</a> <span class="desc">Bearer token validation</span></div>
+    <div class="link-row"><span class="method post">POST</span> <a href="#">/referral/claim</a> <span class="desc">Referral codes: BRIDGE2025, AILAUNCH</span></div>
+    <div class="link-row"><span class="method get">GET</span> <a href="#">/api/keyforge/status</a> <span class="desc">KeyForge rotating key system</span> <span class="badge brain">BRAIN</span></div>
+    <div class="link-row"><span class="method post">POST</span> <a href="#">/api/keyforge/issue</a> <span class="desc">Issue scoped rotating tokens</span> <span class="badge brain">BRAIN</span></div>
+    <div class="link-row"><span class="method get">GET</span> <a href="#">/api/admin/keys</a> <span class="desc">Env key health check</span> <span class="badge brain">BRAIN</span></div>
+  </div>
+</div>
+
+<h2>BRAIN SPINE (port 8000 — shared state for all pages)</h2>
+<div class="grid">
+  <div class="section">
+    <div class="section-title">TWIN & REASONING <span class="badge brain">BRAIN</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/twin/profile <span class="desc">Digital twin identity + skills</span></div>
+    <div class="link-row"><span class="method post">POST</span> /api/twin/decide <span class="desc">Twin decision with reasoning</span></div>
+    <div class="link-row"><span class="method post">POST</span> /api/brain/ask <span class="desc">RAG-enhanced Q&A</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/emotion/status <span class="desc">Twin emotion state</span></div>
+    <div class="link-row"><span class="method post">POST</span> /api/speech/speak <span class="desc">Text-to-speech</span></div>
+    <div class="link-row"><span class="method post">POST</span> /api/speech/reason <span class="desc">Speech reasoning pipeline</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">ECONOMY & REVENUE <span class="badge brain">BRAIN</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/treasury/status <span class="desc">Balance: $137,284</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/revenue/streams <span class="desc">5 revenue streams</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/revenue/rails <span class="desc">PayFast, Paystack, Stripe, Crypto, PayPal</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/marketplace/tasks <span class="desc">Task marketplace</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/marketing/campaigns <span class="desc">3 active campaigns</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/marketing/leads <span class="desc">587 leads, 85 converted</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">QUANT & TRADING <span class="badge brain">BRAIN</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/quant/positions <span class="desc">BTC/ETH/SOL positions</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/quant/strategies <span class="desc">4 strategies (momentum, arb, etc)</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/quant/risk <span class="desc">VaR, exposure, leverage</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/bossbots <span class="desc">4 trading bots</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/bossbots/matrix <span class="desc">Strategy matrix + risk config</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/bossbots/signals <span class="desc">Live trading signals</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">SWARM & ORCHESTRATION <span class="badge brain">BRAIN</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/swarm/agents <span class="desc">8 agents (alpha-theta)</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/swarm/matrix <span class="desc">L1/L2/L3 layer map</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/swarm/strategies <span class="desc">4 swarm strategies</span></div>
+    <div class="link-row"><span class="method post">POST</span> /api/swarm/orchestrate <span class="desc">Execute coordinated plan</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/prime <span class="desc">Prime agent (master orchestrator)</span></div>
+    <div class="link-row"><span class="method post">POST</span> /api/prime/plan <span class="desc">Create execution plan</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">RAG & TOOLS <span class="badge brain">BRAIN</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/docs <span class="desc">13 indexed documents</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/docs/search?q= <span class="desc">Keyword RAG search</span></div>
+    <div class="link-row"><span class="method post">POST</span> /api/docs/ingest <span class="desc">Ingest new document</span></div>
+    <div class="link-row"><span class="method post">POST</span> /api/docs/scan <span class="desc">Scan filesystem + index</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/tools <span class="desc">15 registered tools</span></div>
+    <div class="link-row"><span class="method post">POST</span> /api/tools/register <span class="desc">Register new tool</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">GOVERNANCE & SDG <span class="badge brain">BRAIN</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/mission/board <span class="desc">Active missions</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/founder-todo <span class="desc">Founder task list</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/sdg/metrics <span class="desc">SDG goal tracking</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/skills <span class="desc">Twin skill registry</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/esim/status <span class="desc">Evolutionary simulation</span></div>
+    <div class="link-row"><span class="method get">GET</span> /api/cli/status <span class="desc">CLI orchestration</span></div>
+  </div>
+</div>
+
+<h2>WEBSOCKET & SSE STREAMS</h2>
+<div class="section" style="max-width:700px">
+  <div class="link-row"><span class="method ws">WS</span> ws://host:8000/ws/&lt;channel&gt; <span class="desc">Brain live events (twin, state, trades)</span> <span class="badge ws">WS</span></div>
+  <div class="link-row"><span class="method ws">WS</span> ws://host:5002/terminal <span class="desc">PTY terminal shell</span> <span class="badge ws">WS</span></div>
+  <div class="link-row"><span class="method ws">WS</span> ws://host:3000/terminal <span class="desc">System terminal (RBAC)</span> <span class="badge ws">WS</span></div>
+  <div class="link-row"><span class="method sse">SSE</span> /events/stream <span class="desc">Gateway SSE (5 event types, 5s interval)</span> <span class="badge sse">SSE</span></div>
+</div>
+
+<h2>MCP INTEGRATION</h2>
+<div class="section" style="max-width:700px">
+  <div class="link-row"><span class="method post">POST</span> /api/mcp/register <span class="desc">Register external MCP tool server</span></div>
+  <div class="link-row"><span class="method get">GET</span> /api/mcp/servers <span class="desc">List connected MCP servers</span></div>
+  <div class="link-row"><span class="method post">POST</span> /api/mcp/execute <span class="desc">Execute tool on MCP server</span></div>
+  <div class="link-row"><span class="method post">POST</span> /api/mcp/context <span class="desc">Exchange context with MCP</span></div>
+</div>
+
+<h2>SUBDOMAINS — ai-os.co.za ECOSYSTEM</h2>
+<div class="domain-grid" id="domain-grid"></div>
+
+<h2>GATEWAY API (port 8080 — 20+ endpoints)</h2>
+<div class="section" style="max-width:700px">
+  <div class="link-row"><span class="method get">GET</span> /health <span class="desc">Gateway + core liveness</span></div>
+  <div class="link-row"><span class="method get">GET</span> /api/topology <span class="desc">Network topology</span></div>
+  <div class="link-row"><span class="method get">GET</span> /api/avatar/* <span class="desc">Avatar modes + scenes</span></div>
+  <div class="link-row"><span class="method get">GET</span> /api/registry/* <span class="desc">8 registry namespaces</span></div>
+  <div class="link-row"><span class="method get">GET</span> /api/marketplace/* <span class="desc">6 marketplace sections</span></div>
+  <div class="link-row"><span class="method get">GET</span> /api/status <span class="desc">Aggregate service health</span></div>
+  <div class="link-row"><span class="method get">GET</span> /api/agents <span class="desc">L1+L2 agent federation</span></div>
+  <div class="link-row"><span class="method get">GET</span> /api/contracts <span class="desc">13 shared contracts</span></div>
+  <div class="link-row"><span class="method get">GET</span> /orchestrator/status <span class="desc">8 swarm agents</span></div>
+  <div class="link-row"><span class="method get">GET</span> /billing <span class="desc">Treasury + subscriptions</span></div>
+  <div class="link-row"><span class="method post">POST</span> /ask <span class="desc">LLM inference</span></div>
+</div>
+
+<h2>SERVICES (PM2 managed)</h2>
+<div class="section" style="max-width:700px">
+  <div class="link-row"><span class="status-dot dot-green"></span> <b>bridge-gateway</b> <span class="desc">:8080 — Unified entry point</span></div>
+  <div class="link-row"><span class="status-dot dot-green"></span> <b>super-brain</b> <span class="desc">:8000 — Control plane (99+ endpoints)</span></div>
+  <div class="link-row"><span class="status-dot dot-green"></span> <b>god-mode-system</b> <span class="desc">:3000 — System scanner + topology</span></div>
+  <div class="link-row"><span class="status-dot dot-green"></span> <b>terminal-proxy</b> <span class="desc">:5002 — PTY terminal</span></div>
+  <div class="link-row"><span class="status-dot dot-green"></span> <b>auth-service</b> <span class="desc">:5001 — JWT + SQLite auth</span></div>
+  <div class="link-row"><span class="status-dot dot-green"></span> <b>ban-engine</b> <span class="desc">:8001 — Python FastAPI (LIVE — 3 nodes, consensus active)</span></div>
+</div>
+
+</div>
+<script>
+const domains = [
+  {name:'go',url:'go.ai-os.co.za',ip:'.44',status:'live',desc:'Main gateway + brain'},
+  {name:'ai-os.co.za',url:'ai-os.co.za',ip:'.44',status:'live',desc:'Root domain — HTTPS'},
+  {name:'bridge',url:'bridge.ai-os.co.za',ip:'.44',status:'live',desc:'Bridge connector — HTTPS'},
+  {name:'ban',url:'ban.ai-os.co.za',ip:'.44',status:'live',desc:'BAN task engine — HTTPS'},
+  {name:'supac',url:'supac.ai-os.co.za',ip:'.44',status:'live',desc:'SupAC dashboard — HTTPS'},
+  {name:'ehsa',url:'ehsa.ai-os.co.za',ip:'.44',status:'live',desc:'EHSA health system — HTTPS'},
+  {name:'aurora',url:'aurora.ai-os.co.za',ip:'.44',status:'live',desc:'Aurora AI assistant — HTTPS'},
+  {name:'ubi',url:'ubi.ai-os.co.za',ip:'.44',status:'live',desc:'Universal Basic Income — HTTPS'},
+  {name:'aid',url:'aid.ai-os.co.za',ip:'.44',status:'live',desc:'Aid distribution — HTTPS'},
+  {name:'abaas',url:'abaas.ai-os.co.za',ip:'.53',status:'dns',desc:'Agent-as-a-Service (DNS pending)'},
+  {name:'hospitalinabox',url:'hospitalinabox.ai-os.co.za',ip:'.44',status:'live',desc:'Hospital in a Box — HTTPS'},
+  {name:'rootedearth',url:'rootedearth.ai-os.co.za',ip:'.44',status:'live',desc:'Sustainability — HTTPS'},
+];
+const grid = document.getElementById('domain-grid');
+domains.forEach(d => {
+  const dot = d.status === 'live' ? 'dot-green' : 'dot-yellow';
+  grid.innerHTML += `<div class="domain-card"><div class="name"><span class="status-dot ${dot}"></span>${d.name}</div><div class="url">${d.url}</div><div class="ip">${d.ip} — ${d.desc}</div></div>`;
+});
+</script>
+</body>
+</html>

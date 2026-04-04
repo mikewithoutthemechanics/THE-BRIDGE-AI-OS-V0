@@ -1,0 +1,40 @@
+{
+  "contract_id": "parallel-dev-days2-5",
+  "published_by": "Agent-1",
+  "published_at": "2026-03-25T21:11:59Z",
+  "status": "active",
+  "title": "Days 2-5 Parallel Development Contract",
+  "description": "All L1 agents build real code in parallel. No blocking. Streaming commits every 2-4 hours.",
+  "timeline": {
+    "day2": {
+      "Agent-2A": "Build unified gateway — single port 8080, route all 120+ endpoints, proxy middleware",
+      "Agent-3A": "Build TOPOLOGY + AVATAR dashboards (24 of 43 features)",
+      "Agent-4A": "Write DB migrations: aoe-unified.db → PostgreSQL namespace aoe_unified",
+      "Agent-5A": "Implement unified /auth/login + /auth/logout + JWT middleware",
+      "Agent-6A": "Write feature tests for gateway + topology + avatar (tests run as code arrives)"
+    },
+    "day3": {
+      "Agent-2A": "Gateway load balancing, error handling, health endpoints, p95 < 100ms target",
+      "Agent-3A": "Build REGISTRY + MARKETPLACE dashboards (19 of 43 features)",
+      "Agent-4A": "Write DB migrations: bridgeos.db + BRIDGE_AI_OS.db → PostgreSQL",
+      "Agent-5A": "Implement unified /referral/claim + user migration from 3 legacy auth systems",
+      "Agent-6A": "Write integration tests cross-service (gateway + dashboard + auth). Start soak test."
+    },
+    "day4": {
+      "Agent-2A": "Gateway hardening — rate limiting, circuit breakers, zero 5xx errors",
+      "Agent-3A": "Feature verification pass — all 43 features confirmed present and rendering",
+      "Agent-4A": "Migration dry-run — zero data loss verification (checksums), rollback test < 5min",
+      "Agent-5A": "Auth load test — 1000 concurrent users, p95 < 200ms",
+      "Agent-6A": "200+ unit tests complete, coverage >= 80%, all 43 feature tests passing"
+    },
+    "day5": {
+      "all_agents": "FEATURE GATE — all 43 features verified, all tests green, migrations validated",
+      "gate_condition": "Zero blockers to proceed to hardening phase (Days 6-7)"
+    }
+  },
+  "commit_cadence": "Every 2-4 hours per agent — no big-bang merges",
+  "conflict_protocol": "Agent-1B on L2 monitors for conflicts every 60s, escalates to Agent-1 on L1",
+  "gate_condition": "Day 5 EOD: 43 features verified, 200+ tests passing, migrations clean, auth load test passed",
+  "depends_on": ["gateway-api-spec", "dashboard-manifest", "database-schema", "auth-api-spec", "test-spec"],
+  "used_by": ["Agent-2A", "Agent-3A", "Agent-4A", "Agent-5A", "Agent-6A", "all-L2-agents"]
+}

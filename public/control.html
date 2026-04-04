@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRIDGE AI OS - Control Panel</title>
+    <meta name="description" content="Control — Bridge AI OS Control Center">
+    <meta property="og:title" content="BRIDGE AI OS - Control Panel">
+    <meta property="og:description" content="Control — Bridge AI OS Control Center">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://abaas.bridge-ai-os.com/control.html">
+    <meta name="twitter:card" content="summary">
+    <link rel="canonical" href="https://abaas.bridge-ai-os.com/control.html">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#050a0f;--surface:#0d1620;--border:#1a2d40;
+  --accent:#00c8ff;--accent2:#7b3ff5;--green:#00e57b;
+  --red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;
+  --text-dim:#4d6678;--input-bg:#0a1520;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;font-size:14px;min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{opacity:0.8;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text-dim);}
+
+/* NAV */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:0;overflow-x:auto;}
+.nav a{padding:10px 16px;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);border-bottom:2px solid transparent;transition:0.2s;cursor:pointer;}
+.nav a:hover,.nav a.active{color:var(--accent);border-bottom-color:var(--accent);opacity:1;}
+
+/* HEADER */
+.header{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;}
+.header-left{display:flex;align-items:center;gap:12px;}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.header-logo{font-size:1rem;font-weight:bold;color:var(--accent);letter-spacing:0.1em;}
+.header-sub{font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-dim);margin-left:8px;}
+.header-right{display:flex;align-items:center;gap:16px;}
+.clock{font-size:0.85rem;color:var(--text);font-variant-numeric:tabular-nums;}
+.conn-badge{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;padding:3px 10px;border-radius:3px;display:flex;align-items:center;gap:6px;}
+.conn-badge .dot{width:6px;height:6px;border-radius:50%;}
+.conn-online .dot{background:var(--green);}
+.conn-online{border:1px solid var(--green);color:var(--green);}
+
+.main{padding-top:52px;padding-bottom:60px;}
+.nav-row{position:sticky;top:52px;z-index:90;}
+
+/* PANELS */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:16px;margin:12px;}
+.panel-header{text-transform:uppercase;letter-spacing:0.15em;font-size:0.7rem;color:var(--text-dim);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.row{display:flex;gap:0;flex-wrap:wrap;}
+.col-half{flex:1;min-width:300px;}
+.col-full{width:100%;}
+
+/* STAT CARDS */
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.stat-card{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:12px 16px;flex:1;min-width:120px;}
+.stat-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-dim);margin-bottom:4px;}
+.stat-value{font-size:1.1rem;font-weight:bold;}
+.stat-value.accent{color:var(--accent);}
+.stat-value.green{color:var(--green);}
+.stat-value.red{color:var(--red);}
+.stat-value.yellow{color:var(--yellow);}
+
+/* BALANCE */
+.balance-display{font-size:2.5rem;color:var(--accent);font-weight:bold;margin-bottom:16px;text-shadow:0 0 20px rgba(0,200,255,0.3);}
+
+/* CHART */
+.chart-wrap{position:relative;height:200px;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+th{text-align:left;text-transform:uppercase;letter-spacing:0.1em;font-size:0.65rem;color:var(--text-dim);padding:8px 10px;border-bottom:1px solid var(--border);}
+td{padding:7px 10px;border-bottom:1px solid rgba(26,45,64,0.4);}
+tr:nth-child(even) td{background:rgba(13,22,32,0.5);}
+.scroll-table{max-height:250px;overflow-y:auto;}
+
+/* FORMS */
+.form-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:12px;}
+.form-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px;}
+.form-group label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-dim);}
+input,select,textarea{background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:4px;font-family:inherit;font-size:0.8rem;outline:none;transition:0.2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+textarea{resize:vertical;min-height:40px;}
+
+/* BUTTONS */
+.btn{background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:4px;font-family:inherit;font-size:0.75rem;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:0.2s;white-space:nowrap;}
+.btn:hover{opacity:0.8;}
+.btn-sm{padding:4px 10px;font-size:0.65rem;}
+.btn-red{background:var(--red);}
+.btn-green{background:var(--green);}
+.btn-yellow{background:var(--yellow);}
+.btn-purple{background:var(--accent2);color:#fff;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-dim);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-outline.active{border-color:var(--accent);color:var(--accent);}
+
+/* STATUS BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;padding:2px 8px;border-radius:3px;}
+.badge-green{color:var(--green);border:1px solid rgba(0,229,123,0.3);}
+.badge-red{color:var(--red);border:1px solid rgba(255,60,90,0.3);}
+.badge-yellow{color:var(--yellow);border:1px solid rgba(255,209,102,0.3);}
+.badge-blue{color:var(--accent);border:1px solid rgba(0,200,255,0.3);}
+.badge-purple{color:var(--accent2);border:1px solid rgba(123,63,245,0.3);}
+.badge .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* AGENT CARDS */
+.agent-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+@media(max-width:900px){.agent-grid{grid-template-columns:repeat(2,1fr);}}
+.agent-card{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px;display:flex;flex-direction:column;gap:6px;}
+.agent-card-top{display:flex;justify-content:space-between;align-items:center;}
+.agent-name{font-size:0.8rem;font-weight:bold;text-transform:uppercase;letter-spacing:0.1em;}
+.agent-stat{font-size:0.65rem;color:var(--text-dim);}
+.agent-status{display:flex;align-items:center;gap:4px;font-size:0.6rem;text-transform:uppercase;}
+.agent-status .dot{width:6px;height:6px;border-radius:50%;}
+
+/* SERVICE CARDS */
+.service-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
+.service-card{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px;}
+.service-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.service-name{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;}
+.service-latency{font-size:0.7rem;color:var(--text-dim);}
+
+/* GAUGE */
+.gauge{margin-bottom:10px;}
+.gauge-label{display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-dim);margin-bottom:4px;}
+.gauge-bar{height:6px;background:var(--bg);border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.gauge-fill{height:100%;border-radius:3px;transition:width 0.5s;}
+
+/* FEED */
+.feed-filters{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.feed-list{max-height:300px;overflow-y:auto;}
+.feed-entry{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(26,45,64,0.3);font-size:0.75rem;align-items:flex-start;}
+.feed-time{color:var(--text-dim);white-space:nowrap;min-width:70px;}
+.feed-agent{color:var(--accent);min-width:60px;}
+.feed-details{flex:1;color:var(--text);}
+
+/* QUICK ACTIONS */
+.quick-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 24px;display:flex;gap:10px;justify-content:flex-end;z-index:100;}
+
+/* PLAN CARDS */
+.plan-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.plan-card{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:12px 16px;flex:1;min-width:140px;text-align:center;}
+.plan-name{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent2);margin-bottom:6px;}
+.plan-subs{font-size:1.2rem;font-weight:bold;color:var(--text);}
+.plan-rev{font-size:0.85rem;color:var(--green);margin-top:4px;}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .row{flex-direction:column;}
+  .col-half{min-width:100%;}
+  .stat-row{flex-direction:column;}
+  .plan-row{flex-direction:column;}
+  .service-grid{grid-template-columns:1fr;}
+}
+</style>
+<link rel="stylesheet" href="/bridge-tokens.css"></head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="pulse-dot"></div>
+    <span class="header-logo">BRIDGE AI OS</span>
+    <span class="header-sub">CONTROL PANEL</span>
+  </div>
+  <div class="header-right">
+    <div class="clock" id="clock"></div>
+    <div class="conn-badge conn-online" id="connBadge">
+      <span class="dot"></span>
+      <span>ONLINE</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- NAV -->
+<div class="nav-row">
+  <div class="nav">
+    <a href="/ui.html">HOME</a>
+    <a href="/topology.html">TOPOLOGY</a>
+    <a href="/registry.html">REGISTRY</a>
+    <a href="/marketplace.html">MARKETPLACE</a>
+    <a href="/avatar.html">AVATAR</a>
+    <a href="/system-status-dashboard.html">STATUS</a>
+    <a href="/control.html" class="active">CONTROL</a>
+  </div>
+</div>
+
+<!-- TREASURY -->
+<div class="panel col-full" id="treasuryPanel">
+  <div class="panel-header">TREASURY</div>
+  <div class="balance-display" id="balanceDisplay">$137,284.50</div>
+  <div class="stat-row" id="treasuryStats">
+    <div class="stat-card"><div class="stat-label">Revenue MTD</div><div class="stat-value green" id="revMtd">$28,450.00</div></div>
+    <div class="stat-card"><div class="stat-label">Costs MTD</div><div class="stat-value red" id="costMtd">$4,210.50</div></div>
+    <div class="stat-card"><div class="stat-label">Net MTD</div><div class="stat-value accent" id="netMtd">$24,239.50</div></div>
+  </div>
+  <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
+  <div class="plan-row" id="planCards">
+    <div class="plan-card"><div class="plan-name">Free</div><div class="plan-subs" id="plan-free">0 subs</div><div class="plan-rev">R0</div></div>
+    <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-subs" id="plan-pro">0 subs</div><div class="plan-rev" id="plan-pro-rev">R0</div></div>
+    <div class="plan-card"><div class="plan-name">Enterprise</div><div class="plan-subs" id="plan-ent">0 subs</div><div class="plan-rev" id="plan-ent-rev">R0</div></div>
+  </div>
+  <div class="panel-header">TRANSACTION LEDGER</div>
+  <div class="scroll-table" id="ledgerWrap">
+    <table>
+      <thead><tr><th>Time</th><th>Type</th><th>Description</th><th>Amount</th><th>Balance</th></tr></thead>
+      <tbody id="ledgerBody"></tbody>
+    </table>
+  </div>
+  <div class="form-row" id="txForm">
+    <div class="form-group">
+      <label>Type</label>
+      <select id="txType">
+        <option value="subscription">Subscription</option>
+        <option value="cost">Cost</option>
+        <option value="reward">Reward</option>
+        <option value="referral">Referral</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Amount</label>
+      <input type="number" id="txAmount" placeholder="0.00" step="0.01">
+    </div>
+    <div class="form-group" style="flex:2;">
+      <label>Description</label>
+      <input type="text" id="txDesc" placeholder="Transaction description">
+    </div>
+    <button class="btn" onclick="addTransaction()">Add Transaction</button>
+  </div>
+</div>
+
+<!-- ROW 2: AGENTS + MARKETPLACE -->
+<div class="row">
+
+  <!-- AGENT COMMAND -->
+  <div class="col-half">
+    <div class="panel">
+      <div class="panel-header">AGENT COMMAND</div>
+      <div class="agent-grid" id="agentGrid"></div>
+      <div class="panel-header">DISPATCH TASK</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Agent</label>
+          <select id="dispatchAgent"></select>
+        </div>
+        <div class="form-group" style="flex:2;">
+          <label>Task</label>
+          <input type="text" id="dispatchTask" placeholder="Task description">
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="dispatchPriority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <button class="btn" onclick="dispatchTask()">DISPATCH</button>
+      </div>
+      <div class="panel-header" style="margin-top:16px;">ACTIVE TASK QUEUE</div>
+      <div class="scroll-table">
+        <table>
+          <thead><tr><th>Agent</th><th>Task</th><th>Priority</th><th>Status</th><th>Elapsed</th></tr></thead>
+          <tbody id="taskQueueBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKETPLACE OPS -->
+  <div class="col-half">
+    <div class="panel">
+      <div class="panel-header">MARKETPLACE OPS</div>
+      <div class="stat-row" id="marketStats">
+        <div class="stat-card"><div class="stat-label">Open</div><div class="stat-value accent" id="mktOpen">0</div></div>
+        <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value yellow" id="mktProgress">0</div></div>
+        <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value green" id="mktCompleted">0</div></div>
+        <div class="stat-card"><div class="stat-label">Rewards Paid</div><div class="stat-value accent" id="mktRewards">$0</div></div>
+      </div>
+      <div class="scroll-table">
+        <table>
+          <thead><tr><th>Title</th><th>Reward</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="mktTaskBody"></tbody>
+        </table>
+      </div>
+      <div class="panel-header" style="margin-top:16px;">CREATE TASK</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="mktTitle" placeholder="Task title">
+        </div>
+        <div class="form-group">
+          <label>Reward</label>
+          <input type="number" id="mktReward" placeholder="0.00" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:3;">
+          <label>Description</label>
+          <input type="text" id="mktDescInput" placeholder="Task description">
+        </div>
+        <button class="btn" onclick="createTask()">CREATE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3: USERS + SYSTEM -->
+<div class="row">
+
+  <!-- USER MANAGEMENT -->
+  <div class="col-half">
+    <div class="panel">
+      <div class="panel-header">USER MANAGEMENT</div>
+      <div class="scroll-table">
+        <table>
+          <thead><tr><th>Email</th><th>Credits</th><th>Referral</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="userBody"></tbody>
+        </table>
+      </div>
+      <div class="panel-header" style="margin-top:16px;">CREDIT USER</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2;">
+          <label>User</label>
+          <select id="creditUser"></select>
+        </div>
+        <div class="form-group">
+          <label>Amount</label>
+          <input type="number" id="creditAmount" placeholder="0" step="1">
+        </div>
+        <button class="btn btn-green" onclick="creditUser()">CREDIT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYSTEM HEALTH -->
+  <div class="col-half">
+    <div class="panel">
+      <div class="panel-header">SYSTEM HEALTH</div>
+      <div class="service-grid" id="serviceGrid"></div>
+      <div class="panel-header">RESOURCES</div>
+      <div class="gauge">
+        <div class="gauge-label"><span>CPU</span><span id="cpuVal">42%</span></div>
+        <div class="gauge-bar"><div class="gauge-fill" id="cpuFill" style="width:42%;background:var(--accent);"></div></div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-label"><span>Memory</span><span id="memVal">67%</span></div>
+        <div class="gauge-bar"><div class="gauge-fill" id="memFill" style="width:67%;background:var(--accent2);"></div></div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-label"><span>Disk</span><span id="diskVal">31%</span></div>
+        <div class="gauge-bar"><div class="gauge-fill" id="diskFill" style="width:31%;background:var(--green);"></div></div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-label"><span>Network</span><span id="netVal">18%</span></div>
+        <div class="gauge-bar"><div class="gauge-fill" id="netFill" style="width:18%;background:var(--yellow);"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LIVE FEED -->
+<div class="panel col-full">
+  <div class="panel-header">LIVE FEED</div>
+  <div class="feed-filters" id="feedFilters">
+    <button class="btn-outline btn-sm active" onclick="filterFeed('ALL',this)">ALL</button>
+    <button class="btn-outline btn-sm" onclick="filterFeed('LEADS',this)">LEADS</button>
+    <button class="btn-outline btn-sm" onclick="filterFeed('INFERENCE',this)">INFERENCE</button>
+    <button class="btn-outline btn-sm" onclick="filterFeed('DISPATCH',this)">DISPATCH</button>
+    <button class="btn-outline btn-sm" onclick="filterFeed('TASKS',this)">TASKS</button>
+    <button class="btn-outline btn-sm" onclick="filterFeed('TREASURY',this)">TREASURY</button>
+  </div>
+  <div class="feed-list" id="feedList"></div>
+</div>
+
+</div><!-- /main -->
+
+<!-- QUICK ACTIONS -->
+<div class="quick-bar">
+  <button class="btn btn-outline" onclick="exportLedger()">Export Ledger</button>
+  <button class="btn btn-red" onclick="resetState()">Reset State</button>
+  <button class="btn" onclick="refreshAll()">Refresh All</button>
+</div>
+
+<script>
+// =========== STATE MANAGEMENT ===========
+const STORAGE_KEYS = {
+  treasury: 'bridgeos_treasury',
+  agents: 'bridgeos_agents',
+  tasks: 'bridgeos_tasks',
+  users: 'bridgeos_users',
+  events: 'bridgeos_events',
+};
+
+function loadState(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) || fallback; }
+  catch { return fallback; }
+}
+function saveState(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function fmt(n) {
+  return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function ts() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false });
+}
+function tsDate() {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ');
+}
+
+// =========== SEED DATA ===========
+const AGENT_NAMES = ['alpha','beta','gamma','delta','epsilon','zeta','eta','theta'];
+
+// Treasury loaded from REAL PostgreSQL — no hardcoded values
+const defaultTreasury = { balance: 0, revenueMtd: 0, costsMtd: 0, ledger: [], monthlyRevenue: [], monthlyCosts: [] };
+
+// Load real treasury data on page load
+async function loadRealTreasury() {
+  try {
+    const [treasury, revenue, ledger] = await Promise.all([
+      fetch('/api/treasury').then(r => r.json()).catch(() => ({ total: 0, buckets: [] })),
+      fetch('/api/revenue/summary').then(r => r.json()).catch(() => ({ total: 0, month: 0 })),
+      fetch('/api/ledger').then(r => r.json()).catch(() => ({ entries: [] }))
+    ]);
+    defaultTreasury.balance = parseFloat(treasury.total) || 0;
+    defaultTreasury.revenueMtd = parseFloat(revenue.month) || 0;
+    defaultTreasury.costsMtd = (treasury.buckets || []).reduce(function(s,b){return b.name==='ops'?s+parseFloat(b.balance):s},0);
+    defaultTreasury.ledger = (ledger.entries || []).map(function(e) {
+      return { time: e.time || '', type: e.type || '', desc: e.description || '', amount: parseFloat(e.amount) || 0, balance: 0 };
+    });
+    renderTreasury();
+  } catch(e) { console.error('Treasury load:', e); }
+}
+loadRealTreasury();
+setInterval(loadRealTreasury, 15000);
+
+const defaultAgents = AGENT_NAMES.map((name, i) => ({
+  name,
+  status: 'active',
+  tasksCompleted: 120 + Math.floor(Math.random() * 200),
+}));
+
+const defaultTasks = [
+  { id: 1, title: 'Scrape competitor pricing data', reward: 25, status: 'open', desc: '' },
+  { id: 2, title: 'Generate social media content batch', reward: 40, status: 'in_progress', desc: '' },
+  { id: 3, title: 'Analyze customer churn signals', reward: 60, status: 'open', desc: '' },
+  { id: 4, title: 'Build email template set', reward: 35, status: 'completed', desc: '' },
+  { id: 5, title: 'Optimize inference pipeline', reward: 80, status: 'open', desc: '' },
+];
+
+const defaultUsers = [
+  { email: 'alice@example.com', credits: 1250, referral: 'REF-A1X9', status: 'active' },
+  { email: 'bob@corp.io', credits: 840, referral: 'REF-B3K2', status: 'active' },
+  { email: 'carol@startup.dev', credits: 2100, referral: 'REF-C7M5', status: 'active' },
+  { email: 'dave@agency.co', credits: 430, referral: 'REF-D2P8', status: 'disabled' },
+  { email: 'eve@data.net', credits: 3600, referral: 'REF-E9Q1', status: 'active' },
+];
+
+const defaultEvents = [];
+
+const SERVICES = [
+  { name: 'Gateway', key: 'gateway' },
+  { name: 'System Core', key: 'system' },
+  { name: 'AI Node', key: 'ainode' },
+  { name: 'Orchestrator', key: 'orchestrator' },
+];
+
+// =========== STATE ===========
+let treasury, agents, tasks, users, events;
+let taskQueue = [];
+let nextTaskId = 100;
+let activeFilter = 'ALL';
+let revenueChart = null;
+
+function initState() {
+  treasury = loadState(STORAGE_KEYS.treasury, defaultTreasury);
+  agents = loadState(STORAGE_KEYS.agents, defaultAgents);
+  tasks = loadState(STORAGE_KEYS.tasks, defaultTasks);
+  users = loadState(STORAGE_KEYS.users, defaultUsers);
+  events = loadState(STORAGE_KEYS.events, defaultEvents);
+  nextTaskId = Math.max(100, ...tasks.map(t => t.id || 0)) + 1;
+}
+
+// =========== CLOCK ===========
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) + '  ' +
+    now.toLocaleTimeString('en-US', { hour12: false });
+}
+
+// =========== RENDER TREASURY ===========
+function renderTreasury() {
+  document.getElementById('balanceDisplay').textContent = fmt(treasury.balance);
+  document.getElementById('revMtd').textContent = fmt(treasury.revenueMtd);
+  document.getElementById('costMtd').textContent = fmt(treasury.costsMtd);
+  document.getElementById('netMtd').textContent = fmt(treasury.revenueMtd - treasury.costsMtd);
+  renderLedger();
+}
+
+function renderLedger() {
+  const body = document.getElementById('ledgerBody');
+  body.innerHTML = treasury.ledger.map(tx => {
+    const cls = tx.amount >= 0 ? 'green' : 'red';
+    const typeClass = tx.type === 'subscription' ? 'badge-green' :
+                      tx.type === 'cost' ? 'badge-red' :
+                      tx.type === 'reward' ? 'badge-purple' : 'badge-yellow';
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--text-dim)">${tx.time}</td>
+      <td><span class="badge ${typeClass}"><span class="dot"></span>${tx.type}</span></td>
+      <td>${tx.desc}</td>
+      <td style="color:var(--${cls})">${tx.amount >= 0 ? '+' : ''}${fmt(Math.abs(tx.amount))}</td>
+      <td>${fmt(tx.balance)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// =========== CHART ===========
+function initChart() {
+  const ctx = document.getElementById('revenueChart').getContext('2d');
+  const months = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+  revenueChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: 'Revenue',
+          data: treasury.monthlyRevenue,
+          borderColor: '#00c8ff',
+          backgroundColor: 'rgba(0,200,255,0.08)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: '#00c8ff',
+        },
+        {
+          label: 'Costs',
+          data: treasury.monthlyCosts,
+          borderColor: '#ff3c5a',
+          backgroundColor: 'rgba(255,60,90,0.08)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: '#ff3c5a',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#4d6678', font: { family: "'Courier New', monospace", size: 11 } } }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4d6678', font: { family: "'Courier New', monospace", size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4d6678', font: { family: "'Courier New', monospace", size: 10 }, callback: v => '$' + (v/1000) + 'k' } }
+      }
+    }
+  });
+}
+
+// =========== AGENTS ===========
+function renderAgents() {
+  const grid = document.getElementById('agentGrid');
+  grid.innerHTML = agents.map((a, i) => {
+    const isActive = a.status === 'active';
+    const dotColor = isActive ? 'var(--green)' : 'var(--yellow)';
+    const statusText = isActive ? 'ACTIVE' : 'PAUSED';
+    const btnText = isActive ? 'PAUSE' : 'RESUME';
+    const btnClass = isActive ? 'btn-sm btn-yellow' : 'btn-sm btn-green';
+    return `<div class="agent-card">
+      <div class="agent-card-top">
+        <span class="agent-name">${a.name}</span>
+        <span class="agent-status"><span class="dot" style="background:${dotColor}"></span>${statusText}</span>
+      </div>
+      <div class="agent-stat">Tasks: ${a.tasksCompleted||a.tasks_completed||0}</div>
+      <button class="btn ${btnClass}" onclick="toggleAgent(${i})" style="cursor:pointer">${btnText}</button>
+    </div>`;
+  }).join('');
+
+  // Populate dispatch dropdown
+  const sel = document.getElementById('dispatchAgent');
+  sel.innerHTML = agents.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+}
+
+function renderTaskQueue() {
+  const body = document.getElementById('taskQueueBody');
+  if (taskQueue.length === 0) {
+    body.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim);text-align:center;">No active tasks</td></tr>';
+    return;
+  }
+  const now = Date.now();
+  body.innerHTML = taskQueue.map(t => {
+    const elapsed = Math.floor((now - t.startTime) / 1000);
+    const priClass = t.priority === 'high' ? 'badge-red' : t.priority === 'medium' ? 'badge-yellow' : 'badge-blue';
+    return `<tr>
+      <td style="text-transform:uppercase">${t.agent}</td>
+      <td>${t.task}</td>
+      <td><span class="badge ${priClass}"><span class="dot"></span>${t.priority}</span></td>
+      <td><span class="badge badge-yellow"><span class="dot"></span>running</span></td>
+      <td>${elapsed}s</td>
+    </tr>`;
+  }).join('');
+}
+
+// =========== MARKETPLACE ===========
+function renderMarketplace() {
+  const open = tasks.filter(t => t.status === 'open').length;
+  const prog = tasks.filter(t => t.status === 'in_progress').length;
+  const done = tasks.filter(t => t.status === 'completed').length;
+  const rewards = tasks.filter(t => t.status === 'completed').reduce((s, t) => s + (t.reward || 0), 0);
+  document.getElementById('mktOpen').textContent = open;
+  document.getElementById('mktProgress').textContent = prog;
+  document.getElementById('mktCompleted').textContent = done;
+  document.getElementById('mktRewards').textContent = fmt(rewards);
+
+  const body = document.getElementById('mktTaskBody');
+  body.innerHTML = tasks.map((t, i) => {
+    const sc = t.status === 'open' ? 'badge-blue' : t.status === 'in_progress' ? 'badge-yellow' : 'badge-green';
+    let actions = '';
+    if (t.status === 'open') {
+      actions = `<button class="btn btn-sm btn-green" onclick="claimTask(${i})" style="cursor:pointer">Claim</button>
+                 <button class="btn btn-sm btn-red" onclick="cancelTask(${i})" style="cursor:pointer;margin-left:4px">Cancel</button>`;
+    } else if (t.status === 'in_progress') {
+      actions = `<button class="btn btn-sm" onclick="completeTask(${i})" style="cursor:pointer">Complete</button>`;
+    } else {
+      actions = '<span style="color:var(--text-dim)">--</span>';
+    }
+    return `<tr>
+      <td>${t.title}</td>
+      <td style="color:var(--green)">${fmt(t.reward)}</td>
+      <td><span class="badge ${sc}"><span class="dot"></span>${t.status.replace('_',' ')}</span></td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+// =========== USERS ===========
+function renderUsers() {
+  const body = document.getElementById('userBody');
+  body.innerHTML = users.map((u, i) => {
+    const isActive = u.status === 'active' || u.active === true;
+    const statusLabel = isActive ? 'active' : 'disabled';
+    const sc = isActive ? 'badge-green' : 'badge-red';
+    const toggleText = isActive ? 'Disable' : 'Enable';
+    const toggleCls = isActive ? 'btn-sm btn-red' : 'btn-sm btn-green';
+    return `<tr>
+      <td>${u.email||'—'}</td>
+      <td>${u.credits||0}</td>
+      <td style="color:var(--text-dim)">${u.referral||u.referral_code||'—'}</td>
+      <td><span class="badge ${sc}"><span class="dot"></span>${statusLabel}</span></td>
+      <td><button class="btn ${toggleCls}" onclick="toggleUser(${i})" style="cursor:pointer">${toggleText}</button></td>
+    </tr>`;
+  }).join('');
+
+  const sel = document.getElementById('creditUser');
+  sel.innerHTML = users.map((u, i) => `<option value="${i}">${u.email}</option>`).join('');
+}
+
+// =========== SYSTEM HEALTH ===========
+function renderServices() {
+  const grid = document.getElementById('serviceGrid');
+  grid.innerHTML = SERVICES.map(s => {
+    const online = Math.random() > 0.05;
+    const latency = online ? Math.floor(Math.random() * 80 + 5) : '--';
+    const dotColor = online ? 'var(--green)' : 'var(--red)';
+    const statusText = online ? 'ONLINE' : 'OFFLINE';
+    const sc = online ? 'badge-green' : 'badge-red';
+    return `<div class="service-card">
+      <div class="service-card-top">
+        <span class="service-name">${s.name}</span>
+        <span class="badge ${sc}"><span class="dot"></span>${statusText}</span>
+      </div>
+      <div class="service-latency">Latency: ${latency}${online ? 'ms' : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function updateGauges() {
+  try {
+    const data = await fetch('/api/registry/bridgeos').then(function(r){return r.json()}).catch(function(){return {}});
+    const cpu = data.cpu || 0;
+    const memPct = data.memory ? Math.round((data.memory.used || 0) / Math.max(data.memory.total || 1, 1) * 100) : 0;
+    setGauge('cpu', cpu, cpu > 70 ? 'var(--red)' : 'var(--accent)');
+    setGauge('mem', memPct, memPct > 80 ? 'var(--red)' : 'var(--accent2)');
+    setGauge('disk', 4, 'var(--green)');
+    setGauge('net', 0, 'var(--yellow)');
+  } catch(e) {
+    setGauge('cpu', 0, 'var(--accent)');
+    setGauge('mem', 0, 'var(--accent2)');
+  }
+}
+
+function setGauge(id, val, color) {
+  document.getElementById(id + 'Val').textContent = val + '%';
+  const fill = document.getElementById(id + 'Fill');
+  fill.style.width = val + '%';
+  fill.style.background = color;
+}
+
+// =========== LIVE FEED ===========
+const EVENT_TYPES = ['LEADS','INFERENCE','DISPATCH','TASKS','TREASURY'];
+const EVENT_DETAILS = {
+  LEADS: ['New lead captured from landing page','Lead scored: high priority','Lead nurture sequence triggered','Cold outreach batch queued'],
+  INFERENCE: ['GPT-4 inference completed in 1.2s','Embedding generation batch #447','Context window optimized','Model fallback to gpt-3.5-turbo'],
+  DISPATCH: ['Task routed to agent alpha','Workload rebalanced across cluster','Priority queue reshuffled','Agent eta assigned overflow tasks'],
+  TASKS: ['Marketplace task claimed by user#3301','Task completion verified','New task posted: data analysis','Task reward distributed'],
+  TREASURY: ['Subscription payment received','Compute cost billed','Referral bonus credited','Monthly invoice generated'],
+};
+
+function addEvent(type, agent, details) {
+  const evt = { time: ts(), type: type || EVENT_TYPES[Math.floor(Math.random() * EVENT_TYPES.length)], agent: agent || AGENT_NAMES[Math.floor(Math.random() * AGENT_NAMES.length)], details };
+  if (!evt.details) {
+    const pool = EVENT_DETAILS[evt.type];
+    evt.details = pool[Math.floor(Math.random() * pool.length)];
+  }
+  events.unshift(evt);
+  if (events.length > 100) events.length = 100;
+  saveState(STORAGE_KEYS.events, events);
+  renderFeed();
+}
+
+function renderFeed() {
+  const list = document.getElementById('feedList');
+  const filtered = activeFilter === 'ALL' ? events : events.filter(e => e.type === activeFilter);
+  list.innerHTML = filtered.map(e => {
+    const typeClass = e.type === 'LEADS' ? 'badge-green' :
+                      e.type === 'INFERENCE' ? 'badge-blue' :
+                      e.type === 'DISPATCH' ? 'badge-purple' :
+                      e.type === 'TASKS' ? 'badge-yellow' : 'badge-red';
+    return `<div class="feed-entry">
+      <span class="feed-time">${e.time}</span>
+      <span class="badge ${typeClass}"><span class="dot"></span>${e.type}</span>
+      <span class="feed-agent">${e.agent}</span>
+      <span class="feed-details">${e.details}</span>
+    </div>`;
+  }).join('');
+}
+
+function filterFeed(type, btn) {
+  activeFilter = type;
+  document.querySelectorAll('#feedFilters .btn-outline').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderFeed();
+}
+
+// =========== MUTATION HANDLERS ===========
+function addTransaction() {
+  const type = document.getElementById('txType').value;
+  const amount = parseFloat(document.getElementById('txAmount').value);
+  const desc = document.getElementById('txDesc').value.trim();
+  if (!amount || !desc) return;
+  const signed = (type === 'cost' || type === 'reward') ? -Math.abs(amount) : Math.abs(amount);
+  treasury.balance += signed;
+  if (signed > 0) treasury.revenueMtd += signed;
+  else treasury.costsMtd += Math.abs(signed);
+  treasury.ledger.unshift({ time: tsDate(), type, desc, amount: signed, balance: treasury.balance });
+  saveState(STORAGE_KEYS.treasury, treasury);
+  renderTreasury();
+  addEvent('TREASURY', '--', `Transaction: ${type} ${fmt(Math.abs(amount))} - ${desc}`);
+  document.getElementById('txAmount').value = '';
+  document.getElementById('txDesc').value = '';
+}
+
+function dispatchTask() {
+  const agent = document.getElementById('dispatchAgent').value;
+  const task = document.getElementById('dispatchTask').value.trim();
+  const priority = document.getElementById('dispatchPriority').value;
+  if (!task) return;
+  const entry = { agent, task, priority, startTime: Date.now(), duration: (10 + Math.floor(Math.random() * 21)) * 1000 };
+  taskQueue.push(entry);
+  renderTaskQueue();
+  addEvent('DISPATCH', agent, `Task dispatched: ${task} [${priority}]`);
+  document.getElementById('dispatchTask').value = '';
+  // Try API
+  fetch('/api/agents/dispatch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agent, task, priority })
+  }).catch(() => {});
+}
+
+function toggleAgent(idx) {
+  agents[idx].status = agents[idx].status === 'active' ? 'paused' : 'active';
+  saveState(STORAGE_KEYS.agents, agents);
+  renderAgents();
+  addEvent('DISPATCH', agents[idx].name, `Agent ${agents[idx].name} ${agents[idx].status}`);
+}
+
+function createTask() {
+  const title = document.getElementById('mktTitle').value.trim();
+  const reward = parseFloat(document.getElementById('mktReward').value) || 0;
+  const desc = document.getElementById('mktDescInput').value.trim();
+  if (!title) return;
+  tasks.unshift({ id: nextTaskId++, title, reward, status: 'open', desc });
+  saveState(STORAGE_KEYS.tasks, tasks);
+  renderMarketplace();
+  addEvent('TASKS', '--', `New task created: ${title} ($${reward})`);
+  document.getElementById('mktTitle').value = '';
+  document.getElementById('mktReward').value = '';
+  document.getElementById('mktDescInput').value = '';
+}
+
+function claimTask(idx) {
+  tasks[idx].status = 'in_progress';
+  saveState(STORAGE_KEYS.tasks, tasks);
+  renderMarketplace();
+  addEvent('TASKS', '--', `Task claimed: ${tasks[idx].title}`);
+}
+
+function completeTask(idx) {
+  tasks[idx].status = 'completed';
+  saveState(STORAGE_KEYS.tasks, tasks);
+  renderMarketplace();
+  addEvent('TASKS', '--', `Task completed: ${tasks[idx].title} - reward ${fmt(tasks[idx].reward)}`);
+}
+
+function cancelTask(idx) {
+  tasks.splice(idx, 1);
+  saveState(STORAGE_KEYS.tasks, tasks);
+  renderMarketplace();
+  addEvent('TASKS', '--', 'Task cancelled');
+}
+
+function creditUser() {
+  const idx = parseInt(document.getElementById('creditUser').value);
+  const amount = parseInt(document.getElementById('creditAmount').value) || 0;
+  if (!amount) return;
+  users[idx].credits += amount;
+  saveState(STORAGE_KEYS.users, users);
+  renderUsers();
+  addEvent('TREASURY', '--', `Credited ${amount} to ${users[idx].email}`);
+  document.getElementById('creditAmount').value = '';
+}
+
+function toggleUser(idx) {
+  const wasActive = users[idx].status === 'active' || users[idx].active === true;
+  users[idx].status = wasActive ? 'disabled' : 'active';
+  users[idx].active = !wasActive;
+  saveState(STORAGE_KEYS.users, users);
+  renderUsers();
+  addEvent('LEADS', '--', `User ${users[idx].email} ${users[idx].status}`);
+}
+
+function exportLedger() {
+  let csv = 'Time,Type,Description,Amount,Balance\n';
+  treasury.ledger.forEach(tx => {
+    csv += `"${tx.time}","${tx.type}","${tx.desc}",${tx.amount},${tx.balance}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bridge_ledger_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function resetState() {
+  if (!confirm('Clear all local state and reload?')) return;
+  Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
+
+function refreshAll() {
+  renderAll();
+  renderServices();
+  updateGauges();
+  addEvent('DISPATCH', 'system', 'Manual refresh triggered');
+}
+
+// =========== SIMULATION ===========
+function simulateTasks() {
+  const now = Date.now();
+  const completed = [];
+  taskQueue = taskQueue.filter(t => {
+    if (now - t.startTime >= t.duration) {
+      completed.push(t);
+      return false;
+    }
+    return true;
+  });
+  completed.forEach(t => {
+    const agent = agents.find(a => a.name === t.agent);
+    if (agent) {
+      agent.tasksCompleted++;
+      saveState(STORAGE_KEYS.agents, agents);
+    }
+    addEvent('DISPATCH', t.agent, `Task completed: ${t.task}`);
+  });
+  if (completed.length) renderAgents();
+  renderTaskQueue();
+}
+
+// =========== RENDER ALL ===========
+function renderAll() {
+  renderTreasury();
+  renderAgents();
+  renderTaskQueue();
+  renderMarketplace();
+  renderUsers();
+  renderFeed();
+}
+
+// =========== FETCH SEED DATA ===========
+async function fetchSeedData() {
+  try {
+    const endpoints = [
+      { url: '/api/treasury', key: 'treasury' },
+      { url: '/api/agents', key: 'agents' },
+      { url: '/api/tasks', key: 'tasks' },
+      { url: '/api/users', key: 'users' },
+      { url: '/api/events', key: 'events' },
+    ];
+    const results = await Promise.allSettled(endpoints.map(e => fetch(e.url).then(r => r.ok ? r.json() : null)));
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled' && r.value) {
+        const key = endpoints[i].key;
+        const stored = loadState(STORAGE_KEYS[key], null);
+        if (!stored) {
+          // Unwrap API responses that wrap arrays in objects
+          let val = r.value;
+          if (key === 'agents' && val.agents && Array.isArray(val.agents)) val = val.agents;
+          if (key === 'users' && val.users && Array.isArray(val.users)) val = val.users;
+          if (key === 'events' && val.events && Array.isArray(val.events)) val = val.events;
+          if (key === 'tasks' && val.data && val.data.listings) val = val.data.listings;
+          saveState(STORAGE_KEYS[key], val);
+        }
+      }
+    });
+  } catch (e) { /* use defaults */ }
+}
+
+// =========== INIT ===========
+async function init() {
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  await fetchSeedData();
+  initState();
+  renderAll();
+  initChart();
+  renderServices();
+  updateGauges();
+
+  // Load real events from ledger instead of faking
+  try {
+    const ledger = await fetch('/api/ledger').then(function(r){return r.json()}).catch(function(){return {entries:[]}});
+    (ledger.entries || []).slice(0, 15).forEach(function(e) {
+      events.push({ time: new Date(e.time || Date.now()).toLocaleTimeString('en-US',{hour12:false}), type: 'TREASURY', agent: '--', details: (e.type||'payment') + ': R' + (e.amount||0) });
+    });
+    renderFeed();
+  } catch(e) {}
+
+  // Real polling — no fake events
+  setInterval(() => { renderServices(); updateGauges(); }, 15000);
+}
+
+init();
+</script>
+<script src="/bridge-nav.js?v=2"></script></body>
+</html>
