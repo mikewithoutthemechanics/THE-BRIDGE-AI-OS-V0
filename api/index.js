@@ -92,6 +92,7 @@ const AVATAR_MODES = {
 const db      = require('../lib/db');
 const pf      = require('../lib/payfast');
 const agents  = require('../lib/agents');
+const notify  = require('../lib/notify');
 
 // ── Route handlers ──────────────────────────────────────────────────────────
 // Live system state (as at 2026-04-04)
@@ -132,6 +133,18 @@ const FUNNEL = {
   closed_won:      436,
   customer:        129,
 };
+
+// ── Simple in-process rate limiter (per IP, resets on cold start) ────────────
+const _rateLimits = new Map();
+function rateLimit(ip, key, maxPerMinute) {
+  const k    = `${ip}:${key}`;
+  const now  = Date.now();
+  const prev = _rateLimits.get(k) || { count: 0, window: now };
+  if (now - prev.window > 60000) { _rateLimits.set(k, { count: 1, window: now }); return false; }
+  if (prev.count >= maxPerMinute) return true; // rate-limited
+  _rateLimits.set(k, { count: prev.count + 1, window: prev.window });
+  return false;
+}
 
 // Auth store (ephemeral per cold start — acceptable for serverless demo)
 const authUsers = new Map();
@@ -1264,20 +1277,27 @@ module.exports = async (req, res) => {
 
   // ── /api/agents/run ──
   if (p === '/api/agents/run' && req.method === 'POST') {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
+    if (rateLimit(ip, 'agent-run', 10)) return json(res, { error: 'rate_limited', retry_after: 60 }, 429);
     const body = await parseBody(req);
     const agentName = body.agentName || body.agent;
     if (!agentName) return json(res, { error: 'agentName required' }, 400);
     try {
       const result = await agents.runAgent(agentName, body.input || '');
+      console.log(JSON.stringify({ type: 'agent_run', agent: agentName, time: new Date().toISOString() }));
       return json(res, { ok: true, ...result, ts: ts() });
     } catch (e) {
+      notify.alertError({ context: 'agent-run', message: `${agentName}: ${e.message}` }).catch(() => {});
       return json(res, { ok: false, error: e.message }, 400);
     }
   }
 
   // ── /api/agents/run-all ──
   if (p === '/api/agents/run-all' && req.method === 'POST') {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
+    if (rateLimit(ip, 'agent-run-all', 2)) return json(res, { error: 'rate_limited', retry_after: 60 }, 429);
     const results = await agents.runAllAgents();
+    console.log(JSON.stringify({ type: 'agent_run_all', count: results.length, time: new Date().toISOString() }));
     return json(res, { ok: true, results, count: results.length, ts: ts() });
   }
 
@@ -1325,17 +1345,55 @@ module.exports = async (req, res) => {
   // ── /api/payfast-webhook (ITN — PayFast calls this on payment completion) ──
   if (p === '/api/payfast-webhook' && req.method === 'POST') {
     const body = await parseBody(req);
-    // Verify signature
+
+    // 1. Signature verification (local MD5 check)
     if (!pf.verifyWebhook(body)) {
       console.warn('[PAYFAST] Invalid webhook signature');
       return res.status(400).end('Invalid signature');
     }
-    if (body.payment_status === 'COMPLETE') {
-      const amount = parseFloat(body.amount_gross || body.amount || 0);
-      const newBalance = await db.addToTreasury(amount, `PayFast:${body.pf_payment_id || body.m_payment_id}`);
-      treasuryBalance = newBalance; // update warm cache
-      console.log(`[PAYFAST] Payment complete: R${amount} — new balance: R${newBalance}`);
+
+    // 2. Server-side validation ping (PayFast mandatory for live integration)
+    if (!pf.isSandbox()) {
+      try {
+        const pfValidate = await fetch('https://www.payfast.co.za/eng/query/validate', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body:    new URLSearchParams(body).toString(),
+        });
+        const pfText = await pfValidate.text();
+        if (pfText.trim() !== 'VALID') {
+          console.warn('[PAYFAST] Server validation failed:', pfText);
+          return res.status(400).end('Payment validation failed');
+        }
+      } catch (e) {
+        console.warn('[PAYFAST] Could not reach PayFast validation server:', e.message);
+        // Don't block in case of transient network error — log and continue
+      }
     }
+
+    if (body.payment_status === 'COMPLETE') {
+      const paymentId = body.m_payment_id || body.pf_payment_id;
+      const amount    = parseFloat(body.amount_gross || body.amount || 0);
+
+      // 3. Idempotency — block duplicate ITN replay attacks
+      const isDupe = await db.isDuplicatePayment(paymentId);
+      if (isDupe) {
+        console.warn(`[PAYFAST] Duplicate ITN ignored for ${paymentId}`);
+        return res.status(200).end('OK'); // return 200 so PayFast stops retrying
+      }
+
+      // 4. Credit treasury + log transaction
+      const newBalance = await db.addToTreasury(amount, `PayFast:${paymentId}`);
+      await db.logTransaction({ amount, status: 'success', source: body.email_address || 'PayFast', idempotencyKey: paymentId, meta: { plan: body.custom_str1, payment_id: paymentId } });
+      treasuryBalance = newBalance;
+
+      // 5. Structured log (visible in Vercel function logs)
+      console.log(JSON.stringify({ type: 'payment', amount, payment_id: paymentId, balance: newBalance, time: new Date().toISOString() }));
+
+      // 6. Telegram alert (non-blocking)
+      notify.alertPayment({ amount, source: body.email_address, balance: newBalance }).catch(() => {});
+    }
+
     return res.status(200).end('OK');
   }
 

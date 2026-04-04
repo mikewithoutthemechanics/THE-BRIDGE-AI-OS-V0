@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Center | Bridge AI-OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/bridge-tokens.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#060810;color:#fff;font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden}
+    .cc{max-width:1400px;margin:0 auto;padding:20px;padding-top:60px}
+    .header{display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+    .header h1{font-size:1.2rem;font-weight:700;color:#63ffda;letter-spacing:2px;text-transform:uppercase}
+    .live-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,0.7);animation:blink 2s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+    .refresh-info{font-size:0.7rem;color:#4a5568;margin-left:auto}
+
+    /* Grid layout */
+    .grid-main{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+    .grid-mid{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px}
+    .grid-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+    /* Cards */
+    .card{background:#0a0e17;border:1px solid #1a2a3a;border-radius:10px;padding:16px}
+    .card-title{font-size:0.65rem;color:#63ffda;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:700}
+    .kpi-val{font-size:2rem;font-weight:800;color:#63ffda;line-height:1}
+    .kpi-sub{font-size:0.7rem;color:#94a3b8;margin-top:4px}
+    .kpi-delta{font-size:0.72rem;margin-top:4px}
+    .kpi-delta.up{color:#4ade80}
+    .kpi-delta.down{color:#f87171}
+
+    /* Neuro bars */
+    .neuro-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .neuro-label{font-size:0.68rem;color:#94a3b8;width:24px;flex-shrink:0}
+    .neuro-track{flex:1;height:6px;background:#1a2a3a;border-radius:3px;overflow:hidden}
+    .neuro-fill{height:100%;border-radius:3px;transition:width 0.8s ease}
+    .neuro-val{font-size:0.68rem;color:#63ffda;width:36px;text-align:right;flex-shrink:0}
+    .neuro-D .neuro-fill{background:#818cf8}
+    .neuro-S .neuro-fill{background:#34d399}
+    .neuro-O .neuro-fill{background:#f472b6}
+    .neuro-E .neuro-fill{background:#fbbf24}
+    .cognition-row{display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid #1a2a3a;margin-top:4px}
+    .cog-label{font-size:0.68rem;color:#94a3b8}
+    .cog-val{font-size:0.68rem;color:#63ffda;font-weight:700}
+
+    /* Funnel */
+    .funnel-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+    .funnel-stage{font-size:0.68rem;color:#94a3b8;width:110px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.5px}
+    .funnel-track{flex:1;height:14px;background:#1a2a3a;border-radius:3px;overflow:hidden}
+    .funnel-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#63ffda,#818cf8);transition:width 0.8s ease}
+    .funnel-count{font-size:0.68rem;color:#63ffda;width:32px;text-align:right;flex-shrink:0}
+
+    /* Agent grid */
+    .agent-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .agent-item{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#060810;border-radius:6px;border:1px solid #1a2a3a}
+    .a-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0}
+    .a-name{font-size:0.68rem;color:#cbd5e1;flex:1}
+    .a-layer{font-size:0.6rem;color:#63ffda;background:rgba(99,255,218,0.08);padding:1px 5px;border-radius:4px}
+
+    /* Transactions */
+    .tx-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #111827;font-size:0.72rem}
+    .tx-row:last-child{border-bottom:none}
+    .tx-source{color:#94a3b8;flex:1}
+    .tx-amount{color:#4ade80;font-weight:700;min-width:70px;text-align:right}
+    .tx-time{color:#4a5568;min-width:60px;text-align:right;margin-left:8px}
+
+    /* System health */
+    .health-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .health-item{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#060810;border-radius:6px;font-size:0.7rem}
+    .health-label{color:#94a3b8}
+    .health-val{color:#4ade80;font-weight:700}
+    .health-val.warn{color:#fbbf24}
+    .health-val.err{color:#f87171}
+
+    /* Buckets */
+    .bucket-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .b-name{font-size:0.68rem;color:#94a3b8;width:80px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.5px}
+    .b-track{flex:1;height:8px;background:#1a2a3a;border-radius:4px;overflow:hidden}
+    .b-fill{height:100%;border-radius:4px;transition:width 0.8s ease}
+    .b-ops .b-fill{background:#63ffda}
+    .b-growth .b-fill{background:#818cf8}
+    .b-reserve .b-fill{background:#34d399}
+    .b-founder .b-fill{background:#fbbf24}
+    .b-val{font-size:0.68rem;color:#63ffda;min-width:80px;text-align:right;flex-shrink:0}
+
+    @media(max-width:900px){
+      .grid-main{grid-template-columns:1fr 1fr}
+      .grid-mid{grid-template-columns:1fr}
+      .grid-bottom{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:600px){
+      .grid-main{grid-template-columns:1fr 1fr}
+      .grid-bottom{grid-template-columns:1fr}
+      .cc{padding:14px;padding-top:54px}
+      .agent-list{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <script src="/bridge-nav.js?v=2"></script>
+  <div class="cc">
+    <div class="header">
+      <div class="live-dot"></div>
+      <h1>Bridge AI-OS — Command Center</h1>
+      <div class="refresh-info">Auto-refresh 10s · Last: <span id="lastRefresh">—</span></div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid-main">
+      <div class="card">
+        <div class="card-title">Treasury</div>
+        <div class="kpi-val" id="kpi-treasury">—</div>
+        <div class="kpi-sub">Total balance</div>
+        <div class="kpi-delta up" id="kpi-treasury-delta"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Revenue</div>
+        <div class="kpi-val" id="kpi-revenue">—</div>
+        <div class="kpi-sub">Total to date</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cycle</div>
+        <div class="kpi-val" id="kpi-cycle">—</div>
+        <div class="kpi-sub">Task cycles</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Leads</div>
+        <div class="kpi-val" id="kpi-leads">—</div>
+        <div class="kpi-sub">In pipeline</div>
+      </div>
+    </div>
+
+    <!-- Mid row -->
+    <div class="grid-mid">
+      <!-- Funnel + Buckets -->
+      <div class="card">
+        <div class="card-title">Revenue Funnel</div>
+        <div id="funnelRows"></div>
+        <div style="margin-top:16px">
+          <div class="card-title">Treasury Buckets</div>
+          <div id="bucketRows"></div>
+        </div>
+      </div>
+      <!-- Neuro -->
+      <div class="card">
+        <div class="card-title">Neurochemistry</div>
+        <div class="neuro-row neuro-D">
+          <div class="neuro-label">D</div>
+          <div class="neuro-track"><div class="neuro-fill" id="n-D" style="width:0%"></div></div>
+          <div class="neuro-val" id="nv-D">—</div>
+        </div>
+        <div class="neuro-row neuro-S">
+          <div class="neuro-label">S</div>
+          <div class="neuro-track"><div class="neuro-fill" id="n-S" style="width:0%"></div></div>
+          <div class="neuro-val" id="nv-S">—</div>
+        </div>
+        <div class="neuro-row neuro-O">
+          <div class="neuro-label">O</div>
+          <div class="neuro-track"><div class="neuro-fill" id="n-O" style="width:0%"></div></div>
+          <div class="neuro-val" id="nv-O">—</div>
+        </div>
+        <div class="neuro-row neuro-E">
+          <div class="neuro-label">E</div>
+          <div class="neuro-track"><div class="neuro-fill" id="n-E" style="width:0%"></div></div>
+          <div class="neuro-val" id="nv-E">—</div>
+        </div>
+        <div class="cognition-row">
+          <span class="cog-label">C(t) cognition</span>
+          <span class="cog-val" id="cog-val">—</span>
+        </div>
+        <div class="cognition-row">
+          <span class="cog-label">Dominant state</span>
+          <span class="cog-val" id="cog-state">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom row -->
+    <div class="grid-bottom">
+      <!-- Agents -->
+      <div class="card">
+        <div class="card-title">Agent Swarm</div>
+        <div class="agent-list" id="agentList"></div>
+      </div>
+      <!-- Recent transactions -->
+      <div class="card">
+        <div class="card-title">Recent Transactions</div>
+        <div id="txList"></div>
+      </div>
+      <!-- System health -->
+      <div class="card">
+        <div class="card-title">System Health</div>
+        <div class="health-grid" id="healthGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var prevTreasury = null;
+
+    var FUNNEL_LABELS = {
+      osint_discovery: 'OSINT Discovery',
+      lead_generated:  'Lead Generated',
+      nurturing:       'Nurturing',
+      qualified:       'Qualified',
+      proposal_sent:   'Proposal Sent',
+      closed_won:      'Closed Won',
+      customer:        'Customer',
+    };
+
+    function fmt(n) { return 'R' + Math.round(n).toLocaleString(); }
+    function fmtSmall(n) { return parseFloat(n).toFixed(4); }
+
+    async function refresh() {
+      try {
+        var results = await Promise.allSettled([
+          fetch('/api/brain').then(function(r){return r.json();}),
+          fetch('/api/treasury').then(function(r){return r.json();}),
+          fetch('/api/neuro').then(function(r){return r.json();}),
+        ]);
+
+        var brain    = results[0].status === 'fulfilled' ? results[0].value : {};
+        var treasury = results[1].status === 'fulfilled' ? results[1].value : {};
+        var neuro    = results[2].status === 'fulfilled' ? results[2].value : {};
+
+        // KPIs
+        var bal = parseFloat(treasury.total || brain.treasury && brain.treasury.balance || 0);
+        document.getElementById('kpi-treasury').textContent = fmt(bal);
+        if (prevTreasury !== null && bal !== prevTreasury) {
+          var delta = bal - prevTreasury;
+          var el = document.getElementById('kpi-treasury-delta');
+          el.textContent = (delta > 0 ? '+' : '') + fmt(delta) + ' since last refresh';
+          el.className = 'kpi-delta ' + (delta > 0 ? 'up' : 'down');
+        }
+        prevTreasury = bal;
+
+        var rev = brain.revenue && brain.revenue.total || 0;
+        document.getElementById('kpi-revenue').textContent = fmt(rev);
+        document.getElementById('kpi-cycle').textContent = (brain.revenue && brain.revenue.cycle || 0).toLocaleString();
+        var leads = brain.crm && brain.crm.leads || 0;
+        document.getElementById('kpi-leads').textContent = leads.toLocaleString();
+
+        // Funnel
+        var funnel = brain.funnel || {};
+        var maxFunnel = Math.max.apply(null, Object.values(funnel).concat([1]));
+        var funnelEl = document.getElementById('funnelRows');
+        funnelEl.textContent = '';
+        Object.keys(FUNNEL_LABELS).forEach(function(key) {
+          var val = funnel[key] || 0;
+          var row = document.createElement('div');
+          row.className = 'funnel-row';
+
+          var stage = document.createElement('div');
+          stage.className = 'funnel-stage';
+          stage.textContent = FUNNEL_LABELS[key];
+
+          var track = document.createElement('div');
+          track.className = 'funnel-track';
+          var fill = document.createElement('div');
+          fill.className = 'funnel-fill';
+          fill.style.width = Math.round((val / maxFunnel) * 100) + '%';
+          track.appendChild(fill);
+
+          var count = document.createElement('div');
+          count.className = 'funnel-count';
+          count.textContent = val;
+
+          row.appendChild(stage); row.appendChild(track); row.appendChild(count);
+          funnelEl.appendChild(row);
+        });
+
+        // Buckets
+        var buckets = treasury.buckets || (brain.treasury && brain.treasury.buckets) || [];
+        var bucketEl = document.getElementById('bucketRows');
+        bucketEl.textContent = '';
+        var bucketClasses = { ops: 'b-ops', treasury: 'b-growth', ubi: 'b-reserve', founder: 'b-founder' };
+        buckets.forEach(function(b) {
+          var row = document.createElement('div');
+          row.className = 'bucket-row ' + (bucketClasses[b.name] || '');
+
+          var nameEl = document.createElement('div');
+          nameEl.className = 'b-name';
+          nameEl.textContent = b.label || b.name;
+
+          var track = document.createElement('div');
+          track.className = 'b-track';
+          var fill = document.createElement('div');
+          fill.className = 'b-fill';
+          fill.style.width = (b.pct || 0) + '%';
+          track.appendChild(fill);
+
+          var val = document.createElement('div');
+          val.className = 'b-val';
+          val.textContent = fmt(b.balance || b.value || 0);
+
+          row.appendChild(nameEl); row.appendChild(track); row.appendChild(val);
+          bucketEl.appendChild(row);
+        });
+
+        // Neuro
+        ['D','S','O','E'].forEach(function(k) {
+          var v = parseFloat(neuro[k] || 0);
+          document.getElementById('n-' + k).style.width = Math.round(v * 100) + '%';
+          document.getElementById('nv-' + k).textContent = fmtSmall(v);
+        });
+        document.getElementById('cog-val').textContent   = fmtSmall(neuro.cognition || 0);
+        document.getElementById('cog-state').textContent = neuro.state || '—';
+
+        // Agents
+        var agentNames = (brain.agents && brain.agents.names) || [];
+        var agentEl = document.getElementById('agentList');
+        agentEl.textContent = '';
+        agentNames.forEach(function(name, i) {
+          var item = document.createElement('div');
+          item.className = 'agent-item';
+          var dot = document.createElement('div');
+          dot.className = 'a-dot';
+          var nm = document.createElement('div');
+          nm.className = 'a-name';
+          nm.textContent = name;
+          var layer = document.createElement('div');
+          layer.className = 'a-layer';
+          layer.textContent = i < 3 ? 'L1' : i < 7 ? 'L2' : 'L3';
+          item.appendChild(dot); item.appendChild(nm); item.appendChild(layer);
+          agentEl.appendChild(item);
+        });
+
+        // Transactions
+        var recent = treasury.recent || [];
+        var txEl = document.getElementById('txList');
+        txEl.textContent = '';
+        if (recent.length === 0) {
+          var empty = document.createElement('div');
+          empty.className = 'tx-row';
+          empty.style.color = '#4a5568';
+          empty.textContent = 'No transactions yet';
+          txEl.appendChild(empty);
+        } else {
+          recent.slice(0, 6).forEach(function(t) {
+            var row = document.createElement('div');
+            row.className = 'tx-row';
+            var src = document.createElement('div');
+            src.className = 'tx-source';
+            src.textContent = t.source || t.type || '—';
+            var amt = document.createElement('div');
+            amt.className = 'tx-amount';
+            amt.textContent = (t.amount > 0 ? '+' : '') + 'R' + Math.abs(t.amount);
+            var tm = document.createElement('div');
+            tm.className = 'tx-time';
+            tm.textContent = t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : '—';
+            row.appendChild(src); row.appendChild(amt); row.appendChild(tm);
+            txEl.appendChild(row);
+          });
+        }
+
+        // Health
+        var sys = brain.system || {};
+        var healthData = [
+          { label: 'Uptime',   val: sys.uptime_s ? Math.floor(sys.uptime_s / 60) + 'm' : '—', ok: true },
+          { label: 'Memory',   val: sys.memory_pct ? sys.memory_pct + '%' : '—', ok: (sys.memory_pct || 0) < 85 },
+          { label: 'Agents',   val: (brain.agents && brain.agents.active || 0) + '/' + (brain.agents && brain.agents.count || 0), ok: true },
+          { label: 'Tickets',  val: (brain.support && brain.support.open_tickets || 0) + ' open', ok: (brain.support && brain.support.open_tickets || 0) < 5 },
+          { label: 'API',      val: 'Healthy', ok: true },
+          { label: 'DB',       val: 'Supabase', ok: true },
+        ];
+        var hEl = document.getElementById('healthGrid');
+        hEl.textContent = '';
+        healthData.forEach(function(h) {
+          var item = document.createElement('div');
+          item.className = 'health-item';
+          var lbl = document.createElement('div');
+          lbl.className = 'health-label';
+          lbl.textContent = h.label;
+          var v = document.createElement('div');
+          v.className = 'health-val' + (h.ok ? '' : ' warn');
+          v.textContent = h.val;
+          item.appendChild(lbl); item.appendChild(v);
+          hEl.appendChild(item);
+        });
+
+        document.getElementById('lastRefresh').textContent = new Date().toLocaleTimeString();
+      } catch (e) {
+        console.error('Refresh error:', e);
+      }
+    }
+
+    var countdown = 10;
+    setInterval(function() {
+      countdown--;
+      if (countdown <= 0) { countdown = 10; refresh(); }
+    }, 1000);
+
+    refresh();
+  </script>
+</body>
+</html>
