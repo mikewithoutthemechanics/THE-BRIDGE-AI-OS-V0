@@ -37,7 +37,7 @@
       { name: 'AFFILIATE', url: svcBase+'/affiliate.html' }, { name: 'GOVERNANCE', url: svcBase+'/governance.html' }
     ],
     'SYSTEM': [
-      { name: 'AGENTS', url: svcBase+'/agents.html' }, { name: 'TOPOLOGY', url: svcBase+'/topology.html' }, { name: 'LAYERS', url: svcBase+'/topology-layers.html' },
+      { name: 'COMMAND', url: svcBase+'/command-center.html' }, { name: 'AGENTS', url: svcBase+'/agents.html' }, { name: 'TOPOLOGY', url: svcBase+'/topology.html' }, { name: 'LAYERS', url: svcBase+'/topology-layers.html' },
       { name: 'STATUS', url: svcBase+'/system-status-dashboard.html' }, { name: 'REGISTRY', url: svcBase+'/registry.html' },
       { name: 'LOGS', url: svcBase+'/logs.html' }, { name: 'TERMINAL', url: svcBase+'/terminal.html' },
       { name: 'TREASURY', url: svcBase+'/treasury-dashboard.html' }, { name: 'DASHBOARD', url: svcBase+'/aoe-dashboard.html' }
