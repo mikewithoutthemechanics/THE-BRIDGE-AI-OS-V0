@@ -66,7 +66,7 @@
   }
 
   var css = [
-    '.bn-bar{position:fixed;top:0;left:0;right:0;height:40px;z-index:99999 !important;background:var(--bg-1,#0a0e17);display:flex;align-items:center;padding:0 12px;font-family:"JetBrains Mono",monospace;border-bottom:1px solid rgba(99,255,218,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.4);gap:8px;pointer-events:all !important;}',
+    '.bn-bar{position:fixed;top:0;left:0;right:0;height:40px;z-index:99999 !important;background:var(--bg-1,#0a0e17);display:flex;align-items:center;padding:0 8px;font-family:"JetBrains Mono",monospace;border-bottom:1px solid rgba(99,255,218,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.4);gap:6px;pointer-events:all !important;}',
     '.bn-logo{color:var(--cyan,#63ffda);font-size:12px;font-weight:700;letter-spacing:2px;white-space:nowrap;cursor:pointer;flex-shrink:0;}',
     '.bn-sections{display:flex;gap:4px;align-items:center;flex:1;overflow-x:auto;scrollbar-width:none;}',
     '.bn-sections::-webkit-scrollbar{display:none;}',
