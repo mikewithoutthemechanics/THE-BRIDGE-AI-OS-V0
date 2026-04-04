@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Bridge AI Avatar — Unified Face Engine | Bridge AI OS</title>
-<meta name="description" content="Bridge AI OS unified anatomical face engine — procedural, FACS, constrained elastic, tension balanced, vector muscle, and embodied modes.">
-<meta property="og:title" content="Bridge AI Avatar — Unified Face Engine">
+<title>Bridge AI Avatar — Brain-Controlled Voice Face | Bridge AI OS</title>
+<meta name="description" content="Bridge AI OS unified avatar — voice-controlled, brain-driven facial expressions across 6 anatomical face modes.">
+<meta property="og:title" content="Bridge AI Avatar — Voice & Brain Controlled">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://aoe-unified-final.vercel.app/avatar">
@@ -14,99 +14,339 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #060810; --panel: #0d1117; --border: #1a2a3a;
-    --cyan: #00ffc8; --text: #e0e0e0; --muted: #556;
+    --cyan: #00ffc8; --red: #ff4466; --text: #e0e0e0; --muted: #556;
   }
   html, body { width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; overflow: hidden; }
-  #ui {
-    position: fixed; top: 0; left: 0; right: 0;
+
+  /* ── Top bar ── */
+  #topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    padding: 10px 16px; background: rgba(6,8,16,0.88);
-    backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 10;
+    padding: 8px 14px; background: rgba(6,8,16,0.92);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
   }
-  #ui h1 { font-size: 13px; font-weight: 700; color: var(--cyan); letter-spacing: 2px; margin-right: 8px; white-space: nowrap; }
+  #topbar h1 { font-size: 12px; font-weight: 700; color: var(--cyan); letter-spacing: 2px; white-space: nowrap; }
   .mode-btn {
-    padding: 5px 13px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 600;
     border: 1px solid var(--border); background: transparent; color: var(--muted);
     cursor: pointer; transition: all 0.2s; white-space: nowrap;
   }
   .mode-btn:hover { border-color: var(--cyan); color: var(--cyan); }
   .mode-btn.active { background: var(--cyan); color: #000; border-color: var(--cyan); }
+
+  /* ── Voice + chat overlay ── */
+  #chat {
+    position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%);
+    width: min(520px, 92vw); z-index: 20;
+    background: rgba(6,8,16,0.88); backdrop-filter: blur(14px);
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
+    transition: opacity 0.4s;
+  }
+  #chat.hidden { opacity: 0; pointer-events: none; }
+  #transcript {
+    font-size: 12px; color: var(--muted); font-family: monospace;
+    min-height: 16px; word-break: break-word;
+  }
+  #transcript.listening { color: var(--cyan); }
+  #reply {
+    font-size: 13px; color: var(--text); line-height: 1.5;
+    min-height: 20px; word-break: break-word;
+  }
+  #emotion-badge {
+    display: inline-block; font-size: 10px; font-family: monospace;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 20px;
+    background: rgba(0,255,200,0.1); border: 1px solid rgba(0,255,200,0.3);
+    color: var(--cyan); align-self: flex-start;
+  }
+
+  /* ── Bottom controls ── */
+  #controls {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px; background: rgba(6,8,16,0.92);
+    backdrop-filter: blur(12px); border-top: 1px solid var(--border);
+  }
+
+  /* Mic button */
+  #micBtn {
+    width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; transition: all 0.2s; flex-shrink: 0;
+    background: rgba(0,255,200,0.12); border: 1px solid var(--cyan);
+  }
+  #micBtn:hover { background: rgba(0,255,200,0.25); }
+  #micBtn.listening { background: var(--red); border-color: var(--red); animation: pulse 0.8s ease-in-out infinite alternate; }
+  @keyframes pulse { from { box-shadow: 0 0 0 0 rgba(255,68,102,0.4); } to { box-shadow: 0 0 0 10px rgba(255,68,102,0); } }
+
+  /* Type input */
+  #typeInput {
+    flex: 1; min-width: 140px; padding: 8px 12px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 12px; outline: none;
+  }
+  #typeInput:focus { border-color: var(--cyan); }
+  #sendBtn {
+    padding: 8px 14px; background: var(--cyan); color: #000;
+    border: none; border-radius: 8px; font-size: 12px; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+  }
+  #sendBtn:hover { background: #00dda8; }
+
+  /* Sliders */
+  .sg { display: flex; flex-direction: column; gap: 2px; min-width: 90px; }
+  .sg label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; }
+  .sg label span { color: var(--cyan); font-family: monospace; }
+  .sg input[type=range] { width: 100%; accent-color: var(--cyan); height: 3px; }
+
+  /* Stats */
+  .stat { font-size: 10px; color: var(--muted); font-family: monospace; white-space: nowrap; }
+  .stat b { color: var(--cyan); }
+
+  /* Mode label */
   #mode-label {
-    position: fixed; top: 54px; right: 16px; z-index: 10;
-    font-size: 11px; color: var(--muted); font-family: monospace;
-    background: rgba(6,8,16,0.75); padding: 4px 10px;
+    position: fixed; top: 50px; right: 14px; z-index: 20;
+    font-size: 10px; color: var(--muted); font-family: monospace;
+    background: rgba(6,8,16,0.75); padding: 3px 9px;
     border: 1px solid var(--border); border-radius: 4px;
   }
-  #controls {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
-    padding: 10px 16px; background: rgba(6,8,16,0.88);
-    backdrop-filter: blur(10px); border-top: 1px solid var(--border); z-index: 10;
-  }
-  .sg { display: flex; flex-direction: column; gap: 3px; min-width: 110px; }
-  .sg label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-  .sg input[type=range] { width: 100%; accent-color: var(--cyan); }
-  .stat { font-size: 10px; color: var(--muted); font-family: monospace; }
-  .stat span { color: var(--cyan); }
+
   canvas { width: 100%; height: 100%; display: block; }
 </style>
 </head>
 <body>
 <script src="/bridge-nav.js?v=2"></script>
 
-<div id="ui">
+<!-- ── Top bar ── -->
+<div id="topbar">
   <h1>⬡ BRIDGE AI AVATAR</h1>
   <button class="mode-btn active" data-mode="procedural">Procedural</button>
-  <button class="mode-btn" data-mode="facs">FACS Morph</button>
+  <button class="mode-btn" data-mode="facs">FACS</button>
   <button class="mode-btn" data-mode="constrained">Constrained</button>
   <button class="mode-btn" data-mode="tension">Tension</button>
-  <button class="mode-btn" data-mode="vector">Vector Muscle</button>
+  <button class="mode-btn" data-mode="vector">Vector</button>
   <button class="mode-btn" data-mode="embodied">Embodied</button>
 </div>
 
-<div id="mode-label">MODE: PROCEDURAL</div>
+<div id="mode-label">PROCEDURAL · BRAIN IDLE</div>
 <canvas id="renderCanvas"></canvas>
 
+<!-- ── Chat overlay ── -->
+<div id="chat" class="hidden">
+  <span id="emotion-badge">—</span>
+  <div id="transcript">Listening…</div>
+  <div id="reply"></div>
+</div>
+
+<!-- ── Bottom controls ── -->
 <div id="controls">
-  <div class="sg"><label>Smile</label><input type="range" id="slSmile" min="0" max="100" value="50"></div>
-  <div class="sg"><label>Brow</label><input type="range" id="slBrow" min="0" max="100" value="50"></div>
-  <div class="sg"><label>Jaw</label><input type="range" id="slJaw" min="0" max="100" value="0"></div>
-  <div class="sg"><label>Tension</label><input type="range" id="slTension" min="0" max="100" value="30"></div>
-  <div class="sg"><label>Speed</label><input type="range" id="slSpeed" min="0" max="100" value="60"></div>
-  <div class="stat">FPS <span id="sFps">60</span></div>
-  <div class="stat">Verts <span id="sVerts">--</span></div>
-  <div class="stat">Mode <span id="sMode">procedural</span></div>
+  <button id="micBtn" title="Hold to speak">🎙</button>
+  <input id="typeInput" type="text" placeholder="Type a message to the Brain…" autocomplete="off">
+  <button id="sendBtn">Send</button>
+
+  <div class="sg">
+    <label>Smile <span id="lblSmile">50</span></label>
+    <input type="range" id="slSmile" min="0" max="100" value="50">
+  </div>
+  <div class="sg">
+    <label>Brow <span id="lblBrow">50</span></label>
+    <input type="range" id="slBrow" min="0" max="100" value="50">
+  </div>
+  <div class="sg">
+    <label>Jaw <span id="lblJaw">0</span></label>
+    <input type="range" id="slJaw" min="0" max="100" value="0">
+  </div>
+  <div class="sg">
+    <label>Tension <span id="lblTension">15</span></label>
+    <input type="range" id="slTension" min="0" max="100" value="15">
+  </div>
+  <div class="sg">
+    <label>Speed <span id="lblSpeed">60</span></label>
+    <input type="range" id="slSpeed" min="0" max="100" value="60">
+  </div>
+
+  <div class="stat">FPS <b id="sFps">60</b></div>
+  <div class="stat">Verts <b id="sVerts">--</b></div>
 </div>
 
 <script>
-// ============================================================
-// BRIDGE AI UNIFIED FACE ENGINE v1.0
-// Modes: procedural · facs · constrained · tension · vector · embodied
-// ============================================================
+// ================================================================
+// BRIDGE AI UNIFIED FACE ENGINE — BRAIN + VOICE CONTROLLED
+// Brain endpoint: POST /api/ask → expression params → drive sliders
+// Voice: Web Speech API recognition + synthesis
+// ================================================================
 
 const canvas = document.getElementById('renderCanvas');
 const engine = new BABYLON.Engine(canvas, true);
 
+// ── Slider refs ───────────────────────────────────────────────
 const slSmile   = document.getElementById('slSmile');
 const slBrow    = document.getElementById('slBrow');
 const slJaw     = document.getElementById('slJaw');
 const slTension = document.getElementById('slTension');
 const slSpeed   = document.getElementById('slSpeed');
+const lbls = { smile: document.getElementById('lblSmile'), brow: document.getElementById('lblBrow'), jaw: document.getElementById('lblJaw'), tension: document.getElementById('lblTension'), speed: document.getElementById('lblSpeed') };
 
+// Sync labels on manual drag
+['slSmile','slBrow','slJaw','slTension','slSpeed'].forEach(id => {
+  const key = id.replace('sl','').toLowerCase();
+  document.getElementById(id).addEventListener('input', e => { if (lbls[key]) lbls[key].textContent = e.target.value; });
+});
+
+// ── Brain target values (lerped toward by render loop) ────────
+const brain = { smile: 50, brow: 50, jaw: 0, tension: 15 };
 let animSpeed = 0.6;
-slSpeed.addEventListener('input', () => { animSpeed = slSpeed.value / 100 * 2; });
+slSpeed.addEventListener('input', () => { animSpeed = slSpeed.value / 100 * 2; lbls.speed.textContent = slSpeed.value; });
 
-// ── Scene builder ─────────────────────────────────────────────
+// ── Lerp sliders toward brain targets ────────────────────────
+const LERP = 0.04; // smoothing per frame
+function tickBrainSliders() {
+  ['smile','brow','jaw','tension'].forEach(k => {
+    const el = document.getElementById('sl' + k.charAt(0).toUpperCase() + k.slice(1));
+    const cur = parseFloat(el.value);
+    const target = brain[k];
+    const next = cur + (target - cur) * LERP;
+    el.value = next;
+    if (lbls[k]) lbls[k].textContent = Math.round(next);
+  });
+}
+
+// ── Brain API call ────────────────────────────────────────────
+async function askBrain(prompt) {
+  showChat(prompt, '…', 'thinking');
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    const data = await res.json();
+    if (data.expression) {
+      brain.smile   = Math.round((data.expression.smile   || 0.5) * 100);
+      brain.brow    = Math.round((data.expression.brow    || 0.5) * 100);
+      brain.jaw     = Math.round((data.expression.jaw     || 0.0) * 100);
+      brain.tension = Math.round((data.expression.tension || 0.15) * 100);
+      if (data.expression.mode) switchMode(data.expression.mode, false);
+    }
+    const reply = data.reply || data.response || 'Brain online.';
+    showChat(prompt, reply, data.emotion || 'neutral');
+    speak(reply);
+    updateModeLabel('BRAIN ACTIVE · ' + (data.emotion || 'neutral').toUpperCase());
+    setTimeout(() => updateModeLabel(currentMode.toUpperCase() + ' · BRAIN IDLE'), 8000);
+  } catch (e) {
+    showChat(prompt, 'Brain connection error. Running in manual mode.', 'error');
+  }
+}
+
+// ── Chat overlay ──────────────────────────────────────────────
+function showChat(transcript, reply, emotion) {
+  const chat = document.getElementById('chat');
+  document.getElementById('transcript').textContent = transcript;
+  document.getElementById('transcript').className = '';
+  document.getElementById('reply').textContent = reply;
+  document.getElementById('emotion-badge').textContent = emotion;
+  chat.classList.remove('hidden');
+  clearTimeout(showChat._t);
+  showChat._t = setTimeout(() => chat.classList.add('hidden'), 10000);
+}
+
+// ── Speech synthesis ──────────────────────────────────────────
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = 0.95; utt.pitch = 0.9; utt.volume = 1;
+  // Jaw sync: open while speaking
+  utt.onstart  = () => { brain.jaw = 45; };
+  utt.onend    = () => { brain.jaw = 0; };
+  utt.onboundary = () => { brain.jaw = 20 + Math.random() * 30; };
+  window.speechSynthesis.speak(utt);
+}
+
+// ── Voice recognition ─────────────────────────────────────────
+const micBtn = document.getElementById('micBtn');
+let recognition = null;
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'en-ZA';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    micBtn.classList.add('listening');
+    micBtn.textContent = '🔴';
+    const chat = document.getElementById('chat');
+    chat.classList.remove('hidden');
+    document.getElementById('transcript').textContent = 'Listening…';
+    document.getElementById('transcript').className = 'listening';
+    document.getElementById('reply').textContent = '';
+    brain.tension = 40; brain.brow = 70; // attentive expression while listening
+    updateModeLabel(currentMode.toUpperCase() + ' · LISTENING');
+  };
+
+  recognition.onresult = (e) => {
+    const partial = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('transcript').textContent = partial;
+  };
+
+  recognition.onend = () => {
+    micBtn.classList.remove('listening');
+    micBtn.textContent = '🎙';
+    const final = document.getElementById('transcript').textContent;
+    if (final && final !== 'Listening…') askBrain(final);
+  };
+
+  recognition.onerror = () => {
+    micBtn.classList.remove('listening');
+    micBtn.textContent = '🎙';
+    updateModeLabel(currentMode.toUpperCase() + ' · MIC ERROR');
+  };
+
+  micBtn.addEventListener('click', () => {
+    if (micBtn.classList.contains('listening')) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
+  });
+} else {
+  micBtn.title = 'Speech recognition not supported in this browser';
+  micBtn.style.opacity = '0.4';
+}
+
+// Text input
+const typeInput = document.getElementById('typeInput');
+document.getElementById('sendBtn').addEventListener('click', sendText);
+typeInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendText(); });
+function sendText() {
+  const t = typeInput.value.trim();
+  if (!t) return;
+  typeInput.value = '';
+  askBrain(t);
+}
+
+// ── Mode label ────────────────────────────────────────────────
+function updateModeLabel(text) {
+  document.getElementById('mode-label').textContent = text;
+}
+
+// ================================================================
+// FACE ENGINE
+// ================================================================
+let currentMode = 'procedural';
+let activeScene = null;
+
 function buildScene(mode) {
   const scene = new BABYLON.Scene(engine);
   scene.clearColor = new BABYLON.Color4(0.03, 0.04, 0.06, 1);
 
-  // Camera
   const cam = new BABYLON.ArcRotateCamera('cam', Math.PI / 2, Math.PI / 2.5, 5, BABYLON.Vector3.Zero(), scene);
   cam.attachControl(canvas, true);
   cam.lowerRadiusLimit = 2; cam.upperRadiusLimit = 14;
 
-  // Lighting
   const hemi = new BABYLON.HemisphericLight('h', new BABYLON.Vector3(0, 1, 0), scene);
   hemi.intensity = mode === 'vector' ? 0.1 : 0.7;
   const key = new BABYLON.DirectionalLight('key', new BABYLON.Vector3(-1, -1.5, -2), scene);
@@ -114,32 +354,26 @@ function buildScene(mode) {
   const rim = new BABYLON.PointLight('rim', new BABYLON.Vector3(0, 2, -3), scene);
   rim.diffuse = new BABYLON.Color3(0, 0.8, 1); rim.intensity = 0.3;
 
-  // ── Base skin material ──────────────────────────────────────
-  function makeSkin(name, r) {
+  function makeSkin(name, roughness) {
     const m = new BABYLON.PBRMaterial(name, scene);
     m.albedoColor = new BABYLON.Color3(1.0, 0.78, 0.65);
-    m.roughness = r || 0.6; m.metallic = 0; return m;
+    m.roughness = roughness || 0.6; m.metallic = 0; return m;
   }
 
-  // ── Head mesh ───────────────────────────────────────────────
+  // Head
   const segs = (mode === 'facs' || mode === 'constrained') ? 128 : 64;
-  const head = BABYLON.MeshBuilder.CreateSphere('head', {
-    diameterX: 1.6, diameterY: 2.0, diameterZ: 1.6, segments: segs
-  }, scene);
+  const head = BABYLON.MeshBuilder.CreateSphere('head', { diameterX: 1.6, diameterY: 2.0, diameterZ: 1.6, segments: segs }, scene);
 
   if (mode === 'vector') {
     const wm = new BABYLON.StandardMaterial('wire', scene);
-    wm.wireframe = true; wm.emissiveColor = new BABYLON.Color3(0, 1, 0.8);
-    head.material = wm;
+    wm.wireframe = true; wm.emissiveColor = new BABYLON.Color3(0, 1, 0.8); head.material = wm;
   } else if (mode === 'embodied') {
-    const sm = makeSkin('eskin', 0.75);
-    sm.albedoColor = new BABYLON.Color3(0.88, 0.68, 0.58);
-    head.material = sm;
+    const em = makeSkin('eskin', 0.75); em.albedoColor = new BABYLON.Color3(0.88, 0.68, 0.58); head.material = em;
   } else {
-    head.material = makeSkin('skin_' + mode, mode === 'tension' ? 0.7 : 0.55);
+    head.material = makeSkin('skin', mode === 'tension' ? 0.7 : 0.55);
   }
 
-  // ── FACS Morph targets ──────────────────────────────────────
+  // FACS morphs
   let smileTarget, blinkTarget, browTarget;
   if (mode === 'facs' || mode === 'constrained' || mode === 'tension') {
     const mm = new BABYLON.MorphTargetManager();
@@ -148,111 +382,85 @@ function buildScene(mode) {
 
     smileTarget = new BABYLON.MorphTarget('smile', 0);
     const sp = base.slice();
-    for (let i = 0; i < sp.length; i += 3) {
-      if (sp[i+1] < 0 && sp[i+2] > 0.4) sp[i+1] += 0.18 * Math.abs(sp[i]);
-    }
+    for (let i = 0; i < sp.length; i += 3) { if (sp[i+1] < 0 && sp[i+2] > 0.4) sp[i+1] += 0.18 * Math.abs(sp[i]); }
     smileTarget.setPositions(sp); mm.addTarget(smileTarget);
 
     blinkTarget = new BABYLON.MorphTarget('blink', 0);
     const bp = base.slice();
-    for (let i = 0; i < bp.length; i += 3) {
-      if (bp[i+1] > 0.2 && bp[i+2] > 0.5) bp[i+1] -= 0.15;
-    }
+    for (let i = 0; i < bp.length; i += 3) { if (bp[i+1] > 0.2 && bp[i+2] > 0.5) bp[i+1] -= 0.15; }
     blinkTarget.setPositions(bp); mm.addTarget(blinkTarget);
 
     browTarget = new BABYLON.MorphTarget('brow', 0);
     const brp = base.slice();
-    for (let i = 0; i < brp.length; i += 3) {
-      if (brp[i+1] > 0.5 && Math.abs(brp[i]) > 0.3) brp[i+1] += 0.12;
-    }
+    for (let i = 0; i < brp.length; i += 3) { if (brp[i+1] > 0.5 && Math.abs(brp[i]) > 0.3) brp[i+1] += 0.12; }
     browTarget.setPositions(brp); mm.addTarget(browTarget);
   }
 
-  // ── Eyes ─────────────────────────────────────────────────
+  // Eyes
   function makeEye(xOff) {
     const scl = BABYLON.MeshBuilder.CreateSphere('scl', { diameter: 0.35, segments: 32 }, scene);
     const pup = BABYLON.MeshBuilder.CreateSphere('pup', { diameter: 0.14, segments: 16 }, scene);
     scl.position = new BABYLON.Vector3(xOff, 0.28, 0.74);
     pup.position = new BABYLON.Vector3(xOff, 0.28, 0.91);
-
     const sm = new BABYLON.PBRMaterial('scM', scene);
-    sm.albedoColor = new BABYLON.Color3(0.98, 0.98, 0.98); sm.roughness = 0.05; sm.metallic = 0;
-    scl.material = sm;
-
+    sm.albedoColor = new BABYLON.Color3(0.98, 0.98, 0.98); sm.roughness = 0.05; sm.metallic = 0; scl.material = sm;
     const im = new BABYLON.PBRMaterial('irM', scene);
-    im.albedoColor = mode === 'vector'
-      ? new BABYLON.Color3(0, 1, 0.8)
-      : new BABYLON.Color3(0.1, 0.4, 0.8);
-    im.roughness = 0.1; im.metallic = 0;
-    pup.material = im;
-
+    im.albedoColor = mode === 'vector' ? new BABYLON.Color3(0, 1, 0.8) : new BABYLON.Color3(0.1, 0.4, 0.8);
+    im.roughness = 0.1; im.metallic = 0; pup.material = im;
     return { scl, pup };
   }
   const eyeL = makeEye(-0.35); const eyeR = makeEye(0.35);
 
-  // ── Nose ─────────────────────────────────────────────────
-  const skinRef = head.material instanceof BABYLON.PBRMaterial ? head.material : makeSkin('nsk', 0.6);
-  const nose = BABYLON.MeshBuilder.CreateCylinder('nose', {
-    height: 0.55, diameterTop: 0.06, diameterBottom: 0.28, tessellation: 32
-  }, scene);
-  nose.rotation.x = Math.PI / 2;
-  nose.position = new BABYLON.Vector3(0, -0.05, 0.91);
-  nose.material = head.material;
+  // Nose
+  const nose = BABYLON.MeshBuilder.CreateCylinder('nose', { height: 0.55, diameterTop: 0.06, diameterBottom: 0.28, tessellation: 32 }, scene);
+  nose.rotation.x = Math.PI / 2; nose.position = new BABYLON.Vector3(0, -0.05, 0.91); nose.material = head.material;
 
-  // ── Cheeks ────────────────────────────────────────────────
-  function makeCheek(xOff) {
+  // Cheeks
+  function makeCheek(x) {
     const c = BABYLON.MeshBuilder.CreateSphere('cheek', { diameter: 0.54, segments: 24 }, scene);
-    c.scaling.y = 0.65; c.position = new BABYLON.Vector3(xOff, -0.15, 0.62);
-    c.material = head.material; return c;
+    c.scaling.y = 0.65; c.position = new BABYLON.Vector3(x, -0.15, 0.62); c.material = head.material; return c;
   }
   const cheekL = makeCheek(-0.62); const cheekR = makeCheek(0.62);
 
-  // ── Jaw ───────────────────────────────────────────────────
+  // Jaw
   const jaw = BABYLON.MeshBuilder.CreateBox('jaw', { width: 1.4, height: 0.38, depth: 1.1 }, scene);
-  jaw.position = new BABYLON.Vector3(0, -0.88, 0);
-  jaw.material = head.material;
+  jaw.position = new BABYLON.Vector3(0, -0.88, 0); jaw.material = head.material;
 
-  // ── Tension / vector lines ────────────────────────────────
+  // Tension / constraint lines
   const tensionLines = [];
   if (mode === 'tension' || mode === 'vector' || mode === 'constrained') {
     const pts = [
-      [new BABYLON.Vector3(-0.62, -0.15, 0.62), new BABYLON.Vector3(-0.35, 0.28, 0.74)],
-      [new BABYLON.Vector3(0.62,  -0.15, 0.62),  new BABYLON.Vector3(0.35,  0.28, 0.74)],
-      [new BABYLON.Vector3(0,     -0.88, 0),      new BABYLON.Vector3(0,    -0.05, 0.91)],
-      [new BABYLON.Vector3(-0.5,   0.1,  0.5),   new BABYLON.Vector3(0,    -0.05, 0.91)],
-      [new BABYLON.Vector3(0.5,    0.1,  0.5),   new BABYLON.Vector3(0,    -0.05, 0.91)],
+      [new BABYLON.Vector3(-0.62,-0.15, 0.62), new BABYLON.Vector3(-0.35, 0.28, 0.74)],
+      [new BABYLON.Vector3(0.62, -0.15, 0.62), new BABYLON.Vector3(0.35,  0.28, 0.74)],
+      [new BABYLON.Vector3(0,   -0.88, 0),     new BABYLON.Vector3(0,    -0.05, 0.91)],
+      [new BABYLON.Vector3(-0.5, 0.1,  0.5),   new BABYLON.Vector3(0,    -0.05, 0.91)],
+      [new BABYLON.Vector3(0.5,  0.1,  0.5),   new BABYLON.Vector3(0,    -0.05, 0.91)],
     ];
-    const lineColor = mode === 'constrained'
-      ? new BABYLON.Color3(1, 0.6, 0)
-      : new BABYLON.Color3(0, 1, 0.8);
-    pts.forEach(([a, b], i) => {
-      const ln = BABYLON.MeshBuilder.CreateLines('tl' + i, { points: [a, b] }, scene);
-      ln.color = lineColor; tensionLines.push(ln);
-    });
+    const lc = mode === 'constrained' ? new BABYLON.Color3(1, 0.6, 0) : new BABYLON.Color3(0, 1, 0.8);
+    pts.forEach(([a, b], i) => { const ln = BABYLON.MeshBuilder.CreateLines('tl'+i, { points: [a, b] }, scene); ln.color = lc; tensionLines.push(ln); });
   }
 
-  // ── Embodied stress particles ─────────────────────────────
+  // Embodied particles
   let sparks;
   if (mode === 'embodied') {
     sparks = new BABYLON.ParticleSystem('sparks', 300, scene);
     sparks.particleTexture = new BABYLON.Texture('https://www.babylonjs.com/assets/Flare.png', scene);
     sparks.emitter = head;
-    sparks.minEmitBox = new BABYLON.Vector3(-0.8, -1, -0.8);
-    sparks.maxEmitBox = new BABYLON.Vector3(0.8,  1,  0.8);
-    sparks.color1 = new BABYLON.Color4(1, 0.4, 0, 0.6);
-    sparks.color2 = new BABYLON.Color4(1, 0,   0.4, 0.3);
-    sparks.minSize = 0.02; sparks.maxSize = 0.07;
-    sparks.minLifeTime = 0.4; sparks.maxLifeTime = 1.4;
-    sparks.emitRate = 20;
-    sparks.direction1 = new BABYLON.Vector3(-0.5, 0.5, -0.5);
-    sparks.direction2 = new BABYLON.Vector3(0.5,  1.2,  0.5);
-    sparks.gravity = new BABYLON.Vector3(0, -0.3, 0);
-    sparks.start();
+    sparks.minEmitBox = new BABYLON.Vector3(-0.8,-1,-0.8); sparks.maxEmitBox = new BABYLON.Vector3(0.8,1,0.8);
+    sparks.color1 = new BABYLON.Color4(1,0.4,0,0.6); sparks.color2 = new BABYLON.Color4(1,0,0.4,0.3);
+    sparks.minSize = 0.02; sparks.maxSize = 0.07; sparks.minLifeTime = 0.4; sparks.maxLifeTime = 1.4;
+    sparks.emitRate = 20; sparks.direction1 = new BABYLON.Vector3(-0.5,0.5,-0.5); sparks.direction2 = new BABYLON.Vector3(0.5,1.2,0.5);
+    sparks.gravity = new BABYLON.Vector3(0,-0.3,0); sparks.start();
   }
 
-  // ── Animate ───────────────────────────────────────────────
+  // ── Animation loop ────────────────────────────────────────
   scene.registerBeforeRender(() => {
     const t = performance.now() * 0.001 * (animSpeed || 0.6);
+
+    // Lerp sliders toward brain targets each frame
+    tickBrainSliders();
+
+    // Read current slider values (after lerp)
     const smile   = slSmile.value   / 100;
     const browV   = slBrow.value    / 100;
     const jawV    = slJaw.value     / 100;
@@ -263,47 +471,44 @@ function buildScene(mode) {
     eyeL.scl.rotation.y = ey; eyeR.scl.rotation.y = ey;
     eyeL.pup.rotation.y = ey; eyeR.pup.rotation.y = ey;
 
-    // Blink
+    // Blink (natural, overridden by brain jaw-open state)
     const blink = Math.max(0, Math.sin(t * 4.5));
     eyeL.scl.scaling.y = 1 - blink * 0.65; eyeR.scl.scaling.y = 1 - blink * 0.65;
 
-    // Cheek / smile
+    // Cheeks follow smile
     const smA = (Math.sin(t * 0.9) + 1) / 2;
-    const smB = smile * 0.35 + smA * 0.65;
+    const smB = smile * 0.5 + smA * 0.5;
     cheekL.scaling.y = 0.65 + smB * 0.22; cheekR.scaling.y = 0.65 + smB * 0.22;
 
-    // Jaw
-    jaw.rotation.x = jawV * 0.45 + Math.abs(Math.sin(t * 1.1)) * 0.07;
+    // Jaw (brain-driven for speech)
+    jaw.rotation.x = jawV * 0.45 + Math.abs(Math.sin(t * 1.1)) * 0.05;
 
     // Nose breathe
     nose.scaling.x = 1 + Math.sin(t * 0.5) * 0.04;
 
-    // Head sway
+    // Head micro-sway
     head.rotation.y = Math.sin(t * 0.3) * 0.1;
     head.rotation.z = Math.cos(t * 0.4) * 0.03;
-    jaw.rotation.y = head.rotation.y;
+    jaw.rotation.y  = head.rotation.y;
 
-    // Morph targets
+    // FACS morphs
     if (smileTarget) smileTarget.influence = smB;
     if (blinkTarget) blinkTarget.influence = blink;
     if (browTarget)  browTarget.influence  = browV;
 
-    // Tension lines alpha
-    tensionLines.forEach((ln, i) => {
-      ln.alpha = 0.3 + tensV * 0.7 * Math.abs(Math.sin(t * 1.5 + i));
-    });
+    // Tension lines
+    tensionLines.forEach((ln, i) => { ln.alpha = 0.3 + tensV * 0.7 * Math.abs(Math.sin(t * 1.5 + i)); });
 
     // Embodied particles
     if (sparks) sparks.emitRate = 10 + tensV * 90;
 
-    // Breathing scale
+    // Breathing
     head.scaling.y = 1 + Math.sin(t * 0.4) * 0.008;
 
-    // Stats
+    // FPS stat
     document.getElementById('sFps').textContent = Math.round(engine.getFps());
   });
 
-  // Count verts after build
   setTimeout(() => {
     let v = 0;
     scene.meshes.forEach(m => { try { v += m.getTotalVertices(); } catch(_) {} });
@@ -313,26 +518,29 @@ function buildScene(mode) {
   return scene;
 }
 
-// ── Init ──────────────────────────────────────────────────────
-let active = buildScene('procedural');
-engine.runRenderLoop(() => active && active.render());
-window.addEventListener('resize', () => engine.resize());
-
-function switchMode(mode) {
-  document.getElementById('mode-label').textContent = 'MODE: ' + mode.toUpperCase();
-  document.getElementById('sMode').textContent = mode;
+// ── Mode switching ────────────────────────────────────────────
+function switchMode(mode, updateBtn) {
+  currentMode = mode;
+  if (updateBtn !== false) {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  }
+  updateModeLabel(mode.toUpperCase() + ' · BRAIN IDLE');
   document.getElementById('sVerts').textContent = '--';
-  if (active) { active.dispose(); active = null; }
-  active = buildScene(mode);
+  if (activeScene) { activeScene.dispose(); activeScene = null; }
+  activeScene = buildScene(mode);
 }
 
 document.querySelectorAll('.mode-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    switchMode(btn.dataset.mode);
-  });
+  btn.addEventListener('click', () => switchMode(btn.dataset.mode));
 });
+
+// ── Boot ──────────────────────────────────────────────────────
+activeScene = buildScene('procedural');
+engine.runRenderLoop(() => activeScene && activeScene.render());
+window.addEventListener('resize', () => engine.resize());
+
+// Greet on load
+setTimeout(() => askBrain('hello'), 1200);
 </script>
 </body>
 </html>
