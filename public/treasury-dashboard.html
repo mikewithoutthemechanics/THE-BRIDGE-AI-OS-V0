@@ -37,6 +37,16 @@
     .pulse { animation: pulse 1.5s ease-in-out infinite alternate; }
     @keyframes pulse { from { opacity: 0.7; } to { opacity: 1; } }
     .refresh-bar { font-size: 0.7rem; color: #555; text-align: right; margin-bottom: 8px; }
+    @media(max-width:640px){
+      .dashboard{padding:14px 12px}
+      h1{font-size:1.3rem;margin-bottom:16px}
+      .grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+      .card{padding:14px}
+      .card .value{font-size:1.3rem}
+      th,td{padding:6px 8px;font-size:0.78rem}
+      .subscribe-form{flex-direction:column}
+      .subscribe-form button{width:100%}
+    }
   </style>
 </head>
 <body>
