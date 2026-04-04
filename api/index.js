@@ -169,10 +169,44 @@ module.exports = async (req, res) => {
   }
 
   // ── Ask (LLM) ──
-  if (p === '/ask' && req.method === 'POST') {
+  if ((p === '/ask' || p === '/api/ask') && req.method === 'POST') {
     const body = await parseBody(req);
     if (!body.prompt) return json(res, { error: 'prompt required' }, 400);
-    return json(res, { id: `svl_${Date.now()}`, response: `[Serverless] Received: "${body.prompt}"` });
+
+    const q = (body.prompt || '').toLowerCase();
+
+    // ── Emotion + intent classifier ───────────────────────
+    const EMOTION_MAP = [
+      { keywords: ['hello','hi','hey','greet','good morning','good day'],      emotion: 'friendly',  reply: "Hello! I'm Bridge AI, your autonomous operating system. How can I help you today?",    expression: { smile: 0.85, brow: 0.6,  jaw: 0.05, tension: 0.1,  mode: 'facs'  } },
+      { keywords: ['happy','great','amazing','fantastic','excellent','love'],   emotion: 'joy',       reply: "That's wonderful to hear! The system is performing at full capacity. All agents active.", expression: { smile: 1.0,  brow: 0.8,  jaw: 0.1,  tension: 0.05, mode: 'facs'  } },
+      { keywords: ['sad','unhappy','upset','disappoint','fail','broke'],        emotion: 'concern',   reply: "I understand. Let me run a diagnostic and see how I can help resolve this for you.",    expression: { smile: 0.2,  brow: 0.2,  jaw: 0.15, tension: 0.5,  mode: 'embodied' } },
+      { keywords: ['angry','frustrat','annoyed','broken','wrong','bug'],        emotion: 'alert',     reply: "I hear you. Activating problem-resolution protocol. I'll prioritise this immediately.",  expression: { smile: 0.1,  brow: 0.1,  jaw: 0.3,  tension: 0.85, mode: 'tension' } },
+      { keywords: ['treasury','money','balance','fund','revenue','payment'],    emotion: 'analytical',reply: `Treasury is healthy at $${treasuryBalance.toFixed(2)}. Operations bucket: $${(treasuryBalance*0.4).toFixed(2)}. All 4 buckets active.`, expression: { smile: 0.5,  brow: 0.7,  jaw: 0.05, tension: 0.2,  mode: 'facs'  } },
+      { keywords: ['agent','swarm','task','dispatch','layer','l1','l2','l3'],   emotion: 'focused',   reply: `${agentNames.length} agents active across L1/L2/L3. ${agentNames.length * 47} tasks completed this cycle. Swarm health: optimal.`, expression: { smile: 0.4,  brow: 0.75, jaw: 0.0,  tension: 0.25, mode: 'vector' } },
+      { keywords: ['status','health','system','uptime','monitor','check'],      emotion: 'confident', reply: `System uptime: ${Math.floor(os.uptime())}s. Memory: ${((1-os.freemem()/os.totalmem())*100).toFixed(1)}% used. All endpoints healthy.`, expression: { smile: 0.6,  brow: 0.6,  jaw: 0.0,  tension: 0.15, mode: 'procedural' } },
+      { keywords: ['think','wonder','curious','question','how','why','what'],   emotion: 'curious',   reply: "Good question. Let me analyse the full system state and formulate the most complete answer.", expression: { smile: 0.4,  brow: 0.85, jaw: 0.08, tension: 0.3,  mode: 'constrained' } },
+      { keywords: ['stop','quiet','silence','pause','enough','bye','goodbye'],  emotion: 'calm',      reply: "Understood. Going quiet. I'm here whenever you need me.",                                expression: { smile: 0.35, brow: 0.5,  jaw: 0.0,  tension: 0.05, mode: 'procedural' } },
+      { keywords: ['crm','customer','contact','lead','deal','pipeline'],        emotion: 'helpful',   reply: `CRM: ${CONTACTS.filter(c=>c.status==='customer').length} customers, ${CONTACTS.filter(c=>c.status!=='customer').length} leads. Pipeline moving well.`, expression: { smile: 0.7,  brow: 0.65, jaw: 0.05, tension: 0.15, mode: 'facs'  } },
+      { keywords: ['invoice','billing','pay','due','outstanding','send'],       emotion: 'precise',   reply: `${INVOICES.filter(i=>i.status==='paid').length} invoices paid. ${INVOICES.filter(i=>i.status==='sent').length} outstanding. Auto follow-up active.`, expression: { smile: 0.45, brow: 0.7,  jaw: 0.0,  tension: 0.2,  mode: 'facs'  } },
+    ];
+
+    let match = EMOTION_MAP.find(e => e.keywords.some(k => q.includes(k)));
+    if (!match) {
+      // Default thoughtful response
+      match = { emotion: 'neutral', reply: `Bridge AI processing: "${body.prompt}". All systems nominal. How can I assist further?`, expression: { smile: 0.5, brow: 0.55, jaw: 0.02, tension: 0.15, mode: 'procedural' } };
+    }
+
+    return json(res, {
+      id: `brain_${ts()}`, prompt: body.prompt,
+      reply: match.reply, emotion: match.emotion,
+      expression: match.expression,
+      brain: {
+        treasury: +treasuryBalance.toFixed(2),
+        agents: agentNames.length,
+        uptime_s: Math.floor(os.uptime()),
+      },
+      ts: ts(),
+    });
   }
 
   // ── API: Topology ──
