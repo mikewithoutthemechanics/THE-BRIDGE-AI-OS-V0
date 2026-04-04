@@ -618,15 +618,25 @@ module.exports = async (req, res) => {
 
   // ── /api/treasury (alias for treasury/summary) ──
   if (p === '/api/treasury') {
+    // Bucket names match treasury-dashboard.html expectations (ops/treasury/ubi/founder)
+    const recentTx = [
+      { timestamp: new Date(Date.now() - 3600000).toISOString(),  type: 'subscription', source: 'Patel Tech',       amount: 499, bucket: 'ops' },
+      { timestamp: new Date(Date.now() - 7200000).toISOString(),  type: 'subscription', source: 'Botha Digital',    amount: 49,  bucket: 'ops' },
+      { timestamp: new Date(Date.now() - 14400000).toISOString(), type: 'payout',       source: 'UBI Distribution', amount: -82, bucket: 'ubi' },
+      { timestamp: new Date(Date.now() - 28800000).toISOString(), type: 'subscription', source: 'Dlamini Group',    amount: 149, bucket: 'ops' },
+      { timestamp: new Date(Date.now() - 43200000).toISOString(), type: 'transfer',     source: 'Reserve Fund',     amount: 200, bucket: 'treasury' },
+      { timestamp: new Date(Date.now() - 86400000).toISOString(), type: 'subscription', source: 'Ndlovu Holdings',  amount: 149, bucket: 'ops' },
+    ];
     return json(res, {
       total: +treasuryBalance.toFixed(2), balance: +treasuryBalance.toFixed(2), currency: 'USD',
       buckets: [
-        { name: 'Operations', pct: 40, value: +(treasuryBalance * 0.4).toFixed(2) },
-        { name: 'Growth', pct: 25, value: +(treasuryBalance * 0.25).toFixed(2) },
-        { name: 'Reserve', pct: 20, value: +(treasuryBalance * 0.2).toFixed(2) },
-        { name: 'Founder', pct: 15, value: +(treasuryBalance * 0.15).toFixed(2) },
+        { name: 'ops',      label: 'Operations', pct: 40, balance: +(treasuryBalance * 0.4).toFixed(2),  value: +(treasuryBalance * 0.4).toFixed(2) },
+        { name: 'treasury', label: 'Growth',     pct: 25, balance: +(treasuryBalance * 0.25).toFixed(2), value: +(treasuryBalance * 0.25).toFixed(2) },
+        { name: 'ubi',      label: 'Reserve',    pct: 20, balance: +(treasuryBalance * 0.2).toFixed(2),  value: +(treasuryBalance * 0.2).toFixed(2) },
+        { name: 'founder',  label: 'Founder',    pct: 15, balance: +(treasuryBalance * 0.15).toFixed(2), value: +(treasuryBalance * 0.15).toFixed(2) },
       ],
-      payments_today: Math.floor(Math.random() * 10) + 2,
+      recent: recentTx,
+      payments_today: 6,
       status: 'healthy', ts: ts()
     });
   }
@@ -687,6 +697,382 @@ module.exports = async (req, res) => {
     return json(res, { balance: 5000, used_today: 127, limit: 10000, ts: ts() });
   }
 
+  // ── Seed data (deterministic — no Math.random on financial figures) ──────────
+  const CONTACTS = [
+    { id: 'c001', name: 'Sipho Ndlovu',    email: 'sipho@ndlovuholdings.co.za',  company: 'Ndlovu Holdings',    status: 'customer', plan: 'pro',        value: 149, stage: 'closed', joined: '2026-01-15' },
+    { id: 'c002', name: 'Priya Naidoo',    email: 'priya@techbridge.io',          company: 'TechBridge IO',      status: 'customer', plan: 'enterprise', value: 499, stage: 'closed', joined: '2026-01-22' },
+    { id: 'c003', name: 'Thabo Mokoena',   email: 'thabo@mokoena.co.za',          company: 'Mokoena Consulting', status: 'lead',     plan: 'pro',        value: 149, stage: 'proposal', joined: '2026-02-03' },
+    { id: 'c004', name: 'Zoe van der Berg',email: 'zoe@vdberg.co.za',             company: 'VDB Solutions',      status: 'customer', plan: 'starter',    value: 49,  stage: 'closed', joined: '2026-02-10' },
+    { id: 'c005', name: 'Kwame Asante',    email: 'kwame@asante.africa',          company: 'Asante Africa',      status: 'lead',     plan: 'enterprise', value: 499, stage: 'demo',   joined: '2026-02-18' },
+    { id: 'c006', name: 'Naledi Dlamini',  email: 'naledi@dlaminigroup.co.za',    company: 'Dlamini Group',      status: 'customer', plan: 'pro',        value: 149, stage: 'closed', joined: '2026-03-01' },
+    { id: 'c007', name: 'Reza Patel',      email: 'reza@pateltech.io',            company: 'Patel Tech',         status: 'customer', plan: 'enterprise', value: 499, stage: 'closed', joined: '2026-03-08' },
+    { id: 'c008', name: 'Amara Osei',      email: 'amara@oseiventures.com',       company: 'Osei Ventures',      status: 'lead',     plan: 'pro',        value: 149, stage: 'outreach', joined: '2026-03-15' },
+    { id: 'c009', name: 'Leilani Botha',   email: 'leilani@bothadigital.co.za',   company: 'Botha Digital',      status: 'customer', plan: 'starter',    value: 49,  stage: 'closed', joined: '2026-03-20' },
+    { id: 'c010', name: 'Jabu Khumalo',    email: 'jabu@khumalocorp.co.za',       company: 'Khumalo Corp',       status: 'prospect', plan: 'enterprise', value: 499, stage: 'identified', joined: '2026-04-01' },
+  ];
+
+  const INVOICES = [
+    { id: 'inv_001', client: 'Ndlovu Holdings',    email: 'sipho@ndlovuholdings.co.za',  amount: 149, currency: 'ZAR', status: 'paid',    due: '2026-03-15', issued: '2026-03-01', description: 'Bridge AI OS Pro — March 2026' },
+    { id: 'inv_002', client: 'TechBridge IO',       email: 'priya@techbridge.io',          amount: 499, currency: 'ZAR', status: 'paid',    due: '2026-03-20', issued: '2026-03-05', description: 'Bridge AI OS Enterprise — March 2026' },
+    { id: 'inv_003', client: 'VDB Solutions',        email: 'zoe@vdberg.co.za',             amount: 49,  currency: 'ZAR', status: 'paid',    due: '2026-03-25', issued: '2026-03-10', description: 'Bridge AI OS Starter — March 2026' },
+    { id: 'inv_004', client: 'Dlamini Group',        email: 'naledi@dlaminigroup.co.za',    amount: 149, currency: 'ZAR', status: 'paid',    due: '2026-04-01', issued: '2026-03-15', description: 'Bridge AI OS Pro — April 2026' },
+    { id: 'inv_005', client: 'Patel Tech',           email: 'reza@pateltech.io',            amount: 499, currency: 'ZAR', status: 'sent',    due: '2026-04-08', issued: '2026-03-22', description: 'Bridge AI OS Enterprise — April 2026' },
+    { id: 'inv_006', client: 'Botha Digital',        email: 'leilani@bothadigital.co.za',   amount: 49,  currency: 'ZAR', status: 'sent',    due: '2026-04-20', issued: '2026-04-01', description: 'Bridge AI OS Starter — April 2026' },
+    { id: 'inv_007', client: 'Mokoena Consulting',   email: 'thabo@mokoena.co.za',          amount: 149, currency: 'ZAR', status: 'draft',   due: '2026-04-30', issued: '2026-04-04', description: 'Bridge AI OS Pro — Onboarding' },
+    { id: 'inv_008', client: 'Asante Africa',        email: 'kwame@asante.africa',          amount: 499, currency: 'ZAR', status: 'draft',   due: '2026-05-01', issued: '2026-04-04', description: 'Bridge AI OS Enterprise — Demo Period' },
+  ];
+
+  const TICKETS = [
+    { id: 'tkt_001', subject: 'Treasury dashboard not refreshing', client: 'TechBridge IO',     email: 'priya@techbridge.io',        priority: 'high',   status: 'open',       created: '2026-04-02T08:12:00Z', agent: 'alpha' },
+    { id: 'tkt_002', subject: 'How do I add team members?',         client: 'VDB Solutions',      email: 'zoe@vdberg.co.za',           priority: 'medium', status: 'resolved',   created: '2026-04-01T14:30:00Z', agent: 'beta',  resolved: '2026-04-01T16:45:00Z' },
+    { id: 'tkt_003', subject: 'API rate limit hit on swarm',         client: 'Ndlovu Holdings',    email: 'sipho@ndlovuholdings.co.za', priority: 'high',   status: 'in_progress', created: '2026-04-03T09:00:00Z', agent: 'gamma' },
+    { id: 'tkt_004', subject: 'Invoice PDF not generating',          client: 'Dlamini Group',      email: 'naledi@dlaminigroup.co.za',  priority: 'medium', status: 'open',       created: '2026-04-03T11:15:00Z', agent: null },
+    { id: 'tkt_005', subject: 'Can I upgrade mid-cycle?',            client: 'Botha Digital',      email: 'leilani@bothadigital.co.za', priority: 'low',    status: 'resolved',   created: '2026-03-30T10:00:00Z', agent: 'delta', resolved: '2026-03-30T10:45:00Z' },
+    { id: 'tkt_006', subject: 'Leadgen pipeline stalled at nurture', client: 'Patel Tech',         email: 'reza@pateltech.io',          priority: 'high',   status: 'open',       created: '2026-04-04T07:30:00Z', agent: 'epsilon' },
+  ];
+
+  // ── /api/treasury/status ──
+  if (p === '/api/treasury/status') {
+    return json(res, {
+      balance: +treasuryBalance.toFixed(2), currency: 'ZAR',
+      status: 'healthy', last_updated: new Date().toISOString(),
+      buckets: [
+        { name: 'ops',      label: 'Operations', pct: 40, balance: +(treasuryBalance * 0.4).toFixed(2),  value: +(treasuryBalance * 0.4).toFixed(2) },
+        { name: 'treasury', label: 'Growth',     pct: 25, balance: +(treasuryBalance * 0.25).toFixed(2), value: +(treasuryBalance * 0.25).toFixed(2) },
+        { name: 'ubi',      label: 'Reserve',    pct: 20, balance: +(treasuryBalance * 0.2).toFixed(2),  value: +(treasuryBalance * 0.2).toFixed(2) },
+        { name: 'founder',  label: 'Founder',    pct: 15, balance: +(treasuryBalance * 0.15).toFixed(2), value: +(treasuryBalance * 0.15).toFixed(2) },
+      ],
+      ts: ts(),
+    });
+  }
+
+  // ── /api/analytics/summary ──
+  if (p === '/api/analytics/summary') {
+    const mrr = INVOICES.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+    const open = INVOICES.filter(i => i.status === 'sent').reduce((s, i) => s + i.amount, 0);
+    const agents = agentNames.length;
+    return json(res, {
+      mrr, open_invoices: open,
+      customers: CONTACTS.filter(c => c.status === 'customer').length,
+      leads:     CONTACTS.filter(c => c.status !== 'customer').length,
+      agents_active: agents,
+      tasks_processed: agents * 47,
+      treasury_balance: +treasuryBalance.toFixed(2),
+      uptime_s: os.uptime(),
+      memory_pct: +((1 - os.freemem() / os.totalmem()) * 100).toFixed(1),
+      last_24h: {
+        total: agents * 47 + 312,
+        routes: 18,
+      },
+      top_pages: [
+        { route: '/ui',                  hits: 847 },
+        { route: '/treasury-dashboard',  hits: 312 },
+        { route: '/aoe-dashboard',       hits: 289 },
+        { route: '/50-applications',     hits: 201 },
+        { route: '/system-status-dashboard', hits: 178 },
+      ],
+      ts: ts(),
+    });
+  }
+
+  // ── /api/tools ──
+  if (p === '/api/tools') {
+    const pkgs = listPackages();
+    return json(res, {
+      tools: [
+        { id: 'swarm',    name: 'Agent Swarm',     status: 'active', agents: agentNames.length },
+        { id: 'treasury', name: 'Treasury Engine',  status: 'active', balance: +treasuryBalance.toFixed(2) },
+        { id: 'crm',      name: 'CRM',              status: 'active', contacts: CONTACTS.length },
+        { id: 'leadgen',  name: 'LeadGen Pipeline', status: 'active', leads: CONTACTS.filter(c => c.status !== 'customer').length },
+        { id: 'invoicing',name: 'Invoicing',        status: 'active', open: INVOICES.filter(i => i.status !== 'paid').length },
+        { id: 'brain',    name: 'Central Brain',    status: 'active', uptime_s: os.uptime() },
+      ],
+      packages_installed: pkgs.length,
+      ts: ts(),
+    });
+  }
+
+  // ── /api/brain (central intelligence aggregator) ──
+  if (p === '/api/brain') {
+    const mrr = INVOICES.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+    return json(res, {
+      status: 'active',
+      treasury: { balance: +treasuryBalance.toFixed(2), currency: 'ZAR', status: 'healthy' },
+      agents:   { count: agentNames.length, active: agentNames.length, swarms: 2 },
+      crm:      { contacts: CONTACTS.length, customers: CONTACTS.filter(c => c.status === 'customer').length, leads: CONTACTS.filter(c => c.status !== 'customer').length },
+      revenue:  { mrr, open_invoices: INVOICES.filter(i => i.status === 'sent').length },
+      support:  { open_tickets: TICKETS.filter(t => t.status === 'open').length, in_progress: TICKETS.filter(t => t.status === 'in_progress').length },
+      system:   { uptime_s: os.uptime(), memory_pct: +((1 - os.freemem() / os.totalmem()) * 100).toFixed(1), cpu_cores: os.cpus().length, env: 'serverless' },
+      ts: ts(),
+    });
+  }
+
+  // ── /api/crm/* ──
+  if (p.startsWith('/api/crm')) {
+    const sub = p.replace('/api/crm', '') || '/';
+    if (sub === '/contacts' || sub === '/contacts/') {
+      if (req.method === 'POST') {
+        const body = await parseBody(req);
+        if (!body.name || !body.email) return json(res, { error: 'name and email required' }, 400);
+        const newContact = { id: `c${Date.now()}`, ...body, status: 'lead', stage: 'identified', joined: new Date().toISOString().slice(0, 10) };
+        return json(res, { contact: newContact, message: 'Contact created', ts: ts() }, 201);
+      }
+      return json(res, { contacts: CONTACTS, count: CONTACTS.length, ts: ts() });
+    }
+    if (sub === '/stats') {
+      const customers = CONTACTS.filter(c => c.status === 'customer');
+      const leads = CONTACTS.filter(c => c.status !== 'customer');
+      const mrr = customers.reduce((s, c) => s + (c.value || 0), 0);
+      return json(res, {
+        total_contacts: CONTACTS.length, customers: customers.length, leads: leads.length, prospects: leads.filter(c => c.status === 'prospect').length,
+        mrr, avg_deal_value: customers.length ? +(mrr / customers.length).toFixed(2) : 0,
+        pipeline_value: leads.reduce((s, c) => s + (c.value || 0), 0),
+        ts: ts(),
+      });
+    }
+    if (sub === '/leads') {
+      return json(res, { leads: CONTACTS.filter(c => c.status !== 'customer'), count: CONTACTS.filter(c => c.status !== 'customer').length, ts: ts() });
+    }
+    if (sub === '/campaigns') {
+      return json(res, {
+        campaigns: [
+          { id: 'camp_01', name: 'Q1 AI Automation Outreach', status: 'active',   sent: 320, opened: 148, replied: 42, converted: 7,  revenue: +(7 * 149).toFixed(2) },
+          { id: 'camp_02', name: 'Enterprise Decision Makers', status: 'active',   sent: 85,  opened: 61,  replied: 18, converted: 3,  revenue: +(3 * 499).toFixed(2) },
+          { id: 'camp_03', name: 'SME Starter Push',           status: 'complete', sent: 500, opened: 210, replied: 89, converted: 21, revenue: +(21 * 49).toFixed(2)  },
+          { id: 'camp_04', name: 'Q2 Re-engagement',           status: 'draft',    sent: 0,   opened: 0,   replied: 0,  converted: 0,  revenue: 0 },
+        ],
+        ts: ts(),
+      });
+    }
+    return json(res, { error: 'unknown_crm_endpoint', sub }, 404);
+  }
+
+  // ── /api/outreach/stats ──
+  if (p === '/api/outreach/stats') {
+    return json(res, {
+      emails_sent: 905, emails_opened: 419, open_rate_pct: 46.3,
+      replies: 149, reply_rate_pct: 16.5,
+      demos_booked: 28, deals_closed: 31,
+      pipeline_value: CONTACTS.filter(c => c.status !== 'customer').reduce((s, c) => s + (c.value || 0), 0),
+      ts: ts(),
+    });
+  }
+
+  // ── /api/leadgen/* ──
+  if (p.startsWith('/api/leadgen')) {
+    const sub = p.replace('/api/leadgen', '') || '/';
+    if (sub === '/auto-prospect' && req.method === 'POST') {
+      const body = await parseBody(req);
+      return json(res, {
+        id: `prospect_${ts()}`,
+        status: 'queued',
+        target: body.target || 'SME technology companies ZA',
+        agent: 'epsilon',
+        estimated_leads: 25,
+        queued_at: new Date().toISOString(),
+        ts: ts(),
+      });
+    }
+    if (sub === '/auto-nurture' && req.method === 'POST') {
+      const body = await parseBody(req);
+      return json(res, {
+        id: `nurture_${ts()}`,
+        status: 'dispatched',
+        lead_id: body.lead_id || 'c003',
+        sequence: ['intro_email', 'follow_up_1', 'demo_invite', 'follow_up_2', 'close_offer'],
+        next_touch: new Date(Date.now() + 86400000).toISOString(),
+        agent: 'zeta',
+        ts: ts(),
+      });
+    }
+    if (sub === '/auto-close' && req.method === 'POST') {
+      const body = await parseBody(req);
+      return json(res, {
+        id: `close_${ts()}`,
+        status: 'initiated',
+        lead_id: body.lead_id || 'c005',
+        offer: { plan: 'pro', price: 149, trial_days: 14 },
+        agent: 'eta',
+        ts: ts(),
+      });
+    }
+    // GET — pipeline summary
+    return json(res, {
+      pipeline: CONTACTS.filter(c => c.status !== 'customer').map(c => ({ id: c.id, name: c.name, company: c.company, stage: c.stage, value: c.value })),
+      stages: { identified: 1, outreach: 1, demo: 1, proposal: 1 },
+      total_pipeline_value: CONTACTS.filter(c => c.status !== 'customer').reduce((s, c) => s + (c.value || 0), 0),
+      ts: ts(),
+    });
+  }
+
+  // ── /api/marketing/* ──
+  if (p.startsWith('/api/marketing')) {
+    const sub = p.replace('/api/marketing', '') || '/';
+    const rev = INVOICES.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+    if (sub === '/funnel') {
+      return json(res, {
+        stages: [
+          { name: 'Awareness',    visitors: 4200, pct: 100 },
+          { name: 'Interest',     visitors: 1890, pct: 45  },
+          { name: 'Consideration',visitors: 630,  pct: 15  },
+          { name: 'Intent',       visitors: 210,  pct: 5   },
+          { name: 'Conversion',   visitors: 63,   pct: 1.5 },
+        ],
+        conversion_rate_pct: 1.5, cac: +(rev * 0.12 / Math.max(CONTACTS.filter(c => c.status === 'customer').length, 1)).toFixed(2), ltv: +(rev * 3.2 / Math.max(CONTACTS.filter(c => c.status === 'customer').length, 1)).toFixed(2),
+        ts: ts(),
+      });
+    }
+    if (sub === '/seo') {
+      return json(res, {
+        organic_sessions: 1840, keywords_ranking: 47, avg_position: 14.2,
+        top_keywords: [
+          { keyword: 'AI business automation South Africa', position: 3,  volume: 320 },
+          { keyword: 'autonomous operating system',         position: 7,  volume: 210 },
+          { keyword: 'AI CRM South Africa',                position: 11, volume: 480 },
+          { keyword: 'bridge AI OS',                       position: 1,  volume: 95  },
+        ],
+        domain_authority: 32, backlinks: 184, ts: ts(),
+      });
+    }
+    if (sub === '/social') {
+      return json(res, {
+        platforms: [
+          { name: 'LinkedIn',  followers: 1240, posts_mtd: 12, engagement_pct: 4.8, leads_generated: 14 },
+          { name: 'Twitter/X', followers: 680,  posts_mtd: 28, engagement_pct: 2.1, leads_generated: 5  },
+          { name: 'YouTube',   followers: 310,  posts_mtd: 4,  engagement_pct: 6.3, leads_generated: 8  },
+        ],
+        total_reach: 2230, total_leads: 27, ts: ts(),
+      });
+    }
+    if (sub === '/email') {
+      return json(res, {
+        subscribers: 2840, active: 2310, unsubscribed: 530,
+        sequences: [
+          { name: 'Welcome Series',    emails: 5, open_rate_pct: 58.2, click_rate_pct: 18.4 },
+          { name: 'Nurture Drip',      emails: 8, open_rate_pct: 42.1, click_rate_pct: 9.8  },
+          { name: 'Re-engagement',     emails: 3, open_rate_pct: 22.3, click_rate_pct: 5.1  },
+          { name: 'Upsell Enterprise', emails: 4, open_rate_pct: 51.7, click_rate_pct: 21.0 },
+        ],
+        revenue_attributed: +(rev * 0.35).toFixed(2), ts: ts(),
+      });
+    }
+    if (sub === '/campaign' && req.method === 'POST') {
+      const body = await parseBody(req);
+      if (!body.name) return json(res, { error: 'campaign name required' }, 400);
+      return json(res, {
+        id: `camp_${ts()}`, name: body.name, status: 'draft',
+        created_at: new Date().toISOString(), agent: 'theta', ts: ts(),
+      }, 201);
+    }
+    return json(res, { error: 'unknown_marketing_endpoint', sub }, 404);
+  }
+
+  // ── /api/tickets/* ──
+  if (p.startsWith('/api/tickets')) {
+    const ticketMatch = p.match(/^\/api\/tickets\/([^\/]+)\/reply$/);
+    if (ticketMatch && req.method === 'POST') {
+      const body = await parseBody(req);
+      if (!body.message) return json(res, { error: 'message required' }, 400);
+      return json(res, {
+        id: `reply_${ts()}`, ticket_id: ticketMatch[1],
+        message: body.message, agent: body.agent || 'alpha',
+        sent_at: new Date().toISOString(), ts: ts(),
+      }, 201);
+    }
+    if (p === '/api/tickets' && req.method === 'POST') {
+      const body = await parseBody(req);
+      if (!body.subject) return json(res, { error: 'subject required' }, 400);
+      return json(res, {
+        id: `tkt_${ts()}`, subject: body.subject,
+        client: body.client || 'Unknown', email: body.email || '',
+        priority: body.priority || 'medium', status: 'open',
+        created: new Date().toISOString(), agent: null, ts: ts(),
+      }, 201);
+    }
+    // GET /api/tickets
+    const stats = { open: TICKETS.filter(t => t.status === 'open').length, in_progress: TICKETS.filter(t => t.status === 'in_progress').length, resolved: TICKETS.filter(t => t.status === 'resolved').length };
+    return json(res, { tickets: TICKETS, count: TICKETS.length, stats, ts: ts() });
+  }
+
+  // ── /api/invoices/* ──
+  if (p.startsWith('/api/invoices')) {
+    const invoicePathMatch = p.match(/^\/api\/invoices\/([^\/]+)\/status$/);
+    if (invoicePathMatch && (req.method === 'PUT' || req.method === 'POST')) {
+      const body = await parseBody(req);
+      return json(res, { id: invoicePathMatch[1], status: body.status || 'sent', updated_at: new Date().toISOString(), ts: ts() });
+    }
+    if (p === '/api/invoices/ai-generate' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const contact = CONTACTS.find(c => c.id === body.contact_id) || CONTACTS[0];
+      return json(res, {
+        id: `inv_${ts()}`, client: contact.company, email: contact.email,
+        amount: contact.value || 149, currency: 'ZAR',
+        description: `Bridge AI OS ${contact.plan || 'Pro'} — ${new Date().toLocaleString('en-ZA', { month: 'long', year: 'numeric' })}`,
+        status: 'draft', line_items: [
+          { description: `Bridge AI OS ${contact.plan || 'Pro'}`, qty: 1, unit_price: contact.value || 149 },
+        ],
+        generated_by: 'ai', ts: ts(),
+      }, 201);
+    }
+    if (p === '/api/invoices/smart-create' && req.method === 'POST') {
+      const body = await parseBody(req);
+      return json(res, {
+        id: `inv_${ts()}`, ...body,
+        status: 'draft', currency: body.currency || 'ZAR',
+        issued: new Date().toISOString().slice(0, 10),
+        created_by: 'smart-create', ts: ts(),
+      }, 201);
+    }
+    if (p === '/api/invoices/send' && req.method === 'POST') {
+      const body = await parseBody(req);
+      if (!body.invoice_id) return json(res, { error: 'invoice_id required' }, 400);
+      return json(res, { invoice_id: body.invoice_id, status: 'sent', sent_at: new Date().toISOString(), ts: ts() });
+    }
+    if (p === '/api/invoices/follow-up' && req.method === 'POST') {
+      const body = await parseBody(req);
+      return json(res, { invoice_id: body.invoice_id, follow_up_sent: true, method: 'email', ts: ts() });
+    }
+    // GET /api/invoices
+    const paid   = INVOICES.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+    const outstanding = INVOICES.filter(i => i.status === 'sent').reduce((s, i) => s + i.amount, 0);
+    return json(res, { invoices: INVOICES, count: INVOICES.length, paid_total: paid, outstanding_total: outstanding, ts: ts() });
+  }
+
+  // ── /api/subscribe ──
+  if (p === '/api/subscribe' && req.method === 'POST') {
+    const body = await parseBody(req);
+    // Support both email-only newsletter signups (no plan) and plan-based subscriptions
+    if (!body.plan) {
+      // Newsletter / update subscription (email-only)
+      return json(res, { ok: true, type: 'newsletter', email: body.email || 'anonymous', ts: ts() }, 201);
+    }
+    const plans = { starter: 49, pro: 149, enterprise: 499 };
+    const price = plans[body.plan];
+    if (!price) return json(res, { error: 'invalid plan — use starter|pro|enterprise' }, 400);
+    const subId = `sub_${ts()}`;
+    treasuryBalance += price;
+    return json(res, {
+      ok: true,
+      subscription_id: subId, plan: body.plan, price, currency: 'ZAR',
+      status: 'active', started_at: new Date().toISOString(),
+      treasury_balance: +treasuryBalance.toFixed(2), ts: ts(),
+    }, 201);
+  }
+
   // ── 404 ──
-  return json(res, { error: 'not_found', path: p, available: ['/health', '/api/health', '/api/topology', '/api/avatar/{mode}', '/api/registry/{ns}', '/api/marketplace/{section}', '/api/status', '/api/agents', '/api/contracts', '/api/treasury', '/api/treasury/ledger', '/api/treasury/summary', '/api/treasury/payments', '/api/swarm/agents', '/api/swarm/health', '/api/swarm/matrix', '/api/economics', '/api/credits', '/api/ehsa/dashboard', '/api/events/recent', '/api/agents/dispatch', '/api/agents/queue', '/api/marketplace/tasks/create', '/api/users', '/orchestrator/status', '/billing', '/auth/register', '/auth/login', '/auth/verify', '/referral/claim'] }, 404);
+  return json(res, { error: 'not_found', path: p, available: [
+    '/health', '/api/health', '/api/brain', '/api/topology', '/api/avatar/{mode}',
+    '/api/registry/{ns}', '/api/marketplace/{section}', '/api/status', '/api/agents',
+    '/api/contracts', '/api/treasury', '/api/treasury/status', '/api/treasury/ledger',
+    '/api/treasury/summary', '/api/treasury/payments', '/api/analytics/summary',
+    '/api/swarm/agents', '/api/swarm/health', '/api/swarm/matrix', '/api/economics',
+    '/api/credits', '/api/ehsa/dashboard', '/api/events/recent', '/api/agents/dispatch',
+    '/api/agents/queue', '/api/tools', '/api/crm/contacts', '/api/crm/stats',
+    '/api/crm/leads', '/api/crm/campaigns', '/api/outreach/stats', '/api/leadgen',
+    '/api/leadgen/auto-prospect', '/api/leadgen/auto-nurture', '/api/leadgen/auto-close',
+    '/api/marketing/funnel', '/api/marketing/seo', '/api/marketing/social',
+    '/api/marketing/email', '/api/marketing/campaign', '/api/tickets', '/api/invoices',
+    '/api/subscribe', '/api/users', '/orchestrator/status', '/billing',
+    '/auth/register', '/auth/login', '/auth/verify', '/referral/claim',
+  ] }, 404);
 };
