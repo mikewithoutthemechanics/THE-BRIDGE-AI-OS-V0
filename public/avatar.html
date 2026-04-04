@@ -113,6 +113,32 @@
   }
 
   canvas { width: 100%; height: 100%; display: block; }
+
+  /* ── Neuro HUD ── */
+  #neuro-hud {
+    position: fixed; top: 54px; left: 14px; z-index: 20;
+    background: rgba(6,8,16,0.88); backdrop-filter: blur(10px);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; min-width: 170px; display: flex; flex-direction: column; gap: 5px;
+  }
+  .nh-row { display: flex; align-items: center; gap: 6px; }
+  .nh-label { font-size: 10px; font-family: monospace; color: var(--cyan); width: 10px; }
+  .nh-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .nh-fill { height: 100%; background: var(--cyan); border-radius: 2px; transition: width 1s ease; }
+  .nh-fill.nd-s { background: #7b5ea7; }
+  .nh-fill.nd-o { background: #00ffc8; }
+  .nh-fill.nd-e { background: #ffd166; }
+  .nh-val { font-size: 9px; font-family: monospace; color: var(--muted); width: 34px; text-align: right; }
+  .nh-state { font-size: 9px; font-family: monospace; color: var(--muted); display: flex; gap: 8px; margin-top: 2px; }
+  .nh-state #nhCog { color: var(--cyan); }
+  .nh-state #nhState { color: #ffd166; }
+  .nh-boost {
+    margin-top: 4px; padding: 5px 10px; background: rgba(0,255,200,0.1);
+    border: 1px solid rgba(0,255,200,0.3); border-radius: 6px;
+    color: var(--cyan); font-size: 10px; font-weight: 700; cursor: pointer;
+    letter-spacing: 1px; transition: all 0.2s;
+  }
+  .nh-boost:hover { background: rgba(0,255,200,0.2); border-color: var(--cyan); }
 </style>
 </head>
 <body>
@@ -131,6 +157,16 @@
 
 <div id="mode-label">PROCEDURAL · BRAIN IDLE</div>
 <canvas id="renderCanvas"></canvas>
+
+<!-- ── Neuro HUD ── -->
+<div id="neuro-hud">
+  <div class="nh-row"><span class="nh-label">D</span><div class="nh-bar"><div class="nh-fill" id="nbD" style="width:0.7%"></div></div><span class="nh-val" id="nvD">0.007</span></div>
+  <div class="nh-row"><span class="nh-label">S</span><div class="nh-bar"><div class="nh-fill nd-s" id="nbS" style="width:5.1%"></div></div><span class="nh-val" id="nvS">0.051</span></div>
+  <div class="nh-row"><span class="nh-label">O</span><div class="nh-bar"><div class="nh-fill nd-o" id="nbO" style="width:48.5%"></div></div><span class="nh-val" id="nvO">0.485</span></div>
+  <div class="nh-row"><span class="nh-label">E</span><div class="nh-bar"><div class="nh-fill nd-e" id="nbE" style="width:78.3%"></div></div><span class="nh-val" id="nvE">0.783</span></div>
+  <div class="nh-state"><span id="nhCog">C(t) 0.2518</span> <span id="nhState">|O⟩ Oxytocin</span></div>
+  <button class="nh-boost" onclick="boostCognition()">⚡ BOOST COGNITION</button>
+</div>
 
 <!-- ── Chat overlay ── -->
 <div id="chat" class="hidden">
@@ -229,6 +265,7 @@ async function askBrain(prompt) {
       brain.tension = Math.round((data.expression.tension || 0.15) * 100);
       if (data.expression.mode) switchMode(data.expression.mode, false);
     }
+    if (data.neuro) updateNeuroHUD(data.neuro);
     const reply = data.reply || data.response || 'Brain online.';
     showChat(prompt, reply, data.emotion || 'neutral');
     speak(reply);
@@ -316,6 +353,60 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
   micBtn.title = 'Speech recognition not supported in this browser';
   micBtn.style.opacity = '0.4';
 }
+
+// ── Neuro HUD update ──────────────────────────────────────────
+function updateNeuroHUD(n) {
+  if (!n) return;
+  const stateLabels = { D: 'Dopamine', S: 'Serotonin', O: 'Oxytocin', E: 'Endorphins' };
+  ['D','S','O','E'].forEach(k => {
+    const v = n[k] || 0;
+    const bar = document.getElementById('nb' + k);
+    const val = document.getElementById('nv' + k);
+    if (bar) bar.style.width = (v * 100).toFixed(1) + '%';
+    if (val) val.textContent = v.toFixed(3);
+  });
+  const cog = document.getElementById('nhCog');
+  const st  = document.getElementById('nhState');
+  if (cog) cog.textContent = 'C(t) ' + (n.cognition || 0).toFixed(4);
+  if (st && n.state) {
+    const dom = (n.state || '').replace(/\|(\w)\⟩/, '$1');
+    const label = stateLabels[dom] || dom;
+    st.textContent = (n.state || '') + ' ' + label;
+  }
+  // Map neuro to brain targets for face
+  if (typeof n.O !== 'undefined') {
+    brain.smile   = Math.round(Math.min(100, (n.O * 1.2 + (n.E||0) * 0.3) * 100));
+    brain.brow    = Math.round(Math.min(100, ((n.cognition||0) * 2) * 100));
+    brain.tension = Math.round(Math.max(0,  (1 - (n.S||0) - (n.O||0) * 0.4) * 100));
+  }
+}
+
+async function pollNeuro() {
+  try {
+    const r = await fetch('/api/neuro');
+    const d = await r.json();
+    updateNeuroHUD(d);
+  } catch(_) {}
+}
+
+async function boostCognition() {
+  try {
+    const r = await fetch('/api/neuro', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ boost: 'cognition' })
+    });
+    const d = await r.json();
+    updateNeuroHUD(d);
+    brain.brow = 85; brain.smile = 70;
+    updateModeLabel(currentMode.toUpperCase() + ' · COGNITION BOOST');
+    speak('Cognition boosted. Dopamine and serotonin elevated. System at peak performance.');
+    setTimeout(() => pollNeuro(), 2000);
+  } catch(_) {}
+}
+
+// Poll neuro every 15s
+pollNeuro();
+setInterval(pollNeuro, 15000);
 
 // Text input
 const typeInput = document.getElementById('typeInput');

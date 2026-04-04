@@ -89,8 +89,41 @@ const AVATAR_MODES = {
 };
 
 // ── Route handlers ──────────────────────────────────────────────────────────
-const agentNames = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta'];
-let treasuryBalance = 137284.50;
+// Live system state (as at 2026-04-04)
+const agentNames = [
+  'QuoteGen AI', 'Finance AI', 'Growth Hunter', 'Intelligence AI', 'Nurture AI',
+  'Closer AI', 'Campaign AI', 'Creative AI', 'Support AI', 'Supply AI'
+];
+let treasuryBalance = 1389208.00;
+const CYCLE_COUNT   = 2697;
+const REVENUE_TOTAL = 541225.00;
+
+// ── Neurochemistry model ─────────────────────────────────────────────────────
+// C(t) = 0.4D + 0.2S + 0.25O + 0.15E
+let neuro = {
+  D: 0.007,   // Dopamine
+  S: 0.051,   // Serotonin
+  O: 0.485,   // Oxytocin
+  E: 0.783,   // Endorphins
+};
+function computeCognition(n) {
+  return +(0.4 * n.D + 0.2 * n.S + 0.25 * n.O + 0.15 * n.E).toFixed(4);
+}
+function dominantState(n) {
+  const vals = { D: n.D, S: n.S, O: n.O, E: n.E };
+  return Object.entries(vals).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+// ── Live funnel state ────────────────────────────────────────────────────────
+const FUNNEL = {
+  osint_discovery: 100,
+  lead_generated:  200,
+  nurturing:       28,
+  qualified:       0,
+  proposal_sent:   0,
+  closed_won:      436,
+  customer:        129,
+};
 
 // Auth store (ephemeral per cold start — acceptable for serverless demo)
 const authUsers = new Map();
@@ -192,18 +225,35 @@ module.exports = async (req, res) => {
 
     let match = EMOTION_MAP.find(e => e.keywords.some(k => q.includes(k)));
     if (!match) {
-      // Default thoughtful response
-      match = { emotion: 'neutral', reply: `Bridge AI processing: "${body.prompt}". All systems nominal. How can I assist further?`, expression: { smile: 0.5, brow: 0.55, jaw: 0.02, tension: 0.15, mode: 'procedural' } };
+      match = { emotion: 'neutral', reply: `Bridge AI processing: "${body.prompt}". Treasury: $${(treasuryBalance/1e6).toFixed(2)}M. Cycle: ${CYCLE_COUNT}. Cognition: ${computeCognition(neuro)}. How can I assist?`, expression: { smile: 0.5, brow: 0.55, jaw: 0.02, tension: 0.15, mode: 'procedural' } };
     }
+
+    // Blend expression with current neurochemistry
+    const nExpr = {
+      smile:   +Math.min(1, neuro.O * 1.2 + neuro.E * 0.3).toFixed(2),
+      brow:    +Math.min(1, computeCognition(neuro) * 2).toFixed(2),
+      tension: +Math.max(0, 1 - neuro.S - neuro.O * 0.4).toFixed(2),
+    };
+    const blended = {
+      smile:   +((match.expression.smile * 0.6 + nExpr.smile * 0.4)).toFixed(2),
+      brow:    +((match.expression.brow  * 0.6 + nExpr.brow  * 0.4)).toFixed(2),
+      jaw:     match.expression.jaw,
+      tension: +((match.expression.tension * 0.6 + nExpr.tension * 0.4)).toFixed(2),
+      mode:    match.expression.mode,
+    };
+
+    // Update neuro on interaction (conversation boosts oxytocin + serotonin slightly)
+    neuro.O = Math.min(1, neuro.O + 0.008);
+    neuro.S = Math.min(1, neuro.S + 0.004);
 
     return json(res, {
       id: `brain_${ts()}`, prompt: body.prompt,
       reply: match.reply, emotion: match.emotion,
-      expression: match.expression,
+      expression: blended,
+      neuro: { D: +neuro.D.toFixed(4), S: +neuro.S.toFixed(4), O: +neuro.O.toFixed(4), E: +neuro.E.toFixed(4), cognition: computeCognition(neuro), state: `|${dominantState(neuro)}⟩` },
       brain: {
-        treasury: +treasuryBalance.toFixed(2),
-        agents: agentNames.length,
-        uptime_s: Math.floor(os.uptime()),
+        treasury: +treasuryBalance.toFixed(2), cycle: CYCLE_COUNT, revenue: REVENUE_TOTAL,
+        agents: agentNames.length, uptime_s: Math.floor(os.uptime()),
       },
       ts: ts(),
     });
@@ -827,15 +877,65 @@ module.exports = async (req, res) => {
     });
   }
 
+  // ── /api/neuro ──
+  if (p === '/api/neuro') {
+    const ct = computeCognition(neuro);
+    const dom = dominantState(neuro);
+    const stateLabels = { D: 'Dopamine', S: 'Serotonin', O: 'Oxytocin', E: 'Endorphins' };
+    if (req.method === 'POST') {
+      const body = await parseBody(req);
+      if (body.boost) {
+        const delta = 0.05;
+        if (body.boost === 'dopamine')    neuro.D = Math.min(1, neuro.D + delta * 2);
+        if (body.boost === 'serotonin')   neuro.S = Math.min(1, neuro.S + delta);
+        if (body.boost === 'oxytocin')    neuro.O = Math.min(1, neuro.O + delta);
+        if (body.boost === 'endorphins')  neuro.E = Math.min(1, neuro.E + delta);
+        if (body.boost === 'cognition') { neuro.D = Math.min(1, neuro.D + 0.04); neuro.S = Math.min(1, neuro.S + 0.03); }
+      }
+    }
+    return json(res, {
+      D: +neuro.D.toFixed(4), S: +neuro.S.toFixed(4), O: +neuro.O.toFixed(4), E: +neuro.E.toFixed(4),
+      cognition: computeCognition(neuro),
+      state: `|${dom}⟩ ${stateLabels[dom]}`,
+      dominant: dom,
+      formula: 'C(t) = 0.4D + 0.2S + 0.25O + 0.15E',
+      expression: {
+        smile:   +Math.min(1, neuro.O * 1.2 + neuro.E * 0.4).toFixed(2),
+        brow:    +Math.min(1, neuro.D * 3 + computeCognition(neuro)).toFixed(2),
+        jaw:     +(neuro.D * 0.2).toFixed(2),
+        tension: +Math.max(0, 1 - neuro.S - neuro.O * 0.5).toFixed(2),
+        mode:    neuro.O > 0.4 ? 'facs' : neuro.D > 0.3 ? 'tension' : neuro.E > 0.5 ? 'embodied' : 'procedural',
+      },
+      ts: ts(),
+    });
+  }
+
+  // ── /api/funnel ──
+  if (p === '/api/funnel') {
+    return json(res, { funnel: FUNNEL, cycle: CYCLE_COUNT, osint: FUNNEL.osint_discovery, ts: ts() });
+  }
+
   // ── /api/brain (central intelligence aggregator) ──
   if (p === '/api/brain') {
     const mrr = INVOICES.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+    const ct = computeCognition(neuro);
+    const dom = dominantState(neuro);
     return json(res, {
       status: 'active',
-      treasury: { balance: +treasuryBalance.toFixed(2), currency: 'ZAR', status: 'healthy' },
-      agents:   { count: agentNames.length, active: agentNames.length, swarms: 2 },
+      treasury: {
+        balance: +treasuryBalance.toFixed(2), currency: 'ZAR', status: 'healthy',
+        buckets: [
+          { name: 'ops',      label: 'Operations', pct: 40, balance: +(treasuryBalance*0.4).toFixed(2) },
+          { name: 'treasury', label: 'Growth',     pct: 25, balance: +(treasuryBalance*0.25).toFixed(2) },
+          { name: 'ubi',      label: 'Reserve',    pct: 20, balance: +(treasuryBalance*0.2).toFixed(2) },
+          { name: 'founder',  label: 'Founder',    pct: 15, balance: +(treasuryBalance*0.15).toFixed(2) },
+        ],
+      },
+      agents:   { count: agentNames.length, active: agentNames.length, names: agentNames, swarms: 2 },
       crm:      { contacts: CONTACTS.length, customers: CONTACTS.filter(c => c.status === 'customer').length, leads: CONTACTS.filter(c => c.status !== 'customer').length },
-      revenue:  { mrr, open_invoices: INVOICES.filter(i => i.status === 'sent').length },
+      revenue:  { total: REVENUE_TOTAL, mrr, cycle: CYCLE_COUNT, open_invoices: INVOICES.filter(i => i.status === 'sent').length },
+      funnel:   FUNNEL,
+      neuro:    { D: +neuro.D.toFixed(4), S: +neuro.S.toFixed(4), O: +neuro.O.toFixed(4), E: +neuro.E.toFixed(4), cognition: ct, state: `|${dom}⟩` },
       support:  { open_tickets: TICKETS.filter(t => t.status === 'open').length, in_progress: TICKETS.filter(t => t.status === 'in_progress').length },
       system:   { uptime_s: os.uptime(), memory_pct: +((1 - os.freemem() / os.totalmem()) * 100).toFixed(1), cpu_cores: os.cpus().length, env: 'serverless' },
       ts: ts(),
