@@ -70,7 +70,8 @@ let econCycle = 0;
 let econActive = true;
 
 // ── ECONOMY LOOP ────────────────────────────────────────────────────────────
-function economyLoop(state, broadcast) {
+// Async: treasury credit must await SQLite commit before loop continues (𝓛₁)
+async function economyLoop(state, broadcast) {
   if (!econActive) return;
   econCycle++;
   const t0 = Date.now();
@@ -142,9 +143,20 @@ function economyLoop(state, broadcast) {
 
   // TREASURY DEPOSIT
   if (netValue > 0) {
-    state.treasury.balance += netValue;
-    state.treasury.earned += netValue;
     accumulation.total_in += netValue;
+
+    // 𝓛₁ TUNNEL + 𝓛₂ GATEKEEPER: atomic SQLite commit, idempotent on retry
+    const ikey = crypto.createHash('sha256')
+      .update('econ_cycle_' + econCycle + '_' + netValue.toFixed(8))
+      .digest('hex').slice(0, 32);
+    await require('./supaclaw-core.js').getCore().treasuryCredit(
+      +netValue.toFixed(8), 'economy_cycle_net', ikey
+    );
+
+    // Read-only mirror: derived state only, never source of truth
+    const committed = require('./supaclaw-core.js').getCore().read('treasury', { balance: 0, earned: 0 });
+    state.treasury.balance = committed.balance;
+    state.treasury.earned  = committed.earned;
   }
 
   // LIQUIDITY COMPOUND
@@ -208,8 +220,9 @@ function economyLoop(state, broadcast) {
 // ── REGISTER ROUTES ─────────────────────────────────────────────────────────
 module.exports = function registerEconomyEngine(app, state, broadcast) {
 
+  // economyLoop is async -- catch both sync throws and rejected Promises
   setInterval(() => {
-    try { economyLoop(state, broadcast); } catch (e) { console.error('[ECON] Loop error:', e.message); }
+    economyLoop(state, broadcast).catch(e => console.error('[ECON] Loop error:', e.message));
   }, 9000); // 9s interval (offset from 5s supaclaw + 7s abaas)
   console.log('[ECON] Compound economy engine started (9s interval)');
 

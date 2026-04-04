@@ -94,7 +94,8 @@ function decide(opportunity) {
 }
 
 // ── MASTER CONTROL LOOP ─────────────────────────────────────────────────────
-function masterLoop(state, broadcast) {
+// Async: treasury credit must await SQLite commit before loop continues (𝓛₁)
+async function masterLoop(state, broadcast) {
   if (!runtime.active) return;
 
   const t0 = Date.now();
@@ -190,8 +191,19 @@ function masterLoop(state, broadcast) {
   // L4: CAPTURE VALUE + DISTRIBUTE
   if (cycle_revenue > 0) {
     runtime.total_revenue += cycle_revenue;
-    state.treasury.balance += cycle_revenue;
-    state.treasury.earned += cycle_revenue;
+
+    // 𝓛₁ TUNNEL + 𝓛₂ GATEKEEPER: atomic SQLite commit, idempotent on retry
+    const ikey = crypto.createHash('sha256')
+      .update('sc_cycle_' + runtime.cycle + '_' + cycle_revenue.toFixed(8))
+      .digest('hex').slice(0, 32);
+    await require('./supaclaw-core.js').getCore().treasuryCredit(
+      +cycle_revenue.toFixed(8), 'supaclaw_cycle_revenue', ikey
+    );
+
+    // Read-only mirror: derived state only, never source of truth
+    const committed = require('./supaclaw-core.js').getCore().read('treasury', { balance: 0, earned: 0 });
+    state.treasury.balance = committed.balance;
+    state.treasury.earned  = committed.earned;
 
     // Distribution: 30% UBI, 40% reinvest, 30% reserve
     const ubi = cycle_revenue * 0.30;
@@ -235,8 +247,9 @@ function masterLoop(state, broadcast) {
 module.exports = function registerSupaclaw(app, state, broadcast) {
 
   // Start the master loop (5 second interval)
-  const loopInterval = setInterval(() => {
-    try { masterLoop(state, broadcast); } catch (e) { runtime.errors++; console.error('[SUPACLAW] Loop error:', e.message); }
+  // masterLoop is async -- catch both sync throws and rejected Promises
+  setInterval(() => {
+    masterLoop(state, broadcast).catch(e => { runtime.errors++; console.error('[SUPACLAW] Loop error:', e.message); });
   }, 5000);
 
   console.log('[SUPACLAW] Master control loop started (5s interval)');

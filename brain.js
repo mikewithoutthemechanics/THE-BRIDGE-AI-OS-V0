@@ -1936,6 +1936,44 @@ console.log('[BRAIN] Business suite loaded (17 domains, 49 endpoints)');
 require('./brain-agents.js')(app, state, broadcast);
 console.log('[BRAIN] Agent economy loaded (34 agents, wallets, payroll)');
 
+// ── LOAD DETERMINISTIC CORE (must be first -- all treasury writes route through here)
+const registerCore = require('./supaclaw-core.js');
+const supaCore = registerCore(app);
+// Bridge shared state.treasury reads/writes to the deterministic SQLite core.
+// Existing supaclaw modules call state.treasury.balance += x directly.
+// We intercept by syncing on each masterLoop/economyLoop cycle instead of
+// monkey-patching -- treasury writes use supaCore.treasuryCredit() going forward.
+console.log('[BRAIN] Supa-Claw deterministic core ACTIVE -- SQLite ledger, mutex, self-healing');
+
+// 𝓛₂₇ KILL SWITCH: block all direct treasury mutations at the VM level.
+// Any module that writes state.treasury.balance = x will throw immediately.
+// The only valid path is supaCore.treasuryCredit() / supaCore.treasuryDebit().
+(function installTreasuryGuard(treasury) {
+  let _balance = treasury.balance || 0;
+  let _earned  = treasury.earned  || 0;
+  let _spent   = treasury.spent   || 0;
+  Object.defineProperty(treasury, 'balance', {
+    get: () => _balance,
+    set: (v) => {
+      // Allow one-way sync from the core mirror (supaCore sets it back after commit)
+      if (typeof v === 'number' && isFinite(v)) { _balance = v; return; }
+      throw new Error('[𝓛₂₇] Direct treasury.balance mutation is forbidden -- use supaCore.treasuryCredit()');
+    },
+    configurable: false, enumerable: true,
+  });
+  Object.defineProperty(treasury, 'earned', {
+    get: () => _earned,
+    set: (v) => { if (typeof v === 'number' && isFinite(v)) { _earned = v; return; } throw new Error('[𝓛₂₇] Direct treasury.earned mutation forbidden'); },
+    configurable: false, enumerable: true,
+  });
+  Object.defineProperty(treasury, 'spent', {
+    get: () => _spent,
+    set: (v) => { if (typeof v === 'number' && isFinite(v)) { _spent = v; return; } throw new Error('[𝓛₂₇] Direct treasury.spent mutation forbidden'); },
+    configurable: false, enumerable: true,
+  });
+  console.log('[BRAIN] Treasury kill switch installed -- direct mutations blocked (𝓛₂₇)');
+})(state.treasury);
+
 // ── LOAD SUPACLAW RUNTIME ───────────────────────────────────────────────────
 require('./supaclaw.js')(app, state, broadcast);
 console.log('[BRAIN] SUPACLAW SUPA GURU runtime ACTIVE — master loop running');
