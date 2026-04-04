@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infrastructure — Bridge AI OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="/bridge-nav.js" defer></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060810;
+      --bg2: #0a0e17;
+      --bg3: #0f1520;
+      --accent: #63ffda;
+      --accent-dim: rgba(99,255,218,0.15);
+      --accent-border: rgba(99,255,218,0.12);
+      --text: #c9d1d9;
+      --text-dim: #6e7681;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --danger: #ef4444;
+      --amber: #f59e0b;
+      --font: 'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── layout ── */
+    .page-wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 24px 60px;
+    }
+
+    /* ── header ── */
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .page-header p {
+      margin-top: 6px;
+      color: var(--text-dim);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── actions bar ── */
+    .actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 26px;
+      padding: 12px 16px;
+      background: var(--bg2);
+      border: 1px solid var(--accent-border);
+      border-radius: 10px;
+    }
+    .actions-bar .spacer { flex: 1; }
+
+    /* ── buttons ── */
+    .btn {
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 7px 14px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary {
+      background: var(--accent);
+      color: #060810;
+      border-color: var(--accent);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--accent);
+      border-color: var(--accent-border);
+    }
+    .btn-secondary:hover { background: var(--accent-dim); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-dim);
+      border-color: rgba(110,118,129,0.25);
+      font-size: 11px;
+      padding: 5px 10px;
+    }
+    .btn-ghost:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .btn-approve {
+      background: transparent;
+      color: var(--ok);
+      border: 1px solid rgba(74,222,128,0.3);
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-approve:hover { background: rgba(74,222,128,0.1); }
+    .btn-deny {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid rgba(239,68,68,0.3);
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-deny:hover { background: rgba(239,68,68,0.1); }
+    .btn-restart {
+      background: transparent;
+      color: var(--warn);
+      border: 1px solid rgba(251,191,36,0.3);
+      font-family: var(--font);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.15s;
+    }
+    .btn-restart:hover { background: rgba(251,191,36,0.1); }
+    .btn-action {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--accent-border);
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 7px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-action:hover { background: var(--accent-dim); border-color: rgba(99,255,218,0.3); color: var(--accent); }
+
+    /* ── config status ── */
+    #config-status {
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 5px 10px;
+      border: 1px solid var(--accent-border);
+      border-radius: 5px;
+      background: var(--bg3);
+    }
+
+    /* ── section label ── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--accent-border);
+    }
+
+    /* ── card ── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--accent-border);
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    /* ── metric grid ── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 900px) { .metrics-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 500px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+    .metric-tile {
+      background: var(--bg2);
+      border: 1px solid var(--accent-border);
+      border-radius: 10px;
+      padding: 18px 16px 14px;
+    }
+    .metric-tile .mt-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+    .metric-tile .mt-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .metric-tile .mt-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    .progress-track {
+      height: 4px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--accent);
+      transition: width 0.4s ease;
+    }
+    .progress-fill.warn { background: var(--warn); }
+    .progress-fill.danger { background: var(--danger); }
+
+    /* ── mid grid ── */
+    .mid-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 800px) { .mid-grid { grid-template-columns: 1fr; } }
+
+    /* ── badges ── */
+    .badge-ok   { color: var(--ok);     font-weight: 600; }
+    .badge-warn { color: var(--warn);   font-weight: 600; }
+    .badge-danger { color: var(--danger); font-weight: 600; }
+
+    /* ── service rows ── */
+    .service-list { display: flex; flex-direction: column; gap: 8px; }
+    .service-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--bg3);
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .service-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-ok     { background: var(--ok);     box-shadow: 0 0 6px var(--ok); }
+    .dot-warn   { background: var(--warn);   box-shadow: 0 0 6px var(--warn); }
+    .dot-danger { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    .dot-unknown { background: var(--text-dim); }
+    .service-name { flex: 1; font-size: 12px; font-weight: 500; }
+    .service-badge { font-size: 11px; font-weight: 600; min-width: 52px; text-align: right; }
+
+    /* ── AI report ── */
+    #ai-report {
+      font-size: 11px;
+      line-height: 1.7;
+      color: var(--text-dim);
+      min-height: 120px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ── action queue ── */
+    .action-queue-list { display: flex; flex-direction: column; gap: 10px; }
+    .action-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg3);
+      border: 1px solid rgba(251,191,36,0.2);
+      border-left: 3px solid var(--warn);
+      border-radius: 8px;
+    }
+    .action-item .ai-body { flex: 1; }
+    .action-item .ai-type {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .action-item .ai-meta { font-size: 10px; color: var(--text-dim); }
+    .action-item .ai-controls { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+
+    /* ── quick actions ── */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 700px) { .quick-grid { grid-template-columns: 1fr; } }
+    .quick-col { display: flex; flex-direction: column; gap: 8px; }
+    .quick-col-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    /* ── api reference ── */
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 700px) { .api-grid { grid-template-columns: 1fr; } }
+    .api-col-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--accent-border);
+    }
+    .api-entry-list { display: flex; flex-direction: column; gap: 7px; }
+    .api-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 7px 10px;
+      background: var(--bg3);
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .api-method {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      min-width: 38px;
+      padding-top: 1px;
+    }
+    .method-get  { color: var(--ok); }
+    .method-post { color: var(--amber); }
+    .api-endpoint { font-size: 11px; color: var(--text); word-break: break-all; }
+    .api-desc { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+    /* ── section wrappers ── */
+    .section { margin-bottom: 28px; }
+
+    /* ── toast ── */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: var(--bg2);
+      border: 1px solid var(--accent-border);
+      color: var(--text);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: auto;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.toast-ok     { border-color: rgba(74,222,128,0.35); color: var(--ok); }
+    .toast.toast-warn   { border-color: rgba(251,191,36,0.35); color: var(--warn); }
+    .toast.toast-danger { border-color: rgba(239,68,68,0.35);  color: var(--danger); }
+
+    /* ── modal ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(6,8,16,0.85);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg2);
+      border: 1px solid rgba(99,255,218,0.2);
+      border-radius: 12px;
+      padding: 28px;
+      width: 460px;
+      max-width: 95vw;
+    }
+    .modal h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 18px;
+      letter-spacing: 0.06em;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 5px;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--accent-border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus { border-color: rgba(99,255,218,0.4); }
+    .form-group textarea { resize: vertical; min-height: 72px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+    /* ── empty / loading states ── */
+    .empty-state {
+      color: var(--text-dim);
+      font-size: 11px;
+      text-align: center;
+      padding: 24px 0;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── last-updated ── */
+    #last-updated {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- Queue Action Modal -->
+<div class="modal-backdrop" id="queue-modal">
+  <div class="modal">
+    <h2>Queue Infrastructure Action</h2>
+    <div class="form-group">
+      <label>Action Type</label>
+      <select id="modal-type">
+        <option value="restart_service">restart_service</option>
+        <option value="update_packages">update_packages</option>
+        <option value="reboot">reboot</option>
+        <option value="custom">custom</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Params (JSON)</label>
+      <textarea id="modal-params" placeholder='{"service": "apache"}'></textarea>
+    </div>
+    <div class="form-group">
+      <label>Requested By</label>
+      <input id="modal-requestedBy" type="text" placeholder="bridge-agent or your name" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitQueueAction()">Queue Action</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Infrastructure</h1>
+    <p>DirectAdmin VPS &mdash; Autonomous monitoring with human-gated control &bull; Bridge AI OS</p>
+  </div>
+
+  <!-- Actions Bar -->
+  <div class="actions-bar">
+    <button class="btn btn-primary" onclick="triggerSnapshot()">Snapshot + Analyse</button>
+    <button class="btn btn-secondary" onclick="openModal()">+ Queue Action</button>
+    <span id="config-status">config: loading&hellip;</span>
+    <div class="spacer"></div>
+    <span id="last-updated"></span>
+    <button class="btn btn-ghost" onclick="loadAll()">&#x21bb; Refresh</button>
+  </div>
+
+  <!-- Metrics Grid -->
+  <div class="section">
+    <div class="section-label">System Metrics</div>
+    <div class="metrics-grid" id="metrics-grid">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- Mid Grid: Services + AI Report -->
+  <div class="mid-grid section">
+    <div class="card">
+      <div class="section-label">Services</div>
+      <div id="services-list" class="service-list">
+        <div class="empty-state">Loading services&hellip;</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label">Infra AI Report</div>
+      <div id="ai-report">Fetching report&hellip;</div>
+    </div>
+  </div>
+
+  <!-- Action Queue -->
+  <div class="section">
+    <div class="section-label">Action Queue</div>
+    <div id="action-queue" class="action-queue-list">
+      <div class="empty-state">Loading queue&hellip;</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="section">
+    <div class="section-label">Quick Actions</div>
+    <div class="quick-grid">
+      <div class="quick-col" id="qa-web"></div>
+      <div class="quick-col" id="qa-db"></div>
+      <div class="quick-col" id="qa-sys"></div>
+    </div>
+  </div>
+
+  <!-- API Reference -->
+  <div class="section">
+    <div class="section-label">API Reference</div>
+    <div class="api-grid" id="api-grid"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── helpers ── */
+  function clearEl(id) {
+    var el = document.getElementById(id);
+    if (!el) return el;
+    while (el.firstChild) el.removeChild(el.firstChild);
+    return el;
+  }
+
+  function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+    return node;
+  }
+
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+
+  function toast(msg, type) {
+    var container = document.getElementById('toast-container');
+    var t = el('div', 'toast' + (type ? ' toast-' + type : ''));
+    t.textContent = msg;
+    container.appendChild(t);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { t.classList.add('show'); });
+    });
+    setTimeout(function () {
+      t.classList.remove('show');
+      setTimeout(function () {
+        if (t.parentNode) t.parentNode.removeChild(t);
+      }, 300);
+    }, 3500);
+  }
+
+  function stampNow() {
+    var lu = document.getElementById('last-updated');
+    if (lu) lu.textContent = 'updated ' + new Date().toLocaleTimeString();
+  }
+
+  /* ── progress bar fill class ── */
+  function fillClass(pct) {
+    if (pct >= 90) return 'danger';
+    if (pct >= 70) return 'warn';
+    return '';
+  }
+
+  /* ── render helpers ── */
+  function makeMetricTile(label, value, sub, pct) {
+    var tile = el('div', 'metric-tile');
+
+    var lbl = el('div', 'mt-label', label);
+    tile.appendChild(lbl);
+
+    var val = el('div', 'mt-value', value);
+    tile.appendChild(val);
+
+    var s = el('div', 'mt-sub', sub);
+    tile.appendChild(s);
+
+    var track = el('div', 'progress-track');
+    var fill = el('div', 'progress-fill');
+    var fc = fillClass(pct);
+    if (fc) fill.classList.add(fc);
+    fill.style.width = Math.min(pct, 100) + '%';
+    track.appendChild(fill);
+    tile.appendChild(track);
+
+    return tile;
+  }
+
+  function renderMetrics(data) {
+    var grid = clearEl('metrics-grid');
+    if (!grid) return;
+
+    var cpu  = (data && data.cpu)    || {};
+    var mem  = (data && data.memory) || {};
+    var disk = (data && data.disk)   || {};
+    var load = (data && data.load)   || {};
+
+    var cpuPct  = parseFloat(cpu.percent  || 0);
+    var memPct  = parseFloat(mem.percent  || 0);
+    var diskPct = parseFloat(disk.percent || 0);
+    var loadVal = parseFloat((load.avg1   || load.avg || 0));
+    var loadMax = parseFloat(load.cores   || 4);
+    var loadPct = Math.round((loadVal / loadMax) * 100);
+
+    grid.appendChild(makeMetricTile(
+      'CPU Usage',
+      cpuPct.toFixed(1) + '%',
+      (cpu.cores || '--') + ' cores' + (cpu.model ? '  \u2022  ' + cpu.model : ''),
+      cpuPct
+    ));
+    grid.appendChild(makeMetricTile(
+      'Memory',
+      memPct.toFixed(1) + '%',
+      (mem.used || '--') + ' / ' + (mem.total || '--'),
+      memPct
+    ));
+    grid.appendChild(makeMetricTile(
+      'Disk',
+      diskPct.toFixed(1) + '%',
+      (disk.used || '--') + ' / ' + (disk.total || '--'),
+      diskPct
+    ));
+    grid.appendChild(makeMetricTile(
+      'Load Avg',
+      loadVal.toFixed(2),
+      '1m avg \u2022 ' + (load.avg5 ? load.avg5 + ' 5m' : '') + (load.avg15 ? ' \u2022 ' + load.avg15 + ' 15m' : ''),
+      loadPct
+    ));
+  }
+
+  function dotClass(status) {
+    if (!status) return 'service-dot dot-unknown';
+    var s = status.toLowerCase();
+    if (s === 'running' || s === 'active' || s === 'ok') return 'service-dot dot-ok';
+    if (s === 'warning' || s === 'degraded') return 'service-dot dot-warn';
+    return 'service-dot dot-danger';
+  }
+
+  function badgeClass(status) {
+    if (!status) return 'service-badge';
+    var s = status.toLowerCase();
+    if (s === 'running' || s === 'active' || s === 'ok') return 'service-badge badge-ok';
+    if (s === 'warning' || s === 'degraded') return 'service-badge badge-warn';
+    return 'service-badge badge-danger';
+  }
+
+  function renderServices(services) {
+    var list = clearEl('services-list');
+    if (!list) return;
+
+    if (!services || services.length === 0) {
+      list.appendChild(el('div', 'empty-state', 'No services data available.'));
+      return;
+    }
+
+    services.forEach(function (svc) {
+      var row = el('div', 'service-row');
+
+      var dot = el('span', dotClass(svc.status));
+      row.appendChild(dot);
+
+      var name = el('span', 'service-name', svc.name || 'unknown');
+      row.appendChild(name);
+
+      var badge = el('span', badgeClass(svc.status), svc.status || 'unknown');
+      row.appendChild(badge);
+
+      var restartBtn = el('button', 'btn-restart', 'Restart');
+      restartBtn.setAttribute('data-service', svc.name || '');
+      restartBtn.onclick = (function (svcName) {
+        return function () { queueRestart(svcName); };
+      }(svc.name));
+      row.appendChild(restartBtn);
+
+      list.appendChild(row);
+    });
+  }
+
+  function renderAiReport(text) {
+    var report = document.getElementById('ai-report');
+    if (!report) return;
+    report.textContent = text || 'No report available.';
+  }
+
+  function renderActionQueue(actions) {
+    var queue = clearEl('action-queue');
+    if (!queue) return;
+
+    if (!actions || actions.length === 0) {
+      queue.appendChild(el('div', 'empty-state', 'No pending actions.'));
+      return;
+    }
+
+    actions.forEach(function (action) {
+      var item = el('div', 'action-item');
+
+      var body = el('div', 'ai-body');
+
+      var typeEl = el('div', 'ai-type', action.type || 'unknown');
+      body.appendChild(typeEl);
+
+      var params = '';
+      try {
+        params = JSON.stringify(action.params || {});
+      } catch (e) {
+        params = String(action.params || '');
+      }
+
+      var meta = el('div', 'ai-meta',
+        'by ' + (action.requestedBy || 'system') +
+        (action.createdAt ? '  \u2022  ' + new Date(action.createdAt).toLocaleString() : '') +
+        (params ? '  \u2022  ' + params : '')
+      );
+      body.appendChild(meta);
+      item.appendChild(body);
+
+      var controls = el('div', 'ai-controls');
+
+      var approveBtn = el('button', 'btn-approve', 'Approve');
+      approveBtn.onclick = (function (id) {
+        return function () { approveAction(id); };
+      }(action.id || action._id));
+      controls.appendChild(approveBtn);
+
+      var denyBtn = el('button', 'btn-deny', 'Deny');
+      denyBtn.onclick = (function (id) {
+        return function () { denyAction(id); };
+      }(action.id || action._id));
+      controls.appendChild(denyBtn);
+
+      item.appendChild(controls);
+      queue.appendChild(item);
+    });
+  }
+
+  /* ── quick actions ── */
+  var quickActions = {
+    'qa-web': {
+      label: 'Web Services',
+      actions: [
+        { label: 'Restart Apache',     service: 'apache'     },
+        { label: 'Restart Nginx',      service: 'nginx'      },
+        { label: 'Restart LiteSpeed',  service: 'litespeed'  }
+      ]
+    },
+    'qa-db': {
+      label: 'Database + Email',
+      actions: [
+        { label: 'Restart MySQL',    service: 'mysql'    },
+        { label: 'Restart Exim',     service: 'exim'     },
+        { label: 'Restart Dovecot',  service: 'dovecot'  }
+      ]
+    },
+    'qa-sys': {
+      label: 'System',
+      actions: [
+        { label: 'Run System Update',         type: 'update_packages', params: {} },
+        { label: 'Restart DirectAdmin',       service: 'directadmin' }
+      ]
+    }
+  };
+
+  function buildQuickActions() {
+    Object.keys(quickActions).forEach(function (colId) {
+      var col = document.getElementById(colId);
+      if (!col) return;
+      clearNode(col);
+
+      var colData = quickActions[colId];
+      var lbl = el('div', 'quick-col-label', colData.label);
+      col.appendChild(lbl);
+
+      colData.actions.forEach(function (a) {
+        var btn = el('button', 'btn-action', a.label);
+        btn.onclick = (function (action) {
+          return function () {
+            if (action.service) {
+              queueRestart(action.service);
+            } else {
+              queueAction(action.type || 'custom', action.params || {}, 'quick-actions');
+            }
+          };
+        }(a));
+        col.appendChild(btn);
+      });
+    });
+  }
+
+  /* ── api reference ── */
+  var apiReference = [
+    {
+      label: 'System',
+      entries: [
+        { method: 'GET',  path: '/api/infra/status',  desc: 'Loads snapshot + config status' },
+        { method: 'POST', path: '/api/infra/snapshot', desc: 'Triggers snapshot + Infra AI analysis' },
+        { method: 'GET',  path: '/api/system/state',  desc: 'Reads agent outputs for AI report' }
+      ]
+    },
+    {
+      label: 'Applications',
+      entries: [
+        { method: 'GET',  path: '/api/infra/actions', desc: 'Lists pending action queue' },
+        { method: 'POST', path: '/api/infra/action',  desc: 'Queues a write action' }
+      ]
+    },
+    {
+      label: 'Management',
+      entries: [
+        { method: 'POST', path: '/api/infra/approve', desc: 'Approves a queued action' },
+        { method: 'POST', path: '/api/infra/deny',    desc: 'Denies a queued action' }
+      ]
+    }
+  ];
+
+  function buildApiReference() {
+    var grid = clearEl('api-grid');
+    if (!grid) return;
+
+    apiReference.forEach(function (col) {
+      var card = el('div', 'card');
+
+      var lbl = el('div', 'api-col-label', col.label);
+      card.appendChild(lbl);
+
+      var list = el('div', 'api-entry-list');
+
+      col.entries.forEach(function (entry) {
+        var row = el('div', 'api-row');
+
+        var method = el('span', 'api-method ' + (entry.method === 'GET' ? 'method-get' : 'method-post'), entry.method);
+        row.appendChild(method);
+
+        var info = el('div');
+        var path = el('div', 'api-endpoint', entry.path);
+        info.appendChild(path);
+        var desc = el('div', 'api-desc', entry.desc);
+        info.appendChild(desc);
+        row.appendChild(info);
+
+        list.appendChild(row);
+      });
+
+      card.appendChild(list);
+      grid.appendChild(card);
+    });
+  }
+
+  /* ── API calls ── */
+  function apiFetch(url, opts) {
+    return fetch(url, opts || {})
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText);
+        return r.json();
+      });
+  }
+
+  function loadAll() {
+    apiFetch('/api/infra/status')
+      .then(function (data) {
+        renderMetrics(data.metrics || data);
+        renderServices(data.services || []);
+
+        var cfgEl = document.getElementById('config-status');
+        if (cfgEl) {
+          cfgEl.textContent = 'config: ' + (data.configStatus || data.config || 'ok');
+        }
+
+        return Promise.all([
+          apiFetch('/api/infra/actions'),
+          apiFetch('/api/system/state')
+        ]);
+      })
+      .then(function (results) {
+        renderActionQueue(results[0].actions || results[0] || []);
+        var state = results[1];
+        var report = state.infraReport || state.report || state.text || JSON.stringify(state, null, 2);
+        renderAiReport(report);
+        stampNow();
+      })
+      .catch(function (err) {
+        toast('Load error: ' + err.message, 'danger');
+        renderMetrics({});
+        renderServices([]);
+        renderActionQueue([]);
+        renderAiReport('Could not fetch report: ' + err.message);
+        stampNow();
+      });
+  }
+
+  function triggerSnapshot() {
+    toast('Triggering snapshot + analysis\u2026', 'warn');
+    apiFetch('/api/infra/snapshot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then(function (data) {
+        toast('Snapshot complete. Reloading\u2026', 'ok');
+        setTimeout(loadAll, 1200);
+      })
+      .catch(function (err) {
+        toast('Snapshot failed: ' + err.message, 'danger');
+      });
+  }
+
+  function queueAction(type, params, requestedBy) {
+    apiFetch('/api/infra/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: type, params: params || {}, requestedBy: requestedBy || 'dashboard' })
+    })
+      .then(function () {
+        toast('Action queued: ' + type, 'ok');
+        loadActionQueue();
+      })
+      .catch(function (err) {
+        toast('Queue failed: ' + err.message, 'danger');
+      });
+  }
+
+  function queueRestart(service) {
+    toast('Queuing restart: ' + service, 'warn');
+    queueAction('restart_service', { service: service }, 'quick-actions');
+  }
+
+  function loadActionQueue() {
+    apiFetch('/api/infra/actions')
+      .then(function (data) {
+        renderActionQueue(data.actions || data || []);
+      })
+      .catch(function (err) {
+        toast('Queue load error: ' + err.message, 'danger');
+      });
+  }
+
+  function approveAction(actionId) {
+    apiFetch('/api/infra/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actionId: actionId })
+    })
+      .then(function () {
+        toast('Action approved.', 'ok');
+        loadActionQueue();
+      })
+      .catch(function (err) {
+        toast('Approve failed: ' + err.message, 'danger');
+      });
+  }
+
+  function denyAction(actionId) {
+    apiFetch('/api/infra/deny', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actionId: actionId })
+    })
+      .then(function () {
+        toast('Action denied.', 'warn');
+        loadActionQueue();
+      })
+      .catch(function (err) {
+        toast('Deny failed: ' + err.message, 'danger');
+      });
+  }
+
+  /* ── modal ── */
+  function openModal() {
+    document.getElementById('queue-modal').classList.add('open');
+  }
+  window.openModal = openModal;
+
+  function closeModal() {
+    document.getElementById('queue-modal').classList.remove('open');
+  }
+  window.closeModal = closeModal;
+
+  function submitQueueAction() {
+    var type = document.getElementById('modal-type').value;
+    var paramsRaw = document.getElementById('modal-params').value.trim();
+    var requestedBy = document.getElementById('modal-requestedBy').value.trim() || 'dashboard';
+    var params = {};
+    if (paramsRaw) {
+      try {
+        params = JSON.parse(paramsRaw);
+      } catch (e) {
+        toast('Invalid JSON in params field.', 'danger');
+        return;
+      }
+    }
+    closeModal();
+    queueAction(type, params, requestedBy);
+  }
+  window.submitQueueAction = submitQueueAction;
+
+  /* ── expose globals needed by onclick attributes ── */
+  window.triggerSnapshot = triggerSnapshot;
+  window.loadAll = loadAll;
+
+  /* ── modal backdrop click to close ── */
+  document.getElementById('queue-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeModal();
+  });
+
+  /* ── init ── */
+  buildQuickActions();
+  buildApiReference();
+  loadAll();
+
+  /* ── auto-refresh every 60 s ── */
+  setInterval(loadAll, 60000);
+
+}());
+</script>
+</body>
+</html>

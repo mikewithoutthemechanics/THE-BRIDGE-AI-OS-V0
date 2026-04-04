@@ -94,6 +94,7 @@ const pf      = require('../lib/payfast');
 const agents  = require('../lib/agents');
 const notify  = require('../lib/notify');
 const banks   = require('../lib/banks');
+const da      = require('../lib/directadmin');
 
 // Seed system banks on first cold start (no-op if already seeded)
 banks.seedBanksIfEmpty().catch(() => {});
@@ -1370,6 +1371,121 @@ module.exports = async (req, res) => {
   if (p === '/api/system/state') {
     const state = await db.getSystemState();
     return json(res, state);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // INFRASTRUCTURE (DirectAdmin) — autonomous read + human-gated writes
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /api/infra/status — live VPS snapshot (read-only, autonomous)
+  if (p === '/api/infra/status') {
+    try {
+      const [snapshot, pending] = await Promise.all([
+        da.getInfraSnapshot(),
+        da.getPendingActions(),
+      ]);
+      const pendingCount = pending.filter(a => a.status === 'pending').length;
+      return json(res, { ok: true, configured: da.isConfigured(), snapshot, pendingActions: pendingCount, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/infra/snapshot — trigger fresh DA poll and persist
+  if (p === '/api/infra/snapshot' && req.method === 'POST') {
+    try {
+      const snapshot = await da.snapshotInfra();
+      // Run Infra AI agent against the snapshot
+      const sysStr = JSON.stringify(snapshot.system || {}).slice(0, 600);
+      agents.runAgent('Infra AI', sysStr)
+        .then(async r => {
+          const outputs = (await db.getState('agent_outputs')) || {};
+          outputs['Infra AI'] = { output: r.output, timestamp: r.timestamp };
+          await db.setState('agent_outputs', outputs);
+        })
+        .catch(() => {});
+      return json(res, { ok: true, snapshot, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/infra/services — live service list
+  if (p === '/api/infra/services') {
+    try {
+      const services = await da.getServices();
+      return json(res, { ok: true, services, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/infra/db-processes — live DB process monitor
+  if (p === '/api/infra/db-processes') {
+    try {
+      const processes = await da.getDbProcesses();
+      return json(res, { ok: true, processes, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/infra/disk — disk usage
+  if (p === '/api/infra/disk') {
+    try {
+      const disk = await da.getDiskUsage();
+      return json(res, { ok: true, disk, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/infra/actions — list pending/history human-approval queue
+  if (p === '/api/infra/actions') {
+    try {
+      const actions = await da.getPendingActions();
+      return json(res, { ok: true, actions, pending: actions.filter(a => a.status === 'pending').length, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/infra/action — queue a write action (agent or human requests)
+  if (p === '/api/infra/action' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const { type, params, requestedBy } = body;
+    if (!type) return json(res, { error: 'type required' }, 400);
+    try {
+      const action = await da.queueAction(type, params || {}, requestedBy || 'manual');
+      return json(res, { ok: true, action, message: 'Action queued — awaiting human approval', ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 400); }
+  }
+
+  // POST /api/infra/approve — human approves a queued action
+  if (p === '/api/infra/approve' && req.method === 'POST') {
+    const body = await parseBody(req);
+    if (!body.actionId) return json(res, { error: 'actionId required' }, 400);
+    try {
+      const result = await da.approveAction(body.actionId);
+      console.log(JSON.stringify({ type: 'infra_action_approved', actionId: body.actionId, status: result.status, time: new Date().toISOString() }));
+      return json(res, { ok: true, result, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 400); }
+  }
+
+  // POST /api/infra/deny — human denies a queued action
+  if (p === '/api/infra/deny' && req.method === 'POST') {
+    const body = await parseBody(req);
+    if (!body.actionId) return json(res, { error: 'actionId required' }, 400);
+    try {
+      const result = await da.denyAction(body.actionId);
+      return json(res, { ok: true, result, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 400); }
+  }
+
+  // GET /api/infra/auto — cron: snapshot + Infra AI analysis + persist
+  if (p === '/api/infra/auto') {
+    try {
+      const snapshot = await da.snapshotInfra();
+      const sysStr   = JSON.stringify(snapshot.system || {}).slice(0, 800);
+      let agentResult = null;
+      try {
+        agentResult = await agents.runAgent('Infra AI', sysStr);
+        const outputs = (await db.getState('agent_outputs')) || {};
+        outputs['Infra AI'] = { output: agentResult.output, timestamp: agentResult.timestamp };
+        await db.setState('agent_outputs', outputs);
+        await db.setState('infra_last_report', agentResult.output);
+      } catch (_) {}
+      console.log(JSON.stringify({ type: 'infra_auto_cycle', configured: da.isConfigured(), time: new Date().toISOString() }));
+      return json(res, { ok: true, snapshot: !!snapshot, agentReport: agentResult?.output || null, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
   }
 
   // ── /api/agents/economy ──
