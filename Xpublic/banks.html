@@ -496,7 +496,7 @@ function executeTrade() {
   fetch('/api/banks/trade', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fromId: fromId, toId: toId, amount: amount, reason: reason })
+    body: JSON.stringify({ from: fromId, to: toId, amount: amount, reason: reason })
   })
     .then(function(r) { return r.json(); })
     .then(function(data) {
