@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank System — Bridge AI OS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#060810;color:#e2e8f0;font-family:'JetBrains Mono',monospace;min-height:100vh;padding:20px}
+h1{color:#63ffda;font-size:18px;letter-spacing:3px;text-transform:uppercase;margin-bottom:20px}
+h2{color:#63ffda;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
+
+/* Summary bar */
+.summary-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:28px}
+.summary-card{background:#0a0e17;border:1px solid rgba(99,255,218,0.12);border-radius:8px;padding:16px 20px}
+.summary-card .label{font-size:10px;color:#64748b;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.summary-card .value{font-size:22px;font-weight:700;color:#63ffda}
+.summary-card .sub{font-size:10px;color:#64748b;margin-top:4px}
+
+/* Banks grid */
+.banks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:32px}
+.bank-card{background:#0a0e17;border:1px solid rgba(99,255,218,0.12);border-radius:10px;padding:20px;transition:border-color 0.2s}
+.bank-card:hover{border-color:rgba(99,255,218,0.3)}
+.bank-card .bank-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.bank-card .bank-name{font-size:13px;font-weight:700;color:#e2e8f0;letter-spacing:1px}
+.bank-card .bank-type{font-size:9px;padding:2px 8px;border-radius:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+.type-internal{background:rgba(99,255,218,0.1);color:#63ffda;border:1px solid rgba(99,255,218,0.2)}
+.type-partner{background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.2)}
+.bank-card .balance{font-size:24px;font-weight:700;color:#63ffda;margin-bottom:4px}
+.bank-card .balance-sub{font-size:10px;color:#64748b;margin-bottom:14px}
+.bank-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.bank-meta-item .meta-label{font-size:9px;color:#64748b;letter-spacing:1px;text-transform:uppercase}
+.bank-meta-item .meta-value{font-size:12px;color:#94a3b8;font-weight:600;margin-top:2px}
+.progress-bar{height:4px;background:#1e293b;border-radius:2px;margin-bottom:14px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#63ffda,#06b6d4);border-radius:2px;transition:width 0.5s}
+.bank-actions{display:flex;gap:8px}
+.btn{padding:6px 14px;border-radius:5px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;font-family:inherit;transition:all 0.2s}
+.btn-trade{background:rgba(99,255,218,0.1);color:#63ffda;border:1px solid rgba(99,255,218,0.2)}
+.btn-trade:hover{background:rgba(99,255,218,0.2)}
+.btn-primary{background:#63ffda;color:#060810}
+.btn-primary:hover{background:#4eedc8}
+.btn-ghost{background:transparent;color:#64748b;border:1px solid rgba(100,116,139,0.2)}
+.btn-ghost:hover{border-color:rgba(99,255,218,0.3);color:#63ffda}
+.btn-danger{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+
+/* Actions bar */
+.actions-bar{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
+.actions-bar .spacer{flex:1}
+
+/* History table */
+.table-wrap{background:#0a0e17;border:1px solid rgba(99,255,218,0.12);border-radius:10px;overflow:hidden;margin-bottom:32px}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;color:#64748b;letter-spacing:1.5px;text-transform:uppercase;padding:12px 16px;text-align:left;border-bottom:1px solid rgba(99,255,218,0.08);background:#060810}
+td{font-size:11px;color:#94a3b8;padding:10px 16px;border-bottom:1px solid rgba(99,255,218,0.05)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(99,255,218,0.02)}
+.tx-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.badge-split{background:rgba(99,255,218,0.1);color:#63ffda}
+.badge-compound{background:rgba(168,85,247,0.1);color:#a855f7}
+.badge-trade{background:rgba(251,191,36,0.1);color:#fbbf24}
+.badge-credit{background:rgba(74,222,128,0.1);color:#4ade80}
+.badge-debit{background:rgba(239,68,68,0.1);color:#ef4444}
+
+/* Modals */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{background:#0a0e17;border:1px solid rgba(99,255,218,0.2);border-radius:12px;padding:28px;width:100%;max-width:440px}
+.modal h3{font-size:13px;color:#63ffda;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:10px;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:#060810;border:1px solid rgba(99,255,218,0.15);border-radius:6px;padding:8px 12px;color:#e2e8f0;font-family:inherit;font-size:12px;outline:none;transition:border-color 0.2s}
+.form-group input:focus,.form-group select:focus{border-color:rgba(99,255,218,0.4)}
+.form-group select option{background:#0a0e17}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.modal-actions .btn{flex:1}
+
+/* Loader */
+.loader{display:inline-block;width:14px;height:14px;border:2px solid rgba(99,255,218,0.2);border-top-color:#63ffda;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-state{text-align:center;padding:40px;color:#64748b;font-size:12px}
+
+/* Status badge */
+.status-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.5);display:inline-block;margin-right:8px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#0a0e17;border:1px solid rgba(99,255,218,0.3);color:#63ffda;padding:12px 20px;border-radius:8px;font-size:12px;z-index:9999;transform:translateY(80px);opacity:0;transition:all 0.3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.error{border-color:rgba(239,68,68,0.4);color:#ef4444}
+
+.empty-state{text-align:center;padding:40px;color:#64748b;font-size:11px}
+</style>
+</head>
+<body>
+<script src="/bridge-nav.js"></script>
+
+<h1>&#9679; BANK SYSTEM</h1>
+
+<div class="summary-bar" id="summaryBar">
+  <div class="summary-card"><div class="label">Loading</div><div class="value">—</div></div>
+</div>
+
+<div class="actions-bar">
+  <button class="btn btn-primary" onclick="openModal('compoundModal')">&#9650; Compound All</button>
+  <button class="btn btn-trade" onclick="openModal('tradeModal')">&#8644; Internal Trade</button>
+  <button class="btn btn-ghost" onclick="openModal('partnerModal')">+ Register Partner Bank</button>
+  <div class="spacer"></div>
+  <button class="btn btn-ghost" onclick="loadAll()">&#8635; Refresh</button>
+</div>
+
+<h2>Banks</h2>
+<div class="banks-grid" id="banksGrid">
+  <div class="loading-state"><span class="loader"></span>Loading banks...</div>
+</div>
+
+<h2>Recent Transactions</h2>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Type</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Amount</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody id="txBody">
+      <tr><td colspan="6" class="loading-state"><span class="loader"></span>Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Compound confirm modal -->
+<div class="modal-backdrop" id="compoundModal">
+  <div class="modal">
+    <h3>Compound All Banks</h3>
+    <p style="font-size:12px;color:#94a3b8;margin-bottom:20px">Apply compound_rate to every active bank balance. This is normally run on schedule — confirm to trigger manually.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('compoundModal')">Cancel</button>
+      <button class="btn btn-primary" id="compoundBtn" onclick="runCompound()">Compound Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trade modal -->
+<div class="modal-backdrop" id="tradeModal">
+  <div class="modal">
+    <h3>Internal Trade</h3>
+    <div class="form-group">
+      <label>From Bank</label>
+      <select id="tradeFrom"></select>
+    </div>
+    <div class="form-group">
+      <label>To Bank</label>
+      <select id="tradeTo"></select>
+    </div>
+    <div class="form-group">
+      <label>Amount (R)</label>
+      <input type="number" id="tradeAmount" placeholder="0.00" min="0.01" step="0.01">
+    </div>
+    <div class="form-group">
+      <label>Reason</label>
+      <input type="text" id="tradeReason" placeholder="e.g. ops rebalance">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('tradeModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="executeTrade()">Execute Trade</button>
+    </div>
+  </div>
+</div>
+
+<!-- Register partner modal -->
+<div class="modal-backdrop" id="partnerModal">
+  <div class="modal">
+    <h3>Register Partner Bank</h3>
+    <div class="form-group">
+      <label>Bank ID (slug)</label>
+      <input type="text" id="pId" placeholder="e.g. partner-xyz" pattern="[a-z0-9-]+">
+    </div>
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" id="pName" placeholder="XYZ Partner Bank">
+    </div>
+    <div class="form-group">
+      <label>Owner</label>
+      <input type="text" id="pOwner" placeholder="partner@company.com">
+    </div>
+    <div class="form-group">
+      <label>Split % (share of incoming payments)</label>
+      <input type="number" id="pSplit" placeholder="0" min="0" max="100" step="0.1" value="0">
+    </div>
+    <div class="form-group">
+      <label>Compound Rate (per cycle, e.g. 0.008 = 0.8%)</label>
+      <input type="number" id="pRate" placeholder="0.008" min="0" max="1" step="0.001" value="0.008">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('partnerModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="registerPartner()">Register</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+var banksData = [];
+
+function fmt(n) {
+  return 'R' + parseFloat(n || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function timeAgo(iso) {
+  var d = new Date(iso);
+  var s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
+}
+
+function toast(msg, isError) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (isError ? ' error' : '') + ' show';
+  setTimeout(function() { el.className = 'toast'; }, 3500);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'tradeModal') populateTradeSelects();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-backdrop').forEach(function(el) {
+  el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('open'); });
+});
+
+function populateTradeSelects() {
+  var from = document.getElementById('tradeFrom');
+  var to = document.getElementById('tradeTo');
+  from.innerHTML = '';
+  to.innerHTML = '';
+  banksData.forEach(function(b) {
+    var o1 = document.createElement('option');
+    o1.value = b.id;
+    o1.textContent = b.name + ' (' + fmt(b.balance) + ')';
+    from.appendChild(o1);
+    var o2 = document.createElement('option');
+    o2.value = b.id;
+    o2.textContent = b.name + ' (' + fmt(b.balance) + ')';
+    to.appendChild(o2);
+  });
+  if (banksData.length > 1) to.selectedIndex = 1;
+}
+
+function renderSummary(banks) {
+  var total = banks.reduce(function(s, b) { return s + parseFloat(b.balance || 0); }, 0);
+  var nextGain = banks.reduce(function(s, b) {
+    return s + parseFloat(b.balance || 0) * parseFloat(b.compound_rate || 0);
+  }, 0);
+  var largest = banks.reduce(function(a, b) { return parseFloat(b.balance) > parseFloat(a.balance) ? b : a; }, banks[0] || {});
+  var active = banks.filter(function(b) { return b.active !== false; }).length;
+
+  var bar = document.getElementById('summaryBar');
+  bar.innerHTML = '';
+
+  var items = [
+    { label: 'Total Balance', value: fmt(total), sub: active + ' active banks' },
+    { label: 'Banks', value: String(banks.length), sub: 'internal + partner' },
+    { label: 'Next Compound Gain', value: fmt(nextGain), sub: 'per cycle' },
+    { label: 'Largest Bank', value: largest ? largest.name : '—', sub: largest ? fmt(largest.balance) : '' }
+  ];
+
+  items.forEach(function(item) {
+    var card = document.createElement('div');
+    card.className = 'summary-card';
+    var lbl = document.createElement('div');
+    lbl.className = 'label';
+    lbl.textContent = item.label;
+    var val = document.createElement('div');
+    val.className = 'value';
+    val.textContent = item.value;
+    var sub = document.createElement('div');
+    sub.className = 'sub';
+    sub.textContent = item.sub;
+    card.appendChild(lbl);
+    card.appendChild(val);
+    card.appendChild(sub);
+    bar.appendChild(card);
+  });
+}
+
+function renderBanks(banks) {
+  banksData = banks;
+  var grid = document.getElementById('banksGrid');
+  grid.innerHTML = '';
+
+  if (!banks.length) {
+    var empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = 'No banks found.';
+    grid.appendChild(empty);
+    return;
+  }
+
+  var totalPct = banks.reduce(function(s, b) { return s + parseFloat(b.split_pct || 0); }, 0);
+
+  banks.forEach(function(b) {
+    var card = document.createElement('div');
+    card.className = 'bank-card';
+
+    // Header
+    var header = document.createElement('div');
+    header.className = 'bank-header';
+    var nameEl = document.createElement('div');
+    nameEl.className = 'bank-name';
+    nameEl.textContent = b.name;
+    var typeEl = document.createElement('span');
+    typeEl.className = 'bank-type type-' + (b.type || 'internal');
+    typeEl.textContent = b.type || 'internal';
+    header.appendChild(nameEl);
+    header.appendChild(typeEl);
+
+    // Balance
+    var balEl = document.createElement('div');
+    balEl.className = 'balance';
+    balEl.textContent = fmt(b.balance);
+    var balSub = document.createElement('div');
+    balSub.className = 'balance-sub';
+    balSub.textContent = 'owner: ' + (b.owner || 'system');
+
+    // Meta grid
+    var meta = document.createElement('div');
+    meta.className = 'bank-meta';
+    var gain = (parseFloat(b.balance || 0) * parseFloat(b.compound_rate || 0)).toFixed(2);
+    var metaItems = [
+      { label: 'Split %', value: (b.split_pct || 0) + '%' },
+      { label: 'Compound Rate', value: ((parseFloat(b.compound_rate || 0)) * 100).toFixed(1) + '% / cycle' },
+      { label: 'Projected Gain', value: fmt(gain) },
+      { label: 'Share of Payments', value: totalPct > 0 ? ((parseFloat(b.split_pct || 0) / totalPct) * 100).toFixed(1) + '%' : '0%' }
+    ];
+    metaItems.forEach(function(m) {
+      var item = document.createElement('div');
+      item.className = 'bank-meta-item';
+      var lbl = document.createElement('div');
+      lbl.className = 'meta-label';
+      lbl.textContent = m.label;
+      var val = document.createElement('div');
+      val.className = 'meta-value';
+      val.textContent = m.value;
+      item.appendChild(lbl);
+      item.appendChild(val);
+      meta.appendChild(item);
+    });
+
+    // Progress bar
+    var prog = document.createElement('div');
+    prog.className = 'progress-bar';
+    var fill = document.createElement('div');
+    fill.className = 'progress-fill';
+    var pct = totalPct > 0 ? Math.min(100, (parseFloat(b.split_pct || 0) / totalPct) * 100) : 0;
+    fill.style.width = pct.toFixed(1) + '%';
+    prog.appendChild(fill);
+
+    // Actions
+    var actions = document.createElement('div');
+    actions.className = 'bank-actions';
+    var tradeBtn = document.createElement('button');
+    tradeBtn.className = 'btn btn-trade';
+    tradeBtn.textContent = 'Trade';
+    (function(bankId) {
+      tradeBtn.onclick = function() {
+        openModal('tradeModal');
+        setTimeout(function() {
+          document.getElementById('tradeFrom').value = bankId;
+        }, 50);
+      };
+    })(b.id);
+    var histBtn = document.createElement('button');
+    histBtn.className = 'btn btn-ghost';
+    histBtn.textContent = 'History';
+    (function(bankId) {
+      histBtn.onclick = function() { loadHistory(bankId); };
+    })(b.id);
+    actions.appendChild(tradeBtn);
+    actions.appendChild(histBtn);
+
+    card.appendChild(header);
+    card.appendChild(balEl);
+    card.appendChild(balSub);
+    card.appendChild(meta);
+    card.appendChild(prog);
+    card.appendChild(actions);
+    grid.appendChild(card);
+  });
+}
+
+function renderTx(txs) {
+  var tbody = document.getElementById('txBody');
+  tbody.innerHTML = '';
+
+  if (!txs.length) {
+    var tr = document.createElement('tr');
+    var td = document.createElement('td');
+    td.colSpan = 6;
+    td.className = 'empty-state';
+    td.textContent = 'No transactions yet.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  txs.forEach(function(tx) {
+    var tr = document.createElement('tr');
+
+    var cells = [
+      tx.created_at ? timeAgo(tx.created_at) : '—',
+      null, // badge
+      tx.from_bank || '—',
+      tx.to_bank || '—',
+      fmt(tx.amount),
+      tx.note || '—'
+    ];
+
+    cells.forEach(function(val, i) {
+      var td = document.createElement('td');
+      if (i === 1) {
+        var badge = document.createElement('span');
+        var type = (tx.type || 'credit').toLowerCase();
+        badge.className = 'tx-badge badge-' + type;
+        badge.textContent = type;
+        td.appendChild(badge);
+      } else {
+        td.textContent = val;
+      }
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+function loadAll() {
+  fetch('/api/banks')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var banks = data.banks || data || [];
+      renderSummary(banks);
+      renderBanks(banks);
+    })
+    .catch(function(e) { toast('Failed to load banks: ' + e.message, true); });
+
+  loadHistory(null);
+}
+
+function loadHistory(bankId) {
+  var url = '/api/banks/history' + (bankId ? '?bankId=' + encodeURIComponent(bankId) : '');
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) { renderTx(data.transactions || []); })
+    .catch(function() { renderTx([]); });
+}
+
+function runCompound() {
+  var btn = document.getElementById('compoundBtn');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  fetch('/api/banks/compound', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      closeModal('compoundModal');
+      btn.disabled = false;
+      btn.textContent = 'Compound Now';
+      toast('Compound complete. Total gain: ' + fmt(data.totalGain));
+      loadAll();
+    })
+    .catch(function(e) {
+      btn.disabled = false;
+      btn.textContent = 'Compound Now';
+      toast('Compound failed: ' + e.message, true);
+    });
+}
+
+function executeTrade() {
+  var fromId = document.getElementById('tradeFrom').value;
+  var toId = document.getElementById('tradeTo').value;
+  var amount = parseFloat(document.getElementById('tradeAmount').value);
+  var reason = document.getElementById('tradeReason').value.trim();
+
+  if (!fromId || !toId || !amount || amount <= 0) { toast('Fill all fields', true); return; }
+  if (fromId === toId) { toast('From and To banks must differ', true); return; }
+
+  fetch('/api/banks/trade', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fromId: fromId, toId: toId, amount: amount, reason: reason })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) throw new Error(data.error);
+      closeModal('tradeModal');
+      toast('Trade complete: ' + fmt(amount) + ' from ' + fromId + ' → ' + toId);
+      loadAll();
+    })
+    .catch(function(e) { toast('Trade failed: ' + e.message, true); });
+}
+
+function registerPartner() {
+  var id = document.getElementById('pId').value.trim();
+  var name = document.getElementById('pName').value.trim();
+  var owner = document.getElementById('pOwner').value.trim();
+  var splitPct = parseFloat(document.getElementById('pSplit').value || 0);
+  var compoundRate = parseFloat(document.getElementById('pRate').value || 0.008);
+
+  if (!id || !name || !owner) { toast('id, name and owner are required', true); return; }
+
+  fetch('/api/banks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'register', id: id, name: name, owner: owner, splitPct: splitPct, compoundRate: compoundRate })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) throw new Error(data.error);
+      closeModal('partnerModal');
+      toast('Partner bank registered: ' + name);
+      loadAll();
+    })
+    .catch(function(e) { toast('Registration failed: ' + e.message, true); });
+}
+
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>
