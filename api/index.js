@@ -88,24 +88,32 @@ const AVATAR_MODES = {
   },
 };
 
+// ── Persistent DB layer ──────────────────────────────────────────────────────
+const db      = require('../lib/db');
+const pf      = require('../lib/payfast');
+const agents  = require('../lib/agents');
+
 // ── Route handlers ──────────────────────────────────────────────────────────
 // Live system state (as at 2026-04-04)
 const agentNames = [
   'QuoteGen AI', 'Finance AI', 'Growth Hunter', 'Intelligence AI', 'Nurture AI',
   'Closer AI', 'Campaign AI', 'Creative AI', 'Support AI', 'Supply AI'
 ];
-let treasuryBalance = 1389208.00;
+const TREASURY_SEED = 1389208.00;
+let   treasuryBalance = TREASURY_SEED; // warm cache; refreshed from DB on each treasury request
 const CYCLE_COUNT   = 2697;
 const REVENUE_TOTAL = 541225.00;
 
 // ── Neurochemistry model ─────────────────────────────────────────────────────
 // C(t) = 0.4D + 0.2S + 0.25O + 0.15E
+// Warm cache — loaded from DB on first /api/neuro or /api/brain call
 let neuro = {
   D: 0.007,   // Dopamine
   S: 0.051,   // Serotonin
   O: 0.485,   // Oxytocin
   E: 0.783,   // Endorphins
 };
+let neuroLoaded = false;
 function computeCognition(n) {
   return +(0.4 * n.D + 0.2 * n.S + 0.25 * n.O + 0.15 * n.E).toFixed(4);
 }
@@ -245,6 +253,7 @@ module.exports = async (req, res) => {
     // Update neuro on interaction (conversation boosts oxytocin + serotonin slightly)
     neuro.O = Math.min(1, neuro.O + 0.008);
     neuro.S = Math.min(1, neuro.S + 0.004);
+    db.setNeuro(neuro).catch(() => {}); // persist async, don't block response
 
     return json(res, {
       id: `brain_${ts()}`, prompt: body.prompt,
@@ -703,25 +712,28 @@ module.exports = async (req, res) => {
 
   // ── /api/treasury (alias for treasury/summary) ──
   if (p === '/api/treasury') {
-    // Bucket names match treasury-dashboard.html expectations (ops/treasury/ubi/founder)
-    const recentTx = [
-      { timestamp: new Date(Date.now() - 3600000).toISOString(),  type: 'subscription', source: 'Patel Tech',       amount: 499, bucket: 'ops' },
-      { timestamp: new Date(Date.now() - 7200000).toISOString(),  type: 'subscription', source: 'Botha Digital',    amount: 49,  bucket: 'ops' },
-      { timestamp: new Date(Date.now() - 14400000).toISOString(), type: 'payout',       source: 'UBI Distribution', amount: -82, bucket: 'ubi' },
-      { timestamp: new Date(Date.now() - 28800000).toISOString(), type: 'subscription', source: 'Dlamini Group',    amount: 149, bucket: 'ops' },
-      { timestamp: new Date(Date.now() - 43200000).toISOString(), type: 'transfer',     source: 'Reserve Fund',     amount: 200, bucket: 'treasury' },
-      { timestamp: new Date(Date.now() - 86400000).toISOString(), type: 'subscription', source: 'Ndlovu Holdings',  amount: 149, bucket: 'ops' },
-    ];
+    // Read from DB (falls back to seed if not yet stored)
+    treasuryBalance = await db.getTreasuryBalance(TREASURY_SEED);
+    const recentTx = await db.getTransactions(10);
+    const staticFallback = recentTx.length === 0 ? [
+      { created_at: new Date(Date.now() - 3600000).toISOString(),  source: 'Patel Tech',       amount: 499,  status: 'success', meta: { type: 'subscription', bucket: 'ops' } },
+      { created_at: new Date(Date.now() - 7200000).toISOString(),  source: 'Botha Digital',    amount: 49,   status: 'success', meta: { type: 'subscription', bucket: 'ops' } },
+      { created_at: new Date(Date.now() - 14400000).toISOString(), source: 'UBI Distribution', amount: -82,  status: 'success', meta: { type: 'payout',        bucket: 'ubi' } },
+      { created_at: new Date(Date.now() - 28800000).toISOString(), source: 'Dlamini Group',    amount: 149,  status: 'success', meta: { type: 'subscription', bucket: 'ops' } },
+    ] : recentTx;
+    const recent = staticFallback.map(t => ({
+      timestamp: t.created_at, type: (t.meta && t.meta.type) || 'payment',
+      source: t.source, amount: t.amount, bucket: (t.meta && t.meta.bucket) || 'ops',
+    }));
     return json(res, {
-      total: +treasuryBalance.toFixed(2), balance: +treasuryBalance.toFixed(2), currency: 'USD',
+      total: +treasuryBalance.toFixed(2), balance: +treasuryBalance.toFixed(2), currency: 'ZAR',
       buckets: [
         { name: 'ops',      label: 'Operations', pct: 40, balance: +(treasuryBalance * 0.4).toFixed(2),  value: +(treasuryBalance * 0.4).toFixed(2) },
         { name: 'treasury', label: 'Growth',     pct: 25, balance: +(treasuryBalance * 0.25).toFixed(2), value: +(treasuryBalance * 0.25).toFixed(2) },
         { name: 'ubi',      label: 'Reserve',    pct: 20, balance: +(treasuryBalance * 0.2).toFixed(2),  value: +(treasuryBalance * 0.2).toFixed(2) },
         { name: 'founder',  label: 'Founder',    pct: 15, balance: +(treasuryBalance * 0.15).toFixed(2), value: +(treasuryBalance * 0.15).toFixed(2) },
       ],
-      recent: recentTx,
-      payments_today: 6,
+      recent, payments_today: staticFallback.length,
       status: 'healthy', ts: ts()
     });
   }
@@ -879,8 +891,12 @@ module.exports = async (req, res) => {
 
   // ── /api/neuro ──
   if (p === '/api/neuro') {
-    const ct = computeCognition(neuro);
-    const dom = dominantState(neuro);
+    // Load from DB on first request or POST (warm cache otherwise)
+    if (!neuroLoaded || req.method === 'POST') {
+      const stored = await db.getNeuro();
+      if (stored) neuro = stored;
+      neuroLoaded = true;
+    }
     const stateLabels = { D: 'Dopamine', S: 'Serotonin', O: 'Oxytocin', E: 'Endorphins' };
     if (req.method === 'POST') {
       const body = await parseBody(req);
@@ -892,16 +908,17 @@ module.exports = async (req, res) => {
         if (body.boost === 'endorphins')  neuro.E = Math.min(1, neuro.E + delta);
         if (body.boost === 'cognition') { neuro.D = Math.min(1, neuro.D + 0.04); neuro.S = Math.min(1, neuro.S + 0.03); }
       }
+      await db.setNeuro(neuro); // persist updated state
     }
+    const ct = computeCognition(neuro);
+    const dom = dominantState(neuro);
     return json(res, {
       D: +neuro.D.toFixed(4), S: +neuro.S.toFixed(4), O: +neuro.O.toFixed(4), E: +neuro.E.toFixed(4),
-      cognition: computeCognition(neuro),
-      state: `|${dom}⟩ ${stateLabels[dom]}`,
-      dominant: dom,
+      cognition: ct, state: `|${dom}⟩ ${stateLabels[dom]}`, dominant: dom,
       formula: 'C(t) = 0.4D + 0.2S + 0.25O + 0.15E',
       expression: {
         smile:   +Math.min(1, neuro.O * 1.2 + neuro.E * 0.4).toFixed(2),
-        brow:    +Math.min(1, neuro.D * 3 + computeCognition(neuro)).toFixed(2),
+        brow:    +Math.min(1, neuro.D * 3 + ct).toFixed(2),
         jaw:     +(neuro.D * 0.2).toFixed(2),
         tension: +Math.max(0, 1 - neuro.S - neuro.O * 0.5).toFixed(2),
         mode:    neuro.O > 0.4 ? 'facs' : neuro.D > 0.3 ? 'tension' : neuro.E > 0.5 ? 'embodied' : 'procedural',
@@ -1228,9 +1245,40 @@ module.exports = async (req, res) => {
   // ── /api/agents/execute-paid ──
   if (p === '/api/agents/execute-paid' && req.method === 'POST') {
     const body = await parseBody(req);
-    const cost = body.cost || 5;
-    treasuryBalance -= cost;
-    return json(res, { ok: true, task_id: `task_${ts()}`, agent: 'alpha', cost, treasury_balance: +treasuryBalance.toFixed(2), ts: ts() });
+    const agentName = body.agentName || body.agent || 'Growth Hunter';
+    const input     = body.input || '';
+    const cost      = body.cost || 5;
+
+    // Deduct cost from treasury
+    const newBalance = await db.addToTreasury(-cost, `agent_task:${agentName}`);
+    treasuryBalance = newBalance;
+
+    // Run the real agent (non-blocking — respond immediately, result in payload)
+    try {
+      const result = await agents.runAgent(agentName, input);
+      return json(res, { ok: true, task_id: `task_${ts()}`, agent: agentName, cost, treasury_balance: +newBalance.toFixed(2), result: result.output, ts: ts() });
+    } catch (e) {
+      return json(res, { ok: false, error: e.message, agent: agentName, cost, treasury_balance: +newBalance.toFixed(2), ts: ts() });
+    }
+  }
+
+  // ── /api/agents/run ──
+  if (p === '/api/agents/run' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const agentName = body.agentName || body.agent;
+    if (!agentName) return json(res, { error: 'agentName required' }, 400);
+    try {
+      const result = await agents.runAgent(agentName, body.input || '');
+      return json(res, { ok: true, ...result, ts: ts() });
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 400);
+    }
+  }
+
+  // ── /api/agents/run-all ──
+  if (p === '/api/agents/run-all' && req.method === 'POST') {
+    const results = await agents.runAllAgents();
+    return json(res, { ok: true, results, count: results.length, ts: ts() });
   }
 
   // ── /api/agents/economy ──
@@ -1263,10 +1311,32 @@ module.exports = async (req, res) => {
   // ── /api/create-payment ──
   if (p === '/api/create-payment' && req.method === 'POST') {
     const body = await parseBody(req);
-    return json(res, {
-      ok: true, payment_id: `pmt_${ts()}`, amount: body.amount || 149,
-      currency: 'ZAR', redirect_url: '/treasury-dashboard', provider: 'PayFast', ts: ts(),
-    }, 201);
+    if (!body.amount || !body.email) return json(res, { error: 'amount and email required' }, 400);
+    const result = pf.buildPaymentUrl({
+      amount:   body.amount,
+      email:    body.email,
+      itemName: body.itemName || 'Bridge AI-OS Subscription',
+      firstName: body.firstName || 'Client',
+      meta:     body.meta || '',
+    });
+    return json(res, { ok: true, ...result, ts: ts() }, 201);
+  }
+
+  // ── /api/payfast-webhook (ITN — PayFast calls this on payment completion) ──
+  if (p === '/api/payfast-webhook' && req.method === 'POST') {
+    const body = await parseBody(req);
+    // Verify signature
+    if (!pf.verifyWebhook(body)) {
+      console.warn('[PAYFAST] Invalid webhook signature');
+      return res.status(400).end('Invalid signature');
+    }
+    if (body.payment_status === 'COMPLETE') {
+      const amount = parseFloat(body.amount_gross || body.amount || 0);
+      const newBalance = await db.addToTreasury(amount, `PayFast:${body.pf_payment_id || body.m_payment_id}`);
+      treasuryBalance = newBalance; // update warm cache
+      console.log(`[PAYFAST] Payment complete: R${amount} — new balance: R${newBalance}`);
+    }
+    return res.status(200).end('OK');
   }
 
   // ── /api/customers ──
