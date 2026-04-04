@@ -10,9 +10,10 @@
     }
   },
   "crons": [
-    { "path": "/api/agents/auto", "schedule": "0 */6 * * *" },
-    { "path": "/api/banks/compound", "schedule": "0 0 * * *" },
-    { "path": "/api/treasury/reconcile", "schedule": "0 */3 * * *" }
+    { "path": "/api/agents/auto",       "schedule": "0 */6 * * *" },
+    { "path": "/api/infra/auto",        "schedule": "0 */1 * * *" },
+    { "path": "/api/banks/compound",    "schedule": "0 0 * * *"   },
+    { "path": "/api/treasury/reconcile","schedule": "0 */3 * * *" }
   ],
   "headers": [
     {

@@ -40,7 +40,7 @@
       { name: 'COMMAND', url: svcBase+'/command-center.html' }, { name: 'AGENTS', url: svcBase+'/agents.html' }, { name: 'TOPOLOGY', url: svcBase+'/topology.html' }, { name: 'LAYERS', url: svcBase+'/topology-layers.html' },
       { name: 'STATUS', url: svcBase+'/system-status-dashboard.html' }, { name: 'REGISTRY', url: svcBase+'/registry.html' },
       { name: 'LOGS', url: svcBase+'/logs.html' }, { name: 'TERMINAL', url: svcBase+'/terminal.html' },
-      { name: 'TREASURY', url: svcBase+'/treasury-dashboard.html' }, { name: 'BANKS', url: svcBase+'/banks.html' }, { name: 'DASHBOARD', url: svcBase+'/aoe-dashboard.html' }
+      { name: 'TREASURY', url: svcBase+'/treasury-dashboard.html' }, { name: 'BANKS', url: svcBase+'/banks.html' }, { name: 'INFRA', url: svcBase+'/infra.html' }, { name: 'DASHBOARD', url: svcBase+'/aoe-dashboard.html' }
     ],
     'MORE': [
       { name: 'APPS', url: svcBase+'/applications.html' }, { name: 'MARKETPLACE', url: svcBase+'/marketplace.html' },
