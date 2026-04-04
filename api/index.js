@@ -1382,15 +1382,19 @@ module.exports = async (req, res) => {
         return res.status(200).end('OK'); // return 200 so PayFast stops retrying
       }
 
-      // 4. Credit treasury + log transaction
-      const newBalance = await db.addToTreasury(amount, `PayFast:${paymentId}`);
+      // 4. Credit treasury + log transaction (idempotent)
       await db.logTransaction({ amount, status: 'success', source: body.email_address || 'PayFast', idempotencyKey: paymentId, meta: { plan: body.custom_str1, payment_id: paymentId } });
+      const newBalance = await db.addToTreasury(amount, `PayFast:${paymentId}`);
       treasuryBalance = newBalance;
 
-      // 5. Structured log (visible in Vercel function logs)
+      // 5. Trigger Finance AI agent with payment context (non-blocking)
+      agents.runAgent('Finance AI', `Payment received: R${amount} from ${body.email_address || 'customer'}. Plan: ${body.custom_str1 || 'unknown'}. New treasury: R${newBalance.toFixed(2)}.`)
+        .catch(e => console.warn('[PAYFAST] Agent trigger failed:', e.message));
+
+      // 6. Structured log (visible in Vercel function logs)
       console.log(JSON.stringify({ type: 'payment', amount, payment_id: paymentId, balance: newBalance, time: new Date().toISOString() }));
 
-      // 6. Telegram alert (non-blocking)
+      // 7. Telegram alert (non-blocking)
       notify.alertPayment({ amount, source: body.email_address, balance: newBalance }).catch(() => {});
     }
 
@@ -1561,6 +1565,36 @@ module.exports = async (req, res) => {
     return json(res, {
       balance: +(treasuryBalance * 0.05).toFixed(2), currency: 'ZAR',
       pending: 82.50, available: +(treasuryBalance * 0.05 - 82.50).toFixed(2), ts: ts(),
+    });
+  }
+
+  // ── /api/treasury/reconcile ──
+  if (p === '/api/treasury/reconcile') {
+    const result = await db.reconcileTreasury();
+    if (!result.ok && result.drift !== undefined) {
+      notify.alertError({ context: 'treasury-reconcile', message: `Drift detected: R${result.drift} (${result.driftPct}%). Auto-healed.` }).catch(() => {});
+    }
+    return json(res, { ...result, ts: ts() });
+  }
+
+  // ── /api/ai-spend ──
+  if (p === '/api/ai-spend') {
+    const spend = await db.getAISpend();
+    return json(res, { ...spend, exceeded: spend.spend > spend.budget, ts: ts() });
+  }
+
+  // ── /api/system/health (comprehensive) ──
+  if (p === '/api/system/health') {
+    const [tBalance, spend, recon] = await Promise.all([
+      db.getTreasuryBalance(),
+      db.getAISpend(),
+      db.reconcileTreasury().catch(() => ({ ok: false })),
+    ]);
+    return json(res, {
+      treasury: { balance: tBalance, reconciled: recon.ok, drift: recon.drift || 0 },
+      ai: { spend: spend.spend, budget: spend.budget, ok: spend.spend <= spend.budget },
+      system: { uptime_s: os.uptime(), memory_pct: +((1-os.freemem()/os.totalmem())*100).toFixed(1) },
+      ts: ts(),
     });
   }
 
