@@ -1059,6 +1059,248 @@ module.exports = async (req, res) => {
     }, 201);
   }
 
+  // ── /api/affiliate/* ──
+  if (p.startsWith('/api/affiliate')) {
+    const sub = p.replace('/api/affiliate', '').replace(/^\//, '') || 'dashboard';
+    const affiliates = [
+      { id: 'aff_001', name: 'Sipho Ndlovu',  code: 'SIPHO20',  clicks: 142, signups: 12, revenue: 1788, payout: 178.8, tier: 'silver' },
+      { id: 'aff_002', name: 'Priya Naidoo',  code: 'PRIYA20',  clicks: 289, signups: 31, revenue: 4619, payout: 461.9, tier: 'gold'   },
+      { id: 'aff_003', name: 'Thabo Mokoena', code: 'THABO20',  clicks: 88,  signups: 7,  revenue: 1043, payout: 104.3, tier: 'bronze' },
+    ];
+    if (sub === 'program' || sub === 'dashboard') return json(res, {
+      program: { commission_pct: 10, cookie_days: 30, min_payout: 50, currency: 'ZAR' },
+      stats: { total_affiliates: 3, total_clicks: 519, total_signups: 50, total_revenue: 7450, total_paid: 744.9 },
+      top_affiliate: affiliates[1], ts: ts(),
+    });
+    if (sub === 'stats')       return json(res, { clicks_today: 34, signups_today: 3, revenue_today: 447, conversion_rate: 8.8, ts: ts() });
+    if (sub === 'leaderboard') return json(res, { leaderboard: affiliates, ts: ts() });
+    if (sub === 'creatives')   return json(res, { creatives: [
+      { id: 'cr_001', type: 'banner', size: '728x90', url: '/assets/banners/bridge-728x90.png', clicks: 211 },
+      { id: 'cr_002', type: 'banner', size: '300x250', url: '/assets/banners/bridge-300x250.png', clicks: 178 },
+      { id: 'cr_003', type: 'text',   copy: 'Automate your business with Bridge AI OS', clicks: 130 },
+    ], ts: ts() });
+    if (sub === 'payouts') return json(res, { payouts: [
+      { id: 'pay_a01', affiliate: 'Priya Naidoo', amount: 461.9, status: 'paid',    date: '2026-04-01' },
+      { id: 'pay_a02', affiliate: 'Sipho Ndlovu', amount: 178.8, status: 'pending', date: '2026-04-04' },
+    ], ts: ts() });
+    if (sub === 'join' && req.method === 'POST') {
+      const body = await parseBody(req);
+      return json(res, { ok: true, affiliate_id: `aff_${ts()}`, code: `${(body.name||'USER').slice(0,5).toUpperCase()}20`, ts: ts() }, 201);
+    }
+    return json(res, { error: 'unknown affiliate endpoint' }, 404);
+  }
+
+  // ── /api/agents/execute-paid ──
+  if (p === '/api/agents/execute-paid' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const cost = body.cost || 5;
+    treasuryBalance -= cost;
+    return json(res, { ok: true, task_id: `task_${ts()}`, agent: 'alpha', cost, treasury_balance: +treasuryBalance.toFixed(2), ts: ts() });
+  }
+
+  // ── /api/agents/economy ──
+  if (p === '/api/agents/economy') {
+    return json(res, {
+      total_agents: agentNames.length, active: agentNames.length,
+      tasks_completed: agentNames.length * 47, revenue_generated: +(treasuryBalance * 0.12).toFixed(2),
+      cost_per_task: 2.40, avg_task_time_s: 1.8, ts: ts(),
+    });
+  }
+
+  // ── /api/agents/workforce ──
+  if (p === '/api/agents/workforce') {
+    return json(res, {
+      workforce: agentNames.map((n, i) => ({
+        id: `agent_${i}`, name: n, role: ['analyst','executor','planner','monitor'][i % 4],
+        layer: i < 3 ? 'L1' : i < 6 ? 'L2' : 'L3', utilisation_pct: +(70 + i * 3).toFixed(1),
+        tasks_today: 40 + i * 7, status: 'active',
+      })),
+      ts: ts(),
+    });
+  }
+
+  // ── /api/bossbots/:id/toggle ──
+  if (p.match(/^\/api\/bossbots\/[^/]+\/toggle$/) && req.method === 'POST') {
+    const id = p.split('/')[3];
+    return json(res, { ok: true, bossbot_id: id, status: 'toggled', ts: ts() });
+  }
+
+  // ── /api/create-payment ──
+  if (p === '/api/create-payment' && req.method === 'POST') {
+    const body = await parseBody(req);
+    return json(res, {
+      ok: true, payment_id: `pmt_${ts()}`, amount: body.amount || 149,
+      currency: 'ZAR', redirect_url: '/treasury-dashboard', provider: 'PayFast', ts: ts(),
+    }, 201);
+  }
+
+  // ── /api/customers ──
+  if (p === '/api/customers' || p.startsWith('/api/customers/')) {
+    const customers = CONTACTS.filter(c => c.status === 'customer').map(c => ({
+      id: c.id, name: c.name, email: c.email, company: c.company,
+      plan: c.plan, value: c.value, joined: c.joined, ltv: c.value * 6,
+    }));
+    if (p === '/api/customers') return json(res, { customers, count: customers.length, ts: ts() });
+    const id = p.split('/')[3];
+    const found = customers.find(c => c.id === id);
+    if (!found) return json(res, { error: 'customer not found' }, 404);
+    return json(res, { customer: found, ts: ts() });
+  }
+
+  // ── /api/economy/dashboard ──
+  if (p === '/api/economy/dashboard') {
+    return json(res, {
+      gdp_contribution: +(treasuryBalance * 0.0032).toFixed(2),
+      jobs_created: 47, ubi_distributed: +(treasuryBalance * 0.20).toFixed(2),
+      gini_impact: -0.012, currency: 'ZAR', ts: ts(),
+    });
+  }
+
+  // ── /api/ehsa/funnel ──
+  if (p === '/api/ehsa/funnel') {
+    return json(res, {
+      funnel: [
+        { stage: 'Referred',    count: 3420 },
+        { stage: 'Screened',    count: 2180 },
+        { stage: 'Diagnosed',   count: 1470 },
+        { stage: 'Treated',     count: 1240 },
+        { stage: 'Discharged',  count: 1190 },
+      ], ts: ts(),
+    });
+  }
+
+  // ── /api/fabric/dashboard ──
+  if (p === '/api/fabric/dashboard') {
+    return json(res, {
+      nodes: 12, edges: 34, active_contracts: 8,
+      throughput_rps: 142, latency_ms: 18, ts: ts(),
+    });
+  }
+
+  // ── /api/full (brain alias with extra fields) ──
+  if (p === '/api/full') {
+    const mrr = CONTACTS.filter(c => c.status === 'customer').reduce((s, c) => s + c.value, 0);
+    return json(res, {
+      treasury: { balance: +treasuryBalance.toFixed(2), currency: 'ZAR' },
+      agents: { count: agentNames.length, active: agentNames.length },
+      crm: { customers: CONTACTS.filter(c => c.status === 'customer').length, leads: CONTACTS.filter(c => c.status !== 'customer').length },
+      mrr, invoices: INVOICES.length, tickets: TICKETS.length,
+      system: { uptime_s: os.uptime(), memory_pct: +((1 - os.freemem() / os.totalmem()) * 100).toFixed(1) },
+      ts: ts(),
+    });
+  }
+
+  // ── /api/governance/* ──
+  if (p.startsWith('/api/governance')) {
+    const PROPOSALS = [
+      { id: 'prop_001', title: 'Increase UBI allocation to 25%', status: 'active',  votes_for: 142, votes_against: 38, ends: '2026-04-10' },
+      { id: 'prop_002', title: 'Add new agent layer L4',          status: 'passed',  votes_for: 201, votes_against: 12, ends: '2026-03-28' },
+      { id: 'prop_003', title: 'Reduce founder fee to 10%',       status: 'failed',  votes_for: 67,  votes_against: 189, ends: '2026-03-20' },
+    ];
+    if (p === '/api/governance/proposals') return json(res, { proposals: PROPOSALS, ts: ts() });
+    if (p === '/api/governance/vote' && req.method === 'POST') {
+      const body = await parseBody(req);
+      return json(res, { ok: true, proposal_id: body.proposal_id, vote: body.vote, ts: ts() });
+    }
+    return json(res, { error: 'unknown governance endpoint' }, 404);
+  }
+
+  // ── /api/integrations/status ──
+  if (p === '/api/integrations/status') {
+    return json(res, { integrations: [
+      { name: 'PayFast',    status: 'connected', last_sync: new Date(Date.now() - 300000).toISOString() },
+      { name: 'Supabase',  status: 'connected', last_sync: new Date(Date.now() - 60000).toISOString()  },
+      { name: 'Sendgrid',  status: 'connected', last_sync: new Date(Date.now() - 600000).toISOString() },
+      { name: 'Cloudflare',status: 'connected', last_sync: new Date(Date.now() - 120000).toISOString() },
+      { name: 'Anthropic', status: 'connected', last_sync: new Date(Date.now() - 30000).toISOString()  },
+    ], ts: ts() });
+  }
+
+  // ── /api/intelligence/dashboard ──
+  if (p === '/api/intelligence/dashboard') {
+    return json(res, {
+      signals_processed: agentNames.length * 1240, anomalies_detected: 3,
+      confidence_avg: 94.2, decisions_made: 47, model: 'bridge-ai-v2', ts: ts(),
+    });
+  }
+
+  // ── /api/ledger ──
+  if (p === '/api/ledger') {
+    return json(res, {
+      entries: INVOICES.map((inv, i) => ({
+        id: `ldg_${i + 1}`, type: inv.status === 'paid' ? 'credit' : 'debit',
+        amount: inv.amount, description: inv.description, date: inv.issued,
+        balance: +(treasuryBalance - i * 50).toFixed(2),
+      })),
+      total_credits: INVOICES.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0),
+      ts: ts(),
+    });
+  }
+
+  // ── /api/mfa/setup ──
+  if (p === '/api/mfa/setup' && req.method === 'POST') {
+    return json(res, { ok: true, totp_secret: 'JBSWY3DPEHPK3PXP', qr_url: 'data:image/png;base64,iVBOR', ts: ts() });
+  }
+
+  // ── /api/output/* ──
+  if (p.startsWith('/api/output')) {
+    return json(res, { output: [], count: 0, ts: ts() });
+  }
+
+  // ── /api/pricing ──
+  if (p === '/api/pricing') {
+    return json(res, { plans: [
+      { id: 'starter',    name: 'Starter',    price: 49,  currency: 'ZAR', features: ['5 agents', '1k tasks/mo', 'Basic analytics'] },
+      { id: 'pro',        name: 'Pro',        price: 149, currency: 'ZAR', features: ['20 agents', '10k tasks/mo', 'Full analytics', 'CRM'] },
+      { id: 'enterprise', name: 'Enterprise', price: 499, currency: 'ZAR', features: ['Unlimited agents', 'Unlimited tasks', 'All features', 'SLA'] },
+    ], ts: ts() });
+  }
+
+  // ── /api/quotes ──
+  if (p === '/api/quotes' || p.match(/^\/api\/quotes\/[^/]+\/accept$/)) {
+    const QUOTES = [
+      { id: 'quo_001', client: 'Asante Africa',    amount: 499, status: 'sent',     valid_until: '2026-04-15', items: [{ desc: 'Enterprise Plan', qty: 1, price: 499 }] },
+      { id: 'quo_002', client: 'Khumalo Corp',     amount: 149, status: 'draft',    valid_until: '2026-04-20', items: [{ desc: 'Pro Plan', qty: 1, price: 149 }] },
+      { id: 'quo_003', client: 'Mokoena Consulting',amount: 149, status: 'accepted', valid_until: '2026-04-10', items: [{ desc: 'Pro Plan Onboarding', qty: 1, price: 149 }] },
+    ];
+    if (p === '/api/quotes') return json(res, { quotes: QUOTES, count: QUOTES.length, ts: ts() });
+    const id = p.split('/')[3];
+    if (req.method === 'POST') return json(res, { ok: true, quote_id: id, status: 'accepted', ts: ts() });
+    return json(res, { error: 'method not allowed' }, 405);
+  }
+
+  // ── /api/revenue/summary ──
+  if (p === '/api/revenue/summary') {
+    const mrr = CONTACTS.filter(c => c.status === 'customer').reduce((s, c) => s + c.value, 0);
+    return json(res, {
+      mrr, arr: mrr * 12, ltv_avg: mrr * 6,
+      churn_rate: 2.1, growth_pct: 12.3,
+      revenue_by_plan: { starter: 98, pro: 447, enterprise: 998 },
+      ts: ts(),
+    });
+  }
+
+  // ── /api/supaclaw/runtime ──
+  if (p === '/api/supaclaw/runtime') {
+    return json(res, {
+      version: '2.5.0', layers: ['L1','L2','L3','L9','L10','L27'],
+      active_loops: 3, tick_rate_ms: 100, uptime_s: os.uptime(), ts: ts(),
+    });
+  }
+
+  // ── /api/supaclaw/tick ──
+  if (p === '/api/supaclaw/tick' && req.method === 'POST') {
+    return json(res, { ok: true, tick: ts(), agents_pulsed: agentNames.length, ts: ts() });
+  }
+
+  // ── /api/wallet/balance ──
+  if (p === '/api/wallet/balance') {
+    return json(res, {
+      balance: +(treasuryBalance * 0.05).toFixed(2), currency: 'ZAR',
+      pending: 82.50, available: +(treasuryBalance * 0.05 - 82.50).toFixed(2), ts: ts(),
+    });
+  }
+
   // ── 404 ──
   return json(res, { error: 'not_found', path: p, available: [
     '/health', '/api/health', '/api/brain', '/api/topology', '/api/avatar/{mode}',
