@@ -1296,51 +1296,80 @@ module.exports = async (req, res) => {
     }
   }
 
-  // ── /api/agents/run-all ──
+  // ── /api/agents/run-all — manual override with full pipeline enforcement ──
   if (p === '/api/agents/run-all' && req.method === 'POST') {
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
     if (rateLimit(ip, 'agent-run-all', 2)) return json(res, { error: 'rate_limited', retry_after: 60 }, 429);
-    const results = await agents.runAllAgents();
-    // Persist outputs to system_state for instant page loads
-    const outputMap = {};
-    results.forEach(r => { outputMap[r.agentName] = { output: r.output || null, error: r.error || null, timestamp: r.timestamp || new Date().toISOString() }; });
-    await db.setState('agent_outputs', outputMap);
-    await db.setState('agent_last_run', new Date().toISOString());
-    console.log(JSON.stringify({ type: 'agent_run_all', count: results.length, time: new Date().toISOString() }));
-    return json(res, { ok: true, results, count: results.length, ts: ts() });
+
+    const { results, valid, discarded, executionStatus } = await agents.runAllAgentsValidated();
+
+    // Binary validity: only persist if at least one value-positive output exists
+    let committed = {};
+    if (valid.length > 0) {
+      committed = await db.commitAgentCycle(valid, executionStatus);
+    }
+
+    console.log(JSON.stringify({ type: 'agent_run_all', total: results.length, valid: valid.length, discarded: discarded.length, executionStatus, time: new Date().toISOString() }));
+    return json(res, { ok: true, results, valid: valid.length, discarded: discarded.length, executionStatus, ts: ts() });
   }
 
-  // ── /api/agents/outputs — returns persisted last-run outputs ──
+  // ── /api/agents/outputs — cached outputs from system_state (no execution) ──
   if (p === '/api/agents/outputs') {
-    const outputs  = await db.getState('agent_outputs') || {};
-    const lastRun  = await db.getState('agent_last_run') || null;
-    const { spend, budget } = await db.getAISpend();
-    return json(res, { outputs, lastRun, spend, budget, ts: ts() });
+    const state = await db.getSystemState();
+    return json(res, {
+      outputs:          state.agents.outputs,
+      lastRun:          state.agents.last_run,
+      executionStatus:  state.agents.execution_status,
+      spend:            state.ai.spend,
+      budget:           state.ai.budget,
+      ts: ts(),
+    });
   }
 
-  // ── /api/agents/auto — Vercel cron target (GET) ──
+  // ── /api/agents/auto — Vercel cron target, closed-loop pipeline ──
   if (p === '/api/agents/auto') {
-    // Verify cron secret if set
     const cronSecret = process.env.CRON_SECRET;
     if (cronSecret) {
       const auth = req.headers['authorization'] || '';
       if (auth !== 'Bearer ' + cronSecret) return json(res, { error: 'unauthorized' }, 401);
     }
     try {
-      const results = await agents.runAllAgents();
-      const outputMap = {};
-      results.forEach(r => { outputMap[r.agentName] = { output: r.output || null, error: r.error || null, timestamp: r.timestamp || new Date().toISOString() }; });
-      await db.setState('agent_outputs', outputMap);
-      await db.setState('agent_last_run', new Date().toISOString());
-      const ok    = results.filter(r => !r.error).length;
-      const errCt = results.filter(r =>  r.error).length;
-      console.log(JSON.stringify({ type: 'agent_auto_cycle', ok, errors: errCt, time: new Date().toISOString() }));
-      notify.alertSystemEvent(`Auto agent cycle complete: ${ok} ok, ${errCt} errors.`).catch(() => {});
-      return json(res, { ok: true, ran: results.length, success: ok, errors: errCt, ts: ts() });
+      const { results, valid, discarded, executionStatus } = await agents.runAllAgentsValidated();
+
+      // Pipeline enforcement: commit only if state_valid (executionStatus !== 'failed')
+      // AND value_positive (at least one valid output)
+      const stateValid    = executionStatus !== 'failed';
+      const valuePositive = valid.length > 0;
+
+      let committed = {};
+      if (stateValid && valuePositive) {
+        committed = await db.commitAgentCycle(valid, executionStatus);
+      } else {
+        // Log discard reason but do NOT overwrite existing good state
+        console.warn(JSON.stringify({ type: 'agent_cycle_discarded', stateValid, valuePositive, executionStatus, time: new Date().toISOString() }));
+      }
+
+      console.log(JSON.stringify({ type: 'agent_auto_cycle', total: results.length, valid: valid.length, discarded: discarded.length, committed: Object.keys(committed).length, executionStatus, time: new Date().toISOString() }));
+      notify.alertSystemEvent(`Agent cycle [${executionStatus}]: ${valid.length}/${results.length} outputs committed.`).catch(() => {});
+
+      return json(res, {
+        ok:              stateValid && valuePositive,
+        executionStatus, ran: results.length,
+        valid:           valid.length,
+        discarded:       discarded.length,
+        committed:       Object.keys(committed).length,
+        ts:              ts(),
+      });
     } catch (e) {
       console.error('[AGENTS/AUTO]', e.message);
       return json(res, { ok: false, error: e.message }, 500);
     }
+  }
+
+  // ── /api/system/state — unified single source of truth ──
+  if (p === '/api/system/state') {
+    const state = await db.getSystemState();
+    return json(res, state);
   }
 
   // ── /api/agents/economy ──

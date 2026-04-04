@@ -206,28 +206,51 @@
       if (entry.timestamp) time.textContent = timeAgo(entry.timestamp);
     }
 
+    // Status colour map for execution_status field
+    var STATUS_COLOUR = {
+      complete: '#4ade80',
+      partial:  '#fbbf24',
+      failed:   '#f87171',
+      never:    '#64748b',
+      running:  '#fbbf24',
+    };
+
     async function loadOutputs() {
       try {
-        var res  = await fetch('/api/agents/outputs');
-        var data = await res.json();
+        // Single source of truth — reads system_state, never triggers execution
+        var res   = await fetch('/api/system/state');
+        var state = await res.json();
 
-        // Last run label
-        var lbl = document.getElementById('lastRunLabel');
-        lbl.textContent = data.lastRun ? 'Auto: ' + timeAgo(data.lastRun) : 'No auto-run yet';
+        var agents  = state.agents  || {};
+        var aiState = state.ai      || {};
 
-        // AI spend
-        if (data.spend !== undefined) {
-          document.getElementById('aiSpend').textContent = 'R' + data.spend.toFixed(2);
-          var pct = data.budget > 0 ? Math.min(100, (data.spend / data.budget) * 100) : 0;
-          document.getElementById('spendBar').style.width = pct.toFixed(1) + '%';
+        // Last run + status badge
+        var lbl    = document.getElementById('lastRunLabel');
+        var status = agents.execution_status || 'never';
+        var colour = STATUS_COLOUR[status] || '#64748b';
+        lbl.textContent = agents.last_run
+          ? status.toUpperCase() + ' · ' + timeAgo(agents.last_run)
+          : 'No cycle yet';
+        lbl.style.color = colour;
+        document.querySelector('.auto-badge .dot').style.background = colour;
+
+        // AI spend bar
+        var spend  = aiState.spend  || 0;
+        var budget = aiState.budget || 500;
+        document.getElementById('aiSpend').textContent = 'R' + spend.toFixed(2);
+        var pct = budget > 0 ? Math.min(100, (spend / budget) * 100) : 0;
+        document.getElementById('spendBar').style.width = pct.toFixed(1) + '%';
+
+        // Treasury
+        if (state.treasury && state.treasury.balance) {
+          document.getElementById('treasury').textContent = 'R' + Math.round(state.treasury.balance).toLocaleString();
         }
 
-        // Apply cached outputs to cards
-        if (data.outputs) {
-          Object.keys(data.outputs).forEach(function(name) {
-            applyOutput(name, data.outputs[name]);
-          });
-        }
+        // Apply cached outputs — only value-positive entries exist in state
+        var outputs = agents.outputs || {};
+        Object.keys(outputs).forEach(function(name) {
+          applyOutput(name, outputs[name]);
+        });
       } catch (_) {}
     }
 
@@ -286,8 +309,8 @@
       await Promise.all(agentDefs.map(function(a) { return runAgent(a.name); }));
       btn.disabled = false;
       statusEl.className   = 'run-status done';
-      statusEl.textContent = 'All agents complete — outputs saved';
-      loadOutputs(); // refresh spend + last-run
+      statusEl.textContent = 'Cycle complete — reloading state…';
+      loadOutputs(); // pull fresh system_state from Supabase
       setTimeout(function() {
         statusEl.className   = 'run-status';
         statusEl.textContent = 'Ready';
@@ -305,17 +328,8 @@
       });
     }
 
-    async function loadTreasury() {
-      try {
-        var res  = await fetch('/api/treasury');
-        var data = await res.json();
-        document.getElementById('treasury').textContent = 'R' + Math.round(data.total || 0).toLocaleString();
-      } catch (_) {}
-    }
-
     buildGrid();
-    loadTreasury();
-    loadOutputs();
+    loadOutputs(); // loads treasury, spend, outputs — all from system_state
   </script>
 </body>
 </html>
