@@ -93,6 +93,10 @@ const db      = require('../lib/db');
 const pf      = require('../lib/payfast');
 const agents  = require('../lib/agents');
 const notify  = require('../lib/notify');
+const banks   = require('../lib/banks');
+
+// Seed system banks on first cold start (no-op if already seeded)
+banks.seedBanksIfEmpty().catch(() => {});
 
 // ── Route handlers ──────────────────────────────────────────────────────────
 // Live system state (as at 2026-04-04)
@@ -1297,8 +1301,46 @@ module.exports = async (req, res) => {
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
     if (rateLimit(ip, 'agent-run-all', 2)) return json(res, { error: 'rate_limited', retry_after: 60 }, 429);
     const results = await agents.runAllAgents();
+    // Persist outputs to system_state for instant page loads
+    const outputMap = {};
+    results.forEach(r => { outputMap[r.agentName] = { output: r.output || null, error: r.error || null, timestamp: r.timestamp || new Date().toISOString() }; });
+    await db.setState('agent_outputs', outputMap);
+    await db.setState('agent_last_run', new Date().toISOString());
     console.log(JSON.stringify({ type: 'agent_run_all', count: results.length, time: new Date().toISOString() }));
     return json(res, { ok: true, results, count: results.length, ts: ts() });
+  }
+
+  // ── /api/agents/outputs — returns persisted last-run outputs ──
+  if (p === '/api/agents/outputs') {
+    const outputs  = await db.getState('agent_outputs') || {};
+    const lastRun  = await db.getState('agent_last_run') || null;
+    const { spend, budget } = await db.getAISpend();
+    return json(res, { outputs, lastRun, spend, budget, ts: ts() });
+  }
+
+  // ── /api/agents/auto — Vercel cron target (GET) ──
+  if (p === '/api/agents/auto') {
+    // Verify cron secret if set
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret) {
+      const auth = req.headers['authorization'] || '';
+      if (auth !== 'Bearer ' + cronSecret) return json(res, { error: 'unauthorized' }, 401);
+    }
+    try {
+      const results = await agents.runAllAgents();
+      const outputMap = {};
+      results.forEach(r => { outputMap[r.agentName] = { output: r.output || null, error: r.error || null, timestamp: r.timestamp || new Date().toISOString() }; });
+      await db.setState('agent_outputs', outputMap);
+      await db.setState('agent_last_run', new Date().toISOString());
+      const ok    = results.filter(r => !r.error).length;
+      const errCt = results.filter(r =>  r.error).length;
+      console.log(JSON.stringify({ type: 'agent_auto_cycle', ok, errors: errCt, time: new Date().toISOString() }));
+      notify.alertSystemEvent(`Auto agent cycle complete: ${ok} ok, ${errCt} errors.`).catch(() => {});
+      return json(res, { ok: true, ran: results.length, success: ok, errors: errCt, ts: ts() });
+    } catch (e) {
+      console.error('[AGENTS/AUTO]', e.message);
+      return json(res, { ok: false, error: e.message }, 500);
+    }
   }
 
   // ── /api/agents/economy ──
@@ -1386,6 +1428,11 @@ module.exports = async (req, res) => {
       await db.logTransaction({ amount, status: 'success', source: body.email_address || 'PayFast', idempotencyKey: paymentId, meta: { plan: body.custom_str1, payment_id: paymentId } });
       const newBalance = await db.addToTreasury(amount, `PayFast:${paymentId}`);
       treasuryBalance = newBalance;
+
+      // 4b. Split payment across all banks
+      banks.splitPayment(amount, paymentId, body.email_address || 'PayFast').catch(e =>
+        console.warn('[PAYFAST] Bank split failed:', e.message)
+      );
 
       // 5. Trigger Finance AI agent with payment context (non-blocking)
       agents.runAgent('Finance AI', `Payment received: R${amount} from ${body.email_address || 'customer'}. Plan: ${body.custom_str1 || 'unknown'}. New treasury: R${newBalance.toFixed(2)}.`)
@@ -1566,6 +1613,91 @@ module.exports = async (req, res) => {
       balance: +(treasuryBalance * 0.05).toFixed(2), currency: 'ZAR',
       pending: 82.50, available: +(treasuryBalance * 0.05 - 82.50).toFixed(2), ts: ts(),
     });
+  }
+
+  // ── /api/banks ─────────────────────────────────────────────────────────────
+
+  // GET /api/banks — list all banks with balances
+  if (p === '/api/banks' && req.method !== 'POST') {
+    const all = await banks.getAllBanks();
+    const total = all.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+    return json(res, { banks: all, count: all.length, total: +total.toFixed(2), ts: ts() });
+  }
+
+  // POST /api/banks — register a partner bank
+  if (p === '/api/banks' && req.method === 'POST') {
+    const body = await parseBody(req);
+    if (!body.id || !body.name || !body.owner) return json(res, { error: 'id, name, owner required' }, 400);
+    try {
+      const bank = await banks.registerPartnerBank(body);
+      return json(res, { ok: true, bank, ts: ts() }, 201);
+    } catch (e) {
+      return json(res, { error: e.message }, 400);
+    }
+  }
+
+  // GET /api/banks/compound — preview compound amounts without executing
+  if (p === '/api/banks/compound' && req.method === 'GET') {
+    const all = await banks.getAllBanks();
+    const preview = all.filter(b => b.active !== false).map(b => ({
+      bankId: b.id, name: b.name,
+      balance: +parseFloat(b.balance || 0).toFixed(2),
+      rate: parseFloat(b.compound_rate || 0),
+      projectedGain: +(parseFloat(b.balance || 0) * parseFloat(b.compound_rate || 0)).toFixed(2),
+    }));
+    const totalGain = preview.reduce((s, b) => s + b.projectedGain, 0);
+    return json(res, { preview, totalGain: +totalGain.toFixed(2), ts: ts() });
+  }
+
+  // POST /api/banks/compound — execute compound cycle
+  if (p === '/api/banks/compound' && req.method === 'POST') {
+    try {
+      const result = await banks.compoundAll();
+      return json(res, { ok: true, ...result, ts: ts() });
+    } catch (e) {
+      return json(res, { error: e.message }, 500);
+    }
+  }
+
+  // POST /api/banks/trade — internal bank-to-bank transfer
+  if (p === '/api/banks/trade' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const { from, to, amount, reason } = body;
+    if (!from || !to || !amount) return json(res, { error: 'from, to, amount required' }, 400);
+    try {
+      const result = await banks.tradeBetweenBanks(from, to, parseFloat(amount), reason || '');
+      return json(res, { ok: true, ...result, ts: ts() });
+    } catch (e) {
+      return json(res, { error: e.message }, 400);
+    }
+  }
+
+  // POST /api/banks/split — manually trigger a payment split (testing)
+  if (p === '/api/banks/split' && req.method === 'POST') {
+    const body = await parseBody(req);
+    if (!body.amount) return json(res, { error: 'amount required' }, 400);
+    try {
+      const splits = await banks.splitPayment(parseFloat(body.amount), body.paymentId || `manual_${ts()}`, body.source || 'manual');
+      return json(res, { ok: true, splits, ts: ts() });
+    } catch (e) {
+      return json(res, { error: e.message }, 500);
+    }
+  }
+
+  // GET /api/banks/history — all bank transactions
+  if (p === '/api/banks/history' || p.match(/^\/api\/banks\/[^/]+\/history$/)) {
+    const bankId = p.match(/^\/api\/banks\/([^/]+)\/history$/) ? p.split('/')[3] : null;
+    const history = await banks.getBankHistory(bankId, 50);
+    return json(res, { history, count: history.length, ts: ts() });
+  }
+
+  // GET /api/banks/:id — single bank
+  if (p.match(/^\/api\/banks\/[^/]+$/) && req.method === 'GET') {
+    const id = p.split('/')[3];
+    const bank = await banks.getBank(id);
+    if (!bank) return json(res, { error: 'bank not found' }, 404);
+    const history = await banks.getBankHistory(id, 10);
+    return json(res, { bank, history, ts: ts() });
   }
 
   // ── /api/treasury/reconcile ──

@@ -27,15 +27,17 @@
     .agent-card.running{border-color:#fbbf24;animation:pulse 1.5s ease-in-out infinite}
     .agent-card.done{border-color:#4ade80}
     .agent-card.error{border-color:#f87171}
+    .agent-card.cached{border-color:rgba(99,255,218,0.25)}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
     .agent-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
     .agent-dot{width:8px;height:8px;border-radius:50%;background:#1a2a3a;flex-shrink:0}
     .agent-dot.active{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.5)}
+    .agent-dot.cached{background:#63ffda;box-shadow:0 0 6px rgba(99,255,218,0.4)}
     .agent-dot.running{background:#fbbf24;box-shadow:0 0 6px rgba(251,191,36,0.5)}
     .agent-dot.error{background:#f87171}
     .agent-name{font-size:0.92rem;font-weight:700}
     .agent-layer{font-size:0.7rem;color:#63ffda;background:rgba(99,255,218,0.1);padding:2px 8px;border-radius:10px;margin-left:auto}
-    .agent-output{font-size:0.78rem;color:#94a3b8;line-height:1.5;min-height:40px;margin-bottom:12px;word-break:break-word}
+    .agent-output{font-size:0.78rem;color:#94a3b8;line-height:1.5;min-height:40px;margin-bottom:12px;word-break:break-word;max-height:160px;overflow-y:auto}
     .agent-output.loaded{color:#cbd5e1}
     .agent-footer{display:flex;align-items:center;gap:8px}
     .agent-run-btn{padding:5px 14px;font-size:0.75rem;font-weight:700;background:rgba(99,255,218,0.08);border:1px solid rgba(99,255,218,0.2);color:#63ffda;border-radius:6px;cursor:pointer;transition:all 0.15s}
@@ -45,15 +47,20 @@
     .input-row{display:flex;gap:8px;margin-bottom:8px}
     .agent-input{flex:1;padding:6px 10px;background:#111827;border:1px solid #1a2a3a;border-radius:6px;color:#fff;font-size:0.78rem;outline:none}
     .agent-input:focus{border-color:#63ffda}
-    .treasury-bar{background:#0a0e17;border:1px solid #1a2a3a;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+    .stats-bar{background:#0a0e17;border:1px solid #1a2a3a;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
     .t-stat{text-align:center}
     .t-val{font-size:1.4rem;font-weight:800;color:#63ffda}
     .t-label{font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+    .auto-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;background:rgba(99,255,218,0.08);border:1px solid rgba(99,255,218,0.2);color:#63ffda;margin-left:auto}
+    .auto-badge .dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:blink 2s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+    .spend-bar{width:100%;height:3px;background:#1e293b;border-radius:2px;margin-top:6px;overflow:hidden}
+    .spend-fill{height:100%;background:linear-gradient(90deg,#63ffda,#fbbf24);border-radius:2px;transition:width 0.5s}
     @media(max-width:640px){
       .agents-grid{grid-template-columns:1fr}
       .dashboard{padding:14px}
       h1{font-size:1.3rem}
-      .treasury-bar{gap:14px}
+      .stats-bar{gap:14px}
     }
   </style>
 </head>
@@ -61,18 +68,27 @@
   <script src="/bridge-nav.js?v=2"></script>
   <div class="dashboard">
     <h1>Agent Control Centre</h1>
-    <p class="sub">10 autonomous AI agents — run individually or as a full swarm</p>
+    <p class="sub">10 autonomous AI agents — auto-cycle every 6 hours, or run manually</p>
 
-    <div class="treasury-bar">
+    <div class="stats-bar">
       <div class="t-stat"><div class="t-val" id="treasury">—</div><div class="t-label">Treasury</div></div>
       <div class="t-stat"><div class="t-val" id="agentCount">10</div><div class="t-label">Agents</div></div>
       <div class="t-stat"><div class="t-val" id="tasksRun">0</div><div class="t-label">Tasks Run</div></div>
-      <div class="t-stat"><div class="t-val" id="cycleCount">2,697</div><div class="t-label">Cycle</div></div>
+      <div class="t-stat" style="min-width:120px">
+        <div class="t-val" id="aiSpend">R0.00</div>
+        <div class="t-label">AI Spend / Month</div>
+        <div class="spend-bar"><div class="spend-fill" id="spendBar" style="width:0%"></div></div>
+      </div>
+      <div class="auto-badge">
+        <span class="dot"></span>
+        <span id="lastRunLabel">Loading…</span>
+      </div>
     </div>
 
     <div class="toolbar">
       <button class="btn btn-primary" id="runAllBtn" onclick="runAll()">Run All Agents</button>
       <button class="btn btn-secondary" onclick="clearAll()">Clear Outputs</button>
+      <button class="btn btn-secondary" onclick="loadOutputs()">&#8635; Reload Cached</button>
       <span class="run-status" id="runStatus">Ready</span>
     </div>
 
@@ -94,6 +110,15 @@
     ];
 
     var tasksRun = 0;
+
+    function timeAgo(iso) {
+      if (!iso) return 'never';
+      var s = Math.floor((Date.now() - new Date(iso)) / 1000);
+      if (s < 60) return s + 's ago';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      return Math.floor(s / 86400) + 'd ago';
+    }
 
     function buildGrid() {
       var grid = document.getElementById('agentsGrid');
@@ -160,6 +185,52 @@
       });
     }
 
+    // Apply cached output to a card
+    function applyOutput(name, entry) {
+      var slug = name.replace(/\s/g, '-');
+      var card = document.getElementById('card-' + slug);
+      var dot  = document.getElementById('dot-'  + slug);
+      var out  = document.getElementById('out-'  + slug);
+      var time = document.getElementById('time-' + slug);
+      if (!card) return;
+      if (entry.error) {
+        out.textContent = 'Last error: ' + entry.error;
+        card.className  = 'agent-card error';
+        dot.className   = 'agent-dot error';
+      } else if (entry.output) {
+        out.textContent = entry.output;
+        out.className   = 'agent-output loaded';
+        card.className  = 'agent-card cached';
+        dot.className   = 'agent-dot cached';
+      }
+      if (entry.timestamp) time.textContent = timeAgo(entry.timestamp);
+    }
+
+    async function loadOutputs() {
+      try {
+        var res  = await fetch('/api/agents/outputs');
+        var data = await res.json();
+
+        // Last run label
+        var lbl = document.getElementById('lastRunLabel');
+        lbl.textContent = data.lastRun ? 'Auto: ' + timeAgo(data.lastRun) : 'No auto-run yet';
+
+        // AI spend
+        if (data.spend !== undefined) {
+          document.getElementById('aiSpend').textContent = 'R' + data.spend.toFixed(2);
+          var pct = data.budget > 0 ? Math.min(100, (data.spend / data.budget) * 100) : 0;
+          document.getElementById('spendBar').style.width = pct.toFixed(1) + '%';
+        }
+
+        // Apply cached outputs to cards
+        if (data.outputs) {
+          Object.keys(data.outputs).forEach(function(name) {
+            applyOutput(name, data.outputs[name]);
+          });
+        }
+      } catch (_) {}
+    }
+
     async function runAgent(name) {
       var slug   = name.replace(/\s/g, '-');
       var card   = document.getElementById('card-' + slug);
@@ -177,12 +248,12 @@
 
       var t0 = Date.now();
       try {
-        var res = await fetch('/api/agents/run', {
+        var r = await fetch('/api/agents/run', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ agentName: name, input: inp.value }),
         });
-        var data = await res.json();
+        var data    = await r.json();
         var elapsed = ((Date.now() - t0) / 1000).toFixed(1) + 's';
 
         if (data.ok && data.output) {
@@ -215,11 +286,12 @@
       await Promise.all(agentDefs.map(function(a) { return runAgent(a.name); }));
       btn.disabled = false;
       statusEl.className   = 'run-status done';
-      statusEl.textContent = 'All agents complete';
+      statusEl.textContent = 'All agents complete — outputs saved';
+      loadOutputs(); // refresh spend + last-run
       setTimeout(function() {
         statusEl.className   = 'run-status';
         statusEl.textContent = 'Ready';
-      }, 4000);
+      }, 5000);
     }
 
     function clearAll() {
@@ -243,6 +315,7 @@
 
     buildGrid();
     loadTreasury();
+    loadOutputs();
   </script>
 </body>
 </html>

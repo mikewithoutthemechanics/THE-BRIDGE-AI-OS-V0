@@ -5,10 +5,15 @@
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
-      "maxDuration": 30,
+      "maxDuration": 60,
       "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,lib/**"
     }
   },
+  "crons": [
+    { "path": "/api/agents/auto", "schedule": "0 */6 * * *" },
+    { "path": "/api/banks/compound", "schedule": "0 0 * * *" },
+    { "path": "/api/treasury/reconcile", "schedule": "0 */3 * * *" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
