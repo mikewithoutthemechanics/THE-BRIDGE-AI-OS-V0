@@ -93,8 +93,9 @@ const db      = require('../lib/db');
 const pf      = require('../lib/payfast');
 const agents  = require('../lib/agents');
 const notify  = require('../lib/notify');
-const banks   = require('../lib/banks');
-const da      = require('../lib/directadmin');
+const banks    = require('../lib/banks');
+const da       = require('../lib/directadmin');
+const infraFb  = require('../lib/infra-feedback');
 
 // Seed system banks on first cold start (no-op if already seeded)
 banks.seedBanksIfEmpty().catch(() => {});
@@ -1470,22 +1471,105 @@ module.exports = async (req, res) => {
     } catch (e) { return json(res, { ok: false, error: e.message }, 400); }
   }
 
-  // GET /api/infra/auto — cron: snapshot + Infra AI analysis + persist
+  // GET /api/infra/auto — cron: full closed-loop cycle
   if (p === '/api/infra/auto') {
     try {
+      // infraFb loaded at top
       const snapshot = await da.snapshotInfra();
-      const sysStr   = JSON.stringify(snapshot.system || {}).slice(0, 800);
+      const sys      = snapshot.system || {};
+
+      // Build rich context for Infra AI: snapshot + outcome history
+      const outcomeCtx = await infraFb.getOutcomeContext(8);
+      const aiInput    = JSON.stringify({
+        metrics:   Object.fromEntries(Object.entries(sys).filter(([k]) => k !== 'services').map(([k, v]) => [k, v])),
+        outcomes:  outcomeCtx,
+      }).slice(0, 1200);
+
       let agentResult = null;
       try {
-        agentResult = await agents.runAgent('Infra AI', sysStr);
+        agentResult = await agents.runAgent('Infra AI', aiInput);
         const outputs = (await db.getState('agent_outputs')) || {};
         outputs['Infra AI'] = { output: agentResult.output, timestamp: agentResult.timestamp };
         await db.setState('agent_outputs', outputs);
         await db.setState('infra_last_report', agentResult.output);
       } catch (_) {}
-      console.log(JSON.stringify({ type: 'infra_auto_cycle', configured: da.isConfigured(), time: new Date().toISOString() }));
-      return json(res, { ok: true, snapshot: !!snapshot, agentReport: agentResult?.output || null, ts: ts() });
+
+      // ── REVENUE ↔ INFRA LINK ──────────────────────────────────────────
+      const treasury   = await db.getTreasuryBalance();
+      const cpuPct     = sys.cpu?.used || 0;
+      const loadAvg    = sys.load?.load1 || 0;
+      let revenueAction = null;
+
+      // Scale signal: high load + healthy revenue → queue server resource action
+      if (treasury > 5000 && cpuPct > 80) {
+        try {
+          revenueAction = await da.queueAction('restart-service', { service: 'php-fpm', reason: 'high_cpu_revenue_trigger' }, 'revenue-infra-link');
+        } catch (_) {}
+      }
+
+      // ── SELF-HEALING WATCHDOG ─────────────────────────────────────────
+      const healActions = [];
+      const services = sys.services;
+      if (services) {
+        const svcList = Array.isArray(services) ? services : (services.services || Object.values(services));
+        const critical = ['nginx', 'httpd', 'mysql', 'exim'];
+        for (const svc of svcList) {
+          const name = (svc.name || svc.service || '').toLowerCase();
+          const st   = (svc.status || svc.state || '').toLowerCase();
+          if (critical.includes(name) && (st === 'stopped' || st === 'failed')) {
+            try {
+              const healAct = await da.queueAction('restart-service', { service: name }, 'self-heal');
+              healActions.push(name);
+            } catch (_) {}
+          }
+        }
+      }
+
+      if (healActions.length) {
+        alertSystemEvent(`Self-heal triggered for: ${healActions.join(', ')}`).catch(() => {});
+      }
+
+      const result = {
+        ok: true, configured: da.isConfigured(), snapshot: !!snapshot,
+        agentReport: agentResult?.output || null,
+        revenueAction: revenueAction ? revenueAction.id : null,
+        healActions, treasury, cpuPct,
+        ts: ts(),
+      };
+      console.log(JSON.stringify({ type: 'infra_auto_cycle', ...result, time: new Date().toISOString() }));
+      return json(res, result);
     } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/infra/outcomes — outcome history + action stats
+  if (p === '/api/infra/outcomes') {
+    // infraFb loaded at top
+    const ctx     = await infraFb.getOutcomeContext(20);
+    const cap     = await infraFb.isDailyCapExceeded();
+    return json(res, { ok: true, ...ctx, dailyCap: cap, ts: ts() });
+  }
+
+  // GET /api/audit/export — full audit log export
+  if (p === '/api/audit/export') {
+    const [pending, outcomes, agentOutputs, bankTx, txs] = await Promise.all([
+      db.getState('da_pending_actions'),
+      db.getState('infra_outcomes'),
+      db.getState('agent_outputs'),
+      db.getState('bank_transactions_log'),
+      db.getTransactions(50),
+    ]);
+    const report = {
+      generated_at:  new Date().toISOString(),
+      infra_actions: Object.values(pending || {}),
+      infra_outcomes: (outcomes || []).slice(0, 50),
+      agent_last_run: await db.getState('agent_last_run'),
+      agent_execution_status: await db.getState('agent_execution_status'),
+      transactions: txs,
+      treasury: await db.getTreasuryBalance(),
+      ai_spend: (await db.getAISpend()).spend,
+    };
+    res.setHeader('Content-Disposition', 'attachment; filename="bridge-ai-audit.json"');
+    return json(res, report);
   }
 
   // ── /api/agents/economy ──
