@@ -78,6 +78,7 @@ tr:nth-child(even) td{background:rgba(13,22,32,0.5);}
 .form-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px;}
 .form-group label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-dim);}
 input,select,textarea{background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:4px;font-family:inherit;font-size:0.8rem;outline:none;transition:0.2s;}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 textarea{resize:vertical;min-height:40px;}
 
@@ -210,7 +211,7 @@ textarea{resize:vertical;min-height:40px;}
   </div>
   <div class="form-row" id="txForm">
     <div class="form-group">
-      <label>Type</label>
+      <label for="txType">Type</label>
       <select id="txType">
         <option value="subscription">Subscription</option>
         <option value="cost">Cost</option>
@@ -241,7 +242,7 @@ textarea{resize:vertical;min-height:40px;}
       <div class="panel-header">DISPATCH TASK</div>
       <div class="form-row">
         <div class="form-group">
-          <label>Agent</label>
+          <label for="dispatchAgent">Agent</label>
           <select id="dispatchAgent"></select>
         </div>
         <div class="form-group" style="flex:2;">
@@ -249,7 +250,7 @@ textarea{resize:vertical;min-height:40px;}
           <input type="text" id="dispatchTask" placeholder="Task description">
         </div>
         <div class="form-group">
-          <label>Priority</label>
+          <label for="dispatchPriority">Priority</label>
           <select id="dispatchPriority">
             <option value="low">Low</option>
             <option value="medium" selected>Medium</option>
@@ -322,7 +323,7 @@ textarea{resize:vertical;min-height:40px;}
       <div class="panel-header" style="margin-top:16px;">CREDIT USER</div>
       <div class="form-row">
         <div class="form-group" style="flex:2;">
-          <label>User</label>
+          <label for="creditUser">User</label>
           <select id="creditUser"></select>
         </div>
         <div class="form-group">
