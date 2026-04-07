@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BridgeAI — System Audit Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0e1a; --panel: #111827; --border: #1e2d45;
+    --green: #10b981; --red: #ef4444; --yellow: #f59e0b;
+    --blue: #3b82f6; --text: #e2e8f0; --muted: #64748b;
+    --font: 'JetBrains Mono', 'Fira Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; }
+  header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.05em; }
+  header .sub { color: var(--muted); font-size: 11px; }
+  #last-scan { margin-left: auto; color: var(--muted); font-size: 11px; }
+  #scan-btn { background: var(--blue); border: none; color: #fff; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-family: var(--font); font-size: 12px; }
+  #scan-btn:hover { filter: brightness(1.15); }
+  #scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  main { padding: 20px 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .section-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 700; }
+  .badge-ok { background: #064e3b; color: var(--green); }
+  .badge-warn { background: #451a03; color: var(--yellow); }
+  .badge-err { background: #450a0a; color: var(--red); }
+  .badge-idle { background: #1e2d45; color: var(--muted); }
+  .ep-list { list-style: none; }
+  .ep-row { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  .ep-row:last-child { border-bottom: none; }
+  .ep-row:hover { background: #161e30; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--muted); }
+  .dot-ok { background: var(--green); }
+  .dot-warn { background: var(--yellow); }
+  .dot-err { background: var(--red); }
+  .dot-load { background: var(--blue); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .ep-method { font-size: 10px; padding: 1px 5px; border-radius: 3px; background: #1e2d45; color: var(--blue); min-width: 36px; text-align: center; flex-shrink: 0; }
+  .ep-path { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ep-status { font-size: 11px; color: var(--muted); min-width: 36px; text-align: right; flex-shrink: 0; }
+  .ep-latency { font-size: 11px; color: var(--muted); min-width: 48px; text-align: right; flex-shrink: 0; }
+  .summary-bar { grid-column: 1 / -1; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; display: flex; gap: 32px; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; gap: 4px; }
+  .stat-val { font-size: 28px; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 4px; min-width: 120px; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+  #config-panel { grid-column: 1 / -1; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+  #config-panel h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; }
+  .cfg-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .cfg-row label { font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+  .cfg-row input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-family: var(--font); font-size: 12px; width: 280px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>BridgeAI System Audit Dashboard</h1>
+    <div class="sub">Live endpoint health · FastAPI :8000 · Node.js :3000 · Gateway :8080</div>
+  </div>
+  <span id="last-scan">Not scanned yet</span>
+  <button id="scan-btn" onclick="runScan()">Run Full Scan</button>
+</header>
+
+<main id="main">
+  <div id="config-panel">
+    <h2>Target Configuration</h2>
+    <div class="cfg-row">
+      <label>FastAPI Base URL
+        <input id="cfg-fastapi" value="http://localhost:8000" placeholder="http://localhost:8000">
+      </label>
+      <label>Node.js Base URL
+        <input id="cfg-node" value="http://localhost:3000" placeholder="http://localhost:3000">
+      </label>
+      <label>Gateway Base URL
+        <input id="cfg-gateway" value="http://localhost:8080" placeholder="http://localhost:8080">
+      </label>
+    </div>
+  </div>
+
+  <div class="summary-bar" id="summary-bar">
+    <div class="stat"><span class="stat-val" id="s-total">--</span><span class="stat-label">Total Endpoints</span></div>
+    <div class="stat">
+      <span class="stat-val" style="color:var(--green)" id="s-ok">--</span>
+      <span class="stat-label">Healthy</span>
+      <div class="progress-bar"><div class="progress-fill" id="s-bar" style="background:var(--green);width:0%"></div></div>
+    </div>
+    <div class="stat"><span class="stat-val" style="color:var(--red)" id="s-err">--</span><span class="stat-label">Failing</span></div>
+    <div class="stat"><span class="stat-val" style="color:var(--yellow)" id="s-warn">--</span><span class="stat-label">Warnings (slow &gt;500ms)</span></div>
+    <div class="stat"><span class="stat-val" id="s-avgms">--</span><span class="stat-label">Avg Latency</span></div>
+  </div>
+</main>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Endpoint Registry — matches BRIDGE_SYSTEM_SPEC.md
+// ─────────────────────────────────────────────────────────────────────────────
+function getEndpoints() {
+  const F = document.getElementById('cfg-fastapi').value.replace(/\/$/, '');
+  const N = document.getElementById('cfg-node').value.replace(/\/$/, '');
+  const G = document.getElementById('cfg-gateway').value.replace(/\/$/, '');
+
+  return [
+    // ── FastAPI — Infra / Auth ─────────────────────────────────────────────
+    { section:'FastAPI · Auth & Infra', method:'GET',  url: F+'/health',                    expect:[200] },
+    { section:'FastAPI · Auth & Infra', method:'GET',  url: F+'/api/health',                expect:[200] },
+    { section:'FastAPI · Auth & Infra', method:'GET',  url: F+'/api/auth/me',               expect:[200,401,403] },
+    { section:'FastAPI · Auth & Infra', method:'GET',  url: F+'/api/system/status',         expect:[200] },
+    { section:'FastAPI · Auth & Infra', method:'GET',  url: F+'/api/metrics',               expect:[200,403] },
+
+    // ── FastAPI — Economy / Treasury ──────────────────────────────────────
+    { section:'FastAPI · Economy',      method:'GET',  url: F+'/api/treasury/status',       expect:[200] },
+    { section:'FastAPI · Economy',      method:'GET',  url: F+'/api/marketplace/open',      expect:[200] },
+    { section:'FastAPI · Economy',      method:'GET',  url: F+'/api/ubi/status',            expect:[200] },
+    { section:'FastAPI · Economy',      method:'GET',  url: F+'/api/economy/stats',         expect:[200] },
+
+    // ── FastAPI — CRM / Outreach ──────────────────────────────────────────
+    { section:'FastAPI · CRM & Outreach', method:'GET', url: F+'/api/crm/contacts',         expect:[200,401] },
+    { section:'FastAPI · CRM & Outreach', method:'GET', url: F+'/api/outreach/campaigns',   expect:[200,401] },
+    { section:'FastAPI · CRM & Outreach', method:'GET', url: F+'/api/outreach/leads',       expect:[200,401] },
+
+    // ── FastAPI — Twins / Agents ──────────────────────────────────────────
+    { section:'FastAPI · Twins',        method:'GET',  url: F+'/api/twin/profile',          expect:[200,401] },
+    { section:'FastAPI · Twins',        method:'GET',  url: F+'/api/competition/status',    expect:[200] },
+    { section:'FastAPI · Twins',        method:'GET',  url: F+'/api/twins',                 expect:[200,401] },
+
+    // ── FastAPI — Billing ─────────────────────────────────────────────────
+    { section:'FastAPI · Billing',      method:'GET',  url: F+'/api/billing/invoices',      expect:[200,401] },
+    { section:'FastAPI · Billing',      method:'GET',  url: F+'/api/billing/subscriptions', expect:[200,401] },
+
+    // ── FastAPI — Governance ──────────────────────────────────────────────
+    { section:'FastAPI · Governance',   method:'GET',  url: F+'/api/governance/proposals',  expect:[200] },
+    { section:'FastAPI · Governance',   method:'GET',  url: F+'/api/sdg/status',            expect:[200] },
+    { section:'FastAPI · Governance',   method:'GET',  url: F+'/api/dao/status',            expect:[200] },
+
+    // ── FastAPI — Network / Swarm ─────────────────────────────────────────
+    { section:'FastAPI · Network',      method:'GET',  url: F+'/api/network/status',        expect:[200] },
+    { section:'FastAPI · Network',      method:'GET',  url: F+'/api/swarm/health',          expect:[200] },
+    { section:'FastAPI · Network',      method:'GET',  url: F+'/api/projects',              expect:[200,401] },
+
+    // ── FastAPI — TTS / Runtime ──────────────────────────────────────────
+    { section:'FastAPI · TTS & Runtime', method:'GET', url: F+'/api/tts/voices',            expect:[200] },
+    { section:'FastAPI · Runtime',      method:'GET',  url: F+'/api/runtime/status',        expect:[200] },
+
+    // ── Node.js Gateway ──────────────────────────────────────────────────
+    { section:'Node.js Gateway',        method:'GET',  url: N+'/',                          expect:[200] },
+    { section:'Node.js Gateway',        method:'GET',  url: N+'/health',                   expect:[200] },
+    { section:'Node.js Gateway',        method:'GET',  url: N+'/api/status',               expect:[200] },
+    { section:'Node.js Gateway',        method:'GET',  url: N+'/api/users',                expect:[200,401] },
+    { section:'Node.js Gateway',        method:'GET',  url: N+'/api/leads',                expect:[200,401] },
+    { section:'Node.js Gateway',        method:'GET',  url: N+'/api/pipeline',             expect:[200,401] },
+    { section:'Node.js Gateway',        method:'GET',  url: N+'/api/agents',               expect:[200,401] },
+
+    // ── Unified Gateway :8080 ─────────────────────────────────────────────
+    { section:'Gateway :8080',          method:'GET',  url: G+'/health',                   expect:[200] },
+    { section:'Gateway :8080',          method:'GET',  url: G+'/api/health',               expect:[200] },
+    { section:'Gateway :8080',          method:'GET',  url: G+'/',                         expect:[200] },
+  ];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Core scan logic
+// ─────────────────────────────────────────────────────────────────────────────
+async function probeEndpoint(ep) {
+  const t0 = performance.now();
+  try {
+    const res = await fetch(ep.url, {
+      method: ep.method,
+      signal: AbortSignal.timeout(5000),
+      headers: { 'Accept': 'application/json' }
+    });
+    const ms = Math.round(performance.now() - t0);
+    const ok = ep.expect.includes(res.status);
+    return { ...ep, status: res.status, ms, ok, warn: ok && ms > 500, err: !ok };
+  } catch(e) {
+    const ms = Math.round(performance.now() - t0);
+    return { ...ep, status: 0, ms, ok: false, warn: false, err: true, errMsg: e.name === 'TimeoutError' ? 'timeout' : 'network error' };
+  }
+}
+
+function groupBy(arr, key) {
+  return arr.reduce((acc, item) => {
+    (acc[item[key]] = acc[item[key]] || []).push(item);
+    return acc;
+  }, {});
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function renderResults(results) {
+  const main = document.getElementById('main');
+  // Remove old section cards (keep config + summary)
+  Array.from(main.querySelectorAll('.section')).forEach(s => s.remove());
+
+  const grouped = groupBy(results, 'section');
+
+  for (const [sectionName, eps] of Object.entries(grouped)) {
+    const okCount = eps.filter(e => e.ok && !e.warn).length;
+    const errCount = eps.filter(e => e.err).length;
+    const warnCount = eps.filter(e => e.warn).length;
+
+    const card = el('div', 'section');
+    const hdr = el('div', 'section-header');
+    const title = el('span', 'section-title', sectionName);
+    const badge = el('span', 'badge', errCount > 0 ? errCount + ' FAIL' : warnCount > 0 ? warnCount + ' SLOW' : okCount + ' OK');
+    badge.className = 'badge ' + (errCount > 0 ? 'badge-err' : warnCount > 0 ? 'badge-warn' : 'badge-ok');
+    hdr.appendChild(title);
+    hdr.appendChild(badge);
+    card.appendChild(hdr);
+
+    const list = el('ul', 'ep-list');
+    for (const ep of eps) {
+      const row = el('li', 'ep-row');
+      const dot = el('span', 'dot ' + (ep.ok && !ep.warn ? 'dot-ok' : ep.warn ? 'dot-warn' : 'dot-err'));
+      const method = el('span', 'ep-method', ep.method);
+      const path = el('span', 'ep-path', ep.url.replace(/^https?:\/\/[^/]+/, ''));
+      const status = el('span', 'ep-status', ep.status ? String(ep.status) : (ep.errMsg || 'err'));
+      const latency = el('span', 'ep-latency', ep.ms + 'ms');
+
+      if (ep.warn) { status.style.color = 'var(--yellow)'; latency.style.color = 'var(--yellow)'; }
+      if (ep.err) { status.style.color = 'var(--red)'; latency.style.color = 'var(--red)'; }
+
+      row.appendChild(dot);
+      row.appendChild(method);
+      row.appendChild(path);
+      row.appendChild(status);
+      row.appendChild(latency);
+      list.appendChild(row);
+    }
+    card.appendChild(list);
+    main.appendChild(card);
+  }
+
+  // Update summary
+  const total = results.length;
+  const ok = results.filter(r => r.ok && !r.warn).length;
+  const err = results.filter(r => r.err).length;
+  const warn = results.filter(r => r.warn).length;
+  const avgMs = Math.round(results.reduce((a,r) => a + r.ms, 0) / total);
+  const pct = Math.round((ok / total) * 100);
+
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-ok').textContent = ok;
+  document.getElementById('s-err').textContent = err;
+  document.getElementById('s-warn').textContent = warn;
+  document.getElementById('s-avgms').textContent = avgMs + 'ms';
+  document.getElementById('s-bar').style.width = pct + '%';
+  document.getElementById('last-scan').textContent = 'Last scan: ' + new Date().toLocaleTimeString() + ' — ' + pct + '% healthy';
+}
+
+function setLoadingState(endpoints) {
+  const main = document.getElementById('main');
+  Array.from(main.querySelectorAll('.section')).forEach(s => s.remove());
+
+  const grouped = groupBy(endpoints, 'section');
+  for (const [sectionName, eps] of Object.entries(grouped)) {
+    const card = el('div', 'section');
+    const hdr = el('div', 'section-header');
+    hdr.appendChild(el('span', 'section-title', sectionName));
+    const badge = el('span', 'badge badge-idle', 'SCANNING…');
+    hdr.appendChild(badge);
+    card.appendChild(hdr);
+    const list = el('ul', 'ep-list');
+    for (const ep of eps) {
+      const row = el('li', 'ep-row');
+      row.appendChild(el('span', 'dot dot-load'));
+      row.appendChild(el('span', 'ep-method', ep.method));
+      row.appendChild(el('span', 'ep-path', ep.url.replace(/^https?:\/\/[^/]+/, '')));
+      row.appendChild(el('span', 'ep-status', '…'));
+      row.appendChild(el('span', 'ep-latency', '…'));
+      list.appendChild(row);
+    }
+    card.appendChild(list);
+    main.appendChild(card);
+  }
+}
+
+async function runScan() {
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  btn.textContent = 'Scanning…';
+
+  const endpoints = getEndpoints();
+  setLoadingState(endpoints);
+
+  const results = await Promise.all(endpoints.map(probeEndpoint));
+  renderResults(results);
+
+  btn.disabled = false;
+  btn.textContent = 'Run Full Scan';
+}
+
+// Auto-scan on load
+window.addEventListener('DOMContentLoaded', () => setTimeout(runScan, 300));
+</script>
+<script src="/bridge-nav.js" defer></script>
+</body>
+</html>

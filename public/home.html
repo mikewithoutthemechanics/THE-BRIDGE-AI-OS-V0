@@ -110,5 +110,6 @@ fetch('/api/treasury/status').then(r=>r.json()).then(d=>{
   document.getElementById('s-treasury').textContent='$'+(d.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
 }).catch(()=>{});
 </script>
+<script src="/bridge-nav.js" defer></script>
 </body>
 </html>

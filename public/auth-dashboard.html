@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AUTH MERKLE | Bridge AI OS</title>
+<script src="/bridge-nav.js" defer></script>
+<style>
+:root{--bg-0:#060810;--bg-1:#0a0e17;--bg-2:#111827;--cyan:#63ffda;--purple:#a78bfa;--amber:#fbbf24;--red:#f87171;--green:#4ade80;--text:#e2e8f0;--muted:#94a3b8;--border:rgba(99,255,218,0.1);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg-0);color:var(--text);font-family:"JetBrains Mono",monospace;font-size:13px;padding-top:56px;}
+.page{max-width:1400px;margin:0 auto;padding:24px 16px;}
+h1{color:var(--cyan);font-size:18px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.sub{color:var(--muted);font-size:11px;margin-bottom:24px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.card{background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
+.ct{color:var(--cyan);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+.metric{background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center;}
+.mv{font-size:22px;font-weight:700;color:var(--cyan);}
+.ml{color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
+.root-h{background:var(--bg-0);border:1px solid rgba(99,255,218,0.2);border-radius:6px;padding:10px;font-size:11px;word-break:break-all;color:var(--cyan);}
+.fg{margin-bottom:12px;}
+label{display:block;color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+input{width:100%;background:var(--bg-0);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:8px 10px;font-family:inherit;font-size:12px;outline:none;}
+input:focus{border-color:var(--cyan);}
+.tabs{display:flex;gap:4px;margin-bottom:16px;}
+.tab{padding:6px 14px;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:10px;letter-spacing:1px;text-transform:uppercase;background:transparent;color:var(--muted);}
+.tab.on{background:rgba(99,255,218,0.08);border-color:var(--cyan);color:var(--cyan);}
+.tp{display:none;}.tp.on{display:block;}
+.btn{padding:8px 16px;border-radius:4px;border:1px solid var(--cyan);background:rgba(99,255,218,0.08);color:var(--cyan);font-family:inherit;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;}
+.btn:hover{background:rgba(99,255,218,0.15);}
+.btn.d{border-color:var(--red);background:rgba(248,113,113,0.08);color:var(--red);}
+canvas{width:100%;height:240px;background:var(--bg-0);border-radius:6px;border:1px solid var(--border);display:block;}
+.er{display:grid;grid-template-columns:50px 100px 1fr 80px;gap:8px;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center;font-size:11px;cursor:pointer;}
+.er:hover{background:rgba(99,255,218,0.03);}
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;letter-spacing:1px;text-transform:uppercase;font-weight:600;}
+.br{background:rgba(99,255,218,0.12);color:var(--cyan);}
+.bl{background:rgba(74,222,128,0.12);color:var(--green);}
+.bo{background:rgba(94,94,94,0.2);color:var(--muted);}
+.bf{background:rgba(248,113,113,0.12);color:var(--red);}
+.resp{background:var(--bg-0);border:1px solid var(--border);border-radius:4px;padding:10px;font-size:11px;color:var(--muted);min-height:48px;word-break:break-all;white-space:pre-wrap;max-height:160px;overflow-y:auto;}
+.ok{color:var(--green)!important;}.err{color:var(--red)!important;}
+.ps{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.pp{width:40px;text-align:center;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:2px 4px;border-radius:3px;}
+.ppL{background:rgba(167,139,250,0.12);color:var(--purple);}
+.ppR{background:rgba(251,191,36,0.12);color:var(--amber);}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:rgba(99,255,218,0.2);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="page">
+<h1>AUTH + MERKLE AUDIT</h1>
+<p class="sub">Tamper-evident auth — every event hashed into a Merkle tree. Alter any event and the root changes.</p>
+<div class="g3">
+  <div class="metric"><div class="mv" id="m-lv">—</div><div class="ml">Audit Leaves</div></div>
+  <div class="metric"><div class="mv" id="m-dp">—</div><div class="ml">Tree Depth</div></div>
+  <div class="metric" id="m-it"><div class="mv" id="m-ig">—</div><div class="ml">Integrity</div></div>
+</div>
+<div class="g2">
+  <div class="card">
+    <div class="ct">Merkle Root</div>
+    <p style="color:var(--muted);font-size:10px;margin-bottom:6px">Current root hash (SHA-256)</p>
+    <div class="root-h" id="root-h">loading...</div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn" onclick="loadState()">Refresh</button>
+      <button class="btn" onclick="verifyI()">Verify</button>
+    </div>
+    <p id="ig-r" style="margin-top:10px;font-size:11px"></p>
+  </div>
+  <div class="card"><div class="ct">Tree Structure</div><canvas id="cv"></canvas></div>
+</div>
+<div class="g2">
+  <div class="card">
+    <div class="ct">Auth Actions</div>
+    <div class="tabs">
+      <button class="tab on" onclick="sw(event,'rg')">Register</button>
+      <button class="tab" onclick="sw(event,'lg')">Login</button>
+      <button class="tab" onclick="sw(event,'vf')">Verify</button>
+    </div>
+    <div class="tp on" id="tp-rg">
+      <div class="fg"><label>Email</label><input id="re" type="email" placeholder="user@example.com"></div>
+      <div class="fg"><label>Password</label><input id="rp" type="password" placeholder="min 6 chars"></div>
+      <button class="btn" onclick="doReg()">Register</button>
+    </div>
+    <div class="tp" id="tp-lg">
+      <div class="fg"><label>Email</label><input id="le" type="email" placeholder="user@example.com"></div>
+      <div class="fg"><label>Password</label><input id="lp" type="password" placeholder="password"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="doLgn()">Login</button>
+        <button class="btn d" onclick="doLgt()">Logout</button>
+      </div>
+    </div>
+    <div class="tp" id="tp-vf">
+      <div class="fg"><label>Bearer Token</label><input id="vt" placeholder="paste JWT..."></div>
+      <button class="btn" onclick="doVfy()">Verify Token</button>
+    </div>
+    <div style="margin-top:12px">
+      <p style="color:var(--muted);font-size:10px;margin-bottom:4px">Response</p>
+      <div class="resp" id="ar">—</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">Audit Events — click row for proof</div>
+    <div class="er" style="cursor:default">
+      <span style="color:var(--muted);font-size:10px">ID</span>
+      <span style="color:var(--muted);font-size:10px">Action</span>
+      <span style="color:var(--muted);font-size:10px">Leaf Hash</span>
+      <span style="color:var(--muted);font-size:10px">Time</span>
+    </div>
+    <div id="evtl" style="max-height:280px;overflow-y:auto"></div>
+    <button class="btn" style="margin-top:10px" onclick="loadEvts()">Refresh</button>
+  </div>
+</div>
+<div class="card">
+  <div class="ct">Merkle Proof Verifier</div>
+  <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
+    <div style="flex:1"><label>Leaf Hash — click any event row to populate</label><input id="ph" placeholder="64-char sha256 leaf hash..."></div>
+    <button class="btn" onclick="getProof()">Get Proof</button>
+  </div>
+  <div id="po"></div>
+</div>
+</div>
+<script>
+var tok = localStorage.getItem('bridge_token') || '';
+
+function mk(t, c, x) {
+  var e = document.createElement(t);
+  if (c) e.className = c;
+  if (x != null) e.textContent = x;
+  return e;
+}
+
+function sw(e, n) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
+  document.querySelectorAll('.tp').forEach(function(p) { p.classList.remove('on'); });
+  document.getElementById('tp-' + n).classList.add('on');
+  e.target.classList.add('on');
+}
+
+async function loadState() {
+  try {
+    var r = await fetch('/auth/audit/state');
+    var d = await r.json();
+    document.getElementById('m-lv').textContent = d.leaf_count;
+    document.getElementById('m-dp').textContent = d.depth;
+    document.getElementById('root-h').textContent = d.root || '—';
+    drawTree(d);
+  } catch(e) {
+    document.getElementById('root-h').textContent = 'Error: ' + e.message;
+  }
+}
+
+async function verifyI() {
+  var el = document.getElementById('ig-r');
+  try {
+    var r = await fetch('/auth/audit/verify');
+    var d = await r.json();
+    document.getElementById('m-ig').textContent = d.integrity ? 'VALID' : 'FAIL';
+    document.getElementById('m-it').style.borderColor = d.integrity ? 'rgba(74,222,128,0.4)' : 'rgba(248,113,113,0.4)';
+    el.style.color = d.integrity ? 'var(--green)' : 'var(--red)';
+    el.textContent = d.integrity
+      ? 'Integrity OK — ' + d.leaf_count + ' leaves verified, DB matches memory'
+      : 'INTEGRITY MISMATCH — audit log may be tampered';
+  } catch(e) { el.textContent = 'Error: ' + e.message; }
+}
+
+async function loadEvts() {
+  try {
+    var r = await fetch('/auth/audit/events?limit=50');
+    var d = await r.json();
+    var el = document.getElementById('evtl');
+    while (el.firstChild) el.removeChild(el.firstChild);
+    var cls = { register:'badge br', login:'badge bl', logout:'badge bo', failed_login:'badge bf' };
+    (d.events || []).forEach(function(ev) {
+      var row = document.createElement('div');
+      row.className = 'er';
+      var id = mk('span', null, '#' + ev.id); id.style.color = 'var(--muted)';
+      var bdg = mk('span', cls[ev.action] || 'badge', ev.action || '—');
+      var bw = document.createElement('span'); bw.appendChild(bdg);
+      var hx = mk('span', null, (ev.leaf_hash || '').slice(0, 14) + '...');
+      hx.title = ev.leaf_hash; hx.style.cssText = 'color:var(--muted);font-size:10px';
+      var ts = mk('span', null, new Date(ev.ts).toLocaleTimeString()); ts.style.color = 'var(--muted)';
+      row.appendChild(id); row.appendChild(bw); row.appendChild(hx); row.appendChild(ts);
+      row.onclick = function() { document.getElementById('ph').value = ev.leaf_hash; };
+      el.appendChild(row);
+    });
+  } catch(e) { console.error(e); }
+}
+
+function showR(data, ok) {
+  var el = document.getElementById('ar');
+  el.className = 'resp ' + (ok ? 'ok' : 'err');
+  el.textContent = JSON.stringify(data, null, 2);
+  if (data.merkle_root) {
+    document.getElementById('root-h').textContent = data.merkle_root;
+    loadState(); loadEvts();
+  }
+}
+
+async function doReg() {
+  var r = await fetch('/auth/register', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: document.getElementById('re').value, password: document.getElementById('rp').value })
+  });
+  var d = await r.json();
+  if (d.token) { tok = d.token; localStorage.setItem('bridge_token', tok); }
+  showR(d, r.ok);
+}
+
+async function doLgn() {
+  var r = await fetch('/auth/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: document.getElementById('le').value, password: document.getElementById('lp').value })
+  });
+  var d = await r.json();
+  if (d.token) { tok = d.token; localStorage.setItem('bridge_token', tok); }
+  showR(d, r.ok);
+}
+
+async function doLgt() {
+  if (!tok) { showR({ error: 'No token — login first' }, false); return; }
+  var r = await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + tok } });
+  var d = await r.json();
+  tok = ''; localStorage.removeItem('bridge_token');
+  showR(d, r.ok);
+}
+
+async function doVfy() {
+  var t = document.getElementById('vt').value || tok;
+  var r = await fetch('/auth/verify', { headers: { 'Authorization': 'Bearer ' + t } });
+  showR(await r.json(), r.ok);
+}
+
+async function getProof() {
+  var h = document.getElementById('ph').value.trim();
+  if (!h) return;
+  var el = document.getElementById('po');
+  while (el.firstChild) el.removeChild(el.firstChild);
+  try {
+    var r = await fetch('/auth/audit/proof/' + encodeURIComponent(h));
+    var d = await r.json();
+    if (!r.ok) {
+      var em = mk('span', null, d.error || 'Not found');
+      em.style.color = 'var(--red)';
+      el.appendChild(em);
+      return;
+    }
+    var hdr = mk('p', null, 'Proof path — ' + d.proof.length + ' steps to root');
+    hdr.style.cssText = 'color:var(--muted);font-size:10px;text-transform:uppercase;margin-bottom:8px';
+    el.appendChild(hdr);
+    d.proof.forEach(function(st, i) {
+      var row = document.createElement('div');
+      row.className = 'ps';
+      var n = mk('span', null, (i + 1) + '');
+      n.style.cssText = 'color:var(--muted);font-size:10px;width:20px;flex-shrink:0';
+      var pos = mk('span', 'pp ' + (st.position === 'left' ? 'ppL' : 'ppR'), st.position.toUpperCase());
+      var hsh = mk('span', null, st.hash);
+      hsh.style.cssText = 'color:var(--cyan);font-size:10px;word-break:break-all';
+      row.appendChild(n); row.appendChild(pos); row.appendChild(hsh);
+      el.appendChild(row);
+    });
+    var rl = document.createElement('p');
+    rl.style.cssText = 'margin-top:10px;color:var(--muted);font-size:10px';
+    rl.textContent = 'Root: ';
+    var rv = mk('span', null, d.root); rv.style.color = 'var(--cyan)';
+    rl.appendChild(rv); el.appendChild(rl);
+  } catch(e) {
+    var em = mk('span', null, 'Error: ' + e.message); em.style.color = 'var(--red)';
+    el.appendChild(em);
+  }
+}
+
+function drawTree(s) {
+  var cv = document.getElementById('cv');
+  if (!cv.getContext) return;
+  cv.width = cv.offsetWidth || 800;
+  cv.height = 240;
+  var ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  var n = s.leaf_count, dep = s.depth || 0, W = cv.width, H = 240;
+  if (!n) {
+    ctx.fillStyle = '#94a3b8'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('No events — register or login to create leaves', W / 2, 120);
+    return;
+  }
+  var rh = (H - 50) / Math.max(dep, 1);
+  for (var lv = 0; lv < dep; lv++) {
+    var nr = Math.pow(2, lv), xs = W / (nr + 1), y = 20 + lv * rh;
+    for (var ni = 0; ni < nr; ni++) {
+      var x = xs * (ni + 1);
+      if (lv > 0) {
+        var pr = Math.pow(2, lv - 1), ps = W / (pr + 1);
+        var px = ps * (Math.floor(ni / 2) + 1), py = 20 + (lv - 1) * rh;
+        ctx.strokeStyle = 'rgba(99,255,218,0.12)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke();
+      }
+      var isLeaf = lv === dep - 1;
+      ctx.beginPath(); ctx.arc(x, y, isLeaf ? 5 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = lv === 0 ? '#63ffda' : isLeaf ? 'rgba(99,255,218,0.7)' : 'rgba(99,255,218,0.35)';
+      ctx.fill();
+    }
+  }
+  ctx.fillStyle = 'rgba(99,255,218,0.5)'; ctx.font = '10px monospace'; ctx.textAlign = 'left';
+  ctx.fillText(n + ' leaves  depth ' + dep, 10, H - 8);
+  ctx.textAlign = 'right'; ctx.fillStyle = '#4ade80';
+  ctx.fillText('root: ' + (s.root || '').slice(0, 16) + '...', W - 10, H - 8);
+}
+
+if (tok) document.getElementById('vt').value = tok;
+loadState(); loadEvts(); verifyI();
+setInterval(function() { loadState(); loadEvts(); }, 30000);
+</script>
+</body>
+</html>

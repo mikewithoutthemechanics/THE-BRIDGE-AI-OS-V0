@@ -162,5 +162,6 @@ if(isAuth)(async()=>{
   document.getElementById('debts-body').innerHTML=db.length?db.slice(0,10).map(d=>`<tr><td>${d.description||d.name||'--'}</td><td style="color:var(--r)">$${parseFloat(d.amount||0).toLocaleString()}</td><td>${d.due||d.dueDate||'--'}</td><td><span class="badge ${d.status==='paid'?'badge-green':'badge-red'}">${d.status||'--'}</span></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--t)">No outstanding debts</td></tr>';
 })();
 </script>
+<script src="/bridge-nav.js" defer></script>
 </body>
 </html>
