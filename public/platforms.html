@@ -3,14 +3,6 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bridge AI OS — Platform Network</title>
-    <meta name="description" content="Platforms — Bridge AI OS Platform Integrations">
-    <meta property="og:title" content="Bridge AI OS — Platform Network">
-    <meta property="og:description" content="Platforms — Bridge AI OS Platform Integrations">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/platforms.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/platforms.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#050a0f;--s:#0d1620;--s2:#111d2b;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--t:#c8dce8;--d:#4d6678;--p:#a78bfa;--o:#fb923c}
@@ -51,7 +43,7 @@ h2{color:var(--a);font-size:.85rem;letter-spacing:.12em;margin:1.5rem 0 .6rem;bo
 .net .val{font-size:2rem;font-weight:800;color:var(--g)}
 .net .sub{font-size:.7rem;color:var(--d)}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <div class="c">
 <h1>BRIDGE AI NETWORK</h1>
@@ -92,7 +84,7 @@ h2{color:var(--a);font-size:.85rem;letter-spacing:.12em;margin:1.5rem 0 .6rem;bo
 </div>
 
 <script>
-const BRAIN = '';
+const BRAIN = location.port === '8000' ? '' : (location.port === '8080' || location.port === '443' || !location.port ? '' : `${location.protocol}//${location.hostname}:8000`);
 
 const platforms = [
   { id:'bridge', name:'Bridge AI OS', domain:'go.ai-os.co.za', subdomain:'bridge.ai-os.co.za', status:'live', desc:'Core AI operating system. Dashboard, topology, registry, marketplace, avatar, terminal, control panel. The central nervous system.', rails:['payfast','paystack','crypto','brdg'], pools:['treasury','ubi','reserve'], revenue:'SaaS subscriptions + API metering', spine:'brain:8000' },
@@ -123,38 +115,31 @@ document.getElementById('platforms').innerHTML = platforms.map(p => `
   </div>
 `).join('');
 
-// Load live data from PostgreSQL treasury
+// Load live data
 async function loadStats() {
   try {
-    const [treasury, swarm] = await Promise.all([
-      fetch('/api/treasury').then(r=>r.json()).catch(()=>({total:0,buckets:[]})),
-      fetch('/api/agents').then(r=>r.json()).catch(()=>({count:0})),
+    const [treasury, wallet, swarm, analytics] = await Promise.all([
+      fetch(BRAIN + '/api/treasury/status').then(r=>r.json()).catch(()=>({})),
+      fetch(BRAIN + '/api/wallet/balance').then(r=>r.json()).catch(()=>({total_usd:0})),
+      fetch(BRAIN + '/api/swarm/agents').then(r=>r.json()).catch(()=>({count:0})),
+      fetch(BRAIN + '/api/analytics/overview').then(r=>r.json()).catch(()=>({})),
     ]);
-    const total = parseFloat(treasury.total) || 0;
-    const statsEl = document.getElementById('stats');
-    statsEl.textContent = '';
-    const statsData = [
-      {v:'10', l:'PLATFORMS'},
-      {v:'R'+total.toLocaleString('en-ZA',{minimumFractionDigits:2}), l:'TREASURY (ZAR)'},
-      {v:'R0', l:'WALLET'},
-      {v:String(swarm.count||8), l:'AGENTS'},
-      {v:'6', l:'PAYMENT RAILS'}
-    ];
-    statsData.forEach(function(s){
-      var d=document.createElement('div');d.className='stat';
-      var vEl=document.createElement('div');vEl.className='v';vEl.textContent=s.v;
-      var lEl=document.createElement('div');lEl.className='l';lEl.textContent=s.l;
-      d.appendChild(vEl);d.appendChild(lEl);statsEl.appendChild(d);
-    });
-    var nw = document.getElementById('net-worth');
-    nw.textContent = '';
-    var h3=document.createElement('h3');h3.textContent='NETWORK NET WORTH';
-    var val=document.createElement('div');val.className='val';val.textContent='R'+total.toLocaleString('en-ZA',{minimumFractionDigits:2});
-    var sub=document.createElement('div');sub.className='sub';sub.textContent='Real PostgreSQL treasury total | 10 platforms \u00d7 6 rails \u00d7 8 agents';
-    nw.appendChild(h3);nw.appendChild(val);nw.appendChild(sub);
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="v">10</div><div class="l">PLATFORMS</div></div>
+      <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
+      <div class="stat"><div class="v">$${((wallet.total_usd||0)/1000).toFixed(0)}K</div><div class="l">WALLET</div></div>
+      <div class="stat"><div class="v">${swarm.count||8}</div><div class="l">AGENTS</div></div>
+      <div class="stat"><div class="v">6</div><div class="l">PAYMENT RAILS</div></div>
+    `;
+    const netWorth = (treasury.balance||0) + (wallet.total_usd||0);
+    document.getElementById('net-worth').innerHTML = `
+      <h3>NETWORK NET WORTH</h3>
+      <div class="val">$${netWorth.toLocaleString()}</div>
+      <div class="sub">Treasury + Wallet + Token Value | 10 platforms × 6 rails × 8 agents</div>
+    `;
   } catch(e) { console.error(e); }
 }
 loadStats();
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

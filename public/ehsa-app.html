@@ -3,14 +3,6 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>EHSA — Empeleni Health Services Africa</title>
-    <meta name="description" content="EHSA App — Electronic Health Services Application">
-    <meta property="og:title" content="EHSA — Empeleni Health Services Africa">
-    <meta property="og:description" content="EHSA App — Electronic Health Services Application">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/ehsa-app.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/ehsa-app.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#00e57b">
 <style>
@@ -63,7 +55,7 @@ input:focus{border-color:var(--a);outline:none}
 .triage-result{margin-top:1rem;padding:1rem;border-radius:8px;font-size:.8rem;display:none}
 .triage-result.show{display:block}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <button class="mob-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
 <div class="app">
@@ -128,7 +120,7 @@ input:focus{border-color:var(--a);outline:none}
 <div class="panel" id="p-patients">
 <h1>PATIENT REGISTRY</h1>
 <div class="sub-h">Unified African patient identity system</div>
-<div style="margin-bottom:1rem"><button class="btn btn-p" onclick="show('dashboard')">+ REGISTER PATIENT (via Dashboard)</button></div>
+<div style="margin-bottom:1rem"><button class="btn btn-p" onclick="alert('Patient registration form — connect to EHSA patient API')">+ REGISTER PATIENT</button></div>
 <table><thead><tr><th>ID</th><th>NAME</th><th>AGE</th><th>REGION</th><th>LAST VISIT</th><th>STATUS</th></tr></thead><tbody id="patients-tbody"></tbody></table>
 </div>
 
@@ -209,7 +201,7 @@ input:focus{border-color:var(--a);outline:none}
 <div class="panel" id="p-network">
 <h1>PAN-AFRICAN NETWORK</h1>
 <div class="sub-h">Facilities, workers, and patients mapped continent-wide</div>
-<div style="text-align:center;padding:2rem"><div style="max-width:700px;margin:0 auto;border:1px solid var(--b);border-radius:8px;padding:2rem;background:var(--s)"><svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg" style="width:100%"><circle cx="250" cy="150" r="8" fill="#00e57b"/><text x="250" y="130" fill="#00e57b" text-anchor="middle" font-size="10">EHSA Hub</text><circle cx="100" cy="80" r="6" fill="#00b862"/><text x="100" y="65" fill="#4d7868" text-anchor="middle" font-size="8">Gauteng Clinic</text><line x1="250" y1="150" x2="100" y2="80" stroke="#1a3d28" stroke-width="1"/><circle cx="400" cy="80" r="6" fill="#00b862"/><text x="400" y="65" fill="#4d7868" text-anchor="middle" font-size="8">KZN Hospital</text><line x1="250" y1="150" x2="400" y2="80" stroke="#1a3d28" stroke-width="1"/><circle cx="80" cy="220" r="6" fill="#00b862"/><text x="80" y="245" fill="#4d7868" text-anchor="middle" font-size="8">Limpopo Mobile</text><line x1="250" y1="150" x2="80" y2="220" stroke="#1a3d28" stroke-width="1"/><circle cx="250" cy="260" r="6" fill="#00b862"/><text x="250" y="280" fill="#4d7868" text-anchor="middle" font-size="8">Cape Town Hub</text><line x1="250" y1="150" x2="250" y2="260" stroke="#1a3d28" stroke-width="1"/><circle cx="420" cy="220" r="6" fill="#ffd166"/><text x="420" y="245" fill="#4d7868" text-anchor="middle" font-size="8">E. Cape Mobile</text><line x1="250" y1="150" x2="420" y2="220" stroke="#1a3d28" stroke-width="1"/><circle cx="170" cy="200" r="5" fill="#00b862"/><text x="170" y="218" fill="#4d7868" text-anchor="middle" font-size="7">Pharmacy Node</text><line x1="250" y1="150" x2="170" y2="200" stroke="#0a1a10" stroke-width="1"/><circle cx="330" cy="200" r="5" fill="#00b862"/><text x="330" y="218" fill="#4d7868" text-anchor="middle" font-size="7">Mpumalanga Post</text><line x1="250" y1="150" x2="330" y2="200" stroke="#0a1a10" stroke-width="1"/></svg><div style="color:var(--d);font-size:.65rem;margin-top:.5rem">8 facilities across 5 provinces</div></div></div>
+<div style="text-align:center;padding:2rem"><object data="/api/glyph/topology" type="image/svg+xml" width="100%" style="max-width:700px;border:1px solid var(--b);border-radius:8px"></object></div>
 </div>
 
 </div>
@@ -235,14 +227,10 @@ async function runTriage() {
   result.style.border = '1px solid var(--b)';
   result.innerHTML = 'Analyzing symptoms...';
   try {
-    const d = await fetch(API + '/api/status').then(r => r.json()).catch(()=>({}));
+    const d = await fetch(API + '/api/brain/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: 'Medical triage assessment for: ' + input }) }).then(r => r.json());
     const severity = input.toLowerCase().includes('chest pain') || input.toLowerCase().includes('breathing') ? 'EMERGENCY' : input.toLowerCase().includes('fever') ? 'URGENT' : 'ROUTINE';
     const colors = { EMERGENCY: 'var(--r)', URGENT: 'var(--y)', ROUTINE: 'var(--a)' };
-    var recText = severity === 'EMERGENCY' ? 'Call emergency services immediately' : severity === 'URGENT' ? 'Visit nearest clinic within 24 hours' : 'Schedule appointment at convenience';
-    result.textContent = '';
-    var sev = document.createElement('div'); sev.style.cssText='font-size:1.1rem;font-weight:700;margin-bottom:.5rem;color:'+colors[severity]; sev.textContent=severity; result.appendChild(sev);
-    var desc = document.createElement('div'); desc.style.fontSize='.8rem'; desc.textContent='Assessment complete. Please consult a healthcare provider for a full diagnosis.'; result.appendChild(desc);
-    var rec = document.createElement('div'); rec.style.cssText='margin-top:.8rem;font-size:.7rem;color:var(--d)'; rec.textContent='Recommendation: '+recText; result.appendChild(rec);
+    result.innerHTML = `<div style="font-size:1.1rem;font-weight:700;color:${colors[severity]};margin-bottom:.5rem">${severity}</div><div style="font-size:.8rem">${d.answer || 'Assessment complete. Please consult a healthcare provider.'}</div><div style="margin-top:.8rem;font-size:.7rem;color:var(--d)">Recommendation: ${severity === 'EMERGENCY' ? 'Call emergency services immediately' : severity === 'URGENT' ? 'Visit nearest clinic within 24 hours' : 'Schedule appointment at convenience'}</div>`;
     result.style.borderColor = colors[severity];
   } catch (e) { result.innerHTML = 'AI triage unavailable. Please visit your nearest clinic.'; }
 }
@@ -287,7 +275,7 @@ async function loadSection(id) {
       ['EHSA Mobile Unit Gamma','Mobile','Free State','25 patients/day','Maintenance'],
     ].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><span class="badge ${r[4]==='Maintenance'?'warn':'ok'}">${r[4]}</span></td></tr>`).join('');
   } else if (id === 'compliance') {
-    const d = {}; // compliance data rendered locally
+    const d = await fetch(API + '/api/compliance/status').then(r => r.json()).catch(() => ({ frameworks: [] }));
     document.getElementById('compliance-content').innerHTML = `<h2>FRAMEWORKS</h2>` +
       [['POPIA (ZA Privacy)', 'compliant', 'South African health data protection'], ['NDOH Standards', 'compliant', 'National Department of Health compliance'], ['WHO Digital Health', 'partial', 'WHO digital health guidelines alignment'], ['HIPAA (Reference)', 'partial', 'International interoperability standard']].map(f => `<div class="card" style="margin-bottom:.5rem"><h3><span class="badge ${f[1]==='compliant'?'ok':'warn'}">${f[1].toUpperCase()}</span> ${f[0]}</h3><p>${f[2]}</p></div>`).join('') +
       `<h2>HEALTH DATA RULES</h2><div class="card"><p>All patient data encrypted at rest (AES-256) and in transit (TLS 1.3). Consent required for all data collection. Right to deletion enforced. Audit trail on every access. Data residency: South Africa.</p></div>`;
@@ -303,5 +291,5 @@ async function loadSection(id) {
 }
 loadSection('dashboard');
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

@@ -1,651 +1,735 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Bridge AI Avatar — Brain-Controlled Voice Face | Bridge AI OS</title>
-<meta name="description" content="Bridge AI OS unified avatar — voice-controlled, brain-driven facial expressions across 6 anatomical face modes.">
-<meta property="og:title" content="Bridge AI Avatar — Voice & Brain Controlled">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="canonical" href="https://aoe-unified-final.vercel.app/avatar">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVATAR — BRIDGE AI OS</title>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@6.0.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-materials@6.0.0/babylonjs.materials.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #060810; --panel: #0d1117; --border: #1a2a3a;
-    --cyan: #00ffc8; --red: #ff4466; --text: #e0e0e0; --muted: #556;
-  }
-  html, body { width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; overflow: hidden; }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#050a10;font-family:'Courier New',monospace;color:#0ff;overflow:hidden}
 
-  /* ── Top bar ── */
-  #topbar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    padding: 8px 14px; background: rgba(6,8,16,0.92);
-    backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
-  }
-  #topbar h1 { font-size: 12px; font-weight: 700; color: var(--cyan); letter-spacing: 2px; white-space: nowrap; }
-  .mode-btn {
-    padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 600;
-    border: 1px solid var(--border); background: transparent; color: var(--muted);
-    cursor: pointer; transition: all 0.2s; white-space: nowrap;
-  }
-  .mode-btn:hover { border-color: var(--cyan); color: var(--cyan); }
-  .mode-btn.active { background: var(--cyan); color: #000; border-color: var(--cyan); }
+/* HUD */
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:40px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;background:rgba(0,0,0,.92);
+  border-bottom:1px solid rgba(0,255,255,.2);
+}
+#hud-left{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:2px;color:#0ff;}
+#hud-right{display:flex;align-items:center;gap:14px;font-size:9px;color:#0f9;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#0f9;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+#clock{font-size:10px;letter-spacing:2px;color:#0f9;}
+.conn-badge{padding:2px 8px;border-radius:2px;font-size:8px;letter-spacing:1px;font-weight:bold;background:#003300;border:1px solid #0f93;color:#0f9;}
+.nav-links a{color:#0ac;font-size:9px;letter-spacing:1px;text-decoration:none;opacity:.7;margin-right:12px;transition:opacity .2s;}
+.nav-links a:hover{opacity:1;color:#0ff;}
 
-  /* ── Voice + chat overlay ── */
-  #chat {
-    position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%);
-    width: min(520px, 92vw); z-index: 20;
-    background: rgba(6,8,16,0.88); backdrop-filter: blur(14px);
-    border: 1px solid var(--border); border-radius: 14px;
-    padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
-    transition: opacity 0.4s;
-  }
-  #chat.hidden { opacity: 0; pointer-events: none; }
-  #transcript {
-    font-size: 12px; color: var(--muted); font-family: monospace;
-    min-height: 16px; word-break: break-word;
-  }
-  #transcript.listening { color: var(--cyan); }
-  #reply {
-    font-size: 13px; color: var(--text); line-height: 1.5;
-    min-height: 20px; word-break: break-word;
-  }
-  #emotion-badge {
-    display: inline-block; font-size: 10px; font-family: monospace;
-    letter-spacing: 1px; text-transform: uppercase;
-    padding: 2px 8px; border-radius: 20px;
-    background: rgba(0,255,200,0.1); border: 1px solid rgba(0,255,200,0.3);
-    color: var(--cyan); align-self: flex-start;
-  }
+/* CANVAS */
+#renderCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;outline:none;}
 
-  /* ── Bottom controls ── */
-  #controls {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 10px 16px; background: rgba(6,8,16,0.92);
-    backdrop-filter: blur(12px); border-top: 1px solid var(--border);
-  }
+/* SCENE INFO PANEL */
+#scene-info{
+  position:fixed;top:50px;right:16px;z-index:101;
+  padding:12px 16px;min-width:200px;
+  background:rgba(0,10,20,.9);border:1px solid rgba(0,255,255,.2);border-radius:3px;
+  font-size:10px;letter-spacing:1px;
+}
+#scene-info .info-title{color:#0ff;font-size:11px;letter-spacing:2px;margin-bottom:8px;border-bottom:1px solid rgba(0,255,255,.15);padding-bottom:4px;}
+#scene-info .info-row{display:flex;justify-content:space-between;margin-bottom:4px;color:#0ac;}
+#scene-info .info-row span:last-child{color:#0f9;}
 
-  /* Mic button */
-  #micBtn {
-    width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; transition: all 0.2s; flex-shrink: 0;
-    background: rgba(0,255,200,0.12); border: 1px solid var(--cyan);
-  }
-  #micBtn:hover { background: rgba(0,255,200,0.25); }
-  #micBtn.listening { background: var(--red); border-color: var(--red); animation: pulse 0.8s ease-in-out infinite alternate; }
-  @keyframes pulse { from { box-shadow: 0 0 0 0 rgba(255,68,102,0.4); } to { box-shadow: 0 0 0 10px rgba(255,68,102,0); } }
+/* ANIMATION CONTROLS */
+#anim-controls{
+  position:fixed;top:50px;left:16px;z-index:101;
+  padding:10px 14px;
+  background:rgba(0,10,20,.9);border:1px solid rgba(0,255,255,.2);border-radius:3px;
+  font-size:9px;letter-spacing:1px;
+  display:flex;align-items:center;gap:10px;
+}
+#anim-controls button{
+  padding:4px 12px;font-size:9px;letter-spacing:1px;cursor:pointer;
+  background:#001a1a;border:1px solid #0ff3;color:#0ff;border-radius:2px;
+  font-family:monospace;transition:all .2s;
+}
+#anim-controls button:hover{background:#002a2a;border-color:#0ff;}
+#anim-controls label{color:#0ac;}
+#speed-slider{width:80px;accent-color:#0ff;}
+#speed-val{color:#0f9;min-width:30px;}
 
-  /* Type input */
-  #typeInput {
-    flex: 1; min-width: 140px; padding: 8px 12px;
-    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text); font-size: 12px; outline: none;
-  }
-  #typeInput:focus { border-color: var(--cyan); }
-  #sendBtn {
-    padding: 8px 14px; background: var(--cyan); color: #000;
-    border: none; border-radius: 8px; font-size: 12px; font-weight: 700;
-    cursor: pointer; white-space: nowrap;
-  }
-  #sendBtn:hover { background: #00dda8; }
+/* MODE BAR */
+#mode-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 16px;background:rgba(0,0,0,.92);
+  border-top:1px solid rgba(0,255,255,.2);
+}
+.mode-btn{
+  padding:8px 18px;font-size:10px;letter-spacing:2px;cursor:pointer;
+  background:#001a1a;border:1px solid #0ff2;color:#0ac;border-radius:2px;
+  font-family:'Courier New',monospace;transition:all .2s;text-transform:uppercase;
+}
+.mode-btn:hover{background:#002a2a;border-color:#0ff5;color:#0ff;}
+.mode-btn.active{background:#003333;border-color:#0ff;color:#0ff;box-shadow:0 0 12px rgba(0,255,255,0.3);}
 
-  /* Sliders */
-  .sg { display: flex; flex-direction: column; gap: 2px; min-width: 90px; }
-  .sg label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; }
-  .sg label span { color: var(--cyan); font-family: monospace; }
-  .sg input[type=range] { width: 100%; accent-color: var(--cyan); height: 3px; }
+/* LAYER TOGGLE (anatomical) */
+#layer-toggle{
+  position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:101;
+  display:none;gap:8px;
+  padding:8px 14px;background:rgba(0,10,20,.9);border:1px solid rgba(0,255,255,.2);border-radius:3px;
+}
+#layer-toggle button{
+  padding:4px 10px;font-size:8px;letter-spacing:1px;cursor:pointer;
+  background:#1a0a0a;border:1px solid #f003;color:#f90;border-radius:2px;
+  font-family:monospace;transition:all .2s;
+}
+#layer-toggle button.on{background:#2a1a00;border-color:#f90;color:#ff0;}
 
-  /* Stats */
-  .stat { font-size: 10px; color: var(--muted); font-family: monospace; white-space: nowrap; }
-  .stat b { color: var(--cyan); }
-
-  /* Mode label */
-  #mode-label {
-    position: fixed; top: 50px; right: 14px; z-index: 20;
-    font-size: 10px; color: var(--muted); font-family: monospace;
-    background: rgba(6,8,16,0.75); padding: 3px 9px;
-    border: 1px solid var(--border); border-radius: 4px;
-  }
-
-  canvas { width: 100%; height: 100%; display: block; }
-
-  @media(max-width:640px){
-    #topbar { gap: 4px; padding: 6px 10px; }
-    #topbar h1 { font-size: 11px; }
-    .mode-btn { padding: 3px 8px; font-size: 10px; }
-    #neuro-hud { top: auto; bottom: 200px; left: 8px; min-width: 140px; padding: 8px 10px; }
-    #chat { bottom: 200px; width: 94vw; padding: 10px 12px; }
-    #controls { gap: 8px; padding: 8px 10px; flex-wrap: wrap; }
-    .sg { min-width: 80px; }
-    #micBtn { width: 38px; height: 38px; font-size: 16px; }
-    #typeInput { min-width: 100px; font-size: 11px; }
-    #sendBtn { padding: 6px 10px; font-size: 11px; }
-    .stat { display: none; }
-  }
-
-  /* ── Neuro HUD ── */
-  #neuro-hud {
-    position: fixed; top: 54px; left: 14px; z-index: 20;
-    background: rgba(6,8,16,0.88); backdrop-filter: blur(10px);
-    border: 1px solid var(--border); border-radius: 10px;
-    padding: 10px 12px; min-width: 170px; display: flex; flex-direction: column; gap: 5px;
-  }
-  .nh-row { display: flex; align-items: center; gap: 6px; }
-  .nh-label { font-size: 10px; font-family: monospace; color: var(--cyan); width: 10px; }
-  .nh-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
-  .nh-fill { height: 100%; background: var(--cyan); border-radius: 2px; transition: width 1s ease; }
-  .nh-fill.nd-s { background: #7b5ea7; }
-  .nh-fill.nd-o { background: #00ffc8; }
-  .nh-fill.nd-e { background: #ffd166; }
-  .nh-val { font-size: 9px; font-family: monospace; color: var(--muted); width: 34px; text-align: right; }
-  .nh-state { font-size: 9px; font-family: monospace; color: var(--muted); display: flex; gap: 8px; margin-top: 2px; }
-  .nh-state #nhCog { color: var(--cyan); }
-  .nh-state #nhState { color: #ffd166; }
-  .nh-boost {
-    margin-top: 4px; padding: 5px 10px; background: rgba(0,255,200,0.1);
-    border: 1px solid rgba(0,255,200,0.3); border-radius: 6px;
-    color: var(--cyan); font-size: 10px; font-weight: 700; cursor: pointer;
-    letter-spacing: 1px; transition: all 0.2s;
-  }
-  .nh-boost:hover { background: rgba(0,255,200,0.2); border-color: var(--cyan); }
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:#0ff3;border-radius:2px;}
 </style>
 </head>
 <body>
-<script src="/bridge-nav.js?v=2"></script>
 
-<!-- ── Top bar ── -->
-<div id="topbar">
-  <h1>⬡ BRIDGE AI AVATAR</h1>
-  <button class="mode-btn active" data-mode="procedural">Procedural</button>
-  <button class="mode-btn" data-mode="facs">FACS</button>
-  <button class="mode-btn" data-mode="constrained">Constrained</button>
-  <button class="mode-btn" data-mode="tension">Tension</button>
-  <button class="mode-btn" data-mode="vector">Vector</button>
-  <button class="mode-btn" data-mode="embodied">Embodied</button>
+<div id="hud">
+  <div id="hud-left">
+    <div class="live-dot"></div>
+    <span>BRIDGE AI OS &mdash; AVATAR</span>
+    <div class="nav-links">
+      <a href="/ui.html">HOME</a>
+      <a href="/control.html">CONTROL</a>
+      <a href="/registry.html">REGISTRY</a>
+      <a href="/marketplace.html">MARKETPLACE</a>
+      <a href="/topology.html">TOPOLOGY</a>
+      <a href="/system-status-dashboard.html">STATUS</a>
+    </div>
+  </div>
+  <div id="hud-right">
+    <span id="active-mode-label">MODE: WIREFRAME</span>
+    <span id="conn-badge" class="conn-badge">CONNECTED</span>
+    <span id="clock">--:--:--</span>
+  </div>
 </div>
 
-<div id="mode-label">PROCEDURAL · BRAIN IDLE</div>
 <canvas id="renderCanvas"></canvas>
 
-<!-- ── Neuro HUD ── -->
-<div id="neuro-hud">
-  <div class="nh-row"><span class="nh-label">D</span><div class="nh-bar"><div class="nh-fill" id="nbD" style="width:0.7%"></div></div><span class="nh-val" id="nvD">0.007</span></div>
-  <div class="nh-row"><span class="nh-label">S</span><div class="nh-bar"><div class="nh-fill nd-s" id="nbS" style="width:5.1%"></div></div><span class="nh-val" id="nvS">0.051</span></div>
-  <div class="nh-row"><span class="nh-label">O</span><div class="nh-bar"><div class="nh-fill nd-o" id="nbO" style="width:48.5%"></div></div><span class="nh-val" id="nvO">0.485</span></div>
-  <div class="nh-row"><span class="nh-label">E</span><div class="nh-bar"><div class="nh-fill nd-e" id="nbE" style="width:78.3%"></div></div><span class="nh-val" id="nvE">0.783</span></div>
-  <div class="nh-state"><span id="nhCog">C(t) 0.2518</span> <span id="nhState">|O⟩ Oxytocin</span></div>
-  <button class="nh-boost" onclick="boostCognition()">⚡ BOOST COGNITION</button>
+<div id="scene-info">
+  <div class="info-title">SCENE DATA</div>
+  <div class="info-row"><span>MODE</span><span id="info-mode">WIREFRAME</span></div>
+  <div class="info-row"><span>VERTICES</span><span id="info-verts">0</span></div>
+  <div class="info-row"><span>MATERIAL</span><span id="info-mat">—</span></div>
+  <div class="info-row"><span>FPS</span><span id="info-fps">0</span></div>
 </div>
 
-<!-- ── Chat overlay ── -->
-<div id="chat" class="hidden">
-  <span id="emotion-badge">—</span>
-  <div id="transcript">Listening…</div>
-  <div id="reply"></div>
+<div id="anim-controls">
+  <button id="play-pause-btn" onclick="toggleAnim()">PAUSE</button>
+  <label>SPEED</label>
+  <input type="range" id="speed-slider" min="0.5" max="3" step="0.1" value="1">
+  <span id="speed-val">1.0x</span>
 </div>
 
-<!-- ── Bottom controls ── -->
-<div id="controls">
-  <button id="micBtn" title="Hold to speak">🎙</button>
-  <input id="typeInput" type="text" placeholder="Type a message to the Brain…" autocomplete="off">
-  <button id="sendBtn">Send</button>
+<div id="layer-toggle">
+  <button class="on" onclick="toggleLayer(0,this)">SKELETON</button>
+  <button class="on" onclick="toggleLayer(1,this)">MUSCLE</button>
+  <button class="on" onclick="toggleLayer(2,this)">SKIN</button>
+</div>
 
-  <div class="sg">
-    <label>Smile <span id="lblSmile">50</span></label>
-    <input type="range" id="slSmile" min="0" max="100" value="50">
-  </div>
-  <div class="sg">
-    <label>Brow <span id="lblBrow">50</span></label>
-    <input type="range" id="slBrow" min="0" max="100" value="50">
-  </div>
-  <div class="sg">
-    <label>Jaw <span id="lblJaw">0</span></label>
-    <input type="range" id="slJaw" min="0" max="100" value="0">
-  </div>
-  <div class="sg">
-    <label>Tension <span id="lblTension">15</span></label>
-    <input type="range" id="slTension" min="0" max="100" value="15">
-  </div>
-  <div class="sg">
-    <label>Speed <span id="lblSpeed">60</span></label>
-    <input type="range" id="slSpeed" min="0" max="100" value="60">
-  </div>
-
-  <div class="stat">FPS <b id="sFps">60</b></div>
-  <div class="stat">Verts <b id="sVerts">--</b></div>
+<div id="mode-bar">
+  <button class="mode-btn active" onclick="switchMode('wireframe')">WIREFRAME</button>
+  <button class="mode-btn" onclick="switchMode('textured')">TEXTURED</button>
+  <button class="mode-btn" onclick="switchMode('anatomical')">ANATOMICAL</button>
+  <button class="mode-btn" onclick="switchMode('neural')">NEURAL</button>
+  <button class="mode-btn" onclick="switchMode('holographic')">HOLOGRAPHIC</button>
+  <button class="mode-btn" onclick="switchMode('quantum')">QUANTUM</button>
 </div>
 
 <script>
-// ================================================================
-// BRIDGE AI UNIFIED FACE ENGINE — BRAIN + VOICE CONTROLLED
-// Brain endpoint: POST /api/ask → expression params → drive sliders
-// Voice: Web Speech API recognition + synthesis
-// ================================================================
+// ── CLOCK ──
+function updateClock(){document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);}
+setInterval(updateClock,1000);updateClock();
+
+// ── GLOBALS ──
+let currentMode = 'wireframe';
+let animPaused = false;
+let animSpeed = 1.0;
+let engine, scene, camera;
+let sceneAnimations = [];
+let anatomicalLayers = [];
+let apiModeData = {};
 
 const canvas = document.getElementById('renderCanvas');
-const engine = new BABYLON.Engine(canvas, true);
+engine = new BABYLON.Engine(canvas, true, {preserveDrawingBuffer:true, stencil:true});
 
-// ── Slider refs ───────────────────────────────────────────────
-const slSmile   = document.getElementById('slSmile');
-const slBrow    = document.getElementById('slBrow');
-const slJaw     = document.getElementById('slJaw');
-const slTension = document.getElementById('slTension');
-const slSpeed   = document.getElementById('slSpeed');
-const lbls = { smile: document.getElementById('lblSmile'), brow: document.getElementById('lblBrow'), jaw: document.getElementById('lblJaw'), tension: document.getElementById('lblTension'), speed: document.getElementById('lblSpeed') };
-
-// Sync labels on manual drag
-['slSmile','slBrow','slJaw','slTension','slSpeed'].forEach(id => {
-  const key = id.replace('sl','').toLowerCase();
-  document.getElementById(id).addEventListener('input', e => { if (lbls[key]) lbls[key].textContent = e.target.value; });
+// ── SPEED SLIDER ──
+document.getElementById('speed-slider').addEventListener('input', function(){
+  animSpeed = parseFloat(this.value);
+  document.getElementById('speed-val').textContent = animSpeed.toFixed(1)+'x';
 });
 
-// ── Brain target values (lerped toward by render loop) ────────
-const brain = { smile: 50, brow: 50, jaw: 0, tension: 15 };
-let animSpeed = 0.6;
-slSpeed.addEventListener('input', () => { animSpeed = slSpeed.value / 100 * 2; lbls.speed.textContent = slSpeed.value; });
+// ── PLAY/PAUSE ──
+function toggleAnim(){
+  animPaused = !animPaused;
+  document.getElementById('play-pause-btn').textContent = animPaused ? 'PLAY' : 'PAUSE';
+}
 
-// ── Lerp sliders toward brain targets ────────────────────────
-const LERP = 0.04; // smoothing per frame
-function tickBrainSliders() {
-  ['smile','brow','jaw','tension'].forEach(k => {
-    const el = document.getElementById('sl' + k.charAt(0).toUpperCase() + k.slice(1));
-    const cur = parseFloat(el.value);
-    const target = brain[k];
-    const next = cur + (target - cur) * LERP;
-    el.value = next;
-    if (lbls[k]) lbls[k].textContent = Math.round(next);
+// ── LAYER TOGGLE (anatomical) ──
+function toggleLayer(idx, btn){
+  if(!anatomicalLayers[idx]) return;
+  const mesh = anatomicalLayers[idx];
+  mesh.isVisible = !mesh.isVisible;
+  btn.classList.toggle('on', mesh.isVisible);
+}
+
+// ── CAMERA SETUP ──
+function setupCamera(){
+  camera = new BABYLON.ArcRotateCamera('cam', -Math.PI/2, Math.PI/2.5, 8, BABYLON.Vector3.Zero(), scene);
+  camera.lowerRadiusLimit = 2;
+  camera.upperRadiusLimit = 25;
+  camera.wheelPrecision = 30;
+  camera.attachControl(canvas, true);
+}
+
+// ── DISPOSE SCENE ──
+function disposeScene(){
+  sceneAnimations = [];
+  anatomicalLayers = [];
+  if(scene){ scene.dispose(); }
+  scene = new BABYLON.Scene(engine);
+  scene.clearColor = new BABYLON.Color4(5/255, 10/255, 16/255, 1);
+  setupCamera();
+}
+
+// ── UPDATE INFO PANEL ──
+function updateInfo(mode, verts, matType){
+  document.getElementById('info-mode').textContent = mode.toUpperCase();
+  document.getElementById('info-verts').textContent = verts;
+  document.getElementById('info-mat').textContent = matType;
+}
+
+// ── MODE BUILDERS ──
+
+function buildWireframe(){
+  disposeScene();
+
+  const gl = new BABYLON.GlowLayer('glow', scene);
+  gl.intensity = 0.6;
+
+  const sphere = BABYLON.MeshBuilder.CreateIcoSphere('ico', {radius:2, subdivisions:4}, scene);
+  const mat = new BABYLON.StandardMaterial('wireMat', scene);
+  mat.emissiveColor = BABYLON.Color3.FromHexString('#00ffcc');
+  mat.wireframe = true;
+  sphere.material = mat;
+  sphere.enableEdgesRendering();
+  sphere.edgesWidth = 1.0;
+  sphere.edgesColor = new BABYLON.Color4(0, 1, 0.8, 0.5);
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.3;
+
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){ t += 0.01 * animSpeed; sphere.rotation.y = t; }
   });
+
+  updateInfo('wireframe', sphere.getTotalVertices(), 'Wireframe / Emissive');
 }
 
-// ── Brain API call ────────────────────────────────────────────
-async function askBrain(prompt) {
-  showChat(prompt, '…', 'thinking');
-  try {
-    const res = await fetch('/api/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
-    });
-    const data = await res.json();
-    if (data.expression) {
-      brain.smile   = Math.round((data.expression.smile   || 0.5) * 100);
-      brain.brow    = Math.round((data.expression.brow    || 0.5) * 100);
-      brain.jaw     = Math.round((data.expression.jaw     || 0.0) * 100);
-      brain.tension = Math.round((data.expression.tension || 0.15) * 100);
-      if (data.expression.mode) switchMode(data.expression.mode, false);
-    }
-    if (data.neuro) updateNeuroHUD(data.neuro);
-    const reply = data.reply || data.response || 'Brain online.';
-    showChat(prompt, reply, data.emotion || 'neutral');
-    speak(reply);
-    updateModeLabel('BRAIN ACTIVE · ' + (data.emotion || 'neutral').toUpperCase());
-    setTimeout(() => updateModeLabel(currentMode.toUpperCase() + ' · BRAIN IDLE'), 8000);
-  } catch (e) {
-    showChat(prompt, 'Brain connection error. Running in manual mode.', 'error');
-  }
-}
+function buildTextured(){
+  disposeScene();
 
-// ── Chat overlay ──────────────────────────────────────────────
-function showChat(transcript, reply, emotion) {
-  const chat = document.getElementById('chat');
-  document.getElementById('transcript').textContent = transcript;
-  document.getElementById('transcript').className = '';
-  document.getElementById('reply').textContent = reply;
-  document.getElementById('emotion-badge').textContent = emotion;
-  chat.classList.remove('hidden');
-  clearTimeout(showChat._t);
-  showChat._t = setTimeout(() => chat.classList.add('hidden'), 10000);
-}
+  const parent = new BABYLON.TransformNode('humanoid', scene);
+  const allParts = [];
 
-// ── Speech synthesis ──────────────────────────────────────────
-function speak(text) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.rate = 0.95; utt.pitch = 0.9; utt.volume = 1;
-  // Jaw sync: open while speaking
-  utt.onstart  = () => { brain.jaw = 45; };
-  utt.onend    = () => { brain.jaw = 0; };
-  utt.onboundary = () => { brain.jaw = 20 + Math.random() * 30; };
-  window.speechSynthesis.speak(utt);
-}
+  // Head (ellipsoid — taller than wide)
+  const head = BABYLON.MeshBuilder.CreateSphere('head', {diameterX:0.95, diameterY:1.15, diameterZ:1.0, segments:32}, scene);
+  head.position.y = 2.35;
+  allParts.push(head);
 
-// ── Voice recognition ─────────────────────────────────────────
-const micBtn = document.getElementById('micBtn');
-let recognition = null;
+  // Neck
+  const neck = BABYLON.MeshBuilder.CreateCylinder('neck', {height:0.35, diameterTop:0.38, diameterBottom:0.42, tessellation:16}, scene);
+  neck.position.y = 1.7;
+  allParts.push(neck);
 
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SR();
-  recognition.lang = 'en-ZA';
-  recognition.continuous = false;
-  recognition.interimResults = true;
+  // Torso (tapered — chest wider than waist)
+  const torso = BABYLON.MeshBuilder.CreateCylinder('torso', {height:1.6, diameterTop:1.2, diameterBottom:0.85, tessellation:24}, scene);
+  torso.position.y = 0.75;
+  allParts.push(torso);
 
-  recognition.onstart = () => {
-    micBtn.classList.add('listening');
-    micBtn.textContent = '🔴';
-    const chat = document.getElementById('chat');
-    chat.classList.remove('hidden');
-    document.getElementById('transcript').textContent = 'Listening…';
-    document.getElementById('transcript').className = 'listening';
-    document.getElementById('reply').textContent = '';
-    brain.tension = 40; brain.brow = 70; // attentive expression while listening
-    updateModeLabel(currentMode.toUpperCase() + ' · LISTENING');
-  };
+  // Shoulders (wider capsules)
+  const lShoulder = BABYLON.MeshBuilder.CreateSphere('lShoulder', {diameter:0.45, segments:12}, scene);
+  lShoulder.position.set(-0.75, 1.45, 0);
+  const rShoulder = BABYLON.MeshBuilder.CreateSphere('rShoulder', {diameter:0.45, segments:12}, scene);
+  rShoulder.position.set(0.75, 1.45, 0);
+  allParts.push(lShoulder, rShoulder);
 
-  recognition.onresult = (e) => {
-    const partial = Array.from(e.results).map(r => r[0].transcript).join('');
-    document.getElementById('transcript').textContent = partial;
-  };
+  // Upper arms
+  const lUpper = BABYLON.MeshBuilder.CreateCylinder('lUpper', {height:1.0, diameterTop:0.3, diameterBottom:0.25, tessellation:12}, scene);
+  lUpper.position.set(-0.85, 0.85, 0); lUpper.rotation.z = 0.15;
+  const rUpper = BABYLON.MeshBuilder.CreateCylinder('rUpper', {height:1.0, diameterTop:0.3, diameterBottom:0.25, tessellation:12}, scene);
+  rUpper.position.set(0.85, 0.85, 0); rUpper.rotation.z = -0.15;
+  allParts.push(lUpper, rUpper);
 
-  recognition.onend = () => {
-    micBtn.classList.remove('listening');
-    micBtn.textContent = '🎙';
-    const final = document.getElementById('transcript').textContent;
-    if (final && final !== 'Listening…') askBrain(final);
-  };
+  // Forearms
+  const lFore = BABYLON.MeshBuilder.CreateCylinder('lFore', {height:0.9, diameterTop:0.22, diameterBottom:0.18, tessellation:12}, scene);
+  lFore.position.set(-0.92, 0.0, 0.05); lFore.rotation.z = 0.08;
+  const rFore = BABYLON.MeshBuilder.CreateCylinder('rFore', {height:0.9, diameterTop:0.22, diameterBottom:0.18, tessellation:12}, scene);
+  rFore.position.set(0.92, 0.0, 0.05); rFore.rotation.z = -0.08;
+  allParts.push(lFore, rFore);
 
-  recognition.onerror = () => {
-    micBtn.classList.remove('listening');
-    micBtn.textContent = '🎙';
-    updateModeLabel(currentMode.toUpperCase() + ' · MIC ERROR');
-  };
+  // Hands (small spheres)
+  const lHand = BABYLON.MeshBuilder.CreateSphere('lHand', {diameter:0.22, segments:8}, scene);
+  lHand.position.set(-0.95, -0.5, 0.05);
+  const rHand = BABYLON.MeshBuilder.CreateSphere('rHand', {diameter:0.22, segments:8}, scene);
+  rHand.position.set(0.95, -0.5, 0.05);
+  allParts.push(lHand, rHand);
 
-  micBtn.addEventListener('click', () => {
-    if (micBtn.classList.contains('listening')) {
-      recognition.stop();
-    } else {
-      recognition.start();
-    }
-  });
-} else {
-  micBtn.title = 'Speech recognition not supported in this browser';
-  micBtn.style.opacity = '0.4';
-}
+  // Hips
+  const hips = BABYLON.MeshBuilder.CreateCylinder('hips', {height:0.3, diameterTop:0.85, diameterBottom:0.9, tessellation:20}, scene);
+  hips.position.y = -0.15;
+  allParts.push(hips);
 
-// ── Neuro HUD update ──────────────────────────────────────────
-function updateNeuroHUD(n) {
-  if (!n) return;
-  const stateLabels = { D: 'Dopamine', S: 'Serotonin', O: 'Oxytocin', E: 'Endorphins' };
-  ['D','S','O','E'].forEach(k => {
-    const v = n[k] || 0;
-    const bar = document.getElementById('nb' + k);
-    const val = document.getElementById('nv' + k);
-    if (bar) bar.style.width = (v * 100).toFixed(1) + '%';
-    if (val) val.textContent = v.toFixed(3);
-  });
-  const cog = document.getElementById('nhCog');
-  const st  = document.getElementById('nhState');
-  if (cog) cog.textContent = 'C(t) ' + (n.cognition || 0).toFixed(4);
-  if (st && n.state) {
-    const dom = (n.state || '').replace(/\|(\w)\⟩/, '$1');
-    const label = stateLabels[dom] || dom;
-    st.textContent = (n.state || '') + ' ' + label;
-  }
-  // Map neuro to brain targets for face
-  if (typeof n.O !== 'undefined') {
-    brain.smile   = Math.round(Math.min(100, (n.O * 1.2 + (n.E||0) * 0.3) * 100));
-    brain.brow    = Math.round(Math.min(100, ((n.cognition||0) * 2) * 100));
-    brain.tension = Math.round(Math.max(0,  (1 - (n.S||0) - (n.O||0) * 0.4) * 100));
-  }
-}
+  // Upper legs (thighs)
+  const lThigh = BABYLON.MeshBuilder.CreateCylinder('lThigh', {height:1.2, diameterTop:0.38, diameterBottom:0.3, tessellation:12}, scene);
+  lThigh.position.set(-0.28, -0.95, 0);
+  const rThigh = BABYLON.MeshBuilder.CreateCylinder('rThigh', {height:1.2, diameterTop:0.38, diameterBottom:0.3, tessellation:12}, scene);
+  rThigh.position.set(0.28, -0.95, 0);
+  allParts.push(lThigh, rThigh);
 
-async function pollNeuro() {
-  try {
-    const r = await fetch('/api/neuro');
-    const d = await r.json();
-    updateNeuroHUD(d);
-  } catch(_) {}
-}
+  // Calves
+  const lCalf = BABYLON.MeshBuilder.CreateCylinder('lCalf', {height:1.1, diameterTop:0.28, diameterBottom:0.2, tessellation:12}, scene);
+  lCalf.position.set(-0.28, -2.1, 0);
+  const rCalf = BABYLON.MeshBuilder.CreateCylinder('rCalf', {height:1.1, diameterTop:0.28, diameterBottom:0.2, tessellation:12}, scene);
+  rCalf.position.set(0.28, -2.1, 0);
+  allParts.push(lCalf, rCalf);
 
-async function boostCognition() {
-  try {
-    const r = await fetch('/api/neuro', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ boost: 'cognition' })
-    });
-    const d = await r.json();
-    updateNeuroHUD(d);
-    brain.brow = 85; brain.smile = 70;
-    updateModeLabel(currentMode.toUpperCase() + ' · COGNITION BOOST');
-    speak('Cognition boosted. Dopamine and serotonin elevated. System at peak performance.');
-    setTimeout(() => pollNeuro(), 2000);
-  } catch(_) {}
-}
+  // Feet
+  const lFoot = BABYLON.MeshBuilder.CreateBox('lFoot', {width:0.22, height:0.12, depth:0.35}, scene);
+  lFoot.position.set(-0.28, -2.7, 0.06);
+  const rFoot = BABYLON.MeshBuilder.CreateBox('rFoot', {width:0.22, height:0.12, depth:0.35}, scene);
+  rFoot.position.set(0.28, -2.7, 0.06);
+  allParts.push(lFoot, rFoot);
 
-// Poll neuro every 15s
-pollNeuro();
-setInterval(pollNeuro, 15000);
-
-// Text input
-const typeInput = document.getElementById('typeInput');
-document.getElementById('sendBtn').addEventListener('click', sendText);
-typeInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendText(); });
-function sendText() {
-  const t = typeInput.value.trim();
-  if (!t) return;
-  typeInput.value = '';
-  askBrain(t);
-}
-
-// ── Mode label ────────────────────────────────────────────────
-function updateModeLabel(text) {
-  document.getElementById('mode-label').textContent = text;
-}
-
-// ================================================================
-// FACE ENGINE
-// ================================================================
-let currentMode = 'procedural';
-let activeScene = null;
-
-function buildScene(mode) {
-  const scene = new BABYLON.Scene(engine);
-  scene.clearColor = new BABYLON.Color4(0.03, 0.04, 0.06, 1);
-
-  const cam = new BABYLON.ArcRotateCamera('cam', Math.PI / 2, Math.PI / 2.5, 5, BABYLON.Vector3.Zero(), scene);
-  cam.attachControl(canvas, true);
-  cam.lowerRadiusLimit = 2; cam.upperRadiusLimit = 14;
-
-  const hemi = new BABYLON.HemisphericLight('h', new BABYLON.Vector3(0, 1, 0), scene);
-  hemi.intensity = mode === 'vector' ? 0.1 : 0.7;
-  const key = new BABYLON.DirectionalLight('key', new BABYLON.Vector3(-1, -1.5, -2), scene);
-  key.intensity = 0.5;
-  const rim = new BABYLON.PointLight('rim', new BABYLON.Vector3(0, 2, -3), scene);
-  rim.diffuse = new BABYLON.Color3(0, 0.8, 1); rim.intensity = 0.3;
-
-  function makeSkin(name, roughness) {
-    const m = new BABYLON.PBRMaterial(name, scene);
-    m.albedoColor = new BABYLON.Color3(1.0, 0.78, 0.65);
-    m.roughness = roughness || 0.6; m.metallic = 0; return m;
-  }
-
-  // Head
-  const segs = (mode === 'facs' || mode === 'constrained') ? 128 : 64;
-  const head = BABYLON.MeshBuilder.CreateSphere('head', { diameterX: 1.6, diameterY: 2.0, diameterZ: 1.6, segments: segs }, scene);
-
-  if (mode === 'vector') {
-    const wm = new BABYLON.StandardMaterial('wire', scene);
-    wm.wireframe = true; wm.emissiveColor = new BABYLON.Color3(0, 1, 0.8); head.material = wm;
-  } else if (mode === 'embodied') {
-    const em = makeSkin('eskin', 0.75); em.albedoColor = new BABYLON.Color3(0.88, 0.68, 0.58); head.material = em;
-  } else {
-    head.material = makeSkin('skin', mode === 'tension' ? 0.7 : 0.55);
-  }
-
-  // FACS morphs
-  let smileTarget, blinkTarget, browTarget;
-  if (mode === 'facs' || mode === 'constrained' || mode === 'tension') {
-    const mm = new BABYLON.MorphTargetManager();
-    head.morphTargetManager = mm;
-    const base = head.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-
-    smileTarget = new BABYLON.MorphTarget('smile', 0);
-    const sp = base.slice();
-    for (let i = 0; i < sp.length; i += 3) { if (sp[i+1] < 0 && sp[i+2] > 0.4) sp[i+1] += 0.18 * Math.abs(sp[i]); }
-    smileTarget.setPositions(sp); mm.addTarget(smileTarget);
-
-    blinkTarget = new BABYLON.MorphTarget('blink', 0);
-    const bp = base.slice();
-    for (let i = 0; i < bp.length; i += 3) { if (bp[i+1] > 0.2 && bp[i+2] > 0.5) bp[i+1] -= 0.15; }
-    blinkTarget.setPositions(bp); mm.addTarget(blinkTarget);
-
-    browTarget = new BABYLON.MorphTarget('brow', 0);
-    const brp = base.slice();
-    for (let i = 0; i < brp.length; i += 3) { if (brp[i+1] > 0.5 && Math.abs(brp[i]) > 0.3) brp[i+1] += 0.12; }
-    browTarget.setPositions(brp); mm.addTarget(browTarget);
-  }
-
-  // Eyes
-  function makeEye(xOff) {
-    const scl = BABYLON.MeshBuilder.CreateSphere('scl', { diameter: 0.35, segments: 32 }, scene);
-    const pup = BABYLON.MeshBuilder.CreateSphere('pup', { diameter: 0.14, segments: 16 }, scene);
-    scl.position = new BABYLON.Vector3(xOff, 0.28, 0.74);
-    pup.position = new BABYLON.Vector3(xOff, 0.28, 0.91);
-    const sm = new BABYLON.PBRMaterial('scM', scene);
-    sm.albedoColor = new BABYLON.Color3(0.98, 0.98, 0.98); sm.roughness = 0.05; sm.metallic = 0; scl.material = sm;
-    const im = new BABYLON.PBRMaterial('irM', scene);
-    im.albedoColor = mode === 'vector' ? new BABYLON.Color3(0, 1, 0.8) : new BABYLON.Color3(0.1, 0.4, 0.8);
-    im.roughness = 0.1; im.metallic = 0; pup.material = im;
-    return { scl, pup };
-  }
-  const eyeL = makeEye(-0.35); const eyeR = makeEye(0.35);
+  // Face details on head
+  // Eyes (dark insets)
+  const lEye = BABYLON.MeshBuilder.CreateSphere('lEye', {diameter:0.12, segments:8}, scene);
+  lEye.position.set(-0.18, 2.45, 0.42);
+  const rEye = BABYLON.MeshBuilder.CreateSphere('rEye', {diameter:0.12, segments:8}, scene);
+  rEye.position.set(0.18, 2.45, 0.42);
+  const eyeMat = new BABYLON.PBRMaterial('eyeMat', scene);
+  eyeMat.albedoColor = new BABYLON.Color3(0.15, 0.1, 0.08);
+  eyeMat.roughness = 0.2; eyeMat.metallic = 0.1;
+  lEye.material = eyeMat; rEye.material = eyeMat;
+  allParts.push(lEye, rEye);
 
   // Nose
-  const nose = BABYLON.MeshBuilder.CreateCylinder('nose', { height: 0.55, diameterTop: 0.06, diameterBottom: 0.28, tessellation: 32 }, scene);
-  nose.rotation.x = Math.PI / 2; nose.position = new BABYLON.Vector3(0, -0.05, 0.91); nose.material = head.material;
+  const nose = BABYLON.MeshBuilder.CreateCylinder('nose', {height:0.2, diameterTop:0.02, diameterBottom:0.1, tessellation:8}, scene);
+  nose.position.set(0, 2.3, 0.48); nose.rotation.x = -0.3;
+  allParts.push(nose);
 
-  // Cheeks
-  function makeCheek(x) {
-    const c = BABYLON.MeshBuilder.CreateSphere('cheek', { diameter: 0.54, segments: 24 }, scene);
-    c.scaling.y = 0.65; c.position = new BABYLON.Vector3(x, -0.15, 0.62); c.material = head.material; return c;
-  }
-  const cheekL = makeCheek(-0.62); const cheekR = makeCheek(0.62);
+  // Mouth
+  const mouth = BABYLON.MeshBuilder.CreateBox('mouth', {width:0.25, height:0.04, depth:0.05}, scene);
+  mouth.position.set(0, 2.15, 0.44);
+  const mouthMat = new BABYLON.PBRMaterial('mouthMat', scene);
+  mouthMat.albedoColor = new BABYLON.Color3(0.6, 0.25, 0.25);
+  mouthMat.roughness = 0.4;
+  mouth.material = mouthMat;
+  allParts.push(mouth);
 
-  // Jaw
-  const jaw = BABYLON.MeshBuilder.CreateBox('jaw', { width: 1.4, height: 0.38, depth: 1.1 }, scene);
-  jaw.position = new BABYLON.Vector3(0, -0.88, 0); jaw.material = head.material;
+  // Parent all
+  allParts.forEach(p => { p.parent = parent; });
 
-  // Tension / constraint lines
-  const tensionLines = [];
-  if (mode === 'tension' || mode === 'vector' || mode === 'constrained') {
-    const pts = [
-      [new BABYLON.Vector3(-0.62,-0.15, 0.62), new BABYLON.Vector3(-0.35, 0.28, 0.74)],
-      [new BABYLON.Vector3(0.62, -0.15, 0.62), new BABYLON.Vector3(0.35,  0.28, 0.74)],
-      [new BABYLON.Vector3(0,   -0.88, 0),     new BABYLON.Vector3(0,    -0.05, 0.91)],
-      [new BABYLON.Vector3(-0.5, 0.1,  0.5),   new BABYLON.Vector3(0,    -0.05, 0.91)],
-      [new BABYLON.Vector3(0.5,  0.1,  0.5),   new BABYLON.Vector3(0,    -0.05, 0.91)],
-    ];
-    const lc = mode === 'constrained' ? new BABYLON.Color3(1, 0.6, 0) : new BABYLON.Color3(0, 1, 0.8);
-    pts.forEach(([a, b], i) => { const ln = BABYLON.MeshBuilder.CreateLines('tl'+i, { points: [a, b] }, scene); ln.color = lc; tensionLines.push(ln); });
-  }
+  // Skin PBR material
+  const skin = new BABYLON.PBRMaterial('skinPBR', scene);
+  skin.albedoColor = BABYLON.Color3.FromHexString('#c4956a');
+  skin.roughness = 0.55;
+  skin.metallic = 0.0;
+  // Subsurface scattering hint
+  skin.subSurface.isTranslucencyEnabled = true;
+  skin.subSurface.translucencyIntensity = 0.3;
+  skin.subSurface.tintColor = new BABYLON.Color3(0.9, 0.5, 0.4);
 
-  // Embodied particles
-  let sparks;
-  if (mode === 'embodied') {
-    sparks = new BABYLON.ParticleSystem('sparks', 300, scene);
-    sparks.particleTexture = new BABYLON.Texture('https://www.babylonjs.com/assets/Flare.png', scene);
-    sparks.emitter = head;
-    sparks.minEmitBox = new BABYLON.Vector3(-0.8,-1,-0.8); sparks.maxEmitBox = new BABYLON.Vector3(0.8,1,0.8);
-    sparks.color1 = new BABYLON.Color4(1,0.4,0,0.6); sparks.color2 = new BABYLON.Color4(1,0,0.4,0.3);
-    sparks.minSize = 0.02; sparks.maxSize = 0.07; sparks.minLifeTime = 0.4; sparks.maxLifeTime = 1.4;
-    sparks.emitRate = 20; sparks.direction1 = new BABYLON.Vector3(-0.5,0.5,-0.5); sparks.direction2 = new BABYLON.Vector3(0.5,1.2,0.5);
-    sparks.gravity = new BABYLON.Vector3(0,-0.3,0); sparks.start();
-  }
+  // Apply skin to body parts (not eyes/mouth)
+  allParts.forEach(p => {
+    if(!p.material) p.material = skin;
+  });
+  nose.material = skin;
 
-  // ── Animation loop ────────────────────────────────────────
-  scene.registerBeforeRender(() => {
-    const t = performance.now() * 0.001 * (animSpeed || 0.6);
+  // Lighting
+  const dirLight = new BABYLON.DirectionalLight('dir', new BABYLON.Vector3(-1,-2,-1), scene);
+  dirLight.intensity = 1.8;
+  dirLight.diffuse = new BABYLON.Color3(1, 0.95, 0.9);
+  const ambLight = new BABYLON.HemisphericLight('amb', new BABYLON.Vector3(0,1,0), scene);
+  ambLight.intensity = 0.5;
+  ambLight.groundColor = new BABYLON.Color3(0.2, 0.15, 0.1);
+  const rimLight = new BABYLON.DirectionalLight('rim', new BABYLON.Vector3(1,0.5,1), scene);
+  rimLight.intensity = 0.4;
+  rimLight.diffuse = new BABYLON.Color3(0.6, 0.8, 1);
 
-    // Lerp sliders toward brain targets each frame
-    tickBrainSliders();
+  // Shadows
+  const sg = new BABYLON.ShadowGenerator(512, dirLight);
+  allParts.forEach(p => sg.addShadowCaster(p));
 
-    // Read current slider values (after lerp)
-    const smile   = slSmile.value   / 100;
-    const browV   = slBrow.value    / 100;
-    const jawV    = slJaw.value     / 100;
-    const tensV   = slTension.value / 100;
+  // Ground plane for shadow
+  const ground = BABYLON.MeshBuilder.CreateGround('ground', {width:6, height:6}, scene);
+  ground.position.y = -2.8;
+  const gMat = new BABYLON.PBRMaterial('gMat', scene);
+  gMat.albedoColor = new BABYLON.Color3(0.03, 0.05, 0.08);
+  gMat.roughness = 1; gMat.metallic = 0;
+  ground.material = gMat;
+  ground.receiveShadows = true;
 
-    // Eyes
-    const ey = Math.sin(t) * 0.4;
-    eyeL.scl.rotation.y = ey; eyeR.scl.rotation.y = ey;
-    eyeL.pup.rotation.y = ey; eyeR.pup.rotation.y = ey;
-
-    // Blink (natural, overridden by brain jaw-open state)
-    const blink = Math.max(0, Math.sin(t * 4.5));
-    eyeL.scl.scaling.y = 1 - blink * 0.65; eyeR.scl.scaling.y = 1 - blink * 0.65;
-
-    // Cheeks follow smile
-    const smA = (Math.sin(t * 0.9) + 1) / 2;
-    const smB = smile * 0.5 + smA * 0.5;
-    cheekL.scaling.y = 0.65 + smB * 0.22; cheekR.scaling.y = 0.65 + smB * 0.22;
-
-    // Jaw (brain-driven for speech)
-    jaw.rotation.x = jawV * 0.45 + Math.abs(Math.sin(t * 1.1)) * 0.05;
-
-    // Nose breathe
-    nose.scaling.x = 1 + Math.sin(t * 0.5) * 0.04;
-
-    // Head micro-sway
-    head.rotation.y = Math.sin(t * 0.3) * 0.1;
-    head.rotation.z = Math.cos(t * 0.4) * 0.03;
-    jaw.rotation.y  = head.rotation.y;
-
-    // FACS morphs
-    if (smileTarget) smileTarget.influence = smB;
-    if (blinkTarget) blinkTarget.influence = blink;
-    if (browTarget)  browTarget.influence  = browV;
-
-    // Tension lines
-    tensionLines.forEach((ln, i) => { ln.alpha = 0.3 + tensV * 0.7 * Math.abs(Math.sin(t * 1.5 + i)); });
-
-    // Embodied particles
-    if (sparks) sparks.emitRate = 10 + tensV * 90;
-
-    // Breathing
-    head.scaling.y = 1 + Math.sin(t * 0.4) * 0.008;
-
-    // FPS stat
-    document.getElementById('sFps').textContent = Math.round(engine.getFps());
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.02 * animSpeed;
+      // Breathing
+      const breath = 1 + 0.015 * Math.sin(t);
+      parent.scaling.set(1, breath, 1);
+      // Subtle idle sway
+      parent.rotation.y = Math.sin(t*0.3)*0.02;
+    }
   });
 
-  setTimeout(() => {
-    let v = 0;
-    scene.meshes.forEach(m => { try { v += m.getTotalVertices(); } catch(_) {} });
-    document.getElementById('sVerts').textContent = v.toLocaleString();
-  }, 600);
-
-  return scene;
+  let totalVerts = 0;
+  allParts.forEach(p => totalVerts += p.getTotalVertices());
+  updateInfo('textured', totalVerts, 'PBR Subsurface Skin');
 }
 
-// ── Mode switching ────────────────────────────────────────────
-function switchMode(mode, updateBtn) {
-  currentMode = mode;
-  if (updateBtn !== false) {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+function buildAnatomical(){
+  disposeScene();
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.8;
+
+  const layers = [
+    {name:'skeleton', radius:1.5, color:'#ffffff', alpha:1.0},
+    {name:'muscle',   radius:2.0, color:'#cc3333', alpha:0.6},
+    {name:'skin',     radius:2.4, color:'#deb887', alpha:0.3},
+  ];
+
+  anatomicalLayers = [];
+  let totalVerts = 0;
+
+  layers.forEach((l, i) => {
+    const sphere = BABYLON.MeshBuilder.CreateSphere(l.name, {diameter:l.radius*2, segments:24}, scene);
+    const mat = new BABYLON.StandardMaterial(l.name+'Mat', scene);
+    mat.diffuseColor = BABYLON.Color3.FromHexString(l.color);
+    mat.alpha = l.alpha;
+    mat.backFaceCulling = false;
+    sphere.material = mat;
+    anatomicalLayers.push(sphere);
+    totalVerts += sphere.getTotalVertices();
+  });
+
+  document.getElementById('layer-toggle').style.display = 'flex';
+
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.01 * animSpeed;
+      anatomicalLayers.forEach((m,i) => { m.rotation.y = t * (0.5 + i*0.2); });
+    }
+  });
+
+  updateInfo('anatomical', totalVerts, 'Layered Transparent');
+}
+
+function buildNeural(){
+  disposeScene();
+
+  const gl = new BABYLON.GlowLayer('glow', scene);
+  gl.intensity = 0.8;
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.15;
+  const dl = new BABYLON.DirectionalLight('dl', new BABYLON.Vector3(-1,-1,-1), scene);
+  dl.intensity = 0.3;
+
+  // Brain mesh (deformed sphere)
+  const brainGeo = BABYLON.MeshBuilder.CreateSphere('brain', {diameter:3, segments:64}, scene);
+  const positions = brainGeo.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+  for(let i=0;i<positions.length;i+=3){
+    let x=positions[i],y=positions[i+1],z=positions[i+2];
+    const lobe=Math.sin(x*2)*0.15+Math.cos(z*3)*0.08;
+    const sulcus=Math.sin(x*8+y*6)*0.03;
+    positions[i]*=(1+lobe+sulcus);
+    positions[i+1]*=0.85+Math.abs(Math.sin(z*2))*0.08;
+    positions[i+2]*=1.05;
+    if(Math.abs(positions[i])<0.06) positions[i+1]-=0.06;
   }
-  updateModeLabel(mode.toUpperCase() + ' · BRAIN IDLE');
-  document.getElementById('sVerts').textContent = '--';
-  if (activeScene) { activeScene.dispose(); activeScene = null; }
-  activeScene = buildScene(mode);
+  brainGeo.setVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
+
+  const brainMat = new BABYLON.StandardMaterial('brainMat', scene);
+  brainMat.diffuseColor = new BABYLON.Color3(0.15, 0.05, 0.25);
+  brainMat.emissiveColor = new BABYLON.Color3(0.1, 0.02, 0.2);
+  brainMat.alpha = 0.4;
+  brainMat.backFaceCulling = false;
+  brainGeo.material = brainMat;
+
+  // Neural network nodes (200 neurons)
+  const neurons = [];
+  const neuronPositions = [];
+  for(let i=0;i<200;i++){
+    const theta=Math.random()*Math.PI*2, phi=Math.acos(2*Math.random()-1), r=Math.cbrt(Math.random())*1.3;
+    const x=r*Math.sin(phi)*Math.cos(theta), y=r*Math.sin(phi)*Math.sin(theta)*0.85, z=r*Math.cos(phi)*1.05;
+    const s = BABYLON.MeshBuilder.CreateSphere('n'+i, {diameter:0.06, segments:4}, scene);
+    s.position.set(x,y,z);
+    const m = new BABYLON.StandardMaterial('nm'+i, scene);
+    const region = y>0.3 ? '#00ffcc' : y<-0.3 ? '#ff66aa' : Math.abs(x)>0.6 ? '#ffaa00' : '#7766ff';
+    m.emissiveColor = BABYLON.Color3.FromHexString(region);
+    m.disableLighting = true;
+    s.material = m;
+    neurons.push(s);
+    neuronPositions.push(new BABYLON.Vector3(x,y,z));
+  }
+
+  // Synaptic connections (lines between nearby neurons)
+  const synapses = [];
+  for(let i=0;i<200;i++){
+    for(let j=i+1;j<200;j++){
+      if(BABYLON.Vector3.Distance(neuronPositions[i], neuronPositions[j]) < 0.5){
+        const line = BABYLON.MeshBuilder.CreateLines('syn'+i+'_'+j, {points:[neuronPositions[i], neuronPositions[j]]}, scene);
+        line.color = new BABYLON.Color3(0.3, 0.1, 0.5);
+        line.alpha = 0.15;
+        synapses.push(line);
+      }
+    }
+  }
+
+  // Firing pulses (particles along synapses)
+  const pulseCount = 30;
+  const pulses = [];
+  for(let i=0;i<pulseCount;i++){
+    const p = BABYLON.MeshBuilder.CreateSphere('pulse'+i, {diameter:0.04, segments:3}, scene);
+    const pm = new BABYLON.StandardMaterial('pm'+i, scene);
+    pm.emissiveColor = BABYLON.Color3.FromHexString(i%3===0?'#00ffcc':i%3===1?'#ff66aa':'#ffaa00');
+    pm.disableLighting = true;
+    p.material = pm;
+    const from = Math.floor(Math.random()*200), to = Math.floor(Math.random()*200);
+    pulses.push({mesh:p, from, to, progress:Math.random(), speed:0.005+Math.random()*0.01});
+  }
+
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.005 * animSpeed;
+      brainGeo.rotation.y = t * 0.3;
+      // Pulse neurons (random firing)
+      if(Math.random()>0.95){
+        const idx=Math.floor(Math.random()*200);
+        const n=neurons[idx];
+        if(n&&n.material) n.material.emissiveColor=BABYLON.Color3.White();
+        setTimeout(()=>{if(n&&n.material){const c=n.position.y>0.3?'#00ffcc':n.position.y<-0.3?'#ff66aa':'#7766ff';n.material.emissiveColor=BABYLON.Color3.FromHexString(c);}},200);
+      }
+      // Move pulses along paths
+      pulses.forEach(p=>{
+        p.progress += p.speed * animSpeed;
+        if(p.progress > 1){p.progress=0;p.from=Math.floor(Math.random()*200);p.to=Math.floor(Math.random()*200);}
+        const a=neuronPositions[p.from]||BABYLON.Vector3.Zero(), b=neuronPositions[p.to]||BABYLON.Vector3.Zero();
+        p.mesh.position = BABYLON.Vector3.Lerp(a, b, p.progress);
+      });
+    }
+  });
+
+  updateInfo('neural', 200+pulseCount, 'Neural Network + Synaptic');
 }
 
-document.querySelectorAll('.mode-btn').forEach(btn => {
-  btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+function buildHolographic(){
+  disposeScene();
+
+  const gl = new BABYLON.GlowLayer('glow', scene);
+  gl.intensity = 0.5;
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.3;
+
+  const knot = BABYLON.MeshBuilder.CreateTorusKnot('knot', {radius:1.5, tube:0.4, radialSegments:128, tubularSegments:64}, scene);
+  const mat = new BABYLON.StandardMaterial('holoMat', scene);
+  mat.diffuseColor = BABYLON.Color3.FromHexString('#00ccff');
+  mat.emissiveColor = new BABYLON.Color3(0, 0.3, 0.5);
+  mat.alpha = 0.6;
+  mat.backFaceCulling = false;
+
+  mat.diffuseFresnelParameters = new BABYLON.FresnelParameters();
+  mat.diffuseFresnelParameters.leftColor = BABYLON.Color3.White();
+  mat.diffuseFresnelParameters.rightColor = BABYLON.Color3.FromHexString('#00ccff');
+  mat.diffuseFresnelParameters.bias = 0.1;
+  mat.diffuseFresnelParameters.power = 2;
+
+  mat.emissiveFresnelParameters = new BABYLON.FresnelParameters();
+  mat.emissiveFresnelParameters.leftColor = BABYLON.Color3.FromHexString('#00ccff');
+  mat.emissiveFresnelParameters.rightColor = BABYLON.Color3.Black();
+  mat.emissiveFresnelParameters.bias = 0.2;
+  mat.emissiveFresnelParameters.power = 3;
+
+  mat.opacityFresnelParameters = new BABYLON.FresnelParameters();
+  mat.opacityFresnelParameters.leftColor = BABYLON.Color3.White();
+  mat.opacityFresnelParameters.rightColor = new BABYLON.Color3(0.3,0.3,0.3);
+
+  knot.material = mat;
+
+  // Scanline plane overlay
+  const scanPlane = BABYLON.MeshBuilder.CreatePlane('scan', {size:8}, scene);
+  scanPlane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+  const scanMat = new BABYLON.StandardMaterial('scanMat', scene);
+  // Procedural scanline texture
+  const scanTex = new BABYLON.DynamicTexture('scanTex', {width:4, height:256}, scene);
+  const stCtx = scanTex.getContext();
+  for(let y=0;y<256;y++){
+    stCtx.fillStyle = y%4<2 ? 'rgba(0,204,255,0.04)' : 'rgba(0,0,0,0)';
+    stCtx.fillRect(0,y,4,1);
+  }
+  scanTex.update();
+  scanMat.diffuseTexture = scanTex;
+  scanMat.opacityTexture = scanTex;
+  scanMat.emissiveColor = new BABYLON.Color3(0, 0.4, 0.6);
+  scanMat.backFaceCulling = false;
+  scanMat.alpha = 0.3;
+  scanPlane.material = scanMat;
+
+  let t = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.01 * animSpeed;
+      knot.rotation.y = t;
+      knot.rotation.x = t * 0.3;
+      if(scanMat.diffuseTexture) scanMat.diffuseTexture.vOffset = t * 0.5;
+    }
+  });
+
+  updateInfo('holographic', knot.getTotalVertices(), 'Fresnel Holographic');
+}
+
+function buildQuantum(){
+  disposeScene();
+
+  const gl = new BABYLON.GlowLayer('glow', scene);
+  gl.intensity = 0.8;
+
+  const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0,1,0), scene);
+  light.intensity = 0.2;
+
+  const N = 200;
+  const spheres = [];
+  const origins = [];
+  const threshold = 2.5;
+
+  for(let i=0;i<N;i++){
+    // Random position in sphere volume
+    const theta = Math.random()*Math.PI*2;
+    const phi = Math.acos(2*Math.random()-1);
+    const r = Math.cbrt(Math.random())*4;
+    const x = r*Math.sin(phi)*Math.cos(theta);
+    const y = r*Math.sin(phi)*Math.sin(theta);
+    const z = r*Math.cos(phi);
+
+    const s = BABYLON.MeshBuilder.CreateSphere('q'+i, {diameter:0.1, segments:4}, scene);
+    s.position.set(x,y,z);
+    const mat = new BABYLON.StandardMaterial('qm'+i, scene);
+    mat.emissiveColor = BABYLON.Color3.FromHexString(i%2===0 ? '#ff00ff' : '#00ffff');
+    mat.disableLighting = true;
+    s.material = mat;
+
+    spheres.push(s);
+    origins.push(new BABYLON.Vector3(x,y,z));
+  }
+
+  // Lines connecting nearby spheres
+  let lines = [];
+  function rebuildLines(){
+    lines.forEach(l => l.dispose());
+    lines = [];
+    for(let i=0;i<N;i++){
+      for(let j=i+1;j<N;j++){
+        const d = BABYLON.Vector3.Distance(spheres[i].position, spheres[j].position);
+        if(d < threshold){
+          const line = BABYLON.MeshBuilder.CreateLines('ln'+i+'_'+j, {
+            points:[spheres[i].position.clone(), spheres[j].position.clone()],
+            updatable:false
+          }, scene);
+          line.color = new BABYLON.Color3(0.5, 0, 0.5);
+          line.alpha = 0.3;
+          lines.push(line);
+        }
+      }
+    }
+  }
+  rebuildLines();
+
+  let t = 0;
+  let lineTimer = 0;
+  sceneAnimations.push(()=>{
+    if(!animPaused){
+      t += 0.016 * animSpeed;
+      lineTimer += 0.016 * animSpeed;
+      for(let i=0;i<N;i++){
+        const jitter = 0.03 * animSpeed;
+        spheres[i].position.x = origins[i].x + (Math.random()-0.5)*jitter;
+        spheres[i].position.y = origins[i].y + (Math.random()-0.5)*jitter;
+        spheres[i].position.z = origins[i].z + (Math.random()-0.5)*jitter;
+      }
+      if(lineTimer > 0.5){
+        lineTimer = 0;
+        rebuildLines();
+      }
+    }
+  });
+
+  let totalVerts = 0;
+  spheres.forEach(s => totalVerts += s.getTotalVertices());
+  updateInfo('quantum', totalVerts, 'Emissive Particle');
+}
+
+// ── MODE SWITCH ──
+const builders = {
+  wireframe: buildWireframe,
+  textured: buildTextured,
+  anatomical: buildAnatomical,
+  neural: buildNeural,
+  holographic: buildHolographic,
+  quantum: buildQuantum
+};
+
+function switchMode(mode){
+  currentMode = mode;
+  document.getElementById('active-mode-label').textContent = 'MODE: '+mode.toUpperCase();
+
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === mode);
+  });
+
+  // Hide layer toggle unless anatomical
+  document.getElementById('layer-toggle').style.display = mode==='anatomical' ? 'flex' : 'none';
+
+  // Fetch API data then build
+  fetch('/api/avatar/'+mode, {signal:AbortSignal.timeout(3000)})
+    .then(r => {if(!r.ok) throw new Error(); return r.json();})
+    .catch(() => ({mode:mode, status:'local', vertices:0, material:'default'}))
+    .then(data => {
+      apiModeData[mode] = data;
+      builders[mode]();
+    });
+}
+
+// ── RENDER LOOP ──
+engine.runRenderLoop(function(){
+  if(scene && scene.activeCamera){
+    sceneAnimations.forEach(fn => fn());
+    scene.render();
+    document.getElementById('info-fps').textContent = engine.getFps().toFixed(0);
+  }
 });
 
-// ── Boot ──────────────────────────────────────────────────────
-activeScene = buildScene('procedural');
-engine.runRenderLoop(() => activeScene && activeScene.render());
 window.addEventListener('resize', () => engine.resize());
 
-// Greet on load
-setTimeout(() => askBrain('hello'), 1200);
+// ── INIT ──
+fetch('/api/avatar/modes', {signal:AbortSignal.timeout(3000)})
+  .then(r => r.json())
+  .catch(() => ['wireframe','textured','anatomical','neural','holographic','quantum'])
+  .then(() => { switchMode('wireframe'); });
 </script>
 </body>
 </html>

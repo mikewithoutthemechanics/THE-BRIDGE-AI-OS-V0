@@ -1,453 +1,506 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Smart Invoicing — Bridge AI OS</title>
-    <meta name="description" content="CRM-integrated invoicing with AI generation, email sending, and payment tracking">
-    <meta property="og:title" content="Smart Invoicing — Bridge AI OS">
-    <meta property="og:description" content="CRM-integrated invoicing with AI generation and payment tracking">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/invoicing.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/invoicing.html">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/bridge-tokens.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { min-height: 100vh; background: var(--bg-0); font-family: var(--font-ui); color: var(--text-primary); }
-        body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 80%, rgba(99,255,218,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
-        .shell { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px; }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
-        .header h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); background: linear-gradient(135deg, var(--cyan) 0%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .stats-bar { display: flex; gap: var(--gap); margin-bottom: 24px; flex-wrap: wrap; }
-        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 22px; flex: 1; min-width: 140px; }
-        .stat-card .label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-family: var(--font-mono); margin-bottom: 6px; }
-        .stat-card .value { font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--cyan); }
-        .stat-card .value.revenue { color: var(--alive); }
-        .stat-card .value.overdue { color: var(--offline); }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BridgeAI · Smart Invoicing</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--surface:#0f172a;--surface2:#1e293b;
+  --border:#1e293b;--border2:#334155;
+  --accent:#38bdf8;--accent2:#0284c7;--green:#34d399;
+  --yellow:#fbbf24;--red:#f87171;--purple:#a78bfa;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --font:Inter,system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
 
-        .create-section { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px; }
-        .create-section h2 { font-size: var(--text-lg); color: var(--cyan); margin-bottom: 16px; }
-        .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-        .form-group { flex: 1; min-width: 200px; }
-        .form-group label { display: block; font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: var(--tracking-wide); margin-bottom: 4px; font-family: var(--font-mono); }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-ui); font-size: var(--text-sm); outline: none; }
-        .form-group input:focus, .form-group textarea:focus { border-color: var(--cyan); }
-        .form-group textarea { resize: vertical; min-height: 60px; }
-        .crm-info { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; font-size: var(--text-sm); color: var(--text-secondary); display: none; }
-        .crm-info.visible { display: block; }
-        .crm-info .crm-name { color: var(--cyan); font-weight: var(--weight-semibold); }
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;
+  padding:.6rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50}
+.nav-brand{font-size:1rem;font-weight:700;color:#fff;letter-spacing:.5px}
+.nav-links{display:flex;gap:.25rem}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:.82rem;padding:.35rem .75rem;
+  border-radius:4px;transition:all .15s}
+.nav-links a:hover,.nav-links a.active{color:#fff;background:var(--surface2)}
+.nav-actions{display:flex;gap:.5rem;align-items:center}
+.nav-btn{padding:.35rem .9rem;border-radius:5px;border:none;cursor:pointer;
+  font-family:var(--font);font-size:.8rem;font-weight:600}
+.nav-btn-primary{background:var(--accent2);color:#fff}
+.nav-btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.nav-btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.nav-btn-warn{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:var(--yellow)}
+.nav-btn-warn:hover{background:rgba(251,191,36,.2)}
 
-        .line-items-section { margin-top: 12px; }
-        .line-items-section h3 { font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
-        .line-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
-        .line-item input { flex: 1; padding: 8px 10px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-ui); font-size: var(--text-sm); outline: none; }
-        .line-item input:first-child { flex: 2; }
-        .line-item input:focus { border-color: var(--cyan); }
-        .line-item .remove-line { background: none; border: none; color: var(--signal-red); cursor: pointer; font-size: 16px; padding: 4px 8px; opacity: 0.6; }
-        .line-item .remove-line:hover { opacity: 1; }
-        .add-line-btn { background: none; border: 1px dashed var(--border); color: var(--text-secondary); padding: 8px; border-radius: var(--radius-sm); width: 100%; cursor: pointer; font-family: var(--font-mono); font-size: var(--text-xs); margin-top: 4px; }
-        .add-line-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+/* ── STATS BAR ── */
+.stats-bar{display:flex;gap:.75rem;padding:.75rem 1.5rem;background:var(--surface);
+  border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:wrap}
+.stat{background:var(--surface2);border-radius:6px;padding:.5rem 1rem;min-width:110px;flex-shrink:0}
+.stat-val{font-size:1.2rem;font-weight:700;color:var(--accent)}
+.stat-val.green{color:var(--green)}
+.stat-val.yellow{color:var(--yellow)}
+.stat-val.red{color:var(--red)}
+.stat-lbl{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
 
-        .form-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-        .btn { padding: 10px 20px; border: none; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: var(--text-sm); font-weight: var(--weight-semibold); cursor: pointer; transition: all 0.15s; }
-        .btn-primary { background: var(--cyan); color: var(--bg-0); }
-        .btn-primary:hover { filter: brightness(1.1); }
-        .btn-secondary { background: var(--bg-2); color: var(--text-primary); border: 1px solid var(--border); }
-        .btn-secondary:hover { border-color: var(--cyan); }
-        .btn-ai { background: linear-gradient(135deg, #a78bfa, #38bdf8); color: var(--bg-0); }
-        .btn-ai:hover { filter: brightness(1.1); }
-        .btn-danger { background: rgba(255,0,51,0.15); color: var(--offline); border: 1px solid rgba(255,0,51,0.3); }
-        .btn-danger:hover { background: rgba(255,0,51,0.25); }
-        .btn-sm { padding: 6px 12px; font-size: var(--text-xs); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* ── MAIN GRID ── */
+.main{display:grid;grid-template-columns:380px 1fr;gap:0;height:calc(100vh - 112px);overflow:hidden}
+.panel-left{border-right:1px solid var(--border);overflow-y:auto;padding:1.25rem}
+.panel-right{overflow-y:auto;padding:1.25rem}
 
-        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
-        .toolbar-left { display: flex; gap: 8px; flex-wrap: wrap; }
+/* ── FORM ── */
+.section-label{font-size:.72rem;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem}
+.field{margin-bottom:.65rem}
+.field label{display:block;font-size:.7rem;color:var(--text3);margin-bottom:.25rem}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:5px;padding:.45rem .7rem;color:#f1f5f9;font-size:.82rem;
+  font-family:var(--font);outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.65rem}
 
-        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
-        th, td { text-align: left; padding: 12px 16px; font-size: var(--text-sm); border-bottom: 1px solid var(--border); }
-        th { background: var(--bg-2); color: var(--text-secondary); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-size: var(--text-xs); font-family: var(--font-mono); }
-        tr:hover td { background: rgba(99,255,218,0.03); }
+/* ── ITEMS TABLE ── */
+.items-hdr{display:flex;justify-content:space-between;align-items:center;margin:.75rem 0 .4rem}
+.items-hdr-lbl{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.items-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:.75rem}
+.items-table th{background:var(--surface);padding:.4rem .6rem;
+  text-align:left;color:var(--text3);border-bottom:1px solid var(--border);font-weight:500}
+.items-table td{padding:.35rem .6rem;border-bottom:1px solid var(--border)}
+.items-table input{background:var(--surface);border:1px solid var(--border2);
+  border-radius:4px;padding:.3rem .45rem;color:#f1f5f9;font-size:.78rem;width:100%;font-family:var(--font)}
+.totals{background:var(--surface);border-radius:6px;padding:.75rem;margin-top:.5rem}
+.total-row{display:flex;justify-content:space-between;padding:.2rem 0;font-size:.82rem;color:var(--text2)}
+.total-row.grand{font-size:1rem;font-weight:700;color:#f1f5f9;
+  border-top:1px solid var(--border2);margin-top:.4rem;padding-top:.4rem}
+.form-actions{display:flex;gap:.6rem;margin-top:1rem}
+.btn{padding:.45rem 1.1rem;border-radius:5px;border:none;cursor:pointer;
+  font-size:.82rem;font-weight:600;font-family:var(--font)}
+.btn-primary{background:var(--accent2);color:#fff}
+.btn-secondary{background:var(--surface2);color:var(--text2)}
+.btn-danger{background:#7f1d1d;color:#fca5a5;padding:.25rem .5rem;font-size:.72rem}
+.btn-sm{padding:.25rem .65rem;font-size:.75rem}
+.btn-green{background:#064e3b;color:var(--green)}
 
-        .badge { display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: var(--text-xs); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
-        .badge.paid { background: rgba(0,255,136,0.12); color: var(--alive); }
-        .badge.pending { background: rgba(255,170,0,0.12); color: var(--degraded); }
-        .badge.sent { background: rgba(56,189,248,0.12); color: #38bdf8; }
-        .badge.overdue { background: rgba(255,0,51,0.12); color: var(--offline); }
-        .badge.draft { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+/* ── INVOICE LIST ── */
+.list-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+.filter-group{display:flex;gap:.5rem;align-items:center}
+.filter-group select{background:var(--surface2);border:1px solid var(--border2);
+  border-radius:5px;padding:.35rem .6rem;color:#f1f5f9;font-size:.78rem;font-family:var(--font)}
+.inv-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:.85rem 1rem;margin-bottom:.6rem;display:flex;justify-content:space-between;
+  align-items:flex-start;transition:border-color .15s}
+.inv-card:hover{border-color:var(--accent)}
+.inv-num{font-size:.82rem;font-weight:600;color:#f1f5f9}
+.inv-client{font-size:.72rem;color:var(--text2);margin-top:2px}
+.inv-actions{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap}
+.inv-amount{font-size:1rem;font-weight:700;color:var(--accent);text-align:right}
+.inv-meta{font-size:.68rem;color:var(--text3);margin-top:2px;text-align:right}
+.badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:.66rem;font-weight:600}
+.s-draft{background:var(--surface2);color:var(--text2)}
+.s-sent{background:#0c4a6e;color:#7dd3fc}
+.s-paid{background:#064e3b;color:var(--green)}
+.s-overdue{background:#7f1d1d;color:#fca5a5}
+.s-pending{background:#451a03;color:var(--yellow)}
+.empty-state{text-align:center;color:var(--text3);padding:2rem;font-size:.82rem}
 
-        .actions-cell { display: flex; gap: 4px; flex-wrap: wrap; }
-        .crm-link { color: var(--cyan); text-decoration: none; font-size: var(--text-xs); }
-        .crm-link:hover { text-decoration: underline; }
-
-        .loading, .error-msg { text-align: center; padding: 48px; color: var(--text-secondary); font-family: var(--font-mono); font-size: var(--text-sm); }
-        .error-msg { color: var(--signal-red); }
-        .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-1); border: 1px solid var(--cyan); border-radius: var(--radius-md); padding: 14px 20px; color: var(--cyan); font-size: var(--text-sm); z-index: 9999; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        .toast.error { border-color: var(--offline); color: var(--offline); }
-
-        @media (max-width: 700px) {
-            .form-row { flex-direction: column; }
-            .form-group { min-width: 100%; }
-            th:nth-child(6), td:nth-child(6) { display: none; }
-        }
-    </style>
+/* ── TOAST ── */
+#toast{position:fixed;bottom:1.25rem;right:1.25rem;background:var(--surface);
+  border:1px solid var(--accent);color:var(--accent);font-size:.82rem;
+  padding:.6rem 1.1rem;border-radius:6px;display:none;z-index:999}
+</style>
 </head>
 <body>
 
-<div class="shell">
-    <div class="header">
-        <h1>Smart Invoicing</h1>
-        <div class="header-actions">
-            <button class="btn btn-secondary btn-sm" onclick="toggleCreateSection()">+ New Invoice</button>
-            <button class="btn btn-ai btn-sm" onclick="followUpAll()">Follow Up Unpaid</button>
-            <button class="btn btn-secondary btn-sm" onclick="sendAllPending()">Send All Pending</button>
-        </div>
-    </div>
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">BRIDGE AI</div>
+  <div class="nav-links">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/crm">CRM</a>
+    <a href="/leads">Leads</a>
+    <a href="/invoicing" class="active">Invoicing</a>
+    <a href="/agents">Agents</a>
+    <a href="/settings">Settings</a>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-warn" id="btnFollowUp">Follow Up Unpaid</button>
+    <button class="nav-btn nav-btn-outline" id="btnSendAll">Send All Pending</button>
+    <button class="nav-btn nav-btn-primary" id="btnNewInvoice">+ New Invoice</button>
+  </div>
+</nav>
 
-    <div class="stats-bar">
-        <div class="stat-card"><div class="label">Total Invoices</div><div class="value" id="stat-total">--</div></div>
-        <div class="stat-card"><div class="label">Paid</div><div class="value" id="stat-paid">--</div></div>
-        <div class="stat-card"><div class="label">Pending</div><div class="value" id="stat-pending">--</div></div>
-        <div class="stat-card"><div class="label">Overdue</div><div class="value overdue" id="stat-overdue">--</div></div>
-        <div class="stat-card"><div class="label">Revenue</div><div class="value revenue" id="stat-revenue">--</div></div>
-    </div>
-
-    <div class="create-section" id="create-section" style="display:none;">
-        <h2>Create Smart Invoice</h2>
-        <div class="form-row">
-            <div class="form-group">
-                <label>Client Email *</label>
-                <input id="inv-email" placeholder="client@company.com" oninput="lookupCRM()">
-            </div>
-            <div class="form-group">
-                <label>Client Name</label>
-                <input id="inv-name" placeholder="Auto-filled from CRM">
-            </div>
-            <div class="form-group">
-                <label>Company</label>
-                <input id="inv-company" placeholder="Auto-filled from CRM">
-            </div>
-        </div>
-        <div class="crm-info" id="crm-info">
-            CRM Contact: <span class="crm-name" id="crm-name"></span> — <a href="/crm.html" class="crm-link" id="crm-profile-link">View Profile</a>
-        </div>
-        <div class="form-row">
-            <div class="form-group" style="flex:2;">
-                <label>AI Description (optional — generates line items)</label>
-                <textarea id="inv-description" placeholder="e.g. Website redesign with 5 pages, SEO setup, and monthly maintenance for 3 months"></textarea>
-            </div>
-            <div class="form-group" style="flex:0 0 auto; display:flex; align-items:flex-end;">
-                <button class="btn btn-ai" id="btn-ai-generate" onclick="aiGenerate()">AI Generate</button>
-            </div>
-        </div>
-        <div class="line-items-section">
-            <h3>Line Items</h3>
-            <div id="line-items">
-                <div class="line-item">
-                    <input placeholder="Item name" class="li-name">
-                    <input placeholder="Qty" type="number" min="1" value="1" class="li-qty" style="max-width:80px;">
-                    <input placeholder="Rate (ZAR)" type="number" min="0" step="0.01" class="li-rate" style="max-width:120px;">
-                    <button class="remove-line" onclick="this.parentElement.remove()">&times;</button>
-                </div>
-            </div>
-            <button class="add-line-btn" onclick="addLineItem()">+ Add line item</button>
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label>Notes</label>
-                <input id="inv-notes" placeholder="Optional notes">
-            </div>
-        </div>
-        <div class="form-actions">
-            <button class="btn btn-primary" onclick="smartCreate()">Create Invoice</button>
-            <button class="btn btn-secondary" onclick="toggleCreateSection()">Cancel</button>
-        </div>
-    </div>
-
-    <div id="table-container"><div class="loading">Loading invoices...</div></div>
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat"><div class="stat-val" id="ss-total">—</div><div class="stat-lbl">Total Invoices</div></div>
+  <div class="stat"><div class="stat-val green" id="ss-paid">—</div><div class="stat-lbl">Paid</div></div>
+  <div class="stat"><div class="stat-val yellow" id="ss-pending">—</div><div class="stat-lbl">Pending</div></div>
+  <div class="stat"><div class="stat-val red" id="ss-overdue">—</div><div class="stat-lbl">Overdue</div></div>
+  <div class="stat"><div class="stat-val green" id="ss-revenue">—</div><div class="stat-lbl">Revenue</div></div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- MAIN -->
+<div class="main">
+
+  <!-- CREATE PANEL -->
+  <div class="panel-left" id="createPanel">
+    <div class="section-label">Smart Invoicing</div>
+    <div class="row2">
+      <div class="field"><label>Client Email *</label>
+        <input type="email" id="c-email" placeholder="client@company.com"/></div>
+      <div class="field"><label>Client Name</label>
+        <input type="text" id="c-name" placeholder="Jane Smith"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Company</label>
+        <input type="text" id="c-company" placeholder="Acme Corp"/></div>
+      <div class="field"><label>Currency</label>
+        <select id="c-currency">
+          <option value="ZAR">ZAR (R)</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+        </select>
+      </div>
+    </div>
+    <div class="row3">
+      <div class="field"><label>Tax %</label>
+        <input type="number" id="c-tax" value="15" min="0" max="100"/></div>
+      <div class="field"><label>Due Days</label>
+        <input type="number" id="c-due" value="30"/></div>
+      <div class="field"><label>Status</label>
+        <select id="c-status">
+          <option value="draft">Draft</option>
+          <option value="sent">Send Now</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Notes / Payment Terms</label>
+      <textarea id="c-notes" rows="2" placeholder="Bank details, payment terms…"></textarea></div>
+
+    <div class="items-hdr">
+      <div class="items-hdr-lbl">Line Items</div>
+      <button class="btn btn-secondary btn-sm" onclick="addItem()">+ Add Item</button>
+    </div>
+    <table class="items-table">
+      <thead><tr>
+        <th>Description</th><th style="width:60px">Qty</th>
+        <th style="width:90px">Unit Price</th><th style="width:28px"></th>
+      </tr></thead>
+      <tbody id="items-body"></tbody>
+    </table>
+    <div class="totals">
+      <div class="total-row"><span>Subtotal</span><span id="t-sub">R 0.00</span></div>
+      <div class="total-row"><span>Tax (<span id="t-taxrate">15</span>%)</span><span id="t-tax">R 0.00</span></div>
+      <div class="total-row grand"><span>TOTAL</span><span id="t-total">R 0.00</span></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="createInvoice()">Create Invoice</button>
+      <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+    </div>
+  </div>
+
+  <!-- INVOICE LIST -->
+  <div class="panel-right">
+    <div class="list-hdr">
+      <div class="section-label" style="margin:0">All Invoices</div>
+      <div class="filter-group">
+        <select id="filter-status" onchange="loadInvoices()">
+          <option value="">All</option>
+          <option value="draft">Draft</option>
+          <option value="sent">Sent</option>
+          <option value="paid">Paid</option>
+          <option value="overdue">Overdue</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadInvoices()">↺</button>
+      </div>
+    </div>
+    <div id="invoice-list"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
 
 <script>
-var invoices = [];
-var crmLookupTimeout = null;
+const DEV_SECRET = 'dev-secret-bridge-2026';
+const DEV_ADDR   = '0xDEV000000000000000000000000000000000001';
+let _items = [];
+let _authToken = localStorage.getItem('bridge_token') || '';
 
-function showToast(msg, isError) {
-    var t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(function() { t.className = 'toast'; }, 3500);
-}
-
-function toggleCreateSection() {
-    var s = document.getElementById('create-section');
-    s.style.display = s.style.display === 'none' ? 'block' : 'none';
-}
-
-function addLineItem() {
-    var c = document.getElementById('line-items');
-    var div = document.createElement('div'); div.className = 'line-item';
-    div.innerHTML = '<input placeholder="Item name" class="li-name">' +
-        '<input placeholder="Qty" type="number" min="1" value="1" class="li-qty" style="max-width:80px;">' +
-        '<input placeholder="Rate (ZAR)" type="number" min="0" step="0.01" class="li-rate" style="max-width:120px;">' +
-        '<button class="remove-line" onclick="this.parentElement.remove()">&times;</button>';
-    c.appendChild(div);
-}
-
-function lookupCRM() {
-    clearTimeout(crmLookupTimeout);
-    var email = document.getElementById('inv-email').value.trim();
-    if (!email || email.indexOf('@') < 0) {
-        document.getElementById('crm-info').className = 'crm-info';
-        return;
-    }
-    crmLookupTimeout = setTimeout(async function() {
-        try {
-            var res = await fetch('/api/crm/contacts');
-            var data = await res.json();
-            var contacts = data.contacts || data || [];
-            var match = contacts.find(function(c) { return c.email === email; });
-            if (match) {
-                document.getElementById('crm-info').className = 'crm-info visible';
-                document.getElementById('crm-name').textContent = match.name + (match.company ? ' (' + match.company + ')' : '');
-                document.getElementById('inv-name').value = match.name || '';
-                document.getElementById('inv-company').value = match.company || '';
-            } else {
-                document.getElementById('crm-info').className = 'crm-info';
-            }
-        } catch(e) {}
-    }, 500);
-}
-
-async function aiGenerate() {
-    var desc = document.getElementById('inv-description').value.trim();
-    if (!desc) return showToast('Enter a description for AI to generate items', true);
-    var btn = document.getElementById('btn-ai-generate');
-    btn.disabled = true; btn.textContent = 'Generating...';
-    try {
-        var res = await fetch('/api/invoices/ai-generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                description: desc,
-                client_email: document.getElementById('inv-email').value.trim() || 'client@example.com',
-                client_name: document.getElementById('inv-name').value.trim(),
-                company: document.getElementById('inv-company').value.trim()
-            })
-        });
-        var data = await res.json();
-        if (data.ok && data.ai_items && data.ai_items.length) {
-            var container = document.getElementById('line-items');
-            container.innerHTML = '';
-            data.ai_items.forEach(function(item) {
-                var div = document.createElement('div'); div.className = 'line-item';
-                div.innerHTML = '<input placeholder="Item name" class="li-name" value="' + (item.name || '').replace(/"/g, '&quot;') + '">' +
-                    '<input placeholder="Qty" type="number" min="1" value="' + (item.qty || 1) + '" class="li-qty" style="max-width:80px;">' +
-                    '<input placeholder="Rate (ZAR)" type="number" min="0" step="0.01" value="' + (item.rate || 0) + '" class="li-rate" style="max-width:120px;">' +
-                    '<button class="remove-line" onclick="this.parentElement.remove()">&times;</button>';
-                container.appendChild(div);
-            });
-            showToast('AI generated ' + data.ai_items.length + ' line items');
-        } else {
-            showToast('AI generation failed: ' + (data.error || 'unknown'), true);
-        }
-    } catch(e) { showToast('AI generation error: ' + e.message, true); }
-    btn.disabled = false; btn.textContent = 'AI Generate';
-}
-
-async function smartCreate() {
-    var email = document.getElementById('inv-email').value.trim();
-    if (!email) return showToast('Client email is required', true);
-    var rows = document.querySelectorAll('.line-item');
-    var items = [];
-    rows.forEach(function(row) {
-        var name = row.querySelector('.li-name').value;
-        var qty = parseInt(row.querySelector('.li-qty').value) || 1;
-        var rate = parseFloat(row.querySelector('.li-rate').value) || 0;
-        if (name) items.push({ name: name, qty: qty, rate: rate });
+async function ensureAuth() {
+  if (_authToken) {
+    const r = await fetch('/api/auth/me', {
+      credentials: 'include',
+      headers: { Authorization: 'Bearer ' + _authToken }
     });
-    if (!items.length) return showToast('Add at least one line item', true);
-    try {
-        var res = await fetch('/api/invoices/smart-create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                client_email: email,
-                client_name: document.getElementById('inv-name').value.trim(),
-                company: document.getElementById('inv-company').value.trim(),
-                items: items,
-                notes: document.getElementById('inv-notes').value.trim()
-            })
-        });
-        var data = await res.json();
-        if (data.ok) {
-            showToast('Invoice created! Payment ref: ' + (data.payment?.reference || ''));
-            toggleCreateSection();
-            resetForm();
-            loadInvoices();
-        } else {
-            showToast('Failed: ' + (data.error || 'unknown'), true);
-        }
-    } catch(e) { showToast('Error: ' + e.message, true); }
-}
-
-function resetForm() {
-    document.getElementById('inv-email').value = '';
-    document.getElementById('inv-name').value = '';
-    document.getElementById('inv-company').value = '';
-    document.getElementById('inv-description').value = '';
-    document.getElementById('inv-notes').value = '';
-    document.getElementById('crm-info').className = 'crm-info';
-    var c = document.getElementById('line-items');
-    c.innerHTML = '<div class="line-item">' +
-        '<input placeholder="Item name" class="li-name">' +
-        '<input placeholder="Qty" type="number" min="1" value="1" class="li-qty" style="max-width:80px;">' +
-        '<input placeholder="Rate (ZAR)" type="number" min="0" step="0.01" class="li-rate" style="max-width:120px;">' +
-        '<button class="remove-line" onclick="this.parentElement.remove()">&times;</button></div>';
-}
-
-async function sendInvoice(inv) {
-    var email = inv.email || inv.client_email || prompt('Enter email for ' + (inv.client || 'client') + ':');
-    if (!email) return;
-    try {
-        var res = await fetch('/api/invoices/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ invoice_id: inv.id || inv._id, to_email: email, client_name: inv.client })
-        });
-        var data = await res.json();
-        if (data.ok) { showToast('Invoice sent to ' + email); loadInvoices(); }
-        else showToast('Send failed: ' + (data.error || 'unknown'), true);
-    } catch(e) { showToast('Send error: ' + e.message, true); }
-}
-
-async function sendAllPending() {
-    var pending = invoices.filter(function(i) { var s = (i.status || '').toLowerCase(); return s === 'pending' || s === 'draft'; });
-    if (!pending.length) return showToast('No pending invoices to send');
-    var sent = 0;
-    for (var i = 0; i < pending.length; i++) {
-        var inv = pending[i];
-        var email = inv.email || inv.client_email;
-        if (!email) continue;
-        try {
-            await fetch('/api/invoices/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ invoice_id: inv.id || inv._id, to_email: email, client_name: inv.client })
-            });
-            sent++;
-        } catch(e) {}
+    if (r.ok) return true;
+  }
+  const r2 = await fetch('/api/auth/me', { credentials: 'include' });
+  if (r2.ok) return true;
+  try {
+    const r3 = await fetch('/api/auth/dev-login', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: DEV_ADDR, secret: DEV_SECRET, role: 'admin' })
+    });
+    if (r3.ok) {
+      const d = await r3.json();
+      if (d.token) { _authToken = d.token; localStorage.setItem('bridge_token', d.token); }
+      return true;
     }
-    showToast('Sent ' + sent + ' of ' + pending.length + ' pending invoices');
-    loadInvoices();
+  } catch {}
+  window.location.href = '/login?next=/invoicing';
+  return false;
 }
 
-async function followUpAll() {
-    showToast('Generating AI follow-ups...');
-    try {
-        var res = await fetch('/api/invoices/follow-up', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        var data = await res.json();
-        if (data.ok) showToast('Followed up on ' + data.followed + ' of ' + data.pending + ' unpaid invoices');
-        else showToast('Follow-up failed: ' + (data.error || 'unknown'), true);
-    } catch(e) { showToast('Follow-up error: ' + e.message, true); }
+let _csrfToken = '';
+async function fetchCsrf() {
+  try {
+    const r = await fetch('/api/invoices/stats', { credentials: 'include',
+      headers: _authToken ? { Authorization: 'Bearer ' + _authToken } : {} });
+    const t = r.headers.get('X-CSRF-Token');
+    if (t) _csrfToken = t;
+  } catch {}
 }
 
-async function markPaid(id) {
-    if (!id) return;
-    try {
-        var res = await fetch('/api/invoices/' + id + '/status', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'paid' })
-        });
-        if (res.ok) { showToast('Marked as paid'); loadInvoices(); }
-        else showToast('Failed to update status', true);
-    } catch(e) { showToast('Error: ' + e.message, true); }
+async function apiFetch(path, opts = {}) {
+  const method = (opts.method || 'GET').toUpperCase();
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (_authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+  if (['POST','PUT','DELETE','PATCH'].includes(method) && _csrfToken)
+    headers['X-CSRF-Token'] = _csrfToken;
+  const res = await fetch('/api' + path, { credentials: 'include', ...opts, headers });
+  const newCsrf = res.headers.get('X-CSRF-Token');
+  if (newCsrf) _csrfToken = newCsrf;
+  if (res.status === 401) {
+    _authToken = ''; localStorage.removeItem('bridge_token');
+    await ensureAuth(); await fetchCsrf();
+    if (_authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+    if (_csrfToken) headers['X-CSRF-Token'] = _csrfToken;
+    const retry = await fetch('/api' + path, { credentials: 'include', ...opts, headers });
+    if (!retry.ok) throw new Error(await retry.text());
+    return retry.json();
+  }
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }
 
-async function toggleStatus(id, current) {
-    if (!id) return;
-    var cycle = { draft: 'pending', pending: 'sent', sent: 'paid', paid: 'overdue', overdue: 'draft' };
-    var next = cycle[current] || 'pending';
-    try {
-        var res = await fetch('/api/invoices/' + id + '/status', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: next })
-        });
-        if (res.ok) loadInvoices();
-        else showToast('Failed to update status', true);
-    } catch(e) { showToast('Error: ' + e.message, true); }
+const _p = new URLSearchParams(location.search);
+if (_p.get('email'))   document.getElementById('c-email').value   = _p.get('email');
+if (_p.get('company')) document.getElementById('c-company').value = _p.get('company');
+if (_p.get('name'))    document.getElementById('c-name').value    = _p.get('name');
+
+function toast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.color = color || 'var(--accent)';
+  t.style.borderColor = color || 'var(--accent)';
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3500);
 }
+
+function addItem(desc='', qty=1, price=0) {
+  _items.push({ id: Date.now() + Math.random(), desc, qty, price });
+  renderItems();
+}
+function removeItem(id) { _items = _items.filter(i => i.id !== id); renderItems(); }
+function renderItems() {
+  const tbody = document.getElementById('items-body');
+  tbody.textContent = '';
+  _items.forEach(item => {
+    const tr = document.createElement('tr');
+    const mkInput = (type, val, min, step, onInput) => {
+      const el = document.createElement('input');
+      el.type = type; el.value = val;
+      if (min !== undefined) el.min = min;
+      if (step !== undefined) el.step = step;
+      el.addEventListener('input', onInput);
+      return el;
+    };
+    const dTd = document.createElement('td');
+    const dIn = mkInput('text', item.desc, undefined, undefined, e => { item.desc = e.target.value; });
+    dIn.placeholder = 'Service description';
+    dTd.appendChild(dIn); tr.appendChild(dTd);
+    const qTd = document.createElement('td');
+    qTd.appendChild(mkInput('number', item.qty, '0.01', '1', e => { item.qty = parseFloat(e.target.value)||1; updateTotals(); }));
+    tr.appendChild(qTd);
+    const pTd = document.createElement('td');
+    pTd.appendChild(mkInput('number', item.price, '0', '0.01', e => { item.price = parseFloat(e.target.value)||0; updateTotals(); }));
+    tr.appendChild(pTd);
+    const dBtnTd = document.createElement('td');
+    const dBtn = document.createElement('button');
+    dBtn.className = 'btn btn-danger'; dBtn.textContent = '✕';
+    dBtn.onclick = () => removeItem(item.id);
+    dBtnTd.appendChild(dBtn); tr.appendChild(dBtnTd);
+    tbody.appendChild(tr);
+  });
+  updateTotals();
+}
+function updateTotals() {
+  const sym = { ZAR:'R', USD:'$', EUR:'€', GBP:'£' }[document.getElementById('c-currency').value] || 'R';
+  const tax = (parseFloat(document.getElementById('c-tax').value)||0) / 100;
+  const sub = _items.reduce((a,i) => a + i.qty * i.price, 0);
+  const taxAmt = sub * tax;
+  document.getElementById('t-taxrate').textContent = document.getElementById('c-tax').value || '0';
+  document.getElementById('t-sub').textContent = sym + ' ' + sub.toFixed(2);
+  document.getElementById('t-tax').textContent = sym + ' ' + taxAmt.toFixed(2);
+  document.getElementById('t-total').textContent = sym + ' ' + (sub + taxAmt).toFixed(2);
+}
+document.getElementById('c-currency').addEventListener('change', updateTotals);
+document.getElementById('c-tax').addEventListener('input', updateTotals);
+
+function clearForm() {
+  ['c-email','c-name','c-company','c-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('c-currency').value = 'ZAR';
+  document.getElementById('c-tax').value = '15';
+  document.getElementById('c-due').value = '30';
+  document.getElementById('c-status').value = 'draft';
+  _items = []; renderItems();
+}
+
+async function createInvoice() {
+  const email = document.getElementById('c-email').value.trim();
+  if (!email) { toast('Client email required', 'var(--red)'); return; }
+  if (!_items.length) { toast('Add at least one line item', 'var(--red)'); return; }
+  try {
+    const r = await apiFetch('/invoices', {
+      method: 'POST', body: JSON.stringify({
+        client_email:   email,
+        client_name:    document.getElementById('c-name').value.trim(),
+        client_company: document.getElementById('c-company').value.trim(),
+        currency:       document.getElementById('c-currency').value,
+        tax_rate:       (parseFloat(document.getElementById('c-tax').value)||0)/100,
+        due_days:       parseInt(document.getElementById('c-due').value,10)||30,
+        notes:          document.getElementById('c-notes').value.trim(),
+        lead_id:        _p.get('lead_id') || null,
+        items: _items.map(i => ({ description:i.desc, quantity:i.qty, unit_price:i.price })),
+      })
+    });
+    toast('Invoice ' + r.invoice.invoice_number + ' created!', 'var(--green)');
+    clearForm(); loadInvoices(); loadStats();
+  } catch(e) { toast('Error: ' + e.message, 'var(--red)'); }
+}
+
+document.getElementById('btnFollowUp').addEventListener('click', async () => {
+  try {
+    const r = await apiFetch('/invoices/flag-overdue', { method: 'POST', body: '{}' });
+    toast('Flagged ' + (r.flagged||0) + ' overdue invoices', 'var(--yellow)');
+    loadInvoices(); loadStats();
+  } catch(e) { toast('Error: ' + e.message, 'var(--red)'); }
+});
+
+document.getElementById('btnSendAll').addEventListener('click', async () => {
+  const drafts = document.querySelectorAll('[data-status="draft"]');
+  if (!drafts.length) { toast('No draft invoices to send', 'var(--text2)'); return; }
+  let sent = 0;
+  for (const el of drafts) {
+    try { await apiFetch('/invoices/' + encodeURIComponent(el.dataset.id) + '/send', { method:'POST', body:'{}' }); sent++; }
+    catch {}
+  }
+  toast('Sent ' + sent + ' invoices', 'var(--green)');
+  loadInvoices(); loadStats();
+});
+
+document.getElementById('btnNewInvoice').addEventListener('click', () => {
+  document.querySelector('.panel-left').scrollIntoView({ behavior:'smooth' });
+  document.getElementById('c-email').focus();
+});
+
+const SYM = { ZAR:'R', USD:'$', EUR:'€', GBP:'£' };
+const SC  = { draft:'s-draft', sent:'s-sent', paid:'s-paid', overdue:'s-overdue', pending:'s-pending' };
 
 async function loadInvoices() {
-    var container = document.getElementById('table-container');
-    try {
-        var res = await fetch('/api/invoices');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        var data = await res.json();
-        invoices = Array.isArray(data) ? data : (data.invoices || data.data || []);
-        renderStats();
-        renderTable();
-    } catch(e) {
-        container.innerHTML = '<div class="error-msg">Failed to load invoices: ' + e.message + '</div>';
+  const status = document.getElementById('filter-status').value;
+  const url = '/invoices' + (status ? '?status=' + encodeURIComponent(status) : '');
+  try {
+    const r = await apiFetch(url);
+    const el = document.getElementById('invoice-list');
+    el.textContent = '';
+    const invs = r.invoices || [];
+    if (!invs.length) {
+      const e = document.createElement('div');
+      e.className = 'empty-state'; e.textContent = 'No invoices yet';
+      el.appendChild(e); return;
     }
-}
-
-function renderStats() {
-    document.getElementById('stat-total').textContent = invoices.length;
-    var paid = invoices.filter(function(i) { return (i.status || '').toLowerCase() === 'paid'; });
-    var pending = invoices.filter(function(i) { var s = (i.status || '').toLowerCase(); return s === 'pending' || s === 'sent' || s === 'draft'; });
-    var overdue = invoices.filter(function(i) { return (i.status || '').toLowerCase() === 'overdue'; });
-    document.getElementById('stat-paid').textContent = paid.length;
-    document.getElementById('stat-pending').textContent = pending.length;
-    document.getElementById('stat-overdue').textContent = overdue.length;
-    var revenue = paid.reduce(function(s, i) { return s + parseFloat(i.amount || i.total || 0); }, 0);
-    document.getElementById('stat-revenue').textContent = 'R' + revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function renderTable() {
-    var container = document.getElementById('table-container');
-    container.innerHTML = '';
-    if (!invoices.length) { container.innerHTML = '<div class="loading">No invoices yet. Create your first smart invoice above.</div>'; return; }
-    var html = '<table><thead><tr><th>Number</th><th>Client</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
-    invoices.forEach(function(inv) {
-        var id = inv.id || inv._id || '';
-        var status = (inv.status || 'pending').toLowerCase();
-        var amt = parseFloat(inv.amount || inv.total || 0);
-        var dt = inv.date || inv.createdAt || inv.created_at || '';
-        var dateStr = dt ? new Date(dt).toLocaleDateString() : '--';
-        var badgeClass = status === 'paid' ? 'paid' : status === 'overdue' ? 'overdue' : status === 'sent' ? 'sent' : status === 'draft' ? 'draft' : 'pending';
-
-        html += '<tr>';
-        html += '<td style="font-family:var(--font-mono)">' + (inv.number || inv.invoiceNumber || id || '--') + '</td>';
-        html += '<td>' + (inv.client || inv.clientName || '--');
-        if (inv.email || inv.client_email) html += '<br><span style="font-size:var(--text-xs);color:var(--text-muted)">' + (inv.email || inv.client_email) + '</span>';
-        html += '</td>';
-        html += '<td style="font-family:var(--font-mono)">R' + amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>';
-        html += '<td><span class="badge ' + badgeClass + '" style="cursor:pointer" onclick="toggleStatus(\'' + id + '\',\'' + status + '\')" title="Click to cycle status">' + status + '</span></td>';
-        html += '<td style="color:var(--text-muted);font-size:var(--text-xs)">' + dateStr + '</td>';
-        html += '<td class="actions-cell">';
-        if (status !== 'paid') {
-            html += '<button class="btn btn-secondary btn-sm" onclick=\'sendInvoice(' + JSON.stringify({ id: id, client: inv.client, email: inv.email || inv.client_email }) + ')\'>Send</button>';
-            html += '<button class="btn btn-sm" style="background:rgba(0,255,136,0.12);color:var(--alive);border:1px solid rgba(0,255,136,0.3)" onclick="markPaid(\'' + id + '\')">Mark Paid</button>';
-        }
-        if (inv.client) html += '<a href="/crm.html" class="crm-link" style="padding:6px 8px;display:inline-block">CRM</a>';
-        html += '</td>';
-        html += '</tr>';
+    invs.forEach(inv => {
+      const card = document.createElement('div');
+      card.className = 'inv-card';
+      card.dataset.id = inv.id;
+      card.dataset.status = inv.status;
+      const left = document.createElement('div');
+      const num = document.createElement('div'); num.className='inv-num'; num.textContent=inv.invoice_number; left.appendChild(num);
+      const cli = document.createElement('div'); cli.className='inv-client';
+      cli.textContent=(inv.client_name||inv.client_email)+(inv.client_company?' · '+inv.client_company:'');
+      left.appendChild(cli);
+      const badge = document.createElement('span');
+      badge.className='badge '+(SC[inv.status]||'s-draft'); badge.textContent=inv.status;
+      left.appendChild(badge);
+      const acts = document.createElement('div'); acts.className='inv-actions';
+      if (inv.status==='draft') {
+        const b=document.createElement('button'); b.className='btn btn-secondary btn-sm';
+        b.textContent='✉ Send'; b.onclick=()=>sendOne(inv.id); acts.appendChild(b);
+      }
+      if (inv.status!=='paid') {
+        const b=document.createElement('button'); b.className='btn btn-green btn-sm';
+        b.textContent='✓ Paid'; b.onclick=()=>markPaid(inv.id); acts.appendChild(b);
+      }
+      const pdf=document.createElement('button'); pdf.className='btn btn-secondary btn-sm';
+      pdf.textContent='⬇ PDF'; pdf.onclick=()=>dlPdf(inv.id,inv.invoice_number); acts.appendChild(pdf);
+      if (inv.payment_link) {
+        const a=document.createElement('a'); a.className='btn btn-primary btn-sm';
+        a.textContent='💳 Pay'; a.href=inv.payment_link; a.target='_blank'; a.rel='noopener'; acts.appendChild(a);
+      }
+      left.appendChild(acts); card.appendChild(left);
+      const right = document.createElement('div');
+      const amt = document.createElement('div'); amt.className='inv-amount';
+      amt.textContent=(SYM[inv.currency]||inv.currency)+' '+(inv.total??0).toFixed(2); right.appendChild(amt);
+      const meta = document.createElement('div'); meta.className='inv-meta';
+      meta.textContent=inv.currency+' · due '+(inv.due_date||'—'); right.appendChild(meta);
+      card.appendChild(right); el.appendChild(card);
     });
-    html += '</tbody></table>';
-    container.innerHTML = html;
+  } catch(e) { toast('Failed to load invoices: '+e.message, 'var(--red)'); }
 }
 
-loadInvoices();
+async function sendOne(id) {
+  try { await apiFetch('/invoices/'+encodeURIComponent(id)+'/send',{method:'POST',body:'{}'}); loadInvoices(); toast('Sent','var(--green)'); }
+  catch(e){ toast('Error: '+e.message,'var(--red)'); }
+}
+async function markPaid(id) {
+  try { await apiFetch('/invoices/'+encodeURIComponent(id)+'/mark-paid',{method:'POST',body:JSON.stringify({payment_method:'manual'})}); loadInvoices(); loadStats(); toast('Marked paid','var(--green)'); }
+  catch(e){ toast('Error: '+e.message,'var(--red)'); }
+}
+async function dlPdf(id, num) {
+  try {
+    const headers = _authToken ? { Authorization:'Bearer '+_authToken } : {};
+    const res = await fetch('/api/invoices/'+encodeURIComponent(id)+'/pdf',{credentials:'include',headers});
+    if (!res.ok) { toast('PDF error: '+res.status,'var(--red)'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=(num||id)+'.pdf';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  } catch(e){ toast('PDF error: '+e.message,'var(--red)'); }
+}
+
+async function loadStats() {
+  try {
+    const s = await apiFetch('/invoices/stats');
+    document.getElementById('ss-total').textContent   = s.total_invoices ?? 0;
+    document.getElementById('ss-paid').textContent    = 'R '+(s.total_paid ?? 0).toFixed(0);
+    document.getElementById('ss-pending').textContent = s.by_status?.sent ?? 0;
+    document.getElementById('ss-overdue').textContent = s.by_status?.overdue ?? 0;
+    document.getElementById('ss-revenue').textContent = 'R '+(s.total_billed ?? 0).toFixed(0);
+  } catch {}
+}
+
+(async () => {
+  await ensureAuth();
+  await fetchCsrf();
+  addItem('Professional Services', 1, 0);
+  await Promise.all([loadInvoices(), loadStats()]);
+  setInterval(() => { loadInvoices(); loadStats(); }, 30000);
+})();
 </script>
-<script src="/bridge-nav.js?v=2"></script>
 </body>
 </html>

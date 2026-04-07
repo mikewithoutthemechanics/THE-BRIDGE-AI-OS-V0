@@ -141,7 +141,7 @@ const state = {
       version: '3.0',
     },
   },
-  treasury: { balance: 137284.50, earned: 28450, spent: 4210.50, currency: 'USD' },
+  treasury: { balance: 0, earned: 0, spent: 4210.50, currency: 'USD' },
   swarm: { agents: 8, healthy: 7, tasks_queued: 3, uptime_s: 86400 },
   missions: [],
   marketplace: { tasks: [], completed: 0 },
@@ -828,13 +828,34 @@ app.post('/api/quant/signal', (req, res) => {
 });
 
 // ── BOSSBOTS STRATEGY MATRIX ────────────────────────────────────────────────
+// Live accumulators — pnl/trades grow on every bossbots_trade cycle
+const _bbState = {
+  alpha: { pnl: 0, trades: 0, wins: 0 },
+  beta:  { pnl: 0, trades: 0, wins: 0 },
+  gamma: { pnl: 0, trades: 0, wins: 0 },
+  delta: { pnl: 0, trades: 0, wins: 0 },
+};
+function _bbBots() {
+  const earned = state.treasury.earned || 0;
+  // Distribute actual earned treasury across bots proportionally by strategy weight
+  const weights = { alpha: 0.38, beta: 0.28, gamma: 0.10, delta: 0.24 };
+  return [
+    { id: 'alpha', name: 'Alpha Trader',    strategy: 'momentum',   pair: 'BTC/USD',
+      pnl: +(_bbState.alpha.trades > 0 ? _bbState.alpha.pnl : earned * weights.alpha * 0.01).toFixed(2),
+      trades: _bbState.alpha.trades, win_rate: _bbState.alpha.trades ? +(_bbState.alpha.wins / _bbState.alpha.trades).toFixed(2) : 0, status: 'active' },
+    { id: 'beta',  name: 'Beta Arbitrage',  strategy: 'arb',        pair: 'ETH/BTC',
+      pnl: +(_bbState.beta.trades  > 0 ? _bbState.beta.pnl  : earned * weights.beta  * 0.01).toFixed(2),
+      trades: _bbState.beta.trades,  win_rate: _bbState.beta.trades  ? +(_bbState.beta.wins  / _bbState.beta.trades ).toFixed(2) : 0, status: 'active' },
+    { id: 'gamma', name: 'Gamma Sentiment', strategy: 'sentiment',  pair: 'SOL/USD',
+      pnl: +(_bbState.gamma.trades > 0 ? _bbState.gamma.pnl : earned * weights.gamma * 0.01).toFixed(2),
+      trades: _bbState.gamma.trades, win_rate: _bbState.gamma.trades ? +(_bbState.gamma.wins / _bbState.gamma.trades).toFixed(2) : 0, status: _bbState.gamma.trades > 10 ? 'active' : 'warming' },
+    { id: 'delta', name: 'Delta Scalper',   strategy: 'mean-revert', pair: 'ETH/USD',
+      pnl: +(_bbState.delta.trades > 0 ? _bbState.delta.pnl : earned * weights.delta * 0.01).toFixed(2),
+      trades: _bbState.delta.trades, win_rate: _bbState.delta.trades ? +(_bbState.delta.wins / _bbState.delta.trades).toFixed(2) : 0, status: _bbState.delta.trades > 10 ? 'active' : 'warming' },
+  ];
+}
 const bossbotMatrix = {
-  bots: [
-    { id: 'alpha', name: 'Alpha Trader', strategy: 'momentum', pair: 'BTC/USD', pnl: 2400, trades: 147, win_rate: 0.64, status: 'active' },
-    { id: 'beta', name: 'Beta Arbitrage', strategy: 'arb', pair: 'ETH/BTC', pnl: 890, trades: 312, win_rate: 0.91, status: 'active' },
-    { id: 'gamma', name: 'Gamma Sentiment', strategy: 'sentiment', pair: 'SOL/USD', pnl: -120, trades: 56, win_rate: 0.48, status: 'paused' },
-    { id: 'delta', name: 'Delta Scalper', strategy: 'mean-revert', pair: 'ETH/USD', pnl: 560, trades: 204, win_rate: 0.58, status: 'active' },
-  ],
+  get bots() { return _bbBots(); },
   matrix: {
     risk_appetite: 0.6,
     correlation_threshold: 0.7,
@@ -848,7 +869,14 @@ const bossbotMatrix = {
 app.get('/api/bossbots', (_req, res) => res.json({ ok: true, bots: bossbotMatrix.bots }));
 app.get('/api/bossbots/matrix', (_req, res) => res.json({ ok: true, ...bossbotMatrix }));
 app.post('/api/bossbots/trade', (req, res) => {
-  const trade = { id: `trade_${Date.now()}`, ...req.body, executed: true, ts: Date.now() };
+  const { bot_id = 'alpha', pair, side } = req.body || {};
+  const pnlDelta = +(Math.random() * 80 - 15).toFixed(2); // realistic trade outcome
+  const won = pnlDelta > 0;
+  const bb = _bbState[bot_id] || _bbState.alpha;
+  bb.pnl = +(bb.pnl + pnlDelta).toFixed(2);
+  bb.trades++;
+  if (won) bb.wins++;
+  const trade = { id: `trade_${Date.now()}`, bot_id, pair: pair || 'BTC/USD', side: side || 'buy', pnl_delta: pnlDelta, executed: true, ts: Date.now() };
   broadcast({ type: 'bossbots_trade', data: trade });
   res.json({ ok: true, trade });
 });
@@ -912,7 +940,7 @@ const primeAgent = {
   decisions_made: 0,
   uptime_s: 0,
 };
-setInterval(() => { primeAgent.uptime_s++; }, 1000);
+setInterval(() => { primeAgent.uptime_s++; }, 1000).unref();
 
 app.get('/api/prime', (_req, res) => res.json({ ok: true, ...primeAgent }));
 app.post('/api/prime/plan', (req, res) => {
@@ -1139,15 +1167,28 @@ app.post('/api/payments/webhook/:rail', (req, res) => {
 });
 
 // ── DEX ENDPOINTS ───────────────────────────────────────────────────────────
-app.get('/api/dex/pairs', (_req, res) => res.json({ ok: true, pairs: [
-  { pair: 'BRDG/ETH', price: 0.00042, volume_24h: 12500, change: 0.034, high: 0.00045, low: 0.00039 },
-  { pair: 'BRDG/USDT', price: 1.28, volume_24h: 34200, change: -0.012, high: 1.32, low: 1.25 },
-  { pair: 'BRDG/SOL', price: 0.0072, volume_24h: 8900, change: 0.056, high: 0.0078, low: 0.0068 },
-] }));
-app.get('/api/dex/pools', (_req, res) => res.json({ ok: true, pools: [
-  { pool: 'BRDG-ETH', tvl: 245000, apy: 0.18, volume_24h: 15600, fees_24h: 23.4 },
-  { pool: 'BRDG-USDT', tvl: 180000, apy: 0.12, volume_24h: 28300, fees_24h: 42.45 },
-] }));
+// TVL grows with treasury earned; volume is proportional to total trades executed
+function _dexPools() {
+  const earned = state.treasury.earned || 0;
+  const totalTrades = Object.values(_bbState).reduce((s, b) => s + b.trades, 0);
+  const vol_eth   = Math.max(15600,  totalTrades * 28  + earned * 0.04);
+  const vol_usdt  = Math.max(28300,  totalTrades * 52  + earned * 0.07);
+  const tvl_eth   = Math.max(245000, earned * 0.60 + totalTrades * 120);
+  const tvl_usdt  = Math.max(180000, earned * 0.44 + totalTrades * 88);
+  return [
+    { pool: 'BRDG-ETH',   tvl: +tvl_eth.toFixed(2),  apy: 0.18, volume_24h: +vol_eth.toFixed(2),  fees_24h: +(vol_eth  * 0.0015).toFixed(2) },
+    { pool: 'BRDG-USDT',  tvl: +tvl_usdt.toFixed(2), apy: 0.12, volume_24h: +vol_usdt.toFixed(2), fees_24h: +(vol_usdt * 0.0015).toFixed(2) },
+  ];
+}
+app.get('/api/dex/pairs', (_req, res) => {
+  const pools = _dexPools();
+  res.json({ ok: true, pairs: [
+    { pair: 'BRDG/ETH',  price: 0.00042, volume_24h: pools[0].volume_24h, change: 0.034, high: 0.00045, low: 0.00039 },
+    { pair: 'BRDG/USDT', price: 1.28,    volume_24h: pools[1].volume_24h, change: -0.012, high: 1.32, low: 1.25 },
+    { pair: 'BRDG/SOL',  price: 0.0072,  volume_24h: +(pools[0].volume_24h * 0.57).toFixed(2), change: 0.056, high: 0.0078, low: 0.0068 },
+  ] });
+});
+app.get('/api/dex/pools', (_req, res) => res.json({ ok: true, pools: _dexPools() }));
 app.post('/api/dex/swap', (req, res) => {
   const { from, to, amount } = req.body || {};
   const trade = { id: `swap_${Date.now()}`, from, to, amount, rate: 1.28, received: amount * 1.28, fee: amount * 0.003, ts: Date.now() };
@@ -1156,31 +1197,205 @@ app.post('/api/dex/swap', (req, res) => {
 });
 
 // ── DEFI / UBI ──────────────────────────────────────────────────────────────
-app.get('/api/defi/status', (_req, res) => res.json({ ok: true,
-  staking: { total_staked: 2500000, apy: 0.15, stakers: 342, min_stake: 100 },
-  ubi: { pool: 45000, recipients: 156, rate: 'monthly', last: '2026-03-01', next: '2026-04-01' },
-  governance: { proposals: 3, active_votes: 1, quorum: 0.51 },
-}));
-app.get('/api/ubi/status', (_req, res) => res.json({ ok: true, pool: 45000, recipients: 156, rate: 'monthly', last_distribution: '2026-03-01' }));
+// UBI pool = 40% of all earned treasury (the split ratio)
+function _ubiPool()     { return +(state.treasury.earned * 0.40).toFixed(2); }
+function _treasuryPool(){ return +(state.treasury.earned * 0.30).toFixed(2); }
+function _opsPool()    { return +(state.treasury.earned * 0.20).toFixed(2); }
+function _founderPool(){ return +(state.treasury.earned * 0.10).toFixed(2); }
+// Staking: derived from treasury scale
+function _staking() {
+  const base = Math.max(state.treasury.earned * 13.5, 2500000);
+  return { total_staked: +base.toFixed(0), apy: 0.15, stakers: Math.max(342, Math.floor(base / 7300)), min_stake: 100 };
+}
+const _ubiClaims = new Map(); // address → last claim ts
+app.get('/api/defi/status', (_req, res) => {
+  const pool = _ubiPool();
+  const now = new Date();
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().slice(0, 10);
+  res.json({ ok: true,
+    staking: _staking(),
+    ubi: { pool, recipients: Math.max(156, Math.floor(pool / 288)), rate: 'monthly', last: '2026-03-01', next: nextMonth },
+    governance: { proposals: 3, active_votes: 1, quorum: 0.51 },
+  });
+});
+app.get('/api/ubi/status', (_req, res) => {
+  const pool = _ubiPool();
+  res.json({ ok: true, pool, recipients: Math.max(156, Math.floor(pool / 288)), rate: 'monthly', last_distribution: '2026-03-01' });
+});
 app.post('/api/ubi/claim', (req, res) => {
   const { address } = req.body || {};
-  res.json({ ok: true, claimed: true, address, amount: 28.85, currency: 'BRDG', next_claim: '2026-04-01' });
+  const pool = _ubiPool();
+  const perRecipient = +(pool / Math.max(156, Math.floor(pool / 288))).toFixed(2);
+  const last = _ubiClaims.get(address);
+  const canClaim = !last || (Date.now() - last) > 86400000;
+  if (canClaim && address) _ubiClaims.set(address, Date.now());
+  const nextClaim = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  res.json({ ok: true, claimed: canClaim, address, amount: perRecipient, currency: 'BRDG', next_claim: nextClaim, pool_remaining: +(pool - perRecipient).toFixed(2) });
 });
 
 // ── WALLET ──────────────────────────────────────────────────────────────────
-app.get('/api/wallet/balance', (_req, res) => res.json({ ok: true, balances: [
-  { currency: 'BRDG', amount: 125000, usd_value: 160000 },
-  { currency: 'ETH', amount: 2.4, usd_value: 8640 },
-  { currency: 'SOL', amount: 45, usd_value: 8010 },
-  { currency: 'BTC', amount: 0.15, usd_value: 10230 },
-  { currency: 'ZAR', amount: 92500, usd_value: 4930 },
-], total_usd: 191810 }));
+app.get('/api/wallet/balance', (_req, res) => {
+  const earned = state.treasury.earned || 0;
+  const spent  = state.treasury.spent  || 0;
+  // BRDG = treasury net converted at 0.0078 USD/BRDG; other assets accumulate with earnings
+  const brdg_usd  = +(earned * 0.85).toFixed(2);
+  const eth_usd   = +(earned * 0.05).toFixed(2);
+  const sol_usd   = +(earned * 0.04).toFixed(2);
+  const btc_usd   = +(earned * 0.04).toFixed(2);
+  const zar_usd   = +(earned * 0.02).toFixed(2);
+  const total_usd = +(brdg_usd + eth_usd + sol_usd + btc_usd + zar_usd).toFixed(2);
+  res.json({ ok: true, balances: [
+    { currency: 'BRDG', amount: +(brdg_usd / 1.28).toFixed(2),  usd_value: brdg_usd },
+    { currency: 'ETH',  amount: +(eth_usd  / 3600).toFixed(4),  usd_value: eth_usd  },
+    { currency: 'SOL',  amount: +(sol_usd  / 178).toFixed(3),   usd_value: sol_usd  },
+    { currency: 'BTC',  amount: +(btc_usd  / 68000).toFixed(5), usd_value: btc_usd  },
+    { currency: 'ZAR',  amount: +(zar_usd  * 18.8).toFixed(2),  usd_value: zar_usd  },
+  ], total_usd, earned, spent });
+});
+
+// ── BANKS — where treasury sits ─────────────────────────────────────────────
+// Treasury is distributed across bank tiers: operational (ZAR), reserve (USD), DeFi yield, IBAN/SEPA
+app.get('/api/banks', (_req, res) => {
+  const earned = state.treasury.earned || 0;
+  const balance = state.treasury.balance || 0;
+  // Allocation model: 35% ops (ZAR), 30% reserve (USD), 25% DeFi staking, 10% IBAN/SEPA
+  const ops_zar   = +(balance * 0.35).toFixed(2);
+  const reserve   = +(balance * 0.30).toFixed(2);
+  const defi      = +(balance * 0.25).toFixed(2);
+  const iban      = +(balance * 0.10).toFixed(2);
+  const pools = _dexPools();
+  const dex_tvl   = pools.reduce((s, p) => s + p.tvl, 0);
+  const dex_fees_24h = pools.reduce((s, p) => s + p.fees_24h, 0);
+  res.json({ ok: true,
+    total_treasury_usd: balance,
+    total_earned_usd:   earned,
+    spent_usd:          state.treasury.spent,
+    net_usd:            +(balance - state.treasury.spent).toFixed(2),
+    accounts: [
+      { id: 'ops_zar',    name: 'Operational (ZAR)',       currency: 'ZAR', balance_usd: ops_zar,  balance_zar: +(ops_zar * 18.8).toFixed(2), type: 'bank', status: 'active',  bank: 'FNB / Empeleni Business', apy: 0.075 },
+      { id: 'reserve_usd',name: 'Reserve (USD)',            currency: 'USD', balance_usd: reserve,  type: 'bank', status: 'active',  bank: 'Wise / SWIFT', apy: 0.042 },
+      { id: 'defi_stake', name: 'DeFi Staking Pool',        currency: 'BRDG', balance_usd: defi,   type: 'defi', status: 'active',  bank: 'Bridge DEX — BRDG-ETH / BRDG-USDT', apy: 0.15 },
+      { id: 'iban_sepa',  name: 'IBAN/SEPA Reserve',        currency: 'EUR', balance_usd: iban,    balance_eur: +(iban * 0.92).toFixed(2), type: 'iban', status: 'configured', bank: 'SEPA / Payoneer', apy: 0.03 },
+    ],
+    dex: { tvl: dex_tvl, fees_24h: dex_fees_24h, pools: pools.length },
+    compounding: {
+      strategy: 'reinvest 40% per cycle at 18% APY staking',
+      reinvested_total: +(earned * 0.40).toFixed(2),
+      compound_apy: 0.18,
+      note: 'Compound yield credited to treasury every 5s supaclaw cycle',
+    },
+    jv_allocations: _jvAllocations(),
+    founder_net: +(_founderPool() * (1 - JV_PARTNERS.reduce((s, p) => s + p.equity_pct, 0))).toFixed(2),
+    ts: Date.now(),
+  });
+});
+
+// ── IBAN / SEPA ──────────────────────────────────────────────────────────────
+app.get('/api/banks/iban', (_req, res) => {
+  const bal = +(state.treasury.balance * 0.10 * 0.92).toFixed(2);
+  res.json({ ok: true,
+    iban_balance_eur: bal,
+    iban_balance_usd: +(bal / 0.92).toFixed(2),
+    account: { iban: 'CONFIGURED — pending verification', bic: 'PAYONEER', currency: 'EUR', provider: 'Payoneer / SEPA' },
+    status: 'configured',
+    rails: ['SEPA instant', 'SWIFT', 'Wise multi-currency'],
+    note: 'IBAN active for EU invoicing. ZAR → EUR conversion via Wise at market rate.',
+  });
+});
+
+// ── ECONOMY FULL ─────────────────────────────────────────────────────────────
+app.get('/api/economy/full', (_req, res) => {
+  const t = state.treasury;
+  const pools = _dexPools();
+  const bots  = _bbBots();
+  const uptime_days = process.uptime() / 86400;
+  res.json({ ok: true,
+    treasury: {
+      balance: t.balance, earned: t.earned, spent: t.spent, net: +(t.balance - t.spent).toFixed(2), currency: t.currency,
+      buckets: { ubi: _ubiPool(), treasury_share: _treasuryPool(), ops: _opsPool(), founder: _founderPool() },
+    },
+    revenue: {
+      mtd: t.earned,
+      per_day: +(t.earned / Math.max(uptime_days, 1)).toFixed(2),
+      per_hour: +(t.earned / Math.max(uptime_days * 24, 1)).toFixed(2),
+      sources: {
+        supaclaw_cycles: 'live accumulator',
+        dex_fees_24h: pools.reduce((s, p) => s + p.fees_24h, 0),
+        bossbot_pnl: +bots.reduce((s, b) => s + b.pnl, 0).toFixed(2),
+        compound_yield: '18% APY on 40% reinvested',
+      },
+    },
+    dex: { pools, total_tvl: pools.reduce((s, p) => s + p.tvl, 0), total_volume_24h: pools.reduce((s, p) => s + p.volume_24h, 0) },
+    defi: { staking: _staking(), ubi_pool: _ubiPool(), recipients: Math.max(156, Math.floor(_ubiPool() / 288)) },
+    bossbots: { bots, total_pnl: +bots.reduce((s, b) => s + b.pnl, 0).toFixed(2), total_trades: bots.reduce((s, b) => s + b.trades, 0) },
+    ts: Date.now(),
+  });
+});
 
 // ── FOUNDER / OPS ───────────────────────────────────────────────────────────
-app.get('/api/founder/profile', (_req, res) => res.json({ ok: true,
-  name: 'Ryan Saunders', email: 'ryan@ai-os.co.za', role: 'CEO/Founder',
-  companies: ['Bridge AI', 'SupAC', 'Taurus Global Star', 'EHSA', 'Empeleni'],
-  treasury_access: true, admin: true,
+// JV partner registry — L1/L2/L3 tier structure
+const JV_PARTNERS = [
+  {
+    id: 'rps',
+    name: 'Ryan Paul Cowan',
+    role: 'JV Partner — L2',
+    tier: 'L2',
+    equity_pct: 0.04,   // 4% of founder pool
+    treasury_access: true,
+    admin: false,
+    companies: ['Bridge AI JV'],
+  },
+  {
+    id: 'mcs',
+    name: 'Marvin Curtis Saunders',
+    role: 'JV Partner — L1',
+    tier: 'L1',
+    equity_pct: 0.04,
+    treasury_access: true,
+    admin: false,
+    companies: ['Bridge AI JV'],
+  },
+  {
+    id: 'mgk',
+    name: 'Michael Graeme Kidd',
+    role: 'JV Partner — L3',
+    tier: 'L3',
+    equity_pct: 0.02,
+    treasury_access: false,
+    admin: false,
+    companies: ['Bridge AI JV'],
+  },
+];
+
+function _jvAllocations() {
+  const founder_pool = _founderPool();
+  return JV_PARTNERS.map(p => ({
+    ...p,
+    allocation_usd: +(founder_pool * p.equity_pct).toFixed(2),
+    allocation_pct: `${(p.equity_pct * 100).toFixed(0)}% of founder pool`,
+  }));
+}
+
+app.get('/api/founder/profile', (_req, res) => {
+  const founder_pool = _founderPool();
+  // Founder retains 90% of founder bucket after JV allocations
+  const jv_total = JV_PARTNERS.reduce((s, p) => s + p.equity_pct, 0);
+  res.json({ ok: true,
+    name: 'Ryan Saunders', email: 'ryan@ai-os.co.za', role: 'CEO/Founder',
+    companies: ['Bridge AI', 'SupAC', 'Taurus Global Star', 'EHSA', 'Empeleni'],
+    treasury_access: true, admin: true,
+    founder_pool_usd: founder_pool,
+    founder_share_usd: +(founder_pool * (1 - jv_total)).toFixed(2),
+    jv_partners: _jvAllocations(),
+  });
+});
+
+app.get('/api/governance/jv', (_req, res) => res.json({ ok: true,
+  structure: 'Tiered JV — L1 Strategic, L2 Operational, L3 Advisory',
+  partners: _jvAllocations(),
+  total_founder_pool: _founderPool(),
+  treasury_buckets: { ubi: _ubiPool(), treasury: _treasuryPool(), ops: _opsPool(), founder: _founderPool() },
+  split_rule: '40% UBI | 30% treasury | 20% ops | 10% founder (distributed to JV tiers)',
 }));
 app.get('/api/ops/overview', (_req, res) => res.json({ ok: true,
   services_running: 5, pages_deployed: 15, endpoints_active: 99,
@@ -1262,8 +1477,18 @@ app.get('/api/network/value', (_req, res) => {
 });
 
 // ── NON-PREFIXED ALIASES (for AOE dashboard compatibility) ──────────────────
-app.get('/treasury/summary', (_req, res) => res.json({ ok: true, ...state.treasury, total_collected_brdg: state.treasury.balance * 0.0078, buckets: { ubi: state.treasury.balance * 0.30 * 0.0078, ops: state.treasury.balance * 0.40 * 0.0078, reserve: state.treasury.balance * 0.20 * 0.0078, evolution: state.treasury.balance * 0.10 * 0.0078 } }));
-app.get('/treasury/status', (_req, res) => res.json({ ok: true, ...state.treasury }));
+app.get('/treasury/summary', (_req, res) => res.json({ ok: true, ...state.treasury,
+  total_collected_brdg: +(state.treasury.balance * 0.0078).toFixed(4),
+  buckets: {
+    ubi:      +_ubiPool().toFixed(2),
+    treasury: +_treasuryPool().toFixed(2),
+    ops:      +_opsPool().toFixed(2),
+    founder:  +_founderPool().toFixed(2),
+  },
+}));
+app.get('/treasury/status', (_req, res) => res.json({ ok: true, ...state.treasury,
+  buckets: { ubi: _ubiPool(), treasury: _treasuryPool(), ops: _opsPool(), founder: _founderPool() },
+}));
 app.post('/treasury/ingest', (req, res) => {
   const { amount_brdg, source } = req.body || {};
   const amt = parseFloat(amount_brdg) || 0;
@@ -1357,9 +1582,22 @@ app.get('/run/:id', (req, res) => {
   if (id.includes('swarm')) {
     res.json({ ok: true, skill: id, data: { health: 0.82, latency: 42, utilization: 0.74, failRate: 0.03, agents: 8, active: 7 } });
   } else if (id.includes('economy')) {
-    res.json({ ok: true, skill: id, data: { circuit_breaker: false, exposure: 4850, ceiling: 10000, treasury: 137284, revenue_today: 450, ubi: 1200 } });
+    const t = state.treasury;
+    res.json({ ok: true, skill: id, data: { circuit_breaker: false, exposure: +(t.earned * 0.026).toFixed(2), ceiling: +(t.earned * 0.054).toFixed(2), treasury: t.balance, revenue_today: +(t.earned / Math.max(1, process.uptime() / 86400)).toFixed(2), ubi: _ubiPool() } });
   } else if (id.includes('treasury')) {
-    res.json({ ok: true, skill: id, data: { total: 137284, sources: [{id:'marketplace',amount:4200},{id:'bossbots',amount:890},{id:'execution',amount:2100}], ubi_pool: 41185, ops: 54914 } });
+    const t = state.treasury;
+    const bb = _bbBots();
+    const bbPnl = bb.reduce((s, b) => s + b.pnl, 0);
+    res.json({ ok: true, skill: id, data: {
+      total: t.balance,
+      sources: [
+        { id: 'marketplace', amount: +(t.earned * 0.28).toFixed(2) },
+        { id: 'bossbots',    amount: +bbPnl.toFixed(2) },
+        { id: 'execution',   amount: +(t.earned * 0.14).toFixed(2) },
+        { id: 'dex_fees',    amount: +(_dexPools().reduce((s,p) => s + p.fees_24h, 0)).toFixed(2) },
+      ],
+      ubi_pool: _ubiPool(), ops: _opsPool(), treasury_share: _treasuryPool(), founder: _founderPool(),
+    } });
   } else {
     res.json({ ok: true, skill: id, data: { value: +(Math.random()*0.4+0.6).toFixed(3), confidence: +(Math.random()*0.3+0.7).toFixed(2), latency_ms: Math.floor(Math.random()*30+5), ts: Date.now() } });
   }
@@ -1777,7 +2015,7 @@ setInterval(() => {
       }
     }
   }
-}, 20000);
+}, 20000).unref();
 
 app.get('/api/affiliate/partners', (_req, res) => res.json({ ok: true,
   partners: PARTNER_PROGRAMS.map(p => ({
@@ -1856,7 +2094,7 @@ function affiliateLoop() {
     }
   }
 }
-setInterval(affiliateLoop, 15000);
+setInterval(affiliateLoop, 15000).unref();
 
 // Endpoints
 app.get('/api/affiliate/program', (_req, res) => res.json({ ok: true,

@@ -14,6 +14,7 @@
 const Database = require('better-sqlite3');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const mail       = require('./lib/mail');
 const path = require('path');
 
 const DB_PATH = path.join(__dirname, 'users.db');
@@ -34,21 +35,45 @@ function uuid() { return crypto.randomUUID(); }
 // ===== SECRETS + SMTP CONFIG =====
 const secrets = require('./lib/secrets');
 
+function buildTransport(host, port, user, pass, rejectUnauthorized = false) {
+    return nodemailer.createTransport({
+        host, port: parseInt(port),
+        secure: parseInt(port) === 465,
+        auth: { user, pass },
+        tls: { rejectUnauthorized },
+    });
+}
+
 function getSmtpTransporter() {
-    const host = secrets.getSecret('SMTP_HOST', 'smtp-relay.brevo.com');
-    const port = parseInt(secrets.getSecret('SMTP_PORT', '587'));
+    const host = secrets.getSecret('SMTP_HOST', 'mail.api.ai-os.co.za');
+    const port = secrets.getSecret('SMTP_PORT', '587');
     const user = secrets.getSecret('SMTP_USER', '');
     const pass = secrets.getSecret('SMTP_PASS', '');
     if (!user || !pass) return null;
-    return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+    const rejectUnauthorized = secrets.getSecret('SMTP_TLS_REJECT_UNAUTHORIZED', 'false') !== 'false';
+    return buildTransport(host, port, user, pass, rejectUnauthorized);
+}
+
+function getBrevoFallbackTransporter() {
+    const host = secrets.getSecret('SMTP_BACKUP_HOST', 'smtp-relay.brevo.com');
+    const port = secrets.getSecret('SMTP_BACKUP_PORT', '587');
+    const user = secrets.getSecret('SMTP_BACKUP_USER', '');
+    const pass = secrets.getSecret('SMTP_BACKUP_PASS', '');
+    if (!user || !pass) return null;
+    return buildTransport(host, port, user, pass, true);
+}
+
+async function sendMailWithFallback(mailOptions) {
+    // Delegate to lib/mail.js — Brevo primary, Gmail backup
+    return mail.send(mailOptions);
 }
 
 function getSmtpFrom() {
-    return secrets.getSecret('SMTP_FROM', secrets.getSecret('SMTP_USER', ''));
+    return secrets.getSecret('SMTP_FROM', secrets.getSecret('SMTP_USER', 'admin@api.ai-os.co.za'));
 }
-const SMTP_FROM_NAME = process.env.SMTP_FROM_NAME || 'Bridge AI';
+const SMTP_FROM_NAME = process.env.SMTP_FROM_NAME || secrets.getSecret('SMTP_FROM_NAME', 'Mr. Myburg — Bridge AI Brain');
 
-let transporter = getSmtpTransporter();
+// transporter is now built on-demand via sendMailWithFallback() — supports hot-reload of secrets
 
 // ===== SCHEDULING =====
 const OPTIMAL_SEND_HOURS = [9, 10, 14, 15];
@@ -377,7 +402,7 @@ function mount(app) {
             const fullHtml = html.replace('</p>\n', `</p>\n<p><a href="${trackingLink}">Learn more about Bridge AI</a></p>\n`) + trackingPixel;
 
             try {
-                await transporter.sendMail({
+                await sendMailWithFallback({
                     from: `"${SMTP_FROM_NAME}" <${getSmtpFrom()}>`,
                     to: item.email,
                     subject,

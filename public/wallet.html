@@ -4,14 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Wallet & Payments - Bridge AI OS</title>
-    <meta name="description" content="Wallet — Payments & Crypto Management">
-    <meta property="og:title" content="Wallet & Payments - Bridge AI OS">
-    <meta property="og:description" content="Wallet — Payments & Crypto Management">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/wallet.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/wallet.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
 :root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -43,7 +35,7 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
 .action-bar{display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap}
 @media(max-width:600px){main{padding:1rem}.grid-2,.grid-3{grid-template-columns:1fr}h1{font-size:1.4rem}}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <nav class="topnav">
   <a href="/" class="logo">Bridge AI</a>
@@ -69,7 +61,7 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
       <div class="rail"><div class="rail-icon" style="background:#6366f122;color:#818cf8">ST</div><div style="flex:1"><div style="font-weight:600">Stripe</div><div style="color:var(--t);font-size:.75rem">USD, EUR, GBP - Global</div></div><span class="badge badge-green">Active</span></div>
       <div class="rail"><div class="rail-icon" style="background:#ffaa0022;color:var(--y)">&#8383;</div><div style="flex:1"><div style="font-weight:600">Crypto</div><div style="color:var(--t);font-size:.75rem">BTC, ETH, USDT, SOL</div></div><span class="badge badge-green">Active</span></div>
       <div class="rail"><div class="rail-icon" style="background:#ff446622;color:var(--r)">IB</div><div style="flex:1"><div style="font-weight:600">IBAN</div><div style="color:var(--t);font-size:.75rem">EUR - EU Bank Transfer</div></div><span class="badge badge-blue">Available</span></div>
-      <div class="rail"><div class="rail-icon" style="background:#a78bfa22;color:#a78bfa">MO</div><div style="flex:1"><div style="font-weight:600">Mobile Money</div><div style="color:var(--t);font-size:.75rem">M-Pesa, Airtel Money</div></div><span class="badge badge-blue">Available</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#a78bfa22;color:#a78bfa">MO</div><div style="flex:1"><div style="font-weight:600">Mobile Money</div><div style="color:var(--t);font-size:.75rem">M-Pesa, Airtel Money</div></div><span class="badge badge-yellow">Coming Soon</span></div>
     </div>
   </div>
 
@@ -90,8 +82,8 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
         <div id="balance-display"><div class="loading">Loading...</div></div>
         <div class="action-bar">
           <a href="/onboarding.html?plan=pro" class="btn btn-green">Add Funds</a>
-          <button class="btn btn-primary" onclick="sendFunds()">Send</button>
-          <button class="btn btn-outline" onclick="receiveAddress()">Receive</button>
+          <button class="btn btn-primary" onclick="alert('Send flow coming soon')">Send</button>
+          <button class="btn btn-outline" onclick="alert('Receive address copied')">Receive</button>
         </div>
       </div>
       <div class="card">
@@ -143,25 +135,6 @@ document.querySelectorAll('.upgrade-cta').forEach(el=>el.style.display=isAuth?'n
 const headers=token?{Authorization:'Bearer '+token}:{};
 async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;return await r.json()}catch{return null}}
 
-async function sendFunds(){
-  const to=prompt('Recipient email or wallet address:');
-  if(!to)return;
-  const amt=prompt('Amount (USD):');
-  if(!amt||isNaN(amt))return;
-  try{
-    const r=await fetch('/create-payment',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify({client:to,amount:amt,email:to})});
-    const d=await r.json();
-    if(d.payment_url)window.location.href=d.payment_url;
-    else alert('Payment initiated. Reference: '+(d.reference||d.id||'pending'));
-  }catch(e){alert('Send failed: '+e.message);}
-}
-function receiveAddress(){
-  const addr='bridge-'+Math.random().toString(36).slice(2,10)+'.pay';
-  const user=JSON.parse(localStorage.getItem('bridge_user')||'{}');
-  const display=user.email||addr;
-  navigator.clipboard.writeText(display).then(()=>alert('Your receive address copied to clipboard: '+display)).catch(()=>prompt('Your receive address:',display));
-}
-
 if(isAuth)(async()=>{
   const[wallet,treasury,rails,invoices,debts]=await Promise.all([
     f('/api/wallet/balance'),f('/api/treasury/status'),f('/api/revenue/rails'),f('/api/invoices'),f('/api/debts')
@@ -189,5 +162,5 @@ if(isAuth)(async()=>{
   document.getElementById('debts-body').innerHTML=db.length?db.slice(0,10).map(d=>`<tr><td>${d.description||d.name||'--'}</td><td style="color:var(--r)">$${parseFloat(d.amount||0).toLocaleString()}</td><td>${d.due||d.dueDate||'--'}</td><td><span class="badge ${d.status==='paid'?'badge-green':'badge-red'}">${d.status||'--'}</span></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--t)">No outstanding debts</td></tr>';
 })();
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

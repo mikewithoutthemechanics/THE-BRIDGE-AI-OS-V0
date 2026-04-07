@@ -3,14 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>System Status Dashboard - Full Ecosystem</title>
-    <meta name="description" content="System Status — Infrastructure Health Monitor">
-    <meta property="og:title" content="System Status Dashboard - Full Ecosystem">
-    <meta property="og:description" content="System Status — Infrastructure Health Monitor">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/system-status-dashboard.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/system-status-dashboard.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
@@ -100,7 +92,7 @@
     .legend-item { display: flex; align-items: center; gap: 4px; margin: 2px 0; }
     .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
     </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <div class="app-shell">
         <header>
@@ -222,17 +214,17 @@ const TYPE_COLORS = { Server: "#38bdf8", Container: "#a855f7", API: "#22c55e", D
 const _origin = location.origin;
 const HEALTH_ENDPOINTS = [
   { id: "gateway",      url: _origin + "/health" },
-  { id: "core-brain",   url: _origin + "/api/status" },
+  { id: "core-brain",   url: _origin + "/api/health" },
   { id: "system",       url: _origin + "/api/status" },
-  { id: "treasury",     url: _origin + "/api/treasury" },
-  { id: "business",     url: _origin + "/api/contracts" },
-  { id: "swarm",        url: _origin + "/api/agents" },
-  { id: "quant",        url: _origin + "/api/economics" },
-  { id: "twin",         url: _origin + "/api/agents" },
-  { id: "defi",         url: _origin + "/api/economics" },
-  { id: "crm",          url: _origin + "/api/contracts" },
-  { id: "marketing",    url: _origin + "/api/economics" },
-  { id: "neurolink",    url: _origin + "/api/status" },
+  { id: "treasury",     url: _origin + "/api/treasury/status" },
+  { id: "business",     url: _origin + "/api/business/manifest" },
+  { id: "swarm",        url: _origin + "/api/swarm/health" },
+  { id: "quant",        url: _origin + "/api/quant/positions" },
+  { id: "twin",         url: _origin + "/api/twin/profile" },
+  { id: "defi",         url: _origin + "/api/defi/status" },
+  { id: "crm",          url: _origin + "/api/crm/contacts" },
+  { id: "marketing",    url: _origin + "/api/marketing/funnel" },
+  { id: "neurolink",    url: _origin + "/api/neurolink/status" },
 ];
 
 const nodes = [
@@ -615,5 +607,5 @@ setTimeout(fitToScreen, 500);
 const dashboardNode = nodeById.get("dashboard");
 if (dashboardNode) selectNode(dashboardNode);
     </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

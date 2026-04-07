@@ -3,14 +3,6 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bridge AI OS — AI Operating System</title>
-    <meta name="description" content="Home — Bridge AI OS Central Hub">
-    <meta property="og:title" content="Bridge AI OS — AI Operating System">
-    <meta property="og:description" content="Home — Bridge AI OS Central Hub">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/home.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/home.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#020617;--s:#0d1620;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--t:#e5e7eb;--d:#4d6678}
@@ -47,7 +39,7 @@ body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,san
 .footer a{color:var(--a);text-decoration:none}
 @media(max-width:600px){.logo{font-size:2rem}.tagline{font-size:1rem}.stat .v{font-size:1.5rem}}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <div class="hero">
   <svg class="svg-bg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
@@ -66,9 +58,9 @@ body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,san
   </div>
   <div class="cta">
     <a class="btn btn-p" href="/welcome.html">GET STARTED</a>
-    <a class="btn btn-g" href="/aoe-dashboard.html">LIVE BRAIN</a>
+    <a class="btn btn-g" href="/brain-live">LIVE BRAIN</a>
     <a class="btn btn-s" href="/platforms.html">NETWORK</a>
-    <a class="btn btn-s" href="/pricing.html">PRICING</a>
+    <a class="btn btn-s" href="/api/pricing">PRICING</a>
   </div>
 </div>
 
@@ -114,5 +106,5 @@ fetch('/api/treasury/status').then(r=>r.json()).then(d=>{
   document.getElementById('s-treasury').textContent='$'+(d.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
 }).catch(()=>{});
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

@@ -1,11 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="refresh" content="0;url=/logs.html">
-<title>Redirecting to Log Viewer...</title>
+  <title>System Logs Viewer</title>
+  <style>
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #0d1620;
+      color: #c8dce8;
+      padding: 20px;
+    }
+    h1 {
+      color: #00c8ff;
+    }
+    pre {
+      background: #1a2332;
+      padding: 10px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+  </style>
 </head>
 <body>
-<p>Redirecting to <a href="/logs.html">Log Viewer</a>...</p>
+  <h1>System Logs</h1>
+  <pre id="logs">Loading logs...</pre>
+
+  <script>
+    fetch('/api/logs')
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById('logs').innerText = data;
+      })
+      .catch(err => {
+        document.getElementById('logs').innerText = 'Failed to load logs: ' + err.message;
+      });
+  </script>
 </body>
 </html>

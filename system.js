@@ -933,7 +933,7 @@ setInterval(() => {
   const riskLevel = FailureModel.evaluate(Brain.history);
   if (actions.length > 0) log('INFO','AI',`Risk:${riskLevel} actions:[${actions.join(',')}]`);
   AgentSwarm.execute(actions);
-}, 15000);
+}, 15000).unref();
 
 // ─── Cross-platform economics aggregator ─────────────────────────────────
 function aggregateEconomics() {

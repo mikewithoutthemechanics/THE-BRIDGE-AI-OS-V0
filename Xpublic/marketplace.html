@@ -270,6 +270,8 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
 </div>
 
 <script>
+function esc(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML;}
+
 // ── CLOCK ──
 function updateClock(){document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);}
 setInterval(updateClock,1000);updateClock();
@@ -418,8 +420,9 @@ function renderDex(d,mock){
   const hasPrice=typeof pair.price==='number';
   const up=hasPrice?(pair.change>=0):pair.active;
   const changeColor=up?'#0f9':'#f44';
-  const tabs=pairs.map(p=>`
-    <div class="dex-tab ${p.pair===currentPair?'active':''}" onclick="switchPair('${p.pair}')">${p.pair}</div>
+  // Use numeric indices in onclick — safe since idx is always a number
+  const tabs=pairs.map((p,idx)=>`
+    <div class="dex-tab ${p.pair===currentPair?'active':''}" onclick="switchPairByIndex(${idx})">${esc(p.pair)}</div>
   `).join('');
 
   const priceDisplay=hasPrice?'$'+pair.price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})
@@ -469,6 +472,10 @@ function renderDex(d,mock){
 function switchPair(p){
   currentPair=p;
   if(dexData) renderDex(dexData,false);
+}
+function switchPairByIndex(idx){
+  const pairs=(dexData&&dexData.pairs)||[];
+  if(pairs[idx]) switchPair(pairs[idx].pair);
 }
 window.switchPair=switchPair;
 
@@ -529,17 +536,18 @@ function renderSkills(d,mock){
   }else{
     skills=[];
   }
+  _skillsCache=skills;
   const installedCount=skills.filter(s=>s.installed).length;
   document.getElementById('skills-body').innerHTML=`
     <div style="font-size:8px;color:#0ac;margin-bottom:10px;">INSTALLED: <span style="color:#0f9;">${installedCount}/${skills.length}</span>${d.count?' &bull; TOTAL PACKAGES: '+d.count:''}</div>
     <div class="skills-grid">
-      ${skills.map(s=>`
+      ${skills.map((s,idx)=>`
         <div class="skill-card">
-          <div class="skill-name">${s.name}</div>
-          <div class="skill-desc">${s.desc||''}</div>
+          <div class="skill-name">${esc(s.name)}</div>
+          <div class="skill-desc">${esc(s.desc||'')}</div>
           <div class="skill-meta">
-            <span class="skill-version">${s.version!=='—'?'v'+s.version:''}</span>
-            <button class="skill-btn ${s.installed?'installed':'install'}" ${s.installed?'disabled':''} onclick="installSkill('${s.id}',this)">
+            <span class="skill-version">${s.version!=='—'?'v'+esc(s.version):''}</span>
+            <button class="skill-btn ${s.installed?'installed':'install'}" ${s.installed?'disabled':''} onclick="installSkillByIndex(${idx},this)">
               ${s.installed?'INSTALLED':'INSTALL'}
             </button>
           </div>
@@ -553,6 +561,11 @@ function renderSkills(d,mock){
 function installSkill(id,btn){
   btn.textContent='INSTALLING...';btn.disabled=true;
   setTimeout(()=>{btn.className='skill-btn installed';btn.textContent='INSTALLED';},1500);
+}
+let _skillsCache=[];
+function installSkillByIndex(idx,btn){
+  const s=_skillsCache[idx];
+  if(s) installSkill(s.id,btn);
 }
 window.installSkill=installSkill;
 

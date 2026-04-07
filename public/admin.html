@@ -4,13 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BRIDGE AI OS — Admin Keys</title>
-    <meta name="description" content="Admin — Bridge AI OS Administration Panel">
-    <meta property="og:title" content="BRIDGE AI OS — Admin Keys">
-    <meta property="og:description" content="Admin — Bridge AI OS Administration Panel">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/admin.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/admin.html">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -317,7 +310,7 @@
             .stats { flex-direction: column; }
         }
     </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
     <div class="shell">
         <div class="header">
@@ -342,146 +335,6 @@
         </div>
     </div>
 
-    <script>
-(function() {
-  var API_BASE = '';
-  var KEY_GROUPS = [
-    { title: 'AI / LLM', keys: [
-      { key: 'OPENAI_API_KEY', label: 'OpenAI API Key', desc: 'GPT-4 / Embeddings', link: 'https://platform.openai.com/api-keys' },
-      { key: 'ANTHROPIC_API_KEY', label: 'Anthropic API Key', desc: 'Claude models', link: 'https://console.anthropic.com/settings/keys' },
-      { key: 'GOOGLE_AI_KEY', label: 'Google AI Key', desc: 'Gemini models', link: 'https://aistudio.google.com/apikey' },
-    ]},
-    { title: 'Payments', keys: [
-      { key: 'PAYFAST_MERCHANT_ID', label: 'PayFast Merchant ID', desc: 'PayFast payment gateway', link: 'https://www.payfast.co.za' },
-      { key: 'PAYFAST_MERCHANT_KEY', label: 'PayFast Merchant Key', desc: 'PayFast payment gateway' },
-      { key: 'PAYFAST_PASSPHRASE', label: 'PayFast Passphrase', desc: 'Signature verification' },
-      { key: 'STRIPE_SECRET_KEY', label: 'Stripe Secret Key', desc: 'International payments', link: 'https://dashboard.stripe.com/apikeys' },
-    ]},
-    { title: 'Infrastructure', keys: [
-      { key: 'JWT_SECRET', label: 'JWT Secret', desc: 'Auth token signing (min 32 chars)' },
-      { key: 'ECONOMY_DB_URL', label: 'Economy DB URL', desc: 'PostgreSQL connection string' },
-      { key: 'NOTION_TOKEN', label: 'Notion Token', desc: 'Notion integration', link: 'https://www.notion.so/my-integrations' },
-    ]},
-    { title: 'Communication', keys: [
-      { key: 'TWILIO_SID', label: 'Twilio SID', desc: 'SMS / WhatsApp', link: 'https://console.twilio.com' },
-      { key: 'TWILIO_AUTH_TOKEN', label: 'Twilio Auth Token', desc: 'Twilio authentication' },
-      { key: 'SENDGRID_API_KEY', label: 'SendGrid API Key', desc: 'Transactional email', link: 'https://app.sendgrid.com/settings/api_keys' },
-    ]},
-  ];
-
-  function escText(s) { var d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML; }
-
-  async function loadKeys() {
-    try {
-      var r = await fetch(API_BASE + '/api/twin/env-keys');
-      if (!r.ok) throw new Error('Failed to load');
-      var data = await r.json();
-      renderKeys(data);
-    } catch (e) {
-      renderKeys({ keys: [], summary: { configured: 0, missing: 0, criticalMissing: 0 } });
-    }
-  }
-
-  function renderKeys(data) {
-    var container = document.getElementById('keyGroups');
-    var statsEl = document.getElementById('stats');
-    var keyMap = {};
-    (data.keys || []).forEach(function(k) { keyMap[k.key] = k; });
-
-    var s = data.summary || {};
-    // Build stats via DOM
-    statsEl.textContent = '';
-    [{ num: s.configured || 0, label: 'Configured', color: 'var(--accent-green)' },
-     { num: s.missing || s.criticalMissing || 0, label: 'Missing', color: 'var(--accent-red)' },
-     { num: (data.keys || []).length || KEY_GROUPS.reduce(function(a,g){return a+g.keys.length},0), label: 'Total Keys', color: 'var(--accent-cyan)' }
-    ].forEach(function(st) {
-      var div = document.createElement('div'); div.className = 'stat';
-      var num = document.createElement('div'); num.className = 'num'; num.style.color = st.color; num.textContent = st.num;
-      var lab = document.createElement('div'); lab.className = 'label'; lab.textContent = st.label;
-      div.appendChild(num); div.appendChild(lab); statsEl.appendChild(div);
-    });
-
-    container.textContent = '';
-    KEY_GROUPS.forEach(function(group) {
-      var gDiv = document.createElement('div'); gDiv.className = 'group';
-      var title = document.createElement('div'); title.className = 'group-title'; title.textContent = group.title;
-      gDiv.appendChild(title);
-
-      group.keys.forEach(function(k) {
-        var info = keyMap[k.key] || {};
-        var status = info.status || 'missing';
-        var statusClass = status === 'configured' ? 'set' : status === 'placeholder' ? 'placeholder' : 'missing';
-        var statusLabel = status === 'configured' ? 'SET' : status === 'placeholder' ? 'PLACEHOLDER' : 'MISSING';
-
-        var row = document.createElement('div'); row.className = 'key-row';
-        var top = document.createElement('div'); top.className = 'top';
-        var nameSpan = document.createElement('span'); nameSpan.className = 'name'; nameSpan.textContent = k.key;
-        var statusSpan = document.createElement('span'); statusSpan.className = 'status ' + statusClass; statusSpan.textContent = statusLabel;
-        top.appendChild(nameSpan); top.appendChild(statusSpan); row.appendChild(top);
-
-        var descDiv = document.createElement('div'); descDiv.className = 'desc'; descDiv.textContent = k.desc || '';
-        row.appendChild(descDiv);
-
-        var inputRow = document.createElement('div'); inputRow.className = 'input-row';
-        var input = document.createElement('input'); input.type = 'password'; input.name = k.key; input.placeholder = 'Enter ' + k.label + '...';
-        inputRow.appendChild(input);
-        if (k.link) {
-          var linkBtn = document.createElement('a'); linkBtn.className = 'link-btn'; linkBtn.href = k.link; linkBtn.target = '_blank'; linkBtn.textContent = 'Get Key';
-          inputRow.appendChild(linkBtn);
-        }
-        row.appendChild(inputRow);
-        gDiv.appendChild(row);
-      });
-      container.appendChild(gDiv);
-    });
-  }
-
-  window.saveKeys = async function() {
-    var btn = document.getElementById('saveBtn');
-    var banner = document.getElementById('statusBanner');
-    btn.disabled = true;
-    btn.textContent = 'SAVING...';
-
-    var inputs = document.querySelectorAll('.key-row input[name]');
-    var keys = {};
-    inputs.forEach(function(input) {
-      if (input.value.trim()) keys[input.name] = input.value.trim();
-    });
-
-    if (Object.keys(keys).length === 0) {
-      banner.className = 'status-banner error';
-      banner.textContent = 'No keys to save. Enter at least one key value.';
-      btn.disabled = false;
-      btn.textContent = 'SAVE ALL KEYS';
-      return;
-    }
-
-    try {
-      var r = await fetch(API_BASE + '/api/admin/keys', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keys: keys })
-      });
-      if (r.ok) {
-        banner.className = 'status-banner success';
-        banner.textContent = 'Keys saved successfully. Restart the backend for changes to take effect.';
-        inputs.forEach(function(input) { if (input.value.trim()) input.value = ''; });
-        await loadKeys();
-      } else {
-        banner.className = 'status-banner error';
-        banner.textContent = 'Failed to save keys. Server returned an error.';
-      }
-    } catch (e) {
-      banner.className = 'status-banner error';
-      banner.textContent = 'Network error — could not reach server.';
-    }
-    btn.disabled = false;
-    btn.textContent = 'SAVE ALL KEYS';
-    setTimeout(function() { banner.className = 'status-banner'; }, 5000);
-  };
-
-  loadKeys();
-})();
-    </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+    <script type="module" src="/src/admin.js"></script>
+</body>
 </html>

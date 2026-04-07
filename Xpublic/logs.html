@@ -37,7 +37,7 @@
   <div id="head">
     <h1>BAN · Log Viewer</h1>
     <a href="/dashboard.html">← Dashboard</a>
-    <a href="http://localhost:8000/logs" target="_blank">API</a>
+    <a href="/logs" target="_blank">API</a>
   </div>
   <div id="layout">
     <div id="sidebar"></div>
@@ -52,7 +52,7 @@
     </div>
   </div>
   <script>
-    const API = 'http://localhost:8000';
+    const API = window.location.origin;
     let files = [];
 
     async function refresh() {
@@ -66,7 +66,13 @@
           loadLog(files[0].name);
         }
       } catch (e) {
-        document.getElementById('sidebar').innerHTML = `<div class="log-item" style="color:var(--red)">API offline: ${e.message}</div>`;
+        const offlineEl = document.getElementById('sidebar');
+        offlineEl.textContent = '';
+        const offlineDiv = document.createElement('div');
+        offlineDiv.className = 'log-item';
+        offlineDiv.style.color = 'var(--red)';
+        offlineDiv.textContent = 'API offline: ' + e.message;
+        offlineEl.appendChild(offlineDiv);
         document.getElementById('content').textContent = 'Ensure backend is running on port 8000.';
         document.getElementById('empty').style.display = 'block';
       }
@@ -74,16 +80,39 @@
 
     function renderSidebar() {
       const el = document.getElementById('sidebar');
-      el.innerHTML = files.map(f => {
+      el.textContent = '';
+      if (files.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'log-item';
+        empty.style.color = 'var(--dim)';
+        empty.textContent = 'No logs';
+        el.appendChild(empty);
+        return;
+      }
+      files.forEach(f => {
         const isSvg = f.name.includes('svg-build');
-        const cls = isSvg ? 'log-item' : 'log-item warn';
-        return `<div class="${cls}" onclick="loadLog('${f.name}')" data-name="${f.name}">${isSvg ? '◆ ' : '○ '}${f.name}</div>`;
-      }).join('') || '<div class="log-item" style="color:var(--dim)">No logs</div>';
+        const div = document.createElement('div');
+        div.className = isSvg ? 'log-item' : 'log-item warn';
+        div.dataset.name = f.name;
+        div.textContent = (isSvg ? '◆ ' : '○ ') + f.name;
+        div.addEventListener('click', () => loadLog(f.name));
+        el.appendChild(div);
+      });
     }
 
     function renderSelect() {
       const sel = document.getElementById('sel');
-      sel.innerHTML = '<option value="">-- select log --</option>' + files.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
+      sel.textContent = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '-- select log --';
+      sel.appendChild(placeholder);
+      files.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.name;
+        opt.textContent = f.name;
+        sel.appendChild(opt);
+      });
       sel.onchange = () => { if (sel.value) loadLog(sel.value); };
     }
 
@@ -107,7 +136,12 @@
         }).join('');
         document.getElementById('content').innerHTML = html || '<span style="color:var(--dim)">Empty</span>';
       } catch (e) {
-        document.getElementById('content').innerHTML = `<div class="err">Failed: ${e.message}</div>`;
+        const errDiv = document.createElement('div');
+        errDiv.className = 'err';
+        errDiv.textContent = 'Failed: ' + e.message;
+        const contentEl = document.getElementById('content');
+        contentEl.textContent = '';
+        contentEl.appendChild(errDiv);
       }
     }
 

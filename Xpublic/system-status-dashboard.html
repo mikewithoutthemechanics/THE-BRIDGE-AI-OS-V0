@@ -211,58 +211,54 @@ const STATUS_COLORS = { green: "#22c55e", yellow: "#facc15", orange: "#fb923c", 
 const TYPE_COLORS = { Server: "#38bdf8", Container: "#a855f7", API: "#22c55e", Database: "#f97316", Network: "#0ea5e9", Cache: "#facc15", Queue: "#e5e7eb", "AI/ML": "#ec4899" };
 
 /* id must match nodes[].id for poll updates */
-const _origin = location.origin;
+/* Real absolute URLs — only endpoints confirmed reachable from this machine */
 const HEALTH_ENDPOINTS = [
-  { id: "gateway",      url: _origin + "/health" },
-  { id: "core-brain",   url: _origin + "/api/health" },
-  { id: "system",       url: _origin + "/api/status" },
-  { id: "treasury",     url: _origin + "/api/treasury/status" },
-  { id: "business",     url: _origin + "/api/business/manifest" },
-  { id: "swarm",        url: _origin + "/api/swarm/health" },
-  { id: "quant",        url: _origin + "/api/quant/positions" },
-  { id: "twin",         url: _origin + "/api/twin/profile" },
-  { id: "defi",         url: _origin + "/api/defi/status" },
-  { id: "crm",          url: _origin + "/api/crm/contacts" },
-  { id: "marketing",    url: _origin + "/api/marketing/funnel" },
-  { id: "neurolink",    url: _origin + "/api/neurolink/status" },
+  // ── LOCAL — confirmed live ──
+  { id: "gateway",   url: "http://localhost:8787/health" },        // SPINE API v1
+  { id: "business",  url: "http://localhost:8787/api/templates" },  // SPINE templates (4 templates)
+  { id: "treasury",  url: "http://localhost:7071/health" },         // SVG Engine v3 (1246 skills)
+  { id: "pm2",       url: "http://localhost:6063/" },               // Exec Trace Graph UI
+  { id: "nginx",     url: "http://localhost:9090/-/ready" },        // Prometheus (infra monitoring)
+  // ── VPS endpoints (go.ai-os.co.za) unreachable from localhost — omitted ──
+  // Nodes: core-brain, system, twin, swarm, quant, defi, crm, marketing, neurolink, vps
+  // will hold their initial yellow status and simulate metrics until VPS is reachable
 ];
 
 const nodes = [
-  // ── RUNNING SERVICES (PM2) ──
-  { id: "gateway",     name: "Gateway",       type: "Server",  endpoint: ":8080", status: "green", cpu: 12, mem: 55, disk: 4, net: 30 },
-  { id: "core-brain",  name: "Super Brain",   type: "AI/ML",   endpoint: ":8000", status: "green", cpu: 15, mem: 58, disk: 4, net: 45 },
-  { id: "system",      name: "GOD MODE",      type: "Server",  endpoint: ":3000", status: "green", cpu: 8,  mem: 56, disk: 4, net: 20 },
-  { id: "terminal",    name: "Terminal PTY",   type: "Server",  endpoint: ":5002", status: "green", cpu: 5,  mem: 57, disk: 4, net: 15 },
-  { id: "auth",        name: "Auth Service",   type: "API",     endpoint: ":5001", status: "green", cpu: 3,  mem: 50, disk: 4, net: 10 },
-  // ── BRAIN MODULES (virtual services inside brain) ──
-  { id: "twin",        name: "Digital Twin",   type: "AI/ML",   endpoint: "/api/twin",      status: "green", cpu: 20, mem: 40, disk: 2, net: 35 },
-  { id: "treasury",    name: "Treasury",       type: "API",     endpoint: "/api/treasury",   status: "green", cpu: 10, mem: 25, disk: 2, net: 20 },
-  { id: "quant",       name: "Quant Engine",   type: "AI/ML",   endpoint: "/api/quant",      status: "green", cpu: 25, mem: 35, disk: 2, net: 40 },
-  { id: "swarm",       name: "Swarm Orch",     type: "AI/ML",   endpoint: "/api/swarm",      status: "green", cpu: 18, mem: 30, disk: 2, net: 35 },
-  { id: "bossbots",    name: "BossBots",       type: "AI/ML",   endpoint: "/api/bossbots",   status: "green", cpu: 22, mem: 32, disk: 2, net: 38 },
-  { id: "marketplace", name: "Marketplace",    type: "API",     endpoint: "/api/marketplace", status: "green", cpu: 8, mem: 20, disk: 2, net: 15 },
-  { id: "defi",        name: "DeFi / DEX",     type: "API",     endpoint: "/api/defi",       status: "green", cpu: 12, mem: 25, disk: 2, net: 30 },
-  { id: "ubi",         name: "UBI System",     type: "API",     endpoint: "/api/ubi",        status: "green", cpu: 5,  mem: 15, disk: 2, net: 10 },
-  { id: "keyforge",    name: "KeyForge Auth",  type: "API",     endpoint: "/api/keyforge",   status: "green", cpu: 3,  mem: 10, disk: 1, net: 8 },
-  { id: "rag",         name: "RAG Engine",     type: "AI/ML",   endpoint: "/api/docs",       status: "green", cpu: 15, mem: 30, disk: 5, net: 20 },
-  { id: "mcp",         name: "MCP Bridge",     type: "API",     endpoint: "/api/mcp",        status: "green", cpu: 5,  mem: 15, disk: 1, net: 25 },
-  // ── BUSINESS SUITE ──
-  { id: "crm",         name: "CRM",            type: "API",     endpoint: "/api/crm",        status: "green", cpu: 8,  mem: 20, disk: 2, net: 15 },
-  { id: "invoicing",   name: "Invoicing",      type: "API",     endpoint: "/api/invoices",   status: "green", cpu: 5,  mem: 15, disk: 2, net: 10 },
-  { id: "business",    name: "Business Suite",  type: "API",     endpoint: "/api/business",   status: "green", cpu: 10, mem: 25, disk: 3, net: 20 },
-  { id: "legal",       name: "Legal Suite",     type: "API",     endpoint: "/api/legal",      status: "green", cpu: 4,  mem: 12, disk: 2, net: 8 },
-  { id: "marketing",   name: "Marketing",       type: "API",     endpoint: "/api/marketing",  status: "green", cpu: 8,  mem: 18, disk: 2, net: 15 },
-  { id: "tickets",     name: "Support Tickets", type: "API",     endpoint: "/api/tickets",    status: "green", cpu: 5,  mem: 12, disk: 2, net: 10 },
-  { id: "neurolink",   name: "NeuroLink",       type: "AI/ML",   endpoint: "/api/neurolink",  status: "green", cpu: 30, mem: 40, disk: 2, net: 50 },
+  // ── LOCAL SERVICES — confirmed running ──
+  { id: "gateway",     name: "SPINE API",      type: "API",     endpoint: ":8787", status: "green", cpu: 12, mem: 55, disk: 4, net: 30 },
+  { id: "nginx",       name: "Prometheus",     type: "Network", endpoint: ":9090", status: "green", cpu: 2,  mem: 10, disk: 1, net: 60 },
+  { id: "pm2",         name: "Trace UI",       type: "Server",  endpoint: ":6063", status: "green", cpu: 3,  mem: 15, disk: 1, net: 5 },
+  { id: "treasury",    name: "SVG Engine",     type: "AI/ML",   endpoint: ":7071", status: "green", cpu: 10, mem: 25, disk: 2, net: 20 },
+  // ── VPS — go.ai-os.co.za ──
+  { id: "vps",         name: "VPS (DUR)",      type: "Server",  endpoint: "102.208.228.44",  status: "yellow", cpu: 8,  mem: 10, disk: 4, net: 100 },
+  { id: "core-brain",  name: "Super Brain",    type: "AI/ML",   endpoint: "go.ai-os.co.za",  status: "yellow", cpu: 15, mem: 58, disk: 4, net: 45 },
+  { id: "system",      name: "GOD MODE",       type: "Server",  endpoint: "go.ai-os.co.za",  status: "yellow", cpu: 8,  mem: 56, disk: 4, net: 20 },
+  { id: "twin",        name: "Digital Twin",   type: "AI/ML",   endpoint: "/api/twin",       status: "yellow", cpu: 20, mem: 40, disk: 2, net: 35 },
+  { id: "swarm",       name: "Swarm Orch",     type: "AI/ML",   endpoint: "/api/swarm",      status: "yellow", cpu: 18, mem: 30, disk: 2, net: 35 },
+  { id: "quant",       name: "Quant Engine",   type: "AI/ML",   endpoint: "/api/quant",      status: "yellow", cpu: 25, mem: 35, disk: 2, net: 40 },
+  { id: "defi",        name: "DeFi / DEX",     type: "API",     endpoint: "/api/defi",       status: "yellow", cpu: 12, mem: 25, disk: 2, net: 30 },
+  { id: "crm",         name: "CRM",            type: "API",     endpoint: "/api/crm",        status: "yellow", cpu: 8,  mem: 20, disk: 2, net: 15 },
+  { id: "marketing",   name: "Marketing",      type: "API",     endpoint: "/api/marketing",  status: "yellow", cpu: 8,  mem: 18, disk: 2, net: 15 },
+  { id: "neurolink",   name: "NeuroLink",      type: "AI/ML",   endpoint: "/api/neurolink",  status: "yellow", cpu: 30, mem: 40, disk: 2, net: 50 },
+  // ── OFFLINE — not currently running ──
+  { id: "terminal",    name: "Terminal PTY",   type: "Server",  endpoint: ":5002", status: "gray", cpu: 5,  mem: 57, disk: 4, net: 15 },
+  { id: "auth",        name: "Auth Service",   type: "API",     endpoint: ":3030", status: "gray", cpu: 3,  mem: 50, disk: 4, net: 10 },
+  { id: "bossbots",    name: "BossBots",       type: "AI/ML",   endpoint: "/api/bossbots",   status: "gray", cpu: 22, mem: 32, disk: 2, net: 38 },
+  { id: "marketplace", name: "Marketplace",    type: "API",     endpoint: "/api/marketplace", status: "gray", cpu: 8,  mem: 20, disk: 2, net: 15 },
+  { id: "ubi",         name: "UBI System",     type: "API",     endpoint: "/api/ubi",        status: "gray", cpu: 5,  mem: 15, disk: 2, net: 10 },
+  { id: "keyforge",    name: "KeyForge Auth",  type: "API",     endpoint: "/api/keyforge",   status: "gray", cpu: 3,  mem: 10, disk: 1, net: 8 },
+  { id: "rag",         name: "RAG Engine",     type: "AI/ML",   endpoint: "/api/docs",       status: "gray", cpu: 15, mem: 30, disk: 5, net: 20 },
+  { id: "mcp",         name: "MCP Bridge",     type: "API",     endpoint: "/api/mcp",        status: "gray", cpu: 5,  mem: 15, disk: 1, net: 25 },
+  { id: "invoicing",   name: "Invoicing",      type: "API",     endpoint: "/api/invoices",   status: "gray", cpu: 5,  mem: 15, disk: 2, net: 10 },
+  { id: "business",    name: "Business Suite", type: "API",     endpoint: "/api/business",   status: "gray", cpu: 10, mem: 25, disk: 3, net: 20 },
+  { id: "legal",       name: "Legal Suite",    type: "API",     endpoint: "/api/legal",      status: "gray", cpu: 4,  mem: 12, disk: 2, net: 8 },
+  { id: "tickets",     name: "Support Tickets",type: "API",     endpoint: "/api/tickets",    status: "gray", cpu: 5,  mem: 12, disk: 2, net: 10 },
   // ── PAYMENT RAILS ──
-  { id: "payfast",     name: "PayFast (ZA)",    type: "API",     endpoint: "payfast.co.za",   status: "green", cpu: 0, mem: 0, disk: 0, net: 5 },
-  { id: "paystack",    name: "Paystack",        type: "API",     endpoint: "paystack.com",    status: "green", cpu: 0, mem: 0, disk: 0, net: 5 },
-  { id: "crypto",      name: "Crypto Rails",    type: "Network", endpoint: "ETH/BTC/SOL",     status: "green", cpu: 0, mem: 0, disk: 0, net: 10 },
-  { id: "dex",         name: "BRDG DEX",        type: "Network", endpoint: "/api/dex",        status: "green", cpu: 10, mem: 20, disk: 2, net: 30 },
-  // ── INFRASTRUCTURE ──
-  { id: "nginx",       name: "Nginx + SSL",     type: "Network", endpoint: ":443",            status: "green", cpu: 2, mem: 10, disk: 1, net: 60 },
-  { id: "pm2",         name: "PM2 Manager",     type: "Server",  endpoint: "pm2",             status: "green", cpu: 3, mem: 15, disk: 1, net: 5 },
-  { id: "vps",         name: "VPS (WebWay)",    type: "Server",  endpoint: "102.208.228.44",  status: "green", cpu: 8, mem: 10, disk: 4, net: 100 },
+  { id: "payfast",     name: "PayFast (ZA)",   type: "API",     endpoint: "payfast.co.za",   status: "gray", cpu: 0, mem: 0, disk: 0, net: 5 },
+  { id: "paystack",    name: "Paystack",       type: "API",     endpoint: "paystack.com",    status: "gray", cpu: 0, mem: 0, disk: 0, net: 5 },
+  { id: "crypto",      name: "Crypto Rails",   type: "Network", endpoint: "ETH/BTC/SOL",     status: "gray", cpu: 0, mem: 0, disk: 0, net: 10 },
+  { id: "dex",         name: "BRDG DEX",       type: "Network", endpoint: "/api/dex",        status: "gray", cpu: 10, mem: 20, disk: 2, net: 30 },
 ];
 
 const links = [
@@ -398,14 +394,16 @@ let pollingTimer = null;
 function fetchWithTimeout(url, ms) {
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), ms);
-  return fetch(url, { signal: ac.signal }).finally(() => clearTimeout(t));
+  // no-cors: opaque response = server is alive even if CORS blocks body read
+  return fetch(url, { signal: ac.signal, mode: 'no-cors' }).finally(() => clearTimeout(t));
 }
 
 async function pollHealth() {
   const results = await Promise.allSettled(HEALTH_ENDPOINTS.map(async (ep) => {
     try {
       const r = await fetchWithTimeout(ep.url, 2500);
-      return { id: ep.id, ok: r.ok };
+      // r.ok = true for same-origin 2xx; r.type === 'opaque' = cross-origin alive
+      return { id: ep.id, ok: r.ok || r.type === 'opaque' };
     } catch (_) {
       return { id: ep.id, ok: false };
     }
@@ -534,7 +532,12 @@ const timelineNodeName = document.getElementById("timeline-node-name");
 
 function selectNode(nodeData, keepTimeline = false) {
   selectedNode = nodeData;
-  endpointInfo.innerHTML = `<strong>${nodeData.name}</strong> · ${nodeData.type} · <span>${nodeData.endpoint}</span>`;
+  endpointInfo.textContent = '';
+  const _strong=document.createElement('strong');_strong.textContent=nodeData.name||'';
+  endpointInfo.appendChild(_strong);
+  endpointInfo.appendChild(document.createTextNode(' · '+(nodeData.type||'')+' · '));
+  const _span=document.createElement('span');_span.textContent=nodeData.endpoint||'';
+  endpointInfo.appendChild(_span);
   metricCpu.textContent = `${nodeData.cpu.toFixed(0)}%`;
   metricMem.textContent = `${nodeData.mem.toFixed(0)}%`;
   metricDisk.textContent = `${nodeData.disk.toFixed(0)}%`;

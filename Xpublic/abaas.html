@@ -66,23 +66,31 @@ async function load() {
     const treasury = await fetch((BRAIN || '') + '/api/treasury/status').then(r=>r.json()).catch(()=>({}));
     const tools = await fetch((BRAIN || '') + '/api/tools').then(r=>r.json()).catch(()=>({count:0}));
 
-    document.getElementById('stats').innerHTML = `
-      <div class="stat"><div class="val">${agents.length}</div><div class="label">AGENTS</div></div>
-      <div class="stat"><div class="val">${agents.filter(a=>a.status==='active').length}</div><div class="label">ACTIVE</div></div>
-      <div class="stat"><div class="val">${tools.count || 0}</div><div class="label">TOOLS</div></div>
-      <div class="stat"><div class="val">$${(treasury.balance||0).toLocaleString()}</div><div class="label">TREASURY</div></div>
-    `;
+    function statEl(val, label) {
+      const s=document.createElement('div');s.className='stat';
+      const v=document.createElement('div');v.className='val';v.textContent=val;
+      const l=document.createElement('div');l.className='label';l.textContent=label;
+      s.appendChild(v);s.appendChild(l);return s;
+    }
+    const statsEl=document.getElementById('stats');statsEl.textContent='';
+    statsEl.appendChild(statEl(agents.length,'AGENTS'));
+    statsEl.appendChild(statEl(agents.filter(a=>a.status==='active').length,'ACTIVE'));
+    statsEl.appendChild(statEl(tools.count||0,'TOOLS'));
+    statsEl.appendChild(statEl('$'+(treasury.balance||0).toLocaleString(),'TREASURY'));
 
-    document.getElementById('agent-list').innerHTML = agents.map(a => `
-      <div class="agent-row">
-        <span class="name">${a.name}</span>
-        <span class="role">${a.role}</span>
-        <span>L${a.layer?.replace('L','') || '?'}</span>
-        <span class="trust">Trust: ${(a.trust*100).toFixed(0)}%</span>
-        <span class="tasks">${a.tasks_done} tasks</span>
-        <span style="color:${a.status==='active'?'var(--green)':'var(--dim)'}">${a.status.toUpperCase()}</span>
-      </div>
-    `).join('');
+    const listEl=document.getElementById('agent-list');listEl.textContent='';
+    agents.forEach(a=>{
+      const row=document.createElement('div');row.className='agent-row';
+      const nm=document.createElement('span');nm.className='name';nm.textContent=a.name||'—';
+      const rl=document.createElement('span');rl.className='role';rl.textContent=a.role||'—';
+      const ly=document.createElement('span');ly.textContent='L'+((a.layer||'').replace('L','')||'?');
+      const tr=document.createElement('span');tr.className='trust';tr.textContent='Trust: '+((a.trust*100)||0).toFixed(0)+'%';
+      const tk=document.createElement('span');tk.className='tasks';tk.textContent=(a.tasks_done||0)+' tasks';
+      const st=document.createElement('span');st.style.color=a.status==='active'?'var(--green)':'var(--dim)';
+      st.textContent=(a.status||'unknown').toUpperCase();
+      row.appendChild(nm);row.appendChild(rl);row.appendChild(ly);row.appendChild(tr);row.appendChild(tk);row.appendChild(st);
+      listEl.appendChild(row);
+    });
   } catch(e) { console.error(e); }
 }
 load();

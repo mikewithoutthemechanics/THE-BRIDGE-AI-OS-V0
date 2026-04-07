@@ -4,21 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>REGISTRY — BRIDGE AI OS</title>
-    <meta name="description" content="Registry — Agent & Service Registry">
-    <meta property="og:title" content="REGISTRY — BRIDGE AI OS">
-    <meta property="og:description" content="Registry — Agent & Service Registry">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/registry.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/registry.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New',monospace;color:#0ff;overflow-x:hidden}
 
 /* HUD */
 #hud{
-  position:sticky;top:40px;left:0;right:0;z-index:100;height:40px;
+  position:sticky;top:0;left:0;right:0;z-index:100;height:40px;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 16px;background:rgba(0,0,0,.92);
   border-bottom:1px solid rgba(0,255,255,.2);
@@ -82,7 +74,7 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
 @keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
 
 /* NODE MAP CANVAS */
-#node-map-canvas{width:100%;height:300px;display:block;cursor:crosshair;border-radius:8px;}
+#node-map-canvas{width:100%;height:180px;display:block;cursor:crosshair;}
 
 /* FEDERATION NODE GRID */
 .fed-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -137,25 +129,22 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
 ::-webkit-scrollbar-track{background:#000;}
 ::-webkit-scrollbar-thumb{background:#0ff3;border-radius:2px;}
 ::-webkit-scrollbar-thumb:hover{background:#0ff6;}
-/* Mobile responsive */
-@media(max-width:768px){
-  #grid{grid-template-columns:1fr !important;padding:0 8px !important;}
-  .panel{min-width:auto !important;}
-  #hud{flex-wrap:wrap;height:auto;padding:8px;gap:4px;}
-  #hud-left,#hud-right{width:100%;justify-content:center;text-align:center;}
-  #node-map-canvas{height:200px !important;}
-  .bos-mini{flex-wrap:wrap;}
-  .bos-mini>div{min-width:60px;}
-}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 
 <div id="hud">
   <div id="hud-left">
     <div class="live-dot"></div>
     <span>BRIDGE AI OS &mdash; REGISTRY</span>
-    <!-- Old nav removed — mega-nav (bridge-nav.js) handles navigation -->
+    <div class="nav-links">
+      <a href="/ui.html">HOME</a>
+      <a href="/topology.html">TOPOLOGY</a>
+      <a href="/marketplace.html">MARKETPLACE</a>
+      <a href="/avatar.html">AVATAR</a>
+      <a href="/system-status-dashboard.html">STATUS</a>
+      <a href="/control.html">CONTROL</a>
+    </div>
   </div>
   <div id="hud-right">
     <span id="refresh-status">POLLING...</span>
@@ -303,12 +292,9 @@ async function poll(endpoint,callback,badgeId){
     const r=await fetch(endpoint,{signal:AbortSignal.timeout(4000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const json=await r.json();
-    // Detect stub/empty responses from brain proxy — use mock instead
-    if(json.stub||json.error||(json.ok===true&&!json.data&&Object.keys(json).length<=3)){
-      throw new Error('stub response');
-    }
     document.getElementById('conn-badge').textContent='CONNECTED';
     document.getElementById('conn-badge').className='conn-badge';
+    // API returns {namespace, data, ts} — unwrap to pass inner data
     const data=(json&&json.data!==undefined)?json.data:json;
     callback(data,false);
   }catch(e){
@@ -513,7 +499,7 @@ let animFrame=0;
 
 function initNodeMap(){
   const W=canvas.offsetWidth;
-  const H=300;
+  const H=180;
   canvas.width=W;
   canvas.height=H;
   nodes2d=[];
@@ -577,20 +563,19 @@ function drawNodeMap(t){ try{
     // Glow ring
     if(isNaN(n.x)||isNaN(n.y)||!isFinite(n.x)||!isFinite(n.y)) return;
     let grad;
-    try{ grad=ctx.createRadialGradient(n.x,n.y,4,n.x,n.y,Math.max(1,28*pulse)); }catch(e){return;}
-    grad.addColorStop(0,color+'aa');
+    try{ grad=ctx.createRadialGradient(n.x,n.y,2,n.x,n.y,Math.max(1,16*pulse)); }catch(e){return;}
+    grad.addColorStop(0,color+'88');
     grad.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=grad;
-    ctx.beginPath();ctx.arc(n.x,n.y,28*pulse,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(n.x,n.y,16*pulse,0,Math.PI*2);ctx.fill();
 
     // Core dot
     ctx.fillStyle=color;
-    ctx.beginPath();ctx.arc(n.x,n.y,7,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(n.x,n.y,12,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.arc(n.x,n.y,4,0,Math.PI*2);ctx.fill();
 
     // Label
-    ctx.fillStyle='rgba(255,255,255,0.9)';
-    ctx.font='bold 10px JetBrains Mono, Courier New';
+    ctx.fillStyle='rgba(0,255,255,0.7)';
+    ctx.font='7px Courier New';
     ctx.textAlign='center';
     ctx.fillText(n.name,n.x,n.y-10);
   });
@@ -658,5 +643,5 @@ function startPolling(){
 
 startPolling();
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

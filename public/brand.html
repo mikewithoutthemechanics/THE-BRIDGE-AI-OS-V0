@@ -3,14 +3,6 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bridge AI OS — Brand Assets & Metrics</title>
-    <meta name="description" content="Brand — Bridge AI OS Brand Guidelines">
-    <meta property="og:title" content="Bridge AI OS — Brand Assets & Metrics">
-    <meta property="og:description" content="Brand — Bridge AI OS Brand Guidelines">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/brand.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/brand.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#050a0f;--s:#0d1620;--s2:#111d2b;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--t:#c8dce8;--d:#4d6678;--p:#a78bfa}
@@ -44,7 +36,7 @@ h2{color:var(--a);font-size:.85rem;letter-spacing:.12em;margin:1.5rem 0 .6rem;bo
 .link .dot{width:6px;height:6px;border-radius:50%;background:var(--g)}
 #live{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;margin:1rem 0;font-size:.7rem;font-family:monospace;max-height:250px;overflow-y:auto;color:var(--d);white-space:pre-wrap}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <div class="c">
 <h1>BRIDGE AI OS — BRAND & METRICS</h1>
@@ -135,7 +127,7 @@ h2{color:var(--a);font-size:.85rem;letter-spacing:.12em;margin:1.5rem 0 .6rem;bo
   <a class="link" href="/aoe-dashboard.html"><span class="dot"></span> AOE</a>
   <a class="link" href="/platforms.html"><span class="dot"></span> Network</a>
   <a class="link" href="/sitemap.html"><span class="dot"></span> Sitemap</a>
-  <a class="link" href="/join.html"><span class="dot"></span> Join</a>
+  <a class="link" href="/onboarding.html"><span class="dot"></span> Join</a>
   <a class="link" href="/api/pricing"><span class="dot"></span> Pricing API</a>
   <a class="link" href="/api/v3/spec"><span class="dot"></span> V3 Spec</a>
   <a class="link" href="/index.json"><span class="dot"></span> System Manifest</a>
@@ -159,26 +151,26 @@ h2{color:var(--a);font-size:.85rem;letter-spacing:.12em;margin:1.5rem 0 .6rem;bo
 async function load() {
   try {
     const [treasury, agents, economy, il, fabric] = await Promise.all([
-      fetch('/api/treasury').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/agents').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/economics').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/status').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/full').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/treasury/status').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/agents/economy').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/economy/dashboard').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/intelligence/dashboard').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/fabric/dashboard').then(r=>r.json()).catch(()=>({})),
     ]);
     document.getElementById('stats').innerHTML = `
-      <div class="stat"><div class="v">$${((treasury.total||treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
-      <div class="stat"><div class="v">${agents.total_agents||agents.count||34}</div><div class="l">AGENTS</div></div>
+      <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
+      <div class="stat"><div class="v">${agents.total_agents||34}</div><div class="l">AGENTS</div></div>
       <div class="stat"><div class="v">42</div><div class="l">PAGES</div></div>
       <div class="stat"><div class="v">150+</div><div class="l">API ENDPOINTS</div></div>
       <div class="stat"><div class="v">11</div><div class="l">HTTPS DOMAINS</div></div>
       <div class="stat"><div class="v">27</div><div class="l">SKILLS</div></div>
       <div class="stat"><div class="v">7</div><div class="l">AUTO LOOPS</div></div>
-      <div class="stat"><div class="v">${il.status||'LIVE'}</div><div class="l">SYSTEM</div></div>
+      <div class="stat"><div class="v">$${((il.modules?.monetization?.revenue||0)).toFixed(0)}</div><div class="l">IL REVENUE</div></div>
     `;
     document.getElementById('live').textContent = JSON.stringify({treasury, agents_economy: agents, compound_economy: economy, intelligence: il, fabric}, null, 2);
   } catch(e) { document.getElementById('live').textContent = 'Error: ' + e.message; }
 }
 load();
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

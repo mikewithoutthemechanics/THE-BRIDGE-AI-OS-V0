@@ -148,9 +148,13 @@
       btn.textContent = 'Preparing payment…';
 
       try {
+        var token = localStorage.getItem('bridge_token') || '';
         var res = await fetch('/api/create-payment', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token,
+          },
           body:    JSON.stringify({
             amount:    selectedPlan.amount,
             email:     email,

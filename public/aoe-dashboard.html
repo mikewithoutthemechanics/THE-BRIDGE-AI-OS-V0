@@ -3,172 +3,664 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bridge AI OS — Operations Hub</title>
-<meta name="description" content="Bridge AI OS operations dashboard — live services, treasury, agents, skills.">
-<meta property="og:title" content="Bridge AI OS — Operations Hub">
-<meta property="og:description" content="Live operations dashboard for Bridge AI OS">
-<meta property="og:type" content="website">
-<link rel="canonical" href="https://abaas.bridge-ai-os.com/aoe-dashboard.html">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/bridge-tokens.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>BRIDGE AI OS · Live Nav Hub</title>
 <style>
+  :root {
+    --bg:     #060a10;
+    --bg2:    #0a0e17;
+    --bg3:    #0d1424;
+    --border: #1a2540;
+    --cyan:   #63ffda;
+    --purple: #a855f7;
+    --gold:   #f59e0b;
+    --green:  #22c55e;
+    --red:    #ef4444;
+    --blue:   #3b82f6;
+    --dim:    #64748b;
+    --text:   #cbd5e1;
+    --font:   'JetBrains Mono','Fira Code',monospace;
+  }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg-0);color:var(--text-primary);font-family:var(--font-ui);padding-top:40px}
-  .container{max-width:1100px;margin:0 auto;padding:20px}
-  h1{font-size:24px;font-weight:800;margin-bottom:4px}
-  h1 span{color:var(--cyan)}
-  .subtitle{color:var(--text-secondary);font-size:13px;margin-bottom:24px}
-  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
-  .metric{background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center}
-  .metric-val{font-size:22px;font-weight:800;color:var(--cyan);font-family:var(--font-mono)}
-  .metric-label{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
-  .section{margin-bottom:24px}
-  .section-title{font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-  .card{background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:center;gap:10px;transition:all 0.2s;text-decoration:none;color:inherit}
-  .card:hover{border-color:var(--cyan);transform:translateY(-2px)}
-  .card-icon{font-size:20px}
-  .card-name{font-size:13px;font-weight:600}
-  .card-sub{font-size:10px;color:var(--text-secondary);font-family:var(--font-mono)}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--alive);box-shadow:0 0 6px var(--alive-glow);margin-left:auto;flex-shrink:0}
-  .api-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
-  .api-item{background:var(--bg-1);border:1px solid var(--border);border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;font-family:var(--font-mono)}
-  .api-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-  .api-ms{margin-left:auto;color:var(--text-secondary);font-size:11px}
-  @media(max-width:640px){.container{padding:12px}.metrics{grid-template-columns:repeat(2,1fr)}.grid,.api-grid{grid-template-columns:1fr}}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:12px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+  /* TOPBAR */
+  #topbar{display:flex;align-items:center;gap:10px;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;height:44px}
+  #topbar .logo{color:var(--cyan);font-size:14px;font-weight:700;letter-spacing:2px;white-space:nowrap}
+  #topbar .logo span{color:var(--gold)}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:99px;border:1px solid var(--border);font-size:10px;color:var(--dim);white-space:nowrap}
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:var(--dim);flex-shrink:0}
+  .pill.ok .dot{background:var(--green);box-shadow:0 0 4px var(--green)}.pill.ok{color:var(--green);border-color:#1a3a2a}
+  .pill.err .dot{background:var(--red);box-shadow:0 0 4px var(--red)}.pill.err{color:var(--red);border-color:#3a1a1a}
+  .pill.warn .dot{background:var(--gold);box-shadow:0 0 4px var(--gold)}.pill.warn{color:var(--gold);border-color:#3a2a1a}
+  #topbar .spacer{flex:1}
+  #clock{color:var(--dim);font-size:10px}
+
+  /* LAYOUT */
+  #layout{display:flex;flex:1;overflow:hidden}
+
+  /* SIDEBAR */
+  #sidebar{width:196px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+  .nav-section{padding:6px 0;border-bottom:1px solid var(--border)}
+  .nav-header{padding:4px 14px;font-size:9px;letter-spacing:2px;color:var(--dim)}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:5px 14px;cursor:pointer;color:var(--text);text-decoration:none;font-size:11px;transition:background .12s,color .12s;border-left:2px solid transparent}
+  .nav-item:hover,.nav-item.active{background:var(--bg3);color:var(--cyan);border-left-color:var(--cyan)}
+  .nav-ico{font-size:13px;width:16px;text-align:center}
+  .nav-badge{margin-left:auto;font-size:9px;padding:1px 5px;border-radius:4px;background:var(--bg);color:var(--dim)}
+  .nav-badge.live{background:#0d2a1a;color:var(--green)}
+
+  /* MAIN */
+  #main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+  /* TABS */
+  #tabs{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
+  .tab{padding:4px 12px;cursor:pointer;font-size:10px;letter-spacing:1px;color:var(--dim);border-bottom:2px solid transparent;transition:color .12s,border-color .12s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+
+  /* CONTENT */
+  #content{flex:1;overflow:hidden;display:flex}
+  #canvas-area{flex:1;overflow-y:auto;padding:10px}
+
+  /* DETAIL */
+  #detail{width:240px;flex-shrink:0;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  #detail-hdr{padding:8px 12px;border-bottom:1px solid var(--border);font-size:9px;color:var(--dim);letter-spacing:1px}
+  #detail-body{flex:1;overflow-y:auto;padding:10px 12px}
+  .dsec{margin-bottom:10px}
+  .dsec h4{font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:4px}
+  .ditem{padding:3px 0;font-size:10px;color:var(--text);border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+  .ditem:last-child{border-bottom:none}
+  .ditem a{color:var(--cyan);text-decoration:none}
+  .ditem a:hover{text-decoration:underline}
+
+  /* CARDS / GRIDS */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px}
+  .card-title{font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:6px}
+  .card-val{font-size:18px;color:var(--cyan);font-weight:700}
+  .card-sub{font-size:9px;color:var(--dim);margin-top:2px}
+  .srow{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--border)}
+  .srow:last-child{border-bottom:none}
+  .slbl{color:var(--dim);font-size:10px}
+  .sval{color:var(--text);font-size:10px}
+  .sval.ok{color:var(--green)}.sval.warn{color:var(--gold)}.sval.err{color:var(--red)}
+
+  /* SVG FRAME */
+  #svg-frame{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;min-height:320px;display:flex;align-items:center;justify-content:center;position:relative;overflow:auto}
+  #svg-frame svg,#svg-frame img{max-width:100%;border-radius:4px}
+  #svg-lbl{position:absolute;top:8px;left:12px;font-size:9px;color:var(--dim);letter-spacing:1px}
+  #svg-rfr{position:absolute;top:6px;right:10px;background:var(--bg);border:1px solid var(--border);color:var(--cyan);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:9px;font-family:var(--font)}
+  #svg-rfr:hover{background:var(--bg3)}
+
+  /* GALLERY */
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
+  .thumb{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:5px;cursor:pointer;transition:border-color .12s;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .thumb:hover{border-color:var(--cyan)}
+  .thumb img{width:100%;height:56px;object-fit:contain;border-radius:2px}
+  .thumb .fn{font-size:8px;color:var(--dim);text-align:center;word-break:break-all}
+
+  /* SKILL CARDS */
+  #skill-list{display:flex;flex-direction:column;gap:4px}
+  .skcard{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:7px 10px;cursor:pointer;transition:border-color .12s}
+  .skcard:hover{border-color:var(--cyan)}
+  .skid{color:var(--cyan);font-size:10px;font-weight:700}
+  .skname{color:var(--text);font-size:10px}
+  .sksrc{font-size:9px;color:var(--purple);margin-top:1px}
+  .sktags{margin-top:3px;display:flex;gap:3px;flex-wrap:wrap}
+  .tag{font-size:8px;padding:1px 5px;border-radius:3px;background:#1a1040;color:var(--purple)}
+
+  /* INPUTS */
+  .row{display:flex;gap:6px;margin-bottom:8px}
+  .inp{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:4px;font-family:var(--font);font-size:11px;outline:none}
+  .inp:focus{border-color:var(--cyan)}
+  .btn{background:var(--bg3);border:1px solid var(--border);color:var(--cyan);padding:5px 12px;border-radius:4px;cursor:pointer;font-family:var(--font);font-size:10px;transition:background .12s}
+  .btn:hover{background:var(--bg2);border-color:var(--cyan)}
+  .btn.p{background:#0d2a2a;border-color:var(--cyan)}
+  .pbar{background:var(--bg);border-radius:3px;height:6px;overflow:hidden;margin-top:4px}
+  .pfill{height:100%;border-radius:3px;background:var(--cyan);transition:width .5s}
+  .pfill.g{background:var(--green)}.pfill.r{background:var(--red)}.pfill.gold{background:var(--gold)}
+
+  /* TOAST */
+  #toast{position:fixed;bottom:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:5px}
+  .tmsg{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 13px;font-size:11px;animation:fi .2s ease}
+  .tmsg.ok{border-color:var(--green);color:var(--green)}.tmsg.err{border-color:var(--red);color:var(--red)}
+  @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>Operations <span>Hub</span></h1>
-  <div class="subtitle">Live services, treasury, agents, skills — real-time overview</div>
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo">BRIDGE<span>OS</span></div>
+  <div style="color:var(--border)">|</div>
+  <div class="pill" id="p-api"><div class="dot"></div>API</div>
+  <div class="pill" id="p-svg"><div class="dot"></div>SVG</div>
+  <div class="pill" id="p-econ"><div class="dot"></div>ECON</div>
+  <div class="pill" id="p-trs"><div class="dot"></div>TREASURY</div>
+  <div class="pill" id="p-swarm"><div class="dot"></div>SWARM</div>
+  <div class="spacer"></div>
+  <div id="tb-stats" style="color:var(--dim);font-size:10px;margin-right:8px"></div>
+  <div id="clock"></div>
+</div>
 
-  <div class="metrics">
-    <div class="metric"><div class="metric-val" id="m-svc">—</div><div class="metric-label">Services</div></div>
-    <div class="metric"><div class="metric-val" id="m-treasury">—</div><div class="metric-label">Treasury</div></div>
-    <div class="metric"><div class="metric-val" id="m-agents">—</div><div class="metric-label">Agents</div></div>
-    <div class="metric"><div class="metric-val" id="m-skills">—</div><div class="metric-label">Skills</div></div>
-    <div class="metric"><div class="metric-val" id="m-pages">—</div><div class="metric-label">Routes (24h)</div></div>
-    <div class="metric"><div class="metric-val" id="m-events">—</div><div class="metric-label">Events (24h)</div></div>
+<!-- LAYOUT -->
+<div id="layout">
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="nav-section">
+    <div class="nav-header">OVERVIEW</div>
+    <a class="nav-item active" href="#" onclick="sw('overview')"><span class="nav-ico">⬡</span>Live Map<span class="nav-badge live" id="nb-live">●</span></a>
+    <a class="nav-item" href="#" onclick="sw('treasury')"><span class="nav-ico">◈</span>Treasury</a>
+    <a class="nav-item" href="#" onclick="sw('swarm')"><span class="nav-ico">⬢</span>Swarm</a>
   </div>
-
-  <div class="section">
-    <div class="section-title">Services</div>
-    <div class="grid" id="svc-grid"></div>
+  <div class="nav-section">
+    <div class="nav-header">SKILLS</div>
+    <a class="nav-item" href="#" onclick="sw('skills')"><span class="nav-ico">⚡</span>Skill Registry<span class="nav-badge" id="nb-sk">0</span></a>
+    <a class="nav-item" href="#" onclick="sw('vis')"><span class="nav-ico">◎</span>SVG Visualizer</a>
+    <a class="nav-item" href="#" onclick="sw('yt')"><span class="nav-ico">▶</span>YouTube Discover</a>
   </div>
-
-  <div class="section">
-    <div class="section-title">Quick Access</div>
-    <div class="grid" id="quick-grid"></div>
+  <div class="nav-section">
+    <div class="nav-header">ASSETS · E:\A</div>
+    <a class="nav-item" href="#" onclick="sw('output')"><span class="nav-ico">◆</span>Build Output<span class="nav-badge" id="nb-out">0</span></a>
+    <a class="nav-item" href="/output/" target="_blank"><span class="nav-ico">📁</span>Output Dir</a>
+    <a class="nav-item" href="/assets/logos/supac_logo.svg" target="_blank"><span class="nav-ico">🖼</span>Logos</a>
+    <a class="nav-item" href="/index.json" target="_blank"><span class="nav-ico">🗂</span>SVG Index</a>
+    <a class="nav-item" href="/view-logs.html" target="_blank"><span class="nav-ico">📋</span>Log Viewer</a>
   </div>
-
-  <div class="section">
-    <div class="section-title">API Health</div>
-    <div class="api-grid" id="api-grid"></div>
+  <div class="nav-section">
+    <div class="nav-header">APPS</div>
+    <a class="nav-item" href="/docs" target="_blank"><span class="nav-ico">🔌</span>API Docs</a>
+    <a class="nav-item" href="/api/svg" target="_blank"><span class="nav-ico">🎨</span>SVG Engine</a>
+    <a class="nav-item" href="/" target="_blank"><span class="nav-ico">🌐</span>Frontend</a>
+    <a class="nav-item" href="/live-map" target="_blank"><span class="nav-ico">🗺</span>Live Map API</a>
+    <a class="nav-item" href="/ban" target="_blank" title="Task Mesh scaffold (port 8002)"><span class="nav-ico">⚙</span>Task Mesh</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-header">ECONOMY</div>
+    <a class="nav-item" href="#" onclick="sw('econ')"><span class="nav-ico">⟁</span>Circuit Breaker</a>
+    <a class="nav-item" href="#" onclick="sw('ubi')"><span class="nav-ico">◐</span>UBI System</a>
   </div>
 </div>
 
-<script src="/bridge-nav.js"></script>
+<!-- MAIN -->
+<div id="main">
+  <div id="tabs">
+    <div class="tab active" id="t-overview" onclick="sw('overview')">LIVE MAP</div>
+    <div class="tab" id="t-treasury"         onclick="sw('treasury')">TREASURY</div>
+    <div class="tab" id="t-skills"           onclick="sw('skills')">SKILLS</div>
+    <div class="tab" id="t-vis"              onclick="sw('vis')">SVG VIS</div>
+    <div class="tab" id="t-yt"               onclick="sw('yt')">YOUTUBE</div>
+    <div class="tab" id="t-output"           onclick="sw('output')">BUILD OUTPUT</div>
+    <div class="tab" id="t-swarm"            onclick="sw('swarm')">SWARM</div>
+    <div class="tab" id="t-econ"             onclick="sw('econ')">ECON</div>
+    <div class="tab" id="t-ubi"              onclick="sw('ubi')">UBI</div>
+  </div>
+  <div id="content">
+    <div id="canvas-area">
+
+      <!-- ══ OVERVIEW ══ -->
+      <div id="pane-overview">
+        <div class="grid3">
+          <div class="card"><div class="card-title">BACKEND API</div><div class="card-val" id="ov-api">—</div><div class="card-sub" id="ov-api-s">connecting…</div></div>
+          <div class="card"><div class="card-title">SVG ENGINE</div><div class="card-val" id="ov-svg">—</div><div class="card-sub" id="ov-svg-s">port 7070</div></div>
+          <div class="card"><div class="card-title">SKILLS LOADED</div><div class="card-val" id="ov-sk">—</div><div class="card-sub">in engine registry</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card"><div class="card-title">LIVE MAP</div><div id="ov-lm" style="margin-top:4px"></div></div>
+          <div class="card"><div class="card-title">TREASURY SNAPSHOT</div><div id="ov-tr" style="margin-top:4px"></div></div>
+        </div>
+        <div class="grid2">
+          <div class="card"><div class="card-title">SVG ENGINE TELEMETRY</div><div id="ov-tele" style="margin-top:4px"></div></div>
+          <div class="card"><div class="card-title">RECENT BUILDS · E:\A\output</div><div id="ov-builds" style="margin-top:4px"></div></div>
+        </div>
+      </div>
+
+      <!-- ══ TREASURY ══ -->
+      <div id="pane-treasury" style="display:none">
+        <div class="grid2">
+          <div class="card"><div class="card-title">TOTAL BALANCE</div><div class="card-val" id="tr-tot">—</div><div class="card-sub" id="tr-txc">— transactions</div></div>
+          <div class="card"><div class="card-title">LAST TX</div><div class="card-val" style="font-size:13px" id="tr-last">—</div><div class="card-sub" id="tr-last-ts">—</div></div>
+        </div>
+        <div class="card" style="margin-top:8px"><div class="card-title">BUCKETS</div><div id="tr-bkts" style="margin-top:6px"></div></div>
+        <div class="card" style="margin-top:8px">
+          <div class="card-title">INGEST REVENUE</div>
+          <div class="row" style="margin-top:6px">
+            <input class="inp" id="tr-amt" type="number" placeholder="amount (BRDG)" style="width:150px;flex:none">
+            <input class="inp" id="tr-src" type="text" placeholder="source (e.g. marketplace)">
+            <button class="btn p" onclick="ingestRev()">INGEST</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SKILLS ══ -->
+      <div id="pane-skills" style="display:none">
+        <div class="row">
+          <input class="inp" id="sk-filter" placeholder="filter by id, name, tag…" oninput="filterSk()">
+          <button class="btn" onclick="loadSk()">REFRESH</button>
+        </div>
+        <div id="skill-list"></div>
+      </div>
+
+      <!-- ══ SVG VISUALIZER ══ -->
+      <div id="pane-vis" style="display:none">
+        <div class="row">
+          <input class="inp" id="vis-id" placeholder="skill id (e.g. bridge.economy)">
+          <button class="btn p" onclick="doVis()">VISUALIZE</button>
+          <button class="btn" onclick="doExec()">EXECUTE</button>
+          <button class="btn" onclick="doGraph()">GRAPH</button>
+        </div>
+        <div id="svg-frame">
+          <div id="svg-lbl">SVG ENGINE · PORT 7070</div>
+          <button id="svg-rfr" onclick="doRefresh()">↺</button>
+          <div id="svg-c" style="color:var(--dim)">Select a skill to visualize</div>
+        </div>
+        <div id="exec-out" style="margin-top:8px"></div>
+      </div>
+
+      <!-- ══ YOUTUBE ══ -->
+      <div id="pane-yt" style="display:none">
+        <div class="card">
+          <div class="card-title">SEARCH YOUTUBE FOR SKILLS</div>
+          <div class="row" style="margin-top:6px">
+            <input class="inp" id="yt-q" placeholder="e.g. fastapi tutorial, blockchain defi…">
+            <input class="inp" id="yt-lim" type="number" value="6" style="width:55px;flex:none">
+            <button class="btn p" onclick="ytSrch()">SEARCH</button>
+          </div>
+        </div>
+        <div id="yt-res" style="margin-top:8px"></div>
+        <div class="card" style="margin-top:8px">
+          <div class="card-title">LEARN FROM VIDEO ID</div>
+          <div class="row" style="margin-top:6px">
+            <input class="inp" id="yt-vid" placeholder="video_id (e.g. dQw4w9WgXcQ)">
+            <label style="display:flex;align-items:center;gap:4px;color:var(--dim);font-size:10px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="yt-save"> SAVE TO MEMORY</label>
+            <button class="btn p" onclick="ytLearn()">LEARN</button>
+          </div>
+          <div id="yt-lr" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <!-- ══ OUTPUT ══ -->
+      <div id="pane-output" style="display:none">
+        <div class="row">
+          <span style="color:var(--dim);font-size:10px;padding:5px 0">Recent SVG builds from E:\A\output\</span>
+          <div style="flex:1"></div>
+          <button class="btn" onclick="loadOut()">REFRESH</button>
+        </div>
+        <div id="output-gallery" class="gallery"></div>
+      </div>
+
+      <!-- ══ SWARM ══ -->
+      <div id="pane-swarm" style="display:none">
+        <div class="grid2">
+          <div class="card"><div class="card-title">HEALTH SCORE</div><div class="card-val" id="sw-h">—</div><div class="card-sub" id="sw-hs">—</div></div>
+          <div class="card"><div class="card-title">METRICS</div><div id="sw-m" style="margin-top:4px"></div></div>
+        </div>
+        <div class="card" style="margin-top:8px"><div class="card-title">SWARM VISUALIZATION</div><div id="sw-svg" style="text-align:center;margin-top:6px"></div></div>
+      </div>
+
+      <!-- ══ ECON ══ -->
+      <div id="pane-econ" style="display:none">
+        <div class="grid2">
+          <div class="card"><div class="card-title">CIRCUIT BREAKER</div><div class="card-val" id="ec-state">—</div><div class="card-sub" id="ec-sub">—</div></div>
+          <div class="card"><div class="card-title">ACTIONS</div><button class="btn" style="margin-top:8px;width:100%" onclick="resetCB()">RESET CIRCUIT BREAKER</button></div>
+        </div>
+        <div class="card" style="margin-top:8px"><div class="card-title">ECONOMY VISUALIZATION</div><div id="ec-svg" style="text-align:center;margin-top:6px"></div></div>
+      </div>
+
+      <!-- ══ UBI ══ -->
+      <div id="pane-ubi" style="display:none">
+        <div class="card"><div class="card-title">UBI STATUS</div><div id="ubi-s" style="margin-top:4px">Loading…</div></div>
+        <div class="card" style="margin-top:8px">
+          <div class="card-title">CLAIM UBI</div>
+          <div class="row" style="margin-top:6px">
+            <input class="inp" id="ubi-w" placeholder="wallet address 0x…">
+            <button class="btn p" onclick="claimUbi()">CLAIM</button>
+          </div>
+          <div id="ubi-r" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+    </div><!-- /canvas-area -->
+
+    <!-- DETAIL PANEL -->
+    <div id="detail">
+      <div id="detail-hdr">SYSTEM LINKS</div>
+      <div id="detail-body">
+        <div class="dsec">
+          <h4>SERVICES</h4>
+          <div class="ditem"><span>Backend API</span><a href="/health" target="_blank">Brain :8000</a></div>
+          <div class="ditem"><span>SVG Engine</span><a href="/skills" target="_blank">Brain (unified)</a></div>
+          <div class="ditem"><span>Frontend</span><a href="/" target="_blank">Gateway :8080</a></div>
+          <div class="ditem"><span>API Docs</span><a href="/docs" target="_blank">Swagger ↗</a></div>
+        </div>
+        <div class="dsec">
+          <h4>API ENDPOINTS</h4>
+          <div class="ditem"><a href="/health" target="_blank">health</a></div>
+          <div class="ditem"><a href="/live-map" target="_blank">live-map</a></div>
+          <div class="ditem"><a href="/skills/definitions" target="_blank">skill defs</a></div>
+          <div class="ditem"><a href="/treasury/summary" target="_blank">treasury</a></div>
+          <div class="ditem"><a href="/econ/circuit-breaker" target="_blank">circuit breaker</a></div>
+          <div class="ditem"><a href="/swarm/health" target="_blank">swarm health</a></div>
+        </div>
+        <div class="dsec">
+          <h4>SVG ENGINE</h4>
+          <div class="ditem"><a href="/api/svg/skills" target="_blank">skill list</a></div>
+          <div class="ditem"><a href="/api/svg/graph" target="_blank">skill graph</a></div>
+          <div class="ditem"><a href="/api/svg/telemetry" target="_blank">telemetry</a></div>
+          <div class="ditem"><a href="/api/svg/teach/bridge.economy" target="_blank">economy SVG</a></div>
+          <div class="ditem"><a href="/api/svg/teach/bridge.youtube" target="_blank">youtube SVG</a></div>
+        </div>
+        <div class="dsec">
+          <h4>ASSETS · E:\A</h4>
+          <div class="ditem"><a href="/output/" target="_blank">output/</a></div>
+          <div class="ditem"><a href="/assets/logos/" target="_blank">logos/</a></div>
+          <div class="ditem"><a href="/view-logs.html" target="_blank">Log Viewer</a></div>
+          <div class="ditem"><a href="/index.json" target="_blank">index.json</a></div>
+          <div class="ditem"><a href="/ban-live-console.svg" target="_blank">ban-live-console</a></div>
+          <div class="ditem"><a href="/ban-ultra.svg" target="_blank">ban-ultra</a></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /layout -->
+<div id="toast"></div>
+
 <script>
-(function(){
-  var svcs = [
-    {n:'ABAAS Control',i:'🏠',p:':3000',u:'https://abaas.bridge-ai-os.com'},
-    {n:'GOD MODE',i:'🔮',p:':3001',u:'https://god.bridge-ai-os.com'},
-    {n:'Super Brain',i:'🧠',p:':8000',u:'https://brain.bridge-ai-os.com'},
-    {n:'Gateway',i:'🌐',p:':8080',u:'https://dev.bridge-ai-os.com'},
-    {n:'SVG Engine',i:'🎨',p:':7070',u:'https://svg.bridge-ai-os.com'},
-    {n:'LiveWall',i:'🖼',p:':8001',u:'https://live.bridge-ai-os.com'},
-    {n:'Terminal',i:'💻',p:':5002',u:'https://terminal.bridge-ai-os.com'},
-    {n:'Grafana',i:'📊',p:':3003',u:'https://grafana.bridge-ai-os.com'},
-    {n:'Auth',i:'🔐',p:':3030',u:'https://auth.bridge-ai-os.com'},
-    {n:'FastAPI',i:'⚡',p:':8081',u:'https://api.bridge-ai-os.com'}
-  ];
-  var links = [
-    {n:'CRM',i:'👥',u:'/crm.html'},{n:'Invoicing',i:'📄',u:'/invoicing.html'},{n:'Marketing',i:'📈',u:'/marketing.html'},
-    {n:'Legal',i:'⚖️',u:'/legal.html'},{n:'Support',i:'🎫',u:'/tickets.html'},{n:'Treasury',i:'💰',u:'/treasury-dashboard.html'},
-    {n:'Agents',i:'🤖',u:'/agents.html'},{n:'50 Apps',i:'📱',u:'/50-applications.html'},{n:'Pricing',i:'💎',u:'/pricing.html'},
-    {n:'Docs',i:'📚',u:'/docs.html'},{n:'Status',i:'✅',u:'/system-status-dashboard.html'},{n:'Landing',i:'🚀',u:'/landing.html'}
-  ];
-  var apis = [
-    '/api/health','/api/treasury','/api/swarm/agents','/api/ehsa/dashboard',
-    '/api/crm/contacts','/api/invoices','/api/marketing/funnel','/api/analytics/summary',
-    '/api/tools','/api/intelligence/route','/api/pricing','/api/compliance/status'
-  ];
+const API='', SVG='';
+let _tab='overview', _visSk='', _visMode='teach', _allSk=[];
 
-  function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt)e.textContent=txt;return e}
+// CLOCK
+setInterval(()=>document.getElementById('clock').textContent=new Date().toLocaleTimeString(),1000);
 
-  // Render services
-  var sg=document.getElementById('svc-grid');
-  svcs.forEach(function(s){
-    var a=document.createElement('a');a.className='card';a.href=s.u;a.target='_blank';
-    a.appendChild(el('span','card-icon',s.i));
-    var info=el('div','');
-    info.appendChild(el('div','card-name',s.n));
-    info.appendChild(el('div','card-sub',s.p));
-    a.appendChild(info);
-    a.appendChild(el('span','dot'));
-    sg.appendChild(a);
-  });
+// TOAST
+function toast(msg,t=''){
+  const e=document.createElement('div');e.className='tmsg '+t;e.textContent=msg;
+  document.getElementById('toast').appendChild(e);setTimeout(()=>e.remove(),3500);
+}
 
-  // Render quick links
-  var qg=document.getElementById('quick-grid');
-  links.forEach(function(l){
-    var a=document.createElement('a');a.className='card';a.href=l.u;
-    a.appendChild(el('span','card-icon',l.i));
-    a.appendChild(el('div','card-name',l.n));
-    qg.appendChild(a);
-  });
+// PILL
+function pill(id,s,lbl){
+  const e=document.getElementById(id);if(!e)return;
+  e.className='pill '+s;e.innerHTML=`<div class="dot"></div>${lbl}`;
+}
 
-  // Fetch metrics
-  function load(){
-    fetch('/api/treasury/status').then(function(r){return r.json()}).then(function(d){
-      document.getElementById('m-treasury').textContent='$'+Math.round(d.balance||0).toLocaleString();
-    }).catch(function(){});
-    fetch('/api/swarm/agents').then(function(r){return r.json()}).then(function(d){
-      document.getElementById('m-agents').textContent=(d.agents||[]).length;
-    }).catch(function(){});
-    fetch('/api/analytics/summary').then(function(r){return r.json()}).then(function(d){
-      document.getElementById('m-pages').textContent=d.last_24h?d.last_24h.routes:'0';
-      document.getElementById('m-events').textContent=d.last_24h?d.last_24h.total:'0';
-    }).catch(function(){});
-    fetch('/api/tools').then(function(r){return r.json()}).then(function(d){
-      document.getElementById('m-skills').textContent=d.tools?(d.tools.length||d.count||0):0;
-    }).catch(function(){});
-    document.getElementById('m-svc').textContent=svcs.length;
-  }
+// FETCH
+async function api(path,o){const r=await fetch(API+path,o);if(!r.ok)throw new Error(r.status);return r.json();}
+async function svgTxt(path){const r=await fetch(SVG+path);if(!r.ok)throw new Error(r.status);return r.text();}
 
-  // Test APIs
-  function testAPIs(){
-    var grid=document.getElementById('api-grid');
-    grid.textContent='';
-    apis.forEach(function(path){
-      var item=el('div','api-item');
-      var dot=el('span','api-dot');
-      dot.style.background='var(--degraded)';
-      item.appendChild(dot);
-      item.appendChild(el('span','',path));
-      var ms=el('span','api-ms','...');
-      item.appendChild(ms);
-      grid.appendChild(item);
-      var start=Date.now();
-      fetch(path,{signal:AbortSignal.timeout(5000)}).then(function(r){
-        var t=Date.now()-start;
-        dot.style.background=r.ok?'var(--alive)':'var(--offline)';
-        ms.textContent=t+'ms';
-      }).catch(function(){
-        dot.style.background='var(--offline)';
-        ms.textContent='ERR';
-      });
-    });
-  }
+// STAT ROW
+const SR=(l,v,c='')=>`<div class="srow"><span class="slbl">${l}</span><span class="sval ${c}">${v}</span></div>`;
 
-  load();testAPIs();
-  setInterval(load,15000);
-  setInterval(testAPIs,30000);
-})();
+// TAB SWITCH
+function sw(id){
+  document.querySelectorAll('[id^="pane-"]').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const p=document.getElementById('pane-'+id);if(p)p.style.display='';
+  const t=document.getElementById('t-'+id);if(t)t.classList.add('active');
+  _tab=id;
+  if(id==='treasury')loadTr();
+  if(id==='skills')loadSk();
+  if(id==='output')loadOut();
+  if(id==='swarm')loadSwarm();
+  if(id==='econ')loadEcon();
+  if(id==='ubi')loadUbi();
+  return false;
+}
+
+// ── OVERVIEW ──
+async function poll(){
+  // Backend
+  try{
+    const h=await api('/health');
+    pill('p-api','ok','API');
+    document.getElementById('ov-api').textContent=(h.status||'OK').toUpperCase();
+    document.getElementById('ov-api-s').textContent=h.service||'bridge-api';
+  }catch{pill('p-api','err','API');document.getElementById('ov-api').textContent='OFFLINE';}
+
+  // SVG Engine
+  try{
+    const t=await fetch(SVG+'/telemetry').then(r=>r.json());
+    pill('p-svg','ok','SVG');
+    const sk=t.skills_loaded??0;
+    document.getElementById('ov-svg').textContent=sk;
+    document.getElementById('ov-svg-s').textContent=`p50 ${t.latency_p50_ms??'—'}ms · p95 ${t.latency_p95_ms??'—'}ms`;
+    document.getElementById('ov-sk').textContent=sk;
+    document.getElementById('nb-sk').textContent=sk;
+    document.getElementById('ov-tele').innerHTML=
+      SR('Skills',t.skills_loaded??0)+SR('Executions',t.total_executions??0)+
+      SR('p50',`${t.latency_p50_ms??'—'} ms`)+SR('p95',`${t.latency_p95_ms??'—'} ms`);
+    document.getElementById('tb-stats').textContent=`SVG ${sk} skills · p50 ${t.latency_p50_ms??'—'}ms`;
+  }catch{pill('p-svg','err','SVG');document.getElementById('ov-svg').textContent='OFFLINE';}
+
+  // Live map
+  try{
+    const lm=await api('/live-map');
+    const snap=lm.treasury||lm.treasury_snap||{};
+    document.getElementById('ov-lm').innerHTML=
+      SR('State ver',lm.state_version??'—')+SR('Capabilities',Object.keys(lm.capabilities||{}).length)+
+      SR('Degradation',lm.degradation??'—')+SR('Circuit breaker',lm.circuit_breaker_tripped?'TRIPPED':'NORMAL',lm.circuit_breaker_tripped?'err':'ok');
+    document.getElementById('ov-tr').innerHTML=
+      SR('Total BRDG',(snap.total_brdg??0).toFixed?.(4)??'—')+
+      SR('Transactions',snap.total_tx??'—')+
+      SR('Last TX',snap.last_tx?new Date(snap.last_tx).toLocaleTimeString():'—');
+    pill('p-econ',lm.circuit_breaker_tripped?'err':'ok','ECON');
+  }catch{document.getElementById('ov-lm').innerHTML=SR('API','offline','err');}
+
+  // Treasury pill
+  try{
+    const ts=await api('/treasury/summary');
+    pill('p-trs','ok','TREASURY');
+    document.getElementById('ov-tr').innerHTML=
+      SR('Total BRDG',(ts.total_collected_brdg??0).toFixed(4))+
+      SR('Transactions',ts.total_tx??'—')+
+      SR('UBI bucket',(ts.buckets?.ubi??0).toFixed(4))+
+      SR('Ops bucket',(ts.buckets?.ops??0).toFixed(4));
+  }catch{pill('p-trs','warn','TREASURY');}
+
+  // Recent builds
+  try{
+    const html=await fetch('/output/').then(r=>r.text());
+    const files=[...html.matchAll(/href="([^"]+\.svg)"/g)].map(m=>m[1]).reverse().slice(0,4);
+    document.getElementById('nb-out').textContent=files.length;
+    document.getElementById('ov-builds').innerHTML=files.map(f=>
+      `<div class="srow"><span class="slbl">${f}</span><a href="/output/${f}" target="_blank" style="color:var(--cyan);font-size:9px">VIEW</a></div>`
+    ).join('')||SR('No builds yet','—');
+  }catch{document.getElementById('ov-builds').innerHTML=SR('Output dir','offline','err');}
+}
+
+// ── TREASURY ──
+async function loadTr(){
+  try{
+    const ts=await api('/treasury/summary');
+    document.getElementById('tr-tot').textContent=(ts.total_collected_brdg??0).toFixed(4)+' BRDG';
+    document.getElementById('tr-txc').textContent=(ts.total_tx??0)+' transactions';
+    document.getElementById('tr-last').textContent=ts.last_tx_amount?.toFixed(4)??'—';
+    document.getElementById('tr-last-ts').textContent=ts.last_tx_ts?new Date(ts.last_tx_ts).toLocaleString():'—';
+    const bk=ts.buckets||{},tot=ts.total_collected_brdg||1;
+    document.getElementById('tr-bkts').innerHTML=Object.entries(bk).map(([k,v])=>{
+      const pct=Math.min((v/tot)*100,100);
+      return `<div style="margin-bottom:7px">${SR(k.toUpperCase(),(v??0).toFixed(4)+' BRDG')}<div class="pbar"><div class="pfill" style="width:${pct}%"></div></div></div>`;
+    }).join('')||'<div style="color:var(--dim);font-size:10px">No buckets</div>';
+    pill('p-trs','ok','TREASURY');
+  }catch{document.getElementById('tr-tot').textContent='OFFLINE';toast('Treasury API unavailable','err');}
+}
+async function ingestRev(){
+  const amt=parseFloat(document.getElementById('tr-amt').value);
+  const src=document.getElementById('tr-src').value.trim();
+  if(!amt||!src)return toast('Enter amount + source','err');
+  try{await api('/treasury/ingest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount_brdg:amt,source:src})});
+  toast('Revenue ingested ✓','ok');loadTr();}
+  catch(e){toast('Ingest failed: '+e.message,'err');}
+}
+
+// ── SKILLS ──
+async function loadSk(){
+  _allSk=[];
+  try{
+    const r=await fetch(SVG+'/skills').then(r=>r.json()).catch(()=>[]);
+    (Array.isArray(r)?r:r.skills||[]).forEach(s=>_allSk.push({...s,_o:'svg-engine'}));
+    document.getElementById('nb-sk').textContent=_allSk.length;
+  }catch{}
+  try{
+    const d=await api('/skills/definitions');
+    (d.definitions||[]).forEach(s=>{if(!_allSk.find(x=>x.id===s.id))_allSk.push({...s,_o:'backend'});});
+  }catch{}
+  renderSk(_allSk);
+}
+function filterSk(){
+  const q=document.getElementById('sk-filter').value.toLowerCase();
+  renderSk(q?_allSk.filter(s=>(s.id||'').includes(q)||(s.name||'').toLowerCase().includes(q)||(s.tags||[]).some(t=>t.includes(q))):_allSk);
+}
+function renderSk(skills){
+  document.getElementById('skill-list').innerHTML=skills.map(s=>`
+    <div class="skcard" onclick="toVis('${s.id}')">
+      <div class="skid">${s.id||'—'}</div>
+      <div class="skname">${s.name||s.skill_name||'—'}</div>
+      <div class="sksrc">${s._o||s.source||'unknown'}</div>
+      <div class="sktags">${(s.tags||[]).slice(0,6).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    </div>`).join('')||'<div style="color:var(--dim);padding:12px">No skills found</div>';
+}
+function toVis(id){document.getElementById('vis-id').value=id;sw('vis');doVis();}
+
+// ── SVG VIS ──
+async function doVis(){
+  const id=document.getElementById('vis-id').value.trim();if(!id)return toast('Enter skill id','err');
+  _visSk=id;_visMode='teach';
+  const c=document.getElementById('svg-c');c.innerHTML='<div style="color:var(--dim)">Loading…</div>';
+  try{c.innerHTML=await svgTxt('/teach/'+encodeURIComponent(id));}
+  catch{c.innerHTML=`<div style="color:var(--red)">Skill not in SVG engine: ${id}</div>`;}
+}
+async function doExec(){
+  const id=document.getElementById('vis-id').value.trim();if(!id)return toast('Enter skill id','err');
+  _visSk=id;_visMode='run';
+  try{
+    const d=await fetch(SVG+'/run/'+encodeURIComponent(id)).then(r=>r.json());
+    document.getElementById('exec-out').innerHTML=`<div class="card"><div class="card-title">EXECUTION · ${id}</div><pre style="font-size:10px;color:var(--cyan);overflow:auto;max-height:150px;margin-top:6px">${JSON.stringify(d,null,2)}</pre></div>`;
+    toast('Executed: '+id,'ok');
+  }catch(e){toast('Execute failed: '+e.message,'err');}
+}
+async function doGraph(){
+  _visMode='graph';const c=document.getElementById('svg-c');
+  c.innerHTML='<div style="color:var(--dim)">Loading graph…</div>';
+  try{c.innerHTML=await svgTxt('/graph');}
+  catch(e){c.innerHTML=`<div style="color:var(--red)">Graph unavailable: ${e.message}</div>`;}
+}
+function doRefresh(){
+  if(_visMode==='teach'&&_visSk)doVis();
+  else if(_visMode==='run'&&_visSk)doExec();
+  else doGraph();
+}
+
+// ── YOUTUBE ──
+async function ytSrch(){
+  const q=document.getElementById('yt-q').value.trim();
+  const lim=parseInt(document.getElementById('yt-lim').value)||6;
+  if(!q)return toast('Enter search query','err');
+  const el=document.getElementById('yt-res');el.innerHTML='<div style="color:var(--dim)">Searching…</div>';
+  try{
+    const res=await api(`/skills/youtube-search?q=${encodeURIComponent(q)}&limit=${lim}`);
+    if(!res.ok){el.innerHTML=`<div style="color:var(--red)">${res.reason||'Error'} — set YOUTUBE_API_KEY in .env</div>`;return;}
+    el.innerHTML=`<div class="card"><div class="card-title">RESULTS · ${res.count} videos</div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">
+      ${(res.results||[]).map(r=>`
+        <div class="skcard" onclick="document.getElementById('yt-vid').value='${r.video_id}'">
+          <div class="skid">${r.skill_id}</div>
+          <div class="skname">${r.title}</div>
+          <div class="sksrc">${r.channel} · <a href="${r.url}" target="_blank" onclick="event.stopPropagation()" style="color:var(--purple)">▶ YouTube</a></div>
+          <div class="sktags">${(r.tags||[]).slice(0,5).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        </div>`).join('')}
+      </div></div>`;
+    toast(`Found ${res.count} videos`,'ok');
+  }catch(e){el.innerHTML=`<div style="color:var(--red)">API error: ${e.message} — is YOUTUBE_API_KEY set?</div>`;}
+}
+async function ytLearn(){
+  const vid=document.getElementById('yt-vid').value.trim();
+  const save=document.getElementById('yt-save').checked;
+  if(!vid)return toast('Enter video_id','err');
+  const el=document.getElementById('yt-lr');el.innerHTML='<div style="color:var(--dim)">Learning…</div>';
+  try{
+    const res=await api('/skills/learn-from-youtube',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({video_id:vid,save})});
+    const s=res.skill_definition||{};
+    el.innerHTML=`<div class="card"><div class="card-title">LEARNED${res.saved?' · SAVED ✓':''}</div>
+      ${SR('ID',s.id||'—')}${SR('Name',s.name||'—')}${SR('Steps',(s.steps||[]).length)}
+      ${SR('Tags',(s.tags||[]).join(', '))}
+      <div style="color:var(--dim);font-size:10px;margin-top:6px">${(s.description||'').substring(0,200)}</div>
+      ${(s.steps||[]).length?`<div style="margin-top:8px"><div class="card-title">STEPS</div>${s.steps.map((st,i)=>SR(`${i+1}. ${st.title}`,st.detail||'')).join('')}</div>`:''}
+    </div>`;
+    toast('Skill learned'+(res.saved?' + saved':'')+': '+(s.id||vid),'ok');
+  }catch(e){el.innerHTML=`<div style="color:var(--red)">Failed: ${e.message}</div>`;}
+}
+
+// ── BUILD OUTPUT ──
+async function loadOut(){
+  const el=document.getElementById('output-gallery');el.innerHTML='<div style="color:var(--dim)">Loading…</div>';
+  try{
+    const html=await fetch('/output/').then(r=>r.text());
+    const files=[...html.matchAll(/href="([^"]+\.svg)"/g)].map(m=>m[1]).reverse().slice(0,30);
+    document.getElementById('nb-out').textContent=files.length;
+    el.innerHTML=files.map(f=>`<div class="thumb" onclick="window.open('/output/${f}','_blank')">
+      <img src="/output/${f}" loading="lazy" onerror="this.style.display='none'">
+      <div class="fn">${f}</div></div>`).join('')||'<div style="color:var(--dim);padding:12px">No SVG builds found</div>';
+  }catch{el.innerHTML='<div style="color:var(--red)">Output dir not served — open from E:\\A via local server</div>';}
+}
+
+// ── SWARM ──
+async function loadSwarm(){
+  try{
+    const s=await api('/swarm/health');
+    const sc=s.health_score??s.score??0;
+    const el=document.getElementById('sw-h');el.textContent=(sc*100).toFixed(1)+'%';
+    el.style.color=sc>0.8?'var(--green)':sc>0.5?'var(--gold)':'var(--red)';
+    document.getElementById('sw-hs').textContent=s.status||'—';
+    pill('p-swarm',sc>0.8?'ok':'warn','SWARM');
+    document.getElementById('sw-m').innerHTML=Object.entries(s.metrics||{}).map(([k,v])=>SR(k,typeof v==='number'?v.toFixed(3):v)).join('')||SR('No metrics','—');
+  }catch{document.getElementById('sw-h').textContent='OFFLINE';pill('p-swarm','err','SWARM');}
+  try{document.getElementById('sw-svg').innerHTML=await svgTxt('/teach/bridge.swarm');}catch{}
+}
+
+// ── ECON ──
+async function loadEcon(){
+  try{
+    const cb=await api('/econ/circuit-breaker');
+    const t=cb.tripped;
+    document.getElementById('ec-state').textContent=t?'TRIPPED':'NORMAL';
+    document.getElementById('ec-state').style.color=t?'var(--red)':'var(--green)';
+    document.getElementById('ec-sub').textContent=cb.reason||(t?'Trading halted':'All clear');
+    pill('p-econ',t?'err':'ok','ECON');
+  }catch{document.getElementById('ec-state').textContent='OFFLINE';}
+  try{document.getElementById('ec-svg').innerHTML=await svgTxt('/teach/bridge.economy');}catch{}
+}
+async function resetCB(){
+  try{await api('/econ/reset-breaker',{method:'POST'});toast('Circuit breaker reset ✓','ok');loadEcon();}
+  catch(e){toast('Reset failed (orchestrator auth required)','err');}
+}
+
+// ── UBI ──
+async function loadUbi(){
+  try{
+    const s=await api('/ubi/status');
+    document.getElementById('ubi-s').innerHTML=
+      SR('Total claimed',s.total_claimed??'—')+SR('Claimants',s.claimant_count??'—')+SR('Per claim',s.amount_per_claim??'—');
+  }catch{document.getElementById('ubi-s').textContent='UBI API offline';}
+}
+async function claimUbi(){
+  const w=document.getElementById('ubi-w').value.trim();if(!w)return toast('Enter wallet','err');
+  try{
+    const r=await api('/ubi/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet_address:w})});
+    document.getElementById('ubi-r').innerHTML=`<div class="card">${SR('Amount',r.amount??'—')}${SR('Status',r.status??'—')}</div>`;
+    toast('UBI claimed ✓','ok');
+  }catch(e){toast('Claim failed: '+e.message,'err');}
+}
+
+// BOOT
+poll();setInterval(poll,8000);
 </script>
 </body>
 </html>

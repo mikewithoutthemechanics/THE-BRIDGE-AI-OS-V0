@@ -4,13 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Executive Dashboard — Bridge AI OS</title>
-    <meta name="description" content="Executive Dashboard — C-Suite Analytics Overview">
-    <meta property="og:title" content="Executive Dashboard — Bridge AI OS">
-    <meta property="og:description" content="Executive Dashboard — C-Suite Analytics Overview">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/executive-dashboard.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/executive-dashboard.html">
   <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -28,7 +21,7 @@
     .key-placeholder { color:#d97706; }
     #refresh-btn { cursor:pointer; }
   </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body class="bg-slate-100 font-sans antialiased">
 
   <nav class="bg-slate-800 text-white px-4 py-3 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-lg">
@@ -42,7 +35,7 @@
       <li><a href="/join.html" class="hover:text-amber-300">Join</a></li>
       <li><a href="/settings.html" class="hover:text-amber-300">Settings</a></li>
       <li><a href="/docs.html" class="hover:text-amber-300">Docs</a></li>
-      <li><a href="/topology.html" class="hover:text-amber-300">System Map</a></li>
+      <li><a href="http://localhost:4201/system-map.html" target="_blank" class="hover:text-amber-300">System Map</a></li>
     </ul>
     <button id="refresh-btn" class="ml-4 text-slate-400 hover:text-amber-300 text-lg" title="Refresh">↻</button>
   </nav>
@@ -416,5 +409,5 @@
   setInterval(refreshAll, 20000);
 })();
   </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

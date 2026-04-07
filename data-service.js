@@ -36,17 +36,15 @@ exports.getTopology = async function() {
     { id: 'payments', label: 'Payments', port: 4000 },
   ];
 
-  for (const svc of services) {
+  await Promise.all(services.map(async (svc) => {
     let status = 'down';
     try {
       const r = await fetch(`http://localhost:${svc.port}/health`, { signal: AbortSignal.timeout(1000) });
       status = r.ok ? 'up' : 'degraded';
-    } catch (_) {
-      // Try just a TCP connect concept - just mark down
-    }
+    } catch (_) { /* service unreachable */ }
     nodes.push({ ...svc, status, type: 'service' });
     edges.push({ source: 'gateway', target: svc.id });
-  }
+  }));
 
   return { nodes, edges, interface_count: Object.keys(ifaces).length, ts: Date.now() };
 };

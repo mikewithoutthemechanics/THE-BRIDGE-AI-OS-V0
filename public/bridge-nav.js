@@ -135,4 +135,19 @@
   document.addEventListener('click', function() {
     document.querySelectorAll('.bn-group').forEach(function(g) { g.classList.remove('open'); });
   });
+
+  // Auto-inject PHERE design system if not already loaded
+  if (!document.getElementById('bridge-phere-css')) {
+    var phereLink = document.createElement('link');
+    phereLink.id = 'bridge-phere-css';
+    phereLink.rel = 'stylesheet';
+    phereLink.href = '/bridge-phere.css';
+    document.head.appendChild(phereLink);
+  }
+  if (!document.querySelector('script[src*="bridge-phere"]')) {
+    var phereScript = document.createElement('script');
+    phereScript.src = '/bridge-phere.js';
+    phereScript.defer = true;
+    document.head.appendChild(phereScript);
+  }
 })();

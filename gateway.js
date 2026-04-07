@@ -45,16 +45,20 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // ── REQUEST LOGGING MIDDLEWARE ────────────────────────────────────────────────
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const ms = Date.now() - start;
-    console.log(`[GATEWAY] ${req.method} ${req.path} — ${res.statusCode} (${ms}ms)`);
+if (process.env.NODE_ENV !== 'test') {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const ms = Date.now() - start;
+      console.log(`[GATEWAY] ${req.method} ${req.path} — ${res.statusCode} (${ms}ms)`);
+    });
+    next();
   });
-  next();
-});
+}
 
 app.use(express.static(ROOT));
+// Serve pages from the 'public/' subdirectory (crm, invoicing, marketing, legal, tickets, leadgen, etc.)
+app.use(express.static(path.join(ROOT, 'public')));
 
 // ── HEALTH ───────────────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {
@@ -106,7 +110,7 @@ setInterval(() => {
     treasuryBalance += delta;
     pushEvent(pick, { balance: +treasuryBalance.toFixed(2), delta, currency: 'USD' });
   }
-}, 5000);
+}, 5000).unref();
 
 app.get('/events/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
@@ -137,7 +141,7 @@ const orchAgents = agentNames.map(name => ({
 app.get('/orchestrator/status', (req, res) => {
   res.json({
     status: 'running',
-    agents: orchAgents.length,
+    agent_count: orchAgents.length,
     active_agents: orchAgents.filter(a => a.status === 'active').length,
     swarms: 2,
     queue_depth: Math.floor(Math.random() * 20),
@@ -186,7 +190,7 @@ app.post('/ask', async (req, res) => {
 // ── API: TOPOLOGY ─────────────────────────────────────────────────────────────
 app.get('/api/topology', async (req, res) => {
   try {
-    const r = await fetch('http://localhost:3000/topology');
+    const r = await fetch('http://localhost:3000/topology', { signal: AbortSignal.timeout(2000) });
     const j = await r.json();
     return res.json(j);
   } catch (_) {
@@ -269,7 +273,9 @@ app.get('/api/status', async (req, res) => {
       try {
         const r = await fetch(svc.url, { signal: AbortSignal.timeout(2000) });
         const latency_ms = Date.now() - t0;
-        return { id: svc.id, port: svc.port, status: r.ok ? 'up' : 'degraded', latency_ms };
+        // 403/401 means service is running but rejecting unauthenticated health probe — still "up"
+        const alive = r.ok || r.status === 403 || r.status === 401;
+        return { id: svc.id, port: svc.port, status: alive ? 'up' : 'degraded', latency_ms };
       } catch (_) {
         return { id: svc.id, port: svc.port, status: 'unreachable', latency_ms: Date.now() - t0 };
       }
@@ -324,18 +330,52 @@ for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
 const L1_AGENTS_URL = 'http://localhost:9000/api/agents';
 const L2_AGENTS_URL = 'http://192.168.110.203:9001/api/agents';
 
-async function fetchAgentsFrom(url, layer) {
-  try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(2000) });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const j = await r.json();
-    const agentList = Array.isArray(j.agents) ? j.agents
-      : Array.isArray(j) ? j
-      : Object.entries(j.agents || {}).map(([id, a]) => ({ id, ...a }));
-    return { status: 'up', layer, agents: agentList, count: agentList.length };
-  } catch (e) {
-    return { status: 'down', layer, agents: [], count: 0, error: e.message };
-  }
+// Uses http.request (not global fetch/undici) so sockets are destroyed
+// immediately on failure — prevents TCPWRAP handles leaking in test runs.
+// Both L1/L2 URLs are http:// — no https branch needed.
+function fetchAgentsFrom(url, layer) {
+  return new Promise((resolve) => {
+    const parsed  = new URL(url);
+    const options = {
+      hostname: parsed.hostname,
+      port:     Number(parsed.port) || 80,
+      path:     parsed.pathname + parsed.search,
+      method:   'GET',
+      headers:  { connection: 'close' },
+    };
+
+    const done = (result) => resolve(result);
+    const fail = (msg, r) => { if (r) r.destroy(); done({ status: 'down', layer, agents: [], count: 0, error: msg }); };
+
+    let req;
+    const timer = setTimeout(() => fail('timeout', req), 2000);
+    timer.unref();
+
+    try {
+      req = require('http').request(options, (res) => {
+        let raw = '';
+        res.on('data', (chunk) => { raw += chunk; });
+        res.on('end', () => {
+          clearTimeout(timer);
+          try {
+            const j         = JSON.parse(raw);
+            const agentList = Array.isArray(j.agents) ? j.agents
+              : Array.isArray(j) ? j
+              : Object.entries(j.agents || {}).map(([id, a]) => ({ id, ...a }));
+            done({ status: 'up', layer, agents: agentList, count: agentList.length });
+          } catch (e) {
+            done({ status: 'down', layer, agents: [], count: 0, error: e.message });
+          }
+        });
+        res.on('error', (e) => { clearTimeout(timer); fail(e.message, req); });
+      });
+      req.on('error', (e) => { clearTimeout(timer); fail(e.message, req); });
+      req.end();
+    } catch (e) {
+      clearTimeout(timer);
+      fail(e.message, req);
+    }
+  });
 }
 
 app.get('/api/agents', async (_req, res) => {
@@ -444,6 +484,36 @@ app.get('/auth/verify', (req, res) => {
   res.json({ valid: true, user: { sub: payload.sub, email: payload.email } });
 });
 
+// ── AUTH AUDIT PROXY → port 5001 ─────────────────────────────────────────────
+// The merkle audit endpoints live on the dedicated auth service.
+// Proxy them through the gateway so the dashboard can reach them from port 8080.
+const AUTH_SVC = 'http://localhost:5001';
+
+async function proxyToAuth(req, res) {
+  try {
+    const url = AUTH_SVC + req.path + (req._parsedUrl.search || '');
+    const opts = {
+      method: req.method,
+      headers: { 'Content-Type': 'application/json' },
+    };
+    if (req.headers.authorization) opts.headers['Authorization'] = req.headers.authorization;
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const text = await r.text();
+    res.status(r.status).set('Content-Type', 'application/json').send(text);
+  } catch (e) {
+    res.status(502).json({ error: 'Auth service unreachable', details: e.message });
+  }
+}
+
+// Audit endpoints
+app.get('/auth/audit/root',       (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/state',      (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/verify',     (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/events',     (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/proof/:lh',  (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/user/:uid',  (req, res) => proxyToAuth(req, res));
+
 // ── REFERRAL ──────────────────────────────────────────────────────────────────
 // POST /referral/claim
 app.post('/referral/claim', (req, res) => {
@@ -466,23 +536,26 @@ app.post('/referral/claim', (req, res) => {
 });
 
 // ── BAN PROXY ────────────────────────────────────────────────────────────────
-// Try BAN on 8001 (Python FastAPI), fall back to serving BAN frontend with brain on 8000
+// Try BAN on 8001 (Python FastAPI), fall back to ban-home.html
 app.all('/ban', async (_req, res) => {
   // Try BAN FastAPI first
   try {
     const r = await fetch('http://localhost:8001/', { signal: AbortSignal.timeout(2000) });
     if (r.ok) { const html = await r.text(); return res.type('html').send(html); }
   } catch (_) {}
-  // Fallback: serve BAN frontend pointing at brain (port 8000)
-  try {
-    let html = fs.readFileSync(path.join(ROOT, 'BAN', 'frontend', 'index.html'), 'utf8');
-    // Rewrite BAN frontend to use brain on 8000 instead of 8001
-    html = html.replace(/const BAN_PORT = \d+;/, 'const BAN_PORT = 8000;');
-    if (!html.includes('id="bridge-nav"')) html = html.replace(/<body[^>]*>/i, (m) => m + NAV_HTML);
-    res.type('html').send(html);
-  } catch (e) {
-    res.status(502).json({ error: 'BAN frontend not found', details: e.message });
+  // Fallback: serve ban-home.html from Xpublic (preferred) or public/
+  const banPaths = [
+    path.join(XPUBLIC, 'ban-home.html'),
+    path.join(ROOT, 'public', 'ban-home.html'),
+  ];
+  for (const p of banPaths) {
+    try {
+      let html = fs.readFileSync(p, 'utf8');
+      if (!html.includes('id="bridge-nav"')) html = html.replace(/<body[^>]*>/i, (m) => m + NAV_HTML);
+      return res.type('html').send(html);
+    } catch (_) {}
   }
+  res.status(503).json({ error: 'BAN service offline', hint: 'Start ban-engine via PM2' });
 });
 // BAN API endpoints — try 8001 first, fallback to brain on 8000
 ['health', 'tasks/add', 'tasks/list', 'tasks/execute', 'nodes', 'consensus/state', 'ledger', 'logs', 'ws'].forEach(ep => {
@@ -602,6 +675,12 @@ function getBootScreen(pagePath) {
 <script>setTimeout(()=>{const b=document.getElementById('boot-screen');if(b){b.style.opacity='0';setTimeout(()=>b.remove(),600)}},2000)</script>`;
 }
 
+// PHERE design system snippet — injected into every served page
+const PHERE_INJECT = `
+<link rel="stylesheet" href="/bridge-phere.css" id="bridge-phere-css">
+<script src="/bridge-phere.js" defer><\/script>
+`;
+
 function serveWithNav(filePath, res) {
   try {
     let html = fs.readFileSync(filePath, 'utf8');
@@ -610,6 +689,10 @@ function serveWithNav(filePath, res) {
       const pageName = '/' + path.basename(filePath);
       const boot = hasOwnBoot ? '' : getBootScreen(pageName);
       html = html.replace(/<body[^>]*>/i, (m) => m + boot + NAV_HTML);
+    }
+    // Inject PHERE before </head> if not already present
+    if (!html.includes('bridge-phere-css') && html.includes('</head>')) {
+      html = html.replace('</head>', PHERE_INJECT + '</head>');
     }
     res.type('html').send(html);
   } catch (e) { res.status(404).send('Page not found'); }
@@ -650,7 +733,8 @@ app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
 // ── BRAIN NON-API ROUTES — proxy brain endpoints that don't start with /api ──
 // brain-live serves the 3D brain directly
 app.get('/brain-live', (_req, res) => res.sendFile(path.join(ROOT, 'Xpublic', 'ehsa-brain.html')));
-const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/teach', '/econ', '/output', '/treasury', '/swarm', '/docs', '/share', '/index.json', '/manifest.json', '/auth/google', '/auth/microsoft', '/auth/github', '/view-logs'];
+// Note: '/docs' intentionally excluded — handled by GATEWAY_SHORT_ROUTES → /docs.html
+const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/teach', '/econ', '/output', '/treasury', '/swarm', '/share', '/index.json', '/manifest.json', '/auth/google', '/auth/microsoft', '/auth/github', '/view-logs'];
 BRAIN_ROUTES.forEach(prefix => {
   app.all(prefix, async (req, res, next) => {
     try {
@@ -668,6 +752,82 @@ BRAIN_ROUTES.forEach(prefix => {
       res.status(r.status).set('Content-Type', ct).send(text);
     } catch (_) { next(); }
   });
+});
+
+// ── WORDPRESS INTEGRATION LAYER ──────────────────────────────────────────────
+// Proxies /wp-json/* to a configured WordPress instance.
+// Set WP_URL in .env to activate (e.g. WP_URL=https://blog.ai-os.co.za)
+// When WP is absent, returns graceful stubs so the frontend never breaks.
+const WP_URL = process.env.WP_URL || '';
+
+// PHERE activation signal from frontend
+app.post('/wp-json/bridge-ai/v1/phere/activate', (req, res) => {
+  // If WP is configured, forward to WP REST API
+  if (WP_URL) {
+    fetch(`${WP_URL}/wp-json/bridge-ai/v1/phere/activate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+      signal: AbortSignal.timeout(3000),
+    })
+      .then(r => r.json())
+      .then(j => res.json(j))
+      .catch(() => res.json({ ok: true, source: 'gateway-stub' }));
+  } else {
+    res.json({ ok: true, source: 'gateway-stub', message: 'Set WP_URL to activate WordPress integration' });
+  }
+});
+
+// WordPress REST API proxy — passes through all /wp-json/* requests
+app.all('/wp-json/*path', async (req, res) => {
+  if (!WP_URL) {
+    // Graceful stub: return empty-but-valid WP REST responses
+    const path = req.params.path || [];
+    const pathStr = Array.isArray(path) ? path.join('/') : path;
+    if (pathStr.startsWith('wp/v2/posts')) {
+      return res.json([]);
+    }
+    if (pathStr.startsWith('wp/v2/pages')) {
+      return res.json([]);
+    }
+    return res.status(503).json({
+      code: 'wp_not_configured',
+      message: 'Set WP_URL environment variable to enable WordPress integration',
+      data: { status: 503 },
+    });
+  }
+
+  const subpath = req.originalUrl.replace('/wp-json', '');
+  const url = `${WP_URL}/wp-json${subpath}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(5000) };
+    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const text = await r.text();
+    res.status(r.status).set('Content-Type', r.headers.get('content-type') || 'application/json').send(text);
+  } catch (e) {
+    res.status(502).json({ code: 'wp_unreachable', message: e.message });
+  }
+});
+
+// WordPress posts feed for embedding in pages (e.g. blog section on landing)
+app.get('/api/wp/posts', async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit || '5', 10), 20);
+  if (!WP_URL) {
+    return res.json({ posts: [], source: 'stub', configured: false });
+  }
+  try {
+    const r = await fetch(
+      `${WP_URL}/wp-json/wp/v2/posts?per_page=${limit}&_fields=id,title,excerpt,link,date,categories`,
+      { signal: AbortSignal.timeout(4000) }
+    );
+    const posts = await r.json();
+    res.json({ posts: Array.isArray(posts) ? posts : [], source: 'wordpress', configured: true });
+  } catch (e) {
+    res.json({ posts: [], source: 'error', error: e.message });
+  }
 });
 
 // ── REAL TREASURY (PostgreSQL via server on :3000) ────────────────────────────
@@ -728,8 +888,53 @@ app.get('/home.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'home.html'
 app.get('/corporate.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'corporate.html'), res));
 app.get('/ehsa-app.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'ehsa-app.html'), res));
 
+// ── SHORT-PATH ALIASES (no .html) ────────────────────────────────────────────
+// These mirror server.js shortRoutes so all ui.html Quick Actions work on :8080
+const GATEWAY_SHORT_ROUTES = {
+  '/landing': '/landing.html',
+  '/apps': '/50-applications.html',
+  '/treasury-dash': '/aoe-dashboard.html',
+  '/leadgen': '/leadgen.html',
+  '/control': '/control.html',
+  '/dashboard': '/aoe-dashboard.html',
+  '/status': '/system-status-dashboard.html',
+  '/registry': '/registry.html',
+  '/crm': '/crm.html',
+  '/invoicing': '/invoicing.html',
+  '/marketing': '/marketing.html',
+  '/legal': '/legal.html',
+  '/tickets': '/tickets.html',
+  '/pricing': '/pricing.html',
+  '/ehsa': '/ehsa-app.html',
+  '/supac': '/supac-home.html',
+  '/ubi': '/ubi-home.html',
+  '/aid': '/aid-home.html',
+  '/aurora': '/aurora-home.html',
+  '/sitemap': '/sitemap.html',
+  '/onboarding': '/onboarding.html',
+  '/agents': '/agents.html',
+  '/docs': '/docs.html',
+  '/marketplace': '/marketplace.html',
+  '/topology': '/topology.html',
+  '/terminal': '/terminal.html',
+  '/settings': '/settings.html',
+  '/home': '/home.html',
+  '/welcome': '/welcome.html',
+  '/corporate': '/corporate.html',
+  '/brand': '/brand.html',
+  '/governance': '/governance.html',
+  '/twins': '/digital-twin-console.html',
+  '/intelligence': '/intelligence.html',
+  '/executive': '/executive-dashboard.html',
+};
+Object.entries(GATEWAY_SHORT_ROUTES).forEach(([short, target]) => {
+  app.get(short, (_req, res) => res.redirect(target));
+});
+
 const SUBDOMAIN_MAP = {
   'ai-os.co.za': 'home.html',
+  'go.ai-os.co.za': 'landing.html',
+  'gateway.ai-os.co.za': 'landing.html',
   'bridge.ai-os.co.za': 'bridge-home.html',
   'ban.ai-os.co.za': 'ban-home.html',
   'supac.ai-os.co.za': 'supac-home.html',

@@ -3,44 +3,37 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ABAAS — Agent-as-a-Service</title>
-    <meta name="description" content="ABaaS — AI Business as a Service Dashboard">
-    <meta property="og:title" content="ABAAS — Agent-as-a-Service">
-    <meta property="og:description" content="ABaaS — AI Business as a Service Dashboard">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/abaas.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/abaas.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  :root{--bg:#050a0f;--surface:#0d1620;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa}
+  :root{--bg:#050a0f;--surface:#0d1620;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#628ba0;--purple:#a78bfa}
   body{background:var(--bg);color:var(--text);font-family:system-ui,monospace}
   .container{max-width:1100px;margin:0 auto;padding:1.5rem}
   h1{color:var(--accent);font-size:1.3rem;letter-spacing:.2em}
-  .subtitle{color:var(--dim);font-size:.72rem;margin-bottom:1.5rem}
+  .subtitle{color:var(--dim);font-size:.875rem;margin-bottom:1.5rem}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;margin-top:1rem}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;cursor:pointer;transition:border-color .2s}
   .card:hover{border-color:var(--accent)}
   .card h3{font-size:.85rem;color:var(--accent);margin-bottom:.3rem}
-  .card p{font-size:.72rem;color:var(--dim);line-height:1.5}
+  .card p{font-size:.875rem;color:var(--dim);line-height:1.5}
   .badge{display:inline-block;font-size:.6rem;padding:2px 6px;border-radius:3px;margin-left:.3rem}
   .badge.live{background:rgba(0,229,123,.15);color:var(--green);border:1px solid var(--green)}
   .badge.coming{background:rgba(255,209,102,.15);color:var(--yellow);border:1px solid var(--yellow)}
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-top:1.5rem}
   .stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.8rem;text-align:center}
   .stat .val{font-size:1.5rem;font-weight:700;color:var(--green)}
-  .stat .label{font-size:.65rem;color:var(--dim);letter-spacing:.1em;margin-top:.2rem}
+  .stat .label{font-size:.75rem;color:var(--dim);letter-spacing:.1em;margin-top:.2rem}
   #agent-list{margin-top:1rem}
-  .agent-row{display:flex;align-items:center;gap:.8rem;padding:.5rem .7rem;border-bottom:1px solid #0a1520;font-size:.75rem}
+  .agent-row{display:flex;align-items:center;gap:.8rem;padding:.5rem .7rem;border-bottom:1px solid #0a1520;font-size:.875rem}
   .agent-row .name{font-weight:600;min-width:100px}
   .agent-row .role{color:var(--dim);min-width:100px}
   .agent-row .trust{color:var(--green)}
   .agent-row .tasks{color:var(--accent)}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <div class="container">
-<h1>ABAAS <span style="color:var(--dim);font-size:.7rem">Agent-as-a-Service</span></h1>
+<h1>ABAAS <span style="color:var(--dim);font-size:.875rem">Agent-as-a-Service</span></h1>
 <div class="subtitle">Deploy, manage, and monetize autonomous AI agents across the Bridge AI ecosystem</div>
 
 <div class="stats" id="stats"></div>
@@ -54,28 +47,31 @@
   <div class="card"><h3>Custom Agent Builder <span class="badge live">LIVE</span></h3><p>Build custom agents with drag-and-drop skill composition. Wire skills from the SVG engine into autonomous workflows.</p></div>
   <div class="card"><h3>Agent Marketplace <span class="badge live">LIVE</span></h3><p>Buy, sell, and rent agent time. Revenue sharing: 70% creator / 15% platform / 15% UBI pool.</p></div>
   <div class="card"><h3>Swarm Orchestration <span class="badge live">LIVE</span></h3><p>Coordinate multi-agent swarms across L1/L2/L3 layers. Parallel execution, verification chains, teaching loops.</p></div>
-  <div class="card" onclick="location='/agents.html'"><h3>Agent Analytics <span class="badge live">LIVE</span></h3><p>Performance dashboards per agent: tasks/hr, revenue generated, trust score, error rate, cost efficiency. View on the Agents page.</p></div>
-  <div class="card" onclick="location='/docs.html'"><h3>Enterprise API <span class="badge live">LIVE</span></h3><p>REST + WebSocket + MCP agent API for enterprise clients. See /api/agents, /api/agents/pricing, /api/agents/execute-paid.</p></div>
+  <div class="card"><h3>Agent Analytics <span class="badge coming">COMING</span></h3><p>Performance dashboards per agent: tasks/hr, revenue generated, trust score, error rate, cost efficiency.</p></div>
+  <div class="card"><h3>Enterprise API <span class="badge coming">COMING</span></h3><p>White-label agent API for enterprise clients. Custom SLAs, dedicated capacity, compliance reporting.</p></div>
 </div>
 </div>
 
 <script>
+const API = location.origin.includes('8001') ? location.origin : (location.protocol + '//' + location.hostname + ':8000');
+const BRAIN = location.port === '8080' || location.port === '443' || location.port === '' ? '' : API;
+
 async function load() {
   try {
-    // Agents from real API
-    const agentData = await fetch('/api/agents').then(r=>r.json()).catch(()=>({agents:[]}));
-    const agents = (agentData.agents||[]).map(function(a,i){
-      return {name:a.name||a.id||('Agent-'+i),role:a.type||a.role||'general',layer:'L'+(i<2?'1':i<5?'2':'3'),trust:a.trust||0.85+Math.random()*0.1,tasks_done:a.tasks_done||Math.floor(Math.random()*50+10),status:a.status||'active'};
-    });
+    // Swarm agents
+    const swarm = await fetch((BRAIN || '') + '/api/swarm/agents').then(r=>r.json()).catch(()=>({ok:false}));
+    const agents = swarm.ok ? swarm.agents : [];
 
     // Stats
-    const treasury = await fetch('/api/treasury').then(r=>r.json()).catch(()=>({}));
+    const health = await fetch((BRAIN || '') + '/api/swarm/health').then(r=>r.json()).catch(()=>({}));
+    const treasury = await fetch((BRAIN || '') + '/api/treasury/status').then(r=>r.json()).catch(()=>({}));
+    const tools = await fetch((BRAIN || '') + '/api/tools').then(r=>r.json()).catch(()=>({count:0}));
 
     document.getElementById('stats').innerHTML = `
       <div class="stat"><div class="val">${agents.length}</div><div class="label">AGENTS</div></div>
       <div class="stat"><div class="val">${agents.filter(a=>a.status==='active').length}</div><div class="label">ACTIVE</div></div>
-      <div class="stat"><div class="val">27</div><div class="label">SKILLS</div></div>
-      <div class="stat"><div class="val">R${(treasury.total||treasury.balance||0).toLocaleString()}</div><div class="label">TREASURY</div></div>
+      <div class="stat"><div class="val">${tools.count || 0}</div><div class="label">TOOLS</div></div>
+      <div class="stat"><div class="val">$${(treasury.balance||0).toLocaleString()}</div><div class="label">TREASURY</div></div>
     `;
 
     document.getElementById('agent-list').innerHTML = agents.map(a => `
@@ -93,5 +89,5 @@ async function load() {
 load();
 setInterval(load, 10000);
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

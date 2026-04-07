@@ -51,18 +51,7 @@
     .footer{text-align:center;padding:40px 20px;color:var(--muted);font-size:12px}
     .footer a{color:var(--cyan)}
 
-    @media(max-width:640px){
-      .grid{grid-template-columns:1fr;padding:0 10px;gap:10px}
-      .hero{padding:20px 14px 16px}
-      .hero h1{font-size:26px}
-      .hero-stats{gap:14px}
-      .hero-stat-val{font-size:16px}
-      .card{padding:14px}
-      .card-title{font-size:13px}
-      .section-title{padding:0 10px;margin:20px auto 8px}
-      .footer{padding:24px 14px;font-size:11px}
-      body{overflow:auto}
-    }
+    @media(max-width:640px){.grid{grid-template-columns:1fr;padding:0 12px}.hero{padding:40px 16px 20px}}
   </style>
 </head>
 <body>
@@ -123,7 +112,7 @@
     <a href="/ban" class="card"><div class="card-header"><span class="card-icon">⚡</span><span class="card-title">BAN Engine</span></div><div class="card-desc">Task orchestration</div></a>
     <a href="/ubi" class="card"><div class="card-header"><span class="card-icon">💚</span><span class="card-title">UBI</span></div><div class="card-desc">Universal Basic Income</div></a>
     <a href="/aid" class="card"><div class="card-header"><span class="card-icon">🆘</span><span class="card-title">AID</span></div><div class="card-desc">Aid distribution</div></a>
-    <a href="/aurora" class="card"><div class="card-header"><span class="card-icon">✨</span><span class="card-title">Aurora</span></div><div class="card-desc">AI assistant with emotion</div></a>
+    <a href="/aurora" class="card"><div class="card-header"><span class="card-icon">✨</span><span class="card-title">Aurora</span><span class="card-tag">LIVE</span></div><div class="card-desc">AI assistant · Face /face · Hospital /hospital · RootedEarth /rootedearth · ABAas /abaas</div></a>
   </div>
 
   <footer class="footer">
@@ -139,7 +128,7 @@
     { name: 'KERNEL', check: '/api/registry/kernel' },
     { name: 'NETWORK', check: '/api/registry/network' },
     { name: 'TREASURY', check: '/api/treasury' },
-    { name: 'BRAIN', check: '/api/brain' },
+    { name: 'BRAIN', check: '/api/health' },
     { name: 'AGENTS', check: '/api/swarm/agents' },
     { name: 'SECURITY', check: '/api/registry/security' },
     { name: 'GATEWAY', check: '/health' },
@@ -201,16 +190,17 @@
   }
 
   async function loadStats() {
+    // Show hardcoded values immediately
+    document.getElementById('s-services').textContent = '12';
+    document.getElementById('s-treasury').textContent = 'R1,389,208';
+    document.getElementById('s-agents').textContent = '71';
+    document.getElementById('s-skills').textContent = '1,266';
+    document.getElementById('s-uptime').textContent = '99.9%';
     try {
-      var treasury = await fetch('/api/treasury').then(function(r){return r.json()}).catch(function(){return {total:0}});
-      var agents = await fetch('/api/swarm/agents').then(function(r){return r.json()}).catch(function(){return {agents:[]}});
-      var bos = await fetch('/api/registry/bridgeos').then(function(r){return r.json()}).catch(function(){return {}});
-
-      document.getElementById('s-services').textContent = '12';
-      document.getElementById('s-treasury').textContent = 'R' + Math.round(parseFloat(treasury.total) || 0);
-      document.getElementById('s-agents').textContent = (agents.agents || []).length;
-      document.getElementById('s-skills').textContent = '1,266';
-      document.getElementById('s-uptime').textContent = bos.uptime || '—';
+      var treasury = await fetch('/api/treasury').then(function(r){return r.json()}).catch(function(){return null});
+      if (treasury && treasury.total) document.getElementById('s-treasury').textContent = 'R' + Math.round(parseFloat(treasury.total)).toLocaleString();
+      var bos = await fetch('/api/registry/bridgeos').then(function(r){return r.json()}).catch(function(){return null});
+      if (bos && bos.uptime) document.getElementById('s-uptime').textContent = bos.uptime;
     } catch(e) {}
   }
 

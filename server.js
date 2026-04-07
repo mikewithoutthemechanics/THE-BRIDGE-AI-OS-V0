@@ -21,6 +21,10 @@ const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const mail   = require('./lib/mail');
+const da     = require('./lib/directadmin');
+const wp     = require('./lib/wordpress');
+const wpAuth = require('./lib/wp-auth');
 // CSRF disabled — frontend pages use fetch() which cannot supply CSRF tokens
 // const csrf = require('csurf');
 // Auth middleware disabled at global level — individual admin routes use requireAdmin
@@ -705,7 +709,12 @@ const secrets = require('./lib/secrets');
 
 // Seed env vars into DB on first boot
 secrets.seedFromEnv([
-  'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM',
+  // Primary: mr-myburg brain orchestrator mail server
+  'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'SMTP_FROM_NAME', 'SMTP_TLS_REJECT_UNAUTHORIZED',
+  // Brevo backup relay
+  'SMTP_BACKUP_HOST', 'SMTP_BACKUP_PORT', 'SMTP_BACKUP_USER', 'SMTP_BACKUP_PASS',
+  // Brain orchestrator identity
+  'BRAIN_ADMIN_EMAIL', 'BRAIN_ADMIN_NAME', 'BRAIN_IDENTITY',
   'PAYFAST_MERCHANT_ID', 'PAYFAST_MERCHANT_KEY', 'PAYFAST_PASSPHRASE',
   'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'OPENROUTER_API_KEY'
 ]);
@@ -987,7 +996,206 @@ app.get('/api/founder/balance', async (req, res) => {
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// MAIL — Brevo primary, Gmail backup
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/mail/status', (req, res) => res.json({ ok: true, ...mail.status() }));
+
+app.get('/api/mail/ping', async (req, res) => {
+  try { res.json(await mail.ping()); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/mail/test', async (req, res) => {
+  try { res.json(await mail.test(req.body?.to || null)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/mail/send', async (req, res) => {
+  const { to, subject, html, text, from, replyTo } = req.body || {};
+  if (!to || !subject || (!html && !text))
+    return res.status(400).json({ ok: false, error: 'to, subject, and html/text required' });
+  try { res.json(await mail.send({ to, subject, html, text, from, replyTo })); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// EMAIL ACCOUNTS — DirectAdmin
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/email/list/:domain', async (req, res) => {
+  try { res.json(await da.listEmailAccounts(req.params.domain)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/email/create', async (req, res) => {
+  const { domain, user, passwd, quota } = req.body || {};
+  if (!domain || !user || !passwd)
+    return res.status(400).json({ ok: false, error: 'domain, user, passwd required' });
+  try { res.json(await da.createEmailAccount(domain, user, passwd, quota)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/email/delete', async (req, res) => {
+  const { domain, user } = req.body || {};
+  if (!domain || !user)
+    return res.status(400).json({ ok: false, error: 'domain, user required' });
+  try { res.json(await da.deleteEmailAccount(domain, user)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/email/forwarder', async (req, res) => {
+  const { domain, user, email } = req.body || {};
+  if (!domain || !user || !email)
+    return res.status(400).json({ ok: false, error: 'domain, user, email required' });
+  try { res.json(await da.createForwarder(domain, user, email)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/email/setup-bridge-profiles', async (req, res) => {
+  const { domain, daPasswd, wpSite, profiles, wpPasswd } = req.body || {};
+  if (!domain || !daPasswd)
+    return res.status(400).json({ ok: false, error: 'domain and daPasswd required' });
+  try {
+    const profileList = profiles || [
+      { user: 'admin',   wpRole: 'administrator' },
+      { user: 'content', wpRole: 'editor'        },
+      { user: 'support', wpRole: 'author'        },
+      { user: 'noreply', wpRole: null            },
+    ];
+    const daResults = [];
+    for (const prof of profileList) {
+      try { daResults.push(await da.createEmailAccount(domain, prof.user, daPasswd)); }
+      catch (e) { daResults.push({ ok: false, email: `${prof.user}@${domain}`, message: e.message }); }
+    }
+    let wpResults = null;
+    if (wpSite && wp.isConfigured(wpSite)) {
+      const wpProfiles = profileList.filter(p => p.wpRole).map(p => ({
+        username: p.user, email: `${p.user}@${domain}`,
+        password: wpPasswd || daPasswd, role: p.wpRole,
+      }));
+      wpResults = await wp.createBridgeWpProfiles(wpSite, wpProfiles);
+    }
+    res.json({ ok: daResults.every(r => r.ok), domain, emailSetup: daResults, wpSetup: wpResults });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// WORDPRESS — multi-domain sync + user management
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/wordpress/status', async (req, res) => {
+  try { res.json({ ok: true, ...(await wp.getStatus()) }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/wordpress/data', (req, res) => {
+  try {
+    const data = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data/50-applications.json'), 'utf8'));
+    res.json({ ok: true, data });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/wordpress/preview', (req, res) => {
+  try {
+    const data = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data/50-applications.json'), 'utf8'));
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>WP Preview</title></head><body>${wp.renderAppsHtml(data)}</body></html>`);
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/sync', async (req, res) => {
+  try { res.json(await wp.syncAll()); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/sync/:site', async (req, res) => {
+  const { site } = req.params;
+  if (!wp.SITES[site]) return res.status(400).json({ ok: false, error: `Unknown site: ${site}`, known: Object.keys(wp.SITES) });
+  try { res.json(await wp.syncSite(site)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/wordpress/users/:site', async (req, res) => {
+  try { res.json(await wp.listWpUsers(req.params.site)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/users/:site', async (req, res) => {
+  try { res.json(await wp.createWpUser(req.params.site, req.body)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/profiles/:site', async (req, res) => {
+  try { res.json(await wp.createBridgeWpProfiles(req.params.site, req.body?.profiles || [])); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// WORDPRESS POSTS — content management
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/wordpress/posts/:site', async (req, res) => {
+  try { res.json(await wp.listPosts(req.params.site)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/posts/:site', async (req, res) => {
+  try { res.json(await wp.createPost(req.params.site, req.body)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/posts/:site/:id', async (req, res) => {
+  try { res.json(await wp.updatePost(req.params.site, req.params.id, req.body)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// POST /api/wordpress/sync-post/:site — push 50-apps as a post (WP.com compatible)
+app.post('/api/wordpress/sync-post/:site', async (req, res) => {
+  try { res.json(await wp.syncAsPost(req.params.site)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH UNIFICATION — WordPress login → JWT → Merkle
+// ═══════════════════════════════════════════════════════════════
+
+// POST /api/auth/wp-login — WordPress fires this webhook on every login
+app.post('/api/auth/wp-login', async (req, res) => {
+  try {
+    const result = await wpAuth.handleWpLogin(req);
+    res.json(result);
+  } catch (e) {
+    res.status(e.status || 500).json({ ok: false, error: e.message });
+  }
+});
+
+// GET /api/auth/wp-plugin — returns the PHP snippet to paste into WP functions.php
+app.get('/api/auth/wp-plugin', (req, res) => {
+  const snippet = wpAuth.getPluginSnippet(
+    process.env.WP_BACKEND_URL || 'https://bridge-ai-os.com',
+    process.env.WP_HOOK_SECRET || 'REPLACE_WITH_RANDOM_SECRET'
+  );
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send(snippet);
+});
+
 // ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE =================
+// ── Topic Vector Matrix (TVM) — must be before the brain catch-all ───────────
+const tvm = require('./lib/tvm');
+app.get('/api/tvm', (req, res) => res.json(tvm.getMatrix()));
+app.get('/api/tvm/summary', (req, res) => res.json(tvm.getSummary()));
+app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIONS));
+app.get('/api/tvm/:topic', (req, res) => {
+  const row = tvm.getRow(req.params.topic);
+  if (!row) return res.status(404).json({ error: 'topic not found' });
+  res.json({ ...row, recommendation_text: tvm.getRecommendation(row.recommendation_code) });
+});
+app.put('/api/tvm/:topic', (req, res) => res.json(tvm.updateRow(req.params.topic, { ...req.body, _actor: 'human' })));
+app.post('/api/tvm/:topic/approve', (req, res) => res.json(tvm.approveAction(req.params.topic)));
+app.post('/api/tvm/:topic/reject',  (req, res) => res.json(tvm.rejectAction(req.params.topic)));
+app.post('/api/tvm/:topic/propose', (req, res) => {
+  const { proposal_code, justification } = req.body || {};
+  res.json(tvm.agentPropose(req.params.topic, proposal_code, justification));
+});
+
 app.all('/api/{*path}', async (req, res) => {
   try {
     const resp = await axios({
@@ -1363,6 +1571,142 @@ app.post('/api/agents/dispatch', (req, res) => {
   res.json({ ok: true, agent, task, priority, dispatched: true });
 });
 
+// ═══════════════════════════════════════════════════════════════
+// MAIL — Brevo primary, Gmail backup
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/mail/status', (req, res) => res.json({ ok: true, ...mail.status() }));
+
+app.get('/api/mail/ping', async (req, res) => {
+  try { res.json(await mail.ping()); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/mail/test', async (req, res) => {
+  try { res.json(await mail.test(req.body?.to || null)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/mail/send', async (req, res) => {
+  const { to, subject, html, text, from, replyTo } = req.body || {};
+  if (!to || !subject || (!html && !text))
+    return res.status(400).json({ ok: false, error: 'to, subject, and html/text required' });
+  try { res.json(await mail.send({ to, subject, html, text, from, replyTo })); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// EMAIL ACCOUNTS — DirectAdmin
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/email/list/:domain', async (req, res) => {
+  try { res.json(await da.listEmailAccounts(req.params.domain)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/email/create', async (req, res) => {
+  const { domain, user, passwd, quota } = req.body || {};
+  if (!domain || !user || !passwd)
+    return res.status(400).json({ ok: false, error: 'domain, user, passwd required' });
+  try { res.json(await da.createEmailAccount(domain, user, passwd, quota)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/email/delete', async (req, res) => {
+  const { domain, user } = req.body || {};
+  if (!domain || !user)
+    return res.status(400).json({ ok: false, error: 'domain, user required' });
+  try { res.json(await da.deleteEmailAccount(domain, user)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/email/forwarder', async (req, res) => {
+  const { domain, user, email } = req.body || {};
+  if (!domain || !user || !email)
+    return res.status(400).json({ ok: false, error: 'domain, user, email required' });
+  try { res.json(await da.createForwarder(domain, user, email)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/email/setup-bridge-profiles', async (req, res) => {
+  const { domain, daPasswd, wpSite, profiles, wpPasswd } = req.body || {};
+  if (!domain || !daPasswd)
+    return res.status(400).json({ ok: false, error: 'domain and daPasswd required' });
+  try {
+    const profileList = profiles || [
+      { user: 'admin',   wpRole: 'administrator' },
+      { user: 'content', wpRole: 'editor'        },
+      { user: 'support', wpRole: 'author'        },
+      { user: 'noreply', wpRole: null            },
+    ];
+    const daResults = [];
+    for (const prof of profileList) {
+      try {
+        daResults.push(await da.createEmailAccount(domain, prof.user, daPasswd));
+      } catch (e) {
+        daResults.push({ ok: false, email: `${prof.user}@${domain}`, message: e.message });
+      }
+    }
+    let wpResults = null;
+    if (wpSite && wp.isConfigured(wpSite)) {
+      const wpProfiles = profileList.filter(p => p.wpRole).map(p => ({
+        username: p.user, email: `${p.user}@${domain}`,
+        password: wpPasswd || daPasswd, role: p.wpRole,
+      }));
+      wpResults = await wp.createBridgeWpProfiles(wpSite, wpProfiles);
+    }
+    res.json({ ok: daResults.every(r => r.ok), domain, emailSetup: daResults, wpSetup: wpResults });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// WORDPRESS — multi-domain sync + user management
+// ═══════════════════════════════════════════════════════════════
+app.get('/api/wordpress/status', async (req, res) => {
+  try { res.json({ ok: true, ...(await wp.getStatus()) }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/wordpress/data', (req, res) => {
+  try {
+    const data = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data/50-applications.json'), 'utf8'));
+    res.json({ ok: true, data });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/wordpress/preview', (req, res) => {
+  try {
+    const data = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data/50-applications.json'), 'utf8'));
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>WP Preview</title></head><body>${wp.renderAppsHtml(data)}</body></html>`);
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/sync', async (req, res) => {
+  try { res.json(await wp.syncAll()); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/sync/:site', async (req, res) => {
+  const { site } = req.params;
+  if (!wp.SITES[site]) return res.status(400).json({ ok: false, error: `Unknown site: ${site}`, known: Object.keys(wp.SITES) });
+  try { res.json(await wp.syncSite(site)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/wordpress/users/:site', async (req, res) => {
+  try { res.json(await wp.listWpUsers(req.params.site)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/users/:site', async (req, res) => {
+  try { res.json(await wp.createWpUser(req.params.site, req.body)); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/wordpress/profiles/:site', async (req, res) => {
+  try { res.json(await wp.createBridgeWpProfiles(req.params.site, req.body?.profiles || [])); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 app.get('/api', (req, res) => res.json({
   service: 'Bridge AI OS', version: '1.0.0',
   endpoints: {
@@ -1399,6 +1743,9 @@ const shortRoutes = {
 Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));
 });
+
+// TVM routes registered earlier, before brain catch-all
+app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIONS));
 
 // ================= SERVER =================
 app.listen(3000, () => {

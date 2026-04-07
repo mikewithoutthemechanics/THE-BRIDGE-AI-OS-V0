@@ -7,7 +7,9 @@
 <meta name="description" content="Bridge AI OS — Sovereign Web3 Entry Protocol. Wallet, chain, contract, owner, gas, block, SIWE-style auth.">
 <title>Bridge AI OS Sovereign Gateway</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.min.js"
+        integrity="sha384-2i14ubFq4mU3B4ii0jVVZYB2SRGXJNRFW6RMtgiTMkZsEi1iI7SAx3m5jl95mxC1"
+        crossorigin="anonymous"></script>
 <style>
 body {
   background: #0b0f1a;
@@ -106,8 +108,35 @@ a { text-decoration: none; color: inherit; }
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"
+        integrity="sha384-Izc791esqyEy3BEIC42q7jbE0AaOkACziN+dyyXgYeDmpeMCLz0xA+xYN3aCd5zz"
+        crossorigin="anonymous"></script>
 <script>
+// Safe DOM status helper — avoids innerHTML with any user-controlled or API data
+function setStatus(id, text, type) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = '';
+  var span = document.createElement('span');
+  span.className = type === 'good' ? 'status-good' : 'status-bad';
+  span.textContent = text;
+  el.appendChild(span);
+}
+
+function setWalletConnected(address) {
+  var el = document.getElementById('walletStatus');
+  if (!el) return;
+  el.textContent = '';
+  var label = document.createElement('span');
+  label.className = 'status-good';
+  label.textContent = 'Connected: ';
+  var addr = document.createElement('span');
+  addr.className = 'mono';
+  addr.textContent = address; // address is hex from provider.getSigner(), safe as textContent
+  el.appendChild(label);
+  el.appendChild(addr);
+}
+
 const CONFIG = {
   EXPECTED_CHAIN_ID: 59144,
   CHAIN_ID_HEX: "0xe708",
@@ -135,7 +164,7 @@ if (typeof QRCode !== 'undefined') {
 
 async function connectWallet() {
   if (!window.ethereum) {
-    document.getElementById("walletStatus").innerHTML = "<span class='status-bad'>Web3 wallet not detected.</span>";
+    setStatus('walletStatus', 'Web3 wallet not detected.', 'bad');
     return;
   }
   try {
@@ -143,14 +172,12 @@ async function connectWallet() {
     await provider.send("eth_requestAccounts", []);
     signer = await provider.getSigner();
     const address = await signer.getAddress();
-    document.getElementById("walletStatus").innerHTML =
-      "<span class='status-good'>Connected:</span> <span class='mono'>" + address + "</span>";
+    setWalletConnected(address);
     await enforceNetwork();
     await loadChainData();
     await verifyContract();
   } catch (e) {
-    document.getElementById("walletStatus").innerHTML =
-      "<span class='status-bad'>" + (e.message || "Connection failed") + "</span>";
+    setStatus('walletStatus', e.message || 'Connection failed', 'bad');
   }
 }
 
@@ -162,8 +189,7 @@ async function enforceNetwork() {
         method: "wallet_switchEthereumChain",
         params: [{ chainId: CONFIG.CHAIN_ID_HEX }]
       });
-      document.getElementById("networkStatus").innerHTML =
-        "<span class='status-good'>Switched to Linea Mainnet</span>";
+      setStatus('networkStatus', 'Switched to Linea Mainnet', 'good');
     } catch (err) {
       if (err.code === 4902) {
         try {
@@ -175,21 +201,17 @@ async function enforceNetwork() {
               rpcUrls: [CONFIG.RPC_URL]
             }]
           });
-          document.getElementById("networkStatus").innerHTML =
-            "<span class='status-good'>Linea Mainnet Added & Connected</span>";
+          setStatus('networkStatus', 'Linea Mainnet Added & Connected', 'good');
         } catch (_) {
-          document.getElementById("networkStatus").innerHTML =
-            "<span class='status-bad'>Please add Linea Mainnet manually</span>";
+          setStatus('networkStatus', 'Please add Linea Mainnet manually', 'bad');
         }
       } else {
-        document.getElementById("networkStatus").innerHTML =
-          "<span class='status-bad'>Please switch to Linea Mainnet</span>";
+        setStatus('networkStatus', 'Please switch to Linea Mainnet', 'bad');
       }
       return;
     }
   } else {
-    document.getElementById("networkStatus").innerHTML =
-      "<span class='status-good'>Linea Mainnet Connected</span>";
+    setStatus('networkStatus', 'Linea Mainnet Connected', 'good');
   }
 }
 
@@ -217,14 +239,13 @@ async function loadChainData() {
 
 async function verifyContract() {
   if (CONFIG.CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") {
-    document.getElementById("contractBadge").innerHTML = "<span style='color:#888'>Configure CONTRACT_ADDRESS</span>";
+    document.getElementById("contractBadge").textContent = 'Configure CONTRACT_ADDRESS';
     return;
   }
   try {
     const code = await provider.getCode(CONFIG.CONTRACT_ADDRESS);
     if (code && code !== "0x") {
-      document.getElementById("contractBadge").innerHTML =
-        "<span class='status-good'>Verified On-Chain</span>";
+      setStatus('contractBadge', 'Verified On-Chain', 'good');
       const abi = ["function owner() view returns (address)"];
       const contract = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, abi, provider);
       try {
@@ -234,12 +255,10 @@ async function verifyContract() {
         document.getElementById("contractOwner").textContent = "Owner function not available";
       }
     } else {
-      document.getElementById("contractBadge").innerHTML =
-        "<span class='status-bad'>Contract Not Found</span>";
+      setStatus('contractBadge', 'Contract Not Found', 'bad');
     }
   } catch (_) {
-    document.getElementById("contractBadge").innerHTML =
-      "<span class='status-bad'>Verification failed</span>";
+    setStatus('contractBadge', 'Verification failed', 'bad');
   }
 }
 
@@ -253,8 +272,7 @@ function copyContract() {
 
 async function signIn() {
   if (!signer) {
-    document.getElementById("loginStatus").innerHTML =
-      "<span class='status-bad'>Connect wallet first.</span>";
+    setStatus("loginStatus", "Connect wallet first.", "bad");
     return;
   }
   try {
@@ -274,24 +292,20 @@ Nonce: ${Date.now()}
     const data = await res.json();
     if (!res.ok) {
       let err = data.detail || data.error || "Auth failed";
-      if (Array.isArray(err)) err = err.map(e => e.msg || e).join("; ");
-      if (typeof err !== "string") err = JSON.stringify(err);
-      document.getElementById("loginStatus").innerHTML =
-        "<span class='status-bad'>" + err + "</span>";
+      if (Array.isArray(err)) err = err.map(e => String(e.msg || e)).join("; ");
+      if (typeof err !== "string") err = "Auth failed";
+      setStatus('loginStatus', String(err).slice(0, 200), 'bad'); // slice caps length; textContent prevents XSS
       return;
     }
     const token = data.data?.token || data.token;
     if (token) {
       localStorage.setItem(CONFIG.JWT_KEY, token);
-      document.getElementById("loginStatus").innerHTML =
-        "<span class='status-good'>Authenticated. JWT stored.</span>";
+      setStatus('loginStatus', 'Authenticated. JWT stored.', 'good');
     } else {
-      document.getElementById("loginStatus").innerHTML =
-        "<span class='status-bad'>No token in response</span>";
+      setStatus('loginStatus', 'No token in response', 'bad');
     }
   } catch (e) {
-    document.getElementById("loginStatus").innerHTML =
-      "<span class='status-bad'>" + (e.message || "Sign failed") + "</span>";
+    setStatus('loginStatus', e.message || 'Sign failed', 'bad');
   }
 }
 
