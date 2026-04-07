@@ -118,7 +118,7 @@
   <script>
 (function() {
   var API_BASE = (typeof window !== 'undefined' && window.__API_BASE) ? String(window.__API_BASE).replace(/\/$/, '') : '';
-  var backendOrigin = API_BASE || (window.location.port === '3020' || window.location.port === '3000' ? 'http://localhost:8000' : window.location.origin);
+  var backendOrigin = API_BASE || window.location.origin;
   document.getElementById('api-docs-link').href = backendOrigin + '/docs';
   document.getElementById('openapi-link').href = backendOrigin + '/openapi.json';
   document.getElementById('api-base-display').textContent = backendOrigin || '(same origin)';

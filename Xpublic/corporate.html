@@ -175,6 +175,7 @@ input:focus,select:focus{border-color:var(--a);outline:none}
 
 <script>
 const API = '';
+function esc(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML;}
 
 function show(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -281,19 +282,19 @@ async function loadSection(id) {
       document.getElementById('recent-activity').textContent = 'System active. Treasury: $' + (treasury.balance || 0).toLocaleString();
     } else if (id === 'quotes') {
       const d = await fetch(API + '/api/quotes').then(r => r.json());
-      document.getElementById('quotes-tbody').innerHTML = (d.quotes || []).map(q => `<tr><td>${q.number || q.id}</td><td>${q.client}</td><td>$${(q.total || 0).toFixed(2)}</td><td><span class="status ${q.status}">${q.status}</span></td><td>${q.valid_until || '-'}</td><td>${q.status === 'draft' ? `<button class="btn btn-p" onclick="acceptQuote('${q.id}')">ACCEPT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" style="color:var(--d);text-align:center">No quotes yet</td></tr>';
+      document.getElementById('quotes-tbody').innerHTML = (d.quotes || []).map(q => `<tr><td>${esc(q.number || q.id)}</td><td>${esc(q.client)}</td><td>$${(q.total || 0).toFixed(2)}</td><td><span class="status ${q.status}">${q.status}</span></td><td>${q.valid_until || '-'}</td><td>${q.status === 'draft' ? `<button class="btn btn-p" onclick="acceptQuote('${q.id}')">ACCEPT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" style="color:var(--d);text-align:center">No quotes yet</td></tr>';
     } else if (id === 'invoices') {
       const d = await fetch(API + '/api/invoices').then(r => r.json());
-      document.getElementById('invoices-tbody').innerHTML = (d.invoices || []).map(i => `<tr><td>${i.number || i.id}</td><td>${i.client}</td><td>$${(i.total || 0).toFixed(2)}</td><td>$${(i.tax || 0).toFixed(2)}</td><td><span class="status ${i.status}">${i.status}</span></td><td>${i.due_date || '-'}</td><td>${i.status !== 'paid' ? `<button class="btn btn-p" onclick="markPaid('${i.id}')">PAID</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--d);text-align:center">No invoices yet</td></tr>';
+      document.getElementById('invoices-tbody').innerHTML = (d.invoices || []).map(i => `<tr><td>${esc(i.number || i.id)}</td><td>${esc(i.client)}</td><td>$${(i.total || 0).toFixed(2)}</td><td>$${(i.tax || 0).toFixed(2)}</td><td><span class="status ${i.status}">${i.status}</span></td><td>${i.due_date || '-'}</td><td>${i.status !== 'paid' ? `<button class="btn btn-p" onclick="markPaid('${i.id}')">PAID</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--d);text-align:center">No invoices yet</td></tr>';
     } else if (id === 'debtors') {
       const d = await fetch(API + '/api/debts').then(r => r.json());
-      document.getElementById('debtors-tbody').innerHTML = (d.debts || []).map(db => `<tr><td>${db.debtor}</td><td>$${(db.amount || 0).toFixed(2)} ${db.currency || ''}</td><td><span class="status ${db.status}">${db.status}</span></td><td>${db.reminders_sent || 0}</td><td>${db.status !== 'paid' ? `<button class="btn btn-s" onclick="sendReminder('${db.id}')">REMIND</button> <button class="btn btn-p" onclick="collectDebt('${db.id}')">COLLECT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No debts</td></tr>';
+      document.getElementById('debtors-tbody').innerHTML = (d.debts || []).map(db => `<tr><td>${esc(db.debtor)}</td><td>$${(db.amount || 0).toFixed(2)} ${db.currency || ''}</td><td><span class="status ${db.status}">${db.status}</span></td><td>${db.reminders_sent || 0}</td><td>${db.status !== 'paid' ? `<button class="btn btn-s" onclick="sendReminder('${db.id}')">REMIND</button> <button class="btn btn-p" onclick="collectDebt('${db.id}')">COLLECT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No debts</td></tr>';
     } else if (id === 'vendors') {
       const d = await fetch(API + '/api/vendors').then(r => r.json());
-      document.getElementById('vendors-tbody').innerHTML = (d.vendors || []).map(v => `<tr><td>${v.name}</td><td>${v.type}</td><td>${v.contact}</td><td><span class="status ${v.status}">${v.status}</span></td><td>$${(v.spend_mtd || 0)} ${v.currency || ''}</td></tr>`).join('');
+      document.getElementById('vendors-tbody').innerHTML = (d.vendors || []).map(v => `<tr><td>${esc(v.name)}</td><td>${esc(v.type)}</td><td>${esc(v.contact)}</td><td><span class="status ${v.status}">${v.status}</span></td><td>$${(v.spend_mtd || 0)} ${v.currency || ''}</td></tr>`).join('');
     } else if (id === 'customers') {
       const d = await fetch(API + '/api/customers').then(r => r.json());
-      document.getElementById('customers-tbody').innerHTML = (d.customers || []).map(c => `<tr><td>${c.name || c.id}</td><td>${c.plan || 'free'}</td><td>$${c.ltv || 0}</td><td>${c.tickets || 0}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--d);text-align:center">No customers yet</td></tr>';
+      document.getElementById('customers-tbody').innerHTML = (d.customers || []).map(c => `<tr><td>${esc(c.name || c.id)}</td><td>${esc(c.plan || 'free')}</td><td>$${c.ltv || 0}</td><td>${c.tickets || 0}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--d);text-align:center">No customers yet</td></tr>';
     } else if (id === 'crm') {
       const d = await fetch(API + '/api/crm/contacts').then(r => r.json());
       document.getElementById('crm-tbody').innerHTML = (d.contacts || []).map(c => `<tr><td>${c.name}</td><td>${c.email || '-'}</td><td>${c.company || '-'}</td><td>${c.type || '-'}</td><td>${(c.tags || []).join(', ')}</td></tr>`).join('');

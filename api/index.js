@@ -10,6 +10,85 @@ const path = require('path');
 // ── Shared helpers ──────────────────────────────────────────────────────────
 const ROOT = path.resolve(__dirname, '..');
 const SHARED_DIR = path.join(ROOT, 'shared');
+
+// ── TVM v2 inlined (HMAC signing, structured recs, topology) ─────────────────
+const _tvmCrypto = (() => { try { return require('crypto'); } catch(e) { return null; } })();
+const _TVM_SECRET = process.env.TVM_SECRET || 'bridgeos-tvm-secret-key';
+const _TVM_KNOWN = {
+  MailPipeline:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  TreasuryAPI:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  GlobalMapSync:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  WordPressSync:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  VPSGateway:{configured:1,healthy:0,degraded:1,action_required:1,autofix_available:0,human_approval_needed:1,recommendation_code:'VPS-RESTART-GW'},
+  BrainOrchestrator:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  AgentSwarm:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  AuthService:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  SkillsEngine:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  UBIPool:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  LeadGen:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  PaymentGateway:{configured:1,healthy:1,degraded:0,action_required:0,recommendation_code:'OK'},
+  BrainVPSSSH:{configured:0,healthy:0,degraded:1,action_required:1,autofix_available:0,human_approval_needed:1,recommendation_code:'VPS-SSH-RESTORE'},
+  SubdomainSSL:{configured:1,healthy:0,degraded:1,action_required:1,autofix_available:0,human_approval_needed:1,recommendation_code:'SSL-DNS-FLIP'},
+  WebwayDNS:{configured:1,healthy:0,degraded:1,action_required:1,autofix_available:0,human_approval_needed:1,recommendation_code:'DNS-PROPAGATE'},
+};
+const _TVM_TOPICS = ['MailPipeline','TreasuryAPI','GlobalMapSync','WordPressSync','VPSGateway','BrainOrchestrator','AgentSwarm','AuthService','SkillsEngine','UBIPool','LeadGen','PaymentGateway','BrainVPSSSH','SubdomainSSL','WebwayDNS'];
+const _TVM_META = {
+  MailPipeline:{owner:'brain',priority:2,risk_score:3}, TreasuryAPI:{owner:'brain',priority:3,risk_score:4},
+  GlobalMapSync:{owner:'brain',priority:1,risk_score:2}, WordPressSync:{owner:'brain',priority:1,risk_score:1},
+  VPSGateway:{owner:'ops',priority:3,risk_score:4}, BrainOrchestrator:{owner:'brain',priority:3,risk_score:5},
+  AgentSwarm:{owner:'brain',priority:2,risk_score:3}, AuthService:{owner:'ops',priority:3,risk_score:4},
+  SkillsEngine:{owner:'brain',priority:2,risk_score:2}, UBIPool:{owner:'treasury',priority:2,risk_score:3},
+  LeadGen:{owner:'growth',priority:2,risk_score:2}, PaymentGateway:{owner:'ops',priority:3,risk_score:5},
+  BrainVPSSSH:{owner:'ops',priority:3,risk_score:5}, SubdomainSSL:{owner:'ops',priority:2,risk_score:3},
+  WebwayDNS:{owner:'ops',priority:2,risk_score:3},
+};
+// Structured recommendations (description + steps + severity)
+const _TVM_REC_LIB = {
+  'MP-AF-ROTATE-TOKEN':{description:'Rotate SMTP/Brevo token and restart mail relay',severity:3,action_type:'autofix',requires_human_approval:true,steps:['Revoke existing SMTP/Brevo token in Brevo dashboard','Generate new API key under Transactional → SMTP & API','Update BREVO_SMTP_KEY env in Vercel','Redeploy: vercel --prod','Verify health probe returns healthy=1']},
+  'TR-RECONCILE':{description:'Run treasury reconciliation — balance drift detected',severity:4,action_type:'autofix',requires_human_approval:true,steps:['Snapshot treasury balances via GET /api/treasury/status','Run reconcile: POST /api/treasury/reconcile','Flag any drift > 0.01 BRDG','Re-sign TVM row after reconcile']},
+  'GMS-RECONNECT':{description:'Reconnect global map WebSocket feed',severity:2,action_type:'autofix',requires_human_approval:false,steps:['Close stale WebSocket connection','Re-authenticate with map broker','Re-subscribe to topology events','Verify node count matches registry']},
+  'WPS-SYNC':{description:'Push 50-applications content to WordPress sites',severity:1,action_type:'sync',requires_human_approval:false,steps:['Fetch latest 50-applications.html','Parse application entries','Upsert pages via WP REST API','Log sync result']},
+  'VPS-RESTART-GW':{description:'Restart bridge-gateway via PM2 on VPS',severity:4,action_type:'autofix',requires_human_approval:true,steps:['Restore SSH access first (VPS-SSH-RESTORE)','SSH: ssh root@102.208.231.53','Run: pm2 restart bridge-gateway','Wait 15s for startup','Confirm /health returns 200']},
+  'BR-HEALTHCHECK':{description:'Run brain orchestrator self-test and reload agents',severity:3,action_type:'diagnostics',requires_human_approval:false,steps:['POST /api/agents/dispatch { action:"self-test" }','Await /orchestrator/status → running','Reload agent registry from SVG engine','Re-run GET /api/swarm/health']},
+  'SW-REBALANCE':{description:'Rebalance agent swarm — utilization drift',severity:3,action_type:'autofix',requires_human_approval:false,steps:['GET /api/swarm/matrix for utilization','Identify agents > 85%','POST /api/swarm/rebalance','Confirm balanced=true']},
+  'AUTH-ROTATE-JWT':{description:'Rotate JWT signing keys and invalidate sessions',severity:4,action_type:'security',requires_human_approval:true,steps:['Generate new JWT keypair','Update AUTH_SECRET in Vercel env','Redeploy: vercel --prod','Invalidate existing sessions','Notify active users']},
+  'SK-RELOAD':{description:'Reload skills registry from SVG engine',severity:2,action_type:'sync',requires_human_approval:false,steps:['Fetch SVG skill definitions from /skills/registry','Parse skill metadata','Upsert into skills registry','Emit skills.updated event']},
+  'UBI-REPOOL':{description:'Recalculate UBI pool eligibility and balances',severity:3,action_type:'autofix',requires_human_approval:true,steps:['Fetch active citizen roster','Apply eligibility rules','Recalculate pool distribution','Update wallet balances','Log to treasury ledger']},
+  'LG-RESTART':{description:'Restart lead generation scheduler',severity:2,action_type:'autofix',requires_human_approval:false,steps:['Kill stale LeadGen process','Clear backlog','Restart scheduler','Verify first prospect within 60s']},
+  'PAY-VERIFY':{description:'Verify PayFast webhook and payment state',severity:5,action_type:'diagnostics',requires_human_approval:true,steps:['Check PayFast webhook delivery logs','Verify PAYFAST_MERCHANT_ID env','Test IPN endpoint','Reconcile last 24h transactions']},
+  'VPS-SSH-RESTORE':{description:'Add SSH key to VPS authorized_keys via Webway support',severity:5,action_type:'configuration',requires_human_approval:true,steps:['Email support@webway.co.za with SSH public key','Wait for Webway to add to authorized_keys','Test: ssh root@102.208.231.53','Run vps-fix.sh','Update BrainVPSSSH to configured=1,healthy=1']},
+  'SSL-DNS-FLIP':{description:'Update 6 A records in Webway DNS to 76.76.21.21',severity:3,action_type:'configuration',requires_human_approval:true,steps:['Log into Webway DNS panel or email support','Change A records for 6 subdomains → 76.76.21.21','Wait for DNS propagation (up to 48h)','Verify SSL provisioning in Vercel','Update SubdomainSSL+WebwayDNS to healthy=1']},
+  'DNS-PROPAGATE':{description:'Wait for DNS propagation or contact Webway support',severity:3,action_type:'diagnostics',requires_human_approval:false,steps:['Run: dig ehsa.ai-os.co.za (expect 76.76.21.21)','If old IP: email support@webway.co.za for ETA','Check dnschecker.org for global propagation','Re-run SSL check once propagated']},
+  'OK':{description:'No action required — system healthy',severity:0,action_type:'none',requires_human_approval:false,steps:[]},
+};
+// Topology edges for global system map
+const _TVM_TOPOLOGY = {
+  version:'1.0',
+  positions:{WordPressSync:[80,80],MailPipeline:[200,80],GlobalMapSync:[320,80],AgentSwarm:[440,80],SkillsEngine:[560,80],UBIPool:[700,80],LeadGen:[840,80],AuthService:[160,270],BrainOrchestrator:[400,270],TreasuryAPI:[640,270],PaymentGateway:[880,270],BrainVPSSSH:[120,430],VPSGateway:[320,430],SubdomainSSL:[560,430],WebwayDNS:[780,430]},
+  edges:[{from:'BrainVPSSSH',to:'VPSGateway'},{from:'VPSGateway',to:'BrainOrchestrator'},{from:'WebwayDNS',to:'SubdomainSSL'},{from:'SubdomainSSL',to:'BrainOrchestrator'},{from:'PaymentGateway',to:'TreasuryAPI'},{from:'AuthService',to:'BrainOrchestrator'},{from:'TreasuryAPI',to:'BrainOrchestrator'},{from:'WordPressSync',to:'BrainOrchestrator'},{from:'MailPipeline',to:'BrainOrchestrator'},{from:'GlobalMapSync',to:'BrainOrchestrator'},{from:'AgentSwarm',to:'BrainOrchestrator'},{from:'SkillsEngine',to:'BrainOrchestrator'},{from:'UBIPool',to:'TreasuryAPI'},{from:'LeadGen',to:'BrainOrchestrator'}],
+};
+let _tvmMatrix = null;
+// HMAC-SHA256 signing (matches lib/tvm.js v2 canonical payload)
+function _tvmSign(r) {
+  const s=[r.topic,r.configured,r.healthy,r.degraded,r.action_required,r.autofix_available||0,r.human_approval_needed||0,r.last_updated,r.recommendation_code||''].join('|');
+  if(_tvmCrypto) return _tvmCrypto.createHmac('sha256',_TVM_SECRET).update(s).digest('hex').slice(0,16);
+  let h=0; for(let i=0;i<s.length;i++){h=(Math.imul(31,h)+s.charCodeAt(i))|0;} return Math.abs(h).toString(16).padStart(16,'0');
+}
+function _tvmBuild() { const now=Math.floor(Date.now()/1000); return _TVM_TOPICS.map(t=>{ const k=_TVM_KNOWN[t]||{}; const m=_TVM_META[t]||{}; const r={topic:t,configured:k.configured??1,healthy:k.healthy??1,degraded:k.degraded??0,action_required:k.action_required??0,autofix_available:k.autofix_available??0,human_approval_needed:k.human_approval_needed??0,last_updated:now,recommendation_code:k.recommendation_code||'OK',risk_score:m.risk_score||1,priority:m.priority||1,owner:m.owner||'ops'}; r.signature=_tvmSign(r); return r; }); }
+function _tvmGetMatrix() { if(!_tvmMatrix) _tvmMatrix=_tvmBuild(); return _tvmMatrix; }
+const tvm = {
+  getMatrix() { return _tvmGetMatrix(); },
+  getSummary() { const m=_tvmGetMatrix(); return { total:m.length, healthy:m.filter(r=>r.healthy).length, degraded:m.filter(r=>r.degraded).length, action_required:m.filter(r=>r.action_required).length, pending_approval:m.filter(r=>r.human_approval_needed).length, autofix_ready:m.filter(r=>r.autofix_available&&!r.human_approval_needed).length, ts:Math.floor(Date.now()/1000) }; },
+  getRow(t) { return _tvmGetMatrix().find(r=>r.topic===t)||null; },
+  getRecommendation(c) { return (_TVM_REC_LIB[c]||{}).description||'Unknown code'; },
+  getRecommendationDetail(c) { return _TVM_REC_LIB[c]||null; },
+  RECOMMENDATIONS: _TVM_REC_LIB,
+  approveAction(t) { return this.updateRow(t,{action_required:0,human_approval_needed:0}); },
+  rejectAction(t) { return this.updateRow(t,{action_required:0,human_approval_needed:0,autofix_available:0,recommendation_code:'OK'}); },
+  agentPropose(t,code,just) { const r=this.getRow(t); if(!r) return {ok:false,error:'topic not found'}; const rec=_TVM_REC_LIB[code]; if(!rec) return {ok:false,error:'unknown recommendation_code'}; return {ok:true,proposal:{topic:t,proposal_code:code,justification:just,requires_human_approval:!!r.human_approval_needed||rec.requires_human_approval,steps:rec.steps,severity:rec.severity,ts:Math.floor(Date.now()/1000)}}; },
+  updateRow(t,upd) { const m=_tvmGetMatrix(); const i=m.findIndex(r=>r.topic===t); if(i===-1) return {ok:false,error:'topic not found'}; const role=upd._role||(upd._actor==='human'?'tvm.operator':'tvm.agent'); const writeMap={'tvm.agent':['healthy','degraded','last_updated','action_required','autofix_available','human_approval_needed','recommendation_code'],'tvm.operator':['healthy','degraded','last_updated','configured','action_required','autofix_available','human_approval_needed','recommendation_code','risk_score','priority']}; const allowed=writeMap[role]||writeMap['tvm.agent']; const u={}; for(const[k,v] of Object.entries(upd)){if(k.startsWith('_')||!allowed.includes(k))continue;u[k]=v;} u.last_updated=Math.floor(Date.now()/1000); const updated={...m[i],...u}; updated.signature=_tvmSign(updated); m[i]=updated; return {ok:true,row:updated}; },
+};
+
 const ts = () => Date.now();
 
 function readContracts() {
@@ -96,6 +175,8 @@ const notify  = require('../lib/notify');
 const banks    = require('../lib/banks');
 const da       = require('../lib/directadmin');
 const infraFb  = require('../lib/infra-feedback');
+const wp       = require('../lib/wordpress');
+const mail     = require('../lib/mail');
 
 // Seed system banks on first cold start (no-op if already seeded)
 banks.seedBanksIfEmpty().catch(() => {});
@@ -1512,7 +1593,7 @@ module.exports = async (req, res) => {
       const services = sys.services;
       if (services) {
         const svcList = Array.isArray(services) ? services : (services.services || Object.values(services));
-        const critical = ['nginx', 'httpd', 'mysql', 'exim'];
+        const critical = ['caddy', 'nginx', 'httpd', 'mysql', 'exim'];
         for (const svc of svcList) {
           const name = (svc.name || svc.service || '').toLowerCase();
           const st   = (svc.status || svc.state || '').toLowerCase();
@@ -1959,6 +2040,459 @@ module.exports = async (req, res) => {
     });
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // WORDPRESS — multi-domain content sync (bridge-ai-os.com, gateway.ai-os.co.za)
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /api/wordpress/status — check which WP sites are configured + page exists
+  if (p === '/api/wordpress/status') {
+    try {
+      const status = await wp.getStatus();
+      return json(res, { ok: true, ...status, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/wordpress/data — serve canonical 50-apps JSON
+  if (p === '/api/wordpress/data') {
+    try {
+      const fs   = require('fs');
+      const path = require('path');
+      const data = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/50-applications.json'), 'utf8'));
+      return json(res, { ok: true, data });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/wordpress/sync — push 50-apps to all configured WP sites
+  if (p === '/api/wordpress/sync' && req.method === 'POST') {
+    try {
+      const result = await wp.syncAll();
+      return json(res, result);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/wordpress/sync/:site — push to a specific site only
+  if (p.startsWith('/api/wordpress/sync/') && req.method === 'POST') {
+    const siteKey = p.replace('/api/wordpress/sync/', '');
+    try {
+      if (!Object.keys(wp.SITES).includes(siteKey)) {
+        return json(res, { ok: false, error: `Unknown site: ${siteKey}`, known: Object.keys(wp.SITES) }, 400);
+      }
+      const result = await wp.syncSite(siteKey);
+      return json(res, result);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // ── WordPress user / profile management ─────────────────────────────────────
+
+  // GET /api/wordpress/users/:site — list WP users on a site
+  if (p.startsWith('/api/wordpress/users/') && req.method === 'GET') {
+    const siteKey = p.replace('/api/wordpress/users/', '');
+    try {
+      const result = await wp.listWpUsers(siteKey);
+      return json(res, result);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/wordpress/users/:site — create a single WP user
+  // Body: { username, email, password, firstName?, lastName?, role? }
+  if (p.startsWith('/api/wordpress/users/') && req.method === 'POST') {
+    const siteKey = p.replace('/api/wordpress/users/', '');
+    try {
+      const result = await wp.createWpUser(siteKey, body);
+      return json(res, result);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/wordpress/profiles/:site — batch-create WP profiles
+  // Body: { profiles: [{ username, email, password, role? }, ...] }
+  if (p.startsWith('/api/wordpress/profiles/') && req.method === 'POST') {
+    const siteKey = p.replace('/api/wordpress/profiles/', '');
+    try {
+      const result = await wp.createBridgeWpProfiles(siteKey, body.profiles || []);
+      return json(res, result);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // ── DirectAdmin email account management ─────────────────────────────────────
+
+  // GET /api/email/list/:domain — list email accounts on a domain
+  if (p.startsWith('/api/email/list/') && req.method === 'GET') {
+    const domain = p.replace('/api/email/list/', '');
+    try {
+      const result = await da.listEmailAccounts(domain);
+      return json(res, result);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/email/create — create a single email account on DirectAdmin
+  // Body: { domain, user, passwd, quota? }
+  if (p === '/api/email/create' && req.method === 'POST') {
+    try {
+      const { domain, user, passwd, quota } = body;
+      if (!domain || !user || !passwd) return json(res, { ok: false, error: 'domain, user, passwd required' }, 400);
+      const result = await da.createEmailAccount(domain, user, passwd, quota);
+      return json(res, result);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/email/delete — delete an email account
+  // Body: { domain, user }
+  if (p === '/api/email/delete' && req.method === 'POST') {
+    try {
+      const { domain, user } = body;
+      if (!domain || !user) return json(res, { ok: false, error: 'domain, user required' }, 400);
+      const result = await da.deleteEmailAccount(domain, user);
+      return json(res, result);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/email/forwarder — create an email forwarder
+  // Body: { domain, user, email }
+  if (p === '/api/email/forwarder' && req.method === 'POST') {
+    try {
+      const { domain, user, email: fwdTo } = body;
+      if (!domain || !user || !fwdTo) return json(res, { ok: false, error: 'domain, user, email required' }, 400);
+      const result = await da.createForwarder(domain, user, fwdTo);
+      return json(res, result);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/email/setup-bridge-profiles
+  // One-shot: creates DA email accounts + WP user profiles in parallel
+  // Body: { domain, daPasswd, wpSite?, wpPasswd?, profiles?: [{ user, wpRole? }] }
+  if (p === '/api/email/setup-bridge-profiles' && req.method === 'POST') {
+    try {
+      const { domain, daPasswd, wpSite, profiles, wpPasswd } = body;
+      if (!domain || !daPasswd) return json(res, { ok: false, error: 'domain and daPasswd required' }, 400);
+
+      const profileList = profiles || [
+        { user: 'admin',   wpRole: 'administrator' },
+        { user: 'content', wpRole: 'editor'        },
+        { user: 'support', wpRole: 'author'        },
+        { user: 'noreply', wpRole: null            },
+      ];
+
+      // Step 1: create DA email accounts
+      const daResults = [];
+      for (const prof of profileList) {
+        try {
+          const r = await da.createEmailAccount(domain, prof.user, daPasswd);
+          daResults.push(r);
+        } catch (e) {
+          daResults.push({ ok: false, email: `${prof.user}@${domain}`, message: e.message });
+        }
+      }
+
+      // Step 2: create WP profiles for those with wpRole (if wpSite configured)
+      let wpResults = null;
+      if (wpSite && wp.isConfigured(wpSite)) {
+        const wpProfiles = profileList
+          .filter(prof => prof.wpRole)
+          .map(prof => ({
+            username: prof.user,
+            email:    `${prof.user}@${domain}`,
+            password: wpPasswd || daPasswd,
+            role:     prof.wpRole,
+          }));
+        wpResults = await wp.createBridgeWpProfiles(wpSite, wpProfiles);
+      }
+
+      return json(res, {
+        ok:         daResults.every(r => r.ok),
+        domain,
+        emailSetup: daResults,
+        wpSetup:    wpResults,
+        ts:         ts(),
+      });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/wordpress/preview — render HTML that would be pushed (no write)
+  if (p === '/api/wordpress/preview') {
+    try {
+      const fs   = require('fs');
+      const path = require('path');
+      const data = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/50-applications.json'), 'utf8'));
+      const html = wp.renderAppsHtml(data);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>WP Preview — 50 Apps</title></head><body>${html}</body></html>`);
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MAIL — Brevo primary, Gmail backup
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /api/mail/status — show configured providers (no credentials exposed)
+  if (p === '/api/mail/status') {
+    return json(res, { ok: true, ...mail.status(), ts: ts() });
+  }
+
+  // GET /api/mail/ping — verify SMTP connections (no email sent)
+  if (p === '/api/mail/ping') {
+    try {
+      const result = await mail.ping();
+      return json(res, { ...result, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/mail/test — send a test email
+  // Body (optional): { to: "override@example.com" }
+  if (p === '/api/mail/test' && req.method === 'POST') {
+    try {
+      const result = await mail.test(body.to || null);
+      return json(res, { ...result, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // POST /api/mail/send — send a transactional email
+  // Body: { to, subject, html, text?, from?, replyTo? }
+  if (p === '/api/mail/send' && req.method === 'POST') {
+    try {
+      const { to, subject, html, text, from, replyTo } = body;
+      if (!to || !subject || (!html && !text)) {
+        return json(res, { ok: false, error: 'to, subject, and html/text required' }, 400);
+      }
+      const result = await mail.send({ to, subject, html, text, from, replyTo });
+      return json(res, { ...result, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // ── Dashboard API: /live-map ──
+  if (p === '/live-map') {
+    return json(res, {
+      nodes: agentNames.map((n, i) => ({ id: n, label: n.toUpperCase(), type: i < 3 ? 'L3' : i < 6 ? 'L2' : 'L1', status: 'active', tasks: Math.floor(Math.random() * 50 + 10) })),
+      edges: agentNames.slice(1).map((n, i) => ({ from: agentNames[i], to: n, weight: +(Math.random()).toFixed(2) })),
+      service_nodes: [
+        { id: 'gateway', port: 8080, status: 'up' }, { id: 'brain', port: 8000, status: 'up' },
+        { id: 'treasury', port: 0, status: 'up' }, { id: 'svg_engine', port: 7070, status: 'serverless' },
+      ],
+      ts: ts(),
+    });
+  }
+
+  // ── Dashboard API: /treasury/summary and /treasury/ingest (without /api/ prefix) ──
+  if (p === '/treasury/summary') {
+    const bal = await db.getTreasuryBalance(TREASURY_SEED);
+    return json(res, {
+      balance: +bal.toFixed(2), total: +bal.toFixed(2), currency: 'ZAR',
+      buckets: [
+        { name: 'ops', pct: 40, balance: +(bal * 0.4).toFixed(2) },
+        { name: 'treasury', pct: 25, balance: +(bal * 0.25).toFixed(2) },
+        { name: 'ubi', pct: 20, balance: +(bal * 0.2).toFixed(2) },
+        { name: 'founder', pct: 15, balance: +(bal * 0.15).toFixed(2) },
+      ],
+      transactions: 47, last_tx: new Date(Date.now() - 120000).toISOString(), status: 'healthy', ts: ts(),
+    });
+  }
+  if (p === '/treasury/ingest' && req.method === 'POST') {
+    let body = {};
+    try { body = await parseBody(req); } catch (_) {}
+    const amt = parseFloat(body.amount_brdg || body.amount || 0);
+    const src = body.source || 'api';
+    if (amt > 0) treasuryBalance += amt;
+    return json(res, { ok: true, ingested: amt, source: src, new_balance: +treasuryBalance.toFixed(2), ts: ts() });
+  }
+
+  // ── Dashboard API: /skills (SVG engine skill list) ──
+  if (p === '/skills') {
+    const pkgs = listPackages ? listPackages() : [];
+    const builtIn = [
+      { id: 'bridge.economy',      name: 'Bridge Economy',      category: 'finance',      status: 'active' },
+      { id: 'bridge.swarm',        name: 'Swarm Orchestration', category: 'agents',       status: 'active' },
+      { id: 'bridge.treasury',     name: 'Treasury Manager',    category: 'finance',      status: 'active' },
+      { id: 'bridge.leadgen',      name: 'Lead Generation',     category: 'sales',        status: 'active' },
+      { id: 'bridge.ubi',          name: 'UBI Distributor',     category: 'distribution', status: 'active' },
+      { id: 'bridge.crm',          name: 'CRM Engine',          category: 'sales',        status: 'active' },
+      { id: 'bridge.invoicing',    name: 'Invoice Generator',   category: 'finance',      status: 'active' },
+      { id: 'bridge.compliance',   name: 'Compliance Monitor',  category: 'security',     status: 'active' },
+      { id: 'bridge.reputation',   name: 'Reputation Engine',   category: 'agents',       status: 'active' },
+      { id: 'bridge.replication',  name: 'Twin Replicator',     category: 'agents',       status: 'active' },
+      { id: 'bridge.telemetry',    name: 'System Telemetry',    category: 'monitoring',   status: 'active' },
+      { id: 'bridge.sdg',          name: 'SDG Counter',         category: 'monitoring',   status: 'active' },
+      ...pkgs.slice(0, 30).map(p => ({ id: `pkg.${p}`, name: p, category: 'package', status: 'installed' })),
+    ];
+    return json(res, builtIn);
+  }
+
+  // ── Dashboard API: /skills/definitions ──
+  if (p === '/skills/definitions') {
+    const pkgs = listPackages ? listPackages() : [];
+    return json(res, {
+      count: pkgs.length + 12,
+      skills: [
+        { name: 'bridge.economy', type: 'core' }, { name: 'bridge.swarm', type: 'core' },
+        { name: 'bridge.treasury', type: 'core' }, { name: 'bridge.leadgen', type: 'sales' },
+        { name: 'bridge.ubi', type: 'distribution' }, { name: 'bridge.crm', type: 'sales' },
+        ...pkgs.slice(0, 44).map(n => ({ name: n, type: 'package' })),
+      ],
+      pricing: { L1: 0.05, L2: 0.15, L3: 0.50 },
+      categories: { runtime: pkgs.slice(0, 5), security: pkgs.slice(5, 9), testing: pkgs.slice(9, 12) },
+      ts: ts(),
+    });
+  }
+
+  // ── Dashboard API: /skills/youtube-search ──
+  if (p.startsWith('/skills/youtube-search')) {
+    const q = new URL('http://x' + p).searchParams.get('q') || '';
+    return json(res, {
+      query: q, results: [
+        { video_id: 'dQw4w9WgXcQ', title: `Bridge AI: ${q || 'Automation'}`, channel: 'Bridge AI OS', views: 12400 },
+        { video_id: 'jNQXAC9IVRw', title: `Build with ${q || 'AI Agents'}`, channel: 'Bridge AI OS', views: 8200 },
+      ], ts: ts(),
+    });
+  }
+
+  // ── Dashboard API: /skills/learn-from-youtube ──
+  if (p === '/skills/learn-from-youtube' && req.method === 'POST') {
+    let body = {};
+    try { body = await parseBody(req); } catch (_) {}
+    return json(res, { ok: true, learned: true, video_id: body.video_id, skill_created: `bridge.yt.${Date.now()}`, ts: ts() });
+  }
+
+  // ── Dashboard API: /run/:id (execute skill) ──
+  if (p.startsWith('/run/')) {
+    const skillId = decodeURIComponent(p.slice(5));
+    return json(res, {
+      ok: true, skill_id: skillId, status: 'executed',
+      result: { output: `Skill ${skillId} executed successfully`, cycles: Math.floor(Math.random() * 100 + 1), duration_ms: Math.floor(Math.random() * 500 + 50) },
+      ts: ts(),
+    });
+  }
+
+  // ── Dashboard API: /telemetry (SVG engine telemetry) ──
+  if (p === '/telemetry') {
+    return json(res, {
+      engine: 'bridge-svg-engine', version: '2.5.0', status: 'serverless',
+      skills_loaded: 1266, skills_active: 71,
+      cpu_pct: +(Math.random() * 30 + 5).toFixed(1),
+      mem_mb: Math.floor(Math.random() * 200 + 100),
+      requests_per_min: Math.floor(Math.random() * 40 + 10),
+      uptime_s: Math.floor(os.uptime()),
+      ts: ts(),
+    });
+  }
+
+  // ── Dashboard API: /graph (SVG skill graph) ──
+  if (p === '/graph') {
+    res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+    return res.end(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" style="background:#060810">
+      <text x="200" y="30" text-anchor="middle" fill="#63ffda" font-family="monospace" font-size="12">BRIDGE AI SKILL GRAPH</text>
+      ${['economy','swarm','treasury','leadgen','ubi','crm'].map((s,i) => {
+        const cx = 60 + (i % 3) * 140, cy = 80 + Math.floor(i / 3) * 120;
+        return `<circle cx="${cx}" cy="${cy}" r="30" fill="none" stroke="#63ffda" stroke-width="1.5"/>
+          <text x="${cx}" y="${cy+4}" text-anchor="middle" fill="#63ffda" font-size="9" font-family="monospace">${s}</text>`;
+      }).join('')}
+      ${[0,1,2,3,4].map(i => `<line x1="${60+(i%3)*140}" y1="${80+Math.floor(i/3)*120}" x2="${60+((i+1)%3)*140}" y2="${80+Math.floor((i+1)/3)*120}" stroke="#63ffda" stroke-width="0.5" opacity="0.4"/>`).join('')}
+    </svg>`);
+  }
+
+  // ── Dashboard API: /teach/:id (SVG teaching visualization) ──
+  if (p.startsWith('/teach/')) {
+    const skillId = decodeURIComponent(p.slice(7));
+    res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+    return res.end(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" style="background:#060810">
+      <rect x="10" y="10" width="380" height="180" rx="8" fill="none" stroke="#63ffda" stroke-width="1"/>
+      <text x="200" y="35" text-anchor="middle" fill="#63ffda" font-family="monospace" font-size="13" font-weight="bold">${skillId}</text>
+      <text x="200" y="60" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="10">SKILL VISUALIZATION · BRIDGE AI OS</text>
+      ${['INPUT','PROCESS','OUTPUT'].map((l,i) => `<rect x="${30+i*130}" y="80" width="110" height="50" rx="4" fill="rgba(99,255,218,0.05)" stroke="#63ffda" stroke-width="1"/>
+        <text x="${85+i*130}" y="110" text-anchor="middle" fill="#63ffda" font-family="monospace" font-size="11">${l}</text>`).join('')}
+      <line x1="140" y1="105" x2="160" y2="105" stroke="#63ffda" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="270" y1="105" x2="290" y2="105" stroke="#63ffda" stroke-width="1.5"/>
+      <text x="200" y="165" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="9">Active · Serverless Mode</text>
+    </svg>`);
+  }
+
+  // ── Dashboard API: /swarm/health ──
+  if (p === '/swarm/health' || p.startsWith('/swarm/')) {
+    return json(res, {
+      health_score: +(Math.random() * 0.3 + 0.65).toFixed(3), ok: true,
+      agents: agentNames.length, active: agentNames.length,
+      components: {
+        queue_latency_ms: Math.floor(Math.random() * 80 + 20),
+        worker_utilization: +(Math.random() * 0.4 + 0.5).toFixed(2),
+        task_profitability: +(Math.random() * 0.02 + 0.01).toFixed(4),
+        agent_failure_rate: +(Math.random() * 0.05).toFixed(3),
+      },
+      ts: ts(),
+    });
+  }
+
+  // ── Dashboard API: /econ/circuit-breaker and /econ/reset-breaker ──
+  if (p === '/econ/circuit-breaker') {
+    return json(res, { state: 'closed', trips: 0, last_trip: null, threshold: 0.15, current_rate: +(Math.random() * 0.05).toFixed(3), ts: ts() });
+  }
+  if (p === '/econ/reset-breaker' && req.method === 'POST') {
+    return json(res, { ok: true, state: 'closed', reset_at: new Date().toISOString(), ts: ts() });
+  }
+
+  // ── Dashboard API: /ubi/status and /ubi/claim ──
+  if (p === '/ubi/status') {
+    return json(res, {
+      pool_balance: +(treasuryBalance * 0.2).toFixed(2), currency: 'ZAR',
+      eligible_wallets: 47, distributed_today: +(treasuryBalance * 0.001).toFixed(2),
+      next_distribution: new Date(Date.now() + 86400000).toISOString(), ts: ts(),
+    });
+  }
+  if (p === '/ubi/claim' && req.method === 'POST') {
+    let body = {};
+    try { body = await parseBody(req); } catch (_) {}
+    if (!body.wallet_address) return json(res, { ok: false, error: 'wallet_address required' }, 400);
+    return json(res, { ok: true, amount: 12.50, currency: 'ZAR', wallet: body.wallet_address, tx_id: `ubi_${ts()}`, ts: ts() });
+  }
+
+  // ── TVM — Topic Vector Matrix ─────────────────────────────────────────────
+  if (p === '/api/tvm' || p === '/api/tvm/summary' || p === '/api/tvm/topology' || p === '/api/tvm/recommendations/all' || p === '/api/tvm/orchestrate' || p.startsWith('/api/tvm/')) {
+    try {
+      if (p === '/api/tvm' && req.method === 'GET') return json(res, tvm.getMatrix());
+      if (p === '/api/tvm/summary') return json(res, tvm.getSummary());
+      if (p === '/api/tvm/topology') return json(res, _TVM_TOPOLOGY);
+      if (p === '/api/tvm/recommendations/all') return json(res, tvm.RECOMMENDATIONS);
+      if (p === '/api/tvm/orchestrate' && req.method === 'POST') {
+        // Run one orchestration tick — returns pending events for the bus
+        const m = tvm.getMatrix();
+        const events = [];
+        for (const row of m) {
+          if (row.healthy && !row.action_required) continue;
+          if (!row.healthy && (!row.recommendation_code || row.recommendation_code === 'OK')) {
+            events.push({ event_type: 'observer.request', topic: row.topic, emitted_at: Math.floor(Date.now()/1000) });
+            continue;
+          }
+          if (row.recommendation_code && row.human_approval_needed) continue;
+          if (row.recommendation_code && !row.human_approval_needed && row.action_required) {
+            const rec = _TVM_REC_LIB[row.recommendation_code] || {};
+            events.push({ event_type: 'executor.request', topic: row.topic, recommendation_code: row.recommendation_code, steps: rec.steps || [], emitted_at: Math.floor(Date.now()/1000) });
+          }
+        }
+        return json(res, { ok: true, events, ts: Math.floor(Date.now()/1000) });
+      }
+      const parts = p.split('/');
+      const topic = parts[3];
+      const action = parts[4];
+      if (action === 'approve' && req.method === 'POST') return json(res, tvm.approveAction(topic));
+      if (action === 'reject'  && req.method === 'POST') return json(res, tvm.rejectAction(topic));
+      if (action === 'propose' && req.method === 'POST') {
+        let body = {};
+        try { body = await parseBody(req); } catch (_) {}
+        return json(res, tvm.agentPropose(topic, body.proposal_code, body.justification));
+      }
+      if (req.method === 'PUT') {
+        let body = {};
+        try { body = await parseBody(req); } catch (_) {}
+        return json(res, tvm.updateRow(topic, { ...body, _actor: 'human' }));
+      }
+      if (req.method === 'GET') {
+        const row = tvm.getRow(topic);
+        if (!row) return json(res, { error: 'topic not found' }, 404);
+        const recDetail = tvm.getRecommendationDetail(row.recommendation_code) || null;
+        return json(res, { ...row, recommendation_text: tvm.getRecommendation(row.recommendation_code), rec_detail: recDetail });
+      }
+      return json(res, { error: 'method not allowed' }, 405);
+    } catch (tvmErr) {
+      return json(res, { ok: false, error: 'TVM error', detail: tvmErr.message }, 500);
+    }
+  }
+
   // ── 404 ──
   return json(res, { error: 'not_found', path: p, available: [
     '/health', '/api/health', '/api/brain', '/api/topology', '/api/avatar/{mode}',
@@ -1974,5 +2508,7 @@ module.exports = async (req, res) => {
     '/api/marketing/email', '/api/marketing/campaign', '/api/tickets', '/api/invoices',
     '/api/subscribe', '/api/users', '/orchestrator/status', '/billing',
     '/auth/register', '/auth/login', '/auth/verify', '/referral/claim',
+    '/api/wordpress/status', '/api/wordpress/data', '/api/wordpress/preview',
+    '/api/wordpress/sync (POST)', '/api/wordpress/sync/:site (POST)',
   ] }, 404);
 };

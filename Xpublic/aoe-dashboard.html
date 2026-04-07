@@ -394,8 +394,11 @@ function pill(id,s,lbl){
 async function api(path,o){const r=await fetch(API+path,o);if(!r.ok)throw new Error(r.status);return r.json();}
 async function svgTxt(path){const r=await fetch(SVG+path);if(!r.ok)throw new Error(r.status);return r.text();}
 
-// STAT ROW
-const SR=(l,v,c='')=>`<div class="srow"><span class="slbl">${l}</span><span class="sval ${c}">${v}</span></div>`;
+// HTML escape helper — prevents API/user data from injecting markup
+function esc(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML;}
+
+// STAT ROW — labels are always static literals; values are escaped
+const SR=(l,v,c='')=>`<div class="srow"><span class="slbl">${l}</span><span class="sval ${c}">${esc(v)}</span></div>`;
 
 // TAB SWITCH
 function sw(id){
@@ -519,13 +522,23 @@ function filterSk(){
   renderSk(q?_allSk.filter(s=>(s.id||'').includes(q)||(s.name||'').toLowerCase().includes(q)||(s.tags||[]).some(t=>t.includes(q))):_allSk);
 }
 function renderSk(skills){
-  document.getElementById('skill-list').innerHTML=skills.map(s=>`
-    <div class="skcard" onclick="toVis('${s.id}')">
-      <div class="skid">${s.id||'—'}</div>
-      <div class="skname">${s.name||s.skill_name||'—'}</div>
-      <div class="sksrc">${s._o||s.source||'unknown'}</div>
-      <div class="sktags">${(s.tags||[]).slice(0,6).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-    </div>`).join('')||'<div style="color:var(--dim);padding:12px">No skills found</div>';
+  const list=document.getElementById('skill-list');
+  list.textContent='';
+  if(!skills.length){
+    const d=document.createElement('div');d.style.cssText='color:var(--dim);padding:12px';
+    d.textContent='No skills found';list.appendChild(d);return;
+  }
+  skills.forEach(s=>{
+    const card=document.createElement('div');card.className='skcard';card.dataset.skillId=s.id||'';
+    const idEl=document.createElement('div');idEl.className='skid';idEl.textContent=s.id||'—';
+    const nm=document.createElement('div');nm.className='skname';nm.textContent=s.name||s.skill_name||'—';
+    const src=document.createElement('div');src.className='sksrc';src.textContent=s._o||s.source||'unknown';
+    const tags=document.createElement('div');tags.className='sktags';
+    (s.tags||[]).slice(0,6).forEach(t=>{const sp=document.createElement('span');sp.className='tag';sp.textContent=t;tags.appendChild(sp);});
+    card.appendChild(idEl);card.appendChild(nm);card.appendChild(src);card.appendChild(tags);
+    card.addEventListener('click',()=>toVis(s.id||''));
+    list.appendChild(card);
+  });
 }
 function toVis(id){document.getElementById('vis-id').value=id;sw('vis');doVis();}
 
@@ -535,14 +548,23 @@ async function doVis(){
   _visSk=id;_visMode='teach';
   const c=document.getElementById('svg-c');c.innerHTML='<div style="color:var(--dim)">Loading…</div>';
   try{c.innerHTML=await svgTxt('/teach/'+encodeURIComponent(id));}
-  catch{c.innerHTML=`<div style="color:var(--red)">Skill not in SVG engine: ${id}</div>`;}
+  catch{
+    const _e=document.createElement('div');_e.style.color='var(--red)';
+    _e.textContent='Skill not in SVG engine: '+id;
+    c.textContent='';c.appendChild(_e);
+  }
 }
 async function doExec(){
   const id=document.getElementById('vis-id').value.trim();if(!id)return toast('Enter skill id','err');
   _visSk=id;_visMode='run';
   try{
     const d=await fetch(SVG+'/run/'+encodeURIComponent(id)).then(r=>r.json());
-    document.getElementById('exec-out').innerHTML=`<div class="card"><div class="card-title">EXECUTION · ${id}</div><pre style="font-size:10px;color:var(--cyan);overflow:auto;max-height:150px;margin-top:6px">${JSON.stringify(d,null,2)}</pre></div>`;
+    const _card=document.createElement('div');_card.className='card';
+    const _ct=document.createElement('div');_ct.className='card-title';_ct.textContent='EXECUTION · '+id;
+    const _pre=document.createElement('pre');_pre.style.cssText='font-size:10px;color:var(--cyan);overflow:auto;max-height:150px;margin-top:6px';
+    _pre.textContent=JSON.stringify(d,null,2);
+    _card.appendChild(_ct);_card.appendChild(_pre);
+    const _out=document.getElementById('exec-out');_out.textContent='';_out.appendChild(_card);
     toast('Executed: '+id,'ok');
   }catch(e){toast('Execute failed: '+e.message,'err');}
 }
@@ -566,19 +588,40 @@ async function ytSrch(){
   const el=document.getElementById('yt-res');el.innerHTML='<div style="color:var(--dim)">Searching…</div>';
   try{
     const res=await api(`/skills/youtube-search?q=${encodeURIComponent(q)}&limit=${lim}`);
-    if(!res.ok){el.innerHTML=`<div style="color:var(--red)">${res.reason||'Error'} — set YOUTUBE_API_KEY in .env</div>`;return;}
-    el.innerHTML=`<div class="card"><div class="card-title">RESULTS · ${res.count} videos</div>
-      <div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">
-      ${(res.results||[]).map(r=>`
-        <div class="skcard" onclick="document.getElementById('yt-vid').value='${r.video_id}'">
-          <div class="skid">${r.skill_id}</div>
-          <div class="skname">${r.title}</div>
-          <div class="sksrc">${r.channel} · <a href="${r.url}" target="_blank" onclick="event.stopPropagation()" style="color:var(--purple)">▶ YouTube</a></div>
-          <div class="sktags">${(r.tags||[]).slice(0,5).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-        </div>`).join('')}
-      </div></div>`;
-    toast(`Found ${res.count} videos`,'ok');
-  }catch(e){el.innerHTML=`<div style="color:var(--red)">API error: ${e.message} — is YOUTUBE_API_KEY set?</div>`;}
+    if(!res.ok){
+      const _eDiv=document.createElement('div');_eDiv.style.color='var(--red)';
+      _eDiv.textContent=(res.reason||'Error')+' — set YOUTUBE_API_KEY in .env';
+      el.textContent='';el.appendChild(_eDiv);return;
+    }
+    // Build results with DOM methods — r.video_id / r.url are untrusted API data
+    el.textContent='';
+    const _wrap=document.createElement('div');_wrap.className='card';
+    const _ttl=document.createElement('div');_ttl.className='card-title';_ttl.textContent='RESULTS · '+(res.count||0)+' videos';
+    const _list=document.createElement('div');_list.style.cssText='display:flex;flex-direction:column;gap:5px;margin-top:6px';
+    (res.results||[]).forEach(r=>{
+      const _c=document.createElement('div');_c.className='skcard';_c.dataset.ytVid=r.video_id||'';
+      const _sid=document.createElement('div');_sid.className='skid';_sid.textContent=r.skill_id||'—';
+      const _t=document.createElement('div');_t.className='skname';_t.textContent=r.title||'—';
+      const _ch=document.createElement('div');_ch.className='sksrc';_ch.textContent=(r.channel||'')+ ' · ';
+      const _a=document.createElement('a');_a.textContent='▶ YouTube';_a.target='_blank';
+      _a.style.color='var(--purple)';
+      // Only allow https:// URLs to prevent javascript: injection
+      if(r.url&&/^https:\/\//i.test(r.url))_a.href=r.url;
+      _a.addEventListener('click',e=>e.stopPropagation());
+      _ch.appendChild(_a);
+      const _tg=document.createElement('div');_tg.className='sktags';
+      (r.tags||[]).slice(0,5).forEach(t=>{const sp=document.createElement('span');sp.className='tag';sp.textContent=t;_tg.appendChild(sp);});
+      _c.appendChild(_sid);_c.appendChild(_t);_c.appendChild(_ch);_c.appendChild(_tg);
+      _c.addEventListener('click',()=>{document.getElementById('yt-vid').value=r.video_id||'';});
+      _list.appendChild(_c);
+    });
+    _wrap.appendChild(_ttl);_wrap.appendChild(_list);el.appendChild(_wrap);
+    toast('Found '+(res.count||0)+' videos','ok');
+  }catch(e){
+    const _eDiv=document.createElement('div');_eDiv.style.color='var(--red)';
+    _eDiv.textContent='API error: '+e.message+' — is YOUTUBE_API_KEY set?';
+    el.textContent='';el.appendChild(_eDiv);
+  }
 }
 async function ytLearn(){
   const vid=document.getElementById('yt-vid').value.trim();
@@ -605,10 +648,25 @@ async function loadOut(){
     const html=await fetch('/output/').then(r=>r.text());
     const files=[...html.matchAll(/href="([^"]+\.svg)"/g)].map(m=>m[1]).reverse().slice(0,30);
     document.getElementById('nb-out').textContent=files.length;
-    el.innerHTML=files.map(f=>`<div class="thumb" onclick="window.open('/output/${f}','_blank')">
-      <img src="/output/${f}" loading="lazy" onerror="this.style.display='none'">
-      <div class="fn">${f}</div></div>`).join('')||'<div style="color:var(--dim);padding:12px">No SVG builds found</div>';
-  }catch{el.innerHTML='<div style="color:var(--red)">Output dir not served — open from E:\\A via local server</div>';}
+    el.textContent='';
+    if(!files.length){
+      const _e=document.createElement('div');_e.style.cssText='color:var(--dim);padding:12px';
+      _e.textContent='No SVG builds found';el.appendChild(_e);
+    } else {
+      files.forEach(f=>{
+        const thumb=document.createElement('div');thumb.className='thumb';
+        thumb.addEventListener('click',()=>window.open('/output/'+encodeURIComponent(f),'_blank'));
+        const img=document.createElement('img');img.src='/output/'+encodeURIComponent(f);
+        img.loading='lazy';img.addEventListener('error',()=>img.style.display='none');
+        const fn=document.createElement('div');fn.className='fn';fn.textContent=f;
+        thumb.appendChild(img);thumb.appendChild(fn);el.appendChild(thumb);
+      });
+    }
+  }catch{
+    const _e=document.createElement('div');_e.style.color='var(--red)';
+    _e.textContent='Output dir not served — open from E:\\A via local server';
+    el.textContent='';el.appendChild(_e);
+  }
 }
 
 // ── SWARM ──
@@ -654,7 +712,10 @@ async function claimUbi(){
   const w=document.getElementById('ubi-w').value.trim();if(!w)return toast('Enter wallet','err');
   try{
     const r=await api('/ubi/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet_address:w})});
-    document.getElementById('ubi-r').innerHTML=`<div class="card">${SR('Amount',r.amount??'—')}${SR('Status',r.status??'—')}</div>`;
+    const _ubi=document.getElementById('ubi-r');_ubi.textContent='';
+    const _ubiCard=document.createElement('div');_ubiCard.className='card';
+    _ubiCard.insertAdjacentHTML('beforeend',SR('Amount',r.amount??'—')+SR('Status',r.status??'—'));
+    _ubi.appendChild(_ubiCard);
     toast('UBI claimed ✓','ok');
   }catch(e){toast('Claim failed: '+e.message,'err');}
 }

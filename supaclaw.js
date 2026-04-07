@@ -206,15 +206,34 @@ async function masterLoop(state, broadcast) {
     state.treasury.earned  = committed.earned;
 
     // Distribution: 30% UBI, 40% reinvest, 30% reserve
-    const ubi = cycle_revenue * 0.30;
+    const ubi      = cycle_revenue * 0.30;
     const reinvest = cycle_revenue * 0.40;
-    const reserve = cycle_revenue * 0.30;
+    const reserve  = cycle_revenue * 0.30;
 
     runtime.total_distributed += ubi;
-    runtime.total_reinvested += reinvest;
-    runtime.total_reserved += reserve;
+    runtime.total_reinvested  += reinvest;
+    runtime.total_reserved    += reserve;
 
-    runtime.last_distribution = { ubi: +ubi.toFixed(2), reinvest: +reinvest.toFixed(2), reserve: +reserve.toFixed(2), ts: Date.now() };
+    // COMPOUNDING: reinvested portion earns a yield (annual 18% staking APY, accrued per 5s cycle)
+    // cycles_per_year = 365 * 24 * 3600 / 5 = 6,307,200
+    const CYCLES_PER_YEAR = 6307200;
+    const COMPOUND_APY = 0.18;
+    const compound_yield = runtime.total_reinvested * (COMPOUND_APY / CYCLES_PER_YEAR);
+    if (compound_yield > 0) {
+      runtime.total_revenue += compound_yield;
+      const ikey_comp = crypto.createHash('sha256')
+        .update('compound_' + runtime.cycle + '_' + compound_yield.toFixed(10))
+        .digest('hex').slice(0, 32);
+      await require('./supaclaw-core.js').getCore().treasuryCredit(
+        +compound_yield.toFixed(8), 'compound_yield', ikey_comp
+      );
+      // Sync mirror
+      const post = require('./supaclaw-core.js').getCore().read('treasury', { balance: 0, earned: 0 });
+      state.treasury.balance = post.balance;
+      state.treasury.earned  = post.earned;
+    }
+
+    runtime.last_distribution = { ubi: +ubi.toFixed(2), reinvest: +reinvest.toFixed(2), reserve: +reserve.toFixed(2), compound_yield: +compound_yield.toFixed(6), ts: Date.now() };
   }
 
   // LEARN + EVOLVE (every 10 cycles)

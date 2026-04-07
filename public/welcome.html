@@ -3,14 +3,6 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bridge AI OS — Your Dashboard</title>
-    <meta name="description" content="Welcome — Bridge AI OS Introduction">
-    <meta property="og:title" content="Bridge AI OS — Your Dashboard">
-    <meta property="og:description" content="Welcome — Bridge AI OS Introduction">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/welcome.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/welcome.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#050a0f;--s:#0d1620;--s2:#111d2b;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--t:#c8dce8;--d:#4d6678;--p:#a78bfa;--o:#fb923c}
@@ -49,7 +41,7 @@ h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin:1.5rem 0 .5rem;bor
 .profile .val{color:var(--t)}
 .logout{position:fixed;top:4rem;right:1rem;z-index:100}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <a class="btn btn-danger logout" href="#" onclick="logout()">LOGOUT</a>
 <div class="page">
@@ -120,12 +112,12 @@ document.getElementById('free-tools').innerHTML = freeTools.map(t => `
 
 // Platforms
 const platformCards = [
-  { icon:'🏥', name:'EHSA Health', desc:'Patient records, telemedicine, pharmacy, AI diagnostics', href:'/ehsa-home.html', tier:'free' },
-  { icon:'✨', name:'Aurora AI', desc:'Conversational AI with emotion, speech, avatar', href:'/aurora-home.html', tier:'free' },
-  { icon:'💰', name:'UBI System', desc:'Universal Basic Income from platform revenue', href:'/ubi-home.html', tier:'free' },
-  { icon:'🏗️', name:'Hospital in a Box', desc:'Complete hospital management in a container', href:'/hospital-home.html', tier:'free' },
-  { icon:'🌱', name:'Rooted Earth', desc:'Sustainability, carbon tracking, SDG alignment', href:'/rootedearth-home.html', tier:'free' },
-  { icon:'🆘', name:'Aid Distribution', desc:'Transparent aid tracking and disbursement', href:'/aid-home.html', tier:'free' },
+  { icon:'🏥', name:'EHSA Health', desc:'Patient records, telemedicine, pharmacy, AI diagnostics', href:'/platforms.html#ehsa', tier:'soon' },
+  { icon:'✨', name:'Aurora AI', desc:'Conversational AI with emotion, speech, avatar', href:'/platforms.html#aurora', tier:'soon' },
+  { icon:'💰', name:'UBI System', desc:'Universal Basic Income from platform revenue', href:'/platforms.html#ubi', tier:'free' },
+  { icon:'🏗️', name:'Hospital in a Box', desc:'Complete hospital management in a container', href:'/platforms.html#hospital', tier:'ent' },
+  { icon:'🌱', name:'Rooted Earth', desc:'Sustainability, carbon tracking, SDG alignment', href:'/platforms.html#rootedearth', tier:'soon' },
+  { icon:'🆘', name:'Aid Distribution', desc:'Transparent aid tracking and disbursement', href:'/platforms.html#aid', tier:'soon' },
 ];
 document.getElementById('platforms').innerHTML = platformCards.map(t => `
   <a class="card" href="${t.href}"><h3><span class="icon">${t.icon}</span> ${t.name} <span class="badge ${t.tier}">${t.tier.toUpperCase()}</span></h3><p>${t.desc}</p></a>
@@ -135,16 +127,16 @@ document.getElementById('platforms').innerHTML = platformCards.map(t => `
 async function load() {
   try {
     const [agents, treasury, wallet, integrations] = await Promise.all([
-      fetch('/api/agents').then(r=>r.json()).catch(()=>({agents:[]})),
-      fetch('/api/treasury').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/credits').then(r=>r.json()).catch(()=>({total_usd:0,credits:0})),
-      Promise.resolve({google:{configured:false},microsoft:{configured:false},github:{configured:false}}),
+      fetch('/api/agents/workforce').then(r=>r.json()).catch(()=>({agents:[]})),
+      fetch('/api/treasury/status').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/wallet/balance').then(r=>r.json()).catch(()=>({total_usd:0})),
+      fetch('/api/integrations/status').then(r=>r.json()).catch(()=>({})),
     ]);
 
     document.getElementById('stats').innerHTML = `
       <div class="stat"><div class="v">13</div><div class="l">TOOLS AVAILABLE</div></div>
       <div class="stat"><div class="v">${(agents.agents||[]).length}</div><div class="l">AI AGENTS</div></div>
-      <div class="stat"><div class="v">$${(((treasury.total||treasury.balance||0))/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
+      <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
       <div class="stat"><div class="v">130+</div><div class="l">API ENDPOINTS</div></div>
     `;
 
@@ -153,12 +145,12 @@ async function load() {
     `).join('');
 
     document.getElementById('economy').innerHTML = `
-      <a class="card" href="/control.html"><h3><span class="icon">🏦</span> Treasury <span class="badge free">LIVE</span></h3><p>Balance: $${(treasury.total||treasury.balance||0).toLocaleString()}</p></a>
-      <a class="card" href="/wallet.html"><h3><span class="icon">👛</span> Wallet <span class="badge free">LIVE</span></h3><p>Credits: ${wallet.credits||0}</p></a>
-      <a class="card" href="/trading.html"><h3><span class="icon">📈</span> DEX Trading <span class="badge free">LIVE</span></h3><p>BRDG/ETH, BRDG/USDT, BRDG/SOL</p></a>
-      <a class="card" href="/defi.html"><h3><span class="icon">🔗</span> DeFi / Staking <span class="badge free">LIVE</span></h3><p>Stake BRDG, earn 15% APY, 342 stakers</p></a>
-      <a class="card" href="/ubi-home.html"><h3><span class="icon">💚</span> UBI Claims <span class="badge free">LIVE</span></h3><p>Monthly distribution · 156 recipients</p></a>
-      <a class="card" href="/defi.html#rails"><h3><span class="icon">💳</span> Payment Rails <span class="badge free">6 RAILS</span></h3><p>PayFast · Paystack · ETH · BTC · SOL · BRDG</p></a>
+      <a class="card" href="/api/treasury/status"><h3><span class="icon">🏦</span> Treasury <span class="badge free">LIVE</span></h3><p>Balance: $${(treasury.balance||0).toLocaleString()} · Revenue: $${(treasury.earned||0).toLocaleString()}</p></a>
+      <a class="card" href="/api/wallet/balance"><h3><span class="icon">👛</span> Wallet <span class="badge free">LIVE</span></h3><p>Total: $${(wallet.total_usd||0).toLocaleString()} · ${(wallet.balances||[]).length} currencies</p></a>
+      <a class="card" href="/api/dex/pairs"><h3><span class="icon">📈</span> DEX Trading <span class="badge free">LIVE</span></h3><p>BRDG/ETH, BRDG/USDT, BRDG/SOL · Live pairs</p></a>
+      <a class="card" href="/api/defi/status"><h3><span class="icon">🔗</span> DeFi / Staking <span class="badge free">LIVE</span></h3><p>Stake BRDG, earn 15% APY, 342 stakers</p></a>
+      <a class="card" href="/api/ubi/status"><h3><span class="icon">💚</span> UBI Claims <span class="badge free">LIVE</span></h3><p>Monthly distribution · 156 recipients</p></a>
+      <a class="card" href="/api/revenue/rails"><h3><span class="icon">💳</span> Payment Rails <span class="badge free">6 RAILS</span></h3><p>PayFast · Paystack · ETH · BTC · SOL · BRDG</p></a>
     `;
 
     document.getElementById('profile').innerHTML = `
@@ -182,9 +174,14 @@ function logout() {
   location.href = '/onboarding.html';
 }
 
-function setupMFA() {
-  alert('MFA setup will be available soon. Contact admin for early access.');
+async function setupMFA() {
+  const email = user.email || 'default';
+  const res = await fetch('/api/mfa/setup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: email}) });
+  const data = await res.json();
+  if (data.ok) {
+    alert('MFA Setup:\\n\\nSecret: ' + data.secret + '\\n\\nBackup codes:\\n' + data.backup_codes.join('\\n') + '\\n\\nAdd to your authenticator app, then verify with a code.');
+  }
 }
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

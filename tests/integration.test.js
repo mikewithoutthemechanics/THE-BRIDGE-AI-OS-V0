@@ -58,9 +58,9 @@ describe('/api/status aggregates all service statuses', () => {
     expect(gw.latency_ms).toBe(0);
   });
 
-  test('services list has 4 entries (gateway, system, ainode, orchestrator)', async () => {
+  test('services list has 5 entries (gateway, system, brain, terminal, auth)', async () => {
     const res = await request(gateway).get('/api/status');
-    expect(res.body.services.length).toBe(4);
+    expect(res.body.services.length).toBe(5);
   });
 
   test('each service entry has id, port, status, latency_ms', async () => {

@@ -3,14 +3,6 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bridge AI OS — Corporate Suite</title>
-    <meta name="description" content="Corporate — Bridge AI OS Enterprise Solutions">
-    <meta property="og:title" content="Bridge AI OS — Corporate Suite">
-    <meta property="og:description" content="Corporate — Bridge AI OS Enterprise Solutions">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/corporate.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/corporate.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#050a0f;--s:#0d1620;--s2:#111d2b;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--t:#c8dce8;--d:#4d6678;--p:#a78bfa;--o:#fb923c}
@@ -56,7 +48,7 @@ input:focus,select:focus{border-color:var(--a);outline:none}
 .actions{display:flex;gap:.5rem;margin-top:1rem}
 @media(max-width:768px){.app{grid-template-columns:1fr}.sidebar{display:none}}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <div class="app">
 <div class="sidebar">
@@ -269,35 +261,24 @@ async function loadSection(id) {
   try {
     if (id === 'dashboard') {
       const [treasury, invoices, debts, quotes, analytics] = await Promise.all([
-        fetch(API + '/api/treasury').then(r => r.json()).catch(()=>({})),
-        fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({})),
-        fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({})),
-        fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({})),
-        fetch(API + '/api/economics').then(r => r.json()).catch(()=>({})),
+        fetch(API + '/api/treasury/status').then(r => r.json()),
+        fetch(API + '/api/invoices').then(r => r.json()),
+        fetch(API + '/api/debts').then(r => r.json()),
+        fetch(API + '/api/quotes').then(r => r.json()),
+        fetch(API + '/api/analytics/overview').then(r => r.json()),
       ]);
-      var bal = treasury.total || treasury.balance || 0;
-      var invList = invoices.invoices || invoices.contracts || [];
-      var debtList = debts.debts || debts.contracts || [];
-      var quoteList = quotes.quotes || quotes.contracts || [];
-      var statsEl = document.getElementById('dash-stats');
-      statsEl.textContent = '';
-      [
-        ['$' + (Number(bal) / 1000).toFixed(0) + 'K', 'TREASURY'],
-        [String(invList.length), 'CONTRACTS'],
-        ['$' + Number(invoices.total || 0).toLocaleString(), 'INVOICED'],
-        [String(debtList.length), 'DEBTORS'],
-        ['$' + Number(debts.total_outstanding || 0).toLocaleString(), 'OUTSTANDING'],
-        [String(quoteList.length), 'QUOTES']
-      ].forEach(function(pair) {
-        var d = document.createElement('div'); d.className = 'stat';
-        var v = document.createElement('div'); v.className = 'v'; v.textContent = pair[0];
-        var l = document.createElement('div'); l.className = 'l'; l.textContent = pair[1];
-        d.appendChild(v); d.appendChild(l); statsEl.appendChild(d);
-      });
-      document.getElementById('b-invoices').textContent = invList.length;
-      document.getElementById('b-quotes').textContent = quoteList.length;
-      document.getElementById('b-debtors').textContent = debtList.length;
-      document.getElementById('recent-activity').textContent = 'System active. Treasury: $' + Number(bal).toLocaleString();
+      document.getElementById('dash-stats').innerHTML = `
+        <div class="stat"><div class="v">$${((treasury.balance || 0) / 1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
+        <div class="stat"><div class="v">${(invoices.invoices || []).length}</div><div class="l">INVOICES</div></div>
+        <div class="stat"><div class="v">$${(invoices.total || 0).toLocaleString()}</div><div class="l">INVOICED</div></div>
+        <div class="stat"><div class="v">${(debts.debts || []).length}</div><div class="l">DEBTORS</div></div>
+        <div class="stat"><div class="v">$${(debts.total_outstanding || 0).toLocaleString()}</div><div class="l">OUTSTANDING</div></div>
+        <div class="stat"><div class="v">${(quotes.quotes || []).length}</div><div class="l">QUOTES</div></div>
+      `;
+      document.getElementById('b-invoices').textContent = (invoices.invoices || []).length;
+      document.getElementById('b-quotes').textContent = (quotes.quotes || []).length;
+      document.getElementById('b-debtors').textContent = (debts.debts || []).length;
+      document.getElementById('recent-activity').textContent = 'System active. Treasury: $' + (treasury.balance || 0).toLocaleString();
     } else if (id === 'quotes') {
       const d = await fetch(API + '/api/quotes').then(r => r.json());
       document.getElementById('quotes-tbody').innerHTML = (d.quotes || []).map(q => `<tr><td>${q.number || q.id}</td><td>${q.client}</td><td>$${(q.total || 0).toFixed(2)}</td><td><span class="status ${q.status}">${q.status}</span></td><td>${q.valid_until || '-'}</td><td>${q.status === 'draft' ? `<button class="btn btn-p" onclick="acceptQuote('${q.id}')">ACCEPT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" style="color:var(--d);text-align:center">No quotes yet</td></tr>';
@@ -320,21 +301,19 @@ async function loadSection(id) {
       const d = await fetch(API + '/api/tickets').then(r => r.json());
       document.getElementById('tickets-tbody').innerHTML = (d.tickets || []).map(t => `<tr><td>${t.id}</td><td>${t.subject}</td><td>${t.priority}</td><td><span class="status ${t.status}">${t.status}</span></td><td>${t.assignee}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No tickets</td></tr>';
     } else if (id === 'legal') {
-      const [docs, compliance] = await Promise.all([fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({})), fetch(API + '/api/contracts').then(r => r.json()).catch(()=>({}))]);
-      docs.documents = docs.documents || docs.contracts || [];
-      compliance.frameworks = compliance.frameworks || [];
+      const [docs, compliance] = await Promise.all([fetch(API + '/api/legal/documents').then(r => r.json()), fetch(API + '/api/compliance/status').then(r => r.json())]);
       document.getElementById('legal-content').innerHTML = `<h2>COMPLIANCE</h2>` + (compliance.frameworks || []).map(f => `<div style="margin:.3rem 0;font-size:.72rem"><span class="status ${f.status === 'compliant' ? 'paid' : 'pending'}">${f.status}</span> ${f.name}</div>`).join('') + `<h2>DOCUMENTS</h2>` + (docs.documents || []).map(d => `<div style="margin:.3rem 0;font-size:.72rem">${d.name} (${d.type}) — ${d.jurisdiction}</div>`).join('');
     } else if (id === 'hr') {
-      const d = await fetch(API + '/api/agents').then(r => r.json()).catch(()=>({}));
+      const d = await fetch(API + '/api/hr/team').then(r => r.json());
       document.getElementById('hr-content').innerHTML = (d.team || []).map(t => `<div style="margin:.5rem 0;font-size:.75rem"><b>${t.name}</b> — ${t.role} (${t.type})</div>`).join('') + `<div style="margin-top:1rem;font-size:.7rem;color:var(--d)">AI Agents: ${d.ai_agents || 0} | Human: ${d.human || 0}</div>`;
     } else if (id === 'inventory') {
       const d = await fetch(API + '/api/inventory').then(r => r.json());
       document.getElementById('inventory-tbody').innerHTML = (d.items || []).map(i => `<tr><td>${i.sku}</td><td>${i.name}</td><td>${i.qty}</td><td>$${i.unit_cost}</td><td>$${(i.qty * i.unit_cost).toFixed(2)}</td><td>${i.location}</td></tr>`).join('');
     } else if (id === 'marketing') {
-      const [funnel, seo, social] = await Promise.all([fetch(API + '/api/economics').then(r => r.json()).catch(()=>({})), fetch(API + '/api/status').then(r => r.json()).catch(()=>({})), fetch(API + '/api/agents').then(r => r.json()).catch(()=>({}))]);
+      const [funnel, seo, social] = await Promise.all([fetch(API + '/api/marketing/funnel').then(r => r.json()), fetch(API + '/api/marketing/seo').then(r => r.json()), fetch(API + '/api/marketing/social').then(r => r.json())]);
       document.getElementById('marketing-content').innerHTML = `<h2>FUNNEL</h2>` + (funnel.stages || []).map(s => `<div style="margin:.3rem 0;font-size:.72rem">${s.stage}: <b>${s.count}</b></div>`).join('') + `<h2>SEO</h2><div style="font-size:.72rem">DA: ${seo.da} | Pages: ${seo.pages_indexed} | Keywords: ${seo.keywords_ranking} | Traffic: ${seo.organic_traffic_mtd}</div>` + `<h2>SOCIAL</h2>` + (social.channels || []).map(c => `<div style="margin:.3rem 0;font-size:.72rem">${c.platform}: ${c.followers} followers, ${c.engagement * 100}% engagement</div>`).join('');
     } else if (id === 'analytics') {
-      const d = await fetch(API + '/api/economics').then(r => r.json()).catch(()=>({}));
+      const d = await fetch(API + '/api/analytics/overview').then(r => r.json());
       document.getElementById('analytics-content').innerHTML = `<div class="stats"><div class="stat"><div class="v">$${(d.revenue?.mtd || 0).toLocaleString()}</div><div class="l">REVENUE MTD</div></div><div class="stat"><div class="v">${d.customers?.total || 0}</div><div class="l">CUSTOMERS</div></div><div class="stat"><div class="v">${d.support?.open_tickets || 0}</div><div class="l">OPEN TICKETS</div></div><div class="stat"><div class="v">${d.agents?.total || 0}</div><div class="l">AGENTS</div></div><div class="stat"><div class="v">${(d.agents?.efficiency * 100 || 0).toFixed(0)}%</div><div class="l">EFFICIENCY</div></div><div class="stat"><div class="v">${d.marketing?.conversion || 0}</div><div class="l">CONVERSION</div></div></div>`;
     }
   } catch (e) { console.error(e); }
@@ -343,5 +322,5 @@ async function loadSection(id) {
 // Initial load
 loadSection('dashboard');
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

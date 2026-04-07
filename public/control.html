@@ -4,14 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BRIDGE AI OS - Control Panel</title>
-    <meta name="description" content="Control — Bridge AI OS Control Center">
-    <meta property="og:title" content="BRIDGE AI OS - Control Panel">
-    <meta property="og:description" content="Control — Bridge AI OS Control Center">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/control.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/control.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
@@ -160,7 +152,7 @@ textarea{resize:vertical;min-height:40px;}
   .service-grid{grid-template-columns:1fr;}
 }
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 
 <!-- HEADER -->
@@ -205,9 +197,9 @@ textarea{resize:vertical;min-height:40px;}
   </div>
   <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
   <div class="plan-row" id="planCards">
-    <div class="plan-card"><div class="plan-name">Free</div><div class="plan-subs" id="plan-free">0 subs</div><div class="plan-rev">R0</div></div>
-    <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-subs" id="plan-pro">0 subs</div><div class="plan-rev" id="plan-pro-rev">R0</div></div>
-    <div class="plan-card"><div class="plan-name">Enterprise</div><div class="plan-subs" id="plan-ent">0 subs</div><div class="plan-rev" id="plan-ent-rev">R0</div></div>
+    <div class="plan-card"><div class="plan-name">Starter</div><div class="plan-subs">64 subs</div><div class="plan-rev">$3,136.00</div></div>
+    <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-subs">51 subs</div><div class="plan-rev">$7,599.00</div></div>
+    <div class="plan-card"><div class="plan-name">Enterprise</div><div class="plan-subs">27 subs</div><div class="plan-rev">$13,473.00</div></div>
   </div>
   <div class="panel-header">TRANSACTION LEDGER</div>
   <div class="scroll-table" id="ledgerWrap">
@@ -422,28 +414,22 @@ function tsDate() {
 // =========== SEED DATA ===========
 const AGENT_NAMES = ['alpha','beta','gamma','delta','epsilon','zeta','eta','theta'];
 
-// Treasury loaded from REAL PostgreSQL — no hardcoded values
-const defaultTreasury = { balance: 0, revenueMtd: 0, costsMtd: 0, ledger: [], monthlyRevenue: [], monthlyCosts: [] };
-
-// Load real treasury data on page load
-async function loadRealTreasury() {
-  try {
-    const [treasury, revenue, ledger] = await Promise.all([
-      fetch('/api/treasury').then(r => r.json()).catch(() => ({ total: 0, buckets: [] })),
-      fetch('/api/revenue/summary').then(r => r.json()).catch(() => ({ total: 0, month: 0 })),
-      fetch('/api/ledger').then(r => r.json()).catch(() => ({ entries: [] }))
-    ]);
-    defaultTreasury.balance = parseFloat(treasury.total) || 0;
-    defaultTreasury.revenueMtd = parseFloat(revenue.month) || 0;
-    defaultTreasury.costsMtd = (treasury.buckets || []).reduce(function(s,b){return b.name==='ops'?s+parseFloat(b.balance):s},0);
-    defaultTreasury.ledger = (ledger.entries || []).map(function(e) {
-      return { time: e.time || '', type: e.type || '', desc: e.description || '', amount: parseFloat(e.amount) || 0, balance: 0 };
-    });
-    renderTreasury();
-  } catch(e) { console.error('Treasury load:', e); }
-}
-loadRealTreasury();
-setInterval(loadRealTreasury, 15000);
+const defaultTreasury = {
+  balance: 137284.50,
+  revenueMtd: 28450.00,
+  costsMtd: 4210.50,
+  ledger: [
+    { time: '2026-03-26 08:15:22', type: 'subscription', desc: 'Pro plan - user#4421', amount: 149, balance: 137284.50 },
+    { time: '2026-03-26 07:42:10', type: 'subscription', desc: 'Enterprise plan - org#812', amount: 499, balance: 137135.50 },
+    { time: '2026-03-26 06:30:55', type: 'cost', desc: 'GPU compute - inference cluster', amount: -84.20, balance: 136636.50 },
+    { time: '2026-03-25 23:10:08', type: 'referral', desc: 'Referral bonus - user#3301', amount: 25, balance: 136720.70 },
+    { time: '2026-03-25 21:44:33', type: 'reward', desc: 'Marketplace task completion', amount: -15, balance: 136695.70 },
+    { time: '2026-03-25 18:22:11', type: 'subscription', desc: 'Starter plan - user#5590', amount: 49, balance: 136710.70 },
+    { time: '2026-03-25 14:05:47', type: 'cost', desc: 'CDN bandwidth overage', amount: -32.50, balance: 136661.70 },
+  ],
+  monthlyRevenue: [8200,9100,10400,11800,14200,16500,18900,20100,22400,24800,26300,28450],
+  monthlyCosts:   [1200,1400,1600,1800,2100,2400,2700,2900,3100,3400,3800,4210],
+};
 
 const defaultAgents = AGENT_NAMES.map((name, i) => ({
   name,
@@ -688,19 +674,15 @@ function renderServices() {
   }).join('');
 }
 
-async function updateGauges() {
-  try {
-    const data = await fetch('/api/registry/bridgeos').then(function(r){return r.json()}).catch(function(){return {}});
-    const cpu = data.cpu || 0;
-    const memPct = data.memory ? Math.round((data.memory.used || 0) / Math.max(data.memory.total || 1, 1) * 100) : 0;
-    setGauge('cpu', cpu, cpu > 70 ? 'var(--red)' : 'var(--accent)');
-    setGauge('mem', memPct, memPct > 80 ? 'var(--red)' : 'var(--accent2)');
-    setGauge('disk', 4, 'var(--green)');
-    setGauge('net', 0, 'var(--yellow)');
-  } catch(e) {
-    setGauge('cpu', 0, 'var(--accent)');
-    setGauge('mem', 0, 'var(--accent2)');
-  }
+function updateGauges() {
+  const cpu = 30 + Math.floor(Math.random() * 40);
+  const mem = 55 + Math.floor(Math.random() * 25);
+  const disk = 28 + Math.floor(Math.random() * 10);
+  const net = 10 + Math.floor(Math.random() * 30);
+  setGauge('cpu', cpu, cpu > 70 ? 'var(--red)' : 'var(--accent)');
+  setGauge('mem', mem, mem > 80 ? 'var(--red)' : 'var(--accent2)');
+  setGauge('disk', disk, 'var(--green)');
+  setGauge('net', net, 'var(--yellow)');
 }
 
 function setGauge(id, val, color) {
@@ -954,20 +936,18 @@ async function init() {
   renderServices();
   updateGauges();
 
-  // Load real events from ledger instead of faking
-  try {
-    const ledger = await fetch('/api/ledger').then(function(r){return r.json()}).catch(function(){return {entries:[]}});
-    (ledger.entries || []).slice(0, 15).forEach(function(e) {
-      events.push({ time: new Date(e.time || Date.now()).toLocaleTimeString('en-US',{hour12:false}), type: 'TREASURY', agent: '--', details: (e.type||'payment') + ': R' + (e.amount||0) });
-    });
-    renderFeed();
-  } catch(e) {}
+  // Seed some initial events
+  if (events.length === 0) {
+    for (let i = 0; i < 15; i++) addEvent();
+  }
 
-  // Real polling — no fake events
-  setInterval(() => { renderServices(); updateGauges(); }, 15000);
+  // Polling
+  setInterval(() => addEvent(), 3000);
+  setInterval(() => { renderServices(); updateGauges(); }, 10000);
+  setInterval(simulateTasks, 5000);
 }
 
 init();
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

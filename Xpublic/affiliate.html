@@ -148,6 +148,12 @@ document.querySelectorAll('.upgrade-cta').forEach(el => el.style.display = isAut
 
 const tierColors = { starter:'starter', bronze:'bronze', silver:'silver', gold:'gold', platinum:'plat', diamond:'dia' };
 
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s == null ? '' : s);
+  return d.innerHTML;
+}
+
 async function load() {
   // Program info
   const [prog, stats, lb, creatives] = await Promise.all([
@@ -173,9 +179,23 @@ async function load() {
   ).join('');
 
   // Leaderboard
-  document.getElementById('leaderboard-tbody').innerHTML = (lb.leaderboard || []).map(a =>
-    `<tr><td>${a.rank}</td><td>${a.name}</td><td><span class="badge ${tierColors[a.tier] || ''}">${a.tier.toUpperCase()}</span></td><td>${a.referrals}</td><td>${a.conversions}</td><td>$${a.earned.toLocaleString()}</td></tr>`
-  ).join('');
+  const lbTbody = document.getElementById('leaderboard-tbody');
+  lbTbody.textContent = '';
+  (lb.leaderboard || []).forEach(function(a) {
+    const tr = document.createElement('tr');
+    [a.rank, a.name].forEach(function(v) {
+      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+    });
+    const tierTd = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = 'badge ' + (tierColors[a.tier] || '');
+    badge.textContent = String(a.tier || '').toUpperCase();
+    tierTd.appendChild(badge); tr.appendChild(tierTd);
+    [a.referrals, a.conversions, '$' + (a.earned || 0).toLocaleString()].forEach(function(v) {
+      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+    });
+    lbTbody.appendChild(tr);
+  });
 
   // Creatives
   document.getElementById('creatives').innerHTML = (creatives.creatives || []).map(c =>
@@ -210,7 +230,16 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const r = await fetch('/api/affiliate/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('join-name').value, email: document.getElementById('join-email').value }) }).then(r => r.json());
   if (r.ok) {
-    document.getElementById('join-msg').innerHTML = '<span style="color:var(--g)">Welcome! Your code: <b>' + r.code + '</b> | Link: ' + (r.links || [''])[0] + '</span>';
+    const joinMsg = document.getElementById('join-msg');
+    joinMsg.textContent = '';
+    const span = document.createElement('span');
+    span.style.color = 'var(--g)';
+    span.textContent = 'Welcome! Your code: ';
+    const bold = document.createElement('b');
+    bold.textContent = r.code || '';
+    span.appendChild(bold);
+    span.appendChild(document.createTextNode(' | Link: ' + ((r.links || [''])[0] || '')));
+    joinMsg.appendChild(span);
   }
 });
 

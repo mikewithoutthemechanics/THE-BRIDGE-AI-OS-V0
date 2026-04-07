@@ -129,6 +129,20 @@
 </div>
 
 <script>
+// Load OAuth provider config from backend so client IDs are never hardcoded in HTML.
+// Backend should expose GET /api/config/oauth → { googleClientId, githubClientId }
+(async function loadOAuthConfig() {
+  try {
+    const res = await fetch('/api/config/oauth');
+    if (!res.ok) return;
+    const cfg = await res.json();
+    if (cfg.googleClientId) window.__GOOGLE_CLIENT_ID = cfg.googleClientId;
+    if (cfg.githubClientId) window.__GITHUB_CLIENT_ID = cfg.githubClientId;
+  } catch (_) {
+    // OAuth not configured — email registration works without it
+  }
+})();
+
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {

@@ -12,6 +12,7 @@ const jwt        = require('jsonwebtoken');
 const Database   = require('better-sqlite3');
 const path       = require('path');
 const fs         = require('fs');
+const { AuthMerkleLog } = require('./lib/auth-merkle');
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -59,8 +60,9 @@ function runMigrations(db) {
   }
 }
 
-const db = openDb();
+const db      = openDb();
 runMigrations(db);
+const merkle  = new AuthMerkleLog(db);
 
 // ─── Prepared Statements ──────────────────────────────────────────────────────
 
@@ -92,7 +94,7 @@ setInterval(() => {
   // We can't decode without try/catch easily here, so just clear periodically
   // In production replace with Redis TTL keys
   if (blacklist.size > 50000) blacklist.clear();
-}, 10 * 60 * 1000);
+}, 10 * 60 * 1000).unref();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -216,10 +218,13 @@ app.post('/auth/register', async (req, res) => {
     const token         = signAccess(payload);
     const refresh_token = signRefresh(payload);
 
+    merkle.log(userId, 'register', req.ip, { email: user.email });
+
     return res.status(201).json({
       token,
       refresh_token,
       user: safeUser(user),
+      merkle_root: merkle.getRoot(),
     });
   } catch (err) {
     console.error('[auth/register]', err);
@@ -253,6 +258,7 @@ app.post('/auth/login', async (req, res) => {
 
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
+      merkle.log(user.id, 'failed_login', req.ip, { reason: 'wrong_password' });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -262,10 +268,13 @@ app.post('/auth/login', async (req, res) => {
     const token         = signAccess(payload);
     const refresh_token = signRefresh(payload);
 
+    merkle.log(user.id, 'login', req.ip, { email: user.email });
+
     return res.json({
       token,
       refresh_token,
       user: safeUser(user),
+      merkle_root: merkle.getRoot(),
     });
   } catch (err) {
     console.error('[auth/login]', err);
@@ -280,7 +289,8 @@ app.post('/auth/login', async (req, res) => {
  */
 app.post('/auth/logout', requireAuth, (req, res) => {
   blacklist.add(req.token);
-  return res.json({ status: 'logged_out' });
+  merkle.log(req.user.sub, 'logout', req.ip, {});
+  return res.json({ status: 'logged_out', merkle_root: merkle.getRoot() });
 });
 
 /**
@@ -396,6 +406,43 @@ app.post('/referral/create', requireAuth, (req, res) => {
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'OK', service: 'auth', port: PORT }));
 
+// ─── Merkle Audit Endpoints ───────────────────────────────────────────────────
+
+/** GET /auth/audit/root — current Merkle root hash */
+app.get('/auth/audit/root', (_req, res) => {
+  res.json({ root: merkle.getRoot(), ts: new Date().toISOString() });
+});
+
+/** GET /auth/audit/state — full tree state (root, depth, leaf_count) */
+app.get('/auth/audit/state', (_req, res) => {
+  res.json(merkle.getState());
+});
+
+/** GET /auth/audit/verify — recompute tree from DB and check integrity */
+app.get('/auth/audit/verify', (_req, res) => {
+  const result = merkle.verifyIntegrity();
+  res.status(result.integrity ? 200 : 409).json(result);
+});
+
+/** GET /auth/audit/events?limit=N — recent audit events */
+app.get('/auth/audit/events', (_req, res) => {
+  const limit = Math.min(parseInt(_req.query.limit) || 30, 200);
+  res.json({ events: merkle.getRecentEvents(limit), root: merkle.getRoot() });
+});
+
+/** GET /auth/audit/proof/:leafHash — Merkle proof for a leaf hash */
+app.get('/auth/audit/proof/:leafHash', (req, res) => {
+  const proof = merkle.getProofByHash(req.params.leafHash);
+  if (!proof) return res.status(404).json({ error: 'Leaf not found in tree' });
+  res.json({ proof, root: merkle.getRoot(), leaf_hash: req.params.leafHash });
+});
+
+/** GET /auth/audit/user/:userId — events for a specific user */
+app.get('/auth/audit/user/:userId', requireAuth, (req, res) => {
+  const events = merkle.getEventsByUser(parseInt(req.params.userId));
+  res.json({ events, root: merkle.getRoot() });
+});
+
 // 404 fallback
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
@@ -405,10 +452,12 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ─── Start ────────────────────────────────────────────────────────────────────
+// ─── Start (skipped when required by tests) ──────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`[auth] Service running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`[auth] Service running on http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app; // for testing

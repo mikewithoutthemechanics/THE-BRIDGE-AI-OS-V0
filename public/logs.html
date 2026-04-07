@@ -4,14 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>BAN · Log Viewer</title>
-    <meta name="description" content="Logs — System Activity & Audit Logs">
-    <meta property="og:title" content="BAN · Log Viewer">
-    <meta property="og:description" content="Logs — System Activity & Audit Logs">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/logs.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/logs.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <style>
     :root{--bg:#060a10;--bg2:#0a0e17;--border:#1a2540;--cyan:#63ffda;--dim:#64748b;--text:#cbd5e1;--green:#22c55e;--red:#ef4444;--gold:#f59e0b}
     *{box-sizing:border-box;margin:0;padding:0}
@@ -40,12 +32,12 @@
     #content .hdr{color:var(--cyan);font-weight:700}
     #empty{color:var(--dim);padding:24px;font-size:11px}
   </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
   <div id="head">
     <h1>BAN · Log Viewer</h1>
-    <a href="/">← Dashboard</a>
-    <a href="/api/logs" target="_blank">API</a>
+    <a href="/dashboard.html">← Dashboard</a>
+    <a href="http://localhost:8000/logs" target="_blank">API</a>
   </div>
   <div id="layout">
     <div id="sidebar"></div>
@@ -60,14 +52,14 @@
     </div>
   </div>
   <script>
-    const API = '';
+    const API = 'http://localhost:8000';
     let files = [];
 
     async function refresh() {
       try {
-        const r = await fetch(API + '/api/logs');
+        const r = await fetch(API + '/logs');
         const d = await r.json();
-        files = (d.files || d.logs || []).sort((a,b) => (b.mtime||0) - (a.mtime||0));
+        files = (d.files || []).sort((a,b) => (b.mtime||0) - (a.mtime||0));
         renderSidebar();
         renderSelect();
         if (files.length && !document.querySelector('.log-item.active')) {
@@ -101,7 +93,7 @@
       document.getElementById('sel').value = name;
       document.getElementById('empty').style.display = 'none';
       try {
-        const r = await fetch(API + '/api/logs/' + encodeURIComponent(name));
+        const r = await fetch(API + '/logs/' + encodeURIComponent(name));
         const d = await r.json();
         const lines = (d.content || '').split('\n');
         const html = lines.map(line => {
@@ -135,5 +127,5 @@
 
     refresh();
   </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

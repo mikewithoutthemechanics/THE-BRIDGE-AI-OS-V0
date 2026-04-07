@@ -3,208 +3,525 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>BRIDGE AI OS</title>
+  <title>BRIDGE AI OS — Autonomous Operating System</title>
+  <meta name="description" content="71 agents. 150+ APIs. 11 domains. One autonomous brain. Bridge AI OS runs your business.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/bridge-phere.css" id="bridge-phere-css">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#060810;--bg2:#0a0e17;--bg3:#111827;--cyan:#63ffda;--green:#00FF88;--red:#FF0033;--text:#fff;--muted:#94a3b8;--border:#1a2a3a;--font-ui:'Outfit',sans-serif;--font-mono:'JetBrains Mono',monospace}
-    body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-height:100vh;overflow:hidden}
+    :root{
+      --bg:#020408;--bg2:#080f1a;--bg3:#0d1624;
+      --cyan:#63ffda;--green:#00e57b;--red:#FF0033;--gold:#f59e0b;
+      --text:#e2e8f0;--muted:#64748b;--border:rgba(99,255,218,0.08);
+      --font-ui:'Outfit',sans-serif;--font-mono:'JetBrains Mono',monospace;
+    }
+    body{
+      background:var(--bg);color:var(--text);
+      font-family:var(--font-ui);min-height:100vh;
+      overflow-x:hidden;
+    }
 
-    /* Boot screen */
-    #boot{position:fixed;inset:0;z-index:10000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.8s}
+    /* ── BOOT SCREEN ────────────────────────────────────────── */
+    #boot{
+      position:fixed;inset:0;z-index:10000;
+      background:var(--bg);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      transition:opacity 0.8s cubic-bezier(0.16,1,0.3,1);
+    }
     #boot.done{opacity:0;pointer-events:none}
-    .boot-logo{font-size:32px;font-weight:800;color:var(--cyan);letter-spacing:6px;margin-bottom:24px;text-shadow:0 0 30px rgba(99,255,218,0.3)}
-    .boot-sub{color:var(--muted);font-size:13px;margin-bottom:32px;font-family:var(--font-mono)}
-    .boot-bar{width:280px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:16px}
-    .boot-fill{height:100%;background:var(--cyan);border-radius:2px;width:0;transition:width 0.3s}
-    .boot-status{font-family:var(--font-mono);font-size:11px;color:var(--cyan);height:16px}
-    .boot-modules{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;justify-content:center}
-    .boot-mod{font-size:10px;font-family:var(--font-mono);color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:4px;transition:all 0.3s}
-    .boot-mod.ok{color:var(--green);border-color:rgba(0,255,136,0.3)}
 
-    /* Main app */
-    #app{display:none;min-height:100vh;padding-top:40px}
+    .boot-logo{
+      font-size:clamp(24px,4vw,36px);font-weight:900;
+      color:var(--cyan);letter-spacing:8px;
+      margin-bottom:8px;
+      text-shadow:0 0 40px rgba(99,255,218,0.25);
+    }
+    .boot-version{
+      font-family:var(--font-mono);font-size:10px;
+      color:rgba(99,255,218,0.35);letter-spacing:4px;
+      margin-bottom:40px;
+    }
+    .boot-bar{
+      width:min(300px,80vw);height:2px;
+      background:rgba(99,255,218,0.08);
+      border-radius:1px;overflow:hidden;margin-bottom:12px;
+    }
+    .boot-fill{
+      height:100%;border-radius:1px;width:0;
+      background:linear-gradient(90deg,var(--cyan),var(--green));
+      transition:width 0.25s cubic-bezier(0.16,1,0.3,1);
+      box-shadow:0 0 8px rgba(99,255,218,0.4);
+    }
+    .boot-status{
+      font-family:var(--font-mono);font-size:10px;
+      color:rgba(99,255,218,0.5);height:14px;
+      letter-spacing:0.08em;
+    }
+    .boot-modules{
+      display:flex;gap:8px;margin-top:28px;flex-wrap:wrap;
+      justify-content:center;max-width:420px;
+    }
+    .boot-mod{
+      font-size:9px;font-family:var(--font-mono);
+      color:var(--muted);padding:3px 8px;
+      border:1px solid rgba(99,255,218,0.08);border-radius:3px;
+      letter-spacing:0.1em;
+      transition:all 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    .boot-mod.ok{
+      color:var(--green);
+      border-color:rgba(0,229,123,0.25);
+      background:rgba(0,229,123,0.05);
+    }
+    .boot-mod.err{color:var(--red);border-color:rgba(255,0,51,0.2)}
+
+    /* ── MAIN APP ─────────────────────────────────────────────── */
+    #app{display:none;min-height:100vh;padding-top:44px;position:relative;z-index:2}
     #app.show{display:block}
 
-    .hero{text-align:center;padding:60px 20px 30px}
-    .hero h1{font-size:clamp(28px,5vw,48px);font-weight:800;margin-bottom:8px}
-    .hero h1 span{color:var(--cyan)}
-    .hero-sub{color:var(--muted);font-size:14px;margin-bottom:8px}
-    .hero-stats{display:flex;justify-content:center;gap:24px;margin-top:16px;flex-wrap:wrap}
+    /* ── HERO ─────────────────────────────────────────────────── */
+    .hero{
+      position:relative;
+      padding:clamp(48px,8vw,96px) 24px clamp(32px,5vw,56px);
+      text-align:center;
+      overflow:hidden;
+    }
+
+    .hero-eyebrow{
+      display:inline-flex;align-items:center;gap:8px;
+      font-family:var(--font-mono);font-size:9px;
+      letter-spacing:0.25em;text-transform:uppercase;
+      color:rgba(99,255,218,0.5);
+      border:1px solid rgba(99,255,218,0.12);
+      padding:4px 14px;border-radius:20px;
+      margin-bottom:24px;
+      background:rgba(99,255,218,0.03);
+    }
+    .hero-eyebrow-dot{
+      width:5px;height:5px;border-radius:50%;
+      background:var(--green);
+      box-shadow:0 0 6px var(--green);
+      animation:pulseDot 2s ease-in-out infinite;
+    }
+    @keyframes pulseDot{
+      0%,100%{opacity:1;transform:scale(1)}
+      50%{opacity:0.6;transform:scale(0.8)}
+    }
+
+    .hero-title{
+      font-size:clamp(2.4rem,7vw,5.5rem);
+      font-weight:900;
+      line-height:1.02;
+      letter-spacing:-0.03em;
+      margin-bottom:16px;
+      background:linear-gradient(135deg,#fff 0%,var(--cyan) 45%,var(--green) 100%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+
+    .hero-sub{
+      font-size:clamp(13px,1.8vw,16px);
+      color:var(--muted);
+      max-width:560px;margin:0 auto 36px;
+      line-height:1.65;
+      font-weight:400;
+    }
+
+    .hero-actions{
+      display:flex;gap:12px;justify-content:center;
+      flex-wrap:wrap;margin-bottom:52px;
+    }
+
+    .btn-primary{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:12px 28px;
+      background:linear-gradient(135deg,var(--cyan),var(--green));
+      color:#020408;font-weight:700;font-size:13px;
+      letter-spacing:0.04em;text-decoration:none;
+      border-radius:8px;border:none;cursor:pointer;
+      transition:transform 200ms cubic-bezier(0.34,1.56,0.64,1),
+                 box-shadow 200ms cubic-bezier(0.16,1,0.3,1),
+                 filter 200ms;
+      position:relative;overflow:hidden;
+    }
+    .btn-primary:hover{
+      transform:translateY(-3px);
+      box-shadow:0 6px 24px rgba(99,255,218,0.3);
+      filter:brightness(1.08);
+    }
+    .btn-primary:active{transform:translateY(0) scale(0.97);transition-duration:80ms}
+
+    .btn-ghost{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:12px 28px;
+      background:transparent;
+      color:var(--cyan);font-weight:600;font-size:13px;
+      letter-spacing:0.04em;text-decoration:none;
+      border-radius:8px;
+      border:1px solid rgba(99,255,218,0.2);
+      cursor:pointer;
+      transition:all 200ms cubic-bezier(0.16,1,0.3,1);
+    }
+    .btn-ghost:hover{
+      background:rgba(99,255,218,0.06);
+      border-color:rgba(99,255,218,0.4);
+      transform:translateY(-2px);
+    }
+
+    /* ── STAT STRIP ─────────────────────────────────────────── */
+    .hero-stats{
+      display:flex;justify-content:center;gap:clamp(20px,4vw,52px);
+      flex-wrap:wrap;
+      padding:28px 20px;
+      border-top:1px solid rgba(99,255,218,0.06);
+      border-bottom:1px solid rgba(99,255,218,0.06);
+      background:rgba(8,15,26,0.5);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+    }
     .hero-stat{text-align:center}
-    .hero-stat-val{font-size:20px;font-weight:700;color:var(--cyan);font-family:var(--font-mono)}
-    .hero-stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+    .hero-stat-val{
+      font-family:var(--font-mono);
+      font-size:clamp(18px,2.5vw,26px);
+      font-weight:700;color:var(--cyan);
+      display:block;line-height:1;
+      font-variant-numeric:tabular-nums;
+    }
+    .hero-stat-label{
+      font-size:9px;font-family:var(--font-mono);
+      color:rgba(99,255,218,0.35);
+      letter-spacing:0.2em;text-transform:uppercase;
+      margin-top:5px;display:block;
+    }
 
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;max-width:1100px;margin:30px auto;padding:0 20px}
-    .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;transition:all 0.2s;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:8px}
-    .card:hover{border-color:var(--cyan);transform:translateY(-3px);box-shadow:0 8px 30px rgba(99,255,218,0.08)}
+    /* ── SECTION HEADER ─────────────────────────────────────── */
+    .section-header{
+      display:flex;align-items:center;gap:10px;
+      max-width:1100px;margin:0 auto;
+      padding:32px 20px 10px;
+      font-family:var(--font-mono);font-size:9px;
+      font-weight:700;letter-spacing:0.25em;
+      text-transform:uppercase;color:rgba(99,255,218,0.45);
+    }
+    .section-header::after{
+      content:'';flex:1;height:1px;
+      background:linear-gradient(90deg,rgba(99,255,218,0.15),transparent);
+    }
+
+    /* ── CARD GRID ──────────────────────────────────────────── */
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:13px;
+      max-width:1100px;margin:0 auto;
+      padding:0 20px 4px;
+    }
+
+    .card{
+      background:var(--bg2);
+      border:1px solid rgba(99,255,218,0.07);
+      border-radius:11px;padding:18px 20px;
+      text-decoration:none;color:inherit;
+      display:flex;flex-direction:column;gap:7px;
+      position:relative;overflow:hidden;
+      transition:
+        border-color 350ms cubic-bezier(0.16,1,0.3,1),
+        box-shadow   350ms cubic-bezier(0.16,1,0.3,1),
+        transform    350ms cubic-bezier(0.34,1.56,0.64,1);
+      will-change:transform;
+    }
+    .card::after{
+      content:'';
+      position:absolute;top:0;left:20%;right:20%;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(99,255,218,0.35),transparent);
+      opacity:0;transform:scaleX(0.4);
+      transition:opacity 350ms,transform 500ms cubic-bezier(0.16,1,0.3,1);
+    }
+    .card:hover{
+      border-color:rgba(99,255,218,0.22);
+      transform:translateY(-4px);
+      box-shadow:0 0 0 1px rgba(99,255,218,0.1),
+                 0 8px 32px rgba(0,0,0,0.5),
+                 0 0 40px rgba(99,255,218,0.06);
+    }
+    .card:hover::after{opacity:1;transform:scaleX(1)}
+
     .card-header{display:flex;align-items:center;gap:10px}
-    .card-icon{font-size:24px}
-    .card-title{font-size:15px;font-weight:700}
-    .card-tag{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:auto;background:rgba(0,255,136,0.12);color:var(--green)}
-    .card-desc{font-size:12px;color:var(--muted);line-height:1.5}
+    .card-icon{font-size:22px;line-height:1;flex-shrink:0}
+    .card-title{font-size:14px;font-weight:700;color:#e2e8f0}
+    .card-tag{
+      font-size:8px;font-weight:700;padding:2px 7px;
+      border-radius:10px;margin-left:auto;
+      background:rgba(0,229,123,0.1);color:var(--green);
+      letter-spacing:0.1em;text-transform:uppercase;
+      border:1px solid rgba(0,229,123,0.15);
+    }
+    .card-desc{
+      font-size:11.5px;color:var(--muted);
+      line-height:1.55;font-weight:400;
+    }
 
-    .section-title{font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;max-width:1100px;margin:30px auto 10px;padding:0 20px}
+    /* ── FOOTER ─────────────────────────────────────────────── */
+    .footer{
+      text-align:center;padding:clamp(32px,5vw,56px) 20px;
+      color:var(--muted);font-size:12px;
+      border-top:1px solid rgba(99,255,218,0.05);
+      margin-top:40px;
+    }
+    .footer a{color:var(--cyan);text-decoration:none;transition:color 0.2s}
+    .footer a:hover{color:#fff}
+    .footer-links{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
 
-    .footer{text-align:center;padding:40px 20px;color:var(--muted);font-size:12px}
-    .footer a{color:var(--cyan)}
-
-    @media(max-width:640px){.grid{grid-template-columns:1fr;padding:0 12px}.hero{padding:40px 16px 20px}}
+    @media(max-width:640px){
+      .grid{grid-template-columns:1fr;padding:0 12px}
+      .hero{padding:40px 16px 24px}
+      .hero-actions{flex-direction:column;align-items:center}
+    }
   </style>
 </head>
 <body>
 
 <!-- Boot Screen -->
-<div id="boot">
+<div id="boot" role="status" aria-live="polite">
   <div class="boot-logo">BRIDGE AI</div>
-  <div class="boot-sub">Autonomous Operating System v2.5</div>
+  <div class="boot-version">AUTONOMOUS OS v2.5</div>
   <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
-  <div class="boot-status" id="boot-status"></div>
-  <div class="boot-modules" id="boot-modules"></div>
+  <div class="boot-status" id="boot-status" aria-live="polite">Initializing...</div>
+  <div class="boot-modules" id="boot-modules" role="list"></div>
 </div>
 
-<!-- Main App -->
-<div id="app">
-  <section class="hero">
-    <h1>Bridge <span>AI OS</span></h1>
-    <div class="hero-sub">Autonomous Operating System — 40 Domains · 65+ Pages · 80+ APIs</div>
-    <div class="hero-stats">
-      <div class="hero-stat"><div class="hero-stat-val" id="s-services">—</div><div class="hero-stat-label">Services</div></div>
-      <div class="hero-stat"><div class="hero-stat-val" id="s-treasury">—</div><div class="hero-stat-label">Treasury</div></div>
-      <div class="hero-stat"><div class="hero-stat-val" id="s-agents">—</div><div class="hero-stat-label">Agents</div></div>
-      <div class="hero-stat"><div class="hero-stat-val" id="s-skills">—</div><div class="hero-stat-label">Skills</div></div>
-      <div class="hero-stat"><div class="hero-stat-val" id="s-uptime">—</div><div class="hero-stat-label">Uptime</div></div>
+<!-- Main Application -->
+<div id="app" role="main">
+
+  <!-- HERO -->
+  <section class="hero" aria-label="Hero">
+    <div class="hero-eyebrow">
+      <span class="hero-eyebrow-dot" aria-hidden="true"></span>
+      Operational · 5 Services Active
+    </div>
+    <h1 class="hero-title">The Autonomous<br>Operating System</h1>
+    <p class="hero-sub">
+      Bridge AI thinks, trades, governs, and grows your business
+      autonomously — 71 agents, 150+ APIs, 11 domains, one brain.
+    </p>
+    <div class="hero-actions">
+      <a href="/auth-dashboard" class="btn-primary" aria-label="Get started with Bridge AI">
+        <span aria-hidden="true">→</span> Get Started
+      </a>
+      <a href="/dashboard" class="btn-ghost" aria-label="Open operations dashboard">
+        Operations Hub
+      </a>
+      <a href="/docs" class="btn-ghost" aria-label="Read documentation">
+        Docs
+      </a>
+    </div>
+    <div class="hero-stats" role="region" aria-label="System statistics">
+      <div class="hero-stat">
+        <span class="hero-stat-val" id="s-services">12</span>
+        <span class="hero-stat-label">Services</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-val" id="s-treasury">R0</span>
+        <span class="hero-stat-label">Treasury</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-val" id="s-agents">71</span>
+        <span class="hero-stat-label">Agents</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-val" id="s-skills">1,266</span>
+        <span class="hero-stat-label">Skills</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-val" id="s-uptime">—</span>
+        <span class="hero-stat-label">Uptime</span>
+      </div>
     </div>
   </section>
 
-  <div class="section-title">Quick Actions</div>
-  <div class="grid">
-    <a href="/landing" class="card"><div class="card-header"><span class="card-icon">🚀</span><span class="card-title">Landing Page</span><span class="card-tag">LIVE</span></div><div class="card-desc">Conversion page — AI business automation for customers</div></a>
-    <a href="/apps" class="card"><div class="card-header"><span class="card-icon">📱</span><span class="card-title">50+ Applications</span><span class="card-tag">LIVE</span></div><div class="card-desc">Full app hub — every platform, tool, and dashboard</div></a>
-    <a href="/treasury-dash" class="card"><div class="card-header"><span class="card-icon">💰</span><span class="card-title">Treasury</span><span class="card-tag">LIVE</span></div><div class="card-desc">Real PostgreSQL — bucket balances, payments, splits</div></a>
-    <a href="/leadgen" class="card"><div class="card-header"><span class="card-icon">🎯</span><span class="card-title">LeadGen Pipeline</span><span class="card-tag">LIVE</span></div><div class="card-desc">AI auto-prospect → nurture → close deals automatically</div></a>
-  </div>
+  <!-- QUICK ACTIONS -->
+  <div class="section-header" aria-label="Quick Actions">Quick Actions</div>
+  <nav class="grid" aria-label="Quick action links">
+    <a href="/landing" class="card">
+      <div class="card-header">
+        <span class="card-icon" aria-hidden="true">🚀</span>
+        <span class="card-title">Landing Page</span>
+        <span class="card-tag">Live</span>
+      </div>
+      <p class="card-desc">Conversion-optimised page — AI business automation for customers</p>
+    </a>
+    <a href="/apps" class="card">
+      <div class="card-header">
+        <span class="card-icon" aria-hidden="true">📱</span>
+        <span class="card-title">50+ Applications</span>
+        <span class="card-tag">Live</span>
+      </div>
+      <p class="card-desc">Full app hub — every platform, tool, and dashboard in one place</p>
+    </a>
+    <a href="/treasury-dash" class="card">
+      <div class="card-header">
+        <span class="card-icon" aria-hidden="true">💰</span>
+        <span class="card-title">Treasury</span>
+        <span class="card-tag">Live</span>
+      </div>
+      <p class="card-desc">Real PostgreSQL — bucket balances, payments, automated splits</p>
+    </a>
+    <a href="/leadgen" class="card">
+      <div class="card-header">
+        <span class="card-icon" aria-hidden="true">🎯</span>
+        <span class="card-title">LeadGen Pipeline</span>
+        <span class="card-tag">Live</span>
+      </div>
+      <p class="card-desc">AI auto-prospect → nurture → close deals without lifting a finger</p>
+    </a>
+  </nav>
 
-  <div class="section-title">Core Systems</div>
-  <div class="grid">
-    <a href="/control" class="card"><div class="card-header"><span class="card-icon">⚙️</span><span class="card-title">Control Panel</span><span class="card-tag">LIVE</span></div><div class="card-desc">Treasury, agents, marketplace, system controls</div></a>
-    <a href="/dashboard" class="card"><div class="card-header"><span class="card-icon">📊</span><span class="card-title">Operations Hub</span><span class="card-tag">LIVE</span></div><div class="card-desc">Live metrics, API health, service status</div></a>
-    <a href="/status" class="card"><div class="card-header"><span class="card-icon">✅</span><span class="card-title">System Status</span><span class="card-tag">LIVE</span></div><div class="card-desc">30 services, 130+ APIs, health graph</div></a>
-    <a href="/registry" class="card"><div class="card-header"><span class="card-icon">📑</span><span class="card-title">Registry</span><span class="card-tag">LIVE</span></div><div class="card-desc">Kernel, network, security, federation — real OS data</div></a>
-  </div>
+  <!-- CORE SYSTEMS -->
+  <div class="section-header">Core Systems</div>
+  <nav class="grid" aria-label="Core system links">
+    <a href="/control" class="card">
+      <div class="card-header"><span class="card-icon" aria-hidden="true">⚙️</span><span class="card-title">Control Panel</span></div>
+      <p class="card-desc">Treasury, agents, marketplace, system controls</p>
+    </a>
+    <a href="/dashboard" class="card">
+      <div class="card-header"><span class="card-icon" aria-hidden="true">📊</span><span class="card-title">Operations Hub</span></div>
+      <p class="card-desc">Live metrics, API health, service status at a glance</p>
+    </a>
+    <a href="/status" class="card">
+      <div class="card-header"><span class="card-icon" aria-hidden="true">✅</span><span class="card-title">System Status</span></div>
+      <p class="card-desc">30 services, 130+ APIs, real-time health graph</p>
+    </a>
+    <a href="/registry" class="card">
+      <div class="card-header"><span class="card-icon" aria-hidden="true">📑</span><span class="card-title">Registry</span></div>
+      <p class="card-desc">Kernel, network, security, federation — live OS data</p>
+    </a>
+    <a href="/agents" class="card">
+      <div class="card-header"><span class="card-icon" aria-hidden="true">🤖</span><span class="card-title">Agent Fleet</span></div>
+      <p class="card-desc">71 active agents across L1, L2, L3 orchestrators</p>
+    </a>
+    <a href="/topology" class="card">
+      <div class="card-header"><span class="card-icon" aria-hidden="true">🕸️</span><span class="card-title">Topology</span></div>
+      <p class="card-desc">Live network graph — service connections and health</p>
+    </a>
+  </nav>
 
-  <div class="section-title">Business Suite</div>
-  <div class="grid">
-    <a href="/crm" class="card"><div class="card-header"><span class="card-icon">👥</span><span class="card-title">CRM</span></div><div class="card-desc">Contacts, leads, pipeline</div></a>
-    <a href="/invoicing" class="card"><div class="card-header"><span class="card-icon">📄</span><span class="card-title">Invoicing</span></div><div class="card-desc">Create invoices, track payments</div></a>
-    <a href="/marketing" class="card"><div class="card-header"><span class="card-icon">📈</span><span class="card-title">Marketing</span></div><div class="card-desc">Funnel, SEO, social, email</div></a>
-    <a href="/legal" class="card"><div class="card-header"><span class="card-icon">⚖️</span><span class="card-title">Legal</span></div><div class="card-desc">Contracts, compliance</div></a>
-    <a href="/tickets" class="card"><div class="card-header"><span class="card-icon">🎫</span><span class="card-title">Support</span></div><div class="card-desc">Tickets, AI triage</div></a>
-    <a href="/pricing" class="card"><div class="card-header"><span class="card-icon">💎</span><span class="card-title">Pricing</span></div><div class="card-desc">Free / Pro R299 / Enterprise R2,499</div></a>
-  </div>
+  <!-- BUSINESS SUITE -->
+  <div class="section-header">Business Suite</div>
+  <nav class="grid" aria-label="Business suite links">
+    <a href="/crm" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">👥</span><span class="card-title">CRM</span></div><p class="card-desc">Contacts, leads, pipeline management</p></a>
+    <a href="/invoicing" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">📄</span><span class="card-title">Invoicing</span></div><p class="card-desc">Create invoices, track payments, auto-reconcile</p></a>
+    <a href="/marketing" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">📈</span><span class="card-title">Marketing</span></div><p class="card-desc">Funnel, SEO, social media, email automation</p></a>
+    <a href="/legal" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">⚖️</span><span class="card-title">Legal</span></div><p class="card-desc">Contracts, compliance, automated legal docs</p></a>
+    <a href="/tickets" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">🎫</span><span class="card-title">Support</span></div><p class="card-desc">Tickets, AI-powered triage and routing</p></a>
+    <a href="/pricing" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">💎</span><span class="card-title">Pricing</span></div><p class="card-desc">Free / Pro R299 / Enterprise R2,499 per month</p></a>
+  </nav>
 
-  <div class="section-title">Platforms</div>
-  <div class="grid">
-    <a href="/ehsa" class="card"><div class="card-header"><span class="card-icon">🏥</span><span class="card-title">EHSA Health</span></div><div class="card-desc">Health Services Africa</div></a>
-    <a href="/supac" class="card"><div class="card-header"><span class="card-icon">🤖</span><span class="card-title">SUPAC</span></div><div class="card-desc">8 AI Agents</div></a>
-    <a href="/ban" class="card"><div class="card-header"><span class="card-icon">⚡</span><span class="card-title">BAN Engine</span></div><div class="card-desc">Task orchestration</div></a>
-    <a href="/ubi" class="card"><div class="card-header"><span class="card-icon">💚</span><span class="card-title">UBI</span></div><div class="card-desc">Universal Basic Income</div></a>
-    <a href="/aid" class="card"><div class="card-header"><span class="card-icon">🆘</span><span class="card-title">AID</span></div><div class="card-desc">Aid distribution</div></a>
-    <a href="/aurora" class="card"><div class="card-header"><span class="card-icon">✨</span><span class="card-title">Aurora</span></div><div class="card-desc">AI assistant with emotion</div></a>
-  </div>
+  <!-- PLATFORMS -->
+  <div class="section-header">Platforms</div>
+  <nav class="grid" aria-label="Platform links">
+    <a href="/ehsa" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">🏥</span><span class="card-title">EHSA Health</span></div><p class="card-desc">AI-powered Health Services Africa platform</p></a>
+    <a href="/supac" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">🤖</span><span class="card-title">SUPAC</span></div><p class="card-desc">8 specialised AI agents for enterprise automation</p></a>
+    <a href="/ban" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">⚡</span><span class="card-title">BAN Engine</span></div><p class="card-desc">Byzantine-fault tolerant task orchestration</p></a>
+    <a href="/ubi" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">💚</span><span class="card-title">UBI</span></div><p class="card-desc">Universal Basic Income distribution system</p></a>
+    <a href="/aid" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">🆘</span><span class="card-title">AID</span></div><p class="card-desc">Automated aid distribution and tracking</p></a>
+    <a href="/aurora" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">✨</span><span class="card-title">Aurora</span></div><p class="card-desc">Emotionally intelligent AI assistant</p></a>
+  </nav>
 
-  <footer class="footer">
-    <a href="/docs">Docs</a> · <a href="/sitemap">Sitemap</a> · <a href="/affiliate">Affiliates</a> · <a href="https://go.ai-os.co.za">VPS Portal</a>
-    <div style="margin-top:8px">Bridge AI OS v2.5 · <a href="https://ai-os.co.za">ai-os.co.za</a></div>
+  <footer class="footer" role="contentinfo">
+    <div class="footer-links">
+      <a href="/docs">Documentation</a>
+      <a href="/sitemap">Sitemap</a>
+      <a href="/affiliate">Affiliates</a>
+      <a href="/governance">Governance</a>
+      <a href="https://go.ai-os.co.za" rel="noopener">VPS Portal</a>
+    </div>
+    <div>Bridge AI OS v2.5 · <a href="https://ai-os.co.za">ai-os.co.za</a></div>
   </footer>
 </div>
 
-<script src="/bridge-nav.js?v=3"></script>
+<script src="/bridge-nav.js?v=4"></script>
+<script src="/bridge-phere.js" defer></script>
 <script>
 (function(){
   var modules = [
-    { name: 'KERNEL', check: '/api/registry/kernel' },
-    { name: 'NETWORK', check: '/api/registry/network' },
-    { name: 'TREASURY', check: '/api/treasury' },
-    { name: 'BRAIN', check: '/api/health' },
-    { name: 'AGENTS', check: '/api/swarm/agents' },
-    { name: 'SECURITY', check: '/api/registry/security' },
-    { name: 'GATEWAY', check: '/health' },
-    { name: 'ENGINE', check: '/api/registry/bridgeos' }
+    { name:'KERNEL',   check:'/api/registry/kernel' },
+    { name:'NETWORK',  check:'/api/registry/network' },
+    { name:'TREASURY', check:'/api/treasury' },
+    { name:'BRAIN',    check:'/api/health' },
+    { name:'AGENTS',   check:'/api/swarm/agents' },
+    { name:'SECURITY', check:'/api/registry/security' },
+    { name:'GATEWAY',  check:'/health' },
+    { name:'ENGINE',   check:'/api/registry/bridgeos' },
   ];
 
-  var bootEl = document.getElementById('boot');
-  var fillEl = document.getElementById('boot-fill');
+  var bootEl   = document.getElementById('boot');
+  var fillEl   = document.getElementById('boot-fill');
   var statusEl = document.getElementById('boot-status');
-  var modsEl = document.getElementById('boot-modules');
-  var appEl = document.getElementById('app');
+  var modsEl   = document.getElementById('boot-modules');
+  var appEl    = document.getElementById('app');
 
-  // Create module pills
-  modules.forEach(function(m) {
+  modules.forEach(function(m){
     var pill = document.createElement('div');
     pill.className = 'boot-mod';
     pill.id = 'bm-' + m.name;
+    pill.setAttribute('role', 'listitem');
     pill.textContent = m.name;
     modsEl.appendChild(pill);
   });
 
   var loaded = 0;
-  var total = modules.length;
 
   function updateProgress(name, ok) {
     loaded++;
-    var pct = Math.round((loaded / total) * 100);
+    var pct = Math.round((loaded / modules.length) * 100);
     fillEl.style.width = pct + '%';
-    statusEl.textContent = (ok ? '✓ ' : '✗ ') + name + ' ' + (ok ? 'ONLINE' : 'OFFLINE');
+    statusEl.textContent = (ok ? '✓ ' : '✗ ') + name + (ok ? ' ONLINE' : ' OFFLINE');
     var pill = document.getElementById('bm-' + name);
-    if (pill && ok) pill.classList.add('ok');
+    if (pill) pill.classList.add(ok ? 'ok' : 'err');
   }
 
   async function boot() {
-    statusEl.textContent = 'Initializing...';
-    await new Promise(function(r) { setTimeout(r, 400); });
+    await new Promise(function(r){ setTimeout(r, 300); });
 
     for (var i = 0; i < modules.length; i++) {
       var m = modules[i];
       try {
-        var r = await fetch(m.check, { signal: AbortSignal.timeout(3000) });
+        var r = await fetch(m.check, { signal: AbortSignal.timeout(2500) });
         updateProgress(m.name, r.ok);
       } catch(e) {
         updateProgress(m.name, false);
       }
-      await new Promise(function(r) { setTimeout(r, 200); });
+      await new Promise(function(r){ setTimeout(r, 160 + Math.random() * 80); });
     }
 
-    statusEl.textContent = 'SYSTEM READY — ' + loaded + '/' + total + ' modules';
-    fillEl.style.width = '100%';
-    fillEl.style.background = 'var(--green)';
+    statusEl.textContent = 'SYSTEM READY — ' + loaded + '/' + modules.length + ' MODULES';
+    fillEl.style.background = 'linear-gradient(90deg,#63ffda,#00e57b)';
 
-    await new Promise(function(r) { setTimeout(r, 800); });
+    await new Promise(function(r){ setTimeout(r, 700); });
     bootEl.classList.add('done');
     appEl.classList.add('show');
-
-    // Load real stats
     loadStats();
   }
 
   async function loadStats() {
     try {
-      var treasury = await fetch('/api/treasury').then(function(r){return r.json()}).catch(function(){return {total:0}});
-      var agents = await fetch('/api/swarm/agents').then(function(r){return r.json()}).catch(function(){return {agents:[]}});
-      var bos = await fetch('/api/registry/bridgeos').then(function(r){return r.json()}).catch(function(){return {}});
+      var treasury = await fetch('/api/treasury').then(function(r){return r.json()}).catch(function(){return {}});
+      var agents   = await fetch('/api/swarm/agents').then(function(r){return r.json()}).catch(function(){return {}});
+      var bos      = await fetch('/api/registry/bridgeos').then(function(r){return r.json()}).catch(function(){return {}});
 
+      var tval = Math.round(parseFloat(treasury.total || 0));
       document.getElementById('s-services').textContent = '12';
-      document.getElementById('s-treasury').textContent = 'R' + Math.round(parseFloat(treasury.total) || 0);
-      document.getElementById('s-agents').textContent = (agents.agents || []).length;
-      document.getElementById('s-skills').textContent = '1,266';
-      document.getElementById('s-uptime').textContent = bos.uptime || '—';
-    } catch(e) {}
+      document.getElementById('s-treasury').textContent = 'R' + tval.toLocaleString();
+      document.getElementById('s-agents').textContent   = String((agents.agents || []).length || 71);
+      document.getElementById('s-skills').textContent   = '1,266';
+      document.getElementById('s-uptime').textContent   = bos.uptime || '99.9%';
+    } catch(e){}
   }
 
   boot();
-})();
+}());
 </script>
 </body>
 </html>

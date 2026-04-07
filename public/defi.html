@@ -4,14 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DeFi Dashboard - Bridge AI OS</title>
-    <meta name="description" content="DeFi — Decentralized Finance Dashboard">
-    <meta property="og:title" content="DeFi Dashboard - Bridge AI OS">
-    <meta property="og:description" content="DeFi — Decentralized Finance Dashboard">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/defi.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/defi.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
 :root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -45,7 +37,7 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
 .loading{color:var(--t);font-size:.85rem;padding:1rem 0}
 @media(max-width:600px){main{padding:1rem}.topnav{padding:.5rem .75rem}h1{font-size:1.4rem}.grid-2,.grid-3{grid-template-columns:1fr}}
 </style>
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
+</head>
 <body>
 <nav class="topnav">
   <a href="/" class="logo">Bridge AI</a>
@@ -132,12 +124,8 @@ async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;re
 
 (async()=>{
   const[defi,pools,wallet,ubi]=await Promise.all([
-    f('/api/economics'),f('/api/treasury'),isAuth?f('/api/credits'):null,f('/api/treasury')
+    f('/api/defi/status'),f('/api/dex/pools'),isAuth?f('/api/wallet/balance'):null,f('/api/ubi/status')
   ]);
-  // Map treasury data to defi-compatible shape
-  if(defi&&!defi.tvl){defi.tvl=defi.treasury||defi.total||defi.balance||45000;defi.avgApy=12.5;defi.protocols=[{name:'BRDG Staking',type:'Staking',tvl:25000,apy:15},{name:'BRDG/ETH LP',type:'Liquidity',tvl:12000,apy:8.5},{name:'UBI Yield',type:'Distribution',tvl:8000,apy:10}]}
-  if(pools&&!pools.pools){pools.pools=[{name:'BRDG/ETH',tvl:12000,apy:8.5,status:'Active'},{name:'BRDG/USDT',tvl:8500,apy:6.2,status:'Active'},{name:'BRDG/SOL',tvl:4200,apy:11.3,status:'Active'}]}
-  if(ubi&&!ubi.recipients){ubi.recipients=156;ubi.pool=ubi.total?ubi.total*0.3:13500;ubi.monthlyAmount=87;ubi.nextDistribution='1st of month';ubi.status='Active'}
 
   const d=defi||{};
   document.getElementById('stat-tvl').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Total TVL</div><div style="font-size:1.5rem;font-weight:700">$${parseInt(d.tvl||d.totalValueLocked||0).toLocaleString()}</div>`;
@@ -171,5 +159,5 @@ async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;re
   }
 })();
 </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>

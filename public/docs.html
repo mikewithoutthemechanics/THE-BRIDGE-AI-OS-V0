@@ -4,125 +4,114 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Docs — Bridge AI OS</title>
-    <meta name="description" content="Docs — Bridge AI OS Documentation">
-    <meta property="og:title" content="Docs — Bridge AI OS">
-    <meta property="og:description" content="Docs — Bridge AI OS Documentation">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/docs.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/docs.html">
+  <meta name="description" content="Bridge AI OS documentation — API reference, frontend routes, and integration guides.">
   <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/bridge-tokens.css"></head>
-<body class="font-sans antialiased" style="background:var(--bg-0,#060810);color:var(--text-primary,#fff)">
+</head>
+<body class="bg-slate-50 font-sans antialiased">
+
+  <nav class="bg-slate-800 text-white p-4 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-lg">
+    <a href="/" class="text-xl font-bold hover:text-amber-300">Bridge AI OS</a>
+    <ul class="flex flex-wrap gap-4 mt-2 md:mt-0">
+      <li><a href="/" class="hover:text-amber-300">Digital Twin</a></li>
+      <li><a href="/executive-dashboard.html" class="hover:text-amber-300">Dashboard</a></li>
+      <li><a href="/50-applications.html" class="hover:text-amber-300">50 Applications</a></li>
+      <li><a href="/agents.html" class="hover:text-amber-300">Agents</a></li>
+      <li><a href="/landing.html" class="hover:text-amber-300">Landing</a></li>
+      <li><a href="/settings.html" class="hover:text-amber-300">Settings</a></li>
+      <li><a href="/docs.html" class="text-amber-300 font-semibold">Docs</a></li>
+    </ul>
+  </nav>
 
   <main class="p-4 md:p-6 max-w-4xl mx-auto space-y-8">
     <header>
-      <h1 class="text-3xl font-bold" style="color:var(--cyan,#63ffda)">Documentation</h1>
-      <p style="color:var(--text-secondary,#94a3b8)" class="mt-1">Bridge AI OS — API, frontend routes, and references. Updated to match current app.</p>
+      <h1 class="text-3xl font-bold text-slate-800">Documentation</h1>
+      <p class="text-slate-600 mt-1">Bridge AI OS — API, frontend routes, and references. Updated to match current app.</p>
     </header>
 
     <!-- Backend API -->
-    <section style="background:var(--bg-1,#0a0e17);border:1px solid var(--border,#2a2a2a)" class="rounded-lg overflow-hidden">
-      <h2 class="text-lg font-semibold p-4" style="color:var(--cyan,#63ffda);border-bottom:1px solid var(--border,#2a2a2a)">Backend API</h2>
+    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
+      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Backend API</h2>
       <div class="p-4 space-y-3 text-sm">
-        <p style="color:var(--text-secondary,#94a3b8)">Interactive API docs (Swagger UI) and OpenAPI spec are served by the backend.</p>
+        <p class="text-slate-600">Interactive API docs (Swagger UI) and OpenAPI spec are served by the backend.</p>
         <ul class="list-disc pl-5 space-y-1">
-          <li><a id="api-docs-link" href="#" target="_blank" rel="noopener" style="color:var(--cyan,#63ffda)" class="hover:underline font-medium">API Docs (Swagger)</a> — try endpoints interactively</li>
-          <li><a id="openapi-link" href="#" target="_blank" rel="noopener" style="color:var(--cyan,#63ffda)" class="hover:underline font-medium">OpenAPI JSON</a> — machine-readable spec</li>
+          <li><a id="api-docs-link" href="#" target="_blank" rel="noopener" aria-label="API Docs (Swagger) — opens in new tab" class="text-blue-600 hover:underline font-medium">API Docs (Swagger) <span class="sr-only">(opens in new tab)</span></a> — try endpoints interactively</li>
+          <li><a id="openapi-link" href="#" target="_blank" rel="noopener" aria-label="OpenAPI JSON — opens in new tab" class="text-blue-600 hover:underline font-medium">OpenAPI JSON <span class="sr-only">(opens in new tab)</span></a> — machine-readable spec</li>
         </ul>
-        <p style="color:var(--text-muted,#666)" class="mt-2">Base URL: <code id="api-base-display" style="background:var(--bg-2,#111827);padding:1px 6px;border-radius:4px">—</code></p>
+        <p class="text-slate-500 mt-2">Base URL: <code id="api-base-display" class="bg-slate-100 px-1 rounded">—</code></p>
       </div>
     </section>
 
     <!-- Frontend routes -->
-    <section style="background:var(--bg-1,#0a0e17);border:1px solid var(--border,#2a2a2a)" class="rounded-lg overflow-hidden">
-      <h2 class="text-lg font-semibold p-4" style="color:var(--cyan,#63ffda);border-bottom:1px solid var(--border,#2a2a2a)">Frontend routes</h2>
+    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
+      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Frontend routes</h2>
       <div class="p-4 overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead>
-            <tr class="border-b border-slate-700">
-              <th class="text-left py-2 pr-4 text-slate-300">Path</th>
-              <th class="text-left py-2 text-slate-300">Description</th>
+            <tr class="border-b border-slate-200">
+              <th class="text-left py-2 pr-4 text-slate-700">Path</th>
+              <th class="text-left py-2 text-slate-700">Description</th>
             </tr>
           </thead>
-          <tbody class="text-slate-400">
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/" class="text-cyan-400 hover:underline">/</a></td><td>Digital Twin (main app)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/executive-dashboard.html" class="text-cyan-400 hover:underline">/executive-dashboard.html</a></td><td>Executive Dashboard (swarm, heatmap, pipeline, agents, mission, marketplace)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/50-applications.html" class="text-cyan-400 hover:underline">/50-applications.html</a></td><td>50 Applications showcase</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/agents.html" class="text-cyan-400 hover:underline">/agents.html</a></td><td>Agents &amp; Digital Twins (replication, leaderboard)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/landing.html" class="text-cyan-400 hover:underline">/landing.html</a></td><td>Landing (redirects to 50 Applications)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/settings.html" class="text-cyan-400 hover:underline">/settings.html</a></td><td>Settings (shared per user across domains)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/gateway/" class="text-cyan-400 hover:underline">/gateway/</a></td><td>Sovereign Gateway — QR scan to join; wallet, SIWE; Bridge · Supac · Taurus · Wiki</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/join.html" class="text-cyan-400 hover:underline">/join.html</a></td><td>Join as Agent — QR + decentralized platform entry</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/docs.html" class="text-cyan-400 hover:underline">/docs.html</a></td><td>This documentation page</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/applications.html" class="text-cyan-400 hover:underline">/applications.html</a></td><td>System Map — all applications linked with navigation</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/sitemap.html" class="text-cyan-400 hover:underline">/sitemap.html</a></td><td>Complete system map — pages, APIs, WebSockets, subdomains</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/topology.html" class="text-cyan-400 hover:underline">/topology.html</a></td><td>Network topology visualization (p5.js)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/registry.html" class="text-cyan-400 hover:underline">/registry.html</a></td><td>Registry explorer (kernel, network, security, federation)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/system-status-dashboard.html" class="text-cyan-400 hover:underline">/system-status-dashboard.html</a></td><td>System status — D3 force graph, 30+ services</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/terminal.html" class="text-cyan-400 hover:underline">/terminal.html</a></td><td>Terminal — xterm.js PTY (multi-tab)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/corporate.html" class="text-cyan-400 hover:underline">/corporate.html</a></td><td>Corporate suite — quotes, invoices, CRM, vendors, legal</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/platforms.html" class="text-cyan-400 hover:underline">/platforms.html</a></td><td>Platform network — 10 platforms, payment rails</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/brand.html" class="text-cyan-400 hover:underline">/brand.html</a></td><td>Brand assets — logos, SVGs, metrics</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4"><a href="/logs.html" class="text-cyan-400 hover:underline">/logs.html</a></td><td>Log viewer — system activity &amp; audit logs</td></tr>
+          <tbody class="text-slate-600">
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/" class="text-blue-600 hover:underline">/</a></td><td>Digital Twin (main app)</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/executive-dashboard.html" class="text-blue-600 hover:underline">/executive-dashboard.html</a></td><td>Executive Dashboard (swarm, heatmap, pipeline, agents, mission, marketplace)</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/50-applications.html" class="text-blue-600 hover:underline">/50-applications.html</a></td><td>50 Applications showcase</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/agents.html" class="text-blue-600 hover:underline">/agents.html</a></td><td>Agents &amp; Digital Twins (replication, leaderboard)</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/landing.html" class="text-blue-600 hover:underline">/landing.html</a></td><td>Landing (redirects to 50 Applications)</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/settings.html" class="text-blue-600 hover:underline">/settings.html</a></td><td>Settings (shared per user across domains)</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/gateway/" class="text-blue-600 hover:underline">/gateway/</a></td><td>Sovereign Gateway — QR scan to join; wallet, SIWE; Bridge · Supac · Taurus · Wiki</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/join.html" class="text-blue-600 hover:underline">/join.html</a></td><td>Join as Agent — QR + decentralized platform entry</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/docs.html" class="text-blue-600 hover:underline">/docs.html</a></td><td>This documentation page</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-blue-600 hover:underline">System Map (4201)</a></td><td>All systems linked — Bridge API, Frontend, Gateway, Join, Next.js (3032), Taurus, Console 3022, Production</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-blue-600 hover:underline">Next.js App (3032)</a></td><td>Next.js root app — synced with system; linked from System Map</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <!-- Key API endpoints -->
-    <section class="bg-transparent rounded-lg shadow-md border border-slate-700 overflow-hidden">
-      <h2 class="text-lg font-semibold text-slate-200 p-4 border-b border-slate-700">Key API endpoints</h2>
+    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
+      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Key API endpoints</h2>
       <div class="p-4 overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead>
-            <tr class="border-b border-slate-700">
-              <th class="text-left py-2 pr-4 text-slate-300">Method</th>
-              <th class="text-left py-2 pr-4 text-slate-300">Path</th>
-              <th class="text-left py-2 text-slate-300">Description</th>
+            <tr class="border-b border-slate-200">
+              <th class="text-left py-2 pr-4 text-slate-700">Method</th>
+              <th class="text-left py-2 pr-4 text-slate-700">Path</th>
+              <th class="text-left py-2 text-slate-700">Description</th>
             </tr>
           </thead>
-          <tbody class="text-slate-400">
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/health</td><td>Gateway + core liveness check</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/status</td><td>Aggregate service health</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/agents</td><td>L1+L2 agent federation</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/economics</td><td>Economic system overview</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/treasury</td><td>Treasury status + allocations</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/contracts</td><td>Shared contracts (13)</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/logs</td><td>System log files</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/full</td><td>Full system state dump</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/kernel</td><td>Kernel registry</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/network</td><td>Network registry</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/security</td><td>Security registry</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/federation</td><td>Federation registry</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/jobs</td><td>Jobs registry</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/market</td><td>Market registry</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/registry/treasury</td><td>Treasury registry</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">POST</td><td class="pr-4 font-mono">/lead</td><td>Submit lead</td></tr>
-            <tr class="border-b border-slate-800"><td class="py-2 pr-4 font-mono">POST</td><td class="pr-4 font-mono">/api/leadgen/auto-prospect</td><td>Auto-prospecting engine</td></tr>
+          <tbody class="text-slate-600">
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/health</td><td>Health check</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/capabilities</td><td>Capability registry</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/user/settings</td><td>User settings (X-User-Id optional)</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">PUT</td><td class="pr-4 font-mono">/api/user/settings</td><td>Save user settings</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins</td><td>List twins</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins/leaderboard</td><td>Leaderboard</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/status</td><td>Replication status</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/nodes</td><td>Replication nodes</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/live/report</td><td>Live report (dashboard, heatmap)</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/founder-todo</td><td>Mission board</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">PATCH</td><td class="pr-4 font-mono">/api/founder-todo/:id/complete</td><td>Complete objective</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/marketplace/tasks</td><td>Marketplace tasks</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <!-- Ports -->
-    <section class="bg-slate-900 rounded-lg p-4 text-sm text-slate-400">
-      <h2 class="font-semibold text-slate-200 mb-2">Services (Production)</h2>
+    <section class="bg-slate-100 rounded-lg p-4 text-sm text-slate-600">
+      <h2 class="font-semibold text-slate-800 mb-2">Ports (typical)</h2>
       <ul class="list-disc pl-5 space-y-1">
-        <li><strong>:3000</strong> — <a href="/" class="text-cyan-400">Bridge OS</a> (main server, 65+ pages, 80+ APIs)</li>
-        <li><strong>:3001</strong> — <a href="https://god.ai-os.co.za" class="text-cyan-400">GOD MODE</a> (topology + terminals)</li>
-        <li><strong>:3030</strong> — <a href="https://auth.ai-os.co.za" class="text-cyan-400">Bridge Auth</a> (SIWE/JWT)</li>
-        <li><strong>:5001</strong> — Auth Service</li>
-        <li><strong>:5002</strong> — <a href="https://terminal.ai-os.co.za" class="text-cyan-400">Terminal</a> (xterm.js PTY)</li>
-        <li><strong>:7070</strong> — <a href="https://svg.ai-os.co.za" class="text-cyan-400">SVG Engine</a> (1,266 skills)</li>
-        <li><strong>:8000</strong> — Super Brain (163 API endpoints + AI)</li>
-        <li><strong>:8080</strong> — <a href="https://gateway.ai-os.co.za" class="text-cyan-400">Gateway</a> (routing + CORS + SSE)</li>
-        <li><strong>:8001</strong> — LiveWall Frontend (Docker)</li>
-        <li><strong>:8081</strong> — FastAPI Backend (Docker)</li>
-        <li><strong>:3003</strong> — Grafana Monitoring</li>
-        <li><strong>:5432</strong> — PostgreSQL (economy database)</li>
+        <li><strong>3020</strong> — Frontend (Vite)</li>
+        <li><strong>3032</strong> — Next.js App (root) — <a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-blue-600 hover:underline">open</a></li>
+        <li><strong>3000</strong> — Dashboard / frontend alt</li>
+        <li><strong>8000</strong> — Backend API</li>
+        <li><strong>4201</strong> — Determinator Boot Agent, System Map — <a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-blue-600 hover:underline">System Map</a></li>
+        <li><strong>4202</strong> — Taurus Showcase</li>
+        <li><strong>3022</strong> — Console sync</li>
       </ul>
     </section>
   </main>
@@ -136,5 +125,5 @@
   document.getElementById('api-base-display').textContent = backendOrigin || '(same origin)';
 })();
   </script>
-<script src="/bridge-nav.js?v=2"></script></body>
+</body>
 </html>
