@@ -37,7 +37,7 @@
   <div id="head">
     <h1>BAN · Log Viewer</h1>
     <a href="/dashboard.html">← Dashboard</a>
-    <a href="http://localhost:8000/logs" target="_blank">API</a>
+    <a href="/logs" target="_blank">API</a>
   </div>
   <div id="layout">
     <div id="sidebar"></div>
@@ -52,7 +52,7 @@
     </div>
   </div>
   <script>
-    const API = 'http://localhost:8000';
+    const API = '';
     let files = [];
 
     async function refresh() {
@@ -67,7 +67,7 @@
         }
       } catch (e) {
         document.getElementById('sidebar').innerHTML = `<div class="log-item" style="color:var(--red)">API offline: ${e.message}</div>`;
-        document.getElementById('content').textContent = 'Ensure backend is running on port 8000.';
+        document.getElementById('content').textContent = 'Ensure backend is running.';
         document.getElementById('empty').style.display = 'block';
       }
     }
