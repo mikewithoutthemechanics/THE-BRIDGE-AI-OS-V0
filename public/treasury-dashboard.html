@@ -53,7 +53,17 @@
   <script src="/bridge-nav.js?v=2"></script>
   <div class="dashboard">
     <h1>Treasury Dashboard</h1>
-    <div class="refresh-bar">Auto-refresh: <span id="countdown">10</span>s | Last: <span id="lastRefresh">--</span></div>
+    <div class="refresh-bar">Auto-refresh: <span id="countdown">10</span>s | Last: <span id="lastRefresh">--</span> | <a href="/wallet.html" style="color:#7b8cff">Wallet</a> · <a href="/defi.html" style="color:#00ffc8">DeFi</a></div>
+
+    <h2>&#9651; Combined Liquidity</h2>
+    <div class="grid" style="margin-bottom:12px">
+      <div class="card"><div class="label">Total Liquidity</div><div class="value" id="combinedTotal" style="font-size:2.2rem">--</div></div>
+      <div class="card"><div class="label">Treasury Pool</div><div class="value" id="liqTreasury">--</div></div>
+      <div class="card"><div class="label">Wallet Balance</div><div class="value secondary" id="liqWallet">--</div></div>
+      <div class="card"><div class="label">DeFi TVL</div><div class="value secondary" id="liqDefi">--</div></div>
+      <div class="card"><div class="label">Brain Earned (MTD)</div><div class="value warn" id="liqRevenue">--</div></div>
+      <div class="card"><div class="label">Net P&amp;L</div><div class="value" id="liqNet">--</div></div>
+    </div>
 
     <h2>Treasury Balances</h2>
     <div class="grid" id="balances">
@@ -126,14 +136,35 @@
       tbody.appendChild(tr);
     }
 
+    function safeJson(p) { return p.then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; }); }
+
     async function refresh() {
       try {
         var results = await Promise.all([
-          fetch('/api/treasury').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/analytics/summary').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/treasury/payments').then(function(r) { return r.json(); }).catch(function() { return []; })
+          safeJson(fetch('/api/treasury')),
+          safeJson(fetch('/api/analytics/summary')),
+          fetch('/api/treasury/payments').then(function(r) { return r.json(); }).catch(function() { return []; }),
+          safeJson(fetch('/api/wallet/balance')),
+          safeJson(fetch('/api/defi/status')),
+          safeJson(fetch('/api/revenue/status')),
+          safeJson(fetch('/api/treasury/status'))
         ]);
         var tRes = results[0], aRes = results[1], payments = results[2];
+        var walletRes = results[3], defiRes = results[4], revRes = results[5], brainTreas = results[6];
+
+        // ── Combined Liquidity ──────────────────────────────────────────────
+        var tTotal    = parseFloat(tRes.total || brainTreas.balance || 0);
+        var walletBal = parseFloat(walletRes.balance || walletRes.usd_value || 0);
+        var defiTVL   = parseFloat(defiRes.tvl || defiRes.total_value || defiRes.liquidity || 0);
+        var revEarned = parseFloat(revRes.revenue_mtd || brainTreas.earned || 0);
+        var revSpent  = parseFloat(revRes.costs_mtd   || brainTreas.spent  || 0);
+        var combined  = tTotal + walletBal + defiTVL;
+        animateValue(document.getElementById('combinedTotal'), combined);
+        animateValue(document.getElementById('liqTreasury'),   tTotal);
+        animateValue(document.getElementById('liqWallet'),     walletBal);
+        animateValue(document.getElementById('liqDefi'),       defiTVL);
+        animateValue(document.getElementById('liqRevenue'),    revEarned);
+        animateValue(document.getElementById('liqNet'),        revEarned - revSpent);
 
         var buckets = tRes.buckets || [];
         var total = parseFloat(tRes.total) || 0;
