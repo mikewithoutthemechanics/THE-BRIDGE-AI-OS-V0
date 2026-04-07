@@ -2,48 +2,348 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Bridge AI OS Digital Twin Console — manage and monitor your AI-powered digital twin.">
+  <meta name="description" content="Bridge AI OS Digital Twin Console — live brain state, emotion, swarm health, treasury, and mission board.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digital Twin Console — Bridge AI OS</title>
-  <script>
-    // Single fallback: __CONSOLE_SYNC_URL, else same-origin if port 3022, else localhost:3022. Used for redirect, meta refresh, and link.
-    (function(){
-      var url = (typeof window !== 'undefined' && window.__CONSOLE_SYNC_URL)
-        ? window.__CONSOLE_SYNC_URL
-        : (location.port === '3022' ? location.origin + '/' : 'http://localhost:3022/');
-      window.__CONSOLE_SYNC_URL = url;
-      var meta = document.createElement('meta');
-      meta.httpEquiv = 'refresh';
-      meta.content = '0;url=' + url;
-      document.head.appendChild(meta);
-      location.replace(url);
-    })();
-  </script>
   <style>
-    body { font-family: system-ui, sans-serif; background: #0a0c12; color: #8fc; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .box { background: rgba(0,0,0,0.85); padding: 2rem; border-radius: 8px; border: 1px solid #333; max-width: 420px; text-align: center; }
-    h1 { font-size: 1.1rem; color: #6af; margin-top: 0; }
-    a { display: inline-block; margin-top: 1rem; padding: 12px 24px; background: #2a6; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; }
-    a:hover { background: #3a7; }
-    .footer { font-size: 11px; color: #666; margin-top: 16px; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#050a0f;--bg2:#0a0e17;--bg3:#0d1620;--border:#1a2d40;--accent:#63ffda;--purple:#a78bfa;--gold:#ffd166;--red:#ff3c5a;--green:#00e57b;--text:#c8dce8;--dim:#628ba0;--font:'JetBrains Mono',monospace;}
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:12px;}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    #header{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:44px;background:var(--bg2);border-bottom:1px solid var(--border);gap:12px;}
+    #header-title{font-size:12px;letter-spacing:2px;color:var(--accent);white-space:nowrap;}
+    #twin-name{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:1px;}
+    #emotion-bar{display:flex;gap:6px;align-items:center;}
+    .emo-tag{padding:2px 8px;border-radius:3px;font-size:9px;letter-spacing:1px;background:rgba(99,255,218,.08);border:1px solid rgba(99,255,218,.2);color:var(--accent);}
+    #brain-dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red);flex-shrink:0;transition:background .3s,box-shadow .3s;}
+    #brain-dot.online{background:var(--green);box-shadow:0 0 6px var(--green);}
+    #last-ts{font-size:9px;color:var(--dim);white-space:nowrap;}
+    #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;padding:14px;}
+    .panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;display:flex;flex-direction:column;}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);background:rgba(99,255,218,.03);}
+    .panel-title{font-size:9px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;}
+    .panel-badge{font-size:8px;padding:1px 6px;border-radius:2px;background:#001a1a;border:1px solid rgba(99,255,218,.2);color:var(--dim);}
+    .panel-body{padding:10px 12px;flex:1;display:flex;flex-direction:column;gap:4px;}
+    .row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(99,255,218,.05);}
+    .row:last-child{border-bottom:none;}
+    .lbl{color:var(--dim);font-size:10px;letter-spacing:.5px;}
+    .val{font-weight:700;font-size:11px;color:var(--accent);}
+    .val.green{color:var(--green);}
+    .val.gold{color:var(--gold);}
+    .val.red{color:var(--red);}
+    .val.purple{color:var(--purple);}
+    .chips{display:flex;flex-wrap:wrap;gap:4px;padding-top:4px;}
+    .chip{padding:2px 7px;background:rgba(99,255,218,.06);border:1px solid rgba(99,255,218,.15);border-radius:3px;font-size:8px;color:var(--accent);}
+    .mission-item{padding:5px 8px;background:rgba(255,209,102,.04);border:1px solid rgba(255,209,102,.15);border-radius:3px;font-size:9px;color:var(--gold);}
+    .sdg-row{display:flex;align-items:center;gap:8px;padding:3px 0;}
+    .sdg-lbl{width:110px;font-size:9px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .sdg-bar-wrap{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+    .sdg-bar-fill{height:100%;background:var(--green);border-radius:3px;}
+    .sdg-pct{width:28px;text-align:right;font-size:9px;color:var(--text);}
+    .cmd-form{display:flex;gap:6px;margin-top:6px;}
+    .cmd-input{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:var(--font);font-size:11px;}
+    .cmd-input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+    .cmd-btn{padding:5px 12px;border-radius:4px;cursor:pointer;font-family:var(--font);font-size:10px;font-weight:700;}
+    .cmd-btn.cyan{background:rgba(99,255,218,.1);border:1px solid rgba(99,255,218,.3);color:var(--accent);}
+    .cmd-btn.cyan:hover{background:rgba(99,255,218,.2);}
+    .cmd-btn.purple{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:var(--purple);}
+    .cmd-btn.purple:hover{background:rgba(167,139,250,.2);}
+    .cmd-out{font-size:9px;color:var(--dim);padding-top:4px;min-height:14px;}
+    .skel{height:12px;border-radius:2px;background:linear-gradient(90deg,#0a1a1a 25%,#0d2020 50%,#0a1a1a 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;margin:3px 0;}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Digital Twin Console</h1>
-    <p>Redirecting to Digital Twin…</p>
-    <a id="link" href="#">Open console</a>
-    <p class="footer" id="footer">Synced with console — Human API at /api/human</p>
+<h1 class="sr-only">Bridge AI OS — Digital Twin Console</h1>
+
+<div id="header">
+  <span id="header-title">&#9651; DIGITAL TWIN CONSOLE</span>
+  <span id="twin-name">LOADING...</span>
+  <div id="emotion-bar"></div>
+  <span id="last-ts">–</span>
+  <span id="brain-dot"></span>
+</div>
+
+<div id="grid">
+  <div class="panel"><div class="panel-head"><span class="panel-title">Twin Profile</span><span class="panel-badge" id="badge-twin">–</span></div><div class="panel-body" id="body-twin"><div class="skel"></div><div class="skel" style="width:70%"></div></div></div>
+  <div class="panel"><div class="panel-head"><span class="panel-title">Emotion State</span><span class="panel-badge" id="badge-emo">–</span></div><div class="panel-body" id="body-emo"><div class="skel"></div></div></div>
+  <div class="panel"><div class="panel-head"><span class="panel-title">Treasury</span><span class="panel-badge" id="badge-treasury">–</span></div><div class="panel-body" id="body-treasury"><div class="skel"></div></div></div>
+  <div class="panel"><div class="panel-head"><span class="panel-title">Swarm Health</span><span class="panel-badge" id="badge-swarm">–</span></div><div class="panel-body" id="body-swarm"><div class="skel"></div></div></div>
+  <div class="panel"><div class="panel-head"><span class="panel-title">Network</span><span class="panel-badge" id="badge-net">–</span></div><div class="panel-body" id="body-net"><div class="skel"></div></div></div>
+  <div class="panel"><div class="panel-head"><span class="panel-title">Mission Board</span><span class="panel-badge" id="badge-missions">–</span></div><div class="panel-body" id="body-missions"><div class="skel"></div></div></div>
+  <div class="panel"><div class="panel-head"><span class="panel-title">SDG Metrics</span><span class="panel-badge" id="badge-sdg">–</span></div><div class="panel-body" id="body-sdg"><div class="skel"></div></div></div>
+  <div class="panel"><div class="panel-head"><span class="panel-title">Evolution Sim</span><span class="panel-badge" id="badge-esim">–</span></div><div class="panel-body" id="body-esim"><div class="skel"></div></div></div>
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title">CLI Queue</span><span class="panel-badge" id="badge-cli">–</span></div>
+    <div class="panel-body">
+      <div id="body-cli"><div class="skel"></div></div>
+      <form class="cmd-form" id="cli-form"><input class="cmd-input" id="cli-input" type="text" placeholder="enqueue command..." autocomplete="off"><button class="cmd-btn cyan" type="submit">RUN</button></form>
+      <div class="cmd-out" id="cli-out"></div>
+    </div>
   </div>
-  <script>
-    (function(){
-      var url = (typeof window !== 'undefined' && window.__CONSOLE_SYNC_URL) ? window.__CONSOLE_SYNC_URL : (location.port === '3022' ? location.origin + '/' : 'http://localhost:3022/');
-      var link = document.getElementById('link');
-      var footer = document.getElementById('footer');
-      if (link) { link.href = url; link.textContent = 'Open at ' + url; }
-      if (footer) footer.innerHTML = 'Synced with ' + url + ' — Human API at /api/human';
-    })();
-  </script>
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title">Speak / Embody</span><span class="panel-badge">TWIN</span></div>
+    <div class="panel-body" id="body-speak">
+      <div class="row"><span class="lbl">Avatar interface</span><a href="/avatar.html" style="color:var(--purple);font-size:10px;text-decoration:none;">&#9675; Open &#8594;</a></div>
+      <div class="row"><span class="lbl">Twin console</span><a href="/digital-twin-console.html" style="color:var(--accent);font-size:10px;text-decoration:none;">&#9651; This page</a></div>
+      <form class="cmd-form" id="speak-form"><input class="cmd-input" id="speak-input" type="text" placeholder="Say something as the twin..."><button class="cmd-btn purple" type="submit">SPEAK</button></form>
+      <div class="cmd-out" id="speak-out"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var API = '';
+
+  function money(n){ return '$' + Number(n||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function apiFetch(path){ return fetch(API + path).then(function(r){ return r.json(); }); }
+
+  function makeRow(lbl, valText, colorClass) {
+    var div = document.createElement('div');
+    div.className = 'row';
+    var l = document.createElement('span');
+    l.className = 'lbl';
+    l.textContent = lbl;
+    var v = document.createElement('span');
+    v.className = 'val ' + (colorClass || '');
+    v.textContent = String(valText);
+    div.appendChild(l);
+    div.appendChild(v);
+    return div;
+  }
+
+  function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+
+  function setRows(id, rows) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    clearEl(el);
+    rows.forEach(function(r) { el.appendChild(makeRow(r[0], r[1], r[2])); });
+  }
+
+  function loadTwin() {
+    return apiFetch('/api/twin/profile').then(function(d) {
+      document.getElementById('twin-name').textContent = (d.name || d.id || 'BRIDGE TWIN').toUpperCase();
+      document.getElementById('badge-twin').textContent = 'ACTIVE';
+      setRows('body-twin', [
+        ['ID', d.id || '–'],
+        ['Name', d.name || '–', 'gold'],
+        ['Score', d.score || 0, 'green'],
+        ['Trust', d.trust || '–'],
+        ['Status', d.status || 'active', 'green']
+      ]);
+      if (d.skills && d.skills.length) {
+        var body = document.getElementById('body-twin');
+        var chips = document.createElement('div');
+        chips.className = 'chips';
+        d.skills.slice(0,8).forEach(function(s) {
+          var c = document.createElement('span');
+          c.className = 'chip';
+          c.textContent = s;
+          chips.appendChild(c);
+        });
+        body.appendChild(chips);
+      }
+    });
+  }
+
+  function loadEmotion() {
+    return apiFetch('/api/emotion/status').then(function(d) {
+      var bar = document.getElementById('emotion-bar');
+      clearEl(bar);
+      ['mood','energy','focus','confidence'].forEach(function(k) {
+        if (d[k] !== undefined) {
+          var t = document.createElement('span');
+          t.className = 'emo-tag';
+          t.textContent = k.toUpperCase() + ':' + d[k];
+          bar.appendChild(t);
+        }
+      });
+      document.getElementById('badge-emo').textContent = d.mood || '–';
+      var keys = Object.keys(d).filter(function(k){ return k !== 'ok'; });
+      var body = document.getElementById('body-emo');
+      clearEl(body);
+      keys.forEach(function(k) {
+        var cls = typeof d[k]==='number' ? (d[k]>0.5?'green':'gold') : '';
+        body.appendChild(makeRow(k, d[k], cls));
+      });
+    });
+  }
+
+  function loadTreasury() {
+    return Promise.all([apiFetch('/api/treasury/status'), apiFetch('/api/revenue/status')]).then(function(rs) {
+      var t = rs[0]; var rev = rs[1];
+      var earned = t.earned || rev.revenue_mtd || 0;
+      var spent  = t.spent  || rev.costs_mtd   || 0;
+      document.getElementById('badge-treasury').textContent = t.ok ? 'LIVE' : 'ERR';
+      setRows('body-treasury', [
+        ['Earned',       money(earned),          'green'],
+        ['Spent',        money(spent),           'red'],
+        ['Net',          money(earned - spent),  'gold'],
+        ['Balance',      money(t.balance)],
+        ['Transactions', t.transactions || 0]
+      ]);
+    });
+  }
+
+  function loadSwarm() {
+    return apiFetch('/api/swarm/health').then(function(d) {
+      document.getElementById('badge-swarm').textContent = d.ok ? 'ONLINE' : 'ERR';
+      setRows('body-swarm', [
+        ['Agents',  d.agents || d.total || 0, 'green'],
+        ['Active',  d.active || 0,            'cyan'],
+        ['Tasks',   d.tasks  || 0,            'gold'],
+        ['Uptime',  d.uptime || '–'],
+        ['Health',  d.health || 'ok',         'green']
+      ]);
+    });
+  }
+
+  function loadNetwork() {
+    return apiFetch('/api/network/status').then(function(d) {
+      document.getElementById('badge-net').textContent = d.ok ? 'CONNECTED' : 'ERR';
+      setRows('body-net', [
+        ['Nodes',       d.nodes       || 0,   'green'],
+        ['Connections', d.connections || 0,   'cyan'],
+        ['Latency',     (d.latency    || 0) + 'ms'],
+        ['Bandwidth',   d.bandwidth   || '–'],
+        ['Mode',        d.mode        || '–', 'gold']
+      ]);
+    });
+  }
+
+  function loadMissions() {
+    return apiFetch('/api/mission/board').then(function(d) {
+      var missions = d.missions || [];
+      document.getElementById('badge-missions').textContent = missions.length + ' active';
+      var body = document.getElementById('body-missions');
+      clearEl(body);
+      if (!missions.length) {
+        body.appendChild(makeRow('No active missions', '–'));
+      } else {
+        missions.slice(0,5).forEach(function(m) {
+          var div = document.createElement('div');
+          div.className = 'mission-item';
+          div.textContent = m.title || m.id || JSON.stringify(m);
+          body.appendChild(div);
+        });
+      }
+    });
+  }
+
+  function loadSDG() {
+    return apiFetch('/api/sdg/metrics').then(function(d) {
+      var goals = d.goals || [];
+      document.getElementById('badge-sdg').textContent = goals.length + ' goals';
+      var body = document.getElementById('body-sdg');
+      clearEl(body);
+      goals.slice(0,6).forEach(function(g) {
+        var pct = Math.min(100, Math.round((g.progress || g.value || 0) * 100));
+        var row = document.createElement('div');
+        row.className = 'sdg-row';
+        var lbl = document.createElement('span');
+        lbl.className = 'sdg-lbl';
+        lbl.textContent = g.label || '';
+        var wrap = document.createElement('div');
+        wrap.className = 'sdg-bar-wrap';
+        var fill = document.createElement('div');
+        fill.className = 'sdg-bar-fill';
+        fill.style.width = pct + '%';
+        wrap.appendChild(fill);
+        var pctEl = document.createElement('span');
+        pctEl.className = 'sdg-pct';
+        pctEl.textContent = pct + '%';
+        row.appendChild(lbl);
+        row.appendChild(wrap);
+        row.appendChild(pctEl);
+        body.appendChild(row);
+      });
+    });
+  }
+
+  function loadESim() {
+    return apiFetch('/api/esim/status').then(function(d) {
+      document.getElementById('badge-esim').textContent = 'GEN ' + (d.generation || 0);
+      setRows('body-esim', [
+        ['Generation', d.generation || 0,                    'gold'],
+        ['Fitness',    (+(d.fitness || 0)).toFixed(3),       'green'],
+        ['Population', d.population || 0,                   'cyan'],
+        ['Mutations',  d.mutations  || 0],
+        ['Status',     d.ok ? 'RUNNING' : 'IDLE',           d.ok ? 'green' : 'gold']
+      ]);
+    });
+  }
+
+  function loadCLI() {
+    return apiFetch('/api/cli/status').then(function(d) {
+      document.getElementById('badge-cli').textContent = 'Q:' + (d.queue_size || 0);
+      setRows('body-cli', [
+        ['Status', d.status     || '–',  'green'],
+        ['Queue',  d.queue_size || 0,    d.queue_size > 0 ? 'gold' : 'green']
+      ]);
+    });
+  }
+
+  // ── Actions ──────────────────────────────────────────────────────────────
+
+  document.getElementById('cli-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var inp = document.getElementById('cli-input');
+    var out = document.getElementById('cli-out');
+    var cmd = inp.value.trim();
+    if (!cmd) return;
+    inp.value = '';
+    out.textContent = 'Sending...';
+    fetch(API + '/api/cli/enqueue', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({command: cmd})
+    }).then(function(r){ return r.json(); }).then(function(d) {
+      out.textContent = d.ok ? ('Queued: ' + cmd) : ('Error: ' + (d.error || 'failed'));
+      loadCLI();
+    }).catch(function() { out.textContent = 'Error sending command'; });
+  });
+
+  document.getElementById('speak-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var inp = document.getElementById('speak-input');
+    var out = document.getElementById('speak-out');
+    var text = inp.value.trim();
+    if (!text) return;
+    inp.value = '';
+    out.textContent = 'Speaking...';
+    fetch(API + '/api/speech/speak', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text: text})
+    }).then(function(r){ return r.json(); }).then(function(d) {
+      out.textContent = d.ok ? ('Said: "' + text + '"') : ('Error: ' + (d.error || 'failed'));
+    }).catch(function() { out.textContent = 'Brain offline'; });
+  });
+
+  // ── Refresh loop ─────────────────────────────────────────────────────────
+
+  function refresh() {
+    var ts  = document.getElementById('last-ts');
+    var dot = document.getElementById('brain-dot');
+    ts.textContent = 'Refreshing...';
+    Promise.allSettled([
+      loadTwin(), loadEmotion(), loadTreasury(),
+      loadSwarm(), loadNetwork(), loadMissions(),
+      loadSDG(), loadESim(), loadCLI()
+    ]).then(function(results) {
+      var ok = results.some(function(r){ return r.status === 'fulfilled'; });
+      if (ok) dot.classList.add('online'); else dot.classList.remove('online');
+      ts.textContent = new Date().toLocaleTimeString();
+    });
+  }
+
+  refresh();
+  setInterval(refresh, 8000);
+})();
+</script>
 <script src="/bridge-nav.js" defer></script>
 </body>
 </html>
