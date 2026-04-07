@@ -18,3 +18,10 @@ users.db-wal
 .env.production
 *.db-shm
 *.db-wal
+
+# Secrets / tunnel credentials — never commit
+cloudflared/
+rotate.ps1
+*.pem
+*.key
+wp-cli.phar
