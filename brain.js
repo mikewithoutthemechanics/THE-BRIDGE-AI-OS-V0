@@ -2253,7 +2253,27 @@ app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
 });
 
+// ── CRASH CAPTURE — log every exit cause so PM2 error.log is never empty ────
+process.on('uncaughtException', (err) => {
+  console.error('[BRAIN][CRASH] uncaughtException:', err.stack || err.message);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[BRAIN][CRASH] unhandledRejection:', reason?.stack || reason);
+  process.exit(1);
+});
+process.on('SIGTERM', () => { console.log('[BRAIN][SIGNAL] SIGTERM received — shutting down'); process.exit(0); });
+process.on('SIGINT',  () => { console.log('[BRAIN][SIGNAL] SIGINT received — shutting down');  process.exit(0); });
+
 // ── START ───────────────────────────────────────────────────────────────────
+server.on('error', (err) => {
+  console.error('[BRAIN][FATAL] Server error:', err.code, err.message);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[BRAIN][FATAL] Port ${PORT} already in use — check: lsof -i :${PORT}`);
+  }
+  process.exit(1);
+});
+
 server.listen(PORT, () => {
   console.log(`[BRAIN] Bridge AI Super Brain running on http://localhost:${PORT}`);
   console.log(`[BRAIN] WebSocket: ws://localhost:${PORT}/ws/<channel>`);
