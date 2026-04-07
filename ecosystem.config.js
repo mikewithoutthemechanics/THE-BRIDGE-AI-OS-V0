@@ -130,9 +130,9 @@ module.exports = {
     // ── BAN Task Engine (port 8001) — Python/FastAPI ────────────────────────
     {
       name:         'ban-engine',
-      script:       'python',
-      args:         '-c "import uvicorn; uvicorn.run(\'backend.main:app\', host=\'0.0.0.0\', port=8001)"',
-      cwd:          './BAN',
+      script:       '/usr/bin/python3',
+      args:         '-m uvicorn backend.main:app --host 0.0.0.0 --port 8001',
+      cwd:          '/opt/ai-os/BAN',
       interpreter:  'none',
       instances:    1,
       autorestart:  true,
