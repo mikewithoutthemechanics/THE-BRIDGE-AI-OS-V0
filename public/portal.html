@@ -396,6 +396,7 @@ async function sendToLLM(userText) {
   setState('thinking');
   addTranscriptMessage('user', userText);
   conversationHistory.push({ role: 'user', content: userText });
+  exchangeCount++;
 
   try {
     const apiKey = localStorage.getItem('brdg_api_key') || '';
@@ -407,19 +408,43 @@ async function sendToLLM(userText) {
       headers,
       body: JSON.stringify({
         prompt: userText,
-        system: SYSTEM_PROMPT,
-        messages: conversationHistory.slice(-6)
+        system: getSystemPrompt(),
+        messages: conversationHistory.slice(-8)
       })
     });
 
     const data = await resp.json();
     console.log('[Bridge AI] LLM response:', data);
     if (!resp.ok || data.error) throw new Error(data.error || 'API error ' + resp.status);
-    const reply = data.text || data.response || data.result || data.output || 'I received your message.';
+    let reply = data.text || data.response || data.result || data.output || 'I received your message.';
+
+    // Check for checkout route marker
+    const shouldRoute = reply.includes('[ROUTE:checkout]');
+    reply = reply.replace(/\[ROUTE:checkout\]/g, '').trim();
 
     conversationHistory.push({ role: 'assistant', content: reply });
     addTranscriptMessage('ai', reply);
     speak(reply);
+
+    // Auto-redirect to checkout after speaking
+    if (shouldRoute) {
+      setTimeout(() => {
+        // Capture lead data before redirecting
+        try {
+          fetch('/api/leads/capture', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              conversation: conversationHistory,
+              source: 'voice_portal',
+              score: exchangeCount * 15,
+              ts: Date.now()
+            })
+          });
+        } catch (_) {}
+        window.location.href = '/checkout.html';
+      }, 2000);
+    }
   } catch (e) {
     const fallback = 'Sorry, I could not process that right now.';
     addTranscriptMessage('ai', fallback);

@@ -2581,6 +2581,46 @@ try {
   console.warn('[BRAIN] Telegram bot failed to load:', e.message);
 }
 
+// ── LEAD CAPTURE FROM VOICE CONVERSATIONS ──────────────────────────────────
+const bridgeKB = (() => { try { return require('./lib/bridge-kb'); } catch (_) { return null; } })();
+
+app.post('/api/leads/capture', (req, res) => {
+  const { name, email, company, source, conversation, score } = req.body || {};
+  const lead = { id: `lead_${Date.now()}`, ts: Date.now(), source: source || 'voice_portal', score: score || 0 };
+
+  // Use KB module to extract and qualify lead data if available
+  if (bridgeKB && Array.isArray(conversation)) {
+    const captured = bridgeKB.captureLeadData(conversation);
+    const qualified = bridgeKB.qualifyLead(conversation);
+    Object.assign(lead, captured, {
+      name: name || captured.name,
+      email: email || captured.email,
+      company: company || captured.company,
+      score: qualified.score,
+      qualified: qualified.qualified,
+      signals: qualified.signals,
+    });
+  } else {
+    Object.assign(lead, { name: name || null, email: email || null, company: company || null });
+  }
+
+  // Store lead in state for CRM access
+  if (!state._leads) state._leads = [];
+  state._leads.push(lead);
+
+  // Log to audit trail
+  audit('lead_captured', 'voice_portal', `Lead ${lead.name || 'anonymous'} (score: ${lead.score}) from ${lead.source}`);
+  broadcast({ type: 'lead_captured', data: lead });
+
+  console.log(`[BRAIN] Lead captured: ${lead.name || 'anonymous'} | score: ${lead.score} | source: ${lead.source}`);
+  res.json({ ok: true, lead });
+});
+
+app.get('/api/leads', (_req, res) => {
+  const leads = state._leads || [];
+  res.json({ ok: true, leads: leads.slice(-50), total: leads.length });
+});
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
