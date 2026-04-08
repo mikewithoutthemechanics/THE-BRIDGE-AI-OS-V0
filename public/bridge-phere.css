@@ -1,0 +1,687 @@
+/**
+ * BRIDGE AI OS — PHERE Living Design System
+ * Post-Human Experiential Reality Engine
+ * Cinematic · Adaptive · Physics-Driven · Human-Indistinguishable
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 1 — PERCEPTUAL FOUNDATION: Variable tokens with entropy
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Brand palette with multi-depth gradients */
+  --phere-void:      #020408;
+  --phere-deep:      #050a12;
+  --phere-surface:   #080f1a;
+  --phere-raised:    #0d1624;
+  --phere-float:     #111e30;
+  --phere-border:    rgba(99,255,218,0.08);
+  --phere-border-hi: rgba(99,255,218,0.22);
+
+  /* Cyan spectrum — alive, not flat */
+  --phere-cyan-dim:   #1a6b5a;
+  --phere-cyan:       #63ffda;
+  --phere-cyan-hi:    #9fffec;
+  --phere-cyan-glow:  rgba(99,255,218,0.15);
+
+  /* Accent palette */
+  --phere-emerald:    #00e57b;
+  --phere-gold:       #f59e0b;
+  --phere-crimson:    #ff3366;
+  --phere-violet:     #a855f7;
+  --phere-sapphire:   #3b82f6;
+
+  /* Typography — fluid variable */
+  --phere-font-display: 'Outfit', 'Inter', system-ui, sans-serif;
+  --phere-font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+  --phere-font-serif:   'Playfair Display', Georgia, serif;
+
+  /* Spacing rhythm — non-linear, organic */
+  --phere-s1: 4px;
+  --phere-s2: 7px;
+  --phere-s3: 13px;
+  --phere-s4: 21px;
+  --phere-s5: 34px;
+  --phere-s6: 55px;
+  --phere-s7: 89px;
+
+  /* Motion — spring physics */
+  --phere-ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --phere-ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --phere-ease-inertia:  cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --phere-ease-pressure: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  --phere-dur-snap:   80ms;
+  --phere-dur-quick:  200ms;
+  --phere-dur-smooth: 400ms;
+  --phere-dur-scene:  700ms;
+  --phere-dur-drift:  1200ms;
+
+  /* Surface depth — glassmorphism stack */
+  --phere-glass-1: rgba(8, 15, 26, 0.6);
+  --phere-glass-2: rgba(13, 22, 36, 0.75);
+  --phere-glass-3: rgba(17, 30, 48, 0.88);
+  --phere-blur-1: blur(8px);
+  --phere-blur-2: blur(16px);
+  --phere-blur-3: blur(24px);
+
+  /* Elevation shadows */
+  --phere-shadow-1: 0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,255,218,0.04);
+  --phere-shadow-2: 0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,255,218,0.06), 0 0 24px rgba(99,255,218,0.03);
+  --phere-shadow-3: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,255,218,0.1), 0 0 48px rgba(99,255,218,0.06);
+  --phere-shadow-glow: 0 0 0 1px rgba(99,255,218,0.2), 0 0 24px rgba(99,255,218,0.12), 0 8px 32px rgba(0,0,0,0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 2 — PERCEPTUAL RESET & BASE LAYER
+   ═══════════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ambient canvas — WebGL layer sits behind everything */
+#phere-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  mix-blend-mode: screen;
+}
+
+/* Noise texture overlay — eliminates flat synthetic look */
+#phere-noise {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 3 — LIVING CARD SYSTEM (replaces static cards)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-card {
+  position: relative;
+  background: var(--phere-glass-2);
+  border: 1px solid var(--phere-border);
+  border-radius: 12px;
+  padding: var(--phere-s4) var(--phere-s4);
+  transition:
+    border-color var(--phere-dur-smooth) var(--phere-ease-out),
+    box-shadow   var(--phere-dur-smooth) var(--phere-ease-out),
+    transform    var(--phere-dur-smooth) var(--phere-ease-spring);
+  overflow: hidden;
+  will-change: transform, box-shadow;
+  backdrop-filter: var(--phere-blur-1);
+  -webkit-backdrop-filter: var(--phere-blur-1);
+}
+
+.phere-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(99,255,218,0.04) 0%,
+    transparent 50%,
+    rgba(0,229,123,0.02) 100%
+  );
+  opacity: 0;
+  transition: opacity var(--phere-dur-smooth) var(--phere-ease-out);
+}
+
+/* Kinetic shimmer line — top edge highlight */
+.phere-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(99,255,218,0.4),
+    rgba(0,229,123,0.3),
+    transparent
+  );
+  opacity: 0;
+  transform: scaleX(0.3);
+  transition:
+    opacity var(--phere-dur-smooth) var(--phere-ease-out),
+    transform var(--phere-dur-scene) var(--phere-ease-out);
+}
+
+.phere-card:hover {
+  border-color: var(--phere-border-hi);
+  box-shadow: var(--phere-shadow-glow);
+  transform: translateY(-4px) scale(1.005);
+}
+
+.phere-card:hover::before { opacity: 1; }
+.phere-card:hover::after  { opacity: 1; transform: scaleX(1); }
+
+/* Magnetic cursor effect — applied by JS */
+.phere-card.phere-magnetic {
+  transition:
+    border-color var(--phere-dur-smooth) var(--phere-ease-out),
+    box-shadow   var(--phere-dur-smooth) var(--phere-ease-out),
+    transform    var(--phere-dur-snap) linear;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 4 — CINEMATIC BUTTON SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--phere-s2);
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-family: var(--phere-font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    transform    var(--phere-dur-quick) var(--phere-ease-spring),
+    box-shadow   var(--phere-dur-quick) var(--phere-ease-out),
+    filter       var(--phere-dur-quick) var(--phere-ease-out);
+  will-change: transform;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Ripple layer */
+.phere-btn .phere-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transform: scale(0);
+  animation: phereRipple 0.6s var(--phere-ease-out);
+  pointer-events: none;
+}
+
+@keyframes phereRipple {
+  to { transform: scale(4); opacity: 0; }
+}
+
+/* Primary variant */
+.phere-btn-primary {
+  background: linear-gradient(135deg, var(--phere-cyan) 0%, var(--phere-emerald) 100%);
+  color: var(--phere-void);
+  box-shadow: 0 0 0 0 rgba(99,255,218,0.4);
+}
+.phere-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(99,255,218,0.3), 0 0 0 1px rgba(99,255,218,0.2);
+  filter: brightness(1.1);
+}
+.phere-btn-primary:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 0 0 2px rgba(99,255,218,0.3);
+  transition-duration: var(--phere-dur-snap);
+}
+
+/* Ghost variant */
+.phere-btn-ghost {
+  background: transparent;
+  color: var(--phere-cyan);
+  border: 1px solid var(--phere-border-hi);
+  box-shadow: inset 0 0 0 0 var(--phere-cyan-glow);
+}
+.phere-btn-ghost:hover {
+  background: var(--phere-cyan-glow);
+  border-color: var(--phere-cyan);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(99,255,218,0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 5 — TYPOGRAPHY: Fluid + Variable
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-display {
+  font-family: var(--phere-font-display);
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg,
+    var(--phere-cyan) 0%,
+    var(--phere-cyan-hi) 40%,
+    var(--phere-emerald) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.phere-heading {
+  font-family: var(--phere-font-display);
+  font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #e2e8f0;
+}
+
+.phere-label {
+  font-family: var(--phere-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--phere-cyan-dim);
+}
+
+/* Kinetic text — animated character entry */
+.phere-kinetic [data-char] {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: phereChar var(--phere-dur-smooth) var(--phere-ease-spring) forwards;
+}
+
+@keyframes phereChar {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 6 — SCROLL REVEAL SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity  var(--phere-dur-scene)  var(--phere-ease-out),
+    transform var(--phere-dur-scene) var(--phere-ease-spring);
+}
+
+.phere-reveal.phere-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.phere-stagger > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity   var(--phere-dur-smooth) var(--phere-ease-out),
+    transform var(--phere-dur-smooth) var(--phere-ease-spring);
+}
+
+.phere-stagger.phere-revealed > * { opacity: 1; transform: translateY(0); }
+.phere-stagger.phere-revealed > *:nth-child(1) { transition-delay: 0ms; }
+.phere-stagger.phere-revealed > *:nth-child(2) { transition-delay: 60ms; }
+.phere-stagger.phere-revealed > *:nth-child(3) { transition-delay: 120ms; }
+.phere-stagger.phere-revealed > *:nth-child(4) { transition-delay: 180ms; }
+.phere-stagger.phere-revealed > *:nth-child(5) { transition-delay: 240ms; }
+.phere-stagger.phere-revealed > *:nth-child(6) { transition-delay: 300ms; }
+.phere-stagger.phere-revealed > *:nth-child(n+7) { transition-delay: 360ms; }
+
+/* Slide from left */
+.phere-reveal-left {
+  opacity: 0;
+  transform: translateX(-32px);
+  transition:
+    opacity   var(--phere-dur-scene) var(--phere-ease-out),
+    transform var(--phere-dur-scene) var(--phere-ease-spring);
+}
+.phere-reveal-left.phere-revealed { opacity: 1; transform: translateX(0); }
+
+/* Scale in */
+.phere-reveal-scale {
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity   var(--phere-dur-smooth) var(--phere-ease-out),
+    transform var(--phere-dur-smooth) var(--phere-ease-spring);
+}
+.phere-reveal-scale.phere-revealed { opacity: 1; transform: scale(1); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 7 — STAT COUNTER DISPLAYS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-stat {
+  position: relative;
+  text-align: center;
+}
+
+.phere-stat-val {
+  font-family: var(--phere-font-mono);
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  font-weight: 700;
+  color: var(--phere-cyan);
+  display: block;
+  line-height: 1;
+  /* Tabular nums for clean counter animation */
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.phere-stat-label {
+  font-family: var(--phere-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(99,255,218,0.4);
+  margin-top: 4px;
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 8 — STATUS INDICATORS (living pulse)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--phere-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.phere-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.phere-status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  opacity: 0;
+  animation: pherePulse 2.4s var(--phere-ease-inertia) infinite;
+}
+
+@keyframes pherePulse {
+  0%   { transform: scale(0.8); opacity: 0.6; }
+  50%  { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(0.8); opacity: 0; }
+}
+
+.phere-status-online  .phere-status-dot { background: var(--phere-emerald); color: var(--phere-emerald); }
+.phere-status-online  { color: var(--phere-emerald); }
+.phere-status-warning .phere-status-dot { background: var(--phere-gold); color: var(--phere-gold); animation-duration: 1.6s; }
+.phere-status-warning { color: var(--phere-gold); }
+.phere-status-error   .phere-status-dot { background: var(--phere-crimson); color: var(--phere-crimson); animation-duration: 0.8s; }
+.phere-status-error   { color: var(--phere-crimson); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 9 — PAGE TRANSITIONS (scene continuity)
+   ═══════════════════════════════════════════════════════════════════════════ */
+#phere-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+  background: linear-gradient(135deg, var(--phere-void), var(--phere-surface));
+  opacity: 0;
+  transition: opacity 300ms var(--phere-ease-out);
+}
+
+#phere-transition-overlay.phere-out {
+  opacity: 1;
+  transition: opacity 220ms var(--phere-ease-out);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 10 — BEHAVIORAL VARIABILITY (organic grid offsets)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Asymmetric hero layout */
+.phere-hero-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--phere-s5);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--phere-s6) var(--phere-s4);
+}
+
+/* Non-uniform card grid — breaks mechanical regularity */
+.phere-organic-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+}
+
+/* Cards with deliberate rhythm variance */
+.phere-organic-grid > :nth-child(1)  { grid-column: span 5; }
+.phere-organic-grid > :nth-child(2)  { grid-column: span 7; }
+.phere-organic-grid > :nth-child(3)  { grid-column: span 4; }
+.phere-organic-grid > :nth-child(4)  { grid-column: span 4; }
+.phere-organic-grid > :nth-child(5)  { grid-column: span 4; }
+.phere-organic-grid > :nth-child(6)  { grid-column: span 6; }
+.phere-organic-grid > :nth-child(7)  { grid-column: span 6; }
+.phere-organic-grid > :nth-child(n+8){ grid-column: span 4; }
+
+@media (max-width: 860px) {
+  .phere-organic-grid > * { grid-column: span 12 !important; }
+}
+@media (min-width: 861px) and (max-width: 1100px) {
+  .phere-organic-grid > :nth-child(1)  { grid-column: span 6; }
+  .phere-organic-grid > :nth-child(2)  { grid-column: span 6; }
+  .phere-organic-grid > :nth-child(n+3){ grid-column: span 6; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 11 — AMBIENT GLOW GRADIENTS (surface warmth)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-glow-cyan {
+  position: absolute;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(99,255,218,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  border-radius: 50%;
+  animation: phereFloat 8s ease-in-out infinite;
+}
+
+.phere-glow-emerald {
+  position: absolute;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(0,229,123,0.05) 0%, transparent 70%);
+  pointer-events: none;
+  border-radius: 50%;
+  animation: phereFloat 11s ease-in-out infinite reverse;
+}
+
+@keyframes phereFloat {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  33%       { transform: translateY(-20px) translateX(12px); }
+  66%       { transform: translateY(8px) translateX(-16px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 12 — LOADING STATES (purposeful, not decorative)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--phere-raised) 25%,
+    var(--phere-float)  50%,
+    var(--phere-raised) 75%
+  );
+  background-size: 400% 100%;
+  animation: phereSkeleton 1.8s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+@keyframes phereSkeleton {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 13 — SECTION DIVIDERS (cinematic rhythm)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--phere-font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(99,255,218,0.5);
+  margin-bottom: var(--phere-s3);
+}
+
+.phere-section-label::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99,255,218,0.4));
+}
+
+.phere-section-label::after {
+  content: '';
+  display: block;
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(99,255,218,0.15), transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 14 — INPUT SENTIENCE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.phere-input {
+  width: 100%;
+  background: var(--phere-raised);
+  border: 1px solid var(--phere-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #e2e8f0;
+  font-family: var(--phere-font-display);
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color var(--phere-dur-quick) var(--phere-ease-out),
+    box-shadow   var(--phere-dur-quick) var(--phere-ease-out),
+    background   var(--phere-dur-quick) var(--phere-ease-out);
+}
+
+.phere-input:focus {
+  border-color: rgba(99,255,218,0.4);
+  background: var(--phere-float);
+  box-shadow: 0 0 0 3px rgba(99,255,218,0.08), 0 0 16px rgba(99,255,218,0.06);
+}
+
+.phere-input::placeholder { color: rgba(99,255,218,0.2); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 15 — ACCESSIBILITY: Full compliance
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .phere-reveal,
+  .phere-stagger > *,
+  .phere-reveal-left,
+  .phere-reveal-scale {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --phere-border: rgba(99,255,218,0.3);
+    --phere-border-hi: rgba(99,255,218,0.6);
+  }
+  .phere-display {
+    -webkit-text-fill-color: var(--phere-cyan);
+  }
+}
+
+/* Focus visible — keyboard navigation */
+.phere-card:focus-visible,
+.phere-btn:focus-visible,
+.phere-input:focus-visible {
+  outline: 2px solid var(--phere-cyan);
+  outline-offset: 3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATUM 16 — UPGRADE OVERLAY (applies to existing pages non-destructively)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Upgrade existing .card elements system-wide */
+.card, [class*="card-"] {
+  transition:
+    border-color var(--phere-dur-smooth) var(--phere-ease-out),
+    box-shadow   var(--phere-dur-smooth) var(--phere-ease-out),
+    transform    var(--phere-dur-smooth) var(--phere-ease-spring) !important;
+  will-change: transform;
+}
+
+.card:hover {
+  transform: translateY(-4px) scale(1.004) !important;
+  box-shadow: var(--phere-shadow-glow) !important;
+}
+
+/* Upgrade existing buttons */
+.btn, [class*="btn-"], button:not([class*="boot"]) {
+  transition:
+    transform  var(--phere-dur-quick) var(--phere-ease-spring),
+    filter     var(--phere-dur-quick) var(--phere-ease-out),
+    box-shadow var(--phere-dur-quick) var(--phere-ease-out) !important;
+  will-change: transform;
+}
+
+.btn:hover, [class*="btn-"]:hover, button:not([class*="boot"]):hover {
+  transform: translateY(-2px) !important;
+}
+
+.btn:active, button:not([class*="boot"]):active {
+  transform: translateY(0px) scale(0.97) !important;
+  transition-duration: var(--phere-dur-snap) !important;
+}
+
+/* Upgrade section titles */
+.section-title, [class*="section-title"] {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.section-title::after {
+  content: '' !important;
+  display: block !important;
+  flex: 1 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, rgba(99,255,218,0.15), transparent) !important;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--phere-void, #020408); }
+::-webkit-scrollbar-thumb { background: rgba(99,255,218,0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(99,255,218,0.4); }
+
+/* Selection color */
+::selection { background: rgba(99,255,218,0.2); color: #fff; }
