@@ -2563,6 +2563,59 @@ try {
   console.warn('[BRAIN] Auto-task loop failed to load:', e.message);
 }
 
+// ── MERCHANT BIDDING SYSTEM ──────────────────────────────────────────────────
+try {
+  const merchantBids = require('./lib/merchant-bids');
+  app.get('/api/merchants/bids', (_req, res) => {
+    try {
+      res.json({ ok: true, bids: merchantBids.getActiveBids() });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+  app.post('/api/merchants/bid', (req, res) => {
+    try {
+      const { merchantName, amount, category, targetAgent } = req.body || {};
+      const bid = merchantBids.placeBid(merchantName, amount, category, targetAgent);
+      res.json({ ok: true, bid });
+    } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
+  });
+  console.log('[BRAIN] Merchant bidding ACTIVE');
+} catch (e) {
+  console.warn('[BRAIN] Merchant bidding failed to load:', e.message);
+}
+
+// ── DATA FLYWHEEL + ANALYTICS ───────────────────────────────────────────────
+try {
+  const flywheel = require('./lib/data-flywheel');
+  app.get('/api/analytics/insights', (_req, res) => {
+    try {
+      res.json({ ok: true, ...flywheel.getInsights() });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+  console.log('[BRAIN] Data flywheel ACTIVE');
+} catch (e) {
+  console.warn('[BRAIN] Data flywheel failed to load:', e.message);
+}
+
+// ── AGENT P&L ANALYTICS ────────────────────────────────────────────────────
+try {
+  const ledgerPnL = require('./lib/agent-ledger');
+  app.get('/api/analytics/agent-pnl', (req, res) => {
+    try {
+      const agentId = req.query.agent_id || req.query.agentId;
+      if (!agentId) return res.status(400).json({ ok: false, error: 'agent_id query param required' });
+      res.json({ ok: true, pnl: ledgerPnL.getAgentPnL(agentId) });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+  app.get('/api/analytics/system-pnl', (_req, res) => {
+    try {
+      res.json({ ok: true, pnl: ledgerPnL.getSystemPnL() });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+  console.log('[BRAIN] Agent P&L analytics ACTIVE');
+} catch (e) {
+  console.warn('[BRAIN] Agent P&L analytics failed to load:', e.message);
+}
+
 // ── API KEY SYSTEM (pay-per-call SaaS) ───────────────────────────────────────
 try {
   const { registerApiKeyRoutes } = require('./lib/api-key-routes');
@@ -2620,6 +2673,13 @@ app.get('/api/leads', (_req, res) => {
   const leads = state._leads || [];
   res.json({ ok: true, leads: leads.slice(-50), total: leads.length });
 });
+
+// ── AP2 PROTOCOL (Agent Payments Protocol) ─────────────────────────────────
+try {
+  const { registerAP2Routes } = require('./lib/ap2/ap2-routes');
+  registerAP2Routes(app);
+  console.log('[BRAIN] AP2 Protocol ACTIVE');
+} catch (e) { console.warn('[BRAIN] AP2 failed:', e.message); }
 
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
