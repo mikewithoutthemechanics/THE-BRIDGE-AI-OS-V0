@@ -112,9 +112,21 @@ async function checkout() {
       return;
     }
 
-    if (d.payfast_url) {
+    if (d.payfast_url && d.payfast_fields) {
       msg.className = 'msg success'; msg.textContent = 'Redirecting to PayFast...';
-      window.location.href = d.payfast_url;
+      // Submit via hidden POST form (PayFast requires POST, not GET)
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = d.payfast_url;
+      Object.entries(d.payfast_fields).forEach(([k, v]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = k;
+        input.value = v;
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
     }
   } catch (e) {
     msg.className = 'msg error'; msg.textContent = 'Network error. Please try again.';
