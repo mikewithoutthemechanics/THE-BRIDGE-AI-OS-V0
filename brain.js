@@ -23,9 +23,11 @@ const { WebSocket, WebSocketServer } = require('ws');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
-const ethTreasury = require('./lib/eth-treasury');
-const brdgChain = require('./lib/brdg-chain');
-const llm = require('./lib/llm-client');
+// Graceful require — if ethers/hardhat not installed, these return null and endpoints degrade
+let ethTreasury, brdgChain, llm;
+try { ethTreasury = require('./lib/eth-treasury'); } catch (e) { console.warn('[brain] eth-treasury unavailable:', e.message); ethTreasury = null; }
+try { brdgChain = require('./lib/brdg-chain'); } catch (e) { console.warn('[brain] brdg-chain unavailable:', e.message); brdgChain = null; }
+try { llm = require('./lib/llm-client'); } catch (e) { console.warn('[brain] llm-client unavailable:', e.message); llm = null; }
 const os = require('os');
 const axios = require('axios');
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
@@ -394,12 +396,12 @@ app.post('/api/speech/reason', (req, res) => {
 // ── TREASURY / ECONOMY ──────────────────────────────────────────────────────
 app.get('/api/treasury/status', async (_req, res) => {
   let onchain = null;
-  try { onchain = await brdgChain.getTokenStats(); } catch (_) {}
+  try { if (brdgChain) onchain = await brdgChain.getTokenStats(); } catch (_) {}
   res.json({
     ok: true, ...state.treasury,
     brdg_token: onchain?.token || null,
     brdg_treasury_balance: onchain?.treasury?.brdgBalance || null,
-    contracts: { brdg: brdgChain.BRDG_ADDRESS, vault: brdgChain.VAULT_ADDRESS },
+    contracts: brdgChain ? { brdg: brdgChain.BRDG_ADDRESS, vault: brdgChain.VAULT_ADDRESS } : null,
     ts: Date.now(),
   });
 });
@@ -1284,6 +1286,7 @@ app.post('/api/checkout', (req, res) => {
 
 // Public: treasury wallet address + on-chain balance
 app.get('/api/treasury/eth/address', (_req, res) => {
+  if (!ethTreasury) return res.json({ ok: false, error: 'eth-treasury module not available (ethers not installed)' });
   res.json({ ok: true, address: ethTreasury.getAddress(), chain: 'linea', chainId: 59144 });
 });
 
@@ -1340,6 +1343,7 @@ app.post('/api/treasury/withdraw/authorize', (req, res) => {
 // ── BRDG ON-CHAIN ENDPOINTS ─────────────────────────────────────────────────
 
 app.get('/api/brdg/token', async (_req, res) => {
+  if (!brdgChain) return res.json({ ok: false, error: 'brdg-chain module not available — install ethers on VPS' });
   try {
     const stats = await brdgChain.getTokenStats();
     res.json({ ok: true, ...stats });
@@ -1349,6 +1353,7 @@ app.get('/api/brdg/token', async (_req, res) => {
 });
 
 app.get('/api/brdg/vault', async (_req, res) => {
+  if (!brdgChain) return res.json({ ok: false, error: 'brdg-chain module not available' });
   try {
     const buckets = await brdgChain.getVaultBuckets();
     res.json({ ok: true, vault: brdgChain.VAULT_ADDRESS, buckets });
@@ -1360,19 +1365,17 @@ app.get('/api/brdg/vault', async (_req, res) => {
 // Unified treasury view: combines off-chain state + on-chain BRDG data
 app.get('/api/treasury/full', async (_req, res) => {
   try {
-    const [chainData, ethBal] = await Promise.all([
-      brdgChain.getTokenStats(),
-      ethTreasury.getBalance(),
-    ]);
+    const chainData = brdgChain ? await brdgChain.getTokenStats() : null;
+    const ethBal = ethTreasury ? await ethTreasury.getBalance() : { eth: '0' };
     res.json({
       ok: true,
-      onchain: {
+      onchain: chainData ? {
         brdg: chainData.token,
         treasury_brdg: chainData.treasury.brdgBalance,
         treasury_eth: ethBal.eth,
         vault: chainData.treasury.vault,
         lineascan: chainData.lineascan,
-      },
+      } : { note: 'ethers not installed — on-chain data unavailable' },
       offchain: {
         balance_usd: state.treasury.balance,
         earned_usd: state.treasury.earned,
@@ -1387,6 +1390,7 @@ app.get('/api/treasury/full', async (_req, res) => {
 
 // LLM inference endpoint (uses Kilo free tier)
 app.post('/api/llm/infer', async (req, res) => {
+  if (!llm) return res.status(503).json({ ok: false, error: 'LLM module not available' });
   const { prompt, system } = req.body || {};
   if (!prompt) return res.status(400).json({ ok: false, error: 'prompt required' });
   try {
@@ -1398,6 +1402,7 @@ app.post('/api/llm/infer', async (req, res) => {
 });
 
 app.get('/api/llm/status', (_req, res) => {
+  if (!llm) return res.json({ ok: true, providers: [], usage: {}, caps: {}, note: 'LLM module not loaded' });
   res.json({ ok: true, providers: llm.getProviders(), usage: llm.getUsage(), caps: llm.getCaps() });
 });
 
