@@ -54,8 +54,17 @@ const AGENTS = [
   { id: 'ban-mike', name: 'Mike (Node)', role: 'execution', layer: 'ban', source: 'BAN/nodes/registry.py', type: 'ban_node', skills: ['task_execution', 'medium_trust'], status: 'active' },
   { id: 'ban-marvin', name: 'Marvin (Node)', role: 'execution', layer: 'ban', source: 'BAN/nodes/registry.py', type: 'ban_node', skills: ['task_execution', 'learning'], status: 'active' },
 
-  // === PRIME AGENT ===
+  // === PRIME AGENT (original) ===
   { id: 'prime-001', name: 'Prime', role: 'master_orchestrator', layer: 'core', source: 'brain.js', type: 'prime', skills: ['reason', 'plan', 'execute', 'trade', 'teach', 'communicate', 'deploy', 'heal'], status: 'active' },
+
+  // === PRIME AGENTS (C-Suite Orchestrators) ===
+  { id: 'prime-aurora', name: 'Aurora', role: 'revenue_orchestrator', layer: 'prime', source: 'lib/prime-agents.js', type: 'prime', skills: ['revenue_optimization', 'pricing_strategy', 'conversion_analysis', 'market_expansion', 'partnership_development'], status: 'active' },
+  { id: 'prime-atlas', name: 'Atlas', role: 'infrastructure_orchestrator', layer: 'prime', source: 'lib/prime-agents.js', type: 'prime', skills: ['system_architecture', 'performance_optimization', 'security_audit', 'deployment', 'monitoring'], status: 'active' },
+  { id: 'prime-vega', name: 'Vega', role: 'intelligence_orchestrator', layer: 'prime', source: 'lib/prime-agents.js', type: 'prime', skills: ['market_research', 'competitive_analysis', 'trend_prediction', 'data_mining', 'sentiment_analysis'], status: 'active' },
+  { id: 'prime-omega', name: 'Omega', role: 'operations_orchestrator', layer: 'prime', source: 'lib/prime-agents.js', type: 'prime', skills: ['workflow_optimization', 'resource_allocation', 'quality_assurance', 'compliance', 'cost_control'], status: 'active' },
+  { id: 'prime-halo', name: 'Halo', role: 'experience_orchestrator', layer: 'prime', source: 'lib/prime-agents.js', type: 'prime', skills: ['ux_design', 'user_research', 'onboarding_optimization', 'retention_strategy', 'brand_management'], status: 'active' },
+  { id: 'prime-nexus', name: 'Nexus', role: 'commerce_orchestrator', layer: 'prime', source: 'lib/prime-agents.js', type: 'prime', skills: ['ap2_protocol', 'merchant_relations', 'partnership_negotiation', 'cross_platform_commerce', 'affiliate_management'], status: 'active' },
+  { id: 'prime-sentinel', name: 'Sentinel', role: 'security_orchestrator', layer: 'prime', source: 'lib/prime-agents.js', type: 'prime', skills: ['threat_detection', 'access_control', 'encryption', 'incident_response', 'audit_trail'], status: 'active' },
 
   // === DIGITAL TWIN ===
   { id: 'twin-empe-001', name: 'Bridge Twin', role: 'digital_twin', layer: 'core', source: 'brain.js', type: 'twin', skills: ['reasoning', 'coding', 'trading', 'communication', 'teaching'], status: 'active' },

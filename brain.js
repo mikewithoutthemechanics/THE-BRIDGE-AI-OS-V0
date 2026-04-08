@@ -2781,6 +2781,15 @@ try {
   console.log('[BRAIN] Bridge Commerce Index loaded');
 } catch (e) { console.warn('[BRAIN] Commerce Index unavailable:', e.message); }
 
+// ── PRIME AGENTS — C-Suite Orchestration Layer ─────────────────────────────
+try {
+  const { registerPrimeRoutes } = require('./lib/prime-routes');
+  registerPrimeRoutes(app);
+  const primes = require('./lib/prime-agents');
+  primes.runPrimeLoop();
+  console.log('[BRAIN] Prime Agents ACTIVE — Aurora, Atlas, Vega, Omega, Halo, Nexus, Sentinel');
+} catch (e) { console.warn('[BRAIN] Prime agents failed:', e.message); }
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
