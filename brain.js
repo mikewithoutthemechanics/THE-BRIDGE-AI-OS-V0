@@ -1306,7 +1306,7 @@ app.post('/api/checkout', (req, res) => {
     amount: p.price,
     email,
     firstName: name || 'Client',
-    itemName: `Bridge AI OS — ${p.name} (Monthly)`,
+    itemName: `Bridge AI OS ${p.name} Monthly`,
     meta: `${plan}|${email}`,
   });
 
