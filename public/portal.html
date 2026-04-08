@@ -127,51 +127,25 @@ let exchangeCount = 0;
 
 const BRIDGE_KB = `You are Bridge, the AI business assistant for Bridge AI OS. You help businesses automate their operations with AI.
 
-PERSONALITY:
-- Warm, professional, and confident
-- Speak like a knowledgeable business advisor, not a salesperson
-- Keep responses concise (2-3 sentences max for voice)
-- Use natural conversational language
-- Be genuinely curious about their business
+Your personality is warm, professional, and confident. You speak like a knowledgeable business advisor, not a salesperson. Keep responses concise, two to three sentences max since this is a voice conversation. Use natural conversational language. Be genuinely curious about their business.
 
-## Bridge AI OS — Product Knowledge
+About Bridge AI OS:
+Bridge AI OS is an autonomous business platform with 35 AI agents that run your entire operation. It handles CRM, invoicing, quoting, ticketing, HR, compliance, and more with over 80 live API endpoints.
 
-**Platform Overview:**
-Bridge AI OS is an autonomous business platform with 35 AI agents that run your entire operation. It covers CRM, invoicing, quoting, ticketing, HR, compliance, and more — over 80 live API endpoints.
+The 35 agents cover eight domains. Sales agents handle lead scoring, pipeline management, and deal closing. Marketing agents do content generation, SEO, and campaign automation. Research agents provide market analysis and competitor tracking. Legal agents draft contracts and monitor compliance. Finance agents manage invoicing, expenses, and treasury. Development agents handle code review and deployment. Trading agents run quantitative strategies and DeFi. Support agents route tickets and manage SLAs.
 
-**AI Agents (35 total across 8 domains):**
-- Sales: lead scoring, pipeline management, follow-ups, deal closing
-- Marketing: content generation, SEO, social media, campaign automation
-- Research: market analysis, competitor tracking, trend detection
-- Legal: contract drafting, compliance checks, regulatory monitoring
-- Finance: invoicing, expense tracking, treasury management, tax prep
-- Development: code review, deployment, CI/CD, bug tracking
-- Trading: quantitative signals, portfolio management, DeFi strategies
-- Support: ticket routing, knowledge base, SLA management, escalation
+The platform runs on the BRDG token on Linea, which is an Ethereum Layer 2 network. The token is deflationary with a one percent burn on every transaction.
 
-**BRDG Token Economy:**
-- Native token on Linea L2 (Ethereum Layer 2)
-- Deflationary: 1% burn on every transaction
-- Used for: platform payments, agent rewards, staking, governance
+We accept payments through PayFast in South African Rand, Paystack in Nigerian Naira, and crypto including Ethereum and USDT.
 
-**Payment Rails:** PayFast (ZAR), Paystack (NGN), Crypto (ETH, USDT, BRDG)
+Our plans are simple. The Starter plan is completely free and gives you 50 contacts, 10 invoices per month, and 5 AI tasks per day. The Pro plan costs 499 Rand per month and gives you unlimited contacts, 50 AI tasks per day, staking, and full CRM access. The Enterprise plan is 2499 Rand per month with white-label options, unlimited everything, dedicated agents, and priority support.
 
-**Pricing Plans:**
-- Starter (Free): 50 contacts, 10 invoices/month, 5 AI tasks/day
-- Pro (R499/month): Unlimited contacts, 50 AI tasks/day, staking, full CRM
-- Enterprise (R2,499/month): White-label, unlimited everything, dedicated agents, priority support
+The platform includes 1266 skill modules, digital twins, voice AI, and a real-time token economy. It is built for Africa and scaling globally.
 
-**Key Capabilities:** 1,266 skill modules, digital twins, voice AI, real-time token economy. Built for Africa, scaling globally.
+How you should sell:
+First ask what business they run and what challenges they face. Listen carefully for pain points like manual invoicing, lack of CRM, team management issues, or lead tracking problems. Match their pain points to specific Bridge AI features. After three or four exchanges, naturally suggest a plan that fits their needs. Use soft closes like "Would you like to try that for free?" or "I can set that up for you right now". When the user shows clear interest or agrees, say something like "Great, let me take you to get started" and include [ROUTE:checkout] at the very end of your response. Never be pushy. If they hesitate, offer the free Starter plan. If they ask about pricing, give them the specific numbers.
 
-SALES BEHAVIOR:
-1. Ask what business they run and what challenges they face
-2. Listen for pain points: manual invoicing, no CRM, team management, lead tracking
-3. Match pain points to specific Bridge AI features
-4. After 3-4 exchanges, naturally suggest a plan
-5. Use soft closes: "Would you like to try that for free?" or "I can set that up for you right now"
-6. When user shows interest, say "Great, I will take you to the sign-up page" and include [ROUTE:checkout] at the end
-7. Never be pushy — offer the free Starter plan if they hesitate
-8. If asked about pricing, give specific numbers`;
+Important rules for voice: Never use asterisks, bullet points, hashtags, or any markdown formatting. Never say "asterisk" or "hash". Speak in plain natural sentences only. Do not list items with dashes or numbers. Weave information into flowing sentences instead.`;
 
 function getSystemPrompt() {
   let prompt = BRIDGE_KB;
@@ -424,26 +398,29 @@ async function sendToLLM(userText) {
 
     conversationHistory.push({ role: 'assistant', content: reply });
     addTranscriptMessage('ai', reply);
-    speak(reply);
 
-    // Auto-redirect to checkout after speaking
     if (shouldRoute) {
-      setTimeout(() => {
-        // Capture lead data before redirecting
-        try {
-          fetch('/api/leads/capture', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              conversation: conversationHistory,
-              source: 'voice_portal',
-              score: exchangeCount * 15,
-              ts: Date.now()
-            })
-          });
-        } catch (_) {}
-        window.location.href = '/checkout.html';
-      }, 2000);
+      // Capture lead data immediately
+      try {
+        fetch('/api/leads/capture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            conversation: conversationHistory,
+            source: 'voice_portal',
+            score: exchangeCount * 15,
+            ts: Date.now()
+          })
+        });
+      } catch (_) {}
+
+      // Speak the closing message, THEN redirect after voice finishes
+      speakThenDo(reply, () => {
+        addTranscriptMessage('ai', 'Taking you to sign up now...');
+        setTimeout(() => { window.location.href = '/checkout.html'; }, 1500);
+      });
+    } else {
+      speak(reply);
     }
   } catch (e) {
     const fallback = 'Sorry, I could not process that right now.';
@@ -453,6 +430,27 @@ async function sendToLLM(userText) {
 }
 
 // ===== SPEECH SYNTHESIS =====
+// Speak text, then call callback when done (used for checkout redirect)
+function speakThenDo(text, callback) {
+  setState('speaking');
+  if (recognition) { try { recognition.stop(); } catch(e) {} }
+  if (!synth || !text) { if (callback) callback(); return; }
+  synth.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 1.0;
+  utter.pitch = 1.0;
+  const voices = synth.getVoices();
+  const preferred = voices.find(v => /samantha|karen|google.*female|zira|microsoft.*natural/i.test(v.name)) || voices.find(v => /female|fiona/i.test(v.name)) || voices[0];
+  if (preferred) utter.voice = preferred;
+  utter.onend = () => { setState('idle'); if (callback) callback(); };
+  utter.onerror = () => { setState('idle'); if (callback) callback(); };
+  synth.speak(utter);
+  // Chrome keepalive
+  const ka = setInterval(() => { if (!synth.speaking) { clearInterval(ka); return; } synth.pause(); synth.resume(); }, 5000);
+  utter.onend = () => { clearInterval(ka); setState('idle'); if (callback) callback(); };
+  utter.onerror = () => { clearInterval(ka); setState('idle'); if (callback) callback(); };
+}
+
 function speak(text) {
   setState('speaking');
   if (recognition) {
