@@ -181,9 +181,8 @@ function vectorOptimize() {
   AGENTS.vector.cycles++;
   AGENTS.vector.last_run = Date.now();
   OPTIMIZATIONS.length = 0;
-  // Simulate optimizations
-  if (Math.random() > 0.7) OPTIMIZATIONS.push({ action: 'promote_page', target: 'abaas', from: 'L1', to: 'L0', reason: 'high_traffic' });
-  if (Math.random() > 0.8) OPTIMIZATIONS.push({ action: 'merge_modules', targets: ['business-suite', 'agent-registry'], reason: 'shared_state' });
+  // Optimizations are populated from real performance data, not simulated.
+  // TODO: Wire to actual traffic metrics and module dependency analysis.
 }
 
 // ── FOUNDRY: Build/import site ──────────────────────────────────────────────

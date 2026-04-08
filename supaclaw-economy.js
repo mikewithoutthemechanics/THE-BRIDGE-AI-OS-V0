@@ -66,6 +66,7 @@ const settlements = { pending: [], completed: [], batched: 0, total_settled: 0 }
 // ── ACCUMULATION TRACKER ────────────────────────────────────────────────────
 const accumulation = { total_in: 0, total_out: 0, net: 0, peak: 0, growth_rate: 0, snapshots: [] };
 
+const taskQueue = []; // Real tasks submitted via API, processed each cycle
 let econCycle = 0;
 let econActive = true;
 
@@ -83,27 +84,25 @@ async function economyLoop(state, broadcast) {
     tps.window_start = Date.now();
   }
 
-  // Simulate task stream (3-8 tasks per cycle)
-  const numTasks = Math.floor(Math.random() * 6) + 3;
+  // Process only REAL tasks from the task queue — no simulated task stream.
+  // Tasks are submitted via POST /api/tasks/submit and queued for processing.
+  const pendingTasks = taskQueue.splice(0, Math.min(taskQueue.length, tps.target));
   let cycleRevenue = 0, cycleCost = 0, cycleTax = 0;
 
-  for (let i = 0; i < numTasks; i++) {
-    const taskCost = +(Math.random() * 0.5 + 0.05).toFixed(4);
-    const taskTime = Math.floor(Math.random() * 100 + 10);
-    const taskPrice = +(taskCost + Math.random() * 2 + 0.1).toFixed(4);
+  for (const task of pendingTasks) {
+    const taskCost = task.cost || 0;
+    const taskPrice = task.price || 0;
     const taskProfit = taskPrice - taskCost;
+    const taskTime = task.time_ms || 0;
 
     // TPS control
-    if (tps.tasks_this_window >= tps.target) { tps.throttled++; continue; }
+    if (tps.tasks_this_window >= tps.target) { tps.throttled++; taskQueue.unshift(task); break; }
 
     // Profitability gate
     if (taskProfit < taskMetrics.min_profit_threshold) { tps.rejected_unprofitable++; continue; }
 
     // Cost gate
     if (taskCost > taskMetrics.cost_threshold) { tps.rejected_unprofitable++; continue; }
-
-    // Time gate (simulated)
-    if (taskTime > taskMetrics.time_threshold_ms) continue;
 
     // EXECUTE
     tps.tasks_this_window++;

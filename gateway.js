@@ -98,28 +98,16 @@ function pushEvent(type, data) {
   }
 }
 
-// Emit synthetic heartbeat events every 5 s so the dashboard shows live data
+// SSE heartbeat — only emits real system health, no fake financial data.
+// Real events are pushed by services calling pushEvent() directly.
 const agentNames = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta'];
-let treasuryBalance = 137284.50;
 
 setInterval(() => {
-  const pick = EVENT_TYPES[Math.floor(Math.random() * EVENT_TYPES.length)];
-  const agent = agentNames[Math.floor(Math.random() * agentNames.length)];
+  pushEvent('heartbeat', { gateway: 'up', clients: sseClients.size, uptime_s: Math.floor(process.uptime()), ts: Date.now() });
+}, 15000).unref();
 
-  if (pick === 'lead_delivered') {
-    pushEvent(pick, { agent, lead_id: `lead_${Date.now()}`, value: +(Math.random() * 500 + 50).toFixed(2) });
-  } else if (pick === 'ai_inference') {
-    pushEvent(pick, { agent, model: 'bridge-llm', tokens: Math.floor(Math.random() * 800 + 100), latency_ms: Math.floor(Math.random() * 300 + 50) });
-  } else if (pick === 'swarm_dispatch') {
-    pushEvent(pick, { agent, task: `task_${Date.now()}`, priority: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] });
-  } else if (pick === 'task_completed') {
-    pushEvent(pick, { agent, task: `task_${Date.now() - 5000}`, duration_ms: Math.floor(Math.random() * 2000 + 200) });
-  } else if (pick === 'treasury_update') {
-    const delta = +(Math.random() * 200 - 50).toFixed(2);
-    treasuryBalance += delta;
-    pushEvent(pick, { balance: +treasuryBalance.toFixed(2), delta, currency: 'USD' });
-  }
-}, 5000).unref();
+// Expose pushEvent for other services to emit real events
+module.exports.pushEvent = pushEvent;
 
 app.get('/events/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
@@ -143,17 +131,19 @@ const orchAgents = agentNames.map(name => ({
   id: `agent_${name}`,
   name,
   status: 'active',
-  tasks_completed: Math.floor(Math.random() * 500),
-  uptime_s: Math.floor(Math.random() * 86400),
+  tasks_completed: 0,
+  uptime_s: 0,
 }));
 
 app.get('/orchestrator/status', (req, res) => {
+  // Update uptime from actual process uptime
+  orchAgents.forEach(a => { a.uptime_s = Math.floor(process.uptime()); });
   res.json({
     status: 'running',
     agent_count: orchAgents.length,
     active_agents: orchAgents.filter(a => a.status === 'active').length,
     swarms: 2,
-    queue_depth: Math.floor(Math.random() * 20),
+    queue_depth: 0,
     agents: orchAgents,
     ts: Date.now(),
   });
@@ -192,7 +182,24 @@ app.post('/ask', async (req, res) => {
     const j = await r.json();
     return res.json(j);
   } catch (_) {
-    return res.json({ id: `stub_${Date.now()}`, response: `[Gateway stub] Received: "${prompt}"` });
+    // Fallback: use unified LLM client with provider fallback
+    try {
+      const llm = require('./lib/llm-client');
+      const result = await llm.infer(prompt, { system: 'You are Bridge AI, an autonomous business intelligence assistant.' });
+      return res.json({ id: `llm_${Date.now()}`, response: result.text, provider: result.provider, model: result.model, cost_usd: result.cost_usd });
+    } catch (llmErr) {
+      return res.status(503).json({ error: 'No LLM available', detail: llmErr.message, help: 'Set ANTHROPIC_API_KEY, OPENROUTER_API_KEY, or OPENAI_API_KEY' });
+    }
+  }
+});
+
+// ── LLM STATUS ──────────────────────────────────────────────────────────────
+app.get('/api/llm/status', (_req, res) => {
+  try {
+    const llm = require('./lib/llm-client');
+    res.json({ ok: true, providers: llm.getProviders(), usage: llm.getUsage(), caps: llm.getCaps() });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
   }
 });
 

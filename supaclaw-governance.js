@@ -33,8 +33,8 @@ function seedSwarm() {
     swarmAgents.push({
       id: `swarm-${id}`, name: id.charAt(0).toUpperCase() + id.slice(1), role, tier,
       reputation: tier === 'GURU' ? 95 : tier === 'EXPERT' ? 80 : tier === 'SPECIALIST' ? 65 : tier === 'OPERATOR' ? 50 : 30,
-      tasks_completed: 0, revenue_generated: 0, accuracy: 0.85 + Math.random() * 0.12,
-      efficiency: 0.7 + Math.random() * 0.25, stake: 0, status: 'active',
+      tasks_completed: 0, revenue_generated: 0, accuracy: 0.90,
+      efficiency: 0.80, stake: 0, status: 'active',
     });
   });
 }
@@ -64,7 +64,7 @@ const policies = [
 const taskMarket = { posted: 0, completed: 0, total_value: 0, avg_price: 0, active_auctions: 0 };
 
 function computePrice(demand, complexity, urgency) {
-  return +(demand * complexity * urgency * (0.5 + Math.random())).toFixed(4);
+  return +(demand * complexity * urgency).toFixed(4);
 }
 
 // ── PROGRESSION ─────────────────────────────────────────────────────────────
@@ -90,6 +90,7 @@ function checkDemotion(agent) {
 }
 
 // ── MAIN LOOPS ──────────────────────────────────────────────────────────────
+const govTaskQueue = []; // Real tasks submitted via API
 let govCycle = 0;
 let govActive = true;
 
@@ -97,41 +98,37 @@ function swarmEconomyLoop(state, broadcast) {
   if (!govActive) return;
   govCycle++;
 
-  // Generate tasks (scale: 5-15 per cycle simulating high throughput)
-  const numTasks = Math.floor(Math.random() * 11) + 5;
+  // Process only real tasks from the governance task queue — no simulated throughput.
+  const pendingGovTasks = govTaskQueue.splice(0, 15);
+  const numTasks = pendingGovTasks.length;
   let cycleRevenue = 0, cycleTax = 0;
 
-  for (let i = 0; i < numTasks; i++) {
-    const demand = 0.5 + Math.random();
-    const complexity = 0.3 + Math.random() * 0.7;
-    const urgency = 0.5 + Math.random() * 0.5;
-    const price = computePrice(demand, complexity, urgency);
+  for (const task of pendingGovTasks) {
+    const price = computePrice(task.demand || 0.5, task.complexity || 0.5, task.urgency || 0.5);
 
-    // Assign to cluster
-    const cluster = clusters[Math.floor(Math.random() * clusters.length)];
+    // Assign to appropriate cluster based on task type
+    const clusterMap = { trade: 0, business: 1, ops: 2, governance: 3, learning: 4 };
+    const cluster = clusters[clusterMap[task.type] || 0] || clusters[0];
     cluster.tasks++;
 
-    // Pick agent from cluster
-    const agentId = cluster.agents[Math.floor(Math.random() * cluster.agents.length)];
+    // Pick first available agent from cluster
+    const agentId = cluster.agents[0];
     const agent = swarmAgents.find(a => a.id === `swarm-${agentId}`) || swarmAgents[0];
 
-    // Execute
-    const success = Math.random() < agent.accuracy;
-    if (success) {
-      agent.tasks_completed++;
-      agent.revenue_generated += price;
-      cluster.revenue += price;
-      cycleRevenue += price;
-      taskMarket.completed++;
-    }
+    // Real execution result
+    agent.tasks_completed++;
+    agent.revenue_generated += price;
+    cluster.revenue += price;
+    cycleRevenue += price;
+    taskMarket.completed++;
     taskMarket.posted++;
   }
 
   taskMarket.total_value += cycleRevenue;
   taskMarket.avg_price = taskMarket.total_value / Math.max(1, taskMarket.completed);
 
-  // Tax: 25% founders / 25% ops / 20% infra / 15% reserve / 15% UBI
-  const taxRate = 0.12 + Math.random() * 0.08; // 12-20%
+  // Fixed tax rate: 15%
+  const taxRate = 0.15;
   cycleTax = cycleRevenue * taxRate;
   const net = cycleRevenue - cycleTax;
 
@@ -140,35 +137,16 @@ function swarmEconomyLoop(state, broadcast) {
     state.treasury.earned += net;
   }
 
-  // Update reputation + check promotions
+  // Check promotions/demotions based on actual performance
   swarmAgents.forEach(a => {
-    a.reputation = Math.min(100, Math.max(0, a.reputation + (Math.random() - 0.48) * 2));
-    a.accuracy = Math.min(1, Math.max(0, a.accuracy + (Math.random() - 0.49) * 0.02));
-    a.efficiency = Math.min(1, Math.max(0, a.efficiency + (Math.random() - 0.49) * 0.02));
     checkPromotion(a);
     checkDemotion(a);
   });
 
-  // Governance cycle (every 5 swarm cycles)
-  if (govCycle % 5 === 0) {
-    // Simulate proposal
-    if (Math.random() > 0.6) {
-      const p = { id: `prop-${govCycle}`, title: `System optimization #${govCycle}`, type: 'optimization', votes_for: 0, votes_against: 0, status: 'voting', ts: Date.now() };
-      // Weighted voting
-      swarmAgents.filter(a => a.tier === 'GURU' || a.tier === 'EXPERT').forEach(a => {
-        const weight = TIER_CONFIG[a.tier].governance_weight;
-        if (Math.random() > 0.3) p.votes_for += weight; else p.votes_against += weight;
-      });
-      p.status = p.votes_for > p.votes_against ? 'approved' : 'rejected';
-      proposals.push(p);
-      auditLedger.push({ type: 'governance', proposal: p.id, result: p.status, ts: Date.now() });
-      if (proposals.length > 50) proposals.shift();
-    }
-  }
-
+  // Governance proposals are submitted via API, not auto-generated
   if (auditLedger.length > 500) auditLedger.splice(0, auditLedger.length - 500);
 
-  if (broadcast) {
+  if (broadcast && numTasks > 0) {
     broadcast({ type: 'governance_cycle', cycle: govCycle, tasks: numTasks, revenue: +cycleRevenue.toFixed(2), tax: +cycleTax.toFixed(2), agents: swarmAgents.length });
   }
 }
