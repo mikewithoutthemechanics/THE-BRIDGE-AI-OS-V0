@@ -2540,6 +2540,34 @@ try {
   console.warn('[BRAIN] Agent economy failed to load:', e.message);
 }
 
+// ── AUTO-TASK LOOP (economy runs itself 24/7) ────────────────────────────────
+try {
+  const autoLoop = require('./lib/auto-task-loop');
+  autoLoop.startAutoLoop();
+  app.get('/api/economy/loop-stats', (_req, res) => res.json({ ok: true, ...autoLoop.getLoopStats() }));
+  console.log('[BRAIN] Auto-task loop ACTIVE — economy runs autonomously');
+} catch (e) {
+  console.warn('[BRAIN] Auto-task loop failed to load:', e.message);
+}
+
+// ── API KEY SYSTEM (pay-per-call SaaS) ───────────────────────────────────────
+try {
+  const { registerApiKeyRoutes } = require('./lib/api-key-routes');
+  registerApiKeyRoutes(app);
+  console.log('[BRAIN] API key system ACTIVE — public SaaS endpoints');
+} catch (e) {
+  console.warn('[BRAIN] API key system failed to load:', e.message);
+}
+
+// ── TELEGRAM BOT ────────────────────────────────────────────────────────────
+try {
+  const { registerTelegramRoutes } = require('./lib/telegram-routes');
+  registerTelegramRoutes(app);
+  console.log('[BRAIN] Telegram bot routes ACTIVE — webhook, status, set-webhook');
+} catch (e) {
+  console.warn('[BRAIN] Telegram bot failed to load:', e.message);
+}
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
