@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bridge AI OS — Autonomous Business Intelligence</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00c8ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
 <meta name="description" content="AI-powered business automation platform. CRM, invoicing, agent workforce, and DeFi treasury on Linea L2. Built for Africa, scaling globally.">
 <link rel="canonical" href="https://go.ai-os.co.za/">
 <meta property="og:type" content="website">
@@ -188,6 +194,7 @@ footer a{color:var(--cyan)}
     <a href="#api">API</a>
     <a href="/portal.html">Client Portal</a>
     <a href="/checkout.html" class="nav-cta">Get Started</a>
+    <button id="pwa-install-btn" style="display:none;background:var(--green);color:#000;padding:.4rem 1rem;border-radius:6px;font-weight:600;font-size:.8rem;border:none;cursor:pointer;margin-left:.5rem">Install App</button>
   </div>
 </nav>
 
@@ -617,6 +624,40 @@ setInterval(refreshBurnCounter, 15000);
     }
   } catch (_) {}
 })();
+
+/* ── PWA Install Prompt ── */
+let deferredPrompt = null;
+const installBtn = document.getElementById('pwa-install-btn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'inline-block';
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  console.log('[Bridge AI] Install:', result.outcome);
+  deferredPrompt = null;
+  installBtn.style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  installBtn.style.display = 'none';
+  deferredPrompt = null;
+  console.log('[Bridge AI] App installed');
+});
+
+/* ── Service Worker Registration ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[Bridge AI] SW registered, scope:', reg.scope))
+      .catch(err => console.warn('[Bridge AI] SW registration failed:', err));
+  });
+}
 </script>
 <!-- Globe canvas replaced by Pexels video background -->
 </body>
