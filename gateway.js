@@ -22,6 +22,7 @@
 //   GET  /api/contracts           — all JSON contract files from shared/
 // =============================================================================
 
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -833,6 +834,24 @@ app.all('/api/*path', async (req, res) => {
     res.status(r.status).set('Content-Type', ct).send(text);
   } catch (e) {
     res.status(502).json({ error: 'brain unreachable', path: req.originalUrl, details: e.message });
+  }
+});
+
+// ── AGENT PROXY — forward /agent/* to brain on 8000 ─────────────────────────
+app.all('/agent/*path', async (req, res) => {
+  const url = `http://localhost:8000${req.originalUrl}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
+    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.headers['x-api-key']) opts.headers['X-API-Key'] = req.headers['x-api-key'];
+    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const ct = r.headers.get('content-type') || 'application/json';
+    const text = await r.text();
+    res.status(r.status).set('Content-Type', ct).send(text);
+  } catch (e) {
+    res.status(502).json({ status: 'error', error: 'brain unreachable', path: req.originalUrl, code: 'BRAIN_UNREACHABLE' });
   }
 });
 
