@@ -3,575 +3,532 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bridge AI OS — Client Portal</title>
+<title>Bridge AI — Voice Portal</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#050a0f;--surface:#0a1520;--surface2:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--dim:#4d6678;--text:#e0e8f0;--red:#ff3c5a;--yellow:#f0c040}
-body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-a{color:var(--cyan);text-decoration:none}
-a:hover{text-decoration:underline}
+:root{
+  --bg:#02030a;--surface:rgba(5,12,25,0.85);--border:rgba(0,200,255,0.1);
+  --cyan:#00e0ff;--green:#00ff88;--amber:#ffb020;--purple:#a855f7;
+  --dim:#4a6070;--text:#d0dce6;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text)}
 
-/* Nav */
-.nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid var(--border);background:var(--surface)}
-.nav-brand{font-weight:700;font-size:1.1rem;color:var(--cyan)}
-.nav-links{display:flex;gap:1.5rem;font-size:.9rem}
-.nav-links a{color:var(--dim);transition:color .2s}
-.nav-links a:hover{color:var(--cyan);text-decoration:none}
+/* Top nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1.5rem;background:rgba(2,3,10,0.9);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
+.nav-brand{font-weight:700;font-size:1rem;color:var(--cyan);letter-spacing:0.5px}
+.nav-links{display:flex;align-items:center;gap:1.2rem;font-size:0.8rem}
+.nav-links a{color:var(--dim);text-decoration:none;transition:color 0.2s}
+.nav-links a:hover{color:var(--cyan)}
+.mic-indicator{display:flex;align-items:center;gap:0.4rem;font-size:0.75rem;color:var(--dim)}
+.mic-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);transition:background 0.3s,box-shadow 0.3s}
+.mic-dot.active{background:var(--green);box-shadow:0 0 8px var(--green)}
+.mic-dot.error{background:#ff3c5a;box-shadow:0 0 8px #ff3c5a}
 
-/* Layout */
-.container{max-width:1200px;margin:0 auto;padding:1.5rem}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem}
-.full-width{grid-column:1/-1}
+/* Main layout */
+.main{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding-top:48px;padding-bottom:60px;position:relative}
 
-/* Cards */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
-.card h2{font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
-.card h2 .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-.dot-cyan{background:var(--cyan)}
-.dot-green{background:var(--green)}
-.dot-yellow{background:var(--yellow)}
+/* Brain canvas */
+#brainCanvas{width:100%;height:100%;position:absolute;top:0;left:0;z-index:0}
 
-/* Setup / Auth */
-.setup-row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
-.setup-row input{flex:1;min-width:200px;padding:.6rem .75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;outline:none}
-.setup-row input:focus{border-color:var(--cyan)}
-.btn{padding:.6rem 1.2rem;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s}
-.btn-cyan{background:var(--cyan);color:#000}
-.btn-cyan:hover{opacity:.85}
-.btn-green{background:var(--green);color:#000}
-.btn-green:hover{opacity:.85}
-.btn-red{background:var(--red);color:#fff}
-.btn-red:hover{opacity:.85}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
-.btn-outline:hover{border-color:var(--cyan);color:var(--cyan)}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-.status-bar{margin-top:.75rem;padding:.6rem .75rem;border-radius:8px;font-size:.85rem;display:none}
-.status-bar.ok{display:block;background:rgba(0,229,123,.08);color:var(--green);border:1px solid rgba(0,229,123,.2)}
-.status-bar.err{display:block;background:rgba(255,60,90,.08);color:var(--red);border:1px solid rgba(255,60,90,.2)}
-.plan-badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.75rem;font-weight:600;background:rgba(0,200,255,.12);color:var(--cyan);margin-left:.5rem}
+/* Status text */
+.voice-status{position:relative;z-index:10;margin-top:auto;margin-bottom:0.5rem;font-size:0.85rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);transition:color 0.4s;text-align:center}
+.voice-status.listening{color:var(--green)}
+.voice-status.thinking{color:var(--amber)}
+.voice-status.speaking{color:var(--purple)}
 
-/* Usage stats */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem}
-.stat-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.75rem;text-align:center}
-.stat-val{font-size:1.4rem;font-weight:700;color:var(--cyan)}
-.stat-label{font-size:.75rem;color:var(--dim);margin-top:.2rem}
+/* Transcript */
+.transcript{position:relative;z-index:10;width:90%;max-width:560px;min-height:120px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;padding:0.75rem;margin-bottom:0.5rem;scrollbar-width:none}
+.transcript::-webkit-scrollbar{display:none}
+.transcript-msg{padding:0.5rem 0.75rem;border-radius:10px;font-size:0.85rem;line-height:1.45;max-width:85%;opacity:0;animation:fadeIn 0.4s ease forwards}
+.transcript-msg.user{align-self:flex-end;color:var(--dim);background:rgba(255,255,255,0.04);text-align:right;border-bottom-right-radius:3px}
+.transcript-msg.ai{align-self:flex-start;color:var(--cyan);background:rgba(0,224,255,0.06);border-bottom-left-radius:3px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-/* Chat */
-.chat-container{display:flex;flex-direction:column;height:420px}
-.chat-messages{flex:1;overflow-y:auto;padding:.5rem;display:flex;flex-direction:column;gap:.5rem;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
-.chat-msg{max-width:80%;padding:.6rem .85rem;border-radius:12px;font-size:.9rem;line-height:1.4;word-wrap:break-word}
-.chat-msg.user{align-self:flex-end;background:rgba(0,200,255,.12);color:var(--text);border-bottom-right-radius:4px}
-.chat-msg.ai{align-self:flex-start;background:var(--surface2);color:var(--text);border-bottom-left-radius:4px}
-.chat-msg.system{align-self:center;color:var(--dim);font-size:.8rem;font-style:italic}
-.chat-input-row{display:flex;gap:.5rem;margin-top:.75rem}
-.chat-input-row input{flex:1;padding:.6rem .75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;outline:none}
-.chat-input-row input:focus{border-color:var(--cyan)}
+/* Text fallback */
+.text-fallback{position:relative;z-index:10;width:90%;max-width:480px;display:none;margin-bottom:0.5rem}
+.text-fallback-row{display:flex;gap:0.5rem}
+.text-fallback-row input{flex:1;padding:0.55rem 0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none;font-family:inherit}
+.text-fallback-row input:focus{border-color:var(--cyan)}
+.text-fallback-row button{padding:0.55rem 1rem;background:var(--cyan);color:#000;border:none;border-radius:8px;font-weight:600;font-size:0.8rem;cursor:pointer}
 
-/* Task Board */
-.task-form{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
-.task-form input,.task-form textarea{padding:.5rem .65rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;outline:none;font-family:inherit}
-.task-form input:focus,.task-form textarea:focus{border-color:var(--cyan)}
-.task-form textarea{resize:vertical;min-height:50px}
-.task-form .row{display:flex;gap:.5rem;align-items:center}
-.task-list{display:flex;flex-direction:column;gap:.5rem;max-height:260px;overflow-y:auto}
-.task-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.65rem .75rem}
-.task-item .task-title{font-weight:600;font-size:.9rem}
-.task-item .task-meta{font-size:.75rem;color:var(--dim);margin-top:.25rem;display:flex;gap:1rem;flex-wrap:wrap}
-.task-status{display:inline-block;padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:600}
-.task-status.open{background:rgba(0,200,255,.1);color:var(--cyan)}
-.task-status.claimed{background:rgba(240,192,64,.1);color:var(--yellow)}
-.task-status.completed{background:rgba(0,229,123,.1);color:var(--green)}
-
-/* Economy */
-.eco-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem}
-.leaderboard{display:flex;flex-direction:column;gap:.4rem}
-.lb-row{display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;background:var(--bg);border-radius:6px;font-size:.85rem}
-.lb-rank{color:var(--dim);font-weight:600;width:1.5rem}
-.lb-name{flex:1;margin-left:.5rem}
-.lb-bal{color:var(--green);font-weight:600}
+/* Economy bar */
+.eco-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;justify-content:center;gap:2.5rem;padding:0.5rem 1rem;background:rgba(2,3,10,0.92);border-top:1px solid var(--border);backdrop-filter:blur(12px);font-size:0.7rem;color:var(--dim)}
+.eco-item{display:flex;align-items:center;gap:0.35rem}
+.eco-val{color:var(--cyan);font-weight:600}
 
 /* Responsive */
-@media(max-width:768px){
-  .grid{grid-template-columns:1fr}
-  .nav{padding:.75rem 1rem;flex-wrap:wrap;gap:.5rem}
-  .nav-links{gap:1rem;font-size:.8rem}
-  .container{padding:1rem}
-  .stats-grid{grid-template-columns:repeat(2,1fr)}
-  .eco-stats{grid-template-columns:repeat(2,1fr)}
-  .setup-row{flex-direction:column}
-  .setup-row input{width:100%}
-  .chat-container{height:350px}
+@media(max-width:600px){
+  .nav{padding:0.5rem 0.75rem}
+  .nav-links{gap:0.7rem;font-size:0.7rem}
+  .transcript{max-height:140px;min-height:90px}
+  .eco-bar{gap:1rem;font-size:0.6rem}
 }
-@media(max-width:480px){
-  .eco-stats{grid-template-columns:1fr}
-}
-
-/* Loading spinner */
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
 <nav class="nav">
-  <div class="nav-brand">Bridge AI OS</div>
+  <div class="nav-brand">Bridge AI</div>
   <div class="nav-links">
     <a href="/">Home</a>
-    <a href="/checkout.html">Checkout</a>
     <a href="/economy.html">Economy</a>
-    <a href="/portal.html" style="color:var(--cyan)">Portal</a>
+    <div class="mic-indicator">
+      <div class="mic-dot" id="micDot"></div>
+      <span id="micLabel">Mic</span>
+    </div>
   </div>
 </nav>
 
-<div class="container">
-
-  <!-- API Key Setup -->
-  <div class="card" id="setupCard">
-    <h2><span class="dot dot-cyan"></span> Connect Your Account</h2>
-    <div class="setup-row">
-      <input type="password" id="apiKeyInput" placeholder="Enter your API key" autocomplete="off">
-      <button class="btn btn-cyan" id="connectBtn" onclick="connectKey()">Connect</button>
-      <button class="btn btn-red" id="disconnectBtn" onclick="disconnectKey()" style="display:none">Disconnect</button>
+<div class="main">
+  <canvas id="brainCanvas"></canvas>
+  <div class="voice-status" id="voiceStatus">Initializing...</div>
+  <div class="transcript" id="transcript"></div>
+  <div class="text-fallback" id="textFallback">
+    <div class="text-fallback-row">
+      <input type="text" id="textInput" placeholder="Type your message...">
+      <button id="textSendBtn">Send</button>
     </div>
-    <div id="noKeyHint" style="margin-top:.5rem;font-size:.85rem;color:var(--dim)">
-      No API key? <a href="/checkout.html">Get your API key</a> to get started.
-    </div>
-    <div class="status-bar" id="authStatus"></div>
-  </div>
-
-  <div class="grid">
-
-    <!-- AI Chat Panel -->
-    <div class="card full-width">
-      <h2><span class="dot dot-green"></span> AI Chat</h2>
-      <div class="chat-container">
-        <div class="chat-messages" id="chatMessages"></div>
-        <div class="chat-input-row">
-          <input type="text" id="chatInput" placeholder="Ask Bridge AI anything..." disabled>
-          <button class="btn btn-cyan" id="chatSendBtn" onclick="sendChat()" disabled>Send</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- My Usage -->
-    <div class="card">
-      <h2><span class="dot dot-cyan"></span> My Usage</h2>
-      <div class="stats-grid" id="usageStats">
-        <div class="stat-box"><div class="stat-val" id="usageCalls">--</div><div class="stat-label">Calls Today</div></div>
-        <div class="stat-box"><div class="stat-val" id="usageTotal">--</div><div class="stat-label">Total Calls</div></div>
-        <div class="stat-box"><div class="stat-val" id="usageBrdg">--</div><div class="stat-label">BRDG Balance</div></div>
-        <div class="stat-box"><div class="stat-val" id="usageRate">--</div><div class="stat-label">Rate Limit</div></div>
-        <div class="stat-box"><div class="stat-val" id="usagePlan">--</div><div class="stat-label">Plan</div></div>
-      </div>
-    </div>
-
-    <!-- BRDG Economy Overview -->
-    <div class="card">
-      <h2><span class="dot dot-green"></span> BRDG Economy</h2>
-      <div class="eco-stats">
-        <div class="stat-box"><div class="stat-val" id="ecoCirc">--</div><div class="stat-label">Circulating</div></div>
-        <div class="stat-box"><div class="stat-val" id="ecoBurned">--</div><div class="stat-label">Burned</div></div>
-        <div class="stat-box"><div class="stat-val" id="ecoAgents">--</div><div class="stat-label">Agents</div></div>
-      </div>
-      <h3 style="font-size:.9rem;color:var(--dim);margin-bottom:.5rem">Top Agents</h3>
-      <div class="leaderboard" id="leaderboard">
-        <div class="lb-row" style="color:var(--dim);font-size:.8rem">Connect to view leaderboard</div>
-      </div>
-    </div>
-
-    <!-- Task Board -->
-    <div class="card full-width">
-      <h2><span class="dot dot-yellow"></span> Task Board</h2>
-      <div class="task-form" id="taskForm">
-        <input type="text" id="taskTitle" placeholder="Task title" disabled>
-        <textarea id="taskDesc" placeholder="Task description" rows="2" disabled></textarea>
-        <div class="row">
-          <input type="number" id="taskReward" placeholder="Reward (BRDG)" min="0" step="1" style="max-width:150px" disabled>
-          <button class="btn btn-green" id="postTaskBtn" onclick="postTask()" disabled>Post Task</button>
-        </div>
-      </div>
-      <div class="task-list" id="taskList">
-        <div style="color:var(--dim);font-size:.85rem;text-align:center;padding:1rem">Connect your API key to view tasks</div>
-      </div>
-    </div>
-
   </div>
 </div>
 
+<div class="eco-bar">
+  <div class="eco-item">BRDG Circulating <span class="eco-val" id="ecoCirc">--</span></div>
+  <div class="eco-item">Burned <span class="eco-val" id="ecoBurned">--</span></div>
+  <div class="eco-item">Transactions <span class="eco-val" id="ecoTx">--</span></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
 <script>
-(function() {
-  'use strict';
+(function(){
+'use strict';
 
-  // --- State ---
-  let apiKey = localStorage.getItem('brdg_api_key') || '';
-  let connected = false;
-  let usageInterval = null;
+// ===== STATE =====
+let state = 'idle'; // idle | listening | thinking | speaking
+let recognition = null;
+let synth = window.speechSynthesis;
+let silenceTimer = null;
+let accumulatedText = '';
+let conversationHistory = [];
+const SILENCE_DELAY = 1500;
+const MAX_TRANSCRIPT = 4;
+const SYSTEM_PROMPT = 'You are Bridge, an AI business assistant. Keep responses concise (2-3 sentences). Be warm and professional.';
+let speechSupported = true;
 
-  // --- Helpers ---
-  function esc(str) {
-    const d = document.createElement('div');
-    d.appendChild(document.createTextNode(str));
-    return d.innerHTML;
+// ===== THREE.JS BRAIN =====
+const canvas = document.getElementById('brainCanvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x02030a, 1);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0.2, 3);
+camera.lookAt(0, 0, 0);
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0x112233, 0.6);
+scene.add(ambientLight);
+const pointLight1 = new THREE.PointLight(0x00e0ff, 1.2, 10);
+pointLight1.position.set(2, 2, 3);
+scene.add(pointLight1);
+const pointLight2 = new THREE.PointLight(0x0088ff, 0.8, 10);
+pointLight2.position.set(-2, -1, 2);
+scene.add(pointLight2);
+const rimLight = new THREE.PointLight(0x4400aa, 0.5, 10);
+rimLight.position.set(0, -2, -3);
+scene.add(rimLight);
+
+// Brain geometry -- exact EHSA pattern
+const geo = new THREE.SphereGeometry(1, 128, 128);
+const pos = geo.attributes.position;
+for (let i = 0; i < pos.count; i++) {
+  let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+  let n = Math.sin(x * 8) * Math.cos(y * 8) * Math.sin(z * 8);
+  pos.setXYZ(i, x + n * 0.08, y + n * 0.08, z + n * 0.08);
+}
+const colors = [];
+for (let i = 0; i < pos.count; i++) colors.push(0, 0.15, 0.2);
+geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+geo.computeVertexNormals();
+
+const mat = new THREE.MeshStandardMaterial({
+  vertexColors: true, roughness: 0.3, metalness: 0.2,
+  emissive: new THREE.Color(0x001111), emissiveIntensity: 1
+});
+const brain = new THREE.Mesh(geo, mat);
+scene.add(brain);
+
+// Regions -- exact EHSA pattern
+const REGIONS = {
+  frontal:   { start: 0,     size: 4000, signal: 'D', color: [0, 1, 0.8] },
+  limbic:    { start: 4000,  size: 4000, signal: 'O', color: [1, 0.3, 0.5] },
+  parietal:  { start: 8000,  size: 4000, signal: 'S', color: [0.3, 0.5, 1] },
+  brainstem: { start: 12000, size: 3000, signal: 'E', color: [1, 0.8, 0] },
+};
+
+// State-based color targets
+const STATE_COLORS = {
+  idle:      { emissive: 0x001111, intensity: 1.0, regions: { frontal: 0.15, limbic: 0.05, parietal: 0.08, brainstem: 0.05 } },
+  listening: { emissive: 0x003311, intensity: 1.8, regions: { frontal: 0.9,  limbic: 0.2,  parietal: 0.15, brainstem: 0.1 } },
+  thinking:  { emissive: 0x221100, intensity: 2.2, regions: { frontal: 0.3,  limbic: 0.4,  parietal: 0.5,  brainstem: 0.8 } },
+  speaking:  { emissive: 0x110033, intensity: 1.6, regions: { frontal: 0.2,  limbic: 0.6,  parietal: 0.8,  brainstem: 0.3 } },
+};
+
+let rotationSpeed = 0.003;
+let targetRotationSpeed = 0.003;
+let currentRegionIntensities = { frontal: 0.15, limbic: 0.05, parietal: 0.08, brainstem: 0.05 };
+let pulsePhase = 0;
+
+function activateRegion(name, intensity, t) {
+  const r = REGIONS[name];
+  if (!r) return;
+  const col = geo.attributes.color;
+  for (let i = r.start; i < r.start + r.size && i < pos.count; i++) {
+    const px = pos.getX(i), py = pos.getY(i), pz = pos.getZ(i);
+    const wave = Math.sin(px * 4 + t * 2) * Math.cos(py * 4 + t * 1.5) * 0.3 + 0.7;
+    const pulse = Math.sin(pulsePhase + i * 0.001) * 0.15 + 0.85;
+    const factor = intensity * wave * pulse;
+    col.setXYZ(i,
+      r.color[0] * factor,
+      r.color[1] * factor,
+      r.color[2] * factor
+    );
   }
+}
 
-  function setText(id, val) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
+function resetColors() {
+  const col = geo.attributes.color;
+  for (let i = 0; i < pos.count; i++) {
+    col.setXYZ(i, 0, 0.15, 0.2);
   }
+}
 
-  function showStatus(msg, ok) {
-    const el = document.getElementById('authStatus');
-    el.textContent = msg;
-    el.className = 'status-bar ' + (ok ? 'ok' : 'err');
-  }
+function updateBrainVisuals(t) {
+  const sc = STATE_COLORS[state];
 
-  function hideStatus() {
-    const el = document.getElementById('authStatus');
-    el.className = 'status-bar';
-    el.style.display = 'none';
-  }
+  // Smooth rotation speed transition
+  targetRotationSpeed = state === 'idle' ? 0.003 : state === 'listening' ? 0.008 : state === 'thinking' ? 0.012 : 0.006;
+  rotationSpeed += (targetRotationSpeed - rotationSpeed) * 0.05;
+  brain.rotation.y += rotationSpeed;
+  brain.rotation.x = Math.sin(t * 0.5) * 0.05;
 
-  function apiHeaders() {
-    return { 'Content-Type': 'application/json', 'X-API-Key': apiKey };
-  }
+  // Pulse
+  pulsePhase += state === 'thinking' ? 0.08 : state === 'listening' ? 0.05 : 0.02;
 
-  function fmt(n) {
-    if (n == null) return '--';
-    if (typeof n === 'number') return n.toLocaleString();
-    return String(n);
-  }
-
-  // --- Auth ---
-  window.connectKey = async function() {
-    const input = document.getElementById('apiKeyInput');
-    const key = input.value.trim();
-    if (!key) { showStatus('Please enter an API key.', false); return; }
-    apiKey = key;
-    document.getElementById('connectBtn').disabled = true;
-    document.getElementById('connectBtn').textContent = 'Connecting...';
-
-    try {
-      const resp = await fetch('/api/keys/validate', { headers: { 'X-API-Key': apiKey } });
-      if (!resp.ok) throw new Error('Invalid API key (HTTP ' + resp.status + ')');
-      const data = await resp.json();
-      localStorage.setItem('brdg_api_key', apiKey);
-      connected = true;
-
-      const plan = data.plan || data.tier || 'unknown';
-      const email = data.email || '';
-      const credits = data.credits != null ? data.credits : data.brdg_balance;
-      let statusMsg = 'Connected';
-      if (plan) statusMsg += ' | Plan: ' + plan;
-      if (email) statusMsg += ' | ' + email;
-      if (credits != null) statusMsg += ' | ' + fmt(credits) + ' BRDG';
-      showStatus(statusMsg, true);
-      onConnected();
-    } catch (e) {
-      showStatus(e.message || 'Connection failed', false);
-      apiKey = '';
+  // Vertex distortion pulse
+  const origPos = geo.getAttribute('position');
+  for (let i = 0; i < origPos.count; i++) {
+    let x = origPos.getX(i), y = origPos.getY(i), z = origPos.getZ(i);
+    const len = Math.sqrt(x * x + y * y + z * z);
+    if (len > 0) {
+      const baseLen = 1.0;
+      const n = Math.sin(x * 8) * Math.cos(y * 8) * Math.sin(z * 8);
+      const pulse = state !== 'idle' ? Math.sin(pulsePhase + i * 0.002) * 0.01 : 0;
+      const target = baseLen + n * 0.08 + pulse;
+      const scale = target / len;
+      origPos.setXYZ(i, x * scale, y * scale, z * scale);
     }
-    document.getElementById('connectBtn').disabled = false;
-    document.getElementById('connectBtn').textContent = 'Connect';
+  }
+  origPos.needsUpdate = true;
+
+  // Reset then activate regions
+  resetColors();
+  for (const [name, region] of Object.entries(REGIONS)) {
+    const targetI = sc.regions[name];
+    currentRegionIntensities[name] += (targetI - currentRegionIntensities[name]) * 0.08;
+    activateRegion(name, currentRegionIntensities[name], t);
+  }
+  geo.attributes.color.needsUpdate = true;
+
+  // Emissive color transition
+  const targetEmissive = new THREE.Color(sc.emissive);
+  mat.emissive.lerp(targetEmissive, 0.06);
+  mat.emissiveIntensity += (sc.intensity - mat.emissiveIntensity) * 0.05;
+
+  // Point light color shifts
+  if (state === 'listening') {
+    pointLight1.color.lerp(new THREE.Color(0x00ff88), 0.05);
+  } else if (state === 'thinking') {
+    pointLight1.color.lerp(new THREE.Color(0xffaa00), 0.05);
+  } else if (state === 'speaking') {
+    pointLight1.color.lerp(new THREE.Color(0x8844ff), 0.05);
+  } else {
+    pointLight1.color.lerp(new THREE.Color(0x00e0ff), 0.05);
+  }
+}
+
+// Animation loop
+function animate() {
+  requestAnimationFrame(animate);
+  const t = performance.now() * 0.001;
+  updateBrainVisuals(t);
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ===== UI HELPERS =====
+const statusEl = document.getElementById('voiceStatus');
+const transcriptEl = document.getElementById('transcript');
+const micDot = document.getElementById('micDot');
+const micLabel = document.getElementById('micLabel');
+
+function setState(newState) {
+  state = newState;
+  statusEl.className = 'voice-status ' + newState;
+  switch (newState) {
+    case 'idle':
+      statusEl.textContent = 'Listening...';
+      micDot.className = 'mic-dot active';
+      micLabel.textContent = 'Live';
+      break;
+    case 'listening':
+      statusEl.textContent = 'Listening...';
+      micDot.className = 'mic-dot active';
+      micLabel.textContent = 'Hearing you';
+      break;
+    case 'thinking':
+      statusEl.textContent = 'Thinking...';
+      micDot.className = 'mic-dot';
+      micLabel.textContent = 'Processing';
+      break;
+    case 'speaking':
+      statusEl.textContent = 'Speaking...';
+      micDot.className = 'mic-dot';
+      micLabel.textContent = 'Responding';
+      break;
+  }
+}
+
+function addTranscriptMessage(role, text) {
+  const msg = document.createElement('div');
+  msg.className = 'transcript-msg ' + role;
+  msg.textContent = text;
+  transcriptEl.appendChild(msg);
+
+  // Keep only last MAX_TRANSCRIPT messages
+  while (transcriptEl.children.length > MAX_TRANSCRIPT) {
+    transcriptEl.removeChild(transcriptEl.firstChild);
+  }
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
+}
+
+// ===== LLM API =====
+async function sendToLLM(userText) {
+  setState('thinking');
+  addTranscriptMessage('user', userText);
+  conversationHistory.push({ role: 'user', content: userText });
+
+  try {
+    const apiKey = localStorage.getItem('brdg_api_key') || '';
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['X-API-Key'] = apiKey;
+
+    const resp = await fetch('/api/llm/infer', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        prompt: userText,
+        system: SYSTEM_PROMPT,
+        messages: conversationHistory.slice(-6)
+      })
+    });
+
+    if (!resp.ok) throw new Error('API error ' + resp.status);
+    const data = await resp.json();
+    const reply = data.response || data.result || data.text || data.output || 'I received your message.';
+
+    conversationHistory.push({ role: 'assistant', content: reply });
+    addTranscriptMessage('ai', reply);
+    speak(reply);
+  } catch (e) {
+    const fallback = 'Sorry, I could not process that right now.';
+    addTranscriptMessage('ai', fallback);
+    speak(fallback);
+  }
+}
+
+// ===== SPEECH SYNTHESIS =====
+function speak(text) {
+  setState('speaking');
+  if (recognition) {
+    try { recognition.stop(); } catch(e) {}
+  }
+
+  synth.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 1.0;
+  utter.pitch = 1.0;
+
+  // Pick a good voice if available
+  const voices = synth.getVoices();
+  const preferred = voices.find(v => /samantha|karen|google.*female|zira|microsoft.*natural/i.test(v.name));
+  if (preferred) utter.voice = preferred;
+
+  utter.onend = () => {
+    setState('idle');
+    startRecognition();
+  };
+  utter.onerror = () => {
+    setState('idle');
+    startRecognition();
   };
 
-  window.disconnectKey = function() {
-    localStorage.removeItem('brdg_api_key');
-    apiKey = '';
-    connected = false;
-    hideStatus();
-    document.getElementById('apiKeyInput').value = '';
-    document.getElementById('connectBtn').style.display = '';
-    document.getElementById('disconnectBtn').style.display = 'none';
-    document.getElementById('noKeyHint').style.display = '';
-    setFormState(false);
-    if (usageInterval) { clearInterval(usageInterval); usageInterval = null; }
-    setText('usageCalls', '--');
-    setText('usageTotal', '--');
-    setText('usageBrdg', '--');
-    setText('usageRate', '--');
-    setText('usagePlan', '--');
-    setText('ecoCirc', '--');
-    setText('ecoBurned', '--');
-    setText('ecoAgents', '--');
-    var lb = document.getElementById('leaderboard');
-    lb.textContent = '';
-    var r = document.createElement('div');
-    r.className = 'lb-row';
-    r.style.color = 'var(--dim)';
-    r.style.fontSize = '.8rem';
-    r.textContent = 'Connect to view leaderboard';
-    lb.appendChild(r);
-    var tl = document.getElementById('taskList');
-    tl.textContent = '';
-    var hint = document.createElement('div');
-    hint.style.cssText = 'color:var(--dim);font-size:.85rem;text-align:center;padding:1rem';
-    hint.textContent = 'Connect your API key to view tasks';
-    tl.appendChild(hint);
-  };
+  synth.speak(utter);
+}
 
-  function onConnected() {
-    document.getElementById('connectBtn').style.display = 'none';
-    document.getElementById('disconnectBtn').style.display = '';
-    document.getElementById('noKeyHint').style.display = 'none';
-    document.getElementById('apiKeyInput').value = '';
-    document.getElementById('apiKeyInput').placeholder = 'Key saved';
-    setFormState(true);
-    addChatMsg('system', 'Connected. Ask me anything.');
-    fetchUsage();
-    fetchEconomy();
-    fetchTasks();
-    if (usageInterval) clearInterval(usageInterval);
-    usageInterval = setInterval(fetchUsage, 30000);
+// ===== SPEECH RECOGNITION =====
+function initRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    speechSupported = false;
+    showTextFallback();
+    return;
   }
 
-  function setFormState(on) {
-    document.getElementById('chatInput').disabled = !on;
-    document.getElementById('chatSendBtn').disabled = !on;
-    document.getElementById('taskTitle').disabled = !on;
-    document.getElementById('taskDesc').disabled = !on;
-    document.getElementById('taskReward').disabled = !on;
-    document.getElementById('postTaskBtn').disabled = !on;
-  }
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
 
-  // --- Chat ---
-  function addChatMsg(role, text) {
-    var container = document.getElementById('chatMessages');
-    var div = document.createElement('div');
-    div.className = 'chat-msg ' + role;
-    div.textContent = text;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-  }
+  recognition.onresult = (event) => {
+    if (state === 'thinking' || state === 'speaking') return;
 
-  window.sendChat = async function() {
-    var input = document.getElementById('chatInput');
-    var msg = input.value.trim();
-    if (!msg) return;
-    addChatMsg('user', msg);
-    input.value = '';
-    document.getElementById('chatSendBtn').disabled = true;
+    setState('listening');
+    let finalText = '';
+    let interimText = '';
 
-    // Show typing indicator
-    var typing = document.createElement('div');
-    typing.className = 'chat-msg ai';
-    var spinner = document.createElement('span');
-    spinner.className = 'spinner';
-    typing.appendChild(spinner);
-    var typingText = document.createTextNode(' Thinking...');
-    typing.appendChild(typingText);
-    document.getElementById('chatMessages').appendChild(typing);
-    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
-
-    try {
-      var resp = await fetch('/api/llm/infer', {
-        method: 'POST',
-        headers: apiHeaders(),
-        body: JSON.stringify({ prompt: msg })
-      });
-      if (!resp.ok) throw new Error('Error ' + resp.status);
-      var data = await resp.json();
-      typing.remove();
-      var reply = data.response || data.result || data.text || data.output || JSON.stringify(data);
-      addChatMsg('ai', reply);
-    } catch (e) {
-      typing.remove();
-      addChatMsg('ai', 'Error: ' + e.message);
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalText += transcript + ' ';
+      } else {
+        interimText += transcript;
+      }
     }
-    document.getElementById('chatSendBtn').disabled = false;
-  };
 
-  // Enter key sends
-  document.getElementById('chatInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
-  });
-
-  // --- Usage ---
-  async function fetchUsage() {
-    if (!connected) return;
-    try {
-      var resp = await fetch('/api/keys/usage', { headers: { 'X-API-Key': apiKey } });
-      if (!resp.ok) return;
-      var d = await resp.json();
-      setText('usageCalls', fmt(d.calls_today != null ? d.calls_today : d.today));
-      setText('usageTotal', fmt(d.calls_total != null ? d.calls_total : d.total));
-      setText('usageBrdg', fmt(d.brdg_balance != null ? d.brdg_balance : d.balance));
-      setText('usageRate', fmt(d.rate_limit != null ? d.rate_limit : d.limit));
-      setText('usagePlan', d.plan || d.tier || '--');
-    } catch (e) { /* silent */ }
-  }
-
-  // --- Economy ---
-  async function fetchEconomy() {
-    if (!connected) return;
-    try {
-      var resp = await fetch('/api/economy/stats', { headers: apiHeaders() });
-      if (!resp.ok) return;
-      var d = await resp.json();
-      setText('ecoCirc', fmt(d.total_circulating != null ? d.total_circulating : d.circulating));
-      setText('ecoBurned', fmt(d.burned != null ? d.burned : d.total_burned));
-      setText('ecoAgents', fmt(d.agents != null ? d.agents : d.total_agents));
-
-      // Leaderboard
-      var lb = document.getElementById('leaderboard');
-      lb.textContent = '';
-      var leaders = d.leaderboard || d.top_agents || [];
-      var top5 = leaders.slice(0, 5);
-      if (top5.length === 0) {
-        var empty = document.createElement('div');
-        empty.className = 'lb-row';
-        empty.style.color = 'var(--dim)';
-        empty.style.fontSize = '.8rem';
-        empty.textContent = 'No agent data yet';
-        lb.appendChild(empty);
-        return;
-      }
-      top5.forEach(function(agent, i) {
-        var row = document.createElement('div');
-        row.className = 'lb-row';
-
-        var rank = document.createElement('span');
-        rank.className = 'lb-rank';
-        rank.textContent = '#' + (i + 1);
-        row.appendChild(rank);
-
-        var name = document.createElement('span');
-        name.className = 'lb-name';
-        name.textContent = agent.name || agent.agent_id || agent.id || 'Agent';
-        row.appendChild(name);
-
-        var bal = document.createElement('span');
-        bal.className = 'lb-bal';
-        bal.textContent = fmt(agent.balance != null ? agent.balance : agent.brdg) + ' BRDG';
-        row.appendChild(bal);
-
-        lb.appendChild(row);
-      });
-    } catch (e) { /* silent */ }
-  }
-
-  // --- Tasks ---
-  window.postTask = async function() {
-    var title = document.getElementById('taskTitle').value.trim();
-    var desc = document.getElementById('taskDesc').value.trim();
-    var reward = parseInt(document.getElementById('taskReward').value, 10);
-    if (!title) return;
-    document.getElementById('postTaskBtn').disabled = true;
-    try {
-      var resp = await fetch('/api/economy/tasks', {
-        method: 'POST',
-        headers: apiHeaders(),
-        body: JSON.stringify({ title: title, description: desc, reward: reward || 0 })
-      });
-      if (!resp.ok) throw new Error('Failed to create task');
-      document.getElementById('taskTitle').value = '';
-      document.getElementById('taskDesc').value = '';
-      document.getElementById('taskReward').value = '';
-      fetchTasks();
-    } catch (e) {
-      alert('Error: ' + e.message);
+    if (finalText) {
+      accumulatedText += finalText;
     }
-    document.getElementById('postTaskBtn').disabled = false;
+
+    // Reset silence timer on any speech
+    clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(() => {
+      const text = accumulatedText.trim();
+      if (text.length > 0) {
+        accumulatedText = '';
+        try { recognition.stop(); } catch(e) {}
+        sendToLLM(text);
+      } else {
+        setState('idle');
+      }
+    }, SILENCE_DELAY);
   };
 
-  async function fetchTasks() {
-    if (!connected) return;
-    try {
-      var resp = await fetch('/api/economy/tasks', { headers: apiHeaders() });
-      if (!resp.ok) return;
-      var data = await resp.json();
-      var tasks = Array.isArray(data) ? data : (data.tasks || []);
-      var tl = document.getElementById('taskList');
-      tl.textContent = '';
-      if (tasks.length === 0) {
-        var empty = document.createElement('div');
-        empty.style.cssText = 'color:var(--dim);font-size:.85rem;text-align:center;padding:1rem';
-        empty.textContent = 'No tasks yet. Post one above!';
-        tl.appendChild(empty);
-        return;
-      }
-      tasks.forEach(function(t) {
-        var item = document.createElement('div');
-        item.className = 'task-item';
-
-        var titleRow = document.createElement('div');
-        titleRow.style.display = 'flex';
-        titleRow.style.justifyContent = 'space-between';
-        titleRow.style.alignItems = 'center';
-
-        var titleEl = document.createElement('span');
-        titleEl.className = 'task-title';
-        titleEl.textContent = t.title || 'Untitled';
-        titleRow.appendChild(titleEl);
-
-        var statusEl = document.createElement('span');
-        var st = (t.status || 'open').toLowerCase();
-        statusEl.className = 'task-status ' + st;
-        statusEl.textContent = st.charAt(0).toUpperCase() + st.slice(1);
-        titleRow.appendChild(statusEl);
-
-        item.appendChild(titleRow);
-
-        if (t.description) {
-          var descEl = document.createElement('div');
-          descEl.style.cssText = 'font-size:.8rem;color:var(--dim);margin-top:.3rem';
-          descEl.textContent = t.description;
-          item.appendChild(descEl);
+  recognition.onend = () => {
+    // Auto-restart if we're in idle/listening state
+    if (state === 'idle' || state === 'listening') {
+      setTimeout(() => {
+        if (state === 'idle' || state === 'listening') {
+          startRecognition();
         }
+      }, 200);
+    }
+  };
 
-        var meta = document.createElement('div');
-        meta.className = 'task-meta';
-        if (t.reward != null) {
-          var rw = document.createElement('span');
-          rw.textContent = 'Reward: ' + fmt(t.reward) + ' BRDG';
-          meta.appendChild(rw);
-        }
-        if (t.claimed_by) {
-          var cb = document.createElement('span');
-          cb.textContent = 'Claimed: ' + t.claimed_by;
-          meta.appendChild(cb);
-        }
-        if (t.result) {
-          var rs = document.createElement('span');
-          rs.textContent = 'Result: ' + t.result;
-          meta.appendChild(rs);
-        }
-        item.appendChild(meta);
+  recognition.onerror = (e) => {
+    if (e.error === 'no-speech' || e.error === 'aborted') {
+      // Normal -- will restart via onend
+      return;
+    }
+    if (e.error === 'not-allowed') {
+      micDot.className = 'mic-dot error';
+      micLabel.textContent = 'Denied';
+      statusEl.textContent = 'Microphone access denied. Please allow mic access and reload.';
+      showTextFallback();
+      return;
+    }
+    console.warn('Speech recognition error:', e.error);
+  };
+}
 
-        tl.appendChild(item);
-      });
-    } catch (e) { /* silent */ }
+function startRecognition() {
+  if (!recognition) return;
+  try {
+    accumulatedText = '';
+    recognition.start();
+  } catch (e) {
+    // Already started -- ignore
+  }
+}
+
+function showTextFallback() {
+  document.getElementById('textFallback').style.display = 'block';
+  if (!speechSupported) {
+    statusEl.textContent = 'Voice not supported in this browser. Type below.';
+  }
+}
+
+// Text fallback handlers
+document.getElementById('textSendBtn').addEventListener('click', () => {
+  const input = document.getElementById('textInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  sendToLLM(text);
+});
+document.getElementById('textInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('textSendBtn').click();
+  }
+});
+
+// ===== ECONOMY STATS =====
+async function fetchEconomyStats() {
+  try {
+    const apiKey = localStorage.getItem('brdg_api_key') || '';
+    const headers = {};
+    if (apiKey) headers['X-API-Key'] = apiKey;
+    const resp = await fetch('/api/economy/stats', { headers });
+    if (!resp.ok) return;
+    const d = await resp.json();
+    const fmt = (n) => n != null ? Number(n).toLocaleString() : '--';
+    document.getElementById('ecoCirc').textContent = fmt(d.total_circulating || d.circulating);
+    document.getElementById('ecoBurned').textContent = fmt(d.burned || d.total_burned);
+    document.getElementById('ecoTx').textContent = fmt(d.transactions || d.total_transactions || d.tx_count);
+  } catch (e) { /* silent */ }
+}
+
+// ===== INIT =====
+function init() {
+  // Load voices (some browsers need this)
+  synth.getVoices();
+  if (synth.onvoiceschanged !== undefined) {
+    synth.onvoiceschanged = () => synth.getVoices();
   }
 
-  // --- Init ---
-  if (apiKey) {
-    document.getElementById('apiKeyInput').value = '';
-    document.getElementById('apiKeyInput').placeholder = 'Key loaded from storage';
-    // Auto-validate stored key
-    (async function() {
-      try {
-        var resp = await fetch('/api/keys/validate', { headers: { 'X-API-Key': apiKey } });
-        if (resp.ok) {
-          var data = await resp.json();
-          connected = true;
-          var plan = data.plan || data.tier || 'unknown';
-          var email = data.email || '';
-          var credits = data.credits != null ? data.credits : data.brdg_balance;
-          var msg = 'Connected';
-          if (plan) msg += ' | Plan: ' + plan;
-          if (email) msg += ' | ' + email;
-          if (credits != null) msg += ' | ' + fmt(credits) + ' BRDG';
-          showStatus(msg, true);
-          onConnected();
-        } else {
-          showStatus('Stored key invalid. Please re-enter.', false);
-          localStorage.removeItem('brdg_api_key');
-          apiKey = '';
-        }
-      } catch (e) {
-        showStatus('Cannot reach server. Retry later.', false);
-      }
-    })();
-  }
+  initRecognition();
+  fetchEconomyStats();
+  setInterval(fetchEconomyStats, 60000);
+
+  // Greeting after a short delay
+  setTimeout(() => {
+    const greeting = "Hi, I'm Bridge. How can I help you today?";
+    addTranscriptMessage('ai', greeting);
+    speak(greeting);
+  }, 1200);
+}
+
+init();
 
 })();
 </script>
