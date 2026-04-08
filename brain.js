@@ -1216,6 +1216,16 @@ app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }
       if (raw.includes('|')) { const [plan, email] = raw.split('|'); return { plan, email }; }
       try { return JSON.parse(raw); } catch(_) { return {}; }
     })();
+    // Update user plan if email matches
+    try {
+      const userDb = require('./lib/user-identity');
+      const user = userDb.getUserByEmail(meta.email);
+      if (user) {
+        userDb.setUserPlan(user.id, meta.plan || 'pro');
+        userDb.updateFunnelStage(user.id, 'customer');
+      }
+    } catch (_) {}
+
     if (meta.email) {
       try {
         const mail = require('./lib/mail');
@@ -2673,6 +2683,13 @@ app.get('/api/leads', (_req, res) => {
   const leads = state._leads || [];
   res.json({ ok: true, leads: leads.slice(-50), total: leads.length });
 });
+
+// ── USER IDENTITY + NURTURE PIPELINE ────────────────────────────────────────
+try {
+  const { registerUserRoutes } = require('./lib/user-routes');
+  registerUserRoutes(app);
+  console.log('[BRAIN] User identity + nurture ACTIVE');
+} catch (e) { console.warn('[BRAIN] User identity failed:', e.message); }
 
 // ── AP2 PROTOCOL (Agent Payments Protocol) ─────────────────────────────────
 try {

@@ -12,6 +12,7 @@
   const LS_OPEN = 'bridge_widget_open';
   const LS_USER = 'bridge_widget_user';
   const LS_JOURNEY = 'bridge_widget_journey';
+  const LS_TOKEN = 'bridge_user_token';
   const MAX_MSGS = 50;
   const CYAN = '#00c8ff';
   const CYAN_RGB = '0,200,255';
@@ -126,13 +127,71 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       this.mouseNear = false;
       this.hintShown = false;
       this.proactiveShown = false;
+      this.authUser = null;
+      this.nurturePrompt = '';
 
+      this._initAuth();
       this._trackPage();
       injectStyles();
       this._buildDOM();
       this._startOrbAnimation();
       this._setupProactive();
       if (this.open) this._showPanel();
+    }
+
+    /* ── auth + identity ──────────────────────────────────────── */
+    async _initAuth() {
+      const token = localStorage.getItem(LS_TOKEN);
+      if (!token) return;
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) { localStorage.removeItem(LS_TOKEN); return; }
+        const data = await res.json();
+        if (data.ok && data.user) {
+          this.authUser = data.user;
+          this.nurturePrompt = data.nurture_prompt || '';
+          this.userData.name = data.user.name || this.userData.name;
+          this.userData.email = data.user.email || this.userData.email;
+          this.userData.funnel_stage = data.user.funnel_stage;
+          this.userData.plan = data.user.plan;
+          saveJSON(LS_USER, this.userData);
+        }
+      } catch (_) {}
+    }
+
+    async _autoRegister(email, name) {
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, name: name || this.userData.name, password: 'bridge-' + Date.now() })
+        });
+        const data = await res.json();
+        if (data.ok && data.token) {
+          localStorage.setItem(LS_TOKEN, data.token);
+          this.authUser = data.user;
+          this.nurturePrompt = '';
+          this.userData.email = email;
+          saveJSON(LS_USER, this.userData);
+        }
+      } catch (_) {}
+    }
+
+    _getAuthHeaders() {
+      const token = localStorage.getItem(LS_TOKEN);
+      if (!token) return {};
+      return { 'Authorization': 'Bearer ' + token };
+    }
+
+    async _recordConversation() {
+      try {
+        await fetch('/api/user/conversation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...this._getAuthHeaders() }
+        });
+      } catch (_) {}
     }
 
     /* ── journey tracking ──────────────────────────────────────── */
@@ -253,6 +312,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       this._addMsg('user', text);
       this._captureLeadInfo(text);
       this._callLLM(text);
+      this._recordConversation();
       this.journey.interactions++;
       saveJSON(LS_JOURNEY, this.journey);
     }
@@ -292,13 +352,18 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       const journeyDesc = this.journey.pages.map(p => p.path).join(' -> ');
       const history = this.messages.slice(-10).map(m => (m.role === 'user' ? 'User' : 'Bridge') + ': ' + m.text).join('\n');
 
+      const userCtx = this.authUser
+        ? `Authenticated user: ${this.authUser.name || 'unnamed'} (${this.authUser.email}), plan: ${this.authUser.plan || 'visitor'}, funnel: ${this.authUser.funnel_stage || 'visitor'}, score: ${this.authUser.lead_score || 0}`
+        : `Anonymous visitor. User info: ${JSON.stringify(this.userData)}`;
+      const nurtureAddon = this.nurturePrompt ? `\nNurture guidance: ${this.nurturePrompt}` : '';
+
       const systemPrompt = `${SYSTEM_KB}
 
 Current page: ${path}
 Page context: ${pageCtx}
 User journey: ${journeyDesc}
 Pages visited: ${this.journey.pages.length}
-User info: ${JSON.stringify(this.userData)}
+${userCtx}${nurtureAddon}
 
 Recent conversation:
 ${history}
@@ -356,6 +421,10 @@ Respond concisely (2-3 sentences max). Be helpful and guide the user. If you men
         this.userData.email = emailMatch[0];
         saveJSON(LS_USER, this.userData);
         this._postLead();
+        // Auto-register user when email is mentioned
+        if (!this.authUser) {
+          this._autoRegister(emailMatch[0], this.userData.name);
+        }
       }
       const nameMatch = text.match(/(?:my name is|i'm|i am)\s+(\w+(?:\s+\w+)?)/i);
       if (nameMatch) {

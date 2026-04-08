@@ -109,6 +109,56 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 (function(){
 'use strict';
 
+// ===== USER IDENTITY =====
+let portalUser = null;
+let portalNurturePrompt = '';
+
+(async function initPortalUser() {
+  const token = localStorage.getItem('bridge_user_token');
+  if (!token) return;
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) { localStorage.removeItem('bridge_user_token'); return; }
+    const data = await res.json();
+    if (data.ok && data.user) {
+      portalUser = data.user;
+      portalNurturePrompt = data.nurture_prompt || '';
+      // Show user name in nav
+      const brand = document.querySelector('.nav-brand');
+      if (brand && portalUser.name) {
+        brand.textContent = 'Bridge AI — ' + portalUser.name;
+      }
+    }
+  } catch (_) {}
+})();
+
+function recordPortalPageVisit() {
+  const token = localStorage.getItem('bridge_user_token');
+  if (!token) return;
+  try {
+    fetch('/api/user/page-visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ page: '/portal.html' })
+    });
+  } catch (_) {}
+}
+
+function recordPortalConversation() {
+  const token = localStorage.getItem('bridge_user_token');
+  if (!token) return;
+  try {
+    fetch('/api/user/conversation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+    });
+  } catch (_) {}
+}
+
+recordPortalPageVisit();
+
 // ===== STATE =====
 let state = 'idle'; // idle | listening | thinking | speaking
 let recognition = null;
@@ -149,6 +199,12 @@ Important rules for voice: Never use asterisks, bullet points, hashtags, or any 
 
 function getSystemPrompt() {
   let prompt = BRIDGE_KB;
+  // Add personalized nurture context if user is authenticated
+  if (portalUser && portalNurturePrompt) {
+    prompt += '\n\nUSER CONTEXT: ' + portalNurturePrompt;
+    if (portalUser.name) prompt += ' Their name is ' + portalUser.name + '.';
+    if (portalUser.plan && portalUser.plan !== 'visitor') prompt += ' They are on the ' + portalUser.plan + ' plan.';
+  }
   if (exchangeCount >= 4) {
     prompt += '\n\nCLOSING GUIDANCE: The conversation has progressed well. Start naturally guiding toward a plan recommendation. When the user agrees, include [ROUTE:checkout] at the end of your response.';
   }
@@ -371,6 +427,7 @@ async function sendToLLM(userText) {
   addTranscriptMessage('user', userText);
   conversationHistory.push({ role: 'user', content: userText });
   exchangeCount++;
+  recordPortalConversation();
 
   try {
     const apiKey = localStorage.getItem('brdg_api_key') || '';
