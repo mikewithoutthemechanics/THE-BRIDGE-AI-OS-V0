@@ -36,7 +36,13 @@ self.addEventListener('activate', event => {
 
 // Fetch strategy
 self.addEventListener('fetch', event => {
+  // Skip non-HTTP requests (chrome-extension://, etc.)
+  if (!event.request.url.startsWith('http')) return;
+
   const url = new URL(event.request.url);
+
+  // Skip cross-origin requests
+  if (url.origin !== self.location.origin) return;
 
   // Network-first for API calls
   if (url.pathname.startsWith('/api/')) {
