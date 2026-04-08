@@ -1211,7 +1211,11 @@ app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }
     broadcast({ type: 'payment_received', rail: 'payfast', amount: amount_gross, item: item_name });
 
     // Send confirmation email
-    const meta = (() => { try { return JSON.parse(req.body.custom_str1 || '{}'); } catch(_) { return {}; } })();
+    const meta = (() => {
+      const raw = req.body.custom_str1 || '';
+      if (raw.includes('|')) { const [plan, email] = raw.split('|'); return { plan, email }; }
+      try { return JSON.parse(raw); } catch(_) { return {}; }
+    })();
     if (meta.email) {
       try {
         const mail = require('./lib/mail');
@@ -1303,10 +1307,10 @@ app.post('/api/checkout', (req, res) => {
     email,
     firstName: name || 'Client',
     itemName: `Bridge AI OS — ${p.name} (Monthly)`,
-    meta: JSON.stringify({ plan, email }),
+    meta: `${plan}|${email}`,
   });
 
-  res.json({ ok: true, plan, amount: p.price, currency: 'ZAR', payfast_url: result.url, payment_id: result.paymentId, sandbox: result.sandbox });
+  res.json({ ok: true, plan, amount: p.price, currency: 'ZAR', payfast_url: result.url, payfast_fields: result.fields, payment_id: result.paymentId, sandbox: result.sandbox });
 });
 
 // Public: treasury wallet address + on-chain balance
