@@ -5,8 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID</title>
 
+<!-- CSP: no eval, no inline scripts (except unsafe-inline for legacy onclick handlers), whitelisted CDN only -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+  style-src  'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+  font-src   'self' https://fonts.gstatic.com;
+  connect-src 'self' wss: ws:;
+  img-src 'self' data:;
+  object-src 'none';
+  base-uri 'self';
+">
+
 <!-- P5 + XTERM -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"
+        integrity="sha384-f0yxPojt7RcD8oiNbarUEFxtiJSO0JsM8feWy2U/tviNhVNEoWaihiZHqJrRlkb2"
+        crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"/>
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
@@ -340,7 +354,7 @@ canvas{display:block;}
 <div id="terminals"></div>
 
 <!-- Status Bar -->
-<div id="status-bar" id="status">
+<div id="status-bar">
   <span id="ws-status">WS: connecting…</span>
   &nbsp;|&nbsp;
   <span id="session-count">SESSIONS: 0</span>
@@ -369,6 +383,12 @@ const WIN    = navigator.platform.toLowerCase().includes('win');
 const BASE   = window.location.origin;
 const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/terminal';
 const IS_SERVERLESS = location.hostname.includes('vercel.app') || location.hostname.includes('.vercel.');
+
+/** Escape HTML-special chars to prevent innerHTML XSS */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 let socket       = null;
 let terminals    = {};   // id → { term, fitAddon, el }
@@ -1000,47 +1020,47 @@ function renderEconomicsPanel(data) {
                       p.status === 'configured' ? '#0cf' :
                       p.status === 'protocol-defined' ? '#f90' : '#556';
 
-    html += `<div class="econ-platform" onclick="togglePlatform('${p.id}')">
+    html += `<div class="econ-platform" onclick="togglePlatform('${esc(p.id)}')">
       <div class="econ-ph">
-        <span style="color:${statusCol}">▸ ${p.name}</span>
-        <span class="econ-badge">${p.type.toUpperCase()}</span>
+        <span style="color:${esc(statusCol)}">▸ ${esc(p.name)}</span>
+        <span class="econ-badge">${esc(p.type.toUpperCase())}</span>
       </div>
-      <div class="econ-body" id="econ-${p.id}" style="display:none;">`;
+      <div class="econ-body" id="econ-${esc(p.id)}" style="display:none;">`;
 
     if (p.plans) {
       p.plans.forEach(plan => {
-        const mo = plan.price_monthly > 0 ? `$${plan.price_monthly}/mo` : 'FREE';
-        const yr = plan.price_yearly > 0 ? ` · $${plan.price_yearly}/yr` : '';
-        html += `<div class="econ-row"><span>${plan.name}</span><span class="econ-val">${mo}${yr}</span></div>`;
-        if (plan.api_limit) html += `<div class="econ-sub">${Number(plan.api_limit).toLocaleString()} req · ${Number(plan.token_limit).toLocaleString()} tokens</div>`;
-        if (!plan.api_limit) html += `<div class="econ-sub">UNLIMITED · dedicated SLA</div>`;
+        const mo = plan.price_monthly > 0 ? `$${esc(plan.price_monthly)}/mo` : 'FREE';
+        const yr = plan.price_yearly > 0 ? ` &middot; $${esc(plan.price_yearly)}/yr` : '';
+        html += `<div class="econ-row"><span>${esc(plan.name)}</span><span class="econ-val">${mo}${yr}</span></div>`;
+        if (plan.api_limit) html += `<div class="econ-sub">${esc(Number(plan.api_limit).toLocaleString())} req &middot; ${esc(Number(plan.token_limit).toLocaleString())} tokens</div>`;
+        if (!plan.api_limit) html += `<div class="econ-sub">UNLIMITED &middot; dedicated SLA</div>`;
       });
-      html += `<div class="econ-row green"><span>MRR Potential</span><span class="econ-val">$${p.mrr_potential}/mo</span></div>`;
+      html += `<div class="econ-row green"><span>MRR Potential</span><span class="econ-val">$${esc(p.mrr_potential)}/mo</span></div>`;
     }
 
     if (p.line_items) {
       p.line_items.forEach(li => {
-        html += `<div class="econ-row"><span>${li.description}</span><span class="econ-val">R${Number(li.total_zar).toLocaleString()}</span></div>`;
+        html += `<div class="econ-row"><span>${esc(li.description)}</span><span class="econ-val">R${esc(Number(li.total_zar).toLocaleString())}</span></div>`;
       });
-      html += `<div class="econ-row"><span>Subtotal</span><span class="econ-val">R${Number(p.subtotal_zar).toLocaleString()}</span></div>`;
-      html += `<div class="econ-row"><span>VAT (${p.vat_rate})</span><span class="econ-val">R${Number(p.vat_zar).toLocaleString()}</span></div>`;
-      html += `<div class="econ-row green"><span>TOTAL</span><span class="econ-val">R${Number(p.total_zar).toLocaleString()}</span></div>`;
+      html += `<div class="econ-row"><span>Subtotal</span><span class="econ-val">R${esc(Number(p.subtotal_zar).toLocaleString())}</span></div>`;
+      html += `<div class="econ-row"><span>VAT (${esc(p.vat_rate)})</span><span class="econ-val">R${esc(Number(p.vat_zar).toLocaleString())}</span></div>`;
+      html += `<div class="econ-row green"><span>TOTAL</span><span class="econ-val">R${esc(Number(p.total_zar).toLocaleString())}</span></div>`;
     }
 
     if (p.stats) {
-      html += `<div class="econ-row"><span>Leads Captured</span><span class="econ-val">${p.stats.leads}</span></div>`;
-      html += `<div class="econ-row"><span>Clicks Tracked</span><span class="econ-val">${p.stats.clicks}</span></div>`;
-      html += `<div class="econ-row"><span>Base URL</span><span class="econ-val econ-url">${p.base_url||''}</span></div>`;
+      html += `<div class="econ-row"><span>Leads Captured</span><span class="econ-val">${esc(p.stats.leads)}</span></div>`;
+      html += `<div class="econ-row"><span>Clicks Tracked</span><span class="econ-val">${esc(p.stats.clicks)}</span></div>`;
+      html += `<div class="econ-row"><span>Base URL</span><span class="econ-val econ-url">${esc(p.base_url||'')}</span></div>`;
     }
 
     if (p.flows) {
       p.flows.forEach(f => {
-        html += `<div class="econ-row"><span>▸ ${f}</span></div>`;
+        html += `<div class="econ-row"><span>&#9656; ${esc(f)}</span></div>`;
       });
-      if (p.mechanism) html += `<div class="econ-sub">${p.mechanism}</div>`;
+      if (p.mechanism) html += `<div class="econ-sub">${esc(p.mechanism)}</div>`;
     }
 
-    html += `<div class="econ-sub">📁 ${p.location}</div>`;
+    html += `<div class="econ-sub">&#128193; ${esc(p.location)}</div>`;
     html += `</div></div>`;
   });
 
@@ -1083,7 +1103,7 @@ function showDetailCard(title, html) {
 }
 
 function row(label, val, color) {
-  return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #0ff1;"><span style="color:#556">' + label + '</span><span style="color:' + (color||'#0f9') + '">' + val + '</span></div>';
+  return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #0ff1;"><span style="color:#556">' + esc(label) + '</span><span style="color:' + esc(color||'#0f9') + '">' + esc(val) + '</span></div>';
 }
 
 async function showDetail(type) {

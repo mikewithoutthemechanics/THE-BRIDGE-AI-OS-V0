@@ -495,10 +495,35 @@ function fullScan() {
   return cachedFull;
 }
 
+// ─── CORS origin allowlist (matches gateway.js pattern) ──────────────────────
+const ALLOWED_ORIGINS = new Set([
+  'https://wall.bridge-ai-os.com',
+  'https://go.ai-os.co.za',
+  'http://localhost:3000',
+  'http://localhost:8080',
+]);
+
+// ─── JWT auth helper ──────────────────────────────────────────────────────────
+function verifyJWT(req) {
+  if (!JWT_SECRET) return null;
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  try {
+    const jsonwebtoken = require('jsonwebtoken');
+    return jsonwebtoken.verify(authHeader.slice(7), JWT_SECRET);
+  } catch { return null; }
+}
+
 // ─── HTTP HANDLER ─────────────────────────────────────────────────────────────
 function handler(req, res) {
   const url = req.url.split('?')[0];
-  res.setHeader('Access-Control-Allow-Origin','*');
+
+  // CORS: allowlisted origins only (no wildcard)
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.setHeader('Access-Control-Allow-Methods','GET,OPTIONS');
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
 
@@ -507,8 +532,15 @@ function handler(req, res) {
     res.end(JSON.stringify(data));
   };
 
+  // Health endpoints are always unauthenticated
   if (url === '/health' || url === '/healthz')
     return json({ status:'ok', uptime:Math.round(process.uptime()), port:PORT, env:NODE_ENV, ts:Date.now() });
+
+  // All /api/* endpoints require JWT authentication
+  if (url.startsWith('/api/')) {
+    const user = verifyJWT(req);
+    if (!user) return json({ error: 'Unauthorized — valid Bearer token required' }, 401);
+  }
 
   if (url === '/api/full')            return json(fullScan());
   if (url === '/api/scan')            return json(fullScan());
@@ -544,11 +576,20 @@ function handler(req, res) {
   // ================= UNIVERSAL SHARE ENDPOINTS =================
   if (url.startsWith('/share/')) {
     const parts = url.split('/');
-    const shareId = parts[2];
+    const shareId = path.basename(parts[2] || '');   // sanitize: strip path traversal
     const action = parts[3]; // context, history, or metadata
 
+    if (!shareId || /[^a-zA-Z0-9_\-]/.test(shareId)) {
+      return json({ error: 'Invalid share ID' }, 400);
+    }
+
     try {
-      const sharePath = path.join(ROOT, 'artifacts', 'share', `${shareId}.json`);
+      const shareDir  = path.join(ROOT, 'artifacts', 'share');
+      const sharePath = path.join(shareDir, `${shareId}.json`);
+      // Guard: resolved path must stay inside the share directory
+      if (!sharePath.startsWith(shareDir + path.sep)) {
+        return json({ error: 'Invalid share ID' }, 400);
+      }
       const shareData = JSON.parse(fs.readFileSync(sharePath, 'utf8'));
 
       if (action === 'context') {

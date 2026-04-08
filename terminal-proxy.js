@@ -85,6 +85,9 @@ wss.on('connection', (ws, req) => {
       }
       try {
         const decoded = jwt.verify(msg.token, secret);
+        // TODO: Add Redis-backed token revocation check here.
+        // e.g. if (await redis.sismember('revoked_tokens', decoded.jti)) { reject }
+        // Required for logout / forced session invalidation.
         authed = true;
         ws.user = decoded;
         ws.send(JSON.stringify({

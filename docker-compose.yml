@@ -45,6 +45,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
     volumes:
       - ./public:/app/public
       - ./logs:/app/logs
@@ -60,6 +61,7 @@ services:
       - "5002:5002"
     environment:
       - TERMINAL_PROXY_PORT=5002
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
     networks:
       - bridge_net
     restart: unless-stopped

@@ -30,6 +30,7 @@ const app = express();
 const ROOT = __dirname;
 const SHARED_DIR = path.join(ROOT, 'shared');
 const data = require('./data-service');
+const { requireAuth: gatewayAuth } = require('./middleware/auth');
 
 // ── CORS (restricted to known origins) ───────────────────────────────────────
 const ALLOWED_ORIGINS = new Set([
@@ -65,8 +66,7 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-app.use(express.static(ROOT));
-// Serve pages from the 'public/' subdirectory (crm, invoicing, marketing, legal, tickets, leadgen, etc.)
+// Serve only the public/ directory — never expose the project root (security: #31)
 app.use(express.static(path.join(ROOT, 'public')));
 
 // ── HEALTH ───────────────────────────────────────────────────────────────────
@@ -307,9 +307,10 @@ const ORCHESTRATORS = {
 
 // ── L1 / L2 / L3 PROXY ROUTES ────────────────────────────────────────────────
 // Proxy /api/l1/*, /api/l2/*, /api/l3/* to the correct orchestrator ports
+// Auth required — these are internal orchestrator APIs (security: #21)
 for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
   const prefix = `/api/${layer.toLowerCase()}`;
-  app.all(`${prefix}/*path`, async (req, res) => {
+  app.all(`${prefix}/*path`, gatewayAuth(), async (req, res) => {
     const subpath = req.path.slice(prefix.length) || '/';
     const url = `${base}${subpath}`;
     try {
@@ -427,75 +428,11 @@ app.get('/api/contracts', (req, res) => {
 });
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
-// Minimal in-process auth store (JWT via jsonwebtoken + bcryptjs).
-// A real deployment would delegate to a dedicated auth service.
-let jwt, bcrypt;
-try { jwt   = require('jsonwebtoken'); }  catch (_) { jwt   = null; }
-try { bcrypt = require('bcryptjs'); }      catch (_) { bcrypt = null; }
+// Auth is handled exclusively by the dedicated auth service on port 5001.
+// Shadow auth system (in-memory Map + duplicate register/login/verify) removed
+// for security (#8). All auth routes now proxy to port 5001.
 
-const JWT_SECRET   = process.env.JWT_SECRET;
-const REFERRAL_CODES = { BRIDGE2025: 500, AILAUNCH: 250, BETA100: 100 };
-
-// In-memory user store (replace with DB in production)
-const authUsers = new Map();
-
-function makeToken(payload) {
-  if (!jwt) return `stub-token-${Date.now()}`;
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
-}
-
-function verifyToken(token) {
-  if (!jwt) return null;
-  try { return jwt.verify(token, JWT_SECRET); } catch (_) { return null; }
-}
-
-async function hashPassword(pw) {
-  if (!bcrypt) return `hashed:${pw}`;
-  return bcrypt.hash(pw, 10);
-}
-
-async function checkPassword(pw, hash) {
-  if (!bcrypt) return hash === `hashed:${pw}`;
-  return bcrypt.compare(pw, hash);
-}
-
-// POST /auth/register
-app.post('/auth/register', async (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
-  if (authUsers.has(email)) return res.status(409).json({ error: 'email already registered' });
-  const password_hash = await hashPassword(password);
-  const user = { id: `usr_${Date.now()}`, email, password_hash, credits: 0, created_at: new Date().toISOString() };
-  authUsers.set(email, user);
-  const token = makeToken({ sub: user.id, email });
-  res.status(201).json({ token, user: { id: user.id, email: user.email, credits: user.credits } });
-});
-
-// POST /auth/login
-app.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
-  const user = authUsers.get(email);
-  if (!user) return res.status(401).json({ error: 'invalid credentials' });
-  const ok = await checkPassword(password, user.password_hash);
-  if (!ok) return res.status(401).json({ error: 'invalid credentials' });
-  const token = makeToken({ sub: user.id, email });
-  res.json({ token, user: { id: user.id, email: user.email, credits: user.credits } });
-});
-
-// GET /auth/verify
-app.get('/auth/verify', (req, res) => {
-  const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-  if (!token) return res.status(401).json({ error: 'no token provided' });
-  const payload = verifyToken(token);
-  if (!payload) return res.status(401).json({ error: 'invalid or expired token' });
-  res.json({ valid: true, user: { sub: payload.sub, email: payload.email } });
-});
-
-// ── AUTH AUDIT PROXY → port 5001 ─────────────────────────────────────────────
-// The merkle audit endpoints live on the dedicated auth service.
-// Proxy them through the gateway so the dashboard can reach them from port 8080.
+// ── AUTH PROXY → port 5001 ───────────────────────────────────────────────────
 const AUTH_SVC = 'http://localhost:5001';
 
 async function proxyToAuth(req, res) {
@@ -515,6 +452,11 @@ async function proxyToAuth(req, res) {
   }
 }
 
+// Auth routes — proxy to dedicated auth service on port 5001
+app.post('/auth/register', (req, res) => proxyToAuth(req, res));
+app.post('/auth/login',    (req, res) => proxyToAuth(req, res));
+app.get('/auth/verify',    (req, res) => proxyToAuth(req, res));
+
 // Audit endpoints
 app.get('/auth/audit/root',       (req, res) => proxyToAuth(req, res));
 app.get('/auth/audit/state',      (req, res) => proxyToAuth(req, res));
@@ -523,26 +465,8 @@ app.get('/auth/audit/events',     (req, res) => proxyToAuth(req, res));
 app.get('/auth/audit/proof/:lh',  (req, res) => proxyToAuth(req, res));
 app.get('/auth/audit/user/:uid',  (req, res) => proxyToAuth(req, res));
 
-// ── REFERRAL ──────────────────────────────────────────────────────────────────
-// POST /referral/claim
-app.post('/referral/claim', (req, res) => {
-  const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-  if (!token) return res.status(401).json({ error: 'authentication required' });
-  const payload = verifyToken(token);
-  if (!payload) return res.status(401).json({ error: 'invalid or expired token' });
-
-  const { code } = req.body || {};
-  if (!code) return res.status(400).json({ error: 'referral code required' });
-
-  const credits = REFERRAL_CODES[String(code).toUpperCase()];
-  if (!credits) return res.status(404).json({ error: 'invalid referral code' });
-
-  const user = authUsers.get(payload.email);
-  if (user) user.credits = (user.credits || 0) + credits;
-
-  res.json({ success: true, code, credits, message: `${credits} credits applied to your account` });
-});
+// Referral — proxy to auth service on port 5001
+app.post('/referral/claim', (req, res) => proxyToAuth(req, res));
 
 // ── BAN PROXY ────────────────────────────────────────────────────────────────
 // Try BAN on 8001 (Python FastAPI), fall back to ban-home.html
@@ -876,7 +800,9 @@ app.get('/api/system/metrics', (req, res) => {
 });
 
 // ── BRAIN PROXY — forward unknown /api/* to brain on 8000 ────────────────────
-// This catches any /api/* route not handled above and proxies to the brain
+// This catches any /api/* route not handled above and proxies to the brain.
+// Intentionally unauthenticated: brain service handles its own auth and this
+// is internal routing only. Public API routes are handled above. (security: #H-2)
 app.all('/api/*path', async (req, res) => {
   const url = `http://localhost:8000${req.originalUrl}`;
   try {

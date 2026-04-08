@@ -12,6 +12,8 @@ const jwt        = require('jsonwebtoken');
 const Database   = require('better-sqlite3');
 const path       = require('path');
 const fs         = require('fs');
+const crypto     = require('crypto');
+const rateLimit  = require('express-rate-limit');
 const { AuthMerkleLog } = require('./lib/auth-merkle');
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -98,6 +100,10 @@ const stmts = {
 };
 
 // ─── Token Blacklist (in-memory, production should use Redis) ─────────────────
+// TODO(security #18): Replace in-memory Set with Redis (SETEX with TTL matching
+// token expiry). Current blacklist is lost on process restart, allowing revoked
+// tokens to be reused until they naturally expire. See middleware/auth.js for
+// the Redis-aware implementation pattern to adopt here.
 
 const blacklist = new Set();
 
@@ -111,7 +117,8 @@ setInterval(() => {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function generateReferralCode() {
-  return Math.random().toString(36).substring(2, 10).toUpperCase();
+  // crypto.randomBytes instead of Math.random() for unpredictable codes (security: #46)
+  return crypto.randomBytes(5).toString('hex').toUpperCase();
 }
 
 function signAccess(payload) {
@@ -176,6 +183,15 @@ app.use((req, _res, next) => {
   next();
 });
 
+// ─── Rate Limiting (security: #17) ───────────────────────────────────────────
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,                   // 10 attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts, please try again later' },
+});
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 /**
@@ -183,7 +199,7 @@ app.use((req, _res, next) => {
  * Body: { email, password, referral_code? }
  * Returns: { token, refresh_token, user }
  */
-app.post('/auth/register', async (req, res) => {
+app.post('/auth/register', authLimiter, async (req, res) => {
   try {
     const { email, password, referral_code } = req.body;
 
@@ -249,7 +265,7 @@ app.post('/auth/register', async (req, res) => {
  * Body: { email, password }
  * Returns: { token, refresh_token, user }
  */
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -315,6 +331,9 @@ app.post('/auth/refresh', (req, res) => {
   if (!refresh_token) {
     return res.status(400).json({ error: 'refresh_token is required' });
   }
+  if (blacklist.has(refresh_token)) {
+    return res.status(401).json({ error: 'Refresh token already used' });
+  }
 
   try {
     const decoded = verifyRefreshToken(refresh_token);
@@ -322,6 +341,9 @@ app.post('/auth/refresh', (req, res) => {
     if (!user || !user.active) {
       return res.status(401).json({ error: 'User not found or disabled' });
     }
+
+    // Invalidate the consumed refresh token to prevent reuse (security: #29)
+    blacklist.add(refresh_token);
 
     const payload       = { sub: user.id, email: user.email };
     const token         = signAccess(payload);
@@ -350,7 +372,7 @@ app.get('/auth/verify', requireAuth, (req, res) => {
  * Body: { code, email }
  * Allows a user to claim a referral code
  */
-app.post('/referral/claim', async (req, res) => {
+app.post('/referral/claim', requireAuth, async (req, res) => {
   try {
     const { code, email } = req.body;
     if (!code || !email) {
@@ -420,24 +442,24 @@ app.get('/health', (_req, res) => res.json({ status: 'OK', service: 'auth', port
 
 // ─── Merkle Audit Endpoints ───────────────────────────────────────────────────
 
-/** GET /auth/audit/root — current Merkle root hash */
-app.get('/auth/audit/root', (_req, res) => {
+/** GET /auth/audit/root — current Merkle root hash (security: #16 — auth required) */
+app.get('/auth/audit/root', requireAuth, (_req, res) => {
   res.json({ root: merkle.getRoot(), ts: new Date().toISOString() });
 });
 
 /** GET /auth/audit/state — full tree state (root, depth, leaf_count) */
-app.get('/auth/audit/state', (_req, res) => {
+app.get('/auth/audit/state', requireAuth, (_req, res) => {
   res.json(merkle.getState());
 });
 
 /** GET /auth/audit/verify — recompute tree from DB and check integrity */
-app.get('/auth/audit/verify', (_req, res) => {
+app.get('/auth/audit/verify', requireAuth, (_req, res) => {
   const result = merkle.verifyIntegrity();
   res.status(result.integrity ? 200 : 409).json(result);
 });
 
 /** GET /auth/audit/events?limit=N — recent audit events */
-app.get('/auth/audit/events', (_req, res) => {
+app.get('/auth/audit/events', requireAuth, (_req, res) => {
   const limit = Math.min(parseInt(_req.query.limit) || 30, 200);
   res.json({ events: merkle.getRecentEvents(limit), root: merkle.getRoot() });
 });
