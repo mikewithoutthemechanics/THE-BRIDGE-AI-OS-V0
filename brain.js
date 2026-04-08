@@ -170,10 +170,10 @@ function mutateState(reducer, payload) {
 }
 
 // ── WebSocket Hub ───────────────────────────────────────────────────────────
-const wss = new WebSocketServer({ server, path: '/ws' });
+// noServer: true prevents double-upgrade crash with PM2's http metrics proxy
+const wss = new WebSocketServer({ noServer: true });
 const wsClients = new Map(); // channel → Set<ws>
 
-// Also handle /ws/<channel> paths
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (url.pathname.startsWith('/ws')) {
