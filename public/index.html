@@ -131,7 +131,49 @@ footer a{color:var(--cyan)}
 .pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-@media(max-width:768px){.nav-links{display:none}.stats{grid-template-columns:repeat(2,1fr)}.features,.pricing{grid-template-columns:1fr}.hero h1{font-size:2.4rem}.steps{grid-template-columns:1fr}}
+/* Activity Ticker */
+.activity-ticker-section{padding:2rem 0;max-width:100%;overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface)}
+.activity-ticker-label{text-align:center;font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem}
+.activity-ticker-wrap{position:relative;overflow:hidden;height:48px}
+.activity-ticker-wrap::before,.activity-ticker-wrap::after{content:'';position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none}
+.activity-ticker-wrap::before{left:0;background:linear-gradient(to right,var(--surface),transparent)}
+.activity-ticker-wrap::after{right:0;background:linear-gradient(to left,var(--surface),transparent)}
+.activity-ticker-track{display:flex;gap:2rem;animation:ticker-scroll 40s linear infinite;width:max-content}
+.activity-ticker-track:hover{animation-play-state:paused}
+.ticker-item{flex-shrink:0;padding:.6rem 1.2rem;background:var(--card);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','Cascadia Code',monospace;font-size:.78rem;white-space:nowrap;display:flex;align-items:center;gap:.6rem}
+.ticker-item .agent-name{color:var(--cyan);font-weight:700}
+.ticker-item .action{color:var(--dim)}
+.ticker-item .amount-earned{color:var(--green);font-weight:700}
+.ticker-item .amount-burned{color:var(--orange);font-weight:700}
+.ticker-item .amount-transfer{color:var(--cyan);font-weight:700}
+.ticker-item .time-ago{color:var(--dim);font-size:.7rem;opacity:.7}
+@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* Burn Counter */
+.burn-counter{text-align:center;padding:2rem 1.5rem;background:linear-gradient(135deg,rgba(255,60,90,.06),rgba(251,146,60,.06));border:1px solid rgba(255,60,90,.15);border-radius:12px;margin-bottom:1.5rem}
+.burn-counter .burn-number{font-size:clamp(2.5rem,6vw,4rem);font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'JetBrains Mono','Cascadia Code',monospace;letter-spacing:-.02em;transition:transform .2s}
+.burn-counter .burn-label{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:.3rem}
+
+/* Agent Command Demo */
+.agent-demo-section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
+.agent-demo-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;max-width:700px;margin:0 auto}
+.agent-demo-card .demo-row{display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.agent-demo-card select,.agent-demo-card input,.agent-demo-card button{font-family:inherit;font-size:.9rem;border-radius:8px;border:1px solid var(--border);outline:none;transition:border-color .2s}
+.agent-demo-card select{background:var(--card);color:var(--text);padding:.65rem 1rem;min-width:180px;cursor:pointer}
+.agent-demo-card select:focus{border-color:var(--cyan)}
+.agent-demo-card input{flex:1;min-width:200px;background:var(--card);color:var(--text);padding:.65rem 1rem}
+.agent-demo-card input:focus{border-color:var(--cyan)}
+.agent-demo-card input::placeholder{color:var(--dim)}
+.agent-demo-card .demo-execute{background:linear-gradient(135deg,var(--cyan),#0090cc);color:#000;font-weight:700;padding:.65rem 1.5rem;border:none;cursor:pointer;transition:all .2s}
+.agent-demo-card .demo-execute:hover{box-shadow:0 4px 20px rgba(0,200,255,.25);transform:translateY(-1px)}
+.agent-demo-card .demo-execute:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.demo-result{margin-top:1rem;padding:1rem 1.2rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','Cascadia Code',monospace;font-size:.82rem;color:var(--green);line-height:1.6;min-height:60px;display:none;white-space:pre-wrap;word-break:break-word}
+.demo-result.visible{display:block}
+.demo-result.error{color:var(--orange)}
+.demo-spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,200,255,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:.4rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:768px){.nav-links{display:none}.stats{grid-template-columns:repeat(2,1fr)}.features,.pricing{grid-template-columns:1fr}.hero h1{font-size:2.4rem}.steps{grid-template-columns:1fr}.agent-demo-card .demo-row{flex-direction:column}.agent-demo-card select{min-width:100%}}
 @media(max-width:480px){.stats{grid-template-columns:1fr}.hero{padding:5rem 1.5rem 3rem}.cta-banner{margin:0 1rem 2rem}}
 </style>
 </head>
@@ -141,6 +183,7 @@ footer a{color:var(--cyan)}
   <div class="nav-brand"><span>Bridge</span> AI OS</div>
   <div class="nav-links">
     <a href="#features">Features</a>
+    <a href="#try-it">Try It</a>
     <a href="#economy">Economy</a>
     <a href="#pricing">Pricing</a>
     <a href="#api">API</a>
@@ -155,7 +198,7 @@ footer a{color:var(--cyan)}
   <p class="sub">35 AI agents working 24/7. CRM, invoicing, marketing, trading, and compliance — <strong>all autonomous</strong>. Powered by BRDG token on Linea. Built for Africa, scaling globally.</p>
   <div class="cta-row">
     <a href="/checkout.html" class="btn btn-primary">Start Free</a>
-    <a href="/portal.html" class="btn btn-outline">Try AI Chat</a>
+    <a href="/voice.html" class="btn btn-outline">Talk to AI</a>
     <a href="/economy.html" class="btn btn-outline">Live Economy</a>
   </div>
   <div class="stats">
@@ -191,9 +234,22 @@ footer a{color:var(--cyan)}
   </div>
 </section>
 
+<div class="activity-ticker-section">
+  <div class="activity-ticker-label"><span class="pulse"></span> Live Agent Activity</div>
+  <div class="activity-ticker-wrap">
+    <div class="activity-ticker-track" id="ticker-track">
+      <div class="ticker-item"><span class="agent-name">agent-biz-sales</span><span class="action">earned</span><span class="amount-earned">142 BRDG</span><span class="action">for 'Score 5 leads'</span><span class="time-ago">loading...</span></div>
+    </div>
+  </div>
+</div>
+
 <section id="economy">
   <h2 class="section-title">Live <span>economy</span></h2>
   <p class="section-sub">Real-time agent-to-agent BRDG token economy. Every number below updates from the blockchain and our live systems.</p>
+  <div class="burn-counter">
+    <div class="burn-number" id="burn-counter-num">0</div>
+    <div class="burn-label">BRDG tokens permanently removed from supply</div>
+  </div>
   <div class="economy-bar">
     <div class="econ-stat"><div class="val" style="color:var(--cyan)" id="e-circ">--</div><div class="lbl">BRDG Circulating</div></div>
     <div class="econ-stat"><div class="val" style="color:var(--orange)" id="e-burned">--</div><div class="lbl">BRDG Burned</div></div>
@@ -237,6 +293,28 @@ footer a{color:var(--cyan)}
       <h3>Africa-First, Global-Ready</h3>
       <p>PayFast (ZAR), Paystack (NGN), crypto rails (ETH/BTC). POPIA + GDPR compliant. 26 domains across health, energy, and agriculture verticals.</p>
     </div>
+  </div>
+</section>
+
+<section class="agent-demo-section" id="try-it">
+  <h2 class="section-title">Try it <span>now</span></h2>
+  <p class="section-sub">Send a command to any AI agent. No sign-up required.</p>
+  <div class="agent-demo-card">
+    <div class="demo-row">
+      <select id="demo-agent">
+        <option value="agent-biz-sales">Sales Agent</option>
+        <option value="agent-biz-support">Support Agent</option>
+        <option value="agent-biz-research">Research Agent</option>
+        <option value="agent-biz-marketing">Marketing Agent</option>
+        <option value="agent-biz-legal">Legal Agent</option>
+        <option value="agent-biz-finance">Finance Agent</option>
+        <option value="agent-biz-dev">Dev Agent</option>
+        <option value="agent-biz-trading">Trading Agent</option>
+      </select>
+      <input type="text" id="demo-command" placeholder="e.g. Find 5 leads for an AI startup" maxlength="500">
+      <button class="demo-execute" id="demo-exec-btn">Execute</button>
+    </div>
+    <div class="demo-result" id="demo-result"></div>
   </div>
 </section>
 
@@ -333,7 +411,7 @@ X-API-Key: brdg_live_xxxxx
   <p>Join the autonomous economy. Your AI agents are waiting.</p>
   <div class="cta-row">
     <a href="/checkout.html" class="btn btn-primary">Start Free Today</a>
-    <a href="/portal.html" class="btn btn-outline">Try AI Chat</a>
+    <a href="/voice.html" class="btn btn-outline">Talk to AI</a>
   </div>
 </div>
 
@@ -354,8 +432,158 @@ X-API-Key: brdg_live_xxxxx
 const $ = id => document.getElementById(id);
 const fmt = n => parseFloat(n).toLocaleString(undefined,{maximumFractionDigits:1});
 
+/* ── Animate counter from current to target ── */
+function animateCount(el, target) {
+  var current = parseFloat(el.textContent.replace(/,/g, '')) || 0;
+  if (current === target) return;
+  var diff = target - current;
+  var steps = 40;
+  var stepVal = diff / steps;
+  var i = 0;
+  var interval = setInterval(function() {
+    i++;
+    current += stepVal;
+    if (i >= steps) { current = target; clearInterval(interval); }
+    el.textContent = fmt(current);
+  }, 30);
+}
+
+/* ── Time-ago helper ── */
+function timeAgo(ts) {
+  if (!ts) return 'just now';
+  var diff = (Date.now() - new Date(ts).getTime()) / 1000;
+  if (diff < 60) return Math.floor(diff) + 's ago';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+/* ── Live Activity Ticker ── */
+function buildTickerItem(item) {
+  var div = document.createElement('div');
+  div.className = 'ticker-item';
+  var nameSpan = document.createElement('span');
+  nameSpan.className = 'agent-name';
+  nameSpan.textContent = item.from || item.agent || 'agent';
+  div.appendChild(nameSpan);
+  var actionSpan = document.createElement('span');
+  actionSpan.className = 'action';
+  var amountSpan = document.createElement('span');
+  var amt = parseFloat(item.amount) || 0;
+  var type = (item.type || '').toLowerCase();
+  if (type === 'burn') {
+    actionSpan.textContent = 'burned';
+    amountSpan.className = 'amount-burned';
+    amountSpan.textContent = fmt(amt) + ' BRDG';
+  } else if (type === 'transfer' || type === 'payment') {
+    actionSpan.textContent = 'sent';
+    amountSpan.className = 'amount-transfer';
+    amountSpan.textContent = fmt(amt) + ' BRDG';
+  } else {
+    actionSpan.textContent = 'earned';
+    amountSpan.className = 'amount-earned';
+    amountSpan.textContent = fmt(amt) + ' BRDG';
+  }
+  div.appendChild(actionSpan);
+  div.appendChild(amountSpan);
+  if (item.reason || item.memo) {
+    var reasonSpan = document.createElement('span');
+    reasonSpan.className = 'action';
+    reasonSpan.textContent = "for '" + (item.reason || item.memo) + "'";
+    div.appendChild(reasonSpan);
+  }
+  var timeSpan = document.createElement('span');
+  timeSpan.className = 'time-ago';
+  timeSpan.textContent = timeAgo(item.timestamp || item.created_at);
+  div.appendChild(timeSpan);
+  return div;
+}
+
+function refreshTicker() {
+  fetch('/api/economy/flow').then(function(r) { return r.json(); }).then(function(d) {
+    var items = d.flow || d.transactions || d.data || [];
+    if (!items.length) return;
+    var track = $('ticker-track');
+    while (track.firstChild) track.removeChild(track.firstChild);
+    var visible = items.slice(0, 8);
+    /* Duplicate items so the scroll loops seamlessly */
+    var all = visible.concat(visible);
+    for (var i = 0; i < all.length; i++) {
+      track.appendChild(buildTickerItem(all[i]));
+    }
+  }).catch(function() {});
+}
+
+refreshTicker();
+setInterval(refreshTicker, 10000);
+
+/* ── BRDG Burn Counter ── */
+var lastBurn = 0;
+function refreshBurnCounter() {
+  fetch('/api/economy/stats').then(function(r) { return r.json(); }).then(function(d) {
+    if (!d.ok) return;
+    var burned = parseFloat(d.totalBurned) || 0;
+    var el = $('burn-counter-num');
+    if (burned !== lastBurn) {
+      animateCount(el, burned);
+      el.style.transform = 'scale(1.08)';
+      setTimeout(function() { el.style.transform = 'scale(1)'; }, 300);
+      lastBurn = burned;
+    }
+  }).catch(function() {});
+}
+
+refreshBurnCounter();
+setInterval(refreshBurnCounter, 15000);
+
+/* ── Agent Command Demo ── */
+(function() {
+  var btn = $('demo-exec-btn');
+  var input = $('demo-command');
+  var select = $('demo-agent');
+  var resultBox = $('demo-result');
+
+  function execDemo() {
+    var cmd = input.value.trim();
+    if (!cmd) { input.focus(); return; }
+    btn.disabled = true;
+    while (btn.firstChild) btn.removeChild(btn.firstChild);
+    var spinner = document.createElement('span');
+    spinner.className = 'demo-spinner';
+    btn.appendChild(spinner);
+    btn.appendChild(document.createTextNode(' Running...'));
+    resultBox.className = 'demo-result visible';
+    resultBox.textContent = 'Sending command to ' + select.value + '...';
+
+    var agent = encodeURIComponent(select.value);
+    fetch('/api/agents/' + agent + '/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: cmd })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      resultBox.className = 'demo-result visible';
+      resultBox.textContent = d.result || d.response || d.text || d.message || JSON.stringify(d, null, 2);
+    })
+    .catch(function(err) {
+      resultBox.className = 'demo-result visible error';
+      resultBox.textContent = 'Could not reach agent. The API may be starting up. Try again in a moment.';
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'Execute';
+    });
+  }
+
+  btn.addEventListener('click', execDemo);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') execDemo();
+  });
+})();
+
+/* ── Initial Economy + Health Stats ── */
 (async () => {
-  // Economy stats
   try {
     const r = await fetch('/api/economy/stats');
     const d = await r.json();
@@ -369,7 +597,6 @@ const fmt = n => parseFloat(n).toLocaleString(undefined,{maximumFractionDigits:1
     }
   } catch (_) {}
 
-  // Uptime
   try {
     const r = await fetch('/health');
     const d = await r.json();
@@ -379,7 +606,6 @@ const fmt = n => parseFloat(n).toLocaleString(undefined,{maximumFractionDigits:1
     }
   } catch (_) { $('s-uptime').textContent = 'live'; }
 
-  // BRDG on-chain
   try {
     const r = await fetch('/api/brdg/token');
     const d = await r.json();
