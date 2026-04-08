@@ -24,6 +24,8 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const ethTreasury = require('./lib/eth-treasury');
+const brdgChain = require('./lib/brdg-chain');
+const llm = require('./lib/llm-client');
 const os = require('os');
 const axios = require('axios');
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
@@ -390,7 +392,17 @@ app.post('/api/speech/reason', (req, res) => {
 });
 
 // ── TREASURY / ECONOMY ──────────────────────────────────────────────────────
-app.get('/api/treasury/status', (_req, res) => res.json({ ok: true, ...state.treasury, ts: Date.now() }));
+app.get('/api/treasury/status', async (_req, res) => {
+  let onchain = null;
+  try { onchain = await brdgChain.getTokenStats(); } catch (_) {}
+  res.json({
+    ok: true, ...state.treasury,
+    brdg_token: onchain?.token || null,
+    brdg_treasury_balance: onchain?.treasury?.brdgBalance || null,
+    contracts: { brdg: brdgChain.BRDG_ADDRESS, vault: brdgChain.VAULT_ADDRESS },
+    ts: Date.now(),
+  });
+});
 app.get('/api/treasury/ledger', (_req, res) => res.json({ ok: true, entries: [], total: 0 }));
 app.get('/api/revenue/status', (_req, res) => res.json({ ok: true, revenue_mtd: state.treasury.earned, costs_mtd: state.treasury.spent, net: state.treasury.earned - state.treasury.spent }));
 app.get('/api/revenue/summary', (_req, res) => res.json({ ok: true, revenue_mtd: state.treasury.earned }));
@@ -894,15 +906,16 @@ app.get('/api/bossbots', (_req, res) => res.json({ ok: true, bots: bossbotMatrix
 app.get('/api/bossbots/matrix', (_req, res) => res.json({ ok: true, ...bossbotMatrix }));
 app.post('/api/bossbots/trade', (req, res) => {
   const { bot_id = 'alpha', pair, side } = req.body || {};
-  const pnlDelta = +(Math.random() * 80 - 15).toFixed(2); // realistic trade outcome
-  const won = pnlDelta > 0;
-  const bb = _bbState[bot_id] || _bbState.alpha;
-  bb.pnl = +(bb.pnl + pnlDelta).toFixed(2);
-  bb.trades++;
-  if (won) bb.wins++;
-  const trade = { id: `trade_${Date.now()}`, bot_id, pair: pair || 'BTC/USD', side: side || 'buy', pnl_delta: pnlDelta, executed: true, ts: Date.now() };
-  broadcast({ type: 'bossbots_trade', data: trade });
-  res.json({ ok: true, trade });
+  // Trading is disabled until real exchange integration (LUNO/SyncSwap) is wired.
+  // No simulated P&L — all values must come from real execution.
+  return res.status(503).json({
+    ok: false,
+    error: 'Trading disabled — awaiting real exchange integration',
+    help: 'Connect LUNO API (ZAR/BTC) or SyncSwap (BRDG/ETH on Linea) to enable live trading',
+    bot_id,
+    pair: pair || 'BTC/USD',
+    side: side || 'buy',
+  });
 });
 app.post('/api/bossbots/:id/toggle', (req, res) => {
   const bot = bossbotMatrix.bots.find(b => b.id === req.params.id);
@@ -1239,6 +1252,36 @@ app.post('/api/payments/webhook/:rail', (req, res) => {
 
 // ── ETH TREASURY (Linea L2 — KeyForge-derived wallet) ──────────────────────
 
+// ── CHECKOUT / SUBSCRIBE ────────────────────────────────────────────────────
+const payfast = require('./lib/payfast');
+
+const PLANS = {
+  starter: { name: 'Starter', price: 0, description: 'Free tier — 50 contacts, 10 invoices/mo' },
+  pro:     { name: 'Pro',     price: 499, description: 'Unlimited contacts, 50 AI tasks/day, staking' },
+  enterprise: { name: 'Enterprise', price: 2499, description: 'Unlimited everything, custom AI twin, SLA' },
+};
+
+app.get('/api/plans', (_req, res) => res.json({ ok: true, plans: PLANS, currency: 'ZAR' }));
+
+app.post('/api/checkout', (req, res) => {
+  const { plan, email, name } = req.body || {};
+  if (!plan || !PLANS[plan]) return res.status(400).json({ ok: false, error: 'Invalid plan. Options: starter, pro, enterprise' });
+  if (!email) return res.status(400).json({ ok: false, error: 'Email required' });
+
+  const p = PLANS[plan];
+  if (p.price === 0) return res.json({ ok: true, plan: 'starter', message: 'Free tier — no payment needed', redirect: '/ui.html' });
+
+  const result = payfast.buildPaymentUrl({
+    amount: p.price,
+    email,
+    firstName: name || 'Client',
+    itemName: `Bridge AI OS — ${p.name} (Monthly)`,
+    meta: JSON.stringify({ plan, email }),
+  });
+
+  res.json({ ok: true, plan, amount: p.price, currency: 'ZAR', payfast_url: result.url, payment_id: result.paymentId, sandbox: result.sandbox });
+});
+
 // Public: treasury wallet address + on-chain balance
 app.get('/api/treasury/eth/address', (_req, res) => {
   res.json({ ok: true, address: ethTreasury.getAddress(), chain: 'linea', chainId: 59144 });
@@ -1292,6 +1335,70 @@ app.post('/api/treasury/withdraw/authorize', (req, res) => {
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
+});
+
+// ── BRDG ON-CHAIN ENDPOINTS ─────────────────────────────────────────────────
+
+app.get('/api/brdg/token', async (_req, res) => {
+  try {
+    const stats = await brdgChain.getTokenStats();
+    res.json({ ok: true, ...stats });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: 'Chain read failed', detail: e.message });
+  }
+});
+
+app.get('/api/brdg/vault', async (_req, res) => {
+  try {
+    const buckets = await brdgChain.getVaultBuckets();
+    res.json({ ok: true, vault: brdgChain.VAULT_ADDRESS, buckets });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: 'Vault read failed', detail: e.message });
+  }
+});
+
+// Unified treasury view: combines off-chain state + on-chain BRDG data
+app.get('/api/treasury/full', async (_req, res) => {
+  try {
+    const [chainData, ethBal] = await Promise.all([
+      brdgChain.getTokenStats(),
+      ethTreasury.getBalance(),
+    ]);
+    res.json({
+      ok: true,
+      onchain: {
+        brdg: chainData.token,
+        treasury_brdg: chainData.treasury.brdgBalance,
+        treasury_eth: ethBal.eth,
+        vault: chainData.treasury.vault,
+        lineascan: chainData.lineascan,
+      },
+      offchain: {
+        balance_usd: state.treasury.balance,
+        earned_usd: state.treasury.earned,
+        spent_usd: state.treasury.spent,
+      },
+      ts: Date.now(),
+    });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: e.message });
+  }
+});
+
+// LLM inference endpoint (uses Kilo free tier)
+app.post('/api/llm/infer', async (req, res) => {
+  const { prompt, system } = req.body || {};
+  if (!prompt) return res.status(400).json({ ok: false, error: 'prompt required' });
+  try {
+    const result = await llm.infer(prompt, { system: system || 'You are Bridge AI, an autonomous business intelligence assistant.' });
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(503).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/llm/status', (_req, res) => {
+  res.json({ ok: true, providers: llm.getProviders(), usage: llm.getUsage(), caps: llm.getCaps() });
 });
 
 // ── DEX ENDPOINTS ───────────────────────────────────────────────────────────
@@ -1737,7 +1844,8 @@ app.get('/run/:id', (req, res) => {
       ubi_pool: _ubiPool(), ops: _opsPool(), treasury_share: _treasuryPool(), founder: _founderPool(),
     } });
   } else {
-    res.json({ ok: true, skill: id, data: { value: +(Math.random()*0.4+0.6).toFixed(3), confidence: +(Math.random()*0.3+0.7).toFixed(2), latency_ms: Math.floor(Math.random()*30+5), ts: Date.now() } });
+    const t0 = Date.now();
+    res.json({ ok: true, skill: id, data: { value: 0, confidence: 0, latency_ms: Date.now() - t0, ts: Date.now(), note: 'Skill not yet connected to real execution engine' } });
   }
 });
 app.get('/teach/:id', (req, res) => {
@@ -1797,8 +1905,8 @@ app.get('/teach/:id', (req, res) => {
     svg = `<text x="20" y="30" fill="${C.cyan}" font-family="monospace" font-size="14" font-weight="700">${skill.name}</text>
       <text x="20" y="50" fill="${C.dim}" font-family="monospace" font-size="10">${skill.description || ''}</text>
       <text x="20" y="70" fill="${C.dim}" font-family="monospace" font-size="9">Tags: ${(skill.tags||[]).join(' · ')}</text>
-      ${gauge(120,150,50,0.78,'STATUS',C.green)}${gauge(260,150,50,Math.random()*0.4+0.6,'PERF',C.cyan)}${gauge(400,150,50,Math.random()*0.3+0.7,'TRUST',C.green)}
-      ${bar(520,120,200,10,Math.random()*0.5+0.5,'Executions',C.cyan)}${bar(520,140,200,10,Math.random()*0.3+0.7,'Success Rate',C.green)}${bar(520,160,200,10,Math.random()*0.2+0.4,'Cache Hit',C.yellow)}`;
+      ${gauge(120,150,50,0.78,'STATUS',C.green)}${gauge(260,150,50,0.75,'PERF',C.cyan)}${gauge(400,150,50,0.85,'TRUST',C.green)}
+      ${bar(520,120,200,10,0.65,'Executions',C.cyan)}${bar(520,140,200,10,0.82,'Success Rate',C.green)}${bar(520,160,200,10,0.45,'Cache Hit',C.yellow)}`;
   }
 
   res.type('svg').send(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="background:${C.bg}">${svg}</svg>`);
@@ -1812,7 +1920,7 @@ app.get('/live-map', (_req, res) => res.json({ ok: true,
   circuit_breaker_tripped: false,
   treasury: { total_brdg: state.treasury.balance * 0.0078, usd: state.treasury.balance },
   treasury_snap: { total_brdg: state.treasury.balance * 0.0078 },
-  nodes: swarmAgents.map(a => ({ id: a.id, name: a.name, layer: a.layer, status: a.status, x: Math.random() * 800, y: Math.random() * 400 })),
+  nodes: swarmAgents.map((a, i) => ({ id: a.id, name: a.name, layer: a.layer, status: a.status, x: 100 + (i % 4) * 200, y: 100 + Math.floor(i / 4) * 150 })),
   edges: swarmStrategies.flatMap(s => s.agents.slice(1).map((a, i) => ({ from: `agent-${s.agents[0]}`, to: `agent-${a}` }))),
 }));
 
@@ -2148,26 +2256,13 @@ const PARTNER_PROGRAMS = [
 // Partner tracking state
 const partnerTracking = new Map();
 PARTNER_PROGRAMS.forEach(p => {
-  partnerTracking.set(p.id, { clicks: Math.floor(Math.random() * 200), signups: Math.floor(Math.random() * 30), revenue: +(Math.random() * 2000).toFixed(2), commission_earned: 0 });
+  partnerTracking.set(p.id, { clicks: 0, signups: 0, revenue: 0, commission_earned: 0 });
   const t = partnerTracking.get(p.id);
   t.commission_earned = p.type === 'flat' ? +(t.signups * (p.flat_reward || 0)).toFixed(2) : +(t.revenue * (p.commission || 0)).toFixed(2);
 });
 
-// Auto-grow partner affiliate metrics
-setInterval(() => {
-  for (const [id, t] of partnerTracking) {
-    if (Math.random() > 0.6) {
-      t.clicks += Math.floor(Math.random() * 3);
-      if (Math.random() > 0.7) {
-        t.signups++;
-        const prog = PARTNER_PROGRAMS.find(p => p.id === id);
-        const sale = (prog?.avg_sale || 50) * (0.5 + Math.random());
-        t.revenue += sale;
-        t.commission_earned += prog?.type === 'flat' ? (prog?.flat_reward || 0) : sale * (prog?.commission || 0.1);
-      }
-    }
-  }
-}, 20000).unref();
+// Partner metrics are tracked from real click/signup events only.
+// No simulated growth — call POST /api/affiliate/partners/:id/track to record real events.
 
 app.get('/api/affiliate/partners', (_req, res) => res.json({ ok: true,
   partners: PARTNER_PROGRAMS.map(p => ({
@@ -2211,12 +2306,12 @@ app.get('/api/affiliate/logistics', (_req, res) => {
 ['marvin','ryan','supac','bridge_team','ehsa_ops'].forEach((name, i) => {
   const refs = [45, 128, 12, 230, 67][i];
   const tier = getAffTier(refs);
-  const earned = refs * (15 + Math.random() * 30) * AFF_TIERS[tier].commission;
+  const earned = refs * 25 * AFF_TIERS[tier].commission; // fixed avg sale for seed data
   affiliates.set(name, {
     id: name, name: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' '),
     code: `AFF-${name.toUpperCase().slice(0, 4)}-${1000 + i}`,
-    tier, referrals: refs, conversions: Math.floor(refs * (0.3 + Math.random() * 0.4)),
-    clicks: refs * (5 + Math.floor(Math.random() * 10)),
+    tier, referrals: refs, conversions: Math.floor(refs * 0.35),
+    clicks: refs * 7,
     earned: +earned.toFixed(2), paid: +(earned * 0.8).toFixed(2), pending: +(earned * 0.2).toFixed(2),
     currency: 'USD', joined: Date.now() - (180 - i * 30) * 86400000,
     links: [`https://go.ai-os.co.za/?ref=${name}`, `https://ai-os.co.za/?ref=${name}`],
@@ -2225,28 +2320,24 @@ app.get('/api/affiliate/logistics', (_req, res) => {
   });
 });
 
-// Autonomous affiliate growth loop
-function affiliateLoop() {
+// Affiliate growth is event-driven from real referral conversions.
+// Record real affiliate events via POST /api/affiliate/:id/conversion
+function recordAffiliateConversion(affId, saleValue) {
+  const aff = affiliates.get(affId);
+  if (!aff) return null;
   affCycle++;
-  for (const [, aff] of affiliates) {
-    if (Math.random() > 0.7) {
-      aff.clicks += Math.floor(Math.random() * 5);
-      if (Math.random() > 0.6) {
-        aff.referrals++;
-        aff.tier = getAffTier(aff.referrals);
-        const commission = AFF_TIERS[aff.tier].commission;
-        const saleValue = 49 + Math.random() * 200;
-        const payout = +(saleValue * commission).toFixed(2);
-        aff.earned += payout;
-        aff.pending += payout;
-        if (Math.random() > 0.5) aff.conversions++;
-        affiliatePayouts.push({ affiliate: aff.id, amount: payout, sale: +saleValue.toFixed(2), commission, tier: aff.tier, ts: Date.now() });
-        if (affiliatePayouts.length > 500) affiliatePayouts.shift();
-      }
-    }
-  }
+  aff.referrals++;
+  aff.conversions++;
+  aff.clicks++;
+  aff.tier = getAffTier(aff.referrals);
+  const commission = AFF_TIERS[aff.tier].commission;
+  const payout = +(saleValue * commission).toFixed(2);
+  aff.earned += payout;
+  aff.pending += payout;
+  affiliatePayouts.push({ affiliate: aff.id, amount: payout, sale: +saleValue.toFixed(2), commission, tier: aff.tier, ts: Date.now() });
+  if (affiliatePayouts.length > 500) affiliatePayouts.shift();
+  return { aff, payout };
 }
-setInterval(affiliateLoop, 15000).unref();
 
 // Endpoints
 app.get('/api/affiliate/program', (_req, res) => res.json({ ok: true,

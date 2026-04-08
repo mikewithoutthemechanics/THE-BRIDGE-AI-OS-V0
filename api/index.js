@@ -289,10 +289,10 @@ module.exports = async (req, res) => {
   if (p === '/orchestrator/status') {
     const agents = agentNames.map(name => ({
       id: `agent_${name}`, name, status: 'active',
-      tasks_completed: Math.floor(Math.random() * 500),
-      uptime_s: Math.floor(Math.random() * 86400),
+      tasks_completed: 0,
+      uptime_s: Math.floor(process.uptime()),
     }));
-    return json(res, { status: 'running', agents: agents.length, active_agents: agents.length, swarms: 2, queue_depth: Math.floor(Math.random() * 20), agents_list: agents, ts: ts() });
+    return json(res, { status: 'running', agents: agents.length, active_agents: agents.length, swarms: 2, queue_depth: 0, agents_list: agents, ts: ts() });
   }
 
   // ── Billing ──
@@ -730,7 +730,7 @@ module.exports = async (req, res) => {
         { id: 'pro', name: 'Pro', price: 149, count: 51, revenue: 7599 },
         { id: 'enterprise', name: 'Enterprise', price: 499, count: 27, revenue: 13473 },
       ],
-      revenue_trend: Array.from({length: 12}, (_, i) => ({ month: i + 1, revenue: Math.floor(20000 + Math.random() * 10000), costs: Math.floor(3000 + Math.random() * 2000) })),
+      revenue_trend: Array.from({length: 12}, (_, i) => ({ month: i + 1, revenue: 0, costs: 0 })),
       ts: ts(),
     });
   }
@@ -745,11 +745,11 @@ module.exports = async (req, res) => {
       const agent = agentNames[i % agentNames.length];
       const evtTs = now - (50 - i) * 6000;
       let data;
-      if (type === 'lead_delivered') data = { agent, lead_id: `lead_${evtTs}`, value: +(Math.random() * 500 + 50).toFixed(2) };
-      else if (type === 'ai_inference') data = { agent, model: 'bridge-llm', tokens: Math.floor(Math.random() * 800 + 100), latency_ms: Math.floor(Math.random() * 300 + 50) };
+      if (type === 'lead_delivered') data = { agent, lead_id: `lead_${evtTs}`, value: 0 };
+      else if (type === 'ai_inference') data = { agent, model: 'bridge-llm', tokens: 0, latency_ms: 0 };
       else if (type === 'swarm_dispatch') data = { agent, task: `task_${evtTs}`, priority: ['low', 'medium', 'high'][i % 3] };
-      else if (type === 'task_completed') data = { agent, task: `task_${evtTs - 5000}`, duration_ms: Math.floor(Math.random() * 2000 + 200) };
-      else data = { balance: +(treasuryBalance + i * 3.2).toFixed(2), delta: +(Math.random() * 200 - 50).toFixed(2), currency: 'USD' };
+      else if (type === 'task_completed') data = { agent, task: `task_${evtTs - 5000}`, duration_ms: 0 };
+      else data = { balance: +treasuryBalance.toFixed(2), delta: 0, currency: 'USD' };
       events.push({ id: `evt_${i}`, type, data, ts: evtTs });
     }
     return json(res, { events, count: events.length, ts: ts() });
@@ -766,7 +766,7 @@ module.exports = async (req, res) => {
       priority: body.priority || 'medium',
       status: 'dispatched',
       dispatched_at: new Date().toISOString(),
-      estimated_completion_ms: Math.floor(Math.random() * 20000 + 10000),
+      estimated_completion_ms: 15000,
     });
   }
 
@@ -779,7 +779,7 @@ module.exports = async (req, res) => {
       priority: ['high', 'medium', 'medium', 'low', 'high'][i],
       status: i === 0 ? 'running' : 'queued',
       queued_at: new Date(Date.now() - i * 30000).toISOString(),
-      elapsed_ms: i === 0 ? Math.floor(Math.random() * 15000) : 0,
+      elapsed_ms: 0,
     }));
     return json(res, { queue, count: queue.length, ts: ts() });
   }
@@ -841,7 +841,7 @@ module.exports = async (req, res) => {
   // ── /api/treasury/payments ──
   if (p === '/api/treasury/payments') {
     const payments = Array.from({ length: 8 }, (_, i) => ({
-      id: `pay_${1000 + i}`, amount: +(Math.random() * 500 + 50).toFixed(2), currency: 'ZAR',
+      id: `pay_${1000 + i}`, amount: 0, currency: 'ZAR',
       status: ['completed', 'completed', 'pending', 'completed'][i % 4],
       method: ['PayFast', 'EFT', 'Crypto', 'PayFast'][i % 4],
       date: new Date(Date.now() - i * 86400000).toISOString().slice(0, 10),
@@ -859,8 +859,8 @@ module.exports = async (req, res) => {
     const agents = agentNames.map((n, i) => ({
       id: `agent_${i}`, name: n, status: 'active',
       layer: i < 3 ? 'L1' : i < 6 ? 'L2' : 'L3',
-      tasks_completed: Math.floor(Math.random() * 100) + 10,
-      uptime_pct: +(95 + Math.random() * 5).toFixed(1),
+      tasks_completed: 0,
+      uptime_pct: 99.9,
     }));
     return json(res, { agents, count: agents.length, swarms: 2, ts: ts() });
   }
@@ -2261,8 +2261,8 @@ module.exports = async (req, res) => {
   // ── Dashboard API: /live-map ──
   if (p === '/live-map') {
     return json(res, {
-      nodes: agentNames.map((n, i) => ({ id: n, label: n.toUpperCase(), type: i < 3 ? 'L3' : i < 6 ? 'L2' : 'L1', status: 'active', tasks: Math.floor(Math.random() * 50 + 10) })),
-      edges: agentNames.slice(1).map((n, i) => ({ from: agentNames[i], to: n, weight: +(Math.random()).toFixed(2) })),
+      nodes: agentNames.map((n, i) => ({ id: n, label: n.toUpperCase(), type: i < 3 ? 'L3' : i < 6 ? 'L2' : 'L1', status: 'active', tasks: 0 })),
+      edges: agentNames.slice(1).map((n, i) => ({ from: agentNames[i], to: n, weight: 1 })),
       service_nodes: [
         { id: 'gateway', port: 8080, status: 'up' }, { id: 'brain', port: 8000, status: 'up' },
         { id: 'treasury', port: 0, status: 'up' }, { id: 'svg_engine', port: 7070, status: 'serverless' },
@@ -2355,7 +2355,7 @@ module.exports = async (req, res) => {
     const skillId = decodeURIComponent(p.slice(5));
     return json(res, {
       ok: true, skill_id: skillId, status: 'executed',
-      result: { output: `Skill ${skillId} executed successfully`, cycles: Math.floor(Math.random() * 100 + 1), duration_ms: Math.floor(Math.random() * 500 + 50) },
+      result: { output: `Skill ${skillId} executed successfully`, cycles: 0, duration_ms: 0 },
       ts: ts(),
     });
   }
@@ -2365,9 +2365,9 @@ module.exports = async (req, res) => {
     return json(res, {
       engine: 'bridge-svg-engine', version: '2.5.0', status: 'serverless',
       skills_loaded: 1266, skills_active: 71,
-      cpu_pct: +(Math.random() * 30 + 5).toFixed(1),
-      mem_mb: Math.floor(Math.random() * 200 + 100),
-      requests_per_min: Math.floor(Math.random() * 40 + 10),
+      cpu_pct: 0,
+      mem_mb: Math.floor(process.memoryUsage().rss / 1024 / 1024),
+      requests_per_min: 0,
       uptime_s: Math.floor(os.uptime()),
       ts: ts(),
     });
@@ -2406,13 +2406,13 @@ module.exports = async (req, res) => {
   // ── Dashboard API: /swarm/health ──
   if (p === '/swarm/health' || p.startsWith('/swarm/')) {
     return json(res, {
-      health_score: +(Math.random() * 0.3 + 0.65).toFixed(3), ok: true,
+      health_score: 1.000, ok: true,
       agents: agentNames.length, active: agentNames.length,
       components: {
-        queue_latency_ms: Math.floor(Math.random() * 80 + 20),
-        worker_utilization: +(Math.random() * 0.4 + 0.5).toFixed(2),
-        task_profitability: +(Math.random() * 0.02 + 0.01).toFixed(4),
-        agent_failure_rate: +(Math.random() * 0.05).toFixed(3),
+        queue_latency_ms: 0,
+        worker_utilization: 0,
+        task_profitability: 0,
+        agent_failure_rate: 0,
       },
       ts: ts(),
     });
@@ -2420,7 +2420,7 @@ module.exports = async (req, res) => {
 
   // ── Dashboard API: /econ/circuit-breaker and /econ/reset-breaker ──
   if (p === '/econ/circuit-breaker') {
-    return json(res, { state: 'closed', trips: 0, last_trip: null, threshold: 0.15, current_rate: +(Math.random() * 0.05).toFixed(3), ts: ts() });
+    return json(res, { state: 'closed', trips: 0, last_trip: null, threshold: 0.15, current_rate: 0, ts: ts() });
   }
   if (p === '/econ/reset-breaker' && req.method === 'POST') {
     return json(res, { ok: true, state: 'closed', reset_at: new Date().toISOString(), ts: ts() });

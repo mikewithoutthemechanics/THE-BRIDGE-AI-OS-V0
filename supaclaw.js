@@ -23,6 +23,7 @@ const SYSTEM = {
 };
 
 // ── STATE ────────────────────────────────────────────────────────────────────
+const scOpportunityQueue = []; // Real opportunities pushed via API
 const runtime = {
   cycle: 0,
   active: true,
@@ -66,7 +67,7 @@ function evolveTwins() {
 
   // Mutate all slightly
   twins.forEach(t => {
-    t.fitness = Math.min(1, Math.max(0, t.fitness + (Math.random() - 0.48) * 0.05));
+    t.fitness = Math.min(1, Math.max(0, t.fitness + (top.fitness - t.fitness) * 0.02));
   });
 
   runtime.twins_evolved++;
@@ -101,52 +102,26 @@ async function masterLoop(state, broadcast) {
   const t0 = Date.now();
   runtime.cycle++;
 
-  // L1: SCAN ENVIRONMENT
+  // L1: SCAN ENVIRONMENT — real metrics, no simulated values
   const scan = {
     ts: Date.now(),
-    system_health: 0.82 + Math.random() * 0.15,
-    latency_avg: 12 + Math.random() * 30,
+    system_health: 0.95, // TODO: compute from actual service health checks
+    latency_avg: 15,     // TODO: compute from actual request latency
     agents_active: 33,
     treasury: state.treasury.balance,
-    market_sentiment: Math.random(),
+    market_sentiment: 0.5, // Neutral until real market data feed connected
   };
   runtime.last_scan = scan;
 
   // L1: REASON
   const knowledge = {
-    market_trend: scan.market_sentiment > 0.5 ? 'bullish' : 'bearish',
+    market_trend: 'neutral', // No simulated market sentiment
     system_state: scan.system_health > 0.7 ? 'healthy' : 'degraded',
     treasury_runway_months: state.treasury.balance / (state.treasury.spent || 4210),
   };
 
-  // L2: GENERATE OPPORTUNITIES
-  const opportunities = [];
-
-  // Trading signals
-  if (Math.random() > 0.4) {
-    opportunities.push({
-      id: `opp_trade_${runtime.cycle}`,
-      type: 'trade',
-      source: knowledge.market_trend === 'bullish' ? 'quant.momentum' : 'quant.meanrevert',
-      value: +(Math.random() * 500 - 50).toFixed(2),
-      risk: +(Math.random() * 0.6).toFixed(2),
-      ethical_score: 0,
-      system_health: scan.system_health,
-    });
-  }
-
-  // Business leads
-  if (Math.random() > 0.6) {
-    opportunities.push({
-      id: `opp_biz_${runtime.cycle}`,
-      type: 'business',
-      source: 'biz.marketing',
-      value: +(Math.random() * 200 + 50).toFixed(2),
-      risk: +(Math.random() * 0.3).toFixed(2),
-      ethical_score: 0,
-      system_health: scan.system_health,
-    });
-  }
+  // L2: PROCESS REAL OPPORTUNITIES from the opportunity queue
+  const opportunities = scOpportunityQueue.splice(0, 10);
 
   // System optimization
   if (scan.latency_avg > 30) {
@@ -183,7 +158,7 @@ async function masterLoop(state, broadcast) {
   // L3: EXECUTE
   let cycle_revenue = 0;
   for (const exec of executions) {
-    const revenue = Math.max(0, exec.value * (0.7 + Math.random() * 0.6));
+    const revenue = Math.max(0, exec.value || 0);
     cycle_revenue += revenue;
     runtime.last_execution = { id: exec.id, type: exec.type, revenue: +revenue.toFixed(2), ts: Date.now() };
   }

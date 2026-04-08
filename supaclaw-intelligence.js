@@ -32,7 +32,7 @@ function cognitiveRoute(context) {
   const selected = pool[Math.floor(complexity * pool.length) % pool.length];
   const expectedValue = (1 - (complexity * 0.3)) * urgency * (user_tier === 'PLATFORM' ? 5 : user_tier === 'ENTERPRISE' ? 3 : 1);
   ledger.total_decisions++;
-  return { agent: selected, action: task_type, expected_value: +expectedValue.toFixed(2), confidence: +(0.7 + Math.random() * 0.25).toFixed(2) };
+  return { agent: selected, action: task_type, expected_value: +expectedValue.toFixed(2), confidence: 0.85 };
 }
 
 // ── OPPORTUNITY ENGINE (OE-2) ───────────────────────────────────────────────
@@ -42,9 +42,7 @@ function scanOpportunities(systemState) {
   if (systemState.agents_active > 5) opps.push({ type: 'upsell', target: 'PRO→ENTERPRISE', value: 450, trigger: 'agent_count_exceeded' });
   if (systemState.api_calls > 8000) opps.push({ type: 'upsell', target: 'api_tier_upgrade', value: 200, trigger: 'api_limit_approaching' });
   // Automation opportunities
-  opps.push({ type: 'automation', target: 'recurring_task', value: +(Math.random() * 100 + 20).toFixed(2), trigger: 'pattern_detected' });
-  // Marketplace opportunities
-  if (Math.random() > 0.5) opps.push({ type: 'marketplace', target: 'agent_lease', value: +(Math.random() * 50 + 10).toFixed(2), trigger: 'demand_signal' });
+  opps.push({ type: 'automation', target: 'recurring_task', value: 50, trigger: 'pattern_detected' });
   return opps;
 }
 
@@ -81,7 +79,7 @@ function intelligenceLoop(state, broadcast) {
   ilCycle++;
 
   // Scan opportunities
-  const opps = scanOpportunities({ agents_active: 33, api_calls: Math.floor(Math.random() * 12000), treasury: state.treasury.balance });
+  const opps = scanOpportunities({ agents_active: 33, api_calls: 0, treasury: state.treasury.balance });
 
   // Score each
   opps.forEach(opp => {

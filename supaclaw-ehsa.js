@@ -12,6 +12,7 @@ const pipeline = [];
 const quotes = [];
 const campaigns = [];
 const osintFindings = [];
+const ehsaScanQueue = []; // Real OSINT findings submitted via API
 let ehsaCycle = 0;
 
 // ── PRICING ENGINE ──────────────────────────────────────────────────────────
@@ -63,35 +64,28 @@ function scoreLead(lead) {
 function ehsaRevenueLoop(state, broadcast) {
   ehsaCycle++;
 
-  // OSINT: Discover opportunities
-  if (Math.random() > 0.5) {
-    const sources = ['gov_tender', 'ngo_grant', 'hospital_expansion', 'clinic_request', 'partner_referral'];
-    const regions = ['Gauteng', 'KZN', 'Western Cape', 'Limpopo', 'Eastern Cape', 'Mpumalanga', 'Kenya', 'Nigeria', 'Ghana'];
-    const finding = {
-      id: uid('osint'), source: sources[Math.floor(Math.random() * sources.length)],
-      region: regions[Math.floor(Math.random() * regions.length)],
-      value: Math.floor(Math.random() * 200000 + 20000),
-      description: `Healthcare opportunity detected in ${regions[Math.floor(Math.random() * regions.length)]}`,
-      ts: Date.now(),
-    };
+  // OSINT: Process real findings from the ehsa scan queue (populated by external scrapers/integrations)
+  // No simulated discoveries — real opportunities come via POST /api/ehsa/osint/submit
+  const pendingFindings = ehsaScanQueue.splice(0, 5);
+  pendingFindings.forEach(finding => {
+    finding.id = finding.id || uid('osint');
+    finding.ts = finding.ts || Date.now();
     osintFindings.push(finding);
     if (osintFindings.length > 100) osintFindings.shift();
-  }
+  });
 
-  // Lead Gen: Convert OSINT to leads
-  if (osintFindings.length > 0 && Math.random() > 0.4) {
-    const f = osintFindings[osintFindings.length - 1];
-    const types = ['government', 'ngo', 'private', 'hospital'];
+  // Lead Gen: Convert real OSINT findings to leads (only new unprocessed findings)
+  pendingFindings.forEach(f => {
     const lead = scoreLead({
-      id: uid('lead'), name: `${f.region} Health ${types[Math.floor(Math.random() * types.length)]}`,
-      type: types[Math.floor(Math.random() * types.length)], region: f.region,
-      budget: f.value, urgency: f.value > 100000 ? 'high' : 'medium',
-      decision_maker: Math.random() > 0.4, source: f.source, osint_id: f.id,
+      id: uid('lead'), name: f.name || `${f.region} Health Opportunity`,
+      type: f.type || 'private', region: f.region || 'Unknown',
+      budget: f.value || 0, urgency: (f.value || 0) > 100000 ? 'high' : 'medium',
+      decision_maker: f.decision_maker || false, source: f.source || 'manual', osint_id: f.id,
       status: 'new', created: Date.now(), nurture_count: 0,
     });
     leads.push(lead);
     if (leads.length > 200) leads.shift();
-  }
+  });
 
   // Nurture: Progress leads
   leads.filter(l => l.stage === 'nurturing' && l.nurture_count < 5).forEach(l => {
@@ -99,11 +93,11 @@ function ehsaRevenueLoop(state, broadcast) {
     if (l.nurture_count >= 3 && l.score > 40) l.stage = 'qualified';
   });
 
-  // Auto-Quote: Generate quotes for qualified leads
+  // Auto-Quote: Generate quotes for qualified leads (deterministic — first matching service)
   leads.filter(l => l.stage === 'qualified' && !l.quoted).forEach(l => {
     const services = Object.keys(SERVICES);
-    const svc = services[Math.floor(Math.random() * services.length)];
-    const q = generateQuote(svc, l.name, l.region.includes('rural') ? 'rural' : 'urban', Math.ceil(Math.random() * 3), 12);
+    const svc = services[0]; // Default to first service; user selects via API
+    const q = generateQuote(svc, l.name, (l.region || '').includes('rural') ? 'rural' : 'urban', 1, 12);
     q.lead_id = l.id;
     quotes.push(q);
     l.quoted = true;
@@ -111,28 +105,10 @@ function ehsaRevenueLoop(state, broadcast) {
     pipeline.push({ lead_id: l.id, quote_id: q.id, stage: 'proposal', value: q.total, ts: Date.now() });
   });
 
-  // Auto-Close: Some proposals close
-  pipeline.filter(p => p.stage === 'proposal').forEach(p => {
-    if (Math.random() > 0.7) {
-      p.stage = 'closed_won';
-      const lead = leads.find(l => l.id === p.lead_id);
-      if (lead) lead.stage = 'customer';
-      state.treasury.balance += p.value * 0.01; // ZAR to USD rough
-      state.treasury.earned += p.value * 0.01;
-    }
-  });
+  // Close: proposals are closed via API call POST /api/ehsa/pipeline/:id/close
+  // No auto-close with Math.random() — revenue must come from real deal closure.
 
-  // Campaign: Auto-run marketing
-  if (ehsaCycle % 5 === 0) {
-    campaigns.push({
-      id: uid('camp'), type: ['email', 'sms', 'whatsapp', 'social'][Math.floor(Math.random() * 4)],
-      target: `${Math.floor(Math.random() * 500 + 100)} health organizations`,
-      sent: Math.floor(Math.random() * 300 + 50), opens: Math.floor(Math.random() * 150),
-      clicks: Math.floor(Math.random() * 50), leads_generated: Math.floor(Math.random() * 10),
-      ts: Date.now(),
-    });
-    if (campaigns.length > 50) campaigns.shift();
-  }
+  // Campaigns are created via API POST /api/ehsa/campaigns, not auto-generated.
 
   if (broadcast) broadcast({ type: 'ehsa_revenue_cycle', cycle: ehsaCycle, leads: leads.length, pipeline: pipeline.length, quotes: quotes.length });
 }
