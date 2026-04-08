@@ -2531,6 +2531,15 @@ safeLoadModule('./supaclaw-ehsa.js',      'EHSA autonomous revenue engine (OSINT
 safeLoadModule('./supaclaw-usl.js',       'USL (Universal Share Layer) + Glyph (HD SVG engine)');
 safeLoadModule('./supaclaw-intelligence.js','Intelligence Layer IL-0 — pricing, routing, scoring, monetization');
 
+// ── AGENT ECONOMY (Agent-to-Agent BRDG marketplace) ──────────────────────────
+try {
+  const { registerEconomyRoutes } = require('./lib/economy-routes');
+  registerEconomyRoutes(app);
+  console.log('[BRAIN] Agent economy ACTIVE — ledger, task market, BRDG transfers');
+} catch (e) {
+  console.warn('[BRAIN] Agent economy failed to load:', e.message);
+}
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });

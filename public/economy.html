@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Economy | Bridge AI</title>
+  <meta name="description" content="Agent Economy Dashboard — Bridge AI OS">
+  <meta property="og:title" content="Agent Economy | Bridge AI">
+  <meta property="og:description" content="Agent-to-agent BRDG economy dashboard — Bridge AI OS">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050a0f;
+      color: #c8d6e5;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* Navigation bar */
+    .top-nav {
+      background: #0a1520;
+      border-bottom: 1px solid #1a2d40;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .top-nav a {
+      color: #00c8ff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+    .top-nav a:hover { color: #00e57b; }
+    .top-nav .sep { color: #1a2d40; }
+    .top-nav .brand {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #00e57b;
+      margin-right: 8px;
+    }
+
+    /* Dashboard layout */
+    .dashboard {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      font-size: 1.6rem;
+      color: #00c8ff;
+      font-weight: 700;
+    }
+    .header .refresh-info {
+      font-size: 0.75rem;
+      color: #4a6580;
+      text-align: right;
+    }
+    .header .refresh-info span { color: #00c8ff; }
+
+    /* KPI cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+    .kpi-card {
+      background: #0a1520;
+      border: 1px solid #1a2d40;
+      border-radius: 10px;
+      padding: 18px;
+      transition: border-color 0.3s;
+    }
+    .kpi-card:hover { border-color: #00c8ff40; }
+    .kpi-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #4a6580;
+      margin-bottom: 6px;
+    }
+    .kpi-value {
+      font-size: 1.7rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #00c8ff;
+    }
+    .kpi-value.green { color: #00e57b; }
+    .kpi-value.amber { color: #ffb347; }
+    .kpi-value.red { color: #ff4757; }
+
+    /* Section titles */
+    .section-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #4a6580;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1a2d40;
+    }
+
+    /* Content grid */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .panel {
+      background: #0a1520;
+      border: 1px solid #1a2d40;
+      border-radius: 10px;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      text-align: left;
+      padding: 8px 10px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #4a6580;
+      border-bottom: 1px solid #1a2d40;
+      font-weight: 600;
+    }
+    td {
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      color: #c8d6e5;
+      border-bottom: 1px solid #0f1f2e;
+    }
+    tr:hover td { background: #0f1f2e; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-open { background: #00e57b20; color: #00e57b; }
+    .badge-claimed { background: #00c8ff20; color: #00c8ff; }
+    .badge-completed { background: #4a658020; color: #4a6580; }
+    .badge-worker { background: #00c8ff15; color: #00c8ff; }
+    .badge-poster { background: #00e57b15; color: #00e57b; }
+    .badge-system { background: #ffb34715; color: #ffb347; }
+    .badge-orchestrator { background: #ff475715; color: #ff4757; }
+
+    .amount { color: #00e57b; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .amount-out { color: #ff4757; }
+
+    /* Transaction flow */
+    .flow-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid #0f1f2e;
+      font-size: 0.82rem;
+    }
+    .flow-item:last-child { border-bottom: none; }
+    .flow-arrow { color: #4a6580; flex-shrink: 0; }
+    .flow-from, .flow-to { color: #00c8ff; font-weight: 500; }
+    .flow-amount { margin-left: auto; color: #00e57b; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .flow-type {
+      font-size: 0.68rem;
+      color: #4a6580;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .flow-time { font-size: 0.7rem; color: #3a5570; flex-shrink: 0; }
+
+    /* Loading / error states */
+    .loading { color: #4a6580; font-style: italic; padding: 12px 0; }
+    .error-msg { color: #ff4757; font-size: 0.82rem; padding: 8px 0; }
+
+    .scroll-container {
+      max-height: 360px;
+      overflow-y: auto;
+    }
+    .scroll-container::-webkit-scrollbar { width: 4px; }
+    .scroll-container::-webkit-scrollbar-track { background: #0a1520; }
+    .scroll-container::-webkit-scrollbar-thumb { background: #1a2d40; border-radius: 2px; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .content-grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .dashboard { padding: 16px; }
+      .header h1 { font-size: 1.3rem; }
+      .kpi-value { font-size: 1.3rem; }
+    }
+    @media (max-width: 480px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .kpi-card { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav">
+    <span class="brand">Bridge AI</span>
+    <a href="/index.html">Home</a>
+    <span class="sep">|</span>
+    <a href="/aoe-dashboard.html">AOE Dashboard</a>
+    <span class="sep">|</span>
+    <a href="/treasury-dashboard.html">Treasury</a>
+    <span class="sep">|</span>
+    <a href="/agents.html">Agents</a>
+    <span class="sep">|</span>
+    <span style="color:#00e57b; font-weight:600; font-size:0.85rem;">Economy</span>
+  </nav>
+
+  <div class="dashboard">
+    <div class="header">
+      <h1>Agent Economy Dashboard</h1>
+      <div class="refresh-info">
+        Auto-refresh: <span id="countdown">15</span>s<br>
+        Last update: <span id="lastUpdate">--</span>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total BRDG in System</div>
+        <div class="kpi-value" id="kpi-total-supply">--</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Transactions</div>
+        <div class="kpi-value green" id="kpi-total-txns">--</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Burned</div>
+        <div class="kpi-value red" id="kpi-total-burned">--</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Fees Collected</div>
+        <div class="kpi-value amber" id="kpi-total-fees">--</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active Tasks</div>
+        <div class="kpi-value green" id="kpi-active-tasks">--</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active Agents</div>
+        <div class="kpi-value" id="kpi-active-agents">--</div>
+      </div>
+    </div>
+
+    <!-- Leaderboard + Open Tasks -->
+    <div class="content-grid">
+      <div class="panel">
+        <div class="section-title">Agent Leaderboard</div>
+        <div class="scroll-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Agent</th>
+                <th>Type</th>
+                <th>Balance</th>
+                <th>Earned</th>
+                <th>Tasks</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+              <tr><td colspan="6" class="loading">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="section-title">Open Tasks</div>
+        <div class="scroll-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Reward</th>
+                <th>Poster</th>
+                <th>Status</th>
+                <th>Posted</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-body">
+              <tr><td colspan="5" class="loading">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction Flow -->
+    <div class="panel">
+      <div class="section-title">Transaction Flow (Recent)</div>
+      <div class="scroll-container" id="flow-container">
+        <div class="loading">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var REFRESH_INTERVAL = 15;
+      var countdownEl = document.getElementById('countdown');
+      var lastUpdateEl = document.getElementById('lastUpdate');
+      var timer = REFRESH_INTERVAL;
+
+      // --- Safe DOM helpers ---
+      function clearChildren(el) {
+        while (el.firstChild) { el.removeChild(el.firstChild); }
+      }
+
+      function createEl(tag, attrs, text) {
+        var el = document.createElement(tag);
+        if (attrs) {
+          Object.keys(attrs).forEach(function (k) {
+            if (k === 'className') { el.className = attrs[k]; }
+            else { el.setAttribute(k, attrs[k]); }
+          });
+        }
+        if (text !== undefined && text !== null) { el.textContent = String(text); }
+        return el;
+      }
+
+      function formatNumber(n) {
+        if (n === null || n === undefined) return '--';
+        return Number(n).toLocaleString();
+      }
+
+      function formatBRDG(n) {
+        if (n === null || n === undefined) return '--';
+        return Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' BRDG';
+      }
+
+      function relativeTime(ts) {
+        if (!ts) return '--';
+        var diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+        if (diff < 60) return diff + 's ago';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        return Math.floor(diff / 86400) + 'd ago';
+      }
+
+      function typeBadgeClass(type) {
+        var t = (type || '').toLowerCase();
+        if (t === 'worker') return 'badge badge-worker';
+        if (t === 'poster' || t === 'requester') return 'badge badge-poster';
+        if (t === 'system' || t === 'treasury') return 'badge badge-system';
+        if (t === 'orchestrator') return 'badge badge-orchestrator';
+        return 'badge badge-worker';
+      }
+
+      function statusBadgeClass(status) {
+        var s = (status || '').toLowerCase();
+        if (s === 'open') return 'badge badge-open';
+        if (s === 'claimed' || s === 'in_progress') return 'badge badge-claimed';
+        return 'badge badge-completed';
+      }
+
+      // --- Fetch helpers ---
+      function fetchJSON(url) {
+        return fetch(url).then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        });
+      }
+
+      // --- KPI Stats ---
+      function loadStats() {
+        fetchJSON('/api/economy/stats').then(function (data) {
+          document.getElementById('kpi-total-supply').textContent = formatBRDG(data.totalSupply);
+          document.getElementById('kpi-total-txns').textContent = formatNumber(data.totalTransactions);
+          document.getElementById('kpi-total-burned').textContent = formatBRDG(data.totalBurned);
+          document.getElementById('kpi-total-fees').textContent = formatBRDG(data.totalFees);
+          document.getElementById('kpi-active-tasks').textContent = formatNumber(data.activeTasks);
+          document.getElementById('kpi-active-agents').textContent = formatNumber(data.activeAgents);
+        }).catch(function (err) {
+          console.warn('Stats fetch failed:', err.message);
+        });
+      }
+
+      // --- Leaderboard ---
+      function loadLeaderboard() {
+        var tbody = document.getElementById('leaderboard-body');
+        fetchJSON('/api/economy/balances').then(function (data) {
+          clearChildren(tbody);
+          var agents = Array.isArray(data) ? data : (data.agents || []);
+          if (agents.length === 0) {
+            var tr = createEl('tr');
+            var td = createEl('td', { colspan: '6', className: 'loading' }, 'No agents found');
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            return;
+          }
+          agents.sort(function (a, b) { return (b.balance || 0) - (a.balance || 0); });
+          agents.forEach(function (agent, i) {
+            var tr = createEl('tr');
+            tr.appendChild(createEl('td', null, i + 1));
+            tr.appendChild(createEl('td', null, agent.name || agent.id || 'Unknown'));
+
+            var typeTd = createEl('td');
+            typeTd.appendChild(createEl('span', { className: typeBadgeClass(agent.type) }, agent.type || 'agent'));
+            tr.appendChild(typeTd);
+
+            var balTd = createEl('td');
+            balTd.appendChild(createEl('span', { className: 'amount' }, formatBRDG(agent.balance)));
+            tr.appendChild(balTd);
+
+            var earnTd = createEl('td');
+            earnTd.appendChild(createEl('span', { className: 'amount' }, formatBRDG(agent.earned)));
+            tr.appendChild(earnTd);
+
+            tr.appendChild(createEl('td', null, formatNumber(agent.tasksCompleted)));
+            tbody.appendChild(tr);
+          });
+        }).catch(function (err) {
+          clearChildren(tbody);
+          var tr = createEl('tr');
+          tr.appendChild(createEl('td', { colspan: '6', className: 'error-msg' }, 'Failed to load: ' + err.message));
+          tbody.appendChild(tr);
+        });
+      }
+
+      // --- Open Tasks ---
+      function loadTasks() {
+        var tbody = document.getElementById('tasks-body');
+        fetchJSON('/api/economy/tasks?status=open').then(function (data) {
+          clearChildren(tbody);
+          var tasks = Array.isArray(data) ? data : (data.tasks || []);
+          if (tasks.length === 0) {
+            var tr = createEl('tr');
+            tr.appendChild(createEl('td', { colspan: '5', className: 'loading' }, 'No open tasks'));
+            tbody.appendChild(tr);
+            return;
+          }
+          tasks.forEach(function (task) {
+            var tr = createEl('tr');
+            tr.appendChild(createEl('td', null, task.title || task.name || 'Untitled'));
+
+            var rewardTd = createEl('td');
+            rewardTd.appendChild(createEl('span', { className: 'amount' }, formatBRDG(task.reward)));
+            tr.appendChild(rewardTd);
+
+            tr.appendChild(createEl('td', null, task.poster || task.postedBy || '--'));
+
+            var statusTd = createEl('td');
+            statusTd.appendChild(createEl('span', { className: statusBadgeClass(task.status) }, task.status || 'open'));
+            tr.appendChild(statusTd);
+
+            tr.appendChild(createEl('td', null, relativeTime(task.postedAt || task.createdAt)));
+            tbody.appendChild(tr);
+          });
+        }).catch(function (err) {
+          clearChildren(tbody);
+          var tr = createEl('tr');
+          tr.appendChild(createEl('td', { colspan: '5', className: 'error-msg' }, 'Failed to load: ' + err.message));
+          tbody.appendChild(tr);
+        });
+      }
+
+      // --- Transaction Flow ---
+      function loadFlow() {
+        var container = document.getElementById('flow-container');
+        fetchJSON('/api/economy/flow').then(function (data) {
+          clearChildren(container);
+          var txns = Array.isArray(data) ? data : (data.transactions || []);
+          if (txns.length === 0) {
+            container.appendChild(createEl('div', { className: 'loading' }, 'No recent transactions'));
+            return;
+          }
+          txns.forEach(function (tx) {
+            var row = createEl('div', { className: 'flow-item' });
+            row.appendChild(createEl('span', { className: 'flow-from' }, tx.from || 'System'));
+            row.appendChild(createEl('span', { className: 'flow-arrow' }, '\u2192'));
+            row.appendChild(createEl('span', { className: 'flow-to' }, tx.to || 'Burn'));
+
+            var typeSpan = createEl('span', { className: 'flow-type' }, tx.type || 'transfer');
+            row.appendChild(typeSpan);
+
+            row.appendChild(createEl('span', { className: 'flow-amount' }, formatBRDG(tx.amount)));
+            row.appendChild(createEl('span', { className: 'flow-time' }, relativeTime(tx.time || tx.timestamp)));
+
+            container.appendChild(row);
+          });
+        }).catch(function (err) {
+          clearChildren(container);
+          container.appendChild(createEl('div', { className: 'error-msg' }, 'Failed to load: ' + err.message));
+        });
+      }
+
+      // --- Refresh cycle ---
+      function refreshAll() {
+        loadStats();
+        loadLeaderboard();
+        loadTasks();
+        loadFlow();
+        lastUpdateEl.textContent = new Date().toLocaleTimeString();
+        timer = REFRESH_INTERVAL;
+      }
+
+      function tick() {
+        timer--;
+        if (timer <= 0) {
+          refreshAll();
+        }
+        countdownEl.textContent = timer;
+      }
+
+      // Initial load
+      refreshAll();
+      setInterval(tick, 1000);
+    })();
+  </script>
+</body>
+</html>
