@@ -1209,6 +1209,31 @@ app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }
     state.treasury.balance += parseFloat(amount_gross || 0);
     state.treasury.earned += parseFloat(amount_gross || 0);
     broadcast({ type: 'payment_received', rail: 'payfast', amount: amount_gross, item: item_name });
+
+    // Send confirmation email
+    const meta = (() => { try { return JSON.parse(req.body.custom_str1 || '{}'); } catch(_) { return {}; } })();
+    if (meta.email) {
+      try {
+        const mail = require('./lib/mail');
+        mail.send({
+          to: meta.email,
+          subject: 'Bridge AI OS — Payment Confirmed',
+          html: `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:2rem">
+            <h2 style="color:#00c8ff">Payment Confirmed</h2>
+            <p>Thank you for subscribing to <strong>Bridge AI OS</strong>.</p>
+            <table style="width:100%;border-collapse:collapse;margin:1.5rem 0">
+              <tr><td style="padding:.5rem;color:#666">Plan</td><td style="padding:.5rem;font-weight:600">${item_name || 'Pro'}</td></tr>
+              <tr><td style="padding:.5rem;color:#666">Amount</td><td style="padding:.5rem;font-weight:600">R${amount_gross}</td></tr>
+              <tr><td style="padding:.5rem;color:#666">Payment ID</td><td style="padding:.5rem;font-family:monospace">${pf_payment_id}</td></tr>
+              <tr><td style="padding:.5rem;color:#666">Status</td><td style="padding:.5rem;color:#00e57b;font-weight:600">Confirmed</td></tr>
+            </table>
+            <p>Your account is now active. <a href="https://go.ai-os.co.za/ui.html" style="color:#00c8ff">Open Dashboard</a></p>
+            <hr style="border:none;border-top:1px solid #eee;margin:2rem 0">
+            <p style="color:#999;font-size:.8rem">Bridge AI OS &middot; <a href="https://go.ai-os.co.za" style="color:#00c8ff">go.ai-os.co.za</a></p>
+          </div>`,
+        }).catch(e => console.error('[MAIL] Payment confirmation failed:', e.message));
+      } catch(_) {}
+    }
   }
   res.json({ ok: true });
 });

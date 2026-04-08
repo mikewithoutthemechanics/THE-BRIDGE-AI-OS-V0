@@ -182,26 +182,23 @@ app.post('/ask', async (req, res) => {
     const j = await r.json();
     return res.json(j);
   } catch (_) {
-    // Fallback: use unified LLM client with provider fallback
+    // Fallback: proxy to brain's LLM endpoint
     try {
-      const llm = require('./lib/llm-client');
-      const result = await llm.infer(prompt, { system: 'You are Bridge AI, an autonomous business intelligence assistant.' });
-      return res.json({ id: `llm_${Date.now()}`, response: result.text, provider: result.provider, model: result.model, cost_usd: result.cost_usd });
+      const r2 = await fetch('http://localhost:8000/api/llm/infer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, system: 'You are Bridge AI, an autonomous business intelligence assistant.' }),
+        signal: AbortSignal.timeout(30000),
+      });
+      const j2 = await r2.json();
+      return res.json(j2);
     } catch (llmErr) {
-      return res.status(503).json({ error: 'No LLM available', detail: llmErr.message, help: 'Set ANTHROPIC_API_KEY, OPENROUTER_API_KEY, or OPENAI_API_KEY' });
+      return res.status(503).json({ error: 'No LLM available', detail: llmErr.message });
     }
   }
 });
 
-// ── LLM STATUS ──────────────────────────────────────────────────────────────
-app.get('/api/llm/status', (_req, res) => {
-  try {
-    const llm = require('./lib/llm-client');
-    res.json({ ok: true, providers: llm.getProviders(), usage: llm.getUsage(), caps: llm.getCaps() });
-  } catch (e) {
-    res.json({ ok: false, error: e.message });
-  }
-});
+// LLM endpoints are handled by brain via the catch-all proxy at the bottom.
 
 // ── API: TOPOLOGY ─────────────────────────────────────────────────────────────
 app.get('/api/topology', async (req, res) => {
