@@ -107,6 +107,11 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 let state = 'idle'; // idle | listening | thinking | speaking
 let recognition = null;
 let synth = window.speechSynthesis;
+// Chrome loads voices async — preload them
+if (synth && synth.onvoiceschanged !== undefined) {
+  synth.onvoiceschanged = () => { synth.getVoices(); };
+}
+try { synth.getVoices(); } catch(_) {}
 let silenceTimer = null;
 let accumulatedText = '';
 let conversationHistory = [];
@@ -342,9 +347,10 @@ async function sendToLLM(userText) {
       })
     });
 
-    if (!resp.ok) throw new Error('API error ' + resp.status);
     const data = await resp.json();
-    const reply = data.response || data.result || data.text || data.output || 'I received your message.';
+    console.log('[Bridge AI] LLM response:', data);
+    if (!resp.ok || data.error) throw new Error(data.error || 'API error ' + resp.status);
+    const reply = data.text || data.response || data.result || data.output || 'I received your message.';
 
     conversationHistory.push({ role: 'assistant', content: reply });
     addTranscriptMessage('ai', reply);
@@ -363,26 +369,58 @@ function speak(text) {
     try { recognition.stop(); } catch(e) {}
   }
 
+  if (!synth || !text) {
+    setState('idle');
+    startRecognition();
+    return;
+  }
+
   synth.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 1.0;
-  utter.pitch = 1.0;
 
-  // Pick a good voice if available
+  // Split long text into chunks (Chrome cuts off utterances >~200 chars)
+  const chunks = [];
+  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+  let current = '';
+  for (const s of sentences) {
+    if ((current + s).length > 180) {
+      if (current) chunks.push(current.trim());
+      current = s;
+    } else {
+      current += s;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+
+  // Pick voice once
   const voices = synth.getVoices();
-  const preferred = voices.find(v => /samantha|karen|google.*female|zira|microsoft.*natural/i.test(v.name));
-  if (preferred) utter.voice = preferred;
+  const preferred = voices.find(v => /samantha|karen|google.*female|zira|microsoft.*natural/i.test(v.name))
+    || voices.find(v => /female|fiona/i.test(v.name))
+    || voices[0];
 
-  utter.onend = () => {
-    setState('idle');
-    startRecognition();
-  };
-  utter.onerror = () => {
-    setState('idle');
-    startRecognition();
-  };
+  let idx = 0;
+  function speakNext() {
+    if (idx >= chunks.length) {
+      setState('idle');
+      startRecognition();
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(chunks[idx]);
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
+    if (preferred) utter.voice = preferred;
+    utter.onend = () => { idx++; speakNext(); };
+    utter.onerror = () => { idx++; speakNext(); };
+    synth.speak(utter);
 
-  synth.speak(utter);
+    // Chrome bug: long utterances pause. Keepalive workaround.
+    const keepAlive = setInterval(() => {
+      if (!synth.speaking) { clearInterval(keepAlive); return; }
+      synth.pause(); synth.resume();
+    }, 5000);
+    utter.onend = () => { clearInterval(keepAlive); idx++; speakNext(); };
+    utter.onerror = () => { clearInterval(keepAlive); idx++; speakNext(); };
+  }
+  speakNext();
 }
 
 // ===== SPEECH RECOGNITION =====
