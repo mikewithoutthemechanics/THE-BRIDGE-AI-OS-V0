@@ -2805,6 +2805,20 @@ try {
   console.log('[BRAIN] Agent Execution Server ACTIVE — 10 specialized agents');
 } catch (e) { console.warn('[BRAIN] Agent execution failed:', e.message); }
 
+// ── AP2-v3 ORCHESTRATION ENGINE ──────────────────────────────────────────────
+try {
+  const { registerAP2v3Routes } = require('./lib/ap2v3/routes');
+  registerAP2v3Routes(app);
+  console.log('[BRAIN] AP2-v3 Engine ACTIVE');
+} catch (e) { console.warn('[BRAIN] AP2-v3 failed:', e.message); }
+
+// ── AGENT REGISTRY (52 agents, single source of truth) ───────────────────────
+try {
+  const registryRoutes = require('./lib/agent-registry-routes');
+  registryRoutes.mount(app);
+  console.log('[BRAIN] Agent Registry ACTIVE — 52 agents');
+} catch (e) { console.warn('[BRAIN] Agent registry failed:', e.message); }
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
