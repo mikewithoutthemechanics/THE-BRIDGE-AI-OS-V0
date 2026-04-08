@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRIDGE AI OS v3 -- Terminal</title>
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdn.jsdelivr.net;
+    style-src  'self' https://cdn.jsdelivr.net 'unsafe-inline';
+    connect-src 'self';
+    object-src 'none';
+    base-uri 'self';
+  ">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0e14; --surface: #0d1521; --border: #1a2d40;
+      --cyan: #00e0ff; --green: #00e57b; --red: #ff3c5a;
+      --yellow: #ffd166; --magenta: #c678dd; --dim: #4a6070;
+      --text: #c8dce8;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; overflow: hidden; }
+
+    /* Matrix rain canvas */
+    #matrix-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0; opacity: 0.04; pointer-events: none;
+    }
+
+    .app { display: flex; flex-direction: column; height: 100vh; position: relative; z-index: 1; }
+
+    /* Header bar */
+    .header {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.5rem 1rem; background: var(--surface);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .header-title { color: var(--cyan); font-size: 0.85rem; font-weight: bold; letter-spacing: 0.15em; }
+    .header-stats { display: flex; gap: 1.2rem; margin-left: auto; font-size: 0.7rem; color: var(--dim); }
+    .header-stats span { display: flex; align-items: center; gap: 0.3rem; }
+    .header-stats .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; }
+    .header-stats .val { color: var(--text); }
+
+    /* Terminal container */
+    #terminal-container { flex: 1; padding: 4px; overflow: hidden; }
+
+    /* Status bar */
+    .status-bar {
+      display: flex; align-items: center; gap: 1.5rem;
+      padding: 0.35rem 1rem; background: var(--surface);
+      border-top: 1px solid var(--border); font-size: 0.65rem;
+      color: var(--dim); flex-shrink: 0;
+    }
+    .status-bar .active { color: var(--green); }
+    .status-bar .label { color: var(--dim); }
+
+    /* Blinking cursor via xterm config */
+    .xterm-cursor-layer { animation: none; }
+  </style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+<div class="app">
+  <div class="header">
+    <span class="header-title">BRIDGE AI OS v3</span>
+    <div class="header-stats">
+      <span><span class="dot"></span> <span class="val" id="h-session">---</span></span>
+      <span class="label">AGENTS:</span><span class="val" id="h-agents">8</span>
+      <span class="label">CIRC:</span><span class="val" id="h-circ">--</span>
+      <span class="label">BURNED:</span><span class="val" id="h-burned">--</span>
+    </div>
+  </div>
+  <div id="terminal-container"></div>
+  <div class="status-bar">
+    <span><span class="label">AGENTS </span><span class="active" id="sb-agents">8 connected</span></span>
+    <span><span class="label">MEMORY </span><span id="sb-memory">0 entries</span></span>
+    <span><span class="label">UPTIME </span><span id="sb-uptime">00:00:00</span></span>
+    <span style="margin-left:auto;"><span class="label">SESSION </span><span id="sb-session">---</span></span>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ── Session ─────────────────────────────────────────────────────────── */
+  var sessionId = localStorage.getItem('bridge_session_id');
+  if (!sessionId) {
+    sessionId = 'ses_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+    localStorage.setItem('bridge_session_id', sessionId);
+  }
+  var sessionStart = Date.now();
+  var memoryEntries = 0;
+
+  document.getElementById('h-session').textContent = sessionId.slice(0, 12);
+  document.getElementById('sb-session').textContent = sessionId;
+
+  /* ── Command history ─────────────────────────────────────────────────── */
+  var MAX_HISTORY = 100;
+  var history = [];
+  try { history = JSON.parse(localStorage.getItem('bridge_cmd_history') || '[]'); } catch (_) { history = []; }
+  var historyIdx = -1;
+  var savedLine = '';
+
+  function pushHistory(cmd) {
+    if (!cmd.trim()) return;
+    if (history.length > 0 && history[history.length - 1] === cmd) return;
+    history.push(cmd);
+    if (history.length > MAX_HISTORY) history.shift();
+    localStorage.setItem('bridge_cmd_history', JSON.stringify(history));
+  }
+
+  /* ── Session memory store ────────────────────────────────────────────── */
+  var sessionMemory = [];
+
+  /* ── Auto-complete data ──────────────────────────────────────────────── */
+  var COMMANDS = ['/agent', '/chain', '/process', '/agents', '/memory', '/clear', '/help', '/primes', '/economy', '/status'];
+  var AGENT_NAMES = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta'];
+
+  /* ── Terminal init ───────────────────────────────────────────────────── */
+  var term = new Terminal({
+    theme: {
+      background: '#0a0e14',
+      foreground: '#c8dce8',
+      cursor: '#00e0ff',
+      cursorAccent: '#0a0e14',
+      selectionBackground: '#1a3a5c',
+      cyan: '#00e0ff',
+      green: '#00e57b',
+      red: '#ff3c5a',
+      yellow: '#ffd166',
+      magenta: '#c678dd',
+      white: '#c8dce8',
+      brightBlack: '#4a6070'
+    },
+    cursorBlink: true,
+    cursorStyle: 'block',
+    fontSize: 14,
+    fontFamily: "'Courier New', 'Consolas', monospace",
+    scrollback: 5000,
+    allowProposedApi: true
+  });
+
+  var fitAddon = new FitAddon.FitAddon();
+  term.loadAddon(fitAddon);
+  term.open(document.getElementById('terminal-container'));
+  fitAddon.fit();
+  window.addEventListener('resize', function () { fitAddon.fit(); });
+
+  /* ── Color helpers ───────────────────────────────────────────────────── */
+  var C = {
+    cyan:    function (s) { return '\x1b[36m' + s + '\x1b[0m'; },
+    green:   function (s) { return '\x1b[32m' + s + '\x1b[0m'; },
+    red:     function (s) { return '\x1b[31m' + s + '\x1b[0m'; },
+    yellow:  function (s) { return '\x1b[33m' + s + '\x1b[0m'; },
+    magenta: function (s) { return '\x1b[35m' + s + '\x1b[0m'; },
+    dim:     function (s) { return '\x1b[2m' + s + '\x1b[0m'; },
+    bold:    function (s) { return '\x1b[1m' + s + '\x1b[0m'; },
+    reset:   '\x1b[0m'
+  };
+
+  function writeLn(s) { term.writeln(s || ''); }
+
+  /* ── Boot banner ─────────────────────────────────────────────────────── */
+  function showBanner() {
+    writeLn('');
+    writeLn(C.cyan('  ____  ____  ___ ____   ____ _____    _    ___    ___  ____'));
+    writeLn(C.cyan('  | __ )|  _ \\|_ _|  _ \\ / ___| ____|  / \\  |_ _|  / _ \\/ ___|'));
+    writeLn(C.cyan('  |  _ \\| |_) || || | | | |  _|  _|   / _ \\  | |  | | | \\___ \\'));
+    writeLn(C.cyan('  | |_) |  _ < | || |_| | |_| | |___ / ___ \\ | |  | |_| |___) |'));
+    writeLn(C.cyan('  |____/|_| \\_\\___|____/ \\____|_____/_/   \\_\\___|  \\___/|____/'));
+    writeLn('');
+    writeLn(C.dim('  Autonomous Agent Orchestration Engine v3.0'));
+    writeLn(C.dim('  Session: ' + sessionId));
+    writeLn(C.dim('  Type /help for available commands'));
+    writeLn('');
+  }
+
+  showBanner();
+  prompt();
+
+  /* ── Prompt ──────────────────────────────────────────────────────────── */
+  var PROMPT_STR = '\x1b[36mbridge\x1b[0m\x1b[2m@v3\x1b[0m\x1b[36m $\x1b[0m ';
+  var PROMPT_LEN = 12; // visible char count of prompt
+  var currentLine = '';
+  var cursorPos = 0;
+
+  function prompt() {
+    term.write(PROMPT_STR);
+    currentLine = '';
+    cursorPos = 0;
+    historyIdx = -1;
+    savedLine = '';
+  }
+
+  /* ── Redraw current line (for editing / history) ─────────────────────── */
+  function redrawLine() {
+    // Move cursor to prompt start, clear line, rewrite
+    term.write('\r' + PROMPT_STR + currentLine + '\x1b[K');
+    // Position cursor correctly
+    var back = currentLine.length - cursorPos;
+    if (back > 0) term.write('\x1b[' + back + 'D');
+  }
+
+  /* ── Tab completion ──────────────────────────────────────────────────── */
+  function tabComplete() {
+    var parts = currentLine.split(/\s+/);
+    if (parts.length === 1) {
+      // Complete command
+      var partial = parts[0];
+      var matches = COMMANDS.filter(function (c) { return c.indexOf(partial) === 0; });
+      if (matches.length === 1) {
+        currentLine = matches[0] + ' ';
+        cursorPos = currentLine.length;
+        redrawLine();
+      } else if (matches.length > 1) {
+        writeLn('');
+        writeLn(C.dim(matches.join('  ')));
+        prompt();
+        currentLine = partial;
+        cursorPos = currentLine.length;
+        term.write(currentLine);
+      }
+    } else if (parts[0] === '/agent' && parts.length === 2) {
+      // Complete agent name
+      var partialA = parts[1];
+      var matchesA = AGENT_NAMES.filter(function (n) { return n.indexOf(partialA) === 0; });
+      if (matchesA.length === 1) {
+        currentLine = '/agent ' + matchesA[0] + ' ';
+        cursorPos = currentLine.length;
+        redrawLine();
+      } else if (matchesA.length > 1) {
+        writeLn('');
+        writeLn(C.dim(matchesA.join('  ')));
+        prompt();
+        currentLine = '/agent ' + partialA;
+        cursorPos = currentLine.length;
+        term.write(currentLine);
+      }
+    }
+  }
+
+  /* ── Spinner ─────────────────────────────────────────────────────────── */
+  var SPINNER_FRAMES = ['|', '/', '-', '\\'];
+  var spinnerTimer = null;
+  var spinnerFrame = 0;
+
+  function startSpinner(label) {
+    spinnerFrame = 0;
+    term.write('\r\x1b[K  ' + C.yellow(SPINNER_FRAMES[0]) + ' ' + C.dim(label || 'Executing...'));
+    spinnerTimer = setInterval(function () {
+      spinnerFrame = (spinnerFrame + 1) % SPINNER_FRAMES.length;
+      term.write('\r\x1b[K  ' + C.yellow(SPINNER_FRAMES[spinnerFrame]) + ' ' + C.dim(label || 'Executing...'));
+    }, 100);
+  }
+
+  function stopSpinner() {
+    if (spinnerTimer) { clearInterval(spinnerTimer); spinnerTimer = null; }
+    term.write('\r\x1b[K');
+  }
+
+  /* ── API helpers ─────────────────────────────────────────────────────── */
+  function apiPost(path, body) {
+    return fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({}, body, { session_id: sessionId }))
+    }).then(function (r) { return r.json(); });
+  }
+
+  function apiGet(path) {
+    return fetch(path + (path.indexOf('?') >= 0 ? '&' : '?') + 'session_id=' + sessionId)
+      .then(function (r) { return r.json(); });
+  }
+
+  /* ── Format data with indentation ────────────────────────────────────── */
+  function formatData(obj, indent) {
+    indent = indent || 0;
+    var pad = '  '.repeat(indent);
+    var lines = [];
+    if (obj === null || obj === undefined) return [];
+    if (typeof obj !== 'object') {
+      lines.push(pad + String(obj));
+      return lines;
+    }
+    var keys = Object.keys(obj);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      var v = obj[k];
+      if (v === null || v === undefined) {
+        lines.push(pad + C.dim(k + ': ') + C.dim('null'));
+      } else if (typeof v === 'object' && !Array.isArray(v)) {
+        lines.push(pad + C.cyan(k + ':'));
+        lines = lines.concat(formatData(v, indent + 1));
+      } else if (Array.isArray(v)) {
+        lines.push(pad + C.cyan(k + ':') + C.dim(' [' + v.length + ' items]'));
+        for (var j = 0; j < Math.min(v.length, 10); j++) {
+          if (typeof v[j] === 'object') {
+            lines.push(pad + '  ' + C.dim('-'));
+            lines = lines.concat(formatData(v[j], indent + 2));
+          } else {
+            lines.push(pad + '  ' + C.dim('- ') + String(v[j]));
+          }
+        }
+        if (v.length > 10) lines.push(pad + '  ' + C.dim('... +' + (v.length - 10) + ' more'));
+      } else if (typeof v === 'number') {
+        lines.push(pad + C.dim(k + ': ') + C.yellow(String(v)));
+      } else if (typeof v === 'boolean') {
+        lines.push(pad + C.dim(k + ': ') + (v ? C.green('true') : C.red('false')));
+      } else {
+        lines.push(pad + C.dim(k + ': ') + String(v));
+      }
+    }
+    return lines;
+  }
+
+  /* ── Display agent response ──────────────────────────────────────────── */
+  function displayResponse(data, label) {
+    writeLn('');
+    if (label) writeLn('  ' + C.magenta('[' + label + ']'));
+    if (data.ok === false || data.error) {
+      writeLn('  ' + C.red('ERROR: ') + (data.error || 'Unknown error'));
+    } else if (data.ok) {
+      writeLn('  ' + C.green('OK'));
+    }
+    // Show main data, skip meta keys
+    var skip = { ok: 1, ts: 1, session_id: 1, latency_ms: 1, cost: 1, tokens: 1, model: 1 };
+    var keys = Object.keys(data);
+    var body = {};
+    var meta = {};
+    for (var i = 0; i < keys.length; i++) {
+      if (skip[keys[i]]) {
+        meta[keys[i]] = data[keys[i]];
+      } else {
+        body[keys[i]] = data[keys[i]];
+      }
+    }
+    var lines = formatData(body, 1);
+    for (var j = 0; j < lines.length; j++) writeLn(lines[j]);
+
+    // Meta line
+    var metaParts = [];
+    if (meta.latency_ms) metaParts.push('latency: ' + meta.latency_ms + 'ms');
+    if (meta.cost) metaParts.push('cost: $' + meta.cost);
+    if (meta.tokens) metaParts.push('tokens: ' + meta.tokens);
+    if (meta.model) metaParts.push('model: ' + meta.model);
+    if (meta.ts) metaParts.push('ts: ' + new Date(meta.ts).toISOString());
+    if (metaParts.length) {
+      writeLn('');
+      writeLn('  ' + C.dim(metaParts.join(' | ')));
+    }
+    writeLn('');
+  }
+
+  /* ── Chain display (sequential steps) ────────────────────────────────── */
+  function displayChain(steps) {
+    if (!steps || !steps.length) return;
+    writeLn('  ' + C.cyan('Chain execution:'));
+    for (var i = 0; i < steps.length; i++) {
+      var s = steps[i];
+      var statusIcon = s.status === 'done' || s.status === 'completed' ? C.green('[OK]') :
+                       s.status === 'failed' ? C.red('[FAIL]') : C.yellow('[' + (s.status || '..') + ']');
+      writeLn('  ' + C.dim((i + 1) + '.') + ' ' + C.magenta(s.agent || s.action || 'step') + ' ' + statusIcon);
+      if (s.result) writeLn('     ' + C.dim(typeof s.result === 'string' ? s.result : JSON.stringify(s.result)));
+    }
+  }
+
+  /* ── Command execution ───────────────────────────────────────────────── */
+  function storeMemory(cmd, result) {
+    sessionMemory.push({ cmd: cmd, result: result, ts: Date.now() });
+    memoryEntries = sessionMemory.length;
+    document.getElementById('sb-memory').textContent = memoryEntries + ' entries';
+  }
+
+  async function executeCommand(raw) {
+    var trimmed = raw.trim();
+    if (!trimmed) { prompt(); return; }
+
+    pushHistory(trimmed);
+
+    var parts = trimmed.split(/\s+/);
+    var cmd = parts[0].toLowerCase();
+    var args = parts.slice(1);
+
+    switch (cmd) {
+
+      case '/help':
+        writeLn('');
+        writeLn('  ' + C.cyan('Available commands:'));
+        writeLn('  ' + C.bold('/agent <name> <input>') + '   Execute a single agent');
+        writeLn('  ' + C.bold('/chain <task>') + '           Auto-detect and chain agents');
+        writeLn('  ' + C.bold('/process <input>') + '        Auto-route to best agent');
+        writeLn('  ' + C.bold('/agents') + '                 List all available agents');
+        writeLn('  ' + C.bold('/memory') + '                 Show session memory');
+        writeLn('  ' + C.bold('/clear') + '                  Clear terminal');
+        writeLn('  ' + C.bold('/help') + '                   Show this help');
+        writeLn('  ' + C.bold('/primes') + '                 List prime agents');
+        writeLn('  ' + C.bold('/economy') + '                Show economy stats');
+        writeLn('  ' + C.bold('/status') + '                 System health check');
+        writeLn('');
+        prompt();
+        return;
+
+      case '/clear':
+        term.clear();
+        showBanner();
+        prompt();
+        return;
+
+      case '/memory':
+        writeLn('');
+        writeLn('  ' + C.cyan('Session Memory') + C.dim(' (' + sessionMemory.length + ' entries)'));
+        if (sessionMemory.length === 0) {
+          writeLn('  ' + C.dim('No entries yet. Execute commands to build memory.'));
+        } else {
+          var show = sessionMemory.slice(-15);
+          for (var m = 0; m < show.length; m++) {
+            var entry = show[m];
+            var age = Math.round((Date.now() - entry.ts) / 1000);
+            writeLn('  ' + C.dim('[' + age + 's ago]') + ' ' + C.yellow(entry.cmd) + ' ' +
+              (entry.result.ok ? C.green('OK') : C.red('ERR')));
+          }
+        }
+        writeLn('');
+        prompt();
+        return;
+
+      case '/agents':
+        startSpinner('Fetching agents...');
+        try {
+          var agentsData = await apiGet('/api/swarm/agents');
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Registered Agents') + C.dim(' (' + (agentsData.count || 0) + ')'));
+          var agents = agentsData.agents || [];
+          for (var a = 0; a < agents.length; a++) {
+            var ag = agents[a];
+            var st = ag.status === 'active' ? C.green(ag.status) : C.yellow(ag.status);
+            writeLn('  ' + C.magenta(ag.name.padEnd(10)) + ' ' + C.dim(ag.role.padEnd(14)) +
+              ' ' + st + '  ' + C.dim('L' + ag.layer + ' trust:' + ag.trust + ' tasks:' + ag.tasks_done));
+          }
+          writeLn('');
+          storeMemory(trimmed, agentsData);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/primes':
+        startSpinner('Loading prime agents...');
+        try {
+          var primeData = await apiGet('/api/swarm/topology');
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Prime Agent Topology'));
+          displayResponse(primeData, 'PRIME');
+          storeMemory(trimmed, primeData);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/economy':
+        startSpinner('Fetching economy stats...');
+        try {
+          var econData = await apiGet('/api/economy/full');
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Bridge Economy Dashboard'));
+          displayResponse(econData, 'ECONOMY');
+          storeMemory(trimmed, econData);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/status':
+        startSpinner('Running health check...');
+        try {
+          var results = await Promise.allSettled([
+            apiGet('/api/health'),
+            apiGet('/api/swarm/health'),
+            apiGet('/api/treasury/status'),
+            apiGet('/api/network/status')
+          ]);
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('System Health Check'));
+          var labels = ['Brain', 'Swarm', 'Treasury', 'Network'];
+          for (var h = 0; h < results.length; h++) {
+            var r = results[h];
+            if (r.status === 'fulfilled' && r.value.ok) {
+              writeLn('  ' + C.green('[OK]') + ' ' + labels[h]);
+            } else {
+              var err = r.status === 'rejected' ? r.reason.message : (r.value.error || 'fail');
+              writeLn('  ' + C.red('[FAIL]') + ' ' + labels[h] + ' - ' + C.dim(err));
+            }
+          }
+          writeLn('');
+          storeMemory(trimmed, { ok: true, checks: labels.length });
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/agent':
+        if (args.length < 1) {
+          writeLn('  ' + C.red('Usage: /agent <name> <input>'));
+          prompt();
+          return;
+        }
+        var agentName = args[0];
+        var agentInput = args.slice(1).join(' ') || 'status check';
+        startSpinner('Executing agent ' + agentName + '...');
+        try {
+          var execResult = await apiPost('/api/twin/decide', {
+            prompt: '[Agent:' + agentName + '] ' + agentInput,
+            context: { agent: agentName, session: sessionId }
+          });
+          stopSpinner();
+          displayResponse(execResult, agentName.toUpperCase());
+          storeMemory(trimmed, execResult);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/chain':
+        if (args.length < 1) {
+          writeLn('  ' + C.red('Usage: /chain <task description>'));
+          prompt();
+          return;
+        }
+        var chainTask = args.join(' ');
+        startSpinner('Chaining agents for task...');
+        try {
+          var chainResult = await apiPost('/api/swarm/execute', {
+            plan: chainTask,
+            agents: null
+          });
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.magenta('[CHAIN]') + ' ' + C.cyan(chainTask));
+          if (chainResult.steps) {
+            displayChain(chainResult.steps);
+          }
+          displayResponse(chainResult, 'CHAIN');
+          storeMemory(trimmed, chainResult);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/process':
+        if (args.length < 1) {
+          writeLn('  ' + C.red('Usage: /process <input>'));
+          prompt();
+          return;
+        }
+        var processInput = args.join(' ');
+        startSpinner('Processing input...');
+        try {
+          var procResult = await apiPost('/api/twin/decide', {
+            prompt: processInput,
+            context: { mode: 'auto_route', session: sessionId }
+          });
+          stopSpinner();
+          displayResponse(procResult, 'PROCESS');
+          storeMemory(trimmed, procResult);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      default:
+        writeLn('  ' + C.red('Unknown command: ') + C.yellow(cmd));
+        writeLn('  ' + C.dim('Type /help for available commands'));
+        writeLn('');
+        prompt();
+        return;
+    }
+  }
+
+  /* ── Key handling ────────────────────────────────────────────────────── */
+  term.onKey(function (e) {
+    var ev = e.domEvent;
+    var key = ev.key;
+
+    // Ctrl+C — cancel
+    if (ev.ctrlKey && key === 'c') {
+      if (spinnerTimer) stopSpinner();
+      term.write('^C');
+      writeLn('');
+      prompt();
+      return;
+    }
+
+    // Ctrl+L — clear
+    if (ev.ctrlKey && key === 'l') {
+      term.clear();
+      showBanner();
+      prompt();
+      term.write(currentLine);
+      return;
+    }
+
+    // Enter — execute
+    if (key === 'Enter') {
+      writeLn('');
+      executeCommand(currentLine);
+      return;
+    }
+
+    // Tab — autocomplete
+    if (key === 'Tab') {
+      ev.preventDefault();
+      tabComplete();
+      return;
+    }
+
+    // Backspace
+    if (key === 'Backspace') {
+      if (cursorPos > 0) {
+        currentLine = currentLine.slice(0, cursorPos - 1) + currentLine.slice(cursorPos);
+        cursorPos--;
+        redrawLine();
+      }
+      return;
+    }
+
+    // Delete
+    if (key === 'Delete') {
+      if (cursorPos < currentLine.length) {
+        currentLine = currentLine.slice(0, cursorPos) + currentLine.slice(cursorPos + 1);
+        redrawLine();
+      }
+      return;
+    }
+
+    // Arrow Up — history previous
+    if (key === 'ArrowUp') {
+      if (history.length === 0) return;
+      if (historyIdx === -1) {
+        savedLine = currentLine;
+        historyIdx = history.length - 1;
+      } else if (historyIdx > 0) {
+        historyIdx--;
+      }
+      currentLine = history[historyIdx];
+      cursorPos = currentLine.length;
+      redrawLine();
+      return;
+    }
+
+    // Arrow Down — history next
+    if (key === 'ArrowDown') {
+      if (historyIdx === -1) return;
+      if (historyIdx < history.length - 1) {
+        historyIdx++;
+        currentLine = history[historyIdx];
+      } else {
+        historyIdx = -1;
+        currentLine = savedLine;
+      }
+      cursorPos = currentLine.length;
+      redrawLine();
+      return;
+    }
+
+    // Arrow Left
+    if (key === 'ArrowLeft') {
+      if (cursorPos > 0) { cursorPos--; term.write('\x1b[D'); }
+      return;
+    }
+
+    // Arrow Right
+    if (key === 'ArrowRight') {
+      if (cursorPos < currentLine.length) { cursorPos++; term.write('\x1b[C'); }
+      return;
+    }
+
+    // Home
+    if (key === 'Home') {
+      if (cursorPos > 0) { term.write('\x1b[' + cursorPos + 'D'); cursorPos = 0; }
+      return;
+    }
+
+    // End
+    if (key === 'End') {
+      var diff = currentLine.length - cursorPos;
+      if (diff > 0) { term.write('\x1b[' + diff + 'C'); cursorPos = currentLine.length; }
+      return;
+    }
+
+    // Printable characters
+    if (key.length === 1 && !ev.ctrlKey && !ev.altKey && !ev.metaKey) {
+      currentLine = currentLine.slice(0, cursorPos) + key + currentLine.slice(cursorPos);
+      cursorPos++;
+      redrawLine();
+    }
+  });
+
+  /* ── Matrix rain effect ──────────────────────────────────────────────── */
+  (function initMatrix() {
+    var canvas = document.getElementById('matrix-canvas');
+    var ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    var fontSize = 14;
+    var columns = Math.floor(canvas.width / fontSize);
+    var drops = new Array(columns);
+    for (var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+
+    var chars = '01ABCDEFbrdgBRDG<>{}[]|/\\';
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(10, 14, 20, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00e0ff';
+      ctx.font = fontSize + 'px monospace';
+
+      for (var i = 0; i < drops.length; i++) {
+        if (drops[i] < 0) { drops[i] += 0.1; continue; }
+        var ch = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(ch, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i] += 0.5;
+      }
+    }
+
+    setInterval(drawMatrix, 60);
+
+    window.addEventListener('resize', function () {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      var newCols = Math.floor(canvas.width / fontSize);
+      var newDrops = new Array(newCols);
+      for (var i = 0; i < newCols; i++) {
+        newDrops[i] = i < drops.length ? drops[i] : Math.random() * -100;
+      }
+      drops = newDrops;
+    });
+  })();
+
+  /* ── Header stats refresh ────────────────────────────────────────────── */
+  function refreshHeaderStats() {
+    apiGet('/api/economy/full').then(function (data) {
+      if (!data.ok) return;
+      var t = data.treasury || {};
+      document.getElementById('h-circ').textContent = (t.balance || 0).toLocaleString();
+      document.getElementById('h-burned').textContent = (t.spent || 0).toLocaleString();
+    }).catch(function () { /* silent */ });
+
+    apiGet('/api/swarm/agents').then(function (data) {
+      if (!data.ok) return;
+      var count = data.count || 0;
+      document.getElementById('h-agents').textContent = String(count);
+      var active = (data.agents || []).filter(function (a) { return a.status === 'active'; }).length;
+      document.getElementById('sb-agents').textContent = active + '/' + count + ' active';
+    }).catch(function () { /* silent */ });
+  }
+
+  refreshHeaderStats();
+  setInterval(refreshHeaderStats, 30000);
+
+  /* ── Uptime ticker ───────────────────────────────────────────────────── */
+  setInterval(function () {
+    var elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    var h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    var m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    var s = String(elapsed % 60).padStart(2, '0');
+    document.getElementById('sb-uptime').textContent = h + ':' + m + ':' + s;
+  }, 1000);
+
+})();
+</script>
+</body>
+</html>
