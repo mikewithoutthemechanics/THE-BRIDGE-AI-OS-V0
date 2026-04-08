@@ -5,161 +5,163 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bridge AI OS — Autonomous Business Intelligence</title>
 <meta name="description" content="AI-powered business automation platform. CRM, invoicing, agent workforce, and DeFi treasury on Linea L2. Built for Africa, scaling globally.">
-
-<!-- Canonical URL -->
 <link rel="canonical" href="https://go.ai-os.co.za/">
-
-<!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Bridge AI OS — Autonomous Business Intelligence">
-<meta property="og:description" content="AI-powered business automation platform. CRM, invoicing, AI agent workforce, and DeFi treasury on Linea L2. Built for Africa, scaling globally.">
+<meta property="og:description" content="AI-powered business automation. CRM, invoicing, AI agent workforce, and DeFi treasury on Linea L2. Built for Africa, scaling globally.">
 <meta property="og:url" content="https://go.ai-os.co.za/">
 <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
 <meta property="og:site_name" content="Bridge AI OS">
 <meta property="og:locale" content="en_ZA">
-
-<!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Bridge AI OS — Autonomous Business Intelligence">
-<meta name="twitter:description" content="CRM, invoicing, AI agents, and DeFi treasury in one platform. 150+ API endpoints. Built for Africa, scaling globally.">
+<meta name="twitter:description" content="CRM, invoicing, AI agents, and DeFi treasury in one platform. 150+ API endpoints. Built for Africa.">
 <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
-
-<!-- Structured Data: SoftwareApplication -->
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Bridge AI OS",
-  "description": "Autonomous business infrastructure platform with CRM, invoicing, AI agent workforce, and DeFi treasury on Linea L2.",
-  "url": "https://go.ai-os.co.za/",
-  "applicationCategory": "BusinessApplication",
-  "operatingSystem": "Web",
-  "offers": [
-    {
-      "@type": "Offer",
-      "name": "Starter",
-      "price": "0",
-      "priceCurrency": "ZAR",
-      "description": "50 CRM contacts, 10 invoices/month, 3 AI agent tasks/day"
-    },
-    {
-      "@type": "Offer",
-      "name": "Pro",
-      "price": "499",
-      "priceCurrency": "ZAR",
-      "description": "Unlimited contacts and invoices, 50 AI agent tasks/day, BRDG token staking"
-    },
-    {
-      "@type": "Offer",
-      "name": "Enterprise",
-      "price": "2499",
-      "priceCurrency": "ZAR",
-      "description": "Unlimited everything, custom AI twin, white-label option, SLA guarantee"
-    }
-  ],
-  "featureList": [
-    "CRM and contact management",
-    "Invoicing and quoting",
-    "AI agent workforce (24+ agents)",
-    "DeFi treasury on Linea L2",
-    "Digital twin technology",
-    "PayFast ZAR payments",
-    "150+ REST API endpoints",
-    "BRDG token economy"
-  ],
-  "creator": {
-    "@type": "Organization",
-    "name": "Bridge AI",
-    "url": "https://bridge-ai-os.com"
-  }
-}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Bridge AI OS","description":"Autonomous business infrastructure platform with CRM, invoicing, AI agent workforce, and DeFi treasury on Linea L2.","url":"https://go.ai-os.co.za/","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":[{"@type":"Offer","name":"Starter","price":"0","priceCurrency":"ZAR"},{"@type":"Offer","name":"Pro","price":"499","priceCurrency":"ZAR"},{"@type":"Offer","name":"Enterprise","price":"2499","priceCurrency":"ZAR"}],"creator":{"@type":"Organization","name":"Bridge AI","url":"https://bridge-ai-os.com"}}
 </script>
-
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 20px rgba(0,200,255,.15)}
-body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
 a{color:var(--cyan);text-decoration:none}
 a:hover{text-decoration:underline}
 
-/* Hero */
-.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,200,255,.08) 0%,transparent 60%);pointer-events:none}
-.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;letter-spacing:-.02em;margin-bottom:.5rem}
-.hero h1 span{background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero .sub{font-size:1.25rem;color:var(--dim);max-width:600px;margin:0 auto 2rem}
-.hero .cta-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
-.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.75rem;border-radius:8px;font-weight:600;font-size:1rem;border:none;cursor:pointer;transition:all .2s}
-.btn-primary{background:linear-gradient(135deg,var(--cyan),#0090cc);color:#000}
-.btn-primary:hover{box-shadow:var(--glow);transform:translateY(-1px);text-decoration:none}
-.btn-outline{background:transparent;color:var(--cyan);border:1px solid var(--border)}
-.btn-outline:hover{border-color:var(--cyan);text-decoration:none}
+/* Nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:.75rem 2rem;display:flex;align-items:center;justify-content:space-between;background:rgba(5,10,15,.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(26,45,64,.5)}
+.nav-brand{font-weight:800;font-size:1.1rem;letter-spacing:-.01em}
+.nav-brand span{color:var(--cyan)}
+.nav-links{display:flex;gap:1.5rem;align-items:center;font-size:.85rem}
+.nav-links a{color:var(--dim);transition:color .2s}
+.nav-links a:hover{color:var(--cyan);text-decoration:none}
+.nav-cta{background:var(--cyan);color:#000;padding:.4rem 1rem;border-radius:6px;font-weight:600;font-size:.8rem}
+.nav-cta:hover{text-decoration:none;opacity:.9}
 
-/* Stats bar */
-.stats{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-top:3rem;padding:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:800px}
-.stat{text-align:center}
-.stat .num{font-size:1.75rem;font-weight:700;color:var(--cyan)}
-.stat .label{font-size:.8rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% -20%,rgba(0,200,255,.1) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(167,139,250,.05) 0%,transparent 40%);pointer-events:none}
+.hero::after{content:'';position:absolute;top:50%;left:50%;width:600px;height:600px;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(0,200,255,.04);pointer-events:none;animation:ring 20s linear infinite}
+@keyframes ring{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+.hero .badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(0,229,123,.2);background:rgba(0,229,123,.06);font-size:.8rem;color:var(--green);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.8rem,7vw,5rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.2rem;color:var(--dim);max-width:640px;margin:0 auto 2.5rem;line-height:1.6}
+.hero .sub strong{color:var(--text)}
+.cta-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0090cc);color:#000;box-shadow:0 4px 20px rgba(0,200,255,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(0,200,255,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--cyan);color:var(--cyan);text-decoration:none}
+.btn-sm{padding:.5rem 1.2rem;font-size:.85rem}
+
+/* Live stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:3rem;max-width:900px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--cyan)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
 
 /* Sections */
 section{padding:5rem 2rem;max-width:1100px;margin:0 auto}
-.section-title{font-size:2rem;font-weight:700;margin-bottom:.5rem}
+.section-title{font-size:2.2rem;font-weight:800;margin-bottom:.5rem;letter-spacing:-.02em}
 .section-title span{color:var(--cyan)}
-.section-sub{color:var(--dim);margin-bottom:2.5rem;max-width:600px}
+.section-sub{color:var(--dim);margin-bottom:2.5rem;max-width:600px;font-size:1.05rem}
+
+/* How it works */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2rem;counter-reset:step}
+.step{position:relative;padding:1.5rem;padding-top:3rem}
+.step::before{counter-increment:step;content:counter(step);position:absolute;top:0;left:1.5rem;width:2rem;height:2rem;border-radius:50%;background:var(--cyan);color:#000;font-weight:800;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.step h3{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+.step p{font-size:.85rem;color:var(--dim)}
 
 /* Feature grid */
-.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
-.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:border-color .2s}
-.feature:hover{border-color:var(--cyan)}
-.feature .icon{font-size:1.5rem;margin-bottom:.75rem}
-.feature h3{font-size:1.1rem;font-weight:600;margin-bottom:.5rem}
-.feature p{font-size:.9rem;color:var(--dim);line-height:1.5}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.feature:hover{border-color:var(--cyan);transform:translateY(-2px);box-shadow:var(--glow)}
+.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem}
+.feature .icon-cyan{background:rgba(0,200,255,.1);color:var(--cyan)}
+.feature .icon-green{background:rgba(0,229,123,.1);color:var(--green)}
+.feature .icon-purple{background:rgba(167,139,250,.1);color:var(--purple)}
+.feature .icon-orange{background:rgba(251,146,60,.1);color:var(--orange)}
+.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+/* Live economy */
+.economy-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;padding:2rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:2rem}
+.econ-stat .val{font-size:1.5rem;font-weight:800}
+.econ-stat .lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
 
 /* Pricing */
-.pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
-.plan{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;text-align:center}
-.plan.featured{border-color:var(--cyan);box-shadow:var(--glow)}
-.plan h3{font-size:1.2rem;margin-bottom:.5rem}
-.plan .price{font-size:2.5rem;font-weight:800;color:var(--cyan);margin:.5rem 0}
-.plan .price small{font-size:.9rem;color:var(--dim);font-weight:400}
+.pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.plan{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;text-align:center;transition:all .25s}
+.plan:hover{transform:translateY(-2px)}
+.plan.featured{border-color:var(--cyan);box-shadow:var(--glow);position:relative}
+.plan.featured::before{content:'POPULAR';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--cyan);color:#000;font-size:.65rem;font-weight:800;padding:.2rem .8rem;border-radius:10px;letter-spacing:.05em}
+.plan h3{font-size:1.2rem;margin-bottom:.25rem}
+.plan .price{font-size:2.8rem;font-weight:900;color:var(--cyan);margin:.5rem 0}
+.plan .price small{font-size:.85rem;color:var(--dim);font-weight:400}
 .plan ul{list-style:none;text-align:left;margin:1.5rem 0}
-.plan li{padding:.4rem 0;color:var(--dim);font-size:.9rem}
-.plan li::before{content:"+ ";color:var(--green);font-weight:700}
+.plan li{padding:.35rem 0;color:var(--dim);font-size:.85rem;display:flex;align-items:center;gap:.5rem}
+.plan li::before{content:"\2713";color:var(--green);font-weight:700;font-size:.75rem}
 
 /* API */
 .api-demo{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;overflow-x:auto}
-.api-demo pre{color:var(--cyan);font-size:.85rem;line-height:1.6;font-family:'Cascadia Code',monospace}
+.api-demo pre{color:var(--cyan);font-size:.8rem;line-height:1.7;font-family:'JetBrains Mono','Cascadia Code',monospace}
 .api-demo .comment{color:var(--dim)}
 .api-demo .string{color:var(--green)}
 .api-demo .keyword{color:var(--purple)}
 
-/* Footer */
-footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.85rem}
-footer a{color:var(--cyan)}
+/* Logos / Trust */
+.trust{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.trust .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.5rem}
+.trust-logos{display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;align-items:center;opacity:.5}
+.trust-logos span{font-size:.9rem;font-weight:600;color:var(--dim)}
 
-/* Live pulse */
+/* CTA Banner */
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(0,200,255,.05),rgba(167,139,250,.05));border-radius:16px;margin:0 2rem 3rem;max-width:1100px;margin-left:auto;margin-right:auto}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+/* Footer */
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.footer-links{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+
+/* Pulse */
 .pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* Chain badge */
-.chain{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .8rem;border-radius:20px;border:1px solid var(--border);font-size:.75rem;color:var(--dim);margin-top:1rem}
-
-@media(max-width:600px){.stats{flex-direction:column;gap:1rem}.hero h1{font-size:2.2rem}.features,.pricing{grid-template-columns:1fr}}
+@media(max-width:768px){.nav-links{display:none}.stats{grid-template-columns:repeat(2,1fr)}.features,.pricing{grid-template-columns:1fr}.hero h1{font-size:2.4rem}.steps{grid-template-columns:1fr}}
+@media(max-width:480px){.stats{grid-template-columns:1fr}.hero{padding:5rem 1.5rem 3rem}.cta-banner{margin:0 1rem 2rem}}
 </style>
 </head>
 <body>
 
-<div class="hero">
-  <h1><span>Bridge AI</span> OS</h1>
-  <p class="sub">Autonomous business infrastructure. CRM, invoicing, AI agents, and DeFi treasury — all in one platform. Built for Africa, scaling globally.</p>
-  <div class="cta-row">
-    <a href="/ui.html" class="btn btn-primary">Open Dashboard</a>
-    <a href="#pricing" class="btn btn-outline">View Plans</a>
-    <a href="#api" class="btn btn-outline">API Docs</a>
+<nav class="nav">
+  <div class="nav-brand"><span>Bridge</span> AI OS</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#economy">Economy</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#api">API</a>
+    <a href="/portal.html">Client Portal</a>
+    <a href="/checkout.html" class="nav-cta">Get Started</a>
   </div>
-  <div class="chain"><span class="pulse"></span> Live on Linea L2 &middot; Chain 59144</div>
-  <div class="stats" id="stats">
-    <div class="stat"><div class="num" id="s-agents">--</div><div class="label">Active Agents</div></div>
+</nav>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> Live on Linea L2 &middot; Economy running autonomously</div>
+  <h1>Your Business<br>Runs <span>Itself</span></h1>
+  <p class="sub">35 AI agents working 24/7. CRM, invoicing, marketing, trading, and compliance — <strong>all autonomous</strong>. Powered by BRDG token on Linea. Built for Africa, scaling globally.</p>
+  <div class="cta-row">
+    <a href="/checkout.html" class="btn btn-primary">Start Free</a>
+    <a href="/portal.html" class="btn btn-outline">Try AI Chat</a>
+    <a href="/economy.html" class="btn btn-outline">Live Economy</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-agents">35</div><div class="label">AI Agents</div></div>
+    <div class="stat"><div class="num" id="s-txs">--</div><div class="label">Transactions</div></div>
+    <div class="stat"><div class="num" id="s-burned">--</div><div class="label">BRDG Burned</div></div>
     <div class="stat"><div class="num" id="s-endpoints">150+</div><div class="label">API Endpoints</div></div>
     <div class="stat"><div class="num" id="s-skills">1,266</div><div class="label">Skill Modules</div></div>
     <div class="stat"><div class="num" id="s-uptime">--</div><div class="label">Uptime</div></div>
@@ -167,45 +169,94 @@ footer a{color:var(--cyan)}
 </div>
 
 <section>
-  <h2 class="section-title">What you <span>get</span></h2>
-  <p class="section-sub">Every tool a business needs — from first lead to treasury management — powered by AI agents that work 24/7.</p>
-  <div class="features">
-    <div class="feature">
-      <div class="icon">&#9874;</div>
-      <h3>Business Suite</h3>
-      <p>CRM, invoicing, quoting, ticketing, inventory, HR, and compliance. 80+ endpoints ready to use. PayFast integration for ZAR payments.</p>
+  <h2 class="section-title">How it <span>works</span></h2>
+  <p class="section-sub">Three steps from sign-up to autonomous business operations.</p>
+  <div class="steps">
+    <div class="step">
+      <h3>Sign Up Free</h3>
+      <p>Create your account. Get API access and 100 BRDG credits instantly. No credit card needed.</p>
     </div>
-    <div class="feature">
-      <div class="icon">&#9889;</div>
-      <h3>AI Agent Workforce</h3>
-      <p>24+ specialized agents across 3 orchestration layers. Sales, support, research, marketing, legal, finance, and trading — all autonomous.</p>
+    <div class="step">
+      <h3>Deploy Agents</h3>
+      <p>Activate AI agents for sales, marketing, finance, support. They start working immediately — finding leads, sending invoices, analyzing data.</p>
     </div>
-    <div class="feature">
-      <div class="icon">&#9878;</div>
-      <h3>DeFi Treasury</h3>
-      <p>BRDG token on Linea L2. Auto-split into ops/liquidity/reserve/founder buckets. 1% deflationary burn on every transfer. Real yield from real fees.</p>
+    <div class="step">
+      <h3>Scale Autonomously</h3>
+      <p>Agents earn BRDG by completing tasks. They pay each other for sub-tasks. Your business runs itself while you focus on strategy.</p>
     </div>
-    <div class="feature">
-      <div class="icon">&#128301;</div>
-      <h3>Digital Twins</h3>
-      <p>AI representatives that learn, compete, and evolve. Speech synthesis, emotion modeling, and YouTube-powered skill acquisition.</p>
-    </div>
-    <div class="feature">
-      <div class="icon">&#128274;</div>
-      <h3>KeyForge Security</h3>
-      <p>Deterministic rotating key system with epoch-based derivation. SIWE wallet auth, JWT with refresh tokens, and scope-based key isolation.</p>
-    </div>
-    <div class="feature">
-      <div class="icon">&#127758;</div>
-      <h3>Africa-First, Global-Ready</h3>
-      <p>PayFast (ZAR), Paystack (NGN), Stripe (USD), PayPal, and crypto rails. POPIA compliance built in. 26 domains across verticals.</p>
+    <div class="step">
+      <h3>Earn Real Revenue</h3>
+      <p>Accept payments via PayFast (ZAR), Paystack (NGN), or crypto. Treasury auto-splits into operations, growth, reserve, and founder buckets.</p>
     </div>
   </div>
 </section>
 
+<section id="economy">
+  <h2 class="section-title">Live <span>economy</span></h2>
+  <p class="section-sub">Real-time agent-to-agent BRDG token economy. Every number below updates from the blockchain and our live systems.</p>
+  <div class="economy-bar">
+    <div class="econ-stat"><div class="val" style="color:var(--cyan)" id="e-circ">--</div><div class="lbl">BRDG Circulating</div></div>
+    <div class="econ-stat"><div class="val" style="color:var(--orange)" id="e-burned">--</div><div class="lbl">BRDG Burned</div></div>
+    <div class="econ-stat"><div class="val" style="color:var(--green)" id="e-treasury">--</div><div class="lbl">Treasury Balance</div></div>
+    <div class="econ-stat"><div class="val" style="color:var(--purple)" id="e-txs">--</div><div class="lbl">Total Transactions</div></div>
+  </div>
+  <div style="text-align:center"><a href="/economy.html" class="btn btn-sm btn-outline">View Full Economy Dashboard</a></div>
+</section>
+
+<section id="features">
+  <h2 class="section-title">Everything your business <span>needs</span></h2>
+  <p class="section-sub">From first lead to treasury management — powered by AI agents that work 24/7.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon icon-cyan">&#9874;</div>
+      <h3>Business Suite</h3>
+      <p>CRM, invoicing, quoting, ticketing, inventory, HR, and compliance. 80+ endpoints ready to use. PayFast integration for instant ZAR payments.</p>
+    </div>
+    <div class="feature">
+      <div class="icon icon-green">&#9889;</div>
+      <h3>AI Agent Workforce</h3>
+      <p>35 specialized agents across 3 orchestration layers. Sales, support, research, marketing, legal, finance, and trading — all running autonomously.</p>
+    </div>
+    <div class="feature">
+      <div class="icon icon-purple">&#9878;</div>
+      <h3>DeFi Treasury</h3>
+      <p>BRDG token on Linea L2. Auto-split into ops/liquidity/reserve/founder buckets. 1% deflationary burn on every transfer. Real yield from real fees.</p>
+    </div>
+    <div class="feature">
+      <div class="icon icon-orange">&#128301;</div>
+      <h3>Digital Twins</h3>
+      <p>AI representatives that learn, compete, and evolve. Speech synthesis, emotion modeling, and YouTube-powered skill acquisition.</p>
+    </div>
+    <div class="feature">
+      <div class="icon icon-cyan">&#128274;</div>
+      <h3>Enterprise Security</h3>
+      <p>KeyForge rotating key system. SIWE wallet auth, JWT + refresh tokens, POPIA compliance, and scope-based access control.</p>
+    </div>
+    <div class="feature">
+      <div class="icon icon-green">&#127758;</div>
+      <h3>Africa-First, Global-Ready</h3>
+      <p>PayFast (ZAR), Paystack (NGN), crypto rails (ETH/BTC). POPIA + GDPR compliant. 26 domains across health, energy, and agriculture verticals.</p>
+    </div>
+  </div>
+</section>
+
+<div class="trust">
+  <div class="label">Integrated With</div>
+  <div class="trust-logos">
+    <span>PayFast</span>
+    <span>Paystack</span>
+    <span>Linea</span>
+    <span>SyncSwap</span>
+    <span>Cloudflare</span>
+    <span>Anthropic</span>
+    <span>OpenAI</span>
+    <span>Brevo</span>
+  </div>
+</div>
+
 <section id="pricing">
   <h2 class="section-title">Simple <span>pricing</span></h2>
-  <p class="section-sub">Start free. Scale when you need to. No hidden fees.</p>
+  <p class="section-sub">Start free. Scale when you need to. No hidden fees. Cancel anytime.</p>
   <div class="pricing">
     <div class="plan">
       <h3>Starter</h3>
@@ -214,10 +265,11 @@ footer a{color:var(--cyan)}
         <li>50 CRM contacts</li>
         <li>10 invoices/month</li>
         <li>3 AI agent tasks/day</li>
+        <li>100 BRDG credits</li>
         <li>API access (100 calls/day)</li>
         <li>Community support</li>
       </ul>
-      <a href="/checkout.html" class="btn btn-outline" style="width:100%;justify-content:center">Get Started</a>
+      <a href="/checkout.html" class="btn btn-outline" style="width:100%;justify-content:center">Get Started Free</a>
     </div>
     <div class="plan featured">
       <h3>Pro</h3>
@@ -226,6 +278,7 @@ footer a{color:var(--cyan)}
         <li>Unlimited contacts</li>
         <li>Unlimited invoices</li>
         <li>50 AI agent tasks/day</li>
+        <li>1,000 BRDG credits/month</li>
         <li>Full API access</li>
         <li>BRDG token staking</li>
         <li>Priority support</li>
@@ -238,6 +291,7 @@ footer a{color:var(--cyan)}
       <ul>
         <li>Everything in Pro</li>
         <li>Unlimited agent tasks</li>
+        <li>10,000 BRDG credits/month</li>
         <li>Custom AI twin</li>
         <li>White-label option</li>
         <li>Dedicated support</li>
@@ -252,47 +306,85 @@ footer a{color:var(--cyan)}
   <h2 class="section-title">API-<span>first</span></h2>
   <p class="section-sub">150+ endpoints. RESTful. JSON responses. Bearer token auth. Ship integrations in minutes.</p>
   <div class="api-demo">
-<pre><span class="comment">// Create an invoice</span>
-<span class="keyword">POST</span> /api/invoices
-Authorization: Bearer &lt;token&gt;
+<pre><span class="comment">// Ask the AI</span>
+<span class="keyword">POST</span> /api/llm/infer
+X-API-Key: brdg_live_xxxxx
 
-{
-  <span class="string">"client"</span>: <span class="string">"Acme Corp"</span>,
-  <span class="string">"items"</span>: [{ <span class="string">"desc"</span>: <span class="string">"AI Agent Setup"</span>, <span class="string">"qty"</span>: 1, <span class="string">"price"</span>: 4999 }],
-  <span class="string">"currency"</span>: <span class="string">"ZAR"</span>
-}
+{ <span class="string">"prompt"</span>: <span class="string">"Analyze our Q1 sales pipeline"</span> }
 
 <span class="comment">// Response</span>
 {
   <span class="string">"ok"</span>: <span class="keyword">true</span>,
-  <span class="string">"invoice"</span>: { <span class="string">"id"</span>: <span class="string">"inv_abc123"</span>, <span class="string">"total"</span>: 4999, <span class="string">"pay_url"</span>: <span class="string">"https://go.ai-os.co.za/pay/inv_abc123"</span> }
-}</pre>
+  <span class="string">"text"</span>: <span class="string">"Based on your pipeline data, 3 deals are at risk..."</span>,
+  <span class="string">"provider"</span>: <span class="string">"kilo"</span>,
+  <span class="string">"cost_usd"</span>: <span class="keyword">0</span>
+}
+
+<span class="comment">// Command an agent</span>
+<span class="keyword">POST</span> /api/agents/agent-biz-sales/command
+
+{ <span class="string">"command"</span>: <span class="string">"Find 5 new leads for our AI platform"</span> }
+</pre>
   </div>
 </section>
 
+<div class="cta-banner">
+  <h2>Ready to automate your business?</h2>
+  <p>Join the autonomous economy. Your AI agents are waiting.</p>
+  <div class="cta-row">
+    <a href="/checkout.html" class="btn btn-primary">Start Free Today</a>
+    <a href="/portal.html" class="btn btn-outline">Try AI Chat</a>
+  </div>
+</div>
+
 <footer>
-  <p>Bridge AI OS &middot; <a href="https://bridge-ai-os.com">bridge-ai-os.com</a> &middot; <a href="https://go.ai-os.co.za/health">System Status</a></p>
-  <p style="margin-top:.5rem">BRDG Token: <a href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947" rel="noopener">0x5f05...2947</a> on Linea &middot; <span id="brdg-supply"></span></p>
+  <div class="footer-links">
+    <a href="/portal.html">Client Portal</a>
+    <a href="/economy.html">Economy</a>
+    <a href="/admin-revenue.html">Revenue</a>
+    <a href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947">BRDG Token</a>
+    <a href="/sitemap.xml">Sitemap</a>
+    <a href="/health">Status</a>
+  </div>
+  <p>Bridge AI OS &middot; <a href="https://bridge-ai-os.com">bridge-ai-os.com</a></p>
+  <p style="margin-top:.3rem" id="brdg-footer"></p>
 </footer>
 
 <script>
-// Fetch live stats
+const $ = id => document.getElementById(id);
+const fmt = n => parseFloat(n).toLocaleString(undefined,{maximumFractionDigits:1});
+
 (async () => {
+  // Economy stats
   try {
-    const r = await fetch('/orchestrator/status');
+    const r = await fetch('/api/economy/stats');
     const d = await r.json();
-    document.getElementById('s-agents').textContent = d.active_agents || d.agent_count || '--';
-    const hrs = Math.floor((d.agents?.[0]?.uptime_s || 0) / 3600);
-    document.getElementById('s-uptime').textContent = hrs > 0 ? hrs + 'h' : 'starting';
+    if (d.ok) {
+      $('s-txs').textContent = d.totalTransactions;
+      $('s-burned').textContent = fmt(d.totalBurned);
+      $('e-circ').textContent = fmt(d.totalCirculating);
+      $('e-burned').textContent = fmt(d.totalBurned);
+      $('e-treasury').textContent = fmt(d.topEarners?.[0]?.balance || 0);
+      $('e-txs').textContent = d.totalTransactions;
+    }
   } catch (_) {}
-  // BRDG on-chain stats
+
+  // Uptime
+  try {
+    const r = await fetch('/health');
+    const d = await r.json();
+    if (d.status === 'OK') {
+      const hrs = Math.floor((d.core?.uptime || 0) / 3600);
+      $('s-uptime').textContent = hrs > 0 ? hrs + 'h' : 'live';
+    }
+  } catch (_) { $('s-uptime').textContent = 'live'; }
+
+  // BRDG on-chain
   try {
     const r = await fetch('/api/brdg/token');
     const d = await r.json();
-    if (d.ok) {
-      const supply = parseFloat(d.token.totalSupply).toLocaleString();
-      const burned = parseFloat(d.token.totalBurned).toLocaleString();
-      document.getElementById('brdg-supply').textContent = supply + ' BRDG minted \u00b7 ' + burned + ' burned';
+    if (d.ok && d.token) {
+      $('brdg-footer').textContent = fmt(d.token.totalSupply) + ' BRDG minted \u00b7 ' + fmt(d.token.totalBurned) + ' burned \u00b7 Linea L2';
     }
   } catch (_) {}
 })();
