@@ -31,12 +31,21 @@ const ROOT = __dirname;
 const SHARED_DIR = path.join(ROOT, 'shared');
 const data = require('./data-service');
 
-// ── CORS ────────────────────────────────────────────────────────────────────
+// ── CORS (restricted to known origins) ───────────────────────────────────────
+const ALLOWED_ORIGINS = new Set([
+  'https://wall.bridge-ai-os.com',
+  'https://go.ai-os.co.za',
+  'http://localhost:3000',
+  'http://localhost:8080',
+]);
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Cache-Control, Pragma, Accept, Origin, X-Forwarded-For, X-Real-IP, Upgrade, Connection');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, X-Request-Id');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.setHeader('Access-Control-Max-Age', '86400');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
@@ -424,7 +433,7 @@ let jwt, bcrypt;
 try { jwt   = require('jsonwebtoken'); }  catch (_) { jwt   = null; }
 try { bcrypt = require('bcryptjs'); }      catch (_) { bcrypt = null; }
 
-const JWT_SECRET   = process.env.JWT_SECRET || 'bridge-ai-os-dev-secret-change-in-prod';
+const JWT_SECRET   = process.env.JWT_SECRET;
 const REFERRAL_CODES = { BRIDGE2025: 500, AILAUNCH: 250, BETA100: 100 };
 
 // In-memory user store (replace with DB in production)

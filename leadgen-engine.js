@@ -74,6 +74,7 @@ function getSmtpFrom() {
 const SMTP_FROM_NAME = process.env.SMTP_FROM_NAME || secrets.getSecret('SMTP_FROM_NAME', 'Mr. Myburg — Bridge AI Brain');
 
 // transporter is now built on-demand via sendMailWithFallback() — supports hot-reload of secrets
+let transporter = null;
 
 // ===== SCHEDULING =====
 const OPTIMAL_SEND_HOURS = [9, 10, 14, 15];

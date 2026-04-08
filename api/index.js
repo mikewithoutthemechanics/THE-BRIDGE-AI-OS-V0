@@ -235,7 +235,7 @@ function rateLimit(ip, key, maxPerMinute) {
 
 // Auth store (ephemeral per cold start — acceptable for serverless demo)
 const authUsers = new Map();
-const JWT_SECRET = process.env.JWT_SECRET || 'bridge-ai-os-dev-secret-change-in-prod';
+const JWT_SECRET = process.env.JWT_SECRET;
 const REFERRAL_CODES = { BRIDGE2025: 500, AILAUNCH: 250, BETA100: 100 };
 
 let jwt, bcrypt;

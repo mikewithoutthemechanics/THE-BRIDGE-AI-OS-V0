@@ -1,7 +1,9 @@
 FROM node:20-alpine
 WORKDIR /app
-COPY package*.json ./
-RUN npm install --production
+# Copy manifests first — layer-cached unless deps change
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+# Copy source (secrets/logs excluded via .dockerignore)
 COPY . .
 EXPOSE 8080 8000 3000 5002 5001
 CMD ["node", "brain.js"]

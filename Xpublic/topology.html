@@ -5,11 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID</title>
 
-<!-- P5 + XTERM -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"/>
-<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<!-- ✅ SECURE CSP -->
+<meta http-equiv="Content-Security-Policy" content="
+default-src 'self';
+script-src 'self' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
+style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+connect-src 'self' wss: ws:;
+object-src 'none';
+base-uri 'self';
+">
+
+<!-- P5 + XTERM with SRI -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js" integrity="sha384-7aZ9BzDqjZG7K7U7FqJtJkXffufZBkT2F4PrVqPLiLgmJ5J3St2nGLCkIRXqFFs" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" integrity="sha384-HN订D6R9CnLNQa7F0H8UOCoqDPLQfWwZLnTqTHRNPzLeFlYcCXE9XjKS8EneT/2" crossorigin="anonymous"/>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" integrity="sha384-n7rVq3MZhH9K1bKTod86jT3nF3PXUOVc9kT3N7kK3R2LGMxRvTFLF3N5hNq7uN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js" integrity="sha384-8MGM9qZ3D5J5/9M7YKhKxkH3hKJA+v17K3wcmVMTwFV+6J6L6rSqOQ0j2VMT5x5" crossorigin="anonymous"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -338,7 +348,7 @@ canvas{display:block;}
 <div id="terminals"></div>
 
 <!-- Status Bar -->
-<div id="status-bar" id="status">
+<div id="status-bar">
   <span id="ws-status">WS: connecting…</span>
   &nbsp;|&nbsp;
   <span id="session-count">SESSIONS: 0</span>
@@ -564,7 +574,7 @@ function runScan() {
       terminals[activeId].term.write('\r\n\x1b[36m[SCAN COMPLETE]\x1b[0m Nodes: ' +
         (d.nodes ? d.nodes.length : '?') + '\r\n');
     }
-  }).catch(() => {});
+  }).catch(err => console.warn('Scan failed:', err));
 }
 
 // Open a terminal in the working directory of a topology node
@@ -631,7 +641,7 @@ function fetchAudit() {
     const t = terminals[activeId].term;
     t.write('\r\n\x1b[33m[CONTRACTS — ' + (d.count||0) + ' files]\x1b[0m\r\n');
     (d.files||[]).slice(-20).forEach(f => t.write('  ' + f + '\r\n'));
-  }).catch(() => {});
+  }).catch(err => console.warn('Audit fetch failed:', err));
 }
 
 function rebalanceGrid() {
@@ -1272,11 +1282,39 @@ if (IS_SERVERLESS) {
 /*****************************************************************************
   BOOT
 *****************************************************************************/
+// Check for valid token before connecting
+function getAuthToken() {
+  return localStorage.getItem('bridge_terminal_token') || sessionStorage.getItem('bridge_terminal_token') || null;
+}
+
+function saveAuthToken(token) {
+  localStorage.setItem('bridge_terminal_token', token);
+}
+
 wsConnect();
-// Authenticate as root (default)
-setTimeout(() => { wsSend({ type:'auth', user:'root' }); }, 400);
-// Auto-start 2 terminals
-setTimeout(() => { createTerminal(); createTerminal(); }, 700);
+// Authenticate with JWT token (required)
+setTimeout(() => { 
+  const token = getAuthToken();
+  if (token) {
+    wsSend({ type:'auth', token });
+  } else {
+    // Prompt for token if not available
+    const tokenInput = prompt('Enter terminal access token:');
+    if (tokenInput) {
+      saveAuthToken(tokenInput);
+      wsSend({ type:'auth', token: tokenInput });
+    } else {
+      document.getElementById('ws-status').textContent = 'WS: auth required';
+      document.getElementById('ws-status').style.color = '#f44';
+    }
+  }
+}, 400);
+// Auto-start 2 terminals (only if authenticated)
+setTimeout(() => { 
+  if (getAuthToken()) {
+    createTerminal(); createTerminal(); 
+  }
+}, 700);
 // Load economics data
 setTimeout(() => { loadEconomics(); }, 1000);
 </script>

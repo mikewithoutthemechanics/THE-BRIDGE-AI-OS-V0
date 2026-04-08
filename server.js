@@ -11,12 +11,13 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 }
 
 const express = require("express");
-const bodyParser = require("body-parser");
+// body-parser not needed — Express 5 has built-in JSON/urlencoded parsing
 const sqlite3 = require("better-sqlite3");
 const axios = require("axios");
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const path = require("path");
+const fs = require("fs");
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
@@ -25,17 +26,30 @@ const mail   = require('./lib/mail');
 const da     = require('./lib/directadmin');
 const wp     = require('./lib/wordpress');
 const wpAuth = require('./lib/wp-auth');
-// CSRF disabled — frontend pages use fetch() which cannot supply CSRF tokens
-// const csrf = require('csurf');
+// CSRF: csurf is deprecated and removed — use SameSite cookies + Origin header checks
 // Auth middleware disabled at global level — individual admin routes use requireAdmin
 // const { requireAuth } = require('./middleware/auth');
 
 const economyDb = new Pool({
-  connectionString: process.env.ECONOMY_DB_URL || 'postgresql://postgres:password@localhost:5432/bridgeai_economy'
+  connectionString: process.env.ECONOMY_DB_URL,
+  max: 5,
+  connectionTimeoutMillis: 5000,
+});
+
+// Prevent unhandled pool errors from crashing the process.
+// Individual route handlers already catch query errors — this covers
+// background connection failures (e.g. PostgreSQL is down at startup).
+let _pgWarned = false;
+economyDb.on('error', (err) => {
+  if (!_pgWarned) {
+    console.error('[SERVER][WARN] PostgreSQL pool error (economy routes will fail gracefully):', err.message);
+    _pgWarned = true;
+    setTimeout(() => { _pgWarned = false; }, 60000); // re-warn after 1 min
+  }
 });
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({ origin: ['https://wall.bridge-ai-os.com', 'http://localhost:3000', 'https://go.ai-os.co.za'], credentials: true }));
@@ -44,7 +58,7 @@ app.use(cors({ origin: ['https://wall.bridge-ai-os.com', 'http://localhost:3000'
 app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com",
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://cdnjs.cloudflare.com",
     "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:",
     "img-src 'self' data: blob: https:",
@@ -57,8 +71,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files
-app.use(express.static(path.join(__dirname)));
+// Serve static files — ONLY from public/ to prevent exposing source, .env, DBs
 app.use(express.static(path.join(__dirname, "public")));
 
 // Rate limiting
@@ -66,6 +79,11 @@ const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
 const maxReq = Number(process.env.RATE_LIMIT_MAX || 1000);
 app.use(rateLimit({ windowMs, max: maxReq, standardHeaders: true, legacyHeaders: false }));
 app.use("/payfast/notify", rateLimit({ windowMs, max: Math.min(maxReq, 30), standardHeaders: true, legacyHeaders: false }));
+
+// HTML escape helper to prevent XSS in server-rendered pages
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 // IP allowlist helpers
 function getClientIp(req) {
@@ -159,7 +177,7 @@ app.post("/lead", (req, res) => {
 });
 
 // ================= AI SALES AUTO CLOSE =================
-app.post("/auto-close", (req, res) => {
+app.post("/auto-close", requireAdmin, (req, res) => {
   const selectNewClients = db.prepare("SELECT * FROM clients WHERE status='new'");
   const rows = selectNewClients.all();
 
@@ -183,8 +201,11 @@ app.post("/create-payment", (req, res) => {
 
 // Internal checkout page — collects to batch pool for later remittance
 app.get("/checkout", (req, res) => {
-  const { ref, amount, client, email } = req.query;
-  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bridge AI OS — Checkout</title><link rel="stylesheet" href="/bridge-tokens.css"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg-0);color:var(--text-primary);font-family:var(--font-ui);display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:420px;width:100%}h1{font-size:22px;font-weight:700;margin-bottom:4px}h1 span{color:var(--cyan)}.sub{color:var(--text-secondary);font-size:13px;margin-bottom:24px}.amount{font-size:36px;font-weight:800;color:var(--cyan);font-family:var(--font-mono);text-align:center;margin:20px 0}.detail{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05)}.detail-label{color:var(--text-secondary)}.methods{display:flex;flex-direction:column;gap:8px;margin:20px 0}.method{background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s}.method:hover,.method.selected{border-color:var(--cyan)}.method-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border)}.method.selected .method-dot{background:var(--cyan);border-color:var(--cyan)}.btn{width:100%;padding:14px;border-radius:8px;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s}.btn-pay{background:var(--cyan);color:#000}.btn-pay:hover{filter:brightness(1.1)}.btn-pay:disabled{opacity:0.5;cursor:not-allowed}.note{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px}.success{display:none;text-align:center}.success h2{color:var(--alive);font-size:20px;margin-bottom:8px}.success p{color:var(--text-secondary);font-size:13px}</style></head><body><div class="card" id="checkout-form"><h1>Bridge <span>AI OS</span></h1><div class="sub">Secure Checkout</div><div class="amount">R${amount || '0.00'}</div><div class="detail"><span class="detail-label">Reference</span><span style="font-family:var(--font-mono);font-size:12px">${ref || '—'}</span></div><div class="detail"><span class="detail-label">Customer</span><span>${decodeURIComponent(client || 'Customer')}</span></div><div class="detail"><span class="detail-label">Product</span><span>Bridge AI OS Pro</span></div><div class="methods"><div class="method selected" onclick="selectMethod(this,'eft')"><span class="method-dot"></span><div><strong>EFT / Bank Transfer</strong><div style="font-size:11px;color:var(--text-secondary)">Manual transfer — batch processed</div></div></div><div class="method" onclick="selectMethod(this,'card')"><span class="method-dot"></span><div><strong>Card Payment</strong><div style="font-size:11px;color:var(--text-secondary)">Available when PayFast verified</div></div></div><div class="method" onclick="selectMethod(this,'crypto')"><span class="method-dot"></span><div><strong>Crypto (ETH/BTC/SOL)</strong><div style="font-size:11px;color:var(--text-secondary)">Send to treasury wallet</div></div></div></div><button class="btn btn-pay" id="pay-btn" onclick="processPayment()">Confirm Payment — R${amount || '0.00'}</button><div class="note">Funds are held in a batch pool and processed within 24 hours.<br>Treasury splits: UBI 40% · Treasury 30% · Ops 20% · Founder 10%</div></div><div class="success" id="success"><h2>Payment Recorded</h2><p>Reference: ${ref}</p><p>Amount: R${amount} added to batch pool</p><p style="margin-top:12px">Treasury will be updated within 24 hours.</p><p style="margin-top:16px"><a href="/treasury-dash" style="color:var(--cyan)">View Treasury →</a> · <a href="/apps" style="color:var(--cyan)">Go to Apps →</a></p></div><script>var selectedMethod='eft';function selectMethod(el,m){document.querySelectorAll('.method').forEach(function(e){e.classList.remove('selected')});el.classList.add('selected');selectedMethod=m}function processPayment(){var btn=document.getElementById('pay-btn');btn.disabled=true;btn.textContent='Processing...';fetch('/api/checkout/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ref:'${ref}',amount:'${amount}',client:'${decodeURIComponent(client||"")}',email:'${decodeURIComponent(email||"")}',method:selectedMethod})}).then(function(r){return r.json()}).then(function(d){document.getElementById('checkout-form').style.display='none';document.getElementById('success').style.display='block'}).catch(function(){btn.disabled=false;btn.textContent='Retry'})}</script></body></html>`);
+  const safeRef = esc(req.query.ref || '—');
+  const safeAmount = esc(req.query.amount || '0.00');
+  const safeClient = esc(decodeURIComponent(req.query.client || 'Customer'));
+  const safeEmail = esc(decodeURIComponent(req.query.email || ''));
+  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bridge AI OS — Checkout</title><link rel="stylesheet" href="/bridge-tokens.css"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg-0);color:var(--text-primary);font-family:var(--font-ui);display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:420px;width:100%}h1{font-size:22px;font-weight:700;margin-bottom:4px}h1 span{color:var(--cyan)}.sub{color:var(--text-secondary);font-size:13px;margin-bottom:24px}.amount{font-size:36px;font-weight:800;color:var(--cyan);font-family:var(--font-mono);text-align:center;margin:20px 0}.detail{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05)}.detail-label{color:var(--text-secondary)}.methods{display:flex;flex-direction:column;gap:8px;margin:20px 0}.method{background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s}.method:hover,.method.selected{border-color:var(--cyan)}.method-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border)}.method.selected .method-dot{background:var(--cyan);border-color:var(--cyan)}.btn{width:100%;padding:14px;border-radius:8px;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s}.btn-pay{background:var(--cyan);color:#000}.btn-pay:hover{filter:brightness(1.1)}.btn-pay:disabled{opacity:0.5;cursor:not-allowed}.note{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px}.success{display:none;text-align:center}.success h2{color:var(--alive);font-size:20px;margin-bottom:8px}.success p{color:var(--text-secondary);font-size:13px}</style></head><body><div class="card" id="checkout-form"><h1>Bridge <span>AI OS</span></h1><div class="sub">Secure Checkout</div><div class="amount">R${safeAmount}</div><div class="detail"><span class="detail-label">Reference</span><span style="font-family:var(--font-mono);font-size:12px">${safeRef}</span></div><div class="detail"><span class="detail-label">Customer</span><span>${safeClient}</span></div><div class="detail"><span class="detail-label">Product</span><span>Bridge AI OS Pro</span></div><div class="methods"><div class="method selected" onclick="selectMethod(this,'eft')"><span class="method-dot"></span><div><strong>EFT / Bank Transfer</strong><div style="font-size:11px;color:var(--text-secondary)">Manual transfer — batch processed</div></div></div><div class="method" onclick="selectMethod(this,'card')"><span class="method-dot"></span><div><strong>Card Payment</strong><div style="font-size:11px;color:var(--text-secondary)">Available when PayFast verified</div></div></div><div class="method" onclick="selectMethod(this,'crypto')"><span class="method-dot"></span><div><strong>Crypto (ETH/BTC/SOL)</strong><div style="font-size:11px;color:var(--text-secondary)">Send to treasury wallet</div></div></div></div><button class="btn btn-pay" id="pay-btn" onclick="processPayment()">Confirm Payment — R${safeAmount}</button><div class="note">Funds are held in a batch pool and processed within 24 hours.<br>Treasury splits: UBI 40% · Treasury 30% · Ops 20% · Founder 10%</div></div><div class="success" id="success"><h2>Payment Recorded</h2><p>Reference: ${safeRef}</p><p>Amount: R${safeAmount} added to batch pool</p><p style="margin-top:12px">Treasury will be updated within 24 hours.</p><p style="margin-top:16px"><a href="/treasury-dash" style="color:var(--cyan)">View Treasury →</a> · <a href="/apps" style="color:var(--cyan)">Go to Apps →</a></p></div><script>var selectedMethod='eft';var _ref=${JSON.stringify(req.query.ref||'')};var _amount=${JSON.stringify(req.query.amount||'0')};var _client=${JSON.stringify(decodeURIComponent(req.query.client||''))};var _email=${JSON.stringify(decodeURIComponent(req.query.email||''))};function selectMethod(el,m){document.querySelectorAll('.method').forEach(function(e){e.classList.remove('selected')});el.classList.add('selected');selectedMethod=m}function processPayment(){var btn=document.getElementById('pay-btn');btn.disabled=true;btn.textContent='Processing...';fetch('/api/checkout/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ref:_ref,amount:_amount,client:_client,email:_email,method:selectedMethod})}).then(function(r){return r.json()}).then(function(d){document.getElementById('checkout-form').style.display='none';document.getElementById('success').style.display='block'}).catch(function(){btn.disabled=false;btn.textContent='Retry'})}</script></body></html>`);
 });
 
 // Confirm checkout — records to batch pool + treasury
@@ -636,7 +657,7 @@ const _origErr = console.error;
 console.log = (...args) => { _logBuffer.push({ level: 'INFO', msg: args.join(' '), ts: new Date().toISOString() }); if (_logBuffer.length > 500) _logBuffer.shift(); _origLog(...args); };
 console.error = (...args) => { _logBuffer.push({ level: 'ERROR', msg: args.join(' '), ts: new Date().toISOString() }); if (_logBuffer.length > 500) _logBuffer.shift(); _origErr(...args); };
 
-app.get("/api/logs", (req, res) => {
+app.get("/api/logs", requireAdmin, (req, res) => {
   const format = req.query.format || 'text';
   if (format === 'json') {
     return res.json({ count: _logBuffer.length, logs: _logBuffer.slice(-100) });
@@ -653,12 +674,22 @@ app.get("/api/logs", (req, res) => {
 
 // ================= UNIVERSAL SHARE ENDPOINTS =================
 
+// Share ID sanitizer — prevent path traversal (alphanumeric + hyphens only)
+function safeSharePath(shareId) {
+  if (!/^[a-zA-Z0-9_-]+$/.test(shareId)) return null;
+  const resolved = path.resolve(__dirname, 'artifacts', 'share', `${shareId}.json`);
+  const safeDir = path.resolve(__dirname, 'artifacts', 'share');
+  if (!resolved.startsWith(safeDir)) return null;
+  return resolved;
+}
+
 // GET /share/:id/context - Returns just the context bundle for agents
 app.get("/share/:id/context", (req, res) => {
-  const shareId = req.params.id;
+  const filePath = safeSharePath(req.params.id);
+  if (!filePath) return res.status(400).json({ error: "Invalid share ID" });
 
   try {
-    const shareData = require(`./artifacts/share/${shareId}.json`);
+    const shareData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     res.json(shareData.context);
   } catch (error) {
     res.status(404).json({ error: "Share not found" });
@@ -667,14 +698,14 @@ app.get("/share/:id/context", (req, res) => {
 
 // GET /share/:id/history - Returns timeline/audit trail from share file
 app.get("/share/:id/history", (req, res) => {
-  const shareId = req.params.id;
+  const filePath = safeSharePath(req.params.id);
+  if (!filePath) return res.status(400).json({ error: "Invalid share ID" });
+
   try {
-    const fs = require('fs');
-    const filePath = path.join(__dirname, 'artifacts', 'share', `${shareId}.json`);
     const stat = fs.statSync(filePath);
     const shareData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     res.json({
-      shareId,
+      shareId: req.params.id,
       created: stat.birthtime.toISOString(),
       modified: stat.mtime.toISOString(),
       events: [
@@ -689,12 +720,12 @@ app.get("/share/:id/history", (req, res) => {
 
 // GET /share/:id/metadata - Returns everything except heavy blobs
 app.get("/share/:id/metadata", (req, res) => {
-  const shareId = req.params.id;
+  const filePath = safeSharePath(req.params.id);
+  if (!filePath) return res.status(400).json({ error: "Invalid share ID" });
 
   try {
-    const shareData = require(`./artifacts/share/${shareId}.json`);
+    const shareData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     const { context, ...metadata } = shareData;
-    // Remove base64 image data from context if present
     const cleanContext = { ...context };
     delete cleanContext.imageBase64;
 
@@ -765,7 +796,7 @@ leadgenEngine.mount(app);
 // ================= NOTION REPORTING LAYER =================
 const notionSync = require('./lib/notion-sync');
 
-app.post('/api/notion/init', async (req, res) => {
+app.post('/api/notion/init', requireAdmin, async (req, res) => {
   try {
     const ok = await notionSync.init();
     res.json({ ok, message: ok ? 'Notion databases initialized' : 'NOTION_TOKEN not set' });
@@ -774,7 +805,7 @@ app.post('/api/notion/init', async (req, res) => {
   }
 });
 
-app.post('/api/notion/sync', async (req, res) => {
+app.post('/api/notion/sync', requireAdmin, async (req, res) => {
   try {
     const results = await notionSync.syncAll();
     res.json(results);
@@ -843,7 +874,7 @@ app.post('/referral/claim', async (req, res) => {
 });
 
 // ================= LEADGEN AI PIPELINE (must be before catch-all proxy) =================
-app.post('/api/leadgen/auto-prospect', async (req, res) => {
+app.post('/api/leadgen/auto-prospect', requireAdmin, async (req, res) => {
   const { industry, region, count } = req.body;
   try {
     const resp = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
@@ -857,14 +888,14 @@ app.post('/api/leadgen/auto-prospect', async (req, res) => {
     res.json({ ok: true, leads_generated: leads.length, leads, raw: leads.length ? undefined : text });
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
-app.post('/api/leadgen/auto-nurture', async (req, res) => {
+app.post('/api/leadgen/auto-nurture', requireAdmin, async (req, res) => {
   try {
     const camp = await axios.post('http://localhost:3000/api/crm/campaigns', { name: req.body.subject || 'AI Nurture', template_type: 'intro' }).then(r=>r.data).catch(()=>({}));
     const queue = await axios.post('http://localhost:3000/api/outreach/leads', { filter: 'all', template: 'intro' }).then(r=>r.data).catch(()=>({}));
     res.json({ ok: true, campaign: camp, queued: queue });
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
-app.post('/api/leadgen/auto-close', async (req, res) => {
+app.post('/api/leadgen/auto-close', requireAdmin, async (req, res) => {
   const { lead_id, offer } = req.body;
   try {
     const lead = await axios.get('http://localhost:3000/api/crm/leads/' + lead_id).then(r=>r.data).catch(()=>null);
@@ -898,7 +929,7 @@ app.get('/api/credits', async (req, res) => {
 });
 
 // Add credits (admin)
-app.post('/api/credits/add', async (req, res) => {
+app.post('/api/credits/add', requireAdmin, async (req, res) => {
   const { userId, amount } = req.body;
   if (!userId || !amount) return res.status(400).json({ error: 'Missing userId or amount' });
   try {
@@ -972,7 +1003,7 @@ app.get('/api/founder/tax', (req, res) => {
   res.json({ ok: true, taxRate: founderTaxRate, note: 'Additional founder extraction before standard split' });
 });
 
-app.post('/api/founder/tax', (req, res) => {
+app.post('/api/founder/tax', requireAdmin, (req, res) => {
   const { rate } = req.body;
   const r = parseFloat(rate);
   if (isNaN(r) || r < 0 || r > 20) return res.status(400).json({ error: 'Rate must be 0-20%' });
@@ -1006,12 +1037,12 @@ app.get('/api/mail/ping', async (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/mail/test', async (req, res) => {
+app.post('/api/mail/test', requireAdmin, async (req, res) => {
   try { res.json(await mail.test(req.body?.to || null)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/mail/send', async (req, res) => {
+app.post('/api/mail/send', requireAdmin, async (req, res) => {
   const { to, subject, html, text, from, replyTo } = req.body || {};
   if (!to || !subject || (!html && !text))
     return res.status(400).json({ ok: false, error: 'to, subject, and html/text required' });
@@ -1027,7 +1058,7 @@ app.get('/api/email/list/:domain', async (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/email/create', async (req, res) => {
+app.post('/api/email/create', requireAdmin, async (req, res) => {
   const { domain, user, passwd, quota } = req.body || {};
   if (!domain || !user || !passwd)
     return res.status(400).json({ ok: false, error: 'domain, user, passwd required' });
@@ -1035,7 +1066,7 @@ app.post('/api/email/create', async (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/email/delete', async (req, res) => {
+app.post('/api/email/delete', requireAdmin, async (req, res) => {
   const { domain, user } = req.body || {};
   if (!domain || !user)
     return res.status(400).json({ ok: false, error: 'domain, user required' });
@@ -1043,7 +1074,7 @@ app.post('/api/email/delete', async (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/email/forwarder', async (req, res) => {
+app.post('/api/email/forwarder', requireAdmin, async (req, res) => {
   const { domain, user, email } = req.body || {};
   if (!domain || !user || !email)
     return res.status(400).json({ ok: false, error: 'domain, user, email required' });
@@ -1051,7 +1082,7 @@ app.post('/api/email/forwarder', async (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/email/setup-bridge-profiles', async (req, res) => {
+app.post('/api/email/setup-bridge-profiles', requireAdmin, async (req, res) => {
   const { domain, daPasswd, wpSite, profiles, wpPasswd } = req.body || {};
   if (!domain || !daPasswd)
     return res.status(400).json({ ok: false, error: 'domain and daPasswd required' });
@@ -1102,12 +1133,12 @@ app.get('/api/wordpress/preview', (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/sync', async (req, res) => {
+app.post('/api/wordpress/sync', requireAdmin, async (req, res) => {
   try { res.json(await wp.syncAll()); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/sync/:site', async (req, res) => {
+app.post('/api/wordpress/sync/:site', requireAdmin, async (req, res) => {
   const { site } = req.params;
   if (!wp.SITES[site]) return res.status(400).json({ ok: false, error: `Unknown site: ${site}`, known: Object.keys(wp.SITES) });
   try { res.json(await wp.syncSite(site)); }
@@ -1119,12 +1150,12 @@ app.get('/api/wordpress/users/:site', async (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/users/:site', async (req, res) => {
+app.post('/api/wordpress/users/:site', requireAdmin, async (req, res) => {
   try { res.json(await wp.createWpUser(req.params.site, req.body)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/profiles/:site', async (req, res) => {
+app.post('/api/wordpress/profiles/:site', requireAdmin, async (req, res) => {
   try { res.json(await wp.createBridgeWpProfiles(req.params.site, req.body?.profiles || [])); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
@@ -1137,12 +1168,12 @@ app.get('/api/wordpress/posts/:site', async (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/posts/:site', async (req, res) => {
+app.post('/api/wordpress/posts/:site', requireAdmin, async (req, res) => {
   try { res.json(await wp.createPost(req.params.site, req.body)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/posts/:site/:id', async (req, res) => {
+app.post('/api/wordpress/posts/:site/:id', requireAdmin, async (req, res) => {
   try { res.json(await wp.updatePost(req.params.site, req.params.id, req.body)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
@@ -1569,142 +1600,6 @@ app.get('/api/ehsa/dashboard', (req, res) => {
 app.post('/api/agents/dispatch', (req, res) => {
   const { agent, task, priority } = req.body;
   res.json({ ok: true, agent, task, priority, dispatched: true });
-});
-
-// ═══════════════════════════════════════════════════════════════
-// MAIL — Brevo primary, Gmail backup
-// ═══════════════════════════════════════════════════════════════
-app.get('/api/mail/status', (req, res) => res.json({ ok: true, ...mail.status() }));
-
-app.get('/api/mail/ping', async (req, res) => {
-  try { res.json(await mail.ping()); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/mail/test', async (req, res) => {
-  try { res.json(await mail.test(req.body?.to || null)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/mail/send', async (req, res) => {
-  const { to, subject, html, text, from, replyTo } = req.body || {};
-  if (!to || !subject || (!html && !text))
-    return res.status(400).json({ ok: false, error: 'to, subject, and html/text required' });
-  try { res.json(await mail.send({ to, subject, html, text, from, replyTo })); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-// ═══════════════════════════════════════════════════════════════
-// EMAIL ACCOUNTS — DirectAdmin
-// ═══════════════════════════════════════════════════════════════
-app.get('/api/email/list/:domain', async (req, res) => {
-  try { res.json(await da.listEmailAccounts(req.params.domain)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/email/create', async (req, res) => {
-  const { domain, user, passwd, quota } = req.body || {};
-  if (!domain || !user || !passwd)
-    return res.status(400).json({ ok: false, error: 'domain, user, passwd required' });
-  try { res.json(await da.createEmailAccount(domain, user, passwd, quota)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/email/delete', async (req, res) => {
-  const { domain, user } = req.body || {};
-  if (!domain || !user)
-    return res.status(400).json({ ok: false, error: 'domain, user required' });
-  try { res.json(await da.deleteEmailAccount(domain, user)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/email/forwarder', async (req, res) => {
-  const { domain, user, email } = req.body || {};
-  if (!domain || !user || !email)
-    return res.status(400).json({ ok: false, error: 'domain, user, email required' });
-  try { res.json(await da.createForwarder(domain, user, email)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/email/setup-bridge-profiles', async (req, res) => {
-  const { domain, daPasswd, wpSite, profiles, wpPasswd } = req.body || {};
-  if (!domain || !daPasswd)
-    return res.status(400).json({ ok: false, error: 'domain and daPasswd required' });
-  try {
-    const profileList = profiles || [
-      { user: 'admin',   wpRole: 'administrator' },
-      { user: 'content', wpRole: 'editor'        },
-      { user: 'support', wpRole: 'author'        },
-      { user: 'noreply', wpRole: null            },
-    ];
-    const daResults = [];
-    for (const prof of profileList) {
-      try {
-        daResults.push(await da.createEmailAccount(domain, prof.user, daPasswd));
-      } catch (e) {
-        daResults.push({ ok: false, email: `${prof.user}@${domain}`, message: e.message });
-      }
-    }
-    let wpResults = null;
-    if (wpSite && wp.isConfigured(wpSite)) {
-      const wpProfiles = profileList.filter(p => p.wpRole).map(p => ({
-        username: p.user, email: `${p.user}@${domain}`,
-        password: wpPasswd || daPasswd, role: p.wpRole,
-      }));
-      wpResults = await wp.createBridgeWpProfiles(wpSite, wpProfiles);
-    }
-    res.json({ ok: daResults.every(r => r.ok), domain, emailSetup: daResults, wpSetup: wpResults });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-// ═══════════════════════════════════════════════════════════════
-// WORDPRESS — multi-domain sync + user management
-// ═══════════════════════════════════════════════════════════════
-app.get('/api/wordpress/status', async (req, res) => {
-  try { res.json({ ok: true, ...(await wp.getStatus()) }); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/wordpress/data', (req, res) => {
-  try {
-    const data = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data/50-applications.json'), 'utf8'));
-    res.json({ ok: true, data });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/wordpress/preview', (req, res) => {
-  try {
-    const data = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data/50-applications.json'), 'utf8'));
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>WP Preview</title></head><body>${wp.renderAppsHtml(data)}</body></html>`);
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/wordpress/sync', async (req, res) => {
-  try { res.json(await wp.syncAll()); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/wordpress/sync/:site', async (req, res) => {
-  const { site } = req.params;
-  if (!wp.SITES[site]) return res.status(400).json({ ok: false, error: `Unknown site: ${site}`, known: Object.keys(wp.SITES) });
-  try { res.json(await wp.syncSite(site)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.get('/api/wordpress/users/:site', async (req, res) => {
-  try { res.json(await wp.listWpUsers(req.params.site)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/wordpress/users/:site', async (req, res) => {
-  try { res.json(await wp.createWpUser(req.params.site, req.body)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/wordpress/profiles/:site', async (req, res) => {
-  try { res.json(await wp.createBridgeWpProfiles(req.params.site, req.body?.profiles || [])); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 app.get('/api', (req, res) => res.json({

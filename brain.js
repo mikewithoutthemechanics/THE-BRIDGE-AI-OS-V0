@@ -23,6 +23,7 @@ const { WebSocket, WebSocketServer } = require('ws');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const ethTreasury = require('./lib/eth-treasury');
 const os = require('os');
 const axios = require('axios');
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
@@ -52,7 +53,7 @@ function kfMasterSecret() {
   const sources = [
     process.env.BRIDGE_SIWE_JWT_SECRET,
     process.env.BRIDGE_INTERNAL_SECRET,
-    process.env.JWT_SECRET || 'bridge-ai-os-dev-secret-change-in-prod',
+    process.env.JWT_SECRET,
   ].filter(s => s && s.length >= 8);
   const combined = sources.join(':') + ':' + os.hostname();
   return crypto.createHash('sha512').update(combined).digest();
@@ -1092,7 +1093,7 @@ app.get('/api/twin/full', (_req, res) => {
         active: [
           { id: 'payfast', name: 'PayFast', region: 'ZA', currency: 'ZAR', type: 'fiat', status: 'active' },
           { id: 'paystack', name: 'Paystack', region: 'NG/GH/ZA', currency: 'ZAR,NGN,USD,GHS', type: 'fiat', status: 'active' },
-          { id: 'crypto_eth', name: 'Ethereum', currency: 'ETH', type: 'crypto', status: 'active', address: '0x...' },
+          { id: 'crypto_eth', name: 'Ethereum (Linea)', currency: 'ETH', type: 'crypto', status: 'active', address: ethTreasury.getAddress(), chain: 'linea', chainId: 59144 },
           { id: 'crypto_btc', name: 'Bitcoin', currency: 'BTC', type: 'crypto', status: 'active' },
           { id: 'crypto_sol', name: 'Solana', currency: 'SOL', type: 'crypto', status: 'active' },
           { id: 'brdg_token', name: 'BRDG Token', currency: 'BRDG', type: 'defi', status: 'active' },
@@ -1166,6 +1167,61 @@ app.post('/api/payments/webhook/:rail', (req, res) => {
   res.json({ ok: true, rail: req.params.rail });
 });
 
+// ── ETH TREASURY (Linea L2 — KeyForge-derived wallet) ──────────────────────
+
+// Public: treasury wallet address + on-chain balance
+app.get('/api/treasury/eth/address', (_req, res) => {
+  res.json({ ok: true, address: ethTreasury.getAddress(), chain: 'linea', chainId: 59144 });
+});
+
+app.get('/api/treasury/eth/balance', async (_req, res) => {
+  try {
+    const [balance, gas, block] = await Promise.all([
+      ethTreasury.getBalance(),
+      ethTreasury.getGasPrice(),
+      ethTreasury.getBlockNumber(),
+    ]);
+    res.json({ ok: true, address: ethTreasury.getAddress(), balance, gas, block, chain: 'linea' });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: 'RPC unreachable', detail: e.message });
+  }
+});
+
+// Protected: withdraw ETH — requires KeyForge token with scope "treasury:withdraw"
+app.post('/api/treasury/withdraw/eth', async (req, res) => {
+  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  const auth = kfValidate(token, 'treasury:withdraw');
+  if (!auth.valid) return res.status(403).json({ ok: false, error: 'KeyForge auth failed', reason: auth.reason });
+
+  const { to, amount } = req.body || {};
+  if (!to || !amount) return res.status(400).json({ ok: false, error: 'to and amount required' });
+
+  try {
+    const result = await ethTreasury.withdraw(to, amount);
+    // Log to treasury state
+    state.treasury.spent += parseFloat(amount) * 3600; // approximate ETH→USD
+    broadcast({ type: 'treasury_withdraw', rail: 'eth', ...result });
+    kfAuditLog.push({ action: 'eth_withdraw', to, amount, tx: result.tx_hash, ts: Date.now() / 1000 });
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+// Issue a KeyForge token for treasury withdrawal (admin only)
+app.post('/api/treasury/withdraw/authorize', (req, res) => {
+  const adminKey = req.headers['x-bridge-secret'];
+  if (adminKey !== process.env.BRIDGE_INTERNAL_SECRET) {
+    return res.status(403).json({ ok: false, error: 'Admin secret required' });
+  }
+  try {
+    const token = kfIssue('treasury:withdraw');
+    res.json({ ok: true, token, expires_in: EPOCH_SEC + 'sec', note: 'Use as Bearer token for /api/treasury/withdraw/eth' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ── DEX ENDPOINTS ───────────────────────────────────────────────────────────
 // TVL grows with treasury earned; volume is proportional to total trades executed
 function _dexPools() {
@@ -1234,23 +1290,33 @@ app.post('/api/ubi/claim', (req, res) => {
 });
 
 // ── WALLET ──────────────────────────────────────────────────────────────────
-app.get('/api/wallet/balance', (_req, res) => {
+app.get('/api/wallet/balance', async (_req, res) => {
   const earned = state.treasury.earned || 0;
   const spent  = state.treasury.spent  || 0;
-  // BRDG = treasury net converted at 0.0078 USD/BRDG; other assets accumulate with earnings
+
+  // Fetch real on-chain ETH balance from Linea
+  let onChainEth = '0';
+  try {
+    const bal = await ethTreasury.getBalance();
+    onChainEth = bal.eth;
+  } catch { /* RPC down — fall back to estimate */ }
+
+  const ethAmount = parseFloat(onChainEth) || +(earned * 0.05 / 3600).toFixed(4);
+  const ethUsd    = +(ethAmount * 3600).toFixed(2);
+
   const brdg_usd  = +(earned * 0.85).toFixed(2);
-  const eth_usd   = +(earned * 0.05).toFixed(2);
   const sol_usd   = +(earned * 0.04).toFixed(2);
   const btc_usd   = +(earned * 0.04).toFixed(2);
   const zar_usd   = +(earned * 0.02).toFixed(2);
-  const total_usd = +(brdg_usd + eth_usd + sol_usd + btc_usd + zar_usd).toFixed(2);
+  const total_usd = +(brdg_usd + ethUsd + sol_usd + btc_usd + zar_usd).toFixed(2);
+
   res.json({ ok: true, balances: [
     { currency: 'BRDG', amount: +(brdg_usd / 1.28).toFixed(2),  usd_value: brdg_usd },
-    { currency: 'ETH',  amount: +(eth_usd  / 3600).toFixed(4),  usd_value: eth_usd  },
-    { currency: 'SOL',  amount: +(sol_usd  / 178).toFixed(3),   usd_value: sol_usd  },
-    { currency: 'BTC',  amount: +(btc_usd  / 68000).toFixed(5), usd_value: btc_usd  },
-    { currency: 'ZAR',  amount: +(zar_usd  * 18.8).toFixed(2),  usd_value: zar_usd  },
-  ], total_usd, earned, spent });
+    { currency: 'ETH',  amount: +ethAmount.toFixed(6),           usd_value: ethUsd, source: parseFloat(onChainEth) ? 'linea' : 'estimate', address: ethTreasury.getAddress() },
+    { currency: 'SOL',  amount: +(sol_usd  / 178).toFixed(3),    usd_value: sol_usd  },
+    { currency: 'BTC',  amount: +(btc_usd  / 68000).toFixed(5),  usd_value: btc_usd  },
+    { currency: 'ZAR',  amount: +(zar_usd  * 18.8).toFixed(2),   usd_value: zar_usd  },
+  ], total_usd, earned, spent, treasury_eth_address: ethTreasury.getAddress() });
 });
 
 // ── BANKS — where treasury sits ─────────────────────────────────────────────
@@ -2212,41 +2278,26 @@ console.log('[BRAIN] Supa-Claw deterministic core ACTIVE -- SQLite ledger, mutex
   console.log('[BRAIN] Treasury kill switch installed -- direct mutations blocked (𝓛₂₇)');
 })(state.treasury);
 
-// ── LOAD SUPACLAW RUNTIME ───────────────────────────────────────────────────
-require('./supaclaw.js')(app, state, broadcast);
-console.log('[BRAIN] SUPACLAW SUPA GURU runtime ACTIVE — master loop running');
+// ── LOAD SUPACLAW MODULES (guarded — one bad module must not kill the brain) ─
+function safeLoadModule(modPath, label) {
+  try {
+    require(modPath)(app, state, broadcast);
+    console.log(`[BRAIN] ${label} ACTIVE`);
+  } catch (err) {
+    console.error(`[BRAIN][WARN] Failed to load ${modPath}: ${err.message}`);
+    console.error(err.stack);
+  }
+}
 
-// ── LOAD ABAAS LAYER ────────────────────────────────────────────────────────
-require('./supaclaw-abaas.js')(app, state, broadcast);
-console.log('[BRAIN] ABAAS agent layer ACTIVE — 8 agents, 3 tiers, trust engine');
-
-// ── LOAD COMPOUND ECONOMY ENGINE ────────────────────────────────────────────
-require('./supaclaw-economy.js')(app, state, broadcast);
-console.log('[BRAIN] Compound economy engine ACTIVE — TPS control, tax, liquidity, FinTech');
-
-// ── LOAD GITHUB + DOCKER MCP ────────────────────────────────────────────────
-require('./supaclaw-github.js')(app, state, broadcast);
-console.log('[BRAIN] GitHub + Docker MCP integration loaded');
-
-// ── LOAD AGENT FABRIC (9 autonomous agents) ─────────────────────────────────
-require('./supaclaw-fabric.js')(app, state, broadcast);
-console.log('[BRAIN] Agent fabric ACTIVE — 9 agents: atlas, weaver, forge, oracle, strata, horizon, architect, vector, foundry');
-
-// ── LOAD SWARM ECONOMY GOVERNANCE ───────────────────────────────────────────
-require('./supaclaw-governance.js')(app, state, broadcast);
-console.log('[BRAIN] Swarm governance ACTIVE — 20 agents, 5 tiers, 5 clusters, governance loop');
-
-// ── LOAD EHSA REVENUE ENGINE ─────────────────────────────────────────────────
-require('./supaclaw-ehsa.js')(app, state, broadcast);
-console.log('[BRAIN] EHSA autonomous revenue engine ACTIVE (OSINT + leads + quotes + pipeline)');
-
-// ── LOAD USL + GLYPH VISUAL ENGINE ──────────────────────────────────────────
-require('./supaclaw-usl.js')(app, state, broadcast);
-console.log('[BRAIN] USL (Universal Share Layer) + Glyph (HD SVG engine) ACTIVE');
-
-// ── LOAD INTELLIGENCE LAYER (IL-0) ──────────────────────────────────────────
-require('./supaclaw-intelligence.js')(app, state, broadcast);
-console.log('[BRAIN] Intelligence Layer IL-0 ACTIVE — pricing, routing, scoring, monetization');
+safeLoadModule('./supaclaw.js',           'SUPACLAW SUPA GURU runtime — master loop running');
+safeLoadModule('./supaclaw-abaas.js',     'ABAAS agent layer — 8 agents, 3 tiers, trust engine');
+safeLoadModule('./supaclaw-economy.js',   'Compound economy engine — TPS control, tax, liquidity, FinTech');
+safeLoadModule('./supaclaw-github.js',    'GitHub + Docker MCP integration');
+safeLoadModule('./supaclaw-fabric.js',    'Agent fabric — 9 agents: atlas, weaver, forge, oracle, strata, horizon, architect, vector, foundry');
+safeLoadModule('./supaclaw-governance.js','Swarm governance — 20 agents, 5 tiers, 5 clusters, governance loop');
+safeLoadModule('./supaclaw-ehsa.js',      'EHSA autonomous revenue engine (OSINT + leads + quotes + pipeline)');
+safeLoadModule('./supaclaw-usl.js',       'USL (Universal Share Layer) + Glyph (HD SVG engine)');
+safeLoadModule('./supaclaw-intelligence.js','Intelligence Layer IL-0 — pricing, routing, scoring, monetization');
 
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
@@ -2254,13 +2305,16 @@ app.all('/api/*path', (req, res) => {
 });
 
 // ── CRASH CAPTURE — log every exit cause so PM2 error.log is never empty ────
+// uncaughtException: still exit — synchronous corruption is unrecoverable.
+// unhandledRejection: LOG ONLY — async failures (e.g. a failed fetch in a
+// background loop) should not kill the entire brain. The module that threw
+// can recover on its next cycle.
 process.on('uncaughtException', (err) => {
   console.error('[BRAIN][CRASH] uncaughtException:', err.stack || err.message);
   process.exit(1);
 });
 process.on('unhandledRejection', (reason) => {
-  console.error('[BRAIN][CRASH] unhandledRejection:', reason?.stack || reason);
-  process.exit(1);
+  console.error('[BRAIN][WARN] unhandledRejection (non-fatal):', reason?.stack || reason);
 });
 process.on('SIGTERM', () => { console.log('[BRAIN][SIGNAL] SIGTERM received — shutting down'); process.exit(0); });
 process.on('SIGINT',  () => { console.log('[BRAIN][SIGNAL] SIGINT received — shutting down');  process.exit(0); });

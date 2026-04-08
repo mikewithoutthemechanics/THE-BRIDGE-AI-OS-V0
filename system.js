@@ -25,6 +25,11 @@ const HTML     = path.join(ROOT, 'public', 'topology.html');
 const CERTS    = path.join(ROOT, 'certs');
 const LOG_DIR  = path.join(ROOT, 'logs');
 const LOG_FILE = path.join(LOG_DIR, `scan-${new Date().toISOString().slice(0,10)}.jsonl`);
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.log('\x1b[33m⚠ WARNING: JWT_SECRET not set — auth features will be unavailable.\x1b[0m');
+}
 
 // Ensure log dir
 if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -1060,7 +1065,7 @@ if (WebSocketLib) {
   wss.on('connection', (ws, req) => {
     const clientIp = req.socket.remoteAddress;
     log('INFO','WS',`Client connected from ${clientIp}`);
-    let wsUser = 'root'; // default role (override with auth message)
+    let wsUser = 'guest'; // unauthenticated until auth message received
 
     function send(obj) {
       if (ws.readyState === WebSocketLib.OPEN) ws.send(JSON.stringify(obj));
@@ -1076,8 +1081,28 @@ if (WebSocketLib) {
       switch (type) {
 
         case 'auth': {
-          if (USERS[msg.user]) { wsUser = msg.user; send({ type:'auth_ok', user: wsUser, role: USERS[wsUser].role }); }
-          else { send({ type:'auth_fail' }); }
+          // Support both token-based and user-based auth
+          if (msg.token) {
+            // JWT token verification
+            try {
+              const jwt = require('jsonwebtoken');
+              if (!JWT_SECRET) { send({ type:'auth_fail', error: 'Server misconfigured: JWT_SECRET not set' }); break; }
+              const decoded = jwt.verify(msg.token, JWT_SECRET);
+              wsUser = decoded.user || decoded.sub || 'token-user';
+              send({ type:'auth_ok', user: wsUser, role: decoded.role || 'operator', method: 'token' });
+              log('INFO','AUTH',`Token auth success for ${wsUser}`);
+            } catch (e) {
+              send({ type:'auth_fail', error: 'Invalid token' });
+              log('WARN','AUTH',`Token auth failed: ${e.message}`);
+            }
+          } else if (msg.user && USERS[msg.user]) {
+            // Legacy user-based auth (deprecated - only works locally)
+            wsUser = msg.user;
+            send({ type:'auth_ok', user: wsUser, role: USERS[wsUser].role, method: 'legacy' });
+            log('INFO','AUTH',`Legacy auth for ${wsUser} (deprecated)`);
+          } else {
+            send({ type:'auth_fail', error: 'Authentication required' });
+          }
           break;
         }
 
@@ -1088,6 +1113,7 @@ if (WebSocketLib) {
         }
 
         case 'create_node': {
+          if (wsUser === 'guest') { send({ type:'error', message:'Authenticate first' }); return; }
           if (!authorize(wsUser, 'exec')) { send({ type:'error', message:'forbidden' }); return; }
           const nodeId = msg.node || 'HOST';
           const cols = parseInt(msg.cols)||120, rows = parseInt(msg.rows)||30;
@@ -1103,6 +1129,8 @@ if (WebSocketLib) {
         }
 
         case 'create': {
+          if (wsUser === 'guest') { send({ type:'error', message:'Authenticate first' }); return; }
+          if (!authorize(wsUser, 'exec')) { send({ type:'error', message:'forbidden' }); return; }
           const cols = parseInt(msg.cols) || 120;
           const rows = parseInt(msg.rows) || 30;
           if (activeSessions.has(sessionId)) killSession(sessionId);
@@ -1141,6 +1169,7 @@ if (WebSocketLib) {
         }
 
         case 'input': {
+          if (wsUser === 'guest') { send({ type:'error', message:'Authenticate first' }); return; }
           const s = activeSessions.get(sessionId);
           if (!s) return;
           auditCommand(sessionId, msg.data || '');

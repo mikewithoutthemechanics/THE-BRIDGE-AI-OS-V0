@@ -17,8 +17,14 @@ const { AuthMerkleLog } = require('./lib/auth-merkle');
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const PORT          = process.env.AUTH_PORT   || 5001;
-const JWT_SECRET    = process.env.JWT_SECRET  || 'aoe-unified-super-secret-change-in-prod';
-const JWT_REFRESH   = process.env.JWT_REFRESH_SECRET || 'aoe-refresh-secret-change-in-prod';
+const JWT_SECRET    = process.env.JWT_SECRET;
+const JWT_REFRESH   = process.env.JWT_REFRESH_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  throw new Error('[auth] JWT_SECRET env var missing or too short (min 32 chars)');
+}
+if (!JWT_REFRESH || JWT_REFRESH.length < 32) {
+  throw new Error('[auth] JWT_REFRESH_SECRET env var missing or too short (min 32 chars)');
+}
 const JWT_EXPIRY    = '24h';
 const REFRESH_EXPIRY = '7d';
 const BCRYPT_ROUNDS  = 10;
@@ -54,9 +60,15 @@ function runMigrations(db) {
   for (const file of files) {
     if (applied.includes(file)) continue;
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
-    db.exec(sql);
-    run.run(file);
-    console.log(`[migration] applied: ${file}`);
+    try {
+      db.exec(sql);
+      run.run(file);
+      console.log(`[migration] applied: ${file}`);
+    } catch (migrationErr) {
+      console.error(`[migration] FAILED on ${file}: ${migrationErr.message}`);
+      console.error('[migration] Service will start with partial schema — fix the SQL and restart');
+      break;
+    }
   }
 }
 
