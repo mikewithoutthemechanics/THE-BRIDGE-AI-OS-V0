@@ -1,0 +1,69 @@
+# Dependencies — rebuilt inside image
+node_modules/
+
+# Secrets & credentials — must never enter the image layer
+.env
+.env.*
+!.env.example
+*.secure.json
+keys.json
+credentials.json
+certs/
+cloudflared/
+rotate.ps1
+*.pem
+*.key
+
+# Databases — managed via volume mounts at runtime
+*.db
+*.db-shm
+*.db-wal
+
+# Logs & audit artefacts
+logs/
+*.log
+unified.log
+gitleaks-report.json
+gitleaks-stderr.txt
+semgrep-report.json
+semgrep-stderr.txt
+grype-report.json
+grype-stderr.txt
+hadolint-report.json
+hadolint-stderr.txt
+npm-audit.json
+npm-audit-stderr.txt
+precommit-scan*.md
+hs_err_pid*.log
+
+# Git
+.git/
+.gitignore
+
+# Dev tooling
+.vscode/
+.vercel/
+jest.setup.js
+tests/
+
+# Docs & planning (not needed at runtime)
+*.md
+!README.md
+STANDUPS/
+SUPADASH_*/
+LOGS/
+Xlogs/
+Xpayments/
+Xscripts/
+Xcontainerx/
+
+# Deployment scripts (run from CI, not inside container)
+deploy-*.sh
+vps-fix.sh
+purge-secrets-from-git.sh
+setup-laptop*.sh
+scripts/
+
+# Windows artefacts
+Thumbs.db
+wp-cli.phar

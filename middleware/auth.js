@@ -49,7 +49,8 @@ const requireAuth = (requiredAuthority = null) => {
         if (revokedTokens.has(token)) return res.status(401).json({ error: 'Token revoked' });
       }
 
-      const secret = process.env.JWT_SECRET || 'aoe-unified-super-secret-change-in-prod';
+      const secret = process.env.JWT_SECRET;
+      if (!secret) return res.status(500).json({ error: 'Server misconfigured: JWT_SECRET not set' });
       const decoded = jwt.verify(token, secret);
 
       // Attach user context

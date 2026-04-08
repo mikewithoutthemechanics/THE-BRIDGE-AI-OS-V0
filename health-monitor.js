@@ -1,12 +1,6 @@
 const http = require('http');
 const { Pool } = require('pg');
-const db = new Pool({ connectionString: 'postgresql://postgres:password@localhost:5432/bridgeai_economy' });
-
-// Create table
-db.query(`CREATE TABLE IF NOT EXISTS health_checks (
-  id SERIAL PRIMARY KEY, ts TIMESTAMPTZ DEFAULT NOW(),
-  service VARCHAR(100), url VARCHAR(255), status INTEGER, latency_ms INTEGER, ok BOOLEAN
-)`).catch(() => {});
+const db = new Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://bridge:change-me-in-production@localhost:5432/bridge' });
 
 const endpoints = [
   { service: 'node0-core', url: 'http://localhost:3000/health' },
@@ -38,7 +32,15 @@ async function check() {
   }
 }
 
-// Run every 60 seconds
-check();
-setInterval(check, 60000);
-console.log('[health-monitor] Running — checking 8 endpoints every 60s');
+// Ensure table exists, then start polling
+async function start() {
+  await db.query(`CREATE TABLE IF NOT EXISTS health_checks (
+    id SERIAL PRIMARY KEY, ts TIMESTAMPTZ DEFAULT NOW(),
+    service VARCHAR(100), url VARCHAR(255), status INTEGER, latency_ms INTEGER, ok BOOLEAN
+  )`);
+  console.log('[health-monitor] Running — checking 8 endpoints every 60s');
+  await check();
+  setInterval(check, 60000);
+}
+
+start().catch(err => { console.error('[health-monitor] Fatal startup error:', err.message); process.exit(1); });

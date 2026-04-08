@@ -27,8 +27,8 @@ services:
       - NODE_ENV=production
       - BRAIN_PORT=8000
       - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - JWT_SECRET=${JWT_SECRET:-bridge_secure_key}
-      - KEYFORGE_MASTER=${KEYFORGE_MASTER:-bridge_keyforge_master}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
+      - KEYFORGE_MASTER=${KEYFORGE_MASTER:?KEYFORGE_MASTER must be set in .env}
     volumes:
       - ./shared:/app/shared
       - ./logs:/app/logs
@@ -72,7 +72,7 @@ services:
       - "5001:5001"
     environment:
       - AUTH_PORT=5001
-      - JWT_SECRET=${JWT_SECRET:-bridge_secure_key}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
     volumes:
       - ./users.db:/app/users.db
     networks:
