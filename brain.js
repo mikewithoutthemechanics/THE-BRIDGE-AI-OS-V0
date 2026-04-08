@@ -2681,6 +2681,89 @@ try {
   console.log('[BRAIN] AP2 Protocol ACTIVE');
 } catch (e) { console.warn('[BRAIN] AP2 failed:', e.message); }
 
+// ── PHASE 4: Compounding Revenue Engine ────────────────────────────────────
+
+// AP2 External Agent Registry
+try {
+  const ap2Registry = require('./lib/ap2/ap2-registry');
+
+  app.get('/api/ap2/registry', (_req, res) => {
+    try {
+      const status = _req.query.status || null;
+      const agents = ap2Registry.getExternalAgents(status);
+      const stats = ap2Registry.getExternalStats();
+      res.json({ ok: true, agents, stats });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  app.post('/api/ap2/registry', (req, res) => {
+    try {
+      const { name, url, catalog, commission_rate } = req.body || {};
+      if (!name || !url) return res.status(400).json({ ok: false, error: 'name and url required' });
+      const agent = ap2Registry.registerExternalAgent(name, url, catalog, commission_rate);
+      res.json({ ok: true, agent });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  console.log('[BRAIN] AP2 External Agent Registry loaded');
+} catch (e) { console.warn('[BRAIN] AP2 Registry unavailable:', e.message); }
+
+// Dynamic Exchange Rate
+try {
+  const exchangeRate = require('./lib/exchange-rate');
+
+  app.get('/api/exchange/rate', (_req, res) => {
+    try {
+      const rate = exchangeRate.getBrdgRate();
+      res.json({ ok: true, ...rate });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  app.get('/api/exchange/convert', (req, res) => {
+    try {
+      const { from, amount } = req.query;
+      const amt = parseFloat(amount) || 0;
+      if (from === 'zar') {
+        res.json({ ok: true, ...exchangeRate.convertZarToBrdg(amt) });
+      } else {
+        res.json({ ok: true, ...exchangeRate.convertBrdgToZar(amt) });
+      }
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  console.log('[BRAIN] Dynamic Exchange Rate loaded');
+} catch (e) { console.warn('[BRAIN] Exchange Rate unavailable:', e.message); }
+
+// Revenue Compounding
+try {
+  const compounder = require('./lib/revenue-compounder');
+  compounder.startCompounding();
+  console.log('[BRAIN] Revenue compounding ACTIVE');
+
+  app.get('/api/analytics/compounding', (_req, res) => {
+    try {
+      const stats = compounder.getCompoundingStats();
+      res.json({ ok: true, ...stats });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+} catch (e) { console.warn('[BRAIN] Compounding failed:', e.message); }
+
+// Bridge Commerce Index (BCI)
+try {
+  const bci = require('./lib/commerce-index');
+
+  app.get('/api/analytics/bci', (req, res) => {
+    try {
+      const days = parseInt(req.query.days, 10) || 7;
+      const current = bci.calculateBCI();
+      const history = bci.getBCIHistory(days);
+      res.json({ ok: true, current, history });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  console.log('[BRAIN] Bridge Commerce Index loaded');
+} catch (e) { console.warn('[BRAIN] Commerce Index unavailable:', e.message); }
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
