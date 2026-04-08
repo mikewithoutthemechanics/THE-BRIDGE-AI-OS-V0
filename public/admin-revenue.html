@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bridge AI OS — Revenue Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--red:#ff3c5a;--purple:#a78bfa;--orange:#fb923c;--dim:#4d6678;--text:#e0e8f0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:1.5rem;line-height:1.5}
+h1{font-size:1.6rem;font-weight:700;margin-bottom:.3rem}
+.sub{color:var(--dim);font-size:.85rem;margin-bottom:1.5rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+.card .label{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+.card .value{font-size:1.8rem;font-weight:800;margin:.3rem 0}
+.card .detail{font-size:.8rem;color:var(--dim)}
+.cyan{color:var(--cyan)}.green{color:var(--green)}.red{color:var(--red)}.purple{color:var(--purple)}.orange{color:var(--orange)}
+.section{margin-bottom:2rem}
+.section h2{font-size:1.1rem;font-weight:600;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;color:var(--dim);font-weight:500;padding:.5rem;border-bottom:1px solid var(--border)}
+td{padding:.5rem;border-bottom:1px solid rgba(26,45,64,.4)}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.7rem;font-weight:600}
+.badge-live{background:rgba(0,229,123,.15);color:var(--green)}
+.badge-pending{background:rgba(255,209,102,.15);color:var(--orange)}
+.badge-free{background:rgba(77,102,120,.2);color:var(--dim)}
+.refresh{position:fixed;top:1rem;right:1rem;background:var(--surface);border:1px solid var(--border);color:var(--cyan);padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.8rem}
+.refresh:hover{border-color:var(--cyan)}
+.pulse{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#log{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:monospace;font-size:.75rem;max-height:200px;overflow-y:auto;color:var(--dim)}
+</style>
+</head>
+<body>
+<button class="refresh" onclick="loadAll()">Refresh</button>
+<h1>Revenue Dashboard</h1>
+<p class="sub"><span class="pulse"></span> Bridge AI OS — Live Production Metrics</p>
+
+<div class="grid" id="kpis">
+  <div class="card"><div class="label">Treasury Balance</div><div class="value cyan" id="k-balance">--</div><div class="detail">Off-chain (USD)</div></div>
+  <div class="card"><div class="label">Revenue MTD</div><div class="value green" id="k-earned">--</div><div class="detail">Earned this period</div></div>
+  <div class="card"><div class="label">BRDG Supply</div><div class="value purple" id="k-brdg">--</div><div class="detail">On-chain (Linea)</div></div>
+  <div class="card"><div class="label">BRDG Burned</div><div class="value orange" id="k-burned">--</div><div class="detail">Deflationary 1%</div></div>
+  <div class="card"><div class="label">LLM Requests</div><div class="value cyan" id="k-llm">--</div><div class="detail" id="k-llm-cost">$0.00 cost</div></div>
+  <div class="card"><div class="label">LLM Provider</div><div class="value green" id="k-provider">--</div><div class="detail" id="k-model">--</div></div>
+</div>
+
+<div class="section">
+  <h2>Payment Rails</h2>
+  <table id="rails-table">
+    <thead><tr><th>Rail</th><th>Status</th><th>Currency</th><th>Endpoint</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Subscription Plans</h2>
+  <table id="plans-table">
+    <thead><tr><th>Plan</th><th>Price</th><th>Description</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>BRDG Token (On-Chain)</h2>
+  <table id="brdg-table">
+    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Event Log</h2>
+  <div id="log"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => parseFloat(n).toLocaleString(undefined, {maximumFractionDigits:2});
+
+function addLogEntry(msg) {
+  const log = $('log');
+  const div = document.createElement('div');
+  const ts = new Date().toLocaleTimeString();
+  div.textContent = '[' + ts + '] ' + msg;
+  log.prepend(div);
+  while (log.children.length > 100) log.removeChild(log.lastChild);
+}
+
+function clearTable(id) {
+  const tbody = $(id).querySelector('tbody');
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+  return tbody;
+}
+
+function addRow(tbody, cells) {
+  const tr = document.createElement('tr');
+  cells.forEach(text => {
+    const td = document.createElement('td');
+    td.textContent = text;
+    tr.appendChild(td);
+  });
+  tbody.appendChild(tr);
+}
+
+async function loadAll() {
+  // Treasury
+  try {
+    const r = await fetch('/api/treasury/status');
+    const d = await r.json();
+    if (d.ok) {
+      $('k-balance').textContent = '$' + fmt(d.balance);
+      $('k-earned').textContent = '$' + fmt(d.earned);
+      if (d.brdg_token) {
+        $('k-brdg').textContent = fmt(d.brdg_token.totalSupply);
+        $('k-burned').textContent = fmt(d.brdg_token.totalBurned);
+      }
+    }
+  } catch(_) {}
+
+  // BRDG on-chain
+  try {
+    const r = await fetch('/api/brdg/token');
+    const d = await r.json();
+    if (d.ok && d.token) {
+      $('k-brdg').textContent = fmt(d.token.totalSupply);
+      $('k-burned').textContent = fmt(d.token.totalBurned);
+      const tbody = clearTable('brdg-table');
+      addRow(tbody, ['Contract', d.token.address]);
+      addRow(tbody, ['Chain', d.token.chain + ' (' + d.token.chainId + ')']);
+      addRow(tbody, ['Total Supply', fmt(d.token.totalSupply) + ' BRDG']);
+      addRow(tbody, ['Max Supply', fmt(d.token.maxSupply) + ' BRDG']);
+      addRow(tbody, ['Total Burned', fmt(d.token.totalBurned) + ' BRDG']);
+      addRow(tbody, ['Burn Rate', d.token.burnRate]);
+      addRow(tbody, ['Treasury BRDG', fmt(d.treasury.brdgBalance) + ' BRDG']);
+      addRow(tbody, ['Treasury Owner', d.treasury.owner]);
+      addRow(tbody, ['Vault ETH', d.treasury.vault.ethBalance + ' ETH']);
+      addRow(tbody, ['Lineascan', d.lineascan]);
+    }
+  } catch(_) {
+    const tbody = clearTable('brdg-table');
+    addRow(tbody, ['Status', 'On-chain data unavailable (ethers not installed on VPS)']);
+  }
+
+  // LLM
+  try {
+    const r = await fetch('/api/llm/status');
+    const d = await r.json();
+    if (d.ok) {
+      $('k-llm').textContent = d.usage.total_requests;
+      $('k-llm-cost').textContent = '$' + (d.usage.total_cost_usd || 0).toFixed(4) + ' total cost';
+      if (d.providers && d.providers.length > 0) {
+        $('k-provider').textContent = d.providers[0].name;
+        $('k-model').textContent = d.providers[0].model;
+      } else {
+        $('k-provider').textContent = 'None';
+        $('k-model').textContent = 'Set KILO_API_KEY';
+      }
+    }
+  } catch(_) {}
+
+  // Plans
+  try {
+    const r = await fetch('/api/plans');
+    const d = await r.json();
+    if (d.ok) {
+      const tbody = clearTable('plans-table');
+      Object.entries(d.plans).forEach(([id, p]) => {
+        addRow(tbody, [p.name, p.price === 0 ? 'Free' : 'R' + p.price.toLocaleString() + '/mo', p.description]);
+      });
+    }
+  } catch(_) {}
+
+  // Payment rails (static)
+  const railsTbody = clearTable('rails-table');
+  [
+    ['PayFast', 'live', 'ZAR', '/api/payments/webhook/payfast'],
+    ['Paystack', 'live', 'NGN/USD', '/api/payments/webhook/paystack'],
+    ['Crypto (ETH)', 'live', 'ETH', '/api/payments/webhook/crypto'],
+    ['BRDG Token', 'live', 'BRDG', 'Linea L2'],
+    ['Stripe', 'pending', 'USD/EUR', 'Not configured'],
+  ].forEach(([name, status, currency, ep]) => {
+    addRow(railsTbody, [name, status, currency, ep]);
+  });
+
+  addLogEntry('Dashboard refreshed');
+}
+
+// SSE live events
+try {
+  const es = new EventSource('/events/stream');
+  es.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      let msg = d.type;
+      if (d.data && d.data.amount) msg += ' R' + d.data.amount;
+      if (d.data && d.data.balance) msg += ' balance: $' + fmt(d.data.balance);
+      addLogEntry(msg);
+    } catch(_) {}
+  };
+} catch(_) {}
+
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>
