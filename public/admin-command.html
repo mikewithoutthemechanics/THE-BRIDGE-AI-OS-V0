@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Command Center | Bridge AI OS</title>
+  <meta name="description" content="Admin Command Center — Bridge AI OS">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050a0f;
+      color: #c8d6e5;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* Top nav */
+    .top-nav {
+      background: #0a1520;
+      border-bottom: 1px solid #1a2d40;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .top-nav a { color: #00c8ff; text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+    .top-nav a:hover { color: #00e57b; }
+    .top-nav .sep { color: #1a2d40; }
+    .top-nav .brand { font-weight: 700; font-size: 1rem; color: #00e57b; margin-right: 8px; }
+
+    /* Header bar */
+    .header-bar {
+      background: #0a1520;
+      border-bottom: 1px solid #1a2d40;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .header-bar h1 { font-size: 1.4rem; color: #00c8ff; font-weight: 700; }
+    .health-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid #1a2d40;
+    }
+    .health-badge.ok { color: #00e57b; border-color: #00e57b40; }
+    .health-badge.err { color: #ff4d6a; border-color: #ff4d6a40; }
+    .health-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .health-badge.ok .health-dot { background: #00e57b; box-shadow: 0 0 6px #00e57b80; }
+    .health-badge.err .health-dot { background: #ff4d6a; box-shadow: 0 0 6px #ff4d6a80; }
+    .uptime-label { color: #4a6580; font-size: 0.75rem; }
+    .uptime-label span { color: #00c8ff; }
+    .secret-group {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .secret-group label { font-size: 0.75rem; color: #4a6580; }
+    .secret-input {
+      background: #0d1b2a;
+      border: 1px solid #1a2d40;
+      color: #c8d6e5;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      width: 200px;
+      font-family: monospace;
+    }
+    .secret-input:focus { outline: none; border-color: #00c8ff; }
+
+    /* Dashboard container */
+    .dashboard {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* Panels */
+    .panel {
+      background: #0a1520;
+      border: 1px solid #1a2d40;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .panel-full { grid-column: 1 / -1; }
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid #1a2d40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-header h2 {
+      font-size: 0.95rem;
+      color: #00c8ff;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-header h2 .icon { font-size: 1.1rem; }
+    .panel-body { padding: 16px 18px; }
+
+    /* Table */
+    .agent-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    .agent-table th {
+      text-align: left;
+      color: #4a6580;
+      font-weight: 600;
+      padding: 8px 10px;
+      border-bottom: 1px solid #1a2d40;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .agent-table td {
+      padding: 10px 10px;
+      border-bottom: 1px solid #0d1b2a;
+      vertical-align: middle;
+    }
+    .agent-table tr:hover td { background: #0d1b2a; }
+    .status-online { color: #00e57b; }
+    .status-offline { color: #ff4d6a; }
+    .status-idle { color: #ffc107; }
+
+    /* Buttons */
+    .btn {
+      padding: 5px 12px;
+      border: 1px solid #1a2d40;
+      border-radius: 6px;
+      background: #0d1b2a;
+      color: #c8d6e5;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn:hover { border-color: #00c8ff; color: #00c8ff; }
+    .btn-primary {
+      background: #00c8ff18;
+      border-color: #00c8ff50;
+      color: #00c8ff;
+    }
+    .btn-primary:hover { background: #00c8ff30; }
+    .btn-green {
+      background: #00e57b18;
+      border-color: #00e57b50;
+      color: #00e57b;
+    }
+    .btn-green:hover { background: #00e57b30; }
+    .btn-lg {
+      padding: 8px 20px;
+      font-size: 0.85rem;
+    }
+    .btn-group { display: flex; gap: 6px; }
+
+    /* Inputs */
+    .input, .select, .textarea {
+      background: #0d1b2a;
+      border: 1px solid #1a2d40;
+      color: #c8d6e5;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-family: inherit;
+      width: 100%;
+    }
+    .input:focus, .select:focus, .textarea:focus { outline: none; border-color: #00c8ff; }
+    .textarea { resize: vertical; min-height: 60px; }
+    .select { cursor: pointer; appearance: auto; }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: flex-end;
+    }
+    .form-col { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .form-col label { font-size: 0.7rem; color: #4a6580; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Result / output panel */
+    .result-box {
+      background: #050a0f;
+      border: 1px solid #1a2d40;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      color: #4a6580;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 10px;
+    }
+    .result-box.has-data { color: #00e57b; }
+
+    /* Toggle switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #0d1b2a;
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 0.85rem; }
+    .toggle-label small { display: block; color: #4a6580; font-size: 0.72rem; margin-top: 2px; }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: #1a2d40;
+      border-radius: 12px;
+      transition: background 0.3s;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #4a6580;
+      top: 3px;
+      left: 3px;
+      transition: all 0.3s;
+    }
+    .toggle-switch input:checked + .toggle-track { background: #00c8ff30; }
+    .toggle-switch input:checked + .toggle-track::after {
+      background: #00c8ff;
+      transform: translateX(20px);
+    }
+
+    /* Event log */
+    .event-log {
+      background: #050a0f;
+      border: 1px solid #1a2d40;
+      border-radius: 6px;
+      padding: 10px;
+      max-height: 320px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+    }
+    .event-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #0a1520;
+      display: flex;
+      gap: 8px;
+    }
+    .event-entry:last-child { border-bottom: none; }
+    .event-time { color: #4a6580; min-width: 70px; }
+    .event-type { color: #00c8ff; min-width: 80px; font-weight: 600; }
+    .event-msg { color: #c8d6e5; }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #050a0fcc;
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: #0a1520;
+      border: 1px solid #1a2d40;
+      border-radius: 12px;
+      padding: 24px;
+      width: 420px;
+      max-width: 90vw;
+    }
+    .modal h3 { color: #00c8ff; font-size: 1rem; margin-bottom: 16px; }
+    .modal .form-row { margin-bottom: 12px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .panel-full { grid-column: 1; }
+      .header-bar { flex-direction: column; align-items: flex-start; }
+      .secret-group { margin-left: 0; width: 100%; }
+      .secret-input { flex: 1; }
+    }
+    @media (max-width: 600px) {
+      .form-row { flex-direction: column; }
+      .agent-table { font-size: 0.7rem; }
+      .agent-table th, .agent-table td { padding: 6px 4px; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #050a0f; }
+    ::-webkit-scrollbar-thumb { background: #1a2d40; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2a3d50; }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="top-nav">
+  <span class="brand">BRIDGE AI</span>
+  <span class="sep">|</span>
+  <a href="/">Home</a>
+  <span class="sep">|</span>
+  <a href="/economy.html">Economy</a>
+  <span class="sep">|</span>
+  <a href="/agents.html">Agents</a>
+  <span class="sep">|</span>
+  <a href="/admin.html">Admin Keys</a>
+  <span class="sep">|</span>
+  <a href="/admin-command.html" style="color:#00e57b;">Command Center</a>
+  <span class="sep">|</span>
+  <a href="/topology.html">Topology</a>
+</nav>
+
+<!-- Header bar -->
+<div class="header-bar">
+  <h1>Admin Command Center</h1>
+  <div id="healthBadge" class="health-badge err">
+    <span class="health-dot"></span>
+    <span id="healthText">Checking...</span>
+  </div>
+  <div class="uptime-label">Uptime: <span id="uptimeVal">--</span></div>
+  <div class="secret-group">
+    <label for="secretInput">Admin Secret:</label>
+    <input type="password" id="secretInput" class="secret-input" placeholder="Enter bridge secret" autocomplete="off">
+  </div>
+</div>
+
+<!-- Main dashboard -->
+<div class="dashboard">
+
+  <!-- ========== AGENT CONTROL PANEL ========== -->
+  <div class="panel panel-full">
+    <div class="panel-header">
+      <h2><span class="icon">&#x1F916;</span> Agent Control Panel</h2>
+      <span id="agentRefreshInfo" style="font-size:0.7rem;color:#4a6580;"></span>
+    </div>
+    <div class="panel-body" style="overflow-x:auto;">
+      <table class="agent-table">
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>Type</th>
+            <th>Balance (BRDG)</th>
+            <th>Status</th>
+            <th>Earned</th>
+            <th>Tasks Done</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="agentTableBody">
+          <tr><td colspan="7" style="color:#4a6580;text-align:center;padding:24px;">Loading agents...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== COMMAND CONSOLE ========== -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2><span class="icon">&#x1F4BB;</span> Command Console</h2>
+    </div>
+    <div class="panel-body">
+      <div class="form-row">
+        <div class="form-col">
+          <label>Target Agent</label>
+          <select id="cmdAgentSelect" class="select">
+            <option value="">-- Select Agent --</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col">
+          <label>Command</label>
+          <input type="text" id="cmdInput" class="input" placeholder="e.g. analyze market trends">
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="executeCommand()">Execute</button>
+      </div>
+      <div id="cmdResult" class="result-box">Awaiting command...</div>
+
+      <div style="margin-top:18px;border-top:1px solid #1a2d40;padding-top:14px;">
+        <div class="form-row">
+          <div class="form-col">
+            <label>Ask AI (LLM Infer)</label>
+            <textarea id="aiPrompt" class="textarea" placeholder="Ask the AI anything..."></textarea>
+          </div>
+        </div>
+        <div class="form-row">
+          <button class="btn btn-green btn-lg" onclick="askAI()">Ask AI</button>
+        </div>
+        <div id="aiResult" class="result-box">Awaiting prompt...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SYSTEM CONTROLS ========== -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2><span class="icon">&#x2699;</span> System Controls</h2>
+    </div>
+    <div class="panel-body">
+      <!-- Toggles -->
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Auto-Loop
+          <small id="loopStats">Fetching stats...</small>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggleAutoLoop" onchange="toggleAutoLoop()">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Economy Engine
+          <small>BRDG minting and reward distribution</small>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggleEconomy" checked>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <!-- Post Task -->
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="openTaskForm()" style="width:100%;margin-bottom:8px;">+ Post Task</button>
+        <div id="taskFormArea" style="display:none;">
+          <div class="form-row">
+            <div class="form-col">
+              <label>Poster</label>
+              <input type="text" id="taskPoster" class="input" placeholder="admin">
+            </div>
+            <div class="form-col">
+              <label>Reward (BRDG)</label>
+              <input type="number" id="taskReward" class="input" placeholder="50">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col">
+              <label>Title</label>
+              <input type="text" id="taskTitle" class="input" placeholder="Task title">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col">
+              <label>Description</label>
+              <textarea id="taskDesc" class="textarea" placeholder="Describe the task..."></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <button class="btn btn-green" onclick="postTask()">Submit Task</button>
+            <button class="btn" onclick="closeTaskForm()">Cancel</button>
+          </div>
+          <div id="taskResult" class="result-box" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Create API Key -->
+      <div style="margin-top:12px;">
+        <button class="btn btn-primary" onclick="openKeyForm()" style="width:100%;margin-bottom:8px;">+ Create API Key</button>
+        <div id="keyFormArea" style="display:none;">
+          <div class="form-row">
+            <div class="form-col">
+              <label>Email</label>
+              <input type="email" id="keyEmail" class="input" placeholder="user@example.com">
+            </div>
+            <div class="form-col">
+              <label>Plan</label>
+              <select id="keyPlan" class="select">
+                <option value="free">Free</option>
+                <option value="starter">Starter</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <button class="btn btn-green" onclick="createKey()">Generate Key</button>
+            <button class="btn" onclick="closeKeyForm()">Cancel</button>
+          </div>
+          <div id="keyResult" class="result-box" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== LIVE EVENT LOG ========== -->
+  <div class="panel panel-full">
+    <div class="panel-header">
+      <h2><span class="icon">&#x1F4E1;</span> Live Event Log</h2>
+      <div class="btn-group">
+        <span id="sseStatus" style="font-size:0.7rem;color:#4a6580;">SSE: disconnected</span>
+        <button class="btn" onclick="loadTransactionFlow()">Load Transactions</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div id="eventLog" class="event-log">
+        <div style="color:#4a6580;padding:10px;">Connecting to event stream...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer Modal -->
+<div id="transferModal" class="modal-overlay">
+  <div class="modal">
+    <h3>Transfer BRDG</h3>
+    <div class="form-row">
+      <div class="form-col">
+        <label>From</label>
+        <input type="text" id="txFrom" class="input" readonly>
+      </div>
+      <div class="form-col">
+        <label>To</label>
+        <input type="text" id="txTo" class="input" placeholder="recipient-agent">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-col">
+        <label>Amount (BRDG)</label>
+        <input type="number" id="txAmount" class="input" placeholder="100">
+      </div>
+      <div class="form-col">
+        <label>Memo</label>
+        <input type="text" id="txMemo" class="input" placeholder="admin transfer">
+      </div>
+    </div>
+    <div id="txResult" class="result-box" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeTransferModal()">Cancel</button>
+      <button class="btn btn-green btn-lg" onclick="execTransfer()">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ---- Secret management ----
+  var secretInput = document.getElementById('secretInput');
+  secretInput.value = localStorage.getItem('bridge_admin_secret') || '';
+  secretInput.addEventListener('input', function() {
+    localStorage.setItem('bridge_admin_secret', secretInput.value);
+  });
+
+  function getSecret() {
+    return secretInput.value || '';
+  }
+
+  function authHeaders() {
+    var h = { 'Content-Type': 'application/json' };
+    var s = getSecret();
+    if (s) h['x-bridge-secret'] = s;
+    return h;
+  }
+
+  // ---- Health check ----
+  function checkHealth() {
+    fetch('/health').then(function(r) { return r.json(); }).then(function(d) {
+      var badge = document.getElementById('healthBadge');
+      var text = document.getElementById('healthText');
+      badge.className = 'health-badge ok';
+      text.textContent = d.status || 'OK';
+      var up = document.getElementById('uptimeVal');
+      if (d.uptime) {
+        var secs = Math.floor(d.uptime);
+        var hrs = Math.floor(secs / 3600);
+        var mins = Math.floor((secs % 3600) / 60);
+        up.textContent = hrs + 'h ' + mins + 'm';
+      } else {
+        up.textContent = 'N/A';
+      }
+    }).catch(function() {
+      document.getElementById('healthBadge').className = 'health-badge err';
+      document.getElementById('healthText').textContent = 'Unreachable';
+      document.getElementById('uptimeVal').textContent = '--';
+    });
+  }
+  checkHealth();
+  setInterval(checkHealth, 30000);
+
+  // ---- Agent table ----
+  var agentData = [];
+
+  function loadAgents() {
+    fetch('/api/economy/balances', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        agentData = Array.isArray(d) ? d : (d.agents || d.balances || []);
+        renderAgentTable();
+        populateAgentDropdown();
+        var info = document.getElementById('agentRefreshInfo');
+        info.textContent = 'Updated ' + new Date().toLocaleTimeString();
+      })
+      .catch(function(e) {
+        var tbody = document.getElementById('agentTableBody');
+        clearChildren(tbody);
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.setAttribute('colspan', '7');
+        td.style.color = '#ff4d6a';
+        td.style.textAlign = 'center';
+        td.style.padding = '24px';
+        td.textContent = 'Failed to load agents: ' + e.message;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      });
+  }
+
+  function clearChildren(el) {
+    while (el.firstChild) el.removeChild(el.firstChild);
+  }
+
+  function renderAgentTable() {
+    var tbody = document.getElementById('agentTableBody');
+    clearChildren(tbody);
+
+    if (!agentData.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.setAttribute('colspan', '7');
+      td.style.color = '#4a6580';
+      td.style.textAlign = 'center';
+      td.style.padding = '24px';
+      td.textContent = 'No agents found';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+
+    agentData.forEach(function(agent) {
+      var tr = document.createElement('tr');
+      var name = agent.name || agent.id || agent.agent || 'unknown';
+      var type = agent.type || agent.role || '--';
+      var balance = agent.balance != null ? Number(agent.balance).toFixed(2) : '0.00';
+      var status = agent.status || 'online';
+      var earned = agent.earned != null ? Number(agent.earned).toFixed(2) : '0.00';
+      var tasks = agent.tasks_done != null ? agent.tasks_done : (agent.tasksDone != null ? agent.tasksDone : 0);
+
+      var cells = [
+        { text: name, cls: '' },
+        { text: type, cls: '' },
+        { text: balance, cls: '' },
+        { text: status, cls: 'status-' + status.toLowerCase() },
+        { text: earned, cls: '' },
+        { text: String(tasks), cls: '' }
+      ];
+
+      cells.forEach(function(c) {
+        var td = document.createElement('td');
+        td.textContent = c.text;
+        if (c.cls) td.className = c.cls;
+        tr.appendChild(td);
+      });
+
+      // Action buttons
+      var actionTd = document.createElement('td');
+      var btnGroup = document.createElement('div');
+      btnGroup.className = 'btn-group';
+
+      var cmdBtn = document.createElement('button');
+      cmdBtn.className = 'btn';
+      cmdBtn.textContent = 'Command';
+      cmdBtn.addEventListener('click', function() {
+        var sel = document.getElementById('cmdAgentSelect');
+        sel.value = name;
+        document.getElementById('cmdInput').focus();
+        sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      var txBtn = document.createElement('button');
+      txBtn.className = 'btn btn-green';
+      txBtn.textContent = 'Transfer';
+      txBtn.addEventListener('click', function() {
+        openTransferModal(name);
+      });
+
+      btnGroup.appendChild(cmdBtn);
+      btnGroup.appendChild(txBtn);
+      actionTd.appendChild(btnGroup);
+      tr.appendChild(actionTd);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function populateAgentDropdown() {
+    var sel = document.getElementById('cmdAgentSelect');
+    var current = sel.value;
+    clearChildren(sel);
+    var defOpt = document.createElement('option');
+    defOpt.value = '';
+    defOpt.textContent = '-- Select Agent --';
+    sel.appendChild(defOpt);
+
+    agentData.forEach(function(agent) {
+      var name = agent.name || agent.id || agent.agent || 'unknown';
+      var opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+    if (current) sel.value = current;
+  }
+
+  loadAgents();
+  setInterval(loadAgents, 15000);
+
+  // ---- Command Console ----
+  window.executeCommand = function() {
+    var agent = document.getElementById('cmdAgentSelect').value;
+    var cmd = document.getElementById('cmdInput').value.trim();
+    var box = document.getElementById('cmdResult');
+
+    if (!agent) { box.textContent = 'ERROR: Select an agent first.'; box.className = 'result-box'; return; }
+    if (!cmd) { box.textContent = 'ERROR: Enter a command.'; box.className = 'result-box'; return; }
+
+    box.textContent = 'Executing...';
+    box.className = 'result-box';
+
+    fetch('/api/agents/' + encodeURIComponent(agent) + '/command', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ command: cmd })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      box.textContent = JSON.stringify(d, null, 2);
+      box.className = 'result-box has-data';
+    })
+    .catch(function(e) {
+      box.textContent = 'ERROR: ' + e.message;
+      box.className = 'result-box';
+    });
+  };
+
+  // ---- Ask AI ----
+  window.askAI = function() {
+    var prompt = document.getElementById('aiPrompt').value.trim();
+    var box = document.getElementById('aiResult');
+
+    if (!prompt) { box.textContent = 'ERROR: Enter a prompt.'; box.className = 'result-box'; return; }
+
+    box.textContent = 'Thinking...';
+    box.className = 'result-box';
+
+    fetch('/api/llm/infer', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ prompt: prompt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var text = d.response || d.result || d.output || d.text || JSON.stringify(d, null, 2);
+      box.textContent = text;
+      box.className = 'result-box has-data';
+    })
+    .catch(function(e) {
+      box.textContent = 'ERROR: ' + e.message;
+      box.className = 'result-box';
+    });
+  };
+
+  // ---- Toggles ----
+  function fetchLoopStats() {
+    fetch('/api/economy/loop-stats', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var el = document.getElementById('loopStats');
+        var parts = [];
+        if (d.cycles != null) parts.push('Cycles: ' + d.cycles);
+        if (d.totalMinted != null) parts.push('Minted: ' + Number(d.totalMinted).toFixed(2));
+        if (d.active != null) parts.push(d.active ? 'Running' : 'Stopped');
+        if (d.running != null) parts.push(d.running ? 'Running' : 'Stopped');
+        el.textContent = parts.length ? parts.join(' | ') : 'Loop stats loaded';
+        if (d.active || d.running) {
+          document.getElementById('toggleAutoLoop').checked = true;
+        }
+      })
+      .catch(function() {
+        document.getElementById('loopStats').textContent = 'Could not fetch loop stats';
+      });
+  }
+  fetchLoopStats();
+
+  window.toggleAutoLoop = function() {
+    fetchLoopStats();
+  };
+
+  // ---- Post Task ----
+  window.openTaskForm = function() { document.getElementById('taskFormArea').style.display = 'block'; };
+  window.closeTaskForm = function() { document.getElementById('taskFormArea').style.display = 'none'; };
+
+  window.postTask = function() {
+    var resBox = document.getElementById('taskResult');
+    resBox.style.display = 'block';
+    resBox.textContent = 'Submitting...';
+    resBox.className = 'result-box';
+
+    var body = {
+      poster: document.getElementById('taskPoster').value.trim() || 'admin',
+      title: document.getElementById('taskTitle').value.trim(),
+      description: document.getElementById('taskDesc').value.trim(),
+      reward: Number(document.getElementById('taskReward').value) || 0
+    };
+
+    if (!body.title) { resBox.textContent = 'ERROR: Title is required.'; return; }
+
+    fetch('/api/economy/tasks', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      resBox.textContent = 'Task created: ' + JSON.stringify(d, null, 2);
+      resBox.className = 'result-box has-data';
+    })
+    .catch(function(e) {
+      resBox.textContent = 'ERROR: ' + e.message;
+    });
+  };
+
+  // ---- Create API Key ----
+  window.openKeyForm = function() { document.getElementById('keyFormArea').style.display = 'block'; };
+  window.closeKeyForm = function() { document.getElementById('keyFormArea').style.display = 'none'; };
+
+  window.createKey = function() {
+    var resBox = document.getElementById('keyResult');
+    resBox.style.display = 'block';
+    resBox.textContent = 'Generating...';
+    resBox.className = 'result-box';
+
+    var body = {
+      email: document.getElementById('keyEmail').value.trim(),
+      plan: document.getElementById('keyPlan').value
+    };
+
+    if (!body.email) { resBox.textContent = 'ERROR: Email is required.'; return; }
+
+    fetch('/api/keys/create', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var key = d.key || d.apiKey || d.api_key || '';
+      if (key) {
+        resBox.textContent = 'API Key: ' + key + '\n\nSave this key — it will not be shown again.';
+      } else {
+        resBox.textContent = JSON.stringify(d, null, 2);
+      }
+      resBox.className = 'result-box has-data';
+    })
+    .catch(function(e) {
+      resBox.textContent = 'ERROR: ' + e.message;
+    });
+  };
+
+  // ---- Transfer Modal ----
+  window.openTransferModal = function(fromAgent) {
+    document.getElementById('txFrom').value = fromAgent;
+    document.getElementById('txTo').value = '';
+    document.getElementById('txAmount').value = '';
+    document.getElementById('txMemo').value = '';
+    var res = document.getElementById('txResult');
+    res.style.display = 'none';
+    res.textContent = '';
+    document.getElementById('transferModal').className = 'modal-overlay active';
+  };
+
+  window.closeTransferModal = function() {
+    document.getElementById('transferModal').className = 'modal-overlay';
+  };
+
+  window.execTransfer = function() {
+    var resBox = document.getElementById('txResult');
+    resBox.style.display = 'block';
+    resBox.textContent = 'Sending...';
+    resBox.className = 'result-box';
+
+    var body = {
+      from: document.getElementById('txFrom').value,
+      to: document.getElementById('txTo').value.trim(),
+      amount: Number(document.getElementById('txAmount').value) || 0,
+      memo: document.getElementById('txMemo').value.trim() || 'admin transfer'
+    };
+
+    if (!body.to) { resBox.textContent = 'ERROR: Recipient is required.'; return; }
+    if (body.amount <= 0) { resBox.textContent = 'ERROR: Amount must be positive.'; return; }
+
+    fetch('/api/economy/transfer', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      resBox.textContent = 'Transfer complete: ' + JSON.stringify(d, null, 2);
+      resBox.className = 'result-box has-data';
+      loadAgents();
+    })
+    .catch(function(e) {
+      resBox.textContent = 'ERROR: ' + e.message;
+    });
+  };
+
+  // Close modal on overlay click
+  document.getElementById('transferModal').addEventListener('click', function(e) {
+    if (e.target === this) closeTransferModal();
+  });
+
+  // ---- Live Event Log (SSE) ----
+  var eventLog = document.getElementById('eventLog');
+  var maxEvents = 200;
+
+  function addEvent(type, msg) {
+    // Trim old events
+    while (eventLog.children.length >= maxEvents) {
+      eventLog.removeChild(eventLog.lastChild);
+    }
+
+    var entry = document.createElement('div');
+    entry.className = 'event-entry';
+
+    var timeEl = document.createElement('span');
+    timeEl.className = 'event-time';
+    timeEl.textContent = new Date().toLocaleTimeString();
+
+    var typeEl = document.createElement('span');
+    typeEl.className = 'event-type';
+    typeEl.textContent = type;
+
+    var msgEl = document.createElement('span');
+    msgEl.className = 'event-msg';
+    msgEl.textContent = msg;
+
+    entry.appendChild(timeEl);
+    entry.appendChild(typeEl);
+    entry.appendChild(msgEl);
+
+    eventLog.insertBefore(entry, eventLog.firstChild);
+  }
+
+  function connectSSE() {
+    var statusEl = document.getElementById('sseStatus');
+    try {
+      var evtSource = new EventSource('/events/stream');
+      evtSource.onopen = function() {
+        statusEl.textContent = 'SSE: connected';
+        statusEl.style.color = '#00e57b';
+        clearChildren(eventLog);
+        addEvent('SYSTEM', 'Connected to event stream');
+      };
+      evtSource.onmessage = function(e) {
+        try {
+          var data = JSON.parse(e.data);
+          var type = data.type || data.event || 'EVENT';
+          var msg = data.message || data.msg || data.description || JSON.stringify(data);
+          addEvent(type, msg);
+        } catch(_) {
+          addEvent('RAW', e.data);
+        }
+      };
+      evtSource.onerror = function() {
+        statusEl.textContent = 'SSE: reconnecting...';
+        statusEl.style.color = '#ffc107';
+      };
+    } catch(e) {
+      statusEl.textContent = 'SSE: unavailable';
+      statusEl.style.color = '#ff4d6a';
+      addEvent('ERROR', 'SSE not available: ' + e.message);
+    }
+  }
+  connectSSE();
+
+  // ---- Transaction flow ----
+  window.loadTransactionFlow = function() {
+    addEvent('SYSTEM', 'Loading recent transactions...');
+    fetch('/api/economy/flow', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var txns = Array.isArray(d) ? d : (d.transactions || d.flow || d.recent || []);
+        if (!txns.length) {
+          addEvent('INFO', 'No recent transactions found');
+          return;
+        }
+        txns.slice(0, 50).reverse().forEach(function(tx) {
+          var msg = (tx.from || '?') + ' -> ' + (tx.to || '?') + ': ' + (tx.amount || 0) + ' BRDG';
+          if (tx.memo) msg += ' (' + tx.memo + ')';
+          addEvent('TX', msg);
+        });
+      })
+      .catch(function(e) {
+        addEvent('ERROR', 'Failed to load transactions: ' + e.message);
+      });
+  };
+
+  // Handle enter key on command input
+  document.getElementById('cmdInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') executeCommand();
+  });
+
+})();
+</script>
+</body>
+</html>

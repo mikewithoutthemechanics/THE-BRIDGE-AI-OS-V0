@@ -2544,6 +2544,15 @@ try {
   console.warn('[BRAIN] Agent economy failed to load:', e.message);
 }
 
+// ── AGENT COMMAND API ──────────────────────────────────────────────────────────
+try {
+  const { registerAgentCommands } = require('./lib/agent-commands');
+  registerAgentCommands(app);
+  console.log('[BRAIN] Agent commands ACTIVE');
+} catch (e) {
+  console.warn('[BRAIN] Agent commands failed:', e.message);
+}
+
 // ── AUTO-TASK LOOP (economy runs itself 24/7) ────────────────────────────────
 try {
   const autoLoop = require('./lib/auto-task-loop');
