@@ -208,7 +208,9 @@
         return;
       }
       if (msg.type === 'error') {
-        term.writeln('\r\n\x1b[31m[ERR] ' + msg.message + '\x1b[0m\r\n');
+        // Strip control characters to prevent ANSI injection from server error messages
+        var safeMsg = String(msg.message || '').replace(/[\x00-\x1f\x7f]/g, '');
+        term.writeln('\r\n\x1b[31m[ERR] ' + safeMsg + '\x1b[0m\r\n');
         return;
       }
     };

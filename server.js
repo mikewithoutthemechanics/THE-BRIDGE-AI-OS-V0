@@ -169,9 +169,12 @@ const CONFIG = {
 // ================= CLIENT CAPTURE =================
 app.post("/lead", (req, res) => {
   const { name, phone, service } = req.body;
+  if (!name || !String(name).trim() || !phone || !String(phone).trim() || !service || !String(service).trim()) {
+    return res.status(400).json({ error: 'name, phone, and service are required' });
+  }
 
   const insertClient = db.prepare("INSERT INTO clients(name, phone, service, status) VALUES(?,?,?,?)");
-  insertClient.run(name, phone, service, "new");
+  insertClient.run(String(name).trim(), String(phone).trim(), String(service).trim(), "new");
 
   res.json({ status: "lead captured" });
 });
@@ -192,6 +195,10 @@ app.post("/auto-close", requireAdmin, (req, res) => {
 // ================= PAYMENT GATEWAY (BATCH POOL UNTIL PAYFAST VERIFIED) =================
 app.post("/create-payment", (req, res) => {
   const { client, amount, email } = req.body;
+  const parsedAmount = parseFloat(amount);
+  if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
+    return res.status(400).json({ error: 'amount must be a positive number' });
+  }
   const reference = `REF_${Date.now()}`;
   const insertPayment = db.prepare("INSERT INTO payments(client, amount, status, reference) VALUES(?,?,?,?)");
   insertPayment.run(client || 'Customer', amount || '0', "pending", reference);
@@ -253,7 +260,7 @@ app.post("/api/checkout/confirm", async (req, res) => {
     }
     res.json({ ok: true, ref, status: 'batch_pool', treasury_updated: true });
   } catch (err) {
-    res.json({ ok: true, ref, status: 'batch_pool', treasury_updated: false, note: err.message });
+    res.status(500).json({ ok: false, ref, status: 'error', treasury_updated: false, note: err.message });
   }
 });
 
@@ -397,6 +404,10 @@ app.post("/whatsapp", (req, res) => {
   const message = req.body.message;
   const from = req.body.from;
 
+  if (!message || typeof message !== 'string') {
+    return res.status(400).json({ error: 'message is required' });
+  }
+
   if (message.includes("price")) {
     return res.json({
       reply: "Our services start from R1000. Reply YES to proceed."
@@ -419,7 +430,7 @@ app.post("/whatsapp", (req, res) => {
 const os = require('os');
 const dataService = require('./data-service');
 
-app.get('/api/registry/kernel', (req, res) => {
+app.get('/api/registry/kernel', requireAdmin, (req, res) => {
   res.json({
     os_release: os.release(), os_type: os.type(), os_platform: os.platform(), os_arch: os.arch(),
     hostname: os.hostname(), uptime_seconds: os.uptime(), pid: process.pid,
@@ -428,7 +439,7 @@ app.get('/api/registry/kernel', (req, res) => {
   });
 });
 
-app.get('/api/registry/network', (req, res) => {
+app.get('/api/registry/network', requireAdmin, (req, res) => {
   const ifaces = os.networkInterfaces();
   const interfaces = [];
   for (const [name, addrs] of Object.entries(ifaces)) {
@@ -477,7 +488,7 @@ app.get('/api/registry/bridgeos', async (req, res) => {
   });
 });
 
-app.get('/api/registry/system', (req, res) => {
+app.get('/api/registry/system', requireAdmin, (req, res) => {
   res.json({
     node: process.version, platform: os.platform(), arch: os.arch(),
     cpus: os.cpus().length, totalMem: os.totalmem(), freeMem: os.freemem(),
@@ -755,7 +766,9 @@ function requireAdmin(req, res, next) {
   const token = req.headers['x-admin-token'];
   const expected = secrets.getSecret('ADMIN_TOKEN') || process.env.ADMIN_TOKEN;
   if (!expected) return res.status(503).json({ error: 'ADMIN_TOKEN not configured' });
-  if (!token || !crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected))) {
+  const tokenBuf = Buffer.from(token);
+  const expectedBuf = Buffer.from(expected);
+  if (tokenBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(tokenBuf, expectedBuf)) {
     return res.status(401).json({ error: 'unauthorized' });
   }
   next();
@@ -782,7 +795,9 @@ app.post('/api/webhook/secrets-sync', (req, res) => {
   const sig = req.headers['x-webhook-signature'];
   const expected = secrets.getSecret('WEBHOOK_SECRET') || process.env.WEBHOOK_SECRET;
   if (!expected) return res.status(503).json({ error: 'WEBHOOK_SECRET not configured' });
-  if (!sig || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+  const sigBuf = Buffer.from(sig);
+  const expectedBuf2 = Buffer.from(expected);
+  if (sigBuf.length !== expectedBuf2.length || !crypto.timingSafeEqual(sigBuf, expectedBuf2)) {
     return res.status(401).json({ error: 'unauthorized' });
   }
   const result = secrets.syncFromNotion(req.body);
@@ -940,7 +955,7 @@ app.post('/api/credits/add', requireAdmin, async (req, res) => {
 });
 
 // Execute with economic gate (unified for agents + tasks)
-app.post('/api/economy/execute', async (req, res) => {
+app.post('/api/economy/execute', requireAdmin, async (req, res) => {
   const { userId, agentId, layer, task } = req.body;
   const uid = userId || 'default';
   try {
@@ -1208,8 +1223,7 @@ app.get('/api/auth/wp-plugin', (req, res) => {
   res.send(snippet);
 });
 
-// ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE =================
-// ── Topic Vector Matrix (TVM) — must be before the brain catch-all ───────────
+// ── Topic Vector Matrix (TVM) ───────────
 const tvm = require('./lib/tvm');
 app.get('/api/tvm', (req, res) => res.json(tvm.getMatrix()));
 app.get('/api/tvm/summary', (req, res) => res.json(tvm.getSummary()));
@@ -1225,21 +1239,6 @@ app.post('/api/tvm/:topic/reject',  (req, res) => res.json(tvm.rejectAction(req.
 app.post('/api/tvm/:topic/propose', (req, res) => {
   const { proposal_code, justification } = req.body || {};
   res.json(tvm.agentPropose(req.params.topic, proposal_code, justification));
-});
-
-app.all('/api/{*path}', async (req, res) => {
-  try {
-    const resp = await axios({
-      method: req.method,
-      url: BRAIN_URL + req.originalUrl,
-      data: req.body,
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 10000
-    });
-    res.status(resp.status).json(resp.data);
-  } catch (err) {
-    res.status(err.response?.status || 502).json(err.response?.data || { error: 'Service unavailable' });
-  }
 });
 
 // ================= API INDEX =================
@@ -1393,7 +1392,7 @@ app.get('/api/marketplace/stats', (req, res) => {
 });
 
 // Env keys (used by executive-dashboard.html, admin.html)
-app.get('/api/twin/env-keys', (req, res) => {
+app.get('/api/twin/env-keys', requireAdmin, (req, res) => {
   const envKeys = [
     { key: 'OPENAI_API_KEY', label: 'OpenAI', status: process.env.OPENAI_API_KEY ? 'configured' : 'missing', critical: true },
     { key: 'ANTHROPIC_API_KEY', label: 'Anthropic', status: process.env.ANTHROPIC_API_KEY ? 'configured' : 'missing', critical: true },
@@ -1409,7 +1408,7 @@ app.get('/api/twin/env-keys', (req, res) => {
 });
 
 // Admin keys save (used by admin.html)
-app.post('/api/admin/keys', (req, res) => {
+app.post('/api/admin/keys', requireAdmin, (req, res) => {
   const { keys } = req.body;
   if (!keys || typeof keys !== 'object') return res.status(400).json({ error: 'Invalid keys' });
   // In production this would write to .env; for now just acknowledge
@@ -1417,7 +1416,7 @@ app.post('/api/admin/keys', (req, res) => {
 });
 
 // UBI claim (used by executive-dashboard.html)
-app.post('/api/ubi/claim', async (req, res) => {
+app.post('/api/ubi/claim', requireAdmin, async (req, res) => {
   const { address } = req.body;
   if (!address) return res.status(400).json({ error: 'Address required' });
   try {
@@ -1482,7 +1481,7 @@ app.get('/api/replication/nodes', (req, res) => {
 });
 
 // Demand pump (used by agents.html)
-app.post('/api/demand/pump', (req, res) => {
+app.post('/api/demand/pump', requireAdmin, (req, res) => {
   const { target_backlog, max_create } = req.body;
   const created = Math.min(max_create || 25, Math.max(0, (target_backlog || 50) - 12));
   res.json({ created, skipped: 0, open_tasks: 12 + created, target_backlog: target_backlog || 50 });
@@ -1526,13 +1525,13 @@ app.get('/api/governance/proposals', (req, res) => {
   ]});
 });
 
-app.post('/api/governance/proposals', (req, res) => {
+app.post('/api/governance/proposals', requireAdmin, (req, res) => {
   const { title, description } = req.body;
   if (!title) return res.status(400).json({ error: 'Title required' });
   res.json({ ok: true, id: 'P-' + Date.now(), title, description, status: 'active' });
 });
 
-app.post('/api/governance/vote', (req, res) => {
+app.post('/api/governance/vote', requireAdmin, (req, res) => {
   const { proposal, vote } = req.body;
   res.json({ ok: true, proposal, vote, recorded: true });
 });
@@ -1642,7 +1641,24 @@ Object.entries(shortRoutes).forEach(([short, target]) => {
 // TVM routes registered earlier, before brain catch-all
 app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIONS));
 
+// ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE (catch-all — must be last) =================
+app.all('/api/{*path}', async (req, res) => {
+  try {
+    const resp = await axios({
+      method: req.method,
+      url: BRAIN_URL + req.originalUrl,
+      data: req.body,
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+    res.status(resp.status).json(resp.data);
+  } catch (err) {
+    res.status(err.response?.status || 502).json(err.response?.data || { error: 'Service unavailable' });
+  }
+});
+
 // ================= SERVER =================
-app.listen(3000, () => {
-  console.log("SYSTEM LIVE -> http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
 });

@@ -22,6 +22,9 @@ const revokedTokens = new Set();
 })();
 
 // Prune in-memory set periodically to prevent unbounded growth
+// TODO(security #18): The bulk-clear at 50k is a blunt instrument — revoked tokens
+// are silently un-revoked. Once Redis is reliably available, remove the in-memory
+// Set fallback entirely and rely on Redis SETEX with TTL matching JWT expiry.
 setInterval(() => { if (revokedTokens.size > 50000) revokedTokens.clear(); }, 10 * 60 * 1000);
 
 const requireAuth = (requiredAuthority = null) => {

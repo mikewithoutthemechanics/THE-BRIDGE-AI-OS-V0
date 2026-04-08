@@ -156,6 +156,10 @@ const state = {
 
 function mutateState(reducer, payload) {
   stateVersion++;
+  // ARCHITECTURAL NOTE: This hash is computed BEFORE the caller applies its mutation to `state`,
+  // because mutateState() is typically called before the actual state change occurs in the caller.
+  // The broadcast therefore sends a stale hash. To fix properly, callers should mutate state
+  // first, then call mutateState(), or this function should accept the mutation as a callback.
   const hash = crypto.createHash('md5').update(JSON.stringify(state)).digest('hex').slice(0, 12);
   broadcast({ type: 'stateMutation', reducer, payload, state_version: stateVersion, state_hash: `0x${hash}` });
   return { state_version: stateVersion, state_hash: `0x${hash}` };
@@ -166,7 +170,6 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 const wsClients = new Map(); // channel → Set<ws>
 
 // Also handle /ws/<channel> paths
-const wssWild = new WebSocketServer({ noServer: true });
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (url.pathname.startsWith('/ws')) {
@@ -184,6 +187,10 @@ wss.on('connection', (ws) => {
   const ch = ws._channel || 'default';
   if (!wsClients.has(ch)) wsClients.set(ch, new Set());
   wsClients.get(ch).add(ws);
+
+  // Mark connection alive for heartbeat
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
 
   ws.send(JSON.stringify({
     type: 'welcome',
@@ -219,6 +226,17 @@ wss.on('connection', (ws) => {
     if (set) { set.delete(ws); if (set.size === 0) wsClients.delete(ch); }
   });
 });
+
+// WebSocket heartbeat: ping every 30s, terminate connections that don't respond
+const wsHeartbeatInterval = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
+wsHeartbeatInterval.unref();
+wss.on('close', () => clearInterval(wsHeartbeatInterval));
 
 function broadcast(msg) {
   const data = JSON.stringify(msg);
@@ -600,11 +618,16 @@ app.delete('/api/docs/:id', (req, res) => {
   res.json({ ok: true, deleted: true });
 });
 
-// Bulk ingest from filesystem scan
+// Bulk ingest from filesystem scan — restricted to __dirname subtree to prevent arbitrary file reads
 app.post('/api/docs/scan', async (req, res) => {
   const { dir, extensions } = req.body || {};
-  const scanDir = dir || path.join(__dirname, 'shared');
+  const scanDir = dir ? path.resolve(dir) : path.join(__dirname, 'shared');
   const exts = extensions || ['.json', '.md', '.txt', '.html'];
+  // Security: only allow scanning within the project directory
+  const allowedRoot = path.resolve(__dirname);
+  if (!scanDir.startsWith(allowedRoot + path.sep) && scanDir !== allowedRoot) {
+    return res.status(403).json({ ok: false, error: 'Scan restricted to project directory subtree' });
+  }
   let count = 0;
   try {
     const files = fs.readdirSync(scanDir).filter(f => exts.some(e => f.endsWith(e)));
@@ -962,6 +985,8 @@ app.post('/api/prime/plan', (req, res) => {
     ts: Date.now(),
   };
   primeAgent.active_plans.push(plan);
+  // Cap active_plans to prevent unbounded memory growth
+  while (primeAgent.active_plans.length > 200) primeAgent.active_plans.shift();
   primeAgent.decisions_made++;
   broadcast({ type: 'prime_plan', data: plan });
   res.json({ ok: true, plan });
@@ -1136,8 +1161,35 @@ app.get('/api/twin/full', (_req, res) => {
 });
 
 // ── PAYMENT WEBHOOKS ────────────────────────────────────────────────────────
-app.post('/api/payments/webhook/payfast', (req, res) => {
-  const { pf_payment_id, payment_status, amount_gross, item_name } = req.body || {};
+
+// PayFast signature verification: MD5 of alphabetically-sorted POST fields (excluding 'signature')
+function verifyPayFastSignature(body, passphrase) {
+  const filtered = Object.keys(body)
+    .filter(k => k !== 'signature' && body[k] !== '')
+    .sort()
+    .map(k => `${k}=${encodeURIComponent(body[k]).replace(/%20/g, '+')}`)
+    .join('&');
+  const withPassphrase = passphrase ? `${filtered}&passphrase=${encodeURIComponent(passphrase)}` : filtered;
+  return crypto.createHash('md5').update(withPassphrase).digest('hex');
+}
+
+// Paystack signature verification: HMAC-SHA512 of raw body with secret key
+function verifyPaystackSignature(rawBody, signature, secretKey) {
+  const expected = crypto.createHmac('sha512', secretKey).update(rawBody).digest('hex');
+  if (expected.length !== signature.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(signature, 'hex'));
+}
+
+// Middleware to capture raw body for Paystack HMAC verification
+app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }), (req, res) => {
+  const { pf_payment_id, payment_status, amount_gross, item_name, signature } = req.body || {};
+  // Verify PayFast signature
+  const passphrase = process.env.PAYFAST_PASSPHRASE || '';
+  const expectedSig = verifyPayFastSignature(req.body, passphrase);
+  if (!signature || expectedSig !== signature) {
+    audit('payfast_webhook_rejected', 'payfast', 'Invalid PayFast signature');
+    return res.status(403).json({ ok: false, error: 'Invalid PayFast signature' });
+  }
   if (payment_status === 'COMPLETE') {
     state.treasury.balance += parseFloat(amount_gross || 0);
     state.treasury.earned += parseFloat(amount_gross || 0);
@@ -1146,6 +1198,17 @@ app.post('/api/payments/webhook/payfast', (req, res) => {
   res.json({ ok: true });
 });
 app.post('/api/payments/webhook/paystack', (req, res) => {
+  const paystackSecret = process.env.PAYSTACK_SECRET_KEY || '';
+  const sig = req.headers['x-paystack-signature'];
+  if (!sig || !paystackSecret) {
+    audit('paystack_webhook_rejected', 'paystack', 'Missing Paystack signature or secret');
+    return res.status(403).json({ ok: false, error: 'Invalid Paystack signature' });
+  }
+  const rawBody = JSON.stringify(req.body);
+  if (!verifyPaystackSignature(rawBody, sig, paystackSecret)) {
+    audit('paystack_webhook_rejected', 'paystack', 'Invalid Paystack HMAC');
+    return res.status(403).json({ ok: false, error: 'Invalid Paystack signature' });
+  }
   const { event, data } = req.body || {};
   if (event === 'charge.success') {
     const amt = (data?.amount || 0) / 100;
@@ -1156,6 +1219,13 @@ app.post('/api/payments/webhook/paystack', (req, res) => {
   res.json({ ok: true });
 });
 app.post('/api/payments/webhook/crypto', (req, res) => {
+  // Crypto webhooks require BRIDGE_INTERNAL_SECRET header for authentication
+  const internalSecret = process.env.BRIDGE_INTERNAL_SECRET;
+  const provided = req.headers['x-bridge-secret'];
+  if (!internalSecret || provided !== internalSecret) {
+    audit('crypto_webhook_rejected', 'crypto', 'Missing or invalid BRIDGE_INTERNAL_SECRET header');
+    return res.status(403).json({ ok: false, error: 'Unauthorized — x-bridge-secret header required' });
+  }
   const { amount, currency, tx_hash } = req.body || {};
   state.treasury.balance += parseFloat(amount || 0);
   state.treasury.earned += parseFloat(amount || 0);
@@ -1199,7 +1269,9 @@ app.post('/api/treasury/withdraw/eth', async (req, res) => {
   try {
     const result = await ethTreasury.withdraw(to, amount);
     // Log to treasury state
-    state.treasury.spent += parseFloat(amount) * 3600; // approximate ETH→USD
+    // TODO: Replace hardcoded ETH price with a live price feed (e.g. CoinGecko, Chainlink oracle).
+    // The value 3600 is a static approximation and will drift from market price.
+    state.treasury.spent += parseFloat(amount) * 3600; // approximate ETH→USD — hardcoded, needs price feed
     broadcast({ type: 'treasury_withdraw', rail: 'eth', ...result });
     kfAuditLog.push({ action: 'eth_withdraw', to, amount, tx: result.tx_hash, ts: Date.now() / 1000 });
     res.json(result);
@@ -1761,6 +1833,13 @@ const RBAC_ROLES = {
 
 app.get('/api/rbac/roles', (_req, res) => res.json({ ok: true, roles: RBAC_ROLES }));
 app.get('/api/rbac/check', (req, res) => {
+  // Require authentication via KeyForge token or internal secret
+  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  const internalSecret = req.headers['x-bridge-secret'];
+  const kfResult = token ? kfValidate(token) : { valid: false };
+  if (!kfResult.valid && internalSecret !== process.env.BRIDGE_INTERNAL_SECRET) {
+    return res.status(401).json({ ok: false, error: 'Authentication required — provide KeyForge Bearer token or x-bridge-secret header' });
+  }
   const { role, permission } = req.query;
   const r = RBAC_ROLES[role];
   if (!r) return res.json({ ok: true, allowed: false, reason: 'unknown_role' });
@@ -1848,7 +1927,11 @@ const mfaSecrets = new Map(); // userId → { secret, enabled, backup_codes }
 const totpWindow = 30; // 30 second TOTP window
 
 function generateTOTPSecret() {
-  return crypto.randomBytes(20).toString('base32') || crypto.randomBytes(20).toString('hex').slice(0, 32);
+  // NOTE: Node.js Buffer does not support base32 encoding natively.
+  // Using hex encoding here. For full TOTP compatibility with authenticator apps,
+  // integrate a base32 library (e.g., 'hi-base32' or 'thirty-two') to produce
+  // RFC 4648 base32-encoded secrets.
+  return crypto.randomBytes(20).toString('hex');
 }
 function generateBackupCodes() {
   return Array.from({ length: 8 }, () => crypto.randomBytes(4).toString('hex'));
@@ -1857,7 +1940,7 @@ function verifyTOTP(secret, code) {
   // Simplified TOTP — in production use speakeasy/otpauth library
   const epoch = Math.floor(Date.now() / 1000 / totpWindow);
   const expected = crypto.createHmac('sha1', secret).update(String(epoch)).digest('hex').slice(-6);
-  return code === expected || code === '000000'; // dev bypass
+  return code === expected;
 }
 
 app.post('/api/mfa/setup', (req, res) => {
@@ -1911,7 +1994,8 @@ app.get('/auth/google/callback', async (req, res) => {
     const user = await userRes.json();
     const token = kfIssue('auth', 'default');
     audit('google_login', user.email, `Google OAuth: ${user.name}`);
-    res.redirect(`/?token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email)}&name=${encodeURIComponent(user.name || '')}`);
+    // Use URL fragment (#) instead of query string (?) to prevent token leakage in server logs/referrer headers
+    res.redirect(`/#token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email)}&name=${encodeURIComponent(user.name || '')}`);
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 app.get('/api/auth/google/status', (_req, res) => res.json({ ok: true, configured: !!GOOGLE_CLIENT_ID, client_id_set: !!GOOGLE_CLIENT_ID, client_secret_set: !!GOOGLE_CLIENT_SECRET }));
@@ -1940,7 +2024,8 @@ app.get('/auth/microsoft/callback', async (req, res) => {
     const user = await userRes.json();
     const token = kfIssue('auth', 'default');
     audit('microsoft_login', user.mail || user.userPrincipalName, `Azure AD: ${user.displayName}`);
-    res.redirect(`/?token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.mail || user.userPrincipalName)}&name=${encodeURIComponent(user.displayName || '')}`);
+    // Use URL fragment (#) instead of query string (?) to prevent token leakage in server logs/referrer headers
+    res.redirect(`/#token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.mail || user.userPrincipalName)}&name=${encodeURIComponent(user.displayName || '')}`);
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 app.get('/api/auth/microsoft/status', (_req, res) => res.json({ ok: true, configured: !!AZURE_CLIENT_ID, tenant: AZURE_TENANT }));
@@ -2006,7 +2091,8 @@ app.get('/auth/github/callback', async (req, res) => {
     const user = await userRes.json();
     const token = kfIssue('auth', 'default');
     audit('github_login', user.login, `GitHub: ${user.name || user.login}`);
-    res.redirect(`/?token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email || user.login)}&name=${encodeURIComponent(user.name || user.login)}`);
+    // Use URL fragment (#) instead of query string (?) to prevent token leakage in server logs/referrer headers
+    res.redirect(`/#token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email || user.login)}&name=${encodeURIComponent(user.name || user.login)}`);
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
@@ -2260,19 +2346,44 @@ console.log('[BRAIN] Supa-Claw deterministic core ACTIVE -- SQLite ledger, mutex
     get: () => _balance,
     set: (v) => {
       // Allow one-way sync from the core mirror (supaCore sets it back after commit)
-      if (typeof v === 'number' && isFinite(v)) { _balance = v; return; }
+      if (typeof v === 'number' && isFinite(v)) {
+        if (v < 0) {
+          console.error(`[𝓛₂₇][BLOCKED] Attempted to set treasury.balance to negative value: ${v}`);
+          audit('treasury_negative_blocked', 'system', `Blocked negative balance: ${v}`);
+          return; // Silently reject negative balance
+        }
+        if (_balance !== v) {
+          audit('treasury_mutation', 'system', `balance: ${_balance} -> ${v}`);
+        }
+        _balance = v;
+        return;
+      }
       throw new Error('[𝓛₂₇] Direct treasury.balance mutation is forbidden -- use supaCore.treasuryCredit()');
     },
     configurable: false, enumerable: true,
   });
   Object.defineProperty(treasury, 'earned', {
     get: () => _earned,
-    set: (v) => { if (typeof v === 'number' && isFinite(v)) { _earned = v; return; } throw new Error('[𝓛₂₇] Direct treasury.earned mutation forbidden'); },
+    set: (v) => {
+      if (typeof v === 'number' && isFinite(v)) {
+        if (v < 0) { console.error(`[𝓛₂₇][BLOCKED] Attempted negative earned: ${v}`); return; }
+        if (_earned !== v) audit('treasury_mutation', 'system', `earned: ${_earned} -> ${v}`);
+        _earned = v; return;
+      }
+      throw new Error('[𝓛₂₇] Direct treasury.earned mutation forbidden');
+    },
     configurable: false, enumerable: true,
   });
   Object.defineProperty(treasury, 'spent', {
     get: () => _spent,
-    set: (v) => { if (typeof v === 'number' && isFinite(v)) { _spent = v; return; } throw new Error('[𝓛₂₇] Direct treasury.spent mutation forbidden'); },
+    set: (v) => {
+      if (typeof v === 'number' && isFinite(v)) {
+        if (v < 0) { console.error(`[𝓛₂₇][BLOCKED] Attempted negative spent: ${v}`); return; }
+        if (_spent !== v) audit('treasury_mutation', 'system', `spent: ${_spent} -> ${v}`);
+        _spent = v; return;
+      }
+      throw new Error('[𝓛₂₇] Direct treasury.spent mutation forbidden');
+    },
     configurable: false, enumerable: true,
   });
   console.log('[BRAIN] Treasury kill switch installed -- direct mutations blocked (𝓛₂₇)');
