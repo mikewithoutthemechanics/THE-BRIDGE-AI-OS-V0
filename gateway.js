@@ -54,6 +54,20 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// ── JSON GUARD — prevent HTML responses on agent/api routes ─────────────────
+try {
+  const { jsonGuard } = require('./lib/agent-contract');
+  app.use('/api/', jsonGuard());
+  app.use('/agent/', jsonGuard());
+} catch (_) { /* agent-contract not available */ }
+
+// ── AGENT EXECUTION SERVER — 10 specialized agents ─────────────────────────
+try {
+  const { registerAgentExecutionRoutes } = require('./lib/agent-execution-server');
+  registerAgentExecutionRoutes(app);
+  console.log('[GATEWAY] Agent Execution Server ACTIVE — 10 specialized agents');
+} catch (e) { console.warn('[GATEWAY] Agent execution failed:', e.message); }
+
 // ── REQUEST LOGGING MIDDLEWARE ────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'test') {
   app.use((req, res, next) => {

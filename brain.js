@@ -39,6 +39,14 @@ const server = http.createServer(app);
 
 // ── CORS + JSON ─────────────────────────────────────────────────────────────
 app.use(express.json());
+
+// ── JSON GUARD — prevent HTML responses on agent/api routes ─────────────────
+try {
+  const { jsonGuard } = require('./lib/agent-contract');
+  app.use('/api/', jsonGuard());
+  app.use('/agent/', jsonGuard());
+} catch (_) { /* agent-contract not available */ }
+
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -2789,6 +2797,13 @@ try {
   primes.runPrimeLoop();
   console.log('[BRAIN] Prime Agents ACTIVE — Aurora, Atlas, Vega, Omega, Halo, Nexus, Sentinel');
 } catch (e) { console.warn('[BRAIN] Prime agents failed:', e.message); }
+
+// ── AGENT EXECUTION SERVER — 10 specialized business agents ─────────────────
+try {
+  const { registerAgentExecutionRoutes } = require('./lib/agent-execution-server');
+  registerAgentExecutionRoutes(app);
+  console.log('[BRAIN] Agent Execution Server ACTIVE — 10 specialized agents');
+} catch (e) { console.warn('[BRAIN] Agent execution failed:', e.message); }
 
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
