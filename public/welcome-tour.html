@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bridge AI OS — Welcome Tour</title>
+<meta name="description" content="Launch your first AI agent in 60 seconds. Interactive onboarding for Bridge AI OS.">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#c4a8ff;--orange:#fb923c;--dim:#7a8fa0;--text:#e0e8f0}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+.tour{max-width:600px;width:100%;text-align:center}
+.tour h1{font-size:2rem;font-weight:900;margin-bottom:.5rem}
+.tour h1 span{color:var(--cyan)}
+.tour .sub{color:var(--dim);margin-bottom:2rem;font-size:1rem}
+
+.progress{display:flex;gap:.5rem;justify-content:center;margin-bottom:2.5rem}
+.progress-dot{width:12px;height:12px;border-radius:50%;background:var(--border);transition:all .3s}
+.progress-dot.active{background:var(--cyan);box-shadow:0 0 12px rgba(0,200,255,.4)}
+.progress-dot.done{background:var(--green)}
+
+.step-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.5rem 2rem;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .3s}
+.step-icon{font-size:3rem;margin-bottom:1.5rem}
+.step-title{font-size:1.3rem;font-weight:700;margin-bottom:.75rem}
+.step-desc{color:var(--dim);font-size:.95rem;line-height:1.6;max-width:440px;margin-bottom:1.5rem}
+
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem;margin-bottom:1.5rem;width:100%}
+.agent-pick{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:.75rem;cursor:pointer;transition:all .2s;text-align:center}
+.agent-pick:hover{border-color:rgba(0,200,255,.4)}
+.agent-pick.selected{border-color:var(--cyan);background:rgba(0,200,255,.05)}
+.agent-pick .agent-emoji{font-size:1.5rem;margin-bottom:.3rem}
+.agent-pick .agent-label{font-size:.78rem;color:var(--dim);font-weight:600}
+
+.command-row{display:flex;gap:.5rem;width:100%;max-width:440px}
+.command-row input{flex:1;padding:.7rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;outline:none}
+.command-row input:focus{border-color:var(--cyan)}
+
+.tour-result{width:100%;max-width:440px;margin-top:1rem;padding:1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','Cascadia Code',monospace;font-size:.82rem;color:var(--green);line-height:1.6;text-align:left;display:none;white-space:pre-wrap;word-break:break-word;max-height:200px;overflow-y:auto}
+.tour-result.visible{display:block}
+
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0090cc);color:#000;box-shadow:0 4px 20px rgba(0,200,255,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(0,200,255,.35);transform:translateY(-2px)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-row{display:flex;gap:.75rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap}
+
+.confetti{font-size:2rem;animation:confetti-pop .6s ease-out;display:inline-block}
+@keyframes confetti-pop{0%{transform:scale(0) rotate(-10deg);opacity:0}60%{transform:scale(1.3) rotate(5deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+.stat-earned{display:inline-block;padding:.4rem .8rem;background:rgba(0,229,123,.1);border:1px solid rgba(0,229,123,.2);border-radius:6px;color:var(--green);font-weight:700;font-size:1.2rem;margin:.5rem}
+
+@media(max-width:480px){.tour h1{font-size:1.5rem}.step-card{padding:1.5rem 1rem}.agent-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="tour">
+  <h1>Welcome to <span>Bridge AI</span></h1>
+  <p class="sub">Launch your first AI agent in 60 seconds</p>
+
+  <div class="progress">
+    <div class="progress-dot active" id="dot-0"></div>
+    <div class="progress-dot" id="dot-1"></div>
+    <div class="progress-dot" id="dot-2"></div>
+    <div class="progress-dot" id="dot-3"></div>
+  </div>
+
+  <div class="step-card" id="step-card"></div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var currentStep = 0;
+  var selectedAgent = 'agent-biz-sales';
+  var totalSteps = 4;
+  var card = document.getElementById('step-card');
+
+  var AGENTS = [
+    { id: 'agent-biz-sales', emoji: '\uD83D\uDCBC', label: 'Sales' },
+    { id: 'agent-biz-marketing', emoji: '\uD83D\uDCE3', label: 'Marketing' },
+    { id: 'agent-biz-finance', emoji: '\uD83D\uDCB0', label: 'Finance' },
+    { id: 'agent-biz-research', emoji: '\uD83D\uDD0D', label: 'Research' },
+    { id: 'agent-biz-support', emoji: '\uD83C\uDFE5', label: 'Support' },
+    { id: 'agent-biz-legal', emoji: '\u2696\uFE0F', label: 'Legal' },
+  ];
+
+  var SUGGESTIONS = {
+    'agent-biz-sales': 'Find 5 leads for an AI startup in Johannesburg',
+    'agent-biz-marketing': 'Write a social media post about AI automation',
+    'agent-biz-finance': 'Create a monthly revenue forecast',
+    'agent-biz-research': 'Analyze the South African AI market size',
+    'agent-biz-support': 'Draft an FAQ for new customers',
+    'agent-biz-legal': 'Summarize POPIA compliance requirements',
+  };
+
+  function el(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
+
+  function updateDots() {
+    for (var i = 0; i < totalSteps; i++) {
+      var dot = document.getElementById('dot-' + i);
+      if (!dot) continue;
+      dot.className = 'progress-dot';
+      if (i < currentStep) dot.classList.add('done');
+      if (i === currentStep) dot.classList.add('active');
+    }
+  }
+
+  function renderStep() {
+    updateDots();
+    card.style.opacity = '0';
+    setTimeout(function() {
+      card.textContent = '';
+      switch (currentStep) {
+        case 0: renderStep0(); break;
+        case 1: renderStep1(); break;
+        case 2: renderStep2(); break;
+        case 3: renderStep3(); break;
+      }
+      card.style.opacity = '1';
+    }, 200);
+  }
+
+  function renderStep0() {
+    var icon = el('div', 'step-icon'); icon.textContent = '\uD83D\uDE80'; card.appendChild(icon);
+    var title = el('div', 'step-title'); title.textContent = 'Choose your first agent'; card.appendChild(title);
+    var desc = el('div', 'step-desc'); desc.textContent = 'Pick the AI agent that matches your biggest need right now. You can activate more later.'; card.appendChild(desc);
+
+    var grid = el('div', 'agent-grid');
+    AGENTS.forEach(function(a) {
+      var pick = el('div', 'agent-pick' + (a.id === selectedAgent ? ' selected' : ''));
+      var emoji = el('div', 'agent-emoji'); emoji.textContent = a.emoji; pick.appendChild(emoji);
+      var label = el('div', 'agent-label'); label.textContent = a.label; pick.appendChild(label);
+      pick.addEventListener('click', function() {
+        selectedAgent = a.id;
+        grid.querySelectorAll('.agent-pick').forEach(function(p) { p.classList.remove('selected'); });
+        pick.classList.add('selected');
+      });
+      grid.appendChild(pick);
+    });
+    card.appendChild(grid);
+
+    var row = el('div', 'btn-row');
+    var next = el('button', 'btn btn-primary'); next.textContent = 'Deploy Agent';
+    next.addEventListener('click', function() { currentStep = 1; renderStep(); });
+    row.appendChild(next);
+    card.appendChild(row);
+  }
+
+  function renderStep1() {
+    var icon = el('div', 'step-icon'); icon.textContent = '\u2699\uFE0F'; card.appendChild(icon);
+    var title = el('div', 'step-title'); title.textContent = 'Give it a command'; card.appendChild(title);
+    var agentLabel = selectedAgent.replace('agent-biz-', '');
+    var desc = el('div', 'step-desc'); desc.textContent = 'Tell your ' + agentLabel + ' agent what to do. Or use the suggestion below.'; card.appendChild(desc);
+
+    var row = el('div', 'command-row');
+    var input = document.createElement('input'); input.type = 'text'; input.id = 'tour-command';
+    input.placeholder = SUGGESTIONS[selectedAgent] || 'Type a command...';
+    input.value = SUGGESTIONS[selectedAgent] || '';
+    row.appendChild(input); card.appendChild(row);
+
+    var result = el('div', 'tour-result'); result.id = 'tour-result'; card.appendChild(result);
+
+    var btnRow = el('div', 'btn-row');
+    var back = el('button', 'btn btn-outline'); back.textContent = 'Back';
+    back.addEventListener('click', function() { currentStep = 0; renderStep(); });
+    btnRow.appendChild(back);
+
+    var run = el('button', 'btn btn-primary'); run.textContent = 'Run Command';
+    run.addEventListener('click', function() {
+      var cmd = input.value.trim();
+      if (!cmd) { input.focus(); return; }
+      run.disabled = true; run.textContent = 'Running...';
+      result.className = 'tour-result visible';
+      result.textContent = 'Sending to ' + selectedAgent + '...';
+
+      fetch('/api/agents/' + encodeURIComponent(selectedAgent) + '/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: cmd })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        result.textContent = d.result || d.response || d.text || d.message || JSON.stringify(d, null, 2);
+        run.textContent = 'Next Step'; run.disabled = false;
+        run.onclick = function() { currentStep = 2; renderStep(); };
+      })
+      .catch(function() {
+        result.textContent = 'Agent is warming up. This is normal for first runs.';
+        result.style.color = 'var(--orange)';
+        run.textContent = 'Next Step'; run.disabled = false;
+        run.onclick = function() { currentStep = 2; renderStep(); };
+      });
+    });
+    btnRow.appendChild(run); card.appendChild(btnRow);
+  }
+
+  function renderStep2() {
+    var icon = el('div', 'step-icon'); icon.textContent = '\uD83D\uDCC8'; card.appendChild(icon);
+    var title = el('div', 'step-title'); title.textContent = 'Your agent is live'; card.appendChild(title);
+    var agentLabel = selectedAgent.replace('agent-biz-', '');
+    var desc = el('div', 'step-desc'); desc.textContent = 'Your ' + agentLabel + ' agent is deployed and earning BRDG tokens. Monitor it from the Client Portal.'; card.appendChild(desc);
+
+    var stats = el('div'); stats.style.cssText = 'display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem';
+    [{ val: '100', lbl: 'BRDG Credits' }, { val: '1', lbl: 'Active Agent' }, { val: 'Free', lbl: 'Current Plan' }].forEach(function(item) {
+      var s = el('div'); s.style.cssText = 'text-align:center;padding:.75rem 1.25rem;background:var(--card);border:1px solid var(--border);border-radius:8px';
+      var v = el('div'); v.style.cssText = 'font-size:1.3rem;font-weight:800;color:var(--cyan)'; v.textContent = item.val; s.appendChild(v);
+      var l = el('div'); l.style.cssText = 'font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-top:.2rem'; l.textContent = item.lbl; s.appendChild(l);
+      stats.appendChild(s);
+    });
+    card.appendChild(stats);
+
+    var row = el('div', 'btn-row');
+    var next = el('button', 'btn btn-primary'); next.textContent = 'Finish Setup';
+    next.addEventListener('click', function() { currentStep = 3; renderStep(); });
+    row.appendChild(next); card.appendChild(row);
+  }
+
+  function renderStep3() {
+    var confetti = el('div', 'confetti'); confetti.textContent = '\uD83C\uDF89'; card.appendChild(confetti);
+    var title = el('div', 'step-title'); title.textContent = "You're all set!"; card.appendChild(title);
+    var earned = el('div', 'stat-earned'); earned.textContent = '+100 BRDG earned while you explored'; card.appendChild(earned);
+    var desc = el('div', 'step-desc'); desc.textContent = 'Your AI agents are ready. Head to the Client Portal to manage your workforce, or explore the Live Economy.'; card.appendChild(desc);
+
+    var row = el('div', 'btn-row');
+    var portal = el('a', 'btn btn-primary'); portal.textContent = 'Go to Client Portal'; portal.href = '/portal.html'; row.appendChild(portal);
+    var economy = el('a', 'btn btn-outline'); economy.textContent = 'View Live Economy'; economy.href = '/economy.html'; row.appendChild(economy);
+    card.appendChild(row);
+  }
+
+  renderStep();
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+</body>
+</html>
