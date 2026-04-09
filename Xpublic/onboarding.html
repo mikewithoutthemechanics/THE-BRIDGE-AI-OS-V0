@@ -193,7 +193,13 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
       showMsg('reg-msg', 'Account created! Loading your dashboard...', true);
-      localStorage.setItem('bridge_user', JSON.stringify(data.user || { email: body.email }));
+      localStorage.setItem('bridge_user', JSON.stringify({
+        email: body.email,
+        role: data.role || 'member',
+        name: data.name || body.email.split('@')[0],
+        credits: data.credits || 100,
+        plan: data.plan || 'free'
+      }));
       // Claim referral if provided
       const ref = document.getElementById('reg-referral').value.trim();
       if (ref) {
@@ -229,7 +235,13 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
       showMsg('login-msg', 'Signed in! Loading your dashboard...', true);
-      localStorage.setItem('bridge_user', JSON.stringify(data.user || { email: body.email }));
+      localStorage.setItem('bridge_user', JSON.stringify({
+        email: body.email,
+        role: data.role || 'member',
+        name: data.name || body.email.split('@')[0],
+        credits: data.credits || 100,
+        plan: data.plan || 'free'
+      }));
       setTimeout(() => { location.href = '/welcome.html'; }, 1000);
     } else {
       showMsg('login-msg', data.error || 'Login failed', false);
