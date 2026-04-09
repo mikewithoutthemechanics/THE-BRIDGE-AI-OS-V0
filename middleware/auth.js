@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 
-// Redis-backed token revocation with graceful fallback to in-memory Set
+// Redis-backed token revocation with graceful fallback to TTL-based in-memory Map
 let redisClient = null;
-const revokedTokens = new Set();
+const revokedTokens = new Map(); // token → expiry timestamp (ms)
 
 // Attempt Redis connection, fall back silently
 (async () => {
@@ -12,7 +12,7 @@ const revokedTokens = new Set();
       url: process.env.REDIS_URL || 'redis://localhost:6379',
       socket: { connectTimeout: 3000, reconnectStrategy: (retries) => retries > 3 ? false : 1000 }
     });
-    redisClient.on('error', () => {}); // suppress connection errors
+    redisClient.on('error', () => {});
     await redisClient.connect();
     console.log('[AUTH-MW] Redis connected for token revocation');
   } catch (_) {
@@ -21,11 +21,20 @@ const revokedTokens = new Set();
   }
 })();
 
-// Prune in-memory set periodically to prevent unbounded growth
-// TODO(security #18): The bulk-clear at 50k is a blunt instrument — revoked tokens
-// are silently un-revoked. Once Redis is reliably available, remove the in-memory
-// Set fallback entirely and rely on Redis SETEX with TTL matching JWT expiry.
-setInterval(() => { if (revokedTokens.size > 50000) revokedTokens.clear(); }, 10 * 60 * 1000);
+// TTL-based cleanup: remove expired revocations every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, expiresAt] of revokedTokens) {
+    if (expiresAt <= now) revokedTokens.delete(token);
+  }
+}, 5 * 60 * 1000);
+
+function isTokenRevoked(token) {
+  const expiresAt = revokedTokens.get(token);
+  if (!expiresAt) return false;
+  if (Date.now() > expiresAt) { revokedTokens.delete(token); return false; }
+  return true;
+}
 
 const requireAuth = (requiredAuthority = null) => {
   return async (req, res, next) => {
@@ -46,10 +55,10 @@ const requireAuth = (requiredAuthority = null) => {
           if (revoked) return res.status(401).json({ error: 'Token revoked' });
         } catch (_) {
           // Redis read failed — fall through to in-memory check
-          if (revokedTokens.has(token)) return res.status(401).json({ error: 'Token revoked' });
+          if (isTokenRevoked(token)) return res.status(401).json({ error: 'Token revoked' });
         }
       } else {
-        if (revokedTokens.has(token)) return res.status(401).json({ error: 'Token revoked' });
+        if (isTokenRevoked(token)) return res.status(401).json({ error: 'Token revoked' });
       }
 
       const secret = process.env.JWT_SECRET;
@@ -85,9 +94,9 @@ const requireAuth = (requiredAuthority = null) => {
   };
 };
 
-// Utility: revoke a token
-async function revokeToken(token, ttlSeconds = 86400) {
-  revokedTokens.add(token);
+// Utility: revoke a token (TTL defaults to 7 days = JWT expiry)
+async function revokeToken(token, ttlSeconds = 7 * 24 * 3600) {
+  revokedTokens.set(token, Date.now() + ttlSeconds * 1000);
   if (redisClient) {
     try { await redisClient.set(`revoked:${token}`, '1', { EX: ttlSeconds }); } catch (_) {}
   }

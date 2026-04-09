@@ -22,7 +22,7 @@ function safeCompare(a, b) {
 // ── Page Tier Definitions ──────────────────────────────────────────────────
 const PAGE_TIERS = {
   PUBLIC: ['/', '/index.html', '/landing.html', '/home.html', '/pricing.html', '/onboarding.html', '/checkout.html',
-    '/payment-success.html', '/payment-cancel.html', '/welcome.html', '/onboarding.html', '/sitemap.html',
+    '/payment-success.html', '/payment-cancel.html', '/welcome.html', '/welcome-tour.html', '/onboarding.html', '/sitemap.html',
     '/docs.html', '/50-applications.html', '/applications.html', '/404.html', '/offline.html',
     '/platforms.html', '/bridge-home.html', '/ehsa-home.html', '/aurora-home.html', '/hospital-home.html',
     '/aid-home.html', '/rootedearth-home.html', '/portal.html', '/voice.html'],
@@ -53,7 +53,7 @@ for (const [tier, pages] of Object.entries(PAGE_TIERS)) {
 
 // ── Token Extraction ───────────────────────────────────────────────────────
 
-function extractUser(req) {
+async function extractUser(req) {
   let token = null;
 
   // 1. Authorization Bearer header
@@ -74,7 +74,7 @@ function extractUser(req) {
 
   if (!token) return null;
 
-  return userDb.verifyAuthToken(token);
+  return await userDb.verifyAuthToken(token);
 }
 
 // ── Helper: check if request wants HTML ────────────────────────────────────
@@ -86,8 +86,8 @@ function wantsHtml(req) {
 
 // ── Middleware: requireClient ──────────────────────────────────────────────
 
-function requireClient(req, res, next) {
-  const user = extractUser(req);
+async function requireClient(req, res, next) {
+  const user = await extractUser(req);
   if (!user || user.plan === 'visitor') {
     if (wantsHtml(req)) {
       const redirect = encodeURIComponent(req.originalUrl || req.path);
@@ -101,8 +101,8 @@ function requireClient(req, res, next) {
 
 // ── Middleware: requireAdmin ──────────────────────────────────────────────
 
-function requireAdmin(req, res, next) {
-  const user = extractUser(req);
+async function requireAdmin(req, res, next) {
+  const user = await extractUser(req);
 
   // Check admin token header
   const adminToken = req.headers['x-admin-token'];
@@ -132,8 +132,8 @@ function requireAdmin(req, res, next) {
 
 // ── Middleware: requireSuperAdmin ──────────────────────────────────────────
 
-function requireSuperAdmin(req, res, next) {
-  const user = extractUser(req);
+async function requireSuperAdmin(req, res, next) {
+  const user = await extractUser(req);
 
   // Must pass admin check first (user role or headers)
   const isAdmin = (user && (user.role === 'admin' || user.role === 'superadmin'))
@@ -163,7 +163,7 @@ function requireSuperAdmin(req, res, next) {
 // ── Middleware Factory: pageGuard ──────────────────────────────────────────
 
 function pageGuard() {
-  return function pageGuardMiddleware(req, res, next) {
+  return async function pageGuardMiddleware(req, res, next) {
     // Only guard GET requests for .html pages or exact path matches
     if (req.method !== 'GET') return next();
 

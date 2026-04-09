@@ -64,10 +64,20 @@ try {
   app.get('/api/config/clerk', (_req, res) => {
     res.json({ publishableKey: process.env.CLERK_PUBLISHABLE_KEY || '' });
   });
-  app.post('/api/auth/logout', (req, res) => {
+  app.post('/api/auth/logout', async (req, res) => {
+    // Revoke Clerk session
     const auth = getAuth(req);
     if (auth && auth.sessionId) {
       clerkClient.sessions.revokeSession(auth.sessionId).catch(() => {});
+    }
+    // Revoke Bridge JWT server-side
+    const authHeader = req.headers.authorization || '';
+    const bridgeToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (bridgeToken) {
+      try {
+        const { revokeToken } = require('./middleware/auth');
+        await revokeToken(bridgeToken);
+      } catch (_) {}
     }
     res.json({ ok: true, message: 'Signed out' });
   });
@@ -1237,7 +1247,7 @@ function verifyPaystackSignature(rawBody, signature, secretKey) {
 }
 
 // Middleware to capture raw body for Paystack HMAC verification
-app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }), (req, res) => {
+app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }), async (req, res) => {
   const { pf_payment_id, payment_status, amount_gross, item_name, signature } = req.body || {};
   // Verify PayFast signature
   const passphrase = process.env.PAYFAST_PASSPHRASE || '';
@@ -1260,10 +1270,10 @@ app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }
     // Update user plan if email matches
     try {
       const userDb = require('./lib/user-identity');
-      const user = userDb.getUserByEmail(meta.email);
+      const user = await userDb.getUserByEmail(meta.email);
       if (user) {
-        userDb.setUserPlan(user.id, meta.plan || 'pro');
-        userDb.updateFunnelStage(user.id, 'customer');
+        await userDb.setUserPlan(user.id, meta.plan || 'pro');
+        await userDb.updateFunnelStage(user.id, 'customer');
       }
     } catch (_) {}
 
@@ -2202,31 +2212,31 @@ function verifyTOTP(secretBase32, code) {
   return false;
 }
 
-app.post('/api/mfa/setup', (req, res) => {
+app.post('/api/mfa/setup', async (req, res) => {
   const { user_id } = req.body || {};
   if (!user_id) return res.status(400).json({ ok: false, error: 'user_id required' });
   const secret = generateTOTPSecret();
   const backup_codes = generateBackupCodes();
   // Persist to SQLite via user-identity module
-  userMfa.setTotpSecret(user_id, secret, backup_codes);
+  await userMfa.setTotpSecret(user_id, secret, backup_codes);
   const otpauth_url = `otpauth://totp/BridgeAI:${encodeURIComponent(user_id)}?secret=${secret}&issuer=BridgeAI&algorithm=SHA1&digits=6&period=30`;
   res.json({ ok: true, secret, otpauth_url, backup_codes, qr_hint: `Use any authenticator app to scan: ${otpauth_url}` });
 });
-app.post('/api/mfa/verify', (req, res) => {
+app.post('/api/mfa/verify', async (req, res) => {
   const { user_id, code } = req.body || {};
-  const mfa = userMfa.getTotpData(user_id);
+  const mfa = await userMfa.getTotpData(user_id);
   if (!mfa || !mfa.secret) return res.status(404).json({ ok: false, error: 'MFA not setup for user' });
-  if (verifyTOTP(mfa.secret, code) || userMfa.consumeBackupCode(user_id, code)) {
-    userMfa.enableTotp(user_id);
+  if (verifyTOTP(mfa.secret, code) || await userMfa.consumeBackupCode(user_id, code)) {
+    await userMfa.enableTotp(user_id);
     audit('mfa_verified', user_id, 'MFA verification successful');
     res.json({ ok: true, verified: true, mfa_enabled: true });
   } else {
     res.json({ ok: false, verified: false, error: 'Invalid code' });
   }
 });
-app.get('/api/mfa/status', (req, res) => {
+app.get('/api/mfa/status', async (req, res) => {
   const user_id = req.query.user_id || 'default';
-  const mfa = userMfa.getTotpData(user_id);
+  const mfa = await userMfa.getTotpData(user_id);
   res.json({ ok: true, enabled: mfa?.enabled || false, setup: !!(mfa && mfa.secret), user_id });
 });
 
@@ -2683,15 +2693,15 @@ try {
 // ── MERCHANT BIDDING SYSTEM ──────────────────────────────────────────────────
 try {
   const merchantBids = require('./lib/merchant-bids');
-  app.get('/api/merchants/bids', (_req, res) => {
+  app.get('/api/merchants/bids', async (_req, res) => {
     try {
-      res.json({ ok: true, bids: merchantBids.getActiveBids() });
+      res.json({ ok: true, bids: await merchantBids.getActiveBids() });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
   });
-  app.post('/api/merchants/bid', (req, res) => {
+  app.post('/api/merchants/bid', async (req, res) => {
     try {
       const { merchantName, amount, category, targetAgent } = req.body || {};
-      const bid = merchantBids.placeBid(merchantName, amount, category, targetAgent);
+      const bid = await merchantBids.placeBid(merchantName, amount, category, targetAgent);
       res.json({ ok: true, bid });
     } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
   });
@@ -2703,9 +2713,9 @@ try {
 // ── DATA FLYWHEEL + ANALYTICS ───────────────────────────────────────────────
 try {
   const flywheel = require('./lib/data-flywheel');
-  app.get('/api/analytics/insights', (_req, res) => {
+  app.get('/api/analytics/insights', async (_req, res) => {
     try {
-      res.json({ ok: true, ...flywheel.getInsights() });
+      res.json({ ok: true, ...(await flywheel.getInsights()) });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
   });
   console.log('[BRAIN] Data flywheel ACTIVE');
@@ -2716,16 +2726,16 @@ try {
 // ── AGENT P&L ANALYTICS ────────────────────────────────────────────────────
 try {
   const ledgerPnL = require('./lib/agent-ledger');
-  app.get('/api/analytics/agent-pnl', (req, res) => {
+  app.get('/api/analytics/agent-pnl', async (req, res) => {
     try {
       const agentId = req.query.agent_id || req.query.agentId;
       if (!agentId) return res.status(400).json({ ok: false, error: 'agent_id query param required' });
-      res.json({ ok: true, pnl: ledgerPnL.getAgentPnL(agentId) });
+      res.json({ ok: true, pnl: await ledgerPnL.getAgentPnL(agentId) });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
   });
-  app.get('/api/analytics/system-pnl', (_req, res) => {
+  app.get('/api/analytics/system-pnl', async (_req, res) => {
     try {
-      res.json({ ok: true, pnl: ledgerPnL.getSystemPnL() });
+      res.json({ ok: true, pnl: await ledgerPnL.getSystemPnL() });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
   });
   console.log('[BRAIN] Agent P&L analytics ACTIVE');
@@ -2876,11 +2886,11 @@ try {
 try {
   const bci = require('./lib/commerce-index');
 
-  app.get('/api/analytics/bci', (req, res) => {
+  app.get('/api/analytics/bci', async (req, res) => {
     try {
       const days = parseInt(req.query.days, 10) || 7;
-      const current = bci.calculateBCI();
-      const history = bci.getBCIHistory(days);
+      const current = await bci.calculateBCI();
+      const history = await bci.getBCIHistory(days);
       res.json({ ok: true, current, history });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
   });
@@ -2921,37 +2931,37 @@ try {
 // ── PAGE ECONOMICS — track value generated per page ─────────────────────────
 try {
   const pageEcon = require('./lib/page-economics');
-  app.post('/api/pages/track', (req, res) => {
+  app.post('/api/pages/track', async (req, res) => {
     try {
       const { page, action, user_id, brdg_value } = req.body || {};
       if (!page || !action) return res.status(400).json({ ok: false, error: 'page and action are required' });
-      const record = pageEcon.recordPageValue(page, user_id, action, brdg_value);
+      const record = await pageEcon.recordPageValue(page, user_id, action, brdg_value);
       res.json({ ok: true, record });
     } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
   });
-  app.get('/api/pages/metrics', (_req, res) => {
+  app.get('/api/pages/metrics', async (_req, res) => {
     try {
-      const metrics = pageEcon.getPageMetrics();
+      const metrics = await pageEcon.getPageMetrics();
       res.json({ ok: true, ...metrics });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
   });
-  app.get('/api/pages/top', (req, res) => {
+  app.get('/api/pages/top', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit) || 10;
-      const top = pageEcon.getTopPages(limit);
+      const top = await pageEcon.getTopPages(limit);
       res.json({ ok: true, pages: top, count: top.length });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
   });
-  app.get('/api/pages/recent', (req, res) => {
+  app.get('/api/pages/recent', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit) || 50;
-      const recent = pageEcon.getRecentActivity(limit);
+      const recent = await pageEcon.getRecentActivity(limit);
       res.json({ ok: true, activity: recent, count: recent.length });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
   });
-  app.get('/api/pages/user/:userId', (req, res) => {
+  app.get('/api/pages/user/:userId', async (req, res) => {
     try {
-      const pages = pageEcon.getUserPageValue(req.params.userId);
+      const pages = await pageEcon.getUserPageValue(req.params.userId);
       res.json({ ok: true, pages, count: pages.length });
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
   });
