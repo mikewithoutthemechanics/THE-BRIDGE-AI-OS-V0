@@ -561,7 +561,7 @@ const NAV_HTML = `
 }
 </style>
 <nav id="bridge-nav">
-<a href="/" class="logo">BRIDGE AI</a>
+<a href="/dashboard" class="logo">BRIDGE AI</a>
 <button id="bnav-toggle" onclick="document.getElementById('bnav-links').classList.toggle('open')">&#9776;</button>
 <div id="bnav-links">
 <span class="sep">|</span><span class="cat">SYSTEM</span>
@@ -678,6 +678,9 @@ const ALL_PAGES = [
   'applications','admin','agents','digital-twin-console','docs','executive-dashboard','landing','join','settings','twin-wall','ehsa-brain','ehsa-app',
   '50-applications','anatomical_face','anatomical_face_constrained_system','anatomical_face_embodied','anatomical_face_facs','anatomical_face_tension_balanced','anatomical_face_vector_muscle',
   'trading','defi','wallet','governance','intelligence','pricing','view-logs','corporate','affiliate',
+  'payment-success','payment-cancel','auth-dashboard','twin','command-center','infra',
+  'checkout','economy','customers','vendors','quotes','tickets','leadgen','marketing','workforce','banks',
+  'payment','legal','admin-revenue',
 ];
 ALL_PAGES.forEach(p => {
   app.get(`/${p}.html`, (_req, res) => serveWithNav(path.join(XPUBLIC, `${p}.html`), res));
