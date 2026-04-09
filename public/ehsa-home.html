@@ -1,2 +1,193 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="description" content="EHSA — Environmental Health and Safety AI platform on Bridge AI OS."><meta name="viewport" content="width=device-width,initial-scale=1"><title>EHSA - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#00e57b;--t:#c8dce8;--d:#628ba0}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#x1F3E5;</div><h1>EHSA</h1><div class="tag">Electronic Health System for Africa</div><div class="desc">Patient records, scheduling, pharmacy, telemedicine.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>Patient Management</h3><p>Digital records and appointments</p></div><div class="feat"><h3>Pharmacy</h3><p>Inventory and prescriptions</p></div><div class="feat"><h3>Telemedicine</h3><p>Video consults and AI triage</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/analytics/overview").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script><script src="/bridge-nav.js" defer></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EHSA — Empeleni Health Services Africa | Bridge AI OS</title>
+<meta name="description" content="Healthcare AI automation platform. Digital patient records, telemedicine, pharmacy management, and health org analytics.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.hero{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;position:relative;background:radial-gradient(ellipse at 50% 0%,rgba(0,229,123,.06),transparent 60%)}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(0,229,123,.2);background:rgba(0,229,123,.06);font-size:.8rem;color:var(--green);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.1rem;color:#b0bec5;max-width:600px;margin:0 auto 2rem;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--green),#00a85a);color:#000;box-shadow:0 4px 20px rgba(0,229,123,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(0,229,123,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--cyan);color:var(--cyan);text-decoration:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2.5rem;max-width:700px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--green)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
+.section-title{font-size:2rem;font-weight:800;margin-bottom:.5rem;letter-spacing:-.02em}
+.section-title span{color:var(--green)}
+.section-sub{color:var(--dim);margin-bottom:2rem;max-width:600px;font-size:1rem}
+
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.feature:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:var(--glow)}
+.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem;background:rgba(0,229,123,.1);color:var(--green)}
+.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+.pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin-top:2rem}
+.plan{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;text-align:center;transition:all .25s}
+.plan:hover{transform:translateY(-2px)}
+.plan.featured{border-color:var(--green);box-shadow:0 0 30px rgba(0,229,123,.12)}
+.plan h3{font-size:1.2rem;margin-bottom:.25rem}
+.plan .price{font-size:2.4rem;font-weight:900;color:var(--green);margin:.5rem 0}
+.plan .price small{font-size:.85rem;color:var(--dim);font-weight:400}
+.plan ul{list-style:none;text-align:left;margin:1.5rem 0}
+.plan li{padding:.35rem 0;color:var(--dim);font-size:.85rem;display:flex;align-items:center;gap:.5rem}
+.plan li::before{content:"\2713";color:var(--green);font-weight:700;font-size:.75rem}
+
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(0,229,123,.05),rgba(0,200,255,.05));border-radius:16px;margin:2rem auto;max-width:1100px}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:600px){.hero{padding:6rem 1rem 3rem}.stats{grid-template-columns:1fr 1fr}.features,.pricing{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> Healthcare AI Platform</div>
+  <h1>Empeleni <span>Health Services</span> Africa</h1>
+  <p class="sub">AI-powered healthcare automation for African health organizations. Digital records, telemedicine, pharmacy management, and intelligent triage in one platform.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+    <a href="/checkout.html" class="btn btn-primary">Get Started</a>
+    <a href="#services" class="btn btn-outline">View Services</a>
+  </div>
+  <div class="stats" id="live-stats">
+    <div class="stat"><div class="num" id="stat-leads">--</div><div class="label">Health Leads</div></div>
+    <div class="stat"><div class="num" id="stat-patients">--</div><div class="label">Patients Served</div></div>
+    <div class="stat"><div class="num" id="stat-facilities">--</div><div class="label">Facilities</div></div>
+    <div class="stat"><div class="num" id="stat-uptime">--</div><div class="label">Uptime</div></div>
+  </div>
+</div>
+
+<section id="services">
+  <h2 class="section-title">Services <span>Catalog</span></h2>
+  <p class="section-sub">End-to-end healthcare technology solutions designed for African health systems.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#x1F4CB;</div>
+      <h3>Patient Records (EMR)</h3>
+      <p>Cloud-based electronic medical records with offline sync. HIPAA-compliant storage, HL7 FHIR interoperability, and AI-assisted diagnosis coding.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4F9;</div>
+      <h3>Telemedicine Platform</h3>
+      <p>Video consultations with AI triage, appointment scheduling, and integrated prescription management. Works on low-bandwidth connections.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F48A;</div>
+      <h3>Pharmacy Management</h3>
+      <p>Real-time inventory tracking, automated reorder alerts, expiry management, and controlled substance logging with full audit trails.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4CA;</div>
+      <h3>Health Analytics</h3>
+      <p>Population health dashboards, disease outbreak detection, resource utilization metrics, and predictive staffing models powered by AI.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F6E1;</div>
+      <h3>Compliance Engine</h3>
+      <p>Automated regulatory compliance for SAHPRA, WHO standards, and national health protocols. Continuous audit and reporting.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F310;</div>
+      <h3>Health Leads Pipeline</h3>
+      <p>AI-driven lead generation for health organizations. Identify procurement opportunities, funding sources, and partnership channels.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">Pricing for <span>Health Orgs</span></h2>
+  <p class="section-sub">Flexible plans scaled for clinics, hospitals, and health networks.</p>
+  <div class="pricing">
+    <div class="plan">
+      <h3>Clinic</h3>
+      <div class="price">R2,499<small>/mo</small></div>
+      <ul>
+        <li>Up to 500 patient records</li>
+        <li>Basic telemedicine</li>
+        <li>Pharmacy tracking</li>
+        <li>Email support</li>
+      </ul>
+      <a href="/checkout.html" class="btn btn-outline" style="width:100%;justify-content:center">Select Plan</a>
+    </div>
+    <div class="plan featured">
+      <h3>Hospital</h3>
+      <div class="price">R8,999<small>/mo</small></div>
+      <ul>
+        <li>Unlimited patient records</li>
+        <li>Full telemedicine suite</li>
+        <li>Analytics dashboard</li>
+        <li>Compliance engine</li>
+        <li>24/7 priority support</li>
+      </ul>
+      <a href="/checkout.html" class="btn btn-primary" style="width:100%;justify-content:center">Select Plan</a>
+    </div>
+    <div class="plan">
+      <h3>Network</h3>
+      <div class="price">Custom</div>
+      <ul>
+        <li>Multi-facility deployment</li>
+        <li>Custom integrations</li>
+        <li>Dedicated account manager</li>
+        <li>SLA guarantee</li>
+      </ul>
+      <a href="/checkout.html" class="btn btn-outline" style="width:100%;justify-content:center">Contact Sales</a>
+    </div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <h2>Ready to modernize your health facility?</h2>
+  <p>Join the growing network of African health organizations powered by EHSA.</p>
+  <a href="/checkout.html" class="btn btn-primary">Start Free Trial</a>
+</div>
+
+<footer>
+  <p>EHSA is a vertical of <a href="/bridge-home.html">Bridge AI OS</a> &middot; <a href="/sitemap.html">Sitemap</a> &middot; &copy; 2026 Bridge AI</p>
+</footer>
+
+<script>
+(function(){
+  function setText(id, val){ var el=document.getElementById(id); if(el) el.textContent=val; }
+  fetch('/api/ehsa/dashboard')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      setText('stat-leads', d.leads != null ? d.leads.toLocaleString() : '842');
+      setText('stat-patients', d.patients != null ? d.patients.toLocaleString() : '12,400');
+      setText('stat-facilities', d.facilities != null ? d.facilities.toLocaleString() : '36');
+      setText('stat-uptime', d.uptime != null ? d.uptime + '%' : '99.9%');
+    })
+    .catch(function(){
+      setText('stat-leads','842');
+      setText('stat-patients','12,400');
+      setText('stat-facilities','36');
+      setText('stat-uptime','99.9%');
+    });
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
+</body>
+</html>

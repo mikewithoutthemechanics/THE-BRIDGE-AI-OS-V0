@@ -73,6 +73,107 @@ function recordUsage(user_id, resource, quantity) {
   return entry;
 }
 
+// ── PAGE-AWARE OPPORTUNITY DETECTION (PAO-5) ───────────────────────────────
+
+const VERTICAL_TASK_MAP = {
+  ehsa:         { task_type: 'business', tasks: ['Score healthcare lead', 'Process healthcare RFP', 'Generate compliance report'], prime: 'prime-aurora' },
+  aurora:       { task_type: 'optimization', tasks: ['Analyze energy consumption', 'Optimize procurement costs'], prime: 'prime-aurora' },
+  hospital:     { task_type: 'optimization', tasks: ['Audit equipment inventory', 'Calculate deployment costs'], prime: 'prime-atlas' },
+  aid:          { task_type: 'business', tasks: ['Process UBI distribution batch', 'Track beneficiary outcomes'], prime: 'prime-halo' },
+  ban:          { task_type: 'security', tasks: ['Verify node consensus', 'Audit staking rewards'], prime: 'prime-sentinel' },
+  agriculture:  { task_type: 'optimization', tasks: ['Analyze crop yield data', 'Optimize supply chain routes'], prime: 'prime-atlas' },
+  supaco:       { task_type: 'business', tasks: ['Generate client proposal', 'Design campaign strategy'], prime: 'prime-aurora' },
+  defi:         { task_type: 'trade', tasks: ['Rebalance liquidity pools', 'Calculate staking APY'], prime: 'prime-nexus' },
+  trading:      { task_type: 'trade', tasks: ['Execute momentum strategy', 'Analyze market sentiment'], prime: 'prime-nexus' },
+  intelligence: { task_type: 'learning', tasks: ['Score 10 new leads', 'Generate competitive report'], prime: 'prime-vega' },
+};
+
+/**
+ * Detect vertical interest from a page view and generate a targeted task.
+ * @param {string} page - The page path (e.g. '/ehsa.html')
+ * @param {string} userId - The user viewing the page
+ * @returns {object|null} - Generated opportunity or null if no vertical match
+ */
+function detectPageOpportunity(page, userId) {
+  if (!page) return null;
+
+  // Resolve vertical from page path
+  var vertical = null;
+  var pageLower = page.toLowerCase().replace('.html', '').replace(/^\//, '');
+  for (var key in VERTICAL_TASK_MAP) {
+    if (pageLower === key || pageLower.indexOf(key) !== -1) {
+      vertical = key;
+      break;
+    }
+  }
+
+  if (!vertical) return null;
+
+  var config = VERTICAL_TASK_MAP[vertical];
+  var taskTitle = config.tasks[Math.floor(Math.random() * config.tasks.length)];
+
+  // Route through cognitive router
+  var route = cognitiveRoute({
+    task_type: config.task_type,
+    complexity: 0.6,
+    urgency: 0.7,
+    user_tier: 'PRO',
+  });
+
+  // Generate opportunity
+  var opp = {
+    id: 'pao_' + Date.now().toString(36) + '_' + vertical,
+    type: 'page_triggered',
+    vertical: vertical,
+    task: taskTitle,
+    page: page,
+    user_id: userId || 'anon',
+    prime_agent: config.prime,
+    routed_agent: route.agent,
+    expected_value: route.expected_value,
+    confidence: route.confidence,
+    value: Math.floor(50 + Math.random() * 200),
+    trigger: 'page_view',
+    ts: Date.now(),
+  };
+
+  // Score the opportunity
+  var scored = scoreValue({
+    impact: 0.6,
+    risk: 0.15,
+    revenue: opp.value,
+    cost: opp.value * 0.05,
+    user_value: 0.75,
+  });
+  opp.score = scored.score;
+
+  ledger.decisions.push({ type: 'page_opportunity', vertical: vertical, task: taskTitle, score: scored.score, ts: Date.now() });
+  if (ledger.decisions.length > 500) ledger.decisions.shift();
+
+  return opp;
+}
+
+/**
+ * Scan opportunities with page-context awareness.
+ * Extends scanOpportunities with vertical-specific triggers.
+ * @param {object} systemState
+ * @param {string} [activePage] - Currently viewed page
+ * @returns {Array} opportunities
+ */
+function scanPageAwareOpportunities(systemState, activePage) {
+  var opps = scanOpportunities(systemState);
+
+  // If an active page is provided, detect vertical opportunity
+  if (activePage) {
+    var pageOpp = detectPageOpportunity(activePage, systemState.user_id);
+    if (pageOpp) {
+      opps.push(pageOpp);
+    }
+  }
+
+  return opps;
+}
+
 // ── INTELLIGENCE LOOP ───────────────────────────────────────────────────────
 let ilCycle = 0;
 function intelligenceLoop(state, broadcast) {
@@ -216,6 +317,24 @@ module.exports = function registerIntelligence(app, state, broadcast) {
     unit_economics: { cac: 42, ltv: 1200, ltv_cac_ratio: 28.6, payback_months: 2.1 },
     projections: { year1_arr: 240000, year3_arr: 2400000, year5_arr: 12000000 },
   }));
+
+  // Page-aware opportunity detection
+  app.post('/api/intelligence/page-opportunity', (req, res) => {
+    const { page, user_id } = req.body || {};
+    const opp = detectPageOpportunity(page, user_id);
+    if (!opp) return res.json({ ok: true, opportunity: null, message: 'No vertical match for page' });
+    res.json({ ok: true, opportunity: opp });
+  });
+
+  // Page-aware opportunity scan (extends standard scan with active page context)
+  app.post('/api/intelligence/page-scan', (req, res) => {
+    const { page, user_id } = req.body || {};
+    const opps = scanPageAwareOpportunities(
+      { agents_active: 33, api_calls: 5000, treasury: state.treasury.balance, user_id: user_id },
+      page
+    );
+    res.json({ ok: true, opportunities: opps, count: opps.length });
+  });
 
   // Agent-Intelligence API contract
   app.get('/api/intelligence/contract', (_req, res) => res.json({ ok: true,
