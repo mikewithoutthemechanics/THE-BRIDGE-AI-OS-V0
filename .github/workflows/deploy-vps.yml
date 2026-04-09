@@ -23,8 +23,17 @@ jobs:
             echo "=== Pulling latest code ==="
             git fetch origin main
             git reset --hard origin/main
+
             echo "=== Installing dependencies ==="
             npm install --production --no-audit 2>&1 | tail -5
+
+            echo "=== Ensuring .env has required vars ==="
+            # Only add if missing (don't duplicate)
+            grep -q SUPABASE_URL .env 2>/dev/null || echo 'SUPABASE_URL=${{ secrets.SUPABASE_URL }}' >> .env
+            grep -q SUPABASE_SERVICE_KEY .env 2>/dev/null || echo 'SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}' >> .env
+            grep -q SUPABASE_ANON_KEY .env 2>/dev/null || echo 'SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}' >> .env
+            grep -q JWT_SECRET .env 2>/dev/null || echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
+
             echo "=== Restarting services ==="
             pm2 restart super-brain bridge-gateway --update-env
             pm2 save

@@ -24,12 +24,35 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .brand h1 span{color:var(--cyan)}
 .brand p{color:var(--dim);font-size:.85rem;margin-top:.3rem}
 
-/* Clerk mount wrapper */
-.clerk-wrapper{background:rgba(10,21,32,.95);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;padding:1.5rem;box-shadow:0 20px 60px rgba(0,0,0,.5);min-height:200px;display:flex;align-items:center;justify-content:center}
-@supports not (backdrop-filter:blur(1px)){.clerk-wrapper{background:rgba(10,21,32,.98)}}
+/* Auth form wrapper */
+.auth-wrapper{background:rgba(10,21,32,.95);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;padding:1.5rem;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+@supports not (backdrop-filter:blur(1px)){.auth-wrapper{background:rgba(10,21,32,.98)}}
 :focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
-.clerk-wrapper .cl-rootBox{width:100%}
-.clerk-loading{color:var(--dim);font-size:.85rem;text-align:center}
+
+/* Form styles */
+.auth-form{display:flex;flex-direction:column;gap:.85rem}
+.auth-form label{font-size:.8rem;color:var(--dim);font-weight:600;display:block;margin-bottom:.25rem}
+.auth-form input[type="email"],
+.auth-form input[type="password"],
+.auth-form input[type="text"]{width:100%;padding:.65rem .8rem;background:#050a0f;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;font-family:inherit;transition:border-color .2s}
+.auth-form input:focus{border-color:var(--cyan);outline:none}
+.auth-form input::placeholder{color:#4d6678}
+
+.btn-primary{width:100%;padding:.7rem;background:linear-gradient(135deg,#00c8ff,#0090cc);color:#000;font-weight:700;font-size:.9rem;border:none;border-radius:8px;cursor:pointer;font-family:inherit;transition:opacity .2s}
+.btn-primary:hover{opacity:.9}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+
+.divider{display:flex;align-items:center;gap:.75rem;margin:.25rem 0}
+.divider-line{flex:1;height:1px;background:var(--border)}
+.divider-text{color:#4d6678;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+
+.btn-social{width:100%;padding:.6rem;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:border-color .2s}
+.btn-social:hover{border-color:var(--cyan)}
+.btn-social svg{width:18px;height:18px;flex-shrink:0}
+
+.auth-links{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;margin-top:.15rem}
+.auth-links a,.auth-links button{color:var(--cyan);background:none;border:none;cursor:pointer;font-size:.8rem;font-family:inherit;padding:0;text-decoration:none}
+.auth-links a:hover,.auth-links button:hover{text-decoration:underline}
 
 .msg{margin-top:1rem;padding:.6rem;border-radius:6px;font-size:.8rem;display:none;text-align:center}
 .msg.error{display:block;background:rgba(255,60,90,.1);color:var(--red);border:1px solid rgba(255,60,90,.15)}
@@ -56,7 +79,12 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 /* Redirect notice */
 .redirect-notice{text-align:center;margin-bottom:1rem;padding:.5rem;background:rgba(0,200,255,.06);border:1px solid rgba(0,200,255,.15);border-radius:8px;font-size:.8rem;color:var(--cyan);display:none}
 
-@media(max-width:480px){.clerk-wrapper{padding:1rem}.brand h1{font-size:1.4rem}.team-grid{grid-template-columns:1fr}}
+/* Reset password inline */
+.reset-form{display:none;flex-direction:column;gap:.85rem}
+.reset-form.active{display:flex}
+.auth-form.hidden{display:none}
+
+@media(max-width:480px){.auth-wrapper{padding:1rem}.brand h1{font-size:1.4rem}.team-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -76,8 +104,66 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 
     <div class="redirect-notice" id="redirectNotice"></div>
 
-    <div class="clerk-wrapper">
-      <div id="clerk-sign-in"><span class="clerk-loading">Loading secure sign-in...</span></div>
+    <div class="auth-wrapper">
+      <!-- Sign In / Sign Up Form -->
+      <form class="auth-form" id="authForm" autocomplete="on">
+        <h2 id="formTitle" style="font-size:1.1rem;font-weight:700;text-align:center;margin-bottom:.25rem">Sign In</h2>
+
+        <div id="nameField" style="display:none">
+          <label for="authName">Full Name</label>
+          <input type="text" id="authName" name="name" placeholder="Your name" autocomplete="name">
+        </div>
+
+        <div>
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" name="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+
+        <div>
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" name="password" placeholder="Your password" required autocomplete="current-password" minlength="6">
+        </div>
+
+        <button type="submit" class="btn-primary" id="authSubmit">Sign In</button>
+
+        <div class="auth-links">
+          <button type="button" id="toggleMode">Create Account</button>
+          <button type="button" id="forgotLink">Forgot password?</button>
+        </div>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span class="divider-text">or</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <button type="button" class="btn-social" id="googleBtn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Sign in with Google
+        </button>
+
+        <button type="button" class="btn-social" id="githubBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+          Sign in with GitHub
+        </button>
+      </form>
+
+      <!-- Forgot Password Form -->
+      <form class="reset-form" id="resetForm">
+        <h2 style="font-size:1.1rem;font-weight:700;text-align:center;margin-bottom:.25rem">Reset Password</h2>
+        <p style="font-size:.8rem;color:var(--dim);text-align:center">Enter your email and we'll send a reset link.</p>
+
+        <div>
+          <label for="resetEmail">Email</label>
+          <input type="email" id="resetEmail" name="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+
+        <button type="submit" class="btn-primary">Send Reset Link</button>
+
+        <div class="auth-links" style="justify-content:center">
+          <button type="button" id="backToLogin">Back to Sign In</button>
+        </div>
+      </form>
     </div>
 
     <div class="msg" id="msg"></div>
@@ -124,198 +210,211 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-// ── Config ────────────────────────────────────────────────────────────────
-const CLERK_PK = window.__CLERK_PK__ || '';
+// ── Supabase Client ──────────────────────────────────────────────────────
+const supabase = window.supabase.createClient(
+  'https://sdkysuvmtqjqopmdpvoz.supabase.co',
+  'sb_publishable_m0AClm2WfoXbp4lMXDEzjA_olAZmShA'
+);
 
+// ── Config ───────────────────────────────────────────────────────────────
 const params = new URLSearchParams(window.location.search);
 const redirectTo = params.get('redirect');
 const safeRedirect = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null;
 if (safeRedirect) {
-  const notice = document.getElementById('redirectNotice');
+  var notice = document.getElementById('redirectNotice');
   notice.style.display = 'block';
   notice.textContent = 'Sign in to access ' + safeRedirect;
 }
 
 // Auto-redirect if already logged in
-const existingToken = localStorage.getItem('bridge_user_token');
+var existingToken = localStorage.getItem('bridge_token');
 if (existingToken && safeRedirect) {
   window.location.href = safeRedirect;
 }
 
+// ── DOM refs ─────────────────────────────────────────────────────────────
+var authForm = document.getElementById('authForm');
+var resetForm = document.getElementById('resetForm');
+var formTitle = document.getElementById('formTitle');
+var nameField = document.getElementById('nameField');
+var authSubmit = document.getElementById('authSubmit');
+var toggleMode = document.getElementById('toggleMode');
+var forgotLink = document.getElementById('forgotLink');
+var backToLogin = document.getElementById('backToLogin');
+var emailInput = document.getElementById('authEmail');
+var passwordInput = document.getElementById('authPassword');
+var nameInput = document.getElementById('authName');
+var resetEmailInput = document.getElementById('resetEmail');
+
+var isSignUp = false;
+
 function showMsg(type, text) {
-  const m = document.getElementById('msg');
+  var m = document.getElementById('msg');
   m.className = 'msg ' + type;
   m.textContent = text;
 }
 
-function setMountError(text) {
-  const el = document.getElementById('clerk-sign-in');
-  el.textContent = '';
-  const p = document.createElement('p');
-  p.style.cssText = 'color:var(--red);font-size:.85rem';
-  p.textContent = text;
-  el.appendChild(p);
+function clearMsg() {
+  var m = document.getElementById('msg');
+  m.className = 'msg';
+  m.textContent = '';
 }
 
-// ── After Clerk sign-in → sync Bridge JWT then redirect to tour ──────────
-async function syncBridgeSession() {
+// ── Mode toggle (Sign In / Sign Up) ─────────────────────────────────────
+toggleMode.addEventListener('click', function() {
+  isSignUp = !isSignUp;
+  clearMsg();
+  if (isSignUp) {
+    formTitle.textContent = 'Create Account';
+    authSubmit.textContent = 'Create Account';
+    toggleMode.textContent = 'Already have an account? Sign In';
+    nameField.style.display = 'block';
+    passwordInput.setAttribute('autocomplete', 'new-password');
+  } else {
+    formTitle.textContent = 'Sign In';
+    authSubmit.textContent = 'Sign In';
+    toggleMode.textContent = 'Create Account';
+    nameField.style.display = 'none';
+    passwordInput.setAttribute('autocomplete', 'current-password');
+  }
+});
+
+// ── Forgot password toggle ───────────────────────────────────────────────
+forgotLink.addEventListener('click', function() {
+  clearMsg();
+  authForm.classList.add('hidden');
+  resetForm.classList.add('active');
+  resetEmailInput.value = emailInput.value;
+});
+
+backToLogin.addEventListener('click', function() {
+  clearMsg();
+  resetForm.classList.remove('active');
+  authForm.classList.remove('hidden');
+});
+
+// ── Handle successful session ────────────────────────────────────────────
+function handleSession(session) {
+  if (!session) return;
+  localStorage.setItem('bridge_token', session.access_token);
+  localStorage.setItem('bridge_user', JSON.stringify({
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.user_metadata && session.user.user_metadata.name || ''
+  }));
+  showMsg('success', 'Signed in! Redirecting...');
+  var dest = safeRedirect || '/console.html';
+  setTimeout(function() { window.location.href = dest; }, 400);
+}
+
+// ── Listen for auth state changes (handles OAuth redirect return) ────────
+supabase.auth.onAuthStateChange(function(event, session) {
+  if (event === 'SIGNED_IN' && session) {
+    handleSession(session);
+  }
+});
+
+// ── Check for existing session on load (OAuth callback) ──────────────────
+(async function() {
+  var result = await supabase.auth.getSession();
+  if (result.data && result.data.session) {
+    handleSession(result.data.session);
+  }
+})();
+
+// ── Email/password form submit ───────────────────────────────────────────
+authForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  clearMsg();
+  authSubmit.disabled = true;
+  authSubmit.textContent = isSignUp ? 'Creating account...' : 'Signing in...';
+
+  var email = emailInput.value.trim();
+  var password = passwordInput.value;
+
   try {
-    var session = window.Clerk.session;
-    if (!session) { showMsg('error', 'No session found'); return; }
-
-    showMsg('success', 'Signed in! Setting up your account...');
-
-    var clerkToken = await session.getToken();
-    if (!clerkToken) { showMsg('error', 'Failed to get session token'); return; }
-
-    var r = await fetch('/api/auth/clerk-sync', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + clerkToken,
-      },
-    });
-
-    if (!r.ok) {
-      showMsg('error', 'Account sync failed (' + r.status + '). Please try again.');
-      return;
-    }
-
-    var d = await r.json();
-
-    if (d.ok && d.token) {
-      localStorage.setItem('bridge_token', d.token);
-      localStorage.setItem('bridge_user_token', d.token);
-      localStorage.setItem('bridge_user', JSON.stringify(d.user));
+    if (isSignUp) {
+      var opts = { email: email, password: password };
+      var name = nameInput.value.trim();
+      if (name) {
+        opts.options = { data: { name: name } };
+      }
+      var result = await supabase.auth.signUp(opts);
+      if (result.error) {
+        showMsg('error', result.error.message);
+      } else if (result.data.user && !result.data.session) {
+        // Email confirmation required
+        showMsg('success', 'Account created! Check your email to confirm, then sign in.');
+        isSignUp = false;
+        formTitle.textContent = 'Sign In';
+        authSubmit.textContent = 'Sign In';
+        toggleMode.textContent = 'Create Account';
+        nameField.style.display = 'none';
+        return;
+      } else if (result.data.session) {
+        handleSession(result.data.session);
+        return;
+      }
     } else {
-      showMsg('error', d.error || 'Sync failed. Please try again.');
-      return;
+      var result = await supabase.auth.signInWithPassword({ email: email, password: password });
+      if (result.error) {
+        showMsg('error', result.error.message);
+      } else if (result.data.session) {
+        handleSession(result.data.session);
+        return;
+      }
     }
-  } catch (e) {
-    console.warn('[onboarding] sync error:', e);
+  } catch (err) {
     showMsg('error', 'Connection error. Please check your network and try again.');
-    return;
   }
 
-  // Redirect to tour (or direct destination) only on success
-  var dest = '/welcome-tour.html';
-  if (safeRedirect) dest += '?redirect=' + encodeURIComponent(safeRedirect);
-  window.location.href = dest;
-}
+  authSubmit.disabled = false;
+  authSubmit.textContent = isSignUp ? 'Create Account' : 'Sign In';
+});
 
-// ── Load Clerk and mount sign-in ──────────────────────────────────────────
-async function initClerk() {
-  let pk = CLERK_PK;
-  if (!pk) {
-    try {
-      const r = await fetch('/api/config/clerk');
-      const d = await r.json();
-      pk = d.publishableKey;
-    } catch (_) {}
-  }
+// ── Reset password form ──────────────────────────────────────────────────
+resetForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  clearMsg();
+  var email = resetEmailInput.value.trim();
+  if (!email) { showMsg('error', 'Please enter your email.'); return; }
 
-  if (!pk) {
-    setMountError('Clerk not configured. Set CLERK_PUBLISHABLE_KEY in .env');
-    return;
-  }
-
-  // Derive the Clerk Frontend API URL from the publishable key
-  var pkPayload = '';
-  try { pkPayload = atob(pk.replace('pk_test_', '').replace('pk_live_', '')); } catch (_) {}
-  var fapiUrl = pkPayload.replace(/\$$/, '') || 'clerk.go.ai-os.co.za';
-
-  // Load Clerk UI components first, then Clerk JS (order matters)
-  var uiScript = document.createElement('script');
-  uiScript.src = 'https://' + fapiUrl + '/npm/@clerk/ui@1/dist/ui.browser.js';
-  uiScript.crossOrigin = 'anonymous';
-
-  var script = document.createElement('script');
-  script.setAttribute('data-clerk-publishable-key', pk);
-  script.src = 'https://' + fapiUrl + '/npm/@clerk/clerk-js@6/dist/clerk.browser.js';
-  script.crossOrigin = 'anonymous';
-
-  // Chain: UI loads → Clerk JS loads → mount
-  uiScript.addEventListener('load', () => document.head.appendChild(script));
-  uiScript.addEventListener('error', () => {
-    // Fall back: try loading Clerk without UI (basic mode)
-    document.head.appendChild(script);
-  });
-  document.head.appendChild(uiScript);
-
-  script.addEventListener('load', async () => {
-    // Wait for Clerk to be ready (with UI components if available)
-    var loadOpts = {};
-    if (window.__internal_ClerkUICtor) {
-      loadOpts.ui = { ClerkUI: window.__internal_ClerkUICtor };
-    }
-    await window.Clerk.load(loadOpts);
-
-    // If already signed in (or returned from SSO callback), go to welcome tour
-    if (window.Clerk.user) {
-      if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
-      return syncBridgeSession();
-    }
-
-    // Mount Clerk's sign-in component with Bridge dark theme
-    window.Clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
-      // Redirect back HERE after OAuth so syncBridgeSession() creates the Bridge JWT
-      // before navigating to welcome-tour (avoids double-bounce)
-      forceRedirectUrl: window.location.origin + '/onboarding.html' + window.location.search,
-      signUpForceRedirectUrl: window.location.origin + '/onboarding.html' + window.location.search,
-      appearance: {
-        variables: {
-          colorPrimary: '#00c8ff',
-          colorBackground: '#0a1520',
-          colorText: '#e0e8f0',
-          colorTextSecondary: '#4d6678',
-          colorInputBackground: '#050a0f',
-          colorInputText: '#e0e8f0',
-          borderRadius: '8px',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-        },
-        elements: {
-          card: { background: 'transparent', boxShadow: 'none', border: 'none' },
-          headerTitle: { display: 'none' },
-          headerSubtitle: { display: 'none' },
-          socialButtonsBlockButton: {
-            background: '#0d1a28',
-            border: '1px solid #1a2d40',
-            color: '#e0e8f0',
-          },
-          socialButtonsBlockButtonText: { color: '#e0e8f0' },
-          formButtonPrimary: {
-            background: 'linear-gradient(135deg, #00c8ff, #0090cc)',
-            color: '#000',
-            fontWeight: '700',
-          },
-          footerActionLink: { color: '#00c8ff' },
-          identityPreviewEditButton: { color: '#00c8ff' },
-          formFieldInput: {
-            background: '#050a0f',
-            border: '1px solid #1a2d40',
-            color: '#e0e8f0',
-          },
-          dividerLine: { background: '#1a2d40' },
-          dividerText: { color: '#4d6678' },
-        },
-      },
+  try {
+    var result = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/onboarding.html'
     });
+    if (result.error) {
+      showMsg('error', result.error.message);
+    } else {
+      showMsg('success', 'Password reset link sent! Check your email.');
+    }
+  } catch (err) {
+    showMsg('error', 'Connection error. Please try again.');
+  }
+});
 
-    // Listen for successful sign-in
-    window.Clerk.addListener(({ session }) => {
-      if (session) syncBridgeSession();
-    });
+// ── Social login buttons ─────────────────────────────────────────────────
+document.getElementById('googleBtn').addEventListener('click', async function() {
+  clearMsg();
+  var result = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + '/onboarding.html' + (safeRedirect ? '?redirect=' + encodeURIComponent(safeRedirect) : '') }
   });
-  script.addEventListener('error', () => {
-    setMountError('Failed to load auth. Check your connection and reload.');
+  if (result.error) showMsg('error', result.error.message);
+});
+
+document.getElementById('githubBtn').addEventListener('click', async function() {
+  clearMsg();
+  var result = await supabase.auth.signInWithOAuth({
+    provider: 'github',
+    options: { redirectTo: window.location.origin + '/onboarding.html' + (safeRedirect ? '?redirect=' + encodeURIComponent(safeRedirect) : '') }
   });
-  document.head.appendChild(script);
-}
+  if (result.error) showMsg('error', result.error.message);
+});
 
-initClerk();
-
-// Video pause/play toggle
+// ── Video pause/play toggle ──────────────────────────────────────────────
 (function() {
   var vid = document.getElementById('onboard-vid');
   var btn = document.getElementById('onboard-vid-toggle');

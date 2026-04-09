@@ -1,45 +1,19 @@
-name: Fix VPS Supabase env vars
+# DEPRECATED: This one-time fix workflow is no longer needed.
+# Environment variable management is now handled by deploy-vps.yml
+# which ensures required vars exist on every deploy.
+#
+# This workflow has been disabled (no triggers).
+
+name: "[DEPRECATED] Fix VPS Supabase env vars"
 
 on:
-  workflow_dispatch:
+  # No triggers — workflow is disabled
+  push:
+    branches: [never-trigger-this-workflow]
 
 jobs:
-  fix-env:
+  deprecated:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
-
     steps:
-      - name: Set Supabase env vars and restart
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          script: |
-            cd /opt/ai-os || exit 1
-
-            # Remove any broken Supabase lines (with leading spaces or line-wrapped)
-            sed -i '/SUPABASE_URL/d; /SUPABASE_SERVICE_KEY/d; /SUPABASE_ANON_KEY/d; /^  /d; /^wIjoy/d' .env
-
-            # Add correct values
-            echo 'SUPABASE_URL=https://sdkysuvmtqjqopmdpvoz.supabase.co' >> .env
-            echo 'SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNka3lzdXZtdHFqcW9wbWRwdm96Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTY4NTgzNCwiZXhwIjoyMDkxMjYxODM0fQ.3dCkxsaCPMjN88h3EftSpAfTmU0ECOspXHqT3yAjGX0' >> .env
-            echo 'SUPABASE_ANON_KEY=sb_publishable_m0AClm2WfoXbp4lMXDEzjA_olAZmShA' >> .env
-
-            # Verify
-            echo "=== Supabase env check ==="
-            grep SUPABASE .env | sed 's/=.*/=***/'
-
-            # Clean up dead processes
-            pm2 delete auth-service unified-server 2>/dev/null || true
-
-            # Restart live services
-            pm2 restart super-brain bridge-gateway --update-env
-            pm2 save
-
-            echo "=== PM2 status ==="
-            pm2 status
-
-            echo "=== Brain logs (last 15 lines) ==="
-            pm2 logs super-brain --lines 15 --nostream
+      - name: Notice
+        run: echo "This workflow is deprecated. Use deploy-vps.yml instead."

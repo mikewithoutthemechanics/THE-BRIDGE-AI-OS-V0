@@ -55,34 +55,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── CLERK AUTH (social login + email) ──────────────────────────────────────
-try {
-  const { createClerkMiddleware, clerkSyncHandler } = require('./middleware/clerk');
-  const { getAuth, clerkClient } = require('@clerk/express');
-  app.use(createClerkMiddleware());
-  app.post('/api/auth/clerk-sync', clerkSyncHandler);
-  app.get('/api/config/clerk', (_req, res) => {
-    res.json({ publishableKey: process.env.CLERK_PUBLISHABLE_KEY || '' });
-  });
-  app.post('/api/auth/logout', async (req, res) => {
-    // Revoke Clerk session
-    const auth = getAuth(req);
-    if (auth && auth.sessionId) {
-      clerkClient.sessions.revokeSession(auth.sessionId).catch(() => {});
-    }
-    // Revoke Bridge JWT server-side
-    const authHeader = req.headers.authorization || '';
-    const bridgeToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    if (bridgeToken) {
-      try {
-        const { revokeToken } = require('./middleware/auth');
-        await revokeToken(bridgeToken);
-      } catch (_) {}
-    }
-    res.json({ ok: true, message: 'Signed out' });
-  });
-  console.log('[BRAIN] Clerk auth middleware ACTIVE');
-} catch (e) { console.warn('[BRAIN] Clerk auth unavailable:', e.message); }
+// ── AUTH: Logout (Supabase + Bridge JWT) ──────────────────────────────────
+app.post('/api/auth/logout', async (req, res) => {
+  // Client clears localStorage; server-side is best-effort
+  const { revokeToken } = require('./middleware/auth');
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (token) { try { await revokeToken(token); } catch (_) {} }
+  res.json({ ok: true, message: 'Signed out' });
+});
 
 // ── KEYFORGE — Deterministic Rotating Key System (ported from Python) ────────
 const EPOCH_SEC = parseInt(process.env.KEYFORGE_EPOCH_SEC, 10) || 600;
@@ -408,7 +389,7 @@ app.post('/api/twin/decide', async (req, res) => {
 });
 app.get('/api/twin/shared-xml', (_req, res) => res.json({ ok: true, xml: '<twin><state>active</state></twin>', ts: Date.now() }));
 app.post('/api/twin/shared-xml', (req, res) => { res.json({ ok: true, saved: true }); });
-app.get('/api/twin/env-keys', (_req, res) => res.json({ ok: true, keys: { OPENAI_API_KEY: '***', ANTHROPIC_API_KEY: '***', CLERK_KEY: '***' } }));
+app.get('/api/twin/env-keys', (_req, res) => res.json({ ok: true, keys: { OPENAI_API_KEY: '***', ANTHROPIC_API_KEY: '***' } }));
 app.get('/api/twins', (_req, res) => res.json({ ok: true, twins: [state.twin], count: 1 }));
 app.get('/api/twins/leaderboard', (_req, res) => res.json({ ok: true, leaderboard: [{ id: state.twin.id, name: state.twin.name, score: 9500, rank: 1 }] }));
 app.post('/api/twins/allocate', (req, res) => res.json({ ok: true, allocated: true }));
@@ -880,7 +861,7 @@ app.get('/api/keyforge/audit', (_req, res) => res.json({ ok: true, log: kfAuditL
 app.get('/api/admin/keys', (req, res) => {
   const secret = req.headers['x-bridge-secret'];
   if (!secret || !process.env.BRIDGE_INTERNAL_SECRET || secret !== process.env.BRIDGE_INTERNAL_SECRET) return res.status(403).json({ ok: false, error: 'Forbidden' });
-  const envKeys = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'CLERK_PUBLISHABLE_KEY', 'PAYFAST_MERCHANT_KEY', 'JWT_SECRET', 'BRIDGE_INTERNAL_SECRET', 'GH_TOKEN'];
+  const envKeys = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'SUPABASE_URL', 'PAYFAST_MERCHANT_KEY', 'JWT_SECRET', 'BRIDGE_INTERNAL_SECRET', 'GH_TOKEN'];
   const status = {};
   for (const k of envKeys) { const v = process.env[k]; status[k] = v ? (v.length > 8 ? 'set' : 'weak') : 'missing'; }
   res.json({ ok: true, keys: status, keyforge: { epoch: kfCurrentEpoch(), active: [...kfActiveKeys] } });
@@ -1168,7 +1149,7 @@ app.get('/api/twin/full', (_req, res) => {
         id: 'empe-001',
         emails: { microsoft: 'supasoloc@yahoo.co.uk', google: '', notion: 'admin@ai-os.co.za', bridgeos: 'ryan@ai-os.co.za' },
         tenants: { microsoft: ['NHCLTD'], google: ['default'], notion: ["BRIDGE AI OS's Space"] },
-        auth: { jwt: true, keyforge: true, siwe: false, clerk: false, google_oauth: 'pending' },
+        auth: { jwt: true, keyforge: true, siwe: false, supabase: true, google_oauth: 'pending' },
       },
     },
     economy: {

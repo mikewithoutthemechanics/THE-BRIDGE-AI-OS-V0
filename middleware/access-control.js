@@ -74,7 +74,25 @@ async function extractUser(req) {
 
   if (!token) return null;
 
-  return await userDb.verifyAuthToken(token);
+  // Try Bridge JWT first (backward compat)
+  const bridgeUser = await userDb.verifyAuthToken(token);
+  if (bridgeUser) return bridgeUser;
+
+  // Try Supabase JWT
+  try {
+    const { supabase } = require('../lib/supabase');
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (user && !error) {
+      // Look up or create user in our users table
+      let dbUser = await userDb.getUserByEmail(user.email);
+      if (!dbUser) {
+        dbUser = await userDb.createUser(user.email, user.user_metadata?.name, 'supabase', user.id);
+      }
+      return dbUser;
+    }
+  } catch (_) {}
+
+  return null;
 }
 
 // ── Helper: check if request wants HTML ────────────────────────────────────
