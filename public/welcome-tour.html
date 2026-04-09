@@ -87,7 +87,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
   </div>
 
   <div class="step-card" id="step-card"></div>
-  <a href="/console.html" id="skip-tour" style="display:inline-block;margin-top:1.5rem;color:var(--dim);font-size:.85rem;text-decoration:underline;transition:color .2s" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--dim)'" onclick="localStorage.setItem('bridge_tour_done','true')">Skip tour</a>
+  <a href="/portal.html" id="skip-tour" style="display:inline-block;margin-top:1.5rem;color:var(--dim);font-size:.85rem;text-decoration:underline;transition:color .2s" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--dim)'" onclick="localStorage.setItem('bridge_tour_done','true')">Skip tour</a>
 </div>
 
 <script>
@@ -247,7 +247,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
     var desc = el('div', 'step-desc'); desc.textContent = 'Your AI agents are ready. Head to the Console to manage your workforce and start building.'; card.appendChild(desc);
 
     var row = el('div', 'btn-row');
-    var console = el('a', 'btn btn-primary'); console.textContent = 'Go to Console'; console.href = '/console.html'; row.appendChild(console);
+    var console = el('a', 'btn btn-primary'); console.textContent = 'Go to Console'; console.href = '/portal.html'; row.appendChild(console);
     card.appendChild(row);
   }
 

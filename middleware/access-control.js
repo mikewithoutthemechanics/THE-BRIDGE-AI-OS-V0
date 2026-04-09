@@ -25,9 +25,9 @@ const PAGE_TIERS = {
     '/payment-success.html', '/payment-cancel.html', '/welcome.html', '/onboarding.html', '/sitemap.html',
     '/docs.html', '/50-applications.html', '/applications.html', '/404.html', '/offline.html',
     '/platforms.html', '/bridge-home.html', '/ehsa-home.html', '/aurora-home.html', '/hospital-home.html',
-    '/aid-home.html', '/rootedearth-home.html', '/portal.html', '/voice.html'],
+    '/aid-home.html', '/rootedearth-home.html', '/portal.html', '/voice.html', '/welcome-tour.html'],
 
-  CLIENT: ['/welcome-tour.html', '/console.html', '/avatar.html', '/digital-twin-console.html', '/twin-wall.html', '/twin.html',
+  CLIENT: ['/console.html', '/avatar.html', '/digital-twin-console.html', '/twin-wall.html', '/twin.html',
     '/crm.html', '/invoicing.html', '/quotes.html', '/legal.html', '/marketing.html', '/tickets.html',
     '/vendors.html', '/customers.html', '/workforce.html', '/leadgen.html', '/affiliate.html',
     '/corporate.html', '/brand.html', '/marketplace.html', '/payment.html', '/settings.html',
