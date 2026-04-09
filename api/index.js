@@ -9,6 +9,7 @@ const path = require('path');
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 const { supabase, isConfigured: supabaseConfigured } = require('../lib/supabase');
+const { computeBuckets } = require('../lib/treasury');
 const ROOT = path.resolve(__dirname, '..');
 const SHARED_DIR = path.join(ROOT, 'shared');
 
@@ -932,12 +933,7 @@ module.exports = async (req, res) => {
     }));
     return json(res, {
       total: +treasuryBalance.toFixed(2), balance: +treasuryBalance.toFixed(2), currency: 'ZAR',
-      buckets: [
-        { name: 'ops',      label: 'Operations', pct: 40, balance: +(treasuryBalance * 0.4).toFixed(2),  value: +(treasuryBalance * 0.4).toFixed(2) },
-        { name: 'treasury', label: 'Growth',     pct: 25, balance: +(treasuryBalance * 0.25).toFixed(2), value: +(treasuryBalance * 0.25).toFixed(2) },
-        { name: 'ubi',      label: 'Reserve',    pct: 20, balance: +(treasuryBalance * 0.2).toFixed(2),  value: +(treasuryBalance * 0.2).toFixed(2) },
-        { name: 'founder',  label: 'Founder',    pct: 15, balance: +(treasuryBalance * 0.15).toFixed(2), value: +(treasuryBalance * 0.15).toFixed(2) },
-      ],
+      buckets: computeBuckets(treasuryBalance, { includeValue: true }),
       recent, payments_today: staticFallback.length,
       status: 'healthy', ts: ts()
     });
@@ -1038,12 +1034,7 @@ module.exports = async (req, res) => {
     return json(res, {
       balance: +treasuryBalance.toFixed(2), currency: 'ZAR',
       status: 'healthy', last_updated: new Date().toISOString(),
-      buckets: [
-        { name: 'ops',      label: 'Operations', pct: 40, balance: +(treasuryBalance * 0.4).toFixed(2),  value: +(treasuryBalance * 0.4).toFixed(2) },
-        { name: 'treasury', label: 'Growth',     pct: 25, balance: +(treasuryBalance * 0.25).toFixed(2), value: +(treasuryBalance * 0.25).toFixed(2) },
-        { name: 'ubi',      label: 'Reserve',    pct: 20, balance: +(treasuryBalance * 0.2).toFixed(2),  value: +(treasuryBalance * 0.2).toFixed(2) },
-        { name: 'founder',  label: 'Founder',    pct: 15, balance: +(treasuryBalance * 0.15).toFixed(2), value: +(treasuryBalance * 0.15).toFixed(2) },
-      ],
+      buckets: computeBuckets(treasuryBalance, { includeValue: true }),
       ts: ts(),
     });
   }
@@ -1146,12 +1137,7 @@ module.exports = async (req, res) => {
       status: 'active',
       treasury: {
         balance: +treasuryBalance.toFixed(2), currency: 'ZAR', status: 'healthy',
-        buckets: [
-          { name: 'ops',      label: 'Operations', pct: 40, balance: +(treasuryBalance*0.4).toFixed(2) },
-          { name: 'treasury', label: 'Growth',     pct: 25, balance: +(treasuryBalance*0.25).toFixed(2) },
-          { name: 'ubi',      label: 'Reserve',    pct: 20, balance: +(treasuryBalance*0.2).toFixed(2) },
-          { name: 'founder',  label: 'Founder',    pct: 15, balance: +(treasuryBalance*0.15).toFixed(2) },
-        ],
+        buckets: computeBuckets(treasuryBalance),
       },
       agents:   { count: agentNames.length, active: agentNames.length, names: agentNames, swarms: 2 },
       crm:      { contacts: CONTACTS.length, customers: CONTACTS.filter(c => c.status === 'customer').length, leads: CONTACTS.filter(c => c.status !== 'customer').length },
@@ -2405,12 +2391,7 @@ module.exports = async (req, res) => {
     const bal = await db.getTreasuryBalance(TREASURY_SEED);
     return json(res, {
       balance: +bal.toFixed(2), total: +bal.toFixed(2), currency: 'ZAR',
-      buckets: [
-        { name: 'ops', pct: 40, balance: +(bal * 0.4).toFixed(2) },
-        { name: 'treasury', pct: 25, balance: +(bal * 0.25).toFixed(2) },
-        { name: 'ubi', pct: 20, balance: +(bal * 0.2).toFixed(2) },
-        { name: 'founder', pct: 15, balance: +(bal * 0.15).toFixed(2) },
-      ],
+      buckets: computeBuckets(bal),
       transactions: 47, last_tx: new Date(Date.now() - 120000).toISOString(), status: 'healthy', ts: ts(),
     });
   }
