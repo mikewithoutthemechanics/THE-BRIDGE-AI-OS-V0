@@ -55,6 +55,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── CLERK AUTH (social login + email) ──────────────────────────────────────
+try {
+  const { createClerkMiddleware, clerkSyncHandler } = require('./middleware/clerk');
+  const { getAuth, clerkClient } = require('@clerk/express');
+  app.use(createClerkMiddleware());
+  app.post('/api/auth/clerk-sync', clerkSyncHandler);
+  app.get('/api/config/clerk', (_req, res) => {
+    res.json({ publishableKey: process.env.CLERK_PUBLISHABLE_KEY || '' });
+  });
+  app.post('/api/auth/logout', (req, res) => {
+    const auth = getAuth(req);
+    if (auth && auth.sessionId) {
+      clerkClient.sessions.revokeSession(auth.sessionId).catch(() => {});
+    }
+    res.json({ ok: true, message: 'Signed out' });
+  });
+  console.log('[BRAIN] Clerk auth middleware ACTIVE');
+} catch (e) { console.warn('[BRAIN] Clerk auth unavailable:', e.message); }
+
 // ── KEYFORGE — Deterministic Rotating Key System (ported from Python) ────────
 const EPOCH_SEC = parseInt(process.env.KEYFORGE_EPOCH_SEC, 10) || 600;
 const DRIFT_EPOCHS = 1;
@@ -387,8 +406,16 @@ app.post('/api/twins/teach', (req, res) => res.json({ ok: true, taught: true }))
 // ── EMOTION ─────────────────────────────────────────────────────────────────
 app.get('/api/emotion/status', (_req, res) => res.json({ ok: true, ...state.twin.emotion }));
 app.post('/api/emotion/update', (req, res) => {
-  Object.assign(state.twin.emotion, req.body || {});
-  mutateState('emotion.update', req.body);
+  const allowed = ['valence', 'arousal', 'dominance', 'mood'];
+  const patch = {};
+  for (const key of allowed) {
+    if (key in (req.body || {})) {
+      const v = req.body[key];
+      if (typeof v === 'number' && Number.isFinite(v)) patch[key] = v;
+    }
+  }
+  Object.assign(state.twin.emotion, patch);
+  mutateState('emotion.update', patch);
   res.json({ ok: true, emotion: state.twin.emotion });
 });
 
@@ -817,8 +844,11 @@ app.get('/api/keyforge/status', (_req, res) => res.json({
   boot_epoch: kfBootEpoch, uptime_epochs: kfCurrentEpoch() - kfBootEpoch, audit_entries: kfAuditLog.length,
 }));
 app.post('/api/keyforge/issue', (req, res) => {
+  const secret = req.headers['x-bridge-secret'];
+  if (!secret || !process.env.BRIDGE_INTERNAL_SECRET || secret !== process.env.BRIDGE_INTERNAL_SECRET) return res.status(403).json({ ok: false, error: 'Forbidden' });
   try {
     const { scope, key_id } = req.body || {};
+    if ((scope || '').includes('treasury:withdraw')) return res.status(403).json({ ok: false, error: 'treasury:withdraw scope cannot be issued from this endpoint' });
     const token = kfIssue(scope || 'api-gateway', key_id || 'default');
     res.json({ ok: true, token, scope: scope || 'api-gateway' });
   } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
@@ -836,7 +866,9 @@ app.post('/api/keyforge/revoke', (req, res) => {
   res.json({ ok: true, revoked: { key_id, scope } });
 });
 app.get('/api/keyforge/audit', (_req, res) => res.json({ ok: true, log: kfAuditLog.slice(-50) }));
-app.get('/api/admin/keys', (_req, res) => {
+app.get('/api/admin/keys', (req, res) => {
+  const secret = req.headers['x-bridge-secret'];
+  if (!secret || !process.env.BRIDGE_INTERNAL_SECRET || secret !== process.env.BRIDGE_INTERNAL_SECRET) return res.status(403).json({ ok: false, error: 'Forbidden' });
   const envKeys = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'CLERK_PUBLISHABLE_KEY', 'PAYFAST_MERCHANT_KEY', 'JWT_SECRET', 'BRIDGE_INTERNAL_SECRET', 'GH_TOKEN'];
   const status = {};
   for (const k of envKeys) { const v = process.env[k]; status[k] = v ? (v.length > 8 ? 'set' : 'weak') : 'missing'; }
@@ -1787,6 +1819,8 @@ app.get('/treasury/status', (_req, res) => res.json({ ok: true, ...state.treasur
   buckets: { ubi: _ubiPool(), treasury: _treasuryPool(), ops: _opsPool(), founder: _founderPool() },
 }));
 app.post('/treasury/ingest', (req, res) => {
+  const secret = req.headers['x-bridge-secret'];
+  if (!secret || !process.env.BRIDGE_INTERNAL_SECRET || secret !== process.env.BRIDGE_INTERNAL_SECRET) return res.status(403).json({ ok: false, error: 'Forbidden' });
   const { amount_brdg, source } = req.body || {};
   const amt = parseFloat(amount_brdg) || 0;
   state.treasury.balance += amt / 0.0078;
@@ -2082,25 +2116,89 @@ app.get('/api/testlab/status', (_req, res) => res.json({ ok: true,
   last_run: { type: 'full_audit', result: '113/113 pass', ts: Date.now() },
 }));
 
-// ── MFA (Multi-Factor Authentication) ────────────────────────────────────────
-const mfaSecrets = new Map(); // userId → { secret, enabled, backup_codes }
-const totpWindow = 30; // 30 second TOTP window
+// ── MFA (Multi-Factor Authentication) — RFC 6238 TOTP, SQLite-backed ────────
+// NOTE: For production hardening, consider using the `otplib` package for
+// battle-tested TOTP generation/verification. This implementation follows
+// RFC 6238 correctly but has not been through a formal security audit.
+
+const userMfa = require('./lib/user-identity');
+
+// ── Base32 encode/decode (RFC 4648) ─────────────────────────────────────────
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+function base32Encode(buffer) {
+  let bits = 0, value = 0, output = '';
+  for (let i = 0; i < buffer.length; i++) {
+    value = (value << 8) | buffer[i];
+    bits += 8;
+    while (bits >= 5) {
+      output += BASE32_ALPHABET[(value >>> (bits - 5)) & 0x1F];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) {
+    output += BASE32_ALPHABET[(value << (5 - bits)) & 0x1F];
+  }
+  return output;
+}
+
+function base32Decode(str) {
+  str = str.replace(/=+$/, '').toUpperCase();
+  let bits = 0, value = 0, index = 0;
+  const output = Buffer.alloc(Math.floor(str.length * 5 / 8));
+  for (let i = 0; i < str.length; i++) {
+    const idx = BASE32_ALPHABET.indexOf(str[i]);
+    if (idx === -1) continue;
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      output[index++] = (value >>> (bits - 8)) & 0xFF;
+      bits -= 8;
+    }
+  }
+  return output.slice(0, index);
+}
+
+// ── RFC 6238 TOTP ───────────────────────────────────────────────────────────
+const TOTP_PERIOD = 30;
+const TOTP_DIGITS = 6;
+const TOTP_DRIFT = 1; // allow 1 step before/after
 
 function generateTOTPSecret() {
-  // NOTE: Node.js Buffer does not support base32 encoding natively.
-  // Using hex encoding here. For full TOTP compatibility with authenticator apps,
-  // integrate a base32 library (e.g., 'hi-base32' or 'thirty-two') to produce
-  // RFC 4648 base32-encoded secrets.
-  return crypto.randomBytes(20).toString('hex');
+  // 20 random bytes → base32-encoded (160 bits, standard for TOTP)
+  return base32Encode(crypto.randomBytes(20));
 }
+
 function generateBackupCodes() {
   return Array.from({ length: 8 }, () => crypto.randomBytes(4).toString('hex'));
 }
-function verifyTOTP(secret, code) {
-  // Simplified TOTP — in production use speakeasy/otpauth library
-  const epoch = Math.floor(Date.now() / 1000 / totpWindow);
-  const expected = crypto.createHmac('sha1', secret).update(String(epoch)).digest('hex').slice(-6);
-  return code === expected;
+
+function computeTOTPCode(secretBase32, counter) {
+  const key = base32Decode(secretBase32);
+  // Counter as big-endian 8-byte buffer (RFC 4226 section 5.1)
+  const counterBuf = Buffer.alloc(8);
+  counterBuf.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+  counterBuf.writeUInt32BE(counter >>> 0, 4);
+  const hmac = crypto.createHmac('sha1', key).update(counterBuf).digest();
+  // Dynamic truncation (RFC 4226 section 5.3)
+  const offset = hmac[hmac.length - 1] & 0x0F;
+  const binary = ((hmac[offset] & 0x7F) << 24)
+    | ((hmac[offset + 1] & 0xFF) << 16)
+    | ((hmac[offset + 2] & 0xFF) << 8)
+    | (hmac[offset + 3] & 0xFF);
+  const otp = binary % Math.pow(10, TOTP_DIGITS);
+  return String(otp).padStart(TOTP_DIGITS, '0');
+}
+
+function verifyTOTP(secretBase32, code) {
+  if (!code || !secretBase32) return false;
+  const now = Math.floor(Date.now() / 1000);
+  // Check current step and +/- TOTP_DRIFT steps
+  for (let drift = -TOTP_DRIFT; drift <= TOTP_DRIFT; drift++) {
+    const counter = Math.floor((now / TOTP_PERIOD) + drift);
+    if (computeTOTPCode(secretBase32, counter) === code) return true;
+  }
+  return false;
 }
 
 app.post('/api/mfa/setup', (req, res) => {
@@ -2108,17 +2206,17 @@ app.post('/api/mfa/setup', (req, res) => {
   if (!user_id) return res.status(400).json({ ok: false, error: 'user_id required' });
   const secret = generateTOTPSecret();
   const backup_codes = generateBackupCodes();
-  mfaSecrets.set(user_id, { secret, enabled: false, backup_codes, created: Date.now() });
-  const otpauth_url = `otpauth://totp/BridgeAI:${user_id}?secret=${secret}&issuer=BridgeAI&algorithm=SHA1&digits=6&period=30`;
+  // Persist to SQLite via user-identity module
+  userMfa.setTotpSecret(user_id, secret, backup_codes);
+  const otpauth_url = `otpauth://totp/BridgeAI:${encodeURIComponent(user_id)}?secret=${secret}&issuer=BridgeAI&algorithm=SHA1&digits=6&period=30`;
   res.json({ ok: true, secret, otpauth_url, backup_codes, qr_hint: `Use any authenticator app to scan: ${otpauth_url}` });
 });
 app.post('/api/mfa/verify', (req, res) => {
   const { user_id, code } = req.body || {};
-  const mfa = mfaSecrets.get(user_id);
-  if (!mfa) return res.status(404).json({ ok: false, error: 'MFA not setup for user' });
-  if (verifyTOTP(mfa.secret, code) || mfa.backup_codes.includes(code)) {
-    mfa.enabled = true;
-    mfa.backup_codes = mfa.backup_codes.filter(c => c !== code);
+  const mfa = userMfa.getTotpData(user_id);
+  if (!mfa || !mfa.secret) return res.status(404).json({ ok: false, error: 'MFA not setup for user' });
+  if (verifyTOTP(mfa.secret, code) || userMfa.consumeBackupCode(user_id, code)) {
+    userMfa.enableTotp(user_id);
     audit('mfa_verified', user_id, 'MFA verification successful');
     res.json({ ok: true, verified: true, mfa_enabled: true });
   } else {
@@ -2127,8 +2225,8 @@ app.post('/api/mfa/verify', (req, res) => {
 });
 app.get('/api/mfa/status', (req, res) => {
   const user_id = req.query.user_id || 'default';
-  const mfa = mfaSecrets.get(user_id);
-  res.json({ ok: true, enabled: mfa?.enabled || false, setup: !!mfa, user_id });
+  const mfa = userMfa.getTotpData(user_id);
+  res.json({ ok: true, enabled: mfa?.enabled || false, setup: !!(mfa && mfa.secret), user_id });
 });
 
 // ── GOOGLE OAUTH ────────────────────────────────────────────────────────────

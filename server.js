@@ -804,6 +804,10 @@ app.post('/api/webhook/secrets-sync', (req, res) => {
   res.json(result);
 });
 
+// ================= AGENT REGISTRY (single source of truth) =================
+const agentRegistryRoutes = require('./lib/agent-registry-routes');
+agentRegistryRoutes.mount(app);
+
 // ================= LEADGEN + CRM + OSINT ENGINE =================
 const leadgenEngine = require('./leadgen-engine');
 leadgenEngine.mount(app);
