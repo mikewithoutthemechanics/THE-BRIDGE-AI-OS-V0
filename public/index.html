@@ -55,7 +55,7 @@
   <h1 style="position:relative;z-index:10">Your Business<br>Runs <span>Itself</span></h1>
   <p class="sub" style="position:relative;z-index:10">Automate sales, invoicing, and operations with <strong>35 AI agents</strong> — live in under 5 minutes. No code required. Start free, scale when you need to.</p>
   <div class="cta-row" style="position:relative;z-index:10">
-    <a href="/checkout.html" class="btn btn-primary">Start Free — No Credit Card</a>
+    <a href="/onboarding.html" class="btn btn-primary">Start Free — No Credit Card</a>
     <a href="#try-it" class="btn btn-outline">See Demo</a>
   </div>
   <div class="stats" style="position:relative;z-index:10">
@@ -113,7 +113,7 @@
     <div class="econ-stat"><div class="val" style="color:var(--green)" id="e-treasury">--</div><div class="lbl">Treasury Balance</div></div>
     <div class="econ-stat"><div class="val" style="color:var(--purple)" id="e-txs">--</div><div class="lbl">Total Transactions</div></div>
   </div>
-  <div style="text-align:center"><a href="/economy.html" class="btn btn-sm btn-outline" aria-label="View full economy dashboard">View Full Economy Dashboard</a></div>
+  <div style="text-align:center"><a href="/onboarding.html" class="btn btn-sm btn-outline" aria-label="Sign in to view economy dashboard">View Full Economy Dashboard</a></div>
 </section>
 
 <section id="features">
@@ -245,7 +245,7 @@
         <li>API access (100 calls/day)</li>
         <li>Community support</li>
       </ul>
-      <a href="/checkout.html" class="btn btn-outline" style="width:100%;justify-content:center">Get Started Free</a>
+      <a href="/onboarding.html" class="btn btn-outline" style="width:100%;justify-content:center">Get Started Free</a>
     </div>
     <div class="plan featured">
       <h3>Pro</h3>
@@ -259,7 +259,7 @@
         <li>BRDG token staking</li>
         <li>Priority support</li>
       </ul>
-      <a href="/checkout.html" class="btn btn-primary" style="width:100%;justify-content:center">Start Pro Trial</a>
+      <a href="/onboarding.html" class="btn btn-primary" style="width:100%;justify-content:center">Start Pro Trial</a>
     </div>
     <div class="plan">
       <h3>Enterprise</h3>
@@ -273,7 +273,7 @@
         <li>Dedicated support</li>
         <li>SLA guarantee</li>
       </ul>
-      <a href="/checkout.html" class="btn btn-outline" style="width:100%;justify-content:center">Contact Sales</a>
+      <a href="/onboarding.html" class="btn btn-outline" style="width:100%;justify-content:center">Contact Sales</a>
     </div>
   </div>
 </section>
@@ -308,15 +308,21 @@ X-API-Key: brdg_live_xxxxx
   <h2>Launch your first AI agent in 60 seconds</h2>
   <p>No setup. No code. Your agents start working the moment you sign up.</p>
   <div class="cta-row">
-    <a href="/checkout.html" class="btn btn-primary">Start Free Today</a>
-    <a href="/voice.html" class="btn btn-outline">Talk to AI</a>
+    <a href="/onboarding.html" class="btn btn-primary">Start Free Today</a>
+    <a href="#try-it" class="btn btn-outline">See Demo</a>
   </div>
+</div>
+
+<div class="cta-banner" style="margin-top:0">
+  <h2>Join Bridge AI</h2>
+  <p>Create your free account and deploy your first AI agent in under 60 seconds.</p>
+  <a href="/onboarding.html" class="btn btn-primary">Get Started</a>
 </div>
 
 <footer>
   <div class="footer-links">
     <a href="/portal.html">Client Portal</a>
-    <a href="/economy.html" aria-label="Economy dashboard">Economy Dashboard</a>
+    <a href="/pricing.html" aria-label="Pricing page">Pricing</a>
     <a href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947">BRDG Token</a>
     <a href="/sitemap.xml">Sitemap</a>
     <a href="/health">Status</a>
@@ -325,6 +331,16 @@ X-API-Key: brdg_live_xxxxx
   <p style="margin-top:.3rem" id="brdg-footer"></p>
 </footer>
 
+<script>
+(function(){
+  var token = localStorage.getItem('bridge_token');
+  var btn = document.getElementById('nav-auth-btn');
+  if (btn && token) {
+    btn.textContent = 'Console';
+    btn.href = '/console.html';
+  }
+})();
+</script>
 <script src="/app.js" defer></script>
 <script src="/bridge-auth.js" defer></script>
 <script src="/bridge-widget.js" defer></script>

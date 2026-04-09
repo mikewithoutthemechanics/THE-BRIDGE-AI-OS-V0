@@ -671,13 +671,13 @@ module.exports = async (req, res) => {
     const { data: user, error: insertErr } = await supabase.from('users').insert({
       id: userId, email: body.email.toLowerCase().trim(), password_hash,
       brdg_balance: 0, first_seen: now, last_seen: now,
-      oauth_provider: 'email', plan: 'visitor', funnel_stage: 'visitor',
+      oauth_provider: 'email', plan: 'client', funnel_stage: 'visitor',
       lead_score: 0, conversations: 0, role: 'user',
     }).select().single();
     if (insertErr) return json(res, { error: 'Registration failed: ' + insertErr.message }, 500);
 
     const token = makeToken({ sub: user.id, email: user.email });
-    return json(res, { token, user: { id: user.id, email: user.email, credits: user.brdg_balance || 0 } }, 201);
+    return json(res, { token, user: { id: user.id, email: user.email, plan: user.plan, credits: user.brdg_balance || 0 } }, 201);
   }
 
   // ── Auth: Login (with rate limiting) ──
@@ -707,7 +707,7 @@ module.exports = async (req, res) => {
     }
 
     const token = makeToken({ sub: user.id, email: user.email });
-    return json(res, { token, user: { id: user.id, email: user.email, credits: user.brdg_balance || 0 } });
+    return json(res, { token, user: { id: user.id, email: user.email, plan: user.plan, credits: user.brdg_balance || 0 } });
   }
 
   // ── Auth: Verify ──
@@ -754,6 +754,27 @@ module.exports = async (req, res) => {
       if (_revokedTokens.size > 10000) _revokedTokens.clear();
     }
     return json(res, { ok: true, message: 'Signed out' });
+  }
+
+  // ── Auth: Session check (/api/auth/me) ──
+  if (p === '/api/auth/me' && req.method === 'GET') {
+    const authHeader = req.headers['authorization'] || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (!token) return json(res, { ok: false, error: 'Not authenticated' }, 401);
+    if (_revokedTokens.has(token)) return json(res, { ok: false, error: 'Token revoked' }, 401);
+    const payload = verifyToken(token);
+    if (!payload) return json(res, { ok: false, error: 'Invalid or expired token' }, 401);
+
+    // Look up full user from DB
+    if (supabase) {
+      const { data: user } = await supabase.from('users').select('*').eq('email', payload.email?.toLowerCase().trim()).single();
+      if (user) {
+        const { password_hash, totp_secret, totp_backup_codes, ...safe } = user;
+        return json(res, { ok: true, user: safe });
+      }
+    }
+    // Fallback: return JWT payload
+    return json(res, { ok: true, user: { id: payload.sub, email: payload.email } });
   }
 
   // ── L1 / L2 / L3 orchestrator proxy stubs ──

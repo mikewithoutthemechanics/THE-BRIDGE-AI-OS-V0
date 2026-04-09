@@ -6,6 +6,23 @@
 <title>Bridge AI OS — Welcome Tour</title>
 <meta name="description" content="Launch your first AI agent in 60 seconds. Interactive onboarding for Bridge AI OS.">
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  var SUPABASE_URL = 'https://sdkysuvmtqjqopmdpvoz.supabase.co';
+  var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNka3lzdXZtdHFqcW9wbWRwdm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2ODU4MzQsImV4cCI6MjA5MTI2MTgzNH0.fE28i7UyAmvun7046Jn4taHFN756-s70KFRnG863bV0';
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  var token = localStorage.getItem('bridge_token');
+  sb.auth.getSession().then(function(res){
+    var hasSession = res && res.data && res.data.session;
+    if (!hasSession && !token) {
+      window.location.replace('/onboarding.html');
+    }
+  }).catch(function(){
+    if (!token) window.location.replace('/onboarding.html');
+  });
+})();
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#c4a8ff;--orange:#fb923c;--dim:#7a8fa0;--text:#e0e8f0}
@@ -70,6 +87,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
   </div>
 
   <div class="step-card" id="step-card"></div>
+  <a href="/console.html" id="skip-tour" style="display:inline-block;margin-top:1.5rem;color:var(--dim);font-size:.85rem;text-decoration:underline;transition:color .2s" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--dim)'" onclick="localStorage.setItem('bridge_tour_done','true')">Skip tour</a>
 </div>
 
 <script>
@@ -222,14 +240,14 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
   }
 
   function renderStep3() {
+    localStorage.setItem('bridge_tour_done', 'true');
     var confetti = el('div', 'confetti'); confetti.textContent = '\uD83C\uDF89'; card.appendChild(confetti);
     var title = el('div', 'step-title'); title.textContent = "You're all set!"; card.appendChild(title);
     var earned = el('div', 'stat-earned'); earned.textContent = '+100 BRDG earned while you explored'; card.appendChild(earned);
-    var desc = el('div', 'step-desc'); desc.textContent = 'Your AI agents are ready. Head to the Client Portal to manage your workforce, or explore the Live Economy.'; card.appendChild(desc);
+    var desc = el('div', 'step-desc'); desc.textContent = 'Your AI agents are ready. Head to the Console to manage your workforce and start building.'; card.appendChild(desc);
 
     var row = el('div', 'btn-row');
-    var portal = el('a', 'btn btn-primary'); portal.textContent = 'Go to Client Portal'; portal.href = '/portal.html'; row.appendChild(portal);
-    var economy = el('a', 'btn btn-outline'); economy.textContent = 'View Live Economy'; economy.href = '/economy.html'; row.appendChild(economy);
+    var console = el('a', 'btn btn-primary'); console.textContent = 'Go to Console'; console.href = '/console.html'; row.appendChild(console);
     card.appendChild(row);
   }
 

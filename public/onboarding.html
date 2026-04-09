@@ -174,6 +174,7 @@ try {
 window._supabase = sb;
 
 var isSignUp = false;
+var _redirecting = false;
 var params = new URLSearchParams(window.location.search);
 var redirectTo = params.get('redirect');
 var safeRedirect = (redirectTo && redirectTo.charAt(0) === '/' && redirectTo.charAt(1) !== '/') ? redirectTo : null;
@@ -193,31 +194,56 @@ function clearMsg() {
   document.getElementById('msg').className = 'msg';
 }
 
-var didRedirect = false;
-function onLogin(session) {
-  if (didRedirect) return; // prevent double-fire
-  didRedirect = true;
+function handleSession(session) {
+  if (_redirecting) return;
+  _redirecting = true;
   console.log('[AUTH] Session obtained:', session.user.email);
+
   localStorage.setItem('bridge_token', session.access_token);
-  localStorage.setItem('bridge_user_token', session.access_token);
   localStorage.setItem('bridge_user', JSON.stringify({
     id: session.user.id,
     email: session.user.email,
     name: (session.user.user_metadata && session.user.user_metadata.name) || ''
   }));
+
   // Set cookie so server-side pageGuard can read it
   document.cookie = 'bridge_token=' + session.access_token + ';path=/;max-age=' + (7*24*3600) + ';SameSite=Lax';
+
+  // Determine redirect destination
+  var dest = sessionStorage.getItem('auth_redirect') || '/console.html';
+  sessionStorage.removeItem('auth_redirect');
+
+  // First-time users go to welcome tour
+  if (!localStorage.getItem('bridge_tour_done')) {
+    dest = '/welcome-tour.html';
+  }
+
   showMsg('success', 'Signed in! Redirecting...');
-  var dest = safeRedirect || '/welcome-tour.html';
   console.log('[AUTH] Redirecting to:', dest);
-  window.location.replace(dest);
+  setTimeout(function() { window.location.replace(dest); }, 300);
 }
 
 // ── Check existing session on page load (handles OAuth callback) ─────────
-if (sb) {
-  sb.auth.getSession().then(function(res) {
+(async function() {
+  if (!sb) return;
+  try {
+    var res = await sb.auth.getSession();
     if (res.data && res.data.session) {
-      onLogin(res.data.session);
+      handleSession(res.data.session);
+      return; // Don't show login form
+    }
+  } catch (e) {
+    console.error('[AUTH] getSession error:', e);
+  }
+  // No session — show login form (it's already visible by default)
+})();
+
+// ── Listen for auth state changes (catches OAuth callback token exchange) ─
+if (sb) {
+  sb.auth.onAuthStateChange(function(event, session) {
+    console.log('[AUTH] onAuthStateChange:', event);
+    if (event === 'SIGNED_IN' && session) {
+      handleSession(session);
     }
   });
 }
@@ -247,10 +273,12 @@ async function doGoogle() {
   console.log('[AUTH] Google OAuth clicked');
   clearMsg();
   if (!sb) { showMsg('error', 'Auth not initialized'); return; }
+  // Store redirect in sessionStorage before OAuth (query params get lost)
+  sessionStorage.setItem('auth_redirect', safeRedirect || '/console.html');
   try {
     var res = await sb.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/onboarding.html' + (safeRedirect ? '?redirect=' + encodeURIComponent(safeRedirect) : '') }
+      options: { redirectTo: window.location.origin + '/onboarding.html' }
     });
     console.log('[AUTH] Google result:', JSON.stringify(res));
     if (res.error) showMsg('error', res.error.message);
@@ -265,10 +293,12 @@ async function doGithub() {
   console.log('[AUTH] GitHub OAuth clicked');
   clearMsg();
   if (!sb) { showMsg('error', 'Auth not initialized'); return; }
+  // Store redirect in sessionStorage before OAuth (query params get lost)
+  sessionStorage.setItem('auth_redirect', safeRedirect || '/console.html');
   try {
     var res = await sb.auth.signInWithOAuth({
       provider: 'github',
-      options: { redirectTo: window.location.origin + '/onboarding.html' + (safeRedirect ? '?redirect=' + encodeURIComponent(safeRedirect) : '') }
+      options: { redirectTo: window.location.origin + '/onboarding.html' }
     });
     console.log('[AUTH] GitHub result:', JSON.stringify(res));
     if (res.error) showMsg('error', res.error.message);
@@ -308,7 +338,7 @@ async function doEmail() {
     if (res.error) {
       showMsg('error', res.error.message);
     } else if (res.data.session) {
-      onLogin(res.data.session);
+      handleSession(res.data.session);
       return;
     } else if (res.data.user && !res.data.session) {
       showMsg('success', 'Account created! Check your email to confirm, then sign in.');

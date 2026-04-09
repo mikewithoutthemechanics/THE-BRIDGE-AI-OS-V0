@@ -22,12 +22,12 @@ function safeCompare(a, b) {
 // ── Page Tier Definitions ──────────────────────────────────────────────────
 const PAGE_TIERS = {
   PUBLIC: ['/', '/index.html', '/landing.html', '/home.html', '/pricing.html', '/onboarding.html', '/checkout.html',
-    '/payment-success.html', '/payment-cancel.html', '/welcome.html', '/welcome-tour.html', '/onboarding.html', '/sitemap.html',
+    '/payment-success.html', '/payment-cancel.html', '/welcome.html', '/onboarding.html', '/sitemap.html',
     '/docs.html', '/50-applications.html', '/applications.html', '/404.html', '/offline.html',
     '/platforms.html', '/bridge-home.html', '/ehsa-home.html', '/aurora-home.html', '/hospital-home.html',
     '/aid-home.html', '/rootedearth-home.html', '/portal.html', '/voice.html'],
 
-  CLIENT: ['/console.html', '/avatar.html', '/digital-twin-console.html', '/twin-wall.html', '/twin.html',
+  CLIENT: ['/welcome-tour.html', '/console.html', '/avatar.html', '/digital-twin-console.html', '/twin-wall.html', '/twin.html',
     '/crm.html', '/invoicing.html', '/quotes.html', '/legal.html', '/marketing.html', '/tickets.html',
     '/vendors.html', '/customers.html', '/workforce.html', '/leadgen.html', '/affiliate.html',
     '/corporate.html', '/brand.html', '/marketplace.html', '/payment.html', '/settings.html',
@@ -87,6 +87,17 @@ async function extractUser(req) {
       let dbUser = await userDb.getUserByEmail(user.email);
       if (!dbUser) {
         dbUser = await userDb.createUser(user.email, user.user_metadata?.name, 'supabase', user.id);
+      }
+      // Authenticated Supabase users should be at least 'client' plan
+      // This prevents redirect loops where a valid Supabase session
+      // still has plan='visitor' in the DB from initial creation
+      if (dbUser && dbUser.plan === 'visitor') {
+        try {
+          const { supabase: supa } = require('../lib/supabase');
+          await supa.from('users').update({ plan: 'client', funnel_stage: 'lead' }).eq('id', dbUser.id);
+          dbUser.plan = 'client';
+          dbUser.funnel_stage = 'lead';
+        } catch (_upgradeErr) {}
       }
       return dbUser;
     }
