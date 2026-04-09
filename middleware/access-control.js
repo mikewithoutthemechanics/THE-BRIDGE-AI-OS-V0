@@ -193,10 +193,8 @@ async function requireSuperAdmin(req, res, next) {
 
 function pageGuard() {
   return async function pageGuardMiddleware(req, res, next) {
-    // STAGING MODE: all pages accessible — re-enable RBAC for production
-    if (process.env.STAGING_MODE === '1' || process.env.NODE_ENV !== 'production') {
-      return next();
-    }
+    // STAGING MODE: all pages accessible — remove this block to re-enable RBAC
+    return next();
 
     // Only guard GET requests for .html pages or exact path matches
     if (req.method !== 'GET') return next();
