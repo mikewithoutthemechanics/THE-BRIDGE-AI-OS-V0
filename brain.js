@@ -68,12 +68,22 @@ app.use((req, res, next) => {
 
 // ── AUTH: Logout (Supabase + Bridge JWT) ──────────────────────────────────
 app.post('/api/auth/logout', async (req, res) => {
-  // Client clears localStorage; server-side is best-effort
+  // Client clears localStorage; server-side revokes the token
   const { revokeToken } = require('./middleware/auth');
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
   if (token) { try { await revokeToken(token); } catch (_) {} }
+  res.clearCookie('bridge_token', { path: '/' });
   res.json({ ok: true, message: 'Signed out' });
+});
+
+// ── AUTH: Session check (/api/auth/me) ───────────────────────────────────
+app.get('/api/auth/me', async (req, res) => {
+  const { extractUser } = require('./middleware/access-control');
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ ok: false, error: 'Not authenticated' });
+  const { password_hash, totp_secret, totp_backup_codes, ...safe } = user;
+  res.json({ ok: true, user: safe });
 });
 
 // ── KEYFORGE — Deterministic Rotating Key System (ported from Python) ────────
