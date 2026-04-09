@@ -1,196 +1,419 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Settings — Bridge AI OS</title>
-  <meta name="description" content="Bridge AI OS user settings — configure theme, API base, notifications, and cross-device sync preferences.">
-  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta charset="UTF-8">
+<meta name="description" content="Bridge AI OS Settings — API keys, plan details, notifications, and profile management.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings - Bridge AI OS</title>
+<style>
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--p:#a78bfa;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
+.topnav{background:var(--bg2);border-bottom:1px solid #1a2a3a;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;overflow-x:auto;flex-shrink:0}
+.topnav .logo{font-weight:700;font-size:1.1rem;color:var(--a);white-space:nowrap}
+.topnav a{color:var(--t);font-size:.85rem;white-space:nowrap;padding:.35rem .6rem;border-radius:6px;transition:all .2s}
+.topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
+main{flex:1;padding:1.5rem;max-width:900px;width:100%;margin:0 auto}
+h1{font-size:1.8rem;margin-bottom:.25rem}.subtitle{color:var(--t);margin-bottom:1.5rem}
+.card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+.card h2{font-size:1.1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600}
+.badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}.badge-yellow{background:#ffaa0022;color:var(--y)}
+.btn{display:inline-block;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:all .2s;text-align:center}
+.btn-primary{background:var(--a);color:#000}.btn-green{background:var(--g);color:#000}.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}.btn-red{background:transparent;color:var(--r);border:1px solid var(--r)}
+.btn:hover{opacity:.85;text-decoration:none}
+.btn-sm{padding:.4rem .8rem;font-size:.78rem}
+input,select,textarea{background:var(--bg3);color:var(--w);border:1px solid #1a2a3a;border-radius:8px;padding:.6rem .8rem;font-size:.85rem;outline:none;width:100%;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--a)}
+.form-group{margin-bottom:1rem}
+.form-label{display:block;font-size:.85rem;color:var(--t);margin-bottom:.3rem;font-weight:500}
+.form-hint{font-size:.75rem;color:var(--t);margin-top:.2rem}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #0d1520}
+.toggle-row:last-child{border:none}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:#1a2a3a;border-radius:11px;cursor:pointer;transition:background .2s}
+.toggle .slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;bottom:2px;background:var(--w);border-radius:50%;transition:transform .2s}
+.toggle input:checked+.slider{background:var(--a)}
+.toggle input:checked+.slider:before{transform:translateX(18px)}
+.api-key{font-family:monospace;font-size:.8rem;background:var(--bg3);padding:.5rem .75rem;border-radius:6px;border:1px solid #1a2a3a;word-break:break-all;display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.api-key .key-text{flex:1;overflow:hidden;text-overflow:ellipsis}
+.usage-bar{height:8px;background:#1a2a3a;border-radius:4px;overflow:hidden;margin-top:.3rem}
+.usage-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--a),var(--g))}
+.plan-card{padding:1rem;background:var(--bg3);border-radius:8px;text-align:center;border:1px solid #1a2a3a}
+.plan-card.current{border-color:var(--a);box-shadow:0 0 15px rgba(0,200,255,.1)}
+.loading{color:var(--t);font-size:.85rem;padding:1rem 0}
+.msg{padding:.6rem .8rem;border-radius:8px;font-size:.8rem;margin-top:.5rem;display:none}
+.msg.ok{display:block;background:#00e57b18;color:var(--g);border:1px solid #00e57b33}
+.msg.err{display:block;background:#ff446618;color:var(--r);border:1px solid #ff446633}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem}
+@media(max-width:600px){main{padding:1rem}h1{font-size:1.4rem}.grid-3{grid-template-columns:1fr}}
+</style>
 </head>
-<body class="bg-slate-50 font-sans antialiased">
+<body>
+<nav class="topnav">
+  <a href="/" class="logo">Bridge AI</a>
+  <a href="/">Dashboard</a>
+  <a href="/trading.html">Trading</a>
+  <a href="/defi.html">DeFi</a>
+  <a href="/wallet.html">Wallet</a>
+  <a href="/governance.html">Governance</a>
+  <a href="/intelligence.html">Intelligence</a>
+  <a href="/docs.html">Docs</a>
+  <a href="/settings.html" class="active">Settings</a>
+</nav>
+<main>
+  <h1>Settings</h1>
+  <p class="subtitle">API keys, plan details, notifications, and profile</p>
 
-  <nav class="bg-slate-800 text-white p-4 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-lg">
-    <a href="/" class="text-xl font-bold hover:text-amber-300">Bridge AI OS</a>
-    <ul class="flex flex-wrap gap-4 mt-2 md:mt-0">
-      <li><a href="/" class="hover:text-amber-300">Digital Twin</a></li>
-      <li><a href="/executive-dashboard.html" class="hover:text-amber-300">Dashboard</a></li>
-      <li><a href="/50-applications.html" class="hover:text-amber-300">50 Applications</a></li>
-      <li><a href="/agents.html" class="hover:text-amber-300">Agents</a></li>
-      <li><a href="/landing.html" class="hover:text-amber-300">Landing</a></li>
-      <li><a href="/gateway/" class="hover:text-amber-300">Gateway</a></li>
-      <li><a href="/join.html" class="hover:text-amber-300">Join as Agent</a></li>
-      <li><a href="/docs.html" class="hover:text-amber-300">Docs</a></li>
-      <li><a href="/settings.html" class="text-amber-300 font-semibold">Settings</a></li>
-    </ul>
-  </nav>
+  <!-- Profile -->
+  <div class="card">
+    <h2>Profile</h2>
+    <div class="form-group">
+      <label class="form-label">Display Name</label>
+      <input type="text" id="profile-name" placeholder="Your name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" id="profile-email" placeholder="you@example.com" readonly>
+      <div class="form-hint">Contact support to change your email</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Company</label>
+      <input type="text" id="profile-company" placeholder="Company name (optional)">
+    </div>
+    <button class="btn btn-primary btn-sm" id="save-profile-btn">Save Profile</button>
+    <div class="msg" id="profile-msg"></div>
+  </div>
 
-  <main class="p-4 md:p-6 max-w-2xl mx-auto space-y-8">
-    <header>
-      <h1 class="text-3xl font-bold text-slate-800">Settings</h1>
-      <p class="text-slate-600 mt-1">Shared per user across all domains. Stored on the backend.</p>
-    </header>
+  <!-- API Keys -->
+  <div class="card">
+    <h2>API Keys <span class="badge badge-blue">MANAGE</span></h2>
+    <div id="api-keys-list"><div class="loading">Loading API keys...</div></div>
+    <div style="margin-top:.75rem;display:flex;gap:.5rem">
+      <input type="text" id="new-key-name" placeholder="Key name (e.g. production)" style="flex:1">
+      <button class="btn btn-green btn-sm" id="create-key-btn">Create Key</button>
+    </div>
+    <div class="msg" id="key-msg"></div>
+  </div>
 
-    <div id="message" class="hidden p-3 rounded-lg text-sm"></div>
+  <!-- API Usage -->
+  <div class="card">
+    <h2>API Usage</h2>
+    <div id="usage-info"><div class="loading">Loading usage...</div></div>
+  </div>
 
-    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Preferences</h2>
-      <form id="settings-form" class="p-4 space-y-5">
-        <div>
-          <label for="theme" class="block text-sm font-medium text-slate-700 mb-1">Theme</label>
-          <select id="theme" name="theme" class="w-full max-w-xs border border-slate-300 rounded-lg px-3 py-2 text-slate-800">
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-            <option value="system">System</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">API base (optional)</label>
-          <input type="text" id="apiBase" name="apiBase" placeholder="Leave empty for same origin" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-800">
-          <p class="text-xs text-slate-500 mt-1">Override for backend URL. Shared across all apps when saved.</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <input type="checkbox" id="notifications" name="notifications" class="rounded border-slate-300">
-          <label for="notifications" class="text-sm text-slate-700">Enable notifications</label>
-        </div>
-        <div class="flex items-center gap-2">
-          <input type="checkbox" id="liveRefresh" name="liveRefresh" class="rounded border-slate-300" checked>
-          <label for="liveRefresh" class="text-sm text-slate-700">Live refresh (dashboard / agents)</label>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">User ID (for cross-device sync)</label>
-          <input type="text" id="userId" name="userId" placeholder="default" class="w-full max-w-xs border border-slate-300 rounded-lg px-3 py-2 text-slate-800">
-          <p class="text-xs text-slate-500 mt-1">Set to share settings across devices; send as X-User-Id header.</p>
-        </div>
-        <div class="flex gap-3 pt-2">
-          <button type="submit" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-medium">Save</button>
-          <button type="button" id="reset-btn" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100">Reset to defaults</button>
-        </div>
-      </form>
-    </section>
-  </main>
+  <!-- Plan Details -->
+  <div class="card">
+    <h2>Plan Details</h2>
+    <div class="grid-3" id="plan-cards"><div class="loading">Loading plans...</div></div>
+  </div>
 
-  <script>
-(function() {
-  const API_BASE = (typeof window !== 'undefined' && window.__API_BASE) ? String(window.__API_BASE).replace(/\/$/, '') : '';
+  <!-- Notifications -->
+  <div class="card">
+    <h2>Notification Preferences</h2>
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Email Notifications</div>
+        <div style="color:var(--t);font-size:.78rem">Receive alerts and reports via email</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="notif-email" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Trading Alerts</div>
+        <div style="color:var(--t);font-size:.78rem">Get notified when BossBots execute trades</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="notif-trading"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Governance Updates</div>
+        <div style="color:var(--t);font-size:.78rem">New proposals and vote results</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="notif-governance" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Economy Reports</div>
+        <div style="color:var(--t);font-size:.78rem">Weekly BRDG economy summaries</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="notif-economy" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Security Alerts</div>
+        <div style="color:var(--t);font-size:.78rem">Login attempts and security events</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="notif-security" checked><span class="slider"></span></label>
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin-top:.75rem" id="save-notif-btn">Save Preferences</button>
+    <div class="msg" id="notif-msg"></div>
+  </div>
 
-  function api(path) {
-    return (API_BASE ? API_BASE + path : path);
-  }
+  <!-- Appearance -->
+  <div class="card">
+    <h2>Appearance</h2>
+    <div class="form-group">
+      <label class="form-label">Theme</label>
+      <select id="theme-select">
+        <option value="dark">Dark (Default)</option>
+        <option value="light">Light</option>
+        <option value="system">System</option>
+      </select>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Live Refresh</div>
+        <div style="color:var(--t);font-size:.78rem">Auto-update dashboard data</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="live-refresh" checked><span class="slider"></span></label>
+    </div>
+  </div>
 
-  var STORAGE_USER_ID_KEY = 'bridge_user_id';
+  <!-- Danger Zone -->
+  <div class="card" style="border-color:#ff446633">
+    <h2 style="color:var(--r)">Danger Zone</h2>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+      <button class="btn btn-red btn-sm" id="logout-btn">Logout</button>
+      <button class="btn btn-red btn-sm" id="delete-data-btn">Delete All Data</button>
+    </div>
+  </div>
+</main>
 
-  function getUserId() {
-    var el = document.getElementById('userId');
-    if (el && el.value && el.value.trim()) return el.value.trim().slice(0, 128);
-    try { return localStorage.getItem(STORAGE_USER_ID_KEY); } catch (_) {}
-    return null;
-  }
+<script>
+(function(){
+  'use strict';
+  const token = localStorage.getItem('bridge_token');
+  const user = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+  const headers = token ? { Authorization: 'Bearer ' + token } : {};
 
-  function setStoredUserId(uid) {
-    try { if (uid) localStorage.setItem(STORAGE_USER_ID_KEY, uid); else localStorage.removeItem(STORAGE_USER_ID_KEY); } catch (_) {}
-  }
-
-  function headers() {
-    var h = { 'Content-Type': 'application/json' };
-    var uid = getUserId();
-    if (uid) h['X-User-Id'] = uid;
-    return h;
-  }
-
-  async function load() {
+  async function api(url, opts) {
     try {
-      var r = await fetch(api('/api/user/settings'), { headers: headers() });
-      var data = r.ok ? await r.json() : null;
-      if (data && data.settings) {
-        var s = data.settings;
-        setField('theme', s.theme);
-        setField('apiBase', s.apiBase);
-        setField('notifications', s.notifications);
-        setField('liveRefresh', s.liveRefresh !== false);
-        if (s.userId != null) setField('userId', s.userId);
-        else {
-          var stored = null;
-          try { stored = localStorage.getItem(STORAGE_USER_ID_KEY); } catch (_) {}
-          if (stored) setField('userId', stored);
-        }
-      }
-    } catch (e) {
-      showMessage('Could not load settings', true);
-    }
+      const r = await fetch(url, Object.assign({ headers: headers }, opts || {}));
+      if (!r.ok) throw new Error(r.status);
+      return await r.json();
+    } catch { return null; }
   }
 
-  function setField(name, value) {
-    var el = document.getElementById(name) || document.querySelector('[name="' + name + '"]');
-    if (!el) return;
-    if (el.type === 'checkbox') el.checked = !!value;
-    else el.value = value == null ? '' : value;
-  }
+  function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
-  function getField(name) {
-    var el = document.getElementById(name) || document.querySelector('[name="' + name + '"]');
-    if (!el) return undefined;
-    if (el.type === 'checkbox') return el.checked;
-    return el.value;
-  }
-
-  function getSettings() {
-    return {
-      theme: getField('theme') || 'light',
-      apiBase: getField('apiBase') || '',
-      notifications: !!getField('notifications'),
-      liveRefresh: getField('liveRefresh') !== false,
-      userId: getField('userId') || ''
-    };
-  }
-
-  function showMessage(text, isError) {
-    var el = document.getElementById('message');
+  function showMsg(id, text, ok) {
+    const el = document.getElementById(id);
     if (!el) return;
     el.textContent = text;
-    el.className = 'p-3 rounded-lg text-sm ' + (isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800');
-    el.classList.remove('hidden');
-    setTimeout(function() { el.classList.add('hidden'); }, 4000);
+    el.className = 'msg ' + (ok ? 'ok' : 'err');
+    setTimeout(function(){ el.className = 'msg'; }, 4000);
   }
 
-  document.getElementById('settings-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    var payload = getSettings();
+  // Load profile
+  document.getElementById('profile-name').value = user.name || '';
+  document.getElementById('profile-email').value = user.email || '';
+  document.getElementById('profile-company').value = user.company || '';
+
+  // Save profile
+  document.getElementById('save-profile-btn').addEventListener('click', async function() {
+    const name = document.getElementById('profile-name').value.trim();
+    const company = document.getElementById('profile-company').value.trim();
     try {
-      var r = await fetch(api('/api/user/settings'), {
+      const r = await fetch('/api/user/settings', {
         method: 'PUT',
-        headers: headers(),
-        body: JSON.stringify({ settings: payload })
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify({ settings: { name: name, company: company } })
       });
       if (r.ok) {
-        setStoredUserId(payload.userId || null);
-        showMessage('Settings saved. They are shared across all domains for this user.');
-        if (payload.apiBase && typeof window !== 'undefined') {
-          var base = payload.apiBase.replace(/\/$/, '');
-          window.__API_BASE = base;
-        }
-      } else {
-        showMessage('Failed to save settings', true);
-      }
-    } catch (err) {
-      showMessage('Failed to save settings', true);
+        user.name = name;
+        user.company = company;
+        localStorage.setItem('bridge_user', JSON.stringify(user));
+        showMsg('profile-msg', 'Profile saved.', true);
+      } else showMsg('profile-msg', 'Failed to save.', false);
+    } catch { showMsg('profile-msg', 'Network error.', false); }
+  });
+
+  // API Keys
+  async function loadKeys() {
+    const data = await api('/api/keys/usage');
+    const keysEl = document.getElementById('api-keys-list');
+    clearEl(keysEl);
+    const keys = data?.keys || data?.apiKeys || [];
+    if (keys.length) {
+      keys.forEach(function(k) {
+        const div = document.createElement('div');
+        div.className = 'api-key';
+        div.style.marginBottom = '.5rem';
+        const left = document.createElement('div');
+        left.style.flex = '1';
+        const name = document.createElement('div');
+        name.style.cssText = 'font-weight:600;font-size:.85rem;margin-bottom:.2rem';
+        name.textContent = k.name || 'API Key';
+        const keyText = document.createElement('div');
+        keyText.className = 'key-text';
+        keyText.textContent = k.key || k.token || k.prefix || '***';
+        left.appendChild(name); left.appendChild(keyText);
+        const revokeBtn = document.createElement('button');
+        revokeBtn.className = 'btn btn-red btn-sm';
+        revokeBtn.textContent = 'Revoke';
+        revokeBtn.addEventListener('click', async function() {
+          if (!confirm('Revoke this API key?')) return;
+          await fetch('/api/keys/' + (k.id || k._id), {
+            method: 'DELETE',
+            headers: headers
+          });
+          loadKeys();
+        });
+        div.appendChild(left); div.appendChild(revokeBtn);
+        keysEl.appendChild(div);
+      });
+    } else {
+      const msg = document.createElement('div');
+      msg.style.color = 'var(--t)';
+      msg.textContent = 'No API keys. Create one to access the API programmatically.';
+      keysEl.appendChild(msg);
     }
+
+    // Usage stats
+    const usageEl = document.getElementById('usage-info');
+    clearEl(usageEl);
+    const usage = data?.usage || data || {};
+    const limit = parseInt(usage.limit || usage.dailyLimit || 10000);
+    const used = parseInt(usage.used || usage.callsToday || 0);
+    const pct = Math.min((used / limit) * 100, 100);
+
+    const row1 = document.createElement('div');
+    row1.style.cssText = 'display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem';
+    const r1l = document.createElement('span');
+    r1l.style.color = 'var(--t)';
+    r1l.textContent = 'API Calls Today';
+    const r1v = document.createElement('span');
+    r1v.style.fontWeight = '600';
+    r1v.textContent = used.toLocaleString() + ' / ' + limit.toLocaleString();
+    row1.appendChild(r1l); row1.appendChild(r1v);
+
+    const bar = document.createElement('div');
+    bar.className = 'usage-bar';
+    const fill = document.createElement('div');
+    fill.className = 'usage-fill';
+    fill.style.width = pct + '%';
+    if (pct > 80) fill.style.background = 'linear-gradient(90deg,var(--y),var(--r))';
+    bar.appendChild(fill);
+
+    const row2 = document.createElement('div');
+    row2.style.cssText = 'display:flex;justify-content:space-between;font-size:.78rem;color:var(--t);margin-top:.5rem';
+    const r2l = document.createElement('span');
+    r2l.textContent = 'Remaining: ' + (limit - used).toLocaleString();
+    const r2v = document.createElement('span');
+    r2v.textContent = pct.toFixed(0) + '% used';
+    row2.appendChild(r2l); row2.appendChild(r2v);
+
+    usageEl.appendChild(row1); usageEl.appendChild(bar); usageEl.appendChild(row2);
+  }
+  loadKeys();
+
+  // Create key
+  document.getElementById('create-key-btn').addEventListener('click', async function() {
+    if (!token) { showMsg('key-msg', 'Please log in first.', false); return; }
+    const name = document.getElementById('new-key-name').value.trim();
+    if (!name) { showMsg('key-msg', 'Enter a key name.', false); return; }
+    try {
+      const r = await fetch('/api/keys', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify({ name: name })
+      });
+      const data = await r.json();
+      if (r.ok) {
+        showMsg('key-msg', 'Key created: ' + (data.key || data.token || 'OK'), true);
+        document.getElementById('new-key-name').value = '';
+        loadKeys();
+      } else showMsg('key-msg', data.error || 'Failed.', false);
+    } catch { showMsg('key-msg', 'Network error.', false); }
   });
 
-  document.getElementById('reset-btn').addEventListener('click', function() {
-    setField('theme', 'light');
-    setField('apiBase', '');
-    setField('notifications', false);
-    setField('liveRefresh', true);
-    setField('userId', '');
-    showMessage('Form reset to defaults. Click Save to persist.');
+  // Plan cards
+  var currentPlan = user.plan || (user.credits > 0 ? 'pro' : 'free');
+  var plans = [
+    { id: 'free', name: 'Free', price: '$0', features: ['100 API calls/day', '1 AI agent', 'Trading signals'] },
+    { id: 'pro', name: 'Pro', price: '$49/mo', features: ['10,000 API calls/day', '5 AI agents', 'Live execution', '2 BossBots'] },
+    { id: 'enterprise', name: 'Enterprise', price: '$499/mo', features: ['100,000 API calls/day', '50 AI agents', 'Cognitive routing', 'Priority support'] }
+  ];
+  var planCards = document.getElementById('plan-cards');
+  clearEl(planCards);
+  plans.forEach(function(p) {
+    var div = document.createElement('div');
+    div.className = 'plan-card' + (p.id === currentPlan ? ' current' : '');
+    var name = document.createElement('div');
+    name.style.cssText = 'font-weight:700;font-size:1rem;margin-bottom:.3rem';
+    name.textContent = p.name;
+    var price = document.createElement('div');
+    price.style.cssText = 'font-size:1.5rem;font-weight:800;color:var(--a);margin-bottom:.5rem';
+    price.textContent = p.price;
+    div.appendChild(name); div.appendChild(price);
+    p.features.forEach(function(f) {
+      var feat = document.createElement('div');
+      feat.style.cssText = 'font-size:.78rem;color:var(--t);padding:.15rem 0';
+      feat.textContent = '\u2713 ' + f;
+      div.appendChild(feat);
+    });
+    if (p.id === currentPlan) {
+      var badge = document.createElement('div');
+      badge.style.cssText = 'margin-top:.5rem';
+      var b = document.createElement('span');
+      b.className = 'badge badge-green';
+      b.textContent = 'Current Plan';
+      badge.appendChild(b);
+      div.appendChild(badge);
+    } else {
+      var btn = document.createElement('a');
+      btn.href = '/onboarding.html?plan=' + p.id;
+      btn.className = 'btn btn-outline btn-sm';
+      btn.style.cssText = 'display:block;margin-top:.5rem';
+      btn.textContent = p.id === 'free' ? 'Downgrade' : 'Upgrade';
+      div.appendChild(btn);
+    }
+    planCards.appendChild(div);
   });
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
-  else load();
+  // Save notifications
+  document.getElementById('save-notif-btn').addEventListener('click', async function() {
+    var prefs = {
+      email: document.getElementById('notif-email').checked,
+      trading: document.getElementById('notif-trading').checked,
+      governance: document.getElementById('notif-governance').checked,
+      economy: document.getElementById('notif-economy').checked,
+      security: document.getElementById('notif-security').checked
+    };
+    try {
+      var r = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify({ settings: { notifications: prefs } })
+      });
+      showMsg('notif-msg', r.ok ? 'Preferences saved.' : 'Failed to save.', r.ok);
+    } catch { showMsg('notif-msg', 'Network error.', false); }
+  });
+
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', function() {
+    localStorage.removeItem('bridge_token');
+    localStorage.removeItem('bridge_user');
+    window.location.href = '/';
+  });
+
+  // Delete data
+  document.getElementById('delete-data-btn').addEventListener('click', async function() {
+    if (!confirm('This will permanently delete all your data. Are you sure?')) return;
+    if (!confirm('Last chance. This cannot be undone.')) return;
+    try {
+      await fetch('/api/user/delete', { method: 'DELETE', headers: headers });
+      localStorage.removeItem('bridge_token');
+      localStorage.removeItem('bridge_user');
+      window.location.href = '/';
+    } catch { alert('Failed to delete account. Contact support.'); }
+  });
 })();
-  </script>
-<script src="/bridge-nav.js" defer></script>
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
 </body>
 </html>
