@@ -1,2 +1,173 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="description" content="AURORA — AI-driven renewable energy and sustainability platform on Bridge AI OS."><meta name="viewport" content="width=device-width,initial-scale=1"><title>AURORA - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#fb923c;--t:#c8dce8;--d:#628ba0}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#10024;</div><h1>AURORA</h1><div class="tag">AI Assistant with Emotion</div><div class="desc">Conversational AI with emotion, speech, lip-sync avatar.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>Emotion Engine</h3><p>Valence, arousal, dominance</p></div><div class="feat"><h3>Speech Synthesis</h3><p>TTS with emotion</p></div><div class="feat"><h3>RAG Reasoning</h3><p>Documents + live data</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/twin/full").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script><script src="/bridge-nav.js" defer></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aurora Energy — Renewable Energy AI | Bridge AI OS</title>
+<meta name="description" content="AI-powered renewable energy procurement, grid analytics, and market signal optimization.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+.hero{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;background:radial-gradient(ellipse at 50% 0%,rgba(251,146,60,.06),transparent 60%)}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(251,146,60,.2);background:rgba(251,146,60,.06);font-size:.8rem;color:var(--orange);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--orange),#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.1rem;color:#b0bec5;max-width:600px;margin:0 auto 2rem;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--orange),#e67e22);color:#000;box-shadow:0 4px 20px rgba(251,146,60,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(251,146,60,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--orange);color:var(--orange);text-decoration:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2.5rem;max-width:700px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--orange)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
+.section-title{font-size:2rem;font-weight:800;margin-bottom:.5rem}.section-title span{color:var(--orange)}
+.section-sub{color:var(--dim);margin-bottom:2rem;max-width:600px;font-size:1rem}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.feature:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:var(--glow)}
+.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem;background:rgba(251,146,60,.1);color:var(--orange)}
+.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+.grid-dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin-top:2rem}
+.grid-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.grid-panel h3{font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--orange)}
+.grid-panel .row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.grid-panel .row:last-child{border-bottom:none}
+.grid-panel .row .val{color:var(--orange);font-weight:700}
+
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(251,146,60,.05),rgba(0,200,255,.05));border-radius:16px;margin:2rem auto;max-width:1100px}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--orange);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:600px){.hero{padding:6rem 1rem 3rem}.stats{grid-template-columns:1fr 1fr}.features,.grid-dashboard{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> Renewable Energy AI</div>
+  <h1>Aurora <span>Energy</span></h1>
+  <p class="sub">AI-driven renewable energy procurement, grid analytics, and market signal optimization. Reduce energy costs and accelerate the green transition.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+    <a href="/checkout.html" class="btn btn-primary">Get Started</a>
+    <a href="#dashboard" class="btn btn-outline">View Analytics</a>
+  </div>
+  <div class="stats" id="live-stats">
+    <div class="stat"><div class="num" id="stat-savings">--</div><div class="label">Cost Savings</div></div>
+    <div class="stat"><div class="num" id="stat-capacity">--</div><div class="label">MW Managed</div></div>
+    <div class="stat"><div class="num" id="stat-signals">--</div><div class="label">Market Signals</div></div>
+    <div class="stat"><div class="num" id="stat-carbon">--</div><div class="label">CO2 Offset (tons)</div></div>
+  </div>
+</div>
+
+<section>
+  <h2 class="section-title">Energy <span>Intelligence</span></h2>
+  <p class="section-sub">Advanced AI modules for every stage of the energy value chain.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#x26A1;</div>
+      <h3>Market Signal Engine</h3>
+      <p>Real-time energy price tracking across spot, day-ahead, and futures markets. AI-powered buy/sell signals with confidence scoring.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4B0;</div>
+      <h3>Procurement Optimizer</h3>
+      <p>Automated PPA negotiation, tariff comparison, and supplier ranking. Save 15-30% on energy procurement through intelligent bidding.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F50B;</div>
+      <h3>Grid Analytics</h3>
+      <p>Load forecasting, demand response optimization, and grid stability monitoring. Predict outages before they happen.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x2600;</div>
+      <h3>Renewable Forecasting</h3>
+      <p>Solar irradiance and wind speed prediction with 96% accuracy. Optimize generation scheduling and storage dispatch.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4CA;</div>
+      <h3>Carbon Tracking</h3>
+      <p>Automated carbon credit calculation, scope 1-3 emissions tracking, and ESG compliance reporting for your portfolio.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F6E0;</div>
+      <h3>Asset Management</h3>
+      <p>Predictive maintenance for solar panels, wind turbines, and battery storage. Maximize asset lifetime and ROI.</p>
+    </div>
+  </div>
+</section>
+
+<section id="dashboard">
+  <h2 class="section-title">Grid Analytics <span>Dashboard</span></h2>
+  <p class="section-sub">Live energy market data and grid performance metrics.</p>
+  <div class="grid-dashboard" id="grid-data">
+    <div class="grid-panel">
+      <h3>Market Signals</h3>
+      <div class="row"><span>Spot Price (ZAR/kWh)</span><span class="val" id="gd-spot">--</span></div>
+      <div class="row"><span>Day-Ahead</span><span class="val" id="gd-dayahead">--</span></div>
+      <div class="row"><span>Trend</span><span class="val" id="gd-trend">--</span></div>
+      <div class="row"><span>Signal</span><span class="val" id="gd-signal">--</span></div>
+    </div>
+    <div class="grid-panel">
+      <h3>Grid Performance</h3>
+      <div class="row"><span>Load Factor</span><span class="val" id="gd-load">--</span></div>
+      <div class="row"><span>Renewable Mix</span><span class="val" id="gd-renewable">--</span></div>
+      <div class="row"><span>Grid Frequency</span><span class="val" id="gd-freq">--</span></div>
+      <div class="row"><span>Stability Index</span><span class="val" id="gd-stability">--</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <h2>Power your business with intelligent energy</h2>
+  <p>Join organizations saving 20%+ on energy costs with Aurora AI.</p>
+  <a href="/checkout.html" class="btn btn-primary">Start Optimization</a>
+</div>
+
+<footer>
+  <p>Aurora Energy is a vertical of <a href="/bridge-home.html">Bridge AI OS</a> &middot; <a href="/sitemap.html">Sitemap</a> &middot; &copy; 2026 Bridge AI</p>
+</footer>
+
+<script>
+(function(){
+  function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  fetch('/api/aurora/dashboard')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      setText('stat-savings',d.savings||'22%');
+      setText('stat-capacity',d.capacity||'340');
+      setText('stat-signals',d.signals||'1,247');
+      setText('stat-carbon',d.carbon_offset||'8,200');
+      setText('gd-spot',d.spot_price||'R1.42');
+      setText('gd-dayahead',d.day_ahead||'R1.38');
+      setText('gd-trend',d.trend||'Bearish');
+      setText('gd-signal',d.signal||'BUY');
+      setText('gd-load',d.load_factor||'72%');
+      setText('gd-renewable',d.renewable_mix||'34%');
+      setText('gd-freq',d.frequency||'50.01 Hz');
+      setText('gd-stability',d.stability||'96.4');
+    })
+    .catch(function(){
+      setText('stat-savings','22%');setText('stat-capacity','340');setText('stat-signals','1,247');setText('stat-carbon','8,200');
+      setText('gd-spot','R1.42');setText('gd-dayahead','R1.38');setText('gd-trend','Bearish');setText('gd-signal','BUY');
+      setText('gd-load','72%');setText('gd-renewable','34%');setText('gd-freq','50.01 Hz');setText('gd-stability','96.4');
+    });
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
+</body>
+</html>

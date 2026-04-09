@@ -2819,6 +2819,48 @@ try {
   console.log('[BRAIN] Agent Registry ACTIVE — 52 agents');
 } catch (e) { console.warn('[BRAIN] Agent registry failed:', e.message); }
 
+// ── PAGE ECONOMICS — track value generated per page ─────────────────────────
+try {
+  const pageEcon = require('./lib/page-economics');
+  app.post('/api/pages/track', (req, res) => {
+    try {
+      const { page, action, user_id, brdg_value } = req.body || {};
+      if (!page || !action) return res.status(400).json({ ok: false, error: 'page and action are required' });
+      const record = pageEcon.recordPageValue(page, user_id, action, brdg_value);
+      res.json({ ok: true, record });
+    } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
+  });
+  app.get('/api/pages/metrics', (_req, res) => {
+    try {
+      const metrics = pageEcon.getPageMetrics();
+      res.json({ ok: true, ...metrics });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+  app.get('/api/pages/top', (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit) || 10;
+      const top = pageEcon.getTopPages(limit);
+      res.json({ ok: true, pages: top, count: top.length });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+  app.get('/api/pages/recent', (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit) || 50;
+      const recent = pageEcon.getRecentActivity(limit);
+      res.json({ ok: true, activity: recent, count: recent.length });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+  app.get('/api/pages/user/:userId', (req, res) => {
+    try {
+      const pages = pageEcon.getUserPageValue(req.params.userId);
+      res.json({ ok: true, pages, count: pages.length });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+  console.log('[BRAIN] Page economics ACTIVE — tracking BRDG value per page');
+} catch (e) {
+  console.warn('[BRAIN] Page economics failed to load:', e.message);
+}
+
 // ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
 app.all('/api/*path', (req, res) => {
   res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });

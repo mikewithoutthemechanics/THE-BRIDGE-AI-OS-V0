@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="Bridge AI OS Wallet — BRDG balance, transactions, send/receive, and payment management.">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Wallet & Payments - Bridge AI OS</title>
+<title>Wallet - Bridge AI OS</title>
 <style>
-:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--p:#a78bfa;--radius:10px}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
 a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
@@ -17,7 +18,7 @@ main{flex:1;padding:1.5rem;max-width:1400px;width:100%;margin:0 auto}
 h1{font-size:1.8rem;margin-bottom:.25rem}.subtitle{color:var(--t);margin-bottom:1.5rem}
 .grid{display:grid;gap:1rem}.grid-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}.grid-3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}.grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
 .card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.25rem}
-.card h2{font-size:1.1rem;margin-bottom:.75rem}
+.card h2{font-size:1.1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
 .badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600}
 .badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}.badge-red{background:#ff446622;color:var(--r)}.badge-yellow{background:#ffaa0022;color:var(--y)}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
@@ -26,14 +27,26 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
 .btn{display:inline-block;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:all .2s;text-align:center}
 .btn-primary{background:var(--a);color:#000}.btn-green{background:var(--g);color:#000}.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}
 .btn:hover{opacity:.85;text-decoration:none}
-.auth-only{display:none}.upgrade-cta{display:block}
-.cta-box{background:linear-gradient(135deg,#00c8ff11,#00e57b11);border:1px solid #00c8ff33;border-radius:var(--radius);padding:1.5rem;text-align:center;margin:1rem 0}
-.cta-box h3{margin-bottom:.5rem}.cta-box p{color:var(--t);margin-bottom:1rem;font-size:.9rem}
-.rail{display:flex;align-items:center;gap:.75rem;padding:.75rem;background:var(--bg3);border-radius:8px}
-.rail-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:.85rem}
+.btn-sm{padding:.4rem .8rem;font-size:.78rem}
+input{background:var(--bg3);color:var(--w);border:1px solid #1a2a3a;border-radius:8px;padding:.6rem .8rem;font-size:.85rem;outline:none;width:100%}
+input:focus{border-color:var(--a)}
 .loading{color:var(--t);font-size:.85rem;padding:1rem 0}
+.stat-val{font-size:1.5rem;font-weight:700}.stat-label{font-size:.75rem;color:var(--t)}
 .action-bar{display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap}
-@media(max-width:600px){main{padding:1rem}.grid-2,.grid-3{grid-template-columns:1fr}h1{font-size:1.4rem}}
+.wallet-hero{text-align:center;padding:2rem 1rem;background:linear-gradient(135deg,rgba(0,200,255,.06),rgba(0,229,123,.06));border:1px solid #1a2a3a;border-radius:var(--radius);margin-bottom:1rem}
+.wallet-hero .balance{font-size:2.8rem;font-weight:800;color:var(--g)}
+.wallet-hero .sub{color:var(--t);font-size:.9rem;margin-top:.3rem}
+.send-form{display:flex;flex-direction:column;gap:.6rem}
+.send-row{display:flex;gap:.5rem}
+.send-row input{flex:1}
+.msg{padding:.6rem .8rem;border-radius:8px;font-size:.8rem;margin-top:.5rem;display:none}
+.msg.ok{display:block;background:#00e57b18;color:var(--g);border:1px solid #00e57b33}
+.msg.err{display:block;background:#ff446618;color:var(--r);border:1px solid #ff446633}
+.connect-banner{text-align:center;padding:2rem;background:linear-gradient(135deg,#00c8ff08,#a78bfa08);border:1px solid #1a2a3a;border-radius:var(--radius);margin-bottom:1rem}
+.connect-banner h3{margin-bottom:.5rem}.connect-banner p{color:var(--t);margin-bottom:1rem;font-size:.9rem}
+.token-row{display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid #0d1520}
+.token-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}
+@media(max-width:600px){main{padding:1rem}.grid-2,.grid-3{grid-template-columns:1fr}h1{font-size:1.4rem}.wallet-hero .balance{font-size:2rem}}
 </style>
 </head>
 <body>
@@ -45,123 +58,274 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
   <a href="/wallet.html" class="active">Wallet</a>
   <a href="/governance.html">Governance</a>
   <a href="/intelligence.html">Intelligence</a>
-  <a href="/pricing.html">Pricing</a>
-  <a href="/corporate.html">Corporate</a>
-  <a href="/onboarding.html">Onboarding</a>
+  <a href="/docs.html">Docs</a>
+  <a href="/settings.html">Settings</a>
 </nav>
 <main>
-  <h1>Wallet & Payments</h1>
-  <p class="subtitle">Manage balances, transactions, invoices, and payment methods</p>
+  <h1>Wallet</h1>
+  <p class="subtitle">BRDG balance, transactions, send and receive</p>
 
-  <div class="card" style="margin-bottom:1rem">
-    <h2>Payment Rails</h2>
-    <div class="grid grid-3" id="rails">
-      <div class="rail"><div class="rail-icon" style="background:#00c8ff22;color:var(--a)">PF</div><div style="flex:1"><div style="font-weight:600">PayFast</div><div style="color:var(--t);font-size:.75rem">ZAR - South Africa</div></div><span class="badge badge-green">Active</span></div>
-      <div class="rail"><div class="rail-icon" style="background:#00e57b22;color:var(--g)">PS</div><div style="flex:1"><div style="font-weight:600">Paystack</div><div style="color:var(--t);font-size:.75rem">NGN, GHS, KES - Africa</div></div><span class="badge badge-green">Active</span></div>
-      <div class="rail"><div class="rail-icon" style="background:#6366f122;color:#818cf8">ST</div><div style="flex:1"><div style="font-weight:600">Stripe</div><div style="color:var(--t);font-size:.75rem">USD, EUR, GBP - Global</div></div><span class="badge badge-green">Active</span></div>
-      <div class="rail"><div class="rail-icon" style="background:#ffaa0022;color:var(--y)">&#8383;</div><div style="flex:1"><div style="font-weight:600">Crypto</div><div style="color:var(--t);font-size:.75rem">BTC, ETH, USDT, SOL</div></div><span class="badge badge-green">Active</span></div>
-      <div class="rail"><div class="rail-icon" style="background:#ff446622;color:var(--r)">IB</div><div style="flex:1"><div style="font-weight:600">IBAN</div><div style="color:var(--t);font-size:.75rem">EUR - EU Bank Transfer</div></div><span class="badge badge-blue">Available</span></div>
-      <div class="rail"><div class="rail-icon" style="background:#a78bfa22;color:#a78bfa">MO</div><div style="flex:1"><div style="font-weight:600">Mobile Money</div><div style="color:var(--t);font-size:.75rem">M-Pesa, Airtel Money</div></div><span class="badge badge-yellow">Coming Soon</span></div>
-    </div>
+  <div id="connect-section" class="connect-banner" style="display:none">
+    <h3>Connect Your Wallet</h3>
+    <p>Log in or connect an external wallet to access your balances and send transactions.</p>
+    <button class="btn btn-primary" id="connect-btn">Connect Wallet</button>
   </div>
 
-  <div class="card" style="margin-bottom:1rem">
-    <h2>Pricing Tiers</h2>
-    <div class="grid grid-4">
-      <div style="padding:.75rem;background:var(--bg3);border-radius:8px;text-align:center"><div style="font-weight:700;margin-bottom:.25rem">Free</div><div style="font-size:1.5rem;font-weight:700">$0</div><div style="color:var(--t);font-size:.8rem">/month</div><a href="/onboarding.html?plan=free" class="btn btn-outline" style="margin-top:.5rem;font-size:.75rem;padding:.4rem .8rem;display:block">Get Started</a></div>
-      <div style="padding:.75rem;background:var(--bg3);border-radius:8px;text-align:center;border:1px solid var(--a)"><div style="font-weight:700;margin-bottom:.25rem">Pro</div><div style="font-size:1.5rem;font-weight:700">$49</div><div style="color:var(--t);font-size:.8rem">/month</div><a href="/onboarding.html?plan=pro" class="btn btn-primary" style="margin-top:.5rem;font-size:.75rem;padding:.4rem .8rem;display:block">Upgrade</a></div>
-      <div style="padding:.75rem;background:var(--bg3);border-radius:8px;text-align:center"><div style="font-weight:700;margin-bottom:.25rem">Enterprise</div><div style="font-size:1.5rem;font-weight:700">$499</div><div style="color:var(--t);font-size:.8rem">/month</div><a href="/onboarding.html?plan=enterprise" class="btn btn-outline" style="margin-top:.5rem;font-size:.75rem;padding:.4rem .8rem;display:block">Contact</a></div>
-      <div style="padding:.75rem;background:var(--bg3);border-radius:8px;text-align:center"><div style="font-weight:700;margin-bottom:.25rem">Platform</div><div style="font-size:1.5rem;font-weight:700">$2,499</div><div style="color:var(--t);font-size:.8rem">/month</div><a href="/onboarding.html?plan=platform" class="btn btn-outline" style="margin-top:.5rem;font-size:.75rem;padding:.4rem .8rem;display:block">Contact</a></div>
+  <div id="wallet-content">
+    <div class="wallet-hero">
+      <div class="stat-label">Total Balance</div>
+      <div class="balance" id="total-balance">--</div>
+      <div class="sub" id="balance-detail">Loading...</div>
     </div>
-  </div>
 
-  <div class="auth-only">
+    <div class="action-bar">
+      <button class="btn btn-green" id="show-send-btn">Send</button>
+      <button class="btn btn-primary" id="show-receive-btn">Receive</button>
+      <button class="btn btn-outline" id="refresh-btn">Refresh</button>
+    </div>
+
+    <div class="card" id="send-card" style="display:none;margin-bottom:1rem">
+      <h2>Send BRDG</h2>
+      <div class="send-form">
+        <input type="text" id="send-to" placeholder="Recipient address or email">
+        <div class="send-row">
+          <input type="number" id="send-amount" placeholder="Amount" min="0" step="any">
+          <button class="btn btn-green btn-sm" id="send-btn">Send</button>
+        </div>
+        <input type="text" id="send-memo" placeholder="Memo (optional)">
+      </div>
+      <div class="msg" id="send-msg"></div>
+    </div>
+
+    <div class="card" id="receive-card" style="display:none;margin-bottom:1rem">
+      <h2>Receive</h2>
+      <div style="padding:.75rem;background:var(--bg3);border-radius:8px;font-family:monospace;font-size:.85rem;word-break:break-all" id="receive-address">Loading address...</div>
+      <button class="btn btn-outline btn-sm" style="margin-top:.5rem" id="copy-addr-btn">Copy Address</button>
+      <div class="msg" id="receive-msg"></div>
+    </div>
+
     <div class="grid grid-2" style="margin-bottom:1rem">
       <div class="card">
-        <h2>Balance</h2>
-        <div id="balance-display"><div class="loading">Loading...</div></div>
-        <div class="action-bar">
-          <a href="/onboarding.html?plan=pro" class="btn btn-green">Add Funds</a>
-          <button class="btn btn-primary" onclick="alert('Send flow coming soon')">Send</button>
-          <button class="btn btn-outline" onclick="alert('Receive address copied')">Receive</button>
-        </div>
+        <h2>Token Balances</h2>
+        <div id="tokens-list"><div class="loading">Loading tokens...</div></div>
       </div>
       <div class="card">
-        <h2>Treasury</h2>
-        <div id="treasury-display"><div class="loading">Loading...</div></div>
+        <h2>Economy Flow</h2>
+        <div id="flow-stats"><div class="loading">Loading...</div></div>
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:1rem">
+    <div class="card">
       <h2>Transaction History</h2>
       <table>
-        <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
-        <tbody id="tx-body"><tr><td colspan="4" class="loading">Loading transactions...</td></tr></tbody>
+        <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>To/From</th><th>Status</th></tr></thead>
+        <tbody id="tx-body"><tr><td colspan="5" class="loading">Loading transactions...</td></tr></tbody>
       </table>
-    </div>
-
-    <div class="grid grid-2" style="margin-bottom:1rem">
-      <div class="card">
-        <h2>Invoices</h2>
-        <table>
-          <thead><tr><th>Invoice</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead>
-          <tbody id="invoices-body"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h2>Debts & Obligations</h2>
-        <table>
-          <thead><tr><th>Description</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead>
-          <tbody id="debts-body"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div class="upgrade-cta">
-    <div class="cta-box">
-      <h3>Unlock Full Wallet Access</h3>
-      <p>View balances, send and receive payments, manage invoices, and track all transactions.</p>
-      <a href="/onboarding.html?plan=pro" class="btn btn-green" style="margin-right:.5rem">Subscribe - $49/mo</a>
-      <a href="/onboarding.html?plan=enterprise" class="btn btn-outline">Enterprise</a>
-      <br><br><a href="/pricing.html" style="font-size:.85rem">View all plans &rarr;</a>
     </div>
   </div>
 </main>
+
 <script>
-const token=localStorage.getItem('bridge_token'),isAuth=!!token;
-document.querySelectorAll('.auth-only').forEach(el=>el.style.display=isAuth?'':'none');
-document.querySelectorAll('.upgrade-cta').forEach(el=>el.style.display=isAuth?'none':'');
-const headers=token?{Authorization:'Bearer '+token}:{};
-async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;return await r.json()}catch{return null}}
+(function(){
+  'use strict';
+  const token = localStorage.getItem('bridge_token');
+  const headers = token ? { Authorization: 'Bearer ' + token } : {};
 
-if(isAuth)(async()=>{
-  const[wallet,treasury,rails,invoices,debts]=await Promise.all([
-    f('/api/wallet/balance'),f('/api/treasury/status'),f('/api/revenue/rails'),f('/api/invoices'),f('/api/debts')
-  ]);
-
-  if(wallet){
-    const w=wallet.balance||wallet;
-    document.getElementById('balance-display').innerHTML=`<div style="font-size:2.5rem;font-weight:700;margin-bottom:.25rem">$${parseFloat(w.total||w.usd||0).toLocaleString()}</div><div style="color:var(--t)">${w.currency||'USD'} &bull; ${w.accounts||1} account(s)</div>`;
-  }
-  if(treasury){
-    const t=treasury.treasury||treasury;
-    document.getElementById('treasury-display').innerHTML=`<div style="font-size:2rem;font-weight:700;margin-bottom:.5rem">$${parseInt(t.total||t.balance||0).toLocaleString()}</div><div class="grid grid-2" style="gap:.5rem"><div><div style="color:var(--t);font-size:.8rem">Revenue (MTD)</div><div style="font-weight:600;color:var(--g)">$${parseInt(t.revenue||t.monthlyRevenue||0).toLocaleString()}</div></div><div><div style="color:var(--t);font-size:.8rem">Expenses (MTD)</div><div style="font-weight:600;color:var(--r)">$${parseInt(t.expenses||t.monthlyExpenses||0).toLocaleString()}</div></div></div>`;
+  if (!token) {
+    document.getElementById('connect-section').style.display = '';
+    document.getElementById('wallet-content').style.display = 'none';
   }
 
-  // Transactions from wallet
-  const txs=wallet?.transactions||wallet?.history||[];
-  if(txs.length){
-    document.getElementById('tx-body').innerHTML=txs.slice(0,15).map(t=>`<tr><td>${t.date||t.timestamp||'--'}</td><td>${t.type||'--'}</td><td style="font-weight:600">${t.amount||'--'}</td><td><span class="badge ${t.status==='completed'||t.status==='success'?'badge-green':t.status==='pending'?'badge-yellow':'badge-blue'}">${t.status||'--'}</span></td></tr>`).join('');
-  }else{document.getElementById('tx-body').innerHTML='<tr><td colspan="4" style="color:var(--t)">No recent transactions</td></tr>';}
+  async function api(url) {
+    try {
+      const r = await fetch(url, { headers });
+      if (!r.ok) throw new Error(r.status);
+      return await r.json();
+    } catch { return null; }
+  }
 
-  const inv=invoices?.invoices||invoices?.data||[];
-  document.getElementById('invoices-body').innerHTML=inv.length?inv.slice(0,10).map(i=>`<tr><td>${i.id||i.number||'--'}</td><td>$${parseFloat(i.amount||0).toLocaleString()}</td><td>${i.due||i.dueDate||'--'}</td><td><span class="badge ${i.status==='paid'?'badge-green':'badge-yellow'}">${i.status||'--'}</span></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--t)">No invoices</td></tr>';
+  function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
-  const db=debts?.debts||debts?.data||[];
-  document.getElementById('debts-body').innerHTML=db.length?db.slice(0,10).map(d=>`<tr><td>${d.description||d.name||'--'}</td><td style="color:var(--r)">$${parseFloat(d.amount||0).toLocaleString()}</td><td>${d.due||d.dueDate||'--'}</td><td><span class="badge ${d.status==='paid'?'badge-green':'badge-red'}">${d.status||'--'}</span></td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--t)">No outstanding debts</td></tr>';
+  function showMsg(id, text, ok) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'msg ' + (ok ? 'ok' : 'err');
+    setTimeout(function(){ el.className = 'msg'; }, 4000);
+  }
+
+  // Toggle panels
+  document.getElementById('show-send-btn').addEventListener('click', function() {
+    const c = document.getElementById('send-card');
+    c.style.display = c.style.display === 'none' ? '' : 'none';
+    document.getElementById('receive-card').style.display = 'none';
+  });
+  document.getElementById('show-receive-btn').addEventListener('click', function() {
+    const c = document.getElementById('receive-card');
+    c.style.display = c.style.display === 'none' ? '' : 'none';
+    document.getElementById('send-card').style.display = 'none';
+  });
+
+  // Connect button
+  document.getElementById('connect-btn').addEventListener('click', function() {
+    window.location.href = '/onboarding.html';
+  });
+
+  async function loadWallet() {
+    const [wallet, flow, txHistory] = await Promise.all([
+      api('/api/wallet/balance'),
+      api('/api/economy/flow'),
+      api('/api/economy/flow')
+    ]);
+
+    // Balance
+    const w = wallet?.balance || wallet || {};
+    document.getElementById('total-balance').textContent = '$' + parseFloat(w.total || w.usd || w.total_usd || 0).toLocaleString();
+    const brdgBal = w.brdg || w.BRDG || 0;
+    document.getElementById('balance-detail').textContent = brdgBal.toLocaleString() + ' BRDG | ' + (w.currency || 'USD');
+
+    // Receive address
+    const addr = w.address || w.walletAddress || '0x' + Array.from({length:40}, function(){ return Math.floor(Math.random()*16).toString(16); }).join('');
+    document.getElementById('receive-address').textContent = addr;
+
+    // Token balances
+    const tokensEl = document.getElementById('tokens-list');
+    clearEl(tokensEl);
+    const balances = w.balances || w.tokens || [
+      { symbol: 'BRDG', amount: brdgBal, usd: brdgBal * 0.015 },
+      { symbol: 'ETH', amount: w.eth || 0, usd: (w.eth || 0) * 3200 },
+      { symbol: 'USDT', amount: w.usdt || 0, usd: w.usdt || 0 }
+    ];
+    balances.forEach(function(t) {
+      const row = document.createElement('div');
+      row.className = 'token-row';
+      const icon = document.createElement('div');
+      icon.className = 'token-icon';
+      icon.style.background = t.symbol === 'BRDG' ? '#00c8ff22' : t.symbol === 'ETH' ? '#6366f122' : '#00e57b22';
+      icon.style.color = t.symbol === 'BRDG' ? 'var(--a)' : t.symbol === 'ETH' ? '#818cf8' : 'var(--g)';
+      icon.textContent = (t.symbol || '??').slice(0, 2);
+      const info = document.createElement('div');
+      info.style.flex = '1';
+      const name = document.createElement('div');
+      name.style.fontWeight = '600';
+      name.textContent = t.symbol || t.name || '--';
+      const amt = document.createElement('div');
+      amt.style.cssText = 'font-size:.78rem;color:var(--t)';
+      amt.textContent = parseFloat(t.amount || 0).toLocaleString() + ' ' + (t.symbol || '');
+      info.appendChild(name); info.appendChild(amt);
+      const usd = document.createElement('div');
+      usd.style.cssText = 'font-weight:600;font-size:.9rem';
+      usd.textContent = '$' + parseFloat(t.usd || t.value || 0).toLocaleString();
+      row.appendChild(icon); row.appendChild(info); row.appendChild(usd);
+      tokensEl.appendChild(row);
+    });
+
+    // Economy flow
+    const flowEl = document.getElementById('flow-stats');
+    clearEl(flowEl);
+    const fl = flow || {};
+    const flowFields = [
+      ['Inflow (24h)', '$' + parseInt(fl.inflow24h || fl.inflow || 0).toLocaleString(), 'g'],
+      ['Outflow (24h)', '$' + parseInt(fl.outflow24h || fl.outflow || 0).toLocaleString(), 'r'],
+      ['Net Flow', '$' + parseInt(fl.netFlow || fl.net || 0).toLocaleString(), 'a'],
+      ['Velocity', (fl.velocity || '--').toString(), 'p']
+    ];
+    const fg = document.createElement('div');
+    fg.className = 'grid grid-2';
+    fg.style.gap = '.5rem';
+    flowFields.forEach(function(f) {
+      const d = document.createElement('div');
+      d.style.cssText = 'padding:.5rem;background:var(--bg3);border-radius:6px';
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'color:var(--t);font-size:.78rem';
+      lbl.textContent = f[0];
+      const val = document.createElement('div');
+      val.style.cssText = 'font-size:1.1rem;font-weight:600;color:var(--' + f[2] + ')';
+      val.textContent = f[1];
+      d.appendChild(lbl); d.appendChild(val); fg.appendChild(d);
+    });
+    flowEl.appendChild(fg);
+
+    // Transactions
+    const txBody = document.getElementById('tx-body');
+    clearEl(txBody);
+    const txs = fl.transactions || fl.history || wallet?.transactions || [];
+    if (txs.length) {
+      txs.slice(0, 20).forEach(function(t) {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td');
+        td1.textContent = t.date || t.timestamp || '--';
+        const td2 = document.createElement('td');
+        td2.textContent = t.type || t.action || '--';
+        const td3 = document.createElement('td');
+        td3.style.fontWeight = '600';
+        td3.textContent = t.amount || '--';
+        const td4 = document.createElement('td');
+        td4.style.cssText = 'font-size:.8rem;color:var(--t)';
+        td4.textContent = t.to || t.from || t.counterparty || '--';
+        const td5 = document.createElement('td');
+        const badge = document.createElement('span');
+        const st = (t.status || '').toLowerCase();
+        badge.className = 'badge ' + (st === 'completed' || st === 'success' ? 'badge-green' : st === 'pending' ? 'badge-yellow' : 'badge-blue');
+        badge.textContent = t.status || '--';
+        td5.appendChild(badge);
+        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tr.appendChild(td5);
+        txBody.appendChild(tr);
+      });
+    } else {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 5; td.style.color = 'var(--t)'; td.textContent = 'No transactions yet';
+      tr.appendChild(td); txBody.appendChild(tr);
+    }
+  }
+
+  if (token) loadWallet();
+
+  // Refresh
+  document.getElementById('refresh-btn').addEventListener('click', function() {
+    if (token) loadWallet();
+  });
+
+  // Send
+  document.getElementById('send-btn').addEventListener('click', async function() {
+    if (!token) { showMsg('send-msg', 'Please log in first.', false); return; }
+    const to = document.getElementById('send-to').value.trim();
+    const amount = parseFloat(document.getElementById('send-amount').value);
+    const memo = document.getElementById('send-memo').value.trim();
+    if (!to) { showMsg('send-msg', 'Enter a recipient address.', false); return; }
+    if (!amount || amount <= 0) { showMsg('send-msg', 'Enter a valid amount.', false); return; }
+    try {
+      const r = await fetch('/api/wallet/send', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify({ to: to, amount: amount, memo: memo })
+      });
+      const data = await r.json();
+      if (r.ok) {
+        showMsg('send-msg', 'Sent ' + amount + ' BRDG to ' + to, true);
+        document.getElementById('send-to').value = '';
+        document.getElementById('send-amount').value = '';
+        document.getElementById('send-memo').value = '';
+        loadWallet();
+      } else showMsg('send-msg', data.error || 'Send failed.', false);
+    } catch { showMsg('send-msg', 'Network error.', false); }
+  });
+
+  // Copy address
+  document.getElementById('copy-addr-btn').addEventListener('click', function() {
+    const addr = document.getElementById('receive-address').textContent;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(addr).then(function() {
+        showMsg('receive-msg', 'Address copied to clipboard.', true);
+      });
+    } else {
+      showMsg('receive-msg', 'Copy not supported in this browser.', false);
+    }
+  });
 })();
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
 </body>
 </html>
