@@ -81,6 +81,13 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
+// ── ACCESS CONTROL — tier-based page guard ──────────────────────────────────
+try {
+  const { pageGuard } = require('./middleware/access-control');
+  app.use(pageGuard());
+  console.log('[GATEWAY] Access control (4-tier page guard) ACTIVE');
+} catch(e) { console.warn('[GATEWAY] Access control not loaded:', e.message); }
+
 // Serve only the public/ directory — never expose the project root (security: #31)
 app.use(express.static(path.join(ROOT, 'public')));
 
