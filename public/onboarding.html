@@ -274,7 +274,7 @@ async function doGoogle() {
   clearMsg();
   if (!sb) { showMsg('error', 'Auth not initialized'); return; }
   // Store redirect in sessionStorage before OAuth (query params get lost)
-  sessionStorage.setItem('auth_redirect', safeRedirect || '/console.html');
+  sessionStorage.setItem('auth_redirect', safeRedirect || '/portal.html');
   try {
     var res = await sb.auth.signInWithOAuth({
       provider: 'google',
@@ -294,7 +294,7 @@ async function doGithub() {
   clearMsg();
   if (!sb) { showMsg('error', 'Auth not initialized'); return; }
   // Store redirect in sessionStorage before OAuth (query params get lost)
-  sessionStorage.setItem('auth_redirect', safeRedirect || '/console.html');
+  sessionStorage.setItem('auth_redirect', safeRedirect || '/portal.html');
   try {
     var res = await sb.auth.signInWithOAuth({
       provider: 'github',

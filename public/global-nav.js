@@ -24,7 +24,7 @@
   if (_token && _user) {
     _role = _user.role || 'user';
     _authLabel = (_user.name || _user.email || '').split(' ')[0] || 'Account';
-    _authHref = '/console.html';
+    _authHref = '/portal.html';
   }
 
   var isAuthenticated = !!(_token && _user);
