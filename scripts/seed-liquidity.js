@@ -98,7 +98,7 @@ async function main() {
   console.log('\n[2/3] Approving BRDG on SyncSwap Router...');
   const allowance = await brdg.allowance(wallet.address, SYNCSWAP_ROUTER);
   if (allowance < BRDG_AMOUNT) {
-    const approveTx = await brdg.approve(SYNCSWAP_ROUTER, ethers.MaxUint256);
+    const approveTx = await brdg.approve(SYNCSWAP_ROUTER, BRDG_AMOUNT);
     await approveTx.wait();
     console.log('  Approved:', approveTx.hash);
   } else {
@@ -119,11 +119,14 @@ async function main() {
   // data = abi.encode(address) — the recipient of LP tokens
   const addData = ethers.AbiCoder.defaultAbiCoder().encode(['address'], [wallet.address]);
 
+  // Calculate 95% of expected LP tokens as minimum to prevent sandwich attacks
+  const minLiquidity = BRDG_AMOUNT * 95n / 100n; // 95% floor
+
   const addTx = await router.addLiquidity2(
     poolAddress,
     inputs,
     addData,
-    0,                    // minLiquidity (0 for initial seed)
+    minLiquidity,         // minLiquidity (95% floor to prevent sandwich attacks)
     ethers.ZeroAddress,   // no callback
     '0x',                 // no callbackData
     { value: ETH_AMOUNT } // send ETH with tx

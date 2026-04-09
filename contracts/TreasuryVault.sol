@@ -54,10 +54,14 @@ contract TreasuryVault is Ownable {
     /// @notice Deposit BRDG tokens — auto-splits into 4 buckets.
     function depositBrdg(uint256 amount) external {
         brdg.safeTransferFrom(msg.sender, address(this), amount);
-        brdgBuckets.ops       += (amount * OPS_BPS)     / 10000;
-        brdgBuckets.liquidity += (amount * LIQ_BPS)     / 10000;
-        brdgBuckets.reserve   += (amount * RESERVE_BPS) / 10000;
-        brdgBuckets.founder   += (amount * FOUNDER_BPS) / 10000;
+        uint256 ops = (amount * OPS_BPS) / 10000;
+        uint256 liq = (amount * LIQ_BPS) / 10000;
+        uint256 res = (amount * RESERVE_BPS) / 10000;
+        uint256 fnd = amount - ops - liq - res; // captures remainder to prevent dust loss
+        brdgBuckets.ops       += ops;
+        brdgBuckets.liquidity += liq;
+        brdgBuckets.reserve   += res;
+        brdgBuckets.founder   += fnd;
         totalBrdgDeposited += amount;
         emit BrdgDeposited(msg.sender, amount);
     }
@@ -103,10 +107,14 @@ contract TreasuryVault is Ownable {
     }
 
     function _splitEth(uint256 amount) internal {
-        ethBuckets.ops       += (amount * OPS_BPS)     / 10000;
-        ethBuckets.liquidity += (amount * LIQ_BPS)     / 10000;
-        ethBuckets.reserve   += (amount * RESERVE_BPS) / 10000;
-        ethBuckets.founder   += (amount * FOUNDER_BPS) / 10000;
+        uint256 ops = (amount * OPS_BPS) / 10000;
+        uint256 liq = (amount * LIQ_BPS) / 10000;
+        uint256 res = (amount * RESERVE_BPS) / 10000;
+        uint256 fnd = amount - ops - liq - res; // captures remainder to prevent dust loss
+        ethBuckets.ops       += ops;
+        ethBuckets.liquidity += liq;
+        ethBuckets.reserve   += res;
+        ethBuckets.founder   += fnd;
         totalEthDeposited += amount;
     }
 }
