@@ -77,7 +77,10 @@ async function verifyTables() {
     'payments', 'crm_leads', 'crm_interactions', 'crm_campaigns',
     'email_outreach', 'email_sent', 'email_opens', 'email_clicks',
     'email_followups', 'osint_registry', 'empeleni_clients',
-    'empeleni_payments', 'commerce_index', 'external_agents'
+    'empeleni_payments', 'commerce_index', 'external_agents',
+    'banks', 'bank_transactions', 'system_state', 'transactions',
+    'agent_runs', 'ap2_offers', 'ap2_payments', 'ap2_receipts',
+    'affiliate_clicks', 'secrets_vault', 'notion_sync_log'
   ];
 
   let found = 0;
