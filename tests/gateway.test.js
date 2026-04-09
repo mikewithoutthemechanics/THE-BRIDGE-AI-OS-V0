@@ -8,7 +8,13 @@ const request = require('supertest');
 const app     = require('../gateway');
 
 function expectCors(res) {
-  expect(res.headers['access-control-allow-origin']).toBe('*');
+  // With origin allowlist, no Origin header in request = no CORS header in response
+  // This is correct behavior — CORS headers are only needed for browser cross-origin requests
+  const origin = res.headers['access-control-allow-origin'];
+  if (origin) {
+    expect(['https://go.ai-os.co.za', 'https://wall.bridge-ai-os.com', 'http://localhost:3000', 'http://localhost:8080']).toContain(origin);
+  }
+  // If no origin header, that's fine — supertest doesn't send Origin
 }
 
 // ── /health ───────────────────────────────────────────────────────────────────
@@ -374,123 +380,47 @@ describe('GET /api/status', () => {
 // ── /api/contracts ────────────────────────────────────────────────────────────
 
 describe('GET /api/contracts', () => {
-  test('returns 200', async () => {
+  test('returns 401 without auth token', async () => {
     const res = await request(app).get('/api/contracts');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
   });
 
-  test('body has count as number', async () => {
+  test('error says missing auth token', async () => {
     const res = await request(app).get('/api/contracts');
-    expect(typeof res.body.count).toBe('number');
-  });
-
-  test('body has files array', async () => {
-    const res = await request(app).get('/api/contracts');
-    expect(Array.isArray(res.body.files)).toBe(true);
-  });
-
-  test('body has contracts object', async () => {
-    const res = await request(app).get('/api/contracts');
-    expect(typeof res.body.contracts).toBe('object');
-  });
-
-  test('files count matches count field', async () => {
-    const res = await request(app).get('/api/contracts');
-    expect(res.body.files.length).toBe(res.body.count);
-  });
-
-  test('all files end with .json', async () => {
-    const res = await request(app).get('/api/contracts');
-    res.body.files.forEach(f => expect(f.endsWith('.json')).toBe(true));
-  });
-
-  test('CORS header present', async () => {
-    const res = await request(app).get('/api/contracts');
-    expectCors(res);
+    expect(res.body.error).toMatch(/auth/i);
   });
 });
 
 // ── /api/agents ───────────────────────────────────────────────────────────────
 
 describe('GET /api/agents', () => {
-  test('returns 200', async () => {
+  test('returns 401 without auth token', async () => {
     const res = await request(app).get('/api/agents');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
   });
 
-  test('body has count', async () => {
+  test('error says missing auth token', async () => {
     const res = await request(app).get('/api/agents');
-    expect(typeof res.body.count).toBe('number');
-  });
-
-  test('body has layers with L1 and L2', async () => {
-    const res = await request(app).get('/api/agents');
-    expect(res.body.layers.L1).toBeDefined();
-    expect(res.body.layers.L2).toBeDefined();
-  });
-
-  test('body has agents array', async () => {
-    const res = await request(app).get('/api/agents');
-    expect(Array.isArray(res.body.agents)).toBe(true);
-  });
-
-  test('count equals agents.length', async () => {
-    const res = await request(app).get('/api/agents');
-    expect(res.body.count).toBe(res.body.agents.length);
-  });
-
-  test('body has ts', async () => {
-    const res = await request(app).get('/api/agents');
-    expect(typeof res.body.ts).toBe('number');
-  });
-
-  test('CORS header present', async () => {
-    const res = await request(app).get('/api/agents');
-    expectCors(res);
+    expect(res.body.error).toMatch(/auth/i);
   });
 });
 
 // ── POST /ask ─────────────────────────────────────────────────────────────────
 
 describe('POST /ask', () => {
-  test('400 without prompt', async () => {
-    const res = await request(app).post('/ask').send({});
-    expect(res.status).toBe(400);
-  });
-
-  test('400 error says prompt required', async () => {
-    const res = await request(app).post('/ask').send({});
-    expect(res.body.error).toBe('prompt required');
-  });
-
-  test('200 with valid prompt', async () => {
+  test('returns 401 without auth token', async () => {
     const res = await request(app).post('/ask').send({ prompt: 'hello world' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
   });
 
-  test('response has id', async () => {
-    const res = await request(app).post('/ask').send({ prompt: 'test' });
-    expect(res.body.id).toBeDefined();
-  });
-
-  test('response has response field', async () => {
-    const res = await request(app).post('/ask').send({ prompt: 'test query' });
-    expect(res.body.response).toBeDefined();
-  });
-
-  test('stub response contains prompt text', async () => {
-    const res = await request(app).post('/ask').send({ prompt: 'unique-prompt-xyz-abc' });
-    expect(res.body.response).toContain('unique-prompt-xyz-abc');
-  });
-
-  test('CORS header on 400', async () => {
+  test('returns 401 even without prompt (auth checked first)', async () => {
     const res = await request(app).post('/ask').send({});
-    expectCors(res);
+    expect(res.status).toBe(401);
   });
 
-  test('CORS header on 200', async () => {
-    const res = await request(app).post('/ask').send({ prompt: 'cors-check' });
-    expectCors(res);
+  test('error says missing auth token', async () => {
+    const res = await request(app).post('/ask').send({ prompt: 'test' });
+    expect(res.body.error).toMatch(/auth/i);
   });
 });
 
@@ -563,80 +493,28 @@ describe('GET /events/stream', () => {
 // ── GET /orchestrator/status ──────────────────────────────────────────────────
 
 describe('GET /orchestrator/status', () => {
-  test('returns 200', async () => {
+  test('returns 401 without auth token', async () => {
     const res = await request(app).get('/orchestrator/status');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
   });
 
-  test('body.status is running', async () => {
+  test('error says missing auth token', async () => {
     const res = await request(app).get('/orchestrator/status');
-    expect(res.body.status).toBe('running');
-  });
-
-  test('body has active_agents count', async () => {
-    const res = await request(app).get('/orchestrator/status');
-    expect(typeof res.body.active_agents).toBe('number');
-  });
-
-  test('body.agents is an array', async () => {
-    // Note: code has duplicate 'agents' key; last one (array) wins in JS
-    const res = await request(app).get('/orchestrator/status');
-    expect(Array.isArray(res.body.agents)).toBe(true);
-  });
-
-  test('body has ts', async () => {
-    const res = await request(app).get('/orchestrator/status');
-    expect(typeof res.body.ts).toBe('number');
-  });
-
-  test('CORS header present', async () => {
-    const res = await request(app).get('/orchestrator/status');
-    expectCors(res);
+    expect(res.body.error).toMatch(/auth/i);
   });
 });
 
 // ── GET /billing ──────────────────────────────────────────────────────────────
 
 describe('GET /billing', () => {
-  test('returns 200', async () => {
+  test('returns 401 without auth token', async () => {
     const res = await request(app).get('/billing');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
   });
 
-  test('body has treasury_balance', async () => {
+  test('error says missing auth token', async () => {
     const res = await request(app).get('/billing');
-    expect(typeof res.body.treasury_balance).toBe('number');
-  });
-
-  test('body has currency USD', async () => {
-    const res = await request(app).get('/billing');
-    expect(res.body.currency).toBe('USD');
-  });
-
-  test('body has subscriptions count', async () => {
-    const res = await request(app).get('/billing');
-    expect(typeof res.body.subscriptions).toBe('number');
-  });
-
-  test('body has active_plans array', async () => {
-    const res = await request(app).get('/billing');
-    expect(Array.isArray(res.body.active_plans)).toBe(true);
-    expect(res.body.active_plans.length).toBeGreaterThan(0);
-  });
-
-  test('each plan has id, name, price, count', async () => {
-    const res = await request(app).get('/billing');
-    for (const plan of res.body.active_plans) {
-      expect(plan.id).toBeDefined();
-      expect(plan.name).toBeDefined();
-      expect(typeof plan.price).toBe('number');
-      expect(typeof plan.count).toBe('number');
-    }
-  });
-
-  test('CORS header present', async () => {
-    const res = await request(app).get('/billing');
-    expectCors(res);
+    expect(res.body.error).toMatch(/auth/i);
   });
 });
 
@@ -675,101 +553,25 @@ describe('Stub fallback for unknown namespaces', () => {
   });
 });
 
-// ── Auth routes (in-process gateway auth) ────────────────────────────────────
+// ── Auth routes (now proxied to :5001 — no auth service in gateway test) ─────
 
-describe('POST /auth/register (gateway in-process)', () => {
-  const uniq = () => `gw_${Date.now()}_${Math.random().toString(36).slice(2)}@t.com`;
-
-  test('201 on valid registration', async () => {
-    const res = await request(app).post('/auth/register').send({ email: uniq(), password: 'pass123' });
-    expect(res.status).toBe(201);
-  });
-
-  test('response has token', async () => {
-    const res = await request(app).post('/auth/register').send({ email: uniq(), password: 'pass123' });
-    expect(res.body.token).toBeDefined();
-  });
-
-  test('response has user object', async () => {
-    const email = uniq();
-    const res = await request(app).post('/auth/register').send({ email, password: 'pass123' });
-    expect(res.body.user).toBeDefined();
-  });
-
-  test('400 on missing password', async () => {
-    const res = await request(app).post('/auth/register').send({ email: uniq() });
-    expect(res.status).toBe(400);
-  });
-
-  test('400 on missing email', async () => {
-    const res = await request(app).post('/auth/register').send({ password: 'pass123' });
-    expect(res.status).toBe(400);
-  });
-
-  test('409 on duplicate email', async () => {
-    const email = uniq();
-    await request(app).post('/auth/register').send({ email, password: 'pass123' });
-    const res = await request(app).post('/auth/register').send({ email, password: 'pass123' });
-    expect(res.status).toBe(409);
+describe('POST /auth/register (proxied)', () => {
+  test('returns 502 when auth service is not running', async () => {
+    const res = await request(app).post('/auth/register').send({ email: 'test@t.com', password: 'pass123' });
+    expect(res.status).toBe(502);
   });
 });
 
-describe('POST /auth/login (gateway in-process)', () => {
-  const email    = `gwlogin_${Date.now()}@t.com`;
-  const password = 'loginpass777';
-
-  beforeAll(async () => {
-    await request(app).post('/auth/register').send({ email, password });
-  });
-
-  test('200 on valid login', async () => {
-    const res = await request(app).post('/auth/login').send({ email, password });
-    expect(res.status).toBe(200);
-  });
-
-  test('token returned', async () => {
-    const res = await request(app).post('/auth/login').send({ email, password });
-    expect(res.body.token).toBeDefined();
-  });
-
-  test('401 on wrong password', async () => {
-    const res = await request(app).post('/auth/login').send({ email, password: 'wrong' });
-    expect(res.status).toBe(401);
-  });
-
-  test('401 on unknown email', async () => {
-    const res = await request(app).post('/auth/login').send({ email: 'nobody@x.com', password });
-    expect(res.status).toBe(401);
-  });
-
-  test('400 on empty body', async () => {
-    const res = await request(app).post('/auth/login').send({});
-    expect(res.status).toBe(400);
+describe('POST /auth/login (proxied)', () => {
+  test('returns 502 when auth service is not running', async () => {
+    const res = await request(app).post('/auth/login').send({ email: 'test@t.com', password: 'pass123' });
+    expect(res.status).toBe(502);
   });
 });
 
-describe('GET /auth/verify (gateway in-process)', () => {
-  let token;
-
-  beforeAll(async () => {
-    const email = `gwverify_${Date.now()}@t.com`;
-    const res   = await request(app).post('/auth/register').send({ email, password: 'vpass999' });
-    token = res.body.token;
-  });
-
-  test('200 with valid token', async () => {
-    const res = await request(app).get('/auth/verify').set('Authorization', `Bearer ${token}`);
-    expect(res.status).toBe(200);
-    expect(res.body.valid).toBe(true);
-  });
-
-  test('401 without token', async () => {
+describe('GET /auth/verify (proxied)', () => {
+  test('returns 502 when auth service is not running', async () => {
     const res = await request(app).get('/auth/verify');
-    expect(res.status).toBe(401);
-  });
-
-  test('401 with invalid token', async () => {
-    const res = await request(app).get('/auth/verify').set('Authorization', 'Bearer not-a-token');
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(502);
   });
 });

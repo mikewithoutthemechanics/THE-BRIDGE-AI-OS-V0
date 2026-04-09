@@ -47,8 +47,19 @@ try {
   app.use('/agent/', jsonGuard());
 } catch (_) { /* agent-contract not available */ }
 
+const ALLOWED_ORIGINS = new Set([
+  'https://wall.bridge-ai-os.com',
+  'https://go.ai-os.co.za',
+  'https://bridge-ai-os.com',
+  'http://localhost:3000',
+  'http://localhost:8080',
+]);
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id, X-Bridge-User-Id, X-CFO-Token');
   if (req.method === 'OPTIONS') return res.sendStatus(204);

@@ -251,14 +251,42 @@ function verifyToken(token) {
   if (!jwt) return null;
   try { return jwt.verify(token, JWT_SECRET); } catch (_) { return null; }
 }
-async function hashPassword(pw) { return bcrypt ? bcrypt.hash(pw, 10) : `hashed:${pw}`; }
-async function checkPassword(pw, hash) { return bcrypt ? bcrypt.compare(pw, hash) : hash === `hashed:${pw}`; }
+async function hashPassword(pw) {
+  if (!bcrypt) throw new Error('bcryptjs not available — cannot hash password');
+  return bcrypt.hash(pw, 12);
+}
+async function checkPassword(pw, hash) {
+  if (!bcrypt) throw new Error('bcryptjs not available — cannot verify password');
+  return bcrypt.compare(pw, hash);
+}
+
+function requireAuthOrFail(req, res) {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!token) { json(res, { error: 'authentication required' }, 401); return null; }
+  if (_revokedTokens.has(token)) { json(res, { error: 'token revoked' }, 401); return null; }
+  const payload = verifyToken(token);
+  if (!payload) { json(res, { error: 'invalid or expired token' }, 401); return null; }
+  return payload;
+}
 
 // ── Router ──────────────────────────────────────────────────────────────────
-function cors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+const ALLOWED_ORIGINS = [
+  'https://go.ai-os.co.za',
+  'https://wall.bridge-ai-os.com',
+  'https://bridge-ai-os.com',
+  'http://localhost:3000',
+  'http://localhost:8080',
+];
+
+function cors(req, res) {
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 }
 
 function json(res, data, status = 200) {
@@ -275,7 +303,7 @@ async function parseBody(req) {
 }
 
 module.exports = async (req, res) => {
-  cors(res);
+  cors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -298,14 +326,13 @@ module.exports = async (req, res) => {
 
   // ── Billing ──
   if (p === '/billing') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    const bal = await db.getTreasuryBalance(TREASURY_SEED);
     return json(res, {
-      treasury_balance: +treasuryBalance.toFixed(2), currency: 'USD', period: 'monthly',
-      revenue_mtd: 28450, costs_mtd: 4210.50, net_mtd: 24239.50, subscriptions: 142,
-      active_plans: [
-        { id: 'starter', name: 'Starter', price: 49, count: 64 },
-        { id: 'pro', name: 'Pro', price: 149, count: 51 },
-        { id: 'enterprise', name: 'Enterprise', price: 499, count: 27 },
-      ],
+      treasury_balance: +bal.toFixed(2), currency: 'USD', period: 'monthly',
+      revenue_mtd: null, costs_mtd: null, net_mtd: null, subscriptions: 0,
+      active_plans: [],
+      source: 'live',
       last_updated: new Date().toISOString(),
     });
   }
@@ -813,6 +840,7 @@ module.exports = async (req, res) => {
 
   // ── API: Agents Dispatch ──
   if (p === '/api/agents/dispatch' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     if (!body.agent || !body.task) return json(res, { error: 'agent and task required' }, 400);
     return json(res, {
@@ -1117,6 +1145,7 @@ module.exports = async (req, res) => {
 
   // ── /api/crm/* ──
   if (p.startsWith('/api/crm')) {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const sub = p.replace('/api/crm', '') || '/';
     if (sub === '/contacts' || sub === '/contacts/') {
       if (req.method === 'POST') {
@@ -1829,6 +1858,7 @@ module.exports = async (req, res) => {
 
   // ── /api/economy/dashboard ──
   if (p === '/api/economy/dashboard') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     return json(res, {
       gdp_contribution: +(treasuryBalance * 0.0032).toFixed(2),
       jobs_created: 47, ubi_distributed: +(treasuryBalance * 0.20).toFixed(2),
@@ -1919,7 +1949,23 @@ module.exports = async (req, res) => {
 
   // ── /api/mfa/setup ──
   if (p === '/api/mfa/setup' && req.method === 'POST') {
-    return json(res, { ok: true, totp_secret: 'JBSWY3DPEHPK3PXP', qr_url: 'data:image/png;base64,iVBOR', ts: ts() });
+    const user = requireAuthOrFail(req, res); if (!user) return;
+
+    const secret = _tvmCrypto.randomBytes(20);
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let bits = 0, value = 0, encoded = '';
+    for (let i = 0; i < secret.length; i++) {
+      value = (value << 8) | secret[i];
+      bits += 8;
+      while (bits >= 5) { encoded += alphabet[(value >>> (bits - 5)) & 31]; bits -= 5; }
+    }
+    if (bits > 0) encoded += alphabet[(value << (5 - bits)) & 31];
+
+    const issuer = 'BridgeAI';
+    const account = encodeURIComponent(payload.email || payload.sub);
+    const otpauth_uri = `otpauth://totp/${issuer}:${account}?secret=${encoded}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+
+    return json(res, { ok: true, totp_secret: encoded, otpauth_uri, ts: ts() });
   }
 
   // ── /api/output/* ──
@@ -1970,6 +2016,7 @@ module.exports = async (req, res) => {
 
   // ── /api/supaclaw/tick ──
   if (p === '/api/supaclaw/tick' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     return json(res, { ok: true, tick: ts(), agents_pulsed: agentNames.length, ts: ts() });
   }
 
@@ -1992,6 +2039,7 @@ module.exports = async (req, res) => {
 
   // POST /api/banks — register a partner bank
   if (p === '/api/banks' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     if (!body.id || !body.name || !body.owner) return json(res, { error: 'id, name, owner required' }, 400);
     try {
@@ -2017,6 +2065,7 @@ module.exports = async (req, res) => {
 
   // POST /api/banks/compound — execute compound cycle
   if (p === '/api/banks/compound' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     try {
       const result = await banks.compoundAll();
       return json(res, { ok: true, ...result, ts: ts() });
@@ -2027,6 +2076,7 @@ module.exports = async (req, res) => {
 
   // POST /api/banks/trade — internal bank-to-bank transfer
   if (p === '/api/banks/trade' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     const { from, to, amount, reason } = body;
     if (!from || !to || !amount) return json(res, { error: 'from, to, amount required' }, 400);
@@ -2040,6 +2090,7 @@ module.exports = async (req, res) => {
 
   // POST /api/banks/split — manually trigger a payment split (testing)
   if (p === '/api/banks/split' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     if (!body.amount) return json(res, { error: 'amount required' }, 400);
     try {
@@ -2068,6 +2119,7 @@ module.exports = async (req, res) => {
 
   // ── /api/treasury/reconcile ──
   if (p === '/api/treasury/reconcile') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const result = await db.reconcileTreasury();
     if (!result.ok && result.drift !== undefined) {
       notify.alertError({ context: 'treasury-reconcile', message: `Drift detected: R${result.drift} (${result.driftPct}%). Auto-healed.` }).catch(() => {});
