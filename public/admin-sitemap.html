@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bridge AI OS — Admin Site Map</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:1rem 1.5rem 4rem;line-height:1.5}
+h1{font-size:1.4rem;font-weight:800;margin-bottom:.3rem}
+.sub{color:var(--dim);font-size:.8rem;margin-bottom:1rem}
+.search{width:100%;padding:.6rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;outline:none;margin-bottom:1.5rem}
+.search:focus{border-color:var(--cyan)}
+.section{margin-bottom:1.5rem}
+.section-title{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;padding-bottom:.3rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.section-title .count{background:var(--surface);padding:.1rem .5rem;border-radius:10px;font-size:.65rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
+.page-link{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--text);font-size:.8rem;transition:all .15s}
+.page-link:hover{border-color:var(--cyan);background:rgba(0,200,255,.05);text-decoration:none}
+.page-link .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-core{background:var(--cyan)}
+.dot-vertical{background:var(--green)}
+.dot-business{background:var(--purple)}
+.dot-admin{background:var(--orange)}
+.dot-system{background:var(--red)}
+.dot-other{background:var(--dim)}
+.page-link .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.page-link .lines{font-size:.65rem;color:var(--dim)}
+.legend{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;font-size:.7rem;color:var(--dim)}
+.legend-item{display:flex;align-items:center;gap:.3rem}
+.hidden{display:none}
+.stats-bar{display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+.stat-pill{padding:.3rem .8rem;background:var(--surface);border:1px solid var(--border);border-radius:20px;font-size:.75rem}
+.stat-pill .num{color:var(--cyan);font-weight:700}
+</style>
+</head>
+<body>
+<h1>Admin Site Map</h1>
+<p class="sub">All 87 pages — admin-only navigation hub</p>
+
+<div class="stats-bar">
+  <div class="stat-pill"><span class="num" id="total">87</span> pages</div>
+  <div class="stat-pill"><span class="num" id="visible">87</span> showing</div>
+</div>
+
+<input type="text" class="search" id="search" placeholder="Search pages...">
+
+<div class="legend">
+  <div class="legend-item"><span class="dot dot-core"></span> Core</div>
+  <div class="legend-item"><span class="dot dot-vertical"></span> Verticals</div>
+  <div class="legend-item"><span class="dot dot-business"></span> Business</div>
+  <div class="legend-item"><span class="dot dot-admin"></span> Admin</div>
+  <div class="legend-item"><span class="dot dot-system"></span> System</div>
+  <div class="legend-item"><span class="dot dot-other"></span> Other</div>
+</div>
+
+<div id="sections"></div>
+
+<script>
+const PAGES = {
+  'Core': [
+    { name: 'Landing Page', href: '/', cat: 'core' },
+    { name: 'Voice Portal', href: '/portal.html', cat: 'core' },
+    { name: 'Voice Agent', href: '/voice.html', cat: 'core' },
+    { name: 'Console (v3)', href: '/console.html', cat: 'core' },
+    { name: 'Checkout', href: '/checkout.html', cat: 'core' },
+    { name: 'Welcome', href: '/welcome.html', cat: 'core' },
+    { name: 'Main Dashboard', href: '/ui.html', cat: 'core' },
+    { name: 'Home', href: '/home.html', cat: 'core' },
+    { name: 'Avatar / Twin', href: '/avatar.html', cat: 'core' },
+    { name: 'Digital Twin Console', href: '/digital-twin-console.html', cat: 'core' },
+    { name: 'Twin Wall', href: '/twin-wall.html', cat: 'core' },
+    { name: 'Twin', href: '/twin.html', cat: 'core' },
+    { name: 'Pricing', href: '/pricing.html', cat: 'core' },
+    { name: 'Join', href: '/join.html', cat: 'core' },
+    { name: 'Payment Success', href: '/payment-success.html', cat: 'core' },
+    { name: 'Payment Cancel', href: '/payment-cancel.html', cat: 'core' },
+  ],
+  'Verticals': [
+    { name: 'Bridge Hub', href: '/bridge-home.html', cat: 'vertical' },
+    { name: 'EHSA Health', href: '/ehsa-home.html', cat: 'vertical' },
+    { name: 'EHSA App', href: '/ehsa-app.html', cat: 'vertical' },
+    { name: 'EHSA Brain', href: '/ehsa-brain.html', cat: 'vertical' },
+    { name: 'Aurora Energy', href: '/aurora-home.html', cat: 'vertical' },
+    { name: 'Hospital in a Box', href: '/hospital-home.html', cat: 'vertical' },
+    { name: 'Bridge AID', href: '/aid-home.html', cat: 'vertical' },
+    { name: 'BAN Network', href: '/ban-home.html', cat: 'vertical' },
+    { name: 'Rooted Earth Agri', href: '/rootedearth-home.html', cat: 'vertical' },
+    { name: 'Supaco Agency', href: '/supac-home.html', cat: 'vertical' },
+    { name: 'UBI Platform', href: '/ubi-home.html', cat: 'vertical' },
+    { name: 'ABaaS Platform', href: '/abaas-home.html', cat: 'vertical' },
+    { name: 'Platforms', href: '/platforms.html', cat: 'vertical' },
+  ],
+  'Business Suite': [
+    { name: 'CRM', href: '/crm.html', cat: 'business' },
+    { name: 'Invoicing', href: '/invoicing.html', cat: 'business' },
+    { name: 'Quotes', href: '/quotes.html', cat: 'business' },
+    { name: 'Legal', href: '/legal.html', cat: 'business' },
+    { name: 'Marketing', href: '/marketing.html', cat: 'business' },
+    { name: 'Tickets', href: '/tickets.html', cat: 'business' },
+    { name: 'Vendors', href: '/vendors.html', cat: 'business' },
+    { name: 'Customers', href: '/customers.html', cat: 'business' },
+    { name: 'Workforce', href: '/workforce.html', cat: 'business' },
+    { name: 'LeadGen', href: '/leadgen.html', cat: 'business' },
+    { name: 'Affiliate', href: '/affiliate.html', cat: 'business' },
+    { name: 'Onboarding', href: '/onboarding.html', cat: 'business' },
+    { name: 'Corporate', href: '/corporate.html', cat: 'business' },
+    { name: 'Brand', href: '/brand.html', cat: 'business' },
+  ],
+  'Economy & DeFi': [
+    { name: 'Economy Dashboard', href: '/economy.html', cat: 'business' },
+    { name: 'DeFi', href: '/defi.html', cat: 'business' },
+    { name: 'Trading', href: '/trading.html', cat: 'business' },
+    { name: 'Wallet', href: '/wallet.html', cat: 'business' },
+    { name: 'Banks', href: '/banks.html', cat: 'business' },
+    { name: 'Treasury Dashboard', href: '/treasury-dashboard.html', cat: 'business' },
+    { name: 'Payment', href: '/payment.html', cat: 'business' },
+    { name: 'Governance', href: '/governance.html', cat: 'business' },
+    { name: 'Marketplace', href: '/marketplace.html', cat: 'business' },
+  ],
+  'Admin & Intelligence': [
+    { name: 'Admin Command Center', href: '/admin-command.html', cat: 'admin' },
+    { name: 'Admin Revenue', href: '/admin-revenue.html', cat: 'admin' },
+    { name: 'Admin Panel', href: '/admin.html', cat: 'admin' },
+    { name: 'Intelligence', href: '/intelligence.html', cat: 'admin' },
+    { name: 'Executive Dashboard', href: '/executive-dashboard.html', cat: 'admin' },
+    { name: 'AOE Dashboard', href: '/aoe-dashboard.html', cat: 'admin' },
+    { name: 'Bridge Audit', href: '/bridge-audit-dashboard.html', cat: 'admin' },
+    { name: 'Auth Dashboard', href: '/auth-dashboard.html', cat: 'admin' },
+    { name: 'Admin Sitemap', href: '/admin-sitemap.html', cat: 'admin' },
+  ],
+  'Agents & System': [
+    { name: 'Agents', href: '/agents.html', cat: 'system' },
+    { name: 'Registry', href: '/registry.html', cat: 'system' },
+    { name: 'Topology', href: '/topology.html', cat: 'system' },
+    { name: 'Topology Layers', href: '/topology-layers.html', cat: 'system' },
+    { name: 'Control', href: '/control.html', cat: 'system' },
+    { name: 'Command Center', href: '/command-center.html', cat: 'system' },
+    { name: 'System Status', href: '/system-status-dashboard.html', cat: 'system' },
+    { name: 'Infrastructure', href: '/infra.html', cat: 'system' },
+    { name: 'Terminal (legacy)', href: '/terminal.html', cat: 'system' },
+    { name: 'Logs', href: '/logs.html', cat: 'system' },
+    { name: 'View Logs', href: '/view-logs.html', cat: 'system' },
+  ],
+  'Settings & Docs': [
+    { name: 'Settings', href: '/settings.html', cat: 'other' },
+    { name: 'API Docs', href: '/docs.html', cat: 'other' },
+    { name: 'Sitemap (public)', href: '/sitemap.html', cat: 'other' },
+    { name: 'Landing (alt)', href: '/landing.html', cat: 'other' },
+    { name: '50 Applications', href: '/50-applications.html', cat: 'other' },
+    { name: 'Applications', href: '/applications.html', cat: 'other' },
+    { name: '404 Page', href: '/404.html', cat: 'other' },
+    { name: 'Offline', href: '/offline.html', cat: 'other' },
+  ],
+};
+
+const container = document.getElementById('sections');
+const searchInput = document.getElementById('search');
+let allLinks = [];
+
+Object.entries(PAGES).forEach(([sectionName, pages]) => {
+  const section = document.createElement('div');
+  section.className = 'section';
+
+  const title = document.createElement('div');
+  title.className = 'section-title';
+  const titleText = document.createElement('span');
+  titleText.textContent = sectionName;
+  const count = document.createElement('span');
+  count.className = 'count';
+  count.textContent = pages.length;
+  title.appendChild(titleText);
+  title.appendChild(count);
+  section.appendChild(title);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+
+  pages.forEach(page => {
+    const a = document.createElement('a');
+    a.className = 'page-link';
+    a.href = page.href;
+    a.dataset.name = page.name.toLowerCase();
+    a.dataset.href = page.href.toLowerCase();
+
+    const dot = document.createElement('span');
+    dot.className = 'dot dot-' + page.cat;
+
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = page.name;
+
+    a.appendChild(dot);
+    a.appendChild(name);
+    grid.appendChild(a);
+    allLinks.push(a);
+  });
+
+  section.appendChild(grid);
+  container.appendChild(section);
+});
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase().trim();
+  let visible = 0;
+  allLinks.forEach(a => {
+    const match = !q || a.dataset.name.includes(q) || a.dataset.href.includes(q);
+    a.classList.toggle('hidden', !match);
+    if (match) visible++;
+  });
+  document.getElementById('visible').textContent = visible;
+});
+</script>
+<script src="/global-nav.js" defer></script>
+</body>
+</html>
