@@ -239,6 +239,9 @@ async function handleRegister(req, res) {
     email:        normalizedEmail,
     source:       resolvedSource,
     referralCode: user.referralCode,
+    role:         user.role || 'member',
+    credits:      user.credits || 100,
+    plan:         user.plan || 'free',
     token,
     expiresAt:    new Date(exp).toISOString(),
     ts:           Date.now(),
@@ -273,6 +276,9 @@ async function handleLogin(req, res) {
     userId:    user.id,
     email:     normalizedEmail,
     source:    resolvedSource,
+    role:      user.role || 'member',
+    credits:   user.credits || 100,
+    plan:      user.plan || 'free',
     token,
     tokenId:   jti,
     expiresAt: new Date(exp).toISOString(),
@@ -297,10 +303,10 @@ async function handleLogout(req, res) {
 }
 
 /**
- * GET /auth/verify
+ * GET /auth/me
  * Header: Authorization: Bearer <token>
  */
-async function handleVerify(req, res) {
+async function handleMe(req, res) {
   const raw = extractBearerToken(req);
   if (!raw) return badRequest(res, 'Bearer token required');
 
@@ -309,13 +315,17 @@ async function handleVerify(req, res) {
 
   const user = Object.values(users).find(u => u.id === payload.sub);
 
+  if (!user) return notFound(res);
+
   ok(res, {
-    valid:     true,
-    userId:    payload.sub,
-    email:     user ? user.email : null,
-    source:    payload.src,
-    issuedAt:  new Date(payload.iat).toISOString(),
-    expiresAt: new Date(payload.exp).toISOString(),
+    userId:    user.id,
+    email:     user.email,
+    source:    user.source,
+    role:      user.role || 'member',
+    credits:   user.credits || 0,
+    plan:      user.plan || 'free',
+    referralCode: user.referralCode,
+    createdAt: user.createdAt,
     ts:        Date.now(),
   });
 }
@@ -435,6 +445,7 @@ async function router(req, res) {
     if (method === 'POST' && pathname === '/auth/login')     return await handleLogin(req, res);
     if (method === 'POST' && pathname === '/auth/logout')    return await handleLogout(req, res);
     if (method === 'GET'  && pathname === '/auth/verify')    return await handleVerify(req, res);
+    if (method === 'GET'  && pathname === '/auth/me')       return await handleMe(req, res);
     if (method === 'POST' && pathname === '/referral/claim') return await handleReferralClaim(req, res);
     if (method === 'GET'  && pathname === '/referral/stats') return await handleReferralStats(req, res);
 
@@ -453,6 +464,7 @@ async function router(req, res) {
           'POST /auth/login',
           'POST /auth/logout',
           'GET  /auth/verify',
+          'GET  /auth/me',
           'POST /referral/claim',
           'GET  /referral/stats',
         ],

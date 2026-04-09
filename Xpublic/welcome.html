@@ -84,26 +84,44 @@ if (!token && !user.email) { location.href = '/onboarding.html'; }
 
 // User info
 document.getElementById('user-name').textContent = user.name || user.email || 'Bridge AI User';
-document.getElementById('user-role').textContent = user.credits > 0 ? 'PRO MEMBER' : 'FREE MEMBER';
 
-// Free tools
+// Role display with proper hierarchy
+const roleDisplay = user.role === 'superadmin' ? 'SUPERADMIN' : 
+                    user.plan === 'pro' || user.credits >= 1000 ? 'PRO MEMBER' : 'FREE MEMBER';
+document.getElementById('user-role').textContent = roleDisplay;
+
+// RBAC: Page access by role
+const role = user.role || 'member';
+const canAccess = {
+  superadmin: ['admin', 'settings', 'control', 'wallet', 'governance', 'registry', 'terminal'],
+  member: ['marketplace', 'platforms', 'avatar', 'terminal', 'topology'],
+  demo: ['onboarding']
+};
+
+// All tools with role requirements
 const freeTools = [
-  { icon:'🏠', name:'Command Dashboard', desc:'Main control center with live service health, SSE events, agent status', href:'/', tier:'free' },
-  { icon:'🌐', name:'Network Topology', desc:'D3/p5.js force graph of all nodes, agents, L1/L2/L3 connections', href:'/topology.html', tier:'free' },
-  { icon:'📋', name:'System Registry', desc:'Kernel, network, security, federation, jobs — live VPS data', href:'/registry.html', tier:'free' },
-  { icon:'📊', name:'Status Graph', desc:'30+ service D3 force graph with real-time health polling', href:'/system-status-dashboard.html', tier:'free' },
-  { icon:'🤖', name:'Avatar (3D)', desc:'Babylon.js avatar with emotion engine, lip-sync, 6 render modes', href:'/avatar.html', tier:'free' },
-  { icon:'💻', name:'Terminal', desc:'Browser-based PTY shell — execute commands on Bridge AI OS', href:'/terminal.html', tier:'free' },
-  { icon:'🎛️', name:'Control Panel', desc:'Treasury management, agent command, marketplace ops', href:'/control.html', tier:'free' },
-  { icon:'🏪', name:'Marketplace', desc:'Task listings, DEX pairs, agent skills, wallet, portfolio', href:'/marketplace.html', tier:'free' },
-  { icon:'⚡', name:'BAN Task Engine', desc:'Submit tasks, scored by priority, routed to best node, consensus', href:'/ban', tier:'free' },
-  { icon:'🤝', name:'ABAAS Agents', desc:'8 AI agents: deploy, manage, monetize autonomous workforce', href:'/abaas.html', tier:'free' },
-  { icon:'🔧', name:'AOE Dashboard', desc:'SVG engine, skills, builds, treasury snapshot, live map', href:'/aoe-dashboard.html', tier:'free' },
-  { icon:'🗺️', name:'System Sitemap', desc:'Full ecosystem map: 130+ APIs, WebSockets, subdomains', href:'/sitemap.html', tier:'free' },
-  { icon:'🌍', name:'Platform Network', desc:'10 platforms, 6 payment rails, treasury spine, network value', href:'/platforms.html', tier:'free' },
+  { icon:'🏠', name:'Command Dashboard', desc:'Main control center with live service health, SSE events, agent status', href:'/', tier:'free', roles:['superadmin','member','demo'] },
+  { icon:'🌐', name:'Network Topology', desc:'D3/p5.js force graph of all nodes, agents, L1/L2/L3 connections', href:'/topology.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'📋', name:'System Registry', desc:'Kernel, network, security, federation, jobs — live VPS data', href:'/registry.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'📊', name:'Status Graph', desc:'30+ service D3 force graph with real-time health polling', href:'/system-status-dashboard.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'🤖', name:'Avatar (3D)', desc:'Babylon.js avatar with emotion engine, lip-sync, 6 render modes', href:'/avatar.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'💻', name:'Terminal', desc:'Browser-based PTY shell — execute commands on Bridge AI OS', href:'/terminal.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'🎛️', name:'Control Panel', desc:'Treasury management, agent command, marketplace ops', href:'/control.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'🏪', name:'Marketplace', desc:'Task listings, DEX pairs, agent skills, wallet, portfolio', href:'/marketplace.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'⚡', name:'BAN Task Engine', desc:'Submit tasks, scored by priority, routed to best node, consensus', href:'/ban', tier:'free', roles:['superadmin','member'] },
+  { icon:'🤝', name:'ABAAS Agents', desc:'8 AI agents: deploy, manage, monetize autonomous workforce', href:'/abaas.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'🔧', name:'AOE Dashboard', desc:'SVG engine, skills, builds, treasury snapshot, live map', href:'/aoe-dashboard.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'🗺️', name:'System Sitemap', desc:'Full ecosystem map: 130+ APIs, WebSockets, subdomains', href:'/sitemap.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'🌍', name:'Platform Network', desc:'10 platforms, 6 payment rails, treasury spine, network value', href:'/platforms.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'⚙️', name:'Admin Panel', desc:'System administration, user management, keys', href:'/admin.html', tier:'free', roles:['superadmin'] },
+  { icon:'🔐', name:'Settings', desc:'Account settings, security, integrations', href:'/settings.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'🏦', name:'Wallet & Treasury', desc:'Multi-chain wallet, BRDG tokens, treasury', href:'/wallet.html', tier:'free', roles:['superadmin','member'] },
+  { icon:'🏛️', name:'Governance', desc:'DAO proposals, voting, governance', href:'/governance.html', tier:'free', roles:['superadmin','member'] },
 ];
 
-document.getElementById('free-tools').innerHTML = freeTools.map(t => `
+// Filter by role
+const accessibleTools = freeTools.filter(t => t.roles.includes(role));
+document.getElementById('free-tools').innerHTML = accessibleTools.map(t => `
   <a class="card" href="${t.href}">
     <h3><span class="icon">${t.icon}</span> ${t.name} <span class="badge ${t.tier}">${t.tier.toUpperCase()}</span></h3>
     <p>${t.desc}</p>
