@@ -1699,7 +1699,23 @@ const shortRoutes = {
   '/twin-wall': '/twin-wall.html', '/welcome': '/welcome.html', '/face': '/anatomical_face.html',
   '/leadgen': '/leadgen.html', '/crm': '/crm.html', '/invoicing': '/invoicing.html', '/tickets': '/tickets.html',
   '/legal': '/legal.html', '/marketing': '/marketing.html', '/vendors': '/vendors.html',
-  '/quotes': '/quotes.html', '/customers': '/customers.html', '/workforce': '/workforce.html'
+  '/quotes': '/quotes.html', '/customers': '/customers.html', '/workforce': '/workforce.html',
+  '/payment': '/payment.html', '/payment-success': '/payment-success.html', '/payment-cancel': '/payment-cancel.html',
+  '/command-center': '/command-center.html', '/banks': '/banks.html', '/infra': '/infra.html',
+  '/ui': '/ui.html', '/applications': '/applications.html', '/bridge-audit': '/bridge-audit-dashboard.html',
+  '/topology-layers': '/topology-layers.html', '/view-logs': '/view-logs.html',
+  '/treasury': '/treasury-dashboard.html', '/twin': '/twin.html', '/economy': '/economy.html',
+  '/admin-command': '/admin-command.html', '/admin-revenue': '/admin-revenue.html',
+  '/admin-sitemap': '/admin-sitemap.html', '/terminal-v3': '/terminal-v3.html',
+  '/console': '/console.html', '/bridge': '/bridge-home.html',
+  '/auth-dashboard': '/auth-dashboard.html', '/checkout': '/checkout.html',
+  '/portal': '/portal.html', '/voice': '/voice.html', '/welcome-tour': '/welcome-tour.html',
+  '/offline': '/offline.html',
+  '/face-constrained': '/anatomical_face_constrained_system.html',
+  '/face-embodied': '/anatomical_face_embodied.html',
+  '/face-facs': '/anatomical_face_facs.html',
+  '/face-tension': '/anatomical_face_tension_balanced.html',
+  '/face-vector': '/anatomical_face_vector_muscle.html'
 };
 Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));
