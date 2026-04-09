@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bridge AI — Voice Portal</title>
+<meta name="description" content="Talk to Bridge AI using your voice. Real-time AI voice assistant for business automation, CRM, and agent management.">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#00c8ff">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,13 +16,14 @@
 :root{
   --bg:#02030a;--surface:rgba(5,12,25,0.85);--border:rgba(0,200,255,0.1);
   --cyan:#00e0ff;--green:#00ff88;--amber:#ffb020;--purple:#a855f7;
-  --dim:#4a6070;--text:#d0dce6;
+  --dim:#7a8fa0;--text:#d0dce6;
 }
 html,body{height:100%;overflow:hidden}
 body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text)}
 
 /* Top nav */
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1.5rem;background:rgba(2,3,10,0.9);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1.5rem;background:rgba(2,3,10,0.95);border-bottom:1px solid var(--border);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+@supports not (backdrop-filter:blur(1px)){.nav{background:rgba(2,3,10,0.98)}}
 .nav-brand{font-weight:700;font-size:1rem;color:var(--cyan);letter-spacing:0.5px}
 .nav-links{display:flex;align-items:center;gap:1.2rem;font-size:0.8rem}
 .nav-links a{color:var(--dim);text-decoration:none;transition:color 0.2s}
@@ -56,14 +58,16 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 .text-fallback-row{display:flex;gap:0.5rem}
 .text-fallback-row input{flex:1;padding:0.55rem 0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none;font-family:inherit}
 .text-fallback-row input:focus{border-color:var(--cyan)}
-.text-fallback-row button{padding:0.55rem 1rem;background:var(--cyan);color:#000;border:none;border-radius:8px;font-weight:600;font-size:0.8rem;cursor:pointer}
+.text-fallback-row button{padding:0.55rem 1rem;background:var(--cyan);color:#000;border:none;border-radius:8px;font-weight:600;font-size:0.8rem;cursor:pointer;min-height:44px}
 
 /* Economy bar */
-.eco-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;justify-content:center;gap:2.5rem;padding:0.5rem 1rem;background:rgba(2,3,10,0.92);border-top:1px solid var(--border);backdrop-filter:blur(12px);font-size:0.7rem;color:var(--dim)}
+.eco-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;justify-content:center;gap:2.5rem;padding:0.5rem 1rem;background:rgba(2,3,10,0.95);border-top:1px solid var(--border);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font-size:0.75rem;color:var(--dim)}
+@supports not (backdrop-filter:blur(1px)){.eco-bar{background:rgba(2,3,10,0.98)}}
 .eco-item{display:flex;align-items:center;gap:0.35rem}
 .eco-val{color:var(--cyan);font-weight:600}
 
 /* Responsive */
+:focus-visible{outline:2px solid #00c8ff;outline-offset:2px}
 @media(max-width:600px){
   .nav{padding:0.5rem 0.75rem}
   .nav-links{gap:0.7rem;font-size:0.7rem}
@@ -75,7 +79,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 <body>
 
 <nav class="nav">
-  <div class="nav-brand">Bridge AI</div>
+  <h1 class="nav-brand">Bridge AI</h1>
   <div class="nav-links">
     <a href="/">Home</a>
     <a href="/economy.html">Economy</a>

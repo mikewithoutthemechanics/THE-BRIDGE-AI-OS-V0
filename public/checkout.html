@@ -4,10 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title id="page-title">Bridge AI OS — Checkout</title>
+<meta name="description" content="Subscribe to Bridge AI OS. Choose a plan and pay securely via PayFast. AI-powered business automation for Africa.">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--dim:#4d6678;--text:#e0e8f0;--danger:#ff3c5a}
+:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--dim:#7a8fa0;--text:#e0e8f0;--danger:#ff3c5a}
 body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:2rem 1rem}
+a{color:var(--accent)}a:visited{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .checkout-wrap{max-width:960px;margin:0 auto}
 .brand-header{text-align:center;margin-bottom:2.5rem}
 .brand-header .logo-area{width:56px;height:56px;border-radius:14px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900;color:#000}
@@ -28,13 +31,13 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .form-section label{display:block;font-size:.85rem;color:var(--dim);margin-bottom:.3rem;margin-top:1.25rem}
 .form-section input{width:100%;padding:.75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;outline:none}
 .form-section input:focus{border-color:var(--accent)}
-.btn-pay{display:block;width:100%;padding:.9rem;border:none;border-radius:8px;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:1.75rem;transition:all .2s;color:#000}
+.btn-pay{display:block;width:100%;padding:.9rem;border:none;border-radius:8px;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:1.75rem;transition:all .2s;color:#000;min-height:48px}
 .btn-pay:hover{opacity:.88}
 .btn-pay:disabled{opacity:.45;cursor:not-allowed}
 .msg{margin-top:1rem;padding:.75rem;border-radius:8px;font-size:.85rem;display:none}
 .msg.error{display:block;background:rgba(255,60,90,.1);color:var(--danger);border:1px solid rgba(255,60,90,.2)}
 .msg.success{display:block;background:rgba(0,229,123,.1);color:var(--green);border:1px solid rgba(0,229,123,.2)}
-.secure-footer{text-align:center;margin-top:2rem;color:var(--dim);font-size:.75rem}
+.secure-footer{text-align:center;margin-top:2rem;color:var(--dim);font-size:.8rem}
 .secure-footer a{color:var(--accent);text-decoration:none}
 .secure-footer a:hover{text-decoration:underline}
 @media(max-width:640px){

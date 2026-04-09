@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#00c8ff">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#b794fc;--orange:#fb923c;--red:#ff3c5a;--dim:#7a8fa0;--text:#e0e8f0}
 body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
 /* Hero with video */
@@ -25,7 +25,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .brand p{color:var(--dim);font-size:.85rem;margin-top:.3rem}
 
 /* Clerk mount wrapper */
-.clerk-wrapper{background:rgba(10,21,32,.9);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;padding:1.5rem;box-shadow:0 20px 60px rgba(0,0,0,.5);min-height:200px;display:flex;align-items:center;justify-content:center}
+.clerk-wrapper{background:rgba(10,21,32,.95);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;padding:1.5rem;box-shadow:0 20px 60px rgba(0,0,0,.5);min-height:200px;display:flex;align-items:center;justify-content:center}
+@supports not (backdrop-filter:blur(1px)){.clerk-wrapper{background:rgba(10,21,32,.98)}}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .clerk-wrapper .cl-rootBox{width:100%}
 .clerk-loading{color:var(--dim);font-size:.85rem;text-align:center}
 
@@ -46,8 +48,8 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .team-card:hover{border-color:var(--cyan)}
 .team-card .avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:#000;margin:0 auto 1rem}
 .team-card h3{font-size:1rem;font-weight:700;margin-bottom:.2rem}
-.team-card .role{font-size:.75rem;color:var(--cyan);margin-bottom:.5rem}
-.team-card p{font-size:.8rem;color:var(--dim);line-height:1.4}
+.team-card .role{font-size:.8rem;color:var(--cyan);margin-bottom:.5rem}
+.team-card p{font-size:.85rem;color:var(--dim);line-height:1.4}
 .team-cta{margin-top:2rem}
 .team-cta a{color:var(--cyan);font-weight:600;font-size:.9rem}
 
@@ -60,9 +62,10 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 <body>
 
 <div class="hero">
-  <video class="hero-video" autoplay muted loop playsinline>
+  <video class="hero-video" autoplay muted loop playsinline id="onboard-vid">
     <source src="https://videos.pexels.com/video-files/3129957/3129957-hd_1920_1080_25fps.mp4" type="video/mp4">
   </video>
+  <button id="onboard-vid-toggle" aria-label="Pause background video" style="position:absolute;top:1rem;right:1.5rem;z-index:20;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);color:#fff;padding:.35rem .7rem;border-radius:6px;font-size:.75rem;cursor:pointer">Pause</button>
   <div class="hero-overlay"></div>
 
   <div class="auth-container">
@@ -117,7 +120,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
   </div>
 
   <div class="team-cta">
-    <a href="https://agentcy.co.za" target="_blank" rel="noopener">Visit Agentcy.co.za for consulting &rarr;</a>
+    <a href="https://agentcy.co.za" target="_blank" rel="noopener" aria-label="Visit Agentcy.co.za for consulting (opens in a new window)" style="display:inline-block;padding:.5rem 1rem">Visit Agentcy.co.za for consulting (opens new window) &rarr;</a>
   </div>
 </div>
 
@@ -155,35 +158,50 @@ function setMountError(text) {
   el.appendChild(p);
 }
 
-// ── Bridge JWT sync — called after Clerk sign-in completes ────────────────
-async function syncBridgeSession(clerkInstance) {
+// ── After Clerk sign-in → sync Bridge JWT then redirect to tour ──────────
+async function syncBridgeSession() {
   try {
-    const session = clerkInstance.session;
-    if (!session) return;
+    var session = window.Clerk.session;
+    if (!session) { showMsg('error', 'No session found'); return; }
 
-    const clerkToken = await session.getToken();
+    showMsg('success', 'Signed in! Setting up your account...');
 
-    const r = await fetch('/api/auth/clerk-sync', {
+    var clerkToken = await session.getToken();
+    if (!clerkToken) { showMsg('error', 'Failed to get session token'); return; }
+
+    var r = await fetch('/api/auth/clerk-sync', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + clerkToken,
       },
     });
-    const d = await r.json();
-    if (!d.ok) return showMsg('error', d.error || 'Session sync failed');
 
-    // Write both keys — most pages read bridge_token, some read bridge_user_token
-    localStorage.setItem('bridge_token', d.token);
-    localStorage.setItem('bridge_user_token', d.token);
-    localStorage.setItem('bridge_user', JSON.stringify(d.user));
+    if (!r.ok) {
+      showMsg('error', 'Account sync failed (' + r.status + '). Please try again.');
+      return;
+    }
 
-    showMsg('success', 'Welcome to Bridge AI OS!');
-    setTimeout(() => { window.location.href = safeRedirect || '/console.html'; }, 800);
+    var d = await r.json();
+
+    if (d.ok && d.token) {
+      localStorage.setItem('bridge_token', d.token);
+      localStorage.setItem('bridge_user_token', d.token);
+      localStorage.setItem('bridge_user', JSON.stringify(d.user));
+    } else {
+      showMsg('error', d.error || 'Sync failed. Please try again.');
+      return;
+    }
   } catch (e) {
-    console.error('[clerk-sync]', e);
-    showMsg('error', 'Connection error. Please try again.');
+    console.warn('[onboarding] sync error:', e);
+    showMsg('error', 'Connection error. Please check your network and try again.');
+    return;
   }
+
+  // Redirect to tour (or direct destination) only on success
+  var dest = '/welcome-tour.html';
+  if (safeRedirect) dest += '?redirect=' + encodeURIComponent(safeRedirect);
+  window.location.href = dest;
 }
 
 // ── Load Clerk and mount sign-in ──────────────────────────────────────────
@@ -202,21 +220,49 @@ async function initClerk() {
     return;
   }
 
-  // Load Clerk JS from CDN
-  const script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
-  script.crossOrigin = 'anonymous';
-  script.onload = async () => {
-    const clerk = new window.Clerk(pk);
-    await clerk.load();
+  // Derive the Clerk Frontend API URL from the publishable key
+  var pkPayload = '';
+  try { pkPayload = atob(pk.replace('pk_test_', '').replace('pk_live_', '')); } catch (_) {}
+  var fapiUrl = pkPayload.replace(/\$$/, '') || 'clerk.go.ai-os.co.za';
 
-    // If already signed in, sync immediately
-    if (clerk.user) {
-      return syncBridgeSession(clerk);
+  // Load Clerk UI components first, then Clerk JS (order matters)
+  var uiScript = document.createElement('script');
+  uiScript.src = 'https://' + fapiUrl + '/npm/@clerk/ui@1/dist/ui.browser.js';
+  uiScript.crossOrigin = 'anonymous';
+
+  var script = document.createElement('script');
+  script.setAttribute('data-clerk-publishable-key', pk);
+  script.src = 'https://' + fapiUrl + '/npm/@clerk/clerk-js@6/dist/clerk.browser.js';
+  script.crossOrigin = 'anonymous';
+
+  // Chain: UI loads → Clerk JS loads → mount
+  uiScript.addEventListener('load', () => document.head.appendChild(script));
+  uiScript.addEventListener('error', () => {
+    // Fall back: try loading Clerk without UI (basic mode)
+    document.head.appendChild(script);
+  });
+  document.head.appendChild(uiScript);
+
+  script.addEventListener('load', async () => {
+    // Wait for Clerk to be ready (with UI components if available)
+    var loadOpts = {};
+    if (window.__internal_ClerkUICtor) {
+      loadOpts.ui = { ClerkUI: window.__internal_ClerkUICtor };
+    }
+    await window.Clerk.load(loadOpts);
+
+    // If already signed in (or returned from SSO callback), go to welcome tour
+    if (window.Clerk.user) {
+      if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
+      return syncBridgeSession();
     }
 
     // Mount Clerk's sign-in component with Bridge dark theme
-    clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
+    window.Clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
+      // Redirect back HERE after OAuth so syncBridgeSession() creates the Bridge JWT
+      // before navigating to welcome-tour (avoids double-bounce)
+      forceRedirectUrl: window.location.origin + '/onboarding.html' + window.location.search,
+      signUpForceRedirectUrl: window.location.origin + '/onboarding.html' + window.location.search,
       appearance: {
         variables: {
           colorPrimary: '#00c8ff',
@@ -257,17 +303,32 @@ async function initClerk() {
     });
 
     // Listen for successful sign-in
-    clerk.addListener(({ session }) => {
-      if (session) syncBridgeSession(clerk);
+    window.Clerk.addListener(({ session }) => {
+      if (session) syncBridgeSession();
     });
-  };
-  script.onerror = () => {
+  });
+  script.addEventListener('error', () => {
     setMountError('Failed to load auth. Check your connection and reload.');
-  };
+  });
   document.head.appendChild(script);
 }
 
 initClerk();
+
+// Video pause/play toggle
+(function() {
+  var vid = document.getElementById('onboard-vid');
+  var btn = document.getElementById('onboard-vid-toggle');
+  if (vid && btn) {
+    btn.addEventListener('click', function() {
+      if (vid.paused) { vid.play(); btn.textContent = 'Pause'; btn.setAttribute('aria-label', 'Pause background video'); }
+      else { vid.pause(); btn.textContent = 'Play'; btn.setAttribute('aria-label', 'Play background video'); }
+    });
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      vid.pause(); btn.textContent = 'Play'; btn.setAttribute('aria-label', 'Play background video');
+    }
+  }
+})();
 </script>
 <script src="/global-nav.js" defer></script>
 <script src="/bridge-widget.js" defer></script>

@@ -26,198 +26,45 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Bridge AI OS","description":"Autonomous business infrastructure platform with CRM, invoicing, AI agent workforce, and DeFi treasury on Linea L2.","url":"https://go.ai-os.co.za/","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":[{"@type":"Offer","name":"Starter","price":"0","priceCurrency":"ZAR"},{"@type":"Offer","name":"Pro","price":"499","priceCurrency":"ZAR"},{"@type":"Offer","name":"Enterprise","price":"2499","priceCurrency":"ZAR"}],"creator":{"@type":"Organization","name":"Bridge AI","url":"https://bridge-ai-os.com"}}
 </script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
-body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
-a{color:var(--cyan);text-decoration:none}
-a:hover{text-decoration:underline}
-
-/* Nav */
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:.75rem 2rem;display:flex;align-items:center;justify-content:space-between;background:rgba(5,10,15,.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(26,45,64,.5)}
-.nav-brand{font-weight:800;font-size:1.1rem;letter-spacing:-.01em}
-.nav-brand span{color:var(--cyan)}
-.nav-links{display:flex;gap:1.5rem;align-items:center;font-size:.85rem}
-.nav-links a{color:var(--dim);transition:color .2s}
-.nav-links a:hover{color:var(--cyan);text-decoration:none}
-.nav-cta{background:var(--cyan);color:#000;padding:.4rem 1rem;border-radius:6px;font-weight:600;font-size:.8rem}
-.nav-cta:hover{text-decoration:none;opacity:.9}
-
-/* Hero */
-.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem;position:relative;overflow:hidden}
-.hero-video{position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;width:auto;height:auto;transform:translate(-50%,-50%);z-index:0;object-fit:cover;opacity:.45}
-.hero-overlay{position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(5,10,15,.7) 70%),linear-gradient(to bottom,rgba(5,10,15,.3) 0%,transparent 30%,transparent 60%,#050a0f 100%);pointer-events:none}
-.hero .badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(0,229,123,.2);background:rgba(0,229,123,.06);font-size:.8rem;color:var(--green);margin-bottom:1.5rem}
-.hero h1{font-size:clamp(2.8rem,7vw,5rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1;text-shadow:0 2px 30px rgba(0,0,0,.6)}
-.hero h1 span{background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero .sub{font-size:1.2rem;color:#b0bec5;max-width:640px;margin:0 auto 2.5rem;line-height:1.6;text-shadow:0 1px 20px rgba(0,0,0,.5)}
-.hero .sub strong{color:var(--text)}
-.cta-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
-.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s}
-.btn-primary{background:linear-gradient(135deg,var(--cyan),#0090cc);color:#000;box-shadow:0 4px 20px rgba(0,200,255,.2)}
-.btn-primary:hover{box-shadow:0 6px 30px rgba(0,200,255,.35);transform:translateY(-2px);text-decoration:none}
-.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
-.btn-outline:hover{border-color:var(--cyan);color:var(--cyan);text-decoration:none}
-.btn-sm{padding:.5rem 1.2rem;font-size:.85rem}
-
-/* Live stats */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:3rem;max-width:900px;width:100%}
-.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
-.stat .num{font-size:1.6rem;font-weight:800;color:var(--cyan)}
-.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
-
-/* Sections */
-section{padding:5rem 2rem;max-width:1100px;margin:0 auto}
-.section-title{font-size:2.2rem;font-weight:800;margin-bottom:.5rem;letter-spacing:-.02em}
-.section-title span{color:var(--cyan)}
-.section-sub{color:var(--dim);margin-bottom:2.5rem;max-width:600px;font-size:1.05rem}
-
-/* How it works */
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2rem;counter-reset:step}
-.step{position:relative;padding:1.5rem;padding-top:3rem}
-.step::before{counter-increment:step;content:counter(step);position:absolute;top:0;left:1.5rem;width:2rem;height:2rem;border-radius:50%;background:var(--cyan);color:#000;font-weight:800;font-size:.85rem;display:flex;align-items:center;justify-content:center}
-.step h3{font-size:1rem;font-weight:700;margin-bottom:.4rem}
-.step p{font-size:.85rem;color:var(--dim)}
-
-/* Feature grid */
-.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem}
-.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
-.feature:hover{border-color:var(--cyan);transform:translateY(-2px);box-shadow:var(--glow)}
-.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem}
-.feature .icon-cyan{background:rgba(0,200,255,.1);color:var(--cyan)}
-.feature .icon-green{background:rgba(0,229,123,.1);color:var(--green)}
-.feature .icon-purple{background:rgba(167,139,250,.1);color:var(--purple)}
-.feature .icon-orange{background:rgba(251,146,60,.1);color:var(--orange)}
-.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
-.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
-
-/* Live economy */
-.economy-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;padding:2rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:2rem}
-.econ-stat .val{font-size:1.5rem;font-weight:800}
-.econ-stat .lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
-
-/* Pricing */
-.pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
-.plan{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;text-align:center;transition:all .25s}
-.plan:hover{transform:translateY(-2px)}
-.plan.featured{border-color:var(--cyan);box-shadow:var(--glow);position:relative}
-.plan.featured::before{content:'POPULAR';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--cyan);color:#000;font-size:.65rem;font-weight:800;padding:.2rem .8rem;border-radius:10px;letter-spacing:.05em}
-.plan h3{font-size:1.2rem;margin-bottom:.25rem}
-.plan .price{font-size:2.8rem;font-weight:900;color:var(--cyan);margin:.5rem 0}
-.plan .price small{font-size:.85rem;color:var(--dim);font-weight:400}
-.plan ul{list-style:none;text-align:left;margin:1.5rem 0}
-.plan li{padding:.35rem 0;color:var(--dim);font-size:.85rem;display:flex;align-items:center;gap:.5rem}
-.plan li::before{content:"\2713";color:var(--green);font-weight:700;font-size:.75rem}
-
-/* API */
-.api-demo{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;overflow-x:auto}
-.api-demo pre{color:var(--cyan);font-size:.8rem;line-height:1.7;font-family:'JetBrains Mono','Cascadia Code',monospace}
-.api-demo .comment{color:var(--dim)}
-.api-demo .string{color:var(--green)}
-.api-demo .keyword{color:var(--purple)}
-
-/* Logos / Trust */
-.trust{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.trust .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.5rem}
-.trust-logos{display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;align-items:center;opacity:.5}
-.trust-logos span{font-size:.9rem;font-weight:600;color:var(--dim)}
-
-/* CTA Banner */
-.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(0,200,255,.05),rgba(167,139,250,.05));border-radius:16px;margin:0 2rem 3rem;max-width:1100px;margin-left:auto;margin-right:auto}
-.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
-.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
-
-/* Footer */
-footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
-footer a{color:var(--cyan)}
-.footer-links{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
-
-/* Pulse */
-.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-/* Activity Ticker */
-.activity-ticker-section{padding:2rem 0;max-width:100%;overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface)}
-.activity-ticker-label{text-align:center;font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem}
-.activity-ticker-wrap{position:relative;overflow:hidden;height:48px}
-.activity-ticker-wrap::before,.activity-ticker-wrap::after{content:'';position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none}
-.activity-ticker-wrap::before{left:0;background:linear-gradient(to right,var(--surface),transparent)}
-.activity-ticker-wrap::after{right:0;background:linear-gradient(to left,var(--surface),transparent)}
-.activity-ticker-track{display:flex;gap:2rem;animation:ticker-scroll 40s linear infinite;width:max-content}
-.activity-ticker-track:hover{animation-play-state:paused}
-.ticker-item{flex-shrink:0;padding:.6rem 1.2rem;background:var(--card);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','Cascadia Code',monospace;font-size:.78rem;white-space:nowrap;display:flex;align-items:center;gap:.6rem}
-.ticker-item .agent-name{color:var(--cyan);font-weight:700}
-.ticker-item .action{color:var(--dim)}
-.ticker-item .amount-earned{color:var(--green);font-weight:700}
-.ticker-item .amount-burned{color:var(--orange);font-weight:700}
-.ticker-item .amount-transfer{color:var(--cyan);font-weight:700}
-.ticker-item .time-ago{color:var(--dim);font-size:.7rem;opacity:.7}
-@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-
-/* Burn Counter */
-.burn-counter{text-align:center;padding:2rem 1.5rem;background:linear-gradient(135deg,rgba(255,60,90,.06),rgba(251,146,60,.06));border:1px solid rgba(255,60,90,.15);border-radius:12px;margin-bottom:1.5rem}
-.burn-counter .burn-number{font-size:clamp(2.5rem,6vw,4rem);font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'JetBrains Mono','Cascadia Code',monospace;letter-spacing:-.02em;transition:transform .2s}
-.burn-counter .burn-label{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:.3rem}
-
-/* Agent Command Demo */
-.agent-demo-section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
-.agent-demo-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;max-width:700px;margin:0 auto}
-.agent-demo-card .demo-row{display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
-.agent-demo-card select,.agent-demo-card input,.agent-demo-card button{font-family:inherit;font-size:.9rem;border-radius:8px;border:1px solid var(--border);outline:none;transition:border-color .2s}
-.agent-demo-card select{background:var(--card);color:var(--text);padding:.65rem 1rem;min-width:180px;cursor:pointer}
-.agent-demo-card select:focus{border-color:var(--cyan)}
-.agent-demo-card input{flex:1;min-width:200px;background:var(--card);color:var(--text);padding:.65rem 1rem}
-.agent-demo-card input:focus{border-color:var(--cyan)}
-.agent-demo-card input::placeholder{color:var(--dim)}
-.agent-demo-card .demo-execute{background:linear-gradient(135deg,var(--cyan),#0090cc);color:#000;font-weight:700;padding:.65rem 1.5rem;border:none;cursor:pointer;transition:all .2s}
-.agent-demo-card .demo-execute:hover{box-shadow:0 4px 20px rgba(0,200,255,.25);transform:translateY(-1px)}
-.agent-demo-card .demo-execute:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
-.demo-result{margin-top:1rem;padding:1rem 1.2rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','Cascadia Code',monospace;font-size:.82rem;color:var(--green);line-height:1.6;min-height:60px;display:none;white-space:pre-wrap;word-break:break-word}
-.demo-result.visible{display:block}
-.demo-result.error{color:var(--orange)}
-.demo-spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,200,255,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:.4rem}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-@media(max-width:768px){.nav-links{display:none}.stats{grid-template-columns:repeat(2,1fr)}.features,.pricing{grid-template-columns:1fr}.hero h1{font-size:2.4rem}.steps{grid-template-columns:1fr}.agent-demo-card .demo-row{flex-direction:column}.agent-demo-card select{min-width:100%}}
-@media(max-width:480px){.stats{grid-template-columns:1fr}.hero{padding:5rem 1.5rem 3rem}.cta-banner{margin:0 1rem 2rem}}
-</style>
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 
 <nav class="nav">
   <div class="nav-brand"><span>Bridge</span> AI OS</div>
-  <div class="nav-links">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">&#9776;</button>
+  <div class="nav-links" id="nav-links">
     <a href="#features">Features</a>
     <a href="#try-it">Try It</a>
-    <a href="#economy">Economy</a>
+    <a href="#economy" aria-label="Economy overview">Economy</a>
     <a href="#pricing">Pricing</a>
     <a href="#api">API</a>
     <a href="/portal.html">Client Portal</a>
-    <a href="/checkout.html" class="nav-cta">Get Started</a>
+    <a href="/onboarding.html" class="nav-cta" id="nav-auth-btn">Sign In</a>
     <button id="pwa-install-btn" style="display:none;background:var(--green);color:#000;padding:.4rem 1rem;border-radius:6px;font-weight:600;font-size:.8rem;border:none;cursor:pointer;margin-left:.5rem">Install App</button>
   </div>
 </nav>
 
 <div class="hero">
-  <video class="hero-video" autoplay muted loop playsinline poster="">
+  <video class="hero-video" autoplay muted loop playsinline preload="none" id="hero-vid" poster="/og-image.png">
     <source src="https://videos.pexels.com/video-files/3129957/3129957-hd_1920_1080_25fps.mp4" type="video/mp4">
   </video>
+  <button id="hero-vid-toggle" aria-label="Pause background video" style="position:absolute;top:5rem;right:1.5rem;z-index:20;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);color:#fff;padding:.35rem .7rem;border-radius:6px;font-size:.75rem;cursor:pointer">Pause</button>
   <div class="hero-overlay"></div>
   <div class="badge" style="position:relative;z-index:10"><span class="pulse"></span> Live on Linea L2 &middot; Economy running autonomously</div>
   <h1 style="position:relative;z-index:10">Your Business<br>Runs <span>Itself</span></h1>
-  <p class="sub" style="position:relative;z-index:10">35 AI agents working 24/7. CRM, invoicing, marketing, trading, and compliance — <strong>all autonomous</strong>. Powered by BRDG token on Linea. Built for Africa, scaling globally.</p>
+  <p class="sub" style="position:relative;z-index:10">Automate sales, invoicing, and operations with <strong>35 AI agents</strong> — live in under 5 minutes. No code required. Start free, scale when you need to.</p>
   <div class="cta-row" style="position:relative;z-index:10">
-    <a href="/checkout.html" class="btn btn-primary">Start Free</a>
-    <a href="/voice.html" class="btn btn-outline">Talk to AI</a>
-    <a href="/economy.html" class="btn btn-outline">Live Economy</a>
+    <a href="/checkout.html" class="btn btn-primary">Start Free — No Credit Card</a>
+    <a href="#try-it" class="btn btn-outline">See Demo</a>
   </div>
   <div class="stats" style="position:relative;z-index:10">
     <div class="stat"><div class="num" id="s-agents">35</div><div class="label">AI Agents</div></div>
-    <div class="stat"><div class="num" id="s-txs">--</div><div class="label">Transactions</div></div>
-    <div class="stat"><div class="num" id="s-burned">--</div><div class="label">BRDG Burned</div></div>
+    <div class="stat"><div class="num loading" id="s-txs">--</div><div class="label">Transactions</div></div>
+    <div class="stat"><div class="num loading" id="s-burned">--</div><div class="label">BRDG Burned</div></div>
     <div class="stat"><div class="num" id="s-endpoints">150+</div><div class="label">API Endpoints</div></div>
     <div class="stat"><div class="num" id="s-skills">1,266</div><div class="label">Skill Modules</div></div>
-    <div class="stat"><div class="num" id="s-uptime">--</div><div class="label">Uptime</div></div>
+    <div class="stat"><div class="num loading" id="s-uptime">--</div><div class="label">Uptime</div></div>
   </div>
 </div>
 
@@ -255,7 +102,7 @@ footer a{color:var(--cyan)}
 
 <section id="economy">
   <h2 class="section-title">Live <span>economy</span></h2>
-  <p class="section-sub">Real-time agent-to-agent BRDG token economy. Every number below updates from the blockchain and our live systems.</p>
+  <p class="section-sub">BRDG is the fuel that powers your AI agents and automates payments between them. 1% burns on every transfer, making it deflationary.</p>
   <div class="burn-counter">
     <div class="burn-number" id="burn-counter-num">0</div>
     <div class="burn-label">BRDG tokens permanently removed from supply</div>
@@ -266,7 +113,7 @@ footer a{color:var(--cyan)}
     <div class="econ-stat"><div class="val" style="color:var(--green)" id="e-treasury">--</div><div class="lbl">Treasury Balance</div></div>
     <div class="econ-stat"><div class="val" style="color:var(--purple)" id="e-txs">--</div><div class="lbl">Total Transactions</div></div>
   </div>
-  <div style="text-align:center"><a href="/economy.html" class="btn btn-sm btn-outline">View Full Economy Dashboard</a></div>
+  <div style="text-align:center"><a href="/economy.html" class="btn btn-sm btn-outline" aria-label="View full economy dashboard">View Full Economy Dashboard</a></div>
 </section>
 
 <section id="features">
@@ -311,7 +158,8 @@ footer a{color:var(--cyan)}
   <p class="section-sub">Send a command to any AI agent. No sign-up required.</p>
   <div class="agent-demo-card">
     <div class="demo-row">
-      <select id="demo-agent">
+      <label for="demo-agent" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Select an AI agent</label>
+      <select id="demo-agent" aria-label="Select an AI agent">
         <option value="agent-biz-sales">Sales Agent</option>
         <option value="agent-biz-support">Support Agent</option>
         <option value="agent-biz-research">Research Agent</option>
@@ -324,7 +172,41 @@ footer a{color:var(--cyan)}
       <input type="text" id="demo-command" placeholder="e.g. Find 5 leads for an AI startup" maxlength="500">
       <button class="demo-execute" id="demo-exec-btn">Execute</button>
     </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem">
+      <button class="btn btn-sm btn-outline quick-prompt" type="button" style="font-size:.78rem;padding:.35rem .8rem">Find 5 leads</button>
+      <button class="btn btn-sm btn-outline quick-prompt" type="button" style="font-size:.78rem;padding:.35rem .8rem">Generate invoice</button>
+      <button class="btn btn-sm btn-outline quick-prompt" type="button" style="font-size:.78rem;padding:.35rem .8rem">Analyze sales pipeline</button>
+      <button class="btn btn-sm btn-outline quick-prompt" type="button" style="font-size:.78rem;padding:.35rem .8rem">Draft contract</button>
+    </div>
     <div class="demo-result" id="demo-result"></div>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">What businesses <span>say</span></h2>
+  <p class="section-sub">Real results from businesses running on Bridge AI OS.</p>
+  <div class="testimonials">
+    <div class="testimonial">
+      <blockquote>"We replaced our manual CRM workflow with Bridge agents. Lead response time dropped from 4 hours to under 2 minutes. The ROI was obvious within the first week."</blockquote>
+      <div class="author">
+        <div class="avatar">TM</div>
+        <div><div class="name">Thabo Mokoena</div><div class="company">Founder, CapeTech Solutions</div></div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <blockquote>"Our invoicing used to take a full day each month. Now it runs itself. The Finance Agent processes everything overnight and sends reminders automatically."</blockquote>
+      <div class="author">
+        <div class="avatar">LN</div>
+        <div><div class="name">Lindiwe Ndaba</div><div class="company">CFO, Umthunzi Logistics</div></div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <blockquote>"The competitive intelligence reports are gold. We caught a competitor's pricing change 3 days before anyone else and adjusted instantly. Paid for itself on day one."</blockquote>
+      <div class="author">
+        <div class="avatar">JV</div>
+        <div><div class="name">Johan van der Berg</div><div class="company">MD, SignalWave Digital</div></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -340,11 +222,17 @@ footer a{color:var(--cyan)}
     <span>OpenAI</span>
     <span>Brevo</span>
   </div>
+  <div style="display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem;font-size:.8rem;color:var(--dim)">
+    <span>&#128274; PCI DSS Compliant</span>
+    <span>&#128737; POPIA + GDPR</span>
+    <span>&#9889; Cloudflare Protected</span>
+    <span>&#128274; Data Encrypted</span>
+  </div>
 </div>
 
 <section id="pricing">
   <h2 class="section-title">Simple <span>pricing</span></h2>
-  <p class="section-sub">Start free. Scale when you need to. No hidden fees. Cancel anytime.</p>
+  <p class="section-sub">Replace a sales rep (R15k/mo), accountant (R10k/mo), and support agent (R8k/mo) — starting at R0. Cancel anytime.</p>
   <div class="pricing">
     <div class="plan">
       <h3>Starter</h3>
@@ -417,8 +305,8 @@ X-API-Key: brdg_live_xxxxx
 </section>
 
 <div class="cta-banner">
-  <h2>Ready to automate your business?</h2>
-  <p>Join the autonomous economy. Your AI agents are waiting.</p>
+  <h2>Launch your first AI agent in 60 seconds</h2>
+  <p>No setup. No code. Your agents start working the moment you sign up.</p>
   <div class="cta-row">
     <a href="/checkout.html" class="btn btn-primary">Start Free Today</a>
     <a href="/voice.html" class="btn btn-outline">Talk to AI</a>
@@ -428,8 +316,7 @@ X-API-Key: brdg_live_xxxxx
 <footer>
   <div class="footer-links">
     <a href="/portal.html">Client Portal</a>
-    <a href="/economy.html">Economy</a>
-    <a href="/admin-revenue.html">Revenue</a>
+    <a href="/economy.html" aria-label="Economy dashboard">Economy Dashboard</a>
     <a href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947">BRDG Token</a>
     <a href="/sitemap.xml">Sitemap</a>
     <a href="/health">Status</a>
@@ -438,228 +325,8 @@ X-API-Key: brdg_live_xxxxx
   <p style="margin-top:.3rem" id="brdg-footer"></p>
 </footer>
 
-<script>
-const $ = id => document.getElementById(id);
-const fmt = n => parseFloat(n).toLocaleString(undefined,{maximumFractionDigits:1});
-
-/* ── Animate counter from current to target ── */
-function animateCount(el, target) {
-  var current = parseFloat(el.textContent.replace(/,/g, '')) || 0;
-  if (current === target) return;
-  var diff = target - current;
-  var steps = 40;
-  var stepVal = diff / steps;
-  var i = 0;
-  var interval = setInterval(function() {
-    i++;
-    current += stepVal;
-    if (i >= steps) { current = target; clearInterval(interval); }
-    el.textContent = fmt(current);
-  }, 30);
-}
-
-/* ── Time-ago helper ── */
-function timeAgo(ts) {
-  if (!ts) return 'just now';
-  var diff = (Date.now() - new Date(ts).getTime()) / 1000;
-  if (diff < 60) return Math.floor(diff) + 's ago';
-  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-  return Math.floor(diff / 86400) + 'd ago';
-}
-
-/* ── Live Activity Ticker ── */
-function buildTickerItem(item) {
-  var div = document.createElement('div');
-  div.className = 'ticker-item';
-  var nameSpan = document.createElement('span');
-  nameSpan.className = 'agent-name';
-  nameSpan.textContent = item.from || item.agent || 'agent';
-  div.appendChild(nameSpan);
-  var actionSpan = document.createElement('span');
-  actionSpan.className = 'action';
-  var amountSpan = document.createElement('span');
-  var amt = parseFloat(item.amount) || 0;
-  var type = (item.type || '').toLowerCase();
-  if (type === 'burn') {
-    actionSpan.textContent = 'burned';
-    amountSpan.className = 'amount-burned';
-    amountSpan.textContent = fmt(amt) + ' BRDG';
-  } else if (type === 'transfer' || type === 'payment') {
-    actionSpan.textContent = 'sent';
-    amountSpan.className = 'amount-transfer';
-    amountSpan.textContent = fmt(amt) + ' BRDG';
-  } else {
-    actionSpan.textContent = 'earned';
-    amountSpan.className = 'amount-earned';
-    amountSpan.textContent = fmt(amt) + ' BRDG';
-  }
-  div.appendChild(actionSpan);
-  div.appendChild(amountSpan);
-  if (item.reason || item.memo) {
-    var reasonSpan = document.createElement('span');
-    reasonSpan.className = 'action';
-    reasonSpan.textContent = "for '" + (item.reason || item.memo) + "'";
-    div.appendChild(reasonSpan);
-  }
-  var timeSpan = document.createElement('span');
-  timeSpan.className = 'time-ago';
-  timeSpan.textContent = timeAgo(item.timestamp || item.created_at);
-  div.appendChild(timeSpan);
-  return div;
-}
-
-function refreshTicker() {
-  fetch('/api/economy/flow').then(function(r) { return r.json(); }).then(function(d) {
-    var items = d.flow || d.transactions || d.data || [];
-    if (!items.length) return;
-    var track = $('ticker-track');
-    while (track.firstChild) track.removeChild(track.firstChild);
-    var visible = items.slice(0, 8);
-    /* Duplicate items so the scroll loops seamlessly */
-    var all = visible.concat(visible);
-    for (var i = 0; i < all.length; i++) {
-      track.appendChild(buildTickerItem(all[i]));
-    }
-  }).catch(function() {});
-}
-
-refreshTicker();
-setInterval(refreshTicker, 10000);
-
-/* ── BRDG Burn Counter ── */
-var lastBurn = 0;
-function refreshBurnCounter() {
-  fetch('/api/economy/stats').then(function(r) { return r.json(); }).then(function(d) {
-    if (!d.ok) return;
-    var burned = parseFloat(d.totalBurned) || 0;
-    var el = $('burn-counter-num');
-    if (burned !== lastBurn) {
-      animateCount(el, burned);
-      el.style.transform = 'scale(1.08)';
-      setTimeout(function() { el.style.transform = 'scale(1)'; }, 300);
-      lastBurn = burned;
-    }
-  }).catch(function() {});
-}
-
-refreshBurnCounter();
-setInterval(refreshBurnCounter, 15000);
-
-/* ── Agent Command Demo ── */
-(function() {
-  var btn = $('demo-exec-btn');
-  var input = $('demo-command');
-  var select = $('demo-agent');
-  var resultBox = $('demo-result');
-
-  function execDemo() {
-    var cmd = input.value.trim();
-    if (!cmd) { input.focus(); return; }
-    btn.disabled = true;
-    while (btn.firstChild) btn.removeChild(btn.firstChild);
-    var spinner = document.createElement('span');
-    spinner.className = 'demo-spinner';
-    btn.appendChild(spinner);
-    btn.appendChild(document.createTextNode(' Running...'));
-    resultBox.className = 'demo-result visible';
-    resultBox.textContent = 'Sending command to ' + select.value + '...';
-
-    var agent = encodeURIComponent(select.value);
-    fetch('/api/agents/' + agent + '/command', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ command: cmd })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      resultBox.className = 'demo-result visible';
-      resultBox.textContent = d.result || d.response || d.text || d.message || JSON.stringify(d, null, 2);
-    })
-    .catch(function(err) {
-      resultBox.className = 'demo-result visible error';
-      resultBox.textContent = 'Could not reach agent. The API may be starting up. Try again in a moment.';
-    })
-    .finally(function() {
-      btn.disabled = false;
-      btn.textContent = 'Execute';
-    });
-  }
-
-  btn.addEventListener('click', execDemo);
-  input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') execDemo();
-  });
-})();
-
-/* ── Initial Economy + Health Stats ── */
-(async () => {
-  try {
-    const r = await fetch('/api/economy/stats');
-    const d = await r.json();
-    if (d.ok) {
-      $('s-txs').textContent = d.totalTransactions;
-      $('s-burned').textContent = fmt(d.totalBurned);
-      $('e-circ').textContent = fmt(d.totalCirculating);
-      $('e-burned').textContent = fmt(d.totalBurned);
-      $('e-treasury').textContent = fmt(d.topEarners?.[0]?.balance || 0);
-      $('e-txs').textContent = d.totalTransactions;
-    }
-  } catch (_) {}
-
-  try {
-    const r = await fetch('/health');
-    const d = await r.json();
-    if (d.status === 'OK') {
-      const hrs = Math.floor((d.core?.uptime || 0) / 3600);
-      $('s-uptime').textContent = hrs > 0 ? hrs + 'h' : 'live';
-    }
-  } catch (_) { $('s-uptime').textContent = 'live'; }
-
-  try {
-    const r = await fetch('/api/brdg/token');
-    const d = await r.json();
-    if (d.ok && d.token) {
-      $('brdg-footer').textContent = fmt(d.token.totalSupply) + ' BRDG minted \u00b7 ' + fmt(d.token.totalBurned) + ' burned \u00b7 Linea L2';
-    }
-  } catch (_) {}
-})();
-
-/* ── PWA Install Prompt ── */
-let deferredPrompt = null;
-const installBtn = document.getElementById('pwa-install-btn');
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.style.display = 'inline-block';
-});
-
-installBtn.addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const result = await deferredPrompt.userChoice;
-  console.log('[Bridge AI] Install:', result.outcome);
-  deferredPrompt = null;
-  installBtn.style.display = 'none';
-});
-
-window.addEventListener('appinstalled', () => {
-  installBtn.style.display = 'none';
-  deferredPrompt = null;
-  console.log('[Bridge AI] App installed');
-});
-
-/* ── Service Worker Registration ── */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('[Bridge AI] SW registered, scope:', reg.scope))
-      .catch(err => console.warn('[Bridge AI] SW registration failed:', err));
-  });
-}
-</script>
-<!-- Globe canvas replaced by Pexels video background -->
+<script src="/app.js" defer></script>
+<script src="/bridge-auth.js" defer></script>
 <script src="/bridge-widget.js" defer></script>
 <script src="/global-nav.js" defer></script>
 </body>

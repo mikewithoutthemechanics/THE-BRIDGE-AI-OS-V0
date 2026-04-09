@@ -12,7 +12,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 
 const express = require("express");
 // body-parser not needed — Express 5 has built-in JSON/urlencoded parsing
-const sqlite3 = require("better-sqlite3");
+const { supabase } = require('./lib/supabase');
 const axios = require("axios");
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
@@ -131,26 +131,8 @@ function generateSignature(unsigned, passphrase) {
 }
 
 // ================= DATABASE =================
-const db = new sqlite3("./users.db");
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-
-db.exec(`CREATE TABLE IF NOT EXISTS clients (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT,
-  phone TEXT,
-  service TEXT,
-  status TEXT
-)`);
-
-db.exec(`CREATE TABLE IF NOT EXISTS payments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  client TEXT,
-  amount REAL,
-  status TEXT,
-  reference TEXT UNIQUE,
-  pf_payment_id TEXT
-)`);
+// All persistent data now lives in Supabase (tables: clients, payments, etc.)
+// The `supabase` client is imported from ./lib/supabase above.
 
 // ================= FOUNDER TAX (must be before checkout which uses it) =================
 let founderTaxRate = 0; // Additional % extracted before standard split (0-20%)
@@ -167,41 +149,45 @@ const CONFIG = {
 };
 
 // ================= CLIENT CAPTURE =================
-app.post("/lead", (req, res) => {
+app.post("/lead", async (req, res) => {
   const { name, phone, service } = req.body;
   if (!name || !String(name).trim() || !phone || !String(phone).trim() || !service || !String(service).trim()) {
     return res.status(400).json({ error: 'name, phone, and service are required' });
   }
 
-  const insertClient = db.prepare("INSERT INTO clients(name, phone, service, status) VALUES(?,?,?,?)");
-  insertClient.run(String(name).trim(), String(phone).trim(), String(service).trim(), "new");
-
-  res.json({ status: "lead captured" });
+  try {
+    await supabase.from('clients').insert({ name: String(name).trim(), phone: String(phone).trim(), service: String(service).trim(), status: 'new' });
+    res.json({ status: "lead captured" });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to capture lead' });
+  }
 });
 
 // ================= AI SALES AUTO CLOSE =================
-app.post("/auto-close", requireAdmin, (req, res) => {
-  const selectNewClients = db.prepare("SELECT * FROM clients WHERE status='new'");
-  const rows = selectNewClients.all();
-
-  const updateClient = db.prepare("UPDATE clients SET status='closed' WHERE id=?");
-  rows.forEach(client => {
-    updateClient.run(client.id);
-  });
-
-  res.json({ status: "deals closed", count: rows.length });
+app.post("/auto-close", requireAdmin, async (req, res) => {
+  try {
+    const { data: rows } = await supabase.from('clients').select('*').eq('status', 'new');
+    const ids = (rows || []).map(r => r.id);
+    if (ids.length) {
+      await supabase.from('clients').update({ status: 'closed' }).in('id', ids);
+    }
+    res.json({ status: "deals closed", count: ids.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ================= PAYMENT GATEWAY (BATCH POOL UNTIL PAYFAST VERIFIED) =================
-app.post("/create-payment", (req, res) => {
+app.post("/create-payment", async (req, res) => {
   const { client, amount, email } = req.body;
   const parsedAmount = parseFloat(amount);
   if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
     return res.status(400).json({ error: 'amount must be a positive number' });
   }
   const reference = `REF_${Date.now()}`;
-  const insertPayment = db.prepare("INSERT INTO payments(client, amount, status, reference) VALUES(?,?,?,?)");
-  insertPayment.run(client || 'Customer', amount || '0', "pending", reference);
+  try {
+    await supabase.from('payments').insert({ client: client || 'Customer', amount: parsedAmount, status: 'pending', reference });
+  } catch (_) { /* best-effort */ }
   // Redirect to internal checkout page instead of PayFast
   res.json({ payment_url: `/checkout?ref=${reference}&amount=${amount || 10}&client=${encodeURIComponent(client || 'Customer')}&email=${encodeURIComponent(email || '')}` });
 });
@@ -219,8 +205,8 @@ app.get("/checkout", (req, res) => {
 app.post("/api/checkout/confirm", async (req, res) => {
   const { ref, amount, client, email, method } = req.body;
   try {
-    // Update payment status in SQLite
-    db.prepare("UPDATE payments SET status = 'batch_pool' WHERE reference = ?").run(ref);
+    // Update payment status in Supabase
+    await supabase.from('payments').update({ status: 'batch_pool' }).eq('reference', ref);
     // Record in PostgreSQL economy DB
     if (typeof economyDb !== 'undefined') {
       const payment = await economyDb.query(
@@ -265,13 +251,13 @@ app.post("/api/checkout/confirm", async (req, res) => {
 });
 
 // Keep PayFast for when verified
-app.post("/create-payment-payfast", (req, res) => {
+app.post("/create-payment-payfast", async (req, res) => {
   const { client, amount } = req.body;
   const reference = `REF_${Date.now()}`;
   const paymentData = { merchant_id: CONFIG.payfast_merchant_id, merchant_key: CONFIG.payfast_merchant_key, return_url: CONFIG.return_url, cancel_url: CONFIG.cancel_url, notify_url: CONFIG.notify_url, name_first: client, amount: amount, item_name: "Health Service", m_payment_id: reference };
   const signature = generateSignature(paymentData, CONFIG.passphrase);
   paymentData.signature = signature;
-  db.prepare("INSERT INTO payments(client, amount, status, reference) VALUES(?,?,?,?)").run(client, amount, "pending", reference);
+  try { await supabase.from('payments').insert({ client, amount: parseFloat(amount) || 0, status: 'pending', reference }); } catch (_) {}
   res.json({ payment_url: "https://www.payfast.co.za/eng/process?" + new URLSearchParams(paymentData).toString() });
 });
 
@@ -308,16 +294,14 @@ app.post("/payfast/notify", async (req, res) => {
   const gross = parseFloat(unsigned.amount_gross || "0");
   if (isNaN(gross) || gross <= 0) return res.sendStatus(400);
 
-  const selectPayment = db.prepare("SELECT * FROM payments WHERE reference=?");
-  const payment = selectPayment.get(reference);
-  if (!payment) return res.sendStatus(404);
+  const { data: paymentRow } = await supabase.from('payments').select('*').eq('reference', reference).single();
+  if (!paymentRow) return res.sendStatus(404);
 
-  const expected = parseFloat(payment.amount || "0");
+  const expected = parseFloat(paymentRow.amount || "0");
   if (isNaN(expected) || expected !== gross) return res.sendStatus(400);
-  if (payment.status === "paid") return res.sendStatus(200);
+  if (paymentRow.status === "paid") return res.sendStatus(200);
 
-  const updatePayment = db.prepare("UPDATE payments SET status='paid', pf_payment_id=? WHERE reference=?");
-  updatePayment.run(pfId, reference);
+  await supabase.from('payments').update({ status: 'paid', pf_payment_id: pfId }).eq('reference', reference);
 
   // === BridgeAI Economy: record payment and split revenue ===
   try {
@@ -400,7 +384,7 @@ app.get("/payment/cancel", (req, res) => {
 });
 
 // ================= WHATSAPP BOT (WEBHOOK READY) =================
-app.post("/whatsapp", (req, res) => {
+app.post("/whatsapp", async (req, res) => {
   const message = req.body.message;
   const from = req.body.from;
 
@@ -415,8 +399,7 @@ app.post("/whatsapp", (req, res) => {
   }
 
   if (message === "YES") {
-    const insertClient = db.prepare("INSERT INTO clients(name, phone, service, status) VALUES(?,?,?,?)");
-    insertClient.run(from, from, "Health Service", "closed");
+    try { await supabase.from('clients').insert({ name: from, phone: from, service: 'Health Service', status: 'closed' }); } catch (_) {}
 
     return res.json({
       reply: "Booking confirmed. Payment link coming..."
@@ -525,7 +508,7 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK", core: "reachable" });
 });
 
-app.get("/api/agents", (req, res) => {
+app.get("/api/agents", async (req, res) => {
   try {
     const fs = require('fs');
     const agentDir = path.join(__dirname, 'agents');
@@ -540,10 +523,10 @@ app.get("/api/agents", (req, res) => {
     } catch (_) {}
     const byLayer = { L1: [], L2: [], L3: [] };
     agents.forEach(a => (byLayer[a.layer] || byLayer.L1).push(a));
-    // Also pull from SQLite lg_agents table
+    // Also pull from Supabase lg_agents table
     try {
-      const dbAgents = db.prepare('SELECT * FROM lg_agents ORDER BY created_at DESC').all();
-      dbAgents.forEach(a => agents.push({ id: a.id, name: a.name, type: a.type, layer: 'L1', source: 'db' }));
+      const { data: dbAgents } = await supabase.from('lg_agents').select('*').order('created_at', { ascending: false });
+      (dbAgents || []).forEach(a => agents.push({ id: a.id, name: a.name, type: a.type, layer: 'L1', source: 'db' }));
     } catch (_) {}
     res.json({
       layers: {
@@ -677,7 +660,7 @@ app.get("/api/logs", requireAdmin, (req, res) => {
   if (lines.length === 0) {
     lines.push(`[${new Date().toISOString()}] [INFO] System initialized`);
     lines.push(`[${new Date().toISOString()}] [INFO] Bridge AI OS server running on port 3000`);
-    lines.push(`[${new Date().toISOString()}] [INFO] SQLite: users.db loaded`);
+    lines.push(`[${new Date().toISOString()}] [INFO] Supabase client initialized`);
     lines.push(`[${new Date().toISOString()}] [INFO] PostgreSQL economy pool connected`);
   }
   res.type('text/plain').send(lines.join('\n'));
@@ -749,7 +732,7 @@ app.get("/share/:id/metadata", (req, res) => {
 // ================= SECRETS MANAGEMENT API =================
 const secrets = require('./lib/secrets');
 
-// Seed env vars into DB on first boot
+// Seed env vars into DB on first boot (async — fire and forget)
 secrets.seedFromEnv([
   // Primary: mr-myburg brain orchestrator mail server
   'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'SMTP_FROM_NAME', 'SMTP_TLS_REJECT_UNAUTHORIZED',
@@ -759,7 +742,7 @@ secrets.seedFromEnv([
   'BRAIN_ADMIN_EMAIL', 'BRAIN_ADMIN_NAME', 'BRAIN_IDENTITY',
   'PAYFAST_MERCHANT_ID', 'PAYFAST_MERCHANT_KEY', 'PAYFAST_PASSPHRASE',
   'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'OPENROUTER_API_KEY'
-]);
+]).catch(() => {});
 
 // Internal-only secrets API — requires ADMIN_TOKEN header
 function requireAdmin(req, res, next) {
@@ -774,24 +757,24 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-app.get('/api/secrets', requireAdmin, (req, res) => {
-  res.json(secrets.listSecrets());
+app.get('/api/secrets', requireAdmin, async (req, res) => {
+  res.json(await secrets.listSecrets());
 });
 
-app.post('/api/secrets', requireAdmin, (req, res) => {
+app.post('/api/secrets', requireAdmin, async (req, res) => {
   const { key_name, key_value, service } = req.body;
   if (!key_name || !key_value) return res.status(400).json({ error: 'key_name and key_value required' });
-  secrets.setSecret(key_name, key_value, service || 'API', 'api');
+  await secrets.setSecret(key_name, key_value, service || 'API', 'api');
   res.json({ ok: true, key_name });
 });
 
-app.delete('/api/secrets/:key', requireAdmin, (req, res) => {
-  secrets.deleteSecret(req.params.key);
+app.delete('/api/secrets/:key', requireAdmin, async (req, res) => {
+  await secrets.deleteSecret(req.params.key);
   res.json({ ok: true });
 });
 
 // Webhook: Notion Secrets Vault → local DB sync
-app.post('/api/webhook/secrets-sync', (req, res) => {
+app.post('/api/webhook/secrets-sync', async (req, res) => {
   const sig = req.headers['x-webhook-signature'];
   const expected = secrets.getSecret('WEBHOOK_SECRET') || process.env.WEBHOOK_SECRET;
   if (!expected) return res.status(503).json({ error: 'WEBHOOK_SECRET not configured' });
@@ -800,7 +783,7 @@ app.post('/api/webhook/secrets-sync', (req, res) => {
   if (sigBuf.length !== expectedBuf2.length || !crypto.timingSafeEqual(sigBuf, expectedBuf2)) {
     return res.status(401).json({ error: 'unauthorized' });
   }
-  const result = secrets.syncFromNotion(req.body);
+  const result = await secrets.syncFromNotion(req.body);
   res.json(result);
 });
 
