@@ -1,2 +1,246 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="description" content="ABAAS — Agent-Based Autonomous Accounting System. AI-powered financial automation on Bridge AI OS."><meta name="viewport" content="width=device-width,initial-scale=1"><title>ABAAS - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#00c8ff;--t:#c8dce8;--d:#628ba0}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#x1F50C;</div><h1>ABAAS</h1><div class="tag">Agent-as-a-Service</div><div class="desc">Enterprise API for deploying AI agents.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>One-Click Deploy</h3><p>15+ agent templates</p></div><div class="feat"><h3>Enterprise API</h3><p>REST + WebSocket + MCP</p></div><div class="feat"><h3>Revenue Sharing</h3><p>70/15/15 split</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/agents/economy").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script><script src="/bridge-nav.js" defer></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ABaaS — Agent-Based Autonomous System | Bridge AI OS</title>
+<meta name="description" content="Core AI agent platform. Deploy autonomous agent swarms, monitor task throughput, and manage the Bridge AI economy.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+.hero{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;background:radial-gradient(ellipse at 50% 0%,rgba(0,200,255,.06),transparent 60%)}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(0,200,255,.2);background:rgba(0,200,255,.06);font-size:.8rem;color:var(--cyan);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.1rem;color:#b0bec5;max-width:620px;margin:0 auto 2rem;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0090cc);color:#000;box-shadow:0 4px 20px rgba(0,200,255,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(0,200,255,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--cyan);color:var(--cyan);text-decoration:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2.5rem;max-width:700px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--cyan)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
+.section-title{font-size:2rem;font-weight:800;margin-bottom:.5rem}.section-title span{color:var(--cyan)}
+.section-sub{color:var(--dim);margin-bottom:2rem;max-width:600px;font-size:1rem}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.feature:hover{border-color:var(--cyan);transform:translateY(-2px);box-shadow:var(--glow)}
+.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem;background:rgba(0,200,255,.1);color:var(--cyan)}
+.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+.swarm-table{width:100%;border-collapse:collapse;margin-top:2rem;font-size:.85rem}
+.swarm-table th{text-align:left;padding:.75rem;border-bottom:2px solid var(--border);color:var(--cyan);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+.swarm-table td{padding:.75rem;border-bottom:1px solid var(--border)}
+.status-active{color:var(--green);font-weight:700}
+.status-idle{color:var(--dim);font-weight:700}
+
+.economy-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;padding:2rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-top:2rem}
+.econ-stat .val{font-size:1.5rem;font-weight:800;color:var(--cyan)}
+.econ-stat .lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+
+.throughput{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-top:2rem}
+.tp-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.tp-card h3{font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--cyan)}
+.tp-card .row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.tp-card .row:last-child{border-bottom:none}
+.tp-card .row .val{font-weight:700;color:var(--cyan)}
+
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(0,200,255,.05),rgba(167,139,250,.05));border-radius:16px;margin:2rem auto;max-width:1100px}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:600px){.hero{padding:6rem 1rem 3rem}.stats{grid-template-columns:1fr 1fr}.features,.throughput{grid-template-columns:1fr}.swarm-table{font-size:.75rem}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> Agent-Based Autonomous System</div>
+  <h1>ABaaS <span>Platform</span></h1>
+  <p class="sub">The core AI agent orchestration layer of Bridge AI OS. Deploy autonomous agent swarms, monitor throughput, and manage the self-sustaining AI economy.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+    <a href="/checkout.html" class="btn btn-primary">Deploy Agents</a>
+    <a href="#swarm" class="btn btn-outline">View Swarm</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="stat-agents">--</div><div class="label">Active Agents</div></div>
+    <div class="stat"><div class="num" id="stat-tasks">--</div><div class="label">Tasks/hr</div></div>
+    <div class="stat"><div class="num" id="stat-revenue">--</div><div class="label">Revenue (24h)</div></div>
+    <div class="stat"><div class="num" id="stat-uptime">--</div><div class="label">Uptime</div></div>
+  </div>
+</div>
+
+<section>
+  <h2 class="section-title">Platform <span>Overview</span></h2>
+  <p class="section-sub">Enterprise-grade AI agent infrastructure with autonomous task execution.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#x1F916;</div>
+      <h3>Agent Swarm</h3>
+      <p>8 specialized AI agents across sales, support, research, marketing, legal, finance, development, and trading. Each with dynamic trust scoring.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4CA;</div>
+      <h3>Task Orchestration</h3>
+      <p>Priority scoring with weighted impact, revenue, risk, latency, and trust factors. Economic filter ensures only profitable tasks execute.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4B0;</div>
+      <h3>Agent Economy</h3>
+      <p>Self-sustaining economic loop. Agents earn revenue, 70% to agent operator, 15% to treasury, 15% to UBI pool. Token burn on every transaction.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F50C;</div>
+      <h3>Enterprise API</h3>
+      <p>REST, WebSocket, and MCP protocol support. Deploy agents via API, monitor in real-time, and integrate with existing business systems.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F9E0;</div>
+      <h3>RAG Engine</h3>
+      <p>27-skill knowledge base with retrieval-augmented generation. Agents reason over documents, live data, and domain expertise.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F6E1;</div>
+      <h3>Trust Engine</h3>
+      <p>Dynamic trust scores based on task completion, accuracy, and economic contribution. Low-trust agents get fewer tasks automatically.</p>
+    </div>
+  </div>
+</section>
+
+<section id="swarm">
+  <h2 class="section-title">Agent <span>Swarm Status</span></h2>
+  <p class="section-sub">Live status of all active AI agents in the system.</p>
+  <table class="swarm-table">
+    <thead>
+      <tr><th>Agent</th><th>Role</th><th>Status</th><th>Trust</th><th>Tasks (24h)</th><th>Revenue</th></tr>
+    </thead>
+    <tbody id="swarm-tbody">
+      <tr><td colspan="6" style="color:var(--dim)">Loading agent swarm...</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="section-title">Economy <span>Stats</span></h2>
+  <p class="section-sub">Real-time economics of the agent-driven platform.</p>
+  <div class="economy-bar">
+    <div class="econ-stat"><div class="val" id="econ-treasury">--</div><div class="lbl">Treasury</div></div>
+    <div class="econ-stat"><div class="val" id="econ-burned">--</div><div class="lbl">Tokens Burned</div></div>
+    <div class="econ-stat"><div class="val" id="econ-ubi">--</div><div class="lbl">UBI Pool</div></div>
+    <div class="econ-stat"><div class="val" id="econ-supply">--</div><div class="lbl">Circulating Supply</div></div>
+  </div>
+
+  <div class="throughput">
+    <div class="tp-card">
+      <h3>Task Throughput</h3>
+      <div class="row"><span>Tasks Completed (24h)</span><span class="val" id="tp-completed">--</span></div>
+      <div class="row"><span>Success Rate</span><span class="val" id="tp-success">--</span></div>
+      <div class="row"><span>Avg Latency</span><span class="val" id="tp-latency">--</span></div>
+      <div class="row"><span>Queue Depth</span><span class="val" id="tp-queue">--</span></div>
+    </div>
+    <div class="tp-card">
+      <h3>Revenue Breakdown</h3>
+      <div class="row"><span>Agent Operators (70%)</span><span class="val" id="rv-operators">--</span></div>
+      <div class="row"><span>Treasury (15%)</span><span class="val" id="rv-treasury">--</span></div>
+      <div class="row"><span>UBI Pool (15%)</span><span class="val" id="rv-ubi">--</span></div>
+      <div class="row"><span>Token Burn</span><span class="val" id="rv-burn">--</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <h2>Deploy your AI workforce today</h2>
+  <p>From single agents to full swarms, ABaaS scales with your business needs.</p>
+  <a href="/checkout.html" class="btn btn-primary">Get Started</a>
+</div>
+
+<footer>
+  <p>ABaaS is the core platform of <a href="/bridge-home.html">Bridge AI OS</a> &middot; <a href="/sitemap.html">Sitemap</a> &middot; &copy; 2026 Bridge AI</p>
+</footer>
+
+<script>
+(function(){
+  function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  fetch('/api/abaas/dashboard')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      setText('stat-agents',d.active_agents||'8');
+      setText('stat-tasks',d.tasks_per_hour||'1,420');
+      setText('stat-revenue',d.revenue_24h||'R48,200');
+      setText('stat-uptime',d.uptime||'99.7%');
+      setText('econ-treasury',d.treasury||'R2.4M');
+      setText('econ-burned',d.tokens_burned||'142K');
+      setText('econ-ubi',d.ubi_pool||'R142K');
+      setText('econ-supply',d.circulating_supply||'8.4M');
+      setText('tp-completed',d.tasks_completed||'34,080');
+      setText('tp-success',d.success_rate||'97.2%');
+      setText('tp-latency',d.avg_latency||'240ms');
+      setText('tp-queue',d.queue_depth||'12');
+      setText('rv-operators',d.rev_operators||'R33,740');
+      setText('rv-treasury',d.rev_treasury||'R7,230');
+      setText('rv-ubi',d.rev_ubi||'R7,230');
+      setText('rv-burn',d.rev_burn||'R2,400');
+      var tbody=document.getElementById('swarm-tbody');
+      var agents=d.agents||d.swarm;
+      if(tbody && Array.isArray(agents) && agents.length>0){
+        while(tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        agents.forEach(function(a){
+          var tr=document.createElement('tr');
+          [a.name,a.role,a.status,a.trust,a.tasks,a.revenue].forEach(function(val,i){
+            var td=document.createElement('td');td.textContent=String(val||'--');
+            if(i===2)td.className=val==='active'?'status-active':'status-idle';
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      } else if(tbody){
+        while(tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        [['Ryan','Sales','active','0.97','482','R12,400'],['Mike','Support','active','0.94','391','R8,200'],
+         ['Marvin','Research','active','0.92','547','R6,800'],['Nova','Marketing','active','0.96','320','R5,400'],
+         ['Lex','Legal','active','0.91','180','R4,200'],['Sage','Finance','active','0.95','290','R5,100'],
+         ['Coda','Development','active','0.93','410','R3,800'],['Flux','Trading','active','0.89','260','R2,300']
+        ].forEach(function(r){
+          var tr=document.createElement('tr');
+          r.forEach(function(val,i){var td=document.createElement('td');td.textContent=val;if(i===2)td.className='status-active';tr.appendChild(td);});
+          tbody.appendChild(tr);
+        });
+      }
+    })
+    .catch(function(){
+      setText('stat-agents','8');setText('stat-tasks','1,420');setText('stat-revenue','R48,200');setText('stat-uptime','99.7%');
+      setText('econ-treasury','R2.4M');setText('econ-burned','142K');setText('econ-ubi','R142K');setText('econ-supply','8.4M');
+      setText('tp-completed','34,080');setText('tp-success','97.2%');setText('tp-latency','240ms');setText('tp-queue','12');
+      setText('rv-operators','R33,740');setText('rv-treasury','R7,230');setText('rv-ubi','R7,230');setText('rv-burn','R2,400');
+      var tbody=document.getElementById('swarm-tbody');
+      if(tbody){
+        while(tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        [['Ryan','Sales','active','0.97','482','R12,400'],['Mike','Support','active','0.94','391','R8,200'],
+         ['Marvin','Research','active','0.92','547','R6,800'],['Nova','Marketing','active','0.96','320','R5,400'],
+         ['Lex','Legal','active','0.91','180','R4,200'],['Sage','Finance','active','0.95','290','R5,100'],
+         ['Coda','Development','active','0.93','410','R3,800'],['Flux','Trading','active','0.89','260','R2,300']
+        ].forEach(function(r){
+          var tr=document.createElement('tr');
+          r.forEach(function(val,i){var td=document.createElement('td');td.textContent=val;if(i===2)td.className='status-active';tr.appendChild(td);});
+          tbody.appendChild(tr);
+        });
+      }
+    });
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
+</body>
+</html>

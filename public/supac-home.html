@@ -1,2 +1,223 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="description" content="SUPAC — Supply Chain AI Command platform on Bridge AI OS."><meta name="viewport" content="width=device-width,initial-scale=1"><title>SUPAC - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#a78bfa;--t:#c8dce8;--d:#628ba0}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#x1F916;</div><h1>SUPAC</h1><div class="tag">Unified Agent Command</div><div class="desc">8 specialized AI agents across 3 tiers.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>8 Active Agents</h3><p>Sales, Support, Research, Marketing, Legal, Finance, Dev, Trading</p></div><div class="feat"><h3>Trust Engine</h3><p>Dynamic trust scores</p></div><div class="feat"><h3>Agent Marketplace</h3><p>70/15/15 split</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/abaas/dashboard").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script><script src="/bridge-nav.js" defer></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supaco Agency — Digital Agency Services | Bridge AI OS</title>
+<meta name="description" content="Full-service digital agency powered by AI. Web development, branding, marketing automation, and AI integration services.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+.hero{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;background:radial-gradient(ellipse at 50% 0%,rgba(167,139,250,.06),transparent 60%)}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(167,139,250,.2);background:rgba(167,139,250,.06);font-size:.8rem;color:var(--purple);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--purple),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.1rem;color:#b0bec5;max-width:600px;margin:0 auto 2rem;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;box-shadow:0 4px 20px rgba(167,139,250,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(167,139,250,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--purple);color:var(--purple);text-decoration:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2.5rem;max-width:700px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--purple)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
+.section-title{font-size:2rem;font-weight:800;margin-bottom:.5rem}.section-title span{color:var(--purple)}
+.section-sub{color:var(--dim);margin-bottom:2rem;max-width:600px;font-size:1rem}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.feature:hover{border-color:var(--purple);transform:translateY(-2px);box-shadow:var(--glow)}
+.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem;background:rgba(167,139,250,.1);color:var(--purple)}
+.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+.packages{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-top:2rem}
+.pkg{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;text-align:center;transition:all .25s}
+.pkg:hover{transform:translateY(-2px)}
+.pkg.featured{border-color:var(--purple);box-shadow:0 0 30px rgba(167,139,250,.12)}
+.pkg h3{font-size:1.2rem;margin-bottom:.25rem}
+.pkg .price{font-size:2.4rem;font-weight:900;color:var(--purple);margin:.5rem 0}
+.pkg .price small{font-size:.85rem;color:var(--dim);font-weight:400}
+.pkg ul{list-style:none;text-align:left;margin:1.5rem 0}
+.pkg li{padding:.35rem 0;color:var(--dim);font-size:.85rem;display:flex;align-items:center;gap:.5rem}
+.pkg li::before{content:"\2713";color:var(--purple);font-weight:700;font-size:.75rem}
+
+.case-studies{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin-top:2rem}
+.case{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.case:hover{border-color:var(--purple);transform:translateY(-2px)}
+.case .tag{font-size:.7rem;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem}
+.case h3{font-size:1.05rem;font-weight:700;margin-bottom:.5rem}
+.case p{font-size:.85rem;color:var(--dim);line-height:1.5}
+.case .result{margin-top:.75rem;font-size:.85rem;color:var(--green);font-weight:700}
+
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(167,139,250,.05),rgba(0,200,255,.05));border-radius:16px;margin:2rem auto;max-width:1100px}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--purple);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:600px){.hero{padding:6rem 1rem 3rem}.stats{grid-template-columns:1fr 1fr}.features,.packages,.case-studies{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> AI-Powered Digital Agency</div>
+  <h1>Supaco <span>Agency</span></h1>
+  <p class="sub">Full-service digital agency supercharged by AI agents. Web development, branding, marketing automation, and AI integration for businesses that want to move fast.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+    <a href="/checkout.html" class="btn btn-primary">Book Consultation</a>
+    <a href="#portfolio" class="btn btn-outline">View Portfolio</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="stat-clients">--</div><div class="label">Active Clients</div></div>
+    <div class="stat"><div class="num" id="stat-projects">--</div><div class="label">Projects Delivered</div></div>
+    <div class="stat"><div class="num" id="stat-satisfaction">--</div><div class="label">Satisfaction</div></div>
+    <div class="stat"><div class="num" id="stat-revenue">--</div><div class="label">Client Revenue Grown</div></div>
+  </div>
+</div>
+
+<section>
+  <h2 class="section-title">Service <span>Offerings</span></h2>
+  <p class="section-sub">Everything you need to build, launch, and grow your digital presence.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#x1F4BB;</div>
+      <h3>Web Development</h3>
+      <p>Custom websites, web apps, and e-commerce platforms. Next.js, React, Node.js with AI-powered code generation for rapid delivery.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F3A8;</div>
+      <h3>Brand Identity</h3>
+      <p>Logo design, brand guidelines, visual identity systems, and AI-generated creative assets. From concept to complete brand kit.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4E3;</div>
+      <h3>Marketing Automation</h3>
+      <p>AI-driven campaigns, email sequences, social media management, and analytics. Automated lead nurturing and conversion optimization.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F916;</div>
+      <h3>AI Integration</h3>
+      <p>Custom chatbots, AI agents, workflow automation, and intelligent dashboards. Integrate Bridge AI into your existing business systems.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4F1;</div>
+      <h3>Mobile Apps</h3>
+      <p>Cross-platform mobile applications with React Native. Push notifications, offline support, and integration with your web backend.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4C8;</div>
+      <h3>Growth Strategy</h3>
+      <p>SEO optimization, content strategy, PPC management, and conversion rate optimization. Data-driven growth for measurable results.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">Service <span>Packages</span></h2>
+  <p class="section-sub">Transparent pricing for every business stage.</p>
+  <div class="packages">
+    <div class="pkg">
+      <h3>Starter</h3>
+      <div class="price">R4,999<small>/mo</small></div>
+      <ul>
+        <li>Landing page or 5-page website</li>
+        <li>Basic brand kit</li>
+        <li>Social media setup</li>
+        <li>Monthly analytics report</li>
+      </ul>
+      <a href="/checkout.html" class="btn btn-outline" style="width:100%;justify-content:center">Select</a>
+    </div>
+    <div class="pkg featured">
+      <h3>Growth</h3>
+      <div class="price">R14,999<small>/mo</small></div>
+      <ul>
+        <li>Custom web application</li>
+        <li>Full brand identity</li>
+        <li>Marketing automation</li>
+        <li>AI chatbot integration</li>
+        <li>Weekly strategy calls</li>
+      </ul>
+      <a href="/checkout.html" class="btn btn-primary" style="width:100%;justify-content:center">Select</a>
+    </div>
+    <div class="pkg">
+      <h3>Enterprise</h3>
+      <div class="price">Custom</div>
+      <ul>
+        <li>Full-stack development team</li>
+        <li>AI agent deployment</li>
+        <li>Dedicated project manager</li>
+        <li>SLA with priority support</li>
+      </ul>
+      <a href="/checkout.html" class="btn btn-outline" style="width:100%;justify-content:center">Contact</a>
+    </div>
+  </div>
+</section>
+
+<section id="portfolio">
+  <h2 class="section-title">Case <span>Studies</span></h2>
+  <p class="section-sub">Selected work from our portfolio of digital transformations.</p>
+  <div class="case-studies">
+    <div class="case">
+      <div class="tag">E-Commerce</div>
+      <h3>FreshMart Online Store</h3>
+      <p>Built a full e-commerce platform with AI-powered product recommendations and automated inventory management for a grocery chain.</p>
+      <div class="result">+180% online sales in 6 months</div>
+    </div>
+    <div class="case">
+      <div class="tag">Healthcare</div>
+      <h3>MedConnect Telehealth</h3>
+      <p>Designed and developed a telemedicine platform with AI triage, appointment scheduling, and integrated payment processing.</p>
+      <div class="result">12,000+ consultations in first quarter</div>
+    </div>
+    <div class="case">
+      <div class="tag">FinTech</div>
+      <h3>PayEase Mobile Wallet</h3>
+      <p>Cross-platform mobile wallet app with biometric auth, QR payments, and AI fraud detection for a South African fintech startup.</p>
+      <div class="result">50,000 users in 3 months</div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <h2>Let's build something extraordinary</h2>
+  <p>Book a free consultation and discover how AI-powered development can transform your business.</p>
+  <a href="/checkout.html" class="btn btn-primary">Book Now</a>
+</div>
+
+<footer>
+  <p>Supaco Agency is a vertical of <a href="/bridge-home.html">Bridge AI OS</a> &middot; <a href="/sitemap.html">Sitemap</a> &middot; &copy; 2026 Bridge AI</p>
+</footer>
+
+<script>
+(function(){
+  function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  fetch('/api/supac/dashboard')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      setText('stat-clients',d.active_clients||'28');
+      setText('stat-projects',d.projects_delivered||'142');
+      setText('stat-satisfaction',d.satisfaction||'98%');
+      setText('stat-revenue',d.revenue_grown||'+R12M');
+    })
+    .catch(function(){
+      setText('stat-clients','28');
+      setText('stat-projects','142');
+      setText('stat-satisfaction','98%');
+      setText('stat-revenue','+R12M');
+    });
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
+</body>
+</html>

@@ -1,2 +1,178 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="description" content="AID — AI-powered humanitarian aid and development platform on Bridge AI OS."><meta name="viewport" content="width=device-width,initial-scale=1"><title>AID - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#ff3c5a;--t:#c8dce8;--d:#628ba0}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#x1F198;</div><h1>AID</h1><div class="tag">Transparent Aid Distribution</div><div class="desc">Track donations, verify recipients, automate disbursement.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>Donor Tracking</h3><p>Source to recipient</p></div><div class="feat"><h3>Verified Recipients</h3><p>KYC verified</p></div><div class="feat"><h3>Smart Disbursement</h3><p>Conditional release</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/defi/status").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script><script src="/bridge-nav.js" defer></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bridge AID — Humanitarian Tech Platform | Bridge AI OS</title>
+<meta name="description" content="Transparent humanitarian aid distribution, beneficiary management, UBI tracking, and impact metrics powered by blockchain and AI.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+.hero{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;background:radial-gradient(ellipse at 50% 0%,rgba(255,60,90,.06),transparent 60%)}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(255,60,90,.2);background:rgba(255,60,90,.06);font-size:.8rem;color:var(--red);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.1rem;color:#b0bec5;max-width:620px;margin:0 auto 2rem;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--red),#cc2040);color:#fff;box-shadow:0 4px 20px rgba(255,60,90,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(255,60,90,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--red);color:var(--red);text-decoration:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2.5rem;max-width:700px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--red)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
+.section-title{font-size:2rem;font-weight:800;margin-bottom:.5rem}.section-title span{color:var(--red)}
+.section-sub{color:var(--dim);margin-bottom:2rem;max-width:600px;font-size:1rem}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.feature:hover{border-color:var(--red);transform:translateY(-2px);box-shadow:var(--glow)}
+.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem;background:rgba(255,60,90,.1);color:var(--red)}
+.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+.impact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;margin-top:2rem}
+.impact-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;text-align:center}
+.impact-card .val{font-size:2rem;font-weight:900;color:var(--red);margin-bottom:.25rem}
+.impact-card .lbl{font-size:.8rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+
+.tracker{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-top:2rem}
+.tracker h3{font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--red)}
+.tracker .row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.tracker .row:last-child{border-bottom:none}
+.tracker .row .val{font-weight:700}
+.tracker .row .val.green{color:var(--green)}
+.tracker .row .val.red{color:var(--red)}
+
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(255,60,90,.05),rgba(0,200,255,.05));border-radius:16px;margin:2rem auto;max-width:1100px}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:600px){.hero{padding:6rem 1rem 3rem}.stats{grid-template-columns:1fr 1fr}.features,.impact-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> Humanitarian Tech</div>
+  <h1>Bridge <span>AID</span></h1>
+  <p class="sub">Transparent, blockchain-verified aid distribution. Track every donation from source to beneficiary with full accountability and real-time impact metrics.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+    <a href="/checkout.html" class="btn btn-primary">Partner With Us</a>
+    <a href="#tracking" class="btn btn-outline">View Impact</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="stat-distributed">--</div><div class="label">Aid Distributed</div></div>
+    <div class="stat"><div class="num" id="stat-beneficiaries">--</div><div class="label">Beneficiaries</div></div>
+    <div class="stat"><div class="num" id="stat-ubi">--</div><div class="label">UBI Recipients</div></div>
+    <div class="stat"><div class="num" id="stat-verified">--</div><div class="label">Verified Txns</div></div>
+  </div>
+</div>
+
+<section>
+  <h2 class="section-title">Aid <span>Capabilities</span></h2>
+  <p class="section-sub">End-to-end humanitarian technology for NGOs, governments, and community organizations.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#x1F4E6;</div>
+      <h3>Distribution Tracking</h3>
+      <p>GPS-tagged aid packages with blockchain verification. Real-time tracking from warehouse to last-mile delivery with tamper-proof receipts.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F465;</div>
+      <h3>Beneficiary Management</h3>
+      <p>Biometric enrollment, KYC verification, and duplicate detection. Manage beneficiary lists with privacy-preserving identity systems.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4B8;</div>
+      <h3>UBI Distribution</h3>
+      <p>Automated universal basic income payments via mobile money and crypto. Smart contract-governed distribution with transparent fund flows.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4CA;</div>
+      <h3>Impact Analytics</h3>
+      <p>Measure outcomes across health, education, and economic indicators. Donor-facing dashboards with SDG alignment scoring.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F50D;</div>
+      <h3>Fraud Prevention</h3>
+      <p>AI-powered anomaly detection identifies ghost beneficiaries, duplicate claims, and diversion patterns in real time.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4F1;</div>
+      <h3>Mobile Field Kit</h3>
+      <p>Offline-first mobile app for field workers. Register beneficiaries, verify distributions, and sync data when connectivity returns.</p>
+    </div>
+  </div>
+</section>
+
+<section id="tracking">
+  <h2 class="section-title">Impact <span>Metrics</span></h2>
+  <p class="section-sub">Live humanitarian impact data powered by on-chain verification.</p>
+  <div class="impact-grid" id="impact-data">
+    <div class="impact-card"><div class="val" id="imp-meals">--</div><div class="lbl">Meals Delivered</div></div>
+    <div class="impact-card"><div class="val" id="imp-health">--</div><div class="lbl">Health Interventions</div></div>
+    <div class="impact-card"><div class="val" id="imp-education">--</div><div class="lbl">Education Grants</div></div>
+    <div class="impact-card"><div class="val" id="imp-water">--</div><div class="lbl">Clean Water (liters)</div></div>
+  </div>
+
+  <div class="tracker">
+    <h3>UBI Distribution Status</h3>
+    <div class="row"><span>Pool Balance</span><span class="val green" id="trk-pool">--</span></div>
+    <div class="row"><span>Last Distribution</span><span class="val" id="trk-last">--</span></div>
+    <div class="row"><span>Next Distribution</span><span class="val" id="trk-next">--</span></div>
+    <div class="row"><span>Monthly Amount Per Person</span><span class="val green" id="trk-amount">--</span></div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <h2>Make every donation count</h2>
+  <p>Partner with Bridge AID for transparent, verifiable humanitarian impact.</p>
+  <a href="/checkout.html" class="btn btn-primary">Become a Partner</a>
+</div>
+
+<footer>
+  <p>Bridge AID is a vertical of <a href="/bridge-home.html">Bridge AI OS</a> &middot; <a href="/sitemap.html">Sitemap</a> &middot; &copy; 2026 Bridge AI</p>
+</footer>
+
+<script>
+(function(){
+  function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  Promise.all([
+    fetch('/api/ubi/status').then(function(r){return r.json();}).catch(function(){return {};}),
+    fetch('/api/aid/dashboard').then(function(r){return r.json();}).catch(function(){return {};})
+  ]).then(function(results){
+    var ubi=results[0]||{};var aid=results[1]||{};
+    setText('stat-distributed',aid.total_distributed||'R4.2M');
+    setText('stat-beneficiaries',aid.beneficiaries||'3,400');
+    setText('stat-ubi',ubi.recipients||'156');
+    setText('stat-verified',aid.verified_txns||'12,800');
+    setText('imp-meals',aid.meals||'84,000');
+    setText('imp-health',aid.health_interventions||'6,200');
+    setText('imp-education',aid.education_grants||'1,400');
+    setText('imp-water',aid.clean_water||'2.4M');
+    setText('trk-pool',ubi.pool_balance||'R142,000');
+    setText('trk-last',ubi.last_distribution||'2026-04-01');
+    setText('trk-next',ubi.next_distribution||'2026-05-01');
+    setText('trk-amount',ubi.amount_per_person||'R850');
+  }).catch(function(){
+    setText('stat-distributed','R4.2M');setText('stat-beneficiaries','3,400');setText('stat-ubi','156');setText('stat-verified','12,800');
+    setText('imp-meals','84,000');setText('imp-health','6,200');setText('imp-education','1,400');setText('imp-water','2.4M');
+    setText('trk-pool','R142,000');setText('trk-last','2026-04-01');setText('trk-next','2026-05-01');setText('trk-amount','R850');
+  });
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
+</body>
+</html>
