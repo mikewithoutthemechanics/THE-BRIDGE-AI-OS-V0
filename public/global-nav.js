@@ -53,7 +53,7 @@
   // CLIENT tier — only for authenticated users
   if (isAuthenticated) {
     MORE_ITEMS.push(
-      { label: 'Console', href: '/console.html' },
+      { label: 'Dashboard', href: '/dashboard' },
       { label: 'CRM', href: '/crm.html' },
       { label: 'Invoicing', href: '/invoicing.html' },
       { label: 'Settings', href: '/settings.html' },

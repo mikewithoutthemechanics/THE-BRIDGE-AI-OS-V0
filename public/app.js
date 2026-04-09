@@ -371,10 +371,10 @@ if ('serviceWorker' in navigator) {
       var user = JSON.parse(localStorage.getItem('bridge_user'));
       var name = (user && (user.name || user.email)) || 'My Account';
       btn.textContent = name.split(' ')[0];
-      btn.href = '/console.html';
+      btn.href = '/dashboard';
     } catch (_) {
-      btn.textContent = 'Console';
-      btn.href = '/console.html';
+      btn.textContent = 'Dashboard';
+      btn.href = '/dashboard';
     }
   }
 })();
