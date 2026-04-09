@@ -1,7 +1,7 @@
 // =============================================================================
 // VERCEL SERVERLESS — SINGLE CATCH-ALL FUNCTION v2
 // Handles ALL /api/*, /health, /orchestrator/*, /billing, /ask, /auth/*, /referral/*
-// Buckets: ops/treasury/ubi/founder — matches treasury-dashboard.html
+// Buckets: ops(45%)/growth(15%)/reserve(15%)/founder(25%) — Config E
 // =============================================================================
 const os = require('os');
 const fs = require('fs');
