@@ -238,9 +238,17 @@ const authUsers = new Map();
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFERRAL_CODES = { BRIDGE2025: 500, AILAUNCH: 250, BETA100: 100 };
 
-let jwt, bcrypt;
+let jwt, bcrypt, clerkVerifyToken, clerkCreateClient, clerkClientInstance;
 try { jwt = require('jsonwebtoken'); } catch (_) { jwt = null; }
 try { bcrypt = require('bcryptjs'); } catch (_) { bcrypt = null; }
+try {
+  const clerk = require('@clerk/express');
+  clerkVerifyToken = clerk.verifyToken;
+  clerkCreateClient = clerk.createClerkClient;
+  if (process.env.CLERK_SECRET_KEY) {
+    clerkClientInstance = clerkCreateClient({ secretKey: process.env.CLERK_SECRET_KEY });
+  }
+} catch (_) { clerkVerifyToken = null; }
 
 function makeToken(payload) {
   if (!jwt) return `stub-token-${Date.now()}`;
@@ -671,6 +679,53 @@ module.exports = async (req, res) => {
     const user = authUsers.get(payload.email);
     if (user) user.credits = (user.credits || 0) + credits;
     return json(res, { success: true, code: body.code, credits, message: `${credits} credits applied` });
+  }
+
+  // ── Clerk: Config (publishable key for frontend) ──
+  if (p === '/api/config/clerk') {
+    return json(res, { publishableKey: process.env.CLERK_PUBLISHABLE_KEY || '' });
+  }
+
+  // ── Clerk: Sync (exchange Clerk session for Bridge JWT) ──
+  if (p === '/api/auth/clerk-sync' && req.method === 'POST') {
+    if (!clerkVerifyToken || !clerkClientInstance) {
+      return json(res, { ok: false, error: 'Clerk not configured' }, 503);
+    }
+    const authHeader = req.headers['authorization'] || '';
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (!bearerToken) return json(res, { ok: false, error: 'No Clerk session token' }, 401);
+
+    try {
+      const clerkPayload = await clerkVerifyToken(bearerToken, {
+        secretKey: process.env.CLERK_SECRET_KEY,
+      });
+      const clerkUser = await clerkClientInstance.users.getUser(clerkPayload.sub);
+      const email = clerkUser.emailAddresses && clerkUser.emailAddresses[0] && clerkUser.emailAddresses[0].emailAddress;
+      if (!email) return json(res, { ok: false, error: 'Clerk user has no email' }, 400);
+
+      const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || null;
+      let provider = 'clerk';
+      if (clerkUser.externalAccounts && clerkUser.externalAccounts[0]) {
+        provider = clerkUser.externalAccounts[0].provider || 'clerk';
+      }
+
+      // Upsert into ephemeral auth store
+      let user = authUsers.get(email.toLowerCase());
+      if (!user) {
+        user = { id: 'usr_' + Date.now(), email: email.toLowerCase(), name, credits: 0, provider, clerk_id: clerkPayload.sub, created_at: new Date().toISOString() };
+        authUsers.set(email.toLowerCase(), user);
+      }
+
+      const token = makeToken({ sub: user.id, email: user.email });
+      return json(res, { ok: true, token, user: { id: user.id, email: user.email, name: name || user.name, credits: user.credits }, clerk_id: clerkPayload.sub });
+    } catch (e) {
+      return json(res, { ok: false, error: 'Clerk verification failed' }, 401);
+    }
+  }
+
+  // ── Auth: Logout ──
+  if (p === '/api/auth/logout' && req.method === 'POST') {
+    return json(res, { ok: true, message: 'Signed out' });
   }
 
   // ── L1 / L2 / L3 orchestrator proxy stubs ──

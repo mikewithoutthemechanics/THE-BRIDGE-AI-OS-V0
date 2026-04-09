@@ -24,6 +24,7 @@
 
 require('dotenv').config();
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 const app = express();
@@ -54,6 +55,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+app.use(cookieParser());
 
 // ── JSON GUARD — prevent HTML responses on agent/api routes ─────────────────
 try {

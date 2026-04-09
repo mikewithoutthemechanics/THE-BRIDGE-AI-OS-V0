@@ -220,9 +220,13 @@ async function doLgn() {
 
 async function doLgt() {
   if (!tok) { showR({ error: 'No token — login first' }, false); return; }
+  if (window.BridgeAuth) {
+    await window.BridgeAuth.signOut('/auth-dashboard.html');
+    return;
+  }
   var r = await fetch('/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + tok } });
   var d = await r.json();
-  tok = ''; localStorage.removeItem('bridge_token');
+  tok = ''; localStorage.removeItem('bridge_token'); localStorage.removeItem('bridge_user_token');
   showR(d, r.ok);
 }
 

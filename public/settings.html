@@ -393,11 +393,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--a)}
     } catch { showMsg('notif-msg', 'Network error.', false); }
   });
 
-  // Logout
+  // Logout (clears Bridge JWT + Clerk session)
   document.getElementById('logout-btn').addEventListener('click', function() {
-    localStorage.removeItem('bridge_token');
-    localStorage.removeItem('bridge_user');
-    window.location.href = '/';
+    if (window.BridgeAuth) {
+      window.BridgeAuth.signOut('/');
+    } else {
+      localStorage.removeItem('bridge_token');
+      localStorage.removeItem('bridge_user_token');
+      localStorage.removeItem('bridge_user');
+      window.location.href = '/';
+    }
   });
 
   // Delete data
@@ -413,6 +418,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--a)}
   });
 })();
 </script>
+<script src="/bridge-auth.js"></script>
 <script src="/global-nav.js" defer></script>
 <script src="/bridge-widget.js" defer></script>
 </body>

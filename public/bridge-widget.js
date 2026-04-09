@@ -166,7 +166,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
         const res = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, name: name || this.userData.name, password: 'bridge-' + Date.now() })
+          body: JSON.stringify({ email, name: name || this.userData.name, password: Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('') })
         });
         const data = await res.json();
         if (data.ok && data.token) {
@@ -329,7 +329,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
     }
 
     _renderMsg(role, text, scroll) {
-      const m = el('div', 'msg ' + PFX + 'msg-' + role);
+      const m = el('div', 'msg msg-' + role);
       m.textContent = text;
       this.msgArea.insertBefore(m, this.typingEl);
       if (scroll) this._scrollBottom();
