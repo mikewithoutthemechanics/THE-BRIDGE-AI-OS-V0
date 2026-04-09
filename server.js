@@ -13,6 +13,8 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 const express = require("express");
 // body-parser not needed — Express 5 has built-in JSON/urlencoded parsing
 const { supabase } = require('./lib/supabase');
+const validation = require('./lib/validation');
+const { validate } = require('./lib/validation');
 const axios = require("axios");
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
@@ -149,19 +151,25 @@ const CONFIG = {
 };
 
 // ================= CLIENT CAPTURE =================
-app.post("/lead", async (req, res) => {
-  const { name, phone, service } = req.body;
-  if (!name || !String(name).trim() || !phone || !String(phone).trim() || !service || !String(service).trim()) {
-    return res.status(400).json({ error: 'name, phone, and service are required' });
-  }
-
-  try {
-    await supabase.from('clients').insert({ name: String(name).trim(), phone: String(phone).trim(), service: String(service).trim(), status: 'new' });
-    res.json({ status: "lead captured" });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to capture lead' });
-  }
-});
+app.post("/lead", 
+  validation.validateRequest({
+    name: { type: 'string', required: true, min: 1, max: 100 },
+    phone: { type: 'string', required: true, min: 10, max: 20, validate: validation.validatePhone },
+    service: { type: 'string', required: true, min: 1, max: 100 }
+  }),
+  async (req, res) => {
+    try {
+      await supabase.from('clients').insert({
+        name: req.body.name.trim(),
+        phone: req.body.phone.trim(),
+        service: req.body.service.trim(),
+        status: 'new'
+      });
+      res.json({ status: "lead captured" });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to capture lead' });
+    }
+  });
 
 // ================= AI SALES AUTO CLOSE =================
 app.post("/auto-close", requireAdmin, async (req, res) => {
@@ -178,19 +186,22 @@ app.post("/auto-close", requireAdmin, async (req, res) => {
 });
 
 // ================= PAYMENT GATEWAY (BATCH POOL UNTIL PAYFAST VERIFIED) =================
-app.post("/create-payment", async (req, res) => {
-  const { client, amount, email } = req.body;
-  const parsedAmount = parseFloat(amount);
-  if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
-    return res.status(400).json({ error: 'amount must be a positive number' });
-  }
-  const reference = `REF_${Date.now()}`;
-  try {
-    await supabase.from('payments').insert({ client: client || 'Customer', amount: parsedAmount, status: 'pending', reference });
-  } catch (_) { /* best-effort */ }
-  // Redirect to internal checkout page instead of PayFast
-  res.json({ payment_url: `/checkout?ref=${reference}&amount=${amount || 10}&client=${encodeURIComponent(client || 'Customer')}&email=${encodeURIComponent(email || '')}` });
-});
+app.post("/create-payment", 
+  validation.validateRequest({
+    client: { type: 'string', required: true, min: 1, max: 100 },
+    amount: { type: 'positive', required: true },
+    email: { type: 'string', required: false, validate: validation.validateEmail }
+  }),
+  async (req, res) => {
+    const { client, amount, email } = req.body;
+    const parsedAmount = parseFloat(amount);
+    const reference = `REF_${Date.now()}`;
+    try {
+      await supabase.from('payments').insert({ client, amount: parsedAmount, status: 'pending', reference });
+    } catch (_) { /* best-effort */ }
+    // Redirect to internal checkout page instead of PayFast
+    res.json({ payment_url: `/checkout?ref=${reference}&amount=${amount || 10}&client=${encodeURIComponent(client || 'Customer')}&email=${encodeURIComponent(email || '')}` });
+  });
 
 // Internal checkout page — collects to batch pool for later remittance
 app.get("/checkout", (req, res) => {
@@ -198,57 +209,65 @@ app.get("/checkout", (req, res) => {
   const safeAmount = esc(req.query.amount || '0.00');
   const safeClient = esc(decodeURIComponent(req.query.client || 'Customer'));
   const safeEmail = esc(decodeURIComponent(req.query.email || ''));
-  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bridge AI OS — Checkout</title><link rel="stylesheet" href="/bridge-tokens.css"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg-0);color:var(--text-primary);font-family:var(--font-ui);display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:420px;width:100%}h1{font-size:22px;font-weight:700;margin-bottom:4px}h1 span{color:var(--cyan)}.sub{color:var(--text-secondary);font-size:13px;margin-bottom:24px}.amount{font-size:36px;font-weight:800;color:var(--cyan);font-family:var(--font-mono);text-align:center;margin:20px 0}.detail{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05)}.detail-label{color:var(--text-secondary)}.methods{display:flex;flex-direction:column;gap:8px;margin:20px 0}.method{background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s}.method:hover,.method.selected{border-color:var(--cyan)}.method-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border)}.method.selected .method-dot{background:var(--cyan);border-color:var(--cyan)}.btn{width:100%;padding:14px;border-radius:8px;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s}.btn-pay{background:var(--cyan);color:#000}.btn-pay:hover{filter:brightness(1.1)}.btn-pay:disabled{opacity:0.5;cursor:not-allowed}.note{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px}.success{display:none;text-align:center}.success h2{color:var(--alive);font-size:20px;margin-bottom:8px}.success p{color:var(--text-secondary);font-size:13px}</style></head><body><div class="card" id="checkout-form"><h1>Bridge <span>AI OS</span></h1><div class="sub">Secure Checkout</div><div class="amount">R${safeAmount}</div><div class="detail"><span class="detail-label">Reference</span><span style="font-family:var(--font-mono);font-size:12px">${safeRef}</span></div><div class="detail"><span class="detail-label">Customer</span><span>${safeClient}</span></div><div class="detail"><span class="detail-label">Product</span><span>Bridge AI OS Pro</span></div><div class="methods"><div class="method selected" onclick="selectMethod(this,'eft')"><span class="method-dot"></span><div><strong>EFT / Bank Transfer</strong><div style="font-size:11px;color:var(--text-secondary)">Manual transfer — batch processed</div></div></div><div class="method" onclick="selectMethod(this,'card')"><span class="method-dot"></span><div><strong>Card Payment</strong><div style="font-size:11px;color:var(--text-secondary)">Available when PayFast verified</div></div></div><div class="method" onclick="selectMethod(this,'crypto')"><span class="method-dot"></span><div><strong>Crypto (ETH/BTC/SOL)</strong><div style="font-size:11px;color:var(--text-secondary)">Send to treasury wallet</div></div></div></div><button class="btn btn-pay" id="pay-btn" onclick="processPayment()">Confirm Payment — R${safeAmount}</button><div class="note">Funds are held in a batch pool and processed within 24 hours.<br>Treasury splits: UBI 40% · Treasury 30% · Ops 20% · Founder 10%</div></div><div class="success" id="success"><h2>Payment Recorded</h2><p>Reference: ${safeRef}</p><p>Amount: R${safeAmount} added to batch pool</p><p style="margin-top:12px">Treasury will be updated within 24 hours.</p><p style="margin-top:16px"><a href="/treasury-dash" style="color:var(--cyan)">View Treasury →</a> · <a href="/apps" style="color:var(--cyan)">Go to Apps →</a></p></div><script>var selectedMethod='eft';var _ref=${JSON.stringify(req.query.ref||'')};var _amount=${JSON.stringify(req.query.amount||'0')};var _client=${JSON.stringify(decodeURIComponent(req.query.client||''))};var _email=${JSON.stringify(decodeURIComponent(req.query.email||''))};function selectMethod(el,m){document.querySelectorAll('.method').forEach(function(e){e.classList.remove('selected')});el.classList.add('selected');selectedMethod=m}function processPayment(){var btn=document.getElementById('pay-btn');btn.disabled=true;btn.textContent='Processing...';fetch('/api/checkout/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ref:_ref,amount:_amount,client:_client,email:_email,method:selectedMethod})}).then(function(r){return r.json()}).then(function(d){document.getElementById('checkout-form').style.display='none';document.getElementById('success').style.display='block'}).catch(function(){btn.disabled=false;btn.textContent='Retry'})}</script></body></html>`);
+  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bridge AI OS — Checkout</title><link rel="stylesheet" href="/bridge-tokens.css"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg-0);color:var(--text-primary);font-family:var(--font-ui);display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:420px;width:100%}h1{font-size:22px;font-weight:700;margin-bottom:4px}h1 span{color:var(--cyan)}.sub{color:var(--text-secondary);font-size:13px;margin-bottom:24px}.amount{font-size:36px;font-weight:800;color:var(--cyan);font-family:var(--font-mono);text-align:center;margin:20px 0}.detail{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05)}.detail-label{color:var(--text-secondary)}.methods{display:flex;flex-direction:column;gap:8px;margin:20px 0}.method{background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s}.method:hover,.method.selected{border-color:var(--cyan)}.method-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border)}.method.selected .method-dot{background:var(--cyan);border-color:var(--cyan)}.btn{width:100%;padding:14px;border-radius:8px;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s}.btn-pay{background:var(--cyan);color:#000}.btn-pay:hover{filter:brightness(1.1)}.btn-pay:disabled{opacity:0.5;cursor:not-allowed}.note{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px}.success{display:none;text-align:center}.success h2{color:var(--alive);font-size:20px;margin-bottom:8px}.success p{color:var(--text-secondary);font-size:13px}</style></head><body><div class="card" id="checkout-form"><h1>Bridge <span>AI OS</span></h1><div class="sub">Secure Checkout</div><div class="amount">R${safeAmount}</div><div class="detail"><span class="detail-label">Reference</span><span style="font-family:var(--font-mono);font-size:12px">${safeRef}</span></div><div class="detail"><span class="detail-label">Customer</span><span>${safeClient}</span></div><div class="detail"><span class="detail-label">Product</span><span>Bridge AI OS Pro</span></div><div class="methods"><div class="method selected" onclick="selectMethod(this,'eft')"><span class="method-dot"></span><div><strong>EFT / Bank Transfer</strong><div style="font-size:11px;color:var(--text-secondary)">Manual transfer — batch processed</div></div></div><div class="method" onclick="selectMethod(this,'card')"><span class="method-dot"></span><div><strong>Card Payment</strong><div style="font-size:11px;color:var(--text-secondary)">Available when PayFast verified</div></div></div><div class="method" onclick="selectMethod(this,'crypto')"><span class="method-dot"></span><div><strong>Crypto (ETH/BTC/SOL)</strong><div style="font-size:11px;color:var(--text-secondary)">Send to treasury wallet</div></div></div></div><button class="btn btn-pay" id="pay-btn" onclick="processPayment()">Confirm Payment — R${safeAmount}</button><div class="note">Funds are held in a batch pool and processed within 24 hours.<br>Treasury splits: UBI 40% · Treasury 30% · Ops 20% · Founder 10%</div></div><div class="success" id="success"><h2>Payment Recorded</h2><p>Reference: ${safeRef}</p><p>Amount: R${safeAmount} added to batch pool</p><p style="margin-top:12px">Treasury will be updated within 24 hours.</p><p style="margin-top:16px"><a href="/treasury-dash" style="color:var(--cyan)">View Treasury →</a> · <a href="/apps" style="color:var(--cyan)">Go to Apps →</a></p></div><script>var selectedMethod='eft';var _ref=${JSON.stringify(req.query.ref||'').replace(/</g,'\\u003c')};var _amount=${JSON.stringify(req.query.amount||'0').replace(/</g,'\\u003c')};var _client=${JSON.stringify(decodeURIComponent(req.query.client||'')).replace(/</g,'\\u003c')};var _email=${JSON.stringify(decodeURIComponent(req.query.email||'')).replace(/</g,'\\u003c')};function selectMethod(el,m){document.querySelectorAll('.method').forEach(function(e){e.classList.remove('selected')});el.classList.add('selected');selectedMethod=m}function processPayment(){var btn=document.getElementById('pay-btn');btn.disabled=true;btn.textContent='Processing...';fetch('/api/checkout/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ref:_ref,amount:_amount,client:_client,email:_email,method:selectedMethod})}).then(function(r){return r.json()}).then(function(d){document.getElementById('checkout-form').style.display='none';document.getElementById('success').style.display='block'}).catch(function(){btn.disabled=false;btn.textContent='Retry'})}</script></body></html>`);
 });
 
 // Confirm checkout — records to batch pool + treasury
-app.post("/api/checkout/confirm", async (req, res) => {
-  const { ref, amount, client, email, method } = req.body;
-  try {
-    // Update payment status in Supabase
-    await supabase.from('payments').update({ status: 'batch_pool' }).eq('reference', ref);
-    // Record in PostgreSQL economy DB
-    if (typeof economyDb !== 'undefined') {
-      const payment = await economyDb.query(
-        'INSERT INTO payments_received (provider, payment_id, amount, currency, payer_email, item_name, raw_payload) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-        [method || 'batch', ref, parseFloat(amount) || 0, 'ZAR', email || '', 'Bridge AI OS Pro', JSON.stringify({ ref, client, method, batch: true })]
-      );
-      // Apply founder tax first, then split remainder
-      const founderTax = parseFloat(amount) * (founderTaxRate / 100);
-      const remaining = parseFloat(amount) - founderTax;
-      const splits = [{ bucket: 'ubi', pct: 40 }, { bucket: 'treasury', pct: 30 }, { bucket: 'ops', pct: 20 }, { bucket: 'founder', pct: 10 }];
-      // Add founder tax as separate entry
-      if (founderTax > 0) {
-        await economyDb.query('INSERT INTO revenue_splits (payment_id, bucket, amount, percentage) VALUES ($1, $2, $3, $4)', [payment.rows[0].id, 'founder_tax', founderTax.toFixed(2), founderTaxRate]);
-        await economyDb.query('UPDATE treasury_buckets SET balance = balance + $1, updated_at = NOW() WHERE name = $2', [founderTax.toFixed(2), 'founder']);
-      }
-      for (const s of splits) {
-        const splitAmount = (remaining * s.pct / 100).toFixed(2);
-        await economyDb.query('INSERT INTO revenue_splits (payment_id, bucket, amount, percentage) VALUES ($1, $2, $3, $4)', [payment.rows[0].id, s.bucket, splitAmount, s.pct]);
-        await economyDb.query('UPDATE treasury_buckets SET balance = balance + $1, updated_at = NOW() WHERE name = $2', [splitAmount, s.bucket]);
-      }
-      await economyDb.query('INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference) VALUES ($1, $2, $3, $4, $5, $6)', ['deposit', method || 'batch', parseFloat(amount), 'ZAR', 'pool', ref]);
-
-      // Track agent execution if this was an agent payment
-      if (ref && ref.startsWith('AGENT_')) {
-        await economyDb.query(
-          "INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference) VALUES ($1, $2, $3, $4, $5, $6)",
-          ['agent_execution', method || 'checkout', parseFloat(amount), 'ZAR', 'agent_pool', ref]
+app.post("/api/checkout/confirm", 
+  validation.validateRequest({
+    ref: { type: 'string', required: true },
+    amount: { type: 'positive', required: true },
+    client: { type: 'string', required: true },
+    email: { type: 'string', required: false, validate: validation.validateEmail },
+    method: { type: 'string', required: true }
+  }),
+  async (req, res) => {
+    const { ref, amount, client, email, method } = req.body;
+    try {
+      // Update payment status in Supabase
+      await supabase.from('payments').update({ status: 'batch_pool' }).eq('reference', ref);
+      // Record in PostgreSQL economy DB
+      if (typeof economyDb !== 'undefined') {
+        const payment = await economyDb.query(
+          'INSERT INTO payments_received (provider, payment_id, amount, currency, payer_email, item_name, raw_payload) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+          [method || 'batch', ref, parseFloat(amount) || 0, 'ZAR', email || '', 'Bridge AI OS Pro', JSON.stringify({ ref, client, method, batch: true })]
         );
-      }
+        // Apply founder tax first, then split remainder
+        const founderTax = parseFloat(amount) * (founderTaxRate / 100);
+        const remaining = parseFloat(amount) - founderTax;
+        const splits = [{ bucket: 'ubi', pct: 40 }, { bucket: 'treasury', pct: 30 }, { bucket: 'ops', pct: 20 }, { bucket: 'founder', pct: 10 }];
+        // Add founder tax as separate entry
+        if (founderTax > 0) {
+          await economyDb.query('INSERT INTO revenue_splits (payment_id, bucket, amount, percentage) VALUES ($1, $2, $3, $4)', [payment.rows[0].id, 'founder_tax', founderTax.toFixed(2), founderTaxRate]);
+          await economyDb.query('UPDATE treasury_buckets SET balance = balance + $1, updated_at = NOW() WHERE name = $2', [founderTax.toFixed(2), 'founder']);
+        }
+        for (const s of splits) {
+          const splitAmount = (remaining * s.pct / 100).toFixed(2);
+          await economyDb.query('INSERT INTO revenue_splits (payment_id, bucket, amount, percentage) VALUES ($1, $2, $3, $4)', [payment.rows[0].id, s.bucket, splitAmount, s.pct]);
+          await economyDb.query('UPDATE treasury_buckets SET balance = balance + $1, updated_at = NOW() WHERE name = $2', [splitAmount, s.bucket]);
+        }
+        await economyDb.query('INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference) VALUES ($1, $2, $3, $4, $5, $6)', ['deposit', method || 'batch', parseFloat(amount), 'ZAR', 'pool', ref]);
 
-      // Add credits for the paying user
-      try {
-        const creditsService = require('./services/credits');
-        creditsService.init(economyDb);
-        await creditsService.addCredits(email || client || 'default', parseFloat(amount));
-      } catch(ce) { console.log('[credits] topup skipped:', ce.message); }
+        // Track agent execution if this was an agent payment
+        if (ref && ref.startsWith('AGENT_')) {
+          await economyDb.query(
+            "INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference) VALUES ($1, $2, $3, $4, $5, $6)",
+            ['agent_execution', method || 'checkout', parseFloat(amount), 'ZAR', 'agent_pool', ref]
+          );
+        }
+
+        // Add credits for the paying user
+        try {
+          const creditsService = require('./services/credits');
+          creditsService.init(economyDb);
+          await creditsService.addCredits(email || client || 'default', parseFloat(amount));
+        } catch(ce) { console.log('[credits] topup skipped:', ce.message); }
+      }
+      res.json({ ok: true, ref, status: 'batch_pool', treasury_updated: true });
+    } catch (err) {
+      res.status(500).json({ ok: false, ref, status: 'error', treasury_updated: false, note: err.message });
     }
-    res.json({ ok: true, ref, status: 'batch_pool', treasury_updated: true });
-  } catch (err) {
-    res.status(500).json({ ok: false, ref, status: 'error', treasury_updated: false, note: err.message });
-  }
-});
+  });
 
 // Keep PayFast for when verified
 app.post("/create-payment-payfast", async (req, res) => {
@@ -413,7 +432,7 @@ app.post("/whatsapp", async (req, res) => {
 const os = require('os');
 const dataService = require('./data-service');
 
-app.get('/api/registry/kernel', requireAdmin, (req, res) => {
+app.get('/api/registry/kernel', requireAdmin, [validate.registryKernel], (req, res) => {
   res.json({
     os_release: os.release(), os_type: os.type(), os_platform: os.platform(), os_arch: os.arch(),
     hostname: os.hostname(), uptime_seconds: os.uptime(), pid: process.pid,
@@ -422,7 +441,7 @@ app.get('/api/registry/kernel', requireAdmin, (req, res) => {
   });
 });
 
-app.get('/api/registry/network', requireAdmin, (req, res) => {
+app.get('/api/registry/network', requireAdmin, [validate.registryNetwork], (req, res) => {
   const ifaces = os.networkInterfaces();
   const interfaces = [];
   for (const [name, addrs] of Object.entries(ifaces)) {
@@ -433,59 +452,61 @@ app.get('/api/registry/network', requireAdmin, (req, res) => {
   res.json({ interfaces, dns: ['8.8.8.8','1.1.1.1'], gateway: 'auto' });
 });
 
-app.get('/api/registry/security', (req, res) => {
-  try {
-    res.json(dataService.getRegistrySecurity());
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.get('/api/registry/federation', async (req, res) => {
-  try {
-    res.json(await dataService.getRegistryFederation());
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.get('/api/registry/jobs', (req, res) => {
-  try {
-    res.json(dataService.getRegistryJobs());
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.get('/api/registry/market', async (req, res) => {
-  try {
-    res.json(await dataService.getRegistryMarket());
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.get('/api/registry/bridgeos', async (req, res) => {
-  const mem = { used: os.totalmem() - os.freemem(), total: os.totalmem(), free: os.freemem() };
-  const upSec = os.uptime();
-  const days = Math.floor(upSec / 86400);
-  const hrs = Math.floor((upSec % 86400) / 3600);
-  const mins = Math.floor((upSec % 3600) / 60);
-  res.json({
-    version: '2.5.0', status: 'operational',
-    modules: ['kernel','registry','marketplace','avatar','dex','federation','auth','gateway'],
-    uptime: days + 'd ' + hrs + 'h ' + mins + 'm',
-    memory: mem, cpu: Math.round(os.loadavg()[0] * 100 / os.cpus().length)
+app.get('/api/registry/security', requireAdmin, [validate.registrySecurity], (req, res) => {
+    try {
+      res.json(dataService.getRegistrySecurity());
+    } catch (e) { res.status(500).json({ error: e.message }); }
   });
-});
 
-app.get('/api/registry/system', requireAdmin, (req, res) => {
-  res.json({
-    node: process.version, platform: os.platform(), arch: os.arch(),
-    cpus: os.cpus().length, totalMem: os.totalmem(), freeMem: os.freemem(),
-    uptime: os.uptime(), loadavg: os.loadavg(), hostname: os.hostname(),
-    env: process.env.NODE_ENV || 'production'
+app.get('/api/registry/federation', requireAdmin, [validate.registryFederation], async (req, res) => {
+    try {
+      res.json(await dataService.getRegistryFederation());
+    } catch (e) { res.status(500).json({ error: e.message }); }
   });
-});
 
-app.get('/api/registry/treasury', async (req, res) => {
-  try {
-    const buckets = await economyDb.query('SELECT name, balance, percentage FROM treasury_buckets ORDER BY percentage DESC');
-    res.json({ source: 'postgresql', buckets: buckets.rows });
-  } catch(e) { res.status(500).json({ error: 'treasury unavailable' }); }
-});
+app.get('/api/registry/jobs', requireAdmin, [validate.registryJobs], (req, res) => {
+    try {
+      res.json(dataService.getRegistryJobs());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+app.get('/api/registry/market', requireAdmin, [validate.registryMarket], async (req, res) => {
+    try {
+      res.json(await dataService.getRegistryMarket());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+app.get('/api/registry/bridgeos', requireAdmin, [validate.registryBridgeOS], async (req, res) => {
+    const mem = { used: os.totalmem() - os.freemem(), total: os.totalmem(), free: os.freemem() };
+    const upSec = os.uptime();
+    const days = Math.floor(upSec / 86400);
+    const hrs = Math.floor((upSec % 86400) / 3600);
+    const mins = Math.floor((upSec % 3600) / 60);
+    res.json({
+      version: '2.5.0', status: 'operational',
+      modules: ['kernel','registry','marketplace','avatar','dex','federation','auth','gateway'],
+      uptime: days + 'd ' + hrs + 'h ' + mins + 'm',
+      memory: mem, cpu: Math.round(os.loadavg()[0] * 100 / os.cpus().length)
+    });
+  });
+
+app.get('/api/registry/system', requireAdmin, [validate.registrySystem], (req, res) => {
+    res.json({
+      node: process.version, platform: os.platform(), arch: os.arch(),
+      cpus: os.cpus().length, totalMem: os.totalmem(), freeMem: os.freemem(),
+      uptime: os.uptime(), loadavg: os.loadavg(), hostname: os.hostname(),
+      env: process.env.NODE_ENV || 'production'
+    });
+  });
+
+app.get('/api/registry/treasury', requireAdmin, [validate.registryTreasury], async (req, res) => {
+    try {
+      const buckets = await economyDb.query('SELECT name, balance, percentage FROM treasury_buckets ORDER BY percentage DESC');
+      const recent = await economyDb.query('SELECT * FROM treasury_ledger ORDER BY timestamp DESC LIMIT 20');
+      const total = buckets.rows.reduce((sum, b) => sum + parseFloat(b.balance || 0), 0);
+      res.json({ total, buckets: buckets.rows, recent: recent.rows });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+  });
 
 // ================= SYSTEM HEALTH ENDPOINTS =================
 // Domain-aware root router
@@ -508,7 +529,7 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK", core: "reachable" });
 });
 
-app.get("/api/agents", async (req, res) => {
+app.get("/api/agents", [validate.agents], async (req, res) => {
   try {
     const fs = require('fs');
     const agentDir = path.join(__dirname, 'agents');
@@ -545,7 +566,7 @@ app.use('/api/agents/pricing', (req, res, next) => next());
 app.use('/api/agents/execute-paid', (req, res, next) => next());
 const agentPricing = require('./lib/agent-pricing');
 
-app.post('/api/agents/execute-paid', (req, res) => {
+app.post('/api/agents/execute-paid', [validate.agentsExecutePaid], (req, res) => {
   const { agentId, layer, task } = req.body;
   if (!agentId) return res.status(400).json({ error: 'Missing agentId' });
 
@@ -562,11 +583,11 @@ app.post('/api/agents/execute-paid', (req, res) => {
   });
 });
 
-app.get('/api/agents/pricing', (req, res) => {
+app.get('/api/agents/pricing', [validate.agentsPricing], (req, res) => {
   res.json({ ok: true, pricing: agentPricing });
 });
 
-app.get("/api/contracts", (req, res) => {
+app.get("/api/contracts", [validate.contracts], (req, res) => {
   try {
     const fs = require('fs');
     const sharedDir = path.join(__dirname, 'shared');
@@ -582,7 +603,7 @@ app.get("/api/contracts", (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get("/api/status", async (req, res) => {
+app.get("/api/status", [validate.status], async (req, res) => {
   const services = [
     { id: 'core', port: 3000 }, { id: 'brain', port: 8000 },
     { id: 'gateway', port: 8080 }, { id: 'svg-engine', port: 7070 },
@@ -598,7 +619,7 @@ app.get("/api/status", async (req, res) => {
   res.json({ services: results, overall: upCount === results.length ? 'up' : upCount > 0 ? 'degraded' : 'down' });
 });
 
-app.get("/api/full", async (req, res) => {
+app.get("/api/full", [validate.full], async (req, res) => {
   try {
     const kernel = dataService.getRegistryKernel();
     const network = dataService.getRegistryNetwork();
@@ -610,7 +631,7 @@ app.get("/api/full", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get("/api/economics", async (req, res) => {
+app.get("/api/economics", [validate.economics], async (req, res) => {
   try {
     const revenue = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received");
     const buckets = await economyDb.query("SELECT name, balance, percentage FROM treasury_buckets ORDER BY percentage DESC");
@@ -651,7 +672,7 @@ const _origErr = console.error;
 console.log = (...args) => { _logBuffer.push({ level: 'INFO', msg: args.join(' '), ts: new Date().toISOString() }); if (_logBuffer.length > 500) _logBuffer.shift(); _origLog(...args); };
 console.error = (...args) => { _logBuffer.push({ level: 'ERROR', msg: args.join(' '), ts: new Date().toISOString() }); if (_logBuffer.length > 500) _logBuffer.shift(); _origErr(...args); };
 
-app.get("/api/logs", requireAdmin, (req, res) => {
+app.get("/api/logs", requireAdmin, [validate.logs], (req, res) => {
   const format = req.query.format || 'text';
   if (format === 'json') {
     return res.json({ count: _logBuffer.length, logs: _logBuffer.slice(-100) });
@@ -678,7 +699,7 @@ function safeSharePath(shareId) {
 }
 
 // GET /share/:id/context - Returns just the context bundle for agents
-app.get("/share/:id/context", (req, res) => {
+app.get("/share/:id/context", [validate.shareContext], (req, res) => {
   const filePath = safeSharePath(req.params.id);
   if (!filePath) return res.status(400).json({ error: "Invalid share ID" });
 
@@ -691,7 +712,7 @@ app.get("/share/:id/context", (req, res) => {
 });
 
 // GET /share/:id/history - Returns timeline/audit trail from share file
-app.get("/share/:id/history", (req, res) => {
+app.get("/share/:id/history", [validate.shareHistory], (req, res) => {
   const filePath = safeSharePath(req.params.id);
   if (!filePath) return res.status(400).json({ error: "Invalid share ID" });
 
@@ -713,7 +734,7 @@ app.get("/share/:id/history", (req, res) => {
 });
 
 // GET /share/:id/metadata - Returns everything except heavy blobs
-app.get("/share/:id/metadata", (req, res) => {
+app.get("/share/:id/metadata", [validate.shareMetadata], (req, res) => {
   const filePath = safeSharePath(req.params.id);
   if (!filePath) return res.status(400).json({ error: "Invalid share ID" });
 
@@ -749,6 +770,7 @@ function requireAdmin(req, res, next) {
   const token = req.headers['x-admin-token'];
   const expected = secrets.getSecret('ADMIN_TOKEN') || process.env.ADMIN_TOKEN;
   if (!expected) return res.status(503).json({ error: 'ADMIN_TOKEN not configured' });
+  if (!token) return res.status(401).json({ error: 'unauthorized' });
   const tokenBuf = Buffer.from(token);
   const expectedBuf = Buffer.from(expected);
   if (tokenBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(tokenBuf, expectedBuf)) {
@@ -757,35 +779,83 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-app.get('/api/secrets', requireAdmin, async (req, res) => {
-  res.json(await secrets.listSecrets());
-});
+// Authentication middleware for all /api/* endpoints
+function requireAuth(req, res, next) {
+  // Public endpoints that don't require authentication
+  const publicEndpoints = [
+    '/api/health',
+    '/api/status',
+    '/api/uptime', // if exists
+    '/api/version' // if exists
+  ];
+  
+  if (publicEndpoints.some(endpoint => req.path.startsWith(endpoint))) {
+    return next();
+  }
+  
+  const token = req.headers['authorization']?.split(' ')[1] || req.cookies?.token;
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  try {
+    const secret = process.env.JWT_SECRET || '';
+    if (!secret) {
+      return res.status(500).json({ error: 'Server misconfigured: JWT_SECRET missing' });
+    }
+    const decoded = jwt.verify(token, secret);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
 
-app.post('/api/secrets', requireAdmin, async (req, res) => {
-  const { key_name, key_value, service } = req.body;
-  if (!key_name || !key_value) return res.status(400).json({ error: 'key_name and key_value required' });
-  await secrets.setSecret(key_name, key_value, service || 'API', 'api');
-  res.json({ ok: true, key_name });
-});
+// Role-based access control middleware
+function requireRole(roles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    next();
+  };
+}
 
-app.delete('/api/secrets/:key', requireAdmin, async (req, res) => {
+// Apply authentication to all /api/* routes
+app.all('/api/*', requireAuth);
+
+app.get('/api/secrets', requireAdmin, [validate.secretsList], async (req, res) => {
+    res.json(await secrets.listSecrets());
+  });
+
+app.post('/api/secrets', requireAdmin, [validate.createSecret], async (req, res) => {
+    const { key_name, key_value, service } = req.body;
+    if (!key_name || !key_value) return res.status(400).json({ error: 'key_name and key_value required' });
+    await secrets.setSecret(key_name, key_value, service || 'API', 'api');
+    res.json({ ok: true, key_name });
+  });
+
+app.delete('/api/secrets/:key', requireAdmin, [validate.secretsDelete], async (req, res) => {
   await secrets.deleteSecret(req.params.key);
   res.json({ ok: true });
 });
 
 // Webhook: Notion Secrets Vault → local DB sync
-app.post('/api/webhook/secrets-sync', async (req, res) => {
-  const sig = req.headers['x-webhook-signature'];
-  const expected = secrets.getSecret('WEBHOOK_SECRET') || process.env.WEBHOOK_SECRET;
-  if (!expected) return res.status(503).json({ error: 'WEBHOOK_SECRET not configured' });
-  const sigBuf = Buffer.from(sig);
-  const expectedBuf2 = Buffer.from(expected);
-  if (sigBuf.length !== expectedBuf2.length || !crypto.timingSafeEqual(sigBuf, expectedBuf2)) {
-    return res.status(401).json({ error: 'unauthorized' });
-  }
-  const result = await secrets.syncFromNotion(req.body);
-  res.json(result);
-});
+app.post('/api/webhook/secrets-sync', [validate.secretsWebhook], async (req, res) => {
+    const sig = req.headers['x-webhook-signature'];
+    const expected = secrets.getSecret('WEBHOOK_SECRET') || process.env.WEBHOOK_SECRET;
+    if (!expected) return res.status(503).json({ error: 'WEBHOOK_SECRET not configured' });
+    const sigBuf = Buffer.from(sig);
+    const expectedBuf2 = Buffer.from(expected);
+    if (sigBuf.length !== expectedBuf2.length || !crypto.timingSafeEqual(sigBuf, expectedBuf2)) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+    const result = await secrets.syncFromNotion(req.body);
+    res.json(result);
+  });
 
 // ================= AGENT REGISTRY (single source of truth) =================
 const agentRegistryRoutes = require('./lib/agent-registry-routes');
@@ -798,7 +868,7 @@ leadgenEngine.mount(app);
 // ================= NOTION REPORTING LAYER =================
 const notionSync = require('./lib/notion-sync');
 
-app.post('/api/notion/init', requireAdmin, async (req, res) => {
+app.post('/api/notion/init', requireAdmin, [validate.notionInit], async (req, res) => {
   try {
     const ok = await notionSync.init();
     res.json({ ok, message: ok ? 'Notion databases initialized' : 'NOTION_TOKEN not set' });
@@ -807,7 +877,7 @@ app.post('/api/notion/init', requireAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/notion/sync', requireAdmin, async (req, res) => {
+app.post('/api/notion/sync', requireAdmin, [validate.notionSync], async (req, res) => {
   try {
     const results = await notionSync.syncAll();
     res.json(results);
@@ -816,7 +886,7 @@ app.post('/api/notion/sync', requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/notion/stats', async (req, res) => {
+app.get('/api/notion/stats', requireAdmin, [validate.notionStats], async (req, res) => {
   try {
     res.json(await notionSync.getStats());
   } catch (err) {
@@ -828,7 +898,7 @@ app.get('/api/notion/stats', async (req, res) => {
 notionSync.init().catch(() => {});
 
 // ================= BRIDGEAI ECONOMY API =================
-app.get('/api/treasury', async (req, res) => {
+app.get('/api/treasury', [validate.treasury], async (req, res) => {
   try {
     const buckets = await economyDb.query('SELECT name, balance, percentage FROM treasury_buckets ORDER BY percentage DESC');
     const recent = await economyDb.query('SELECT * FROM treasury_ledger ORDER BY timestamp DESC LIMIT 20');
@@ -839,18 +909,21 @@ app.get('/api/treasury', async (req, res) => {
   }
 });
 
-app.get('/api/treasury/payments', async (req, res) => {
-  try {
-    const payments = await economyDb.query('SELECT * FROM payments_received ORDER BY received_at DESC LIMIT 50');
-    res.json(payments.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+app.get('/api/treasury/payments', 
+  validation.validateRequest({
+    limit: { type: 'positive', required: false, default: 50 }
+  }),
+  async (req, res) => {
+    const limit = parseInt(req.query.limit) || 50;
+    try {
+      const payments = await economyDb.query("SELECT * FROM payments_received ORDER BY received_at DESC LIMIT $1", [limit]);
+      res.json(payments.rows);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+  });
 
 // ================= PROXY AUTH ROUTES TO BRAIN SERVICE =================
 const BRAIN_URL = 'http://localhost:8000';
-app.post('/auth/register', async (req, res) => {
+app.post('/auth/register', [validate.register], async (req, res) => {
   try {
     const resp = await axios.post(BRAIN_URL + '/auth/register', req.body);
     res.status(resp.status).json(resp.data);
@@ -858,7 +931,7 @@ app.post('/auth/register', async (req, res) => {
     res.status(err.response?.status || 502).json(err.response?.data || { error: 'Brain service unavailable' });
   }
 });
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', [validate.login], async (req, res) => {
   try {
     const resp = await axios.post(BRAIN_URL + '/auth/login', req.body);
     res.status(resp.status).json(resp.data);
@@ -866,7 +939,7 @@ app.post('/auth/login', async (req, res) => {
     res.status(err.response?.status || 502).json(err.response?.data || { error: 'Brain service unavailable' });
   }
 });
-app.post('/referral/claim', async (req, res) => {
+app.post('/referral/claim', [validate.referralClaim], async (req, res) => {
   try {
     const resp = await axios.post(BRAIN_URL + '/referral/claim', req.body);
     res.status(resp.status).json(resp.data);
@@ -876,7 +949,7 @@ app.post('/referral/claim', async (req, res) => {
 });
 
 // ================= LEADGEN AI PIPELINE (must be before catch-all proxy) =================
-app.post('/api/leadgen/auto-prospect', requireAdmin, async (req, res) => {
+app.post('/api/leadgen/auto-prospect', requireAdmin, [validate.leadgenAutoProspect], async (req, res) => {
   const { industry, region, count } = req.body;
   try {
     const resp = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
@@ -890,14 +963,14 @@ app.post('/api/leadgen/auto-prospect', requireAdmin, async (req, res) => {
     res.json({ ok: true, leads_generated: leads.length, leads, raw: leads.length ? undefined : text });
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
-app.post('/api/leadgen/auto-nurture', requireAdmin, async (req, res) => {
+app.post('/api/leadgen/auto-nurture', requireAdmin, [validate.leadgenAutoNurture], async (req, res) => {
   try {
     const camp = await axios.post('http://localhost:3000/api/crm/campaigns', { name: req.body.subject || 'AI Nurture', template_type: 'intro' }).then(r=>r.data).catch(()=>({}));
     const queue = await axios.post('http://localhost:3000/api/outreach/leads', { filter: 'all', template: 'intro' }).then(r=>r.data).catch(()=>({}));
     res.json({ ok: true, campaign: camp, queued: queue });
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
-app.post('/api/leadgen/auto-close', requireAdmin, async (req, res) => {
+app.post('/api/leadgen/auto-close', requireAdmin, [validate.leadgenAutoClose], async (req, res) => {
   const { lead_id, offer } = req.body;
   try {
     const lead = await axios.get('http://localhost:3000/api/crm/leads/' + lead_id).then(r=>r.data).catch(()=>null);
@@ -922,82 +995,82 @@ const roiService = require('./services/roi');
 creditsService.init(economyDb);
 
 // Get user credits
-app.get('/api/credits', async (req, res) => {
-  const userId = req.query.userId || req.headers['x-user-id'] || 'default';
-  try {
-    const balance = await creditsService.getCredits(userId);
-    res.json({ ok: true, userId, balance });
-  } catch(e) { res.json({ ok: false, error: e.message }); }
-});
+  app.get('/api/credits', [validate.getCredits], async (req, res) => {
+    const userId = req.query.userId || req.headers['x-user-id'] || 'default';
+    try {
+      const balance = await creditsService.getCredits(userId);
+      res.json({ ok: true, userId, balance });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+  });
 
-// Add credits (admin)
-app.post('/api/credits/add', requireAdmin, async (req, res) => {
-  const { userId, amount } = req.body;
-  if (!userId || !amount) return res.status(400).json({ error: 'Missing userId or amount' });
-  try {
-    await creditsService.addCredits(userId, parseFloat(amount));
-    const balance = await creditsService.getCredits(userId);
-    res.json({ ok: true, userId, balance });
-  } catch(e) { res.json({ ok: false, error: e.message }); }
-});
+  // Add credits (admin)
+  app.post('/api/credits/add', [validate.addCredits], requireAdmin, async (req, res) => {
+    const { userId, amount } = req.body;
+    if (!userId || !amount) return res.status(400).json({ error: 'Missing userId or amount' });
+    try {
+      await creditsService.addCredits(userId, parseFloat(amount));
+      const balance = await creditsService.getCredits(userId);
+      res.json({ ok: true, userId, balance });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+  });
 
 // Execute with economic gate (unified for agents + tasks)
-app.post('/api/economy/execute', requireAdmin, async (req, res) => {
-  const { userId, agentId, layer, task } = req.body;
-  const uid = userId || 'default';
-  try {
-    const funds = await economyService.ensureFunds(uid, require('./lib/agent-pricing')[layer] || 0.05);
-    if (!funds.ok) return res.json({ ok: false, redirect: funds.redirect });
-    const cost = await economyService.chargeForExecution(uid, layer);
-    res.json({ ok: true, charged: cost, agentId, layer, executed: true });
-  } catch(e) {
-    if (e.message === 'INSUFFICIENT_CREDITS') {
-      return res.json({ ok: false, error: 'INSUFFICIENT_CREDITS', redirect: '/pricing' });
+  app.post('/api/economy/execute', [validate.economyExecute], requireAdmin, async (req, res) => {
+    const { userId, agentId, layer, task } = req.body;
+    const uid = userId || 'default';
+    try {
+      const funds = await economyService.ensureFunds(uid, require('./lib/agent-pricing')[layer] || 0.05);
+      if (!funds.ok) return res.json({ ok: false, redirect: funds.redirect });
+      const cost = await economyService.chargeForExecution(uid, layer);
+      res.json({ ok: true, charged: cost, agentId, layer, executed: true });
+    } catch(e) {
+      if (e.message === 'INSUFFICIENT_CREDITS') {
+        return res.json({ ok: false, error: 'INSUFFICIENT_CREDITS', redirect: '/pricing' });
+      }
+      res.json({ ok: false, error: e.message });
     }
-    res.json({ ok: false, error: e.message });
-  }
-});
+  });
 
 // Subscription summary
-app.get('/api/subscriptions/summary', async (req, res) => {
-  try {
-    const result = await economyDb.query("SELECT plan, COUNT(*) as count, SUM(amount) as revenue FROM subscriptions GROUP BY plan");
-    res.json({ ok: true, plans: result.rows });
-  } catch(e) { res.json({ ok: true, plans: [] }); }
-});
+  app.get('/api/subscriptions/summary', [validate.subscriptionSummary], async (req, res) => {
+    try {
+      const result = await economyDb.query("SELECT plan, COUNT(*) as count, SUM(amount) as revenue FROM subscriptions GROUP BY plan");
+      res.json({ ok: true, plans: result.rows });
+    } catch(e) { res.json({ ok: true, plans: [] }); }
+  });
 
 // Revenue summary
-app.get('/api/revenue/summary', async (req, res) => {
-  try {
-    const total = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received");
-    const month = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received WHERE received_at > date_trunc('month', NOW())");
-    res.json({ ok: true, total: parseFloat(total.rows[0].total), month: parseFloat(month.rows[0].total) });
-  } catch(e) { res.json({ ok: true, total: 0, month: 0 }); }
-});
+  app.get('/api/revenue/summary', [validate.revenueSummary], async (req, res) => {
+    try {
+      const total = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received");
+      const month = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received WHERE received_at > date_trunc('month', NOW())");
+      res.json({ ok: true, total: parseFloat(total.rows[0].total), month: parseFloat(month.rows[0].total) });
+    } catch(e) { res.json({ ok: true, total: 0, month: 0 }); }
+  });
 
 // Economy intelligence
-app.get('/api/economy/intelligence', async (req, res) => {
-  try {
-    const revenue = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received");
-    const splits = await economyDb.query("SELECT bucket, COALESCE(SUM(amount),0) as total FROM revenue_splits GROUP BY bucket");
-    const txCount = await economyDb.query("SELECT COUNT(*) as count FROM payments_received");
-    res.json({
-      ok: true,
-      totalRevenue: parseFloat(revenue.rows[0].total),
-      splits: splits.rows,
-      transactions: parseInt(txCount.rows[0].count),
-      efficiency: 0.82
-    });
-  } catch(e) { res.json({ ok: true, totalRevenue: 0, splits: [], transactions: 0 }); }
-});
+  app.get('/api/economy/intelligence', [validate.economyIntelligence], async (req, res) => {
+    try {
+      const revenue = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received");
+      const splits = await economyDb.query("SELECT bucket, COALESCE(SUM(amount),0) as total FROM revenue_splits GROUP BY bucket");
+      const txCount = await economyDb.query("SELECT COUNT(*) as count FROM payments_received");
+      res.json({
+        ok: true,
+        totalRevenue: parseFloat(revenue.rows[0].total),
+        splits: splits.rows,
+        transactions: parseInt(txCount.rows[0].count),
+        efficiency: 0.82
+      });
+    } catch(e) { res.json({ ok: true, totalRevenue: 0, splits: [], transactions: 0 }); }
+  });
 
 // Ledger (real transaction history)
-app.get('/api/ledger', async (req, res) => {
-  try {
-    const rows = await economyDb.query("SELECT received_at as time, provider as type, item_name as description, amount, currency FROM payments_received ORDER BY received_at DESC LIMIT 50");
-    res.json({ ok: true, entries: rows.rows });
-  } catch(e) { res.json({ ok: true, entries: [] }); }
-});
+  app.get('/api/ledger', [validate.ledger], async (req, res) => {
+    try {
+      const rows = await economyDb.query("SELECT received_at as time, provider as type, item_name as description, amount, currency FROM payments_received ORDER BY received_at DESC LIMIT 50");
+      res.json({ ok: true, entries: rows.rows });
+    } catch(e) { res.json({ ok: true, entries: [] }); }
+  });
 
 // ================= FOUNDER TAX CONTROL =================
 
@@ -1032,19 +1105,19 @@ app.get('/api/founder/balance', async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 // MAIL — Brevo primary, Gmail backup
 // ═══════════════════════════════════════════════════════════════
-app.get('/api/mail/status', (req, res) => res.json({ ok: true, ...mail.status() }));
+app.get('/api/mail/status', [validate.mailStatus], (req, res) => res.json({ ok: true, ...mail.status() }));
 
-app.get('/api/mail/ping', async (req, res) => {
-  try { res.json(await mail.ping()); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
+app.get('/api/mail/ping', [validate.mailPing], async (req, res) => {
+    try { res.json(await mail.ping()); }
+    catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
 
-app.post('/api/mail/test', requireAdmin, async (req, res) => {
+app.post('/api/mail/test', requireAdmin, [validate.mailTest], async (req, res) => {
   try { res.json(await mail.test(req.body?.to || null)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/mail/send', requireAdmin, async (req, res) => {
+app.post('/api/mail/send', requireAdmin, [validate.mailSend], async (req, res) => {
   const { to, subject, html, text, from, replyTo } = req.body || {};
   if (!to || !subject || (!html && !text))
     return res.status(400).json({ ok: false, error: 'to, subject, and html/text required' });
@@ -1055,79 +1128,79 @@ app.post('/api/mail/send', requireAdmin, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 // EMAIL ACCOUNTS — DirectAdmin
 // ═══════════════════════════════════════════════════════════════
-app.get('/api/email/list/:domain', async (req, res) => {
-  try { res.json(await da.listEmailAccounts(req.params.domain)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
+app.get('/api/email/list/:domain', [validate.emailList], async (req, res) => {
+    try { res.json(await da.listEmailAccounts(req.params.domain)); }
+    catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
 
-app.post('/api/email/create', requireAdmin, async (req, res) => {
-  const { domain, user, passwd, quota } = req.body || {};
-  if (!domain || !user || !passwd)
-    return res.status(400).json({ ok: false, error: 'domain, user, passwd required' });
-  try { res.json(await da.createEmailAccount(domain, user, passwd, quota)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
+app.post('/api/email/create', [validate.emailCreate], requireAdmin, async (req, res) => {
+    const { domain, user, passwd, quota } = req.body || {};
+    if (!domain || !user || !passwd)
+      return res.status(400).json({ ok: false, error: 'domain, user, passwd required' });
+    try { res.json(await da.createEmailAccount(domain, user, passwd, quota)); }
+    catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
 
-app.post('/api/email/delete', requireAdmin, async (req, res) => {
-  const { domain, user } = req.body || {};
-  if (!domain || !user)
-    return res.status(400).json({ ok: false, error: 'domain, user required' });
-  try { res.json(await da.deleteEmailAccount(domain, user)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
+app.post('/api/email/delete', [validate.emailDelete], requireAdmin, async (req, res) => {
+    const { domain, user } = req.body || {};
+    if (!domain || !user)
+      return res.status(400).json({ ok: false, error: 'domain, user required' });
+    try { res.json(await da.deleteEmailAccount(domain, user)); }
+    catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
 
-app.post('/api/email/forwarder', requireAdmin, async (req, res) => {
-  const { domain, user, email } = req.body || {};
-  if (!domain || !user || !email)
-    return res.status(400).json({ ok: false, error: 'domain, user, email required' });
-  try { res.json(await da.createForwarder(domain, user, email)); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
+app.post('/api/email/forwarder', [validate.emailForwarder], requireAdmin, async (req, res) => {
+    const { domain, user, email } = req.body || {};
+    if (!domain || !user || !email)
+      return res.status(400).json({ ok: false, error: 'domain, user, email required' });
+    try { res.json(await da.createForwarder(domain, user, email)); }
+    catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
 
-app.post('/api/email/setup-bridge-profiles', requireAdmin, async (req, res) => {
-  const { domain, daPasswd, wpSite, profiles, wpPasswd } = req.body || {};
-  if (!domain || !daPasswd)
-    return res.status(400).json({ ok: false, error: 'domain and daPasswd required' });
-  try {
-    const profileList = profiles || [
-      { user: 'admin',   wpRole: 'administrator' },
-      { user: 'content', wpRole: 'editor'        },
-      { user: 'support', wpRole: 'author'        },
-      { user: 'noreply', wpRole: null            },
-    ];
-    const daResults = [];
-    for (const prof of profileList) {
-      try { daResults.push(await da.createEmailAccount(domain, prof.user, daPasswd)); }
-      catch (e) { daResults.push({ ok: false, email: `${prof.user}@${domain}`, message: e.message }); }
-    }
-    let wpResults = null;
-    if (wpSite && wp.isConfigured(wpSite)) {
-      const wpProfiles = profileList.filter(p => p.wpRole).map(p => ({
-        username: p.user, email: `${p.user}@${domain}`,
-        password: wpPasswd || daPasswd, role: p.wpRole,
-      }));
-      wpResults = await wp.createBridgeWpProfiles(wpSite, wpProfiles);
-    }
-    res.json({ ok: daResults.every(r => r.ok), domain, emailSetup: daResults, wpSetup: wpResults });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
+app.post('/api/email/setup-bridge-profiles', [validate.emailSetupBridgeProfiles], requireAdmin, async (req, res) => {
+    const { domain, daPasswd, wpSite, profiles, wpPasswd } = req.body || {};
+    if (!domain || !daPasswd)
+      return res.status(400).json({ ok: false, error: 'domain and daPasswd required' });
+    try {
+      const profileList = profiles || [
+        { user: 'admin',   wpRole: 'administrator' },
+        { user: 'content', wpRole: 'editor'        },
+        { user: 'support', wpRole: 'author'        },
+        { user: 'noreply', wpRole: null            },
+      ];
+      const daResults = [];
+      for (const prof of profileList) {
+        try { daResults.push(await da.createEmailAccount(domain, prof.user, daPasswd)); }
+        catch (e) { daResults.push({ ok: false, email: `${prof.user}@${domain}`, message: e.message }); }
+      }
+      let wpResults = null;
+      if (wpSite && wp.isConfigured(wpSite)) {
+        const wpProfiles = profileList.filter(p => p.wpRole).map(p => ({
+          username: p.user, email: `${p.user}@${domain}`,
+          password: wpPasswd || daPasswd, role: p.wpRole,
+        }));
+        wpResults = await wp.createBridgeWpProfiles(wpSite, wpProfiles);
+      }
+      res.json({ ok: daResults.every(r => r.ok), domain, emailSetup: daResults, wpSetup: wpResults });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
 
 // ═══════════════════════════════════════════════════════════════
 // WORDPRESS — multi-domain sync + user management
 // ═══════════════════════════════════════════════════════════════
-app.get('/api/wordpress/status', async (req, res) => {
+app.get('/api/wordpress/status', [validate.wordpressStatus], async (req, res) => {
   try { res.json({ ok: true, ...(await wp.getStatus()) }); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/wordpress/data', (req, res) => {
+app.get('/api/wordpress/data', [validate.wordpressData], (req, res) => {
   try {
     const data = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data/50-applications.json'), 'utf8'));
     res.json({ ok: true, data });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/wordpress/preview', (req, res) => {
+app.get('/api/wordpress/preview', [validate.wordpressPreview], (req, res) => {
   try {
     const data = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data/50-applications.json'), 'utf8'));
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -1135,29 +1208,29 @@ app.get('/api/wordpress/preview', (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/sync', requireAdmin, async (req, res) => {
+app.post('/api/wordpress/sync', requireAdmin, [validate.wordpressSync], async (req, res) => {
   try { res.json(await wp.syncAll()); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/sync/:site', requireAdmin, async (req, res) => {
+app.post('/api/wordpress/sync/:site', requireAdmin, [validate.wordpressSyncSite], async (req, res) => {
   const { site } = req.params;
   if (!wp.SITES[site]) return res.status(400).json({ ok: false, error: `Unknown site: ${site}`, known: Object.keys(wp.SITES) });
   try { res.json(await wp.syncSite(site)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/wordpress/users/:site', async (req, res) => {
+app.get('/api/wordpress/users/:site', [validate.wordpressUsersSite], async (req, res) => {
   try { res.json(await wp.listWpUsers(req.params.site)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/users/:site', requireAdmin, async (req, res) => {
+app.post('/api/wordpress/users/:site', requireAdmin, [validate.wordpressUsersSite], async (req, res) => {
   try { res.json(await wp.createWpUser(req.params.site, req.body)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/profiles/:site', requireAdmin, async (req, res) => {
+app.post('/api/wordpress/profiles/:site', requireAdmin, [validate.wordpressProfilesSite], async (req, res) => {
   try { res.json(await wp.createBridgeWpProfiles(req.params.site, req.body?.profiles || [])); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
@@ -1165,23 +1238,23 @@ app.post('/api/wordpress/profiles/:site', requireAdmin, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 // WORDPRESS POSTS — content management
 // ═══════════════════════════════════════════════════════════════
-app.get('/api/wordpress/posts/:site', async (req, res) => {
+app.get('/api/wordpress/posts/:site', [validate.wordpressPostsSite], async (req, res) => {
   try { res.json(await wp.listPosts(req.params.site)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/posts/:site', requireAdmin, async (req, res) => {
+app.post('/api/wordpress/posts/:site', requireAdmin, [validate.wordpressPostsSite], async (req, res) => {
   try { res.json(await wp.createPost(req.params.site, req.body)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wordpress/posts/:site/:id', requireAdmin, async (req, res) => {
+app.post('/api/wordpress/posts/:site/:id', requireAdmin, [validate.wordpressPostsUpdate], async (req, res) => {
   try { res.json(await wp.updatePost(req.params.site, req.params.id, req.body)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 // POST /api/wordpress/sync-post/:site — push 50-apps as a post (WP.com compatible)
-app.post('/api/wordpress/sync-post/:site', async (req, res) => {
+app.post('/api/wordpress/sync-post/:site', [validate.wordpressSyncPostSite], async (req, res) => {
   try { res.json(await wp.syncAsPost(req.params.site)); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
@@ -1191,7 +1264,7 @@ app.post('/api/wordpress/sync-post/:site', async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 
 // POST /api/auth/wp-login — WordPress fires this webhook on every login
-app.post('/api/auth/wp-login', async (req, res) => {
+app.post('/api/auth/wp-login', [validate.authWpLogin], async (req, res) => {
   try {
     const result = await wpAuth.handleWpLogin(req);
     res.json(result);
@@ -1201,7 +1274,7 @@ app.post('/api/auth/wp-login', async (req, res) => {
 });
 
 // GET /api/auth/wp-plugin — returns the PHP snippet to paste into WP functions.php
-app.get('/api/auth/wp-plugin', (req, res) => {
+app.get('/api/auth/wp-plugin', [validate.authWpPlugin], (req, res) => {
   const snippet = wpAuth.getPluginSnippet(
     process.env.WP_BACKEND_URL || 'https://bridge-ai-os.com',
     process.env.WP_HOOK_SECRET || 'REPLACE_WITH_RANDOM_SECRET'
@@ -1212,18 +1285,18 @@ app.get('/api/auth/wp-plugin', (req, res) => {
 
 // ── Topic Vector Matrix (TVM) ───────────
 const tvm = require('./lib/tvm');
-app.get('/api/tvm', (req, res) => res.json(tvm.getMatrix()));
-app.get('/api/tvm/summary', (req, res) => res.json(tvm.getSummary()));
-app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIONS));
-app.get('/api/tvm/:topic', (req, res) => {
+app.get('/api/tvm', [validate.tvm], (req, res) => res.json(tvm.getMatrix()));
+app.get('/api/tvm/summary', [validate.tvmSummary], (req, res) => res.json(tvm.getSummary()));
+app.get('/api/tvm/recommendations/all', [validate.tvmRecommendations], (req, res) => res.json(tvm.RECOMMENDATIONS));
+app.get('/api/tvm/:topic', [validate.tvmTopic], (req, res) => {
   const row = tvm.getRow(req.params.topic);
   if (!row) return res.status(404).json({ error: 'topic not found' });
   res.json({ ...row, recommendation_text: tvm.getRecommendation(row.recommendation_code) });
 });
-app.put('/api/tvm/:topic', (req, res) => res.json(tvm.updateRow(req.params.topic, { ...req.body, _actor: 'human' })));
-app.post('/api/tvm/:topic/approve', (req, res) => res.json(tvm.approveAction(req.params.topic)));
-app.post('/api/tvm/:topic/reject',  (req, res) => res.json(tvm.rejectAction(req.params.topic)));
-app.post('/api/tvm/:topic/propose', (req, res) => {
+app.put('/api/tvm/:topic', [validate.tvmTopicUpdate], (req, res) => res.json(tvm.updateRow(req.params.topic, { ...req.body, _actor: 'human' })));
+app.post('/api/tvm/:topic/approve', [validate.tvmTopicApprove], (req, res) => res.json(tvm.approveAction(req.params.topic)));
+app.post('/api/tvm/:topic/reject', [validate.tvmTopicReject], (req, res) => res.json(tvm.rejectAction(req.params.topic)));
+app.post('/api/tvm/:topic/propose', [validate.tvmTopicPropose], (req, res) => {
   const { proposal_code, justification } = req.body || {};
   res.json(tvm.agentPropose(req.params.topic, proposal_code, justification));
 });
@@ -1236,125 +1309,132 @@ app.get('/api/health', (req, res) => {
 
 // ================= DASHBOARD API ENDPOINTS =================
 // Treasury status (used by home.html, executive-dashboard.html)
-app.get('/api/treasury/status', async (req, res) => {
-  try {
-    const buckets = await economyDb.query("SELECT name, balance FROM treasury_buckets");
-    const txCount = await economyDb.query("SELECT COUNT(*) as count FROM payments_received");
-    const total = buckets.rows.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
-    const bucketMap = {};
-    buckets.rows.forEach(b => { bucketMap[b.name] = parseFloat(b.balance || 0); });
-    res.json({ balance: total, total_collected_brdg: total, buckets: bucketMap, total_tx: parseInt(txCount.rows[0].count), by_project: {}, by_method: {} });
-  } catch(e) { res.json({ balance: 0, total_collected_brdg: 0, buckets: {}, total_tx: 0, by_project: {}, by_method: {} }); }
-});
+app.get('/api/treasury/status', 
+  validation.validateRequest({
+    // No parameters needed, but validation ensures no unexpected input
+  }),
+  async (req, res) => {
+    try {
+      const buckets = await economyDb.query("SELECT name, balance FROM treasury_buckets");
+      const total = buckets.rows.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+      const bucketMap = {};
+      buckets.rows.forEach(b => { bucketMap[b.name] = parseFloat(b.balance || 0); });
+      res.json({ balance: total, distributed: total, ubi: bucketMap.ubi || 0, treasury: bucketMap.treasury || 0, ops: bucketMap.ops || 0, founder: bucketMap.founder || 0 });
+    } catch(e) { res.json({ balance: 0, distributed: 0, ubi: 0, treasury: 0, ops: 0, founder: 0 }); }
+  });
 
-app.get('/api/treasury/ledger', async (req, res) => {
-  const limit = parseInt(req.query.limit) || 20;
-  try {
-    const result = await economyDb.query("SELECT * FROM payments_received ORDER BY received_at DESC LIMIT $1", [limit]);
-    res.json({ entries: result.rows.map(r => ({ ts: r.received_at, source_project: r.item_name || 'bridge', method: r.provider, amount_brdg: parseFloat(r.amount || 0) })) });
-  } catch(e) { res.json({ entries: [] }); }
-});
+app.get('/api/treasury/ledger', 
+  validation.validateRequest({
+    limit: { type: 'positive', required: false, default: 20 }
+  }),
+  async (req, res) => {
+    const limit = parseInt(req.query.limit) || 20;
+    try {
+      const result = await economyDb.query("SELECT * FROM payments_received ORDER BY received_at DESC LIMIT $1", [limit]);
+      res.json({ entries: result.rows.map(r => ({ ts: r.received_at, source_project: r.item_name || 'bridge', method: r.provider, amount_brdg: parseFloat(r.amount || 0) })) });
+    } catch(e) { res.json({ entries: [] }); }
+  });
 
-app.get('/api/treasury/rails', (req, res) => {
-  res.json({ rails: [
-    { label: 'PayFast (ZA)', status: 'active' },
-    { label: 'Stripe (International)', status: 'pending' },
-    { label: 'Crypto (ETH/BTC/SOL)', status: 'active' },
-    { label: 'EFT / Bank Transfer', status: 'active' },
-  ]});
-});
+app.get('/api/treasury/rails', [validate.treasuryRails], (req, res) => {
+    res.json({ rails: [
+      { label: 'PayFast (ZA)', status: 'active' },
+      { label: 'Stripe (International)', status: 'pending' },
+      { label: 'Crypto (ETH/BTC/SOL)', status: 'active' },
+      { label: 'EFT / Bank Transfer', status: 'active' },
+    ]});
+  });
 
 // Revenue status (used by executive-dashboard.html, agents.html)
-app.get('/api/revenue/status', async (req, res) => {
-  try {
-    const buckets = await economyDb.query("SELECT name, balance FROM treasury_buckets");
-    const total = buckets.rows.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
-    const bucketMap = {};
-    buckets.rows.forEach(b => { bucketMap[b.name] = parseFloat(b.balance || 0); });
-    res.json({ balance: total, distributed: total, ubi: bucketMap.ubi || 0, treasury: bucketMap.treasury || 0, ops: bucketMap.ops || 0, founder: bucketMap.founder || 0 });
-  } catch(e) { res.json({ balance: 0, distributed: 0, ubi: 0, treasury: 0, ops: 0, founder: 0 }); }
-});
+app.get('/api/revenue/status', [validate.revenueStatus], async (req, res) => {
+    try {
+      const buckets = await economyDb.query("SELECT name, balance FROM treasury_buckets");
+      const total = buckets.rows.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+      const bucketMap = {};
+      buckets.rows.forEach(b => { bucketMap[b.name] = parseFloat(b.balance || 0); });
+      res.json({ balance: total, distributed: total, ubi: bucketMap.ubi || 0, treasury: bucketMap.treasury || 0, ops: bucketMap.ops || 0, founder: bucketMap.founder || 0 });
+    } catch(e) { res.json({ balance: 0, distributed: 0, ubi: 0, treasury: 0, ops: 0, founder: 0 }); }
+  });
 
 // Swarm agents (used by aoe-dashboard.html)
-app.get('/api/swarm/agents', (req, res) => {
-  const agents = ['alpha','beta','gamma','delta','epsilon','zeta','eta','theta'].map(name => ({ id: name, name, status: 'active', type: 'worker' }));
-  res.json({ agents });
-});
+app.get('/api/swarm/agents', [validate.swarmAgents], (req, res) => {
+    const agents = ['alpha','beta','gamma','delta','epsilon','zeta','eta','theta'].map(name => ({ id: name, name, status: 'active', type: 'worker' }));
+    res.json({ agents });
+  });
 
-app.get('/api/swarm/health', (req, res) => {
-  res.json({ ok: true, health_score: 0.85, components: { queue_latency_ms: 12, worker_utilization: 0.72, task_profitability: 0.15, agent_failure_rate: 0.02 } });
-});
+app.get('/api/swarm/health', [validate.swarmHealth], (req, res) => {
+    res.json({ ok: true, health_score: 0.85, components: { queue_latency_ms: 12, worker_utilization: 0.72, task_profitability: 0.15, agent_failure_rate: 0.02 } });
+  });
 
 // Analytics summary (used by aoe-dashboard.html)
-app.get('/api/analytics/summary', (req, res) => {
-  res.json({ last_24h: { routes: 156, total: 892, unique_visitors: 34 } });
-});
+app.get('/api/analytics/summary', [validate.analyticsSummary], (req, res) => {
+    res.json({ last_24h: { routes: 156, total: 892, unique_visitors: 34 } });
+  });
 
 // Tools/skills (used by aoe-dashboard.html, executive-dashboard.html)
-app.get('/api/tools', (req, res) => {
-  res.json({ tools: ['inference','embedding','scraping','scheduling','email','sms','trading','analytics','legal','support','coding','design','marketing','sales','billing','reporting','monitoring','alerting','automation','orchestration','federation','replication','governance','compliance','audit','treasury','wallet','defi'], count: 28 });
-});
+app.get('/api/tools', [validate.tools], (req, res) => {
+    res.json({ tools: ['inference','embedding','scraping','scheduling','email','sms','trading','analytics','legal','support','coding','design','marketing','sales','billing','reporting','monitoring','alerting','automation','orchestration','federation','replication','governance','compliance','audit','treasury','wallet','defi'], count: 28 });
+  });
 
-app.get('/api/skills', (req, res) => {
-  res.json({ skills: [
-    { name: 'InferenceRouter', tags: ['ai','routing'] },
-    { name: 'TradingEngine', tags: ['defi','trading'] },
-    { name: 'SalesAgent', tags: ['crm','sales'] },
-    { name: 'SupportBot', tags: ['tickets','support'] },
-    { name: 'LegalReviewer', tags: ['compliance','legal'] },
-    { name: 'DataSyncer', tags: ['data','sync'] },
-    { name: 'MarketAnalyzer', tags: ['analytics','market'] },
-    { name: 'ContentGenerator', tags: ['marketing','content'] },
-  ]});
-});
+app.get('/api/skills', [validate.skills], (req, res) => {
+    res.json({ skills: [
+      { name: 'InferenceRouter', tags: ['ai','routing'] },
+      { name: 'TradingEngine', tags: ['defi','trading'] },
+      { name: 'SalesAgent', tags: ['crm','sales'] },
+      { name: 'SupportBot', tags: ['tickets','support'] },
+      { name: 'LegalReviewer', tags: ['compliance','legal'] },
+      { name: 'DataSyncer', tags: ['data','sync'] },
+      { name: 'MarketAnalyzer', tags: ['analytics','market'] },
+      { name: 'ContentGenerator', tags: ['marketing','content'] },
+    ]});
+  });
 
 // Mission board (used by executive-dashboard.html)
-app.get('/api/mission/board', (req, res) => {
-  res.json({ backlog: 12, in_progress: 5, review: 3, done: 47 });
-});
+app.get('/api/mission/board', [validate.missionBoard], (req, res) => {
+    res.json({ backlog: 12, in_progress: 5, review: 3, done: 47 });
+  });
 
 // Projects (used by executive-dashboard.html)
-app.get('/api/projects', (req, res) => {
-  res.json({ projects: [
-    { id: 'ehsa', label: 'EHSA Health', port: 3000, type: 'healthcare', status: 'online', baseUrl: '/ehsa-home.html', capabilities: ['telemedicine','records','billing'] },
-    { id: 'ban', label: 'BAN Task Engine', port: 3000, type: 'taskengine', status: 'online', baseUrl: '/ban-home.html', capabilities: ['scoring','routing','execution'] },
-    { id: 'ubi', label: 'UBI Distribution', port: 3000, type: 'finance', status: 'online', baseUrl: '/ubi-home.html', capabilities: ['claims','distribution','tracking'] },
-    { id: 'aurora', label: 'Aurora AI', port: 3000, type: 'ai', status: 'seeded', baseUrl: '/aurora-home.html', capabilities: ['nlp','vision','generation'] },
-    { id: 'supac', label: 'SUPAC Board', port: 3000, type: 'governance', status: 'online', baseUrl: '/supac-home.html', capabilities: ['voting','proposals','compliance'] },
-    { id: 'abaas', label: 'Agent-as-a-Service', port: 3000, type: 'platform', status: 'online', baseUrl: '/abaas.html', capabilities: ['deployment','billing','monitoring'] },
-  ]});
-});
+app.get('/api/projects', [validate.projects], (req, res) => {
+    res.json({ projects: [
+      { id: 'ehsa', label: 'EHSA Health', port: 3000, type: 'healthcare', status: 'online', baseUrl: '/ehsa-home.html', capabilities: ['telemedicine','records','billing'] },
+      { id: 'ban', label: 'BAN Task Engine', port: 3000, type: 'taskengine', status: 'online', baseUrl: '/ban-home.html', capabilities: ['scoring','routing','execution'] },
+      { id: 'ubi', label: 'UBI Distribution', port: 3000, type: 'finance', status: 'online', baseUrl: '/ubi-home.html', capabilities: ['claims','distribution','tracking'] },
+      { id: 'aurora', label: 'Aurora AI', port: 3000, type: 'ai', status: 'seeded', baseUrl: '/aurora-home.html', capabilities: ['nlp','vision','generation'] },
+      { id: 'supac', label: 'SUPAC Board', port: 3000, type: 'governance', status: 'online', baseUrl: '/supac-home.html', capabilities: ['voting','proposals','compliance'] },
+      { id: 'abaas', label: 'Agent-as-a-Service', port: 3000, type: 'platform', status: 'online', baseUrl: '/abaas.html', capabilities: ['deployment','billing','monitoring'] },
+    ]});
+  });
 
 // Marketplace tasks (used by executive-dashboard.html, marketplace.html)
-app.get('/api/marketplace/tasks', (req, res) => {
-  res.json({ open: 8, in_progress: 3, completed: 24, listings: [
-    { id: 'T-001', title: 'Integrate DEX oracle feed', status: 'open', priority: 'HIGH', reward: 50, age: '2h' },
-    { id: 'T-002', title: 'Fix auth token refresh', status: 'open', priority: 'MED', reward: 30, age: '5h' },
-    { id: 'T-003', title: 'Build skills registry API', status: 'in_progress', priority: 'HIGH', reward: 80, age: '1h' },
-    { id: 'T-004', title: 'Optimize federation sync', status: 'in_progress', priority: 'LOW', reward: 25, age: '30m' },
-    { id: 'T-005', title: 'Deploy BridgeOS 2.4.1', status: 'completed', priority: 'HIGH', reward: 100, age: '1d' },
-    { id: 'T-006', title: 'Setup node monitoring', status: 'completed', priority: 'MED', reward: 40, age: '2d' },
-  ]});
-});
+app.get('/api/marketplace/tasks', [validate.marketplaceTasks], (req, res) => {
+    res.json({ open: 8, in_progress: 3, completed: 24, listings: [
+      { id: 'T-001', title: 'Integrate DEX oracle feed', status: 'open', priority: 'HIGH', reward: 50, age: '2h' },
+      { id: 'T-002', title: 'Fix auth token refresh', status: 'open', priority: 'MED', reward: 30, age: '5h' },
+      { id: 'T-003', title: 'Build skills registry API', status: 'in_progress', priority: 'HIGH', reward: 80, age: '1h' },
+      { id: 'T-004', title: 'Optimize federation sync', status: 'in_progress', priority: 'LOW', reward: 25, age: '30m' },
+      { id: 'T-005', title: 'Deploy BridgeOS 2.4.1', status: 'completed', priority: 'HIGH', reward: 100, age: '1d' },
+      { id: 'T-006', title: 'Setup node monitoring', status: 'completed', priority: 'MED', reward: 40, age: '2d' },
+    ]});
+  });
 
 // Marketplace sections (used by marketplace.html)
-app.get('/api/marketplace/dex', (req, res) => {
-  res.json({ activePair: 'BRDG/USDT', pairs: [
-    { pair: 'BRDG/USDT', price: 0.42, change: 5.2, volume: 125000, prices: [0.38, 0.39, 0.40, 0.395, 0.41, 0.418, 0.42] },
-    { pair: 'ETH/USDT', price: 3521, change: -0.8, volume: 34500000, prices: [3550, 3540, 3530, 3520, 3515, 3518, 3521] },
-    { pair: 'SOL/USDT', price: 188.4, change: 4.1, volume: 5600000, prices: [180, 182, 183, 185, 186, 188, 188.4] },
-  ]});
-});
+app.get('/api/marketplace/dex', [validate.marketplaceDex], (req, res) => {
+    res.json({ activePair: 'BRDG/USDT', pairs: [
+      { pair: 'BRDG/USDT', price: 0.42, change: 5.2, volume: 125000, prices: [0.38, 0.39, 0.40, 0.395, 0.41, 0.418, 0.42] },
+      { pair: 'ETH/USDT', price: 3521, change: -0.8, volume: 34500000, prices: [3550, 3540, 3530, 3520, 3515, 3518, 3521] },
+      { pair: 'SOL/USDT', price: 188.4, change: 4.1, volume: 5600000, prices: [180, 182, 183, 185, 186, 188, 188.4] },
+    ]});
+  });
 
-app.get('/api/marketplace/wallet', (req, res) => {
-  res.json({ address: '0x3f4A...C9bE', balances: [
-    { symbol: 'BRDG', amount: 12450.5 }, { symbol: 'ETH', amount: 4.82 },
-    { symbol: 'USDT', amount: 8320.00 }, { symbol: 'SOL', amount: 22.1 },
-  ], txns: [
-    { hash: '0xab12...ef34', dir: 'in', amount: '+500 BRDG', time: '2m ago' },
-    { hash: '0xcd56...ab78', dir: 'out', amount: '-0.01 ETH', time: '15m ago' },
-  ]});
-});
+app.get('/api/marketplace/wallet', [validate.marketplaceWallet], (req, res) => {
+    res.json({ address: '0x3f4A...C9bE', balances: [
+      { symbol: 'BRDG', amount: 12450.5 }, { symbol: 'ETH', amount: 4.82 },
+      { symbol: 'USDT', amount: 8320.00 }, { symbol: 'SOL', amount: 22.1 },
+    ], txns: [
+      { hash: '0xab12...ef34', dir: 'in', amount: '+500 BRDG', time: '2m ago' },
+      { hash: '0xcd56...ab78', dir: 'out', amount: '-0.01 ETH', time: '15m ago' },
+    ]});
+  });
 
 app.get('/api/marketplace/skills', (req, res) => {
   res.json([
@@ -1374,9 +1454,9 @@ app.get('/api/marketplace/portfolio', (req, res) => {
   ]});
 });
 
-app.get('/api/marketplace/stats', (req, res) => {
-  res.json({ tasks: { value: 1247, trend: '+12%', up: true }, agents: { value: 38, trend: '+3', up: true }, revenue: { value: 84320, trend: '+8.4%', up: true, prefix: '$' }, uptime: { value: 99.94, trend: '', up: true, suffix: '%', decimals: 2 }, volume: { value: 128500000, trend: '+22%', up: true, prefix: '$' }, skills: { value: 94, trend: '+7', up: true } });
-});
+app.get('/api/marketplace/stats', [validate.marketplaceStats], (req, res) => {
+    res.json({ tasks: { value: 1247, trend: '+12%', up: true }, agents: { value: 38, trend: '+3', up: true }, revenue: { value: 84320, trend: '+8.4%', up: true, prefix: '$' }, uptime: { value: 99.94, trend: '', up: true, suffix: '%', decimals: 2 }, volume: { value: 128500000, trend: '+22%', up: true, prefix: '$' }, skills: { value: 94, trend: '+7', up: true } });
+  });
 
 // Env keys (used by executive-dashboard.html, admin.html)
 app.get('/api/twin/env-keys', requireAdmin, (req, res) => {
@@ -1492,12 +1572,12 @@ app.get('/api/intelligence/model', (req, res) => {
   ]});
 });
 
-app.get('/api/intelligence/opportunities', (req, res) => {
-  res.json({ opportunities: [
-    { title: 'Enterprise onboarding pipeline', type: 'sales', value: 15000, confidence: 72 },
-    { title: 'DeFi yield optimization', type: 'defi', value: 8000, confidence: 65 },
-  ]});
-});
+app.get('/api/intelligence/opportunities', [validate.intelligenceOpportunities], (req, res) => {
+    res.json({ opportunities: [
+      { title: 'Enterprise onboarding pipeline', type: 'sales', value: 15000, confidence: 72 },
+      { title: 'DeFi yield optimization', type: 'defi', value: 8000, confidence: 65 },
+    ]});
+  });
 
 // Governance (used by governance.html)
 app.get('/api/governance/dashboard', (req, res) => {

@@ -32,6 +32,7 @@ const app = express();
 const ROOT = __dirname;
 const SHARED_DIR = path.join(ROOT, 'shared');
 const data = require('./data-service');
+const db = require('./lib/db');
 const { requireAuth: gatewayAuth } = require('./middleware/auth');
 
 // ── CORS (restricted to known origins) ───────────────────────────────────────
@@ -159,7 +160,7 @@ const orchAgents = agentNames.map(name => ({
   uptime_s: 0,
 }));
 
-app.get('/orchestrator/status', (req, res) => {
+app.get('/orchestrator/status', gatewayAuth(), (req, res) => {
   // Update uptime from actual process uptime
   orchAgents.forEach(a => { a.uptime_s = Math.floor(process.uptime()); });
   res.json({
@@ -174,26 +175,24 @@ app.get('/orchestrator/status', (req, res) => {
 });
 
 // ── BILLING ───────────────────────────────────────────────────────────────────
-app.get('/billing', (req, res) => {
+app.get('/billing', gatewayAuth(), async (req, res) => {
+  const treasury_balance = await db.getTreasuryBalance();
   res.json({
-    treasury_balance: +treasuryBalance.toFixed(2),
+    source: 'live',
+    treasury_balance: +treasury_balance.toFixed(2),
     currency: 'USD',
     period: 'monthly',
-    revenue_mtd: 28450.00,
-    costs_mtd: 4210.50,
-    net_mtd: 24239.50,
-    subscriptions: 142,
-    active_plans: [
-      { id: 'starter',    name: 'Starter',    price: 49,   count: 64 },
-      { id: 'pro',        name: 'Pro',         price: 149,  count: 51 },
-      { id: 'enterprise', name: 'Enterprise',  price: 499,  count: 27 },
-    ],
+    revenue_mtd: null,
+    costs_mtd: null,
+    net_mtd: null,
+    subscriptions: 0,
+    active_plans: [],
     last_updated: new Date().toISOString(),
   });
 });
 
 // ── LLM / AI INFERENCE ────────────────────────────────────────────────────────
-app.post('/ask', async (req, res) => {
+app.post('/ask', gatewayAuth(), async (req, res) => {
   const { prompt } = req.body || {};
   if (!prompt) return res.status(400).json({ error: 'prompt required' });
   // Try to forward to ainode on 3001, fall back to stub
@@ -416,7 +415,7 @@ function fetchAgentsFrom(url, layer) {
   });
 }
 
-app.get('/api/agents', async (_req, res) => {
+app.get('/api/agents', gatewayAuth(), async (_req, res) => {
   const [l1, l2] = await Promise.all([
     fetchAgentsFrom(L1_AGENTS_URL, 'L1'),
     fetchAgentsFrom(L2_AGENTS_URL, 'L2'),
@@ -437,7 +436,7 @@ app.get('/api/agents', async (_req, res) => {
 
 // ── API: CONTRACTS ────────────────────────────────────────────────────────────
 // Reads and returns all JSON files from the shared/ contracts directory.
-app.get('/api/contracts', (req, res) => {
+app.get('/api/contracts', gatewayAuth(), (req, res) => {
   try {
     const files = fs.readdirSync(SHARED_DIR).filter(f => f.endsWith('.json'));
     const contracts = {};
