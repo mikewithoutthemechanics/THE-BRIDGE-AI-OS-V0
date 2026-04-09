@@ -1724,6 +1724,28 @@ Object.entries(shortRoutes).forEach(([short, target]) => {
 // TVM routes registered earlier, before brain catch-all
 app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIONS));
 
+// ================= ECONOMY ENGINE (agent balances, tasks, auto-loop) =================
+const { registerEconomyRoutes } = require('./lib/economy-routes');
+registerEconomyRoutes(app);
+
+const { registerPrimeRoutes } = require('./lib/prime-routes');
+registerPrimeRoutes(app);
+
+// Auto-task loop — starts generating/claiming/completing tasks autonomously
+const autoLoop = require('./lib/auto-task-loop');
+autoLoop.startAutoLoop();
+app.get('/api/economy/loop-stats', (_req, res) => res.json({ ok: true, ...autoLoop.getLoopStats() }));
+app.post('/api/economy/run-cycle', async (_req, res) => {
+  try {
+    const generated = await autoLoop.generateTasks();
+    const claimed = await autoLoop.claimTasks();
+    const completed = await autoLoop.completeTasks();
+    res.json({ ok: true, generated, claimed, completed, stats: autoLoop.getLoopStats() });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+console.log('[SERVER] Economy engine + auto-task loop ACTIVE');
+
 // ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE (catch-all — must be last) =================
 app.all('/api/{*path}', async (req, res) => {
   try {
