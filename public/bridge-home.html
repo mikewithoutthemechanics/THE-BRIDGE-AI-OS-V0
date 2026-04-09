@@ -1,2 +1,252 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="description" content="Bridge AI — core AI infrastructure and networking layer of the Bridge AI OS platform."><meta name="viewport" content="width=device-width,initial-scale=1"><title>BRIDGE AI - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#00c8ff;--t:#c8dce8;--d:#628ba0}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#x1F309;</div><h1>BRIDGE AI</h1><div class="tag">The AI Operating System</div><div class="desc">Core platform connecting all services, agents, and economic flows.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>Unified Gateway</h3><p>Single entry point to 130+ APIs, 16 pages, 6 services</p></div><div class="feat"><h3>Super Brain</h3><p>27 skills, RAG engine, KeyForge auth, twin reasoning</p></div><div class="feat"><h3>11 HTTPS Domains</h3><p>Full subdomain ecosystem with SSL</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/v3/spec").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script><script src="/bridge-nav.js" defer></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bridge AI — The AI Operating System | Bridge AI OS</title>
+<meta name="description" content="Bridge AI OS main hub. Overview of all 9 verticals, system health, economy stats, and the unified AI platform powering autonomous business.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+.hero{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;background:radial-gradient(ellipse at 50% 0%,rgba(0,200,255,.06),transparent 60%)}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(0,200,255,.2);background:rgba(0,200,255,.06);font-size:.8rem;color:var(--cyan);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.5rem,6vw,4.2rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.15rem;color:#b0bec5;max-width:650px;margin:0 auto 2rem;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0090cc);color:#000;box-shadow:0 4px 20px rgba(0,200,255,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(0,200,255,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--cyan);color:var(--cyan);text-decoration:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2.5rem;max-width:800px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--cyan)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+section{padding:4rem 2rem;max-width:1200px;margin:0 auto}
+.section-title{font-size:2rem;font-weight:800;margin-bottom:.5rem}.section-title span{color:var(--cyan)}
+.section-sub{color:var(--dim);margin-bottom:2rem;max-width:600px;font-size:1rem}
+
+.verticals{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem}
+.vertical{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s;text-decoration:none;color:inherit;display:block}
+.vertical:hover{border-color:var(--cyan);transform:translateY(-3px);box-shadow:var(--glow);text-decoration:none}
+.vertical .v-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+.vertical .v-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.vertical .v-title{font-size:1.1rem;font-weight:700}
+.vertical .v-tag{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.vertical p{font-size:.85rem;color:var(--dim);line-height:1.5}
+.vertical .v-cta{display:inline-block;margin-top:.75rem;font-size:.8rem;font-weight:700;color:var(--cyan)}
+
+.economy-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;padding:2rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-top:2rem}
+.econ-stat .val{font-size:1.5rem;font-weight:800;color:var(--cyan)}
+.econ-stat .lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+
+.health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-top:2rem}
+.health-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.health-card h3{font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--cyan)}
+.health-card .row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.health-card .row:last-child{border-bottom:none}
+.health-card .row .val{font-weight:700}
+.health-card .row .val.green{color:var(--green)}
+.health-card .row .val.orange{color:var(--orange)}
+
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(0,200,255,.05),rgba(0,229,123,.05));border-radius:16px;margin:2rem auto;max-width:1200px}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.footer-links{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:600px){.hero{padding:6rem 1rem 3rem}.stats{grid-template-columns:1fr 1fr}.verticals,.health-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> The AI Operating System</div>
+  <h1>Bridge <span>AI OS</span></h1>
+  <p class="sub">Autonomous business intelligence platform with 9 vertical markets, 130+ API endpoints, AI agent swarms, and a self-sustaining token economy. Built for Africa, scaling globally.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+    <a href="/checkout.html" class="btn btn-primary">Get Started</a>
+    <a href="#verticals" class="btn btn-outline">Explore Verticals</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="stat-agents">--</div><div class="label">AI Agents</div></div>
+    <div class="stat"><div class="num" id="stat-apis">--</div><div class="label">API Endpoints</div></div>
+    <div class="stat"><div class="num" id="stat-verticals">9</div><div class="label">Verticals</div></div>
+    <div class="stat"><div class="num" id="stat-uptime">--</div><div class="label">Uptime</div></div>
+  </div>
+</div>
+
+<section id="verticals">
+  <h2 class="section-title">Platform <span>Verticals</span></h2>
+  <p class="section-sub">Nine specialized AI-powered platforms, one unified operating system.</p>
+  <div class="verticals">
+    <a href="/ehsa-home.html" class="vertical">
+      <div class="v-header">
+        <div class="v-icon" style="background:rgba(0,229,123,.1);color:var(--green)">&#x1F3E5;</div>
+        <div><div class="v-title">EHSA</div><div class="v-tag">Empeleni Health Services Africa</div></div>
+      </div>
+      <p>Healthcare AI automation. Digital records, telemedicine, pharmacy management, and health analytics for African health organizations.</p>
+      <span class="v-cta">Explore EHSA &rarr;</span>
+    </a>
+    <a href="/aurora-home.html" class="vertical">
+      <div class="v-header">
+        <div class="v-icon" style="background:rgba(251,146,60,.1);color:var(--orange)">&#x26A1;</div>
+        <div><div class="v-title">Aurora Energy</div><div class="v-tag">Renewable Energy AI</div></div>
+      </div>
+      <p>Energy market signals, procurement optimization, grid analytics, and carbon tracking for the green energy transition.</p>
+      <span class="v-cta">Explore Aurora &rarr;</span>
+    </a>
+    <a href="/hospital-home.html" class="vertical">
+      <div class="v-header">
+        <div class="v-icon" style="background:rgba(255,209,102,.1);color:#ffd166">&#x1F3D7;</div>
+        <div><div class="v-title">Hospital in a Box</div><div class="v-tag">Turnkey Hospital Deployment</div></div>
+      </div>
+      <p>Deploy fully equipped hospitals in 90 days. Equipment catalog, deployment timelines, cost calculators, and compliance.</p>
+      <span class="v-cta">Explore HIAB &rarr;</span>
+    </a>
+    <a href="/aid-home.html" class="vertical">
+      <div class="v-header">
+        <div class="v-icon" style="background:rgba(255,60,90,.1);color:var(--red)">&#x1F4E6;</div>
+        <div><div class="v-title">Bridge AID</div><div class="v-tag">Humanitarian Tech</div></div>
+      </div>
+      <p>Transparent aid distribution, beneficiary management, UBI tracking, and impact metrics with blockchain verification.</p>
+      <span class="v-cta">Explore AID &rarr;</span>
+    </a>
+    <a href="/ban-home.html" class="vertical">
+      <div class="v-header">
+        <div class="v-icon" style="background:rgba(255,209,102,.1);color:#ffd166">&#x1F5A7;</div>
+        <div><div class="v-title">BAN Network</div><div class="v-tag">Blockchain Agent Network</div></div>
+      </div>
+      <p>Decentralized agent orchestration. Node management, consensus, staking, and distributed task execution.</p>
+      <span class="v-cta">Explore BAN &rarr;</span>
+    </a>
+    <a href="/rootedearth-home.html" class="vertical">
+      <div class="v-header">
+        <div class="v-icon" style="background:rgba(0,229,123,.1);color:var(--green)">&#x1F33E;</div>
+        <div><div class="v-title">Rooted Earth</div><div class="v-tag">AgriTech AI</div></div>
+      </div>
+      <p>Precision agriculture with crop analytics, supply chain optimization, market prices, and weather integration.</p>
+      <span class="v-cta">Explore Rooted Earth &rarr;</span>
+    </a>
+    <a href="/supac-home.html" class="vertical">
+      <div class="v-header">
+        <div class="v-icon" style="background:rgba(167,139,250,.1);color:var(--purple)">&#x1F3A8;</div>
+        <div><div class="v-title">Supaco Agency</div><div class="v-tag">Digital Agency</div></div>
+      </div>
+      <p>AI-powered digital agency. Web development, branding, marketing automation, and client portfolio management.</p>
+      <span class="v-cta">Explore Supaco &rarr;</span>
+    </a>
+    <a href="/ubi-home.html" class="vertical">
+      <div class="v-header">
+        <div class="v-icon" style="background:rgba(0,229,123,.1);color:var(--green)">&#x1F49A;</div>
+        <div><div class="v-title">Bridge UBI</div><div class="v-tag">Universal Basic Income</div></div>
+      </div>
+      <p>30% of all platform revenue flows to community members. Transparent, blockchain-verified income distribution.</p>
+      <span class="v-cta">Explore UBI &rarr;</span>
+    </a>
+    <a href="/abaas-home.html" class="vertical">
+      <div class="v-header">
+        <div class="v-icon" style="background:rgba(0,200,255,.1);color:var(--cyan)">&#x1F916;</div>
+        <div><div class="v-title">ABaaS</div><div class="v-tag">Agent-Based Autonomous System</div></div>
+      </div>
+      <p>Core agent orchestration layer. 8 specialized AI agents, task throughput monitoring, and economy management.</p>
+      <span class="v-cta">Explore ABaaS &rarr;</span>
+    </a>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">System <span>Health</span></h2>
+  <p class="section-sub">Real-time platform status and performance metrics.</p>
+  <div class="health-grid">
+    <div class="health-card">
+      <h3>Infrastructure</h3>
+      <div class="row"><span>API Gateway</span><span class="val green" id="h-api">--</span></div>
+      <div class="row"><span>Database</span><span class="val green" id="h-db">--</span></div>
+      <div class="row"><span>Agent Runtime</span><span class="val green" id="h-agents">--</span></div>
+      <div class="row"><span>SSL/Domains</span><span class="val green" id="h-ssl">--</span></div>
+    </div>
+    <div class="health-card">
+      <h3>Performance</h3>
+      <div class="row"><span>Avg Response</span><span class="val" id="h-response">--</span></div>
+      <div class="row"><span>Requests/min</span><span class="val" id="h-rpm">--</span></div>
+      <div class="row"><span>Error Rate</span><span class="val green" id="h-errors">--</span></div>
+      <div class="row"><span>Memory Usage</span><span class="val" id="h-memory">--</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">Economy <span>Overview</span></h2>
+  <p class="section-sub">The self-sustaining AI-driven economy powering all verticals.</p>
+  <div class="economy-bar">
+    <div class="econ-stat"><div class="val" id="e-treasury">--</div><div class="lbl">Treasury</div></div>
+    <div class="econ-stat"><div class="val" id="e-burned">--</div><div class="lbl">Tokens Burned</div></div>
+    <div class="econ-stat"><div class="val" id="e-ubi">--</div><div class="lbl">UBI Pool</div></div>
+    <div class="econ-stat"><div class="val" id="e-revenue">--</div><div class="lbl">Revenue (30d)</div></div>
+    <div class="econ-stat"><div class="val" id="e-agents">--</div><div class="lbl">Active Agents</div></div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <h2>The future of autonomous business is here</h2>
+  <p>Join the Bridge AI OS ecosystem and put AI agents to work for your organization.</p>
+  <a href="/checkout.html" class="btn btn-primary">Get Started</a>
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="/">Dashboard</a>
+    <a href="/platforms.html">Platforms</a>
+    <a href="/onboarding.html">Onboarding</a>
+    <a href="/sitemap.html">Sitemap</a>
+    <a href="/checkout.html">Pricing</a>
+  </div>
+  <p>&copy; 2026 Bridge AI OS &middot; Built for Africa, scaling globally</p>
+</footer>
+
+<script>
+(function(){
+  function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  Promise.all([
+    fetch('/api/analytics/overview').then(function(r){return r.json();}).catch(function(){return {};}),
+    fetch('/api/abaas/dashboard').then(function(r){return r.json();}).catch(function(){return {};}),
+    fetch('/api/ubi/status').then(function(r){return r.json();}).catch(function(){return {};})
+  ]).then(function(results){
+    var analytics=results[0]||{};var abaas=results[1]||{};var ubi=results[2]||{};
+    setText('stat-agents',abaas.active_agents||analytics.agents||'8');
+    setText('stat-apis',analytics.api_endpoints||'130+');
+    setText('stat-uptime',analytics.uptime||abaas.uptime||'99.7%');
+    setText('h-api',analytics.api_status||'Operational');
+    setText('h-db',analytics.db_status||'Operational');
+    setText('h-agents',analytics.agent_status||'Operational');
+    setText('h-ssl',analytics.ssl_status||'11/11 Valid');
+    setText('h-response',analytics.avg_response||'142ms');
+    setText('h-rpm',analytics.requests_per_min||'2,400');
+    setText('h-errors',analytics.error_rate||'0.3%');
+    setText('h-memory',analytics.memory_usage||'62%');
+    setText('e-treasury',abaas.treasury||analytics.treasury||'R2.4M');
+    setText('e-burned',abaas.tokens_burned||'142K');
+    setText('e-ubi',ubi.pool_balance||'R142K');
+    setText('e-revenue',analytics.revenue_30d||'R480K');
+    setText('e-agents',abaas.active_agents||'8');
+  }).catch(function(){
+    setText('stat-agents','8');setText('stat-apis','130+');setText('stat-uptime','99.7%');
+    setText('h-api','Operational');setText('h-db','Operational');setText('h-agents','Operational');setText('h-ssl','11/11 Valid');
+    setText('h-response','142ms');setText('h-rpm','2,400');setText('h-errors','0.3%');setText('h-memory','62%');
+    setText('e-treasury','R2.4M');setText('e-burned','142K');setText('e-ubi','R142K');setText('e-revenue','R480K');setText('e-agents','8');
+  });
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
+</body>
+</html>

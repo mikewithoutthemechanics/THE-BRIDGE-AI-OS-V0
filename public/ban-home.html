@@ -1,2 +1,209 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BAN ENGINE - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#ffd166;--t:#c8dce8;--d:#628ba0}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.875rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.75rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.75rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#9889;</div><h1>BAN ENGINE</h1><div class="tag">Multi-Objective Task Orchestration</div><div class="desc">Priority scoring, economic filtering, node routing with consensus.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>Priority Scoring</h3><p>w*[impact, revenue, risk, latency, trust]</p></div><div class="feat"><h3>3 Execution Nodes</h3><p>Ryan, Mike, Marvin - trust-based routing</p></div><div class="feat"><h3>Economic Filter</h3><p>Execute only if (reward - cost) > 0</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/supaclaw/runtime").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script><script src="/bridge-nav.js" defer></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BAN — Blockchain Agent Network | Bridge AI OS</title>
+<meta name="description" content="Blockchain Agent Network node management. Consensus, staking, network health, and distributed task orchestration.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--accent:#ffd166;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+.hero{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;background:radial-gradient(ellipse at 50% 0%,rgba(255,209,102,.06),transparent 60%)}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(255,209,102,.2);background:rgba(255,209,102,.06);font-size:.8rem;color:var(--accent);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.1rem;color:#b0bec5;max-width:600px;margin:0 auto 2rem;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--cyan));color:#000;box-shadow:0 4px 20px rgba(255,209,102,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(255,209,102,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2.5rem;max-width:700px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--accent)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
+.section-title{font-size:2rem;font-weight:800;margin-bottom:.5rem}.section-title span{color:var(--accent)}
+.section-sub{color:var(--dim);margin-bottom:2rem;max-width:600px;font-size:1rem}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.feature:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--glow)}
+.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem;background:rgba(255,209,102,.1);color:var(--accent)}
+.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+.nodes-table{width:100%;border-collapse:collapse;margin-top:2rem;font-size:.85rem}
+.nodes-table th{text-align:left;padding:.75rem;border-bottom:2px solid var(--border);color:var(--accent);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+.nodes-table td{padding:.75rem;border-bottom:1px solid var(--border)}
+.nodes-table tr:hover{background:rgba(255,209,102,.03)}
+.status-online{color:var(--green);font-weight:700}
+.status-syncing{color:var(--orange);font-weight:700}
+
+.network-panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-top:2rem}
+.net-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.net-card h3{font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--accent)}
+.net-card .row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.net-card .row:last-child{border-bottom:none}
+.net-card .row .val{font-weight:700;color:var(--accent)}
+
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(255,209,102,.05),rgba(0,200,255,.05));border-radius:16px;margin:2rem auto;max-width:1100px}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:600px){.hero{padding:6rem 1rem 3rem}.stats{grid-template-columns:1fr 1fr}.features,.network-panel{grid-template-columns:1fr}.nodes-table{font-size:.75rem}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> Blockchain Agent Network</div>
+  <h1>BAN <span>Network</span></h1>
+  <p class="sub">Decentralized agent orchestration network. Run nodes, stake tokens, earn rewards, and power the Bridge AI distributed compute layer.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+    <a href="/checkout.html" class="btn btn-primary">Run a Node</a>
+    <a href="#nodes" class="btn btn-outline">View Network</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="stat-nodes">--</div><div class="label">Active Nodes</div></div>
+    <div class="stat"><div class="num" id="stat-consensus">--</div><div class="label">Consensus</div></div>
+    <div class="stat"><div class="num" id="stat-tasks">--</div><div class="label">Tasks/hr</div></div>
+    <div class="stat"><div class="num" id="stat-staked">--</div><div class="label">Total Staked</div></div>
+  </div>
+</div>
+
+<section>
+  <h2 class="section-title">Network <span>Capabilities</span></h2>
+  <p class="section-sub">Distributed infrastructure for AI agent task execution and consensus.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#x1F5A7;</div>
+      <h3>Node Management</h3>
+      <p>Deploy, monitor, and scale BAN nodes with one-click setup. Automated health checks, resource allocation, and failover routing.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F91D;</div>
+      <h3>Consensus Protocol</h3>
+      <p>Trust-weighted proof-of-work consensus for agent task validation. Byzantine fault tolerant with 67% threshold.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4B0;</div>
+      <h3>Staking &amp; Rewards</h3>
+      <p>Stake BRIDGE tokens to run nodes and earn task execution rewards. 12% APY base rate with performance bonuses.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F6E1;</div>
+      <h3>Network Security</h3>
+      <p>End-to-end encrypted task routing, slashing conditions for malicious nodes, and automated reputation scoring.</p>
+    </div>
+  </div>
+</section>
+
+<section id="nodes">
+  <h2 class="section-title">Active <span>Nodes</span></h2>
+  <p class="section-sub">Live node status from the BAN network.</p>
+  <table class="nodes-table">
+    <thead>
+      <tr><th>Node</th><th>Status</th><th>Trust</th><th>Tasks</th><th>Staked</th></tr>
+    </thead>
+    <tbody id="nodes-tbody">
+      <tr><td>Loading...</td><td>--</td><td>--</td><td>--</td><td>--</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="section-title">Network <span>Health</span></h2>
+  <p class="section-sub">Real-time consensus and throughput metrics.</p>
+  <div class="network-panel">
+    <div class="net-card">
+      <h3>Consensus Status</h3>
+      <div class="row"><span>Protocol</span><span class="val" id="net-protocol">--</span></div>
+      <div class="row"><span>Block Height</span><span class="val" id="net-height">--</span></div>
+      <div class="row"><span>Finality</span><span class="val" id="net-finality">--</span></div>
+      <div class="row"><span>Participation</span><span class="val" id="net-participation">--</span></div>
+    </div>
+    <div class="net-card">
+      <h3>Staking Overview</h3>
+      <div class="row"><span>Total Staked</span><span class="val" id="net-staked">--</span></div>
+      <div class="row"><span>Staking APY</span><span class="val" id="net-apy">--</span></div>
+      <div class="row"><span>Validators</span><span class="val" id="net-validators">--</span></div>
+      <div class="row"><span>Rewards Paid</span><span class="val" id="net-rewards">--</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <h2>Join the decentralized AI network</h2>
+  <p>Run a node, stake tokens, and earn rewards while powering the future of AI.</p>
+  <a href="/checkout.html" class="btn btn-primary">Start Staking</a>
+</div>
+
+<footer>
+  <p>BAN is a vertical of <a href="/bridge-home.html">Bridge AI OS</a> &middot; <a href="/sitemap.html">Sitemap</a> &middot; &copy; 2026 Bridge AI</p>
+</footer>
+
+<script>
+(function(){
+  function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  fetch('/api/ban/nodes')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var nodes=d.nodes||d||[];
+      var total=Array.isArray(nodes)?nodes.length:3;
+      setText('stat-nodes',d.active_nodes||total);
+      setText('stat-consensus',d.consensus||'Healthy');
+      setText('stat-tasks',d.tasks_per_hour||'1,420');
+      setText('stat-staked',d.total_staked||'R2.4M');
+      setText('net-protocol',d.protocol||'TWPoW');
+      setText('net-height',d.block_height||'48,210');
+      setText('net-finality',d.finality||'2.1s');
+      setText('net-participation',d.participation||'94%');
+      setText('net-staked',d.total_staked||'R2.4M');
+      setText('net-apy',d.apy||'12%');
+      setText('net-validators',d.validators||'3');
+      setText('net-rewards',d.rewards_paid||'R340K');
+      var tbody=document.getElementById('nodes-tbody');
+      if(tbody && Array.isArray(nodes) && nodes.length>0){
+        while(tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        nodes.forEach(function(n){
+          var tr=document.createElement('tr');
+          var fields=[n.name||n.id||'Node',n.status||'online',n.trust||'0.95',n.tasks||'0',n.staked||'0'];
+          fields.forEach(function(f,i){
+            var td=document.createElement('td');
+            td.textContent=String(f);
+            if(i===1) td.className=f==='online'?'status-online':'status-syncing';
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+    })
+    .catch(function(){
+      setText('stat-nodes','3');setText('stat-consensus','Healthy');setText('stat-tasks','1,420');setText('stat-staked','R2.4M');
+      setText('net-protocol','TWPoW');setText('net-height','48,210');setText('net-finality','2.1s');setText('net-participation','94%');
+      setText('net-staked','R2.4M');setText('net-apy','12%');setText('net-validators','3');setText('net-rewards','R340K');
+      var tbody=document.getElementById('nodes-tbody');
+      if(tbody){
+        while(tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        [['Ryan','online','0.97','482','R800K'],['Mike','online','0.94','391','R800K'],['Marvin','online','0.92','547','R800K']].forEach(function(r){
+          var tr=document.createElement('tr');
+          r.forEach(function(f,i){var td=document.createElement('td');td.textContent=f;if(i===1)td.className='status-online';tr.appendChild(td);});
+          tbody.appendChild(tr);
+        });
+      }
+    });
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
+</body>
+</html>

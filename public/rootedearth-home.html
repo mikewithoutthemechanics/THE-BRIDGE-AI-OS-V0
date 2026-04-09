@@ -1,2 +1,186 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="description" content="Rooted Earth — sustainable agriculture and land management AI platform on Bridge AI OS."><meta name="viewport" content="width=device-width,initial-scale=1"><title>ROOTED EARTH - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#00e57b;--t:#c8dce8;--d:#628ba0}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#x1F331;</div><h1>ROOTED EARTH</h1><div class="tag">Sustainability Platform</div><div class="desc">Carbon tracking, regenerative agriculture, SDG alignment.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>Carbon Tracking</h3><p>Measure and offset</p></div><div class="feat"><h3>SDG Alignment</h3><p>17 Goals tracked</p></div><div class="feat"><h3>Impact Investing</h3><p>Verified projects</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/sdg/metrics").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script><script src="/bridge-nav.js" defer></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rooted Earth Agriculture — AgriTech AI | Bridge AI OS</title>
+<meta name="description" content="AI-powered agriculture platform. Crop analytics, supply chain optimization, market prices, and weather integration for African farmers.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+.hero{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;background:radial-gradient(ellipse at 50% 0%,rgba(0,229,123,.08),transparent 60%)}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(0,229,123,.2);background:rgba(0,229,123,.06);font-size:.8rem;color:var(--green);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--green),#22c55e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.1rem;color:#b0bec5;max-width:620px;margin:0 auto 2rem;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--green),#15803d);color:#000;box-shadow:0 4px 20px rgba(0,229,123,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(0,229,123,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--green);color:var(--green);text-decoration:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2.5rem;max-width:700px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--green)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
+.section-title{font-size:2rem;font-weight:800;margin-bottom:.5rem}.section-title span{color:var(--green)}
+.section-sub{color:var(--dim);margin-bottom:2rem;max-width:600px;font-size:1rem}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.feature:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:var(--glow)}
+.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem;background:rgba(0,229,123,.1);color:var(--green)}
+.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+.data-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-top:2rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.panel h3{font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--green)}
+.panel .row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.panel .row:last-child{border-bottom:none}
+.panel .row .val{font-weight:700;color:var(--green)}
+.panel .row .val.orange{color:var(--orange)}
+
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(0,229,123,.05),rgba(0,200,255,.05));border-radius:16px;margin:2rem auto;max-width:1100px}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:600px){.hero{padding:6rem 1rem 3rem}.stats{grid-template-columns:1fr 1fr}.features,.data-panels{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> AgriTech AI Platform</div>
+  <h1>Rooted Earth <span>Agriculture</span></h1>
+  <p class="sub">AI-powered precision agriculture for African farmers. Crop analytics, supply chain optimization, real-time market prices, and weather-integrated planning.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+    <a href="/checkout.html" class="btn btn-primary">Get Started</a>
+    <a href="#market" class="btn btn-outline">View Markets</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="stat-farms">--</div><div class="label">Farms Connected</div></div>
+    <div class="stat"><div class="num" id="stat-hectares">--</div><div class="label">Hectares Managed</div></div>
+    <div class="stat"><div class="num" id="stat-yield">--</div><div class="label">Yield Increase</div></div>
+    <div class="stat"><div class="num" id="stat-crops">--</div><div class="label">Crop Types</div></div>
+  </div>
+</div>
+
+<section>
+  <h2 class="section-title">AgriTech <span>Capabilities</span></h2>
+  <p class="section-sub">From seed to market, AI-driven insights for every stage of the agricultural value chain.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#x1F33E;</div>
+      <h3>Crop Analytics</h3>
+      <p>Satellite imagery analysis, NDVI monitoring, disease detection, and yield prediction. Get field-level insights updated daily.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F69A;</div>
+      <h3>Supply Chain</h3>
+      <p>Farm-to-market logistics optimization, cold chain monitoring, and demand forecasting. Reduce post-harvest losses by up to 40%.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4B9;</div>
+      <h3>Market Prices</h3>
+      <p>Real-time commodity prices across local and international markets. Price alerts, trend analysis, and optimal selling windows.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x26C5;</div>
+      <h3>Weather Integration</h3>
+      <p>Hyper-local weather forecasting, frost and drought alerts, irrigation scheduling, and planting window optimization.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4A7;</div>
+      <h3>Irrigation AI</h3>
+      <p>Soil moisture sensors, evapotranspiration modeling, and automated irrigation scheduling. Save 30% on water usage.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4CA;</div>
+      <h3>Farm Finance</h3>
+      <p>Input cost tracking, profit margin analysis, crop insurance optimization, and access to agricultural microfinance.</p>
+    </div>
+  </div>
+</section>
+
+<section id="market">
+  <h2 class="section-title">Market <span>Dashboard</span></h2>
+  <p class="section-sub">Live commodity prices and weather data for key agricultural regions.</p>
+  <div class="data-panels">
+    <div class="panel">
+      <h3>Commodity Prices (ZAR/ton)</h3>
+      <div class="row"><span>Maize (White)</span><span class="val" id="mp-maize">--</span></div>
+      <div class="row"><span>Wheat</span><span class="val" id="mp-wheat">--</span></div>
+      <div class="row"><span>Soybeans</span><span class="val" id="mp-soy">--</span></div>
+      <div class="row"><span>Sunflower</span><span class="val" id="mp-sun">--</span></div>
+    </div>
+    <div class="panel">
+      <h3>Supply Chain</h3>
+      <div class="row"><span>Logistics Cost Index</span><span class="val" id="sc-logistics">--</span></div>
+      <div class="row"><span>Post-Harvest Loss</span><span class="val orange" id="sc-loss">--</span></div>
+      <div class="row"><span>Export Volume (tons)</span><span class="val" id="sc-export">--</span></div>
+      <div class="row"><span>Cold Chain Uptime</span><span class="val" id="sc-cold">--</span></div>
+    </div>
+    <div class="panel">
+      <h3>Weather Outlook</h3>
+      <div class="row"><span>Rainfall (7-day)</span><span class="val" id="wx-rain">--</span></div>
+      <div class="row"><span>Temperature Avg</span><span class="val" id="wx-temp">--</span></div>
+      <div class="row"><span>Soil Moisture</span><span class="val" id="wx-soil">--</span></div>
+      <div class="row"><span>Drought Risk</span><span class="val orange" id="wx-drought">--</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <h2>Grow smarter with AI-powered farming</h2>
+  <p>Join thousands of African farmers using Rooted Earth to increase yields and reduce waste.</p>
+  <a href="/checkout.html" class="btn btn-primary">Start Growing</a>
+</div>
+
+<footer>
+  <p>Rooted Earth is a vertical of <a href="/bridge-home.html">Bridge AI OS</a> &middot; <a href="/sitemap.html">Sitemap</a> &middot; &copy; 2026 Bridge AI</p>
+</footer>
+
+<script>
+(function(){
+  function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  fetch('/api/rootedearth/dashboard')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      setText('stat-farms',d.farms||'1,240');
+      setText('stat-hectares',d.hectares||'48,000');
+      setText('stat-yield',d.yield_increase||'+24%');
+      setText('stat-crops',d.crop_types||'32');
+      setText('mp-maize',d.maize_price||'R4,820');
+      setText('mp-wheat',d.wheat_price||'R7,140');
+      setText('mp-soy',d.soy_price||'R8,960');
+      setText('mp-sun',d.sunflower_price||'R9,200');
+      setText('sc-logistics',d.logistics_index||'82.4');
+      setText('sc-loss',d.post_harvest_loss||'12%');
+      setText('sc-export',d.export_volume||'24,600');
+      setText('sc-cold',d.cold_chain_uptime||'97.2%');
+      setText('wx-rain',d.rainfall||'42mm');
+      setText('wx-temp',d.temperature||'22C');
+      setText('wx-soil',d.soil_moisture||'68%');
+      setText('wx-drought',d.drought_risk||'Low');
+    })
+    .catch(function(){
+      setText('stat-farms','1,240');setText('stat-hectares','48,000');setText('stat-yield','+24%');setText('stat-crops','32');
+      setText('mp-maize','R4,820');setText('mp-wheat','R7,140');setText('mp-soy','R8,960');setText('mp-sun','R9,200');
+      setText('sc-logistics','82.4');setText('sc-loss','12%');setText('sc-export','24,600');setText('sc-cold','97.2%');
+      setText('wx-rain','42mm');setText('wx-temp','22C');setText('wx-soil','68%');setText('wx-drought','Low');
+    });
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
+</body>
+</html>

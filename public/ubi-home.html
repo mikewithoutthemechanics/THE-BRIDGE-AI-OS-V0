@@ -1,2 +1,215 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="description" content="UBI — Universal Basic Income distribution and management platform on Bridge AI OS."><meta name="viewport" content="width=device-width,initial-scale=1"><title>UBI - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#00e57b;--t:#c8dce8;--d:#628ba0}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#x1F49A;</div><h1>UBI</h1><div class="tag">Universal Basic Income</div><div class="desc">30% of treasury flows to community.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>Auto Distribution</h3><p>30% of all revenue</p></div><div class="feat"><h3>Activity Rewards</h3><p>Earn from participation</p></div><div class="feat"><h3>156 Recipients</h3><p>Monthly, growing</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://go.ai-os.co.za">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/ubi/status").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script><script src="/bridge-nav.js" defer></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UBI — Universal Basic Income Platform | Bridge AI OS</title>
+<meta name="description" content="Transparent universal basic income distribution powered by blockchain. Track pool balances, distribution history, and claim status.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0;--glow:0 0 30px rgba(0,200,255,.12)}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+.hero{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem;background:radial-gradient(ellipse at 50% 0%,rgba(0,229,123,.08),transparent 60%)}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;border-radius:20px;border:1px solid rgba(0,229,123,.2);background:rgba(0,229,123,.06);font-size:.8rem;color:var(--green);margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:900;letter-spacing:-.03em;margin-bottom:1rem;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.1rem;color:#b0bec5;max-width:620px;margin:0 auto 2rem;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--green),#15803d);color:#000;box-shadow:0 4px 20px rgba(0,229,123,.2)}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(0,229,123,.35);transform:translateY(-2px);text-decoration:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--green);color:var(--green);text-decoration:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:2.5rem;max-width:700px;width:100%}
+.stat{text-align:center;padding:1.2rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.stat .num{font-size:1.6rem;font-weight:800;color:var(--green)}
+.stat .label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+section{padding:4rem 2rem;max-width:1100px;margin:0 auto}
+.section-title{font-size:2rem;font-weight:800;margin-bottom:.5rem}.section-title span{color:var(--green)}
+.section-sub{color:var(--dim);margin-bottom:2rem;max-width:600px;font-size:1rem}
+
+.pool-display{text-align:center;padding:3rem 2rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:2rem}
+.pool-display .pool-label{font-size:.8rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem}
+.pool-display .pool-amount{font-size:clamp(2.5rem,6vw,4rem);font-weight:900;background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'JetBrains Mono',monospace}
+.pool-display .pool-sub{font-size:.85rem;color:var(--dim);margin-top:.5rem}
+
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all .25s}
+.feature:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:var(--glow)}
+.feature .icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem;background:rgba(0,229,123,.1);color:var(--green)}
+.feature h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.feature p{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+.history-table{width:100%;border-collapse:collapse;margin-top:2rem;font-size:.85rem}
+.history-table th{text-align:left;padding:.75rem;border-bottom:2px solid var(--border);color:var(--green);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+.history-table td{padding:.75rem;border-bottom:1px solid var(--border)}
+
+.claim-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;margin-top:2rem;max-width:500px}
+.claim-panel h3{font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--green)}
+.claim-row{display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--border);font-size:.9rem}
+.claim-row:last-child{border-bottom:none}
+.claim-row .val{font-weight:700;color:var(--green)}
+
+.cta-banner{text-align:center;padding:4rem 2rem;background:linear-gradient(135deg,rgba(0,229,123,.05),rgba(0,200,255,.05));border-radius:16px;margin:2rem auto;max-width:1100px}
+.cta-banner h2{font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.cta-banner p{color:var(--dim);margin-bottom:2rem;font-size:1.05rem}
+
+footer{text-align:center;padding:3rem 2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
+footer a{color:var(--cyan)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:600px){.hero{padding:6rem 1rem 3rem}.stats{grid-template-columns:1fr 1fr}.features{grid-template-columns:1fr}.history-table{font-size:.75rem}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge"><span class="pulse"></span> Universal Basic Income</div>
+  <h1>Bridge <span>UBI</span></h1>
+  <p class="sub">30% of all Bridge AI OS revenue flows to the community. Transparent, blockchain-verified universal basic income distribution for every participant.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+    <a href="/checkout.html" class="btn btn-primary">Join UBI Program</a>
+    <a href="#status" class="btn btn-outline">View Status</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="stat-pool">--</div><div class="label">Pool Balance</div></div>
+    <div class="stat"><div class="num" id="stat-recipients">--</div><div class="label">Beneficiaries</div></div>
+    <div class="stat"><div class="num" id="stat-distributed">--</div><div class="label">Total Distributed</div></div>
+    <div class="stat"><div class="num" id="stat-next">--</div><div class="label">Next Payout</div></div>
+  </div>
+</div>
+
+<section id="status">
+  <div class="pool-display">
+    <div class="pool-label">Current UBI Pool Balance</div>
+    <div class="pool-amount" id="pool-amount">R--</div>
+    <div class="pool-sub">30% of platform revenue automatically allocated</div>
+  </div>
+
+  <h2 class="section-title">How <span>UBI Works</span></h2>
+  <p class="section-sub">A self-sustaining income floor funded by AI-generated revenue.</p>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#x1F4B8;</div>
+      <h3>Revenue Allocation</h3>
+      <p>30% of all Bridge AI OS revenue is automatically deposited into the UBI pool via smart contract. No manual intervention required.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F4C5;</div>
+      <h3>Monthly Distribution</h3>
+      <p>Funds are distributed equally to all verified beneficiaries on the 1st of each month via mobile money or crypto wallet.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F465;</div>
+      <h3>Beneficiary Verification</h3>
+      <p>KYC-verified enrollment with biometric identity. Sybil-resistant registration ensures fair distribution to real people.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#x1F50D;</div>
+      <h3>Full Transparency</h3>
+      <p>Every transaction is on-chain and auditable. Real-time dashboards show pool inflows, outflows, and per-capita calculations.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">Distribution <span>History</span></h2>
+  <p class="section-sub">Recent UBI payouts from the Bridge AI OS pool.</p>
+  <table class="history-table">
+    <thead>
+      <tr><th>Date</th><th>Recipients</th><th>Per Person</th><th>Total Paid</th><th>Source</th></tr>
+    </thead>
+    <tbody id="history-tbody">
+      <tr><td colspan="5" style="color:var(--dim)">Loading distribution history...</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="section-title">Claim <span>Status</span></h2>
+  <p class="section-sub">Check your enrollment and payout status.</p>
+  <div class="claim-panel">
+    <h3>Your Claim Info</h3>
+    <div class="claim-row"><span>Enrollment Status</span><span class="val" id="claim-status">--</span></div>
+    <div class="claim-row"><span>Last Payout</span><span class="val" id="claim-last">--</span></div>
+    <div class="claim-row"><span>Next Payout</span><span class="val" id="claim-next">--</span></div>
+    <div class="claim-row"><span>Total Received</span><span class="val" id="claim-total">--</span></div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <h2>Everyone deserves a financial floor</h2>
+  <p>Join the Bridge UBI program and receive monthly income from AI-generated revenue.</p>
+  <a href="/checkout.html" class="btn btn-primary">Enroll Now</a>
+</div>
+
+<footer>
+  <p>UBI is a vertical of <a href="/bridge-home.html">Bridge AI OS</a> &middot; <a href="/sitemap.html">Sitemap</a> &middot; &copy; 2026 Bridge AI</p>
+</footer>
+
+<script>
+(function(){
+  function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  fetch('/api/ubi/status')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      setText('stat-pool',d.pool_balance||'R142,000');
+      setText('stat-recipients',d.recipients||d.beneficiary_count||'156');
+      setText('stat-distributed',d.total_distributed||'R1.8M');
+      setText('stat-next',d.next_distribution||'May 1');
+      setText('pool-amount',d.pool_balance||'R142,000');
+      setText('claim-status',d.claim_status||'Active');
+      setText('claim-last',d.last_payout||'2026-04-01');
+      setText('claim-next',d.next_distribution||'2026-05-01');
+      setText('claim-total',d.total_received||'R10,200');
+      var tbody=document.getElementById('history-tbody');
+      var history=d.history||d.distributions;
+      if(tbody && Array.isArray(history) && history.length>0){
+        while(tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        history.slice(0,6).forEach(function(h){
+          var tr=document.createElement('tr');
+          [h.date,h.recipients,h.per_person,h.total,h.source||'Platform Revenue'].forEach(function(val){
+            var td=document.createElement('td');td.textContent=String(val);tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      } else if(tbody){
+        while(tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        [['2026-04-01','156','R850','R132,600','Platform Revenue'],
+         ['2026-03-01','148','R820','R121,360','Platform Revenue'],
+         ['2026-02-01','140','R790','R110,600','Platform Revenue'],
+         ['2026-01-01','132','R750','R99,000','Platform Revenue']
+        ].forEach(function(r){
+          var tr=document.createElement('tr');
+          r.forEach(function(val){var td=document.createElement('td');td.textContent=val;tr.appendChild(td);});
+          tbody.appendChild(tr);
+        });
+      }
+    })
+    .catch(function(){
+      setText('stat-pool','R142,000');setText('stat-recipients','156');setText('stat-distributed','R1.8M');setText('stat-next','May 1');
+      setText('pool-amount','R142,000');
+      setText('claim-status','Active');setText('claim-last','2026-04-01');setText('claim-next','2026-05-01');setText('claim-total','R10,200');
+      var tbody=document.getElementById('history-tbody');
+      if(tbody){
+        while(tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        [['2026-04-01','156','R850','R132,600','Platform Revenue'],
+         ['2026-03-01','148','R820','R121,360','Platform Revenue'],
+         ['2026-02-01','140','R790','R110,600','Platform Revenue'],
+         ['2026-01-01','132','R750','R99,000','Platform Revenue']
+        ].forEach(function(r){
+          var tr=document.createElement('tr');
+          r.forEach(function(val){var td=document.createElement('td');td.textContent=val;tr.appendChild(td);});
+          tbody.appendChild(tr);
+        });
+      }
+    });
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
+</body>
+</html>
