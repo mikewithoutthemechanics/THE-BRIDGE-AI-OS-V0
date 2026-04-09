@@ -1676,6 +1676,57 @@ app.get('/api', (req, res) => res.json({
   }
 }));
 
+// ================= ADMIN WITHDRAW ROUTES =================
+
+// Step 1: Authorize withdrawal (proxies to brain's KeyForge)
+app.post('/api/admin/withdraw/authorize', requireAdmin, async (req, res) => {
+  try {
+    const resp = await axios.post(BRAIN_URL + '/api/treasury/withdraw/authorize', {}, {
+      headers: { 'x-bridge-secret': process.env.BRIDGE_INTERNAL_SECRET || '' },
+      timeout: 10000
+    });
+    res.json(resp.data);
+  } catch (err) {
+    res.status(err.response?.status || 502).json(err.response?.data || { ok: false, error: 'Authorization service unavailable' });
+  }
+});
+
+// Step 2: Execute withdrawal
+app.post('/api/admin/withdraw/execute', requireAdmin, async (req, res) => {
+  const kfToken = req.headers['x-kf-token'];
+  if (!kfToken) return res.status(400).json({ ok: false, error: 'KeyForge token required (x-kf-token header)' });
+
+  const { to, amount, rail, memo } = req.body || {};
+  if (!to || !amount) return res.status(400).json({ ok: false, error: 'to and amount required' });
+  if (!/^0x[a-fA-F0-9]{40}$/.test(to)) return res.status(400).json({ ok: false, error: 'Invalid address format' });
+
+  try {
+    const endpoint = rail === 'brdg'
+      ? '/api/treasury/withdraw/brdg'
+      : '/api/treasury/withdraw/eth';
+    const resp = await axios.post(BRAIN_URL + endpoint, { to, amount, memo }, {
+      headers: { 'Authorization': 'Bearer ' + kfToken, 'Content-Type': 'application/json' },
+      timeout: 30000
+    });
+    res.json(resp.data);
+  } catch (err) {
+    res.status(err.response?.status || 502).json(err.response?.data || { ok: false, error: 'Withdrawal failed' });
+  }
+});
+
+// Audit log
+app.get('/api/admin/withdraw/audit', requireAdmin, async (req, res) => {
+  try {
+    const resp = await axios.get(BRAIN_URL + '/api/treasury/withdraw/audit', {
+      headers: { 'x-bridge-secret': process.env.BRIDGE_INTERNAL_SECRET || '' },
+      timeout: 10000
+    });
+    res.json(resp.data);
+  } catch (err) {
+    res.json({ log: [] });
+  }
+});
+
 // ================= SHORT URL REDIRECTS =================
 const shortRoutes = {
   '/ban': '/ban-home.html', '/ehsa': '/ehsa-home.html', '/aid': '/aid-home.html',
@@ -1715,7 +1766,8 @@ const shortRoutes = {
   '/face-embodied': '/anatomical_face_embodied.html',
   '/face-facs': '/anatomical_face_facs.html',
   '/face-tension': '/anatomical_face_tension_balanced.html',
-  '/face-vector': '/anatomical_face_vector_muscle.html'
+  '/face-vector': '/anatomical_face_vector_muscle.html',
+  '/withdraw': '/admin-withdraw.html'
 };
 Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));
