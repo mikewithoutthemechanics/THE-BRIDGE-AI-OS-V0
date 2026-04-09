@@ -11,7 +11,7 @@ const userDb = require('../lib/user-identity');
 
 // ── Page Tier Definitions ──────────────────────────────────────────────────
 const PAGE_TIERS = {
-  PUBLIC: ['/', '/index.html', '/landing.html', '/home.html', '/pricing.html', '/join.html', '/checkout.html',
+  PUBLIC: ['/', '/index.html', '/landing.html', '/home.html', '/pricing.html', '/onboarding.html', '/checkout.html',
     '/payment-success.html', '/payment-cancel.html', '/welcome.html', '/onboarding.html', '/sitemap.html',
     '/docs.html', '/50-applications.html', '/applications.html', '/404.html', '/offline.html',
     '/platforms.html', '/bridge-home.html', '/ehsa-home.html', '/aurora-home.html', '/hospital-home.html',
@@ -81,7 +81,7 @@ function requireClient(req, res, next) {
   if (!user || user.plan === 'visitor') {
     if (wantsHtml(req)) {
       const redirect = encodeURIComponent(req.originalUrl || req.path);
-      return res.redirect('/join.html?redirect=' + redirect);
+      return res.redirect('/onboarding.html?redirect=' + redirect);
     }
     return res.status(401).json({ ok: false, error: 'Authentication required. Upgrade from visitor plan.' });
   }
