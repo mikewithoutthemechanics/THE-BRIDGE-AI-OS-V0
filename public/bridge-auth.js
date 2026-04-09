@@ -1,7 +1,7 @@
 /**
  * BRIDGE AI OS — Shared Auth Utilities
  *
- * Provides sign-out that clears both Clerk sessions and Bridge JWTs.
+ * Provides sign-out that clears Supabase sessions and Bridge JWTs.
  * Include on any page: <script src="/bridge-auth.js"></script>
  */
 
@@ -31,8 +31,7 @@ window.BridgeAuth = {
   },
 
   /**
-   * Sign out — clears Bridge JWT + Clerk session + redirects.
-   * Works whether Clerk is loaded or not.
+   * Sign out — clears Bridge JWT + Supabase session + redirects.
    */
   signOut: async function(redirectUrl) {
     // 1. Capture token before clearing (needed for server-side revocation)
@@ -52,14 +51,12 @@ window.BridgeAuth = {
       }).catch(function() {});
     }
 
-    // 4. Sign out of Clerk if loaded
-    if (window.Clerk && window.Clerk.signOut) {
-      try {
-        await window.Clerk.signOut();
-      } catch (e) {
-        console.warn('[bridge-auth] Clerk signOut error:', e.message);
+    // 4. Sign out of Supabase if loaded
+    try {
+      if (window._supabase) {
+        await window._supabase.auth.signOut();
       }
-    }
+    } catch (_) {}
 
     // 5. Redirect
     window.location.href = redirectUrl || '/onboarding.html';

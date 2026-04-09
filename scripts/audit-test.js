@@ -367,7 +367,7 @@ function assert(cond, msg) {
     'lib/supabase', 'lib/user-identity', 'lib/agent-ledger', 'lib/agent-registry',
     'lib/task-market', 'lib/api-keys', 'lib/data-flywheel', 'lib/merchant-bids',
     'lib/page-economics', 'lib/commerce-index', 'lib/ap2v3/memory',
-    'middleware/clerk', 'middleware/access-control', 'middleware/auth', 'middleware/api-key-auth',
+    'middleware/access-control', 'middleware/auth', 'middleware/api-key-auth',
   ];
   for (const m of modules) {
     await test('require ' + m, async () => { require('../' + m); });

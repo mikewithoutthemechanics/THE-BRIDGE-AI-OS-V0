@@ -393,7 +393,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--a)}
     } catch { showMsg('notif-msg', 'Network error.', false); }
   });
 
-  // Logout (clears Bridge JWT + Clerk session)
+  // Logout (clears Bridge JWT + Supabase session)
   document.getElementById('logout-btn').addEventListener('click', function() {
     if (window.BridgeAuth) {
       window.BridgeAuth.signOut('/');
