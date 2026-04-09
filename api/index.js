@@ -93,6 +93,12 @@ const tvm = {
 
 const ts = () => Date.now();
 
+// ── Economy modules ─────────────────────────────────────────────────────────
+let ledger, market, autoLoop;
+try { ledger = require('../lib/agent-ledger'); } catch (_) { ledger = null; }
+try { market = require('../lib/task-market'); } catch (_) { market = null; }
+try { autoLoop = require('../lib/auto-task-loop'); } catch (_) { autoLoop = null; }
+
 function readContracts() {
   try {
     const files = fs.readdirSync(SHARED_DIR).filter(f => f.endsWith('.json'));
@@ -2603,6 +2609,74 @@ module.exports = async (req, res) => {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // ECONOMY — agent balances, task marketplace, auto-loop
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /api/economy/balances — all agent balances
+  if (p === '/api/economy/balances' && ledger) {
+    try {
+      const balances = await ledger.getAllBalances();
+      return json(res, { ok: true, balances, count: balances.length, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/economy/balance/:agentId
+  if (p.match(/^\/api\/economy\/balance\/[^/]+$/) && ledger) {
+    const agentId = p.split('/')[4];
+    try {
+      const balance = await ledger.getBalance(agentId);
+      const history = await ledger.getHistory(agentId);
+      return json(res, { ok: true, agentId, balance, history, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/economy/stats
+  if (p === '/api/economy/stats' && ledger) {
+    try {
+      const stats = await ledger.getStats();
+      return json(res, { ok: true, ...stats, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/economy/flow — recent transactions
+  if (p === '/api/economy/flow' && ledger) {
+    try {
+      const limit = 50;
+      const transactions = await ledger.getRecentTransactions(limit);
+      return json(res, { ok: true, transactions, count: transactions.length, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/economy/tasks — list tasks
+  if (p === '/api/economy/tasks' && market) {
+    try {
+      const tasks = await market.listTasks(undefined);
+      return json(res, { ok: true, tasks, count: tasks.length, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
+  // GET /api/economy/loop-stats — auto-task-loop status
+  if (p === '/api/economy/loop-stats' && autoLoop) {
+    return json(res, { ok: true, ...autoLoop.getLoopStats(), ts: ts() });
+  }
+
+  // POST /api/economy/run-cycle — cron target: run one task generation + claim + complete cycle
+  if (p === '/api/economy/run-cycle' && autoLoop) {
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret) {
+      const auth = req.headers['authorization'] || '';
+      if (auth !== 'Bearer ' + cronSecret) return json(res, { error: 'unauthorized' }, 401);
+    }
+    try {
+      const generated = await autoLoop.generateTasks();
+      const claimed = await autoLoop.claimTasks();
+      const completed = await autoLoop.completeTasks();
+      const stats = autoLoop.getLoopStats();
+      return json(res, { ok: true, generated, claimed, completed, stats, ts: ts() });
+    } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
+  }
+
   // ── 404 ──
   return json(res, { error: 'not_found', path: p, available: [
     '/health', '/api/health', '/api/brain', '/api/topology', '/api/avatar/{mode}',
@@ -2620,5 +2694,8 @@ module.exports = async (req, res) => {
     '/auth/register', '/auth/login', '/auth/verify', '/referral/claim',
     '/api/wordpress/status', '/api/wordpress/data', '/api/wordpress/preview',
     '/api/wordpress/sync (POST)', '/api/wordpress/sync/:site (POST)',
+    '/api/economy/balances', '/api/economy/balance/:agentId', '/api/economy/stats',
+    '/api/economy/flow', '/api/economy/tasks', '/api/economy/loop-stats',
+    '/api/economy/run-cycle (cron)',
   ] }, 404);
 };
