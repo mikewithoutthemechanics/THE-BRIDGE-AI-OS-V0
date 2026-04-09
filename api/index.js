@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
+const { supabase, isConfigured: supabaseConfigured } = require('../lib/supabase');
 const ROOT = path.resolve(__dirname, '..');
 const SHARED_DIR = path.join(ROOT, 'shared');
 
@@ -233,10 +234,10 @@ function rateLimit(ip, key, maxPerMinute) {
   return false;
 }
 
-// Auth store (ephemeral per cold start — acceptable for serverless demo)
-const authUsers = new Map();
+// Auth store — backed by Supabase 'users' table (persistent across cold starts)
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFERRAL_CODES = { BRIDGE2025: 500, AILAUNCH: 250, BETA100: 100 };
+const _revokedTokens = new Set();
 
 let jwt, bcrypt, clerkVerifyToken, clerkCreateClient, clerkClientInstance;
 try { jwt = require('jsonwebtoken'); } catch (_) { jwt = null; }
@@ -556,7 +557,7 @@ module.exports = async (req, res) => {
         return {
           installed: pkgs, count: pkgs.length,
           categories: {
-            runtime: pkgs.filter(p => ['express', 'cors', 'dotenv', 'better-sqlite3'].includes(p)),
+            runtime: pkgs.filter(p => ['express', 'cors', 'dotenv', '@supabase/supabase-js'].includes(p)),
             security: pkgs.filter(p => ['bcryptjs', 'jsonwebtoken', 'helmet'].includes(p)),
             testing: pkgs.filter(p => ['jest', 'supertest', 'mocha', 'chai'].includes(p)),
           },
@@ -631,28 +632,63 @@ module.exports = async (req, res) => {
     return json(res, { count: files.length, files, contracts, ts: ts() });
   }
 
-  // ── Auth: Register ──
+  // ── Auth: Register (rate limited) ──
   if (p === '/auth/register' && req.method === 'POST') {
+    const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    if (rateLimit('register:' + clientIp, 5)) {
+      return json(res, { error: 'Too many registration attempts. Try again in 60 seconds.' }, 429);
+    }
+
     const body = await parseBody(req);
     if (!body.email || !body.password) return json(res, { error: 'email and password required' }, 400);
-    if (authUsers.has(body.email)) return json(res, { error: 'email already registered' }, 409);
+    if (!supabase) return json(res, { error: 'Database not configured' }, 503);
+
+    const { data: existing } = await supabase.from('users').select('id').eq('email', body.email.toLowerCase().trim()).single();
+    if (existing) return json(res, { error: 'email already registered' }, 409);
+
     const password_hash = await hashPassword(body.password);
-    const user = { id: `usr_${Date.now()}`, email: body.email, password_hash, credits: 0, created_at: new Date().toISOString() };
-    authUsers.set(body.email, user);
-    const token = makeToken({ sub: user.id, email: body.email });
-    return json(res, { token, user: { id: user.id, email: body.email, credits: 0 } }, 201);
+    const userId = `usr_${Date.now()}`;
+    const now = new Date().toISOString();
+    const { data: user, error: insertErr } = await supabase.from('users').insert({
+      id: userId, email: body.email.toLowerCase().trim(), password_hash,
+      brdg_balance: 0, first_seen: now, last_seen: now,
+      oauth_provider: 'email', plan: 'visitor', funnel_stage: 'visitor',
+      lead_score: 0, conversations: 0, role: 'user',
+    }).select().single();
+    if (insertErr) return json(res, { error: 'Registration failed: ' + insertErr.message }, 500);
+
+    const token = makeToken({ sub: user.id, email: user.email });
+    return json(res, { token, user: { id: user.id, email: user.email, credits: user.brdg_balance || 0 } }, 201);
   }
 
-  // ── Auth: Login ──
+  // ── Auth: Login (with rate limiting) ──
   if (p === '/auth/login' && req.method === 'POST') {
+    const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    if (rateLimit('login:' + clientIp, 10)) {
+      return json(res, { error: 'Too many login attempts. Try again in 60 seconds.' }, 429);
+    }
+
     const body = await parseBody(req);
     if (!body.email || !body.password) return json(res, { error: 'email and password required' }, 400);
-    const user = authUsers.get(body.email);
-    if (!user) return json(res, { error: 'invalid credentials' }, 401);
+    if (!supabase) return json(res, { error: 'Database not configured' }, 503);
+
+    const { data: user, error: lookupErr } = await supabase.from('users').select('*').eq('email', body.email.toLowerCase().trim()).single();
+    if (lookupErr || !user) return json(res, { error: 'invalid credentials' }, 401);
     const ok = await checkPassword(body.password, user.password_hash);
     if (!ok) return json(res, { error: 'invalid credentials' }, 401);
-    const token = makeToken({ sub: user.id, email: body.email });
-    return json(res, { token, user: { id: user.id, email: body.email, credits: user.credits } });
+
+    // Upgrade legacy SHA-256 hash to bcrypt on successful login
+    if (user.password_hash && user.password_hash.includes(':') && user.password_hash.length === 97) {
+      const newHash = bcrypt ? bcrypt.hashSync(body.password, 12) : null;
+      if (newHash) {
+        await supabase.from('users').update({ password_hash: newHash, last_seen: new Date().toISOString() }).eq('id', user.id);
+      }
+    } else {
+      await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id);
+    }
+
+    const token = makeToken({ sub: user.id, email: user.email });
+    return json(res, { token, user: { id: user.id, email: user.email, credits: user.brdg_balance || 0 } });
   }
 
   // ── Auth: Verify ──
@@ -660,6 +696,7 @@ module.exports = async (req, res) => {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
     if (!token) return json(res, { error: 'no token provided' }, 401);
+    if (_revokedTokens.has(token)) return json(res, { error: 'token revoked' }, 401);
     const payload = verifyToken(token);
     if (!payload) return json(res, { error: 'invalid or expired token' }, 401);
     return json(res, { valid: true, user: { sub: payload.sub, email: payload.email } });
@@ -676,8 +713,12 @@ module.exports = async (req, res) => {
     if (!body.code) return json(res, { error: 'referral code required' }, 400);
     const credits = REFERRAL_CODES[String(body.code).toUpperCase()];
     if (!credits) return json(res, { error: 'invalid referral code' }, 404);
-    const user = authUsers.get(payload.email);
-    if (user) user.credits = (user.credits || 0) + credits;
+    if (supabase) {
+      const { data: user } = await supabase.from('users').select('id, brdg_balance').eq('email', payload.email.toLowerCase().trim()).single();
+      if (user) {
+        await supabase.from('users').update({ brdg_balance: (user.brdg_balance || 0) + credits }).eq('id', user.id);
+      }
+    }
     return json(res, { success: true, code: body.code, credits, message: `${credits} credits applied` });
   }
 
@@ -709,22 +750,51 @@ module.exports = async (req, res) => {
         provider = clerkUser.externalAccounts[0].provider || 'clerk';
       }
 
-      // Upsert into ephemeral auth store
-      let user = authUsers.get(email.toLowerCase());
-      if (!user) {
-        user = { id: 'usr_' + Date.now(), email: email.toLowerCase(), name, credits: 0, provider, clerk_id: clerkPayload.sub, created_at: new Date().toISOString() };
-        authUsers.set(email.toLowerCase(), user);
+      if (!supabase) return json(res, { ok: false, error: 'Database not configured' }, 503);
+
+      // Upsert into Supabase users table
+      const emailLower = email.toLowerCase().trim();
+      let { data: user, error: selErr } = await supabase.from('users').select('*').eq('email', emailLower).single();
+
+      if (selErr && selErr.code === 'PGRST116') {
+        // User does not exist — insert
+        const nowTs = new Date().toISOString();
+        const { data: newUser, error: insErr } = await supabase.from('users').insert({
+          id: 'usr_' + Date.now(), email: emailLower, name,
+          oauth_provider: provider, oauth_id: clerkPayload.sub,
+          brdg_balance: 0, first_seen: nowTs, last_seen: nowTs,
+          plan: 'visitor', funnel_stage: 'visitor', lead_score: 0,
+          conversations: 0, role: 'user',
+        }).select().single();
+        if (insErr) return json(res, { ok: false, error: 'Failed to create user: ' + insErr.message }, 500);
+        user = newUser;
+      } else if (selErr) {
+        return json(res, { ok: false, error: 'DB lookup failed: ' + selErr.message }, 500);
+      } else {
+        // Existing user — update last_seen and oauth_id if missing
+        const updates = { last_seen: new Date().toISOString() };
+        if (!user.oauth_id) updates.oauth_id = clerkPayload.sub;
+        if (!user.name && name) updates.name = name;
+        await supabase.from('users').update(updates).eq('id', user.id);
       }
 
       const token = makeToken({ sub: user.id, email: user.email });
-      return json(res, { ok: true, token, user: { id: user.id, email: user.email, name: name || user.name, credits: user.credits }, clerk_id: clerkPayload.sub });
+      return json(res, { ok: true, token, user: { id: user.id, email: user.email, name: name || user.name, credits: user.brdg_balance || 0 }, clerk_id: clerkPayload.sub });
     } catch (e) {
       return json(res, { ok: false, error: 'Clerk verification failed' }, 401);
     }
   }
 
-  // ── Auth: Logout ──
+  // ── Auth: Logout (invalidate token) ──
   if (p === '/api/auth/logout' && req.method === 'POST') {
+    const authHeader = req.headers['authorization'] || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (token) {
+      // Add to server-side blacklist (survives until JWT expires)
+      _revokedTokens.add(token);
+      // Prune if too large (in serverless, this resets per cold start anyway)
+      if (_revokedTokens.size > 10000) _revokedTokens.clear();
+    }
     return json(res, { ok: true, message: 'Signed out' });
   }
 

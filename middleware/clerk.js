@@ -15,7 +15,7 @@
 
 'use strict';
 
-const { clerkMiddleware, getAuth, clerkClient } = require('@clerk/express');
+const { clerkMiddleware, getAuth, clerkClient, verifyToken } = require('@clerk/express');
 const userDb = require('../lib/user-identity');
 
 // ── Clerk Express Middleware ───────────────────────────────────────────────
@@ -36,14 +36,34 @@ function createClerkMiddleware() {
 // upserts into users.db, and returns a Bridge JWT.
 async function clerkSyncHandler(req, res) {
   try {
-    const auth = getAuth(req);
+    // Extract Bearer token from Authorization header
+    const authHeader = req.headers.authorization || '';
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
 
-    if (!auth || !auth.userId) {
+    let userId = null;
+
+    // Try Bearer token first (frontend sends session token via header)
+    if (bearerToken) {
+      try {
+        const payload = await verifyToken(bearerToken, {
+          secretKey: process.env.CLERK_SECRET_KEY,
+        });
+        userId = payload.sub;
+      } catch (_) {}
+    }
+
+    // Fallback to middleware-injected auth (cookie-based)
+    if (!userId) {
+      const auth = getAuth(req);
+      userId = auth?.userId || null;
+    }
+
+    if (!userId) {
       return res.status(401).json({ ok: false, error: 'No Clerk session found' });
     }
 
     // Fetch full user profile from Clerk
-    const clerkUser = await clerkClient.users.getUser(auth.userId);
+    const clerkUser = await clerkClient.users.getUser(userId);
 
     const email = clerkUser.emailAddresses?.[0]?.emailAddress;
     if (!email) {
@@ -60,17 +80,18 @@ async function clerkSyncHandler(req, res) {
     }
 
     // Upsert into users.db (createUser returns existing user if email matches)
-    const user = userDb.createUser(email, name, provider, auth.userId);
+    const user = await userDb.createUser(email, name, provider, userId);
 
-    // Update name if it was null before (user registered with email first, then linked social)
-    if (!user.name && name) {
-      const db = require('better-sqlite3');
-      // user-identity uses its own db instance, so we update via the module pattern
-      // For now, direct update is fine since createUser returned the existing record
+    // Update name/oauth if user registered email-first then linked a social account
+    if (user && (!user.name && name || !user.oauth_id && userId)) {
+      await userDb.updateUser(user.id, {
+        ...(name && !user.name ? { name } : {}),
+        ...(!user.oauth_id ? { oauth_id: userId, oauth_provider: provider } : {}),
+      });
     }
 
     // Generate Bridge JWT for all downstream middleware
-    const token = userDb.generateAuthToken(user.id);
+    const token = await userDb.generateAuthToken(user.id);
 
     // Sanitize — never send password_hash to client
     const { password_hash, ...safeUser } = user;
@@ -79,7 +100,7 @@ async function clerkSyncHandler(req, res) {
       ok: true,
       token,
       user: { ...safeUser, name: name || safeUser.name },
-      clerk_id: auth.userId,
+      clerk_id: userId,
     });
   } catch (err) {
     console.error('[CLERK-SYNC]', err.message);

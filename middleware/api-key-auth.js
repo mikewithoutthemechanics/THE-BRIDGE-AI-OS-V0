@@ -33,7 +33,7 @@ function apiKeyAuth(creditCost = 1) {
   return (req, res, next) => _handler(creditCost, req, res, next);
 }
 
-function _handler(creditCost, req, res, next) {
+async function _handler(creditCost, req, res, next) {
   try {
     // 1. Extract API key
     const apiKey = extractApiKey(req);
@@ -47,7 +47,7 @@ function _handler(creditCost, req, res, next) {
     // 2. Validate key and check rate limit
     let keyData;
     try {
-      keyData = apiKeys.validateKey(apiKey);
+      keyData = await apiKeys.validateKey(apiKey);
     } catch (err) {
       if (err.code === 'RATE_LIMITED') {
         return res.status(429).json({
@@ -69,7 +69,7 @@ function _handler(creditCost, req, res, next) {
 
     // 3. Deduct BRDG credit
     try {
-      apiKeys.deductCredit(apiKey, creditCost);
+      await apiKeys.deductCredit(apiKey, creditCost);
     } catch (err) {
       if (err.code === 'INSUFFICIENT_BALANCE') {
         return res.status(402).json({
