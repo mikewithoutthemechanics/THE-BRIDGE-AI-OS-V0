@@ -193,7 +193,10 @@ function clearMsg() {
   document.getElementById('msg').className = 'msg';
 }
 
+var didRedirect = false;
 function onLogin(session) {
+  if (didRedirect) return; // prevent double-fire
+  didRedirect = true;
   console.log('[AUTH] Session obtained:', session.user.email);
   localStorage.setItem('bridge_token', session.access_token);
   localStorage.setItem('bridge_user_token', session.access_token);
@@ -202,20 +205,20 @@ function onLogin(session) {
     email: session.user.email,
     name: (session.user.user_metadata && session.user.user_metadata.name) || ''
   }));
+  // Set cookie so server-side pageGuard can read it
+  document.cookie = 'bridge_token=' + session.access_token + ';path=/;max-age=' + (7*24*3600) + ';SameSite=Lax';
   showMsg('success', 'Signed in! Redirecting...');
-  setTimeout(function() {
-    window.location.href = safeRedirect || '/console.html';
-  }, 500);
+  var dest = safeRedirect || '/console.html';
+  console.log('[AUTH] Redirecting to:', dest);
+  window.location.replace(dest);
 }
 
 // ── Check existing session on page load (handles OAuth callback) ─────────
 if (sb) {
-  sb.auth.onAuthStateChange(function(event, session) {
-    console.log('[AUTH] State change:', event);
-    if (event === 'SIGNED_IN' && session) onLogin(session);
-  });
   sb.auth.getSession().then(function(res) {
-    if (res.data && res.data.session) onLogin(res.data.session);
+    if (res.data && res.data.session) {
+      onLogin(res.data.session);
+    }
   });
 }
 
