@@ -1,130 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Docs — Bridge AI OS</title>
-  <meta name="description" content="Bridge AI OS documentation — API reference, frontend routes, and integration guides.">
-  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta charset="UTF-8">
+<meta name="description" content="Bridge AI OS API Documentation — endpoint reference with curl examples for economy, BRDG, agents, primes, and more.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API Docs - Bridge AI OS</title>
+<style>
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--p:#a78bfa;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
+.topnav{background:var(--bg2);border-bottom:1px solid #1a2a3a;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;overflow-x:auto;flex-shrink:0}
+.topnav .logo{font-weight:700;font-size:1.1rem;color:var(--a);white-space:nowrap}
+.topnav a{color:var(--t);font-size:.85rem;white-space:nowrap;padding:.35rem .6rem;border-radius:6px;transition:all .2s}
+.topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
+main{flex:1;padding:1.5rem;max-width:1100px;width:100%;margin:0 auto}
+h1{font-size:1.8rem;margin-bottom:.25rem}.subtitle{color:var(--t);margin-bottom:1.5rem}
+.card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+.card h2{font-size:1.1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600}
+.badge-get{background:#00c8ff22;color:var(--a)}.badge-post{background:#00e57b22;color:var(--g)}.badge-put{background:#ffaa0022;color:var(--y)}.badge-delete{background:#ff446622;color:var(--r)}.badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}
+.btn{display:inline-block;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:all .2s;text-align:center}
+.btn-primary{background:var(--a);color:#000}.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}
+.btn:hover{opacity:.85;text-decoration:none}
+.btn-sm{padding:.35rem .7rem;font-size:.78rem}
+input{background:var(--bg3);color:var(--w);border:1px solid #1a2a3a;border-radius:8px;padding:.6rem .8rem;font-size:.85rem;outline:none;width:100%}
+input:focus{border-color:var(--a)}
+.loading{color:var(--t);font-size:.85rem;padding:1rem 0}
+.endpoint{padding:.75rem;background:var(--bg3);border-radius:8px;margin-bottom:.75rem;border-left:3px solid var(--a)}
+.endpoint.post{border-left-color:var(--g)}
+.endpoint.put{border-left-color:var(--y)}
+.endpoint.delete{border-left-color:var(--r)}
+.ep-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;flex-wrap:wrap}
+.ep-path{font-family:'JetBrains Mono','Cascadia Code',monospace;font-size:.85rem;font-weight:600}
+.ep-desc{color:var(--t);font-size:.8rem;margin-bottom:.4rem}
+.code-block{background:var(--bg);border:1px solid #1a2a3a;border-radius:6px;padding:.75rem;font-family:'JetBrains Mono','Cascadia Code',monospace;font-size:.78rem;line-height:1.5;overflow-x:auto;position:relative;color:var(--g);white-space:pre-wrap;word-break:break-all}
+.code-block .comment{color:var(--t)}
+.copy-btn{position:absolute;top:.4rem;right:.4rem;background:var(--bg3);color:var(--a);border:1px solid #1a2a3a;border-radius:4px;padding:.2rem .5rem;font-size:.7rem;cursor:pointer}
+.copy-btn:hover{background:var(--a);color:#000}
+.category-nav{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.cat-btn{padding:.4rem .8rem;border-radius:20px;font-size:.8rem;border:1px solid #1a2a3a;background:transparent;color:var(--t);cursor:pointer;transition:all .2s}
+.cat-btn:hover,.cat-btn.active{background:var(--a);color:#000;border-color:var(--a)}
+.search-bar{display:flex;gap:.5rem;margin-bottom:1rem}
+.search-bar input{flex:1}
+.section{margin-bottom:2rem}
+.section h3{font-size:1rem;font-weight:700;margin-bottom:.75rem;color:var(--a);padding-bottom:.3rem;border-bottom:1px solid #1a2a3a}
+@media(max-width:600px){main{padding:1rem}h1{font-size:1.4rem}.ep-header{flex-direction:column;align-items:flex-start}}
+</style>
 </head>
-<body class="bg-slate-50 font-sans antialiased">
+<body>
+<nav class="topnav">
+  <a href="/" class="logo">Bridge AI</a>
+  <a href="/">Dashboard</a>
+  <a href="/trading.html">Trading</a>
+  <a href="/defi.html">DeFi</a>
+  <a href="/wallet.html">Wallet</a>
+  <a href="/governance.html">Governance</a>
+  <a href="/intelligence.html">Intelligence</a>
+  <a href="/docs.html" class="active">Docs</a>
+  <a href="/settings.html">Settings</a>
+</nav>
+<main>
+  <h1>API Documentation</h1>
+  <p class="subtitle">Complete endpoint reference with curl examples</p>
 
-  <nav class="bg-slate-800 text-white p-4 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-lg">
-    <a href="/" class="text-xl font-bold hover:text-amber-300">Bridge AI OS</a>
-    <ul class="flex flex-wrap gap-4 mt-2 md:mt-0">
-      <li><a href="/" class="hover:text-amber-300">Digital Twin</a></li>
-      <li><a href="/executive-dashboard.html" class="hover:text-amber-300">Dashboard</a></li>
-      <li><a href="/50-applications.html" class="hover:text-amber-300">50 Applications</a></li>
-      <li><a href="/agents.html" class="hover:text-amber-300">Agents</a></li>
-      <li><a href="/landing.html" class="hover:text-amber-300">Landing</a></li>
-      <li><a href="/settings.html" class="hover:text-amber-300">Settings</a></li>
-      <li><a href="/docs.html" class="text-amber-300 font-semibold">Docs</a></li>
-    </ul>
-  </nav>
+  <div class="card" style="padding:.75rem 1rem;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:.5rem;font-size:.85rem">
+      <span style="color:var(--t)">Base URL:</span>
+      <code id="base-url" style="color:var(--a);font-family:monospace">https://go.ai-os.co.za</code>
+      <span style="color:var(--t)">|</span>
+      <span style="color:var(--t)">Auth:</span>
+      <code style="color:var(--g);font-family:monospace">Authorization: Bearer &lt;token&gt;</code>
+    </div>
+  </div>
 
-  <main class="p-4 md:p-6 max-w-4xl mx-auto space-y-8">
-    <header>
-      <h1 class="text-3xl font-bold text-slate-800">Documentation</h1>
-      <p class="text-slate-600 mt-1">Bridge AI OS — API, frontend routes, and references. Updated to match current app.</p>
-    </header>
+  <div class="search-bar">
+    <input type="text" id="doc-search" placeholder="Search endpoints...">
+    <button class="btn btn-primary btn-sm" id="search-btn">Search</button>
+  </div>
 
-    <!-- Backend API -->
-    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Backend API</h2>
-      <div class="p-4 space-y-3 text-sm">
-        <p class="text-slate-600">Interactive API docs (Swagger UI) and OpenAPI spec are served by the backend.</p>
-        <ul class="list-disc pl-5 space-y-1">
-          <li><a id="api-docs-link" href="#" target="_blank" rel="noopener" aria-label="API Docs (Swagger) — opens in new tab" class="text-blue-600 hover:underline font-medium">API Docs (Swagger) <span class="sr-only">(opens in new tab)</span></a> — try endpoints interactively</li>
-          <li><a id="openapi-link" href="#" target="_blank" rel="noopener" aria-label="OpenAPI JSON — opens in new tab" class="text-blue-600 hover:underline font-medium">OpenAPI JSON <span class="sr-only">(opens in new tab)</span></a> — machine-readable spec</li>
-        </ul>
-        <p class="text-slate-500 mt-2">Base URL: <code id="api-base-display" class="bg-slate-100 px-1 rounded">—</code></p>
-      </div>
-    </section>
+  <div class="category-nav" id="cat-nav"></div>
+  <div id="endpoints-container"></div>
+</main>
 
-    <!-- Frontend routes -->
-    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Frontend routes</h2>
-      <div class="p-4 overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="border-b border-slate-200">
-              <th class="text-left py-2 pr-4 text-slate-700">Path</th>
-              <th class="text-left py-2 text-slate-700">Description</th>
-            </tr>
-          </thead>
-          <tbody class="text-slate-600">
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/" class="text-blue-600 hover:underline">/</a></td><td>Digital Twin (main app)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/executive-dashboard.html" class="text-blue-600 hover:underline">/executive-dashboard.html</a></td><td>Executive Dashboard (swarm, heatmap, pipeline, agents, mission, marketplace)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/50-applications.html" class="text-blue-600 hover:underline">/50-applications.html</a></td><td>50 Applications showcase</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/agents.html" class="text-blue-600 hover:underline">/agents.html</a></td><td>Agents &amp; Digital Twins (replication, leaderboard)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/landing.html" class="text-blue-600 hover:underline">/landing.html</a></td><td>Landing (redirects to 50 Applications)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/settings.html" class="text-blue-600 hover:underline">/settings.html</a></td><td>Settings (shared per user across domains)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/gateway/" class="text-blue-600 hover:underline">/gateway/</a></td><td>Sovereign Gateway — QR scan to join; wallet, SIWE; Bridge · Supac · Taurus · Wiki</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/join.html" class="text-blue-600 hover:underline">/join.html</a></td><td>Join as Agent — QR + decentralized platform entry</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="/docs.html" class="text-blue-600 hover:underline">/docs.html</a></td><td>This documentation page</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-blue-600 hover:underline">System Map (4201)</a></td><td>All systems linked — Bridge API, Frontend, Gateway, Join, Next.js (3032), Taurus, Console 3022, Production</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4"><a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-blue-600 hover:underline">Next.js App (3032)</a></td><td>Next.js root app — synced with system; linked from System Map</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+<script>
+(function(){
+  'use strict';
+  var BASE = window.location.origin;
+  document.getElementById('base-url').textContent = BASE;
 
-    <!-- Key API endpoints -->
-    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
-      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Key API endpoints</h2>
-      <div class="p-4 overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="border-b border-slate-200">
-              <th class="text-left py-2 pr-4 text-slate-700">Method</th>
-              <th class="text-left py-2 pr-4 text-slate-700">Path</th>
-              <th class="text-left py-2 text-slate-700">Description</th>
-            </tr>
-          </thead>
-          <tbody class="text-slate-600">
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/health</td><td>Health check</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/capabilities</td><td>Capability registry</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/user/settings</td><td>User settings (X-User-Id optional)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">PUT</td><td class="pr-4 font-mono">/api/user/settings</td><td>Save user settings</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins</td><td>List twins</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/twins/leaderboard</td><td>Leaderboard</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/status</td><td>Replication status</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/replication/nodes</td><td>Replication nodes</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/live/report</td><td>Live report (dashboard, heatmap)</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/founder-todo</td><td>Mission board</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">PATCH</td><td class="pr-4 font-mono">/api/founder-todo/:id/complete</td><td>Complete objective</td></tr>
-            <tr class="border-b border-slate-100"><td class="py-2 pr-4 font-mono">GET</td><td class="pr-4 font-mono">/api/marketplace/tasks</td><td>Marketplace tasks</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+  var ENDPOINTS = [
+    // Economy
+    { cat: 'Economy', method: 'GET', path: '/api/economy/stats', desc: 'Get full economy statistics including treasury, burn rate, agent count', curl: "curl -s " + BASE + "/api/economy/stats | json_pp" },
+    { cat: 'Economy', method: 'GET', path: '/api/economy/flow', desc: 'Real-time economy flow data: inflows, outflows, velocity', curl: "curl -s " + BASE + "/api/economy/flow \\\n  -H 'Authorization: Bearer YOUR_TOKEN'" },
+    { cat: 'Economy', method: 'GET', path: '/api/treasury/status', desc: 'Treasury vault balance, revenue, expenses, runway', curl: "curl -s " + BASE + "/api/treasury/status | json_pp" },
+    { cat: 'Economy', method: 'GET', path: '/api/revenue/rails', desc: 'Active payment rails: PayFast, Paystack, Stripe, Crypto', curl: "curl -s " + BASE + "/api/revenue/rails" },
 
-    <!-- Ports -->
-    <section class="bg-slate-100 rounded-lg p-4 text-sm text-slate-600">
-      <h2 class="font-semibold text-slate-800 mb-2">Ports (typical)</h2>
-      <ul class="list-disc pl-5 space-y-1">
-        <li><strong>3020</strong> — Frontend (Vite)</li>
-        <li><strong>3032</strong> — Next.js App (root) — <a href="http://localhost:3032/" target="_blank" rel="noopener" class="text-blue-600 hover:underline">open</a></li>
-        <li><strong>3000</strong> — Dashboard / frontend alt</li>
-        <li><strong>8000</strong> — Backend API</li>
-        <li><strong>4201</strong> — Determinator Boot Agent, System Map — <a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener" class="text-blue-600 hover:underline">System Map</a></li>
-        <li><strong>4202</strong> — Taurus Showcase</li>
-        <li><strong>3022</strong> — Console sync</li>
-      </ul>
-    </section>
-  </main>
+    // BRDG Token
+    { cat: 'BRDG Token', method: 'GET', path: '/api/brdg/token', desc: 'BRDG token stats: price, supply, market cap, burn count', curl: "curl -s " + BASE + "/api/brdg/token | json_pp" },
+    { cat: 'BRDG Token', method: 'POST', path: '/api/brdg/stake', desc: 'Stake BRDG tokens for yield', curl: "curl -X POST " + BASE + "/api/brdg/stake \\\n  -H 'Authorization: Bearer YOUR_TOKEN' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"amount\": 1000}'" },
+    { cat: 'BRDG Token', method: 'POST', path: '/api/brdg/unstake', desc: 'Unstake BRDG tokens', curl: "curl -X POST " + BASE + "/api/brdg/unstake \\\n  -H 'Authorization: Bearer YOUR_TOKEN' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"amount\": 500}'" },
 
-  <script>
-(function() {
-  var API_BASE = (typeof window !== 'undefined' && window.__API_BASE) ? String(window.__API_BASE).replace(/\/$/, '') : '';
-  var backendOrigin = API_BASE || (window.location.port === '3020' || window.location.port === '3000' ? 'http://localhost:8000' : window.location.origin);
-  document.getElementById('api-docs-link').href = backendOrigin + '/docs';
-  document.getElementById('openapi-link').href = backendOrigin + '/openapi.json';
-  document.getElementById('api-base-display').textContent = backendOrigin || '(same origin)';
+    // DEX / Trading
+    { cat: 'DEX / Trading', method: 'GET', path: '/api/dex/pairs', desc: 'All trading pairs with price, 24h change, and volume', curl: "curl -s " + BASE + "/api/dex/pairs | json_pp" },
+    { cat: 'DEX / Trading', method: 'GET', path: '/api/dex/pools', desc: 'Liquidity pools with TVL, APY, and status', curl: "curl -s " + BASE + "/api/dex/pools | json_pp" },
+    { cat: 'DEX / Trading', method: 'POST', path: '/api/dex/swap', desc: 'Execute a token swap', curl: "curl -X POST " + BASE + "/api/dex/swap \\\n  -H 'Authorization: Bearer YOUR_TOKEN' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"fromToken\":\"ETH\",\"toToken\":\"BRDG\",\"amount\":0.1}'" },
+    { cat: 'DEX / Trading', method: 'POST', path: '/api/dex/order', desc: 'Place a buy or sell order', curl: "curl -X POST " + BASE + "/api/dex/order \\\n  -H 'Authorization: Bearer YOUR_TOKEN' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"pair\":\"BRDG/USDT\",\"side\":\"buy\",\"type\":\"market\",\"amount\":100}'" },
+
+    // Agents
+    { cat: 'Agents', method: 'GET', path: '/api/agents/workforce', desc: 'List all AI agents and their current status', curl: "curl -s " + BASE + "/api/agents/workforce | json_pp" },
+    { cat: 'Agents', method: 'GET', path: '/api/bossbots', desc: 'BossBot trading agents status and configuration', curl: "curl -s " + BASE + "/api/bossbots | json_pp" },
+    { cat: 'Agents', method: 'GET', path: '/api/bossbots/signals', desc: 'Current trading signals from BossBots', curl: "curl -s " + BASE + "/api/bossbots/signals | json_pp" },
+    { cat: 'Agents', method: 'GET', path: '/agent/status', desc: 'Individual agent status and health', curl: "curl -s " + BASE + "/agent/status" },
+
+    // v3 API
+    { cat: 'v3 API', method: 'GET', path: '/v3/health', desc: 'v3 API health check', curl: "curl -s " + BASE + "/v3/health" },
+    { cat: 'v3 API', method: 'GET', path: '/v3/agents', desc: 'v3 agent listing with extended metadata', curl: "curl -s " + BASE + "/v3/agents \\\n  -H 'Authorization: Bearer YOUR_TOKEN'" },
+    { cat: 'v3 API', method: 'GET', path: '/v3/economy', desc: 'v3 economy overview', curl: "curl -s " + BASE + "/v3/economy" },
+
+    // Primes
+    { cat: 'Primes', method: 'GET', path: '/api/primes/status', desc: 'Prime number computation status and metrics', curl: "curl -s " + BASE + "/api/primes/status" },
+    { cat: 'Primes', method: 'GET', path: '/api/primes/latest', desc: 'Latest discovered primes', curl: "curl -s " + BASE + "/api/primes/latest | json_pp" },
+    { cat: 'Primes', method: 'POST', path: '/api/primes/submit', desc: 'Submit a prime number computation task', curl: "curl -X POST " + BASE + "/api/primes/submit \\\n  -H 'Authorization: Bearer YOUR_TOKEN' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"range_start\": 1000000, \"range_end\": 2000000}'" },
+
+    // Governance
+    { cat: 'Governance', method: 'GET', path: '/api/governance/proposals', desc: 'List all governance proposals', curl: "curl -s " + BASE + "/api/governance/proposals | json_pp" },
+    { cat: 'Governance', method: 'POST', path: '/api/governance/vote', desc: 'Cast a vote on a proposal', curl: "curl -X POST " + BASE + "/api/governance/vote \\\n  -H 'Authorization: Bearer YOUR_TOKEN' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"proposalId\":\"prop_001\",\"vote\":\"for\"}'" },
+    { cat: 'Governance', method: 'GET', path: '/api/governance/policies', desc: 'Active governance policies', curl: "curl -s " + BASE + "/api/governance/policies" },
+    { cat: 'Governance', method: 'GET', path: '/api/governance/leaderboard', desc: 'Agent reputation leaderboard', curl: "curl -s " + BASE + "/api/governance/leaderboard" },
+
+    // Wallet
+    { cat: 'Wallet', method: 'GET', path: '/api/wallet/balance', desc: 'User wallet balance and token breakdown', curl: "curl -s " + BASE + "/api/wallet/balance \\\n  -H 'Authorization: Bearer YOUR_TOKEN'" },
+    { cat: 'Wallet', method: 'POST', path: '/api/wallet/send', desc: 'Send tokens to another address', curl: "curl -X POST " + BASE + "/api/wallet/send \\\n  -H 'Authorization: Bearer YOUR_TOKEN' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"to\":\"0xABC...\",\"amount\":100,\"memo\":\"payment\"}'" },
+
+    // Analytics
+    { cat: 'Analytics', method: 'GET', path: '/api/analytics/insights', desc: 'Market insights and intelligence', curl: "curl -s " + BASE + "/api/analytics/insights \\\n  -H 'Authorization: Bearer YOUR_TOKEN'" },
+    { cat: 'Analytics', method: 'GET', path: '/api/analytics/trends', desc: 'Trend detection data', curl: "curl -s " + BASE + "/api/analytics/trends" },
+    { cat: 'Analytics', method: 'GET', path: '/api/analytics/leads', desc: 'Lead scoring results', curl: "curl -s " + BASE + "/api/analytics/leads \\\n  -H 'Authorization: Bearer YOUR_TOKEN'" },
+
+    // Keys / User
+    { cat: 'User / Keys', method: 'GET', path: '/api/keys/usage', desc: 'API key list and usage statistics', curl: "curl -s " + BASE + "/api/keys/usage \\\n  -H 'Authorization: Bearer YOUR_TOKEN'" },
+    { cat: 'User / Keys', method: 'POST', path: '/api/keys', desc: 'Create a new API key', curl: "curl -X POST " + BASE + "/api/keys \\\n  -H 'Authorization: Bearer YOUR_TOKEN' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"name\": \"production\"}'" },
+    { cat: 'User / Keys', method: 'DELETE', path: '/api/keys/:id', desc: 'Revoke an API key', curl: "curl -X DELETE " + BASE + "/api/keys/key_123 \\\n  -H 'Authorization: Bearer YOUR_TOKEN'" },
+    { cat: 'User / Keys', method: 'GET', path: '/api/user/settings', desc: 'Get user settings', curl: "curl -s " + BASE + "/api/user/settings \\\n  -H 'X-User-Id: myuser'" },
+    { cat: 'User / Keys', method: 'PUT', path: '/api/user/settings', desc: 'Save user settings', curl: "curl -X PUT " + BASE + "/api/user/settings \\\n  -H 'Content-Type: application/json' \\\n  -H 'X-User-Id: myuser' \\\n  -d '{\"settings\":{\"theme\":\"dark\"}}'" },
+
+    // System
+    { cat: 'System', method: 'GET', path: '/api/health', desc: 'System health check', curl: "curl -s " + BASE + "/api/health" },
+    { cat: 'System', method: 'GET', path: '/api/capabilities', desc: 'Full capability registry', curl: "curl -s " + BASE + "/api/capabilities | json_pp" },
+    { cat: 'System', method: 'GET', path: '/api/live/report', desc: 'Live system report for dashboards', curl: "curl -s " + BASE + "/api/live/report" }
+  ];
+
+  // Build categories
+  var categories = [];
+  ENDPOINTS.forEach(function(ep) {
+    if (categories.indexOf(ep.cat) === -1) categories.push(ep.cat);
+  });
+
+  var catNav = document.getElementById('cat-nav');
+  var allBtn = document.createElement('button');
+  allBtn.className = 'cat-btn active';
+  allBtn.textContent = 'All';
+  allBtn.addEventListener('click', function() { filterEndpoints('all'); });
+  catNav.appendChild(allBtn);
+  categories.forEach(function(cat) {
+    var btn = document.createElement('button');
+    btn.className = 'cat-btn';
+    btn.textContent = cat;
+    btn.addEventListener('click', function() { filterEndpoints(cat); });
+    catNav.appendChild(btn);
+  });
+
+  function filterEndpoints(cat) {
+    document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+    if (cat === 'all') {
+      catNav.firstChild.classList.add('active');
+    } else {
+      var btns = catNav.querySelectorAll('.cat-btn');
+      btns.forEach(function(b) { if (b.textContent === cat) b.classList.add('active'); });
+    }
+    renderEndpoints(cat === 'all' ? ENDPOINTS : ENDPOINTS.filter(function(ep) { return ep.cat === cat; }));
+  }
+
+  function renderEndpoints(eps) {
+    var container = document.getElementById('endpoints-container');
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    var grouped = {};
+    eps.forEach(function(ep) {
+      if (!grouped[ep.cat]) grouped[ep.cat] = [];
+      grouped[ep.cat].push(ep);
+    });
+
+    Object.keys(grouped).forEach(function(cat) {
+      var section = document.createElement('div');
+      section.className = 'section';
+      var title = document.createElement('h3');
+      title.textContent = cat;
+      section.appendChild(title);
+
+      grouped[cat].forEach(function(ep) {
+        var div = document.createElement('div');
+        div.className = 'endpoint' + (ep.method === 'POST' ? ' post' : ep.method === 'PUT' ? ' put' : ep.method === 'DELETE' ? ' delete' : '');
+
+        var header = document.createElement('div');
+        header.className = 'ep-header';
+        var methodBadge = document.createElement('span');
+        methodBadge.className = 'badge badge-' + ep.method.toLowerCase();
+        methodBadge.textContent = ep.method;
+        var path = document.createElement('span');
+        path.className = 'ep-path';
+        path.textContent = ep.path;
+        header.appendChild(methodBadge);
+        header.appendChild(path);
+
+        var desc = document.createElement('div');
+        desc.className = 'ep-desc';
+        desc.textContent = ep.desc;
+
+        var codeWrap = document.createElement('div');
+        codeWrap.style.position = 'relative';
+        var code = document.createElement('div');
+        code.className = 'code-block';
+        code.textContent = ep.curl;
+        var copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', (function(text) {
+          return function() {
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(text);
+              this.textContent = 'Copied!';
+              var self = this;
+              setTimeout(function() { self.textContent = 'Copy'; }, 1500);
+            }
+          };
+        })(ep.curl));
+        codeWrap.appendChild(code);
+        codeWrap.appendChild(copyBtn);
+
+        div.appendChild(header);
+        div.appendChild(desc);
+        div.appendChild(codeWrap);
+        section.appendChild(div);
+      });
+
+      container.appendChild(section);
+    });
+  }
+
+  renderEndpoints(ENDPOINTS);
+
+  // Search
+  document.getElementById('search-btn').addEventListener('click', function() {
+    var q = document.getElementById('doc-search').value.trim().toLowerCase();
+    if (!q) { filterEndpoints('all'); return; }
+    var results = ENDPOINTS.filter(function(ep) {
+      return ep.path.toLowerCase().indexOf(q) !== -1 ||
+             ep.desc.toLowerCase().indexOf(q) !== -1 ||
+             ep.cat.toLowerCase().indexOf(q) !== -1 ||
+             ep.method.toLowerCase() === q;
+    });
+    renderEndpoints(results);
+    document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  });
+
+  document.getElementById('doc-search').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('search-btn').click();
+  });
 })();
-  </script>
-<script src="/bridge-nav.js" defer></script>
+</script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
 </body>
 </html>

@@ -1,188 +1,342 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bridge AI OS — Your Dashboard</title>
+<meta charset="UTF-8">
+<meta name="description" content="Welcome to Bridge AI OS — onboarding guide for new users. Explore the portal, talk to Bridge AI, check the economy, and start your free trial.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome - Bridge AI OS</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#050a0f;--s:#0d1620;--s2:#111d2b;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--t:#c8dce8;--d:#628ba0;--p:#a78bfa;--o:#fb923c}
-body{background:var(--bg);color:var(--t);font-family:system-ui,monospace;min-height:100vh}
-.page{max-width:1100px;margin:0 auto;padding:1.5rem}
-.welcome{text-align:center;padding:2rem 0 1rem}
-.welcome h1{color:var(--a);font-size:1.5rem;letter-spacing:.2em}
-.welcome .user{color:var(--g);font-size:1rem;margin:.3rem 0}
-.welcome .role{color:var(--d);font-size:.72rem;letter-spacing:.1em}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin:1.5rem 0}
-.stat{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.8rem;text-align:center}
-.stat .v{font-size:1.4rem;font-weight:700;color:var(--g)}
-.stat .l{font-size:.6rem;color:var(--d);letter-spacing:.1em;margin-top:.2rem}
-h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin:1.5rem 0 .5rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.6rem}
-.card{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.8rem;cursor:pointer;transition:all .2s;text-decoration:none;display:block;color:var(--t)}
-.card:hover{border-color:var(--a);transform:translateY(-2px)}
-.card h3{font-size:.8rem;color:var(--a);margin-bottom:.2rem;display:flex;align-items:center;gap:.4rem}
-.card p{font-size:.68rem;color:var(--d);line-height:1.4}
-.badge{font-size:.5rem;padding:1px 5px;border-radius:3px;font-weight:700}
-.badge.free{background:rgba(0,229,123,.15);color:var(--g);border:1px solid var(--g)}
-.badge.pro{background:rgba(0,200,255,.15);color:var(--a);border:1px solid var(--a)}
-.badge.ent{background:rgba(167,139,250,.15);color:var(--p);border:1px solid var(--p)}
-.badge.soon{background:rgba(255,209,102,.15);color:var(--y);border:1px solid var(--y)}
-.icon{font-size:1.2rem}
-.actions{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap}
-.btn{padding:.5rem 1rem;border:none;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;letter-spacing:.05em;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem}
-.btn-primary{background:var(--a);color:#050a0f}
-.btn-secondary{background:transparent;color:var(--a);border:1px solid var(--a)}
-.btn-danger{background:transparent;color:var(--r);border:1px solid var(--r)}
-.btn:hover{filter:brightness(1.15)}
-.profile{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;margin:1rem 0}
-.profile .row{display:flex;justify-content:space-between;padding:.3rem 0;font-size:.72rem;border-bottom:1px solid #0a1520}
-.profile .row:last-child{border:none}
-.profile .label{color:var(--d)}
-.profile .val{color:var(--t)}
-.logout{position:fixed;top:4rem;right:1rem;z-index:100}
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--p:#a78bfa;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
+.topnav{background:var(--bg2);border-bottom:1px solid #1a2a3a;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;overflow-x:auto;flex-shrink:0}
+.topnav .logo{font-weight:700;font-size:1.1rem;color:var(--a);white-space:nowrap}
+.topnav a{color:var(--t);font-size:.85rem;white-space:nowrap;padding:.35rem .6rem;border-radius:6px;transition:all .2s}
+.topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
+main{flex:1;padding:1.5rem;max-width:900px;width:100%;margin:0 auto}
+.hero{text-align:center;padding:3rem 1rem 2rem}
+.hero h1{font-size:2.2rem;font-weight:800;margin-bottom:.5rem;letter-spacing:-.02em}
+.hero h1 span{color:var(--a)}
+.hero .sub{color:var(--t);font-size:1.05rem;max-width:600px;margin:0 auto 2rem;line-height:1.6}
+.progress-bar{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:2.5rem}
+.progress-step{display:flex;align-items:center}
+.progress-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;border:2px solid #1a2a3a;color:var(--t);background:transparent;transition:all .3s;cursor:pointer}
+.progress-circle.active{border-color:var(--a);color:var(--a);background:rgba(0,200,255,.1)}
+.progress-circle.done{border-color:var(--g);color:#000;background:var(--g)}
+.progress-line{width:60px;height:2px;background:#1a2a3a}
+.progress-line.done{background:var(--g)}
+.step-card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:2rem;margin-bottom:1rem;display:none}
+.step-card.active{display:block}
+.step-card h2{font-size:1.3rem;font-weight:700;margin-bottom:.5rem}
+.step-card .step-num{font-size:.75rem;color:var(--a);font-weight:600;letter-spacing:.1em;margin-bottom:.5rem}
+.step-card p{color:var(--t);font-size:.9rem;line-height:1.6;margin-bottom:1rem}
+.step-card ul{list-style:none;margin-bottom:1.25rem}
+.step-card li{padding:.5rem 0;display:flex;align-items:flex-start;gap:.5rem;font-size:.9rem;border-bottom:1px solid #0d1520}
+.step-card li:last-child{border:none}
+.step-card li .check{color:var(--g);font-weight:700;flex-shrink:0;width:20px}
+.btn{display:inline-block;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:all .2s;text-align:center}
+.btn-primary{background:var(--a);color:#000}.btn-green{background:var(--g);color:#000}.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}
+.btn:hover{opacity:.85;text-decoration:none}
+.btn-lg{padding:.8rem 2rem;font-size:1rem}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600}
+.badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem;margin-bottom:1.25rem}
+.feature-item{background:var(--bg3);border-radius:8px;padding:.75rem;border:1px solid #1a2a3a}
+.feature-item .icon{font-size:1.3rem;margin-bottom:.3rem}
+.feature-item h4{font-size:.9rem;font-weight:600;margin-bottom:.2rem}
+.feature-item p{font-size:.78rem;color:var(--t)}
+.nav-buttons{display:flex;justify-content:space-between;margin-top:1.5rem}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem;margin-bottom:1.25rem}
+.stat-box{text-align:center;padding:.75rem;background:var(--bg3);border-radius:8px}
+.stat-box .val{font-size:1.3rem;font-weight:700;color:var(--a)}
+.stat-box .lbl{font-size:.7rem;color:var(--t);margin-top:.1rem}
+.loading{color:var(--t);font-size:.85rem;padding:1rem 0}
+.checklist-item{display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;background:var(--bg3);border-radius:8px;margin-bottom:.5rem;cursor:pointer;transition:all .2s;border:1px solid #1a2a3a}
+.checklist-item:hover{border-color:var(--a)}
+.checklist-item.completed{border-color:var(--g);opacity:.7}
+.checklist-box{width:22px;height:22px;border:2px solid #1a2a3a;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem;color:transparent}
+.checklist-item.completed .checklist-box{border-color:var(--g);color:var(--g);background:rgba(0,229,123,.1)}
+.final-cta{text-align:center;padding:2rem;background:linear-gradient(135deg,rgba(0,200,255,.06),rgba(0,229,123,.06));border:1px solid #1a2a3a;border-radius:var(--radius);margin-top:1.5rem}
+.final-cta h2{font-size:1.5rem;margin-bottom:.5rem}
+.final-cta p{color:var(--t);margin-bottom:1.25rem}
+@media(max-width:600px){main{padding:1rem}.hero h1{font-size:1.6rem}.progress-line{width:30px}.feature-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-<a class="btn btn-danger logout" href="#" onclick="logout()">LOGOUT</a>
-<div class="page">
-<div class="welcome">
-  <h1>WELCOME TO BRIDGE AI</h1>
-  <div class="user" id="user-name">Loading...</div>
-  <div class="role" id="user-role">MEMBER</div>
-</div>
+<nav class="topnav">
+  <a href="/" class="logo">Bridge AI</a>
+  <a href="/">Dashboard</a>
+  <a href="/trading.html">Trading</a>
+  <a href="/defi.html">DeFi</a>
+  <a href="/wallet.html">Wallet</a>
+  <a href="/governance.html">Governance</a>
+  <a href="/intelligence.html">Intelligence</a>
+  <a href="/docs.html">Docs</a>
+  <a href="/settings.html">Settings</a>
+</nav>
+<main>
+  <div class="hero">
+    <h1>Welcome to <span>Bridge AI</span></h1>
+    <p class="sub">Your autonomous business intelligence platform. Let us guide you through the essentials in 4 quick steps.</p>
+  </div>
 
-<div class="stats" id="stats"></div>
+  <div class="progress-bar" id="progress-bar">
+    <div class="progress-step">
+      <div class="progress-circle active" data-step="0">1</div>
+    </div>
+    <div class="progress-line" id="line-0"></div>
+    <div class="progress-step">
+      <div class="progress-circle" data-step="1">2</div>
+    </div>
+    <div class="progress-line" id="line-1"></div>
+    <div class="progress-step">
+      <div class="progress-circle" data-step="2">3</div>
+    </div>
+    <div class="progress-line" id="line-2"></div>
+    <div class="progress-step">
+      <div class="progress-circle" data-step="3">4</div>
+    </div>
+  </div>
 
-<h2>YOUR ACCESS — AVAILABLE NOW</h2>
-<div class="grid" id="free-tools"></div>
+  <!-- Step 1: Explore -->
+  <div class="step-card active" id="step-0">
+    <div class="step-num">STEP 1 OF 4</div>
+    <h2>Explore the Portal</h2>
+    <p>Bridge AI OS is a complete autonomous business platform with AI agents, DeFi treasury, and 130+ API endpoints. Here is what you can access right now:</p>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <div class="icon">&#9881;</div>
+        <h4>Dashboard</h4>
+        <p>Real-time service health, SSE events, and agent status</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon">&#128200;</div>
+        <h4>Trading</h4>
+        <p>DEX pairs, BossBots, and market signals</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon">&#9733;</div>
+        <h4>DeFi</h4>
+        <p>BRDG token, staking, liquidity pools</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon">&#128218;</div>
+        <h4>API Docs</h4>
+        <p>Full API reference with curl examples</p>
+      </div>
+    </div>
+    <div class="checklist-item" id="check-explore-dash">
+      <div class="checklist-box">&#10003;</div>
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Visit the Dashboard</div>
+        <div style="color:var(--t);font-size:.78rem">See live system status and agent activity</div>
+      </div>
+    </div>
+    <div class="checklist-item" id="check-explore-docs">
+      <div class="checklist-box">&#10003;</div>
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Browse API Docs</div>
+        <div style="color:var(--t);font-size:.78rem">Explore 40+ endpoints with examples</div>
+      </div>
+    </div>
+    <div class="nav-buttons">
+      <div></div>
+      <button class="btn btn-primary" id="next-0">Next: Talk to Bridge AI &#8594;</button>
+    </div>
+  </div>
 
-<h2>PLATFORMS & SERVICES</h2>
-<div class="grid" id="platforms"></div>
+  <!-- Step 2: Chat -->
+  <div class="step-card" id="step-1">
+    <div class="step-num">STEP 2 OF 4</div>
+    <h2>Talk to Bridge AI</h2>
+    <p>Bridge AI is your autonomous assistant. It can answer questions, execute tasks, manage agents, and interact with the entire platform. Look for the chat widget in the bottom-right corner of any page.</p>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <div class="icon">&#128172;</div>
+        <h4>Natural Language</h4>
+        <p>Ask questions in plain English</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon">&#9889;</div>
+        <h4>Execute Tasks</h4>
+        <p>Deploy agents, check balances, swap tokens</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon">&#128202;</div>
+        <h4>Get Reports</h4>
+        <p>Ask for market analysis or economy summaries</p>
+      </div>
+    </div>
+    <div style="padding:1rem;background:var(--bg3);border-radius:8px;margin-bottom:1rem">
+      <div style="color:var(--t);font-size:.78rem;margin-bottom:.5rem">TRY THESE COMMANDS:</div>
+      <div style="font-family:monospace;font-size:.85rem;color:var(--g);line-height:1.8">
+        "What is my BRDG balance?"<br>
+        "Show me the latest trading signals"<br>
+        "How is the treasury doing?"<br>
+        "Deploy a new BossBot for grid trading"
+      </div>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-outline" id="prev-1">&#8592; Previous</button>
+      <button class="btn btn-primary" id="next-1">Next: Check the Economy &#8594;</button>
+    </div>
+  </div>
 
-<h2>AI AGENTS (8 Available)</h2>
-<div class="grid" id="agents"></div>
+  <!-- Step 3: Economy -->
+  <div class="step-card" id="step-2">
+    <div class="step-num">STEP 3 OF 4</div>
+    <h2>Check the Economy</h2>
+    <p>Bridge AI runs a real token economy powered by BRDG on Linea L2. Every agent action earns, burns, or transfers BRDG tokens.</p>
+    <div class="stats-row" id="economy-stats">
+      <div class="stat-box"><div class="val" id="eco-treasury">--</div><div class="lbl">Treasury</div></div>
+      <div class="stat-box"><div class="val" id="eco-agents">--</div><div class="lbl">Agents</div></div>
+      <div class="stat-box"><div class="val" id="eco-burned">--</div><div class="lbl">Burned</div></div>
+      <div class="stat-box"><div class="val" id="eco-stakers">--</div><div class="lbl">Stakers</div></div>
+    </div>
+    <div class="checklist-item" id="check-eco-wallet">
+      <div class="checklist-box">&#10003;</div>
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Open your Wallet</div>
+        <div style="color:var(--t);font-size:.78rem">View balances and transaction history</div>
+      </div>
+    </div>
+    <div class="checklist-item" id="check-eco-defi">
+      <div class="checklist-box">&#10003;</div>
+      <div>
+        <div style="font-weight:600;font-size:.9rem">Explore DeFi</div>
+        <div style="color:var(--t);font-size:.78rem">See pools, staking, and treasury stats</div>
+      </div>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-outline" id="prev-2">&#8592; Previous</button>
+      <button class="btn btn-primary" id="next-2">Next: Start Free Trial &#8594;</button>
+    </div>
+  </div>
 
-<h2>ECONOMY & WALLET</h2>
-<div class="grid" id="economy"></div>
-
-<h2>YOUR PROFILE</h2>
-<div class="profile" id="profile"></div>
-
-<div class="actions">
-  <a class="btn btn-primary" href="/">GO TO DASHBOARD</a>
-  <a class="btn btn-secondary" href="/platforms.html">VIEW NETWORK</a>
-  <a class="btn btn-secondary" href="/sitemap.html">FULL SITEMAP</a>
-  <a class="btn btn-secondary" href="/terminal.html">OPEN TERMINAL</a>
-</div>
-</div>
+  <!-- Step 4: Free Trial -->
+  <div class="step-card" id="step-3">
+    <div class="step-num">STEP 4 OF 4</div>
+    <h2>Start Your Free Trial</h2>
+    <p>You get full access to the Free tier immediately. When you are ready, upgrade to Pro for advanced features.</p>
+    <div class="feature-grid">
+      <div class="feature-item" style="border-color:var(--g)">
+        <h4 style="color:var(--g)">Free Tier</h4>
+        <p>100 API calls/day, 1 AI agent, trading signals, public data, governance read-only</p>
+      </div>
+      <div class="feature-item" style="border-color:var(--a)">
+        <h4 style="color:var(--a)">Pro - $49/mo</h4>
+        <p>10,000 API calls/day, 5 agents, live execution, 2 BossBots, full governance</p>
+      </div>
+      <div class="feature-item" style="border-color:var(--p)">
+        <h4 style="color:var(--p)">Enterprise - $499/mo</h4>
+        <p>100K calls/day, 50 agents, cognitive routing, priority support</p>
+      </div>
+    </div>
+    <div class="final-cta">
+      <h2>Ready to begin?</h2>
+      <p>Create your account and start building with Bridge AI OS.</p>
+      <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+        <a href="/onboarding.html?plan=free" class="btn btn-green btn-lg">Start Free</a>
+        <a href="/onboarding.html?plan=pro" class="btn btn-primary btn-lg">Go Pro - $49/mo</a>
+        <a href="/" class="btn btn-outline">Explore First</a>
+      </div>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-outline" id="prev-3">&#8592; Previous</button>
+      <div></div>
+    </div>
+  </div>
+</main>
 
 <script>
-const token = localStorage.getItem('bridge_token');
-const user = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+(function(){
+  'use strict';
+  var currentStep = 0;
+  var totalSteps = 4;
 
-if (!token && !user.email) { location.href = '/onboarding.html'; }
+  function goToStep(step) {
+    if (step < 0 || step >= totalSteps) return;
+    currentStep = step;
 
-// User info
-document.getElementById('user-name').textContent = user.name || user.email || 'Bridge AI User';
-document.getElementById('user-role').textContent = user.credits > 0 ? 'PRO MEMBER' : 'FREE MEMBER';
+    // Update cards
+    for (var i = 0; i < totalSteps; i++) {
+      var card = document.getElementById('step-' + i);
+      if (card) card.className = 'step-card' + (i === step ? ' active' : '');
+    }
 
-// Free tools
-const freeTools = [
-  { icon:'🏠', name:'Command Dashboard', desc:'Main control center with live service health, SSE events, agent status', href:'/', tier:'free' },
-  { icon:'🌐', name:'Network Topology', desc:'D3/p5.js force graph of all nodes, agents, L1/L2/L3 connections', href:'/topology.html', tier:'free' },
-  { icon:'📋', name:'System Registry', desc:'Kernel, network, security, federation, jobs — live VPS data', href:'/registry.html', tier:'free' },
-  { icon:'📊', name:'Status Graph', desc:'30+ service D3 force graph with real-time health polling', href:'/system-status-dashboard.html', tier:'free' },
-  { icon:'🤖', name:'Avatar (3D)', desc:'Babylon.js avatar with emotion engine, lip-sync, 6 render modes', href:'/avatar.html', tier:'free' },
-  { icon:'💻', name:'Terminal', desc:'Browser-based PTY shell — execute commands on Bridge AI OS', href:'/terminal.html', tier:'free' },
-  { icon:'🎛️', name:'Control Panel', desc:'Treasury management, agent command, marketplace ops', href:'/control.html', tier:'free' },
-  { icon:'🏪', name:'Marketplace', desc:'Task listings, DEX pairs, agent skills, wallet, portfolio', href:'/marketplace.html', tier:'free' },
-  { icon:'⚡', name:'BAN Task Engine', desc:'Submit tasks, scored by priority, routed to best node, consensus', href:'/ban', tier:'free' },
-  { icon:'🤝', name:'ABAAS Agents', desc:'8 AI agents: deploy, manage, monetize autonomous workforce', href:'/abaas.html', tier:'free' },
-  { icon:'🔧', name:'AOE Dashboard', desc:'SVG engine, skills, builds, treasury snapshot, live map', href:'/aoe-dashboard.html', tier:'free' },
-  { icon:'🗺️', name:'System Sitemap', desc:'Full ecosystem map: 130+ APIs, WebSockets, subdomains', href:'/sitemap.html', tier:'free' },
-  { icon:'🌍', name:'Platform Network', desc:'10 platforms, 6 payment rails, treasury spine, network value', href:'/platforms.html', tier:'free' },
-];
+    // Update progress
+    var circles = document.querySelectorAll('.progress-circle');
+    circles.forEach(function(c, idx) {
+      c.className = 'progress-circle';
+      if (idx < step) c.classList.add('done');
+      else if (idx === step) c.classList.add('active');
+    });
+    for (var j = 0; j < totalSteps - 1; j++) {
+      var line = document.getElementById('line-' + j);
+      if (line) line.className = 'progress-line' + (j < step ? ' done' : '');
+    }
 
-document.getElementById('free-tools').innerHTML = freeTools.map(t => `
-  <a class="card" href="${t.href}">
-    <h3><span class="icon">${t.icon}</span> ${t.name} <span class="badge ${t.tier}">${t.tier.toUpperCase()}</span></h3>
-    <p>${t.desc}</p>
-  </a>
-`).join('');
-
-// Platforms
-const platformCards = [
-  { icon:'🏥', name:'EHSA Health', desc:'Patient records, telemedicine, pharmacy, AI diagnostics', href:'/platforms.html#ehsa', tier:'soon' },
-  { icon:'✨', name:'Aurora AI', desc:'Conversational AI with emotion, speech, avatar', href:'/platforms.html#aurora', tier:'soon' },
-  { icon:'💰', name:'UBI System', desc:'Universal Basic Income from platform revenue', href:'/platforms.html#ubi', tier:'free' },
-  { icon:'🏗️', name:'Hospital in a Box', desc:'Complete hospital management in a container', href:'/platforms.html#hospital', tier:'ent' },
-  { icon:'🌱', name:'Rooted Earth', desc:'Sustainability, carbon tracking, SDG alignment', href:'/platforms.html#rootedearth', tier:'soon' },
-  { icon:'🆘', name:'Aid Distribution', desc:'Transparent aid tracking and disbursement', href:'/platforms.html#aid', tier:'soon' },
-];
-document.getElementById('platforms').innerHTML = platformCards.map(t => `
-  <a class="card" href="${t.href}"><h3><span class="icon">${t.icon}</span> ${t.name} <span class="badge ${t.tier}">${t.tier.toUpperCase()}</span></h3><p>${t.desc}</p></a>
-`).join('');
-
-// Load live data
-async function load() {
-  try {
-    const [agents, treasury, wallet, integrations] = await Promise.all([
-      fetch('/api/agents/workforce').then(r=>r.json()).catch(()=>({agents:[]})),
-      fetch('/api/treasury/status').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/wallet/balance').then(r=>r.json()).catch(()=>({total_usd:0})),
-      fetch('/api/integrations/status').then(r=>r.json()).catch(()=>({})),
-    ]);
-
-    document.getElementById('stats').innerHTML = `
-      <div class="stat"><div class="v">13</div><div class="l">TOOLS AVAILABLE</div></div>
-      <div class="stat"><div class="v">${(agents.agents||[]).length}</div><div class="l">AI AGENTS</div></div>
-      <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
-      <div class="stat"><div class="v">130+</div><div class="l">API ENDPOINTS</div></div>
-    `;
-
-    document.getElementById('agents').innerHTML = (agents.agents||[]).map(a => `
-      <div class="card"><h3><span class="icon">🤖</span> ${a.name} <span class="badge free">${a.status.toUpperCase()}</span></h3><p>${a.type} agent · ${a.deals_mtd||a.tickets_resolved||a.reports_generated||a.trades||0} actions this month</p></div>
-    `).join('');
-
-    document.getElementById('economy').innerHTML = `
-      <a class="card" href="/api/treasury/status"><h3><span class="icon">🏦</span> Treasury <span class="badge free">LIVE</span></h3><p>Balance: $${(treasury.balance||0).toLocaleString()} · Revenue: $${(treasury.earned||0).toLocaleString()}</p></a>
-      <a class="card" href="/api/wallet/balance"><h3><span class="icon">👛</span> Wallet <span class="badge free">LIVE</span></h3><p>Total: $${(wallet.total_usd||0).toLocaleString()} · ${(wallet.balances||[]).length} currencies</p></a>
-      <a class="card" href="/api/dex/pairs"><h3><span class="icon">📈</span> DEX Trading <span class="badge free">LIVE</span></h3><p>BRDG/ETH, BRDG/USDT, BRDG/SOL · Live pairs</p></a>
-      <a class="card" href="/api/defi/status"><h3><span class="icon">🔗</span> DeFi / Staking <span class="badge free">LIVE</span></h3><p>Stake BRDG, earn 15% APY, 342 stakers</p></a>
-      <a class="card" href="/api/ubi/status"><h3><span class="icon">💚</span> UBI Claims <span class="badge free">LIVE</span></h3><p>Monthly distribution · 156 recipients</p></a>
-      <a class="card" href="/api/revenue/rails"><h3><span class="icon">💳</span> Payment Rails <span class="badge free">6 RAILS</span></h3><p>PayFast · Paystack · ETH · BTC · SOL · BRDG</p></a>
-    `;
-
-    document.getElementById('profile').innerHTML = `
-      <div class="row"><span class="label">Email</span><span class="val">${user.email||'—'}</span></div>
-      <div class="row"><span class="label">Name</span><span class="val">${user.name||'—'}</span></div>
-      <div class="row"><span class="label">Plan</span><span class="val">${user.credits > 0 ? 'Pro' : 'Free'}</span></div>
-      <div class="row"><span class="label">Credits</span><span class="val">${user.credits||0}</span></div>
-      <div class="row"><span class="label">Token</span><span class="val" style="font-size:.6rem;word-break:break-all">${(token||'').slice(0,30)}...</span></div>
-      <div class="row"><span class="label">Google</span><span class="val">${integrations.google?.configured ? '✓ Connected' : '○ Not connected'}</span></div>
-      <div class="row"><span class="label">Microsoft</span><span class="val">${integrations.microsoft?.configured ? '✓ Connected' : '○ Not connected'}</span></div>
-      <div class="row"><span class="label">GitHub</span><span class="val">${integrations.github?.configured ? '✓ Connected' : '○ Not connected'}</span></div>
-      <div class="row"><span class="label">MFA</span><span class="val">○ Not enabled — <a href="#" onclick="setupMFA()">Enable</a></span></div>
-    `;
-  } catch(e) { console.error(e); }
-}
-load();
-
-function logout() {
-  localStorage.removeItem('bridge_token');
-  localStorage.removeItem('bridge_user');
-  location.href = '/onboarding.html';
-}
-
-async function setupMFA() {
-  const email = user.email || 'default';
-  const res = await fetch('/api/mfa/setup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: email}) });
-  const data = await res.json();
-  if (data.ok) {
-    alert('MFA Setup:\\n\\nSecret: ' + data.secret + '\\n\\nBackup codes:\\n' + data.backup_codes.join('\\n') + '\\n\\nAdd to your authenticator app, then verify with a code.');
+    // Save progress
+    try { localStorage.setItem('bridge_onboard_step', step.toString()); } catch(e) {}
   }
-}
+
+  // Navigation buttons
+  for (var s = 0; s < totalSteps; s++) {
+    (function(idx) {
+      var next = document.getElementById('next-' + idx);
+      if (next) next.addEventListener('click', function() { goToStep(idx + 1); });
+      var prev = document.getElementById('prev-' + idx);
+      if (prev) prev.addEventListener('click', function() { goToStep(idx - 1); });
+    })(s);
+  }
+
+  // Progress circle clicks
+  document.querySelectorAll('.progress-circle').forEach(function(c) {
+    c.addEventListener('click', function() {
+      goToStep(parseInt(this.getAttribute('data-step')));
+    });
+  });
+
+  // Checklist items
+  document.querySelectorAll('.checklist-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      this.classList.toggle('completed');
+      var id = this.id;
+      if (id === 'check-explore-dash') window.open('/', '_blank');
+      else if (id === 'check-explore-docs') window.open('/docs.html', '_blank');
+      else if (id === 'check-eco-wallet') window.open('/wallet.html', '_blank');
+      else if (id === 'check-eco-defi') window.open('/defi.html', '_blank');
+    });
+  });
+
+  // Load economy stats for step 3
+  async function loadEcoStats() {
+    try {
+      var r = await fetch('/api/economy/stats');
+      if (!r.ok) return;
+      var data = await r.json();
+      var el;
+      el = document.getElementById('eco-treasury');
+      if (el) el.textContent = '$' + parseInt(data.treasuryBalance || data.treasury || 0).toLocaleString();
+      el = document.getElementById('eco-agents');
+      if (el) el.textContent = (data.activeAgents || data.agents || '--').toString();
+      el = document.getElementById('eco-burned');
+      if (el) el.textContent = parseInt(data.totalBurned || data.burned || 0).toLocaleString();
+      el = document.getElementById('eco-stakers');
+      if (el) el.textContent = (data.totalStakers || data.stakers || '--').toString();
+    } catch(e) {}
+  }
+  loadEcoStats();
+
+  // Restore saved step
+  try {
+    var saved = parseInt(localStorage.getItem('bridge_onboard_step') || '0');
+    if (saved > 0 && saved < totalSteps) goToStep(saved);
+  } catch(e) {}
+})();
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
 </body>
 </html>

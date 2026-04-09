@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Bridge AI OS Governance — on-chain voting, proposals, and DAO-style decision-making.">
+<meta name="description" content="Bridge AI OS Governance — DAO proposals, voting, policies, and agent reputation.">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Governance & Voting - Bridge AI OS</title>
+<title>Governance - Bridge AI OS</title>
 <style>
-:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--p:#a78bfa;--radius:10px}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
 a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
@@ -16,29 +16,34 @@ a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
 .topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
 main{flex:1;padding:1.5rem;max-width:1400px;width:100%;margin:0 auto}
 h1{font-size:1.8rem;margin-bottom:.25rem}.subtitle{color:var(--t);margin-bottom:1.5rem}
-.grid{display:grid;gap:1rem}.grid-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}.grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.grid-5{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.grid{display:grid;gap:1rem}.grid-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}.grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
 .card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.25rem}
-.card h2{font-size:1.1rem;margin-bottom:.75rem}
+.card h2{font-size:1.1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
 .badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600}
-.badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}.badge-red{background:#ff446622;color:var(--r)}.badge-yellow{background:#ffaa0022;color:var(--y)}
+.badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}.badge-red{background:#ff446622;color:var(--r)}.badge-yellow{background:#ffaa0022;color:var(--y)}.badge-purple{background:#a78bfa22;color:var(--p)}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
 th{text-align:left;color:var(--t);font-weight:500;padding:.5rem;border-bottom:1px solid #1a2a3a}
 td{padding:.5rem;border-bottom:1px solid #0d1520}
 .btn{display:inline-block;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:all .2s;text-align:center}
-.btn-primary{background:var(--a);color:#000}.btn-green{background:var(--g);color:#000}.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}
+.btn-primary{background:var(--a);color:#000}.btn-green{background:var(--g);color:#000}.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}.btn-red{background:var(--r);color:#fff}
 .btn:hover{opacity:.85;text-decoration:none}
-.auth-only{display:none}.upgrade-cta{display:block}
-.cta-box{background:linear-gradient(135deg,#00c8ff11,#00e57b11);border:1px solid #00c8ff33;border-radius:var(--radius);padding:1.5rem;text-align:center;margin:1rem 0}
-.cta-box h3{margin-bottom:.5rem}.cta-box p{color:var(--t);margin-bottom:1rem;font-size:.9rem}
-.tier-bar{display:flex;align-items:center;gap:0;margin:1rem 0;border-radius:8px;overflow:hidden}
-.tier-step{flex:1;padding:.6rem;text-align:center;font-size:.75rem;font-weight:600;position:relative}
+.btn-sm{padding:.35rem .7rem;font-size:.78rem}
+input,textarea,select{background:var(--bg3);color:var(--w);border:1px solid #1a2a3a;border-radius:8px;padding:.6rem .8rem;font-size:.85rem;outline:none;width:100%;font-family:inherit}
+input:focus,textarea:focus{border-color:var(--a)}
+textarea{resize:vertical;min-height:60px}
 .loading{color:var(--t);font-size:.85rem;padding:1rem 0}
-.proposal{padding:.75rem;background:var(--bg3);border-radius:8px;margin-bottom:.5rem}
+.stat-val{font-size:1.5rem;font-weight:700}.stat-label{font-size:.75rem;color:var(--t)}
+.proposal{padding:.75rem;background:var(--bg3);border-radius:8px;margin-bottom:.75rem}
 .proposal-title{font-weight:600;margin-bottom:.25rem}
-.proposal-meta{color:var(--t);font-size:.8rem;display:flex;gap:1rem;flex-wrap:wrap}
-.vote-bar{height:6px;background:#1a2a3a;border-radius:3px;margin-top:.5rem;overflow:hidden}
-.vote-fill{height:100%;border-radius:3px}
-@media(max-width:600px){main{padding:1rem}.grid-2{grid-template-columns:1fr}h1{font-size:1.4rem}}
+.proposal-meta{color:var(--t);font-size:.8rem;display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.3rem}
+.vote-bar{height:8px;background:#1a2a3a;border-radius:4px;margin-top:.4rem;overflow:hidden}
+.vote-fill{height:100%;border-radius:4px}
+.tier-bar{display:flex;align-items:center;gap:0;margin:1rem 0;border-radius:8px;overflow:hidden}
+.tier-step{flex:1;padding:.6rem;text-align:center;font-size:.75rem;font-weight:600}
+.msg{padding:.6rem .8rem;border-radius:8px;font-size:.8rem;margin-top:.5rem;display:none}
+.msg.ok{display:block;background:#00e57b18;color:var(--g);border:1px solid #00e57b33}
+.msg.err{display:block;background:#ff446618;color:var(--r);border:1px solid #ff446633}
+@media(max-width:600px){main{padding:1rem}.grid-2{grid-template-columns:1fr}h1{font-size:1.4rem}.grid-4{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -50,19 +55,18 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
   <a href="/wallet.html">Wallet</a>
   <a href="/governance.html" class="active">Governance</a>
   <a href="/intelligence.html">Intelligence</a>
-  <a href="/pricing.html">Pricing</a>
-  <a href="/corporate.html">Corporate</a>
-  <a href="/onboarding.html">Onboarding</a>
+  <a href="/docs.html">Docs</a>
+  <a href="/settings.html">Settings</a>
 </nav>
 <main>
-  <h1>Governance & Voting</h1>
-  <p class="subtitle">Proposals, policies, reputation, and community leadership</p>
+  <h1>DAO Governance</h1>
+  <p class="subtitle">Proposals, voting, policies, and agent reputation</p>
 
   <div class="grid grid-4" style="margin-bottom:1rem">
     <div class="card" id="stat-proposals"><div class="loading">Loading...</div></div>
     <div class="card" id="stat-voters"><div class="loading">Loading...</div></div>
     <div class="card" id="stat-policies"><div class="loading">Loading...</div></div>
-    <div class="card" id="stat-rep"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-agents"><div class="loading">Loading...</div></div>
   </div>
 
   <div class="card" style="margin-bottom:1rem">
@@ -72,7 +76,26 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
       <div class="tier-step" style="background:#00c8ff22;color:var(--a)">SENIOR<br><span style="font-size:.65rem;font-weight:400">100 pts</span></div>
       <div class="tier-step" style="background:#00e57b22;color:var(--g)">LEAD<br><span style="font-size:.65rem;font-weight:400">500 pts</span></div>
       <div class="tier-step" style="background:#ffaa0022;color:var(--y)">MASTER<br><span style="font-size:.65rem;font-weight:400">2,000 pts</span></div>
-      <div class="tier-step" style="background:#a78bfa22;color:#a78bfa">GURU<br><span style="font-size:.65rem;font-weight:400">10,000 pts</span></div>
+      <div class="tier-step" style="background:#a78bfa22;color:var(--p)">GURU<br><span style="font-size:.65rem;font-weight:400">10,000 pts</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <h2>Active Proposals <span class="badge badge-blue">Vote Now</span></h2>
+    <div id="proposals-list"><div class="loading">Loading proposals...</div></div>
+    <div style="margin-top:1rem">
+      <button class="btn btn-primary" id="new-proposal-toggle">Submit New Proposal</button>
+    </div>
+    <div id="new-proposal-form" style="display:none;margin-top:1rem;padding:1rem;background:var(--bg3);border-radius:8px">
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <input type="text" id="prop-title" placeholder="Proposal title">
+        <textarea id="prop-description" placeholder="Describe your proposal..."></textarea>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-green btn-sm" id="submit-proposal-btn">Submit</button>
+          <button class="btn btn-outline btn-sm" id="cancel-proposal-btn">Cancel</button>
+        </div>
+      </div>
+      <div class="msg" id="proposal-msg"></div>
     </div>
   </div>
 
@@ -82,7 +105,7 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
       <div id="policies-list"><div class="loading">Loading policies...</div></div>
     </div>
     <div class="card">
-      <h2>Leaderboard <span class="badge badge-green">PUBLIC</span></h2>
+      <h2>Agent Leaderboard <span class="badge badge-green">PUBLIC</span></h2>
       <table>
         <thead><tr><th>#</th><th>Agent</th><th>Tier</th><th>Rep</th></tr></thead>
         <tbody id="leaderboard-body"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
@@ -90,78 +113,257 @@ td{padding:.5rem;border-bottom:1px solid #0d1520}
     </div>
   </div>
 
-  <div class="auth-only">
-    <div class="card" style="margin-top:1rem">
-      <h2>Active Proposals <span class="badge badge-blue">Vote Now</span></h2>
-      <div id="proposals-list"><div class="loading">Loading proposals...</div></div>
-      <div style="margin-top:1rem">
-        <button class="btn btn-primary" onclick="alert('Submit proposal form coming soon')">Submit New Proposal</button>
-      </div>
-    </div>
-    <div class="card" style="margin-top:1rem">
-      <h2>Your Reputation</h2>
-      <div id="my-rep"><div class="loading">Loading reputation...</div></div>
-    </div>
-  </div>
-
-  <div class="upgrade-cta">
-    <div class="cta-box">
-      <h3>Stake to Vote</h3>
-      <p>Participate in governance, vote on proposals, and build your reputation score. Requires an active account.</p>
-      <a href="/wallet.html" class="btn btn-green" style="margin-right:.5rem">Go to Wallet</a>
-      <a href="/onboarding.html?plan=pro" class="btn btn-primary">Upgrade to Pro</a>
-      <br><br><a href="/pricing.html" style="font-size:.85rem">View plans &rarr;</a>
-    </div>
+  <div class="card" style="margin-top:1rem">
+    <h2>Governance Stats <span class="badge badge-purple">ECONOMY</span></h2>
+    <div id="gov-stats"><div class="loading">Loading governance stats...</div></div>
   </div>
 </main>
+
 <script>
-const token=localStorage.getItem('bridge_token'),isAuth=!!token;
-document.querySelectorAll('.auth-only').forEach(el=>el.style.display=isAuth?'':'none');
-document.querySelectorAll('.upgrade-cta').forEach(el=>el.style.display=isAuth?'none':'');
-const headers=token?{Authorization:'Bearer '+token}:{};
-async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;return await r.json()}catch{return null}}
+(function(){
+  'use strict';
+  const token = localStorage.getItem('bridge_token');
+  const headers = token ? { Authorization: 'Bearer ' + token } : {};
 
-(async()=>{
-  const[dash,proposals,leaderboard,policies]=await Promise.all([
-    f('/api/governance/dashboard'),f('/api/governance/proposals'),f('/api/governance/leaderboard'),f('/api/governance/policies')
-  ]);
-
-  const d=dash||{};
-  document.getElementById('stat-proposals').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Proposals</div><div style="font-size:1.5rem;font-weight:700">${d.totalProposals||d.proposals||'--'}</div>`;
-  document.getElementById('stat-voters').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Active Voters</div><div style="font-size:1.5rem;font-weight:700">${d.activeVoters||d.voters||'--'}</div>`;
-  document.getElementById('stat-policies').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Policies</div><div style="font-size:1.5rem;font-weight:700">${d.totalPolicies||d.policies||'--'}</div>`;
-  document.getElementById('stat-rep').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Your Rep</div><div style="font-size:1.5rem;font-weight:700">${isAuth?(d.myReputation||d.reputation||'--'):'&#128274;'}</div>`;
-
-  // Policies
-  const pol=policies?.policies||policies?.data||[];
-  if(pol.length){
-    document.getElementById('policies-list').innerHTML=pol.slice(0,8).map(p=>`<div style="padding:.5rem;border-bottom:1px solid #1a2a3a"><div style="font-weight:600">${p.name||p.title||'Policy'}</div><div style="color:var(--t);font-size:.8rem">${p.description||p.summary||''}</div></div>`).join('');
-  }else{document.getElementById('policies-list').innerHTML='<div style="color:var(--t)">No policies loaded</div>';}
-
-  // Leaderboard
-  const lb=leaderboard?.leaderboard||leaderboard?.data||[];
-  if(lb.length){
-    document.getElementById('leaderboard-body').innerHTML=lb.slice(0,10).map((l,i)=>{
-      const tier=l.tier||l.rank||'JUNIOR';
-      const cls=tier==='GURU'?'badge-yellow':tier==='MASTER'?'badge-yellow':tier==='LEAD'?'badge-green':tier==='SENIOR'?'badge-blue':'badge-blue';
-      return `<tr><td>${i+1}</td><td><strong>${l.name||l.agent||'Agent'}</strong></td><td><span class="badge ${cls}">${tier}</span></td><td>${l.reputation||l.score||0}</td></tr>`;
-    }).join('');
-  }else{document.getElementById('leaderboard-body').innerHTML='<tr><td colspan="4" style="color:var(--t)">No leaderboard data</td></tr>';}
-
-  // Auth: proposals
-  if(isAuth){
-    const pr=proposals?.proposals||proposals?.data||[];
-    if(pr.length){
-      document.getElementById('proposals-list').innerHTML=pr.slice(0,10).map(p=>{
-        const yes=parseInt(p.votesFor||p.yes||0),no=parseInt(p.votesAgainst||p.no||0),total=yes+no||1;
-        return `<div class="proposal"><div class="proposal-title">${p.title||p.name||'Proposal'}</div><div class="proposal-meta"><span>By ${p.author||p.proposer||'--'}</span><span class="badge ${p.status==='active'?'badge-green':p.status==='passed'?'badge-blue':'badge-yellow'}">${p.status||'active'}</span><span>${yes} for / ${no} against</span></div><div class="vote-bar"><div class="vote-fill" style="width:${(yes/total*100).toFixed(0)}%;background:linear-gradient(90deg,var(--g),var(--a))"></div></div>${p.status==='active'?`<div style="margin-top:.5rem"><button class="btn btn-green" style="padding:.3rem .8rem;font-size:.75rem" onclick="alert('Vote recorded')">Vote For</button> <button class="btn btn-outline" style="padding:.3rem .8rem;font-size:.75rem" onclick="alert('Vote recorded')">Vote Against</button></div>`:''}</div>`;
-      }).join('');
-    }else{document.getElementById('proposals-list').innerHTML='<div style="color:var(--t)">No active proposals</div>';}
-
-    document.getElementById('my-rep').innerHTML=`<div class="grid grid-4"><div><div style="color:var(--t);font-size:.8rem">Score</div><div style="font-size:1.3rem;font-weight:700">${d.myReputation||d.reputation||0}</div></div><div><div style="color:var(--t);font-size:.8rem">Tier</div><div style="font-size:1.3rem;font-weight:700">${d.myTier||d.tier||'JUNIOR'}</div></div><div><div style="color:var(--t);font-size:.8rem">Votes Cast</div><div style="font-size:1.3rem;font-weight:700">${d.myVotes||d.votesCast||0}</div></div><div><div style="color:var(--t);font-size:.8rem">Proposals</div><div style="font-size:1.3rem;font-weight:700">${d.myProposals||d.proposalsSubmitted||0}</div></div></div>`;
+  async function api(url) {
+    try {
+      const r = await fetch(url, { headers });
+      if (!r.ok) throw new Error(r.status);
+      return await r.json();
+    } catch { return null; }
   }
+
+  function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+
+  function setStatCard(id, label, value, color) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    clearEl(el);
+    const lbl = document.createElement('div');
+    lbl.className = 'stat-label';
+    lbl.textContent = label;
+    const val = document.createElement('div');
+    val.className = 'stat-val';
+    if (color) val.style.color = 'var(--' + color + ')';
+    val.textContent = value;
+    el.appendChild(lbl); el.appendChild(val);
+  }
+
+  function showMsg(id, text, ok) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'msg ' + (ok ? 'ok' : 'err');
+    setTimeout(function(){ el.className = 'msg'; }, 4000);
+  }
+
+  // Toggle proposal form
+  document.getElementById('new-proposal-toggle').addEventListener('click', function() {
+    document.getElementById('new-proposal-form').style.display = '';
+    this.style.display = 'none';
+  });
+  document.getElementById('cancel-proposal-btn').addEventListener('click', function() {
+    document.getElementById('new-proposal-form').style.display = 'none';
+    document.getElementById('new-proposal-toggle').style.display = '';
+  });
+
+  // Submit proposal
+  document.getElementById('submit-proposal-btn').addEventListener('click', async function() {
+    if (!token) { showMsg('proposal-msg', 'Please log in to submit proposals.', false); return; }
+    const title = document.getElementById('prop-title').value.trim();
+    const desc = document.getElementById('prop-description').value.trim();
+    if (!title) { showMsg('proposal-msg', 'Enter a proposal title.', false); return; }
+    try {
+      const r = await fetch('/api/governance/proposals', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify({ title: title, description: desc })
+      });
+      const data = await r.json();
+      if (r.ok) {
+        showMsg('proposal-msg', 'Proposal submitted successfully.', true);
+        document.getElementById('prop-title').value = '';
+        document.getElementById('prop-description').value = '';
+      } else showMsg('proposal-msg', data.error || 'Failed to submit.', false);
+    } catch { showMsg('proposal-msg', 'Network error.', false); }
+  });
+
+  async function castVote(proposalId, vote) {
+    if (!token) { alert('Please log in to vote.'); return; }
+    try {
+      const r = await fetch('/api/governance/vote', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify({ proposalId: proposalId, vote: vote })
+      });
+      const data = await r.json();
+      alert(r.ok ? 'Vote recorded.' : (data.error || 'Vote failed.'));
+    } catch { alert('Network error.'); }
+  }
+
+  // Make castVote accessible
+  window._castVote = castVote;
+
+  (async function() {
+    const [dash, proposals, leaderboard, policies, ecoStats] = await Promise.all([
+      api('/api/governance/dashboard'),
+      api('/api/governance/proposals'),
+      api('/api/governance/leaderboard'),
+      api('/api/governance/policies'),
+      api('/api/economy/stats')
+    ]);
+
+    const d = dash || {};
+    setStatCard('stat-proposals', 'Proposals', (d.totalProposals || d.proposals || '--').toString(), 'a');
+    setStatCard('stat-voters', 'Active Voters', (d.activeVoters || d.voters || '--').toString(), 'g');
+    setStatCard('stat-policies', 'Policies', (d.totalPolicies || d.policies || '--').toString(), 'w');
+    setStatCard('stat-agents', 'Total Agents', (d.totalAgents || d.agents || '--').toString(), 'p');
+
+    // Proposals
+    const prList = proposals?.proposals || proposals?.data || [];
+    const propEl = document.getElementById('proposals-list');
+    clearEl(propEl);
+    if (prList.length) {
+      prList.slice(0, 10).forEach(function(p) {
+        const div = document.createElement('div');
+        div.className = 'proposal';
+        const title = document.createElement('div');
+        title.className = 'proposal-title';
+        title.textContent = p.title || p.name || 'Proposal';
+        const meta = document.createElement('div');
+        meta.className = 'proposal-meta';
+        const author = document.createElement('span');
+        author.textContent = 'By ' + (p.author || p.proposer || '--');
+        const statusBadge = document.createElement('span');
+        const st = (p.status || 'active').toLowerCase();
+        statusBadge.className = 'badge ' + (st === 'active' ? 'badge-green' : st === 'passed' ? 'badge-blue' : 'badge-yellow');
+        statusBadge.textContent = p.status || 'active';
+        const votes = document.createElement('span');
+        const yes = parseInt(p.votesFor || p.yes || 0);
+        const no = parseInt(p.votesAgainst || p.no || 0);
+        votes.textContent = yes + ' for / ' + no + ' against';
+        meta.appendChild(author); meta.appendChild(statusBadge); meta.appendChild(votes);
+        const bar = document.createElement('div');
+        bar.className = 'vote-bar';
+        const fill = document.createElement('div');
+        fill.className = 'vote-fill';
+        const total = yes + no || 1;
+        fill.style.width = (yes / total * 100).toFixed(0) + '%';
+        fill.style.background = 'linear-gradient(90deg,var(--g),var(--a))';
+        bar.appendChild(fill);
+        div.appendChild(title); div.appendChild(meta); div.appendChild(bar);
+
+        if (st === 'active' && token) {
+          const btns = document.createElement('div');
+          btns.style.marginTop = '.5rem';
+          const forBtn = document.createElement('button');
+          forBtn.className = 'btn btn-green btn-sm';
+          forBtn.textContent = 'Vote For';
+          forBtn.addEventListener('click', function() { castVote(p.id || p._id, 'for'); });
+          const againstBtn = document.createElement('button');
+          againstBtn.className = 'btn btn-outline btn-sm';
+          againstBtn.style.marginLeft = '.5rem';
+          againstBtn.textContent = 'Vote Against';
+          againstBtn.addEventListener('click', function() { castVote(p.id || p._id, 'against'); });
+          btns.appendChild(forBtn); btns.appendChild(againstBtn);
+          div.appendChild(btns);
+        }
+        propEl.appendChild(div);
+      });
+    } else {
+      const msg = document.createElement('div');
+      msg.style.color = 'var(--t)';
+      msg.textContent = 'No active proposals';
+      propEl.appendChild(msg);
+    }
+
+    // Policies
+    const polList = policies?.policies || policies?.data || [];
+    const polEl = document.getElementById('policies-list');
+    clearEl(polEl);
+    if (polList.length) {
+      polList.slice(0, 8).forEach(function(p) {
+        const div = document.createElement('div');
+        div.style.cssText = 'padding:.5rem 0;border-bottom:1px solid #1a2a3a';
+        const name = document.createElement('div');
+        name.style.fontWeight = '600';
+        name.textContent = p.name || p.title || 'Policy';
+        const desc = document.createElement('div');
+        desc.style.cssText = 'color:var(--t);font-size:.8rem';
+        desc.textContent = p.description || p.summary || '';
+        div.appendChild(name); div.appendChild(desc);
+        polEl.appendChild(div);
+      });
+    } else {
+      const msg = document.createElement('div');
+      msg.style.color = 'var(--t)';
+      msg.textContent = 'No policies loaded';
+      polEl.appendChild(msg);
+    }
+
+    // Leaderboard
+    const lb = leaderboard?.leaderboard || leaderboard?.data || [];
+    const lbBody = document.getElementById('leaderboard-body');
+    clearEl(lbBody);
+    if (lb.length) {
+      lb.slice(0, 10).forEach(function(l, i) {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td');
+        td1.textContent = (i + 1).toString();
+        const td2 = document.createElement('td');
+        const strong = document.createElement('strong');
+        strong.textContent = l.name || l.agent || 'Agent';
+        td2.appendChild(strong);
+        const td3 = document.createElement('td');
+        const tier = l.tier || l.rank || 'JUNIOR';
+        const tierBadge = document.createElement('span');
+        tierBadge.className = 'badge ' + (tier === 'GURU' || tier === 'MASTER' ? 'badge-yellow' : tier === 'LEAD' ? 'badge-green' : 'badge-blue');
+        tierBadge.textContent = tier;
+        td3.appendChild(tierBadge);
+        const td4 = document.createElement('td');
+        td4.textContent = (l.reputation || l.score || 0).toString();
+        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+        lbBody.appendChild(tr);
+      });
+    } else {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 4; td.style.color = 'var(--t)'; td.textContent = 'No leaderboard data';
+      tr.appendChild(td); lbBody.appendChild(tr);
+    }
+
+    // Governance stats from economy
+    const eco = ecoStats || {};
+    const gsEl = document.getElementById('gov-stats');
+    clearEl(gsEl);
+    const sg = document.createElement('div');
+    sg.className = 'grid grid-4';
+    const gsFields = [
+      ['Total BRDG Staked', (parseInt(eco.totalStaked || 0)).toLocaleString(), 'p'],
+      ['Burn Rate', (eco.burnRate || '--') + '/day', 'r'],
+      ['Treasury Balance', '$' + parseInt(eco.treasuryBalance || eco.treasury || 0).toLocaleString(), 'g'],
+      ['Active Agents', (eco.activeAgents || eco.agents || '--').toString(), 'a'],
+      ['Proposals Passed', (eco.proposalsPassed || d.passed || '--').toString(), 'g'],
+      ['Participation Rate', (eco.participationRate || d.participation || '--') + '%', 'a'],
+      ['Quorum', (eco.quorum || d.quorum || '--') + '%', 'y'],
+      ['Next Election', eco.nextElection || d.nextElection || '--', 't']
+    ];
+    gsFields.forEach(function(f) {
+      const d = document.createElement('div');
+      d.style.cssText = 'padding:.6rem;background:var(--bg3);border-radius:8px';
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'color:var(--t);font-size:.78rem';
+      lbl.textContent = f[0];
+      const val = document.createElement('div');
+      val.style.cssText = 'font-size:1.1rem;font-weight:600;color:var(--' + f[2] + ')';
+      val.textContent = f[1];
+      d.appendChild(lbl); d.appendChild(val); sg.appendChild(d);
+    });
+    gsEl.appendChild(sg);
+  })();
 })();
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
 </body>
 </html>
