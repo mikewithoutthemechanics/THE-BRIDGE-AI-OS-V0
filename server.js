@@ -825,7 +825,7 @@ function requireRole(roles) {
 }
 
 // Apply authentication to all /api/* routes
-app.all('/api/*', requireAuth);
+app.all('/api/{*path}', requireAuth);
 
 app.get('/api/secrets', requireAdmin, [validate.secretsList], async (req, res) => {
     res.json(await secrets.listSecrets());
