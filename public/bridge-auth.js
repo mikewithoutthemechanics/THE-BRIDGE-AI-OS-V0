@@ -38,10 +38,11 @@ window.BridgeAuth = {
     var token = localStorage.getItem('bridge_token')
       || localStorage.getItem('bridge_user_token');
 
-    // 2. Clear all Bridge tokens from localStorage
+    // 2. Clear all Bridge tokens from localStorage + cookie
     localStorage.removeItem('bridge_token');
     localStorage.removeItem('bridge_user_token');
     localStorage.removeItem('bridge_user');
+    document.cookie = 'bridge_token=;path=/;max-age=0';
 
     // 3. Tell the server to invalidate the token (best-effort, non-blocking)
     if (token) {
