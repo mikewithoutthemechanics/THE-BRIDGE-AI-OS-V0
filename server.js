@@ -1776,6 +1776,29 @@ Object.entries(shortRoutes).forEach(([short, target]) => {
 // TVM routes registered earlier, before brain catch-all
 app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIONS));
 
+// ================= WALLET / DEFI STATUS (dashboard dependencies) =================
+const banksModule = require('./lib/banks');
+
+app.get('/api/wallet/balance', async (_req, res) => {
+  try {
+    const all = await banksModule.getAllBanks();
+    const total = all.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+    res.json({ balance: +(total * 0.05).toFixed(2), currency: 'ZAR', pending: 0, available: +(total * 0.05).toFixed(2), ts: Date.now() });
+  } catch (e) { res.json({ balance: 0, currency: 'ZAR', pending: 0, available: 0, ts: Date.now() }); }
+});
+
+app.get('/api/defi/status', (_req, res) => {
+  res.json({ tvl: 0, total_value: 0, liquidity: 0, pools: [], ts: Date.now() });
+});
+
+app.get('/api/treasury/status', async (_req, res) => {
+  try {
+    const all = await banksModule.getAllBanks();
+    const total = all.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+    res.json({ ok: true, balance: total, total, earned: 0, spent: 0, ts: Date.now() });
+  } catch (e) { res.json({ ok: true, balance: 0, total: 0, ts: Date.now() }); }
+});
+
 // ================= ECONOMY ENGINE (agent balances, tasks, auto-loop) =================
 const { registerEconomyRoutes } = require('./lib/economy-routes');
 registerEconomyRoutes(app);
