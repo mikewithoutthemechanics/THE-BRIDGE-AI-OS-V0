@@ -208,7 +208,7 @@ function onLogin(session) {
   // Set cookie so server-side pageGuard can read it
   document.cookie = 'bridge_token=' + session.access_token + ';path=/;max-age=' + (7*24*3600) + ';SameSite=Lax';
   showMsg('success', 'Signed in! Redirecting...');
-  var dest = safeRedirect || '/console.html';
+  var dest = safeRedirect || '/welcome-tour.html';
   console.log('[AUTH] Redirecting to:', dest);
   window.location.replace(dest);
 }
