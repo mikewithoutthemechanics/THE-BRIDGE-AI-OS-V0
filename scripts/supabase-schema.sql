@@ -347,6 +347,151 @@ CREATE TABLE IF NOT EXISTS external_agents (
 );
 
 -- ============================================================
+-- BANKS (multi-entity treasury layer)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS banks (
+  id          text PRIMARY KEY,
+  name        text,
+  owner       text DEFAULT 'system',
+  balance     numeric DEFAULT 0,
+  compound_rate numeric DEFAULT 0.01,
+  split_pct   numeric DEFAULT 0,
+  type        text DEFAULT 'internal',
+  active      boolean DEFAULT true,
+  meta        jsonb,
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS bank_transactions (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  from_bank   text,
+  to_bank     text,
+  amount      numeric,
+  type        text,
+  note        text,
+  meta        jsonb,
+  created_at  timestamptz DEFAULT now()
+);
+
+-- ============================================================
+-- SYSTEM STATE (key/value store for runtime state)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS system_state (
+  key         text PRIMARY KEY,
+  value       jsonb,
+  updated_at  timestamptz DEFAULT now()
+);
+
+-- ============================================================
+-- TRANSACTIONS (general ledger with idempotency)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS transactions (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  idempotency_key text UNIQUE,
+  type        text,
+  from_id     text,
+  to_id       text,
+  amount      numeric,
+  currency    text DEFAULT 'BRDG',
+  status      text DEFAULT 'completed',
+  meta        jsonb,
+  created_at  timestamptz DEFAULT now()
+);
+
+-- ============================================================
+-- AGENT RUNS (execution history)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS agent_runs (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  agent_id    text NOT NULL,
+  trigger     text,
+  input       jsonb,
+  output      jsonb,
+  cost        numeric DEFAULT 0,
+  duration_ms integer,
+  status      text DEFAULT 'completed',
+  error       text,
+  created_at  timestamptz DEFAULT now()
+);
+
+-- ============================================================
+-- AP2 PROTOCOL (agent-to-agent commerce)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS ap2_offers (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  from_agent  text NOT NULL,
+  to_agent    text,
+  service     text,
+  price_brdg  numeric,
+  status      text DEFAULT 'pending',
+  meta        jsonb,
+  created_at  timestamptz DEFAULT now(),
+  expires_at  timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS ap2_payments (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  offer_id    uuid REFERENCES ap2_offers(id),
+  payer       text NOT NULL,
+  payee       text NOT NULL,
+  amount      numeric,
+  status      text DEFAULT 'completed',
+  meta        jsonb,
+  created_at  timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS ap2_receipts (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  payment_id  uuid REFERENCES ap2_payments(id),
+  issuer      text,
+  recipient   text,
+  service     text,
+  amount      numeric,
+  meta        jsonb,
+  created_at  timestamptz DEFAULT now()
+);
+
+-- ============================================================
+-- AFFILIATE TRACKING
+-- ============================================================
+CREATE TABLE IF NOT EXISTS affiliate_clicks (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  affiliate_id text,
+  page        text,
+  referrer    text,
+  ip          text,
+  user_agent  text,
+  converted   boolean DEFAULT false,
+  meta        jsonb,
+  created_at  timestamptz DEFAULT now()
+);
+
+-- ============================================================
+-- SECRETS VAULT
+-- ============================================================
+CREATE TABLE IF NOT EXISTS secrets_vault (
+  key         text PRIMARY KEY,
+  value       text,
+  scope       text DEFAULT 'global',
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+
+-- ============================================================
+-- NOTION SYNC LOG
+-- ============================================================
+CREATE TABLE IF NOT EXISTS notion_sync_log (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  direction   text,
+  table_name  text,
+  record_id   text,
+  status      text DEFAULT 'synced',
+  error       text,
+  created_at  timestamptz DEFAULT now()
+);
+
+-- ============================================================
 -- INDEXES
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -362,3 +507,14 @@ CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks_market(status);
 CREATE INDEX IF NOT EXISTS idx_tasks_poster ON tasks_market(poster_agent);
 CREATE INDEX IF NOT EXISTS idx_crm_leads_email ON crm_leads(email);
 CREATE INDEX IF NOT EXISTS idx_page_econ_user ON page_economics(user_id);
+CREATE INDEX IF NOT EXISTS idx_banks_type ON banks(type);
+CREATE INDEX IF NOT EXISTS idx_bank_tx_from ON bank_transactions(from_bank);
+CREATE INDEX IF NOT EXISTS idx_bank_tx_to ON bank_transactions(to_bank);
+CREATE INDEX IF NOT EXISTS idx_bank_tx_ts ON bank_transactions(created_at);
+CREATE INDEX IF NOT EXISTS idx_agent_runs_agent ON agent_runs(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_runs_ts ON agent_runs(created_at);
+CREATE INDEX IF NOT EXISTS idx_ap2_offers_from ON ap2_offers(from_agent);
+CREATE INDEX IF NOT EXISTS idx_ap2_offers_status ON ap2_offers(status);
+CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);
+CREATE INDEX IF NOT EXISTS idx_transactions_ts ON transactions(created_at);
+CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_aff ON affiliate_clicks(affiliate_id);
