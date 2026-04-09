@@ -3,138 +3,298 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bridge AI OS — Checkout</title>
+<title id="page-title">Bridge AI OS — Checkout</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--dim:#4d6678;--text:#e0e8f0}
-body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}
-.checkout{max-width:460px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.5rem}
-h1{font-size:1.5rem;margin-bottom:.5rem}
-.sub{color:var(--dim);margin-bottom:2rem;font-size:.9rem}
-label{display:block;font-size:.85rem;color:var(--dim);margin-bottom:.3rem;margin-top:1rem}
-input,select{width:100%;padding:.7rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;outline:none}
-input:focus,select:focus{border-color:var(--cyan)}
-.plan-cards{display:flex;gap:.75rem;margin:1rem 0}
-.plan-card{flex:1;padding:.75rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;text-align:center;transition:all .2s}
-.plan-card:hover,.plan-card.selected{border-color:var(--cyan);background:rgba(0,200,255,.05)}
-.plan-card .name{font-weight:600;font-size:.9rem}
-.plan-card .price{font-size:1.3rem;font-weight:800;color:var(--cyan);margin:.3rem 0}
-.plan-card .price small{font-size:.7rem;color:var(--dim);font-weight:400}
-.btn{display:block;width:100%;padding:.85rem;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;margin-top:1.5rem;transition:all .2s}
-.btn-pay{background:linear-gradient(135deg,var(--cyan),#0090cc);color:#000}
-.btn-pay:hover{opacity:.9}
-.btn-pay:disabled{opacity:.5;cursor:not-allowed}
+:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--dim:#4d6678;--text:#e0e8f0;--danger:#ff3c5a}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:2rem 1rem}
+.checkout-wrap{max-width:960px;margin:0 auto}
+.brand-header{text-align:center;margin-bottom:2.5rem}
+.brand-header .logo-area{width:56px;height:56px;border-radius:14px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900;color:#000}
+.brand-header h1{font-size:1.8rem;font-weight:800;margin-bottom:.4rem}
+.brand-header p{color:var(--dim);font-size:1rem}
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin-bottom:2.5rem}
+.plan-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:1.75rem;cursor:pointer;transition:all .2s;position:relative}
+.plan-card:hover{border-color:color-mix(in srgb,var(--accent) 60%,transparent)}
+.plan-card.selected{border-color:var(--accent);box-shadow:0 0 24px color-mix(in srgb,var(--accent) 15%,transparent)}
+.plan-card .badge{position:absolute;top:-10px;right:16px;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase}
+.plan-card .plan-name{font-size:1.1rem;font-weight:700;margin-bottom:.4rem}
+.plan-card .plan-price{font-size:2rem;font-weight:800;margin-bottom:.2rem}
+.plan-card .plan-price span{font-size:.85rem;font-weight:400;color:var(--dim)}
+.plan-card .plan-features{list-style:none;padding:0;margin-top:1rem}
+.plan-card .plan-features li{padding:.35rem 0;font-size:.88rem;color:var(--dim);display:flex;align-items:flex-start;gap:.5rem}
+.plan-card .plan-features li::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.form-section{max-width:460px;margin:0 auto}
+.form-section label{display:block;font-size:.85rem;color:var(--dim);margin-bottom:.3rem;margin-top:1.25rem}
+.form-section input{width:100%;padding:.75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;outline:none}
+.form-section input:focus{border-color:var(--accent)}
+.btn-pay{display:block;width:100%;padding:.9rem;border:none;border-radius:8px;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:1.75rem;transition:all .2s;color:#000}
+.btn-pay:hover{opacity:.88}
+.btn-pay:disabled{opacity:.45;cursor:not-allowed}
 .msg{margin-top:1rem;padding:.75rem;border-radius:8px;font-size:.85rem;display:none}
-.msg.error{display:block;background:rgba(255,60,90,.1);color:#ff3c5a;border:1px solid rgba(255,60,90,.2)}
+.msg.error{display:block;background:rgba(255,60,90,.1);color:var(--danger);border:1px solid rgba(255,60,90,.2)}
 .msg.success{display:block;background:rgba(0,229,123,.1);color:var(--green);border:1px solid rgba(0,229,123,.2)}
-.secure{text-align:center;margin-top:1.5rem;color:var(--dim);font-size:.75rem}
-a{color:var(--cyan)}
+.secure-footer{text-align:center;margin-top:2rem;color:var(--dim);font-size:.75rem}
+.secure-footer a{color:var(--accent);text-decoration:none}
+.secure-footer a:hover{text-decoration:underline}
+@media(max-width:640px){
+  .plans-grid{grid-template-columns:1fr}
+  .brand-header h1{font-size:1.4rem}
+  body{padding:1rem .75rem}
+}
 </style>
 </head>
 <body>
-<div class="checkout">
-  <h1>Subscribe to Bridge AI OS</h1>
-  <p class="sub">Select a plan, enter your details, and pay securely via PayFast.</p>
-
-  <label>Plan</label>
-  <div class="plan-cards">
-    <div class="plan-card" data-plan="starter" onclick="selectPlan('starter')">
-      <div class="name">Starter</div>
-      <div class="price">R0<small>/mo</small></div>
-    </div>
-    <div class="plan-card selected" data-plan="pro" onclick="selectPlan('pro')">
-      <div class="name">Pro</div>
-      <div class="price">R499<small>/mo</small></div>
-    </div>
-    <div class="plan-card" data-plan="enterprise" onclick="selectPlan('enterprise')">
-      <div class="name">Enterprise</div>
-      <div class="price">R2,499<small>/mo</small></div>
-    </div>
+<div class="checkout-wrap">
+  <div class="brand-header">
+    <div class="logo-area" id="logo-area">B</div>
+    <h1 id="brand-title">Subscribe to Bridge AI OS</h1>
+    <p id="brand-sub">Select a plan, enter your details, and pay securely via PayFast.</p>
   </div>
 
-  <label for="name">Full Name</label>
-  <input type="text" id="name" placeholder="Ryan Saunders" required>
+  <div class="plans-grid" id="plans-grid"></div>
 
-  <label for="email">Email</label>
-  <input type="email" id="email" placeholder="you@company.com" required>
+  <div class="form-section">
+    <label for="name">Full Name</label>
+    <input type="text" id="name" placeholder="Your full name" autocomplete="name">
 
-  <button class="btn btn-pay" id="payBtn" onclick="checkout()">Pay R499 via PayFast</button>
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="you@company.com" autocomplete="email">
 
-  <div class="msg" id="msg"></div>
+    <button class="btn-pay" id="payBtn" type="button">Select a plan</button>
 
-  <p class="secure">Secured by PayFast (ZA) &middot; PCI DSS Compliant &middot; <a href="/">Back to home</a></p>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <p class="secure-footer">
+    Secured by PayFast (ZA) &middot; PCI DSS Compliant &middot; <a href="/">Back to home</a>
+  </p>
 </div>
 
 <script>
-let selectedPlan = 'pro';
+(function() {
+  'use strict';
 
-function selectPlan(plan) {
-  selectedPlan = plan;
-  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-  document.querySelector(`[data-plan="${plan}"]`).classList.add('selected');
-  const prices = { starter: 0, pro: 499, enterprise: 2499 };
-  const btn = document.getElementById('payBtn');
-  if (plan === 'starter') {
-    btn.textContent = 'Get Started Free';
+  var VERTICALS = {
+    default: { name: 'Bridge AI OS', accent: '#00c8ff', logo: 'B', plans: [
+      { id: 'starter', name: 'Starter', price: 0, features: ['50 contacts', '10 invoices/mo', '5 AI tasks/day'] },
+      { id: 'pro', name: 'Pro', price: 499, badge: 'Popular', features: ['Unlimited contacts', '50 AI tasks/day', 'Full CRM', 'Staking'] },
+      { id: 'enterprise', name: 'Enterprise', price: 2499, features: ['Unlimited everything', 'Custom AI twin', 'White-label', 'SLA'] },
+    ]},
+    ehsa: { name: 'EHSA Health', accent: '#00e57b', logo: 'E', plans: [
+      { id: 'clinic', name: 'Clinic', price: 299, features: ['Patient CRM', '50 invoices/mo', 'Compliance reports'] },
+      { id: 'hospital', name: 'Hospital', price: 1499, badge: 'Popular', features: ['Full hospital suite', 'Unlimited patients', 'OSINT leads'] },
+      { id: 'network', name: 'Health Network', price: 4999, features: ['Multi-facility', 'White-label', 'Dedicated agents'] },
+    ]},
+    aurora: { name: 'Aurora Energy', accent: '#fb923c', logo: 'A', plans: [
+      { id: 'monitor', name: 'Monitor', price: 399, features: ['Grid analytics', 'Consumption tracking', 'Alerts'] },
+      { id: 'optimize', name: 'Optimize', price: 1299, badge: 'Popular', features: ['Procurement AI', 'Cost optimization', 'Market signals'] },
+      { id: 'enterprise', name: 'Enterprise Grid', price: 3999, features: ['Full grid management', 'Trading signals', 'Custom agents'] },
+    ]},
+    hospital: { name: 'Hospital in a Box', accent: '#ffd166', logo: 'H', plans: [
+      { id: 'basic', name: 'Basic Setup', price: 999, features: ['Equipment catalog', 'Compliance checklist', 'Timeline'] },
+      { id: 'complete', name: 'Complete Deploy', price: 4999, badge: 'Popular', features: ['Full deployment', 'Staff training', 'Ongoing support'] },
+      { id: 'franchise', name: 'Franchise', price: 14999, features: ['Multi-site', 'Full management', 'Revenue share'] },
+    ]},
+    aid: { name: 'Bridge AID', accent: '#ff3c5a', logo: 'D', plans: [
+      { id: 'basic', name: 'Basic', price: 199, features: ['Beneficiary tracking', 'Distribution mgmt', 'Impact reports'] },
+      { id: 'pro', name: 'Pro', price: 799, badge: 'Popular', features: ['UBI automation', 'Grant management', 'Analytics'] },
+    ]},
+    ban: { name: 'BAN Network', accent: '#ffd166', logo: 'N', plans: [
+      { id: 'node', name: 'Node Operator', price: 299, features: ['Run a node', 'Earn rewards', 'Dashboard'] },
+      { id: 'validator', name: 'Validator', price: 999, badge: 'Popular', features: ['Full validation', 'Higher rewards', 'Priority'] },
+    ]},
+    agriculture: { name: 'Rooted Earth', accent: '#00e57b', logo: 'R', plans: [
+      { id: 'farm', name: 'Farm', price: 249, features: ['Crop analytics', 'Weather alerts', 'Market prices'] },
+      { id: 'enterprise', name: 'Agri Enterprise', price: 1499, badge: 'Popular', features: ['Supply chain', 'Export management', 'AI optimization'] },
+    ]},
+    supaco: { name: 'Supaco Agency', accent: '#a78bfa', logo: 'S', plans: [
+      { id: 'starter', name: 'Starter', price: 999, features: ['Website + CRM', '5 campaigns/mo', 'Basic analytics'] },
+      { id: 'growth', name: 'Growth', price: 2999, badge: 'Popular', features: ['Full suite', 'Unlimited campaigns', 'AI content'] },
+      { id: 'agency', name: 'Agency', price: 7999, features: ['White-label', 'Client management', 'Revenue share'] },
+    ]},
+  };
+
+  var params = new URLSearchParams(window.location.search);
+  var verticalKey = params.get('vertical') || 'default';
+  var preselectedPlan = params.get('plan') || params.get('product') || null;
+  var vertical = VERTICALS[verticalKey] || VERTICALS['default'];
+  var selectedPlanId = null;
+  var accent = vertical.accent;
+
+  // Apply accent color as CSS custom property
+  document.documentElement.style.setProperty('--accent', accent);
+
+  // Set brand header
+  var logoArea = document.getElementById('logo-area');
+  logoArea.textContent = vertical.logo;
+  logoArea.style.background = accent;
+
+  var brandTitle = document.getElementById('brand-title');
+  brandTitle.textContent = 'Subscribe to ' + vertical.name;
+
+  document.getElementById('page-title').textContent = vertical.name + ' — Checkout';
+
+  // Render plan cards
+  var grid = document.getElementById('plans-grid');
+  vertical.plans.forEach(function(plan) {
+    var card = document.createElement('div');
+    card.className = 'plan-card';
+    card.setAttribute('data-plan', plan.id);
+
+    if (plan.badge) {
+      var badge = document.createElement('div');
+      badge.className = 'badge';
+      badge.textContent = plan.badge;
+      card.appendChild(badge);
+    }
+
+    var nameEl = document.createElement('div');
+    nameEl.className = 'plan-name';
+    nameEl.textContent = plan.name;
+    card.appendChild(nameEl);
+
+    var priceEl = document.createElement('div');
+    priceEl.className = 'plan-price';
+    priceEl.style.color = accent;
+    if (plan.price === 0) {
+      priceEl.textContent = 'Free';
+    } else {
+      priceEl.textContent = 'R' + plan.price.toLocaleString();
+      var perMo = document.createElement('span');
+      perMo.textContent = '/mo';
+      priceEl.appendChild(perMo);
+    }
+    card.appendChild(priceEl);
+
+    var ul = document.createElement('ul');
+    ul.className = 'plan-features';
+    plan.features.forEach(function(feat) {
+      var li = document.createElement('li');
+      li.textContent = feat;
+      li.style.setProperty('--dot-color', accent);
+      li.querySelector || null; // no-op
+      ul.appendChild(li);
+    });
+    card.appendChild(ul);
+
+    card.addEventListener('click', function() { selectPlan(plan.id); });
+    grid.appendChild(card);
+  });
+
+  // Set feature dot colors via CSS
+  var dotStyle = document.createElement('style');
+  dotStyle.textContent = '.plan-card .plan-features li::before{background:' + accent + '}';
+  document.head.appendChild(dotStyle);
+
+  // Pre-select plan
+  if (preselectedPlan) {
+    selectPlan(preselectedPlan);
   } else {
-    btn.textContent = `Pay R${prices[plan].toLocaleString()} via PayFast`;
+    // Select the plan with a badge, or the first one
+    var badgePlan = vertical.plans.find(function(p) { return p.badge; });
+    if (badgePlan) selectPlan(badgePlan.id);
+    else if (vertical.plans.length > 0) selectPlan(vertical.plans[0].id);
   }
-}
 
-async function checkout() {
-  const btn = document.getElementById('payBtn');
-  const msg = document.getElementById('msg');
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
+  function selectPlan(planId) {
+    selectedPlanId = planId;
+    var cards = grid.querySelectorAll('.plan-card');
+    cards.forEach(function(c) { c.classList.remove('selected'); });
+    var target = grid.querySelector('[data-plan="' + planId + '"]');
+    if (target) target.classList.add('selected');
 
-  if (!email) { msg.className = 'msg error'; msg.textContent = 'Email is required.'; return; }
+    var plan = vertical.plans.find(function(p) { return p.id === planId; });
+    var btn = document.getElementById('payBtn');
+    if (plan) {
+      if (plan.price === 0) {
+        btn.textContent = 'Get Started Free';
+      } else {
+        btn.textContent = 'Pay R' + plan.price.toLocaleString() + ' via PayFast';
+      }
+      btn.style.background = 'linear-gradient(135deg,' + accent + ',color-mix(in srgb,' + accent + ' 70%,#000))';
+    }
+  }
 
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
-  msg.className = 'msg'; msg.style.display = 'none';
+  // Checkout action
+  document.getElementById('payBtn').addEventListener('click', function() {
+    var btn = document.getElementById('payBtn');
+    var msg = document.getElementById('msg');
+    var nameVal = document.getElementById('name').value.trim();
+    var emailVal = document.getElementById('email').value.trim();
 
-  try {
-    const r = await fetch('/api/checkout', {
+    if (!emailVal) {
+      msg.className = 'msg error';
+      msg.textContent = 'Email is required.';
+      return;
+    }
+    if (!selectedPlanId) {
+      msg.className = 'msg error';
+      msg.textContent = 'Please select a plan.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+    msg.className = 'msg';
+    msg.style.display = 'none';
+
+    var payload = {
+      plan: selectedPlanId,
+      email: emailVal,
+      name: nameVal,
+      vertical: verticalKey !== 'default' ? verticalKey : undefined,
+      vertical_name: vertical.name,
+    };
+
+    fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan: selectedPlan, email, name }),
+      body: JSON.stringify(payload),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.ok) {
+        msg.className = 'msg error';
+        msg.textContent = d.error || 'Something went wrong.';
+        btn.disabled = false;
+        selectPlan(selectedPlanId);
+        return;
+      }
+
+      if (d.redirect) {
+        window.location.href = d.redirect;
+        return;
+      }
+
+      if (d.payfast_url && d.payfast_fields) {
+        msg.className = 'msg success';
+        msg.textContent = 'Redirecting to PayFast...';
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = d.payfast_url;
+        Object.keys(d.payfast_fields).forEach(function(k) {
+          var input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = k;
+          input.value = d.payfast_fields[k];
+          form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+      }
+    })
+    .catch(function() {
+      msg.className = 'msg error';
+      msg.textContent = 'Network error. Please try again.';
+      btn.disabled = false;
+      selectPlan(selectedPlanId);
     });
-    const d = await r.json();
+  });
 
-    if (!d.ok) {
-      msg.className = 'msg error'; msg.textContent = d.error || 'Something went wrong.';
-      btn.disabled = false; selectPlan(selectedPlan);
-      return;
-    }
-
-    if (d.redirect) {
-      window.location.href = d.redirect;
-      return;
-    }
-
-    if (d.payfast_url && d.payfast_fields) {
-      msg.className = 'msg success'; msg.textContent = 'Redirecting to PayFast...';
-      // Submit via hidden POST form (PayFast requires POST, not GET)
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = d.payfast_url;
-      Object.entries(d.payfast_fields).forEach(([k, v]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = k;
-        input.value = v;
-        form.appendChild(input);
-      });
-      document.body.appendChild(form);
-      form.submit();
-    }
-  } catch (e) {
-    msg.className = 'msg error'; msg.textContent = 'Network error. Please try again.';
-    btn.disabled = false; selectPlan(selectedPlan);
-  }
-}
+})();
 </script>
-<script src="/bridge-widget.js" defer></script>
 <script src="/global-nav.js" defer></script>
+<script src="/bridge-widget.js" defer></script>
 </body>
 </html>
