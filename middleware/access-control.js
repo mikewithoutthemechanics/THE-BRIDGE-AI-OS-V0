@@ -7,7 +7,17 @@
 
 'use strict';
 
+const crypto = require('crypto');
 const userDb = require('../lib/user-identity');
+
+// Timing-safe comparison to prevent timing attacks on secret tokens
+function safeCompare(a, b) {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 // ── Page Tier Definitions ──────────────────────────────────────────────────
 const PAGE_TIERS = {
@@ -96,14 +106,14 @@ function requireAdmin(req, res, next) {
 
   // Check admin token header
   const adminToken = req.headers['x-admin-token'];
-  if (adminToken && process.env.ADMIN_TOKEN && adminToken === process.env.ADMIN_TOKEN) {
+  if (adminToken && process.env.ADMIN_TOKEN && safeCompare(adminToken, process.env.ADMIN_TOKEN)) {
     req.user = user || { role: 'admin' };
     return next();
   }
 
   // Check bridge internal secret header
   const bridgeSecret = req.headers['x-bridge-secret'];
-  if (bridgeSecret && process.env.BRIDGE_INTERNAL_SECRET && bridgeSecret === process.env.BRIDGE_INTERNAL_SECRET) {
+  if (bridgeSecret && process.env.BRIDGE_INTERNAL_SECRET && safeCompare(bridgeSecret, process.env.BRIDGE_INTERNAL_SECRET)) {
     req.user = user || { role: 'admin' };
     return next();
   }
@@ -127,8 +137,8 @@ function requireSuperAdmin(req, res, next) {
 
   // Must pass admin check first (user role or headers)
   const isAdmin = (user && (user.role === 'admin' || user.role === 'superadmin'))
-    || (req.headers['x-admin-token'] && process.env.ADMIN_TOKEN && req.headers['x-admin-token'] === process.env.ADMIN_TOKEN)
-    || (req.headers['x-bridge-secret'] && process.env.BRIDGE_INTERNAL_SECRET && req.headers['x-bridge-secret'] === process.env.BRIDGE_INTERNAL_SECRET);
+    || (req.headers['x-admin-token'] && process.env.ADMIN_TOKEN && safeCompare(req.headers['x-admin-token'], process.env.ADMIN_TOKEN))
+    || (req.headers['x-bridge-secret'] && process.env.BRIDGE_INTERNAL_SECRET && safeCompare(req.headers['x-bridge-secret'], process.env.BRIDGE_INTERNAL_SECRET));
 
   if (!isAdmin) {
     if (wantsHtml(req)) {
@@ -139,7 +149,7 @@ function requireSuperAdmin(req, res, next) {
 
   // Additionally require CFO token
   const cfoToken = req.headers['x-cfo-token'];
-  if (!cfoToken || !process.env.CFO_TOKEN || cfoToken !== process.env.CFO_TOKEN) {
+  if (!cfoToken || !process.env.CFO_TOKEN || !safeCompare(cfoToken, process.env.CFO_TOKEN)) {
     if (wantsHtml(req)) {
       return res.status(403).send('<!DOCTYPE html><html><body style="background:#050a0f;color:#ff3c5a;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><h1>403 — CFO Authorization Required</h1></body></html>');
     }

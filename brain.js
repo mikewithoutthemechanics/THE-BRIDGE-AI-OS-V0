@@ -185,12 +185,13 @@ const state = {
   sensors: { mouse: { x: 0, y: 0, clicks: 0 }, wifi: { ssid: 'BridgeNet', strength: -45 } },
 };
 
-function mutateState(reducer, payload) {
+function mutateState(reducer, payload, mutationFn) {
+  // If a mutation callback is provided, apply it before hashing
+  if (typeof mutationFn === 'function') {
+    mutationFn(state);
+  }
   stateVersion++;
-  // ARCHITECTURAL NOTE: This hash is computed BEFORE the caller applies its mutation to `state`,
-  // because mutateState() is typically called before the actual state change occurs in the caller.
-  // The broadcast therefore sends a stale hash. To fix properly, callers should mutate state
-  // first, then call mutateState(), or this function should accept the mutation as a callback.
+  // Hash is computed AFTER the mutation so the broadcast reflects the current state
   const hash = crypto.createHash('md5').update(JSON.stringify(state)).digest('hex').slice(0, 12);
   broadcast({ type: 'stateMutation', reducer, payload, state_version: stateVersion, state_hash: `0x${hash}` });
   return { state_version: stateVersion, state_hash: `0x${hash}` };
