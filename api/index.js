@@ -186,6 +186,11 @@ const infraFb  = require('../lib/infra-feedback');
 const wp       = require('../lib/wordpress');
 const mail     = require('../lib/mail');
 
+// ── Zero-Trust Verification Layer ──────────────────────────────────────────
+const zt          = require('../lib/zero-trust');
+const proofStore  = require('../lib/proof-store');
+const chainVerify = require('../lib/chain-verify');
+
 // Seed system banks on first cold start (no-op if already seeded)
 banks.seedBanksIfEmpty().catch(() => {});
 
@@ -1837,7 +1842,19 @@ module.exports = async (req, res) => {
       const newBalance = await db.addToTreasury(amount, `PayFast:${paymentId}`);
       treasuryBalance = newBalance;
 
-      // 4b. Split payment across all banks
+      // 4b. Record cryptographic payment proof (zero-trust chain)
+      proofStore.recordPayment({
+        id: paymentId,
+        amount,
+        currency: 'ZAR',
+        source: 'payfast',
+        webhookId: body.pf_payment_id || paymentId,
+        webhookSignature: { method: 'MD5-HMAC', verified: true },
+        timestamp: new Date().toISOString(),
+        meta: { plan: body.custom_str1, email: body.email_address },
+      }).catch(e => console.warn('[PAYFAST] Proof recording failed:', e.message));
+
+      // 4c. Split payment across all banks
       banks.splitPayment(amount, paymentId, body.email_address || 'PayFast').catch(e =>
         console.warn('[PAYFAST] Bank split failed:', e.message)
       );
@@ -2677,6 +2694,137 @@ module.exports = async (req, res) => {
     } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ZERO-TRUST VERIFICATION ENDPOINTS
+  // Every response is cryptographically signed. Every metric links to source.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ── /api/metrics/token — on-chain derived, trustless ──
+  if (p === '/api/metrics/token') {
+    try {
+      const metrics = await chainVerify.getVerifiedTokenMetrics();
+      return json(res, zt.signResponse({
+        ok: true, ...metrics, source: 'on-chain', trustLevel: 'trustless',
+      }, 'api-response'));
+    } catch (e) {
+      return json(res, { ok: false, error: e.message, source: 'on-chain', fallback: true }, 503);
+    }
+  }
+
+  // ── /api/metrics/treasury — signed + source-linked (on-chain + off-chain) ──
+  if (p === '/api/metrics/treasury') {
+    try {
+      const treasury = await chainVerify.getVerifiedTreasury();
+      return json(res, zt.signResponse({
+        ok: true, ...treasury, source: 'hybrid',
+        trustLevel: { onChain: 'trustless', offChain: 'signed-attestation' },
+      }, 'api-response'));
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 503);
+    }
+  }
+
+  // ── /api/metrics/revenue — hash-linked, derived from proof chain ──
+  if (p === '/api/metrics/revenue') {
+    try {
+      const revenue = await proofStore.getVerifiedRevenue();
+      return json(res, zt.signResponse({
+        ok: true, ...revenue, source: 'payment_proof_chain',
+        trustLevel: 'hash-chain — every payment cryptographically linked',
+      }, 'api-response'));
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 503);
+    }
+  }
+
+  // ── /api/metrics/vault — on-chain vault bucket balances ──
+  if (p === '/api/metrics/vault') {
+    try {
+      const vault = await chainVerify.getVerifiedVaultBuckets();
+      return json(res, zt.signResponse({
+        ok: true, ...vault, source: 'on-chain', trustLevel: 'trustless',
+      }, 'api-response'));
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 503);
+    }
+  }
+
+  // ── /api/verify/payment/:id — public payment verification ──
+  if (p.startsWith('/api/verify/payment/')) {
+    const txId = p.split('/api/verify/payment/')[1];
+    if (!txId) return json(res, { error: 'transaction_id required' }, 400);
+    const proof = await proofStore.getProof(txId);
+    if (!proof) return json(res, { error: 'proof_not_found', transactionId: txId }, 404);
+    const merkle = await proofStore.getMerkleProof(txId);
+    return json(res, zt.signResponse({
+      ok: true, proof, merkleInclusion: merkle,
+      howToVerify: [
+        '1. Recompute txHash: SHA-256("id|amount|currency|source|timestamp|previousHash")',
+        '2. Verify txHash matches the proof',
+        '3. Check previousHash links to prior transaction in the chain',
+        '4. If Merkle-anchored: verify inclusion proof against on-chain root',
+      ],
+    }, 'api-response'));
+  }
+
+  // ── /api/verify/chain — verify entire payment hash chain integrity ──
+  if (p === '/api/verify/chain') {
+    const result = await proofStore.verifyChain();
+    return json(res, zt.signResponse({
+      ok: true, chainIntegrity: result,
+      howToVerify: [
+        '1. Fetch all proofs via /api/proofs/payments',
+        '2. For each proof: recompute SHA-256(canonical fields + previousHash)',
+        '3. Verify each hash matches and previous_hash links are intact',
+        '4. Any break in the chain indicates tampering',
+      ],
+    }, 'api-response'));
+  }
+
+  // ── /api/verify/info — public verification metadata (no secrets) ──
+  if (p === '/api/verify/info') {
+    try {
+      return json(res, {
+        ok: true, ...zt.getVerificationInfo(),
+        contracts: {
+          brdg: { address: chainVerify.BRDG_ADDRESS, explorer: `${chainVerify.LINEASCAN_BASE}/token/${chainVerify.BRDG_ADDRESS}` },
+          vault: { address: chainVerify.VAULT_ADDRESS, explorer: `${chainVerify.LINEASCAN_BASE}/address/${chainVerify.VAULT_ADDRESS}` },
+          treasury: { address: chainVerify.TREASURY_OWNER, explorer: `${chainVerify.LINEASCAN_BASE}/address/${chainVerify.TREASURY_OWNER}` },
+        },
+        chain: { name: 'Linea', chainId: 59144, rpc: 'https://rpc.linea.build' },
+      });
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 500);
+    }
+  }
+
+  // ── /api/verify/response — verify a signed API response envelope ──
+  if (p === '/api/verify/response' && req.method === 'POST') {
+    const body = await parseBody(req);
+    if (!body || !body._proof) return json(res, { error: 'signed envelope required (must have _proof field)' }, 400);
+    const valid = zt.verifyResponse(body, body._proof.purpose || 'api-response');
+    return json(res, { ok: true, valid, keyId: body._proof?.keyId, timestamp: body._proof?.timestamp });
+  }
+
+  // ── /api/proofs/payments — list all payment proofs ──
+  if (p === '/api/proofs/payments') {
+    const limit = parseInt(url.searchParams.get('limit') || '100');
+    const proofs = await proofStore.getAllProofs(limit);
+    return json(res, zt.signResponse({
+      ok: true, proofs, count: proofs.length,
+    }, 'api-response'));
+  }
+
+  // ── /api/proofs/merkle — list Merkle anchors ──
+  if (p === '/api/proofs/merkle') {
+    try {
+      const anchor = await proofStore.createMerkleAnchor();
+      return json(res, zt.signResponse({ ok: true, anchor }, 'api-response'));
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 500);
+    }
+  }
+
   // ── 404 ──
   return json(res, { error: 'not_found', path: p, available: [
     '/health', '/api/health', '/api/brain', '/api/topology', '/api/avatar/{mode}',
@@ -2697,5 +2845,9 @@ module.exports = async (req, res) => {
     '/api/economy/balances', '/api/economy/balance/:agentId', '/api/economy/stats',
     '/api/economy/flow', '/api/economy/tasks', '/api/economy/loop-stats',
     '/api/economy/run-cycle (cron)',
+    // Zero-Trust Verification
+    '/api/metrics/token', '/api/metrics/treasury', '/api/metrics/revenue', '/api/metrics/vault',
+    '/api/verify/payment/:id', '/api/verify/chain', '/api/verify/info', '/api/verify/response (POST)',
+    '/api/proofs/payments', '/api/proofs/merkle',
   ] }, 404);
 };

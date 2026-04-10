@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bridge AI OS — Revenue Dashboard</title>
+<title>Bridge AI OS — Verified Revenue Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--red:#ff3c5a;--purple:#a78bfa;--orange:#fb923c;--dim:#4d6678;--text:#e0e8f0}
+:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--red:#ff3c5a;--purple:#a78bfa;--orange:#fb923c;--dim:#4d6678;--text:#e0e8f0;--verified:#00e57b;--signed:#00c8ff;--chain:#a78bfa}
 body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:1.5rem;line-height:1.5}
 h1{font-size:1.6rem;font-weight:700;margin-bottom:.3rem}
 .sub{color:var(--dim);font-size:.85rem;margin-bottom:1.5rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:1.5rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative}
 .card .label{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
 .card .value{font-size:1.8rem;font-weight:800;margin:.3rem 0}
 .card .detail{font-size:.8rem;color:var(--dim)}
@@ -21,35 +21,87 @@ h1{font-size:1.6rem;font-weight:700;margin-bottom:.3rem}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
 th{text-align:left;color:var(--dim);font-weight:500;padding:.5rem;border-bottom:1px solid var(--border)}
 td{padding:.5rem;border-bottom:1px solid rgba(26,45,64,.4)}
-.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.7rem;font-weight:600}
-.badge-live{background:rgba(0,229,123,.15);color:var(--green)}
-.badge-pending{background:rgba(255,209,102,.15);color:var(--orange)}
-.badge-free{background:rgba(77,102,120,.2);color:var(--dim)}
 .refresh{position:fixed;top:1rem;right:1rem;background:var(--surface);border:1px solid var(--border);color:var(--cyan);padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.8rem}
 .refresh:hover{border-color:var(--cyan)}
 .pulse{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 #log{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:monospace;font-size:.75rem;max-height:200px;overflow-y:auto;color:var(--dim)}
+.v-badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:600;padding:2px 8px;border-radius:10px;position:absolute;top:.75rem;right:.75rem;text-decoration:none}
+.v-onchain{background:rgba(0,229,123,.12);color:var(--verified)}
+.v-signed{background:rgba(0,200,255,.12);color:var(--signed)}
+.v-chain{background:rgba(167,139,250,.12);color:var(--chain)}
+.v-error{background:rgba(255,60,90,.12);color:var(--red)}
+.v-link{font-size:.7rem;color:var(--cyan);text-decoration:none}
+.v-link:hover{text-decoration:underline}
+.v-source{font-size:.7rem;color:var(--dim);margin-top:.3rem}
+.trust-bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--dim)}
+.trust-dot{width:8px;height:8px;border-radius:50%}
+.trust-dot.onchain{background:var(--verified)}.trust-dot.hash{background:var(--chain)}.trust-dot.signed{background:var(--signed)}
+.sig-footer{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:monospace;font-size:.7rem;color:var(--dim);margin-top:1rem;word-break:break-all}
+.sig-footer .sig-label{color:var(--cyan);font-weight:600}
 </style>
 </head>
 <body>
 <button class="refresh" onclick="loadAll()">Refresh</button>
-<h1>Revenue Dashboard</h1>
-<p class="sub"><span class="pulse"></span> Bridge AI OS — Live Production Metrics</p>
+<h1>Verified Revenue Dashboard</h1>
+<p class="sub"><span class="pulse"></span> Bridge AI OS — Zero-Trust Metrics (every value cryptographically verifiable)</p>
+
+<div class="trust-bar">
+  <div class="trust-item"><span class="trust-dot onchain"></span> On-chain (trustless)</div>
+  <div class="trust-item"><span class="trust-dot hash"></span> Hash-chain (tamper-evident)</div>
+  <div class="trust-item"><span class="trust-dot signed"></span> Signed attestation</div>
+</div>
 
 <div class="grid" id="kpis">
-  <div class="card"><div class="label">Treasury Balance</div><div class="value cyan" id="k-balance">--</div><div class="detail">Off-chain (USD)</div></div>
-  <div class="card"><div class="label">Revenue MTD</div><div class="value green" id="k-earned">--</div><div class="detail">Earned this period</div></div>
-  <div class="card"><div class="label">BRDG Supply</div><div class="value purple" id="k-brdg">--</div><div class="detail">On-chain (Linea)</div></div>
-  <div class="card"><div class="label">BRDG Burned</div><div class="value orange" id="k-burned">--</div><div class="detail">Deflationary 1%</div></div>
-  <div class="card"><div class="label">LLM Requests</div><div class="value cyan" id="k-llm">--</div><div class="detail" id="k-llm-cost">$0.00 cost</div></div>
-  <div class="card"><div class="label">LLM Provider</div><div class="value green" id="k-provider">--</div><div class="detail" id="k-model">--</div></div>
+  <div class="card" id="card-treasury">
+    <span class="v-badge v-signed" id="badge-treasury">Signed</span>
+    <div class="label">Treasury Balance (Fiat)</div>
+    <div class="value cyan" id="k-balance">--</div>
+    <div class="detail">Off-chain (ZAR) — reconciled from payment proofs</div>
+    <div class="v-source" id="src-treasury">Source: signed attestation</div>
+  </div>
+  <div class="card" id="card-revenue">
+    <span class="v-badge v-chain" id="badge-revenue">Hash-chain</span>
+    <div class="label">Revenue MTD</div>
+    <div class="value green" id="k-earned">--</div>
+    <div class="detail" id="k-earned-detail">Derived from payment proof chain</div>
+    <div class="v-source" id="src-revenue">Source: proof chain</div>
+  </div>
+  <div class="card" id="card-brdg">
+    <a class="v-badge v-onchain" id="badge-brdg" href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947" target="_blank" rel="noopener">On-chain</a>
+    <div class="label">BRDG Supply</div>
+    <div class="value purple" id="k-brdg">--</div>
+    <div class="detail">On-chain (Linea L2) — read from contract</div>
+    <div class="v-source" id="src-brdg">Source: LineaScan | Block: <span id="brdg-block">--</span></div>
+  </div>
+  <div class="card" id="card-burned">
+    <a class="v-badge v-onchain" id="badge-burned" href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947" target="_blank" rel="noopener">On-chain</a>
+    <div class="label">BRDG Burned</div>
+    <div class="value orange" id="k-burned">--</div>
+    <div class="detail">Deflationary 1% burn on transfers</div>
+    <div class="v-source" id="src-burned">Source: totalBurned() contract call</div>
+  </div>
+  <div class="card" id="card-vault">
+    <a class="v-badge v-onchain" id="badge-vault" href="https://lineascan.build/address/0xDb8d8ca8A65d36eFbD5C84C145B58Ee62C872d88" target="_blank" rel="noopener">On-chain</a>
+    <div class="label">Vault ETH</div>
+    <div class="value cyan" id="k-vault-eth">--</div>
+    <div class="detail">TreasuryVault contract balance</div>
+    <div class="v-source" id="src-vault">Source: TreasuryVault contract</div>
+  </div>
+  <div class="card" id="card-chain">
+    <span class="v-badge v-chain" id="badge-chain">Hash-chain</span>
+    <div class="label">Proof Chain</div>
+    <div class="value green" id="k-chain-status">--</div>
+    <div class="detail" id="k-chain-detail">-- transactions verified</div>
+    <div class="v-source"><a class="v-link" href="/api/verify/chain" target="_blank" rel="noopener">Verify chain integrity</a></div>
+  </div>
 </div>
 
 <div class="section">
   <h2>Payment Rails</h2>
   <table id="rails-table">
-    <thead><tr><th>Rail</th><th>Status</th><th>Currency</th><th>Endpoint</th></tr></thead>
+    <thead><tr><th>Rail</th><th>Status</th><th>Currency</th><th>Proof Method</th><th>Verification</th></tr></thead>
     <tbody></tbody>
   </table>
 </div>
@@ -63,14 +115,29 @@ td{padding:.5rem;border-bottom:1px solid rgba(26,45,64,.4)}
 </div>
 
 <div class="section">
-  <h2>BRDG Token (On-Chain)</h2>
+  <h2>BRDG Token (On-Chain Verified)</h2>
   <table id="brdg-table">
-    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <thead><tr><th>Metric</th><th>Value</th><th>Verification</th></tr></thead>
     <tbody></tbody>
   </table>
 </div>
 
 <div class="section">
+  <h2>Recent Payment Proofs</h2>
+  <table id="proofs-table">
+    <thead><tr><th>Transaction</th><th>Amount</th><th>Source</th><th>Hash (first 16)</th><th>Verify</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="sig-footer" id="sig-footer">
+  <div><span class="sig-label">Response Signature:</span> <span id="sig-value">--</span></div>
+  <div><span class="sig-label">Key ID:</span> <span id="sig-keyid">--</span></div>
+  <div><span class="sig-label">Timestamp:</span> <span id="sig-ts">--</span></div>
+  <div><span class="sig-label">Verify:</span> <a class="v-link" href="/api/verify/info" target="_blank" rel="noopener">/api/verify/info</a></div>
+</div>
+
+<div class="section" style="margin-top:1rem">
   <h2>Event Log</h2>
   <div id="log"></div>
 </div>
@@ -82,8 +149,7 @@ const fmt = n => parseFloat(n).toLocaleString(undefined, {maximumFractionDigits:
 function addLogEntry(msg) {
   const log = $('log');
   const div = document.createElement('div');
-  const ts = new Date().toLocaleTimeString();
-  div.textContent = '[' + ts + '] ' + msg;
+  div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
   log.prepend(div);
   while (log.children.length > 100) log.removeChild(log.lastChild);
 }
@@ -94,108 +160,198 @@ function clearTable(id) {
   return tbody;
 }
 
+function makeLink(text, href) {
+  const a = document.createElement('a');
+  a.textContent = text;
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.className = 'v-link';
+  return a;
+}
+
 function addRow(tbody, cells) {
   const tr = document.createElement('tr');
-  cells.forEach(text => {
+  cells.forEach(cell => {
     const td = document.createElement('td');
-    td.textContent = text;
+    if (typeof cell === 'string' || typeof cell === 'number') {
+      td.textContent = cell;
+    } else if (cell instanceof Node) {
+      td.appendChild(cell);
+    }
     tr.appendChild(td);
   });
   tbody.appendChild(tr);
 }
 
-async function loadAll() {
-  // Treasury
-  try {
-    const r = await fetch('/api/treasury/status');
-    const d = await r.json();
-    if (d.ok) {
-      $('k-balance').textContent = '$' + fmt(d.balance);
-      $('k-earned').textContent = '$' + fmt(d.earned);
-      if (d.brdg_token) {
-        $('k-brdg').textContent = fmt(d.brdg_token.totalSupply);
-        $('k-burned').textContent = fmt(d.brdg_token.totalBurned);
-      }
-    }
-  } catch(_) {}
+function updateSigFooter(envelope) {
+  if (envelope && envelope._proof) {
+    $('sig-value').textContent = envelope._proof.signature;
+    $('sig-keyid').textContent = envelope._proof.keyId;
+    $('sig-ts').textContent = new Date(envelope._proof.timestamp).toISOString();
+  }
+}
 
-  // BRDG on-chain
+function setBadgeError(badgeId, msg) {
+  const badge = $(badgeId);
+  if (badge) { badge.className = 'v-badge v-error'; badge.textContent = msg || 'Unavailable'; }
+}
+
+async function loadAll() {
+  addLogEntry('Fetching verified metrics...');
+
+  // ── Token metrics (on-chain) ──
   try {
-    const r = await fetch('/api/brdg/token');
+    const r = await fetch('/api/metrics/token');
     const d = await r.json();
-    if (d.ok && d.token) {
-      $('k-brdg').textContent = fmt(d.token.totalSupply);
-      $('k-burned').textContent = fmt(d.token.totalBurned);
+    if (d.data && d.data.ok) {
+      const tok = d.data.token;
+      const tres = d.data.treasury;
+      $('k-brdg').textContent = fmt(tok.totalSupply) + ' BRDG';
+      $('k-burned').textContent = fmt(tok.totalBurned) + ' BRDG';
+      $('k-vault-eth').textContent = tres.vault.ethBalance + ' ETH';
+      $('brdg-block').textContent = d.data.readAt.blockNumber || 'N/A';
+
+      const links = tok.verification.links;
+      $('badge-brdg').href = links.contract;
+      $('badge-burned').href = links.contract;
+      $('badge-vault').href = tres.verification.links.vaultContract;
+
+      // Update source links safely
+      $('src-brdg').textContent = '';
+      $('src-brdg').appendChild(document.createTextNode('Source: '));
+      $('src-brdg').appendChild(makeLink(tok.address.slice(0, 10) + '...', links.contract));
+      $('src-brdg').appendChild(document.createTextNode(' | Block: ' + (d.data.readAt.blockNumber || 'N/A')));
+
+      $('src-vault').textContent = '';
+      $('src-vault').appendChild(document.createTextNode('Source: '));
+      $('src-vault').appendChild(makeLink('Vault on LineaScan', tres.verification.links.vaultContract));
+
+      // BRDG detail table
       const tbody = clearTable('brdg-table');
-      addRow(tbody, ['Contract', d.token.address]);
-      addRow(tbody, ['Chain', d.token.chain + ' (' + d.token.chainId + ')']);
-      addRow(tbody, ['Total Supply', fmt(d.token.totalSupply) + ' BRDG']);
-      addRow(tbody, ['Max Supply', fmt(d.token.maxSupply) + ' BRDG']);
-      addRow(tbody, ['Total Burned', fmt(d.token.totalBurned) + ' BRDG']);
-      addRow(tbody, ['Burn Rate', d.token.burnRate]);
-      addRow(tbody, ['Treasury BRDG', fmt(d.treasury.brdgBalance) + ' BRDG']);
-      addRow(tbody, ['Treasury Owner', d.treasury.owner]);
-      addRow(tbody, ['Vault ETH', d.treasury.vault.ethBalance + ' ETH']);
-      addRow(tbody, ['Lineascan', d.lineascan]);
+      addRow(tbody, ['Contract', tok.address, makeLink('LineaScan', links.contract)]);
+      addRow(tbody, ['Chain', tok.chain + ' (' + tok.chainId + ')', 'chainId: ' + tok.chainId]);
+      addRow(tbody, ['Total Supply', fmt(tok.totalSupply) + ' BRDG', makeLink('Read contract', tok.verification.methods.totalSupply.explorerLink)]);
+      addRow(tbody, ['Max Supply', fmt(tok.maxSupply) + ' BRDG', tok.verification.methods.maxSupply.call]);
+      addRow(tbody, ['Total Burned', fmt(tok.totalBurned) + ' BRDG', makeLink('Read contract', tok.verification.methods.totalBurned.explorerLink)]);
+      addRow(tbody, ['Burn Rate', tok.burnRate, 'BURN_BPS constant']);
+      addRow(tbody, ['Treasury BRDG', fmt(tres.brdgBalance) + ' BRDG', makeLink('Verify balance', tres.verification.methods.ownerBalance.explorerLink)]);
+      addRow(tbody, ['Vault ETH', tres.vault.ethBalance + ' ETH', makeLink('Verify balance', tres.verification.methods.vaultEth.explorerLink)]);
+      addRow(tbody, ['Block #', String(d.data.readAt.blockNumber), 'Proves freshness of read']);
+
+      updateSigFooter(d);
+      addLogEntry('Token metrics loaded (on-chain, block ' + d.data.readAt.blockNumber + ')');
     }
-  } catch(_) {
-    const tbody = clearTable('brdg-table');
-    addRow(tbody, ['Status', 'On-chain data unavailable (ethers not installed on VPS)']);
+  } catch (e) {
+    setBadgeError('badge-brdg', 'RPC Error');
+    setBadgeError('badge-burned', 'RPC Error');
+    setBadgeError('badge-vault', 'RPC Error');
+    addLogEntry('Token metrics failed: ' + e.message);
   }
 
-  // LLM
+  // ── Treasury (hybrid: on-chain + signed) ──
   try {
-    const r = await fetch('/api/llm/status');
+    const r = await fetch('/api/metrics/treasury');
     const d = await r.json();
-    if (d.ok) {
-      $('k-llm').textContent = d.usage.total_requests;
-      $('k-llm-cost').textContent = '$' + (d.usage.total_cost_usd || 0).toFixed(4) + ' total cost';
-      if (d.providers && d.providers.length > 0) {
-        $('k-provider').textContent = d.providers[0].name;
-        $('k-model').textContent = d.providers[0].model;
-      } else {
-        $('k-provider').textContent = 'None';
-        $('k-model').textContent = 'Set KILO_API_KEY';
-      }
+    if (d.data && d.data.ok) {
+      const combined = d.data.combined;
+      $('k-balance').textContent = 'R' + fmt(combined.fiatZar);
+      $('src-treasury').textContent = '';
+      $('src-treasury').appendChild(document.createTextNode('Source: signed attestation | '));
+      $('src-treasury').appendChild(makeLink('raw data', '/api/metrics/treasury'));
+      updateSigFooter(d);
+      addLogEntry('Treasury loaded (fiat: R' + fmt(combined.fiatZar) + ', ETH: ' + combined.cryptoEth + ')');
     }
-  } catch(_) {}
+  } catch (e) {
+    setBadgeError('badge-treasury', 'Error');
+    addLogEntry('Treasury metrics failed: ' + e.message);
+  }
 
-  // Plans
+  // ── Revenue (hash-chain derived) ──
   try {
-    const r = await fetch('/api/plans');
+    const r = await fetch('/api/metrics/revenue');
     const d = await r.json();
-    if (d.ok) {
+    if (d.data && d.data.ok) {
+      $('k-earned').textContent = 'R' + fmt(d.data.revenueMtd);
+      $('k-earned-detail').textContent = d.data.transactionCount + ' verified transactions | Total: R' + fmt(d.data.totalRevenue);
+
+      $('src-revenue').textContent = '';
+      $('src-revenue').appendChild(document.createTextNode('Source: '));
+      $('src-revenue').appendChild(makeLink('proof chain (' + d.data.transactionCount + ' tx)', '/api/verify/chain'));
+
+      const ci = d.data.chainIntegrity;
+      $('k-chain-status').textContent = ci.valid ? 'INTACT' : 'BROKEN';
+      $('k-chain-status').className = 'value ' + (ci.valid ? 'green' : 'red');
+      $('k-chain-detail').textContent = ci.length + ' transactions verified';
+      if (!ci.valid) setBadgeError('badge-chain', 'BROKEN at #' + ci.brokenAt);
+
+      updateSigFooter(d);
+      addLogEntry('Revenue loaded (MTD: R' + fmt(d.data.revenueMtd) + ', chain: ' + (ci.valid ? 'intact' : 'BROKEN') + ')');
+    }
+  } catch (e) {
+    addLogEntry('Revenue metrics failed: ' + e.message);
+  }
+
+  // ── Plans ──
+  try {
+    const r = await fetch('/api/pricing');
+    const d = await r.json();
+    if (d.plans) {
       const tbody = clearTable('plans-table');
-      Object.entries(d.plans).forEach(([id, p]) => {
-        addRow(tbody, [p.name, p.price === 0 ? 'Free' : 'R' + p.price.toLocaleString() + '/mo', p.description]);
+      d.plans.forEach(function(p) {
+        addRow(tbody, [p.name, p.price === 0 ? 'Free' : 'R' + p.price.toLocaleString() + '/mo', (p.features || []).join(', ')]);
       });
     }
   } catch(_) {}
 
-  // Payment rails (static)
-  const railsTbody = clearTable('rails-table');
-  [
-    ['PayFast', 'live', 'ZAR', '/api/payments/webhook/payfast'],
-    ['Paystack', 'live', 'NGN/USD', '/api/payments/webhook/paystack'],
-    ['Crypto (ETH)', 'live', 'ETH', '/api/payments/webhook/crypto'],
-    ['BRDG Token', 'live', 'BRDG', 'Linea L2'],
-    ['Stripe', 'pending', 'USD/EUR', 'Not configured'],
-  ].forEach(([name, status, currency, ep]) => {
-    addRow(railsTbody, [name, status, currency, ep]);
+  // ── Payment Rails ──
+  var railsTbody = clearTable('rails-table');
+  var rails = [
+    { name: 'PayFast', status: 'live', currency: 'ZAR', proof: 'MD5-HMAC webhook + server validation', verifyText: 'Proof chain', verifyHref: '/api/verify/chain' },
+    { name: 'Paystack', status: 'pending', currency: 'NGN/USD', proof: 'SHA-512 webhook signature', verifyText: 'Not yet connected', verifyHref: null },
+    { name: 'Crypto (ETH)', status: 'live', currency: 'ETH', proof: 'On-chain transaction hash', verifyText: 'LineaScan', verifyHref: 'https://lineascan.build/address/0xDb8d8ca8A65d36eFbD5C84C145B58Ee62C872d88' },
+    { name: 'BRDG Token', status: 'live', currency: 'BRDG', proof: 'ERC-20 Transfer event log', verifyText: 'LineaScan', verifyHref: 'https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947' },
+    { name: 'Stripe', status: 'pending', currency: 'USD/EUR', proof: 'Stripe webhook signature (v1)', verifyText: 'Not configured', verifyHref: null },
+  ];
+  rails.forEach(function(rail) {
+    var verifyCell = rail.verifyHref ? makeLink(rail.verifyText, rail.verifyHref) : rail.verifyText;
+    addRow(railsTbody, [rail.name, rail.status, rail.currency, rail.proof, verifyCell]);
   });
 
-  addLogEntry('Dashboard refreshed');
+  // ── Recent payment proofs ──
+  try {
+    const r = await fetch('/api/proofs/payments?limit=10');
+    const d = await r.json();
+    if (d.data && d.data.proofs) {
+      const tbody = clearTable('proofs-table');
+      const proofs = d.data.proofs;
+      if (proofs.length === 0) {
+        addRow(tbody, ['No payments recorded yet', '--', '--', '--', '--']);
+      } else {
+        proofs.forEach(function(p) {
+          var txId = p.transaction_id || p.transactionId;
+          var hash = (p.tx_hash || p.txHash || '').slice(0, 16) + '...';
+          addRow(tbody, [txId, 'R' + fmt(p.amount), p.source, hash, makeLink('Verify', '/api/verify/payment/' + encodeURIComponent(txId))]);
+        });
+      }
+    }
+  } catch (e) {
+    addLogEntry('Payment proofs failed: ' + e.message);
+  }
+
+  addLogEntry('Dashboard refreshed (zero-trust mode)');
 }
 
 // SSE live events
 try {
-  const es = new EventSource('/events/stream');
-  es.onmessage = (e) => {
+  var es = new EventSource('/events/stream');
+  es.onmessage = function(e) {
     try {
-      const d = JSON.parse(e.data);
-      let msg = d.type;
+      var d = JSON.parse(e.data);
+      var msg = d.type;
       if (d.data && d.data.amount) msg += ' R' + d.data.amount;
-      if (d.data && d.data.balance) msg += ' balance: $' + fmt(d.data.balance);
+      if (d.data && d.data.balance) msg += ' balance: R' + fmt(d.data.balance);
+      if (d.eventHash) msg += ' [hash:' + d.eventHash.slice(0, 8) + ']';
       addLogEntry(msg);
     } catch(_) {}
   };
