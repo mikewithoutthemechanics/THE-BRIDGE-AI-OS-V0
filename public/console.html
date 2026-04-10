@@ -394,6 +394,11 @@
     var cmd = parts[0].toLowerCase();
     var args = parts.slice(1);
 
+    // Auto-prefix / if user types bare command name
+    if (!cmd.startsWith('/') && ['help','clear','agents','agent','chain','process','memory','primes','economy','status','ls','pwd','whoami'].indexOf(cmd) !== -1) {
+      cmd = '/' + cmd;
+    }
+
     switch (cmd) {
 
       case '/help':
@@ -409,7 +414,11 @@
         writeLn('  ' + C.bold('/primes') + '                 List prime agents');
         writeLn('  ' + C.bold('/economy') + '                Show economy stats');
         writeLn('  ' + C.bold('/status') + '                 System health check');
+        writeLn('  ' + C.bold('ls') + '                      List virtual filesystem');
+        writeLn('  ' + C.bold('pwd') + '                     Show current path');
+        writeLn('  ' + C.bold('whoami') + '                  Show session identity');
         writeLn('');
+        writeLn('  ' + C.dim('Tip: / prefix is optional — "help" and "/help" both work'));
         prompt();
         return;
 
@@ -605,9 +614,32 @@
         prompt();
         return;
 
+      case '/ls':
+        writeLn('');
+        writeLn('  ' + C.cyan('Bridge AI OS — Virtual Filesystem'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  agents/       ' + C.dim('35 AI agents'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  treasury/     ' + C.dim('On-chain vaults'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  economy/      ' + C.dim('BRDG token system'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  skills/       ' + C.dim('1,266 skill modules'));
+        writeLn('  ' + C.dim('-rw-r-----') + '  config.json   ' + C.dim('System configuration'));
+        writeLn('  ' + C.dim('-rw-r-----') + '  status.log    ' + C.dim('Health matrix'));
+        writeLn('');
+        prompt();
+        return;
+
+      case '/pwd':
+        writeLn('  /bridge-ai-os/v3');
+        prompt();
+        return;
+
+      case '/whoami':
+        writeLn('  ' + C.cyan('bridge@v3') + ' — Session ' + sessionId);
+        prompt();
+        return;
+
       default:
-        writeLn('  ' + C.red('Unknown command: ') + C.yellow(cmd));
-        writeLn('  ' + C.dim('Type /help for available commands'));
+        writeLn('  ' + C.red('Unknown command: ') + C.yellow(parts[0]));
+        writeLn('  ' + C.dim('Type /help or just type a question'));
         writeLn('');
         prompt();
         return;
