@@ -1222,9 +1222,30 @@ app.get('/api/treasury', async (_req, res) => {
 app.get('/api/wallet/balance', async (_req, res) => {
   try {
     const balance = await db.getTreasuryBalance();
-    const walletBal = +(balance * 0.05).toFixed(2);
-    res.json({ ok: true, balance: walletBal, usd_value: walletBal, currency: 'ZAR', ts: Date.now() });
-  } catch (e) { res.json({ ok: true, balance: 0 }); }
+    // Get on-chain BRDG and ETH if available
+    var brdgBal = 0, ethBal = 0;
+    try {
+      var brdgChain = require('./lib/brdg-chain');
+      var stats = await brdgChain.getTokenStats();
+      brdgBal = parseFloat(stats.treasury.brdgBalance) || 0;
+      ethBal = parseFloat(stats.treasury.vault.ethBalance) || 0;
+    } catch (_) {}
+    var totalUsd = +(balance * 0.05 + brdgBal * 0.015 + ethBal * 3200).toFixed(2);
+    res.json({
+      ok: true, balance: totalUsd, total: totalUsd, total_usd: totalUsd,
+      brdg: brdgBal, BRDG: brdgBal,
+      eth: ethBal, ETH: ethBal,
+      usdt: 0,
+      currency: 'ZAR',
+      address: '0xAC301f984556c11ecf3818CaA6020d11c8616F64',
+      balances: [
+        { symbol: 'BRDG', amount: brdgBal, usd: +(brdgBal * 0.015).toFixed(2) },
+        { symbol: 'ETH', amount: ethBal, usd: +(ethBal * 3200).toFixed(2) },
+        { symbol: 'ZAR', amount: +(balance * 0.05).toFixed(2), usd: +(balance * 0.05).toFixed(2) },
+      ],
+      ts: Date.now(),
+    });
+  } catch (e) { res.json({ ok: true, balance: 0, total: 0, brdg: 0, eth: 0 }); }
 });
 
 app.get('/api/defi/status', async (_req, res) => {
