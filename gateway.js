@@ -22,7 +22,7 @@
 //   GET  /api/contracts           — all JSON contract files from shared/
 // =============================================================================
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env'), override: true });
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const path = require('path');

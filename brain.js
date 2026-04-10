@@ -16,7 +16,7 @@
 // Every module the BridgeLiveWall frontend expects on :8000
 // =============================================================================
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env'), override: true });
 const express = require('express');
 const http = require('http');
 const { WebSocket, WebSocketServer } = require('ws');
