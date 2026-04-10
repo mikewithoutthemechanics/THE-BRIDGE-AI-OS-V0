@@ -3019,6 +3019,65 @@ try {
   console.warn('[BRAIN] Page economics failed to load:', e.message);
 }
 
+// ── Admin Withdraw (KeyForge-authorized) ──────────────────────────────────────
+let _supaAdmin;
+try { const sb = require('./lib/supabase'); _supaAdmin = sb.supabaseAdmin || sb.supabase; } catch (_) { _supaAdmin = null; }
+
+app.post('/api/admin/withdraw/authorize', (req, res) => {
+  const token = req.headers['x-admin-token'];
+  const expected = process.env.ADMIN_TOKEN;
+  if (!expected) return res.status(503).json({ ok: false, error: 'ADMIN_TOKEN not configured on server' });
+  if (!token || token !== expected) return res.status(401).json({ ok: false, error: 'Invalid admin token' });
+  const kfToken = crypto.randomBytes(32).toString('hex');
+  const expires = Date.now() + 5 * 60 * 1000;
+  global.__kfTokens = global.__kfTokens || {};
+  global.__kfTokens[kfToken] = expires;
+  for (const [k, v] of Object.entries(global.__kfTokens)) { if (v < Date.now()) delete global.__kfTokens[k]; }
+  res.json({ ok: true, token: kfToken, expires_in: 300 });
+});
+
+app.post('/api/admin/withdraw/execute', async (req, res) => {
+  const adminTk = req.headers['x-admin-token'];
+  const expected = process.env.ADMIN_TOKEN;
+  if (!expected || !adminTk || adminTk !== expected) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  const kfToken = req.headers['x-kf-token'];
+  if (!kfToken || !global.__kfTokens || !global.__kfTokens[kfToken] || global.__kfTokens[kfToken] < Date.now()) {
+    return res.status(401).json({ ok: false, error: 'Invalid or expired KeyForge token — re-authorize first' });
+  }
+  delete global.__kfTokens[kfToken];
+  const { to, amount, rail, memo } = req.body || {};
+  if (!to || !/^0x[a-fA-F0-9]{40}$/.test(to)) return res.status(400).json({ ok: false, error: 'Invalid destination address' });
+  const numAmount = parseFloat(amount);
+  if (!amount || isNaN(numAmount) || numAmount <= 0) return res.status(400).json({ ok: false, error: 'Invalid amount' });
+  const entry = { id: Date.now().toString(36), to, amount: numAmount, rail: rail || 'brdg', memo: memo || '', admin: 'admin', ts: Date.now() };
+  try { if (_supaAdmin) await _supaAdmin.from('admin_withdrawals').insert(entry); } catch (e) { console.warn('[AdminWithdraw] DB log:', e.message); }
+  let txHash = null;
+  try {
+    if (!brdgChain) throw new Error('brdg-chain module not available');
+    if (rail === 'eth') {
+      const result = await brdgChain.sendETH(to, amount);
+      txHash = result.tx_hash || result.txHash;
+    } else {
+      const result = await brdgChain.transferBRDG(to, amount);
+      txHash = result.tx_hash || result.txHash;
+    }
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: 'On-chain transfer failed: ' + e.message });
+  }
+  res.json({ ok: true, tx_hash: txHash, amount: numAmount, to, rail: rail || 'brdg' });
+});
+
+app.get('/api/admin/withdraw/audit', async (req, res) => {
+  const adminTk = req.headers['x-admin-token'];
+  const expected = process.env.ADMIN_TOKEN;
+  if (!expected || !adminTk || adminTk !== expected) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  let log = [];
+  try { if (_supaAdmin) { const { data } = await _supaAdmin.from('admin_withdrawals').select('*').order('ts', { ascending: false }).limit(50); log = data || []; } } catch (e) { console.warn('[AdminWithdraw] Audit:', e.message); }
+  res.json({ ok: true, log });
+});
+
+console.log('[BRAIN] Admin withdraw routes ACTIVE');
+
 // ── Zero-Trust Proof Chain & Merkle Anchoring ─────────────────────────────────
 let _zt, _proofStore;
 try { _zt = require('./lib/zero-trust'); } catch (_) { _zt = null; }
