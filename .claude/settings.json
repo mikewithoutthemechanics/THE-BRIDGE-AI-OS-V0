@@ -6,7 +6,8 @@
       "Bash(curl -sI --max-time 10 https://api.bridge-ai-os.com)",
       "Bash(git stash:*)",
       "Bash(npx jest:*)",
-      "Read(//c/aoe-unified-final/**)"
+      "Read(//c/aoe-unified-final/**)",
+      "Bash(find /c/aoe-unified-final -name \"*.js\" -type f -exec grep -l \"Math.random\\(\\)\\\\|faker\\\\|mock\\\\|stub\" {} \\\\;)"
     ]
   }
 }
