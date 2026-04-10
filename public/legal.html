@@ -140,7 +140,7 @@ function clearChildren(el) { while (el.firstChild) el.removeChild(el.firstChild)
 async function loadCompliance() {
   const el = document.getElementById('compliance-grid');
   try {
-    const r = await fetch(API + '/api/contracts');
+    const r = await fetch(API + '/api/compliance/status');
     if (!r.ok) throw new Error(r.statusText);
     const data = await r.json();
     const items = Array.isArray(data) ? data : (data.frameworks || data.contracts || data.items || [data]);
@@ -197,7 +197,7 @@ async function loadDocuments() {
   const el = document.getElementById('doc-table');
   const count = document.getElementById('doc-count');
   try {
-    const r = await fetch(API + '/api/contracts');
+    const r = await fetch(API + '/api/legal/documents');
     if (!r.ok) throw new Error(r.statusText);
     const data = await r.json();
     const docs = Array.isArray(data) ? data : (data.documents || data.items || []);
@@ -228,7 +228,7 @@ async function loadDocuments() {
 async function loadContracts() {
   const el = document.getElementById('contracts-table');
   try {
-    const r = await fetch(API + '/api/contracts');
+    const r = await fetch(API + '/api/legal/contracts/active');
     if (!r.ok) throw new Error(r.statusText);
     const data = await r.json();
     const list = Array.isArray(data) ? data : (data.contracts || data.items || []);
@@ -266,7 +266,7 @@ document.getElementById('add-form').addEventListener('submit', async function(e)
   var fd = new FormData(e.target);
   var body = Object.fromEntries(fd);
   try {
-    var r = await fetch(API + '/api/contracts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    var r = await fetch(API + '/api/legal/documents', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
     if (!r.ok) throw new Error(r.statusText);
     closeModal();
     e.target.reset();

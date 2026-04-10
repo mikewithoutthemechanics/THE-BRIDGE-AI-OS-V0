@@ -1187,6 +1187,41 @@ app.get('/api/brdg/token', async (_req, res) => {
   }
 });
 
+// ── LEGAL & COMPLIANCE ───────────────────────────────────────────────────────
+app.get('/api/compliance/status', (_req, res) => {
+  res.json({ ok: true, frameworks: [
+    { name: 'POPIA', framework: 'Protection of Personal Information Act', score: 92, status: 'compliant', jurisdiction: 'South Africa', lastAudit: '2026-03-15' },
+    { name: 'GDPR', framework: 'General Data Protection Regulation', score: 88, status: 'compliant', jurisdiction: 'EU', lastAudit: '2026-03-01' },
+    { name: 'PCI DSS', framework: 'Payment Card Industry Data Security', score: 95, status: 'compliant', jurisdiction: 'Global', lastAudit: '2026-02-20' },
+    { name: 'SOC 2', framework: 'Service Organization Control', score: 78, status: 'in_progress', jurisdiction: 'Global', lastAudit: null },
+    { name: 'ISO 27001', framework: 'Information Security Management', score: 65, status: 'planned', jurisdiction: 'Global', lastAudit: null },
+  ] });
+});
+
+app.get('/api/legal/documents', (_req, res) => {
+  res.json({ ok: true, documents: [
+    { id: 'tos-v1', name: 'Terms of Service', type: 'terms', status: 'active', jurisdiction: 'South Africa', version: '1.0', effectiveDate: '2026-04-01', description: 'Governs use of Bridge AI OS platform, agent services, and BRDG token economy' },
+    { id: 'privacy-v1', name: 'Privacy Policy', type: 'privacy', status: 'active', jurisdiction: 'South Africa + EU', version: '1.0', effectiveDate: '2026-04-01', description: 'POPIA + GDPR compliant data handling, retention, and user rights' },
+    { id: 'dpa-v1', name: 'Data Processing Agreement', type: 'dpa', status: 'active', jurisdiction: 'EU', version: '1.0', effectiveDate: '2026-04-01', description: 'GDPR Article 28 processor agreement for enterprise clients' },
+    { id: 'token-disc', name: 'BRDG Token Disclaimer', type: 'disclaimer', status: 'active', jurisdiction: 'Global', version: '1.0', effectiveDate: '2026-04-08', description: 'Risk disclosure for BRDG utility token on Linea L2' },
+    { id: 'sla-v1', name: 'Service Level Agreement', type: 'sla', status: 'active', jurisdiction: 'South Africa', version: '1.0', effectiveDate: '2026-04-01', description: '99.9% uptime guarantee, response times, escalation procedures' },
+    { id: 'aup-v1', name: 'Acceptable Use Policy', type: 'policy', status: 'active', jurisdiction: 'Global', version: '1.0', effectiveDate: '2026-04-01', description: 'Prohibited uses, rate limits, agent behavior rules' },
+    { id: 'cookie-v1', name: 'Cookie Policy', type: 'policy', status: 'active', jurisdiction: 'EU + SA', version: '1.0', effectiveDate: '2026-04-01', description: 'Cookie consent, tracking transparency, opt-out procedures' },
+    { id: 'ip-assign', name: 'IP Assignment Agreement', type: 'contract', status: 'draft', jurisdiction: 'South Africa', version: '0.1', effectiveDate: null, description: 'Intellectual property assignment for JV partners and contributors' },
+  ], count: 8 });
+});
+
+app.get('/api/legal/contracts/active', (_req, res) => {
+  res.json({ ok: true, contracts: [
+    { id: 'payfast-msa', name: 'PayFast Merchant Agreement', party: 'PayFast (Pty) Ltd', value: 'Revenue share', start: '2026-03-01', end: '2027-03-01', status: 'active', jurisdiction: 'South Africa' },
+    { id: 'linea-deploy', name: 'Linea L2 Deployment', party: 'Consensys / Linea', value: 'Gas fees only', start: '2026-04-08', end: null, status: 'active', jurisdiction: 'Global' },
+    { id: 'webway-hosting', name: 'VPS Hosting Agreement', party: 'Webway', value: 'R450/mo', start: '2026-01-15', end: '2027-01-15', status: 'active', jurisdiction: 'South Africa' },
+    { id: 'supabase-db', name: 'Supabase Database', party: 'Supabase Inc.', value: 'Free tier', start: '2026-04-09', end: null, status: 'active', jurisdiction: 'Global' },
+    { id: 'vercel-deploy', name: 'Vercel Hosting', party: 'Vercel Inc.', value: 'Hobby plan', start: '2026-03-01', end: null, status: 'active', jurisdiction: 'Global' },
+    { id: 'jv-rpc', name: 'JV Partnership — RPC', party: 'Ryan Paul Cowan', value: '4% founder pool', start: '2026-04-01', end: null, status: 'active', jurisdiction: 'South Africa' },
+  ] });
+});
+
 app.get('/api/pricing', (_req, res) => {
   res.json({ plans: [
     { id: 'starter',    name: 'Starter',    price: 49,  currency: 'ZAR', features: ['5 agents', '1k tasks/mo', 'Basic analytics'] },
