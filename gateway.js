@@ -889,6 +889,34 @@ app.get('/api/banks/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/treasury', async (_req, res) => {
+  try {
+    const balance = await db.getTreasuryBalance();
+    const buckets = [
+      { name: 'ops',     label: 'Operations', pct: 45, balance: +(balance * 0.45).toFixed(2) },
+      { name: 'treasury', label: 'Growth',    pct: 15, balance: +(balance * 0.15).toFixed(2) },
+      { name: 'ubi',     label: 'Reserve',    pct: 15, balance: +(balance * 0.15).toFixed(2) },
+      { name: 'founder', label: 'Founder',    pct: 25, balance: +(balance * 0.25).toFixed(2) },
+    ];
+    res.json({ balance, currency: 'ZAR', buckets, ts: Date.now() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/brdg/token', async (_req, res) => {
+  try {
+    const brdgChain = require('./lib/brdg-chain');
+    const stats = await brdgChain.getTokenStats();
+    res.json({
+      ok: true, token: stats.token, treasury: stats.treasury,
+      totalSupply: stats.token.totalSupply,
+      ethBalance: stats.treasury.vault.ethBalance,
+      lineascan: stats.lineascan, ts: Date.now(),
+    });
+  } catch (e) {
+    res.status(503).json({ ok: false, error: e.message });
+  }
+});
+
 app.get('/api/pricing', (_req, res) => {
   res.json({ plans: [
     { id: 'starter',    name: 'Starter',    price: 49,  currency: 'ZAR', features: ['5 agents', '1k tasks/mo', 'Basic analytics'] },
