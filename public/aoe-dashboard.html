@@ -130,6 +130,220 @@
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+  /* ── MOBILE RESPONSIVENESS ── */
+  @media (max-width: 1024px) {
+    /* Tablet: collapse sidebar to icon-only */
+    #sidebar { width: 48px; }
+    .nav-item { padding: 5px 8px; }
+    .nav-item span:not(.nav-ico) { display: none; }
+    .nav-header { padding: 4px 4px; font-size: 7px; }
+    .nav-badge { margin-left: 0; }
+
+    /* Detail panel remains visible but smaller */
+    #detail { width: 180px; }
+  }
+
+  @media (max-width: 768px) {
+    /* Mobile: full-width stack layout */
+    body { height: auto; overflow-y: auto; }
+
+    /* Larger topbar for touch */
+    #topbar {
+      height: 48px;
+      padding: 8px 12px;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    #topbar .logo { font-size: 13px; }
+    #topbar a { font-size: 9px; padding: 2px 4px; }
+    .pill { font-size: 9px; padding: 1px 6px; }
+    #tb-stats { display: none; }
+
+    /* Layout: vertical stack */
+    #layout { flex-direction: column; height: auto; }
+
+    /* Sidebar becomes fixed overlay with hamburger */
+    #sidebar {
+      width: 100%;
+      height: auto;
+      max-height: 60vh;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 0;
+      padding: 8px;
+      overflow: visible;
+    }
+    .nav-section {
+      padding: 6px;
+      border-bottom: none;
+      border-right: 1px solid var(--border);
+    }
+    .nav-section:last-child { border-right: none; }
+    .nav-header {
+      font-size: 8px;
+      margin-bottom: 4px;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 4px 3px;
+      font-size: 8px;
+      min-height: 44px;
+      justify-content: center;
+      border-left: none;
+      border-bottom: 2px solid transparent;
+    }
+    .nav-item:hover, .nav-item.active {
+      border-left: none;
+      border-bottom-color: var(--cyan);
+    }
+    .nav-ico { width: auto; font-size: 16px; }
+    .nav-badge { font-size: 8px; padding: 1px 3px; }
+
+    /* Main content */
+    #main { flex: 1; min-height: auto; }
+
+    /* Tabs: horizontal scroll on mobile */
+    #tabs {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px 8px 0;
+    }
+    .tab {
+      padding: 3px 8px;
+      font-size: 9px;
+      flex-shrink: 0;
+    }
+
+    /* Canvas area */
+    #canvas-area {
+      padding: 8px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Detail panel: below main content on mobile */
+    #detail {
+      width: 100%;
+      flex-shrink: 1;
+      height: auto;
+      max-height: 50vh;
+      border-left: none;
+      border-top: 1px solid var(--border);
+      border-bottom: none;
+    }
+
+    /* Cards and grid: single column on mobile */
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+
+    /* Touch-friendly inputs and buttons */
+    .inp {
+      padding: 8px 10px;
+      font-size: 12px;
+      min-height: 44px;
+    }
+    .btn {
+      padding: 8px 12px;
+      min-height: 44px;
+      font-size: 11px;
+    }
+
+    /* SVG frame responsive */
+    #svg-frame {
+      min-height: 240px;
+      max-height: 60vh;
+    }
+
+    /* Gallery: adjust for mobile */
+    .gallery {
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 4px;
+    }
+    .thumb {
+      padding: 4px;
+      min-height: 80px;
+    }
+    .thumb img { height: 48px; }
+    .thumb .fn { font-size: 7px; }
+
+    /* Skill cards: full width */
+    .skcard {
+      padding: 6px 8px;
+      font-size: 9px;
+    }
+
+    /* Toast: adjust for mobile safe area */
+    #toast {
+      bottom: max(18px, env(safe-area-inset-bottom));
+      right: max(18px, env(safe-area-inset-right));
+    }
+    .tmsg {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    /* Typography scaling */
+    body { font-size: 12px; line-height: 1.4; }
+    .card-title { font-size: 8px; }
+    .card-val { font-size: 16px; }
+    .card-sub { font-size: 8px; }
+    .srow { padding: 4px 0; }
+    .slbl, .sval { font-size: 9px; }
+  }
+
+  @media (max-width: 480px) {
+    /* Small phones: ultra-compact */
+    #topbar {
+      height: 52px;
+      padding: 6px 8px;
+    }
+    #topbar .logo { font-size: 12px; letter-spacing: 1px; }
+    #topbar a { display: none; } /* Hide nav links, use sidebar only */
+
+    #sidebar {
+      grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+      gap: 0;
+      padding: 4px;
+    }
+    .nav-section { padding: 4px 2px; }
+    .nav-item {
+      font-size: 7px;
+      min-height: 44px;
+      padding: 3px 2px;
+    }
+    .nav-ico { font-size: 14px; }
+
+    /* Single-column grid for everything */
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+
+    /* Reduce padding on cards */
+    .card { padding: 8px 10px; }
+    .tab { padding: 3px 6px; font-size: 8px; }
+
+    /* Hide less critical elements */
+    .pill { display: none; } /* Hide status pills to save space */
+    #detail-hdr { padding: 6px 8px; }
+    #detail-body { padding: 8px; }
+  }
+
+  /* Landscape mobile: optimize for wider phones */
+  @media (max-width: 768px) and (orientation: landscape) {
+    body { height: auto; }
+    #topbar { height: 40px; padding: 4px 8px; }
+    #sidebar {
+      height: auto;
+      max-height: 100px;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+    #detail { max-height: 150px; }
+    #canvas-area { max-height: 400px; }
+  }
 </style>
 </head>
 <body>
