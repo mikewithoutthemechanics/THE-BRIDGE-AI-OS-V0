@@ -43,7 +43,7 @@
       { name: 'TREASURY', url: svcBase+'/treasury-dashboard.html' }, { name: 'BANKS', url: svcBase+'/banks.html' }, { name: 'INFRA', url: svcBase+'/infra.html' }, { name: 'DASHBOARD', url: svcBase+'/aoe-dashboard.html' }
     ],
     'MORE': [
-      { name: 'APPS', url: svcBase+'/applications.html' }, { name: 'MARKETPLACE', url: svcBase+'/marketplace.html' },
+      { name: 'APPS', url: svcBase+'/50-applications.html' }, { name: 'MARKETPLACE', url: svcBase+'/marketplace.html' },
       { name: 'DEFI', url: svcBase+'/defi.html' }, { name: 'TRADING', url: svcBase+'/trading.html' },
       { name: 'PRICING', url: svcBase+'/pricing.html' }, { name: 'PAYMENT', url: svcBase+'/payment.html' }, { name: 'DOCS', url: svcBase+'/docs.html' },
       { name: 'AVATAR', url: svcBase+'/avatar.html' }, { name: 'BRAND', url: svcBase+'/brand.html' },
