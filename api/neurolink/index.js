@@ -146,6 +146,57 @@ module.exports = function setupNeuroLink(app, wsServer) {
     res.json(recommendation);
   });
 
+  // ────── LEVEL 3: INTELLIGENCE GRAPH + AUTONOMOUS MONETIZATION ──────
+
+  /**
+   * GET /api/neurolink/intelligence-graph (LEVEL 3)
+   * Get multi-user intelligence graph summary
+   */
+  router.get('/intelligence-graph', (req, res) => {
+    const summary = neurolink.getIntelligenceGraphSummary();
+    res.json(summary);
+  });
+
+  /**
+   * GET /api/neurolink/cross-user-patterns (LEVEL 3)
+   * Get cross-user behavioral patterns
+   */
+  router.get('/cross-user-patterns', (req, res) => {
+    const patterns = neurolink.getCrossUserPatterns();
+    res.json(patterns);
+  });
+
+  /**
+   * GET /api/neurolink/user-segment (LEVEL 3)
+   * Get behavioral segment information for current user
+   */
+  router.get('/user-segment', (req, res) => {
+    const segment = neurolink.getUserSegment('default-user');
+    if (!segment) {
+      return res.json({ message: 'User not yet in any segment' });
+    }
+    res.json(segment);
+  });
+
+  /**
+   * GET /api/neurolink/autonomous-decisions (LEVEL 3)
+   * Get autonomous monetization decisions and statistics
+   */
+  router.get('/autonomous-decisions', (req, res) => {
+    const stats = neurolink.getAutonomousDecisionStats();
+    res.json(stats);
+  });
+
+  /**
+   * GET /api/neurolink/execution-log (LEVEL 3)
+   * Get execution log of autonomous actions
+   */
+  router.get('/execution-log', (req, res) => {
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const log = neurolink.getExecutionLog(limit);
+    res.json(log);
+  });
+
   // ────── WEBSOCKET HANDLING ──────
 
   /**
@@ -249,6 +300,58 @@ module.exports = function setupNeuroLink(app, wsServer) {
     hookRevenueEngine(state).catch(err => {
       console.error('[NeuroLink] Revenue hook error:', err.message);
     });
+  };
+
+  // ────── LEVEL 3: AUTONOMOUS MONETIZATION INITIALIZATION ──────
+
+  // Initialize autonomous monetization engine with revenue hooks
+  const revenueHooks = {
+    pricingEngine: systemAPIs?.pricingEngine,
+    orchestrator: systemAPIs?.orchestrator,
+    ux: systemAPIs?.ux,
+    supportAI: systemAPIs?.supportAI
+  };
+
+  // Note: systemAPIs is defined inside hookRevenueEngine function
+  // We'll initialize it when the first prediction is available
+  const initializeMonetization = () => {
+    if (!neurolink.autonomousMonetization && neurolink.lastPrediction?.ready) {
+      const systemAPIs = {
+        pricingEngine: {
+          enableHighIntentOffers: async (config) => {
+            console.log('[NeuroLink→Monetization] Offer enabled:', config.offer);
+          }
+        },
+        orchestrator: {
+          switchToAutopilot: async (config) => {
+            console.log('[NeuroLink→Monetization] Autopilot activated');
+          },
+          reduceSystemLoad: async (config) => {
+            console.log('[NeuroLink→Monetization] Load reduced');
+          }
+        },
+        ux: {
+          setMode: async (mode) => {
+            console.log('[NeuroLink→Monetization] UX mode:', mode);
+          }
+        },
+        supportAI: {
+          increaseProactiveHelp: async (config) => {
+            console.log('[NeuroLink→Monetization] Support activated');
+          }
+        }
+      };
+
+      neurolink.initializeAutonomousMonetization(systemAPIs);
+      console.log('[NeuroLink] Level 3: Autonomous monetization engine initialized');
+    }
+  };
+
+  // Wrap the original tick to initialize monetization on first prediction
+  const originalTick = neurolink.tick.bind(neurolink);
+  neurolink.tick = async function() {
+    await originalTick();
+    initializeMonetization();
   };
 
   // ────── SHUTDOWN ──────
