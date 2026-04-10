@@ -17,8 +17,17 @@ class LiveMonetizationOrchestrator {
 
   /**
    * Start processing monetization triggers in real-time
+   * In serverless: disabled (external cron triggers processing via endpoint)
+   * In local: uses setInterval for development
    */
   startProcessing(interval = 1000) {
+    // Serverless mode: processing is triggered by external cron jobs
+    if (process.env.VERCEL === '1' || process.env.SERVERLESS === '1') {
+      console.log('[LiveMonetization] Running in serverless mode — processing triggered by cron');
+      return;
+    }
+
+    // Local mode: periodic processing via setInterval
     this.processingInterval = setInterval(() => {
       this._processPendingTriggers().catch(err => {
         console.error('[LiveMonetization] Processing error:', err.message);

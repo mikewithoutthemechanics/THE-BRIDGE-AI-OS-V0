@@ -188,6 +188,9 @@ const infraFb  = require('../lib/infra-feedback');
 const wp       = require('../lib/wordpress');
 const mail     = require('../lib/mail');
 
+// ── NeuroLink Serverless Cron Handlers ────────────────────────────────────────
+const cronHandlers = require('./neurolink/cron-handlers');
+
 // ── Zero-Trust Verification Layer ──────────────────────────────────────────
 let zt, proofStore, chainVerify;
 try {
@@ -2957,6 +2960,29 @@ module.exports = async (req, res) => {
     } catch (e) {
       return json(res, { ok: false, error: e.message }, 500);
     }
+  }
+
+  // ── NeuroLink Level 3: Serverless Cron Handlers ──────────────────────────────
+  // These endpoints replace setInterval loops for Vercel serverless compatibility
+
+  // POST /api/neurolink/cron/tick — process one inference cycle
+  if (p === '/api/neurolink/cron/tick' && req.method === 'POST') {
+    return cronHandlers.handleInferenceTick(req, res);
+  }
+
+  // POST /api/neurolink/cron/orchestrator — process pending monetization triggers
+  if (p === '/api/neurolink/cron/orchestrator' && req.method === 'POST') {
+    return cronHandlers.handleOrchestratorProcess(req, res);
+  }
+
+  // POST /api/neurolink/cron/stream-flush — flush buffered user states
+  if (p === '/api/neurolink/cron/stream-flush' && req.method === 'POST') {
+    return cronHandlers.handleStreamFlush(req, res);
+  }
+
+  // POST /api/neurolink/cron/graph-update — update intelligence graph patterns
+  if (p === '/api/neurolink/cron/graph-update' && req.method === 'POST') {
+    return cronHandlers.handleGraphUpdate(req, res);
   }
 
   // ── 404 ──

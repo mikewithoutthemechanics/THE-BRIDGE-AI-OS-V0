@@ -221,8 +221,17 @@ class MultiUserStream extends EventEmitter {
 
   /**
    * Start periodic flushing of buffers
+   * In serverless: disabled (external cron triggers flush via endpoint)
+   * In local: uses setInterval for development
    */
   startFlushTimer() {
+    // Serverless mode: flush is triggered by external cron jobs
+    if (process.env.VERCEL === '1' || process.env.SERVERLESS === '1') {
+      console.log('[MultiUserStream] Running in serverless mode — flush triggered by cron');
+      return;
+    }
+
+    // Local mode: periodic flush via setInterval
     this.flushTimer = setInterval(() => {
       for (const userId of this.userBuffer.keys()) {
         if (this.userBuffer.get(userId).length > 0) {
