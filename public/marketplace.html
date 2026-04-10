@@ -7,7 +7,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New',monospace;color:#0ff;overflow-x:hidden}
+html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-apple-system,sans-serif;color:#c8dce8;overflow-x:hidden;padding-bottom:64px}
+@media(max-width:600px){#main{grid-template-columns:1fr!important;padding:8px!important}.tasks-cols{grid-template-columns:1fr!important}.stats-grid{grid-template-columns:1fr 1fr!important}.portfolio-grid{grid-template-columns:1fr!important}.balance-grid{grid-template-columns:1fr!important}}
 
 /* HUD */
 #hud{
@@ -69,7 +70,7 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
 .loading-text{color:#0ff4;font-size:9px;letter-spacing:2px;animation:blink 1s infinite;}
 @keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
 
-/* TASKS BOARD */
+/* Task Marketplace */
 .tasks-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .task-col-header{font-size:7px;letter-spacing:2px;color:#0ac;text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #0ff2;}
 .task-card{
@@ -172,14 +173,15 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
 <div id="hud">
   <div id="hud-left">
     <div class="live-dot"></div>
-    <span>BRIDGE AI OS &mdash; MARKETPLACE</span>
+    <span>Marketplace</span>
     <div class="nav-links">
-      <a href="/ui.html">HOME</a>
-      <a href="/registry.html">REGISTRY</a>
-      <a href="/topology.html">TOPOLOGY</a>
-      <a href="/avatar.html">AVATAR</a>
-      <a href="/system-status-dashboard.html">STATUS</a>
-      <a href="/control.html">CONTROL</a>
+      <a href="/">Home</a>
+      <a href="/portal.html">Portal</a>
+      <a href="/economy.html">Economy</a>
+      <a href="/agents.html">Agents</a>
+      <a href="/admin-revenue.html">Revenue</a>
+      <a href="/control.html">Control</a>
+      <a href="/console.html">Terminal</a>
     </div>
   </div>
   <div id="hud-right">
@@ -191,10 +193,10 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
 
 <div id="main">
 
-  <!-- TASKS BOARD -->
+  <!-- Task Marketplace -->
   <div class="panel" style="grid-column:1/-1;">
     <div class="panel-header">
-      <span class="panel-title">TASKS BOARD</span>
+      <span class="panel-title">Task Marketplace</span>
       <span class="panel-badge" id="tasks-badge">LOADING</span>
     </div>
     <div class="panel-body" id="tasks-body">
@@ -207,7 +209,7 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
   <!-- DEX CHART -->
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title">DEX TRADING</span>
+      <span class="panel-title">Service Exchange</span>
       <span class="panel-badge" id="dex-badge">LOADING</span>
     </div>
     <div class="panel-body" id="dex-body">
@@ -230,10 +232,10 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
     <div class="panel-footer" id="wallet-ts">last update: —</div>
   </div>
 
-  <!-- SKILLS STORE -->
+  <!-- Installed Packages -->
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title">SKILLS STORE</span>
+      <span class="panel-title">Installed Packages</span>
       <span class="panel-badge" id="skills-badge">LOADING</span>
     </div>
     <div class="panel-body" id="skills-body">
@@ -259,7 +261,7 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
   <!-- PLATFORM STATS -->
   <div class="panel" style="grid-column:1/-1;">
     <div class="panel-header">
-      <span class="panel-title">PLATFORM STATISTICS</span>
+      <span class="panel-title">Platform Overview</span>
       <span class="panel-badge" id="stats-badge">LOADING</span>
     </div>
     <div class="panel-body" id="stats-body">
@@ -375,7 +377,7 @@ async function poll(endpoint,callback){
   }
 }
 
-// ── TASKS BOARD ──
+// ── Task Marketplace ──
 function renderTasks(d,mock){
   // API returns {open:N, in_progress:N, completed:N, listings:[...]}
   // Mock returns {open:[...], in_progress:[...], completed:[...]}
@@ -678,6 +680,6 @@ function renderStats(d,mock){
   pollStats();setInterval(pollStats,5000);
 })();
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/global-nav.js" defer></script>
 </body>
 </html>
