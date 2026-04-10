@@ -2889,6 +2889,28 @@ module.exports = async (req, res) => {
     }
   }
 
+  // ── /api/proofs/diagnose — diagnose chain integrity issues ──
+  if (p === '/api/proofs/diagnose') {
+    try {
+      const diagnosis = await proofStore.diagnoseChain();
+      return json(res, zt.signResponse({ ok: true, ...diagnosis }, 'api-response'));
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 500);
+    }
+  }
+
+  // ── /api/proofs/repair — rebuild chain from broken point (POST) ──
+  if (p === '/api/proofs/repair' && req.method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const startIndex = body?.startIndex || 0;
+      const result = await proofStore.rebuildChainFrom(startIndex);
+      return json(res, zt.signResponse({ ok: true, ...result }, 'api-response'));
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 500);
+    }
+  }
+
   // ── 404 ──
   return json(res, { error: 'not_found', path: p, available: [
     '/health', '/api/health', '/api/brain', '/api/topology', '/api/avatar/{mode}',
