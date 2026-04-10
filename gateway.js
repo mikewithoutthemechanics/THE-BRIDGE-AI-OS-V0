@@ -921,6 +921,53 @@ app.get('/api/system/state', async (_req, res) => {
 });
 
 // ── DIGITAL TWIN CONSOLE ENDPOINTS (served directly, no brain proxy) ────────
+// ── AUTONOMOUS REVENUE ENGINE ────────────────────────────────────────────────
+var revenueEngine;
+try {
+  revenueEngine = require('./lib/revenue-engine');
+  revenueEngine.start(60000); // Run every 60 seconds
+} catch (e) { console.warn('[REVENUE-ENGINE] Failed to start:', e.message); revenueEngine = null; }
+
+app.get('/api/revenue-engine/status', (_req, res) => {
+  if (!revenueEngine) return res.json({ ok: false, running: false });
+  res.json(revenueEngine.getStatus());
+});
+
+app.get('/api/revenue-engine/stats', (_req, res) => {
+  if (!revenueEngine) return res.json({ ok: false });
+  res.json({ ok: true, ...revenueEngine.getStats() });
+});
+
+app.post('/api/revenue-engine/tick', express.json(), async (_req, res) => {
+  if (!revenueEngine) return res.status(503).json({ ok: false, error: 'Engine not loaded' });
+  var result = await revenueEngine.tick();
+  res.json(result);
+});
+
+app.post('/api/revenue-engine/start', express.json(), (_req, res) => {
+  if (!revenueEngine) return res.status(503).json({ ok: false });
+  var interval = (_req.body || {}).interval || 60000;
+  res.json(revenueEngine.start(interval));
+});
+
+app.post('/api/revenue-engine/stop', (_req, res) => {
+  if (!revenueEngine) return res.status(503).json({ ok: false });
+  res.json(revenueEngine.stop());
+});
+
+app.get('/api/pricing', (_req, res) => {
+  var pricing = revenueEngine ? revenueEngine.PRICING : {};
+  res.json({
+    plans: [
+      { id: 'starter',    name: pricing.starter?.name || 'Starter',       price: pricing.starter?.price || 79,   currency: 'ZAR', features: pricing.starter?.features || [] },
+      { id: 'pro',        name: pricing.pro?.name || 'Pro',               price: pricing.pro?.price || 249,      currency: 'ZAR', features: pricing.pro?.features || [] },
+      { id: 'enterprise', name: pricing.enterprise?.name || 'Enterprise', price: pricing.enterprise?.price || 999, currency: 'ZAR', features: pricing.enterprise?.features || [] },
+    ],
+    usage: pricing.api || { perCall: 0.02, perAgentTask: 0.10, perContractGen: 1.00 },
+    ts: Date.now(),
+  });
+});
+
 // ── NEUROLINK BCI ENDPOINTS ──────────────────────────────────────────────────
 app.get('/api/neurolink/status', (_req, res) => {
   if (!neurolink || !neurolink.isRunning()) {
@@ -1514,13 +1561,7 @@ app.get('/api/events/recent', (_req, res) => {
   res.json({ ok: true, events: [], count: 0 });
 });
 
-app.get('/api/pricing', (_req, res) => {
-  res.json({ plans: [
-    { id: 'starter',    name: 'Starter',    price: 49,  currency: 'ZAR', features: ['5 agents', '1k tasks/mo', 'Basic analytics'] },
-    { id: 'pro',        name: 'Pro',        price: 149, currency: 'ZAR', features: ['20 agents', '10k tasks/mo', 'Full analytics', 'CRM'] },
-    { id: 'enterprise', name: 'Enterprise', price: 499, currency: 'ZAR', features: ['Unlimited agents', 'Unlimited tasks', 'All features', 'SLA'] },
-  ], ts: Date.now() });
-});
+// Pricing route moved to revenue engine section above
 
 app.get('/api/system/metrics', (req, res) => {
   const upSec = os.uptime();
