@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroLink BCI — Bridge AI OS</title>
+<style>
+:root{--bg:#050a0f;--bg2:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--red:#ff3c5a;--gold:#ffd166;--purple:#a78bfa;--dim:#4d6678;--text:#e0e8f0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;font-size:14px;line-height:1.6;padding-bottom:64px}
+.header{display:flex;align-items:center;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);gap:16px;position:sticky;top:0;z-index:10}
+.header h1{font-size:16px;font-weight:700;color:var(--text)}
+.header h1 span{color:var(--cyan)}
+.header nav{display:flex;gap:4px;margin-left:16px}
+.header nav a{color:var(--dim);text-decoration:none;font-size:12px;padding:4px 10px;border-radius:4px}
+.header nav a:hover{color:var(--cyan);background:rgba(0,200,255,.05)}
+.header .status{margin-left:auto;display:flex;align-items:center;gap:8px}
+.header .dot{width:10px;height:10px;border-radius:50%;transition:all .3s}
+.header .dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.header .dot.off{background:var(--red);box-shadow:0 0 8px var(--red)}
+.header .dot.sim{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.header .status-text{font-size:12px;color:var(--dim)}
+.page{max-width:960px;margin:0 auto;padding:24px}
+.section{margin-bottom:32px}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title .line{flex:1;height:1px;background:var(--border)}
+.section-desc{font-size:13px;color:var(--dim);margin-bottom:16px;max-width:600px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative}
+.card h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.card .desc{font-size:12px;color:var(--dim);margin-bottom:12px}
+.card .badge{position:absolute;top:12px;right:12px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px}
+.badge.installed{background:rgba(0,229,123,.1);color:var(--green)}
+.badge.not-installed{background:rgba(255,60,90,.1);color:var(--red)}
+.badge.active{background:rgba(0,200,255,.15);color:var(--cyan)}
+.badge.configured{background:rgba(167,139,250,.1);color:var(--purple)}
+.setup-steps{font-size:12px;color:var(--dim);margin:8px 0;padding:8px 12px;background:var(--bg);border-radius:6px;font-family:'Courier New',monospace}
+.btn{display:inline-block;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;border:none;transition:all .15s}
+.btn-enable{background:var(--green);color:#050a0f}
+.btn-enable:hover{opacity:.85}
+.btn-disable{background:var(--red);color:#fff}
+.btn-disable:hover{opacity:.85}
+.btn-install{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
+.btn-install:hover{background:rgba(0,200,255,.25)}
+.btn-secondary{background:var(--bg);color:var(--dim);border:1px solid var(--border)}
+.btn-secondary:hover{color:var(--cyan);border-color:var(--cyan)}
+.data-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(26,45,64,.3)}
+.data-row:last-child{border-bottom:none}
+.data-label{font-size:12px;color:var(--dim)}
+.data-value{font-size:13px;font-weight:600;font-family:'Courier New',monospace}
+.data-value.green{color:var(--green)}.data-value.red{color:var(--red)}.data-value.gold{color:var(--gold)}.data-value.cyan{color:var(--cyan)}
+.meter{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px}
+.meter-fill{height:100%;border-radius:3px;transition:width .5s}
+.toast{position:fixed;bottom:80px;right:20px;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;animation:fadeIn .2s}
+.toast.ok{background:rgba(0,229,123,.15);border:1px solid rgba(0,229,123,.3);color:var(--green)}
+.toast.err{background:rgba(255,60,90,.15);border:1px solid rgba(255,60,90,.3);color:var(--red)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Neuro<span>Link</span> BCI</h1>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/digital-twin-console.html">Twin</a>
+    <a href="/console.html">Terminal</a>
+    <a href="/aoe-dashboard.html">Hub</a>
+  </nav>
+  <div class="status">
+    <span class="status-text" id="status-text">Loading...</span>
+    <span class="dot off" id="status-dot"></span>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Live State -->
+  <div class="section">
+    <div class="section-title">Live Cognitive State <span class="line"></span></div>
+    <div class="section-desc">Real-time brain state from the connected device. Updates every 2 seconds.</div>
+    <div class="grid-3">
+      <div class="card">
+        <h3>Focus</h3>
+        <div class="data-value cyan" id="v-focus" style="font-size:24px">--</div>
+        <div class="meter"><div class="meter-fill" id="m-focus" style="width:0;background:var(--cyan)"></div></div>
+      </div>
+      <div class="card">
+        <h3>Stress</h3>
+        <div class="data-value gold" id="v-stress" style="font-size:24px">--</div>
+        <div class="meter"><div class="meter-fill" id="m-stress" style="width:0;background:var(--gold)"></div></div>
+      </div>
+      <div class="card">
+        <h3>Fatigue</h3>
+        <div class="data-value red" id="v-fatigue" style="font-size:24px">--</div>
+        <div class="meter"><div class="meter-fill" id="m-fatigue" style="width:0;background:var(--red)"></div></div>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="card">
+        <h3>Emotion (Digital Twin Feed)</h3>
+        <div id="emotion-rows"></div>
+      </div>
+      <div class="card">
+        <h3>System Response</h3>
+        <div class="data-row"><span class="data-label">Mood</span><span class="data-value" id="v-mood">--</span></div>
+        <div class="data-row"><span class="data-label">Intent</span><span class="data-value" id="v-intent">--</span></div>
+        <div class="data-row"><span class="data-label">Signal Quality</span><span class="data-value" id="v-quality">--</span></div>
+        <div class="data-row"><span class="data-label">Latency</span><span class="data-value" id="v-latency">--</span></div>
+        <div class="data-row"><span class="data-label">Source</span><span class="data-value" id="v-source">--</span></div>
+        <div id="actions-list" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Devices -->
+  <div class="section">
+    <div class="section-title">Device Management <span class="line"></span></div>
+    <div class="section-desc">Install, configure, and switch between BCI devices. Only one device can be active at a time.</div>
+    <div class="grid-2" id="device-list">
+      <div class="card"><div class="desc">Loading devices...</div></div>
+    </div>
+  </div>
+
+  <!-- EEG Bands -->
+  <div class="section">
+    <div class="section-title">EEG Frequency Bands <span class="line"></span></div>
+    <div class="section-desc">Raw band power from the current signal window. These are the building blocks of all cognitive state inference.</div>
+    <div class="grid-3" id="band-cards">
+      <div class="card"><div class="desc">Waiting for data...</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  var currentDevice = 'simulated';
+
+  function toast(msg, type) {
+    var el = document.createElement('div');
+    el.className = 'toast ' + (type || 'ok');
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function() { el.remove(); }, 3500);
+  }
+
+  function pct(v) { return (v * 100).toFixed(1) + '%'; }
+
+  // ── Load live state ──
+  function loadState() {
+    fetch('/api/neurolink/status').then(function(r) { return r.json(); }).then(function(d) {
+      if (!d.ok && !d.connected) {
+        document.getElementById('status-text').textContent = 'Offline';
+        document.getElementById('status-dot').className = 'dot off';
+        return;
+      }
+
+      var s = d.state || {};
+      var src = d.source || 'unknown';
+      document.getElementById('status-text').textContent = (d.device ? d.device.name : 'Unknown') + ' \u2014 ' + src;
+      document.getElementById('status-dot').className = 'dot ' + (src === 'live' ? 'on' : src === 'simulated' ? 'sim' : 'off');
+
+      // State values
+      document.getElementById('v-focus').textContent = pct(s.focus || 0);
+      document.getElementById('m-focus').style.width = ((s.focus || 0) * 100) + '%';
+      document.getElementById('v-stress').textContent = pct(s.stress || 0);
+      document.getElementById('m-stress').style.width = ((s.stress || 0) * 100) + '%';
+      document.getElementById('v-fatigue').textContent = pct(s.fatigue || 0);
+      document.getElementById('m-fatigue').style.width = ((s.fatigue || 0) * 100) + '%';
+
+      document.getElementById('v-mood').textContent = d.mood || '--';
+      document.getElementById('v-intent').textContent = d.intent || '--';
+      document.getElementById('v-quality').textContent = (d.signalQuality || 0) + '/100';
+      document.getElementById('v-latency').textContent = (d.latency ? d.latency.total : 0) + 'ms';
+      document.getElementById('v-source').textContent = src.toUpperCase();
+      document.getElementById('v-source').className = 'data-value ' + (src === 'live' ? 'green' : 'gold');
+
+      // Emotion
+      var emo = d.emotion || {};
+      var emoEl = document.getElementById('emotion-rows');
+      emoEl.textContent = '';
+      [['Valence (positive\u2013negative)', emo.valence, 'cyan'],
+       ['Arousal (energy)', emo.arousal, 'gold'],
+       ['Dominance (control)', emo.dominance, 'green']].forEach(function(r) {
+        var row = document.createElement('div'); row.className = 'data-row';
+        var lbl = document.createElement('span'); lbl.className = 'data-label'; lbl.textContent = r[0];
+        var val = document.createElement('span'); val.className = 'data-value ' + r[2]; val.textContent = (r[1] || 0).toFixed(3);
+        row.appendChild(lbl); row.appendChild(val); emoEl.appendChild(row);
+      });
+
+      // Adaptive actions
+      var actEl = document.getElementById('actions-list');
+      actEl.textContent = '';
+      var actions = d.adaptiveActions || [];
+      if (actions.length === 0) {
+        var none = document.createElement('div');
+        none.style.cssText = 'font-size:11px;color:var(--dim);padding:4px 0';
+        none.textContent = 'No adaptive actions needed';
+        actEl.appendChild(none);
+      }
+      actions.forEach(function(a) {
+        var row = document.createElement('div');
+        row.style.cssText = 'font-size:11px;padding:4px 8px;margin-top:4px;border-radius:4px;background:rgba(255,209,102,.06);color:var(--gold)';
+        row.textContent = a.action + ': ' + a.reason;
+        actEl.appendChild(row);
+      });
+
+      // EEG bands
+      var f = d.features || {};
+      var bandEl = document.getElementById('band-cards');
+      bandEl.textContent = '';
+      [['Delta', f.delta, '0.5\u20134 Hz', 'Deep sleep, unconscious'],
+       ['Theta', f.theta, '4\u20138 Hz', 'Drowsiness, meditation'],
+       ['Alpha', f.alpha, '8\u201312 Hz', 'Relaxed awareness'],
+       ['Beta', f.beta, '12\u201330 Hz', 'Active focus, thinking'],
+       ['Gamma', f.gamma, '30\u201350 Hz', 'Higher cognition, insight']].forEach(function(b) {
+        var card = document.createElement('div'); card.className = 'card';
+        var h = document.createElement('h3'); h.textContent = b[0] + ' (' + b[2] + ')'; card.appendChild(h);
+        var val = document.createElement('div'); val.className = 'data-value cyan'; val.style.fontSize = '18px';
+        val.textContent = (b[1] || 0).toFixed(4) + ' \u00b5V\u00b2/Hz'; card.appendChild(val);
+        var desc = document.createElement('div'); desc.className = 'desc'; desc.textContent = b[3]; card.appendChild(desc);
+        bandEl.appendChild(card);
+      });
+
+      currentDevice = (d.device && d.device.type) || 'simulated';
+    }).catch(function() {
+      document.getElementById('status-text').textContent = 'Connection error';
+      document.getElementById('status-dot').className = 'dot off';
+    });
+  }
+
+  // ── Load devices ──
+  function loadDevices() {
+    fetch('/api/neurolink/devices').then(function(r) { return r.json(); }).then(function(d) {
+      var el = document.getElementById('device-list');
+      el.textContent = '';
+      (d.devices || []).forEach(function(dev) {
+        var card = document.createElement('div'); card.className = 'card';
+
+        // Badge
+        var badge = document.createElement('span'); badge.className = 'badge';
+        if (d.current === dev.id && d.running) { badge.className += ' active'; badge.textContent = 'Active'; }
+        else if (dev.installed) { badge.className += ' installed'; badge.textContent = 'Installed'; }
+        else { badge.className += ' not-installed'; badge.textContent = 'Not Installed'; }
+        card.appendChild(badge);
+
+        var h = document.createElement('h3'); h.textContent = dev.name; card.appendChild(h);
+        var desc = document.createElement('div'); desc.className = 'desc'; desc.textContent = dev.description; card.appendChild(desc);
+
+        // Setup steps
+        var setup = document.createElement('div'); setup.className = 'setup-steps'; setup.textContent = dev.setup; card.appendChild(setup);
+
+        // Buttons
+        var btnRow = document.createElement('div'); btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px';
+
+        if (d.current === dev.id && d.running) {
+          var disBtn = document.createElement('button'); disBtn.className = 'btn btn-disable'; disBtn.textContent = 'Disable';
+          disBtn.onclick = function() { switchDevice('off'); };
+          btnRow.appendChild(disBtn);
+        } else if (dev.installed || !dev.requiresHardware) {
+          var enBtn = document.createElement('button'); enBtn.className = 'btn btn-enable'; enBtn.textContent = 'Enable';
+          enBtn.onclick = function() { switchDevice(dev.id); };
+          btnRow.appendChild(enBtn);
+        } else {
+          var instBtn = document.createElement('button'); instBtn.className = 'btn btn-install';
+          instBtn.textContent = 'Install: npm install ' + dev.npmPackage;
+          instBtn.onclick = function() { toast('Run in terminal: npm install ' + dev.npmPackage, 'ok'); };
+          btnRow.appendChild(instBtn);
+        }
+
+        card.appendChild(btnRow);
+        el.appendChild(card);
+      });
+    }).catch(function() {
+      document.getElementById('device-list').textContent = 'Failed to load devices';
+    });
+  }
+
+  function switchDevice(deviceId) {
+    toast('Switching to ' + deviceId + '...', 'ok');
+    fetch('/api/neurolink/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device: deviceId }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) {
+        toast('Switched to ' + (d.device || deviceId), 'ok');
+        setTimeout(function() { loadDevices(); loadState(); }, 1000);
+      } else {
+        toast('Switch failed: ' + (d.error || 'unknown'), 'err');
+      }
+    }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
+  }
+
+  loadState();
+  loadDevices();
+  setInterval(loadState, 2000);
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+</body>
+</html>

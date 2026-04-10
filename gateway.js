@@ -944,6 +944,76 @@ app.get('/api/neurolink/latency', (_req, res) => {
   res.json({ ok: true, ...neurolink.getLatency() });
 });
 
+app.get('/api/neurolink/devices', (_req, res) => {
+  var devices = [
+    {
+      id: 'simulated', name: 'Simulated EEG', description: 'Physiologically realistic simulated signals for testing',
+      npmPackage: null, installed: true, requiresHardware: false,
+      setup: 'Always available — no setup required',
+    },
+    {
+      id: 'muse', name: 'Muse Headband', description: '4-channel consumer EEG (TP9, AF7, AF8, TP10). Bluetooth pairing required.',
+      npmPackage: 'muse-js', installed: false, requiresHardware: true,
+      setup: '1. npm install muse-js  2. Pair headband via Bluetooth  3. Enable below',
+      envVars: [],
+    },
+    {
+      id: 'brainflow', name: 'OpenBCI (Cyton/Ganglion)', description: '8-channel research-grade EEG via BrainFlow SDK. Serial or Bluetooth.',
+      npmPackage: 'brainflow', installed: false, requiresHardware: true,
+      setup: '1. npm install brainflow  2. Connect board via USB dongle  3. Enable below',
+      envVars: [],
+    },
+    {
+      id: 'emotiv', name: 'Emotiv EPOC X', description: '14-channel research EEG via Cortex API. Requires Emotiv account.',
+      npmPackage: null, installed: false, requiresHardware: true,
+      setup: '1. Create app at emotiv.com/developer  2. Set EMOTIV_CLIENT_ID and EMOTIV_CLIENT_SECRET  3. Enable below',
+      envVars: ['EMOTIV_CLIENT_ID', 'EMOTIV_CLIENT_SECRET'],
+    },
+  ];
+  // Check which packages are actually installed
+  devices.forEach(function(d) {
+    if (d.npmPackage) {
+      try { require.resolve(d.npmPackage); d.installed = true; } catch (_) { d.installed = false; }
+    }
+    if (d.envVars && d.envVars.length) {
+      d.configured = d.envVars.every(function(v) { return !!process.env[v]; });
+    }
+  });
+  var currentDevice = process.env.NEUROLINK_DEVICE || 'simulated';
+  var running = neurolink ? neurolink.isRunning() : false;
+  res.json({ ok: true, devices: devices, current: currentDevice, running: running, ts: Date.now() });
+});
+
+app.post('/api/neurolink/switch', require('express').json(), async (req, res) => {
+  var deviceId = (req.body || {}).device;
+  if (!deviceId) return res.status(400).json({ ok: false, error: 'device required' });
+  var valid = ['simulated', 'muse', 'brainflow', 'emotiv', 'off'];
+  if (valid.indexOf(deviceId) === -1) return res.status(400).json({ ok: false, error: 'Invalid device. Options: ' + valid.join(', ') });
+  try {
+    if (deviceId === 'off') {
+      if (neurolink) await neurolink.stop();
+      return res.json({ ok: true, status: 'stopped', device: 'none' });
+    }
+    if (neurolink) await neurolink.stop();
+    var meta = await neurolink.start(deviceId);
+    // Persist choice to .env (best effort)
+    try {
+      var fs = require('fs'), path = require('path');
+      var envPath = path.join(__dirname, '.env');
+      var env = fs.readFileSync(envPath, 'utf8');
+      if (env.includes('NEUROLINK_DEVICE=')) {
+        env = env.replace(/NEUROLINK_DEVICE=.*/g, 'NEUROLINK_DEVICE=' + deviceId);
+      } else {
+        env += '\nNEUROLINK_DEVICE=' + deviceId;
+      }
+      fs.writeFileSync(envPath, env);
+    } catch (_) {}
+    res.json({ ok: true, status: 'running', device: meta.device, channels: meta.channels, sampleRate: meta.sampleRate });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Feed NeuroLink state into the Digital Twin emotion model
 app.get('/api/emotion/status', (_req, res) => {
   if (neurolink && neurolink.isRunning()) {
