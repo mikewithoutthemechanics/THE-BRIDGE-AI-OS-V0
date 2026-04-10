@@ -94,6 +94,58 @@ module.exports = function setupNeuroLink(app, wsServer) {
     res.json(summary);
   });
 
+  /**
+   * GET /api/neurolink/predictions (LEVEL 2)
+   * Get latest predictive insights
+   */
+  router.get('/predictions', (req, res) => {
+    const predictions = neurolink.getPredictions();
+    res.json(predictions);
+  });
+
+  /**
+   * GET /api/neurolink/next-action (LEVEL 2)
+   * Get recommended next action based on predictions
+   */
+  router.get('/next-action', (req, res) => {
+    const action = neurolink.getNextAction();
+    res.json(action);
+  });
+
+  /**
+   * GET /api/neurolink/user-profile (LEVEL 2)
+   * Get user behavior profile and learning summary
+   */
+  router.get('/user-profile', (req, res) => {
+    const profile = neurolink.getUserProfile();
+    res.json(profile);
+  });
+
+  /**
+   * POST /api/neurolink/predict-intent (LEVEL 2)
+   * Predict next likely intent based on current behavior
+   */
+  router.post('/predict-intent', (req, res) => {
+    const { currentIntent } = req.body;
+    if (!currentIntent) {
+      return res.status(400).json({ error: 'currentIntent required' });
+    }
+    const prediction = neurolink.predictNextIntent(currentIntent);
+    res.json(prediction);
+  });
+
+  /**
+   * GET /api/neurolink/optimal-task (LEVEL 2)
+   * Get recommended task type for current user state
+   */
+  router.get('/optimal-task', (req, res) => {
+    const recommendation = neurolink.predictOptimalTaskType();
+    if (!recommendation) {
+      return res.status(503).json({ error: 'NeuroLink not ready' });
+    }
+    res.json(recommendation);
+  });
+
   // ────── WEBSOCKET HANDLING ──────
 
   /**
