@@ -487,6 +487,12 @@ let revenueChart = null;
 
 function initState() {
   treasury = loadState(STORAGE_KEYS.treasury, defaultTreasury);
+  // Fix corrupted treasury (NaN from API mismatch)
+  if (isNaN(treasury.balance) || treasury.revenueMtd === undefined) {
+    treasury = Object.assign({}, defaultTreasury, { balance: parseFloat(treasury.balance) || defaultTreasury.balance });
+    if (!treasury.ledger) treasury.ledger = defaultTreasury.ledger;
+    saveState(STORAGE_KEYS.treasury, treasury);
+  }
   agents = loadState(STORAGE_KEYS.agents, defaultAgents);
   tasks = loadState(STORAGE_KEYS.tasks, defaultTasks);
   if (!Array.isArray(tasks)) tasks = defaultTasks;
@@ -932,12 +938,20 @@ async function fetchSeedData() {
         const key = endpoints[i].key;
         const stored = loadState(STORAGE_KEYS[key], null);
         if (!stored) {
-          // Unwrap API responses that wrap arrays in objects
           let val = r.value;
+          // Treasury: merge API balance into default structure (keeps revenueMtd, ledger)
+          if (key === 'treasury' && val.balance !== undefined) {
+            val = Object.assign({}, defaultTreasury, {
+              balance: parseFloat(val.balance) || defaultTreasury.balance,
+              revenueMtd: parseFloat(val.earned || val.revenue_mtd) || defaultTreasury.revenueMtd,
+              costsMtd: parseFloat(val.spent || val.costs_mtd) || defaultTreasury.costsMtd,
+            });
+          }
+          // Unwrap API responses that wrap arrays in objects
           if (key === 'agents' && val.agents && Array.isArray(val.agents)) val = val.agents;
           if (key === 'users' && val.users && Array.isArray(val.users)) val = val.users;
           if (key === 'events' && val.events && Array.isArray(val.events)) val = val.events;
-          if (key === 'tasks') { val = val.tasks || val.data?.listings || (Array.isArray(val) ? val : []); }
+          if (key === 'tasks') { val = val.tasks || (val.data ? val.data.listings : null) || (Array.isArray(val) ? val : []); }
           saveState(STORAGE_KEYS[key], val);
         }
       }
