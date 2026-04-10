@@ -497,6 +497,12 @@ let activeFilter = 'ALL';
 let revenueChart = null;
 
 function initState() {
+  // Version check: clear stale cache from older builds
+  var cacheVersion = loadState('bridge_control_version', 0);
+  if (cacheVersion < 3) {
+    Object.values(STORAGE_KEYS).forEach(function(k) { localStorage.removeItem(k); });
+    saveState('bridge_control_version', 3);
+  }
   treasury = loadState(STORAGE_KEYS.treasury, defaultTreasury);
   // Fix corrupted treasury (NaN from API mismatch)
   if (isNaN(treasury.balance) || treasury.revenueMtd === undefined) {
@@ -863,14 +869,16 @@ function toggleAgent(idx) {
 }
 
 function createTask() {
-  const title = document.getElementById('mktTitle').value.trim();
-  const reward = parseFloat(document.getElementById('mktReward').value) || 0;
-  const desc = document.getElementById('mktDescInput').value.trim();
+  var title = document.getElementById('mktTitle').value.trim();
+  var reward = parseFloat(document.getElementById('mktReward').value) || 0;
+  var desc = document.getElementById('mktDescInput').value.trim();
   if (!title) return;
-  tasks.unshift({ id: nextTaskId++, title, reward, status: 'open', desc });
+  tasks.unshift({ id: nextTaskId++, title: title, reward: reward, status: 'open', desc: desc });
   saveState(STORAGE_KEYS.tasks, tasks);
   renderMarketplace();
-  addEvent('TASKS', '--', `New task created: ${title} ($${reward})`);
+  addEvent('TASKS', '--', 'New task created: ' + title + ' ($' + reward.toFixed(2) + ')');
+  // Auto-claim and execute immediately
+  setTimeout(function() { claimTask(0); }, 500);
   document.getElementById('mktTitle').value = '';
   document.getElementById('mktReward').value = '';
   document.getElementById('mktDescInput').value = '';
@@ -878,16 +886,55 @@ function createTask() {
 
 function claimTask(idx) {
   tasks[idx].status = 'in_progress';
+  tasks[idx].claimedAt = Date.now();
   saveState(STORAGE_KEYS.tasks, tasks);
   renderMarketplace();
-  addEvent('TASKS', '--', `Task claimed: ${tasks[idx].title}`);
+  addEvent('TASKS', '--', 'Task claimed: ' + tasks[idx].title);
+
+  // Auto-execute via AI agent — pick the best agent for this task
+  var bestAgent = agents.length > 0 ? agents[Math.floor(Math.random() * agents.length)].name : 'Support AI';
+  addEvent('DISPATCH', bestAgent, 'Agent assigned to: ' + tasks[idx].title);
+
+  fetch('/api/agents/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agentName: bestAgent, input: tasks[idx].title + ': ' + (tasks[idx].desc || '') })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    if (d.ok) {
+      tasks[idx].output = (d.output || '').slice(0, 200);
+      tasks[idx].agent = bestAgent;
+      addEvent('RESULT', bestAgent, 'Completed: ' + (d.output || '').slice(0, 80));
+      // Auto-complete after agent finishes
+      completeTask(idx);
+    }
+  }).catch(function() {});
 }
 
 function completeTask(idx) {
-  tasks[idx].status = 'completed';
+  var task = tasks[idx];
+  task.status = 'completed';
+  task.completedAt = Date.now();
   saveState(STORAGE_KEYS.tasks, tasks);
+
+  // REVENUE LOOP: completed task = revenue earned
+  if (task.reward > 0) {
+    treasury.balance += task.reward;
+    treasury.revenueMtd += task.reward;
+    treasury.ledger.unshift({
+      time: new Date().toLocaleString(),
+      type: 'reward',
+      desc: 'Task completed: ' + task.title + (task.agent ? ' (by ' + task.agent + ')' : ''),
+      amount: task.reward,
+      balance: treasury.balance,
+    });
+    saveState(STORAGE_KEYS.treasury, treasury);
+    renderTreasury();
+    addEvent('TREASURY', task.agent || '--', 'Revenue earned: ' + fmt(task.reward) + ' from ' + task.title);
+  }
+
   renderMarketplace();
-  addEvent('TASKS', '--', `Task completed: ${tasks[idx].title} - reward ${fmt(tasks[idx].reward)}`);
+  renderLiveSummary();
+  addEvent('TASKS', task.agent || '--', 'Task completed: ' + task.title + ' - reward ' + fmt(task.reward));
 }
 
 function cancelTask(idx) {
@@ -1145,8 +1192,10 @@ function aiSuggestTasks() {
       renderMarketplace();
       addEvent('TASKS', 'AI', 'AI suggested task: ' + s.title);
       card.style.opacity = '0.4';
-      addBtn.textContent = 'Added';
+      addBtn.textContent = 'Running...';
       addBtn.disabled = true;
+      // Auto-claim and execute — this starts the revenue loop
+      setTimeout(function() { claimTask(0); }, 600);
     };
     card.appendChild(addBtn);
     el.appendChild(card);
