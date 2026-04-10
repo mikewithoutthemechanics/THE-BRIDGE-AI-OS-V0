@@ -149,8 +149,11 @@
 
   var fitAddon = new FitAddon.FitAddon();
   term.loadAddon(fitAddon);
-  term.open(document.getElementById('terminal-container'));
-  fitAddon.fit();
+  var termEl = document.getElementById('terminal-container');
+  if (!termEl) { console.error('terminal-container not found'); return; }
+  term.open(termEl);
+  // xterm 5.x needs a frame to initialize internal buffers before write()
+  requestAnimationFrame(function () { fitAddon.fit(); });
   window.addEventListener('resize', function () { fitAddon.fit(); });
 
   /* ── Color helpers ───────────────────────────────────────────────────── */
@@ -182,8 +185,11 @@
     writeLn('');
   }
 
-  showBanner();
-  prompt();
+  // Defer first writes until xterm internal buffers are initialized
+  requestAnimationFrame(function () {
+    showBanner();
+    prompt();
+  });
 
   /* ── Prompt ──────────────────────────────────────────────────────────── */
   var PROMPT_STR = '\x1b[36mbridge\x1b[0m\x1b[2m@v3\x1b[0m\x1b[36m $\x1b[0m ';
