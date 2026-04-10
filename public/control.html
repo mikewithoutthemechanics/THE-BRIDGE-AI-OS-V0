@@ -442,7 +442,7 @@ function tsDate() {
 const AGENT_NAMES = ['QuoteGen AI','Finance AI','Growth Hunter','Intelligence AI','Nurture AI','Closer AI','Campaign AI','Creative AI','Support AI','Supply AI'];
 
 const defaultTreasury = {
-  balance: 137284.50,
+  balance: 1389208.00,
   revenueMtd: 28450.00,
   costsMtd: 4210.50,
   ledger: [
@@ -499,9 +499,9 @@ let revenueChart = null;
 function initState() {
   // Version check: clear stale cache from older builds
   var cacheVersion = loadState('bridge_control_version', 0);
-  if (cacheVersion < 3) {
+  if (cacheVersion < 4) {
     Object.values(STORAGE_KEYS).forEach(function(k) { localStorage.removeItem(k); });
-    saveState('bridge_control_version', 3);
+    saveState('bridge_control_version', 4);
   }
   treasury = loadState(STORAGE_KEYS.treasury, defaultTreasury);
   // Fix corrupted treasury (NaN from API mismatch)
@@ -891,8 +891,10 @@ function claimTask(idx) {
   renderMarketplace();
   addEvent('TASKS', '--', 'Task claimed: ' + tasks[idx].title);
 
-  // Auto-execute via AI agent — pick the best agent for this task
-  var bestAgent = agents.length > 0 ? agents[Math.floor(Math.random() * agents.length)].name : 'Support AI';
+  // Auto-execute via AI agent — pick an active agent for this task
+  var activeAgents = agents.filter(function(a) { return a.status === 'active'; });
+  var picked = activeAgents.length > 0 ? activeAgents[Math.floor(Math.random() * activeAgents.length)] : agents[0];
+  var bestAgent = (picked && picked.name) || 'Finance AI';
   addEvent('DISPATCH', bestAgent, 'Agent assigned to: ' + tasks[idx].title);
 
   fetch('/api/agents/run', {
@@ -1230,7 +1232,7 @@ async function init() {
 
   await fetchSeedData();
   initState();
-  // Fetch real agent list from API to populate dispatch
+  // Always fetch real agent list from API (overrides cached defaults)
   try {
     var agentResp = await fetch('/api/swarm/agents').then(function(r){return r.json();});
     var realAgents = agentResp.agents || [];
@@ -1238,6 +1240,15 @@ async function init() {
       agents = realAgents.map(function(a) {
         return { name: a.name, status: a.status || 'active', tasksCompleted: a.tasks_done || 0 };
       });
+      saveState(STORAGE_KEYS.agents, agents);
+    }
+  } catch(_){}
+  // Also fetch real treasury balance
+  try {
+    var tResp = await fetch('/api/treasury').then(function(r){return r.json();});
+    if (tResp.balance) {
+      treasury.balance = parseFloat(tResp.balance);
+      saveState(STORAGE_KEYS.treasury, treasury);
     }
   } catch(_){}
   renderAll();
