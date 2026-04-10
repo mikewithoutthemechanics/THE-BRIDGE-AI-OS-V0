@@ -13,7 +13,7 @@
   --red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;
   --text-dim:#628ba0;--input-bg:#0a1520;
 }
-html,body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;font-size:14px;min-height:100vh;}
+html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;font-size:14px;min-height:100vh;padding-bottom:64px;}
 a{color:var(--accent);text-decoration:none;}
 a:hover{opacity:0.8;}
 ::-webkit-scrollbar{width:6px;height:6px;}
@@ -151,6 +151,17 @@ textarea{resize:vertical;min-height:40px;}
   .stat-row{flex-direction:column;}
   .plan-row{flex-direction:column;}
   .service-grid{grid-template-columns:1fr;}
+  .header{flex-wrap:wrap;height:auto;padding:10px 12px;gap:8px}
+  .header-left{font-size:12px}
+  .nav{padding:0 8px}
+  .nav a{padding:10px 10px;font-size:0.65rem}
+  .main-content{padding:10px}
+  .section{padding:12px}
+  .stat-val{font-size:1.1rem}
+  input,select,textarea,button{font-size:15px;min-height:44px;padding:10px 12px}
+  .quick-bar{padding:8px 12px;gap:6px;flex-wrap:wrap}
+  table{font-size:12px}
+  th,td{padding:6px 8px}
 }
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 </style>
@@ -179,13 +190,15 @@ textarea{resize:vertical;min-height:40px;}
 <!-- NAV -->
 <div class="nav-row">
   <div class="nav">
-    <a href="/ui.html">HOME</a>
-    <a href="/topology.html">TOPOLOGY</a>
-    <a href="/registry.html">REGISTRY</a>
-    <a href="/marketplace.html">MARKETPLACE</a>
-    <a href="/avatar.html">AVATAR</a>
-    <a href="/system-status-dashboard.html">STATUS</a>
-    <a href="/control.html" class="active">CONTROL</a>
+    <a href="/">Home</a>
+    <a href="/portal.html">Portal</a>
+    <a href="/agents.html">Agents</a>
+    <a href="/economy.html">Economy</a>
+    <a href="/admin-revenue.html">Revenue</a>
+    <a href="/treasury-dashboard.html">Treasury</a>
+    <a href="/legal-ai.html">Legal</a>
+    <a href="/console.html">Terminal</a>
+    <a href="/control.html" class="active">Control</a>
   </div>
 </div>
 
@@ -476,8 +489,11 @@ function initState() {
   treasury = loadState(STORAGE_KEYS.treasury, defaultTreasury);
   agents = loadState(STORAGE_KEYS.agents, defaultAgents);
   tasks = loadState(STORAGE_KEYS.tasks, defaultTasks);
+  if (!Array.isArray(tasks)) tasks = defaultTasks;
   users = loadState(STORAGE_KEYS.users, defaultUsers);
+  if (!Array.isArray(users)) users = defaultUsers;
   events = loadState(STORAGE_KEYS.events, defaultEvents);
+  if (!Array.isArray(events)) events = defaultEvents;
   nextTaskId = Math.max(100, ...tasks.map(t => t.id || 0)) + 1;
 }
 
@@ -770,11 +786,13 @@ function dispatchTask() {
   addEvent('DISPATCH', agent, `Task dispatched: ${task} [${priority}]`);
   document.getElementById('dispatchTask').value = '';
   // Try API
-  fetch('/api/agents/dispatch', {
+  fetch('/api/agents/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agent, task, priority })
-  }).catch(() => {});
+    body: JSON.stringify({ agentName: agent, input: task + ' [priority:' + priority + ']' })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    if (d.ok && d.output) addEvent('RESULT', agent, d.output.slice(0, 100));
+  }).catch(function() {});
 }
 
 function toggleAgent(idx) {
@@ -903,10 +921,10 @@ async function fetchSeedData() {
   try {
     const endpoints = [
       { url: '/api/treasury', key: 'treasury' },
-      { url: '/api/agents', key: 'agents' },
-      { url: '/api/tasks', key: 'tasks' },
-      { url: '/api/users', key: 'users' },
-      { url: '/api/events', key: 'events' },
+      { url: '/api/swarm/agents', key: 'agents' },
+      { url: '/api/economy/tasks?status=open', key: 'tasks' },
+      { url: '/api/system/state', key: 'users' },
+      { url: '/api/events/recent', key: 'events' },
     ];
     const results = await Promise.allSettled(endpoints.map(e => fetch(e.url).then(r => r.ok ? r.json() : null)));
     results.forEach((r, i) => {
@@ -919,7 +937,7 @@ async function fetchSeedData() {
           if (key === 'agents' && val.agents && Array.isArray(val.agents)) val = val.agents;
           if (key === 'users' && val.users && Array.isArray(val.users)) val = val.users;
           if (key === 'events' && val.events && Array.isArray(val.events)) val = val.events;
-          if (key === 'tasks' && val.data && val.data.listings) val = val.data.listings;
+          if (key === 'tasks') { val = val.tasks || val.data?.listings || (Array.isArray(val) ? val : []); }
           saveState(STORAGE_KEYS[key], val);
         }
       }
@@ -952,6 +970,6 @@ async function init() {
 
 init();
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/global-nav.js" defer></script>
 </body>
 </html>
