@@ -293,71 +293,9 @@ function animCounter(el,target,prefix='',suffix='',decimals=0){
   },dur/steps);
 }
 
-// ── MOCK DATA ──
+// ── OFFLINE FALLBACK (no mock data — shows empty state) ──
 function fakeFallback(ep){
-  const mocks={
-    '/api/marketplace/tasks':{
-      open:[
-        {id:'T-001',title:'Integrate DEX oracle feed',priority:'HIGH',age:'2h'},
-        {id:'T-002',title:'Fix auth token refresh',priority:'MED',age:'5h'},
-      ],
-      in_progress:[
-        {id:'T-003',title:'Build skills registry API',priority:'HIGH',age:'1h'},
-        {id:'T-004',title:'Optimize federation sync',priority:'LOW',age:'30m'},
-      ],
-      completed:[
-        {id:'T-005',title:'Deploy BridgeOS 2.4.1',priority:'HIGH',age:'1d'},
-        {id:'T-006',title:'Setup node monitoring',priority:'MED',age:'2d'},
-      ]
-    },
-    '/api/marketplace/dex':{
-      pairs:[
-        {pair:'ARC/USDT',price:4.22,change:+11.2,volume:1245000,prices:[3.8,3.9,4.0,3.95,4.1,4.18,4.22]},
-        {pair:'BTC/USDT',price:67234,change:+2.3,volume:89200000,prices:[65100,65800,66200,66900,67000,67100,67234]},
-        {pair:'ETH/USDT',price:3521,change:-0.8,volume:34500000,prices:[3550,3540,3530,3520,3515,3518,3521]},
-        {pair:'SOL/USDT',price:188.4,change:+4.1,volume:5600000,prices:[180,182,183,185,186,188,188.4]},
-      ],
-      activePair:'ARC/USDT'
-    },
-    '/api/marketplace/wallet':{
-      address:'0x3f4A...C9bE',
-      balances:[
-        {symbol:'ARC',amount:12450.5},
-        {symbol:'ETH',amount:4.82},
-        {symbol:'USDT',amount:8320.00},
-        {symbol:'BTC',amount:0.14},
-      ],
-      txns:[
-        {hash:'0xab12...ef34',dir:'in',amount:'+500 ARC',time:'2m ago'},
-        {hash:'0xcd56...ab78',dir:'out',amount:'-0.01 ETH',time:'15m ago'},
-        {hash:'0xef90...cd12',dir:'in',amount:'+1200 USDT',time:'1h ago'},
-      ]
-    },
-    '/api/marketplace/skills':[
-      {id:'sk-001',name:'ImageAnalyzer',desc:'Vision AI for image classification',version:'1.2.0',installed:true},
-      {id:'sk-002',name:'SentimentAI',desc:'NLP sentiment scoring module',version:'2.0.1',installed:false},
-      {id:'sk-003',name:'DataSyncer',desc:'Cross-chain data synchronization',version:'0.9.4',installed:true},
-      {id:'sk-004',name:'VoiceCodec',desc:'Audio processing and transcription',version:'1.1.0',installed:false},
-    ],
-    '/api/marketplace/portfolio':{
-      total:24850.33,
-      assets:[
-        {name:'ARC',value:12450,pct:50.1,color:'#0ff'},
-        {name:'ETH',value:16961,pct:34.3,color:'#8844ff'},
-        {name:'USDT',value:8320,pct:33.5,color:'#0f9'},
-        {name:'BTC',value:9413,pct:12.1,color:'#ff8c00'},
-      ]
-    },
-    '/api/marketplace/stats':{
-      tasks:{value:1247,trend:'+12%',up:true},
-      agents:{value:38,trend:'+3',up:true},
-      revenue:{value:84320,trend:'+8.4%',up:true,prefix:'$'},
-      uptime:{value:99.94,trend:'',up:true,suffix:'%',decimals:2},
-      volume:{value:128500000,trend:'+22%',up:true,prefix:'$'},
-      skills:{value:94,trend:'+7',up:true},
-    }
-  };
-  return mocks[ep]||{};
+  return {_offline:true,open:[],in_progress:[],completed:[],listings:[],pairs:[],balances:[],assets:[],txns:[]};
 }
 
 async function poll(endpoint,callback){
@@ -677,7 +615,17 @@ function renderStats(d,mock){
     };
     renderTasks(mapped, mock);
   });
-  const pollDex=()=>poll('/api/marketplace/dex',renderDex);
+  const pollDex=()=>poll('/api/economy/flow',function(d,mock){
+    // Map transaction flow to DEX-like display
+    var txns = d.transactions || [];
+    var pairs = [];
+    var seen = {};
+    txns.slice(0,20).forEach(function(tx){
+      var key = (tx.from_agent||'System') + '/' + (tx.to_agent||'Agent');
+      if (!seen[key] && pairs.length < 20) { seen[key]=1; pairs.push({pair:key,ports:tx.amount||0,active:true}); }
+    });
+    renderDex({pairs:pairs,activePair:pairs[0]?pairs[0].pair:''},mock);
+  });
   const pollWallet=()=>poll('/api/wallet/balance',function(d,mock){
     // Map wallet balance to marketplace wallet format
     var mapped = {
@@ -687,7 +635,10 @@ function renderStats(d,mock){
     };
     renderWallet(mapped, mock);
   });
-  const pollSkills=()=>poll('/api/marketplace/skills',renderSkills);
+  const pollSkills=()=>poll('/api/skills/unified',function(d,mock){
+    var skills = (d.skills || []).map(function(s){return {id:s.id,name:s.name||s.id,desc:s.description||s.source||'',version:'1.0',installed:true};});
+    renderSkills(skills, mock);
+  });
   const pollPort=()=>poll('/api/treasury',function(d,mock){
     // Map treasury to portfolio format
     var balance = d.balance || d.total || 0;
