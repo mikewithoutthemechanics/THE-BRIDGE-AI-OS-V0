@@ -6,8 +6,8 @@
   var isVPS = h.indexOf('ai-os.co.za') !== -1;
   var isTunnel = h.indexOf('bridge-ai-os.com') !== -1;
   var svcBase = isVPS ? 'https://go.ai-os.co.za' : (isTunnel ? 'https://abaas.bridge-ai-os.com' : '');
-  var godUrl = isVPS ? 'https://god.ai-os.co.za' : 'https://god.bridge-ai-os.com';
-  var svgUrl = isVPS ? 'https://svg.ai-os.co.za' : 'https://svg.bridge-ai-os.com';
+  var godUrl = isVPS ? 'https://go.ai-os.co.za/control.html' : 'https://god.bridge-ai-os.com';
+  var svgUrl = isVPS ? 'https://go.ai-os.co.za/avatar.html' : 'https://svg.bridge-ai-os.com';
   var termUrl = isVPS ? 'https://terminal.ai-os.co.za' : 'https://terminal.bridge-ai-os.com';
   var authUrl = isVPS ? 'https://auth.ai-os.co.za' : 'https://auth.bridge-ai-os.com';
   var gwUrl = isVPS ? 'https://gateway.ai-os.co.za' : 'https://gateway.bridge-ai-os.com';
@@ -17,7 +17,7 @@
       { name: 'GOD MODE', subdomain: 'god', port: '3001', url: godUrl },
       { name: 'LIVE WALL', subdomain: 'live', port: '8001', url: isVPS ? svcBase : 'https://live.bridge-ai-os.com' },
       { name: 'SVG ENGINE', subdomain: 'svg', port: '7070', url: svgUrl },
-      { name: 'BRAIN', subdomain: 'brain', port: '8000', url: svcBase + '/api' },
+      { name: 'BRAIN', subdomain: 'brain', port: '8000', url: svcBase + '/api/health' },
       { name: 'TERMINAL', subdomain: 'terminal', port: '5002', url: termUrl },
       { name: 'GRAFANA', subdomain: 'grafana', port: '3003', url: isVPS ? 'https://go.ai-os.co.za/status' : 'https://grafana.bridge-ai-os.com' }
     ],

@@ -118,8 +118,11 @@ html {
     transform    var(--phere-dur-smooth) var(--phere-ease-spring);
   overflow: hidden;
   will-change: transform, box-shadow;
-  backdrop-filter: var(--phere-blur-1);
   -webkit-backdrop-filter: var(--phere-blur-1);
+  backdrop-filter: var(--phere-blur-1);
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .phere-card { background: rgba(13, 22, 36, 0.95); }
 }
 
 .phere-card::before {

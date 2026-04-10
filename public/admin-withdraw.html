@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BRIDGE AI OS — Admin Withdraw</title>
+    <meta name="description" content="Bridge AI OS admin treasury withdrawal panel — authorize and execute on-chain ETH and BRDG withdrawals on Linea mainnet.">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -57,9 +58,7 @@
         .header h1 {
             font-size: 22px;
             font-weight: 700;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--accent-cyan);
         }
         .header .back {
             color: var(--text-secondary);
@@ -135,8 +134,8 @@
             outline: none;
             transition: border-color 0.2s;
         }
-        .form-group input:focus, .form-group select:focus { border-color: var(--accent-cyan); }
-        .form-group .hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent-cyan); outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+        .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
 
         .btn-withdraw {
             width: 100%;
@@ -218,31 +217,31 @@
 
     <div class="section-title">1. Authenticate</div>
     <div class="form-group">
-        <label>Admin Token</label>
-        <input type="password" id="adminToken" placeholder="Enter admin token">
+        <label for="adminToken">Admin Token</label>
+        <input type="password" id="adminToken" placeholder="Enter admin token" autocomplete="current-password">
         <div class="hint">Same token used for other admin operations</div>
     </div>
 
     <div class="section-title">2. Withdraw Details</div>
     <div class="form-group">
-        <label>Rail</label>
-        <select id="rail">
+        <label for="rail">Rail</label>
+        <select id="rail" aria-label="Select withdrawal rail">
             <option value="eth">ETH (Linea Mainnet)</option>
             <option value="brdg">BRDG Token</option>
         </select>
     </div>
     <div class="form-group">
-        <label>Destination Address</label>
+        <label for="toAddress">Destination Address</label>
         <input type="text" id="toAddress" placeholder="0x..." spellcheck="false">
         <div class="hint">Linea-compatible address (0x...)</div>
     </div>
     <div class="form-group">
-        <label>Amount</label>
+        <label for="amount">Amount</label>
         <input type="number" id="amount" placeholder="0.00" step="any" min="0">
         <div class="hint" id="amountHint">ETH amount to withdraw</div>
     </div>
     <div class="form-group">
-        <label>Memo (optional)</label>
+        <label for="memo">Memo (optional)</label>
         <input type="text" id="memo" placeholder="e.g. Ops payout April 2026">
     </div>
 
