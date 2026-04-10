@@ -197,6 +197,93 @@ module.exports = function setupNeuroLink(app, wsServer) {
     res.json(log);
   });
 
+  // ────── LEVEL 3: REAL-TIME STREAMING ──────
+
+  /**
+   * GET /api/neurolink/stream-stats (LEVEL 3)
+   * Get real-time stream statistics
+   */
+  router.get('/stream-stats', (req, res) => {
+    const stats = neurolink.getStreamStats();
+    res.json(stats);
+  });
+
+  /**
+   * GET /api/neurolink/orchestrator-status (LEVEL 3)
+   * Get live monetization orchestrator status
+   */
+  router.get('/orchestrator-status', (req, res) => {
+    const status = neurolink.getOrchestratorStatus();
+    res.json(status);
+  });
+
+  /**
+   * GET /api/neurolink/orchestrator-revenue (LEVEL 3)
+   * Get orchestrator revenue summary
+   */
+  router.get('/orchestrator-revenue', (req, res) => {
+    const revenue = neurolink.getOrchestratorRevenue();
+    res.json(revenue);
+  });
+
+  /**
+   * GET /api/neurolink/pending-triggers (LEVEL 3)
+   * Get pending monetization triggers
+   */
+  router.get('/pending-triggers', (req, res) => {
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const triggers = neurolink.getPendingTriggers(limit);
+    res.json({ count: triggers.length, triggers });
+  });
+
+  /**
+   * GET /api/neurolink/orchestrator-actions (LEVEL 3)
+   * Get recent orchestrator executed actions
+   */
+  router.get('/orchestrator-actions', (req, res) => {
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const actions = neurolink.getRecentOrchestratorActions(limit);
+    res.json(actions);
+  });
+
+  /**
+   * GET /api/neurolink/stream-users (LEVEL 3)
+   * Get all active users in the stream
+   */
+  router.get('/stream-users', (req, res) => {
+    const users = neurolink.getAllStreamUserStates();
+    res.json({ count: users.length, users });
+  });
+
+  /**
+   * GET /api/neurolink/stream-user/:userId (LEVEL 3)
+   * Get specific user's stream state
+   */
+  router.get('/stream-user/:userId', (req, res) => {
+    const userState = neurolink.getUserStreamState(req.params.userId);
+    if (!userState) {
+      return res.status(404).json({ error: 'User not found in stream' });
+    }
+    res.json(userState);
+  });
+
+  /**
+   * POST /api/neurolink/register-stream-user (LEVEL 3)
+   * Register a new user in the stream
+   */
+  router.post('/register-stream-user', async (req, res) => {
+    const { userId, metadata } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId required' });
+    }
+    try {
+      await neurolink.registerStreamUser(userId, metadata);
+      res.json({ ok: true, userId, registered: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ────── WEBSOCKET HANDLING ──────
 
   /**

@@ -268,8 +268,9 @@ const agentNames = [
   'QuoteGen AI', 'Finance AI', 'Growth Hunter', 'Intelligence AI', 'Nurture AI',
   'Closer AI', 'Campaign AI', 'Creative AI', 'Support AI', 'Supply AI'
 ];
-const TREASURY_SEED = 1389208.00;
-let   treasuryBalance = TREASURY_SEED; // warm cache; refreshed from DB on each treasury request
+// DEPRECATED: In-memory treasury cache removed — use Treasury Service + PostgreSQL ledger
+// const TREASURY_SEED = 1389208.00;
+// let   treasuryBalance = TREASURY_SEED;
 const CYCLE_COUNT   = 2697;
 const REVENUE_TOTAL = 541225.00;
 

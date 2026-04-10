@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topic Vector Matrix — Bridge AI OS</title>
+<style>
+  :root {
+    --bg:#0a0c10;--surface:#111318;--border:#1e2330;
+    --green:#00e676;--red:#ff1744;--yellow:#ffd600;
+    --blue:#448aff;--purple:#e040fb;--orange:#ff9800;
+    --text:#e8eaf0;--muted:#6b7280;
+    --font:'JetBrains Mono','Fira Code',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;min-height:100vh}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center}
+  header h1{font-size:15px;letter-spacing:2px;color:var(--green)}
+  .meta{color:var(--muted);font-size:11px}
+  .summary-bar{display:flex;gap:12px;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .stat{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 16px;display:flex;flex-direction:column;align-items:center;min-width:90px}
+  .stat .val{font-size:22px;font-weight:bold}
+  .stat .lbl{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+  .stat.green .val{color:var(--green)}.stat.red .val{color:var(--red)}.stat.yellow .val{color:var(--yellow)}.stat.blue .val{color:var(--blue)}
+  /* Tabs */
+  .tab-bar{display:flex;gap:0;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:10px 20px;cursor:pointer;font-family:var(--font);font-size:11px;letter-spacing:1.5px}
+  .tab.active{color:var(--green);border-bottom-color:var(--green)}
+  .tab:hover{color:var(--text)}
+  /* Controls */
+  .controls{padding:12px 24px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:4px;cursor:pointer;font-family:var(--font);font-size:11px;letter-spacing:1px}
+  .filter-btn.active{border-color:var(--blue);color:var(--blue)}
+  .refresh-btn{background:var(--green);color:#000;border:none;padding:5px 16px;border-radius:4px;cursor:pointer;font-family:var(--font);font-size:11px;font-weight:bold;margin-left:auto}
+  /* Table */
+  table{width:100%;border-collapse:collapse}
+  th{background:var(--surface);color:var(--muted);font-size:10px;letter-spacing:1px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1}
+  td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:hover td{background:rgba(255,255,255,0.02)}
+  tr.row-degraded td{background:rgba(255,23,68,0.04)}
+  tr.row-pending td{background:rgba(255,214,0,0.04)}
+  .bit{display:inline-block;width:18px;height:18px;border-radius:3px;text-align:center;line-height:18px;font-size:11px;font-weight:bold}
+  .bit1{background:rgba(0,230,118,0.15);color:var(--green);border:1px solid var(--green)}
+  .bit0{background:rgba(255,255,255,0.04);color:var(--muted);border:1px solid var(--border)}
+  .bit1r{background:rgba(255,23,68,0.15);color:var(--red);border:1px solid var(--red)}
+  .bit1y{background:rgba(255,214,0,0.15);color:var(--yellow);border:1px solid var(--yellow)}
+  .rec-code{font-size:10px;color:var(--purple);letter-spacing:0.5px}
+  .sig{font-size:9px;color:var(--border)}
+  .topic-name{font-weight:bold;font-size:12px;color:var(--text)}
+  .owner-badge{font-size:9px;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 5px;display:inline-block;margin-top:2px}
+  .p3{color:var(--red)}.p2{color:var(--yellow)}.p1{color:var(--green)}
+  .risk{display:inline-flex;gap:2px;align-items:center}
+  .rd{width:6px;height:6px;border-radius:50%}
+  .rdf{background:var(--red)}.rde{background:var(--border)}
+  .sev{display:inline-block;font-size:9px;font-weight:bold;padding:1px 5px;border-radius:3px;letter-spacing:0.5px}
+  .sev0{background:rgba(0,230,118,0.15);color:var(--green)}.sev1{background:rgba(0,230,118,0.1);color:var(--green)}
+  .sev2{background:rgba(255,214,0,0.1);color:var(--yellow)}.sev3{background:rgba(255,152,0,0.1);color:var(--orange)}
+  .sev4{background:rgba(255,23,68,0.1);color:var(--red)}.sev5{background:rgba(255,23,68,0.2);color:var(--red);border:1px solid var(--red)}
+  .actions{display:flex;gap:5px}
+  .btn{border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-family:var(--font);font-size:10px;font-weight:bold;letter-spacing:0.5px}
+  .btn-approve{background:rgba(0,230,118,0.15);color:var(--green);border:1px solid var(--green)}
+  .btn-reject{background:rgba(255,23,68,0.15);color:var(--red);border:1px solid var(--red)}
+  .btn-logs{background:rgba(68,138,255,0.1);color:var(--blue);border:1px solid var(--blue)}
+  .btn:hover{opacity:0.8}.btn:disabled{opacity:0.3;cursor:not-allowed}
+  .table-wrap{overflow-x:auto;padding:0 24px 24px}
+  .ts{color:var(--muted);font-size:10px}
+  /* Detail panel */
+  .detail-panel{background:var(--surface);border-top:1px solid var(--border);padding:18px 24px;font-size:11px;line-height:1.8;display:none}
+  .detail-panel h3{font-size:12px;letter-spacing:1px;color:var(--blue);margin-bottom:10px}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .detail-meta{color:var(--muted)}
+  .detail-meta span{color:var(--text)}
+  .rec-description{color:var(--yellow);margin:8px 0 4px}
+  .steps-list{list-style:none;padding:0;margin-top:6px}
+  .steps-list li{padding:3px 0 3px 16px;position:relative;color:var(--muted)}
+  .steps-list li::before{content:attr(data-n)'.';position:absolute;left:0;color:var(--purple);font-weight:bold}
+  .aip-block{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px 20px;margin:0;display:none}
+  .aip-block h4{font-size:11px;letter-spacing:1px;color:var(--blue);margin-bottom:8px}
+  .aip-block pre{font-size:10px;color:var(--muted);white-space:pre-wrap}
+  /* System Map */
+  #tab-map{padding:0 24px 24px;display:none}
+  .map-legend{display:flex;gap:16px;padding:12px 0;flex-wrap:wrap}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)}
+  .legend-dot{width:10px;height:10px;border-radius:2px}
+  #map-svg-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  svg#tvm-map{display:block;width:100%;height:auto}
+  .map-node{cursor:pointer}
+  .map-node rect{transition:filter 0.15s}
+  .map-node:hover rect{filter:brightness(1.3)}
+  .map-node text{font-family:'JetBrains Mono','Fira Code',monospace;pointer-events:none;user-select:none}
+  /* Toast */
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--green);color:var(--green);padding:10px 20px;border-radius:6px;font-size:12px;display:none;z-index:999}
+</style>
+</head>
+<body>
+<header>
+  <h1>&#x2B21; TOPIC VECTOR MATRIX</h1>
+  <div class="meta">Bridge AI OS &middot; TVM v2.0 &middot; <span id="last-refresh">-</span></div>
+</header>
+
+<div class="summary-bar">
+  <div class="stat green"><div class="val" id="s-healthy">-</div><div class="lbl">HEALTHY</div></div>
+  <div class="stat red"><div class="val" id="s-degraded">-</div><div class="lbl">DEGRADED</div></div>
+  <div class="stat yellow"><div class="val" id="s-action">-</div><div class="lbl">ACTION REQ</div></div>
+  <div class="stat blue"><div class="val" id="s-pending">-</div><div class="lbl">PENDING APPROVAL</div></div>
+  <div class="stat"><div class="val" id="s-total">-</div><div class="lbl">TOTAL TOPICS</div></div>
+</div>
+
+<nav class="tab-bar">
+  <button class="tab active" data-tab="matrix">MATRIX</button>
+  <button class="tab" data-tab="map">SYSTEM MAP</button>
+</nav>
+
+<!-- ── MATRIX TAB ─────────────────────────────────────────────────────────── -->
+<div id="tab-matrix">
+  <div class="controls">
+    <button class="filter-btn active" data-filter="all">ALL</button>
+    <button class="filter-btn" data-filter="degraded">DEGRADED</button>
+    <button class="filter-btn" data-filter="action">ACTION REQUIRED</button>
+    <button class="filter-btn" data-filter="pending">PENDING APPROVAL</button>
+    <button class="filter-btn" data-filter="healthy">HEALTHY</button>
+    <button class="refresh-btn" id="refresh-btn">&#x21BB; REFRESH</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>TOPIC</th><th>CFG</th><th>HEALTH</th><th>DEGRADED</th>
+          <th>ACTION</th><th>AUTOFIX</th><th>APPROVAL</th>
+          <th>RISK</th><th>PRI</th><th>REC CODE</th><th>SEV</th>
+          <th>SIG</th><th>UPDATED</th><th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody id="tvm-body"></tbody>
+    </table>
+  </div>
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-grid">
+      <div>
+        <h3 id="detail-topic-title">—</h3>
+        <div class="detail-meta">Owner: <span id="detail-owner">—</span> &nbsp;|&nbsp; Sig: <span id="detail-sig" style="color:var(--border);font-size:9px">—</span></div>
+        <div class="rec-description" id="detail-rec-desc">—</div>
+        <ol class="steps-list" id="detail-steps"></ol>
+      </div>
+      <div class="aip-block" id="aip-block">
+        <h4>&#x2699; AGENT PROPOSAL</h4>
+        <pre id="aip-content"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAP TAB ────────────────────────────────────────────────────────────── -->
+<div id="tab-map">
+  <div class="map-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#00e676"></div>HEALTHY</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff1744"></div>DEGRADED</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ffd600;opacity:.7"></div>ACTION REQ</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#448aff;border-radius:50%"></div>BRAIN</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff9800;border-radius:50%"></div>OPS</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#00e676;border-radius:50%"></div>TREASURY</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e040fb;border-radius:50%"></div>GROWTH</div>
+  </div>
+  <div id="map-svg-wrap">
+    <svg id="tvm-map" viewBox="0 0 960 510" xmlns="http://www.w3.org/2000/svg" style="background:#0d0f14">
+      <defs>
+        <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#1e2330"/>
+        </marker>
+        <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#ff1744" fill-opacity=".5"/>
+        </marker>
+      </defs>
+      <!-- Layer labels -->
+      <text x="12" y="88" font-size="9" fill="#1e2330" font-family="monospace" letter-spacing="2">APPS</text>
+      <text x="12" y="278" font-size="9" fill="#1e2330" font-family="monospace" letter-spacing="2">SERVICES</text>
+      <text x="12" y="438" font-size="9" fill="#1e2330" font-family="monospace" letter-spacing="2">INFRA</text>
+      <g id="map-edges"></g>
+      <g id="map-nodes"></g>
+    </svg>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+let allRows = [];
+let currentFilter = 'all';
+let topology = null;
+
+// Owner → group color
+const OWNER_COLOR = { brain:'#448aff', ops:'#ff9800', treasury:'#00e676', growth:'#e040fb' };
+const SEV_LABELS  = ['','LOW','LOW','MED','HIGH','CRIT'];
+
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function bit(val, type) {
+  if (!val) return '<span class="bit bit0">0</span>';
+  if (type === 'red')    return '<span class="bit bit1r">1</span>';
+  if (type === 'yellow') return '<span class="bit bit1y">1</span>';
+  return '<span class="bit bit1">1</span>';
+}
+
+function riskDots(score) {
+  let h = '<div class="risk">';
+  for (let i = 1; i <= 5; i++) h += '<div class="rd ' + (i <= score ? 'rdf' : 'rde') + '"></div>';
+  return h + '</div>';
+}
+
+function priLabel(p) {
+  const cls = {3:'p3',2:'p2',1:'p1'};
+  return '<span class="' + (cls[p]||'') + '">P' + esc(p) + '</span>';
+}
+
+function sevBadge(code, recLib) {
+  if (!recLib || !code || !recLib[code]) return '';
+  const sev = recLib[code].severity || 0;
+  return '<span class="sev sev' + sev + '">' + (SEV_LABELS[sev] || 'S'+sev) + '</span>';
+}
+
+function timeAgo(epoch) {
+  const d = Math.floor(Date.now()/1000) - epoch;
+  if (d < 60)    return d + 's ago';
+  if (d < 3600)  return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  return Math.floor(d/86400) + 'd ago';
+}
+
+let _recLib = null;
+async function getRecLib() {
+  if (_recLib) return _recLib;
+  try { _recLib = await fetch(API + '/api/tvm/recommendations/all').then(r => r.json()); }
+  catch(_) { _recLib = {}; }
+  return _recLib;
+}
+
+function buildRow(r, recLib) {
+  const rowCls = r.human_approval_needed ? 'row-pending' : r.degraded ? 'row-degraded' : '';
+  const dis = r.human_approval_needed ? '' : 'disabled';
+  const tr = document.createElement('tr');
+  tr.className = rowCls;
+  tr.dataset.topic = r.topic;
+  tr.style.cursor = 'pointer';
+  tr.innerHTML =
+    '<td><div class="topic-name">' + esc(r.topic) + '</div><div class="owner-badge">' + esc(r.owner) + '</div></td>' +
+    '<td>' + bit(r.configured) + '</td>' +
+    '<td>' + bit(r.healthy) + '</td>' +
+    '<td>' + bit(r.degraded,'red') + '</td>' +
+    '<td>' + bit(r.action_required,'yellow') + '</td>' +
+    '<td>' + bit(r.autofix_available) + '</td>' +
+    '<td>' + bit(r.human_approval_needed,'yellow') + '</td>' +
+    '<td>' + riskDots(r.risk_score) + '</td>' +
+    '<td>' + priLabel(r.priority) + '</td>' +
+    '<td><span class="rec-code">' + esc(r.recommendation_code) + '</span></td>' +
+    '<td>' + sevBadge(r.recommendation_code, recLib) + '</td>' +
+    '<td><span class="sig">' + esc(r.signature) + '</span></td>' +
+    '<td><span class="ts">' + esc(timeAgo(r.last_updated)) + '</span></td>' +
+    '<td><div class="actions">' +
+      '<button class="btn btn-approve" ' + dis + ' data-action="approve" data-topic="' + esc(r.topic) + '">APPROVE</button>' +
+      '<button class="btn btn-reject" '  + dis + ' data-action="reject"  data-topic="' + esc(r.topic) + '">REJECT</button>' +
+      '<button class="btn btn-logs" data-action="logs" data-topic="' + esc(r.topic) + '">LOGS</button>' +
+    '</div></td>';
+  return tr;
+}
+
+function applyFilter(rows) {
+  if (currentFilter === 'degraded') return rows.filter(r => r.degraded);
+  if (currentFilter === 'action')   return rows.filter(r => r.action_required);
+  if (currentFilter === 'pending')  return rows.filter(r => r.human_approval_needed);
+  if (currentFilter === 'healthy')  return rows.filter(r => r.healthy && !r.degraded);
+  return rows;
+}
+
+async function renderTable() {
+  const recLib = await getRecLib();
+  const tbody = document.getElementById('tvm-body');
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+  const filtered = applyFilter(allRows);
+  if (!filtered.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 14;
+    td.style.cssText = 'text-align:center;color:var(--muted);padding:24px';
+    td.textContent = 'No rows match filter';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  filtered.forEach(r => tbody.appendChild(buildRow(r, recLib)));
+}
+
+async function selectRow(topic) {
+  const row = allRows.find(r => r.topic === topic);
+  if (!row) return;
+  const panel = document.getElementById('detail-panel');
+  panel.style.display = 'block';
+
+  document.getElementById('detail-topic-title').textContent = row.topic + ' — ' + row.owner;
+  document.getElementById('detail-owner').textContent = row.owner;
+  document.getElementById('detail-sig').textContent = row.signature;
+
+  // Fetch full detail with steps
+  try {
+    const d = await fetch(API + '/api/tvm/' + encodeURIComponent(topic)).then(r => r.json());
+    const rd = d.rec_detail;
+    document.getElementById('detail-rec-desc').textContent =
+      '\u2192 ' + (d.recommendation_text || d.recommendation_code || '');
+
+    const stepsList = document.getElementById('detail-steps');
+    while (stepsList.firstChild) stepsList.removeChild(stepsList.firstChild);
+    if (rd && rd.steps && rd.steps.length) {
+      rd.steps.forEach((s, i) => {
+        const li = document.createElement('li');
+        li.setAttribute('data-n', i + 1);
+        li.textContent = s;
+        stepsList.appendChild(li);
+      });
+    }
+
+    const aip = document.getElementById('aip-block');
+    if (row.autofix_available && rd) {
+      aip.style.display = 'block';
+      document.getElementById('aip-content').textContent = JSON.stringify({
+        event_type: 'executor.request',
+        version: '1.0',
+        topic: row.topic,
+        recommendation_code: row.recommendation_code,
+        steps: rd.steps || [],
+        severity: rd.severity,
+        requires_human_approval: rd.requires_human_approval,
+        correlation_id: row.topic + '-exe-' + Date.now(),
+        emitted_at: Math.floor(Date.now() / 1000),
+      }, null, 2);
+    } else {
+      aip.style.display = 'none';
+    }
+  } catch(_) {}
+}
+
+async function approve(topic) {
+  const r = await fetch(API + '/api/tvm/' + encodeURIComponent(topic) + '/approve', {method:'POST'});
+  const d = await r.json();
+  if (d.ok) { showToast('\u2713 ' + topic + ' approved'); load(); }
+}
+
+async function reject(topic) {
+  const r = await fetch(API + '/api/tvm/' + encodeURIComponent(topic) + '/reject', {method:'POST'});
+  const d = await r.json();
+  if (d.ok) { showToast('\u2717 ' + topic + ' rejected'); load(); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+// ── Global System Map ─────────────────────────────────────────────────────────
+async function loadTopology() {
+  if (topology) return topology;
+  try { topology = await fetch(API + '/api/tvm/topology').then(r => r.json()); }
+  catch(_) { topology = null; }
+  return topology;
+}
+
+function nodeStatus(r) {
+  if (!r) return 'unknown';
+  if (r.human_approval_needed) return 'pending';
+  if (r.degraded) return 'degraded';
+  if (r.action_required) return 'action';
+  if (r.healthy) return 'healthy';
+  return 'unknown';
+}
+
+function renderMap(rows, topo) {
+  if (!topo) return;
+  const rowMap = {};
+  rows.forEach(r => { rowMap[r.topic] = r; });
+  const pos = topo.positions;
+
+  // Dimensions per node: 90×38, centre-anchored
+  const NW = 90, NH = 38, HR = NW/2, VR = NH/2;
+
+  // ── Edges ─────────────────────────────────────────────────────────────────
+  const edgesG = document.getElementById('map-edges');
+  while (edgesG.firstChild) edgesG.removeChild(edgesG.firstChild);
+  (topo.edges || []).forEach(e => {
+    const [x1, y1] = pos[e.from] || [0, 0];
+    const [x2, y2] = pos[e.to]   || [0, 0];
+    const fromRow = rowMap[e.from];
+    const isDegraded = fromRow && fromRow.degraded;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1 + VR);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2 - VR);
+    line.setAttribute('stroke', isDegraded ? 'rgba(255,23,68,0.3)' : 'rgba(30,35,48,0.9)');
+    line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('marker-end', isDegraded ? 'url(#arrow-red)' : 'url(#arrow-gray)');
+    edgesG.appendChild(line);
+  });
+
+  // ── Nodes ─────────────────────────────────────────────────────────────────
+  const nodesG = document.getElementById('map-nodes');
+  while (nodesG.firstChild) nodesG.removeChild(nodesG.firstChild);
+
+  Object.entries(pos).forEach(([topic, [cx, cy]]) => {
+    const row = rowMap[topic];
+    const status = nodeStatus(row);
+    const owner = (row && row.owner) || 'ops';
+    const ownerColor = OWNER_COLOR[owner] || '#6b7280';
+
+    const fillColor = status === 'degraded' ? 'rgba(255,23,68,0.15)'
+                    : status === 'pending'   ? 'rgba(255,214,0,0.1)'
+                    : status === 'action'    ? 'rgba(255,152,0,0.1)'
+                    : status === 'healthy'   ? 'rgba(13,15,20,0.8)'
+                    : 'rgba(13,15,20,0.5)';
+    const strokeColor = status === 'degraded' ? '#ff1744'
+                      : status === 'pending'   ? '#ffd600'
+                      : status === 'action'    ? '#ff9800'
+                      : status === 'healthy'   ? ownerColor
+                      : '#2a2f3d';
+    const strokeW = (status === 'degraded' || status === 'pending') ? 2 : 1;
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'map-node');
+    g.setAttribute('data-topic', topic);
+    g.setAttribute('transform', 'translate(' + (cx - HR) + ',' + (cy - VR) + ')');
+
+    // Background rect
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('width', NW); rect.setAttribute('height', NH);
+    rect.setAttribute('rx', '5'); rect.setAttribute('fill', fillColor);
+    rect.setAttribute('stroke', strokeColor); rect.setAttribute('stroke-width', strokeW);
+    g.appendChild(rect);
+
+    // Owner accent line at top
+    const accent = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    accent.setAttribute('x1', '6'); accent.setAttribute('y1', '0');
+    accent.setAttribute('x2', NW - 6); accent.setAttribute('y2', '0');
+    accent.setAttribute('stroke', ownerColor); accent.setAttribute('stroke-width', '2');
+    accent.setAttribute('opacity', '0.6');
+    g.appendChild(accent);
+
+    // Topic name (split long names)
+    const shortName = topic.replace(/([A-Z])/g, (m, c, i) => (i > 0 ? '\u200b' + c : c));
+    const words = topic.replace(/([a-z])([A-Z])/g,'$1 $2').split(' ');
+    if (words.length <= 2) {
+      const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('x', NW/2); txt.setAttribute('y', NH/2 + 4);
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('font-size', '9'); txt.setAttribute('fill', status === 'healthy' ? ownerColor : strokeColor);
+      txt.setAttribute('font-weight', 'bold');
+      txt.textContent = topic;
+      g.appendChild(txt);
+    } else {
+      words.slice(0, 2).forEach((w, i) => {
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', NW/2); txt.setAttribute('y', (i === 0 ? 14 : 26));
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('font-size', '8'); txt.setAttribute('fill', status === 'healthy' ? ownerColor : strokeColor);
+        txt.setAttribute('font-weight', 'bold');
+        txt.textContent = w;
+        g.appendChild(txt);
+      });
+    }
+
+    // Status dot
+    const dotColor = status === 'healthy' ? '#00e676' : status === 'degraded' ? '#ff1744' : '#ffd600';
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', NW - 8); dot.setAttribute('cy', 8);
+    dot.setAttribute('r', 3); dot.setAttribute('fill', dotColor);
+    g.appendChild(dot);
+
+    g.addEventListener('click', () => {
+      showTab('matrix');
+      selectRow(topic);
+    });
+    nodesG.appendChild(g);
+  });
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.getElementById('tab-matrix').style.display = name === 'matrix' ? '' : 'none';
+  document.getElementById('tab-map').style.display     = name === 'map'    ? '' : 'none';
+  if (name === 'map' && allRows.length) {
+    loadTopology().then(topo => renderMap(allRows, topo));
+  }
+}
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => showTab(btn.dataset.tab));
+});
+
+// ── Filter buttons ────────────────────────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    currentFilter = this.dataset.filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    renderTable();
+  });
+});
+document.getElementById('refresh-btn').addEventListener('click', load);
+
+// ── Event delegation (matrix table) ──────────────────────────────────────────
+document.getElementById('tvm-body').addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action]');
+  const tr  = e.target.closest('tr[data-topic]');
+  if (btn) {
+    e.stopPropagation();
+    const topic = btn.dataset.topic;
+    const action = btn.dataset.action;
+    if (action === 'approve') approve(topic);
+    else if (action === 'reject') reject(topic);
+    else if (action === 'logs') window.open('/logs?topic=' + encodeURIComponent(topic), '_blank');
+  } else if (tr) {
+    selectRow(tr.dataset.topic);
+  }
+});
+
+// ── Data loading ──────────────────────────────────────────────────────────────
+async function loadSummary() {
+  try {
+    const d = await fetch(API + '/api/tvm/summary').then(r => r.json());
+    document.getElementById('s-healthy').textContent  = d.healthy;
+    document.getElementById('s-degraded').textContent = d.degraded;
+    document.getElementById('s-action').textContent   = d.action_required;
+    document.getElementById('s-pending').textContent  = d.pending_approval;
+    document.getElementById('s-total').textContent    = d.total;
+  } catch(_) {}
+}
+
+async function load() {
+  try {
+    const data = await fetch(API + '/api/tvm').then(r => r.json());
+    allRows = Array.isArray(data) ? data : [];
+    await renderTable();
+    loadSummary();
+    document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString();
+    // Refresh map if visible
+    if (document.getElementById('tab-map').style.display !== 'none') {
+      loadTopology().then(topo => renderMap(allRows, topo));
+    }
+  } catch(_) {
+    const tbody = document.getElementById('tvm-body');
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 14;
+    td.style.cssText = 'text-align:center;color:var(--red);padding:24px';
+    td.textContent = 'Failed to load TVM — check API connection';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+}
+
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>

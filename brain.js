@@ -185,7 +185,7 @@ const state = {
       version: '3.0',
     },
   },
-  treasury: { balance: 0, earned: 0, spent: 4210.50, currency: 'USD' },
+  treasury: { }, // DEPRECATED: use Treasury Service + PostgreSQL ledger
   swarm: { agents: 8, healthy: 7, tasks_queued: 3, uptime_s: 86400 },
   missions: [],
   marketplace: { tasks: [], completed: 0 },
@@ -1265,9 +1265,27 @@ app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }
     return res.status(403).json({ ok: false, error: 'Invalid PayFast signature' });
   }
   if (payment_status === 'COMPLETE') {
-    state.treasury.balance += parseFloat(amount_gross || 0);
-    state.treasury.earned += parseFloat(amount_gross || 0);
-    broadcast({ type: 'payment_received', rail: 'payfast', amount: amount_gross, item: item_name });
+    // NEW: Record to Treasury Service + PostgreSQL ledger
+    try {
+      const treasuryFactory = require('./lib/treasury-factory');
+      // Get database connection from context (initialized elsewhere)
+      const treasury = treasuryFactory.getTreasuryService();
+
+      const paymentResult = await treasury.processPayFastPayment({
+        m_payment_id: pf_payment_id,
+        amount_gross: parseFloat(amount_gross || 0),
+        item_description: item_name,
+        email_address: req.body.email_address || '',
+        custom_str1: req.body.custom_str1 || '',
+        subscription_idfrom: req.body.subscription_id || null,
+      });
+
+      broadcast({ type: 'payment_received', rail: 'payfast', amount: amount_gross, item: item_name, txGroup: paymentResult.txGroup });
+    } catch (error) {
+      // FALLBACK: log error but don't fail webhook (PayFast expects 200)
+      console.error('[PayFast Webhook] Treasury Service error:', error);
+      audit('payfast_webhook_treasury_error', 'payfast', error.message);
+    }
 
     // Send confirmation email
     const meta = (() => {

@@ -1,0 +1,23 @@
+name             = "bridge-vps-proxy"
+main             = "index.js"
+compatibility_date = "2025-01-01"
+workers_dev      = false
+
+# Deploy this config with the supaco.ai account token:
+# CLOUDFLARE_API_TOKEN=<supaco-ai-token> npx wrangler deploy --config wrangler.supaco.toml
+
+[[routes]]
+pattern   = "supaco.ai/*"
+zone_name = "supaco.ai"
+
+[[routes]]
+pattern   = "www.supaco.ai/*"
+zone_name = "supaco.ai"
+
+[[routes]]
+pattern   = "app.supaco.ai/*"
+zone_name = "supaco.ai"
+
+[[routes]]
+pattern   = "admin.supaco.ai/*"
+zone_name = "supaco.ai"
