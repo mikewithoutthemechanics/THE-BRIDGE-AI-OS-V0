@@ -1,18 +1,25 @@
 /**
  * NeuroLink API Routes + WebSocket Handler
  * Exposes cognitive state via REST + real-time WebSocket
+ * Includes Level 2: Predictive Revenue Engine + User Cloning
  */
 
 const { AmbientAdapter } = require('./ambient');
 const { inferState } = require('./inference');
 const { NeuroHistory } = require('./history');
+const { PredictiveEngine } = require('./predictive-engine');
+const { UserClone } = require('./user-clone');
 
 class NeuroLinkService {
   constructor() {
     this.adapter = new AmbientAdapter();
     this.history = new NeuroHistory();
+    this.predictor = new PredictiveEngine(50); // 50-state sliding window
+    this.userClone = new UserClone('default-user');
+
     this.currentState = null;
     this.currentStatus = null;
+    this.lastPrediction = null;
     this.cache = { latestState: null, latestStatus: null };
     this.subscribers = new Set(); // WebSocket clients
     this.enabled = process.env.NEUROLINK_ENABLED !== 'false';
@@ -51,6 +58,7 @@ class NeuroLinkService {
 
   /**
    * Single inference tick
+   * Includes Level 2: predictions and user cloning
    */
   async tick() {
     if (!this.enabled) return;
@@ -84,11 +92,37 @@ class NeuroLinkService {
       // Store in history
       await this.history.addPoint(state);
 
+      // ─── LEVEL 2: PREDICTIVE ENGINE ───
+      // Update predictor with new state
+      this.predictor.update(state);
+
+      // Generate predictions every 10 ticks (to reduce CPU overhead)
+      if (this.tickCount === undefined) this.tickCount = 0;
+      this.tickCount = (this.tickCount + 1) % 10;
+
+      if (this.tickCount === 0) {
+        this.lastPrediction = this.predictor.predict();
+      }
+
+      // ─── LEVEL 2: USER CLONING ───
+      // Learn from this state observation
+      this.userClone.learn(state, this.previousState);
+      this.previousState = state;
+
       // Emit to WebSocket subscribers
       this.broadcastStateUpdate(state);
 
       // Check thresholds and emit events
       this.checkThresholds(state);
+
+      // Emit predictions if available (every 10 ticks)
+      if (this.tickCount === 0 && this.lastPrediction?.ready) {
+        this.broadcastEvent({
+          event: 'NEUROLINK_PREDICTION',
+          data: this.lastPrediction,
+          timestamp: new Date().toISOString()
+        });
+      }
     } catch (err) {
       console.error('[NeuroLink] Inference error:', err.message);
       this.cache.latestStatus = {
@@ -287,6 +321,49 @@ class NeuroLinkService {
     const today = new Date().toISOString().split('T')[0];
     const summary = await this.history.getDaySummary(today);
     return summary;
+  }
+
+  /**
+   * Get latest predictions (Level 2)
+   */
+  getPredictions() {
+    return this.lastPrediction || {
+      ready: false,
+      message: 'Gathering baseline data...',
+      dataPoints: this.predictor.window.length
+    };
+  }
+
+  /**
+   * Get next likely action based on predictions (Level 2)
+   */
+  getNextAction() {
+    if (!this.lastPrediction?.nextAction) {
+      return { action: 'MONITOR', reason: 'No predictions available yet' };
+    }
+    return this.lastPrediction.nextAction;
+  }
+
+  /**
+   * Get user behavior profile (Level 2)
+   */
+  getUserProfile() {
+    return this.userClone.getSummary();
+  }
+
+  /**
+   * Predict next intent based on current state (Level 2)
+   */
+  predictNextIntent(currentIntent) {
+    return this.userClone.predictNextIntent(currentIntent);
+  }
+
+  /**
+   * Predict optimal task type for current state (Level 2)
+   */
+  predictOptimalTaskType() {
+    if (!this.currentState) return null;
+    return this.userClone.predictOptimalTaskType(this.currentState);
   }
 }
 
