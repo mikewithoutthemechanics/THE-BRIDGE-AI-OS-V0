@@ -193,6 +193,18 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-a
 
 <div id="main">
 
+  <!-- AI SUMMARY -->
+  <div class="panel" style="grid-column:1/-1;border-color:rgba(0,200,255,.3)">
+    <div class="panel-header">
+      <span class="panel-title">AI Activity Summary</span>
+      <span class="panel-badge" id="summary-badge">LIVE</span>
+    </div>
+    <div class="panel-body" id="ai-summary" style="font-size:12px;color:#c8dce8;line-height:1.6">
+      Loading summary...
+    </div>
+    <div class="panel-footer" id="summary-footer">updates every 30s</div>
+  </div>
+
   <!-- Task Marketplace -->
   <div class="panel" style="grid-column:1/-1;">
     <div class="panel-header">
@@ -298,19 +310,28 @@ function fakeFallback(ep){
   return {_offline:true,open:[],in_progress:[],completed:[],listings:[],pairs:[],balances:[],assets:[],txns:[]};
 }
 
+var _pollOk = 0, _pollFail = 0;
 async function poll(endpoint,callback){
   try{
-    const r=await fetch(endpoint,{signal:AbortSignal.timeout(4000)});
+    const r=await fetch(endpoint,{signal:AbortSignal.timeout(8000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const raw=await r.json();
-    document.getElementById('conn-badge').textContent='CONNECTED';
-    document.getElementById('conn-badge').className='conn-badge';
-    // API wraps responses as {section, data, ts} — unwrap if present
+    _pollOk++;
+    // Only update badge once all polls have run
+    if (_pollOk + _pollFail >= 6) {
+      document.getElementById('conn-badge').textContent = _pollFail === 0 ? 'CONNECTED' : _pollFail + ' DEGRADED';
+      document.getElementById('conn-badge').className = _pollFail === 0 ? 'conn-badge' : 'conn-badge err';
+      _pollOk = 0; _pollFail = 0;
+    }
     const data=(raw && raw.section && raw.data)?raw.data:raw;
     callback(data,false);
   }catch(e){
-    document.getElementById('conn-badge').textContent='OFFLINE';
-    document.getElementById('conn-badge').className='conn-badge err';
+    _pollFail++;
+    if (_pollOk + _pollFail >= 6) {
+      document.getElementById('conn-badge').textContent = _pollOk === 0 ? 'OFFLINE' : _pollFail + ' DEGRADED';
+      document.getElementById('conn-badge').className = 'conn-badge err';
+      _pollOk = 0; _pollFail = 0;
+    }
     callback(fakeFallback(endpoint),true);
   }
 }
@@ -663,12 +684,67 @@ function renderStats(d,mock){
     renderStats(mapped, mock);
   });
 
-  pollTasks();setInterval(pollTasks,5000);
-  pollDex();setInterval(pollDex,3000);
-  pollWallet();setInterval(pollWallet,10000);
-  pollSkills();setInterval(pollSkills,30000);
-  pollPort();setInterval(pollPort,10000);
-  pollStats();setInterval(pollStats,5000);
+  // Stagger polls to avoid rate limiting and flashing
+  pollTasks();setInterval(pollTasks,15000);
+  setTimeout(function(){pollDex();setInterval(pollDex,15000);},2000);
+  setTimeout(function(){pollWallet();setInterval(pollWallet,20000);},4000);
+  setTimeout(function(){pollSkills();setInterval(pollSkills,60000);},6000);
+  setTimeout(function(){pollPort();setInterval(pollPort,20000);},8000);
+  setTimeout(function(){pollStats();setInterval(pollStats,15000);},10000);
+
+  // AI Summary — builds from real data every 30s
+  function updateAISummary() {
+    Promise.all([
+      fetch('/api/economy/stats').then(function(r){return r.json();}).catch(function(){return {};}),
+      fetch('/api/revenue-engine/status').then(function(r){return r.json();}).catch(function(){return {};}),
+      fetch('/api/economy/tasks').then(function(r){return r.json();}).catch(function(){return {};})
+    ]).then(function(results) {
+      var stats = results[0];
+      var engine = results[1];
+      var tasks = results[2];
+      var el = document.getElementById('ai-summary');
+      if (!el) return;
+      el.textContent = '';
+
+      var totalBrdg = (stats.totalCirculating || 0).toLocaleString();
+      var agents = stats.activeAgents || stats.agent_count || 0;
+      var txns = (stats.totalTransactions || 0).toLocaleString();
+      var burned = (stats.totalBurned || 0).toFixed(2);
+      var engLeads = engine.leadsGenerated || 0;
+      var engDeals = engine.dealsConverted || 0;
+      var engRev = (engine.revenueGenerated || 0).toLocaleString();
+      var engRunning = engine.running ? 'Active' : 'Stopped';
+      var taskList = tasks.tasks || [];
+      var posted = taskList.filter(function(t){return t.status==='POSTED';}).length;
+      var claimed = taskList.filter(function(t){return t.status==='CLAIMED';}).length;
+      var completed = taskList.filter(function(t){return t.status==='COMPLETED';}).length;
+
+      var lines = [
+        'Economy: ' + totalBrdg + ' BRDG circulating across ' + agents + ' agents with ' + txns + ' total transactions.',
+        'Marketplace: ' + posted + ' open tasks, ' + claimed + ' being executed, ' + completed + ' completed. ' + burned + ' BRDG burned (deflationary).',
+        'Revenue Engine: ' + engRunning + ' — ' + engLeads + ' leads generated, ' + engDeals + ' converted, R' + engRev + ' revenue earned.',
+      ];
+
+      // AI suggestion based on state
+      if (posted === 0 && claimed === 0) lines.push('Suggestion: Post new tasks to the marketplace to keep agents productive.');
+      else if (engDeals < 3) lines.push('Suggestion: Increase outreach volume to improve conversion rate.');
+      else lines.push('Suggestion: System is healthy. Consider raising prices to increase ARPU.');
+
+      lines.forEach(function(line) {
+        var p = document.createElement('div');
+        p.style.cssText = 'margin-bottom:6px;padding:4px 0;border-bottom:1px solid rgba(0,255,255,0.05)';
+        if (line.startsWith('Suggestion:')) {
+          p.style.cssText += ';color:#ffd166;font-weight:600;border:1px solid rgba(255,209,102,0.15);border-radius:4px;padding:6px 8px;background:rgba(255,209,102,0.03)';
+        }
+        p.textContent = line;
+        el.appendChild(p);
+      });
+
+      document.getElementById('summary-footer').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+    });
+  }
+  updateAISummary();
+  setInterval(updateAISummary, 30000);
 })();
 </script>
 <script src="/global-nav.js" defer></script>
