@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Legal Centre — Bridge AI OS</title>
+<style>
+:root{--bg:#050a0f;--bg2:#0a1520;--bg3:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--red:#ff3c5a;--gold:#ffd166;--purple:#a78bfa;--dim:#4d6678;--text:#e0e8f0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;font-size:14px;line-height:1.6;height:100vh;display:flex;flex-direction:column}
+.header{display:flex;align-items:center;padding:10px 20px;background:var(--bg2);border-bottom:1px solid var(--border);gap:12px;flex-shrink:0}
+.header h1{font-size:15px;font-weight:700}.header h1 span{color:var(--cyan)}
+.header nav{display:flex;gap:2px;margin-left:12px}
+.header nav a{color:var(--dim);text-decoration:none;font-size:11px;padding:3px 8px;border-radius:4px}
+.header nav a:hover{color:var(--cyan);background:rgba(0,200,255,.05)}
+.header .tier{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,229,123,.1);color:var(--green);font-weight:600}
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.sb-section{padding:8px 0;border-bottom:1px solid var(--border)}
+.sb-header{padding:4px 14px;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
+.sb-item{display:block;padding:6px 14px;cursor:pointer;color:var(--text);text-decoration:none;font-size:12px;border-left:2px solid transparent;transition:all .12s}
+.sb-item:hover,.sb-item.active{background:var(--bg3);color:var(--cyan);border-left-color:var(--cyan)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.tab-bar{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.tab{padding:4px 12px;cursor:pointer;font-size:11px;color:var(--dim);border-bottom:2px solid transparent;transition:all .12s}
+.tab:hover{color:var(--text)}.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.pane{display:none;flex:1;overflow-y:auto;padding:16px}
+.pane.active{display:flex;flex-direction:column}
+/* Chat */
+.chat-messages{flex:1;overflow-y:auto;padding:8px 0}
+.msg{margin-bottom:12px;max-width:85%;padding:10px 14px;border-radius:10px;font-size:13px;white-space:pre-wrap;word-wrap:break-word}
+.msg.user{background:rgba(0,200,255,.12);border:1px solid rgba(0,200,255,.2);margin-left:auto;border-bottom-right-radius:2px}
+.msg.ai{background:var(--bg2);border:1px solid var(--border);margin-right:auto;border-bottom-left-radius:2px}
+.msg .disclaimer{font-size:10px;color:var(--dim);margin-top:6px;font-style:italic;border-top:1px solid var(--border);padding-top:4px}
+.chat-input{display:flex;gap:8px;padding:12px 0 0;border-top:1px solid var(--border);flex-shrink:0}
+.chat-input input{flex:1;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px}
+.chat-input input:focus{outline:none;border-color:var(--cyan)}
+.chat-input button{padding:10px 18px;border:none;border-radius:8px;background:var(--cyan);color:#050a0f;font-weight:700;cursor:pointer;font-size:13px}
+.chat-input button:hover{opacity:.85}
+/* Forms */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:11px;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.form-group select,.form-group input,.form-group textarea{width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:inherit}
+.form-group textarea{min-height:80px;resize:vertical}
+.form-group select:focus,.form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--cyan)}
+.btn{display:inline-block;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;border:none}
+.btn-primary{background:var(--cyan);color:#050a0f}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);color:var(--purple)}
+.btn-green{background:var(--green);color:#050a0f}
+.btn-green:hover{opacity:.85}
+/* Output */
+.output{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;font-size:13px;white-space:pre-wrap;max-height:400px;overflow-y:auto}
+.output .title{font-size:11px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.dl-btn{display:inline-block;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;cursor:pointer;border:1px solid rgba(0,200,255,.3);color:var(--cyan);background:rgba(0,200,255,.05);margin-top:8px}
+.dl-btn:hover{background:rgba(0,200,255,.15)}
+.quick-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.quick-btn{padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--border);color:var(--dim);background:var(--bg)}
+.quick-btn:hover{color:var(--cyan);border-color:var(--cyan)}
+.section-desc{font-size:12px;color:var(--dim);margin-bottom:14px}
+.loading{color:var(--dim);font-size:12px;padding:12px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>AI Legal <span>Centre</span></h1>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/legal.html">Documents</a>
+    <a href="/portal.html">Portal</a>
+    <a href="/console.html">Terminal</a>
+  </nav>
+  <span class="tier">POPIA + GDPR</span>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-header">Legal AI</div>
+      <a class="sb-item active" onclick="showTab('chat')">Ask Legal AI</a>
+      <a class="sb-item" onclick="showTab('analyze')">Analyze Document</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-header">Generate</div>
+      <a class="sb-item" onclick="showTab('contracts')">Generate Contract</a>
+      <a class="sb-item" onclick="showTab('proxy')">Legal Proxy Actions</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-header">Resources</div>
+      <a class="sb-item" href="/legal.html">Compliance Dashboard</a>
+      <a class="sb-item" href="/view.html?src=/VERIFICATION.md&title=Verification">Verification Docs</a>
+      <a class="sb-item" href="/api/legal/templates" target="_blank">API Templates</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="tab-bar">
+      <div class="tab active" id="tab-chat" onclick="showTab('chat')">Legal Q&amp;A</div>
+      <div class="tab" id="tab-contracts" onclick="showTab('contracts')">Contracts</div>
+      <div class="tab" id="tab-proxy" onclick="showTab('proxy')">Proxy Actions</div>
+      <div class="tab" id="tab-analyze" onclick="showTab('analyze')">Analyze</div>
+    </div>
+
+    <!-- CHAT PANE -->
+    <div class="pane active" id="pane-chat">
+      <div class="section-desc">Ask about POPIA, GDPR, contracts, compliance, or any legal question. AI responses include relevant legislation references.</div>
+      <div class="quick-btns">
+        <span class="quick-btn" onclick="askQuick('What are my POPIA obligations?')">POPIA obligations</span>
+        <span class="quick-btn" onclick="askQuick('How does GDPR apply to my platform?')">GDPR requirements</span>
+        <span class="quick-btn" onclick="askQuick('Is BRDG token a security under SA law?')">Token legal status</span>
+        <span class="quick-btn" onclick="askQuick('What should my privacy policy include?')">Privacy policy guide</span>
+        <span class="quick-btn" onclick="askQuick('Compare POPIA and GDPR')">POPIA vs GDPR</span>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input">
+        <input id="chat-input" placeholder="Ask about POPIA, GDPR, contracts, compliance..." autocomplete="off">
+        <button onclick="sendChat()">Send</button>
+      </div>
+    </div>
+
+    <!-- CONTRACTS PANE -->
+    <div class="pane" id="pane-contracts">
+      <div class="section-desc">Generate legally compliant documents. AI produces full text based on SA law and GDPR. Review by qualified counsel recommended.</div>
+      <div class="form-group">
+        <label>Contract Type</label>
+        <select id="contract-type">
+          <option value="nda">Non-Disclosure Agreement (NDA)</option>
+          <option value="terms">Terms of Service</option>
+          <option value="privacy">Privacy Policy</option>
+          <option value="dpa">Data Processing Agreement</option>
+          <option value="service">Service Agreement</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Company Name</label>
+        <input id="contract-company" placeholder="e.g. Bridge AI (Pty) Ltd" value="Bridge AI (Pty) Ltd">
+      </div>
+      <div class="form-group">
+        <label>Other Party (leave blank for template)</label>
+        <input id="contract-party" placeholder="e.g. TechBridge Solutions">
+      </div>
+      <button class="btn btn-primary" onclick="generateContract()">Generate Contract</button>
+      <div id="contract-output"></div>
+    </div>
+
+    <!-- PROXY PANE -->
+    <div class="pane" id="pane-proxy">
+      <div class="section-desc">Act on behalf of yourself or your users. Generate legally formatted requests and letters that can be sent to companies or regulators.</div>
+      <div class="form-group">
+        <label>Action Type</label>
+        <select id="proxy-action">
+          <option value="data-access">Data Access Request (POPIA S23 / GDPR Art 15)</option>
+          <option value="data-deletion">Data Deletion Request (POPIA S24 / GDPR Art 17)</option>
+          <option value="complaint">Regulatory Complaint (Information Regulator)</option>
+          <option value="breach-notice">Data Breach Notification (POPIA S22 / GDPR Art 33)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input id="proxy-name" placeholder="e.g. Ryan Cowan">
+      </div>
+      <div class="form-group">
+        <label>Your Email</label>
+        <input id="proxy-email" placeholder="e.g. ryan@ai-os.co.za">
+      </div>
+      <div class="form-group">
+        <label>Target Company / Organization</label>
+        <input id="proxy-target" placeholder="e.g. Google LLC">
+      </div>
+      <button class="btn btn-green" onclick="generateProxy()">Generate Legal Letter</button>
+      <div id="proxy-output"></div>
+    </div>
+
+    <!-- ANALYZE PANE -->
+    <div class="pane" id="pane-analyze">
+      <div class="section-desc">Paste any legal document or contract and the AI will analyze it for compliance risks, missing clauses, and improvements.</div>
+      <div class="form-group">
+        <label>Document Type</label>
+        <select id="analyze-type">
+          <option value="contract">Contract</option>
+          <option value="privacy policy">Privacy Policy</option>
+          <option value="terms of service">Terms of Service</option>
+          <option value="NDA">NDA</option>
+          <option value="legal notice">Legal Notice</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Paste Document Text</label>
+        <textarea id="analyze-text" placeholder="Paste the document content here..."></textarea>
+      </div>
+      <button class="btn btn-secondary" onclick="analyzeDoc()">Analyze for Risks</button>
+      <div id="analyze-output"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Tab switching
+  window.showTab = function(id) {
+    document.querySelectorAll('.pane').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.sb-item').forEach(function(s) { s.classList.remove('active'); });
+    var pane = document.getElementById('pane-' + id);
+    var tab = document.getElementById('tab-' + id);
+    if (pane) pane.classList.add('active');
+    if (tab) tab.classList.add('active');
+  };
+
+  // Chat
+  var chatEl = document.getElementById('chat-messages');
+
+  function addMsg(text, cls, disclaimer) {
+    var div = document.createElement('div'); div.className = 'msg ' + cls;
+    div.textContent = text;
+    if (disclaimer) {
+      var disc = document.createElement('div'); disc.className = 'disclaimer';
+      disc.textContent = disclaimer; div.appendChild(disc);
+    }
+    chatEl.appendChild(div);
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+
+  window.askQuick = function(q) {
+    document.getElementById('chat-input').value = q;
+    sendChat();
+  };
+
+  window.sendChat = function() {
+    var input = document.getElementById('chat-input');
+    var text = input.value.trim();
+    if (!text) return;
+    addMsg(text, 'user');
+    input.value = '';
+    addMsg('Thinking...', 'ai');
+
+    fetch('/api/legal-agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: text }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      chatEl.removeChild(chatEl.lastChild); // remove "Thinking..."
+      addMsg(d.response || d.error || 'No response', 'ai', d.disclaimer);
+    }).catch(function(e) {
+      chatEl.removeChild(chatEl.lastChild);
+      addMsg('Error: ' + e.message, 'ai');
+    });
+  };
+
+  document.getElementById('chat-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') sendChat();
+  });
+
+  // Contract generation
+  window.generateContract = function() {
+    var type = document.getElementById('contract-type').value;
+    var company = document.getElementById('contract-company').value;
+    var party = document.getElementById('contract-party').value;
+    var out = document.getElementById('contract-output');
+    out.textContent = '';
+    var loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = 'Generating ' + type + '...';
+    out.appendChild(loading);
+
+    fetch('/api/legal/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: type, variables: { companyName: company, otherParty: party } }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      out.textContent = '';
+      if (!d.ok) { out.textContent = 'Error: ' + (d.error || 'failed'); return; }
+      var box = document.createElement('div'); box.className = 'output';
+      var title = document.createElement('div'); title.className = 'title'; title.textContent = d.name; box.appendChild(title);
+      var content = document.createElement('div'); content.textContent = d.content; box.appendChild(content);
+      if (d.disclaimer) {
+        var disc = document.createElement('div'); disc.style.cssText = 'font-size:10px;color:var(--dim);margin-top:8px;font-style:italic';
+        disc.textContent = d.disclaimer; box.appendChild(disc);
+      }
+      var dl = document.createElement('a'); dl.className = 'dl-btn';
+      dl.textContent = 'Download as .txt';
+      dl.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(d.content);
+      dl.download = type + '-' + new Date().toISOString().slice(0,10) + '.txt';
+      box.appendChild(dl);
+      out.appendChild(box);
+    }).catch(function(e) { out.textContent = 'Error: ' + e.message; });
+  };
+
+  // Proxy actions
+  window.generateProxy = function() {
+    var action = document.getElementById('proxy-action').value;
+    var out = document.getElementById('proxy-output');
+    out.textContent = '';
+    var loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = 'Generating legal letter...';
+    out.appendChild(loading);
+
+    fetch('/api/legal/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: action,
+        details: {
+          name: document.getElementById('proxy-name').value,
+          email: document.getElementById('proxy-email').value,
+          targetCompany: document.getElementById('proxy-target').value,
+        },
+      }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      out.textContent = '';
+      if (!d.ok) { out.textContent = 'Error: ' + (d.error || 'failed'); return; }
+      var box = document.createElement('div'); box.className = 'output';
+      var title = document.createElement('div'); title.className = 'title'; title.textContent = d.name; box.appendChild(title);
+      var content = document.createElement('div'); content.textContent = d.content; box.appendChild(content);
+      var dl = document.createElement('a'); dl.className = 'dl-btn';
+      dl.textContent = 'Download Letter';
+      dl.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(d.content);
+      dl.download = action + '-' + new Date().toISOString().slice(0,10) + '.txt';
+      box.appendChild(dl);
+      out.appendChild(box);
+    }).catch(function(e) { out.textContent = 'Error: ' + e.message; });
+  };
+
+  // Document analysis
+  window.analyzeDoc = function() {
+    var text = document.getElementById('analyze-text').value.trim();
+    var type = document.getElementById('analyze-type').value;
+    var out = document.getElementById('analyze-output');
+    if (!text) { out.textContent = 'Paste a document to analyze.'; return; }
+    out.textContent = '';
+    var loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = 'Analyzing document for compliance risks...';
+    out.appendChild(loading);
+
+    fetch('/api/legal/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text, type: type }),
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      out.textContent = '';
+      var box = document.createElement('div'); box.className = 'output';
+      var title = document.createElement('div'); title.className = 'title'; title.textContent = 'Analysis Report'; box.appendChild(title);
+      var content = document.createElement('div'); content.textContent = d.response || d.error || 'No analysis returned'; box.appendChild(content);
+      if (d.disclaimer) {
+        var disc = document.createElement('div'); disc.style.cssText = 'font-size:10px;color:var(--dim);margin-top:8px;font-style:italic';
+        disc.textContent = d.disclaimer; box.appendChild(disc);
+      }
+      out.appendChild(box);
+    }).catch(function(e) { out.textContent = 'Error: ' + e.message; });
+  };
+
+  // Welcome message
+  addMsg('Welcome to Bridge AI Legal Centre.\n\nI can help with:\n- POPIA and GDPR compliance questions\n- South African contract law\n- BRDG token regulatory status\n- Document analysis and risk flagging\n\nAsk me anything, or use the quick buttons above.', 'ai',
+    'AI-generated legal guidance. Not a substitute for professional legal advice.');
+})();
+</script>
+<script src="/global-nav.js" defer></script>
+</body>
+</html>

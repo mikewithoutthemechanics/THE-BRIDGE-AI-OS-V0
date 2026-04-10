@@ -1222,6 +1222,61 @@ app.get('/api/legal/contracts/active', (_req, res) => {
   ] });
 });
 
+// ── AI LEGAL AGENT ──────────────────────────────────────────────────────────
+var legalAgent; try { legalAgent = require('./lib/legal-agent'); } catch (_) { legalAgent = null; }
+
+app.post('/api/legal-agent', express.json(), async (req, res) => {
+  if (!legalAgent) return res.status(503).json({ ok: false, error: 'Legal agent module not loaded' });
+  var query = (req.body || {}).query || (req.body || {}).prompt || '';
+  if (!query) return res.status(400).json({ ok: false, error: 'query required' });
+  try {
+    var result = await legalAgent.askLegal(query, (req.body || {}).context);
+    res.json(result);
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/legal/generate', express.json(), async (req, res) => {
+  if (!legalAgent) return res.status(503).json({ ok: false, error: 'Legal agent module not loaded' });
+  var type = (req.body || {}).type;
+  var variables = (req.body || {}).variables || {};
+  if (!type) return res.status(400).json({ ok: false, error: 'type required (nda, terms, privacy, dpa, service)' });
+  try {
+    var result = await legalAgent.generateContract(type, variables);
+    res.json(result);
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/legal/proxy', express.json(), async (req, res) => {
+  if (!legalAgent) return res.status(503).json({ ok: false, error: 'Legal agent module not loaded' });
+  var action = (req.body || {}).action;
+  var details = (req.body || {}).details || {};
+  if (!action) return res.status(400).json({ ok: false, error: 'action required (data-access, data-deletion, complaint, breach-notice)' });
+  try {
+    var result = await legalAgent.generateProxyAction(action, details);
+    res.json(result);
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/legal/analyze', express.json(), async (req, res) => {
+  if (!legalAgent) return res.status(503).json({ ok: false, error: 'Legal agent module not loaded' });
+  var text = (req.body || {}).text || '';
+  var docType = (req.body || {}).type || 'document';
+  if (!text) return res.status(400).json({ ok: false, error: 'text required' });
+  try {
+    var result = await legalAgent.analyzeDocument(text, docType);
+    res.json(result);
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/legal/templates', (_req, res) => {
+  if (!legalAgent) return res.json({ ok: true, contracts: {}, actions: {} });
+  var contracts = {};
+  Object.entries(legalAgent.CONTRACT_TEMPLATES).forEach(function(e) { contracts[e[0]] = { name: e[1].name }; });
+  var actions = {};
+  Object.entries(legalAgent.PROXY_TEMPLATES).forEach(function(e) { actions[e[0]] = { name: e[1].name }; });
+  res.json({ ok: true, contracts: contracts, actions: actions });
+});
+
 app.get('/api/legal/download/:id', (req, res) => {
   var id = req.params.id;
   var docs = {
