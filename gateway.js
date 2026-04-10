@@ -1510,6 +1510,10 @@ STATUS: DRAFT — Not yet in effect.
   res.send(doc.content);
 });
 
+app.get('/api/events/recent', (_req, res) => {
+  res.json({ ok: true, events: [], count: 0 });
+});
+
 app.get('/api/pricing', (_req, res) => {
   res.json({ plans: [
     { id: 'starter',    name: 'Starter',    price: 49,  currency: 'ZAR', features: ['5 agents', '1k tasks/mo', 'Basic analytics'] },
