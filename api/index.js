@@ -2098,6 +2098,23 @@ module.exports = async (req, res) => {
     });
   }
 
+  // ── /api/defi/status — DeFi TVL + protocol positions ──
+  if (p === '/api/defi/status') {
+    try {
+      const stats = brdgChain ? await brdgChain.getTokenStats() : null;
+      const vaultEth = stats?.treasury?.vault?.ethBalance || '0';
+      return json(res, {
+        tvl: parseFloat(vaultEth), currency: 'ETH',
+        total_value: parseFloat(vaultEth),
+        liquidity: parseFloat(vaultEth),
+        protocols: [{ name: 'TreasuryVault', chain: 'linea', value: parseFloat(vaultEth) }],
+        ts: ts(),
+      });
+    } catch (e) {
+      return json(res, { tvl: 0, currency: 'ETH', total_value: 0, liquidity: 0, protocols: [], error: e.message, ts: ts() });
+    }
+  }
+
   // ── /api/banks ─────────────────────────────────────────────────────────────
 
   // GET /api/banks — list all banks with balances
@@ -2871,6 +2888,7 @@ module.exports = async (req, res) => {
     '/api/registry/{ns}', '/api/marketplace/{section}', '/api/status', '/api/agents',
     '/api/contracts', '/api/brdg/token', '/api/treasury', '/api/treasury/status', '/api/treasury/ledger',
     '/api/treasury/summary', '/api/treasury/payments', '/api/revenue/status', '/api/analytics/summary',
+    '/api/defi/status', '/api/wallet/balance',
     '/api/swarm/agents', '/api/swarm/health', '/api/swarm/matrix', '/api/economics',
     '/api/credits', '/api/ehsa/dashboard', '/api/events/recent', '/api/agents/dispatch',
     '/api/agents/queue', '/api/tools', '/api/crm/contacts', '/api/crm/stats',
