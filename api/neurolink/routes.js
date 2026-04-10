@@ -2,6 +2,7 @@
  * NeuroLink API Routes + WebSocket Handler
  * Exposes cognitive state via REST + real-time WebSocket
  * Includes Level 2: Predictive Revenue Engine + User Cloning
+ * Includes Level 3: Intelligence Graph + Autonomous Monetization
  */
 
 const { AmbientAdapter } = require('./ambient');
@@ -9,6 +10,8 @@ const { inferState } = require('./inference');
 const { NeuroHistory } = require('./history');
 const { PredictiveEngine } = require('./predictive-engine');
 const { UserClone } = require('./user-clone');
+const { IntelligenceGraph } = require('./intelligence-graph');
+const { AutonomousMonetization } = require('./autonomous-monetization');
 
 class NeuroLinkService {
   constructor() {
@@ -16,6 +19,10 @@ class NeuroLinkService {
     this.history = new NeuroHistory();
     this.predictor = new PredictiveEngine(50); // 50-state sliding window
     this.userClone = new UserClone('default-user');
+
+    // Level 3: Intelligence Graph + Autonomous Monetization
+    this.intelligenceGraph = new IntelligenceGraph();
+    this.autonomousMonetization = null; // Initialized after revenue hooks are wired
 
     this.currentState = null;
     this.currentStatus = null;
@@ -108,6 +115,33 @@ class NeuroLinkService {
       // Learn from this state observation
       this.userClone.learn(state, this.previousState);
       this.previousState = state;
+
+      // ─── LEVEL 3: INTELLIGENCE GRAPH + AUTONOMOUS MONETIZATION ───
+      // Register or update user in intelligence graph (every 50 ticks = ~5 seconds)
+      if (this.tickCount === 0) {
+        this.intelligenceGraph.registerUser('default-user', this.userClone);
+      }
+
+      // Generate cross-user recommendations (every 100 ticks = ~10 seconds)
+      if (this.tickCount === 0 && this.intelligenceGraph.users.size > 1) {
+        this.intelligenceGraph.generateCrossUserRecommendations();
+      }
+
+      // Execute autonomous decisions if monetization engine is initialized
+      if (this.autonomousMonetization && this.lastPrediction?.ready) {
+        const autonomousAction = this.autonomousMonetization.analyzeAndExecute(
+          'default-user',
+          state,
+          this.lastPrediction
+        );
+
+        // Broadcast autonomous action to WebSocket subscribers
+        this.broadcastEvent({
+          event: 'NEUROLINK_AUTONOMOUS_ACTION',
+          data: autonomousAction,
+          timestamp: new Date().toISOString()
+        });
+      }
 
       // Emit to WebSocket subscribers
       this.broadcastStateUpdate(state);
@@ -364,6 +398,80 @@ class NeuroLinkService {
   predictOptimalTaskType() {
     if (!this.currentState) return null;
     return this.userClone.predictOptimalTaskType(this.currentState);
+  }
+
+  /**
+   * Get intelligence graph summary (Level 3)
+   */
+  getIntelligenceGraphSummary() {
+    return this.intelligenceGraph.getSummary();
+  }
+
+  /**
+   * Get cross-user patterns (Level 3)
+   */
+  getCrossUserPatterns() {
+    const patterns = [];
+    for (const [userId, user] of this.intelligenceGraph.users) {
+      const extracted = this.intelligenceGraph.extractPatterns(userId);
+      if (extracted) {
+        patterns.push({
+          userId,
+          patternCount: extracted.patternCount,
+          patterns: extracted.patterns
+        });
+      }
+    }
+    return patterns;
+  }
+
+  /**
+   * Get user's behavioral segment (Level 3)
+   */
+  getUserSegment(userId) {
+    const user = this.intelligenceGraph.users.get(userId);
+    if (!user || user.segments.size === 0) return null;
+
+    const segments = [];
+    for (const segmentId of user.segments) {
+      const profile = this.intelligenceGraph.getSegmentProfile(segmentId);
+      if (profile) segments.push(profile);
+    }
+
+    return {
+      userId,
+      segmentCount: segments.length,
+      segments
+    };
+  }
+
+  /**
+   * Get autonomous decision statistics (Level 3)
+   */
+  getAutonomousDecisionStats() {
+    if (!this.autonomousMonetization) {
+      return { error: 'Autonomous monetization not initialized' };
+    }
+    return this.autonomousMonetization.getDecisionStats();
+  }
+
+  /**
+   * Get execution log (Level 3)
+   */
+  getExecutionLog(limit = 50) {
+    if (!this.autonomousMonetization) {
+      return [];
+    }
+    return this.autonomousMonetization.getExecutionLog(limit);
+  }
+
+  /**
+   * Initialize autonomous monetization with revenue hooks
+   * Called after revenue hooks are wired in index.js
+   */
+  initializeAutonomousMonetization(revenueHooks) {
+    this.autonomousMonetization = new AutonomousMonetization(this.intelligenceGraph, revenueHooks);
+    console.log('[NeuroLink] Autonomous monetization initialized');
   }
 }
 
