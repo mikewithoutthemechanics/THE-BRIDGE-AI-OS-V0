@@ -35,6 +35,12 @@ const data = require('./data-service');
 const db = require('./lib/db');
 const { requireAuth: gatewayAuth } = require('./middleware/auth');
 
+// ── Zero-Trust Verification Layer ──────────────────────────────────────────
+const zt          = require('./lib/zero-trust');
+const proofStore  = require('./lib/proof-store');
+const chainVerify = require('./lib/chain-verify');
+require('./lib/migrate-zero-trust').ensureTables().catch(() => {});
+
 // ── CORS (restricted to known origins) ───────────────────────────────────────
 const ALLOWED_ORIGINS = new Set([
   'https://wall.bridge-ai-os.com',
@@ -827,6 +833,98 @@ app.get('/api/system/metrics', (req, res) => {
     uptime: Math.floor(upSec) + 's',
     load: os.loadavg().map(l => l.toFixed(2)).join(' ')
   });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ZERO-TRUST VERIFICATION ENDPOINTS
+// Every response is cryptographically signed. Every metric links to source.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/metrics/token', async (_req, res) => {
+  try {
+    const metrics = await chainVerify.getVerifiedTokenMetrics();
+    res.json(zt.signResponse({ ok: true, ...metrics, source: 'on-chain', trustLevel: 'trustless' }, 'api-response'));
+  } catch (e) {
+    res.status(503).json({ ok: false, error: e.message, source: 'on-chain', fallback: true });
+  }
+});
+
+app.get('/api/metrics/treasury', async (_req, res) => {
+  try {
+    const treasury = await chainVerify.getVerifiedTreasury();
+    res.json(zt.signResponse({ ok: true, ...treasury, source: 'hybrid' }, 'api-response'));
+  } catch (e) {
+    res.status(503).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/metrics/revenue', async (_req, res) => {
+  try {
+    const revenue = await proofStore.getVerifiedRevenue();
+    res.json(zt.signResponse({ ok: true, ...revenue, source: 'payment_proof_chain' }, 'api-response'));
+  } catch (e) {
+    res.status(503).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/metrics/vault', async (_req, res) => {
+  try {
+    const vault = await chainVerify.getVerifiedVaultBuckets();
+    res.json(zt.signResponse({ ok: true, ...vault, source: 'on-chain', trustLevel: 'trustless' }, 'api-response'));
+  } catch (e) {
+    res.status(503).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/verify/payment/:id', async (req, res) => {
+  const txId = req.params.id;
+  const proof = await proofStore.getProof(txId);
+  if (!proof) return res.status(404).json({ error: 'proof_not_found', transactionId: txId });
+  const merkle = await proofStore.getMerkleProof(txId);
+  res.json(zt.signResponse({ ok: true, proof, merkleInclusion: merkle }, 'api-response'));
+});
+
+app.get('/api/verify/chain', async (_req, res) => {
+  const result = await proofStore.verifyChain();
+  res.json(zt.signResponse({ ok: true, chainIntegrity: result }, 'api-response'));
+});
+
+app.get('/api/verify/info', (_req, res) => {
+  try {
+    res.json({
+      ok: true, ...zt.getVerificationInfo(),
+      contracts: {
+        brdg: { address: chainVerify.BRDG_ADDRESS, explorer: `${chainVerify.LINEASCAN_BASE}/token/${chainVerify.BRDG_ADDRESS}` },
+        vault: { address: chainVerify.VAULT_ADDRESS, explorer: `${chainVerify.LINEASCAN_BASE}/address/${chainVerify.VAULT_ADDRESS}` },
+        treasury: { address: chainVerify.TREASURY_OWNER, explorer: `${chainVerify.LINEASCAN_BASE}/address/${chainVerify.TREASURY_OWNER}` },
+      },
+      chain: { name: 'Linea', chainId: 59144, rpc: 'https://rpc.linea.build' },
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/verify/response', express.json(), (req, res) => {
+  const body = req.body;
+  if (!body || !body._proof) return res.status(400).json({ error: 'signed envelope required' });
+  const valid = zt.verifyResponse(body, body._proof.purpose || 'api-response');
+  res.json({ ok: true, valid, keyId: body._proof?.keyId, timestamp: body._proof?.timestamp });
+});
+
+app.get('/api/proofs/payments', async (req, res) => {
+  const limit = parseInt(req.query.limit || '100');
+  const proofs = await proofStore.getAllProofs(limit);
+  res.json(zt.signResponse({ ok: true, proofs, count: proofs.length }, 'api-response'));
+});
+
+app.post('/api/proofs/merkle', async (_req, res) => {
+  try {
+    const anchor = await proofStore.createMerkleAnchor();
+    res.json(zt.signResponse({ ok: true, anchor }, 'api-response'));
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // ── BRAIN PROXY — forward unknown /api/* to brain on 8000 ────────────────────
