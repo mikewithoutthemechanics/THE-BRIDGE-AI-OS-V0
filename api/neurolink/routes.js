@@ -43,22 +43,36 @@ class NeuroLinkService {
 
   /**
    * Start the inference loop
+   * In serverless mode: initializes components, relies on external cron for tick()
+   * In local mode: can still use setInterval for development
    */
   start() {
     if (this.loopInterval) return; // Already running
 
     console.log(`[NeuroLink] Starting with device=${this.device}, interval=${this.interval}ms`);
 
-    // Start multi-user stream flushing
+    // Initialize multi-user stream
     this.multiUserStream.startFlushTimer();
 
-    // Initialize and start live orchestrator
+    // Initialize live orchestrator
     if (!this.liveOrchestrator) {
       this.liveOrchestrator = new LiveMonetizationOrchestrator(this.multiUserStream, this.intelligenceGraph, this.multiUserStream.db);
-      this.liveOrchestrator.startProcessing(1000); // Process triggers every 1 second
-      console.log('[NeuroLink] Live monetization orchestrator started');
+      // In serverless: orchestrator processing triggered by external cron
+      // In local: can start processing
+      if (process.env.NODE_ENV !== 'production') {
+        this.liveOrchestrator.startProcessing(1000);
+      }
+      console.log('[NeuroLink] Live monetization orchestrator initialized');
     }
 
+    // Serverless mode: don't use setInterval
+    // External cron jobs will call the REST API endpoints
+    if (process.env.VERCEL === '1' || process.env.SERVERLESS === '1') {
+      console.log('[NeuroLink] Running in serverless mode — rely on external cron for tick()');
+      return;
+    }
+
+    // Local mode: use setInterval for development
     this.loopInterval = setInterval(async () => {
       try {
         await this.tick();

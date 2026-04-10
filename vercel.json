@@ -14,7 +14,12 @@
     { "path": "/api/infra/auto",         "schedule": "0 */1 * * *" },
     { "path": "/api/banks/compound",     "schedule": "0 0 * * *"   },
     { "path": "/api/treasury/reconcile", "schedule": "0 */3 * * *" },
-    { "path": "/api/economy/run-cycle",  "schedule": "*/5 * * * *" }
+    { "path": "/api/economy/run-cycle",  "schedule": "*/5 * * * *" },
+
+    { "path": "/api/neurolink/cron/tick",         "schedule": "*/1 * * * *" },
+    { "path": "/api/neurolink/cron/orchestrator", "schedule": "*/1 * * * *" },
+    { "path": "/api/neurolink/cron/stream-flush", "schedule": "*/1 * * * *" },
+    { "path": "/api/neurolink/cron/graph-update", "schedule": "*/2 * * * *" }
   ],
   "redirects": [
     {
