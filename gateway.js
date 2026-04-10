@@ -36,6 +36,18 @@ const db = require('./lib/db');
 const { requireAuth: gatewayAuth } = require('./middleware/auth');
 let agents; try { agents = require('./lib/agents'); } catch (_) { agents = null; }
 
+// ── NeuroLink BCI Runtime ──────────────────────────────────────────────────
+let neurolink;
+try {
+  neurolink = require('./lib/neurolink/runtime');
+  neurolink.start().then(meta => {
+    console.log('[NEUROLINK] Pipeline active:', meta.device, meta.channels + 'ch');
+  }).catch(e => console.warn('[NEUROLINK] Start failed:', e.message));
+} catch (e) {
+  console.warn('[NEUROLINK] Module unavailable:', e.message);
+  neurolink = null;
+}
+
 // ── Zero-Trust Verification Layer ──────────────────────────────────────────
 let zt, proofStore, chainVerify;
 try {
@@ -909,6 +921,50 @@ app.get('/api/system/state', async (_req, res) => {
 });
 
 // ── DIGITAL TWIN CONSOLE ENDPOINTS (served directly, no brain proxy) ────────
+// ── NEUROLINK BCI ENDPOINTS ──────────────────────────────────────────────────
+app.get('/api/neurolink/status', (_req, res) => {
+  if (!neurolink || !neurolink.isRunning()) {
+    return res.json({ ok: true, connected: false, source: 'offline', note: 'NeuroLink not started. Set NEUROLINK_DEVICE env or start manually.' });
+  }
+  res.json(neurolink.getFullStatus());
+});
+
+app.get('/api/neurolink/state', (_req, res) => {
+  if (!neurolink) return res.json({ ok: false, error: 'NeuroLink not loaded' });
+  res.json({ ok: true, ...neurolink.getState() });
+});
+
+app.get('/api/neurolink/twin', (_req, res) => {
+  if (!neurolink) return res.json({ ok: false, error: 'NeuroLink not loaded' });
+  res.json({ ok: true, ...neurolink.getTwinEmotionUpdate() });
+});
+
+app.get('/api/neurolink/latency', (_req, res) => {
+  if (!neurolink) return res.json({ ok: false });
+  res.json({ ok: true, ...neurolink.getLatency() });
+});
+
+// Feed NeuroLink state into the Digital Twin emotion model
+app.get('/api/emotion/status', (_req, res) => {
+  if (neurolink && neurolink.isRunning()) {
+    var s = neurolink.getState();
+    return res.json({
+      ok: true,
+      mood: s.mood,
+      valence: s.emotion.valence,
+      arousal: s.emotion.arousal,
+      dominance: s.emotion.dominance,
+      focus: s.focus,
+      stress: s.stress,
+      fatigue: s.fatigue,
+      source: s.source,
+      confidence: s.confidence,
+    });
+  }
+  // Fallback: static defaults when NeuroLink is off
+  res.json({ ok: true, mood: 'focused', valence: 0.7, arousal: 0.5, dominance: 0.6, focus: 0.6, source: 'default' });
+});
+
 // ── UNIFIED SKILL REGISTRY (shared across brain, twin, avatar) ──────────────
 app.get('/api/skills/unified', async (_req, res) => {
   try {
