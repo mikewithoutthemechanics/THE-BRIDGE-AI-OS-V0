@@ -207,25 +207,29 @@ async function loadAll() {
     if (d.data && d.data.ok) {
       const tok = d.data.token;
       const tres = d.data.treasury;
-      $('k-brdg').textContent = fmt(tok.totalSupply) + ' BRDG';
-      $('k-burned').textContent = fmt(tok.totalBurned) + ' BRDG';
-      $('k-vault-eth').textContent = tres.vault.ethBalance + ' ETH';
-      $('brdg-block').textContent = d.data.readAt.blockNumber || 'N/A';
+      var el;
+      if ((el = $('k-brdg'))) el.textContent = fmt(tok.totalSupply) + ' BRDG';
+      if ((el = $('k-burned'))) el.textContent = fmt(tok.totalBurned) + ' BRDG';
+      if ((el = $('k-vault-eth'))) el.textContent = tres.vault.ethBalance + ' ETH';
 
-      const links = tok.verification.links;
-      $('badge-brdg').href = links.contract;
-      $('badge-burned').href = links.contract;
-      $('badge-vault').href = tres.verification.links.vaultContract;
+      var links = tok.verification.links;
+      if ((el = $('badge-brdg'))) el.href = links.contract;
+      if ((el = $('badge-burned'))) el.href = links.contract;
+      if ((el = $('badge-vault'))) el.href = tres.verification.links.vaultContract;
 
-      // Update source links safely
-      $('src-brdg').textContent = '';
-      $('src-brdg').appendChild(document.createTextNode('Source: '));
-      $('src-brdg').appendChild(makeLink(tok.address.slice(0, 10) + '...', links.contract));
-      $('src-brdg').appendChild(document.createTextNode(' | Block: ' + (d.data.readAt.blockNumber || 'N/A')));
+      // Update source links safely (clears children, so do brdg-block separately)
+      if ((el = $('src-brdg'))) {
+        el.textContent = '';
+        el.appendChild(document.createTextNode('Source: '));
+        el.appendChild(makeLink(tok.address.slice(0, 10) + '...', links.contract));
+        el.appendChild(document.createTextNode(' | Block: ' + (d.data.readAt.blockNumber || 'N/A')));
+      }
 
-      $('src-vault').textContent = '';
-      $('src-vault').appendChild(document.createTextNode('Source: '));
-      $('src-vault').appendChild(makeLink('Vault on LineaScan', tres.verification.links.vaultContract));
+      if ((el = $('src-vault'))) {
+        el.textContent = '';
+        el.appendChild(document.createTextNode('Source: '));
+        el.appendChild(makeLink('Vault on LineaScan', tres.verification.links.vaultContract));
+      }
 
       // BRDG detail table
       const tbody = clearTable('brdg-table');
