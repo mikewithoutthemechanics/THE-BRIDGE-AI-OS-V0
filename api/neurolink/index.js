@@ -7,6 +7,7 @@ const { Router } = require('express');
 const { WebSocket } = require('ws');
 const { getNeuroLinkService } = require('./routes');
 const { processNeuroState, buildAuditEntry } = require('./revenue-hooks');
+const { initializeAttribution } = require('./attribution-setup');
 
 module.exports = function setupNeuroLink(app, wsServer) {
   const router = Router();
@@ -16,6 +17,9 @@ module.exports = function setupNeuroLink(app, wsServer) {
   if (process.env.NEUROLINK_ENABLED !== 'false') {
     neurolink.start();
   }
+
+  // Initialize attribution event logging
+  initializeAttribution(neurolink);
 
   // ────── REST API ROUTES ──────
 
