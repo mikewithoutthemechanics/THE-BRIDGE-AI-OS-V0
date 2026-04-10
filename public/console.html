@@ -31,15 +31,21 @@
       z-index: 0; opacity: 0.04; pointer-events: none;
     }
 
-    .app { display: flex; flex-direction: column; height: 100vh; position: relative; z-index: 1; }
+    .app { display: flex; flex-direction: column; height: calc(100vh - 56px); position: relative; z-index: 1; }
 
     /* Header bar */
     .header {
-      display: flex; align-items: center; gap: 1rem;
-      padding: 0.5rem 1rem; background: var(--surface);
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.4rem 0.75rem; background: var(--surface);
       border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
     .header-title { color: var(--cyan); font-size: 0.85rem; font-weight: bold; letter-spacing: 0.15em; }
+    .header-nav { display: flex; gap: 2px; margin-left: 1rem; }
+    .header-nav a {
+      color: var(--dim); text-decoration: none; font-size: 0.65rem; padding: 3px 8px;
+      border-radius: 4px; transition: all 0.15s; border: 1px solid transparent;
+    }
+    .header-nav a:hover { color: var(--cyan); border-color: rgba(0,200,255,.2); background: rgba(0,200,255,.05); }
     .header-stats { display: flex; gap: 1.2rem; margin-left: auto; font-size: 0.7rem; color: var(--dim); }
     .header-stats span { display: flex; align-items: center; gap: 0.3rem; }
     .header-stats .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; }
@@ -67,6 +73,14 @@
 <div class="app">
   <div class="header">
     <span class="header-title">BRIDGE AI OS v3</span>
+    <nav class="header-nav">
+      <a href="/">Home</a>
+      <a href="/portal.html">Portal</a>
+      <a href="/economy.html">Economy</a>
+      <a href="/admin-revenue.html">Revenue</a>
+      <a href="/treasury-dashboard.html">Treasury</a>
+      <a href="/agents.html">Agents</a>
+    </nav>
     <div class="header-stats">
       <span><span class="dot"></span> <span class="val" id="h-session">---</span></span>
       <span class="label">AGENTS:</span><span class="val" id="h-agents">8</span>
@@ -120,7 +134,7 @@
   var sessionMemory = [];
 
   /* ── Auto-complete data ──────────────────────────────────────────────── */
-  var COMMANDS = ['/agent', '/chain', '/process', '/agents', '/memory', '/clear', '/help', '/primes', '/economy', '/status', '/treasury', '/verify', '/ask', 'ls', 'pwd', 'whoami', 'history'];
+  var COMMANDS = ['/agent', '/chain', '/process', '/agents', '/memory', '/clear', '/help', '/primes', '/economy', '/status', '/treasury', '/verify', '/ask', 'ls', 'pwd', 'whoami', 'history', 'nav', 'open', 'exit'];
   var AGENT_NAMES = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'sales', 'finance', 'growth', 'intelligence', 'nurture', 'closer', 'campaign', 'creative', 'support', 'supply'];
 
   /* ── Help system ────────────────────────────────────────────────────── */
@@ -141,6 +155,9 @@
     'pwd':      { usage: 'pwd', desc: 'Show current virtual path' },
     'whoami':   { usage: 'whoami', desc: 'Show your session identity' },
     'history':  { usage: 'history', desc: 'Show recent command history' },
+    'nav':      { usage: 'nav', desc: 'Show all pages you can navigate to from this console' },
+    'open':     { usage: 'open <page>', desc: 'Navigate to a page by name', examples: ['open revenue', 'open treasury', 'open agents', 'open home'] },
+    'exit':     { usage: 'exit', desc: 'Leave the console and return to the home page' },
   };
 
   /* ── Terminal init ───────────────────────────────────────────────────── */
@@ -193,19 +210,20 @@
   /* ── Boot banner ─────────────────────────────────────────────────────── */
   function showBanner() {
     writeLn('');
-    writeLn(C.cyan('  ____  ____  ___ ____   ____ _____    _    ___    ___  ____'));
-    writeLn(C.cyan('  | __ )|  _ \\|_ _|  _ \\ / ___| ____|  / \\  |_ _|  / _ \\/ ___|'));
-    writeLn(C.cyan('  |  _ \\| |_) || || | | | |  _|  _|   / _ \\  | |  | | | \\___ \\'));
-    writeLn(C.cyan('  | |_) |  _ < | || |_| | |_| | |___ / ___ \\ | |  | |_| |___) |'));
-    writeLn(C.cyan('  |____/|_| \\_\\___|____/ \\____|_____/_/   \\_\\___|  \\___/|____/'));
+    writeLn(C.cyan('  ╔══════════════════════════════════════════════════════════╗'));
+    writeLn(C.cyan('  ║') + C.bold('  ____       _     _              ___  ____  ') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.bold(' | __ ) _ __(_) __| | __ _  ___ / _ \\/ ___|') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.bold(' |  _ \\| \'__| |/ _` |/ _` |/ _ \\ | | \\___ \\') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.bold(' | |_) | |  | | (_| | (_| |  __/ |_| |___) |') + C.cyan('           ║'));
+    writeLn(C.cyan('  ║') + C.bold(' |____/|_|  |_|\\__,_|\\__, |\\___|\\___/|____/') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.bold('                      |___/                 ') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.dim('  Autonomous Agent Orchestration Engine') + C.green(' v3.0') + C.cyan('          ║'));
+    writeLn(C.cyan('  ╚══════════════════════════════════════════════════════════╝'));
     writeLn('');
-    writeLn(C.dim('  Autonomous Agent Orchestration Engine v3.0'));
-    writeLn(C.dim('  Session: ' + sessionId));
+    writeLn('  ' + C.dim('Session ') + C.yellow(sessionId) + C.dim(' | Linea L2 | 35 agents | 150+ endpoints'));
     writeLn('');
-    writeLn('  ' + C.green('Quick start:'));
-    writeLn('    ' + C.dim('Just type a question or task — AI routes it automatically'));
-    writeLn('    ' + C.bold('/help') + C.dim(' for all commands') + '    ' + C.bold('/agents') + C.dim(' to see agents'));
-    writeLn('    ' + C.bold('/treasury') + C.dim(' balances') + '       ' + C.bold('/status') + C.dim(' health check'));
+    writeLn('  ' + C.green('>') + ' Type a question or task — AI routes it automatically');
+    writeLn('  ' + C.green('>') + ' ' + C.bold('help') + C.dim(' commands') + '  ' + C.bold('agents') + C.dim(' list') + '  ' + C.bold('treasury') + C.dim(' balance') + '  ' + C.bold('status') + C.dim(' health'));
     writeLn('');
   }
 
@@ -419,7 +437,7 @@
     var args = parts.slice(1);
 
     // Auto-prefix / if user types bare command name
-    var KNOWN_BARE = ['help','clear','agents','agent','chain','process','memory','primes','economy','status','ls','pwd','whoami','treasury','verify','ask','history'];
+    var KNOWN_BARE = ['help','clear','agents','agent','chain','process','memory','primes','economy','status','ls','pwd','whoami','treasury','verify','ask','history','nav','exit','open'];
     if (!cmd.startsWith('/') && KNOWN_BARE.indexOf(cmd) !== -1) {
       cmd = '/' + cmd;
     }
@@ -463,6 +481,11 @@
           writeLn('    ' + C.bold('/economy') + '               Full economy dashboard');
           writeLn('    ' + C.bold('/treasury') + '              Treasury balances + on-chain links');
           writeLn('    ' + C.bold('/verify') + '                Zero-trust verification status');
+          writeLn('');
+          writeLn('  ' + C.yellow('Navigation'));
+          writeLn('    ' + C.bold('nav') + '                    Show all pages');
+          writeLn('    ' + C.bold('open <page>') + '            Go to a page  ' + C.dim('(e.g. open revenue)'));
+          writeLn('    ' + C.bold('exit') + '                   Return to home');
           writeLn('');
           writeLn('  ' + C.yellow('Session'));
           writeLn('    ' + C.bold('/memory') + '                Show session memory');
@@ -796,6 +819,59 @@
         }
         writeLn('');
         prompt();
+        return;
+
+      case '/nav':
+        writeLn('');
+        writeLn('  ' + C.cyan('Navigation — Bridge AI OS Pages'));
+        writeLn('');
+        var navItems = [
+          { key: 'home',      path: '/',                       desc: 'Landing page' },
+          { key: 'portal',    path: '/portal.html',            desc: 'Client portal' },
+          { key: 'economy',   path: '/economy.html',           desc: 'BRDG token economy' },
+          { key: 'agents',    path: '/agents.html',            desc: 'Agent workforce' },
+          { key: 'crm',       path: '/crm.html',               desc: 'Customer management' },
+          { key: 'invoicing', path: '/invoicing.html',         desc: 'Invoice management' },
+          { key: 'revenue',   path: '/admin-revenue.html',     desc: 'Verified revenue dashboard' },
+          { key: 'treasury',  path: '/treasury-dashboard.html', desc: 'Treasury management' },
+          { key: 'withdraw',  path: '/admin-withdraw.html',    desc: 'Treasury withdrawals' },
+          { key: 'topology',  path: '/topology.html',          desc: 'Network topology' },
+          { key: 'banks',     path: '/banks.html',             desc: 'Bank system' },
+          { key: 'trading',   path: '/trading.html',           desc: 'Trading terminal' },
+          { key: 'defi',      path: '/defi.html',              desc: 'DeFi dashboard' },
+          { key: 'voice',     path: '/voice.html',             desc: 'Voice AI' },
+          { key: 'settings',  path: '/settings.html',          desc: 'Account settings' },
+        ];
+        for (var ni = 0; ni < navItems.length; ni++) {
+          var n = navItems[ni];
+          writeLn('    ' + C.bold(n.key.padEnd(12)) + C.dim(n.path.padEnd(30)) + n.desc);
+        }
+        writeLn('');
+        writeLn('  ' + C.dim('Type ') + C.cyan('open <name>') + C.dim(' to navigate, e.g. ') + C.cyan('open revenue'));
+        writeLn('');
+        prompt();
+        return;
+
+      case '/open':
+      case '/exit':
+        var target = args[0] ? args[0].toLowerCase() : '';
+        var NAV_MAP = {
+          'home': '/', '': '/', 'portal': '/portal.html', 'economy': '/economy.html',
+          'agents': '/agents.html', 'crm': '/crm.html', 'invoicing': '/invoicing.html',
+          'revenue': '/admin-revenue.html', 'treasury': '/treasury-dashboard.html',
+          'withdraw': '/admin-withdraw.html', 'topology': '/topology.html',
+          'banks': '/banks.html', 'trading': '/trading.html', 'defi': '/defi.html',
+          'voice': '/voice.html', 'settings': '/settings.html', 'console': '/console.html',
+          'admin': '/admin-command.html', 'dashboard': '/dashboard',
+        };
+        if (cmd === '/exit' && !target) target = 'home';
+        if (NAV_MAP[target] !== undefined) {
+          writeLn('  ' + C.dim('Navigating to ') + C.cyan(NAV_MAP[target]) + C.dim('...'));
+          setTimeout(function () { window.location.href = NAV_MAP[target]; }, 300);
+        } else {
+          writeLn('  ' + C.red('Unknown page: ') + C.yellow(target));
+          writeLn('  ' + C.dim('Type ') + C.cyan('nav') + C.dim(' to see available pages'));
+        }
         return;
 
       case '/ls':
