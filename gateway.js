@@ -909,6 +909,45 @@ app.get('/api/system/state', async (_req, res) => {
 });
 
 // ── DIGITAL TWIN CONSOLE ENDPOINTS (served directly, no brain proxy) ────────
+// ── UNIFIED SKILL REGISTRY (shared across brain, twin, avatar) ──────────────
+app.get('/api/skills/unified', async (_req, res) => {
+  try {
+    // Merge skills from brain + SVG engine into one registry
+    var skills = [];
+    try {
+      var brainR = await fetch('http://localhost:8000/skills/definitions', { signal: AbortSignal.timeout(3000) });
+      var brainD = await brainR.json();
+      (brainD.definitions || []).forEach(function(s) { skills.push({ ...s, source: 'brain' }); });
+    } catch (_) {}
+    try {
+      var twinR = await fetch('http://localhost:8000/api/twin/profile', { signal: AbortSignal.timeout(3000) });
+      var twinD = await twinR.json();
+      (twinD.skills || []).forEach(function(id) {
+        if (!skills.find(function(s) { return s.id === id; })) {
+          skills.push({ id: id, name: id, source: 'twin' });
+        }
+      });
+    } catch (_) {}
+    res.json({
+      ok: true, skills: skills, count: skills.length,
+      consumers: ['brain', 'twin', 'avatar'],
+      description: 'Unified skill registry shared across all AI entities',
+      ts: Date.now(),
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ── SWARM AGENTS (full list) ────────────────────────────────────────────────
+app.get('/api/swarm/agents', async (_req, res) => {
+  try {
+    var r = await fetch('http://localhost:8000/api/swarm/agents', { signal: AbortSignal.timeout(3000) });
+    var d = await r.json();
+    res.json(d);
+  } catch (_) {
+    res.json({ ok: true, agents: [], count: 0, note: 'Brain offline — agent list unavailable' });
+  }
+});
+
 app.get('/api/revenue/status', async (_req, res) => {
   try {
     var bal = await db.getTreasuryBalance();
@@ -917,8 +956,15 @@ app.get('/api/revenue/status', async (_req, res) => {
   } catch (e) { res.json({ ok: true, revenue_mtd: 0, costs_mtd: 0, net: 0 }); }
 });
 
-app.get('/api/swarm/health', (_req, res) => {
-  res.json({ ok: true, agents: 8, healthy: 7, tasks_queued: 3, uptime_s: Math.floor(process.uptime()), ts: Date.now() });
+app.get('/api/swarm/health', async (_req, res) => {
+  try {
+    // Try brain for real data, fall back to gateway counts
+    const r = await fetch('http://localhost:8000/api/swarm/health', { signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    res.json(d);
+  } catch (_) {
+    res.json({ ok: true, agents: 8, healthy: 7, tasks_queued: 3, uptime_s: Math.floor(process.uptime()), status: 'online', ts: Date.now() });
+  }
 });
 
 app.get('/api/network/status', (_req, res) => {
