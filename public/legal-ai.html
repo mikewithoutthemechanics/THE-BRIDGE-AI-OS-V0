@@ -105,11 +105,15 @@ body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;fon
     <div class="pane active" id="pane-chat">
       <div class="section-desc">Ask about POPIA, GDPR, contracts, compliance, or any legal question. AI responses include relevant legislation references.</div>
       <div class="quick-btns">
-        <span class="quick-btn" onclick="askQuick('What are my POPIA obligations?')">POPIA obligations</span>
-        <span class="quick-btn" onclick="askQuick('How does GDPR apply to my platform?')">GDPR requirements</span>
-        <span class="quick-btn" onclick="askQuick('Is BRDG token a security under SA law?')">Token legal status</span>
-        <span class="quick-btn" onclick="askQuick('What should my privacy policy include?')">Privacy policy guide</span>
+        <span class="quick-btn" onclick="askQuick('What are my POPIA obligations?')">POPIA</span>
+        <span class="quick-btn" onclick="askQuick('How does GDPR apply to my platform?')">GDPR</span>
+        <span class="quick-btn" onclick="askQuick('Apply the Howey Test to BRDG token')">Howey Test</span>
         <span class="quick-btn" onclick="askQuick('Compare POPIA and GDPR')">POPIA vs GDPR</span>
+        <span class="quick-btn" onclick="askQuick('Define fiduciary duty from Blacks Law Dictionary')">Black's Law</span>
+        <span class="quick-btn" onclick="askQuick('What are jus cogens norms under universal law?')">Universal Law</span>
+        <span class="quick-btn" onclick="askQuick('Director duties under SA Companies Act')">Corporate Governance</span>
+        <span class="quick-btn" onclick="askQuick('Cross-border jurisdiction and data transfer rules')">International</span>
+        <span class="quick-btn" onclick="askQuick('Employment law for platform and gig workers in SA')">Employment</span>
       </div>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input">
@@ -346,8 +350,8 @@ body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;fon
   };
 
   // Welcome message
-  addMsg('Welcome to Bridge AI Legal Centre.\n\nI can help with:\n- POPIA and GDPR compliance questions\n- South African contract law\n- BRDG token regulatory status\n- Document analysis and risk flagging\n\nAsk me anything, or use the quick buttons above.', 'ai',
-    'AI-generated legal guidance. Not a substitute for professional legal advice.');
+  addMsg('Welcome to Bridge AI Legal Centre.\n\nI cover multiple legal domains:\n\n- South African Law (POPIA, Companies Act, Consumer Protection, Labour)\n- EU Law (GDPR, MiCA, Digital Services Act)\n- US Corporate Law (Howey Test, SEC, UCC, Delaware)\n- International Law (CISG, UNCITRAL, Hague Convention)\n- Black\'s Law Dictionary definitions\n- Universal & Natural Law (jus cogens, UDHR)\n- Blockchain & Token Regulation\n\nAsk anything, generate contracts, or create legal proxy actions.', 'ai',
+    'AI-generated legal guidance. Not a substitute for professional legal advice. Consult qualified counsel for binding matters.');
 })();
 </script>
 <script src="/global-nav.js" defer></script>
