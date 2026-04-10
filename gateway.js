@@ -779,7 +779,7 @@ app.all('/wp-json/*path', async (req, res) => {
   const subpath = req.originalUrl.replace('/wp-json', '');
   const url = `${WP_URL}/wp-json${subpath}`;
   try {
-    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(5000) };
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
     if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
     if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
@@ -1080,7 +1080,7 @@ app.post('/api/proofs/merkle', async (_req, res) => {
 app.all('/api/*path', async (req, res) => {
   const url = `http://localhost:8000${req.originalUrl}`;
   try {
-    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(5000) };
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
     if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
     const r = await fetch(url, opts);
