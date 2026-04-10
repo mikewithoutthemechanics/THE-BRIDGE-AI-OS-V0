@@ -292,7 +292,7 @@
       <!-- ══ OUTPUT ══ -->
       <div id="pane-output" style="display:none">
         <div class="row">
-          <span style="color:var(--dim);font-size:10px;padding:5px 0">Recent SVG builds from E:\A\output\</span>
+          <span style="color:var(--dim);font-size:10px;padding:5px 0">Recent SVG skill visualizations</span>
           <div style="flex:1"></div>
           <button class="btn" onclick="loadOut()">REFRESH</button>
         </div>
@@ -352,19 +352,19 @@
         </div>
         <div class="dsec">
           <h4>API ENDPOINTS</h4>
-          <div class="ditem"><a href="/health" target="_blank">System Health</a></div>
-          <div class="ditem"><a href="/live-map" target="_blank">Live Map State</a></div>
-          <div class="ditem"><a href="/skills/definitions" target="_blank">Skill Definitions</a></div>
-          <div class="ditem"><a href="/api/treasury/status" target="_blank">Treasury Status</a></div>
-          <div class="ditem"><a href="/api/verify/info" target="_blank">Verification Keys</a></div>
-          <div class="ditem"><a href="/api/economy/stats" target="_blank">Economy Stats</a></div>
-          <div class="ditem"><a href="/swarm/health" target="_blank">Swarm Health</a></div>
+          <div class="ditem"><a href="/view.html?src=/health&title=System%20Health">System Health</a></div>
+          <div class="ditem"><a href="/view.html?src=/live-map&title=Live%20Map%20State">Live Map State</a></div>
+          <div class="ditem"><a href="/view.html?src=/skills/definitions&title=Skill%20Definitions">Skill Definitions</a></div>
+          <div class="ditem"><a href="/view.html?src=/api/treasury/status&title=Treasury%20Status">Treasury Status</a></div>
+          <div class="ditem"><a href="/view.html?src=/api/verify/info&title=Verification%20Keys">Verification Keys</a></div>
+          <div class="ditem"><a href="/view.html?src=/api/economy/stats&title=Economy%20Stats">Economy Stats</a></div>
+          <div class="ditem"><a href="/view.html?src=/api/swarm/health&title=Swarm%20Health">Swarm Health</a></div>
         </div>
         <div class="dsec">
           <h4>VERIFICATION</h4>
-          <div class="ditem"><a href="/api/metrics/token" target="_blank">Token (on-chain)</a></div>
-          <div class="ditem"><a href="/api/verify/chain" target="_blank">Proof Chain</a></div>
-          <div class="ditem"><a href="/VERIFICATION.md" target="_blank">Methodology</a></div>
+          <div class="ditem"><a href="/view.html?src=/api/metrics/token&title=BRDG%20Token%20(On-Chain)">Token (on-chain)</a></div>
+          <div class="ditem"><a href="/view.html?src=/api/verify/chain&title=Payment%20Proof%20Chain">Proof Chain</a></div>
+          <div class="ditem"><a href="/view.html?src=/VERIFICATION.md&title=Verification%20Methodology">Methodology</a></div>
         </div>
       </div>
     </div>
@@ -603,29 +603,79 @@ async function ytLearn(){
 
 // ── BUILD OUTPUT ──
 async function loadOut(){
-  const el=document.getElementById('output-gallery');el.innerHTML='<div style="color:var(--dim)">Loading…</div>';
+  var el=document.getElementById('output-gallery');
+  el.textContent='Loading…';
+  el.style.color='var(--dim)';
+  // Try /output/ directory first, fall back to listing available skill SVGs
   try{
-    const html=await fetch('/output/').then(r=>r.text());
-    const files=[...html.matchAll(/href="([^"]+\.svg)"/g)].map(m=>m[1]).reverse().slice(0,30);
-    document.getElementById('nb-out').textContent=files.length;
-    el.innerHTML=files.map(f=>`<div class="thumb" onclick="window.open('/output/${f}','_blank')">
-      <img src="/output/${f}" loading="lazy" onerror="this.style.display='none'">
-      <div class="fn">${f}</div></div>`).join('')||'<div style="color:var(--dim);padding:12px">No SVG builds found</div>';
-  }catch{el.innerHTML='<div style="color:var(--red)">Output dir not served — open from E:\\A via local server</div>';}
+    var html=await fetch('/output/').then(function(r){if(!r.ok)throw new Error(r.status);return r.text();});
+    var files=[...html.matchAll(/href="([^"]+\.svg)"/g)].map(function(m){return m[1];}).reverse().slice(0,30);
+    if(files.length>0){
+      document.getElementById('nb-out').textContent=files.length;
+      el.textContent='';el.style.color='';
+      files.forEach(function(f){
+        var div=document.createElement('div');div.className='thumb';
+        div.onclick=function(){window.open('/output/'+f,'_blank');};
+        var img=document.createElement('img');img.src='/output/'+f;img.loading='lazy';
+        img.onerror=function(){this.style.display='none';};
+        var fn=document.createElement('div');fn.className='fn';fn.textContent=f;
+        div.appendChild(img);div.appendChild(fn);el.appendChild(div);
+      });
+      return;
+    }
+  }catch(e){}
+  // Fallback: show available skill visualizations from the SVG engine
+  try{
+    var skills=await fetch(SVG+'/skills').then(function(r){return r.json();}).catch(function(){return[];});
+    var list=Array.isArray(skills)?skills:(skills.skills||[]);
+    if(list.length>0){
+      document.getElementById('nb-out').textContent=list.length;
+      el.textContent='';el.style.color='';
+      var note=document.createElement('div');note.style.cssText='color:var(--dim);font-size:11px;margin-bottom:8px;grid-column:1/-1';
+      note.textContent='Click any skill to visualize it in the Skill Visualizer tab.';
+      el.appendChild(note);
+      list.slice(0,24).forEach(function(s){
+        var div=document.createElement('div');div.className='thumb';
+        div.onclick=function(){toVis(s.id);};
+        var fn=document.createElement('div');fn.className='fn';fn.textContent=s.id;
+        fn.style.color='var(--cyan)';
+        div.appendChild(fn);el.appendChild(div);
+      });
+      return;
+    }
+  }catch(e){}
+  el.textContent='No SVG builds available. Use the Skill Visualizer tab to generate them.';
+  el.style.color='var(--dim)';
 }
 
 // ── SWARM ──
 async function loadSwarm(){
   try{
     const s=await api('/swarm/health');
-    const sc=s.health_score??s.score??0;
+    const total=s.agents||s.total||0;
+    const healthy=s.healthy||0;
+    const sc=s.health_score??s.score??(total>0?healthy/total:0);
     const el=document.getElementById('sw-h');el.textContent=(sc*100).toFixed(1)+'%';
     el.style.color=sc>0.8?'var(--green)':sc>0.5?'var(--gold)':'var(--red)';
-    document.getElementById('sw-hs').textContent=s.status||'—';
-    pill('p-swarm',sc>0.8?'ok':'warn','SWARM');
-    document.getElementById('sw-m').innerHTML=Object.entries(s.metrics||{}).map(([k,v])=>SR(k,typeof v==='number'?v.toFixed(3):v)).join('')||SR('No metrics','—');
-  }catch{document.getElementById('sw-h').textContent='OFFLINE';pill('p-swarm','err','SWARM');}
-  try{document.getElementById('sw-svg').innerHTML=await svgTxt('/teach/bridge.swarm');}catch{}
+    document.getElementById('sw-hs').textContent=s.status||(sc>0.8?'Healthy':'Degraded');
+    pill('p-swarm',sc>0.5?'ok':'warn','Agents');
+    // Build metrics display from available response fields
+    var mEl=document.getElementById('sw-m');
+    mEl.textContent='';
+    var metrics=[
+      ['Total Agents',total],['Healthy',healthy],
+      ['Tasks Queued',s.tasks_queued??0],
+      ['Uptime',s.uptime_s?Math.floor(s.uptime_s/3600)+'h '+Math.floor((s.uptime_s%3600)/60)+'m':'—']
+    ];
+    metrics.forEach(function(m){
+      var row=document.createElement('div');row.className='srow';
+      var lbl=document.createElement('span');lbl.className='slbl';lbl.textContent=m[0];
+      var val=document.createElement('span');val.className='sval';val.textContent=m[1];
+      row.appendChild(lbl);row.appendChild(val);mEl.appendChild(row);
+    });
+  }catch{document.getElementById('sw-h').textContent='OFFLINE';pill('p-swarm','err','Agents');}
+  // Swarm visualization SVG (safe - from our own SVG engine)
+  try{var svgText=await svgTxt('/teach/bridge.swarm');document.getElementById('sw-svg').textContent='';var tmpl=document.createElement('template');tmpl.innerHTML=svgText;document.getElementById('sw-svg').appendChild(tmpl.content);}catch{}
 }
 
 // ── ECON ──
