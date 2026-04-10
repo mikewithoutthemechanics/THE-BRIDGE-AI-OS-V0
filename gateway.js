@@ -866,6 +866,13 @@ app.get('/api/banks/compound', async (_req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/banks/compound', async (_req, res) => {
+  try {
+    const result = await banks.compoundAll();
+    res.json({ ok: true, ...result, ts: Date.now() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/banks/:id/history', async (req, res) => {
   try {
     const history = await banks.getBankHistory(req.params.id, 50);
