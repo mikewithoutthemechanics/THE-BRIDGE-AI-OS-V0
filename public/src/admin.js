@@ -9,15 +9,63 @@ const KEY_GROUPS = {
 
 let keyStatuses = {};
 
+function getSecret() {
+  return localStorage.getItem('bridge_admin_secret') || '';
+}
+
+function promptForSecret() {
+  var container = document.getElementById('keyGroups');
+  if (!container) return;
+  container.textContent = '';
+
+  var box = document.createElement('div');
+  box.style.cssText = 'padding:24px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:12px;text-align:center;';
+
+  var label = document.createElement('p');
+  label.textContent = 'Enter your admin secret to access key management:';
+  label.style.cssText = 'color:var(--text-secondary);font-size:14px;margin-bottom:14px;';
+  box.appendChild(label);
+
+  var input = document.createElement('input');
+  input.type = 'password';
+  input.id = 'adminSecretInput';
+  input.placeholder = 'BRIDGE_INTERNAL_SECRET';
+  input.style.cssText = 'padding:10px 14px;width:100%;max-width:400px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-family:"JetBrains Mono",monospace;font-size:13px;margin-bottom:12px;';
+  box.appendChild(input);
+
+  box.appendChild(document.createElement('br'));
+
+  var btn = document.createElement('button');
+  btn.textContent = 'Authenticate';
+  btn.style.cssText = 'padding:10px 28px;background:linear-gradient(135deg,#63ffda,#38bdf8);color:#060810;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;';
+  btn.onclick = function () {
+    var val = input.value.trim();
+    if (val) {
+      localStorage.setItem('bridge_admin_secret', val);
+      loadKeys();
+    }
+  };
+  box.appendChild(btn);
+
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') btn.click();
+  });
+
+  container.appendChild(box);
+}
+
 async function loadKeys() {
-  const secret = localStorage.getItem('bridge_admin_secret') || '';
+  var secret = getSecret();
+  if (!secret) { promptForSecret(); return; }
   try {
-    const r = await fetch('/api/admin/keys', {
+    var r = await fetch('/api/admin/keys', {
       headers: { 'x-bridge-secret': secret },
     });
-    const d = await r.json();
+    var d = await r.json();
     if (!d.ok) {
-      showStatus('error', d.error || 'Failed to load keys. Check admin secret.');
+      localStorage.removeItem('bridge_admin_secret');
+      promptForSecret();
+      showStatus('error', d.error || 'Invalid secret. Try again.');
       return;
     }
     keyStatuses = d.keys || {};
