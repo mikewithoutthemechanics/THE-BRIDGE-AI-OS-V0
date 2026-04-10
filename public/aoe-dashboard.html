@@ -611,6 +611,52 @@ function pill(id,s,lbl){
 async function api(path,o){const r=await fetch(API+path,o);if(!r.ok)throw new Error(r.status);return r.json();}
 async function svgTxt(path){const r=await fetch(SVG+path);if(!r.ok)throw new Error(r.status);return r.text();}
 
+// ── CLIENT-SIDE CACHING ──
+const clientCache=new Map();
+const pendingRequests=new Map();
+function cachedFetch(key,fetcher,ttl=5000){
+  // Return cached result if fresh
+  const cached=clientCache.get(key);
+  if(cached&&Date.now()-cached.ts<ttl)return Promise.resolve(cached.data);
+
+  // Return pending request if in-flight (debouncing)
+  if(pendingRequests.has(key))return pendingRequests.get(key);
+
+  // Execute and cache
+  const promise=Promise.resolve(fetcher()).then(data=>{
+    clientCache.set(key,{data,ts:Date.now()});
+    pendingRequests.delete(key);
+    return data;
+  }).catch(err=>{
+    pendingRequests.delete(key);
+    throw err;
+  });
+
+  pendingRequests.set(key,promise);
+  return promise;
+}
+
+// Auto-cleanup: remove stale cache entries every 60s
+setInterval(()=>{
+  const now=Date.now();
+  for(const[k,v]of clientCache.entries()){
+    if(now-v.ts>300000)clientCache.delete(k); // 5-minute max TTL
+  }
+},60000);
+
+// ── REQUEST DEBOUNCING ──
+const debounceState={};
+async function fetchWithDebounce(key,fn){
+  if(debounceState[key])return debounceState[key];
+  debounceState[key]=true;
+  try{
+    return await fn();
+  }finally{
+    // Release debounce after 500ms minimum
+    setTimeout(()=>delete debounceState[key],500);
+  }
+}
+
 // STAT ROW
 const SR=(l,v,c='')=>`<div class="srow"><span class="slbl">${l}</span><span class="sval ${c}">${v}</span></div>`;
 
@@ -635,7 +681,7 @@ function sw(id){
 async function poll(){
   // Backend
   try{
-    const h=await api('/health');
+    const h=await cachedFetch('health',()=>api('/health'),5000);
     pill('p-api','ok','API');
     document.getElementById('ov-api').textContent=(h.status||'OK').toUpperCase();
     document.getElementById('ov-api-s').textContent=h.service||'bridge-api';
@@ -643,7 +689,7 @@ async function poll(){
 
   // SVG Engine
   try{
-    const t=await fetch(SVG+'/telemetry').then(r=>r.json());
+    const t=await cachedFetch('svg_telemetry',()=>fetch(SVG+'/telemetry').then(r=>r.json()),5000);
     pill('p-svg','ok','SVG');
     const sk=t.skills_loaded??0;
     document.getElementById('ov-svg').textContent=sk;
@@ -658,7 +704,7 @@ async function poll(){
 
   // Live map
   try{
-    const lm=await api('/live-map');
+    const lm=await cachedFetch('live_map',()=>api('/live-map'),5000);
     const snap=lm.treasury||lm.treasury_snap||{};
     document.getElementById('ov-lm').innerHTML=
       SR('State ver',lm.state_version??'—')+SR('Capabilities',Object.keys(lm.capabilities||{}).length)+
@@ -672,7 +718,7 @@ async function poll(){
 
   // Treasury pill
   try{
-    const ts=await api('/treasury/summary');
+    const ts=await cachedFetch('treasury_summary',()=>api('/treasury/summary'),5000);
     pill('p-trs','ok','TREASURY');
     document.getElementById('ov-tr').innerHTML=
       SR('Total BRDG',(ts.total_collected_brdg??0).toFixed(4))+
@@ -683,7 +729,7 @@ async function poll(){
 
   // Recent builds
   try{
-    const html=await fetch('/output/').then(r=>r.text());
+    const html=await cachedFetch('output_dir',()=>fetch('/output/').then(r=>r.text()),10000);
     const files=[...html.matchAll(/href="([^"]+\.svg)"/g)].map(m=>m[1]).reverse().slice(0,4);
     document.getElementById('nb-out').textContent=files.length;
     document.getElementById('ov-builds').innerHTML=files.map(f=>
@@ -695,7 +741,7 @@ async function poll(){
 // ── TREASURY ──
 async function loadTr(){
   try{
-    const ts=await api('/treasury/summary');
+    const ts=await cachedFetch('treasury_summary',()=>api('/treasury/summary'),5000);
     document.getElementById('tr-tot').textContent=(ts.total_collected_brdg??0).toFixed(4)+' BRDG';
     document.getElementById('tr-txc').textContent=(ts.total_tx??0)+' transactions';
     document.getElementById('tr-last').textContent=ts.last_tx_amount?.toFixed(4)??'—';
@@ -721,12 +767,12 @@ async function ingestRev(){
 async function loadSk(){
   _allSk=[];
   try{
-    const r=await fetch(SVG+'/skills').then(r=>r.json()).catch(()=>[]);
+    const r=await cachedFetch('svg_skills',()=>fetch(SVG+'/skills').then(r=>r.json()).catch(()=>[]),30000);
     (Array.isArray(r)?r:r.skills||[]).forEach(s=>_allSk.push({...s,_o:'svg-engine'}));
     document.getElementById('nb-sk').textContent=_allSk.length;
   }catch{}
   try{
-    const d=await api('/skills/definitions');
+    const d=await cachedFetch('skills_definitions',()=>api('/skills/definitions'),30000);
     (d.definitions||[]).forEach(s=>{if(!_allSk.find(x=>x.id===s.id))_allSk.push({...s,_o:'backend'});});
   }catch{}
   renderSk(_allSk);
@@ -822,7 +868,7 @@ async function loadOut(){
   el.style.color='var(--dim)';
   // Try /output/ directory first, fall back to listing available skill SVGs
   try{
-    var html=await fetch('/output/').then(function(r){if(!r.ok)throw new Error(r.status);return r.text();});
+    var html=await cachedFetch('output_dir',()=>fetch('/output/').then(function(r){if(!r.ok)throw new Error(r.status);return r.text();}),10000);
     var files=[...html.matchAll(/href="([^"]+\.svg)"/g)].map(function(m){return m[1];}).reverse().slice(0,30);
     if(files.length>0){
       document.getElementById('nb-out').textContent=files.length;
@@ -865,7 +911,7 @@ async function loadOut(){
 // ── SWARM ──
 async function loadSwarm(){
   try{
-    const s=await api('/swarm/health');
+    const s=await cachedFetch('swarm_health',()=>api('/swarm/health'),5000);
     const total=s.agents||s.total||0;
     const healthy=s.healthy||0;
     const sc=s.health_score??s.score??(total>0?healthy/total:0);
@@ -895,7 +941,7 @@ async function loadSwarm(){
 // ── ECON ──
 async function loadEcon(){
   try{
-    const cb=await api('/econ/circuit-breaker');
+    const cb=await cachedFetch('econ_circuit',()=>api('/econ/circuit-breaker'),5000);
     const t=cb.tripped;
     document.getElementById('ec-state').textContent=t?'TRIPPED':'NORMAL';
     document.getElementById('ec-state').style.color=t?'var(--red)':'var(--green)';
@@ -912,7 +958,7 @@ async function resetCB(){
 // ── UBI ──
 async function loadUbi(){
   try{
-    const s=await api('/ubi/status');
+    const s=await cachedFetch('ubi_status',()=>api('/ubi/status'),5000);
     document.getElementById('ubi-s').innerHTML=
       SR('Total claimed',s.total_claimed??'—')+SR('Claimants',s.claimant_count??'—')+SR('Per claim',s.amount_per_claim??'—');
   }catch{document.getElementById('ubi-s').textContent='UBI API offline';}
