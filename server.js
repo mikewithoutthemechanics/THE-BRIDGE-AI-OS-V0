@@ -861,6 +861,17 @@ app.post('/api/webhook/secrets-sync', [validate.secretsWebhook], async (req, res
 const agentRegistryRoutes = require('./lib/agent-registry-routes');
 agentRegistryRoutes.mount(app);
 
+// ================= WITHDRAWAL SYSTEM =================
+try {
+  const withdrawalRoutes = require('./lib/withdrawal-routes');
+  withdrawalRoutes.mount(app);
+  const claimRoutes = require('./lib/claim-routes');
+  claimRoutes.mount(app);
+  console.log('[SERVER] Withdrawal + claim routes mounted');
+} catch (e) {
+  console.warn('[SERVER] Withdrawal routes not loaded:', e.message);
+}
+
 // ================= LEADGEN + CRM + OSINT ENGINE =================
 const leadgenEngine = require('./leadgen-engine');
 leadgenEngine.mount(app);
