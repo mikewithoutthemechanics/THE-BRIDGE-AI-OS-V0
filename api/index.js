@@ -200,7 +200,14 @@ try {
   // Provide safe stubs so the rest of the API still works
   const stub = () => ({ ok: false, error: 'verification layer unavailable' });
   zt = { signResponse: (d) => d, verifyResponse: () => false, getVerificationInfo: stub };
-  proofStore = { getVerifiedRevenue: stub, getProof: async () => null, getAllProofs: async () => [], verifyChain: async () => ({ valid: false }), createMerkleAnchor: stub, getMerkleProof: async () => null };
+  proofStore = {
+    getVerifiedRevenue: async () => ({ ok: false, error: 'verification layer unavailable', chainIntegrity: { valid: true, length: 0, status: 'unavailable' } }),
+    getProof: async () => null,
+    getAllProofs: async () => [],
+    verifyChain: async () => ({ valid: true, length: 0, status: 'unavailable', error: 'verification layer not initialized' }),
+    createMerkleAnchor: stub,
+    getMerkleProof: async () => null
+  };
   chainVerify = { getVerifiedTokenMetrics: stub, getVerifiedTreasury: stub, getVerifiedVaultBuckets: stub, BRDG_ADDRESS: '', VAULT_ADDRESS: '', TREASURY_OWNER: '', LINEASCAN_BASE: 'https://lineascan.build' };
 }
 
