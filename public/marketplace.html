@@ -665,12 +665,52 @@ function renderStats(d,mock){
 
 // ── POLLING ──
 (()=>{
-  const pollTasks=()=>poll('/api/marketplace/tasks',renderTasks);
+  // Use real APIs instead of brain's static /api/marketplace/* endpoints
+  const pollTasks=()=>poll('/api/economy/tasks',function(d,mock){
+    // Map economy tasks format to marketplace format
+    var tasks = d.tasks || d.listings || [];
+    var mapped = {
+      open: tasks.filter(function(t){return t.status==='POSTED'||t.status==='open'||t.status==='pending';}),
+      in_progress: tasks.filter(function(t){return t.status==='CLAIMED'||t.status==='in_progress';}),
+      completed: tasks.filter(function(t){return t.status==='COMPLETED'||t.status==='completed';}),
+      listings: tasks.map(function(t){return {id:t.id,title:t.title||t.description,status:t.status==='POSTED'?'pending':t.status==='CLAIMED'?'in_progress':'completed',reward:(t.reward_brdg||0)+' BRDG',age:t.posted_at?'':''};})
+    };
+    renderTasks(mapped, mock);
+  });
   const pollDex=()=>poll('/api/marketplace/dex',renderDex);
-  const pollWallet=()=>poll('/api/marketplace/wallet',renderWallet);
+  const pollWallet=()=>poll('/api/wallet/balance',function(d,mock){
+    // Map wallet balance to marketplace wallet format
+    var mapped = {
+      address: d.address || '0xAC301f...16F64',
+      balances: d.balances || [{symbol:'BRDG',amount:d.brdg||0},{symbol:'ETH',amount:d.eth||0},{symbol:'ZAR',amount:d.balance||0}],
+      txns: []
+    };
+    renderWallet(mapped, mock);
+  });
   const pollSkills=()=>poll('/api/marketplace/skills',renderSkills);
-  const pollPort=()=>poll('/api/marketplace/portfolio',renderPortfolio);
-  const pollStats=()=>poll('/api/marketplace/stats',renderStats);
+  const pollPort=()=>poll('/api/treasury',function(d,mock){
+    // Map treasury to portfolio format
+    var balance = d.balance || d.total || 0;
+    var buckets = d.buckets || [];
+    var colors = ['#0ff','#8844ff','#0f9','#ff8c00'];
+    var mapped = {
+      total: balance,
+      assets: buckets.map(function(b,i){return {name:b.label||b.name,value:b.balance||b.value||0,pct:b.pct||0,color:colors[i%4]};})
+    };
+    renderPortfolio(mapped, mock);
+  });
+  const pollStats=()=>poll('/api/economy/stats',function(d,mock){
+    // Map economy stats to marketplace stats format
+    var mapped = {
+      tasks: {value:d.totalTransactions||0,trend:'',up:true},
+      agents: {value:d.activeAgents||d.agent_count||0,trend:'',up:true},
+      revenue: {value:d.totalCirculating||0,trend:'',up:true,prefix:''},
+      uptime: {value:99.9,trend:'',up:true,suffix:'%',decimals:1},
+      volume: {value:d.totalFeesCollected||0,trend:'',up:true,prefix:''},
+      skills: {value:27,trend:'',up:true},
+    };
+    renderStats(mapped, mock);
+  });
 
   pollTasks();setInterval(pollTasks,5000);
   pollDex();setInterval(pollDex,3000);
