@@ -36,10 +36,19 @@ const db = require('./lib/db');
 const { requireAuth: gatewayAuth } = require('./middleware/auth');
 
 // ── Zero-Trust Verification Layer ──────────────────────────────────────────
-const zt          = require('./lib/zero-trust');
-const proofStore  = require('./lib/proof-store');
-const chainVerify = require('./lib/chain-verify');
-require('./lib/migrate-zero-trust').ensureTables().catch(() => {});
+let zt, proofStore, chainVerify;
+try {
+  zt          = require('./lib/zero-trust');
+  proofStore  = require('./lib/proof-store');
+  chainVerify = require('./lib/chain-verify');
+  require('./lib/migrate-zero-trust').ensureTables().catch(() => {});
+} catch (e) {
+  console.warn('[ZERO-TRUST] Failed to load verification layer:', e.message);
+  const stub = () => ({ ok: false, error: 'verification layer unavailable' });
+  zt = { signResponse: (d) => d, verifyResponse: () => false, getVerificationInfo: stub };
+  proofStore = { getVerifiedRevenue: stub, getProof: async () => null, getAllProofs: async () => [], verifyChain: async () => ({ valid: false }), createMerkleAnchor: stub, getMerkleProof: async () => null };
+  chainVerify = { getVerifiedTokenMetrics: stub, getVerifiedTreasury: stub, getVerifiedVaultBuckets: stub, BRDG_ADDRESS: '', VAULT_ADDRESS: '', TREASURY_OWNER: '', LINEASCAN_BASE: 'https://lineascan.build' };
+}
 
 // ── CORS (restricted to known origins) ───────────────────────────────────────
 const ALLOWED_ORIGINS = new Set([
