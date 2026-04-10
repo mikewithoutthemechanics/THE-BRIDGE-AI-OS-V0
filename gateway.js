@@ -1222,6 +1222,239 @@ app.get('/api/legal/contracts/active', (_req, res) => {
   ] });
 });
 
+app.get('/api/legal/download/:id', (req, res) => {
+  var id = req.params.id;
+  var docs = {
+    'tos-v1': { name: 'Terms of Service', content: `BRIDGE AI OS — TERMS OF SERVICE
+Version 1.0 | Effective: 1 April 2026
+Entity: Bridge AI (Pty) Ltd | Jurisdiction: Republic of South Africa
+
+1. ACCEPTANCE OF TERMS
+By accessing or using Bridge AI OS ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.
+
+2. SERVICE DESCRIPTION
+Bridge AI OS is an autonomous business intelligence platform providing:
+- AI agent orchestration (35+ specialized agents)
+- CRM, invoicing, and business automation
+- BRDG token economy on Linea L2 blockchain
+- Treasury management with on-chain verification
+
+3. USER ACCOUNTS
+3.1 You must provide accurate registration information.
+3.2 You are responsible for maintaining account security.
+3.3 One account per person; no shared credentials.
+
+4. BRDG TOKEN
+4.1 BRDG is a utility token, not a security or investment.
+4.2 1% deflationary burn applies on all transfers.
+4.3 Token value may fluctuate; Bridge AI makes no price guarantees.
+
+5. PAYMENT TERMS
+5.1 Subscriptions billed monthly via PayFast (ZAR) or Paystack (NGN).
+5.2 Enterprise plans invoiced quarterly.
+5.3 Refunds at Bridge AI's sole discretion within 14 days.
+
+6. DATA PROTECTION
+6.1 We comply with POPIA (South Africa) and GDPR (EU).
+6.2 Personal data processed per our Privacy Policy.
+6.3 You may request data export or deletion at any time.
+
+7. ACCEPTABLE USE
+7.1 No illegal activity, spam, or abuse of AI agents.
+7.2 No reverse engineering of the Platform.
+7.3 Rate limits apply per subscription tier.
+
+8. INTELLECTUAL PROPERTY
+8.1 Bridge AI OS, BRDG, and all agent logic are proprietary.
+8.2 User data remains user property.
+8.3 AI-generated outputs are licensed to the requesting user.
+
+9. LIABILITY
+9.1 Platform provided "as is" without warranty.
+9.2 Bridge AI not liable for indirect or consequential damages.
+9.3 Maximum liability limited to fees paid in prior 12 months.
+
+10. TERMINATION
+10.1 Either party may terminate with 30 days notice.
+10.2 Bridge AI may suspend accounts for ToS violations.
+10.3 On termination, user data available for export for 90 days.
+
+11. GOVERNING LAW
+These terms are governed by the laws of the Republic of South Africa.
+Disputes resolved in the courts of Johannesburg.
+
+Contact: legal@ai-os.co.za
+` },
+    'privacy-v1': { name: 'Privacy Policy', content: `BRIDGE AI OS — PRIVACY POLICY
+Version 1.0 | Effective: 1 April 2026
+POPIA + GDPR Compliant
+
+1. DATA CONTROLLER
+Bridge AI (Pty) Ltd, South Africa.
+Information Officer: admin@api.ai-os.co.za
+
+2. DATA WE COLLECT
+- Account data: name, email, password hash
+- Payment data: processed by PayFast/Paystack (we do not store card numbers)
+- Usage data: API calls, agent interactions, session metadata
+- On-chain data: wallet addresses, BRDG transactions (public blockchain)
+
+3. PURPOSE OF PROCESSING
+- Provide and improve the Platform
+- Process payments and manage subscriptions
+- Agent orchestration and task execution
+- Security monitoring and fraud prevention
+
+4. LEGAL BASIS (GDPR Article 6)
+- Contract performance (account services)
+- Legitimate interest (security, analytics)
+- Consent (marketing communications)
+
+5. DATA RETENTION
+- Account data: retained while account is active + 2 years
+- Transaction records: 7 years (financial regulation)
+- Usage logs: 90 days rolling
+- On-chain data: permanent (blockchain immutability)
+
+6. YOUR RIGHTS (POPIA Section 11 / GDPR Articles 15-22)
+- Access: request a copy of your data
+- Rectification: correct inaccurate data
+- Erasure: request deletion ("right to be forgotten")
+- Portability: export data in machine-readable format
+- Objection: opt out of marketing communications
+- Restriction: limit processing in certain circumstances
+
+7. DATA SHARING
+- Payment processors: PayFast, Paystack (PCI DSS compliant)
+- Cloud infrastructure: Vercel, Supabase, Webway
+- Blockchain: Linea L2 (public, pseudonymous)
+- We do NOT sell personal data to third parties.
+
+8. INTERNATIONAL TRANSFERS
+Data may be processed in South Africa, EU, and US.
+Transfers protected by Standard Contractual Clauses.
+
+9. SECURITY
+- AES-256 encryption at rest
+- TLS 1.3 in transit
+- KeyForge rotating authentication keys
+- Zero-trust verification on all treasury data
+
+10. COOKIES
+Essential cookies only. See Cookie Policy for details.
+
+11. CHANGES
+We may update this policy. Material changes notified via email.
+
+12. CONTACT
+Privacy inquiries: legal@ai-os.co.za
+POPIA complaints: Information Regulator (South Africa)
+GDPR complaints: relevant EU supervisory authority
+
+` },
+    'dpa-v1': { name: 'Data Processing Agreement', content: `BRIDGE AI OS — DATA PROCESSING AGREEMENT
+Version 1.0 | GDPR Article 28
+
+This DPA forms part of the Terms of Service between Bridge AI (Pty) Ltd ("Processor") and the Customer ("Controller").
+
+1. SCOPE: Processor processes personal data solely for providing Platform services.
+2. INSTRUCTIONS: Processor acts only on documented Controller instructions.
+3. CONFIDENTIALITY: All personnel authorized to process data are bound by confidentiality.
+4. SECURITY: Technical and organizational measures per GDPR Article 32.
+5. SUB-PROCESSORS: Supabase (database), Vercel (hosting), PayFast (payments).
+6. DATA SUBJECT RIGHTS: Processor assists Controller in fulfilling data subject requests.
+7. BREACH NOTIFICATION: Within 72 hours of becoming aware of a personal data breach.
+8. AUDIT: Controller may audit Processor compliance upon reasonable notice.
+9. DELETION: On termination, Processor deletes all personal data within 90 days.
+10. GOVERNING LAW: Republic of South Africa + EU GDPR.
+
+` },
+    'token-disc': { name: 'BRDG Token Disclaimer', content: `BRDG TOKEN — RISK DISCLOSURE
+Bridge AI (Pty) Ltd | Linea L2 Blockchain
+
+BRDG is a utility token. It is NOT a security, investment product, or financial instrument.
+
+RISKS:
+- Token value may decrease to zero
+- Blockchain transactions are irreversible
+- Smart contract bugs may result in loss of tokens
+- Regulatory changes may affect token utility
+- 1% burn on every transfer reduces supply but does not guarantee value
+
+NO GUARANTEES:
+Bridge AI makes no representations about future token value, returns, or profitability. Past performance is not indicative of future results.
+
+CONTRACT: 0x5f0541302bd4fC672018b07a35FA5f294A322947 (Linea Mainnet)
+VERIFY: https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947
+
+` },
+    'sla-v1': { name: 'Service Level Agreement', content: `BRIDGE AI OS — SERVICE LEVEL AGREEMENT
+Version 1.0 | Effective: 1 April 2026
+
+1. UPTIME: 99.9% monthly availability (excludes scheduled maintenance).
+2. RESPONSE TIME: API p95 latency < 500ms.
+3. SUPPORT: Business hours (SAST 08:00-17:00). Enterprise: 24/7.
+4. ESCALATION: P1 (system down): 1 hour. P2 (degraded): 4 hours. P3 (minor): 24 hours.
+5. CREDITS: <99.9% uptime = 10% credit. <99.0% = 25% credit. <95% = 50% credit.
+6. EXCLUSIONS: Force majeure, user error, third-party service outages.
+
+` },
+    'aup-v1': { name: 'Acceptable Use Policy', content: `BRIDGE AI OS — ACCEPTABLE USE POLICY
+Version 1.0
+
+PROHIBITED:
+- Using AI agents for illegal activity
+- Circumventing rate limits or access controls
+- Automated scraping without API key
+- Distributing malware via the Platform
+- Impersonating other users or agents
+
+RATE LIMITS:
+- Starter: 100 API calls/day, 3 agent tasks/day
+- Pro: Full API access, 50 agent tasks/day
+- Enterprise: Unlimited
+
+ENFORCEMENT:
+Violations result in warning, suspension, or termination at Bridge AI's discretion.
+
+` },
+    'cookie-v1': { name: 'Cookie Policy', content: `BRIDGE AI OS — COOKIE POLICY
+Version 1.0
+
+ESSENTIAL COOKIES (always active):
+- bridge_token: Authentication session (secure, httpOnly)
+- bridge_session_id: Session identifier
+
+NO TRACKING COOKIES. NO THIRD-PARTY ANALYTICS COOKIES.
+
+We do not use Google Analytics, Facebook Pixel, or any ad tracking.
+Session data stored in localStorage for convenience (command history, preferences).
+
+OPT-OUT: Clear browser cookies and localStorage at any time.
+
+` },
+    'ip-assign': { name: 'IP Assignment Agreement', content: `BRIDGE AI OS — IP ASSIGNMENT AGREEMENT
+DRAFT v0.1
+
+This agreement assigns intellectual property rights for contributions to Bridge AI OS.
+
+1. SCOPE: All code, documentation, and creative works contributed to the Platform.
+2. ASSIGNMENT: Contributor assigns all IP rights to Bridge AI (Pty) Ltd.
+3. LICENSE BACK: Contributor receives perpetual license to use their contributions.
+4. WARRANTY: Contributor warrants original authorship and right to assign.
+5. COMPENSATION: Per separate JV or employment agreement.
+
+STATUS: DRAFT — Not yet in effect.
+
+` },
+  };
+  var doc = docs[id];
+  if (!doc) return res.status(404).json({ error: 'Document not found: ' + id });
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="' + id + '.txt"');
+  res.send(doc.content);
+});
+
 app.get('/api/pricing', (_req, res) => {
   res.json({ plans: [
     { id: 'starter',    name: 'Starter',    price: 49,  currency: 'ZAR', features: ['5 agents', '1k tasks/mo', 'Basic analytics'] },

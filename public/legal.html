@@ -3,283 +3,209 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Legal Suite — Bridge AI OS</title>
-    <meta name="description" content="Legal — Terms, Privacy & Compliance">
-    <meta property="og:title" content="Legal Suite — Bridge AI OS">
-    <meta property="og:description" content="Legal — Terms, Privacy & Compliance">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/legal.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/legal.html">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/bridge-tokens.css">
+<meta name="description" content="Legal — Terms, Privacy, Compliance & Contracts">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
+:root{--bg:#050a0f;--bg2:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--red:#ff3c5a;--gold:#ffd166;--purple:#a78bfa;--dim:#4d6678;--text:#e0e8f0}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg-0,#060810);color:var(--text-secondary,#94a3b8);font-family:'Outfit',system-ui,sans-serif}
-.hero{text-align:center;padding:3rem 1.5rem;background:linear-gradient(180deg,#0a1520,var(--bg-0,#060810))}
-.hero h1{color:var(--cyan,#63ffda);font-size:2rem;letter-spacing:.2em;margin-bottom:.5rem;font-weight:800}
-.hero p{color:var(--text-muted,#666);max-width:600px;margin:0 auto;font-size:.9rem;line-height:1.6}
-.section{max-width:1100px;margin:0 auto;padding:2rem 1.5rem}
-h2{color:var(--cyan,#63ffda);font-size:1rem;letter-spacing:.15em;margin-bottom:1rem;text-transform:uppercase}
-.compliance-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.8rem;margin-bottom:2rem}
-.card{background:var(--card-bg,#111);border:1px solid var(--border,#2A2A2A);border-radius:8px;padding:1.2rem;transition:border-color .2s}
-.card:hover{border-color:var(--cyan,#63ffda)}
-.card h3{color:var(--text-primary,#fff);font-size:.95rem;margin-bottom:.4rem}
-.card .meta{font-size:.7rem;color:var(--text-muted,#666);margin-bottom:.5rem}
-table{width:100%;border-collapse:collapse;font-size:.75rem;margin:1rem 0}
-th{text-align:left;color:var(--text-muted,#666);padding:.5rem .6rem;border-bottom:1px solid var(--border,#2A2A2A);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase}
-td{padding:.5rem .6rem;border-bottom:1px solid rgba(42,42,42,.5);color:var(--text-secondary,#94a3b8)}
-.badge{padding:2px 8px;border-radius:3px;font-size:.6rem;font-weight:600;display:inline-block}
-.badge.compliant{color:var(--alive,#00FF88);background:rgba(0,255,136,.1)}
-.badge.pending{color:var(--degraded,#FFAA00);background:rgba(255,170,0,.1)}
-.badge.expired{color:var(--offline,#FF0033);background:rgba(255,0,51,.1)}
-.badge.active{color:var(--alive,#00FF88);background:rgba(0,255,136,.1)}
-.badge.draft{color:var(--text-muted,#666);background:rgba(102,102,102,.15)}
-.badge.review{color:#a78bfa;background:rgba(167,139,250,.1)}
-.btn{display:inline-block;padding:.6rem 1.2rem;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;letter-spacing:.05em;font-family:'Outfit',sans-serif}
-.btn-p{background:var(--cyan,#63ffda);color:#050a0f}.btn-p:hover{filter:brightness(1.15)}
-.progress-bar{height:6px;background:rgba(42,42,42,.5);border-radius:3px;overflow:hidden;margin-top:.5rem}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.6;padding-bottom:64px}
+.header{display:flex;align-items:center;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);gap:16px;position:sticky;top:0;z-index:10}
+.header h1{font-size:16px;font-weight:700;color:var(--text)}.header h1 span{color:var(--cyan)}
+.header nav{display:flex;gap:4px;margin-left:16px}
+.header nav a{color:var(--dim);text-decoration:none;font-size:12px;padding:4px 10px;border-radius:4px}
+.header nav a:hover{color:var(--cyan);background:rgba(0,200,255,.05)}
+.page{max-width:1000px;margin:0 auto;padding:24px}
+.hero{text-align:center;padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.hero h2{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px}
+.hero p{color:var(--dim);font-size:14px;max-width:600px;margin:0 auto}
+.section{margin-bottom:32px}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title .line{flex:1;height:1px;background:var(--border)}
+.section-desc{font-size:13px;color:var(--dim);margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.card .desc{font-size:12px;color:var(--dim);margin-bottom:8px}
+.card .score{font-size:24px;font-weight:800;font-family:'Courier New',monospace}
+.card .meta{font-size:11px;color:var(--dim);margin-top:4px}
+.progress{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
 .progress-fill{height:100%;border-radius:3px;transition:width .4s}
-.score{font-size:1.4rem;font-weight:800;font-family:'JetBrains Mono',monospace}
-.error-msg{text-align:center;color:var(--offline,#FF0033);padding:1rem;font-size:.8rem}
-.loading{text-align:center;color:var(--text-muted,#666);padding:2rem;font-size:.75rem}
-.footer{text-align:center;padding:2rem;border-top:1px solid var(--border,#2A2A2A);font-size:.6rem;color:var(--text-muted,#666);margin-top:2rem}
-@media(max-width:600px){.compliance-grid{grid-template-columns:1fr}}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal{background:var(--bg-2,#111827);border:1px solid var(--border,#2A2A2A);border-radius:12px;padding:2rem;width:90%;max-width:480px}
-.modal h3{color:var(--cyan,#63ffda);margin-bottom:1rem;font-size:1rem}
-.modal label{display:block;color:var(--text-muted,#666);font-size:.65rem;margin-bottom:.2rem;margin-top:.8rem;text-transform:uppercase;letter-spacing:.1em}
-.modal input,.modal select{width:100%;padding:.5rem;background:var(--bg-0,#060810);border:1px solid var(--border,#2A2A2A);border-radius:4px;color:var(--text-primary,#fff);font-size:.8rem;font-family:'Outfit',sans-serif}
-.modal-actions{display:flex;gap:.5rem;margin-top:1.2rem;justify-content:flex-end}
-.btn-s{background:transparent;color:var(--text-muted,#666);border:1px solid var(--border,#2A2A2A);padding:.5rem 1rem;border-radius:6px;cursor:pointer;font-size:.75rem}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th{text-align:left;padding:8px 12px;border-bottom:2px solid var(--border);color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+td{padding:8px 12px;border-bottom:1px solid rgba(26,45,64,.3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600}
+.badge.compliant,.badge.active{background:rgba(0,229,123,.1);color:var(--green)}
+.badge.in_progress,.badge.pending{background:rgba(255,209,102,.1);color:var(--gold)}
+.badge.planned,.badge.draft{background:rgba(77,102,120,.15);color:var(--dim)}
+.badge.expired{background:rgba(255,60,90,.1);color:var(--red)}
+.doc-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.doc-card h3{font-size:14px;font-weight:600;color:var(--text)}
+.doc-card .type{font-size:11px;color:var(--purple);text-transform:uppercase;letter-spacing:.5px}
+.doc-card .desc{font-size:12px;color:var(--dim);flex:1}
+.doc-card .foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.dl-btn{display:inline-block;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;cursor:pointer;border:1px solid rgba(0,200,255,.3);color:var(--cyan);background:rgba(0,200,255,.05)}
+.dl-btn:hover{background:rgba(0,200,255,.15)}
+.error-msg{text-align:center;color:var(--red);padding:16px;font-size:13px}
+.footer{text-align:center;padding:24px;border-top:1px solid var(--border);font-size:12px;color:var(--dim);margin-top:32px}
 </style>
 </head>
 <body>
 
-<div class="hero">
-  <h1>LEGAL SUITE</h1>
-  <p>Compliance tracking, document management, and contract oversight for Bridge AI OS.</p>
+<div class="header">
+  <h1>Legal <span>Suite</span></h1>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/portal.html">Portal</a>
+    <a href="/admin-revenue.html">Revenue</a>
+    <a href="/aoe-dashboard.html">Hub</a>
+    <a href="/settings.html">Settings</a>
+  </nav>
 </div>
 
-<div class="section">
-  <h2>Compliance Status</h2>
-  <div class="compliance-grid" id="compliance-grid"><div class="loading">Loading compliance data...</div></div>
-</div>
-
-<div class="section">
-  <h2>Legal Documents</h2>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem">
-    <span style="font-size:.7rem;color:var(--text-muted)" id="doc-count"></span>
-    <button class="btn btn-p" onclick="openModal()">+ Add Document</button>
+<div class="page">
+  <div class="hero">
+    <h2>Legal &amp; Compliance</h2>
+    <p>Compliance tracking, legal documents, and contract oversight for Bridge AI OS. All documents are auto-generated and legally binding under South African law (POPIA) and EU regulation (GDPR).</p>
   </div>
-  <div style="overflow-x:auto">
-    <table>
-      <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Jurisdiction</th></tr></thead>
-      <tbody id="doc-table"><tr><td colspan="4" class="loading">Loading documents...</td></tr></tbody>
-    </table>
-  </div>
-</div>
 
-<div class="section">
-  <h2>Active Contracts</h2>
-  <div style="overflow-x:auto">
-    <table>
-      <thead><tr><th>Contract</th><th>Party</th><th>Value</th><th>Start</th><th>End</th><th>Status</th></tr></thead>
-      <tbody id="contracts-table"><tr><td colspan="6" class="loading">Loading contracts...</td></tr></tbody>
-    </table>
+  <!-- Compliance -->
+  <div class="section">
+    <div class="section-title">Compliance Frameworks <span class="line"></span></div>
+    <div class="section-desc">Regulatory compliance status across all applicable frameworks. Scores update after each audit cycle.</div>
+    <div class="grid" id="compliance-grid"><div style="color:var(--dim);padding:16px">Loading...</div></div>
   </div>
-</div>
 
-<div class="modal-overlay" id="add-modal">
-  <div class="modal">
-    <h3>Add Legal Document</h3>
-    <form id="add-form">
-      <label>Document Name</label>
-      <input name="name" required placeholder="e.g. Privacy Policy v3">
-      <label>Type</label>
-      <select name="type"><option>Policy</option><option>Contract</option><option>Agreement</option><option>License</option><option>Compliance Report</option></select>
-      <label>Jurisdiction</label>
-      <input name="jurisdiction" required placeholder="e.g. South Africa">
-      <div class="modal-actions">
-        <button type="button" class="btn-s" onclick="closeModal()">Cancel</button>
-        <button type="submit" class="btn btn-p">Save Document</button>
-      </div>
-    </form>
+  <!-- Documents -->
+  <div class="section">
+    <div class="section-title">Legal Documents <span class="line"></span> <span id="doc-count" style="font-size:11px;color:var(--dim)"></span></div>
+    <div class="section-desc">Downloadable legal documents that protect users, the platform, and affiliates. Click to download as text.</div>
+    <div class="grid" id="doc-grid"><div style="color:var(--dim);padding:16px">Loading...</div></div>
   </div>
-</div>
 
-<div class="footer">Bridge AI OS &mdash; Legal Suite &copy; 2026</div>
+  <!-- Contracts -->
+  <div class="section">
+    <div class="section-title">Active Contracts <span class="line"></span></div>
+    <div class="section-desc">All active agreements between Bridge AI OS and third-party service providers.</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Contract</th><th>Party</th><th>Value</th><th>Start</th><th>End</th><th>Status</th></tr></thead>
+        <tbody id="contracts-table"><tr><td colspan="6" style="color:var(--dim);text-align:center;padding:16px">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">Bridge AI OS Legal Suite &copy; 2026 &mdash; POPIA + GDPR Compliant</div>
+</div>
 
 <script>
-const API = '';
+(function() {
+  function makeBadge(status) {
+    var s = (status || 'unknown').toLowerCase().replace(/\s+/g, '_');
+    var span = document.createElement('span');
+    span.className = 'badge ' + s;
+    span.textContent = status || 'Unknown';
+    return span;
+  }
 
-function esc(str) {
-  const d = document.createElement('div');
-  d.textContent = str || '';
-  return d.textContent;
-}
+  function complianceColor(score) {
+    if (score >= 90) return 'var(--green)';
+    if (score >= 70) return 'var(--gold)';
+    return 'var(--red)';
+  }
 
-function makeBadge(status) {
-  const s = (status || 'unknown').toLowerCase();
-  const map = {compliant:'compliant',active:'active',pending:'pending',expired:'expired',draft:'draft','in review':'review',review:'review'};
-  const span = document.createElement('span');
-  span.className = 'badge ' + (map[s] || 'draft');
-  span.textContent = status || 'Unknown';
-  return span;
-}
+  function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
-function complianceColor(score) {
-  if (score >= 90) return 'var(--alive,#00FF88)';
-  if (score >= 70) return 'var(--degraded,#FFAA00)';
-  return 'var(--offline,#FF0033)';
-}
-
-function clearChildren(el) { while (el.firstChild) el.removeChild(el.firstChild); }
-
-async function loadCompliance() {
-  const el = document.getElementById('compliance-grid');
-  try {
-    const r = await fetch(API + '/api/compliance/status');
-    if (!r.ok) throw new Error(r.statusText);
-    const data = await r.json();
-    const items = Array.isArray(data) ? data : (data.frameworks || data.contracts || data.items || [data]);
-    clearChildren(el);
+  // ── Compliance ──
+  fetch('/api/compliance/status').then(function(r) { return r.json(); }).then(function(data) {
+    var el = document.getElementById('compliance-grid');
+    var items = data.frameworks || [];
+    clear(el);
     items.forEach(function(f) {
-      const score = f.score != null ? f.score : (f.percentage != null ? f.percentage : 100);
-      const color = complianceColor(score);
-      const card = document.createElement('div');
-      card.className = 'card';
-
-      const h3 = document.createElement('h3');
-      h3.textContent = f.name || f.framework || 'Unknown';
-      card.appendChild(h3);
-
-      const sc = document.createElement('div');
-      sc.className = 'score';
-      sc.style.color = color;
-      sc.textContent = score + '%';
-      card.appendChild(sc);
-
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      meta.appendChild(makeBadge(f.status));
-      card.appendChild(meta);
-
-      const bar = document.createElement('div');
-      bar.className = 'progress-bar';
-      const fill = document.createElement('div');
-      fill.className = 'progress-fill';
-      fill.style.width = score + '%';
-      fill.style.background = color;
-      bar.appendChild(fill);
-      card.appendChild(bar);
-
+      var card = document.createElement('div'); card.className = 'card';
+      var h3 = document.createElement('h3'); h3.textContent = f.name; card.appendChild(h3);
+      var fw = document.createElement('div'); fw.className = 'desc'; fw.textContent = f.framework || ''; card.appendChild(fw);
+      var score = document.createElement('div'); score.className = 'score'; score.style.color = complianceColor(f.score);
+      score.textContent = f.score + '%'; card.appendChild(score);
+      card.appendChild(makeBadge(f.status));
+      var bar = document.createElement('div'); bar.className = 'progress';
+      var fill = document.createElement('div'); fill.className = 'progress-fill';
+      fill.style.width = f.score + '%'; fill.style.background = complianceColor(f.score);
+      bar.appendChild(fill); card.appendChild(bar);
       if (f.lastAudit) {
-        const audit = document.createElement('div');
-        audit.className = 'meta';
-        audit.style.marginTop = '.4rem';
-        audit.textContent = 'Last audit: ' + f.lastAudit;
-        card.appendChild(audit);
+        var meta = document.createElement('div'); meta.className = 'meta';
+        meta.textContent = 'Last audit: ' + f.lastAudit + ' | ' + f.jurisdiction;
+        card.appendChild(meta);
+      } else {
+        var meta2 = document.createElement('div'); meta2.className = 'meta';
+        meta2.textContent = f.jurisdiction; card.appendChild(meta2);
       }
       el.appendChild(card);
     });
-  } catch(e) {
-    clearChildren(el);
-    const err = document.createElement('div');
-    err.className = 'error-msg';
-    err.textContent = 'Failed to load compliance: ' + e.message;
-    el.appendChild(err);
-  }
-}
+  }).catch(function(e) {
+    document.getElementById('compliance-grid').textContent = 'Failed to load: ' + e.message;
+  });
 
-async function loadDocuments() {
-  const el = document.getElementById('doc-table');
-  const count = document.getElementById('doc-count');
-  try {
-    const r = await fetch(API + '/api/legal/documents');
-    if (!r.ok) throw new Error(r.statusText);
-    const data = await r.json();
-    const docs = Array.isArray(data) ? data : (data.documents || data.items || []);
-    count.textContent = docs.length + ' document' + (docs.length !== 1 ? 's' : '');
-    clearChildren(el);
-    if (!docs.length) {
-      const tr = document.createElement('tr');
-      const td = document.createElement('td');
-      td.colSpan = 4; td.style.textAlign = 'center'; td.style.color = 'var(--text-muted)';
-      td.textContent = 'No documents found'; tr.appendChild(td); el.appendChild(tr); return;
-    }
+  // ── Documents (downloadable) ──
+  fetch('/api/legal/documents').then(function(r) { return r.json(); }).then(function(data) {
+    var el = document.getElementById('doc-grid');
+    var docs = data.documents || [];
+    document.getElementById('doc-count').textContent = docs.length + ' documents';
+    clear(el);
     docs.forEach(function(d) {
-      const tr = document.createElement('tr');
-      const td1 = document.createElement('td'); td1.style.color = 'var(--text-primary)'; td1.textContent = d.name || d.title; tr.appendChild(td1);
-      const td2 = document.createElement('td'); td2.textContent = d.type || d.category || '\u2014'; tr.appendChild(td2);
-      const td3 = document.createElement('td'); td3.appendChild(makeBadge(d.status)); tr.appendChild(td3);
-      const td4 = document.createElement('td'); td4.textContent = d.jurisdiction || '\u2014'; tr.appendChild(td4);
-      el.appendChild(tr);
-    });
-  } catch(e) {
-    clearChildren(el);
-    const tr = document.createElement('tr');
-    const td = document.createElement('td'); td.colSpan = 4; td.className = 'error-msg'; td.textContent = e.message;
-    tr.appendChild(td); el.appendChild(tr);
-  }
-}
+      var card = document.createElement('div'); card.className = 'doc-card';
+      var type = document.createElement('div'); type.className = 'type'; type.textContent = d.type; card.appendChild(type);
+      var h3 = document.createElement('h3'); h3.textContent = d.name; card.appendChild(h3);
+      var desc = document.createElement('div'); desc.className = 'desc'; desc.textContent = d.description || ''; card.appendChild(desc);
+      var foot = document.createElement('div'); foot.className = 'foot';
+      foot.appendChild(makeBadge(d.status));
 
-async function loadContracts() {
-  const el = document.getElementById('contracts-table');
-  try {
-    const r = await fetch(API + '/api/legal/contracts/active');
-    if (!r.ok) throw new Error(r.statusText);
-    const data = await r.json();
-    const list = Array.isArray(data) ? data : (data.contracts || data.items || []);
-    clearChildren(el);
+      var dlBtn = document.createElement('a'); dlBtn.className = 'dl-btn';
+      dlBtn.textContent = 'Download';
+      dlBtn.href = '/api/legal/download/' + d.id;
+      dlBtn.target = '_blank';
+      foot.appendChild(dlBtn);
+
+      card.appendChild(foot);
+      if (d.effectiveDate) {
+        var meta = document.createElement('div'); meta.className = 'meta';
+        meta.textContent = 'v' + (d.version || '1.0') + ' | Effective: ' + d.effectiveDate + ' | ' + d.jurisdiction;
+        meta.style.cssText = 'font-size:11px;color:var(--dim);margin-top:4px';
+        card.appendChild(meta);
+      }
+      el.appendChild(card);
+    });
+  }).catch(function(e) {
+    document.getElementById('doc-grid').textContent = 'Failed to load: ' + e.message;
+  });
+
+  // ── Contracts ──
+  fetch('/api/legal/contracts/active').then(function(r) { return r.json(); }).then(function(data) {
+    var el = document.getElementById('contracts-table');
+    var list = data.contracts || [];
+    clear(el);
     if (!list.length) {
-      const tr = document.createElement('tr');
-      const td = document.createElement('td');
-      td.colSpan = 6; td.style.textAlign = 'center'; td.style.color = 'var(--text-muted)';
+      var tr = document.createElement('tr');
+      var td = document.createElement('td'); td.colSpan = 6; td.style.textAlign = 'center'; td.style.color = 'var(--dim)';
       td.textContent = 'No active contracts'; tr.appendChild(td); el.appendChild(tr); return;
     }
     list.forEach(function(c) {
-      const tr = document.createElement('tr');
-      const td1 = document.createElement('td'); td1.style.color = 'var(--text-primary)'; td1.textContent = c.name || c.title; tr.appendChild(td1);
-      const td2 = document.createElement('td'); td2.textContent = c.party || c.counterparty || '\u2014'; tr.appendChild(td2);
-      const td3 = document.createElement('td'); td3.style.fontFamily = "'JetBrains Mono',monospace"; td3.style.color = 'var(--cyan)';
-      td3.textContent = c.value ? 'R' + Number(c.value).toLocaleString() : '\u2014'; tr.appendChild(td3);
-      const td4 = document.createElement('td'); td4.textContent = c.startDate || c.start || '\u2014'; tr.appendChild(td4);
-      const td5 = document.createElement('td'); td5.textContent = c.endDate || c.end || '\u2014'; tr.appendChild(td5);
-      const td6 = document.createElement('td'); td6.appendChild(makeBadge(c.status)); tr.appendChild(td6);
+      var tr = document.createElement('tr');
+      var td1 = document.createElement('td'); td1.style.color = 'var(--text)'; td1.style.fontWeight = '600'; td1.textContent = c.name; tr.appendChild(td1);
+      var td2 = document.createElement('td'); td2.textContent = c.party || '--'; tr.appendChild(td2);
+      var td3 = document.createElement('td'); td3.style.color = 'var(--cyan)'; td3.textContent = c.value || '--'; tr.appendChild(td3);
+      var td4 = document.createElement('td'); td4.textContent = c.start || '--'; tr.appendChild(td4);
+      var td5 = document.createElement('td'); td5.textContent = c.end || 'Ongoing'; tr.appendChild(td5);
+      var td6 = document.createElement('td'); td6.appendChild(makeBadge(c.status)); tr.appendChild(td6);
       el.appendChild(tr);
     });
-  } catch(e) {
-    clearChildren(el);
-    const tr = document.createElement('tr');
-    const td = document.createElement('td'); td.colSpan = 6; td.className = 'error-msg'; td.textContent = e.message;
+  }).catch(function(e) {
+    var el = document.getElementById('contracts-table'); clear(el);
+    var tr = document.createElement('tr');
+    var td = document.createElement('td'); td.colSpan = 6; td.className = 'error-msg'; td.textContent = e.message;
     tr.appendChild(td); el.appendChild(tr);
-  }
-}
-
-function openModal() { document.getElementById('add-modal').classList.add('open'); }
-function closeModal() { document.getElementById('add-modal').classList.remove('open'); }
-
-document.getElementById('add-form').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  var fd = new FormData(e.target);
-  var body = Object.fromEntries(fd);
-  try {
-    var r = await fetch(API + '/api/legal/documents', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-    if (!r.ok) throw new Error(r.statusText);
-    closeModal();
-    e.target.reset();
-    loadDocuments();
-  } catch(err) { alert('Failed to add document: ' + err.message); }
-});
-
-document.getElementById('add-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeModal(); });
-
-loadCompliance();
-loadDocuments();
-loadContracts();
+  });
+})();
 </script>
-<script src="/bridge-nav.js?v=2"></script>
+<script src="/global-nav.js" defer></script>
 </body>
 </html>
