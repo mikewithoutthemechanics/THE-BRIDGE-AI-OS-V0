@@ -439,7 +439,7 @@ function tsDate() {
 }
 
 // =========== SEED DATA ===========
-const AGENT_NAMES = ['alpha','beta','gamma','delta','epsilon','zeta','eta','theta'];
+const AGENT_NAMES = ['QuoteGen AI','Finance AI','Growth Hunter','Intelligence AI','Nurture AI','Closer AI','Campaign AI','Creative AI','Support AI','Supply AI'];
 
 const defaultTreasury = {
   balance: 137284.50,
@@ -1181,6 +1181,16 @@ async function init() {
 
   await fetchSeedData();
   initState();
+  // Fetch real agent list from API to populate dispatch
+  try {
+    var agentResp = await fetch('/api/swarm/agents').then(function(r){return r.json();});
+    var realAgents = agentResp.agents || [];
+    if (realAgents.length > 0) {
+      agents = realAgents.map(function(a) {
+        return { name: a.name, status: a.status || 'active', tasksCompleted: a.tasks_done || 0 };
+      });
+    }
+  } catch(_){}
   renderAll();
   initChart();
   renderServices();
