@@ -167,6 +167,10 @@
 
     .amount { color: #00e57b; font-weight: 600; font-variant-numeric: tabular-nums; }
     .amount-out { color: #ff4757; }
+    .status-open { color: #00c8ff; font-weight: 600; font-size: 11px; }
+    .status-active { color: #ffd166; font-weight: 600; font-size: 11px; }
+    .status-completed { color: #00e57b; font-weight: 600; font-size: 11px; }
+    .status-unknown { color: #4d6678; font-size: 11px; }
 
     /* Transaction flow */
     .flow-item {
@@ -292,7 +296,7 @@
       </div>
 
       <div class="panel">
-        <div class="section-title">Open Tasks</div>
+        <div class="section-title">Task Marketplace (All)</div>
         <div class="scroll-container">
           <table>
             <thead>
@@ -448,33 +452,37 @@
         });
       }
 
-      // --- Open Tasks ---
+      // --- Task Marketplace (all statuses) ---
       function loadTasks() {
         var tbody = document.getElementById('tasks-body');
-        fetchJSON('/api/economy/tasks?status=open').then(function (data) {
+        // Fetch all tasks (not just open) to show the full pipeline
+        fetchJSON('/api/economy/tasks').then(function (data) {
           clearChildren(tbody);
           var tasks = Array.isArray(data) ? data : (data.tasks || []);
           if (tasks.length === 0) {
             var tr = createEl('tr');
-            tr.appendChild(createEl('td', { colspan: '5', className: 'loading' }, 'No open tasks'));
+            tr.appendChild(createEl('td', { colspan: '5', className: 'loading' }, 'No marketplace tasks yet'));
             tbody.appendChild(tr);
             return;
           }
-          tasks.forEach(function (task) {
+          // Show newest first, limit to 20
+          tasks.slice(0, 20).forEach(function (task) {
             var tr = createEl('tr');
             tr.appendChild(createEl('td', null, task.title || task.name || 'Untitled'));
 
             var rewardTd = createEl('td');
-            rewardTd.appendChild(createEl('span', { className: 'amount' }, formatBRDG(task.reward)));
+            rewardTd.appendChild(createEl('span', { className: 'amount' }, formatBRDG(task.reward_brdg || task.reward || 0)));
             tr.appendChild(rewardTd);
 
-            tr.appendChild(createEl('td', null, task.poster || task.postedBy || '--'));
+            tr.appendChild(createEl('td', null, task.poster_agent || task.poster || task.postedBy || '--'));
 
+            var status = (task.status || 'unknown').toUpperCase();
+            var statusClass = status === 'POSTED' ? 'status-open' : status === 'CLAIMED' ? 'status-active' : status === 'COMPLETED' ? 'status-completed' : 'status-unknown';
             var statusTd = createEl('td');
-            statusTd.appendChild(createEl('span', { className: statusBadgeClass(task.status) }, task.status || 'open'));
+            statusTd.appendChild(createEl('span', { className: statusClass }, status));
             tr.appendChild(statusTd);
 
-            tr.appendChild(createEl('td', null, relativeTime(task.postedAt || task.createdAt)));
+            tr.appendChild(createEl('td', null, relativeTime(task.posted_at || task.postedAt || task.createdAt)));
             tbody.appendChild(tr);
           });
         }).catch(function (err) {
