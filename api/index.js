@@ -190,6 +190,8 @@ const mail     = require('../lib/mail');
 const zt          = require('../lib/zero-trust');
 const proofStore  = require('../lib/proof-store');
 const chainVerify = require('../lib/chain-verify');
+const ztMigrate   = require('../lib/migrate-zero-trust');
+ztMigrate.ensureTables().catch(() => {}); // auto-create tables on cold start
 
 // Seed system banks on first cold start (no-op if already seeded)
 banks.seedBanksIfEmpty().catch(() => {});
