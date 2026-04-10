@@ -1534,35 +1534,53 @@ function _ubiPool()     { return +(state.treasury.earned * 0.40).toFixed(2); }
 function _treasuryPool(){ return +(state.treasury.earned * 0.30).toFixed(2); }
 function _opsPool()    { return +(state.treasury.earned * 0.20).toFixed(2); }
 function _founderPool(){ return +(state.treasury.earned * 0.10).toFixed(2); }
-// Staking: derived from treasury scale
-function _staking() {
-  const base = Math.max(state.treasury.earned * 13.5, 2500000);
-  return { total_staked: +base.toFixed(0), apy: 0.15, stakers: Math.max(342, Math.floor(base / 7300)), min_stake: 100 };
-}
 const _ubiClaims = new Map(); // address → last claim ts
-app.get('/api/defi/status', (_req, res) => {
+app.get('/api/defi/status', async (_req, res) => {
+  // Try to get real on-chain data; fall back to off-chain estimates
+  let tokenStats = null;
+  let vaultBuckets = null;
+  try {
+    if (brdgChain) {
+      tokenStats = await brdgChain.getTokenStats();
+      vaultBuckets = await brdgChain.getVaultBuckets();
+    }
+  } catch { /* chain query failed — use off-chain data */ }
+
   const pool = _ubiPool();
   const now = new Date();
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().slice(0, 10);
+
+  // Real on-chain staking data when available, otherwise honest zeros
+  const staking = tokenStats ? {
+    total_staked: parseFloat(tokenStats.treasury.brdgBalance) || 0,
+    apy: 0,
+    stakers: 0,
+    min_stake: 100,
+    source: 'linea',
+    note: 'Staking contract not yet deployed — showing treasury BRDG holdings',
+  } : {
+    total_staked: 0,
+    apy: 0,
+    stakers: 0,
+    min_stake: 100,
+    source: 'unavailable',
+    note: 'On-chain data unavailable — ethers.js not loaded',
+  };
+
   res.json({ ok: true,
-    staking: _staking(),
-    ubi: { pool, recipients: Math.max(156, Math.floor(pool / 288)), rate: 'monthly', last: '2026-03-01', next: nextMonth },
-    governance: { proposals: 3, active_votes: 1, quorum: 0.51 },
+    staking,
+    token: tokenStats ? tokenStats.token : null,
+    vault: vaultBuckets && !vaultBuckets.error ? vaultBuckets : null,
+    ubi: { pool, recipients: 0, rate: 'monthly', last: null, next: nextMonth, note: 'UBI distribution not yet active' },
+    governance: { proposals: 0, active_votes: 0, quorum: 0.51, note: 'Governance not yet active' },
   });
 });
 app.get('/api/ubi/status', (_req, res) => {
   const pool = _ubiPool();
-  res.json({ ok: true, pool, recipients: Math.max(156, Math.floor(pool / 288)), rate: 'monthly', last_distribution: '2026-03-01' });
+  res.json({ ok: true, pool, recipients: 0, rate: 'monthly', last_distribution: null, note: 'UBI distribution not yet active — on-chain disbursement contract pending' });
 });
-app.post('/api/ubi/claim', (req, res) => {
-  const { address } = req.body || {};
-  const pool = _ubiPool();
-  const perRecipient = +(pool / Math.max(156, Math.floor(pool / 288))).toFixed(2);
-  const last = _ubiClaims.get(address);
-  const canClaim = !last || (Date.now() - last) > 86400000;
-  if (canClaim && address) _ubiClaims.set(address, Date.now());
-  const nextClaim = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-  res.json({ ok: true, claimed: canClaim, address, amount: perRecipient, currency: 'BRDG', next_claim: nextClaim, pool_remaining: +(pool - perRecipient).toFixed(2) });
+app.post('/api/ubi/claim', (_req, res) => {
+  res.status(503).json({ ok: false, error: 'UBI claims not yet active. The on-chain UBI disbursement contract has not been deployed.' });
 });
 
 // ── WALLET ──────────────────────────────────────────────────────────────────
@@ -1570,11 +1588,15 @@ app.get('/api/wallet/balance', async (_req, res) => {
   const earned = state.treasury.earned || 0;
   const spent  = state.treasury.spent  || 0;
 
-  // Fetch real on-chain ETH balance from Linea
+  // Fetch real on-chain ETH balance from Linea (ethTreasury may be null if ethers.js unavailable)
   let onChainEth = '0';
+  let treasuryAddr = null;
   try {
-    const bal = await ethTreasury.getBalance();
-    onChainEth = bal.eth;
+    if (ethTreasury) {
+      const bal = await ethTreasury.getBalance();
+      onChainEth = bal.eth;
+      treasuryAddr = ethTreasury.getAddress();
+    }
   } catch { /* RPC down — fall back to estimate */ }
 
   const ethAmount = parseFloat(onChainEth) || +(earned * 0.05 / 3600).toFixed(4);
@@ -1588,11 +1610,11 @@ app.get('/api/wallet/balance', async (_req, res) => {
 
   res.json({ ok: true, balances: [
     { currency: 'BRDG', amount: +(brdg_usd / 1.28).toFixed(2),  usd_value: brdg_usd },
-    { currency: 'ETH',  amount: +ethAmount.toFixed(6),           usd_value: ethUsd, source: parseFloat(onChainEth) ? 'linea' : 'estimate', address: ethTreasury.getAddress() },
+    { currency: 'ETH',  amount: +ethAmount.toFixed(6),           usd_value: ethUsd, source: parseFloat(onChainEth) ? 'linea' : 'estimate', address: treasuryAddr },
     { currency: 'SOL',  amount: +(sol_usd  / 178).toFixed(3),    usd_value: sol_usd  },
     { currency: 'BTC',  amount: +(btc_usd  / 68000).toFixed(5),  usd_value: btc_usd  },
     { currency: 'ZAR',  amount: +(zar_usd  * 18.8).toFixed(2),   usd_value: zar_usd  },
-  ], total_usd, earned, spent, treasury_eth_address: ethTreasury.getAddress() });
+  ], total_usd, earned, spent, treasury_eth_address: treasuryAddr });
 });
 
 // ── BANKS — where treasury sits ─────────────────────────────────────────────
@@ -2972,9 +2994,9 @@ try {
   console.warn('[BRAIN] Page economics failed to load:', e.message);
 }
 
-// ── CATCH-ALL for unknown /api/* routes — return empty OK instead of HTML ──
+// ── CATCH-ALL for unknown /api/* routes — return 404 instead of misleading 200 ──
 app.all('/api/*path', (req, res) => {
-  res.json({ ok: true, stub: true, path: req.path, method: req.method, ts: Date.now() });
+  res.status(404).json({ ok: false, error: 'not_found', path: req.path, method: req.method, ts: Date.now() });
 });
 
 // ── CRASH CAPTURE — log every exit cause so PM2 error.log is never empty ────

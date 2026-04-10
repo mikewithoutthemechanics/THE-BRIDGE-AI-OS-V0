@@ -3,9 +3,14 @@
   "chainId": 59144,
   "deployer": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
   "treasury": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+  "constructorTreasury": "0xF22Bc18487764FEe106ca5Fb2EE27b11FDcB3756",
   "contracts": {
     "BRDG": "0x5f0541302bd4fC672018b07a35FA5f294A322947",
     "TreasuryVault": "0xDb8d8ca8A65d36eFbD5C84C145B58Ee62C872d88"
   },
-  "deployedAt": "2026-04-08T18:34:28.407Z"
+  "deployedAt": "2026-04-08T18:34:28.407Z",
+  "notes": {
+    "addressDiscrepancy": "BRDG constructor minted 10M to constructorTreasury (0xF22Bc1...), but tokens were transferred to deployer wallet. Deployer holds 9.9M BRDG. TreasuryVault is deployed but currently holds 0 BRDG and 0 ETH — needs depositBrdg() call.",
+    "auditDate": "2026-04-10"
+  }
 }
