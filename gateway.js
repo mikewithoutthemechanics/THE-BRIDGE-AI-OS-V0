@@ -993,7 +993,7 @@ app.get('/api/neurolink/devices', (_req, res) => {
 app.post('/api/neurolink/switch', require('express').json(), async (req, res) => {
   var deviceId = (req.body || {}).device;
   if (!deviceId) return res.status(400).json({ ok: false, error: 'device required' });
-  var valid = ['simulated', 'muse', 'brainflow', 'emotiv', 'off'];
+  var valid = ['ambient', 'simulated', 'muse', 'brainflow', 'emotiv', 'off'];
   if (valid.indexOf(deviceId) === -1) return res.status(400).json({ ok: false, error: 'Invalid device. Options: ' + valid.join(', ') });
   try {
     if (deviceId === 'off') {
