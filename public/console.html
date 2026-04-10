@@ -120,8 +120,28 @@
   var sessionMemory = [];
 
   /* ── Auto-complete data ──────────────────────────────────────────────── */
-  var COMMANDS = ['/agent', '/chain', '/process', '/agents', '/memory', '/clear', '/help', '/primes', '/economy', '/status'];
-  var AGENT_NAMES = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta'];
+  var COMMANDS = ['/agent', '/chain', '/process', '/agents', '/memory', '/clear', '/help', '/primes', '/economy', '/status', '/treasury', '/verify', '/ask', 'ls', 'pwd', 'whoami', 'history'];
+  var AGENT_NAMES = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'sales', 'finance', 'growth', 'intelligence', 'nurture', 'closer', 'campaign', 'creative', 'support', 'supply'];
+
+  /* ── Help system ────────────────────────────────────────────────────── */
+  var HELP_TOPICS = {
+    'agent':    { usage: '/agent <name> <task>', desc: 'Execute a single AI agent by name', examples: ['/agent sales Find 5 leads for a SaaS startup', '/agent finance Generate invoice for R5,000', '/agent support Check open tickets'] },
+    'chain':    { usage: '/chain <task>', desc: 'Auto-detect the best agents and chain them together', examples: ['/chain Onboard a new client named TechBridge IO', '/chain Research competitors in the AI agent space'] },
+    'process':  { usage: '/process <input>', desc: 'Auto-route input to the best single agent', examples: ['/process What is our current revenue?', '/process Draft a proposal for consulting services'] },
+    'ask':      { usage: '/ask <question>', desc: 'Ask the AI a question directly (LLM inference)', examples: ['/ask What is our burn rate?', '/ask Summarize today\'s agent activity'] },
+    'agents':   { usage: '/agents', desc: 'List all registered agents with status, layer, and trust score' },
+    'primes':   { usage: '/primes', desc: 'Show the prime agent topology (Aurora, Atlas, Vega, etc.)' },
+    'economy':  { usage: '/economy', desc: 'Full economy dashboard: treasury, revenue, DeFi, bossbots' },
+    'treasury': { usage: '/treasury', desc: 'Treasury balance, buckets, and on-chain verification links' },
+    'verify':   { usage: '/verify', desc: 'Zero-trust verification: chain integrity, proof count, key IDs' },
+    'status':   { usage: '/status', desc: 'Health check across Brain, Swarm, Treasury, and Network' },
+    'memory':   { usage: '/memory', desc: 'Show commands and results stored in this session' },
+    'clear':    { usage: '/clear or Ctrl+L', desc: 'Clear the terminal screen' },
+    'ls':       { usage: 'ls [path]', desc: 'List the virtual filesystem' },
+    'pwd':      { usage: 'pwd', desc: 'Show current virtual path' },
+    'whoami':   { usage: 'whoami', desc: 'Show your session identity' },
+    'history':  { usage: 'history', desc: 'Show recent command history' },
+  };
 
   /* ── Terminal init ───────────────────────────────────────────────────── */
   var term = new Terminal({
@@ -181,7 +201,11 @@
     writeLn('');
     writeLn(C.dim('  Autonomous Agent Orchestration Engine v3.0'));
     writeLn(C.dim('  Session: ' + sessionId));
-    writeLn(C.dim('  Type /help for available commands'));
+    writeLn('');
+    writeLn('  ' + C.green('Quick start:'));
+    writeLn('    ' + C.dim('Just type a question or task — AI routes it automatically'));
+    writeLn('    ' + C.bold('/help') + C.dim(' for all commands') + '    ' + C.bold('/agents') + C.dim(' to see agents'));
+    writeLn('    ' + C.bold('/treasury') + C.dim(' balances') + '       ' + C.bold('/status') + C.dim(' health check'));
     writeLn('');
   }
 
@@ -395,7 +419,8 @@
     var args = parts.slice(1);
 
     // Auto-prefix / if user types bare command name
-    if (!cmd.startsWith('/') && ['help','clear','agents','agent','chain','process','memory','primes','economy','status','ls','pwd','whoami'].indexOf(cmd) !== -1) {
+    var KNOWN_BARE = ['help','clear','agents','agent','chain','process','memory','primes','economy','status','ls','pwd','whoami','treasury','verify','ask','history'];
+    if (!cmd.startsWith('/') && KNOWN_BARE.indexOf(cmd) !== -1) {
       cmd = '/' + cmd;
     }
 
@@ -403,22 +428,54 @@
 
       case '/help':
         writeLn('');
-        writeLn('  ' + C.cyan('Available commands:'));
-        writeLn('  ' + C.bold('/agent <name> <input>') + '   Execute a single agent');
-        writeLn('  ' + C.bold('/chain <task>') + '           Auto-detect and chain agents');
-        writeLn('  ' + C.bold('/process <input>') + '        Auto-route to best agent');
-        writeLn('  ' + C.bold('/agents') + '                 List all available agents');
-        writeLn('  ' + C.bold('/memory') + '                 Show session memory');
-        writeLn('  ' + C.bold('/clear') + '                  Clear terminal');
-        writeLn('  ' + C.bold('/help') + '                   Show this help');
-        writeLn('  ' + C.bold('/primes') + '                 List prime agents');
-        writeLn('  ' + C.bold('/economy') + '                Show economy stats');
-        writeLn('  ' + C.bold('/status') + '                 System health check');
-        writeLn('  ' + C.bold('ls') + '                      List virtual filesystem');
-        writeLn('  ' + C.bold('pwd') + '                     Show current path');
-        writeLn('  ' + C.bold('whoami') + '                  Show session identity');
+        if (args.length > 0) {
+          // Topic-specific help: /help agent, /help chain, etc.
+          var topic = args[0].replace(/^\//, '').toLowerCase();
+          var h = HELP_TOPICS[topic];
+          if (h) {
+            writeLn('  ' + C.cyan(h.usage));
+            writeLn('  ' + h.desc);
+            if (h.examples) {
+              writeLn('');
+              writeLn('  ' + C.dim('Examples:'));
+              for (var ex = 0; ex < h.examples.length; ex++) {
+                writeLn('    ' + C.green('$') + ' ' + h.examples[ex]);
+              }
+            }
+          } else {
+            writeLn('  ' + C.red('No help for: ') + C.yellow(topic));
+            writeLn('  ' + C.dim('Available topics: ') + Object.keys(HELP_TOPICS).join(', '));
+          }
+        } else {
+          // Full help listing, grouped by category
+          writeLn('  ' + C.bold(C.cyan('BRIDGE AI OS v3 — Command Reference')));
+          writeLn('');
+          writeLn('  ' + C.yellow('Agent Commands'));
+          writeLn('    ' + C.bold('/agent <name> <task>') + '   Execute a specific agent');
+          writeLn('    ' + C.bold('/chain <task>') + '          Chain multiple agents on a task');
+          writeLn('    ' + C.bold('/process <input>') + '       Auto-route to best agent');
+          writeLn('    ' + C.bold('/ask <question>') + '        Ask the AI directly');
+          writeLn('    ' + C.bold('/agents') + '                List all agents + status');
+          writeLn('    ' + C.bold('/primes') + '                Show prime agent topology');
+          writeLn('');
+          writeLn('  ' + C.yellow('System & Treasury'));
+          writeLn('    ' + C.bold('/status') + '                Health check (Brain, Swarm, Treasury)');
+          writeLn('    ' + C.bold('/economy') + '               Full economy dashboard');
+          writeLn('    ' + C.bold('/treasury') + '              Treasury balances + on-chain links');
+          writeLn('    ' + C.bold('/verify') + '                Zero-trust verification status');
+          writeLn('');
+          writeLn('  ' + C.yellow('Session'));
+          writeLn('    ' + C.bold('/memory') + '                Show session memory');
+          writeLn('    ' + C.bold('history') + '                Recent command history');
+          writeLn('    ' + C.bold('/clear') + ' ' + C.dim('(Ctrl+L)') + '       Clear terminal');
+          writeLn('    ' + C.bold('ls') + '                     Virtual filesystem');
+          writeLn('    ' + C.bold('pwd') + '  ' + C.bold('whoami') + '            Path / identity');
+          writeLn('');
+          writeLn('  ' + C.dim('Tip: Type ') + C.cyan('help <command>') + C.dim(' for details, e.g. ') + C.cyan('help agent'));
+          writeLn('  ' + C.dim('Tip: / prefix is optional — "help" and "/help" both work'));
+          writeLn('  ' + C.dim('Tip: Just type a question and it routes to an AI agent automatically'));
+        }
         writeLn('');
-        writeLn('  ' + C.dim('Tip: / prefix is optional — "help" and "/help" both work'));
         prompt();
         return;
 
@@ -614,13 +671,141 @@
         prompt();
         return;
 
+      case '/treasury':
+        startSpinner('Loading treasury...');
+        try {
+          var tResults = await Promise.allSettled([
+            apiGet('/api/metrics/treasury'),
+            apiGet('/api/brdg/token')
+          ]);
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Treasury Status'));
+          // Fiat
+          var tData = tResults[0].status === 'fulfilled' ? tResults[0].value : null;
+          if (tData && tData.data) tData = tData.data;
+          if (tData && tData.combined) {
+            writeLn('  ' + C.green('Fiat (ZAR):    ') + 'R' + Number(tData.combined.fiatZar).toLocaleString());
+            writeLn('  ' + C.green('Crypto (ETH):  ') + tData.combined.cryptoEth + ' ETH');
+            writeLn('  ' + C.green('Crypto (BRDG): ') + Number(tData.combined.cryptoBrdg).toLocaleString() + ' BRDG');
+            writeLn('  ' + C.dim('Source: ') + (tData.onChain ? C.green('on-chain verified') : C.yellow('signed attestation')));
+          } else if (tData && tData.balance) {
+            writeLn('  ' + C.green('Balance: ') + 'R' + Number(tData.balance).toLocaleString());
+          }
+          // Token
+          var bData = tResults[1].status === 'fulfilled' ? tResults[1].value : null;
+          if (bData && bData.ok) {
+            writeLn('');
+            writeLn('  ' + C.cyan('BRDG Token (Linea L2)'));
+            writeLn('  ' + C.dim('Supply:  ') + Number(bData.totalSupply).toLocaleString() + ' BRDG');
+            writeLn('  ' + C.dim('Burned:  ') + Number(bData.ethBalance || 0) + ' ETH in vault');
+            writeLn('  ' + C.dim('Verify:  ') + C.cyan('https://lineascan.build/token/0x5f054130...'));
+          }
+          writeLn('');
+          storeMemory(trimmed, { ok: true });
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+        }
+        prompt();
+        return;
+
+      case '/verify':
+        startSpinner('Running verification...');
+        try {
+          var vResults = await Promise.allSettled([
+            apiGet('/api/verify/chain'),
+            apiGet('/api/verify/info')
+          ]);
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Zero-Trust Verification'));
+          // Chain integrity
+          var chainData = vResults[0].status === 'fulfilled' ? vResults[0].value : null;
+          if (chainData && chainData.data) chainData = chainData.data;
+          if (chainData && chainData.chainIntegrity) {
+            var ci = chainData.chainIntegrity;
+            writeLn('  ' + (ci.valid ? C.green('[INTACT]') : C.red('[BROKEN]')) + ' Payment proof chain');
+            writeLn('  ' + C.dim('Transactions: ') + ci.length);
+            if (ci.tipHash) writeLn('  ' + C.dim('Tip hash: ') + ci.tipHash.slice(0, 24) + '...');
+          }
+          // Verification info
+          var vInfo = vResults[1].status === 'fulfilled' ? vResults[1].value : null;
+          if (vInfo && vInfo.keys) {
+            writeLn('');
+            writeLn('  ' + C.dim('Signing: ') + (vInfo.scheme || 'HMAC-SHA256'));
+            var keyNames = Object.keys(vInfo.keys);
+            for (var ki = 0; ki < keyNames.length; ki++) {
+              writeLn('  ' + C.dim(keyNames[ki] + ': ') + C.yellow(vInfo.keys[keyNames[ki]].keyId));
+            }
+          }
+          if (vInfo && vInfo.contracts) {
+            writeLn('');
+            writeLn('  ' + C.cyan('Contracts'));
+            writeLn('  ' + C.dim('BRDG:     ') + (vInfo.contracts.brdg ? vInfo.contracts.brdg.address : '--'));
+            writeLn('  ' + C.dim('Vault:    ') + (vInfo.contracts.vault ? vInfo.contracts.vault.address : '--'));
+            writeLn('  ' + C.dim('Treasury: ') + (vInfo.contracts.treasury ? vInfo.contracts.treasury.address : '--'));
+          }
+          writeLn('');
+          storeMemory(trimmed, { ok: true });
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+        }
+        prompt();
+        return;
+
+      case '/ask':
+        if (args.length < 1) {
+          writeLn('  ' + C.red('Usage: /ask <question>'));
+          writeLn('  ' + C.dim('Example: /ask What is our current monthly burn rate?'));
+          prompt();
+          return;
+        }
+        var askInput = args.join(' ');
+        startSpinner('Thinking...');
+        try {
+          var askResult = await apiPost('/ask', { prompt: askInput });
+          stopSpinner();
+          writeLn('');
+          if (askResult.text || askResult.response) {
+            writeLn('  ' + C.green('AI: ') + (askResult.text || askResult.response));
+          } else {
+            displayResponse(askResult, 'AI');
+          }
+          if (askResult.provider) writeLn('  ' + C.dim('Provider: ' + askResult.provider + (askResult.model ? ' / ' + askResult.model : '')));
+          writeLn('');
+          storeMemory(trimmed, askResult);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+        }
+        prompt();
+        return;
+
+      case '/history':
+        writeLn('');
+        writeLn('  ' + C.cyan('Command History') + C.dim(' (last 20)'));
+        var showHist = history.slice(-20);
+        if (showHist.length === 0) {
+          writeLn('  ' + C.dim('No history yet.'));
+        } else {
+          for (var hi = 0; hi < showHist.length; hi++) {
+            writeLn('  ' + C.dim(String(hi + 1).padStart(3) + ')') + ' ' + showHist[hi]);
+          }
+        }
+        writeLn('');
+        prompt();
+        return;
+
       case '/ls':
         writeLn('');
         writeLn('  ' + C.cyan('Bridge AI OS — Virtual Filesystem'));
-        writeLn('  ' + C.dim('drwxr-x---') + '  agents/       ' + C.dim('35 AI agents'));
-        writeLn('  ' + C.dim('drwxr-x---') + '  treasury/     ' + C.dim('On-chain vaults'));
-        writeLn('  ' + C.dim('drwxr-x---') + '  economy/      ' + C.dim('BRDG token system'));
-        writeLn('  ' + C.dim('drwxr-x---') + '  skills/       ' + C.dim('1,266 skill modules'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('agents/') + '       ' + C.dim('35 AI agents'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('treasury/') + '     ' + C.dim('On-chain vaults'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('economy/') + '      ' + C.dim('BRDG token system'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('skills/') + '       ' + C.dim('1,266 skill modules'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('proofs/') + '       ' + C.dim('Payment proof chain'));
         writeLn('  ' + C.dim('-rw-r-----') + '  config.json   ' + C.dim('System configuration'));
         writeLn('  ' + C.dim('-rw-r-----') + '  status.log    ' + C.dim('Health matrix'));
         writeLn('');
@@ -634,10 +819,39 @@
 
       case '/whoami':
         writeLn('  ' + C.cyan('bridge@v3') + ' — Session ' + sessionId);
+        writeLn('  ' + C.dim('Memory: ') + sessionMemory.length + ' entries');
+        writeLn('  ' + C.dim('Uptime: ') + Math.floor((Date.now() - sessionStart) / 1000) + 's');
         prompt();
         return;
 
       default:
+        // Natural language routing: if it looks like a question/task, send to /ask
+        if (trimmed.length > 5 && !trimmed.startsWith('/')) {
+          writeLn('  ' + C.dim('Routing to AI...'));
+          startSpinner('Thinking...');
+          try {
+            var nlResult = await apiPost('/ask', { prompt: trimmed });
+            stopSpinner();
+            writeLn('');
+            if (nlResult.text || nlResult.response) {
+              writeLn('  ' + C.green('AI: ') + (nlResult.text || nlResult.response));
+            } else if (nlResult.error) {
+              writeLn('  ' + C.red('AI: ') + nlResult.error);
+            } else {
+              displayResponse(nlResult, 'AI');
+            }
+            if (nlResult.provider) writeLn('  ' + C.dim('Provider: ' + nlResult.provider));
+            writeLn('');
+            storeMemory(trimmed, nlResult);
+          } catch (e) {
+            stopSpinner();
+            writeLn('  ' + C.red('Error: ') + e.message);
+            writeLn('  ' + C.dim('Tip: type /help for available commands'));
+            writeLn('');
+          }
+          prompt();
+          return;
+        }
         writeLn('  ' + C.red('Unknown command: ') + C.yellow(parts[0]));
         writeLn('  ' + C.dim('Type /help or just type a question'));
         writeLn('');
