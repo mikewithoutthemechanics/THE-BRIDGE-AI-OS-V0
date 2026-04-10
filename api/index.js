@@ -2985,6 +2985,11 @@ module.exports = async (req, res) => {
     return cronHandlers.handleGraphUpdate(req, res);
   }
 
+  // POST /api/cron/distribute-rewards — distribute attribution rewards (hourly)
+  if (p === '/api/cron/distribute-rewards' && req.method === 'POST') {
+    return cronHandlers.handleDistributeRewards(req, res);
+  }
+
   // ── 404 ──
   return json(res, { error: 'not_found', path: p, available: [
     '/health', '/api/health', '/api/brain', '/api/topology', '/api/avatar/{mode}',

@@ -184,9 +184,59 @@ async function handleGraphUpdate(req, res) {
   }
 }
 
+/**
+ * POST /api/cron/distribute-rewards
+ * Distributes rewards for unrewarded attribution events (hourly)
+ */
+async function handleDistributeRewards(req, res) {
+  try {
+    // Verify cron token if provided
+    const cronToken = req.headers['x-cron-token'] || req.query.token;
+    if (cronToken && cronToken !== process.env.CRON_SECRET) {
+      return res.status(401).json({
+        ok: false,
+        error: 'Unauthorized',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const distributor = require('../../lib/reward-distributor');
+    const eventType = req.query.eventType || 'neurolink_output';
+    const hoursBack = parseInt(req.query.hoursBack, 10) || 1;
+
+    console.log(`[Cron] Starting reward distribution for ${eventType} (${hoursBack}h window)...`);
+
+    const stats = await distributor.distributeRewards(eventType, {
+      hoursBack,
+      batchSize: 100,
+    });
+
+    const result = {
+      ok: true,
+      processed: stats.processed,
+      skipped: stats.skipped,
+      totalReward: stats.totalReward,
+      eventType,
+      hoursBack,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log('[Cron] Reward distribution complete:', result);
+    return res.json(result);
+  } catch (err) {
+    console.error('[Cron] Reward distribution failed:', err.message);
+    return res.status(500).json({
+      ok: false,
+      error: err.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
 module.exports = {
   handleInferenceTick,
   handleOrchestratorProcess,
   handleStreamFlush,
-  handleGraphUpdate
+  handleGraphUpdate,
+  handleDistributeRewards
 };
