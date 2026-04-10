@@ -924,8 +924,12 @@ app.post('/api/agents/run', express.json(), async (req, res) => {
 app.post('/api/agents/run-all', express.json(), async (req, res) => {
   if (!agents) return res.status(503).json({ ok: false, error: 'Agent module not loaded' });
   try {
-    var result = await agents.runAllAgentsValidated();
-    res.json({ ok: true, ...result, ts: Date.now() });
+    var { results, valid, discarded, executionStatus } = await agents.runAllAgentsValidated();
+    // Persist cycle results so agents page shows last run time + cached outputs
+    if (valid.length > 0) {
+      await db.commitAgentCycle(valid, executionStatus);
+    }
+    res.json({ ok: true, results, valid: valid.length, discarded: discarded.length, executionStatus, ts: Date.now() });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
