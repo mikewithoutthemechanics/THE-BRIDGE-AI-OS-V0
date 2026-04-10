@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID</title>
+<title>System Topology — Bridge AI OS</title>
 
 <!-- CSP: no eval, no inline scripts (except unsafe-inline for legacy onclick handlers), whitelisted CDN only -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -11,7 +11,7 @@
   script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
   style-src  'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com;
   font-src   'self' https://fonts.gstatic.com;
-  connect-src 'self' wss: ws:;
+  connect-src 'self' wss: ws: https://cdn.jsdelivr.net;
   img-src 'self' data:;
   object-src 'none';
   base-uri 'self';
@@ -247,15 +247,27 @@ canvas{display:block;}
 <body>
 <h1 class="sr-only">BRIDGE AI OS — Unified Topology</h1>
 
+<!-- NAVIGATION -->
+<div style="display:flex;align-items:center;padding:6px 16px;background:#0a0e17;border-bottom:1px solid #1a2d40;gap:8px;z-index:200;position:relative">
+  <span style="color:#00c8ff;font-weight:700;font-size:14px;font-family:system-ui">Bridge AI OS</span>
+  <a href="/" style="color:#628ba0;text-decoration:none;font-size:11px;padding:3px 8px;font-family:system-ui">Home</a>
+  <a href="/portal.html" style="color:#628ba0;text-decoration:none;font-size:11px;padding:3px 8px;font-family:system-ui">Portal</a>
+  <a href="/control.html" style="color:#628ba0;text-decoration:none;font-size:11px;padding:3px 8px;font-family:system-ui">Control</a>
+  <a href="/agents.html" style="color:#628ba0;text-decoration:none;font-size:11px;padding:3px 8px;font-family:system-ui">Agents</a>
+  <a href="/economy.html" style="color:#628ba0;text-decoration:none;font-size:11px;padding:3px 8px;font-family:system-ui">Economy</a>
+  <a href="/admin-revenue.html" style="color:#628ba0;text-decoration:none;font-size:11px;padding:3px 8px;font-family:system-ui">Revenue</a>
+  <a href="/console.html" style="color:#628ba0;text-decoration:none;font-size:11px;padding:3px 8px;font-family:system-ui">Terminal</a>
+</div>
+
 <!-- HUD -->
 <div id="hud">
   <div id="hud-left">
     <span id="live-dot"></span>
-    <span>◈ GOD MODE SYSTEM TOPOLOGY</span>
+    <span>System Topology — Live Network Map</span>
   </div>
   <div id="hud-right">
-    <span id="econ-hud">ECON: loading…</span>
-    <span id="stats">NODES:— | EDGES:— | PKT:—</span>
+    <span id="econ-hud">Economy: loading…</span>
+    <span id="stats">Nodes:— | Edges:— | Packets:—</span>
     <span id="clock">--:--:--</span>
   </div>
 </div>
@@ -280,17 +292,17 @@ canvas{display:block;}
 <div id="left-sidebar">
   <!-- Health Status -->
   <div class="left-panel" id="panel-health">
-    <div class="lp-title">SYSTEM HEALTH</div>
-    <div class="stat-row" style="cursor:pointer" onclick="showDetail('gateway')"><span>GATEWAY</span><span class="stat-val" id="hp-gateway" style="color:#0f9">--</span></div>
-    <div class="stat-row" style="cursor:pointer" onclick="showDetail('api')"><span>API</span><span class="stat-val" id="hp-api" style="color:#0f9">--</span></div>
-    <div class="stat-row" style="cursor:pointer" onclick="showDetail('agents')"><span>AGENTS</span><span class="stat-val" id="hp-agents" style="color:#0f9">--</span></div>
-    <div class="stat-row" style="cursor:pointer" onclick="showDetail('treasury')"><span>TREASURY</span><span class="stat-val" id="hp-treasury" style="color:#0f9">--</span></div>
-    <div class="stat-row" style="cursor:pointer;border-top:1px solid #0ff2;padding-top:4px;margin-top:2px;" onclick="showDetail('overall')"><span style="color:#0ff">OVERALL</span><span class="stat-val" id="hp-overall" style="font-weight:bold">--</span></div>
+    <div class="lp-title">Service Health</div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('gateway')"><span>Gateway</span><span class="stat-val" id="hp-gateway" style="color:#0f9">--</span></div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('api')"><span>API Server</span><span class="stat-val" id="hp-api" style="color:#0f9">--</span></div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('agents')"><span>Agent Swarm</span><span class="stat-val" id="hp-agents" style="color:#0f9">--</span></div>
+    <div class="stat-row" style="cursor:pointer" onclick="showDetail('treasury')"><span>Treasury</span><span class="stat-val" id="hp-treasury" style="color:#0f9">--</span></div>
+    <div class="stat-row" style="cursor:pointer;border-top:1px solid #0ff2;padding-top:4px;margin-top:2px;" onclick="showDetail('overall')"><span style="color:#0ff">Overall Status</span><span class="stat-val" id="hp-overall" style="font-weight:bold">--</span></div>
   </div>
 
   <!-- Monitor Panel -->
   <div id="panel-monitor" class="left-panel">
-    <div class="lp-title">SYS MONITOR</div>
+    <div class="lp-title">System Monitor</div>
     <div class="stat-row" style="cursor:pointer" onclick="showDetail('cpu')"><span>CPU</span><span class="stat-val" id="mon-cpu">--</span></div>
     <div class="stat-row" style="cursor:pointer" onclick="showDetail('mem')"><span>MEM</span><span class="stat-val" id="mon-mem">--</span></div>
     <div class="stat-row" style="cursor:pointer" onclick="showDetail('uptime')"><span>UPTIME</span><span class="stat-val" id="mon-up">--</span></div>
@@ -299,7 +311,7 @@ canvas{display:block;}
 
   <!-- Swarm Panel -->
   <div id="panel-swarm" class="left-panel">
-    <div class="lp-title">SWARM OPS</div>
+    <div class="lp-title">Agent Operations</div>
     <button onclick="runSwarm(WIN?'systeminfo':'uptime')">UPTIME</button>
     <button onclick="runSwarm(WIN?'wmic logicaldisk get freespace,caption':'df -h')">DISK</button>
     <button onclick="runSwarm('docker ps')">DOCKER</button>
@@ -331,7 +343,7 @@ canvas{display:block;}
 
   <!-- Control Panel -->
   <div id="control-panel">
-    <div class="cp-title">SYS CONTROL</div>
+    <div class="cp-title">System Controls</div>
     <button onclick="execCmd('ls -la')">FILES</button>
     <button onclick="execCmd(WIN ? 'dir' : 'ls -la')">DIR</button>
     <button onclick="execCmd(WIN ? 'tasklist' : 'ps aux')">PROCESSES</button>
@@ -399,24 +411,34 @@ let packetCount  = 0;
 /*****************************************************************************
   WEBSOCKET
 *****************************************************************************/
+var _wsRetries = 0;
+var _wsMaxRetries = 5;
 function wsConnect() {
   if (IS_SERVERLESS) {
     document.getElementById('ws-status').textContent = 'WS: serverless mode';
     document.getElementById('ws-status').style.color = '#fc0';
     return;
   }
+  if (_wsRetries >= _wsMaxRetries) {
+    document.getElementById('ws-status').textContent = 'WS: unavailable (terminal proxy not running)';
+    document.getElementById('ws-status').style.color = '#666';
+    return;
+  }
 
   socket = new WebSocket(WS_URL);
 
   socket.onopen = () => {
+    _wsRetries = 0;
     document.getElementById('ws-status').textContent = 'WS: connected';
     document.getElementById('ws-status').style.color = '#0f9';
   };
 
   socket.onclose = () => {
-    document.getElementById('ws-status').textContent = 'WS: disconnected — reconnecting…';
+    _wsRetries++;
+    var delay = Math.min(3000 * Math.pow(2, _wsRetries), 30000);
+    document.getElementById('ws-status').textContent = 'WS: retry ' + _wsRetries + '/' + _wsMaxRetries;
     document.getElementById('ws-status').style.color = '#f90';
-    setTimeout(wsConnect, 3000);
+    setTimeout(wsConnect, delay);
   };
 
   socket.onerror = () => {
@@ -938,14 +960,14 @@ function renderAIOverlay(p) {
 }
 
 /*****************************************************************************
-  AI CONTROLS PANEL (added to DOM)
+  AI Engine Controls PANEL (added to DOM)
 *****************************************************************************/
 (function addAIControls() {
   const panel = document.createElement('div');
   panel.id = 'ai-ctrl-panel';
   panel.style.cssText = 'background:#000;border:1px solid #0f9;padding:8px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;border-radius:4px;';
   panel.innerHTML = `
-<div style="font-size:8px;letter-spacing:2px;color:#0f9;padding-bottom:4px;border-bottom:1px solid #0f92;margin-bottom:2px;">AI CONTROLS</div>
+<div style="font-size:8px;letter-spacing:2px;color:#0f9;padding-bottom:4px;border-bottom:1px solid #0f92;margin-bottom:2px;">AI Engine Controls</div>
 <button style="background:#001a0a;border:1px solid #0f93;color:#0f9;padding:3px 7px;font-size:9px;font-family:monospace;cursor:pointer;" onclick="runSwarm('pm2 status')">AI STATUS</button>
 <button style="background:#001a0a;border:1px solid #0f93;color:#0f9;padding:3px 7px;font-size:9px;font-family:monospace;cursor:pointer;" onclick="runSwarm('docker stats --no-stream')">CONTAINERS</button>
 <button style="background:#001a0a;border:1px solid #0f93;color:#0f9;padding:3px 7px;font-size:9px;font-family:monospace;cursor:pointer;" onclick="simulateRevenue();simulateCost()">+ SIM TX</button>
@@ -1005,13 +1027,13 @@ function renderEconomicsPanel(data) {
                            cur === 'USD' ? '$' + Number(n).toLocaleString() :
                            cur === 'USDC' ? Number(n).toLocaleString() + ' USDC' : String(n);
 
-  let html = `<div class="econ-title">◈ ECONOMICS — LIVE</div>`;
+  let html = `<div class="econ-title">Revenue &amp; Economy — Live</div>`;
 
   // Totals bar
   html += `<div class="econ-totals">
-    <span>SaaS MRR</span><span class="econ-val green">$${data.totals.usd_monthly}/mo</span>
-    <span>ARR</span><span class="econ-val green">$${data.totals.usd_yearly}/yr</span>
-    <span>Invoice</span><span class="econ-val gold">R${Number(data.totals.zar_invoice).toLocaleString()}</span>
+    <span>Monthly Revenue</span><span class="econ-val green">$${data.totals.usd_monthly}/mo</span>
+    <span>Annual Revenue</span><span class="econ-val green">$${data.totals.usd_yearly}/yr</span>
+    <span>ZAR Invoice Value</span><span class="econ-val gold">R${Number(data.totals.zar_invoice).toLocaleString()}</span>
   </div>`;
 
   // Each platform
@@ -1136,7 +1158,7 @@ async function showDetail(type) {
 
   else if (type === 'agents') {
     try {
-      const r = await fetch(BASE + '/api/agents');
+      const r = await fetch(BASE + '/api/swarm/agents');
       const d = await r.json();
       let html = row('Total Agents', d.count||0, C);
       const layers = d.layers || {};
@@ -1233,7 +1255,7 @@ async function pollHealth() {
   const checks = [
     { id: 'hp-gateway', url: BASE + '/health', label: 'GATEWAY' },
     { id: 'hp-api', url: BASE + '/api/status', label: 'API' },
-    { id: 'hp-agents', url: BASE + '/api/agents', label: 'AGENTS' },
+    { id: 'hp-agents', url: BASE + '/api/swarm/agents', label: 'AGENTS' },
     { id: 'hp-treasury', url: BASE + '/api/treasury/summary', label: 'TREASURY' },
   ];
   let allOk = true;
@@ -1302,6 +1324,6 @@ setTimeout(() => { createTerminal(); createTerminal(); }, 700);
 // Load economics data
 setTimeout(() => { loadEconomics(); }, 1000);
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/global-nav.js" defer></script>
 </body>
 </html>
