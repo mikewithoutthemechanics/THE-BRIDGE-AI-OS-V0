@@ -3008,9 +3008,53 @@ module.exports = async (req, res) => {
   if (p === '/api/proofs/repair' && req.method === 'POST') {
     try {
       const body = await parseBody(req);
-      const startIndex = body?.startIndex || 0;
-      const result = await proofStore.rebuildChainFrom(startIndex);
-      return json(res, zt.signResponse({ ok: true, ...result }, 'api-response'));
+      const startIndex = body?.startIndex ?? null;
+      const doAnchor = body?.anchor !== false; // default: anchor after repair
+
+      // Step 1: Diagnose to find break point (auto-detect if startIndex not provided)
+      const diagnosis = await proofStore.diagnoseChain();
+      const repairFrom = startIndex !== null ? startIndex : (diagnosis.firstBrokenAt ?? 0);
+
+      if (diagnosis.chainHealth === 'healthy' && startIndex === null) {
+        // Chain is already healthy — skip repair, just anchor if requested
+        let anchor = null;
+        if (doAnchor) {
+          anchor = await proofStore.createMerkleAnchor();
+        }
+        const verify = await proofStore.verifyChain();
+        return json(res, zt.signResponse({
+          ok: true, action: 'no_repair_needed',
+          diagnosis: { chainHealth: 'healthy', totalProofs: diagnosis.totalProofs },
+          chainIntegrity: verify,
+          anchor: anchor,
+        }, 'api-response'));
+      }
+
+      // Step 2: Repair — rebuild hashes from the break point
+      const repairResult = await proofStore.rebuildChainFrom(repairFrom);
+
+      // Step 3: Verify the repaired chain
+      const postRepairVerify = await proofStore.verifyChain();
+
+      // Step 4: Anchor repaired chain to Merkle tree
+      let anchor = null;
+      if (doAnchor && postRepairVerify.valid) {
+        anchor = await proofStore.createMerkleAnchor();
+      }
+
+      return json(res, zt.signResponse({
+        ok: true,
+        action: 'repaired',
+        diagnosis: {
+          chainHealth: diagnosis.chainHealth,
+          issuesFound: diagnosis.integrityIssues.length,
+          firstBrokenAt: diagnosis.firstBrokenAt,
+          repairedFrom: repairFrom,
+        },
+        repair: repairResult,
+        chainIntegrity: postRepairVerify,
+        anchor: anchor,
+      }, 'api-response'));
     } catch (e) {
       return json(res, { ok: false, error: e.message }, 500);
     }
