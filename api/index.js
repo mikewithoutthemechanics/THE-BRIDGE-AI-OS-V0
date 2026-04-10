@@ -2109,10 +2109,36 @@ module.exports = async (req, res) => {
   // ── /api/revenue/summary ──
   if (p === '/api/revenue/summary') {
     const mrr = CONTACTS.filter(c => c.status === 'customer').reduce((s, c) => s + c.value, 0);
+
+    // Get attribution reward stats
+    let attributionStats = {
+      total_rewards_distributed: 0,
+      events_rewarded: 0,
+      avg_reward_per_event: 0,
+      pending_rewards: 0
+    };
+
+    try {
+      const distributor = require('../lib/reward-distributor');
+      const stats = distributor.getRewardStats?.('neurolink_output');
+      if (stats) {
+        attributionStats = {
+          total_rewards_distributed: stats.totalReward || 0,
+          events_rewarded: stats.processed || 0,
+          avg_reward_per_event: stats.processed > 0 ? (stats.totalReward || 0) / stats.processed : 0,
+          pending_rewards: stats.pending || 0
+        };
+      }
+    } catch (e) {
+      // Attribution stats optional
+      console.warn('[Revenue] Attribution stats unavailable:', e.message);
+    }
+
     return json(res, {
       mrr, arr: mrr * 12, ltv_avg: mrr * 6,
       churn_rate: 2.1, growth_pct: 12.3,
       revenue_by_plan: { starter: 98, pro: 447, enterprise: 998 },
+      attribution_rewards: attributionStats,
       ts: ts(),
     });
   }
@@ -2125,10 +2151,35 @@ module.exports = async (req, res) => {
     const proofHash = _tvmCrypto
       ? _tvmCrypto.createHash('sha256').update(raw).digest('hex')
       : null;
+
+    // Add attribution reward distribution status
+    let rewardStatus = {
+      last_distribution: null,
+      next_distribution: null,
+      hourly_volume: 0,
+      status: 'inactive'
+    };
+
+    try {
+      const distributor = require('../lib/reward-distributor');
+      const stats = distributor.getRewardStats?.('neurolink_output');
+      if (stats) {
+        rewardStatus = {
+          last_distribution: stats.lastDistributedAt || null,
+          next_distribution: new Date(Date.now() + 3600000).toISOString(), // Next hour
+          hourly_volume: stats.lastHourlyVolume || 0,
+          status: stats.pending > 0 ? 'processing' : 'idle'
+        };
+      }
+    } catch (e) {
+      console.warn('[Revenue] Reward status unavailable:', e.message);
+    }
+
     return json(res, {
       total, count: paid.length, currency: 'ZAR',
       status: total > 0 ? 'active' : 'idle',
       proofHash,
+      reward_distribution: rewardStatus,
       ts: ts(),
     });
   }
@@ -2988,6 +3039,43 @@ module.exports = async (req, res) => {
   // POST /api/cron/distribute-rewards — distribute attribution rewards (hourly)
   if (p === '/api/cron/distribute-rewards' && req.method === 'POST') {
     return cronHandlers.handleDistributeRewards(req, res);
+  }
+
+  // GET /api/neurolink/attribution-stats — detailed reward attribution statistics
+  if (p === '/api/neurolink/attribution-stats') {
+    try {
+      const { getEventsByUser, getUnrewardedEvents, getUserEventStats } = require('../lib/attribution-events');
+      const userId = req.query.userId || 'default-user';
+
+      // Get user-specific stats
+      const userStats = userId ? await getUserEventStats?.(userId) : null;
+
+      // Get system-wide unrewarded events count
+      const unrewardedCount = await getUnrewardedEvents?.('neurolink_output').then(events => events?.length || 0).catch(() => 0);
+
+      return json(res, {
+        user: userId,
+        user_stats: userStats || {
+          total_events: 0,
+          total_tokens: 0,
+          avg_quality: 0,
+          inferences: 0,
+          outputs: 0,
+          monetization_triggers: 0
+        },
+        system_stats: {
+          pending_rewards: unrewardedCount,
+          next_distribution: new Date(Date.now() + 3600000).toISOString()
+        },
+        ts: ts(),
+      });
+    } catch (e) {
+      console.error('[Attribution] Stats error:', e.message);
+      return json(res, {
+        error: 'Attribution stats unavailable',
+        ts: ts(),
+      }, 503);
+    }
   }
 
   // ── 404 ──
