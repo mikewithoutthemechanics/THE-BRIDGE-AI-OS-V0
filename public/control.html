@@ -1152,11 +1152,11 @@ function aiSuggestTasks() {
     el.appendChild(card);
   });
 
-  // Also try the real AI for a custom suggestion
-  fetch('/ask', {
+  // Also try the AI for a custom suggestion (use legal-agent which is unauthenticated)
+  fetch('/api/legal-agent', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: 'Suggest one high-value task for an AI business automation platform. Return only the task title and estimated value in USD. Be specific and actionable.' })
+    body: JSON.stringify({ query: 'Suggest one high-value business task that an AI automation platform should prioritize this week. Be specific and actionable. One sentence only.' })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.text || d.response) {
       var aiCard = document.createElement('div');
