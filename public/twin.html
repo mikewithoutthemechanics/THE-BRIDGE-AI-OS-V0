@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bridge AI — Digital Twin Avatar Engine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;overflow:hidden;background:#050810;font-family:'Inter',sans-serif;}
+  #renderCanvas{width:100%;height:100%;display:block;touch-action:none;outline:none;}
+
+  #loading-screen{
+    position:fixed;inset:0;background:#050810;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:9999;transition:opacity .6s ease;
+  }
+  #loading-screen.fade-out{opacity:0;pointer-events:none;}
+  .loader-logo{font-size:28px;font-weight:700;color:#38bdf8;letter-spacing:.15em;margin-bottom:24px;text-shadow:0 0 40px rgba(56,189,248,.5);}
+  .loader-sub{font-size:11px;color:#334155;letter-spacing:.2em;text-transform:uppercase;margin-bottom:32px;}
+  .loader-bar-wrap{width:260px;height:2px;background:rgba(56,189,248,.1);border-radius:2px;overflow:hidden;}
+  .loader-bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#818cf8);border-radius:2px;transition:width .3s ease;}
+  .loader-status{margin-top:14px;font-size:10px;color:#475569;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;}
+
+  #hint{
+    position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
+    background:rgba(5,8,20,.8);border:1px solid rgba(56,189,248,.15);
+    border-radius:20px;padding:6px 18px;font-size:10px;color:#475569;
+    font-family:'JetBrains Mono',monospace;letter-spacing:.08em;z-index:100;
+    backdrop-filter:blur(12px);pointer-events:none;
+    opacity:1;transition:opacity 1s ease;
+  }
+  #hint.hidden{opacity:0;}
+
+  /* ── TOP NAV BAR ─────────────────────────────────── */
+  #top-nav{
+    position:fixed;top:0;left:0;right:0;z-index:1000;height:44px;
+    background:rgba(2,5,15,.92);border-bottom:1px solid rgba(56,189,248,.15);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 12px;backdrop-filter:blur(12px);
+    font-family:'JetBrains Mono',monospace;
+  }
+  #top-nav .logo{font-size:13px;font-weight:700;color:#38bdf8;letter-spacing:.12em;}
+  #top-nav .logo span{color:#64748b;font-weight:400;font-size:10px;margin-left:6px;}
+  .nav-links{display:flex;gap:6px;align-items:center;}
+  .nav-link{
+    padding:4px 10px;border-radius:4px;font-size:9px;letter-spacing:.08em;
+    color:#64748b;text-decoration:none;transition:.2s;border:1px solid transparent;
+    cursor:pointer;background:none;font-family:inherit;
+  }
+  .nav-link:hover,.nav-link.active{color:#38bdf8;border-color:rgba(56,189,248,.2);background:rgba(56,189,248,.06);}
+  .nav-sep{width:1px;height:16px;background:rgba(56,189,248,.12);margin:0 4px;}
+  #brain-dot{width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;margin-right:4px;transition:.3s;}
+  #brain-dot.online{background:#34d399;box-shadow:0 0 6px rgba(52,211,153,.5);}
+
+  /* ── MODESTY TOGGLE ──────────────────────────────── */
+  .toggle-wrap{display:flex;align-items:center;gap:6px;}
+  .toggle-label{font-size:9px;color:#64748b;letter-spacing:.05em;}
+  .toggle{
+    width:32px;height:18px;border-radius:9px;
+    background:rgba(100,116,139,.3);cursor:pointer;
+    position:relative;transition:.2s;border:1px solid rgba(100,116,139,.2);
+  }
+  .toggle.on{background:rgba(56,189,248,.3);border-color:rgba(56,189,248,.4);}
+  .toggle::after{
+    content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;
+    border-radius:50%;background:#94a3b8;transition:.2s;
+  }
+  .toggle.on::after{left:16px;background:#38bdf8;}
+
+  /* ── BOTTOM PANEL ────────────────────────────────── */
+  #bottom-panel{
+    position:fixed;bottom:0;left:0;right:0;z-index:1000;
+    background:rgba(2,5,15,.94);border-top:1px solid rgba(56,189,248,.15);
+    backdrop-filter:blur(12px);font-family:'JetBrains Mono',monospace;
+  }
+  #mode-tabs{
+    display:flex;border-bottom:1px solid rgba(56,189,248,.08);overflow-x:auto;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  #mode-tabs::-webkit-scrollbar{display:none;}
+  .mode-tab{
+    padding:6px 14px;font-size:9px;letter-spacing:.08em;color:#475569;
+    cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
+    transition:.2s;flex-shrink:0;background:none;border-top:none;border-left:none;border-right:none;
+    font-family:inherit;
+  }
+  .mode-tab:hover{color:#94a3b8;}
+  .mode-tab.active{color:#38bdf8;border-bottom-color:#38bdf8;}
+
+  /* ── CHAT MODE ──────────────────────────────────── */
+  .panel-content{display:none;padding:8px 12px;max-height:160px;}
+  .panel-content.active{display:block;}
+  #chat-panel .chat-row{display:flex;gap:8px;align-items:center;}
+  #chat-panel input{
+    flex:1;background:rgba(15,23,42,.8);border:1px solid rgba(56,189,248,.15);
+    border-radius:6px;padding:8px 12px;color:#e2e8f0;font-family:inherit;font-size:12px;outline:none;
+  }
+  #chat-panel input:focus{border-color:rgba(56,189,248,.4);}
+  #chat-panel input::placeholder{color:#334155;}
+  .send-btn{
+    padding:8px 16px;border-radius:6px;border:1px solid rgba(56,189,248,.3);
+    background:rgba(56,189,248,.1);color:#38bdf8;cursor:pointer;
+    font-family:inherit;font-size:10px;letter-spacing:.1em;white-space:nowrap;transition:.2s;
+  }
+  .send-btn:hover{background:rgba(56,189,248,.2);}
+
+  /* ── ANIMATION MODE ─────────────────────────────── */
+  .anim-grid{display:flex;gap:6px;flex-wrap:wrap;}
+  .anim-pill{
+    padding:6px 14px;border-radius:16px;border:1px solid rgba(56,189,248,.2);
+    background:rgba(56,189,248,.05);color:#64748b;cursor:pointer;font-size:10px;
+    font-family:inherit;transition:.2s;letter-spacing:.05em;
+  }
+  .anim-pill:hover,.anim-pill.active{color:#38bdf8;border-color:#38bdf8;background:rgba(56,189,248,.12);}
+
+  /* ── BUSINESS MODE ──────────────────────────────── */
+  .biz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;}
+  .biz-btn{
+    padding:8px 6px;border-radius:6px;border:1px solid rgba(56,189,248,.12);
+    background:rgba(15,23,42,.6);color:#94a3b8;cursor:pointer;font-size:9px;
+    font-family:inherit;text-align:center;transition:.2s;letter-spacing:.05em;
+  }
+  .biz-btn:hover{color:#38bdf8;border-color:rgba(56,189,248,.3);background:rgba(56,189,248,.08);}
+  .biz-btn .icon{font-size:16px;display:block;margin-bottom:2px;}
+
+  /* ── SPEECH BUBBLE ──────────────────────────────── */
+  #speech-bubble{
+    position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(10px);
+    max-width:min(500px,90vw);background:rgba(2,8,20,.92);border:1px solid rgba(56,189,248,.25);
+    border-radius:12px;padding:14px 20px;color:#e2e8f0;
+    font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;
+    opacity:0;transition:opacity .4s,transform .4s;pointer-events:none;
+    text-align:center;z-index:999;backdrop-filter:blur(8px);
+  }
+  #speech-bubble.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ── BRAIN LOG ──────────────────────────────────── */
+  #brain-log{
+    position:fixed;right:8px;top:52px;width:240px;max-height:180px;
+    overflow-y:auto;background:rgba(2,5,15,.85);border:1px solid rgba(56,189,248,.1);
+    border-radius:6px;padding:6px 8px;font-family:'JetBrains Mono',monospace;
+    font-size:8px;color:rgba(148,163,184,.6);z-index:998;backdrop-filter:blur(6px);
+    scrollbar-width:thin;
+  }
+  #brain-log:empty{display:none;}
+
+  /* ── MOBILE ─────────────────────────────────────── */
+  @media(max-width:640px){
+    #top-nav{height:38px;padding:0 8px;}
+    #top-nav .logo{font-size:11px;}
+    #top-nav .logo span{display:none;}
+    .nav-link{padding:3px 6px;font-size:8px;}
+    .nav-sep{display:none;}
+    #brain-log{width:180px;max-height:120px;font-size:7px;right:4px;top:42px;}
+    .panel-content{max-height:130px;padding:6px 8px;}
+    #chat-panel input{font-size:14px;padding:10px 12px;} /* prevent iOS zoom */
+    .biz-grid{grid-template-columns:repeat(3,1fr);}
+    .toggle-label{display:none;}
+    #speech-bubble{font-size:12px;padding:10px 14px;}
+    #hint{display:none;}
+  }
+  @media(max-width:380px){
+    .biz-grid{grid-template-columns:repeat(2,1fr);}
+    .nav-link{padding:2px 4px;font-size:7px;}
+  }
+
+  /* ── DASHBOARD SIDEBAR ─────────────────────────── */
+  #dash-sidebar{
+    position:fixed;top:44px;left:0;bottom:0;width:280px;
+    background:rgba(2,5,15,.94);border-right:1px solid rgba(56,189,248,.12);
+    overflow-y:auto;z-index:900;transform:translateX(-100%);
+    transition:transform .3s ease;backdrop-filter:blur(12px);
+    padding:8px;scrollbar-width:thin;
+    font-family:'JetBrains Mono',monospace;font-size:10px;
+  }
+  #dash-sidebar.open{transform:translateX(0);}
+  #dash-sidebar .dp{
+    background:rgba(4,10,24,.8);border:1px solid rgba(56,189,248,.1);
+    border-radius:6px;padding:8px 10px;margin-bottom:6px;
+  }
+  #dash-sidebar .dp h4{
+    font-size:9px;color:#38bdf8;letter-spacing:.12em;text-transform:uppercase;
+    margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(56,189,248,.1);
+  }
+  .mr{display:flex;justify-content:space-between;margin-bottom:3px;color:#64748b;}
+  .mr .mv{color:#34d399;font-weight:600;}
+  .mc-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+  .mc-cell{background:rgba(0,0,0,.3);border-radius:4px;padding:4px 6px;text-align:center;}
+  .mc-cell .lbl{font-size:7px;color:#475569;letter-spacing:.08em;}
+  .mc-cell .val{font-size:12px;color:#38bdf8;font-weight:700;}
+  .d-btn{
+    width:100%;padding:5px;margin-top:5px;border-radius:4px;
+    border:1px solid rgba(56,189,248,.2);background:rgba(56,189,248,.06);
+    color:#38bdf8;font-size:9px;cursor:pointer;font-family:inherit;
+    letter-spacing:.05em;transition:.2s;
+  }
+  .d-btn:hover{background:rgba(56,189,248,.15);}
+  .d-input{
+    width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(56,189,248,.15);
+    border-radius:4px;padding:4px 6px;color:#e2e8f0;font-size:9px;
+    font-family:inherit;outline:none;margin-bottom:4px;
+  }
+  #xterm-out{max-height:100px;overflow-y:auto;font-size:8px;color:rgba(148,163,184,.7);}
+  .dash-toggle{
+    position:fixed;top:50%;left:0;transform:translateY(-50%);z-index:901;
+    width:20px;height:60px;background:rgba(2,5,15,.9);
+    border:1px solid rgba(56,189,248,.2);border-left:none;
+    border-radius:0 6px 6px 0;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    color:#38bdf8;font-size:10px;transition:.3s;
+  }
+  .dash-toggle.shifted{left:280px;}
+  /* Focus indicators for accessibility */
+  .ctrl-btn:focus,.mode-tab:focus,.nav-link:focus,.d-btn:focus,.send-btn:focus,.biz-btn:focus,.anim-pill:focus,.toggle:focus{
+    outline:2px solid rgba(56,189,248,.5);outline-offset:2px;
+  }
+  /* Loading shimmer for dashboard */
+  .dp.loading{position:relative;overflow:hidden;}
+  .dp.loading::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent,rgba(56,189,248,.06),transparent);
+    animation:shimmer 1.5s infinite;
+  }
+  @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  @media(max-width:640px){
+    #dash-sidebar{width:85vw;max-width:300px;}
+    .dash-toggle.shifted{left:85vw;}
+  }
+</style>
+</head>
+<body>
+<canvas id="renderCanvas" tabindex="0"></canvas>
+
+<div id="loading-screen">
+  <div class="loader-logo">⬡ BRIDGE AI</div>
+  <div class="loader-sub">Digital Twin Engine</div>
+  <div class="loader-bar-wrap"><div class="loader-bar" id="loader-bar"></div></div>
+  <div class="loader-status" id="loader-status">Initializing engine…</div>
+</div>
+
+<!-- ── TOP NAVIGATION ── -->
+<nav id="top-nav">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="logo">EHSA<span>Digital Twin</span></div>
+    <span id="brain-dot"></span>
+    <span id="brain-status-text" style="font-size:9px;color:#f87171;letter-spacing:.08em;">OFFLINE</span>
+  </div>
+  <div class="nav-links">
+    <div class="toggle-wrap">
+      <span class="toggle-label">Ninja</span>
+      <div class="toggle" id="hijab-toggle" onclick="toggleHijab()" title="Ninja mode"></div>
+    </div>
+    <div class="nav-sep"></div>
+    <a class="nav-link" href="/">Home</a>
+    <a class="nav-link" href="/avatar.html">Dashboard</a>
+    <a class="nav-link" href="/ehsa-brain.html">Brain</a>
+    <a class="nav-link" href="/twin.html" class="active">Twin</a>
+  </div>
+</nav>
+
+<div id="hint">WASD · Move | Mouse · Camera | 1-5 · Animations | C · Camera</div>
+
+<!-- ── Babylon.js CDN ── -->
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  BRIDGE AI — DIGITAL TWIN AVATAR ENGINE
+//  Production Babylon.js Implementation
+// ═══════════════════════════════════════════════════════════════════════════
+
+const AVATAR_URL = 'https://assets.babylonjs.com/meshes/HVGirl.glb';
+const HDRI_URL   = 'https://assets.babylonjs.com/environments/environmentSpecular.env';
+
+// ── Loading UI ──────────────────────────────────────────────────────────────
+const loaderBar    = document.getElementById('loader-bar');
+const loaderStatus = document.getElementById('loader-status');
+function setProgress(pct, msg) {
+  loaderBar.style.width = pct + '%';
+  if (msg) loaderStatus.textContent = msg;
+}
+
+// ── Engine & Scene ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('renderCanvas');
+const engine = new BABYLON.Engine(canvas, true, {
+  preserveDrawingBuffer: true,
+  stencil: true,
+  adaptToDeviceRatio: true,
+  powerPreference: 'high-performance',
+});
+engine.setHardwareScalingLevel(1 / window.devicePixelRatio);
+
+const scene = new BABYLON.Scene(engine);
+scene.clearColor    = new BABYLON.Color4(0.02, 0.03, 0.06, 1);
+scene.ambientColor  = new BABYLON.Color3(0.05, 0.06, 0.1);
+scene.gravity       = new BABYLON.Vector3(0, -9.81, 0);
+scene.collisionsEnabled = true;
+scene.fogMode       = BABYLON.Scene.FOGMODE_EXP2;
+scene.fogColor      = new BABYLON.Color3(0.02, 0.03, 0.06);
+scene.fogDensity    = 0.012;
+
+setProgress(10, 'Creating cameras…');
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CAMERA SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Arc Rotate Camera (orbit / showcase)
+const arcCam = new BABYLON.ArcRotateCamera('arcCam', -Math.PI / 2, Math.PI / 3, 5, BABYLON.Vector3.Zero(), scene);
+arcCam.lowerRadiusLimit  = 1.5;
+arcCam.upperRadiusLimit  = 14;
+arcCam.lowerBetaLimit    = 0.2;
+arcCam.upperBetaLimit    = Math.PI / 2 - 0.1;
+arcCam.wheelPrecision    = 50;
+arcCam.pinchPrecision    = 60;
+arcCam.inertia           = 0.72;
+arcCam.panningInertia    = 0.8;
+arcCam.minZ              = 0.1;
+arcCam.checkCollisions   = true;
+arcCam.attachControl(canvas, true);
+
+// Universal Camera (first / third person)
+const freeCam = new BABYLON.UniversalCamera('freeCam', new BABYLON.Vector3(0, 1.7, -5), scene);
+freeCam.target    = new BABYLON.Vector3(0, 1.4, 0);
+freeCam.minZ      = 0.1;
+freeCam.speed     = 0.08;
+freeCam.inertia   = 0.75;
+freeCam.fov       = 1.1;
+freeCam.checkCollisions = true;
+freeCam.applyGravity    = false;
+freeCam.ellipsoid = new BABYLON.Vector3(0.4, 0.9, 0.4);
+
+let activeCamera = 'arc';
+function switchCamera() {
+  if (activeCamera === 'arc') {
+    scene.activeCamera = freeCam;
+    freeCam.attachControl(canvas, true);
+    arcCam.detachControl();
+    activeCamera = 'free';
+  } else {
+    scene.activeCamera = arcCam;
+    arcCam.attachControl(canvas, true);
+    freeCam.detachControl();
+    activeCamera = 'arc';
+  }
+}
+scene.activeCamera = arcCam;
+
+setProgress(18, 'Building lights & shadows…');
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIGHTING SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+
+const hemiLight = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
+hemiLight.intensity    = 0.45;
+hemiLight.diffuse      = new BABYLON.Color3(0.55, 0.65, 0.85);
+hemiLight.groundColor  = new BABYLON.Color3(0.08, 0.06, 0.12);
+hemiLight.specular     = new BABYLON.Color3(0.1, 0.12, 0.2);
+
+const dirLight = new BABYLON.DirectionalLight('dirLight', new BABYLON.Vector3(-0.5, -1.2, -0.8), scene);
+dirLight.position   = new BABYLON.Vector3(8, 12, 8);
+dirLight.intensity  = 2.2;
+dirLight.diffuse    = new BABYLON.Color3(1.0, 0.96, 0.88);
+dirLight.specular   = new BABYLON.Color3(1.0, 0.98, 0.92);
+
+const spotLight = new BABYLON.SpotLight('spotLight',
+  new BABYLON.Vector3(3, 6, -3),
+  new BABYLON.Vector3(-0.6, -1, 0.5),
+  Math.PI / 4, 2.5, scene
+);
+spotLight.intensity  = 1.8;
+spotLight.diffuse    = new BABYLON.Color3(0.4, 0.6, 1.0);
+spotLight.specular   = new BABYLON.Color3(0.3, 0.5, 1.0);
+spotLight.range      = 18;
+
+// Shadow generator (PCF soft)
+const shadowGen = new BABYLON.ShadowGenerator(2048, dirLight);
+shadowGen.usePercentageCloserFiltering = true;
+shadowGen.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
+shadowGen.bias        = 0.001;
+shadowGen.normalBias  = 0.02;
+shadowGen.setDarkness(0.35);
+
+setProgress(26, 'Loading environment…');
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ENVIRONMENT — HDRI + SKYBOX + GROUND
+// ═══════════════════════════════════════════════════════════════════════════
+
+scene.environmentTexture = new BABYLON.CubeTexture(HDRI_URL, scene);
+scene.environmentIntensity = 0.6;
+
+const skybox = BABYLON.MeshBuilder.CreateBox('skybox', { size: 500 }, scene);
+const skyMat = new BABYLON.StandardMaterial('skyMat', scene);
+skyMat.backFaceCulling = false;
+skyMat.reflectionTexture = new BABYLON.CubeTexture(HDRI_URL, scene);
+skyMat.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+skyMat.diffuseColor  = BABYLON.Color3.Black();
+skyMat.specularColor = BABYLON.Color3.Black();
+skybox.material = skyMat;
+skybox.infiniteDistance = true;
+skybox.isPickable = false;
+
+// Ground
+const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 40, height: 40, subdivisions: 4 }, scene);
+const groundMat = new BABYLON.PBRMaterial('groundMat', scene);
+groundMat.albedoColor     = new BABYLON.Color3(0.06, 0.07, 0.12);
+groundMat.metallic        = 0.0;
+groundMat.roughness       = 0.92;
+groundMat.emissiveColor   = new BABYLON.Color3(0.01, 0.015, 0.03);
+ground.material = groundMat;
+ground.checkCollisions = true;
+ground.receiveShadows  = true;
+ground.isPickable = false;
+
+// Grid glow lines on ground (subtle)
+const gridMat = new BABYLON.StandardMaterial('gridMat', scene);
+gridMat.emissiveColor = new BABYLON.Color3(0.05, 0.12, 0.22);
+gridMat.wireframe = true;
+const gridMesh = BABYLON.MeshBuilder.CreateGround('grid', { width: 20, height: 20, subdivisions: 20 }, scene);
+gridMesh.material = gridMat;
+gridMesh.position.y = 0.001;
+gridMesh.isPickable = false;
+
+setProgress(34, 'Enabling physics…');
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PHYSICS ENGINE (Cannon.js)
+// ═══════════════════════════════════════════════════════════════════════════
+
+scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
+ground.physicsImpostor = new BABYLON.PhysicsImpostor(
+  ground, BABYLON.PhysicsImpostor.BoxImpostor,
+  { mass: 0, friction: 0.8, restitution: 0.1 }, scene
+);
+
+setProgress(42, 'Loading avatar…');
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AVATAR STATE MACHINE
+// ═══════════════════════════════════════════════════════════════════════════
+
+const Avatar = {
+  meshes: [], skeleton: null, animGroups: [], morphManager: null,
+  bones: {}, rootMesh: null, physicsRoot: null,
+  currentAnim: null, blendTarget: null, blendWeight: 0,
+  headBone: null, leftHandBone: null, rightHandBone: null,
+  position: new BABYLON.Vector3(0, 0, 0),
+  rotation: 0, speed: 0, targetSpeed: 0,
+  isLoaded: false,
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AVATAR LOADER
+// ═══════════════════════════════════════════════════════════════════════════
+
+BABYLON.SceneLoader.ImportMesh('', AVATAR_URL, '', scene,
+  function(meshes, particleSystems, skeletons, animGroups) {
+
+    Avatar.meshes    = meshes;
+    Avatar.skeleton  = skeletons[0] || null;
+    Avatar.animGroups = animGroups;
+    Avatar.isLoaded  = true;
+
+    // Root mesh setup
+    const root = meshes[0];
+    Avatar.rootMesh = root;
+    root.position  = new BABYLON.Vector3(0, 0, 0);
+    root.scaling   = new BABYLON.Vector3(1, 1, 1);
+    root.checkCollisions = true;
+    root.ellipsoid = new BABYLON.Vector3(0.35, 0.9, 0.35);
+    root.ellipsoidOffset = new BABYLON.Vector3(0, 0.9, 0);
+
+    setProgress(68, 'Configuring materials…');
+
+    // ── PBR Materials & Shadows ───────────────────────────────────────────
+    meshes.forEach(mesh => {
+      if (!mesh.material) return;
+      mesh.receiveShadows = true;
+      shadowGen.addShadowCaster(mesh, true);
+
+      // Upgrade to PBR if StandardMaterial
+      if (mesh.material instanceof BABYLON.StandardMaterial) {
+        const pbr = new BABYLON.PBRMaterial(mesh.material.name + '_pbr', scene);
+        if (mesh.material.diffuseTexture) {
+          pbr.albedoTexture = mesh.material.diffuseTexture;
+          pbr.albedoTexture.gammaSpace = true;
+        }
+        pbr.metallic         = 0.0;
+        pbr.roughness        = 0.75;
+        pbr.environmentIntensity = 0.6;
+        pbr.useRadianceOverAlpha = true;
+        pbr.useSpecularOverAlpha = true;
+        mesh.material = pbr;
+      } else if (mesh.material instanceof BABYLON.PBRMaterial ||
+                 mesh.material instanceof BABYLON.PBRMetallicRoughnessMaterial) {
+        mesh.material.environmentIntensity = 0.6;
+        mesh.material.useRadianceOverAlpha = true;
+      }
+
+      // Enable mipmaps
+      if (mesh.material.albedoTexture) {
+        mesh.material.albedoTexture.updateSamplingMode(BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+      }
+    });
+
+    setProgress(76, 'Extracting skeleton & bones…');
+
+    // ── Skeleton & Bone Access ────────────────────────────────────────────
+    if (Avatar.skeleton) {
+      Avatar.headBone = Avatar.skeleton.bones.find(
+        x => x.name.toLowerCase().includes('head')
+      ) || null;
+
+      const lh = Avatar.skeleton.bones.find(b => b.name.toLowerCase().includes('lefthand') || b.name.toLowerCase().includes('left_hand'));
+      const rh = Avatar.skeleton.bones.find(b => b.name.toLowerCase().includes('righthand') || b.name.toLowerCase().includes('right_hand'));
+      if (lh) Avatar.leftHandBone  = lh;
+      if (rh) Avatar.rightHandBone = rh;
+
+      Avatar.skeleton.bones.forEach(b => { Avatar.bones[b.name] = b; });
+    }
+
+    // ── Morph Target Manager ──────────────────────────────────────────────
+    meshes.forEach(mesh => {
+      if (mesh.morphTargetManager && mesh.morphTargetManager.numTargets > 0) {
+        Avatar.morphManager = mesh.morphTargetManager;
+      }
+    });
+
+    setProgress(84, 'Configuring animations…');
+
+    // ── Animation System ──────────────────────────────────────────────────
+    AnimController.init();
+
+    setProgress(90, 'Building post-processing…');
+
+    // ── Arc Camera — target avatar ────────────────────────────────────────
+    arcCam.target = new BABYLON.Vector3(0, 1.2, 0);
+
+    // ── Physics capsule for avatar ────────────────────────────────────────
+    Avatar.physicsRoot = BABYLON.MeshBuilder.CreateCapsule('avatarPhysics',
+      { height: 1.8, radius: 0.28, tessellation: 12 }, scene
+    );
+    Avatar.physicsRoot.position = new BABYLON.Vector3(0, 0.9, 0);
+    Avatar.physicsRoot.isVisible = false;
+    Avatar.physicsRoot.physicsImpostor = new BABYLON.PhysicsImpostor(
+      Avatar.physicsRoot, BABYLON.PhysicsImpostor.CapsuleImpostor,
+      { mass: 70, friction: 0.8, restitution: 0.05 }, scene
+    );
+
+    buildPostProcessing();
+    buildGUI();
+    hideLoadingScreen();
+
+  },
+  function(evt) {
+    const pct = evt.total > 0 ? Math.floor(42 + (evt.loaded / evt.total) * 26) : 60;
+    setProgress(pct, 'Loading avatar mesh… ' + (evt.total > 0 ? Math.round(evt.loaded/evt.total*100) + '%' : ''));
+  },
+  function(scene, msg, ex) {
+    loaderStatus.textContent = 'Load error: ' + msg;
+    console.error('Avatar load failed:', msg, ex);
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ANIMATION CONTROLLER
+// ═══════════════════════════════════════════════════════════════════════════
+
+const AnimController = {
+  groups: {},
+  current: null,
+  blendTimer: null,
+  BLEND_DURATION: 0.25,
+
+  init() {
+    Avatar.animGroups.forEach(ag => {
+      ag.stop();
+      const key = ag.name.toLowerCase();
+      this.groups[key] = ag;
+    });
+    // Map common animation names
+    this._map = {
+      idle:    this._find(['idle','stand','t-pose','tpose','none']),
+      walk:    this._find(['walk','walking']),
+      run:     this._find(['run','running','sprint']),
+      jump:    this._find(['jump','jumping']),
+      samba:   this._find(['samba','dance','dancing']),
+      wavehi:  this._find(['wave','wavehi','hi','hello','greeting']),
+    };
+    // Start idle
+    const first = this._map.idle || Object.values(this.groups)[0];
+    if (first) this.play(first.name, true, 1.0);
+    // Update GUI anim list after init
+    if (typeof refreshAnimList === 'function') refreshAnimList();
+  },
+
+  _find(keywords) {
+    for (const kw of keywords) {
+      for (const [k, ag] of Object.entries(this.groups)) {
+        if (k.includes(kw)) return ag;
+      }
+    }
+    return null;
+  },
+
+  play(nameOrRef, loop = true, speed = 1.0) {
+    const ag = typeof nameOrRef === 'string'
+      ? (this.groups[nameOrRef.toLowerCase()] || Object.values(this.groups).find(g => g.name === nameOrRef))
+      : nameOrRef;
+    if (!ag || ag === this.current) return;
+
+    if (this.current) {
+      this._crossfade(this.current, ag, this.BLEND_DURATION, loop, speed);
+    } else {
+      ag.start(loop, speed);
+      this.current = ag;
+    }
+    // Update GUI highlight
+    document.querySelectorAll && document.querySelectorAll('.anim-btn').forEach(b => {
+      b.classList.toggle('active-anim', b.dataset.anim === ag.name);
+    });
+  },
+
+  _crossfade(from, to, duration, loop, speed) {
+    to.start(loop, speed, to.from, to.to, false);
+    to.setWeightForAllAnimatables(0);
+    this.current = to;
+    const steps = 30;
+    let step = 0;
+    const iv = setInterval(() => {
+      step++;
+      const t = step / steps;
+      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // ease in-out
+      from.setWeightForAllAnimatables(1 - ease);
+      to.setWeightForAllAnimatables(ease);
+      if (step >= steps) {
+        clearInterval(iv);
+        from.stop();
+        from.setWeightForAllAnimatables(1);
+        to.setWeightForAllAnimatables(1);
+      }
+    }, (duration * 1000) / steps);
+  },
+
+  playByKey(key) {
+    const ag = this._map[key] || this._find([key]);
+    if (ag) this.play(ag.name, true, key === 'run' ? 1.2 : 1.0);
+  },
+
+  setSpeed(ratio) {
+    if (this.current) this.current.speedRatio = ratio;
+  },
+
+  getNames() {
+    return Object.values(this.groups).map(g => g.name);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MORPH TARGET CONTROLLER
+// ═══════════════════════════════════════════════════════════════════════════
+
+const MorphController = {
+  targets: {},
+  _timers: {},
+
+  init(mgr) {
+    if (!mgr) return;
+    for (let i = 0; i < mgr.numTargets; i++) {
+      const t = mgr.getTarget(i);
+      this.targets[t.name] = t;
+    }
+  },
+
+  set(name, value, duration = 0) {
+    const t = this.targets[name];
+    if (!t) return;
+    if (duration <= 0) { t.influence = Math.max(0, Math.min(1, value)); return; }
+    const from = t.influence;
+    const start = performance.now();
+    clearInterval(this._timers[name]);
+    this._timers[name] = setInterval(() => {
+      const prog = Math.min(1, (performance.now() - start) / (duration * 1000));
+      t.influence = from + (value - from) * prog;
+      if (prog >= 1) clearInterval(this._timers[name]);
+    }, 16);
+  },
+
+  blink() {
+    const blinkT = this.targets['eyesClosed'] || this.targets['blink'] || this.targets['Blink'];
+    if (!blinkT) return;
+    this.set(blinkT.name, 1.0, 0.06);
+    setTimeout(() => this.set(blinkT.name, 0.0, 0.1), 80);
+  },
+
+  startAutoBlinking() {
+    const schedBlink = () => {
+      this.blink();
+      setTimeout(schedBlink, 2500 + Math.random() * 3500);
+    };
+    setTimeout(schedBlink, 1000 + Math.random() * 2000);
+  },
+
+  getNames() { return Object.keys(this.targets); },
+
+  // Speak cycle — animate mouth morph targets to simulate talking
+  speakCycle(textLen) {
+    const mouthNames = ['mouthOpen','jawOpen','mouth_open','viseme_aa','viseme_O','Mouth_Open','A','O'];
+    const target = mouthNames.reduce((found, n) => found || this.targets[n], null);
+    if (!target) return;
+    const cycles = Math.max(4, Math.min(30, Math.floor(textLen / 5)));
+    let i = 0;
+    const step = () => {
+      if (i >= cycles) { target.influence = 0; return; }
+      target.influence = 0.3 + Math.random() * 0.5;
+      setTimeout(() => {
+        target.influence = Math.random() * 0.15;
+        i++;
+        setTimeout(step, 80 + Math.random() * 80);
+      }, 60 + Math.random() * 60);
+    };
+    step();
+  },
+
+  // Emotion morphs — map brain emotions to face
+  setEmotion(emotion) {
+    const maps = {
+      happy:   { mouthSmile: 0.7, eyeSquint: 0.3 },
+      neutral: { mouthSmile: 0.1 },
+      focused: { browDown: 0.4, eyeSquint: 0.2 },
+      sad:     { mouthFrown: 0.5, browDown: 0.3 },
+    };
+    // Reset all
+    Object.values(this.targets).forEach(t => { t.influence = Math.max(0, t.influence - 0.3); });
+    const morph = maps[emotion] || maps.neutral;
+    Object.entries(morph).forEach(([k, v]) => {
+      const names = [k, k.charAt(0).toUpperCase() + k.slice(1), k.toLowerCase()];
+      names.forEach(n => { if (this.targets[n]) this.set(n, v, 0.5); });
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  HEAD TRACKING (look-at mouse)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const HeadTracker = {
+  enabled: true,
+  target: new BABYLON.Vector3(0, 1.6, -10),
+  smoothTarget: new BABYLON.Vector3(0, 1.6, -10),
+  weight: 0.0, targetWeight: 0.6,
+
+  updateTarget(x, y) {
+    const ray = scene.createPickingRay(x, y, BABYLON.Matrix.Identity(), scene.activeCamera);
+    const t = 6;
+    this.target.set(ray.origin.x + ray.direction.x * t,
+                    ray.origin.y + ray.direction.y * t,
+                    ray.origin.z + ray.direction.z * t);
+  },
+
+  apply() {
+    if (!this.enabled || !Avatar.headBone || !Avatar.rootMesh) return;
+    this.smoothTarget.x += (this.target.x - this.smoothTarget.x) * 0.05;
+    this.smoothTarget.y += (this.target.y - this.smoothTarget.y) * 0.05;
+    this.smoothTarget.z += (this.target.z - this.smoothTarget.z) * 0.05;
+    this.weight += (this.targetWeight - this.weight) * 0.04;
+    // Bone look-at (world space)
+    try {
+      const bonePos = Avatar.headBone.getAbsolutePosition(Avatar.rootMesh);
+      const dir = this.smoothTarget.subtract(bonePos).normalize();
+      const yaw   = Math.atan2(dir.x, dir.z);
+      const pitch = -Math.asin(Math.max(-1, Math.min(1, dir.y)));
+      const clampedYaw   = Math.max(-0.5, Math.min(0.5, yaw));
+      const clampedPitch = Math.max(-0.35, Math.min(0.35, pitch));
+      Avatar.headBone.setRotation(new BABYLON.Vector3(clampedPitch * this.weight, clampedYaw * this.weight, 0));
+    } catch(e) {}
+  }
+};
+
+canvas.addEventListener('mousemove', e => {
+  HeadTracker.updateTarget(e.clientX, e.clientY);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INPUT CONTROLLER
+// ═══════════════════════════════════════════════════════════════════════════
+
+const Input = {
+  keys: {},
+  moving: false,
+
+  init() {
+    window.addEventListener('keydown', e => {
+      this.keys[e.code] = true;
+
+      // Animation hotkeys
+      if (e.code === 'Digit1') AnimController.playByKey('idle');
+      if (e.code === 'Digit2') AnimController.playByKey('walk');
+      if (e.code === 'Digit3') AnimController.playByKey('run');
+      if (e.code === 'Digit4') AnimController.playByKey('samba');
+      if (e.code === 'Digit5') AnimController.playByKey('wavehi');
+
+      // Camera toggle
+      if (e.code === 'KeyC') switchCamera();
+
+      // Inspector toggle
+      if (e.ctrlKey && e.code === 'KeyI') {
+        e.preventDefault();
+        if (scene.debugLayer.isVisible()) scene.debugLayer.hide();
+        else scene.debugLayer.show({ embedMode: true });
+      }
+    });
+    window.addEventListener('keyup', e => { this.keys[e.code] = false; });
+  },
+
+  update() {
+    if (!Avatar.isLoaded || !Avatar.rootMesh) return;
+    const dt  = engine.getDeltaTime() / 1000;
+    const spd = 3.2;
+    let moved = false;
+
+    const fwd   = scene.activeCamera.getForwardRay().direction;
+    fwd.y = 0; fwd.normalize();
+    const right = BABYLON.Vector3.Cross(fwd, BABYLON.Vector3.Up()).normalize();
+
+    const move = BABYLON.Vector3.Zero();
+    if (this.keys['KeyW'] || this.keys['ArrowUp'])    move.addInPlace(fwd.scale(spd * dt));
+    if (this.keys['KeyS'] || this.keys['ArrowDown'])  move.addInPlace(fwd.scale(-spd * dt));
+    if (this.keys['KeyA'] || this.keys['ArrowLeft'])  move.addInPlace(right.scale(-spd * dt));
+    if (this.keys['KeyD'] || this.keys['ArrowRight']) move.addInPlace(right.scale(spd * dt));
+
+    if (move.lengthSquared() > 0) {
+      moved = true;
+      const running = this.keys['ShiftLeft'] || this.keys['ShiftRight'];
+      const finalMove = running ? move.scale(1.8) : move;
+      Avatar.rootMesh.moveWithCollisions(finalMove);
+
+      // Rotate avatar to face movement direction
+      const angle = Math.atan2(move.x, move.z);
+      Avatar.rootMesh.rotation.y = BABYLON.Scalar.Lerp(Avatar.rootMesh.rotation.y, angle, 0.12);
+
+      // Auto-switch animation
+      if (!this.moving) {
+        AnimController.playByKey(running ? 'run' : 'walk');
+        this.moving = true;
+      }
+      // Keep arc camera following avatar
+      if (activeCamera === 'arc') {
+        arcCam.target.x += (Avatar.rootMesh.position.x - arcCam.target.x) * 0.08;
+        arcCam.target.z += (Avatar.rootMesh.position.z - arcCam.target.z) * 0.08;
+      }
+    } else if (this.moving) {
+      AnimController.playByKey('idle');
+      this.moving = false;
+    }
+  }
+};
+Input.init();
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  POST-PROCESSING PIPELINE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildPostProcessing() {
+  const pipeline = new BABYLON.DefaultRenderingPipeline('pipeline', true, scene, [arcCam, freeCam]);
+
+  // MSAA
+  pipeline.samples = 4;
+
+  // FXAA
+  pipeline.fxaaEnabled = true;
+
+  // Bloom
+  pipeline.bloomEnabled    = true;
+  pipeline.bloomThreshold  = 0.72;
+  pipeline.bloomWeight     = 0.28;
+  pipeline.bloomKernel     = 64;
+  pipeline.bloomScale      = 0.5;
+
+  // Depth of Field
+  pipeline.depthOfFieldEnabled    = false; // can enable via GUI
+  pipeline.depthOfFieldBlurLevel  = BABYLON.DepthOfFieldEffectBlurLevel.Low;
+  pipeline.depthOfField.focalLength = 150;
+  pipeline.depthOfField.fStop       = 1.4;
+  pipeline.depthOfField.focusDistance = 2600;
+
+  // Tone mapping
+  pipeline.imageProcessingEnabled   = true;
+  pipeline.imageProcessing.toneMappingEnabled  = true;
+  pipeline.imageProcessing.toneMappingType     = BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
+  pipeline.imageProcessing.exposure            = 1.0;
+  pipeline.imageProcessing.contrast            = 1.12;
+  pipeline.imageProcessing.colorGradingEnabled = false;
+
+  // Grain
+  pipeline.grainEnabled    = true;
+  pipeline.grain.intensity = 8;
+  pipeline.grain.animated  = true;
+
+  // Chromatic aberration
+  pipeline.chromaticAberrationEnabled    = true;
+  pipeline.chromaticAberration.aberrationAmount = 0.5;
+
+  // Sharpen
+  pipeline.sharpenEnabled    = true;
+  pipeline.sharpen.edgeAmount = 0.2;
+  pipeline.sharpen.colorAmount = 1;
+
+  window._pipeline = pipeline;
+  setProgress(95, 'Building GUI…');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  BABYLON GUI
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildGUI() {
+  const adt = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI', true, scene);
+
+  // ── Main panel (right side) ──────────────────────────────────────────────
+  const panel = new BABYLON.GUI.StackPanel();
+  panel.width        = '200px';
+  panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+  panel.verticalAlignment   = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+  panel.paddingRight = '14px';
+  adt.addControl(panel);
+
+  function makeHeader(text) {
+    const t = new BABYLON.GUI.TextBlock();
+    t.text      = text;
+    t.height    = '22px';
+    t.color     = '#38bdf8';
+    t.fontSize  = 9;
+    t.fontFamily = 'JetBrains Mono, monospace';
+    t.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    t.paddingTop = '8px';
+    return t;
+  }
+
+  function makeBtn(label, onClick) {
+    const btn = BABYLON.GUI.Button.CreateSimpleButton('btn_' + label, label);
+    btn.width   = '190px';
+    btn.height  = '28px';
+    btn.color   = '#64748b';
+    btn.background      = 'rgba(56,189,248,0.04)';
+    btn.cornerRadius    = 6;
+    btn.fontSize        = 10;
+    btn.fontFamily      = 'Inter, sans-serif';
+    btn.paddingBottom   = '3px';
+    btn.thickness       = 1;
+    btn.metadata        = { label };
+    btn.onPointerEnterObservable.add(() => { btn.color = '#bae6fd'; btn.background = 'rgba(56,189,248,0.12)'; });
+    btn.onPointerOutObservable.add(() => { btn.color = '#64748b'; btn.background = 'rgba(56,189,248,0.04)'; });
+    btn.onPointerUpObservable.add(onClick);
+    return btn;
+  }
+
+  function makeSlider(label, min, max, value, onChange) {
+    const row = new BABYLON.GUI.StackPanel();
+    row.isVertical = false;
+    row.height = '24px';
+    row.paddingBottom = '2px';
+
+    const lbl = new BABYLON.GUI.TextBlock();
+    lbl.text     = label;
+    lbl.width    = '70px';
+    lbl.color    = '#475569';
+    lbl.fontSize = 9;
+    lbl.fontFamily = 'JetBrains Mono, monospace';
+    lbl.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    row.addControl(lbl);
+
+    const sl = new BABYLON.GUI.Slider();
+    sl.minimum   = min;
+    sl.maximum   = max;
+    sl.value     = value;
+    sl.width     = '110px';
+    sl.height    = '14px';
+    sl.color     = '#38bdf8';
+    sl.background = 'rgba(56,189,248,0.12)';
+    sl.thumbWidth = 12;
+    sl.thumbHeight = 12;
+    sl.borderColor = 'transparent';
+    sl.onValueChangedObservable.add(onChange);
+    row.addControl(sl);
+
+    return row;
+  }
+
+  // ── Section: Animations ──────────────────────────────────────────────────
+  panel.addControl(makeHeader('◈ ANIMATIONS'));
+  const animNames = ['idle','walk','run','samba','wavehi'];
+  const animLabels = { idle:'1 · Idle', walk:'2 · Walk', run:'3 · Run', samba:'4 · Dance', wavehi:'5 · Wave Hi' };
+  animNames.forEach(key => {
+    const btn = makeBtn(animLabels[key] || key, () => AnimController.playByKey(key));
+    btn.className = 'anim-btn';
+    btn.metadata.anim = key;
+    panel.addControl(btn);
+  });
+
+  // Speed slider
+  panel.addControl(makeHeader('◈ SPEED'));
+  panel.addControl(makeSlider('Speed', 0.1, 2.5, 1.0, v => AnimController.setSpeed(v)));
+
+  // ── Section: Camera ──────────────────────────────────────────────────────
+  panel.addControl(makeHeader('◈ CAMERA'));
+  panel.addControl(makeBtn('C · Toggle Camera', switchCamera));
+  panel.addControl(makeSlider('FOV', 0.6, 1.6, 1.1, v => { freeCam.fov = v; }));
+
+  // ── Section: Lighting ────────────────────────────────────────────────────
+  panel.addControl(makeHeader('◈ LIGHTING'));
+  panel.addControl(makeSlider('Key', 0, 4, 2.2, v => { dirLight.intensity = v; }));
+  panel.addControl(makeSlider('Fill', 0, 1.5, 0.45, v => { hemiLight.intensity = v; }));
+  panel.addControl(makeSlider('Spot', 0, 4, 1.8, v => { spotLight.intensity = v; }));
+
+  // ── Section: Post FX ─────────────────────────────────────────────────────
+  panel.addControl(makeHeader('◈ POST FX'));
+  panel.addControl(makeSlider('Bloom', 0, 0.8, 0.28, v => {
+    if (window._pipeline) window._pipeline.bloomWeight = v;
+  }));
+  panel.addControl(makeSlider('Expose', 0.2, 2.5, 1.0, v => {
+    if (window._pipeline) window._pipeline.imageProcessing.exposure = v;
+  }));
+  panel.addControl(makeBtn('Toggle DOF', () => {
+    if (window._pipeline) window._pipeline.depthOfFieldEnabled = !window._pipeline.depthOfFieldEnabled;
+  }));
+
+  // ── Section: Morph Targets ───────────────────────────────────────────────
+  if (Avatar.morphManager && Avatar.morphManager.numTargets > 0) {
+    panel.addControl(makeHeader('◈ MORPH'));
+    for (let i = 0; i < Math.min(Avatar.morphManager.numTargets, 5); i++) {
+      const t = Avatar.morphManager.getTarget(i);
+      const name = t.name.substring(0, 10);
+      panel.addControl(makeSlider(name, 0, 1, 0, v => { t.influence = v; }));
+    }
+  }
+
+  // ── Debug panel (top-left) ───────────────────────────────────────────────
+  const debugPanel = new BABYLON.GUI.StackPanel();
+  debugPanel.width     = '160px';
+  debugPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+  debugPanel.verticalAlignment   = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+  debugPanel.paddingLeft = '12px';
+  debugPanel.paddingTop  = '54px';
+  adt.addControl(debugPanel);
+
+  const debugTxt = new BABYLON.GUI.TextBlock();
+  debugTxt.text      = '';
+  debugTxt.height    = '80px';
+  debugTxt.color     = 'rgba(56,189,248,0.35)';
+  debugTxt.fontSize  = 9;
+  debugTxt.fontFamily = 'JetBrains Mono, monospace';
+  debugTxt.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+  debugTxt.textVerticalAlignment   = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+  debugTxt.lineSpacing = '4px';
+  debugPanel.addControl(debugTxt);
+
+  // Update debug info
+  let frameCount = 0;
+  scene.registerBeforeRender(() => {
+    frameCount++;
+    if (frameCount % 30 === 0) {
+      const fps = engine.getFps().toFixed(0);
+      const tris = scene.getActiveMeshes().data.reduce((a, m) => a + (m.getTotalIndices ? m.getTotalIndices() / 3 : 0), 0);
+      const pos = Avatar.rootMesh ? Avatar.rootMesh.position : { x:0, y:0, z:0 };
+      const animName = AnimController.current ? AnimController.current.name.substring(0, 14) : 'none';
+      debugTxt.text =
+        `FPS: ${fps}\n` +
+        `TRIS: ${Math.round(tris / 1000)}k\n` +
+        `ANIM: ${animName}\n` +
+        `POS: ${pos.x.toFixed(1)}, ${pos.z.toFixed(1)}`;
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SCENE OPTIMIZER
+// ═══════════════════════════════════════════════════════════════════════════
+
+const optimizerOptions = BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed(60);
+optimizerOptions.addOptimization(new BABYLON.HardwareScalingOptimization(0, 1.5));
+const optimizer = new BABYLON.SceneOptimizer(scene, optimizerOptions, false, true);
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  HIDE LOADING SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+function hideLoadingScreen() {
+  setProgress(100, 'Ready');
+  setTimeout(() => {
+    const ls = document.getElementById('loading-screen');
+    ls.classList.add('fade-out');
+    setTimeout(() => { ls.style.display = 'none'; }, 700);
+
+    if (Avatar.morphManager) {
+      MorphController.init(Avatar.morphManager);
+      MorphController.startAutoBlinking();
+    }
+
+    // Hide hint after 8 seconds
+    setTimeout(() => {
+      const hint = document.getElementById('hint');
+      if (hint) hint.classList.add('hidden');
+    }, 8000);
+  }, 400);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SCENE RENDER LOOP (main loop before-render hooks)
+// ═══════════════════════════════════════════════════════════════════════════
+
+scene.registerBeforeRender(() => {
+  Input.update();
+  HeadTracker.apply();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AMBIENT PARTICLES (atmospheric depth)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const ps = new BABYLON.ParticleSystem('dust', 600, scene);
+ps.particleTexture = new BABYLON.Texture('https://assets.babylonjs.com/textures/flare.png', scene);
+ps.emitter = new BABYLON.Vector3(0, 1.0, 0);
+ps.minEmitBox = new BABYLON.Vector3(-8, 0, -8);
+ps.maxEmitBox = new BABYLON.Vector3( 8, 4,  8);
+ps.color1 = new BABYLON.Color4(0.22, 0.48, 0.78, 0.08);
+ps.color2 = new BABYLON.Color4(0.35, 0.65, 1.0,  0.04);
+ps.colorDead = new BABYLON.Color4(0, 0, 0, 0);
+ps.minSize   = 0.01; ps.maxSize   = 0.04;
+ps.minLifeTime = 4; ps.maxLifeTime = 9;
+ps.emitRate    = 30;
+ps.gravity     = new BABYLON.Vector3(0, 0.04, 0);
+ps.direction1  = new BABYLON.Vector3(-0.05, 0.12, -0.05);
+ps.direction2  = new BABYLON.Vector3( 0.05, 0.18,  0.05);
+ps.minAngularSpeed = 0; ps.maxAngularSpeed = Math.PI * 0.2;
+ps.minEmitPower = 0.02; ps.maxEmitPower = 0.08;
+ps.updateSpeed = 0.006;
+ps.blendMode   = BABYLON.ParticleSystem.BLENDMODE_ADD;
+ps.start();
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  WINDOW RESIZE
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.addEventListener('resize', () => engine.resize());
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  RENDER LOOP
+// ═══════════════════════════════════════════════════════════════════════════
+
+engine.runRenderLoop(() => scene.render());
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AUTONOMOUS OS — decision engine, revenue tracking, auto-heal
+//  Ported from avatar.html AutonomousOS (compact version)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const AutonomousOS = (() => {
+  let _mode = 'auto'; // auto|assist|observe
+  let _tick = 0;
+  let _walletReady = false;
+  const revenue = { session: 0, ubiActions: 0, tasksAccepted: 0, dexSwaps: 0 };
+  const decisions = new Map();
+
+  // Endpoint rate-limit memory
+  const epMem = {};
+  function ep(k) { if (!epMem[k]) epMem[k] = { lastCall: 0, errorCode: 0, errorCount: 0, cooldownUntil: 0 }; return epMem[k]; }
+  function epCooling(k) { return Date.now() < ep(k).cooldownUntil; }
+  function epRecord(k, status) {
+    const m = ep(k); m.lastCall = Date.now();
+    if (status === 429) { m.errorCode = 429; m.errorCount++; m.cooldownUntil = Date.now() + Math.min(120000, 60000 * Math.pow(1.5, m.errorCount - 1)); }
+    else if (status === 403) { m.errorCode = 403; m.errorCount++; m.cooldownUntil = Date.now() + (m.errorCount >= 2 ? 3600000 : 90000); }
+    else if (status >= 200 && status < 300) { m.errorCode = 0; m.errorCount = Math.max(0, m.errorCount - 1); m.cooldownUntil = 0; }
+    else if (status >= 500) { m.errorCode = status; m.errorCount++; m.cooldownUntil = Date.now() + 30000; }
+  }
+
+  async function aiFetch(epKey, url, opts) {
+    if (epCooling(epKey) || Date.now() - ep(epKey).lastCall < 10000) return null;
+    let res;
+    try { res = await fetch(url, opts); } catch { epRecord(epKey, 0); return null; }
+    epRecord(epKey, res.status);
+    return res;
+  }
+
+  function setDecision(key, priority, label, actionFn, requiresWallet) {
+    decisions.set(key, { priority, label, actionFn, requiresWallet, ts: Date.now() });
+  }
+
+  // Decision evaluation — rebuild queue each cycle
+  let _cachedTasks = [], _lastTaskFetch = 0;
+  async function evaluate() {
+    decisions.clear();
+
+    // Heal WS
+    if (typeof BrainWS !== 'undefined' && !document.getElementById('brain-dot')?.classList.contains('online')) {
+      setDecision('heal_ws', 95, 'Reconnect Brain', () => BrainWS.connect());
+    }
+
+    // UBI claim
+    if (!epCooling('ubi') && _walletReady) {
+      setDecision('ubi_claim', 82, 'Claim UBI', async () => {
+        const r = await aiFetch('ubi', API_BASE + '/api/ubi/claim', { method: 'POST' });
+        if (r && r.ok) { revenue.ubiActions++; revenue.session += 1; sysLog('UBI claimed', 'tag-green'); refreshDashboard(); }
+      }, true);
+    }
+
+    // Marketplace tasks
+    if (!epCooling('market') && Date.now() - _lastTaskFetch > 45000) {
+      _lastTaskFetch = Date.now();
+      const r = await aiFetch('market', API_BASE + '/api/marketplace/tasks');
+      if (r && r.ok) { const b = await r.json(); _cachedTasks = Array.isArray(b) ? b : (b.tasks || []); }
+    }
+    if (_cachedTasks.length > 0) {
+      const t = _cachedTasks[0];
+      setDecision('task', 76, 'Accept: ' + (t.name || t.title || 'Task').slice(0, 25), async () => {
+        const r = await aiFetch('task_accept', API_BASE + '/api/marketplace/accept', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task_id: t.id || t._id })
+        });
+        if (r && r.ok) { revenue.tasksAccepted++; revenue.session += (t.reward || 0); sysLog('Task accepted', 'tag-green'); }
+      }, true);
+    }
+
+    // BossBot signals
+    if (!epCooling('bossbots')) {
+      setDecision('bossbots', 65, 'Check BossBot signals', async () => {
+        const r = await aiFetch('bossbots', API_BASE + '/api/bossbots');
+        if (r && r.ok) loadBossbots();
+      });
+    }
+  }
+
+  // Execute best decision
+  async function execute() {
+    if (_mode === 'observe') return;
+    const sorted = [...decisions.values()].filter(d => d.actionFn).sort((a, b) => b.priority - a.priority);
+    for (const d of sorted) {
+      if (d.requiresWallet && !_walletReady) continue;
+      if (d.priority < 55) continue;
+      if (_mode === 'auto') {
+        try { sysLog('EXEC: ' + d.label, 'tag-green'); await d.actionFn(); } catch (e) { sysLog('FAIL: ' + e.message, 'tag-red'); }
+      } else {
+        sysLog('SUGGEST: ' + d.label, 'tag-yellow');
+      }
+      break; // one per cycle
+    }
+  }
+
+  // Visual feedback — pulse avatar based on system state
+  function visualSync() {
+    const successRate = Math.min(1, revenue.session / Math.max(1, _tick));
+    // Core light intensity follows success
+    const core = document.getElementById('core-light');
+    if (core) core.style.fill = `rgba(0,229,255,${0.15 + successRate * 0.4})`;
+  }
+
+  // Main 30s tick
+  async function tick() {
+    _tick++;
+    await evaluate();
+    await execute();
+    visualSync();
+  }
+
+  function start() {
+    sysLog('AI-OS v2 started · mode=' + _mode, 'tag-green');
+    setInterval(tick, 30000);
+    setTimeout(tick, 5000);
+  }
+
+  function setWalletReady(v) { _walletReady = v; }
+  function setMode(m) { _mode = m; sysLog('Mode: ' + m.toUpperCase()); }
+
+  return { start, setMode, setWalletReady, revenue };
+})();
+
+// Start AutonomousOS after scene loads
+setTimeout(() => AutonomousOS.start(), 8000);
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  UI: MODE SWITCHING, HIJAB TOGGLE, NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+function switchMode(mode) {
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.textContent === mode.toUpperCase()));
+  document.querySelectorAll('.panel-content').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById(mode + '-panel');
+  if (panel) panel.classList.add('active');
+  if (mode === 'chat') { const inp = document.getElementById('chat-input'); if (inp) inp.focus(); }
+}
+
+function playAnim(key) {
+  AnimController.playByKey(key);
+  document.querySelectorAll('.anim-pill').forEach(p =>
+    p.classList.toggle('active', p.textContent.toLowerCase().replace('dance','samba').startsWith(key.substring(0,3)))
+  );
+}
+
+// ── Hijab/Burkha toggle ────────────────────────────────────────────────────
+let hijabMeshes = [];
+let hijabEnabled = false;
+
+function createNinjaMesh() {
+  if (!Avatar.isLoaded || hijabMeshes.length > 0) return;
+
+  // Find the skinned mesh that the skeleton drives
+  let skinnedMesh = null;
+  Avatar.meshes.forEach(m => { if (m.skeleton) skinnedMesh = m; });
+  if (!skinnedMesh) skinnedMesh = Avatar.rootMesh;
+
+  // Find bones by name
+  const skeleton = Avatar.skeleton;
+  let headBone = null, spineBone = null, hipBone = null;
+  if (skeleton) {
+    skeleton.bones.forEach(b => {
+      const n = b.name.toLowerCase();
+      if (!headBone && n.includes('head') && !n.includes('top_end')) headBone = b;
+      if (!spineBone && (n.includes('spine2') || n.includes('spine1'))) spineBone = b;
+      if (!hipBone && n.includes('hips')) hipBone = b;
+    });
+  }
+
+  // Ninja material factory
+  const NK_D = new BABYLON.Color3(0.04, 0.04, 0.06), NK_E = new BABYLON.Color3(0.02, 0.02, 0.03);
+  const NR_D = new BABYLON.Color3(0.7, 0.06, 0.06),  NR_E = new BABYLON.Color3(0.25, 0.02, 0.02);
+  function ninjaMat(name, d, e, a) {
+    const m = new BABYLON.StandardMaterial(name, scene);
+    m.diffuseColor = d; m.emissiveColor = e; m.backFaceCulling = false;
+    if (a !== undefined && a < 1) m.alpha = a;
+    return m;
+  }
+
+  // Build all ninja pieces
+  const hood = BABYLON.MeshBuilder.CreateSphere('n_hood', { diameter: 0.42, segments: 12 }, scene);
+  hood.scaling = new BABYLON.Vector3(1.1, 1.15, 1.05);
+  hood.material = ninjaMat('n_hood_m', NK_D, NK_E, 1);
+
+  const mask = BABYLON.MeshBuilder.CreateBox('n_mask', { width: 0.24, height: 0.1, depth: 0.16 }, scene);
+  mask.material = ninjaMat('n_mask_m', NK_D, NK_E, 0.96);
+
+  const eyeBand = BABYLON.MeshBuilder.CreateBox('n_eye', { width: 0.3, height: 0.028, depth: 0.17 }, scene);
+  eyeBand.material = ninjaMat('n_eye_m', NR_D, NR_E);
+
+  const torso = BABYLON.MeshBuilder.CreateCylinder('n_torso', {
+    diameterTop: 0.5, diameterBottom: 0.44, height: 0.65, tessellation: 16
+  }, scene);
+  torso.material = ninjaMat('n_torso_m', NK_D, NK_E, 0.93);
+
+  const belt = BABYLON.MeshBuilder.CreateTorus('n_belt', { diameter: 0.46, thickness: 0.028, tessellation: 20 }, scene);
+  belt.material = ninjaMat('n_belt_m', NR_D, NR_E);
+  belt.rotation.x = Math.PI / 2;
+
+  hijabMeshes = [hood, mask, eyeBand, torso, belt];
+  hijabMeshes.forEach(m => { m.isVisible = false; m.isPickable = false; });
+
+  // Track bone positions every frame — this is the reliable approach
+  scene.registerBeforeRender(() => {
+    if (!hijabEnabled || hijabMeshes.length === 0) return;
+
+    if (headBone && skinnedMesh) {
+      const hp = headBone.getAbsolutePosition(skinnedMesh);
+      hood.position.copyFrom(hp);
+      hood.position.y += 0.06;
+
+      mask.position.copyFrom(hp);
+      mask.position.y -= 0.04;
+      mask.position.z += 0.08;
+
+      eyeBand.position.copyFrom(hp);
+      eyeBand.position.y += 0.015;
+      eyeBand.position.z += 0.07;
+
+      // Match head rotation
+      const hm = headBone.getWorldMatrix();
+      const rot = new BABYLON.Vector3();
+      hm.decompose(undefined, undefined, undefined);
+      hood.rotationQuaternion = BABYLON.Quaternion.FromRotationMatrix(hm.getRotationMatrix());
+      mask.rotationQuaternion = hood.rotationQuaternion.clone();
+      eyeBand.rotationQuaternion = hood.rotationQuaternion.clone();
+    }
+
+    if (spineBone && skinnedMesh) {
+      const sp = spineBone.getAbsolutePosition(skinnedMesh);
+      torso.position.copyFrom(sp);
+      torso.position.y -= 0.05;
+
+      belt.position.copyFrom(sp);
+      belt.position.y -= 0.32;
+    }
+  });
+}
+
+function toggleHijab() {
+  hijabEnabled = !hijabEnabled;
+  const tog = document.getElementById('hijab-toggle');
+  if (tog) tog.classList.toggle('on', hijabEnabled);
+
+  if (hijabMeshes.length === 0 && Avatar.isLoaded) createNinjaMesh();
+  hijabMeshes.forEach(m => { m.isVisible = hijabEnabled; });
+  if (typeof BrainWS !== 'undefined') BrainWS.log(hijabEnabled ? 'Ninja mode: ON' : 'Ninja mode: OFF');
+}
+
+// Create ninja meshes once avatar loads
+const _ninjaCheck = setInterval(() => {
+  if (Avatar.isLoaded) { createNinjaMesh(); clearInterval(_ninjaCheck); }
+}, 500);
+
+// ── Business commands ──────────────────────────────────────────────────────
+function animThenIdle(key, ms) {
+  AnimController.playByKey(key);
+  setTimeout(() => AnimController.playByKey('idle'), ms);
+}
+
+function bizCmd(cmd) {
+  BrainWS.send({ type: 'prompt', prompt: `Report on ${cmd} status and metrics` });
+  BrainWS.log(`Business: ${cmd}`);
+  animThenIdle('wavehi', 3000);
+}
+
+// ── Swarm commands ─────────────────────────────────────────────────────────
+function swarmCmd(cmd) {
+  const prompts = {
+    orchestrate: 'Orchestrate all swarm agents — coordinate tasks and optimize workload',
+    dispatch:    'Dispatch new swarm task — assign to best available agent',
+    status:      'Report swarm status — agents online, tasks running, queue depth',
+    heal:        'Run auto-heal on all agents — restart failed, reconnect dropped',
+    scale:       'Scale up swarm — launch additional agent instances',
+    report:      'Generate full swarm performance report',
+  };
+  BrainWS.send({ type: 'prompt', prompt: prompts[cmd] || `Swarm: ${cmd}` });
+  BrainWS.log(`Swarm: ${cmd}`);
+  animThenIdle('run', 2500);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DASHBOARD SIDEBAR — API fetchers ported from avatar.html
+// ═══════════════════════════════════════════════════════════════════════════
+
+const API_BASE = location.origin;
+
+function toggleDash() {
+  const sb = document.getElementById('dash-sidebar');
+  const tog = document.getElementById('dash-toggle');
+  const open = sb.classList.toggle('open');
+  tog.classList.toggle('shifted', open);
+  tog.textContent = open ? '\u25C0' : '\u25B6';
+  if (open) refreshDashboard();
+}
+
+function sysLog(msg, cls) {
+  const el = document.getElementById('xterm-out');
+  if (!el) return;
+  const d = document.createElement('div');
+  d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  if (cls) d.style.color = cls === 'tag-green' ? '#34d399' : cls === 'tag-yellow' ? '#fbbf24' : '#f87171';
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+  while (el.childNodes.length > 40) el.removeChild(el.firstChild);
+}
+
+async function safeFetch(label, url, opts) {
+  try {
+    const r = await fetch(url, opts);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+async function refreshDashboard() {
+  // Show loading state on all panels
+  document.querySelectorAll('#dash-sidebar .dp').forEach(p => p.classList.add('loading'));
+
+  // Skills
+  const sk = await safeFetch('skills', API_BASE + '/api/skills');
+  if (sk) {
+    const list = Array.isArray(sk) ? sk : (sk.skills || []);
+    const el = document.getElementById('skill-list');
+    if (el) {
+      while (el.firstChild) el.removeChild(el.firstChild);
+      list.forEach(s => {
+        const d = document.createElement('div');
+        d.textContent = (typeof s === 'string' ? s : s.name || s.id);
+        d.style.cssText = 'font-size:8px;color:#64748b;padding:1px 0;';
+        el.appendChild(d);
+      });
+    }
+    const cnt = document.getElementById('skills-count-panel');
+    if (cnt) cnt.textContent = list.length;
+  }
+
+  // Mission board
+  const mb = await safeFetch('mission', API_BASE + '/api/mission/board');
+  if (mb) {
+    ['backlog','active','review','done'].forEach(k => {
+      const el = document.getElementById('mb-' + k);
+      if (el) el.textContent = mb[k] || mb[k === 'active' ? 'in_progress' : k] || 0;
+    });
+  }
+
+  function setEl(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
+
+  // SDG
+  const sdg = await safeFetch('sdg', API_BASE + '/api/sdg/metrics');
+  if (sdg) {
+    setEl('sdg-tasks', sdg.tasks_created ?? sdg.tasks ?? 0);
+    setEl('sdg-ubi', sdg.ubi_claims ?? 0);
+    setEl('sdg-trades', sdg.trades ?? 0);
+  }
+
+  // Revenue
+  const rev = await safeFetch('rev', API_BASE + '/api/revenue/status');
+  if (rev) {
+    setEl('rev-balance', '$' + (rev.balance ?? rev.total ?? 0));
+    setEl('rev-dist', '$' + (rev.distributed ?? rev.earned ?? 0));
+  }
+
+  // eSIM
+  const esim = await safeFetch('esim', API_BASE + '/api/esim/status');
+  if (esim) {
+    setEl('esim-status', esim.status || '--');
+    setEl('esim-data', esim.data_remaining || '--');
+  }
+
+  loadMarket();
+  loadBossbots();
+
+  // Remove loading state
+  document.querySelectorAll('#dash-sidebar .dp').forEach(p => p.classList.remove('loading'));
+}
+
+async function loadMarket() {
+  const d = await safeFetch('market', API_BASE + '/api/marketplace/tasks');
+  const el = document.getElementById('market-list');
+  if (!el) return;
+  const tasks = d?.tasks || d || [];
+  while (el.firstChild) el.removeChild(el.firstChild);
+  if (!tasks.length) { el.textContent = 'No tasks'; return; }
+  tasks.slice(0, 5).forEach(t => {
+    const row = document.createElement('div');
+    row.textContent = (t.name || t.title || 'Task') + ' — $' + (t.reward || 0);
+    row.style.cssText = 'padding:2px 0;border-bottom:1px solid rgba(56,189,248,.06);';
+    el.appendChild(row);
+  });
+}
+
+async function loadBossbots() {
+  const d = await safeFetch('bb', API_BASE + '/api/bossbots');
+  const el = document.getElementById('bossbot-list');
+  if (!el || !d) return;
+  const bots = d.bots || [];
+  while (el.firstChild) el.removeChild(el.firstChild);
+  bots.forEach(b => {
+    const row = document.createElement('div');
+    row.textContent = `${b.name}: $${b.pnl} (${b.trades} trades)`;
+    row.style.cssText = 'padding:2px 0;color:' + (b.pnl >= 0 ? '#34d399' : '#f87171');
+    el.appendChild(row);
+  });
+}
+
+function addSkill() {
+  const input = document.getElementById('newSkillInput');
+  const name = input.value.trim();
+  if (!name) return;
+  fetch(API_BASE + '/api/skills', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, tags: [] })
+  }).then(() => refreshDashboard()).catch(() => {});
+  input.value = '';
+}
+
+let _walletCooldown = 0;
+async function connectEVM() {
+  if (!window.ethereum) { sysLog('MetaMask not found', 'tag-yellow'); return; }
+  if (Date.now() < _walletCooldown) return;
+  try {
+    const accts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (!accts.length) { _walletCooldown = Date.now() + 300000; return; }
+    const addr = accts[0];
+    const el = document.getElementById('evm-addr');
+    if (el) el.textContent = addr.slice(0, 6) + '...' + addr.slice(-4);
+    sysLog('EVM connected: ' + addr.slice(0, 10), 'tag-green');
+  } catch (e) { sysLog('EVM error: ' + e.message, 'tag-red'); }
+}
+
+async function connectSOL() {
+  if (!window.solana) { sysLog('Phantom not found', 'tag-yellow'); return; }
+  try {
+    const resp = await window.solana.connect();
+    const addr = resp.publicKey.toString();
+    const el = document.getElementById('sol-addr');
+    if (el) el.textContent = addr.slice(0, 6) + '...' + addr.slice(-4);
+    sysLog('SOL connected: ' + addr.slice(0, 10), 'tag-green');
+  } catch (e) { sysLog('SOL error: ' + e.message, 'tag-red'); }
+}
+
+async function claimUBI() {
+  const d = await safeFetch('ubi', API_BASE + '/api/ubi/claim', { method: 'POST' });
+  if (d) { sysLog('UBI claimed!', 'tag-green'); refreshDashboard(); }
+}
+
+function dexSwap() {
+  const from = document.getElementById('dex-from')?.value;
+  const to = document.getElementById('dex-to')?.value;
+  const amt = document.getElementById('dex-amt')?.value;
+  if (!from || !to || !amt) { sysLog('Fill all DEX fields', 'tag-yellow'); return; }
+  safeFetch('dex', API_BASE + '/api/bossbots/trade', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from_token: from, to_token: to, amount: parseFloat(amt) })
+  }).then(d => {
+    const el = document.getElementById('dex-status');
+    if (el) el.textContent = d ? 'Swap executed' : 'Swap failed';
+    sysLog(d ? 'DEX swap OK' : 'DEX swap failed', d ? 'tag-green' : 'tag-red');
+  });
+}
+
+// Auto-refresh dashboard every 30s if sidebar is open
+setInterval(() => {
+  if (document.getElementById('dash-sidebar')?.classList.contains('open')) refreshDashboard();
+}, 30000);
+
+// Keyboard shortcut: Tab toggles dashboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'Tab' && !e.target.matches('input,textarea')) { e.preventDefault(); toggleDash(); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  BRAIN WEBSOCKET — connects twin to the main brain
+// ═══════════════════════════════════════════════════════════════════════════
+
+const BrainWS = (() => {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${proto}//${location.host}/ws`;
+  let ws = null;
+  let retryDelay = 1000;
+  const statusEl = document.getElementById('brain-status-text');
+  const dotEl = document.getElementById('brain-dot');
+  const logEl = document.getElementById('brain-log');
+
+  function log(msg) {
+    if (!logEl) return;
+    const line = document.createElement('div');
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+    // Keep last 50 lines
+    while (logEl.childNodes.length > 50) logEl.removeChild(logEl.firstChild);
+  }
+
+  function setStatus(text, color) {
+    if (statusEl) { statusEl.textContent = text; statusEl.style.color = color; }
+    if (dotEl) dotEl.classList.toggle('online', color === '#34d399');
+  }
+
+  function connect() {
+    try { ws = new WebSocket(wsUrl); } catch (e) { scheduleRetry(); return; }
+
+    ws.onopen = () => {
+      retryDelay = 1000;
+      setStatus('BRAIN ● ONLINE', '#34d399');
+      log('Brain connected');
+      ws.send(JSON.stringify({ type: 'hello', client: 'twin-avatar' }));
+    };
+
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        handleBrainMessage(msg);
+      } catch (_) {}
+    };
+
+    ws.onclose = () => {
+      setStatus('BRAIN ○ OFFLINE', '#f87171');
+      scheduleRetry();
+    };
+    ws.onerror = () => { if (ws) ws.close(); };
+  }
+
+  function scheduleRetry() {
+    setTimeout(connect, retryDelay);
+    retryDelay = Math.min(retryDelay * 1.5, 15000);
+  }
+
+  function send(msg) {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+  }
+
+  // Handle incoming brain messages → drive avatar state
+  function handleBrainMessage(msg) {
+    switch (msg.type) {
+      case 'welcome':
+        log(`Twin: ${msg.twin} | Emotion: ${msg.emotion}`);
+        AnimController.playByKey('idle');
+        break;
+
+      case 'hello_ack':
+        break;
+
+      case 'response':
+        // Brain responded — animate speak + show text + mouth morph
+        log(`Brain: ${msg.response}`);
+        showSpeechBubble(msg.response);
+        if (msg.emotion_state) MorphController.setEmotion(msg.emotion_state);
+        animThenIdle('wavehi', Math.max(3000, msg.response.length * 50));
+        break;
+
+      case 'stateMutation':
+        // Brain state changed — brief think animation
+        if (AnimController.currentKey === 'idle') {
+          AnimController.playByKey('idle'); // subtle acknowledge
+        }
+        break;
+
+      case 'bossbots_trade':
+      case 'quant_signal':
+        log(`Trade: ${msg.data?.pair || 'signal'}`);
+        animThenIdle('samba', 2500);
+        break;
+
+      case 'payment_received':
+        log(`Payment: $${msg.amount} via ${msg.rail}`);
+        animThenIdle('samba', 3000);
+        break;
+
+      case 'telemetry_event':
+        break; // silent
+
+      default:
+        if (msg.type) log(`Event: ${msg.type}`);
+    }
+  }
+
+  connect();
+  return { send, log, connect };
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SPEECH BUBBLE — shows brain responses as floating text
+// ═══════════════════════════════════════════════════════════════════════════
+
+function showSpeechBubble(text) {
+  let bubble = document.getElementById('speech-bubble');
+  if (!bubble) return;
+  bubble.textContent = text;
+  bubble.classList.add('show');
+  // Animate mouth morphs if available
+  if (MorphController && MorphController._manager) {
+    MorphController.speakCycle(text.length);
+  }
+  clearTimeout(bubble._hideTimer);
+  const dur = Math.max(4000, text.length * 60);
+  bubble._hideTimer = setTimeout(() => { bubble.classList.remove('show'); }, dur);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CHAT INPUT — user talks to brain through the twin
+// ═══════════════════════════════════════════════════════════════════════════
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  if (!input || !input.value.trim()) return;
+  const text = input.value.trim();
+  input.value = '';
+  BrainWS.log(`You: ${text}`);
+
+  // Parse commands
+  const lower = text.toLowerCase();
+  const chatAnimMap = {
+    dance:'samba', samba:'samba', walk:'walk', run:'run',
+    wave:'wavehi', hi:'wavehi', stop:'idle', idle:'idle'
+  };
+  const animKey = chatAnimMap[lower];
+  if (animKey) {
+    AnimController.playByKey(animKey);
+    BrainWS.log(animKey === 'samba' ? 'Dancing!' : animKey);
+    return;
+  }
+
+  // Send to brain for AI response
+  BrainWS.send({ type: 'prompt', prompt: text });
+  // Show thinking animation while waiting
+  AnimController.playByKey('walk'); // gentle movement = thinking
+  setTimeout(() => {
+    if (AnimController.currentKey === 'walk') AnimController.playByKey('idle');
+  }, 8000); // fallback to idle if no response
+}
+
+</script>
+
+<!-- Speech bubble -->
+<div id="speech-bubble"></div>
+
+<!-- Brain log -->
+<div id="brain-log"></div>
+
+<!-- Dashboard toggle tab -->
+<div class="dash-toggle" id="dash-toggle" onclick="toggleDash()">&#9654;</div>
+
+<!-- ── DASHBOARD SIDEBAR (ported from avatar.html) ── -->
+<div id="dash-sidebar">
+
+  <div class="dp">
+    <h4>Skills <span id="skills-count-panel"></span></h4>
+    <div style="display:flex;gap:4px;margin-bottom:4px;">
+      <input class="d-input" id="newSkillInput" placeholder="Add skill..." style="margin-bottom:0" aria-label="New skill name" onkeydown="if(event.key==='Enter')addSkill()"/>
+      <button class="d-btn" onclick="addSkill()" style="width:auto;padding:4px 8px;margin-top:0;">+</button>
+    </div>
+    <div id="skill-list" style="max-height:60px;overflow-y:auto;"></div>
+  </div>
+
+  <div class="dp">
+    <h4>Mission Board</h4>
+    <div class="mc-grid">
+      <div class="mc-cell"><div class="lbl">BACKLOG</div><div class="val" id="mb-backlog">0</div></div>
+      <div class="mc-cell"><div class="lbl">ACTIVE</div><div class="val" id="mb-active">0</div></div>
+      <div class="mc-cell"><div class="lbl">REVIEW</div><div class="val" id="mb-review">0</div></div>
+      <div class="mc-cell"><div class="lbl">DONE</div><div class="val" id="mb-done">0</div></div>
+    </div>
+  </div>
+
+  <div class="dp">
+    <h4>Wallet</h4>
+    <button class="d-btn" onclick="connectEVM()">Connect MetaMask</button>
+    <button class="d-btn" onclick="connectSOL()" style="border-color:rgba(150,80,255,.3);color:#d9a;">Connect Phantom</button>
+    <div class="mr" style="margin-top:4px"><span>EVM</span><span class="mv" id="evm-addr">disconnected</span></div>
+    <div class="mr"><span>SOL</span><span class="mv" id="sol-addr">disconnected</span></div>
+  </div>
+
+  <div class="dp">
+    <h4>UBI Engine</h4>
+    <div class="mr"><span>Claims</span><span class="mv" id="ubi-claims">0</span></div>
+    <div class="mr"><span>Distributed</span><span class="mv" id="ubi-dist">0</span></div>
+    <div class="mr"><span>My Balance</span><span class="mv" id="ubi-bal">--</span></div>
+    <button class="d-btn" onclick="claimUBI()">Claim UBI</button>
+  </div>
+
+  <div class="dp">
+    <h4>Treasury</h4>
+    <div class="mr"><span>Balance</span><span class="mv" id="rev-balance">0</span></div>
+    <div class="mr"><span>Revenue</span><span class="mv" id="rev-dist">0</span></div>
+  </div>
+
+  <div class="dp">
+    <h4>SDG Metrics</h4>
+    <div class="mr"><span>Tasks</span><span class="mv" id="sdg-tasks">0</span></div>
+    <div class="mr"><span>UBI Claims</span><span class="mv" id="sdg-ubi">0</span></div>
+    <div class="mr"><span>Trades</span><span class="mv" id="sdg-trades">0</span></div>
+  </div>
+
+  <div class="dp">
+    <h4>Marketplace</h4>
+    <div id="market-list" style="max-height:60px;overflow-y:auto;font-size:8px;color:#64748b;"></div>
+    <button class="d-btn" onclick="loadMarket()">Refresh</button>
+  </div>
+
+  <div class="dp">
+    <h4>BossBot Signals</h4>
+    <div id="bossbot-list" style="max-height:60px;overflow-y:auto;font-size:8px;color:#64748b;"></div>
+  </div>
+
+  <div class="dp">
+    <h4>DEX</h4>
+    <div style="display:flex;gap:4px;margin-bottom:4px;">
+      <input class="d-input" id="dex-from" placeholder="From" style="margin-bottom:0"/>
+      <input class="d-input" id="dex-to" placeholder="To" style="margin-bottom:0"/>
+    </div>
+    <input class="d-input" id="dex-amt" placeholder="Amount"/>
+    <button class="d-btn" onclick="dexSwap()">Swap</button>
+    <div id="dex-status" style="font-size:8px;color:#475569;margin-top:3px;"></div>
+  </div>
+
+  <div class="dp">
+    <h4>eSIM</h4>
+    <div class="mr"><span>Status</span><span class="mv" id="esim-status">--</span></div>
+    <div class="mr"><span>Data Left</span><span class="mv" id="esim-data">--</span></div>
+  </div>
+
+  <div class="dp">
+    <h4>System Log</h4>
+    <div id="xterm-out"></div>
+  </div>
+
+</div>
+
+<!-- ── BOTTOM PANEL ── -->
+<div id="bottom-panel">
+  <div id="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('chat')" aria-label="Chat mode">CHAT</button>
+    <button class="mode-tab" onclick="switchMode('anim')" aria-label="Animation controls">ANIMATE</button>
+    <button class="mode-tab" onclick="switchMode('biz')" aria-label="Business commands">BUSINESS</button>
+    <button class="mode-tab" onclick="switchMode('swarm')" aria-label="Swarm orchestration">SWARM</button>
+    <button class="mode-tab" onclick="switchMode('aios')" aria-label="Autonomous OS control">AI-OS</button>
+  </div>
+
+  <!-- Chat mode -->
+  <div id="chat-panel" class="panel-content active">
+    <div class="chat-row">
+      <input id="chat-input" type="text" placeholder="Talk to EHSA... (dance, wave, treasury, help)"
+        onkeydown="if(event.key==='Enter')sendChat()" autocomplete="off" />
+      <button class="send-btn" onclick="sendChat()">SEND</button>
+    </div>
+  </div>
+
+  <!-- Animation mode -->
+  <div id="anim-panel" class="panel-content">
+    <div class="anim-grid">
+      <button class="anim-pill active" onclick="playAnim('idle')">Idle</button>
+      <button class="anim-pill" onclick="playAnim('walk')">Walk</button>
+      <button class="anim-pill" onclick="playAnim('run')">Run</button>
+      <button class="anim-pill" onclick="playAnim('samba')">Dance</button>
+      <button class="anim-pill" onclick="playAnim('wavehi')">Wave</button>
+    </div>
+  </div>
+
+  <!-- Business mode -->
+  <div id="biz-panel" class="panel-content">
+    <div class="biz-grid">
+      <button class="biz-btn" onclick="bizCmd('treasury')"><span class="icon">$</span>Treasury</button>
+      <button class="biz-btn" onclick="bizCmd('revenue')"><span class="icon">+</span>Revenue</button>
+      <button class="biz-btn" onclick="bizCmd('deals')"><span class="icon">!</span>Deals</button>
+      <button class="biz-btn" onclick="bizCmd('crm')"><span class="icon">#</span>CRM</button>
+      <button class="biz-btn" onclick="bizCmd('invoicing')"><span class="icon">=</span>Invoices</button>
+      <button class="biz-btn" onclick="bizCmd('marketing')"><span class="icon">*</span>Marketing</button>
+      <button class="biz-btn" onclick="bizCmd('legal')"><span class="icon">@</span>Legal</button>
+      <button class="biz-btn" onclick="bizCmd('support')"><span class="icon">?</span>Support</button>
+    </div>
+  </div>
+
+  <!-- Swarm mode -->
+  <div id="swarm-panel" class="panel-content">
+    <div class="biz-grid">
+      <button class="biz-btn" onclick="swarmCmd('orchestrate')"><span class="icon">~</span>Orchestrate</button>
+      <button class="biz-btn" onclick="swarmCmd('dispatch')"><span class="icon">&gt;</span>Dispatch</button>
+      <button class="biz-btn" onclick="swarmCmd('status')"><span class="icon">:</span>Swarm Status</button>
+      <button class="biz-btn" onclick="swarmCmd('heal')"><span class="icon">+</span>Auto-Heal</button>
+      <button class="biz-btn" onclick="swarmCmd('scale')"><span class="icon">^</span>Scale Up</button>
+      <button class="biz-btn" onclick="swarmCmd('report')"><span class="icon">=</span>Report</button>
+    </div>
+  </div>
+
+  <!-- AI-OS mode -->
+  <div id="aios-panel" class="panel-content">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+      <span style="font-size:9px;color:#64748b;letter-spacing:.08em;">MODE:</span>
+      <button class="anim-pill active" onclick="AutonomousOS.setMode('auto');this.parentElement.querySelectorAll('.anim-pill').forEach(b=>b.classList.remove('active'));this.classList.add('active')">AUTO</button>
+      <button class="anim-pill" onclick="AutonomousOS.setMode('assist');this.parentElement.querySelectorAll('.anim-pill').forEach(b=>b.classList.remove('active'));this.classList.add('active')">ASSIST</button>
+      <button class="anim-pill" onclick="AutonomousOS.setMode('observe');this.parentElement.querySelectorAll('.anim-pill').forEach(b=>b.classList.remove('active'));this.classList.add('active')">OBSERVE</button>
+      <span style="flex:1"></span>
+      <span style="font-size:9px;color:#34d399;" id="aios-revenue">$0</span>
+    </div>
+    <div class="biz-grid" style="grid-template-columns:repeat(3,1fr);">
+      <button class="biz-btn" onclick="refreshDashboard()"><span class="icon">@</span>Refresh</button>
+      <button class="biz-btn" onclick="AutonomousOS.setWalletReady(true);sysLog('Wallet unlocked','tag-green')"><span class="icon">$</span>Unlock</button>
+      <button class="biz-btn" onclick="sysLog('Force cycle');"><span class="icon">!</span>Force</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

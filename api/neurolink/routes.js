@@ -12,9 +12,11 @@ const { PredictiveEngine } = require('./predictive-engine');
 const { UserClone } = require('./user-clone');
 const { IntelligenceGraph } = require('./intelligence-graph');
 const { AutonomousMonetization } = require('./autonomous-monetization');
+const { MultiUserStream } = require('./multi-user-stream');
+const { LiveMonetizationOrchestrator } = require('./live-monetization-orchestrator');
 
 class NeuroLinkService {
-  constructor() {
+  constructor(database = null) {
     this.adapter = new AmbientAdapter();
     this.history = new NeuroHistory();
     this.predictor = new PredictiveEngine(50); // 50-state sliding window
@@ -23,6 +25,10 @@ class NeuroLinkService {
     // Level 3: Intelligence Graph + Autonomous Monetization
     this.intelligenceGraph = new IntelligenceGraph();
     this.autonomousMonetization = null; // Initialized after revenue hooks are wired
+
+    // Level 3: Real-time Multi-User Streaming + Live Monetization
+    this.multiUserStream = new MultiUserStream(database);
+    this.liveOrchestrator = null; // Initialized after multiUserStream is ready
 
     this.currentState = null;
     this.currentStatus = null;
@@ -43,6 +49,16 @@ class NeuroLinkService {
 
     console.log(`[NeuroLink] Starting with device=${this.device}, interval=${this.interval}ms`);
 
+    // Start multi-user stream flushing
+    this.multiUserStream.startFlushTimer();
+
+    // Initialize and start live orchestrator
+    if (!this.liveOrchestrator) {
+      this.liveOrchestrator = new LiveMonetizationOrchestrator(this.multiUserStream, this.intelligenceGraph, this.multiUserStream.db);
+      this.liveOrchestrator.startProcessing(1000); // Process triggers every 1 second
+      console.log('[NeuroLink] Live monetization orchestrator started');
+    }
+
     this.loopInterval = setInterval(async () => {
       try {
         await this.tick();
@@ -59,8 +75,15 @@ class NeuroLinkService {
     if (this.loopInterval) {
       clearInterval(this.loopInterval);
       this.loopInterval = null;
-      console.log('[NeuroLink] Stopped');
     }
+
+    // Stop real-time systems
+    this.multiUserStream.stopFlushTimer();
+    if (this.liveOrchestrator) {
+      this.liveOrchestrator.stopProcessing();
+    }
+
+    console.log('[NeuroLink] Stopped');
   }
 
   /**
@@ -141,6 +164,16 @@ class NeuroLinkService {
           data: autonomousAction,
           timestamp: new Date().toISOString()
         });
+      }
+
+      // ─── LEVEL 3: REAL-TIME MULTI-USER STREAMING ───
+      // Ingest current user state into multi-user stream
+      if (this.multiUserStream) {
+        try {
+          await this.multiUserStream.ingestState('default-user', state, this.lastPrediction);
+        } catch (err) {
+          console.warn('[NeuroLink] Stream ingest error:', err.message);
+        }
       }
 
       // Emit to WebSocket subscribers
@@ -472,6 +505,71 @@ class NeuroLinkService {
   initializeAutonomousMonetization(revenueHooks) {
     this.autonomousMonetization = new AutonomousMonetization(this.intelligenceGraph, revenueHooks);
     console.log('[NeuroLink] Autonomous monetization initialized');
+  }
+
+  /**
+   * Get real-time stream statistics (Level 3)
+   */
+  getStreamStats() {
+    return this.multiUserStream.getStats();
+  }
+
+  /**
+   * Get live orchestrator status (Level 3)
+   */
+  getOrchestratorStatus() {
+    if (!this.liveOrchestrator) {
+      return { status: 'not_initialized' };
+    }
+    return this.liveOrchestrator.getExecutionStats();
+  }
+
+  /**
+   * Get live orchestrator revenue summary (Level 3)
+   */
+  getOrchestratorRevenue() {
+    if (!this.liveOrchestrator) {
+      return { error: 'Orchestrator not initialized' };
+    }
+    return this.liveOrchestrator.getRevenueSummary();
+  }
+
+  /**
+   * Get pending monetization triggers (Level 3)
+   */
+  getPendingTriggers(limit = 20) {
+    return this.multiUserStream.getMonetizationTriggers(limit);
+  }
+
+  /**
+   * Get recent orchestrator actions (Level 3)
+   */
+  getRecentOrchestratorActions(limit = 50) {
+    if (!this.liveOrchestrator) {
+      return [];
+    }
+    return this.liveOrchestrator.getRecentActions(limit);
+  }
+
+  /**
+   * Register a new user in the multi-user stream (Level 3)
+   */
+  async registerStreamUser(userId, metadata = {}) {
+    return this.multiUserStream.registerUser(userId, metadata);
+  }
+
+  /**
+   * Get a specific user's current state from the stream (Level 3)
+   */
+  getUserStreamState(userId) {
+    return this.multiUserStream.getUserState(userId);
+  }
+
+  /**
+   * Get all active user states from the stream (Level 3)
+   */
+  getAllStreamUserStates() {
+    return this.multiUserStream.getAllUserStates();
   }
 }
 
