@@ -34,6 +34,7 @@ const SHARED_DIR = path.join(ROOT, 'shared');
 const data = require('./data-service');
 const db = require('./lib/db');
 const { requireAuth: gatewayAuth } = require('./middleware/auth');
+let agents; try { agents = require('./lib/agents'); } catch (_) { agents = null; }
 
 // ── Zero-Trust Verification Layer ──────────────────────────────────────────
 let zt, proofStore, chainVerify;
@@ -887,6 +888,29 @@ app.get('/api/banks/:id', async (req, res) => {
     const history = await banks.getBankHistory(req.params.id, 10);
     res.json({ bank, history, ts: Date.now() });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── AGENT EXECUTION ─────────────────────────────────────────────────────────
+app.post('/api/agents/run', express.json(), async (req, res) => {
+  if (!agents) return res.status(503).json({ ok: false, error: 'Agent module not loaded' });
+  var agentName = (req.body || {}).agentName || (req.body || {}).agent;
+  if (!agentName) return res.status(400).json({ error: 'agentName required' });
+  try {
+    var result = await agents.runAgent(agentName, (req.body || {}).input || '');
+    res.json({ ok: true, ...result, ts: Date.now() });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/agents/run-all', express.json(), async (req, res) => {
+  if (!agents) return res.status(503).json({ ok: false, error: 'Agent module not loaded' });
+  try {
+    var result = await agents.runAllAgentsValidated();
+    res.json({ ok: true, ...result, ts: Date.now() });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 app.get('/api/treasury', async (_req, res) => {
