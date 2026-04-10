@@ -33,12 +33,31 @@ const axios = require('axios');
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
-const PORT = parseInt(process.env.BRAIN_PORT, 10) || 8000;
+const PORT = parseInt(process.env.BRAIN_PORT, 10) || 8080;
 const app = express();
 const server = http.createServer(app);
 
-// ── CORS + JSON ─────────────────────────────────────────────────────────────
+// ── CORS + JSON + COOKIES ──────────────────────────────────────────────────
 app.use(express.json());
+let cookieParser; try { cookieParser = require('cookie-parser'); app.use(cookieParser()); } catch (_) {}
+
+// ── REQUEST LOGGING ────────────────────────────────────────────────────────
+if (process.env.NODE_ENV !== 'test') {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => console.log(`[BRAIN] ${req.method} ${req.path} — ${res.statusCode} (${Date.now()-start}ms)`));
+    next();
+  });
+}
+
+// ── ACCESS CONTROL — tier-based page guard ─────────────────────────────────
+try { const { pageGuard } = require('./middleware/access-control'); app.use(pageGuard()); console.log('[BRAIN] Access control (4-tier page guard) ACTIVE'); } catch(e) { console.warn('[BRAIN] Access control not loaded:', e.message); }
+
+// ── STATIC FILES ───────────────────────────────────────────────────────────
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ── AGENT EXECUTION SERVER ─────────────────────────────────────────────────
+try { const { registerAgentExecutionRoutes } = require('./lib/agent-execution-server'); registerAgentExecutionRoutes(app); console.log('[BRAIN] Agent Execution Server ACTIVE'); } catch (e) { console.warn('[BRAIN] Agent execution:', e.message); }
 
 // ── JSON GUARD — prevent HTML responses on agent/api routes ─────────────────
 try {
@@ -3168,7 +3187,157 @@ if (_proofStore && _zt) {
   console.warn('[BRAIN] proof-store or zero-trust unavailable — proof routes disabled');
 }
 
-// ── CATCH-ALL for unknown /api/* routes — return 404 instead of misleading 200 ──
+// ═══════════════════════════════════════════════════════════════════════════
+// GATEWAY FEATURES (merged — no more localhost proxy)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── AUTH PROXY → port 5001 ─────────────────────────────────────────────────
+const AUTH_SVC = 'http://localhost:5001';
+async function proxyToAuth(req, res) {
+  try {
+    const url = AUTH_SVC + req.path + (req._parsedUrl?.search || '');
+    const opts = { method: req.method, headers: { 'Content-Type': 'application/json' } };
+    if (req.headers.authorization) opts.headers['Authorization'] = req.headers.authorization;
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const text = await r.text();
+    res.status(r.status).set('Content-Type', 'application/json').send(text);
+  } catch (e) { res.status(502).json({ error: 'Auth service unreachable', details: e.message }); }
+}
+app.post('/auth/register', (req, res) => proxyToAuth(req, res));
+app.post('/auth/login',    (req, res) => proxyToAuth(req, res));
+app.get('/auth/verify',    (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/root',       (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/state',      (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/verify',     (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/events',     (req, res) => proxyToAuth(req, res));
+app.get('/auth/audit/proof/:lh',  (req, res) => proxyToAuth(req, res));
+
+// ── UNIVERSAL NAV + BOOT SCREEN INJECTION ──────────────────────────────────
+const XPUBLIC = path.join(__dirname, 'Xpublic');
+const NAV_HTML = `
+<style>
+#bridge-nav{background:#0a1520;border-bottom:2px solid #1a2d40;padding:5px 12px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-family:system-ui,monospace;font-size:10px;letter-spacing:.06em;position:sticky;top:0;z-index:9999}
+#bridge-nav a{color:#4d6678;text-decoration:none;padding:2px 5px;border:1px solid #1a2d40;border-radius:3px;white-space:nowrap}
+#bridge-nav a:hover{color:#00c8ff;border-color:#00c8ff}
+#bridge-nav .logo{color:#00c8ff;font-weight:700;font-size:12px;margin-right:6px;border:none;padding:0}
+#bridge-nav .sep{color:#1a2d40;margin:0 2px}
+#bridge-nav .cat{color:#4d6678;font-size:7px;letter-spacing:.12em;margin-right:2px}
+#bridge-nav .net{color:#fb923c;border-color:#3a2a1a;background:rgba(251,146,60,.08)}
+#bridge-nav .join{color:#00e57b;border-color:#0d3a1a;background:rgba(0,229,123,.08)}
+#bnav-toggle{display:none;background:none;border:1px solid #1a2d40;color:#00c8ff;font-size:16px;padding:2px 8px;border-radius:4px;cursor:pointer;margin-left:auto}
+#bnav-links{display:contents}
+@media(max-width:768px){#bnav-toggle{display:block}#bnav-links{display:none;width:100%;flex-direction:column;gap:4px;padding:8px 0}#bnav-links.open{display:flex}#bnav-links a{padding:6px 10px;font-size:12px}#bridge-nav .sep,#bridge-nav .cat{display:none}}
+</style>
+<nav id="bridge-nav">
+<a href="/dashboard" class="logo">BRIDGE AI</a>
+<button id="bnav-toggle" onclick="document.getElementById('bnav-links').classList.toggle('open')">&#9776;</button>
+<div id="bnav-links">
+<span class="sep">|</span><span class="cat">SYSTEM</span>
+<a href="/topology.html">TOPOLOGY</a><a href="/registry.html">REGISTRY</a><a href="/system-status-dashboard.html">STATUS</a><a href="/terminal.html">TERM</a><a href="/control.html">CONTROL</a>
+<span class="sep">|</span><span class="cat">ECONOMY</span>
+<a href="/marketplace.html">MARKET</a><a href="/ban">BAN</a>
+<span class="sep">|</span><span class="cat">AI</span>
+<a href="/avatar.html">AVATAR</a><a href="/abaas.html">ABAAS</a><a href="/aoe-dashboard.html">AOE</a>
+<span class="sep">|</span>
+<a href="/corporate.html">BIZ</a><a href="/brand.html">BRAND</a><a href="/brain-live">BRAIN</a>
+<span class="sep">|</span>
+<a href="/platforms.html" class="net">NET</a><a href="/sitemap.html">MAP</a><a href="/onboarding.html" class="join">JOIN</a>
+</div></nav>`;
+
+const PHERE_INJECT = `<link rel="stylesheet" href="/bridge-phere.css" id="bridge-phere-css"><script src="/bridge-phere.js" defer><\/script>`;
+
+const BOOT_THEMES = {
+  '/': { layer: 'L0', name: 'COMMAND CENTER', theme: 'cosmic', color: '#00c8ff', msg: 'Initializing Bridge AI OS...' },
+  '/onboarding.html': { layer: 'L0', name: 'ONBOARDING', theme: 'cosmic', color: '#00e57b', msg: 'Preparing registration...' },
+  '/marketplace.html': { layer: 'L1', name: 'MARKETPLACE', theme: 'blueprint', color: '#00c8ff', msg: 'Loading task marketplace...' },
+  '/topology.html': { layer: 'L2', name: 'TOPOLOGY', theme: 'telemetry', color: '#00e57b', msg: 'Scanning network topology...' },
+  '/terminal.html': { layer: 'L3', name: 'TERMINAL', theme: 'command', color: '#00e57b', msg: 'Connecting PTY shell...' },
+};
+const THEME_COLORS = {
+  cosmic: { bg: 'radial-gradient(circle at center,#0a1a2a 0%,#050a0f 70%)', svg: '<circle cx="50%" cy="50%" r="80" stroke="{COLOR}" fill="none" stroke-width="1"><animate attributeName="r" values="60;100;60" dur="3s" repeatCount="indefinite"/></circle>' },
+  blueprint: { bg: 'linear-gradient(135deg,#050a12 0%,#0a1525 100%)', svg: '<rect x="40" y="40" width="220" height="120" fill="none" stroke="{COLOR}" stroke-width="0.5" stroke-dasharray="4 2"><animate attributeName="stroke-dashoffset" from="0" to="24" dur="2s" repeatCount="indefinite"/></rect>' },
+  telemetry: { bg: 'linear-gradient(180deg,#050a0f 0%,#0a1520 100%)', svg: '<polyline points="20,120 60,80 100,110 140,50 180,90 220,40 260,70" fill="none" stroke="{COLOR}" stroke-width="1.5"><animate attributeName="stroke-dashoffset" from="500" to="0" dur="2s" fill="freeze"/></polyline>' },
+  command: { bg: 'linear-gradient(180deg,#000 0%,#0a0f14 100%)', svg: '<text x="30" y="60" fill="{COLOR}" font-family="monospace" font-size="10" opacity="0.5">$ system boot<animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite"/></text>' },
+};
+function getBootScreen(pagePath) {
+  const config = BOOT_THEMES[pagePath] || BOOT_THEMES['/'];
+  const theme = THEME_COLORS[config.theme] || THEME_COLORS.cosmic;
+  const svgContent = theme.svg.replace(/\{COLOR\}/g, config.color);
+  return `<div id="boot-screen" style="position:fixed;inset:0;z-index:99999;background:${theme.bg};display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,monospace;transition:opacity .6s"><svg viewBox="0 0 300 200" width="200" height="130" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg><div style="color:${config.color};font-size:1.2rem;font-weight:700;letter-spacing:.25em;margin-top:1rem">${config.name}</div><div style="color:#4d6678;font-size:.65rem;letter-spacing:.1em;margin-top:.3rem">${config.layer} — ${config.msg}</div><div style="width:120px;height:3px;background:#1a2d40;border-radius:2px;margin-top:1rem;overflow:hidden"><div style="height:100%;background:${config.color};border-radius:2px;animation:bootbar 1.8s ease-in-out forwards"></div></div></div><style>@keyframes bootbar{0%{width:0}50%{width:70%}100%{width:100%}}</style><script>setTimeout(()=>{const b=document.getElementById('boot-screen');if(b){b.style.opacity='0';setTimeout(()=>b.remove(),600)}},2000)</script>`;
+}
+function serveWithNav(filePath, res) {
+  try {
+    let html = fs.readFileSync(filePath, 'utf8');
+    if (!html.includes('id="bridge-nav"')) {
+      const hasOwnBoot = html.includes('id="boot-screen"');
+      const pageName = '/' + path.basename(filePath);
+      const boot = hasOwnBoot ? '' : getBootScreen(pageName);
+      html = html.replace(/<body[^>]*>/i, (m) => m + boot + NAV_HTML);
+    }
+    if (!html.includes('bridge-phere-css') && html.includes('</head>')) {
+      html = html.replace('</head>', PHERE_INJECT + '</head>');
+    }
+    res.type('html').send(html);
+  } catch (e) { res.status(404).send('Page not found'); }
+}
+
+// Serve Xpublic pages with nav injection
+app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
+try {
+  const xFiles = fs.readdirSync(XPUBLIC).filter(f => f.endsWith('.html'));
+  xFiles.forEach(f => { app.get('/' + f, (_req, res) => serveWithNav(path.join(XPUBLIC, f), res)); });
+} catch (_) {}
+app.get('/brain-live', (_req, res) => { try { res.sendFile(path.join(XPUBLIC, 'ehsa-brain.html')); } catch(_) { res.status(404).end(); } });
+
+// ── SHORT-PATH ALIASES ─────────────────────────────────────────────────────
+const SHORT_ROUTES = {
+  '/landing':'/landing.html','/apps':'/50-applications.html','/treasury-dash':'/aoe-dashboard.html',
+  '/dashboard':'/aoe-dashboard.html','/status':'/system-status-dashboard.html','/registry':'/registry.html',
+  '/crm':'/crm.html','/invoicing':'/invoicing.html','/marketing':'/marketing.html','/legal':'/legal.html',
+  '/tickets':'/tickets.html','/pricing':'/pricing.html','/ehsa':'/ehsa-app.html','/supac':'/supac-home.html',
+  '/ubi':'/ubi-home.html','/aid':'/aid-home.html','/aurora':'/aurora-home.html','/sitemap':'/sitemap.html',
+  '/onboarding':'/onboarding.html','/agents':'/agents.html','/docs':'/docs.html','/marketplace':'/marketplace.html',
+  '/topology':'/topology.html','/terminal':'/terminal.html','/settings':'/settings.html','/home':'/home.html',
+  '/welcome':'/welcome.html','/corporate':'/corporate.html','/brand':'/brand.html','/governance':'/governance.html',
+  '/twins':'/digital-twin-console.html','/intelligence':'/intelligence.html','/executive':'/executive-dashboard.html',
+  '/ban':'/ban-home.html','/hospital':'/hospital-home.html','/rootedearth':'/rootedearth-home.html',
+  '/abaas':'/abaas.html','/defi':'/defi.html','/wallet':'/wallet.html','/trading':'/trading.html',
+  '/affiliate':'/affiliate.html','/join':'/join.html','/admin':'/admin.html','/avatar':'/avatar.html',
+  '/platforms':'/platforms.html','/ehsa-app':'/ehsa-app.html','/ehsa-brain':'/ehsa-brain.html',
+  '/logs':'/logs.html','/twin-wall':'/twin-wall.html','/face':'/anatomical_face.html',
+  '/withdraw':'/admin-withdraw.html','/payment':'/payment.html','/payment-success':'/payment-success.html',
+  '/payment-cancel':'/payment-cancel.html','/command-center':'/command-center.html','/banks':'/banks.html',
+  '/infra':'/infra.html','/ui':'/ui.html','/applications':'/applications.html',
+  '/bridge-audit':'/bridge-audit-dashboard.html','/topology-layers':'/topology-layers.html',
+  '/view-logs':'/view-logs.html','/treasury':'/treasury-dashboard.html','/economy':'/economy.html',
+  '/admin-command':'/admin-command.html','/admin-revenue':'/admin-revenue.html',
+  '/admin-sitemap':'/admin-sitemap.html','/console':'/console.html','/bridge':'/bridge-home.html',
+  '/auth-dashboard':'/auth-dashboard.html','/checkout':'/checkout.html','/portal':'/portal.html',
+  '/voice':'/voice.html','/offline':'/offline.html',
+};
+Object.entries(SHORT_ROUTES).forEach(([short, target]) => {
+  app.get(short, (_req, res) => res.redirect(target));
+});
+
+// ── SUBDOMAIN ROUTING ──────────────────────────────────────────────────────
+const SUBDOMAIN_MAP = {
+  'ai-os.co.za': 'home.html', 'go.ai-os.co.za': 'landing.html',
+  'gateway.ai-os.co.za': 'landing.html', 'bridge.ai-os.co.za': 'bridge-home.html',
+  'ban.ai-os.co.za': 'ban-home.html', 'supac.ai-os.co.za': 'supac-home.html',
+  'ehsa.ai-os.co.za': 'ehsa-app.html', 'aurora.ai-os.co.za': 'aurora-home.html',
+  'ubi.ai-os.co.za': 'ubi-home.html', 'aid.ai-os.co.za': 'aid-home.html',
+  'abaas.ai-os.co.za': 'abaas-home.html', 'hospitalinabox.ai-os.co.za': 'hospital-home.html',
+  'rootedearth.ai-os.co.za': 'rootedearth-home.html',
+};
+app.get('/', (req, res) => {
+  const host = req.hostname || req.headers.host?.split(':')[0] || '';
+  const subPage = SUBDOMAIN_MAP[host];
+  if (subPage) return serveWithNav(path.join(XPUBLIC, subPage), res);
+  serveWithNav(path.join(__dirname, 'ui.html'), res);
+});
+
+// ── CATCH-ALL for unknown /api/* routes ────────────────────────────────────
 app.all('/api/*path', (req, res) => {
   res.status(404).json({ ok: false, error: 'not_found', path: req.path, method: req.method, ts: Date.now() });
 });
