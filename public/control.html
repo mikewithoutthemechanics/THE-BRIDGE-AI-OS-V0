@@ -301,6 +301,11 @@ textarea{resize:vertical;min-height:40px;}
         </table>
       </div>
       <div class="panel-header" style="margin-top:16px;">CREATE TASK</div>
+      <div style="margin-bottom:8px">
+        <button class="btn" style="font-size:11px;padding:6px 12px;margin-right:4px;background:var(--accent2);color:#fff;border:none" onclick="aiSuggestTasks()">AI Suggest Tasks</button>
+        <span id="suggestStatus" style="font-size:11px;color:var(--text-dim)"></span>
+      </div>
+      <div id="aiSuggestions" style="margin-bottom:10px"></div>
       <div class="form-row">
         <div class="form-group">
           <label>Title</label>
@@ -607,23 +612,52 @@ function renderAgents() {
 }
 
 function renderTaskQueue() {
-  const body = document.getElementById('taskQueueBody');
+  var body = document.getElementById('taskQueueBody');
   if (taskQueue.length === 0) {
-    body.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim);text-align:center;">No active tasks</td></tr>';
+    body.textContent = '';
+    var tr = document.createElement('tr');
+    var td = document.createElement('td');
+    td.colSpan = 5; td.style.cssText = 'color:var(--text-dim);text-align:center';
+    td.textContent = 'No active tasks — use Dispatch above to run an agent';
+    tr.appendChild(td); body.appendChild(tr);
     return;
   }
-  const now = Date.now();
-  body.innerHTML = taskQueue.map(t => {
-    const elapsed = Math.floor((now - t.startTime) / 1000);
-    const priClass = t.priority === 'high' ? 'badge-red' : t.priority === 'medium' ? 'badge-yellow' : 'badge-blue';
-    return `<tr>
-      <td style="text-transform:uppercase">${t.agent}</td>
-      <td>${t.task}</td>
-      <td><span class="badge ${priClass}"><span class="dot"></span>${t.priority}</span></td>
-      <td><span class="badge badge-yellow"><span class="dot"></span>running</span></td>
-      <td>${elapsed}s</td>
-    </tr>`;
-  }).join('');
+  var now = Date.now();
+  body.textContent = '';
+  taskQueue.forEach(function(t) {
+    var elapsed = Math.floor(((t.endTime || now) - t.startTime) / 1000);
+    var tr = document.createElement('tr');
+
+    var td1 = document.createElement('td'); td1.style.textTransform = 'uppercase'; td1.textContent = t.agent; tr.appendChild(td1);
+
+    var td2 = document.createElement('td'); td2.textContent = t.task;
+    // Show output below task if available
+    if (t.output) {
+      var out = document.createElement('div');
+      out.style.cssText = 'font-size:11px;color:' + (t.status === 'done' ? 'var(--green)' : 'var(--red)') + ';margin-top:4px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      out.textContent = t.output.slice(0, 150);
+      out.title = t.output;
+      td2.appendChild(out);
+    }
+    tr.appendChild(td2);
+
+    var priClass = t.priority === 'high' ? 'badge-red' : t.priority === 'medium' ? 'badge-yellow' : 'badge-blue';
+    var td3 = document.createElement('td');
+    var badge = document.createElement('span'); badge.className = 'badge ' + priClass;
+    var dot = document.createElement('span'); dot.className = 'dot'; badge.appendChild(dot);
+    badge.appendChild(document.createTextNode(t.priority));
+    td3.appendChild(badge); tr.appendChild(td3);
+
+    var statusClass = t.status === 'done' ? 'badge-green' : t.status === 'failed' ? 'badge-red' : 'badge-yellow';
+    var td4 = document.createElement('td');
+    var sBadge = document.createElement('span'); sBadge.className = 'badge ' + statusClass;
+    var sDot = document.createElement('span'); sDot.className = 'dot'; sBadge.appendChild(sDot);
+    sBadge.appendChild(document.createTextNode(t.status || 'running'));
+    td4.appendChild(sBadge); tr.appendChild(td4);
+
+    var td5 = document.createElement('td'); td5.textContent = elapsed + 's'; tr.appendChild(td5);
+    body.appendChild(tr);
+  });
 }
 
 // =========== MARKETPLACE ===========
@@ -782,23 +816,37 @@ function addTransaction() {
 }
 
 function dispatchTask() {
-  const agent = document.getElementById('dispatchAgent').value;
-  const task = document.getElementById('dispatchTask').value.trim();
-  const priority = document.getElementById('dispatchPriority').value;
+  var agent = document.getElementById('dispatchAgent').value;
+  var task = document.getElementById('dispatchTask').value.trim();
+  var priority = document.getElementById('dispatchPriority').value;
   if (!task) return;
-  const entry = { agent, task, priority, startTime: Date.now(), duration: (10 + Math.floor(Math.random() * 21)) * 1000 };
+  var entry = { agent: agent, task: task, priority: priority, startTime: Date.now(), status: 'running', output: null };
   taskQueue.push(entry);
+  var idx = taskQueue.length - 1;
   renderTaskQueue();
-  addEvent('DISPATCH', agent, `Task dispatched: ${task} [${priority}]`);
+  addEvent('DISPATCH', agent, 'Task dispatched: ' + task + ' [' + priority + ']');
   document.getElementById('dispatchTask').value = '';
-  // Try API
+
+  // Execute via real agent API
   fetch('/api/agents/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agentName: agent, input: task + ' [priority:' + priority + ']' })
+    body: JSON.stringify({ agentName: agent, input: task })
   }).then(function(r) { return r.json(); }).then(function(d) {
-    if (d.ok && d.output) addEvent('RESULT', agent, d.output.slice(0, 100));
-  }).catch(function() {});
+    if (taskQueue[idx]) {
+      taskQueue[idx].status = d.ok ? 'done' : 'failed';
+      taskQueue[idx].output = d.output || d.error || 'No output';
+      taskQueue[idx].endTime = Date.now();
+      renderTaskQueue();
+      addEvent('RESULT', agent, (d.output || d.error || '').slice(0, 120));
+    }
+  }).catch(function(e) {
+    if (taskQueue[idx]) {
+      taskQueue[idx].status = 'failed';
+      taskQueue[idx].output = e.message;
+      renderTaskQueue();
+    }
+  });
 }
 
 function toggleAgent(idx) {
@@ -957,6 +1005,102 @@ async function fetchSeedData() {
       }
     });
   } catch (e) { /* use defaults */ }
+}
+
+// =========== AI TASK SUGGESTIONS ===========
+var AI_TASK_TEMPLATES = [
+  { title: 'Audit POPIA compliance gaps', reward: 50, desc: 'Scan all data processing for POPIA violations' },
+  { title: 'Generate weekly sales report', reward: 25, desc: 'Compile CRM data into executive summary' },
+  { title: 'Analyze competitor pricing changes', reward: 40, desc: 'Monitor top 5 competitors for price adjustments' },
+  { title: 'Draft client onboarding email sequence', reward: 35, desc: '5-email nurture series for new signups' },
+  { title: 'Optimize API response times', reward: 60, desc: 'Profile slow endpoints and suggest fixes' },
+  { title: 'Generate BRDG token economy report', reward: 45, desc: 'Summarize burn rate, circulation, treasury split' },
+  { title: 'Scan for security vulnerabilities', reward: 80, desc: 'Run OWASP top 10 checks across all endpoints' },
+  { title: 'Create social media content calendar', reward: 30, desc: 'Plan 2 weeks of LinkedIn + Twitter posts' },
+  { title: 'Reconcile treasury against payment records', reward: 55, desc: 'Cross-reference PayFast webhooks with DB' },
+  { title: 'Train AI agent on new skill', reward: 70, desc: 'Add capability to existing agent via SVG engine' },
+  { title: 'Generate investor pitch deck data', reward: 65, desc: 'Compile KPIs, revenue, growth metrics' },
+  { title: 'Review and update legal documents', reward: 50, desc: 'Check ToS, Privacy Policy for recent law changes' },
+];
+
+function aiSuggestTasks() {
+  var el = document.getElementById('aiSuggestions');
+  var status = document.getElementById('suggestStatus');
+  status.textContent = 'Generating suggestions...';
+  el.textContent = '';
+
+  // Pick 3 random suggestions not already in tasks
+  var existing = tasks.map(function(t) { return t.title.toLowerCase(); });
+  var available = AI_TASK_TEMPLATES.filter(function(t) {
+    return existing.indexOf(t.title.toLowerCase()) === -1;
+  });
+  // Shuffle and take 3
+  for (var i = available.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = available[i]; available[i] = available[j]; available[j] = tmp;
+  }
+  var suggestions = available.slice(0, 3);
+
+  if (suggestions.length === 0) {
+    status.textContent = 'All suggested tasks already exist.';
+    return;
+  }
+
+  status.textContent = suggestions.length + ' AI suggestions:';
+  suggestions.forEach(function(s) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer';
+    card.title = 'Click to add this task';
+
+    var info = document.createElement('div');
+    info.style.flex = '1';
+    var title = document.createElement('div');
+    title.style.cssText = 'color:var(--accent);font-weight:600';
+    title.textContent = s.title;
+    var desc = document.createElement('div');
+    desc.style.cssText = 'color:var(--text-dim);font-size:11px';
+    desc.textContent = s.desc + ' — $' + s.reward.toFixed(2);
+    info.appendChild(title);
+    info.appendChild(desc);
+    card.appendChild(info);
+
+    var addBtn = document.createElement('button');
+    addBtn.className = 'btn';
+    addBtn.style.cssText = 'font-size:11px;padding:4px 10px;min-height:auto';
+    addBtn.textContent = '+ Add';
+    addBtn.onclick = function() {
+      tasks.unshift({ id: nextTaskId++, title: s.title, reward: s.reward, status: 'open', desc: s.desc });
+      saveState(STORAGE_KEYS.tasks, tasks);
+      renderMarketplace();
+      addEvent('TASKS', 'AI', 'AI suggested task: ' + s.title);
+      card.style.opacity = '0.4';
+      addBtn.textContent = 'Added';
+      addBtn.disabled = true;
+    };
+    card.appendChild(addBtn);
+    el.appendChild(card);
+  });
+
+  // Also try the real AI for a custom suggestion
+  fetch('/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: 'Suggest one high-value task for an AI business automation platform. Return only the task title and estimated value in USD. Be specific and actionable.' })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    if (d.text || d.response) {
+      var aiCard = document.createElement('div');
+      aiCard.style.cssText = 'background:rgba(123,63,245,0.08);border:1px solid rgba(123,63,245,0.2);border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px';
+      var lbl = document.createElement('div');
+      lbl.style.cssText = 'color:var(--accent2);font-size:10px;font-weight:600;margin-bottom:4px';
+      lbl.textContent = 'AI GENERATED';
+      aiCard.appendChild(lbl);
+      var txt = document.createElement('div');
+      txt.style.color = 'var(--text)';
+      txt.textContent = (d.text || d.response).slice(0, 200);
+      aiCard.appendChild(txt);
+      el.appendChild(aiCard);
+    }
+  }).catch(function() {});
 }
 
 // =========== INIT ===========
