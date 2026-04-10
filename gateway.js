@@ -1743,6 +1743,10 @@ app.all('/api/*path', async (req, res) => {
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+    if (req.headers['x-admin-token']) opts.headers['x-admin-token'] = req.headers['x-admin-token'];
+    if (req.headers['x-kf-token']) opts.headers['x-kf-token'] = req.headers['x-kf-token'];
+    if (req.headers['x-bridge-secret']) opts.headers['x-bridge-secret'] = req.headers['x-bridge-secret'];
     if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
     const r = await fetch(url, opts);
     const ct = r.headers.get('content-type') || 'application/json';
