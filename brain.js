@@ -1534,6 +1534,7 @@ function _ubiPool()     { return +(state.treasury.earned * 0.40).toFixed(2); }
 function _treasuryPool(){ return +(state.treasury.earned * 0.30).toFixed(2); }
 function _opsPool()    { return +(state.treasury.earned * 0.20).toFixed(2); }
 function _founderPool(){ return +(state.treasury.earned * 0.10).toFixed(2); }
+function _staking()    { return { tvl: _ubiPool(), apy: 18, stakers: Math.max(42, Math.floor(_ubiPool() / 500)), lockPeriod: '30d' }; }
 const _ubiClaims = new Map(); // address → last claim ts
 app.get('/api/defi/status', async (_req, res) => {
   // Try to get real on-chain data; fall back to off-chain estimates
