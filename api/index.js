@@ -3078,6 +3078,74 @@ module.exports = async (req, res) => {
     }
   }
 
+  // ── Admin Withdraw ────────────────────────────────────────────────────────
+  if (p === '/api/admin/withdraw/authorize' && req.method === 'POST') {
+    const token = req.headers['x-admin-token'];
+    const expected = process.env.ADMIN_TOKEN;
+    if (!expected) return json(res, { ok: false, error: 'ADMIN_TOKEN not configured on server' }, 503);
+    if (!token || token !== expected) return json(res, { ok: false, error: 'Invalid admin token' }, 401);
+    // Issue a short-lived KeyForge token (random, valid 5 min)
+    const crypto = require('crypto');
+    const kfToken = crypto.randomBytes(32).toString('hex');
+    const expires = Date.now() + 5 * 60 * 1000;
+    global.__kfTokens = global.__kfTokens || {};
+    global.__kfTokens[kfToken] = expires;
+    // Clean expired tokens
+    for (const [k, v] of Object.entries(global.__kfTokens)) { if (v < Date.now()) delete global.__kfTokens[k]; }
+    return json(res, { ok: true, token: kfToken, expires_in: 300 });
+  }
+
+  if (p === '/api/admin/withdraw/execute' && req.method === 'POST') {
+    const adminTk = req.headers['x-admin-token'];
+    const expected = process.env.ADMIN_TOKEN;
+    if (!expected || !adminTk || adminTk !== expected) return json(res, { ok: false, error: 'Unauthorized' }, 401);
+    const kfToken = req.headers['x-kf-token'];
+    if (!kfToken || !global.__kfTokens || !global.__kfTokens[kfToken] || global.__kfTokens[kfToken] < Date.now()) {
+      return json(res, { ok: false, error: 'Invalid or expired KeyForge token — re-authorize first' }, 401);
+    }
+    delete global.__kfTokens[kfToken]; // single-use
+    const { to, amount, rail, memo } = body;
+    if (!to || !/^0x[a-fA-F0-9]{40}$/.test(to)) return json(res, { ok: false, error: 'Invalid destination address' }, 400);
+    const numAmount = parseFloat(amount);
+    if (!amount || isNaN(numAmount) || numAmount <= 0) return json(res, { ok: false, error: 'Invalid amount' }, 400);
+    // Log the withdrawal
+    const entry = { id: Date.now().toString(36), to, amount: numAmount, rail: rail || 'brdg', memo: memo || '', admin: 'admin', ts: ts() };
+    try {
+      if (supabaseConfigured()) {
+        await supabase.from('admin_withdrawals').insert(entry);
+      }
+    } catch (e) { console.warn('[AdminWithdraw] DB log error:', e.message); }
+    // Attempt on-chain transfer
+    let txHash = null;
+    try {
+      const brdgChain = require('../lib/brdg-chain');
+      if (rail === 'eth') {
+        const result = await brdgChain.sendETH(to, amount);
+        txHash = result.tx_hash || result.txHash;
+      } else {
+        const result = await brdgChain.transferBRDG(to, amount);
+        txHash = result.tx_hash || result.txHash;
+      }
+    } catch (e) {
+      return json(res, { ok: false, error: 'On-chain transfer failed: ' + e.message }, 500);
+    }
+    return json(res, { ok: true, tx_hash: txHash, amount: numAmount, to, rail: rail || 'brdg' });
+  }
+
+  if (p === '/api/admin/withdraw/audit') {
+    const adminTk = req.headers['x-admin-token'];
+    const expected = process.env.ADMIN_TOKEN;
+    if (!expected || !adminTk || adminTk !== expected) return json(res, { ok: false, error: 'Unauthorized' }, 401);
+    let log = [];
+    try {
+      if (supabaseConfigured()) {
+        const { data } = await supabase.from('admin_withdrawals').select('*').order('ts', { ascending: false }).limit(50);
+        log = data || [];
+      }
+    } catch (e) { console.warn('[AdminWithdraw] Audit fetch error:', e.message); }
+    return json(res, { ok: true, log });
+  }
+
   // ── 404 ──
   return json(res, { error: 'not_found', path: p, available: [
     '/health', '/api/health', '/api/brain', '/api/topology', '/api/avatar/{mode}',
@@ -3103,5 +3171,6 @@ module.exports = async (req, res) => {
     '/api/metrics/token', '/api/metrics/treasury', '/api/metrics/revenue', '/api/metrics/vault',
     '/api/verify/payment/:id', '/api/verify/chain', '/api/verify/info', '/api/verify/response (POST)',
     '/api/proofs/payments', '/api/proofs/merkle',
+    '/api/admin/withdraw/authorize (POST)', '/api/admin/withdraw/execute (POST)', '/api/admin/withdraw/audit',
   ] }, 404);
 };
