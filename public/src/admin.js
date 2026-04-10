@@ -54,21 +54,44 @@ function promptForSecret() {
   container.appendChild(box);
 }
 
+function getAuthToken() {
+  // Check for bridge_token in cookie or localStorage (set by login flow)
+  var match = document.cookie.match(/bridge_token=([^;]+)/);
+  return (match && match[1]) || localStorage.getItem('bridge_token') || '';
+}
+
 async function loadKeys() {
+  // 1. Try session token first (superadmin logged in = no secret needed)
+  var token = getAuthToken();
+  if (token) {
+    try {
+      var r = await fetch('/api/admin/keys', {
+        headers: { 'Authorization': 'Bearer ' + token },
+      });
+      var d = await r.json();
+      if (d.ok) {
+        keyStatuses = d.keys || {};
+        renderGroups();
+        return;
+      }
+    } catch (_) {}
+  }
+
+  // 2. Try stored admin secret
   var secret = getSecret();
   if (!secret) { promptForSecret(); return; }
   try {
-    var r = await fetch('/api/admin/keys', {
+    var r2 = await fetch('/api/admin/keys', {
       headers: { 'x-bridge-secret': secret },
     });
-    var d = await r.json();
-    if (!d.ok) {
+    var d2 = await r2.json();
+    if (!d2.ok) {
       localStorage.removeItem('bridge_admin_secret');
       promptForSecret();
-      showStatus('error', d.error || 'Invalid secret. Try again.');
+      showStatus('error', d2.error || 'Invalid secret. Try again.');
       return;
     }
-    keyStatuses = d.keys || {};
+    keyStatuses = d2.keys || {};
     renderGroups();
   } catch (e) {
     showStatus('error', 'Could not reach API: ' + e.message);
@@ -140,7 +163,11 @@ function showStatus(type, message) {
 
 // Global saveKeys called by onclick
 window.saveKeys = async function () {
-  var secret = localStorage.getItem('bridge_admin_secret') || '';
+  var token = getAuthToken();
+  var secret = getSecret();
+  var headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  else if (secret) headers['x-bridge-secret'] = secret;
   var updates = {};
   for (var keys of Object.values(KEY_GROUPS)) {
     for (var key of keys) {
@@ -157,7 +184,7 @@ window.saveKeys = async function () {
   try {
     var r = await fetch('/api/admin/keys', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-bridge-secret': secret },
+      headers: headers,
       body: JSON.stringify({ keys: updates }),
     });
     var d = await r.json();
