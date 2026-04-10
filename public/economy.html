@@ -409,7 +409,7 @@
         var tbody = document.getElementById('leaderboard-body');
         fetchJSON('/api/economy/balances').then(function (data) {
           clearChildren(tbody);
-          var agents = Array.isArray(data) ? data : (data.agents || []);
+          var agents = Array.isArray(data) ? data : (data.balances || data.agents || []);
           if (agents.length === 0) {
             var tr = createEl('tr');
             var td = createEl('td', { colspan: '6', className: 'loading' }, 'No agents found');
@@ -418,13 +418,15 @@
             return;
           }
           agents.sort(function (a, b) { return (b.balance || 0) - (a.balance || 0); });
-          agents.forEach(function (agent, i) {
+          agents.slice(0, 25).forEach(function (agent, i) {
+            var agentName = agent.name || agent.agent_id || agent.id || 'Unknown';
+            var agentType = agent.type || (agentName.startsWith('prime') ? 'prime' : agentName.startsWith('bossbot') ? 'bot' : 'agent');
             var tr = createEl('tr');
             tr.appendChild(createEl('td', null, i + 1));
-            tr.appendChild(createEl('td', null, agent.name || agent.id || 'Unknown'));
+            tr.appendChild(createEl('td', null, agentName));
 
             var typeTd = createEl('td');
-            typeTd.appendChild(createEl('span', { className: typeBadgeClass(agent.type) }, agent.type || 'agent'));
+            typeTd.appendChild(createEl('span', { className: typeBadgeClass(agentType) }, agentType));
             tr.appendChild(typeTd);
 
             var balTd = createEl('td');
@@ -432,10 +434,10 @@
             tr.appendChild(balTd);
 
             var earnTd = createEl('td');
-            earnTd.appendChild(createEl('span', { className: 'amount' }, formatBRDG(agent.earned)));
+            earnTd.appendChild(createEl('span', { className: 'amount' }, formatBRDG(agent.earned_total || agent.earned || 0)));
             tr.appendChild(earnTd);
 
-            tr.appendChild(createEl('td', null, formatNumber(agent.tasksCompleted)));
+            tr.appendChild(createEl('td', null, formatNumber(agent.tasksCompleted || agent.tasks_completed || 0)));
             tbody.appendChild(tr);
           });
         }).catch(function (err) {
