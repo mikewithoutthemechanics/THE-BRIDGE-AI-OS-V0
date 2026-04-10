@@ -889,6 +889,14 @@ app.get('/api/banks/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/pricing', (_req, res) => {
+  res.json({ plans: [
+    { id: 'starter',    name: 'Starter',    price: 49,  currency: 'ZAR', features: ['5 agents', '1k tasks/mo', 'Basic analytics'] },
+    { id: 'pro',        name: 'Pro',        price: 149, currency: 'ZAR', features: ['20 agents', '10k tasks/mo', 'Full analytics', 'CRM'] },
+    { id: 'enterprise', name: 'Enterprise', price: 499, currency: 'ZAR', features: ['Unlimited agents', 'Unlimited tasks', 'All features', 'SLA'] },
+  ], ts: Date.now() });
+});
+
 app.get('/api/system/metrics', (req, res) => {
   const upSec = os.uptime();
   res.json({
