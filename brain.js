@@ -461,6 +461,16 @@ app.post('/api/speech/reason', (req, res) => {
 });
 
 // ── TREASURY / ECONOMY ──────────────────────────────────────────────────────
+app.get('/api/treasury', async (_req, res) => {
+  const { computeBuckets } = require('./lib/treasury');
+  let bal = state.treasury.balance;
+  try { const db = require('./lib/db'); bal = await db.getTreasuryBalance(bal); } catch (_) {}
+  res.json({
+    ok: true, balance: +bal.toFixed(2), currency: 'ZAR',
+    buckets: computeBuckets(bal, { includeValue: true }),
+    ts: Date.now(),
+  });
+});
 app.get('/api/treasury/status', async (_req, res) => {
   let onchain = null;
   try { if (brdgChain) onchain = await brdgChain.getTokenStats(); } catch (_) {}
