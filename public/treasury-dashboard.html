@@ -15,9 +15,14 @@
   <link rel="stylesheet" href="/bridge-tokens.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0a0a0f; color: #e0e0e0; font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+    body { background: #0a0a0f; color: #e0e0e0; font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; padding-bottom: 64px; }
+    .nav-header{display:flex;align-items:center;padding:12px 24px;background:#14141f;border-bottom:1px solid #222;gap:12px;position:sticky;top:0;z-index:10}
+    .nav-header h1{font-size:16px;font-weight:700;color:#00ffc8;margin:0}
+    .nav-header nav{display:flex;gap:4px;margin-left:12px;overflow-x:auto}
+    .nav-header nav a{color:#888;text-decoration:none;font-size:12px;padding:4px 10px;border-radius:6px;white-space:nowrap}
+    .nav-header nav a:hover{color:#00ffc8;background:rgba(0,255,200,.05)}
     .dashboard { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    h1 { font-size: 1.8rem; margin-bottom: 24px; color: #00ffc8; }
+    h1.page-title { font-size: 1.8rem; margin-bottom: 24px; color: #00ffc8; }
     h2 { font-size: 1.1rem; margin-bottom: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
     .card { background: #14141f; border: 1px solid #222; border-radius: 12px; padding: 20px; }
@@ -50,9 +55,23 @@
   </style>
 </head>
 <body>
-  <script src="/bridge-nav.js?v=2"></script>
+  <script src="/global-nav.js" defer></script>
+  <div class="nav-header">
+    <h1>Treasury</h1>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/portal.html">Portal</a>
+      <a href="/admin-revenue.html">Revenue</a>
+      <a href="/economy.html">Economy</a>
+      <a href="/agents.html">Agents</a>
+      <a href="/control.html">Control</a>
+      <a href="/legal-ai.html">Legal</a>
+      <a href="/console.html">Terminal</a>
+      <a href="/admin-withdraw.html">Withdraw</a>
+    </nav>
+  </div>
   <div class="dashboard">
-    <h1>Treasury Dashboard</h1>
+    <h1 class="page-title">Treasury Dashboard</h1>
     <div class="refresh-bar">Auto-refresh: <span id="countdown">10</span>s | Last: <span id="lastRefresh">--</span> | <a href="/wallet.html" style="color:#7b8cff">Wallet</a> · <a href="/defi.html" style="color:#00ffc8">DeFi</a></div>
 
     <h2>&#9651; Combined Liquidity</h2>
