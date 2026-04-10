@@ -879,9 +879,15 @@ app.post('/api/keyforge/revoke', (req, res) => {
   res.json({ ok: true, revoked: { key_id, scope } });
 });
 app.get('/api/keyforge/audit', (_req, res) => res.json({ ok: true, log: kfAuditLog.slice(-50) }));
-app.get('/api/admin/keys', (req, res) => {
+app.get('/api/admin/keys', async (req, res) => {
+  // Auth: accept BRIDGE_INTERNAL_SECRET header OR superadmin session token
   const secret = req.headers['x-bridge-secret'];
-  if (!secret || !process.env.BRIDGE_INTERNAL_SECRET || secret !== process.env.BRIDGE_INTERNAL_SECRET) return res.status(403).json({ ok: false, error: 'Forbidden' });
+  const secretOk = secret && process.env.BRIDGE_INTERNAL_SECRET && secret === process.env.BRIDGE_INTERNAL_SECRET;
+  if (!secretOk) {
+    const { extractUser } = require('./middleware/access-control');
+    const user = await extractUser(req);
+    if (!user || user.role !== 'superadmin') return res.status(403).json({ ok: false, error: 'Forbidden — requires superadmin session or BRIDGE_INTERNAL_SECRET' });
+  }
   const envKeys = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'SUPABASE_URL', 'PAYFAST_MERCHANT_KEY', 'JWT_SECRET', 'BRIDGE_INTERNAL_SECRET', 'GH_TOKEN'];
   const status = {};
   for (const k of envKeys) { const v = process.env[k]; status[k] = v ? (v.length > 8 ? 'set' : 'weak') : 'missing'; }
