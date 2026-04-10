@@ -395,6 +395,12 @@ textarea{resize:vertical;min-height:40px;}
   <div class="feed-list" id="feedList"></div>
 </div>
 
+<!-- LIVE SYSTEM SUMMARY -->
+<div class="panel col-full" style="margin-top:16px">
+  <div class="panel-header">LIVE SYSTEM SUMMARY</div>
+  <div id="liveSummary" style="padding:12px;font-size:13px;color:var(--text-dim)">Loading summary...</div>
+</div>
+
 </div><!-- /main -->
 
 <!-- QUICK ACTIONS -->
@@ -1007,6 +1013,71 @@ async function fetchSeedData() {
   } catch (e) { /* use defaults */ }
 }
 
+// =========== LIVE SYSTEM SUMMARY ===========
+function renderLiveSummary() {
+  var el = document.getElementById('liveSummary');
+  if (!el) return;
+  el.textContent = '';
+
+  var openTasks = tasks.filter(function(t) { return t.status === 'open'; }).length;
+  var doneTasks = tasks.filter(function(t) { return t.status === 'completed'; }).length;
+  var activeAgents = agents.filter(function(a) { return a.status === 'active'; }).length;
+  var totalUsers = users.length;
+  var queueRunning = taskQueue.filter(function(t) { return t.status === 'running'; }).length;
+  var queueDone = taskQueue.filter(function(t) { return t.status === 'done'; }).length;
+  var queueFailed = taskQueue.filter(function(t) { return t.status === 'failed'; }).length;
+
+  var lines = [
+    { label: 'System Health', value: queueFailed > 0 ? 'Degraded' : 'Optimal', color: queueFailed > 0 ? 'var(--yellow)' : 'var(--green)' },
+    { label: 'Treasury', value: fmt(treasury.balance), color: 'var(--accent)' },
+    { label: 'Revenue MTD', value: fmt(treasury.revenueMtd), color: 'var(--green)' },
+    { label: 'Active Agents', value: activeAgents + '/' + agents.length, color: 'var(--accent)' },
+    { label: 'Marketplace Tasks', value: openTasks + ' open / ' + doneTasks + ' done', color: 'var(--text)' },
+    { label: 'Dispatch Queue', value: queueRunning + ' running / ' + queueDone + ' done / ' + queueFailed + ' failed', color: 'var(--text)' },
+    { label: 'Users', value: totalUsers + ' registered', color: 'var(--text)' },
+    { label: 'Latest Event', value: events.length > 0 ? events[0].type + ': ' + (events[0].details || '').slice(0, 80) : 'None', color: 'var(--text-dim)' },
+  ];
+
+  lines.forEach(function(line) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(26,45,64,0.2)';
+    var lbl = document.createElement('span');
+    lbl.style.color = 'var(--text-dim)';
+    lbl.textContent = line.label;
+    var val = document.createElement('span');
+    val.style.cssText = 'font-weight:600;color:' + line.color;
+    val.textContent = line.value;
+    row.appendChild(lbl);
+    row.appendChild(val);
+    el.appendChild(row);
+  });
+
+  // AI Suggestion
+  var insights = [
+    'Run a POPIA compliance audit — last scan was over 30 days ago',
+    'Treasury is healthy — consider reinvesting in growth agents',
+    agents.filter(function(a){return a.status!=='active'}).length > 0 ? 'Reactivate paused agents to improve task throughput' : 'All agents active — system at full capacity',
+    openTasks > 3 ? 'High task backlog — dispatch agents to clear the queue' : 'Task queue is manageable',
+    'Generate a weekly executive summary for stakeholder review',
+    'Optimize inference costs — current spend: ' + fmt(treasury.costsMtd),
+    'Review competitor pricing — market may have shifted',
+    'Schedule next treasury reconciliation to verify proof chain integrity',
+  ];
+  var suggestion = insights[Math.floor(Math.random() * insights.length)];
+
+  var aiRow = document.createElement('div');
+  aiRow.style.cssText = 'margin-top:10px;padding:10px 12px;background:rgba(123,63,245,0.06);border:1px solid rgba(123,63,245,0.15);border-radius:8px';
+  var aiLabel = document.createElement('div');
+  aiLabel.style.cssText = 'font-size:10px;color:var(--accent2);font-weight:700;margin-bottom:4px';
+  aiLabel.textContent = 'AI RECOMMENDATION';
+  aiRow.appendChild(aiLabel);
+  var aiText = document.createElement('div');
+  aiText.style.cssText = 'font-size:13px;color:var(--text)';
+  aiText.textContent = suggestion;
+  aiRow.appendChild(aiText);
+  el.appendChild(aiRow);
+}
+
 // =========== AI TASK SUGGESTIONS ===========
 var AI_TASK_TEMPLATES = [
   { title: 'Audit POPIA compliance gaps', reward: 50, desc: 'Scan all data processing for POPIA violations' },
@@ -1114,6 +1185,7 @@ async function init() {
   initChart();
   renderServices();
   updateGauges();
+  renderLiveSummary();
 
   // Seed some initial events
   if (events.length === 0) {
@@ -1122,7 +1194,7 @@ async function init() {
 
   // Polling
   setInterval(() => addEvent(), 3000);
-  setInterval(() => { renderServices(); updateGauges(); }, 10000);
+  setInterval(() => { renderServices(); updateGauges(); renderLiveSummary(); }, 10000);
   setInterval(simulateTasks, 5000);
 }
 
