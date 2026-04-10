@@ -834,6 +834,54 @@ app.get('/api/treasury/summary', async (req, res) => {
   } catch { res.json({ balance: 0, earned: 0, spent: 0, currency: 'ZAR', subscriptions: 0, plans: [] }); }
 });
 
+// ── BANK SYSTEM ──────────────────────────────────────────────────────────────
+const banks = require('./lib/banks');
+
+app.get('/api/banks', async (_req, res) => {
+  try {
+    const all = await banks.getAllBanks();
+    const total = all.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+    res.json({ banks: all, count: all.length, total: +total.toFixed(2), ts: Date.now() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/banks/history', async (req, res) => {
+  try {
+    const history = await banks.getBankHistory(null, 50);
+    res.json({ history, count: history.length, ts: Date.now() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/banks/compound', async (_req, res) => {
+  try {
+    const all = await banks.getAllBanks();
+    const preview = all.filter(b => b.active !== false).map(b => ({
+      bankId: b.id, name: b.name,
+      balance: +parseFloat(b.balance || 0).toFixed(2),
+      rate: parseFloat(b.compound_rate || 0),
+      projectedGain: +(parseFloat(b.balance || 0) * parseFloat(b.compound_rate || 0)).toFixed(2),
+    }));
+    const totalGain = preview.reduce((s, b) => s + b.projectedGain, 0);
+    res.json({ preview, totalGain: +totalGain.toFixed(2), ts: Date.now() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/banks/:id/history', async (req, res) => {
+  try {
+    const history = await banks.getBankHistory(req.params.id, 50);
+    res.json({ history, count: history.length, ts: Date.now() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/banks/:id', async (req, res) => {
+  try {
+    const bank = await banks.getBank(req.params.id);
+    if (!bank) return res.status(404).json({ error: 'bank not found' });
+    const history = await banks.getBankHistory(req.params.id, 10);
+    res.json({ bank, history, ts: Date.now() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/system/metrics', (req, res) => {
   const upSec = os.uptime();
   res.json({
