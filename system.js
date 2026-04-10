@@ -514,6 +514,19 @@ function verifyJWT(req) {
   } catch { return null; }
 }
 
+// ─── NeuroLink Service Setup ──────────────────────────────────────────────────
+let neurolinkService = null;
+try {
+  const { getNeuroLinkService } = require('./api/neurolink/routes');
+  neurolinkService = getNeuroLinkService();
+  if (process.env.NEUROLINK_ENABLED !== 'false') {
+    neurolinkService.start();
+    console.log('  ✓ NeuroLink cognitive service initialized');
+  }
+} catch (e) {
+  console.warn('  ⚠ NeuroLink service not available:', e.message);
+}
+
 // ─── HTTP HANDLER ─────────────────────────────────────────────────────────────
 function handler(req, res) {
   const url = req.url.split('?')[0];
@@ -536,7 +549,27 @@ function handler(req, res) {
   if (url === '/health' || url === '/healthz')
     return json({ status:'ok', uptime:Math.round(process.uptime()), port:PORT, env:NODE_ENV, ts:Date.now() });
 
-  // All /api/* endpoints require JWT authentication
+  // NeuroLink endpoints (no auth required)
+  if (neurolinkService) {
+    if (url === '/api/neurolink/status') return json(neurolinkService.getStatus());
+    if (url === '/api/neurolink/state') {
+      const state = neurolinkService.getState();
+      if (!state) return json({ error: 'NeuroLink not ready' }, 503);
+      return json(state);
+    }
+    if (url === '/api/neurolink/twin') {
+      const emotion = neurolinkService.getEmotion();
+      if (!emotion) return json({ error: 'NeuroLink not ready' }, 503);
+      return json(emotion);
+    }
+    if (url === '/api/neurolink/summary') {
+      return neurolinkService.getTodaySummary().then(summary => {
+        json(summary || { message: 'No data for today' });
+      }).catch(err => json({ error: err.message }, 500));
+    }
+  }
+
+  // All other /api/* endpoints require JWT authentication
   if (url.startsWith('/api/')) {
     const user = verifyJWT(req);
     if (!user) return json({ error: 'Unauthorized — valid Bearer token required' }, 401);
