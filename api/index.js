@@ -98,6 +98,8 @@ let ledger, market, autoLoop;
 try { ledger = require('../lib/agent-ledger'); } catch (_) { ledger = null; }
 try { market = require('../lib/task-market'); } catch (_) { market = null; }
 try { autoLoop = require('../lib/auto-task-loop'); } catch (_) { autoLoop = null; }
+let brdgChain;
+try { brdgChain = require('../lib/brdg-chain'); } catch (_) { brdgChain = null; }
 
 function readContracts() {
   try {
@@ -187,11 +189,20 @@ const wp       = require('../lib/wordpress');
 const mail     = require('../lib/mail');
 
 // ── Zero-Trust Verification Layer ──────────────────────────────────────────
-const zt          = require('../lib/zero-trust');
-const proofStore  = require('../lib/proof-store');
-const chainVerify = require('../lib/chain-verify');
-const ztMigrate   = require('../lib/migrate-zero-trust');
-ztMigrate.ensureTables().catch(() => {}); // auto-create tables on cold start
+let zt, proofStore, chainVerify;
+try {
+  zt          = require('../lib/zero-trust');
+  proofStore  = require('../lib/proof-store');
+  chainVerify = require('../lib/chain-verify');
+  require('../lib/migrate-zero-trust').ensureTables().catch(() => {});
+} catch (e) {
+  console.warn('[ZERO-TRUST] Failed to load verification layer:', e.message);
+  // Provide safe stubs so the rest of the API still works
+  const stub = () => ({ ok: false, error: 'verification layer unavailable' });
+  zt = { signResponse: (d) => d, verifyResponse: () => false, getVerificationInfo: stub };
+  proofStore = { getVerifiedRevenue: stub, getProof: async () => null, getAllProofs: async () => [], verifyChain: async () => ({ valid: false }), createMerkleAnchor: stub, getMerkleProof: async () => null };
+  chainVerify = { getVerifiedTokenMetrics: stub, getVerifiedTreasury: stub, getVerifiedVaultBuckets: stub, BRDG_ADDRESS: '', VAULT_ADDRESS: '', TREASURY_OWNER: '', LINEASCAN_BASE: 'https://lineascan.build' };
+}
 
 // Seed system banks on first cold start (no-op if already seeded)
 banks.seedBanksIfEmpty().catch(() => {});
@@ -1050,6 +1061,17 @@ module.exports = async (req, res) => {
       buckets: computeBuckets(treasuryBalance, { includeValue: true }),
       ts: ts(),
     });
+  }
+
+  // ── /api/brdg/token — live on-chain BRDG token data ──
+  if (p === '/api/brdg/token') {
+    if (!brdgChain) return json(res, { error: 'brdg-chain module not available' }, 503);
+    try {
+      const stats = await brdgChain.getTokenStats();
+      return json(res, stats);
+    } catch (e) {
+      return json(res, { error: 'chain_read_failed', detail: e.message }, 502);
+    }
   }
 
   // ── /api/analytics/summary ──
@@ -2038,6 +2060,22 @@ module.exports = async (req, res) => {
     });
   }
 
+  // ── /api/revenue/status — pipeline health + proof hash ──
+  if (p === '/api/revenue/status') {
+    const paid = INVOICES.filter(i => i.status === 'paid');
+    const total = paid.reduce((s, i) => s + i.amount, 0);
+    const raw = JSON.stringify({ total, count: paid.length });
+    const proofHash = _tvmCrypto
+      ? _tvmCrypto.createHash('sha256').update(raw).digest('hex')
+      : null;
+    return json(res, {
+      total, count: paid.length, currency: 'ZAR',
+      status: total > 0 ? 'active' : 'idle',
+      proofHash,
+      ts: ts(),
+    });
+  }
+
   // ── /api/supaclaw/runtime ──
   if (p === '/api/supaclaw/runtime') {
     return json(res, {
@@ -2831,8 +2869,8 @@ module.exports = async (req, res) => {
   return json(res, { error: 'not_found', path: p, available: [
     '/health', '/api/health', '/api/brain', '/api/topology', '/api/avatar/{mode}',
     '/api/registry/{ns}', '/api/marketplace/{section}', '/api/status', '/api/agents',
-    '/api/contracts', '/api/treasury', '/api/treasury/status', '/api/treasury/ledger',
-    '/api/treasury/summary', '/api/treasury/payments', '/api/analytics/summary',
+    '/api/contracts', '/api/brdg/token', '/api/treasury', '/api/treasury/status', '/api/treasury/ledger',
+    '/api/treasury/summary', '/api/treasury/payments', '/api/revenue/status', '/api/analytics/summary',
     '/api/swarm/agents', '/api/swarm/health', '/api/swarm/matrix', '/api/economics',
     '/api/credits', '/api/ehsa/dashboard', '/api/events/recent', '/api/agents/dispatch',
     '/api/agents/queue', '/api/tools', '/api/crm/contacts', '/api/crm/stats',
