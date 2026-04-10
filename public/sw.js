@@ -1,24 +1,21 @@
-const CACHE_VERSION = 'bridge-v1';
+const CACHE_VERSION = 'bridge-v2';
 
 const SHELL_ASSETS = [
   '/portal.html',
   '/index.html',
-  '/voice.html',
-  '/checkout.html',
-  '/globe.js',
-  '/bridge-phere.css',
-  '/bridge-phere.js',
-  '/icon.svg',
   '/manifest.json'
 ];
 
-const OFFLINE_PAGE = '/offline.html';
-
-// Install: cache shell assets + offline fallback
+// Install: cache shell assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then(cache => {
-      return cache.addAll([...SHELL_ASSETS, OFFLINE_PAGE]);
+      // addAll fails if ANY asset 404s — use individual puts instead
+      return Promise.allSettled(
+        SHELL_ASSETS.map(url =>
+          fetch(url).then(r => r.ok ? cache.put(url, r) : null).catch(() => null)
+        )
+      );
     }).then(() => self.skipWaiting())
   );
 });
@@ -26,98 +23,61 @@ self.addEventListener('install', event => {
 // Activate: clean up old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(k => k !== CACHE_VERSION).map(k => caches.delete(k))
-      );
-    }).then(() => self.clients.claim())
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_VERSION).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
 });
 
-// Fetch strategy
+// Fetch: network-first with safe fallbacks (never return undefined)
 self.addEventListener('fetch', event => {
-  // Skip non-HTTP requests (chrome-extension://, etc.)
   if (!event.request.url.startsWith('http')) return;
 
   const url = new URL(event.request.url);
-
-  // Skip cross-origin requests
   if (url.origin !== self.location.origin) return;
 
-  // Network-first for API calls
+  // API calls: network-first, cache fallback, JSON error fallback
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // Cache successful GET responses for offline fallback
-          if (event.request.method === 'GET' && response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => {
-          // Try cache fallback for GET API requests
-          if (event.request.method === 'GET') {
-            return caches.match(event.request);
-          }
-          return new Response(
-            JSON.stringify({ error: 'You are offline', ok: false }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } }
-          );
-        })
-    );
-    return;
-  }
-
-  // Cache-first for static assets (images, CSS, JS, fonts)
-  if (isStaticAsset(url.pathname)) {
-    event.respondWith(
-      caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(response => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        });
-      }).catch(() => {
-        // For navigation requests, show offline page
-        if (event.request.mode === 'navigate') {
-          return caches.match(OFFLINE_PAGE);
+      fetch(event.request).then(response => {
+        if (event.request.method === 'GET' && response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone)).catch(() => {});
         }
+        return response;
+      }).catch(() => {
+        if (event.request.method === 'GET') {
+          return caches.match(event.request).then(cached =>
+            cached || new Response(JSON.stringify({ error: 'offline', ok: false }), {
+              status: 503, headers: { 'Content-Type': 'application/json' }
+            })
+          );
+        }
+        return new Response(JSON.stringify({ error: 'offline', ok: false }), {
+          status: 503, headers: { 'Content-Type': 'application/json' }
+        });
       })
     );
     return;
   }
 
-  // Network-first for HTML navigation, cache-fallback
-  if (event.request.mode === 'navigate') {
+  // Everything else: network-first, cache fallback, never undefined
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
     event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request).then(cached => {
-            return cached || caches.match(OFFLINE_PAGE);
-          });
-        })
+      fetch(event.request).then(response => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone)).catch(() => {});
+        }
+        return response;
+      }).catch(() =>
+        caches.match(event.request).then(cached =>
+          cached || new Response('<html><body><h1>Offline</h1><p>Bridge AI OS is unavailable offline.</p></body></html>', {
+            status: 503, headers: { 'Content-Type': 'text/html' }
+          })
+        )
+      )
     );
     return;
   }
-
-  // Default: network with cache fallback
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
-  );
 });
-
-function isStaticAsset(pathname) {
-  return /\.(css|js|svg|png|jpg|jpeg|gif|webp|woff2?|ttf|eot|ico)$/i.test(pathname);
-}
