@@ -22,7 +22,7 @@
     --font:   'JetBrains Mono','Fira Code',monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:12px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;font-size:13px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
 
   /* TOPBAR */
   #topbar{display:flex;align-items:center;gap:10px;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;height:44px}
@@ -139,11 +139,16 @@
 <div id="topbar">
   <div class="logo">BRIDGE<span>OS</span></div>
   <div style="color:var(--border)">|</div>
+  <a href="/" style="color:var(--dim);text-decoration:none;font-size:10px;padding:2px 6px">Home</a>
+  <a href="/portal.html" style="color:var(--dim);text-decoration:none;font-size:10px;padding:2px 6px">Portal</a>
+  <a href="/economy.html" style="color:var(--dim);text-decoration:none;font-size:10px;padding:2px 6px">Economy</a>
+  <a href="/console.html" style="color:var(--dim);text-decoration:none;font-size:10px;padding:2px 6px">Terminal</a>
+  <div style="color:var(--border)">|</div>
   <div class="pill" id="p-api"><div class="dot"></div>API</div>
-  <div class="pill" id="p-svg"><div class="dot"></div>SVG</div>
-  <div class="pill" id="p-econ"><div class="dot"></div>ECON</div>
-  <div class="pill" id="p-trs"><div class="dot"></div>TREASURY</div>
-  <div class="pill" id="p-swarm"><div class="dot"></div>SWARM</div>
+  <div class="pill" id="p-svg"><div class="dot"></div>Skills</div>
+  <div class="pill" id="p-econ"><div class="dot"></div>Economy</div>
+  <div class="pill" id="p-trs"><div class="dot"></div>Treasury</div>
+  <div class="pill" id="p-swarm"><div class="dot"></div>Agents</div>
   <div class="spacer"></div>
   <div id="tb-stats" style="color:var(--dim);font-size:10px;margin-right:8px"></div>
   <div id="clock"></div>
@@ -155,51 +160,47 @@
 <!-- SIDEBAR -->
 <div id="sidebar">
   <div class="nav-section">
-    <div class="nav-header">OVERVIEW</div>
-    <a class="nav-item active" href="#" onclick="sw('overview')"><span class="nav-ico">⬡</span>Live Map<span class="nav-badge live" id="nb-live">●</span></a>
+    <div class="nav-header">SYSTEM STATUS</div>
+    <a class="nav-item active" href="#" onclick="sw('overview')"><span class="nav-ico">⬡</span>Overview<span class="nav-badge live" id="nb-live">●</span></a>
     <a class="nav-item" href="#" onclick="sw('treasury')"><span class="nav-ico">◈</span>Treasury</a>
-    <a class="nav-item" href="#" onclick="sw('swarm')"><span class="nav-ico">⬢</span>Swarm</a>
+    <a class="nav-item" href="#" onclick="sw('swarm')"><span class="nav-ico">⬢</span>Agent Swarm</a>
   </div>
   <div class="nav-section">
-    <div class="nav-header">SKILLS</div>
-    <a class="nav-item" href="#" onclick="sw('skills')"><span class="nav-ico">⚡</span>Skill Registry<span class="nav-badge" id="nb-sk">0</span></a>
-    <a class="nav-item" href="#" onclick="sw('vis')"><span class="nav-ico">◎</span>SVG Visualizer</a>
-    <a class="nav-item" href="#" onclick="sw('yt')"><span class="nav-ico">▶</span>YouTube Discover</a>
+    <div class="nav-header">AI SKILLS</div>
+    <a class="nav-item" href="#" onclick="sw('skills')"><span class="nav-ico">⚡</span>All Skills<span class="nav-badge" id="nb-sk">0</span></a>
+    <a class="nav-item" href="#" onclick="sw('vis')"><span class="nav-ico">◎</span>Skill Visualizer</a>
+    <a class="nav-item" href="#" onclick="sw('yt')"><span class="nav-ico">▶</span>Learn from YouTube</a>
   </div>
   <div class="nav-section">
-    <div class="nav-header">ASSETS · E:\A</div>
-    <a class="nav-item" href="#" onclick="sw('output')"><span class="nav-ico">◆</span>Build Output<span class="nav-badge" id="nb-out">0</span></a>
-    <a class="nav-item" href="/output/" target="_blank"><span class="nav-ico">📁</span>Output Dir</a>
-    <a class="nav-item" href="/assets/logos/supac_logo.svg" target="_blank"><span class="nav-ico">🖼</span>Logos</a>
-    <a class="nav-item" href="/index.json" target="_blank"><span class="nav-ico">🗂</span>SVG Index</a>
-    <a class="nav-item" href="/view-logs.html" target="_blank"><span class="nav-ico">📋</span>Log Viewer</a>
-  </div>
-  <div class="nav-section">
-    <div class="nav-header">APPS</div>
-    <a class="nav-item" href="/docs" target="_blank"><span class="nav-ico">🔌</span>API Docs</a>
-    <a class="nav-item" href="/api/svg" target="_blank"><span class="nav-ico">🎨</span>SVG Engine</a>
-    <a class="nav-item" href="/" target="_blank"><span class="nav-ico">🌐</span>Frontend</a>
-    <a class="nav-item" href="/live-map" target="_blank"><span class="nav-ico">🗺</span>Live Map API</a>
-    <a class="nav-item" href="/ban" target="_blank" title="Task Mesh scaffold (port 8002)"><span class="nav-ico">⚙</span>Task Mesh</a>
+    <div class="nav-header">OUTPUTS</div>
+    <a class="nav-item" href="#" onclick="sw('output')"><span class="nav-ico">◆</span>SVG Builds<span class="nav-badge" id="nb-out">0</span></a>
+    <a class="nav-item" href="/view-logs.html" target="_blank"><span class="nav-ico">📋</span>System Logs</a>
   </div>
   <div class="nav-section">
     <div class="nav-header">ECONOMY</div>
-    <a class="nav-item" href="#" onclick="sw('econ')"><span class="nav-ico">⟁</span>Circuit Breaker</a>
-    <a class="nav-item" href="#" onclick="sw('ubi')"><span class="nav-ico">◐</span>UBI System</a>
+    <a class="nav-item" href="#" onclick="sw('econ')"><span class="nav-ico">⟁</span>Safety Controls</a>
+    <a class="nav-item" href="#" onclick="sw('ubi')"><span class="nav-ico">◐</span>UBI Distribution</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-header">QUICK LINKS</div>
+    <a class="nav-item" href="/admin-revenue.html"><span class="nav-ico">📊</span>Revenue Dashboard</a>
+    <a class="nav-item" href="/agents.html"><span class="nav-ico">🤖</span>Agent Control</a>
+    <a class="nav-item" href="/digital-twin-console.html"><span class="nav-ico">△</span>Digital Twin</a>
+    <a class="nav-item" href="/economy.html"><span class="nav-ico">💰</span>BRDG Economy</a>
   </div>
 </div>
 
 <!-- MAIN -->
 <div id="main">
   <div id="tabs">
-    <div class="tab active" id="t-overview" onclick="sw('overview')">LIVE MAP</div>
-    <div class="tab" id="t-treasury"         onclick="sw('treasury')">TREASURY</div>
-    <div class="tab" id="t-skills"           onclick="sw('skills')">SKILLS</div>
-    <div class="tab" id="t-vis"              onclick="sw('vis')">SVG VIS</div>
-    <div class="tab" id="t-yt"               onclick="sw('yt')">YOUTUBE</div>
-    <div class="tab" id="t-output"           onclick="sw('output')">BUILD OUTPUT</div>
-    <div class="tab" id="t-swarm"            onclick="sw('swarm')">SWARM</div>
-    <div class="tab" id="t-econ"             onclick="sw('econ')">ECON</div>
+    <div class="tab active" id="t-overview" onclick="sw('overview')">Overview</div>
+    <div class="tab" id="t-treasury"         onclick="sw('treasury')">Treasury</div>
+    <div class="tab" id="t-skills"           onclick="sw('skills')">Skills</div>
+    <div class="tab" id="t-vis"              onclick="sw('vis')">Visualizer</div>
+    <div class="tab" id="t-yt"               onclick="sw('yt')">YouTube</div>
+    <div class="tab" id="t-output"           onclick="sw('output')">Builds</div>
+    <div class="tab" id="t-swarm"            onclick="sw('swarm')">Agents</div>
+    <div class="tab" id="t-econ"             onclick="sw('econ')">Safety</div>
     <div class="tab" id="t-ubi"              onclick="sw('ubi')">UBI</div>
   </div>
   <div id="content">
@@ -207,30 +208,31 @@
 
       <!-- ══ OVERVIEW ══ -->
       <div id="pane-overview">
+        <div style="color:var(--dim);font-size:12px;margin-bottom:10px">Real-time system health. Auto-refreshes every 8 seconds.</div>
         <div class="grid3">
-          <div class="card"><div class="card-title">BACKEND API</div><div class="card-val" id="ov-api">—</div><div class="card-sub" id="ov-api-s">connecting…</div></div>
-          <div class="card"><div class="card-title">SVG ENGINE</div><div class="card-val" id="ov-svg">—</div><div class="card-sub" id="ov-svg-s">port 7070</div></div>
-          <div class="card"><div class="card-title">SKILLS LOADED</div><div class="card-val" id="ov-sk">—</div><div class="card-sub">in engine registry</div></div>
+          <div class="card"><div class="card-title">API Server</div><div class="card-val" id="ov-api">—</div><div class="card-sub" id="ov-api-s">connecting…</div></div>
+          <div class="card"><div class="card-title">Skill Engine</div><div class="card-val" id="ov-svg">—</div><div class="card-sub" id="ov-svg-s">loading skills…</div></div>
+          <div class="card"><div class="card-title">Skills Loaded</div><div class="card-val" id="ov-sk">—</div><div class="card-sub">registered in engine</div></div>
         </div>
         <div class="grid2">
-          <div class="card"><div class="card-title">LIVE MAP</div><div id="ov-lm" style="margin-top:4px"></div></div>
-          <div class="card"><div class="card-title">TREASURY SNAPSHOT</div><div id="ov-tr" style="margin-top:4px"></div></div>
+          <div class="card"><div class="card-title">System State</div><div id="ov-lm" style="margin-top:4px"></div></div>
+          <div class="card"><div class="card-title">Treasury Balance</div><div id="ov-tr" style="margin-top:4px"></div></div>
         </div>
         <div class="grid2">
-          <div class="card"><div class="card-title">SVG ENGINE TELEMETRY</div><div id="ov-tele" style="margin-top:4px"></div></div>
-          <div class="card"><div class="card-title">RECENT BUILDS · E:\A\output</div><div id="ov-builds" style="margin-top:4px"></div></div>
+          <div class="card"><div class="card-title">Engine Performance</div><div id="ov-tele" style="margin-top:4px"></div></div>
+          <div class="card"><div class="card-title">Recent SVG Builds</div><div id="ov-builds" style="margin-top:4px"></div></div>
         </div>
       </div>
 
       <!-- ══ TREASURY ══ -->
       <div id="pane-treasury" style="display:none">
         <div class="grid2">
-          <div class="card"><div class="card-title">TOTAL BALANCE</div><div class="card-val" id="tr-tot">—</div><div class="card-sub" id="tr-txc">— transactions</div></div>
-          <div class="card"><div class="card-title">LAST TX</div><div class="card-val" style="font-size:13px" id="tr-last">—</div><div class="card-sub" id="tr-last-ts">—</div></div>
+          <div class="card"><div class="card-title">Total BRDG Balance</div><div class="card-val" id="tr-tot">—</div><div class="card-sub" id="tr-txc">— transactions</div></div>
+          <div class="card"><div class="card-title">Last Transaction</div><div class="card-val" style="font-size:13px" id="tr-last">—</div><div class="card-sub" id="tr-last-ts">—</div></div>
         </div>
-        <div class="card" style="margin-top:8px"><div class="card-title">BUCKETS</div><div id="tr-bkts" style="margin-top:6px"></div></div>
+        <div class="card" style="margin-top:8px"><div class="card-title">Treasury Buckets</div><div style="color:var(--dim);font-size:11px;margin-bottom:4px">Auto-split allocation across operations, growth, reserve, and founder</div><div id="tr-bkts" style="margin-top:6px"></div></div>
         <div class="card" style="margin-top:8px">
-          <div class="card-title">INGEST REVENUE</div>
+          <div class="card-title">Record Revenue</div>
           <div class="row" style="margin-top:6px">
             <input class="inp" id="tr-amt" type="number" placeholder="amount (BRDG)" style="width:150px;flex:none">
             <input class="inp" id="tr-src" type="text" placeholder="source (e.g. marketplace)">
@@ -257,7 +259,7 @@
           <button class="btn" onclick="doGraph()">GRAPH</button>
         </div>
         <div id="svg-frame">
-          <div id="svg-lbl">SVG ENGINE · PORT 7070</div>
+          <div id="svg-lbl">Skill Visualization Engine</div>
           <button id="svg-rfr" onclick="doRefresh()">↺</button>
           <div id="svg-c" style="color:var(--dim)">Select a skill to visualize</div>
         </div>
@@ -267,7 +269,8 @@
       <!-- ══ YOUTUBE ══ -->
       <div id="pane-yt" style="display:none">
         <div class="card">
-          <div class="card-title">SEARCH YOUTUBE FOR SKILLS</div>
+          <div class="card-title">Search YouTube for Skills</div>
+          <div style="color:var(--dim);font-size:11px;margin-bottom:4px">Find tutorial videos and extract them as teachable AI skills</div>
           <div class="row" style="margin-top:6px">
             <input class="inp" id="yt-q" placeholder="e.g. fastapi tutorial, blockchain defi…">
             <input class="inp" id="yt-lim" type="number" value="6" style="width:55px;flex:none">
@@ -276,7 +279,7 @@
         </div>
         <div id="yt-res" style="margin-top:8px"></div>
         <div class="card" style="margin-top:8px">
-          <div class="card-title">LEARN FROM VIDEO ID</div>
+          <div class="card-title">Learn a Skill from Video</div>
           <div class="row" style="margin-top:6px">
             <input class="inp" id="yt-vid" placeholder="video_id (e.g. dQw4w9WgXcQ)">
             <label style="display:flex;align-items:center;gap:4px;color:var(--dim);font-size:10px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="yt-save"> SAVE TO MEMORY</label>
@@ -299,26 +302,26 @@
       <!-- ══ SWARM ══ -->
       <div id="pane-swarm" style="display:none">
         <div class="grid2">
-          <div class="card"><div class="card-title">HEALTH SCORE</div><div class="card-val" id="sw-h">—</div><div class="card-sub" id="sw-hs">—</div></div>
-          <div class="card"><div class="card-title">METRICS</div><div id="sw-m" style="margin-top:4px"></div></div>
+          <div class="card"><div class="card-title">Agent Health Score</div><div class="card-val" id="sw-h">—</div><div class="card-sub" id="sw-hs">—</div></div>
+          <div class="card"><div class="card-title">Agent Metrics</div><div id="sw-m" style="margin-top:4px"></div></div>
         </div>
-        <div class="card" style="margin-top:8px"><div class="card-title">SWARM VISUALIZATION</div><div id="sw-svg" style="text-align:center;margin-top:6px"></div></div>
+        <div class="card" style="margin-top:8px"><div class="card-title">Agent Network Map</div><div id="sw-svg" style="text-align:center;margin-top:6px"></div></div>
       </div>
 
       <!-- ══ ECON ══ -->
       <div id="pane-econ" style="display:none">
         <div class="grid2">
-          <div class="card"><div class="card-title">CIRCUIT BREAKER</div><div class="card-val" id="ec-state">—</div><div class="card-sub" id="ec-sub">—</div></div>
-          <div class="card"><div class="card-title">ACTIONS</div><button class="btn" style="margin-top:8px;width:100%" onclick="resetCB()">RESET CIRCUIT BREAKER</button></div>
+          <div class="card"><div class="card-title">Safety Circuit Breaker</div><div class="card-sub" style="margin-bottom:6px">Automatically halts trading when anomalies are detected</div><div class="card-val" id="ec-state">—</div><div class="card-sub" id="ec-sub">—</div></div>
+          <div class="card"><div class="card-title">Actions</div><div class="card-sub" style="margin-bottom:6px">Reset requires operator authorization</div><button class="btn" style="margin-top:8px;width:100%" onclick="resetCB()">Reset Circuit Breaker</button></div>
         </div>
-        <div class="card" style="margin-top:8px"><div class="card-title">ECONOMY VISUALIZATION</div><div id="ec-svg" style="text-align:center;margin-top:6px"></div></div>
+        <div class="card" style="margin-top:8px"><div class="card-title">Economy Flow Diagram</div><div id="ec-svg" style="text-align:center;margin-top:6px"></div></div>
       </div>
 
       <!-- ══ UBI ══ -->
       <div id="pane-ubi" style="display:none">
-        <div class="card"><div class="card-title">UBI STATUS</div><div id="ubi-s" style="margin-top:4px">Loading…</div></div>
+        <div class="card"><div class="card-title">Universal Basic Income Status</div><div style="color:var(--dim);font-size:11px;margin-bottom:4px">BRDG tokens distributed to eligible participants</div><div id="ubi-s" style="margin-top:4px">Loading…</div></div>
         <div class="card" style="margin-top:8px">
-          <div class="card-title">CLAIM UBI</div>
+          <div class="card-title">Claim UBI Tokens</div>
           <div class="row" style="margin-top:6px">
             <input class="inp" id="ubi-w" placeholder="wallet address 0x…">
             <button class="btn p" onclick="claimUbi()">CLAIM</button>
@@ -331,40 +334,37 @@
 
     <!-- DETAIL PANEL -->
     <div id="detail">
-      <div id="detail-hdr">SYSTEM LINKS</div>
+      <div id="detail-hdr">Quick Reference</div>
       <div id="detail-body">
         <div class="dsec">
+          <h4>PLATFORM PAGES</h4>
+          <div class="ditem"><span>Revenue</span><a href="/admin-revenue.html">Dashboard</a></div>
+          <div class="ditem"><span>Agents</span><a href="/agents.html">Control</a></div>
+          <div class="ditem"><span>Economy</span><a href="/economy.html">BRDG</a></div>
+          <div class="ditem"><span>Twin</span><a href="/digital-twin-console.html">Console</a></div>
+          <div class="ditem"><span>Treasury</span><a href="/treasury-dashboard.html">Manage</a></div>
+          <div class="ditem"><span>Terminal</span><a href="/console.html">CLI</a></div>
+        </div>
+        <div class="dsec">
           <h4>SERVICES</h4>
-          <div class="ditem"><span>Backend API</span><a href="/health" target="_blank">Brain :8000</a></div>
-          <div class="ditem"><span>SVG Engine</span><a href="/skills" target="_blank">Brain (unified)</a></div>
-          <div class="ditem"><span>Frontend</span><a href="/" target="_blank">Gateway :8080</a></div>
-          <div class="ditem"><span>API Docs</span><a href="/docs" target="_blank">Swagger ↗</a></div>
+          <div class="ditem"><span>API Server</span><a href="/health" target="_blank">Health</a></div>
+          <div class="ditem"><span>Frontend</span><a href="/" target="_blank">Home</a></div>
         </div>
         <div class="dsec">
           <h4>API ENDPOINTS</h4>
-          <div class="ditem"><a href="/health" target="_blank">health</a></div>
-          <div class="ditem"><a href="/live-map" target="_blank">live-map</a></div>
-          <div class="ditem"><a href="/skills/definitions" target="_blank">skill defs</a></div>
-          <div class="ditem"><a href="/treasury/summary" target="_blank">treasury</a></div>
-          <div class="ditem"><a href="/econ/circuit-breaker" target="_blank">circuit breaker</a></div>
-          <div class="ditem"><a href="/swarm/health" target="_blank">swarm health</a></div>
+          <div class="ditem"><a href="/health" target="_blank">System Health</a></div>
+          <div class="ditem"><a href="/live-map" target="_blank">Live Map State</a></div>
+          <div class="ditem"><a href="/skills/definitions" target="_blank">Skill Definitions</a></div>
+          <div class="ditem"><a href="/api/treasury/status" target="_blank">Treasury Status</a></div>
+          <div class="ditem"><a href="/api/verify/info" target="_blank">Verification Keys</a></div>
+          <div class="ditem"><a href="/api/economy/stats" target="_blank">Economy Stats</a></div>
+          <div class="ditem"><a href="/swarm/health" target="_blank">Swarm Health</a></div>
         </div>
         <div class="dsec">
-          <h4>SVG ENGINE</h4>
-          <div class="ditem"><a href="/api/svg/skills" target="_blank">skill list</a></div>
-          <div class="ditem"><a href="/api/svg/graph" target="_blank">skill graph</a></div>
-          <div class="ditem"><a href="/api/svg/telemetry" target="_blank">telemetry</a></div>
-          <div class="ditem"><a href="/api/svg/teach/bridge.economy" target="_blank">economy SVG</a></div>
-          <div class="ditem"><a href="/api/svg/teach/bridge.youtube" target="_blank">youtube SVG</a></div>
-        </div>
-        <div class="dsec">
-          <h4>ASSETS · E:\A</h4>
-          <div class="ditem"><a href="/output/" target="_blank">output/</a></div>
-          <div class="ditem"><a href="/assets/logos/" target="_blank">logos/</a></div>
-          <div class="ditem"><a href="/view-logs.html" target="_blank">Log Viewer</a></div>
-          <div class="ditem"><a href="/index.json" target="_blank">index.json</a></div>
-          <div class="ditem"><a href="/ban-live-console.svg" target="_blank">ban-live-console</a></div>
-          <div class="ditem"><a href="/ban-ultra.svg" target="_blank">ban-ultra</a></div>
+          <h4>VERIFICATION</h4>
+          <div class="ditem"><a href="/api/metrics/token" target="_blank">Token (on-chain)</a></div>
+          <div class="ditem"><a href="/api/verify/chain" target="_blank">Proof Chain</a></div>
+          <div class="ditem"><a href="/VERIFICATION.md" target="_blank">Methodology</a></div>
         </div>
       </div>
     </div>
