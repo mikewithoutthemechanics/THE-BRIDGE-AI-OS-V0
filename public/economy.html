@@ -393,12 +393,12 @@
       // --- KPI Stats ---
       function loadStats() {
         fetchJSON('/api/economy/stats').then(function (data) {
-          document.getElementById('kpi-total-supply').textContent = formatBRDG(data.totalSupply);
-          document.getElementById('kpi-total-txns').textContent = formatNumber(data.totalTransactions);
-          document.getElementById('kpi-total-burned').textContent = formatBRDG(data.totalBurned);
-          document.getElementById('kpi-total-fees').textContent = formatBRDG(data.totalFees);
-          document.getElementById('kpi-active-tasks').textContent = formatNumber(data.activeTasks);
-          document.getElementById('kpi-active-agents').textContent = formatNumber(data.activeAgents);
+          document.getElementById('kpi-total-supply').textContent = formatBRDG(data.totalCirculating || data.totalSupply || 0);
+          document.getElementById('kpi-total-txns').textContent = formatNumber(data.totalTransactions || 0);
+          document.getElementById('kpi-total-burned').textContent = formatBRDG(data.totalBurned || 0);
+          document.getElementById('kpi-total-fees').textContent = formatBRDG(data.totalFeesCollected || data.totalFees || 0);
+          document.getElementById('kpi-active-tasks').textContent = formatNumber(data.activeTasks || data.open_tasks || 0);
+          document.getElementById('kpi-active-agents').textContent = formatNumber(data.activeAgents || data.agent_count || 0);
         }).catch(function (err) {
           console.warn('Stats fetch failed:', err.message);
         });
