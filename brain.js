@@ -3019,6 +3019,96 @@ try {
   console.warn('[BRAIN] Page economics failed to load:', e.message);
 }
 
+// ── Zero-Trust Proof Chain & Merkle Anchoring ─────────────────────────────────
+let _zt, _proofStore;
+try { _zt = require('./lib/zero-trust'); } catch (_) { _zt = null; }
+try { _proofStore = require('./lib/proof-store'); } catch (_) { _proofStore = null; }
+
+if (_proofStore && _zt) {
+  const signRes = (data) => _zt.signResponse ? _zt.signResponse(data, 'api-response') : data;
+
+  app.get('/api/proofs/payments', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit || '100');
+      const proofs = await _proofStore.getAllProofs(limit);
+      res.json(signRes({ ok: true, proofs, count: proofs.length }));
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  app.get('/api/proofs/merkle', async (req, res) => {
+    try {
+      const anchor = await _proofStore.createMerkleAnchor();
+      res.json(signRes({ ok: true, anchor }));
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  app.get('/api/proofs/diagnose', async (req, res) => {
+    try {
+      const diagnosis = await _proofStore.diagnoseChain();
+      res.json(signRes({ ok: true, ...diagnosis }));
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  app.post('/api/proofs/repair', async (req, res) => {
+    try {
+      const { startIndex, anchor: doAnchor } = req.body || {};
+      const repairIdx = startIndex ?? null;
+      const shouldAnchor = doAnchor !== false;
+
+      // Step 1: Diagnose
+      const diagnosis = await _proofStore.diagnoseChain();
+      const repairFrom = repairIdx !== null ? repairIdx : (diagnosis.firstBrokenAt ?? 0);
+
+      if (diagnosis.chainHealth === 'healthy' && repairIdx === null) {
+        let anchor = null;
+        if (shouldAnchor) anchor = await _proofStore.createMerkleAnchor();
+        const verify = await _proofStore.verifyChain();
+        return res.json(signRes({
+          ok: true, action: 'no_repair_needed',
+          diagnosis: { chainHealth: 'healthy', totalProofs: diagnosis.totalProofs },
+          chainIntegrity: verify, anchor,
+        }));
+      }
+
+      // Step 2: Repair
+      const repairResult = await _proofStore.rebuildChainFrom(repairFrom);
+
+      // Step 3: Verify
+      const postRepairVerify = await _proofStore.verifyChain();
+
+      // Step 4: Merkle anchor
+      let anchor = null;
+      if (shouldAnchor && postRepairVerify.valid) {
+        anchor = await _proofStore.createMerkleAnchor();
+      }
+
+      res.json(signRes({
+        ok: true, action: 'repaired',
+        diagnosis: {
+          chainHealth: diagnosis.chainHealth,
+          issuesFound: diagnosis.integrityIssues.length,
+          firstBrokenAt: diagnosis.firstBrokenAt,
+          repairedFrom: repairFrom,
+        },
+        repair: repairResult,
+        chainIntegrity: postRepairVerify,
+        anchor,
+      }));
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  app.get('/api/verify/chain', async (req, res) => {
+    try {
+      const result = await _proofStore.verifyChain();
+      res.json(signRes({ ok: true, chainIntegrity: result }));
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  });
+
+  console.log('[BRAIN] Zero-trust proof chain routes ACTIVE');
+} else {
+  console.warn('[BRAIN] proof-store or zero-trust unavailable — proof routes disabled');
+}
+
 // ── CATCH-ALL for unknown /api/* routes — return 404 instead of misleading 200 ──
 app.all('/api/*path', (req, res) => {
   res.status(404).json({ ok: false, error: 'not_found', path: req.path, method: req.method, ts: Date.now() });
