@@ -890,6 +890,24 @@ app.get('/api/banks/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── SYSTEM STATE — single source of truth for agents page ────────────────────
+app.get('/api/system/state', async (_req, res) => {
+  try {
+    var state = await db.getSystemState();
+    res.json(state);
+  } catch (e) {
+    // Fallback: return treasury at minimum so the page isn't blank
+    var bal = 0; try { bal = await db.getTreasuryBalance(); } catch (_) {}
+    res.json({
+      agents: { outputs: {}, last_run: null, execution_status: 'never' },
+      treasury: { balance: bal },
+      bank: {},
+      ai: { spend: 0, budget: 500 },
+      meta: { generated_at: new Date().toISOString() },
+    });
+  }
+});
+
 // ── AGENT EXECUTION ─────────────────────────────────────────────────────────
 app.post('/api/agents/run', express.json(), async (req, res) => {
   if (!agents) return res.status(503).json({ ok: false, error: 'Agent module not loaded' });
