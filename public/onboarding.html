@@ -46,6 +46,7 @@
   .pw-strength{height:3px;border-radius:2px;margin-top:.3rem;background:var(--border);overflow:hidden}
   .pw-strength-bar{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="page">
@@ -129,18 +130,17 @@
 </div>
 
 <script>
-// Load OAuth provider config from backend so client IDs are never hardcoded in HTML.
-// Backend should expose GET /api/config/oauth → { googleClientId, githubClientId }
-(async function loadOAuthConfig() {
+// Supabase Auth — OAuth flows handled by Supabase, not raw client IDs
+let _supabaseClient = null;
+(async function initSupabaseAuth() {
   try {
     const res = await fetch('/api/config/oauth');
     if (!res.ok) return;
     const cfg = await res.json();
-    if (cfg.googleClientId) window.__GOOGLE_CLIENT_ID = cfg.googleClientId;
-    if (cfg.githubClientId) window.__GITHUB_CLIENT_ID = cfg.githubClientId;
-  } catch (_) {
-    // OAuth not configured — email registration works without it
-  }
+    if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {
+      _supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+    }
+  } catch (_) {}
 })();
 
 // Tab switching
@@ -251,26 +251,30 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   }
 });
 
-// Google OAuth (placeholder — needs Google Client ID)
-function googleAuth() {
-  const clientId = window.__GOOGLE_CLIENT_ID || '';
-  if (!clientId) {
-    showMsg('reg-msg', 'Google OAuth not configured yet. Use email registration.', false);
+// Google OAuth via Supabase Auth
+async function googleAuth() {
+  if (!_supabaseClient) {
+    showMsg('reg-msg', 'OAuth loading… try again in a moment.', false);
     return;
   }
-  const redirect = encodeURIComponent(location.origin + '/auth/google/callback');
-  location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirect}&response_type=code&scope=email%20profile&access_type=offline`;
+  const { error } = await _supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: location.origin + '/auth-callback' },
+  });
+  if (error) showMsg('reg-msg', error.message, false);
 }
 
-// GitHub OAuth (placeholder — needs GitHub Client ID)
-function githubAuth() {
-  const clientId = window.__GITHUB_CLIENT_ID || '';
-  if (!clientId) {
-    showMsg('reg-msg', 'GitHub OAuth not configured yet. Use email registration.', false);
+// GitHub OAuth via Supabase Auth
+async function githubAuth() {
+  if (!_supabaseClient) {
+    showMsg('reg-msg', 'OAuth loading… try again in a moment.', false);
     return;
   }
-  const redirect = encodeURIComponent(location.origin + '/auth/github/callback');
-  location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirect}&scope=user:email`;
+  const { error } = await _supabaseClient.auth.signInWithOAuth({
+    provider: 'github',
+    options: { redirectTo: location.origin + '/auth-callback' },
+  });
+  if (error) showMsg('reg-msg', error.message, false);
 }
 
 // Auto-fill referral from URL

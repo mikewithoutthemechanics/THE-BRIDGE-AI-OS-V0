@@ -92,6 +92,7 @@
     .error-msg{background:rgba(255,60,90,.08);border:1px solid rgba(255,60,90,.3);color:var(--red);border-radius:.4rem;padding:.65rem 1rem;font-size:.8rem;margin-bottom:1rem;display:none}
     .error-msg.show{display:block}
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="logo">BRIDGE<span>AI</span></div>
@@ -206,6 +207,19 @@
 </div>
 
 <script>
+/* Supabase Auth client */
+let _sb = null;
+(async () => {
+  try {
+    const r = await fetch('/api/config/oauth');
+    if (!r.ok) return;
+    const cfg = await r.json();
+    if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {
+      _sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+    }
+  } catch (_) {}
+})();
+
 /* State */
 const state = {
   intent: null,
@@ -432,11 +446,21 @@ function updateSummary() {
   document.getElementById('summPlan').textContent = planObj ? planObj.name + ' (' + planObj.price + '/mo)' : 'Free';
 }
 
-function googleOAuth() {
-  window.location.href = '/auth/google?wizard=1&intent=' +
-    encodeURIComponent(state.intent || '') +
-    '&industry=' + encodeURIComponent(state.industry || '') +
-    '&plan=' + encodeURIComponent(state.plan);
+async function googleOAuth() {
+  if (!_sb) {
+    alert('OAuth loading… try again in a moment.');
+    return;
+  }
+  const { error } = await _sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: location.origin + '/auth-callback?wizard=1&intent=' +
+        encodeURIComponent(state.intent || '') +
+        '&industry=' + encodeURIComponent(state.industry || '') +
+        '&plan=' + encodeURIComponent(state.plan),
+    },
+  });
+  if (error) alert(error.message);
 }
 
 async function createAccount() {
