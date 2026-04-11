@@ -2,29 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>BRIDGE SVG Skill Engine</title>
   <link rel="stylesheet" href="/bridge-tokens.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* Layout backgrounds (aliased from shared tokens) */
       --bg:      var(--bg-0);
       --bg2:     var(--bg-1);
       --bg3:     var(--bg-2, #111827);
-      /* Colors: --cyan, --blue, --purple provided by bridge-tokens.css */
       --pink:    var(--pink, #f472b6);
       --orange:  var(--orange, #fb923c);
       --green:   var(--green, #4ade80);
       --muted:   var(--text-secondary);
-      /* --border provided by bridge-tokens.css */
       --font:    var(--font-mono);
       --fontUI:  var(--font-ui);
       --glow:    var(--glow-cyan);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; background: var(--bg); color: var(--text-primary); font-family: var(--fontUI); overflow: hidden; }
+    html { height: 100%; }
+    body { min-height: 100%; background: var(--bg); color: var(--text-primary); font-family: var(--fontUI); overflow-x: hidden; }
 
     /* ── LAYOUT ── */
     #shell { display: grid; grid-template-columns: 240px 1fr; grid-template-rows: 56px 1fr; height: 100vh; }
@@ -32,22 +30,29 @@
     /* ── TOPBAR ── */
     #topbar {
       grid-column: 1 / -1;
-      display: flex; align-items: center; gap: 16px;
-      padding: 0 24px;
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 16px;
       background: var(--bg2);
       border-bottom: 1px solid var(--border);
+      z-index: 50;
     }
-    #topbar .logo { font-family: var(--font); font-size: 13px; color: var(--cyan); letter-spacing: 2px; }
+    #topbar .logo { font-family: var(--font); font-size: 13px; color: var(--cyan); letter-spacing: 2px; white-space: nowrap; }
     #topbar .logo span { color: var(--muted); }
-    #topbar .tagline { font-size: 11px; color: var(--muted); margin-left: 4px; }
+    #topbar .tagline { font-size: 11px; color: var(--muted); margin-left: 4px; display: none; }
     #topbar .spacer { flex: 1; }
     #topbar .pill {
-      font-family: var(--font); font-size: 10px; padding: 4px 12px;
+      font-family: var(--font); font-size: 10px; padding: 4px 10px;
       background: color-mix(in srgb, var(--cyan) 8%, transparent); border: 1px solid var(--border);
-      border-radius: 99px; color: var(--cyan);
+      border-radius: 99px; color: var(--cyan); white-space: nowrap;
     }
-    #telemetry-bar { display: flex; gap: 20px; font-family: var(--font); font-size: 10px; color: var(--muted); }
+    #telemetry-bar { display: flex; gap: 14px; font-family: var(--font); font-size: 10px; color: var(--muted); }
     #telemetry-bar span { color: var(--cyan); }
+
+    /* Hamburger */
+    #menu-toggle {
+      display: none; background: none; border: none; color: var(--cyan); font-size: 22px;
+      cursor: pointer; padding: 4px 8px; line-height: 1;
+    }
 
     /* ── SIDEBAR ── */
     #sidebar {
@@ -72,36 +77,43 @@
 
     .sidebar-section { padding: 8px 16px 4px; font-family: var(--font); font-size: 8px; color: var(--muted); letter-spacing: 1px; margin-top: 8px; }
 
+    /* ── SIDEBAR OVERLAY (mobile) ── */
+    #sidebar-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 99;
+    }
+
     /* ── MAIN ── */
-    #main { display: flex; flex-direction: column; overflow: hidden; }
+    #main { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
     #toolbar {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 20px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 12px;
       border-bottom: 1px solid var(--border);
       background: var(--bg);
+      flex-wrap: wrap;
     }
     .btn {
       font-family: var(--font); font-size: 10px;
-      padding: 5px 14px; border-radius: 6px;
+      padding: 5px 12px; border-radius: 6px;
       border: 1px solid var(--border);
       background: transparent; color: var(--cyan); cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
     }
     .btn:hover { background: color-mix(in srgb, var(--cyan) 8%, transparent); border-color: var(--cyan); }
     .btn.active { background: color-mix(in srgb, var(--cyan) 12%, transparent); border-color: var(--cyan); }
     .btn.primary { background: var(--cyan); color: var(--bg-0); border-color: var(--cyan); font-weight: 700; }
     .btn.primary:hover { opacity: 0.88; }
-    #skill-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-right: 4px; }
-    #skill-id   { font-family: var(--font); font-size: 10px; color: var(--muted); }
+    #skill-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-right: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+    #skill-id   { font-family: var(--font); font-size: 10px; color: var(--muted); display: none; }
     .spacer { flex: 1; }
 
     /* ── CANVAS ── */
-    #canvas { flex: 1; display: flex; overflow: auto; position: relative; }
+    #canvas { flex: 1; display: flex; flex-direction: column; overflow: auto; position: relative; -webkit-overflow-scrolling: touch; }
     #svg-container {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      padding: 24px; min-height: 0;
+      flex: 1; display: flex; align-items: flex-start; justify-content: center;
+      padding: 16px; min-height: 0; overflow: auto;
     }
-    #svg-container svg { max-width: 100%; border-radius: 12px; box-shadow: var(--glow); }
+    #svg-container svg { max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--glow); }
     #svg-container .loading {
       font-family: var(--font); font-size: 12px; color: var(--muted);
       animation: blink 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -113,40 +125,102 @@
       width: 280px; border-left: 1px solid var(--border);
       background: var(--bg2); overflow-y: auto;
       padding: 16px; display: flex; flex-direction: column; gap: 16px;
-      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: width 0.3s ease;
     }
-    #detail-panel.hidden { width: 0; padding: 0; overflow: hidden; }
+    #detail-panel.hidden { width: 0; padding: 0; overflow: hidden; border: none; }
     .detail-section h4 { font-family: var(--font); font-size: 9px; color: var(--muted); letter-spacing: 2px; margin-bottom: 8px; }
     .detail-section p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
     .step-item { padding: 8px; border-left: 2px solid var(--border); margin-bottom: 6px; }
     .step-item .step-title { font-size: 11px; font-weight: 600; color: var(--text-primary); }
     .step-item .step-detail { font-size: 10px; color: var(--muted); margin-top: 2px; }
-    .run-output { font-family: var(--font); font-size: 9px; color: var(--cyan); background: var(--bg3); padding: 10px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; max-height: 220px; overflow-y: auto; }
-
-    /* ── GRAPH VIEW ── */
-    #graph-view { display: none; }
-    #graph-view.visible { display: flex; flex: 1; align-items: center; justify-content: center; }
-
-    /* ── TOAST ── */
-    #toast {
-      position: fixed; bottom: 20px; right: 20px;
-      background: var(--bg2); border: 1px solid var(--cyan);
-      color: var(--cyan); font-family: var(--font); font-size: 11px;
-      padding: 10px 20px; border-radius: 8px;
-      transform: translateY(60px); opacity: 0; transition: all 0.2s ease-out;
-      z-index: 9999;
-    }
-    #toast.show { transform: translateY(0); opacity: 1; }
+    .run-output { font-family: var(--font); font-size: 9px; color: var(--cyan); background: var(--bg3); padding: 10px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; max-height: 220px; overflow-y: auto; word-break: break-all; }
 
     /* ── MODE TABS ── */
     .mode-tabs { display: flex; gap: 1px; background: var(--bg3); border-radius: 8px; padding: 2px; }
-    .mode-tab { font-family: var(--font); font-size: 9px; padding: 4px 12px; border-radius: 6px; cursor: pointer; color: var(--muted); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: none; background: none; }
+    .mode-tab { font-family: var(--font); font-size: 9px; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: var(--muted); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: none; background: none; white-space: nowrap; }
     .mode-tab.active { background: var(--bg2); color: var(--cyan); }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px);
+      background: var(--bg2); border: 1px solid var(--cyan);
+      color: var(--cyan); font-family: var(--font); font-size: 11px;
+      padding: 10px 20px; border-radius: 8px;
+      opacity: 0; transition: all 0.2s ease-out;
+      z-index: 9999; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* ── BOTTOM NAV (mobile) ── */
+    #bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bg2); border-top: 1px solid var(--border);
+      padding: 6px 0; padding-bottom: max(6px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+    #bottom-nav .nav-row { display: flex; justify-content: space-around; align-items: center; }
+    #bottom-nav .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      color: var(--muted); font-family: var(--font); font-size: 8px;
+      cursor: pointer; padding: 4px 8px; border-radius: 6px;
+      transition: all 0.15s ease; text-decoration: none; border: none; background: none;
+    }
+    #bottom-nav .nav-item:hover, #bottom-nav .nav-item.active { color: var(--cyan); }
+    #bottom-nav .nav-icon { font-size: 18px; line-height: 1; }
+
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* ══ TABLET (<=900px): collapse detail panel ══ */
+    @media (max-width: 900px) {
+      #detail-panel { display: none; }
+      #topbar .tagline { display: none; }
+    }
+
+    /* ══ MOBILE (<=640px): full responsive rewrite ══ */
+    @media (max-width: 640px) {
+      #shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: 52px 1fr;
+        height: 100vh;
       }
+
+      #topbar { padding: 0 12px; gap: 8px; height: 52px; }
+      #topbar .logo { font-size: 11px; letter-spacing: 1px; }
+      #telemetry-bar { display: none; }
+      #menu-toggle { display: block; }
+
+      #sidebar {
+        position: fixed; top: 0; left: -280px; width: 280px;
+        height: 100vh; z-index: 200;
+        transition: left 0.3s ease;
+      }
+      #sidebar.open { left: 0; }
+      #sidebar-overlay.visible { display: block; }
+
+      #toolbar { padding: 6px 8px; gap: 4px; }
+      #skill-name { font-size: 11px; max-width: 120px; }
+      .btn { padding: 4px 8px; font-size: 9px; }
+      .mode-tab { font-size: 8px; padding: 3px 8px; }
+
+      #svg-container { padding: 8px; align-items: flex-start; }
+      #svg-container svg { border-radius: 8px; }
+
+      #detail-panel { display: none; }
+
+      #bottom-nav { display: block; }
+      body { padding-bottom: 64px; }
+
+      #toast { bottom: 76px; }
+    }
+
+    /* ══ SMALL MOBILE (<=380px) ══ */
+    @media (max-width: 380px) {
+      #topbar .logo { font-size: 10px; }
+      #skill-name { max-width: 80px; font-size: 10px; }
+      .mode-tabs { display: none; }
+      .btn { font-size: 8px; padding: 3px 6px; }
     }
   </style>
 </head>
@@ -155,17 +229,22 @@
 
   <!-- TOPBAR -->
   <header id="topbar">
-    <div class="logo">BRIDGE <span>SVG</span> ENGINE</div>
-    <div class="tagline">Discover · Adopt · Teach</div>
+    <button id="menu-toggle" onclick="toggleSidebar()" aria-label="Menu">&#9776;</button>
+    <div class="logo">BRIDGE <span>SVG</span></div>
+    <div class="tagline">Discover &middot; Adopt &middot; Teach</div>
     <div class="spacer"></div>
     <div id="telemetry-bar">
-      <div>skills <span id="t-skills">—</span></div>
-      <div>p50 <span id="t-p50">—</span>ms</div>
-      <div>p95 <span id="t-p95">—</span>ms</div>
-      <div>runs <span id="t-runs">—</span></div>
+      <div>skills <span id="t-skills">&mdash;</span></div>
+      <div>p50 <span id="t-p50">&mdash;</span>ms</div>
+      <div>p95 <span id="t-p95">&mdash;</span>ms</div>
+      <div>exec <span id="t-runs">&mdash;</span></div>
+      <div>svg <span id="t-svg">&mdash;</span></div>
     </div>
-    <div class="pill" id="engine-status">● LOADING</div>
+    <div class="pill" id="engine-status">&#9679; LOADING</div>
   </header>
+
+  <!-- SIDEBAR OVERLAY -->
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
   <!-- SIDEBAR -->
   <nav id="sidebar">
@@ -176,6 +255,14 @@
       <div class="sid">system.graph</div>
       <div class="sname">Skill Dependency Graph</div>
     </div>
+    <div class="skill-item" onclick="runAll()">
+      <div class="sid">system.run-all</div>
+      <div class="sname">Execute All Skills</div>
+    </div>
+    <div class="skill-item" onclick="teachAll()">
+      <div class="sid">system.teach-all</div>
+      <div class="sname">Build All SVGs</div>
+    </div>
   </nav>
 
   <!-- MAIN -->
@@ -185,21 +272,21 @@
       <div id="skill-id"></div>
       <div class="spacer"></div>
       <div class="mode-tabs">
-        <button class="mode-tab active" onclick="setMode('teach')">VISUALIZE</button>
-        <button class="mode-tab" onclick="setMode('run')">EXECUTE</button>
-        <button class="mode-tab" onclick="setMode('tutorial')">TUTORIAL</button>
+        <button class="mode-tab active" onclick="setMode('teach',this)">SVG</button>
+        <button class="mode-tab" onclick="setMode('run',this)">EXEC</button>
+        <button class="mode-tab" onclick="setMode('tutorial',this)">LEARN</button>
       </div>
-      <button class="btn" onclick="refresh()" title="Refresh">↺ REFRESH</button>
-      <button class="btn" onclick="togglePanel()">DETAIL</button>
-      <button class="btn primary" onclick="autoPlay()">▶ AUTO</button>
+      <button class="btn" onclick="refresh()" title="Refresh">&#8634;</button>
+      <button class="btn" onclick="togglePanel()">&#9776;</button>
+      <button class="btn primary" onclick="autoPlay()">&#9654;</button>
     </div>
 
     <div id="canvas">
-      <div id="svg-container"><div class="loading">● INITIALIZING SVG ENGINE…</div></div>
-      <div id="detail-panel">
+      <div id="svg-container"><div class="loading">&#9679; INITIALIZING SVG ENGINE&hellip;</div></div>
+      <div id="detail-panel" class="hidden">
         <div class="detail-section">
           <h4>DESCRIPTION</h4>
-          <p id="desc-text">—</p>
+          <p id="desc-text">&mdash;</p>
         </div>
         <div class="detail-section">
           <h4>STEPS</h4>
@@ -207,76 +294,115 @@
         </div>
         <div class="detail-section">
           <h4>EXECUTION OUTPUT</h4>
-          <pre class="run-output" id="run-output">—</pre>
+          <pre class="run-output" id="run-output">&mdash;</pre>
         </div>
       </div>
     </div>
   </main>
 </div>
 
+<!-- BOTTOM NAV (mobile) -->
+<nav id="bottom-nav">
+  <div class="nav-row">
+    <button class="nav-item" onclick="toggleSidebar()">
+      <span class="nav-icon">&#9776;</span>SKILLS
+    </button>
+    <button class="nav-item" onclick="setMode('teach')" id="bnav-svg">
+      <span class="nav-icon">&#9670;</span>SVG
+    </button>
+    <button class="nav-item" onclick="setMode('run')" id="bnav-exec">
+      <span class="nav-icon">&#9889;</span>EXEC
+    </button>
+    <button class="nav-item" onclick="showGraph()" id="bnav-graph">
+      <span class="nav-icon">&#9678;</span>GRAPH
+    </button>
+    <button class="nav-item" onclick="setMode('tutorial')" id="bnav-learn">
+      <span class="nav-icon">&#128214;</span>LEARN
+    </button>
+  </div>
+</nav>
+
 <div id="toast"></div>
 
 <script>
-const ENGINE = `http://localhost:7070`;
-let skills   = [];
-let current  = null;
-let mode     = "teach";
-let autoTimer = null;
-let panelOpen = true;
+// NOTE: This dashboard uses safe DOM manipulation with textContent where possible.
+// SVG content from the engine is trusted (same-origin) and rendered via the SVG container.
+
+const loc = window.location;
+const ENGINE = (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1')
+  ? 'http://localhost:7070'
+  : loc.pathname.startsWith('/svg-engine')
+    ? loc.origin + '/svg-engine'
+    : loc.origin;
+
+let skills = [], current = null, mode = 'teach', autoTimer = null, panelOpen = false, sidebarOpen = false;
+
+function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 async function init() {
   try {
-    const r = await fetch(`${ENGINE}/skills`);
-    const j = await r.json();
+    var r = await fetch(ENGINE + '/skills');
+    var j = await r.json();
     skills = j.skills || [];
     renderSidebar();
     updateTelemetry();
     setInterval(updateTelemetry, 8000);
-    document.getElementById("engine-status").textContent = `● ${skills.length} SKILLS`;
-    document.getElementById("engine-status").style.color = "var(--cyan)";
+    document.getElementById('engine-status').textContent = '\u25CF ' + skills.length + ' SKILLS';
+    document.getElementById('engine-status').style.color = 'var(--cyan)';
     if (skills.length) selectSkill(skills[0].id);
   } catch(e) {
-    document.getElementById("svg-container").innerHTML =
-      `<div style="color:var(--pink);font-family:var(--font);font-size:12px;text-align:center">
-        ● SVG Engine offline<br><small style="color:var(--muted)">Start with: node api/server.js</small>
-      </div>`;
-    document.getElementById("engine-status").textContent = "● OFFLINE";
-    document.getElementById("engine-status").style.color = "var(--pink)";
+    document.getElementById('svg-container').textContent = '';
+    var msg = document.createElement('div');
+    msg.style.cssText = 'color:var(--pink);font-family:var(--font);font-size:12px;text-align:center;padding:40px 20px';
+    msg.textContent = '\u25CF SVG Engine offline \u2014 Start with: node api/server.js';
+    document.getElementById('svg-container').appendChild(msg);
+    document.getElementById('engine-status').textContent = '\u25CF OFFLINE';
+    document.getElementById('engine-status').style.color = 'var(--pink)';
   }
 }
 
 function renderSidebar() {
-  const grouped = {};
-  skills.forEach(s => {
-    const group = s.tags[0] || "other";
+  var grouped = {};
+  skills.forEach(function(s) {
+    var group = (s.tags && s.tags[0]) || 'other';
     (grouped[group] = grouped[group] || []).push(s);
   });
-
-  let html = "";
-  Object.entries(grouped).forEach(([g, list]) => {
-    html += `<div class="sidebar-section">${g.toUpperCase()}</div>`;
-    list.forEach(s => {
-      html += `<div class="skill-item" id="item-${s.id.replace(/\./g,'_')}" onclick="selectSkill('${s.id}')">
-        <div class="sid">${s.id}</div>
-        <div class="sname">${s.name}</div>
-        <div class="stags">${(s.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
-      </div>`;
+  var container = document.getElementById('skill-list');
+  container.textContent = '';
+  Object.entries(grouped).forEach(function(entry) {
+    var g = entry[0], list = entry[1];
+    var sec = document.createElement('div');
+    sec.className = 'sidebar-section';
+    sec.textContent = g.toUpperCase();
+    container.appendChild(sec);
+    list.forEach(function(s) {
+      var item = document.createElement('div');
+      item.className = 'skill-item';
+      item.id = 'item-' + s.id.replace(/[.:]/g, '_');
+      item.onclick = function() { selectSkill(s.id); };
+      var sid = document.createElement('div'); sid.className = 'sid'; sid.textContent = s.id;
+      var sname = document.createElement('div'); sname.className = 'sname'; sname.textContent = s.name;
+      var stags = document.createElement('div'); stags.className = 'stags';
+      (s.tags || []).slice(0,4).forEach(function(t) {
+        var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = t;
+        stags.appendChild(tag);
+      });
+      item.appendChild(sid); item.appendChild(sname); item.appendChild(stags);
+      container.appendChild(item);
     });
   });
-  document.getElementById("skill-list").innerHTML = html;
 }
 
 async function selectSkill(id) {
   current = id;
-  document.querySelectorAll(".skill-item").forEach(el => el.classList.remove("active"));
-  const el = document.getElementById(`item-${id.replace(/\./g,'_')}`);
-  if (el) { el.classList.add("active"); el.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
-
-  const skill = skills.find(s => s.id === id) || {};
-  document.getElementById("skill-name").textContent = skill.name || id;
-  document.getElementById("skill-id").textContent   = id;
-  document.getElementById("desc-text").textContent  = skill.description || "—";
-
+  closeSidebar();
+  document.querySelectorAll('.skill-item').forEach(function(el) { el.classList.remove('active'); });
+  var el = document.getElementById('item-' + id.replace(/[.:]/g, '_'));
+  if (el) { el.classList.add('active'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  var skill = skills.find(function(s) { return s.id === id; }) || {};
+  document.getElementById('skill-name').textContent = skill.name || id;
+  document.getElementById('skill-id').textContent = id;
+  document.getElementById('desc-text').textContent = skill.description || '\u2014';
   await renderMode();
   await fetchRunOutput(id);
   renderSteps(skill.steps || []);
@@ -284,120 +410,254 @@ async function selectSkill(id) {
 
 async function renderMode() {
   if (!current) return;
-  const container = document.getElementById("svg-container");
-  container.innerHTML = `<div class="loading">● RENDERING ${current}…</div>`;
-
+  var container = document.getElementById('svg-container');
+  container.textContent = '';
+  var loader = document.createElement('div'); loader.className = 'loading'; loader.textContent = '\u25CF RENDERING\u2026';
+  container.appendChild(loader);
   try {
-    if (mode === "teach") {
-      const r = await fetch(`${ENGINE}/teach/${current}`);
-      const svg = await r.text();
-      container.innerHTML = svg;
-    } else if (mode === "run") {
-      const r = await fetch(`${ENGINE}/run/${current}`);
-      const j = await r.json();
-      container.innerHTML = `<pre style="font-family:var(--font);font-size:11px;color:var(--cyan);background:var(--bg2);padding:24px;border-radius:12px;max-width:700px;white-space:pre-wrap">${JSON.stringify(j, null, 2)}</pre>`;
-    } else if (mode === "tutorial") {
-      const r = await fetch(`${ENGINE}/tutorial/${current}`);
-      const j = await r.json();
-      const tut = j.tutorial || {};
-      container.innerHTML = `
-        <div style="max-width:700px;width:100%">
-          <div style="margin-bottom:12px">
-            <div style="font-size:16px;font-weight:700;color:var(--text-primary)">${tut.name || current}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px">${tut.description || ""}</div>
-          </div>
-          ${tut.svg || ""}
-          ${(tut.steps||[]).map((s,i)=>`
-            <div style="margin-top:12px;padding:10px 14px;background:var(--bg2);border-left:2px solid var(--cyan);border-radius:0 8px 8px 0">
-              <div style="font-size:11px;font-weight:600;color:var(--text-primary)">${i+1}. ${s.title}</div>
-              <div style="font-size:10px;color:var(--muted);margin-top:3px">${s.detail}</div>
-            </div>`).join("")}
-        </div>`;
+    if (mode === 'teach') {
+      var r = await fetch(ENGINE + '/teach/' + current);
+      var svg = await r.text();
+      container.textContent = '';
+      // SVG from our own engine — trusted same-origin content
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = svg;
+      while (wrapper.firstChild) container.appendChild(wrapper.firstChild);
+    } else if (mode === 'run') {
+      var r2 = await fetch(ENGINE + '/run/' + current);
+      var j2 = await r2.json();
+      container.textContent = '';
+      var pre = document.createElement('pre');
+      pre.style.cssText = 'font-family:var(--font);font-size:11px;color:var(--cyan);background:var(--bg2);padding:16px;border-radius:12px;max-width:100%;white-space:pre-wrap;word-break:break-all;overflow:auto';
+      pre.textContent = JSON.stringify(j2, null, 2);
+      container.appendChild(pre);
+    } else if (mode === 'tutorial') {
+      var r3 = await fetch(ENGINE + '/tutorial/' + current);
+      var j3 = await r3.json();
+      var tut = j3.tutorial || {};
+      container.textContent = '';
+      var div = document.createElement('div');
+      div.style.cssText = 'max-width:700px;width:100%';
+      var title = document.createElement('div');
+      title.style.cssText = 'font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:4px';
+      title.textContent = tut.name || current;
+      div.appendChild(title);
+      var desc = document.createElement('div');
+      desc.style.cssText = 'font-size:12px;color:var(--muted);margin-bottom:12px';
+      desc.textContent = tut.description || '';
+      div.appendChild(desc);
+      if (tut.svg) {
+        var svgWrap = document.createElement('div');
+        svgWrap.innerHTML = tut.svg;
+        div.appendChild(svgWrap);
+      }
+      (tut.steps || []).forEach(function(s, i) {
+        var step = document.createElement('div');
+        step.style.cssText = 'margin-top:12px;padding:10px 14px;background:var(--bg2);border-left:2px solid var(--cyan);border-radius:0 8px 8px 0';
+        var st = document.createElement('div');
+        st.style.cssText = 'font-size:11px;font-weight:600;color:var(--text-primary)';
+        st.textContent = (i+1) + '. ' + s.title;
+        var sd = document.createElement('div');
+        sd.style.cssText = 'font-size:10px;color:var(--muted);margin-top:3px';
+        sd.textContent = s.detail;
+        step.appendChild(st); step.appendChild(sd);
+        div.appendChild(step);
+      });
+      container.appendChild(div);
     }
   } catch(e) {
-    container.innerHTML = `<div style="color:var(--pink);font-family:var(--font);font-size:11px">Error: ${e.message}</div>`;
+    container.textContent = '';
+    var err = document.createElement('div');
+    err.style.cssText = 'color:var(--pink);font-family:var(--font);font-size:11px;padding:20px';
+    err.textContent = 'Error: ' + e.message;
+    container.appendChild(err);
   }
+  updateBottomNav();
 }
 
 async function fetchRunOutput(id) {
   try {
-    const r = await fetch(`${ENGINE}/run/${id}`);
-    const j = await r.json();
-    document.getElementById("run-output").textContent = JSON.stringify(j.data || j, null, 2);
-  } catch { document.getElementById("run-output").textContent = "—"; }
+    var r = await fetch(ENGINE + '/run/' + id);
+    var j = await r.json();
+    document.getElementById('run-output').textContent = JSON.stringify(j.data || j, null, 2);
+  } catch(e) { document.getElementById('run-output').textContent = '\u2014'; }
 }
 
 function renderSteps(steps) {
-  document.getElementById("steps-list").innerHTML = steps.map((s,i) => `
-    <div class="step-item">
-      <div class="step-title">${i+1}. ${s.title}</div>
-      <div class="step-detail">${s.detail}</div>
-    </div>`).join("") || "<div style='color:var(--muted);font-size:11px'>No steps defined</div>";
+  var container = document.getElementById('steps-list');
+  container.textContent = '';
+  if (!steps.length) {
+    var empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--muted);font-size:11px';
+    empty.textContent = 'No steps defined';
+    container.appendChild(empty);
+    return;
+  }
+  steps.forEach(function(s, i) {
+    var item = document.createElement('div'); item.className = 'step-item';
+    var t = document.createElement('div'); t.className = 'step-title'; t.textContent = (i+1) + '. ' + s.title;
+    var d = document.createElement('div'); d.className = 'step-detail'; d.textContent = s.detail;
+    item.appendChild(t); item.appendChild(d);
+    container.appendChild(item);
+  });
 }
 
 async function updateTelemetry() {
   try {
-    const r = await fetch(`${ENGINE}/telemetry`);
-    const j = await r.json();
-    const t = j.telemetry || {};
-    document.getElementById("t-skills").textContent = t.skills_loaded || "—";
-    document.getElementById("t-p50").textContent    = t.p50_ms || "0";
-    document.getElementById("t-p95").textContent    = t.p95_ms || "0";
-    document.getElementById("t-runs").textContent   = t.total_executions || "0";
-  } catch {}
+    var r = await fetch(ENGINE + '/telemetry');
+    var j = await r.json();
+    var t = j.telemetry || {};
+    document.getElementById('t-skills').textContent = t.skills_loaded || '\u2014';
+    document.getElementById('t-p50').textContent = t.p50_ms || '0';
+    document.getElementById('t-p95').textContent = t.p95_ms || '0';
+    document.getElementById('t-runs').textContent = t.total_executions || '0';
+    document.getElementById('t-svg').textContent = t.svg_builds || '0';
+  } catch(e) {}
 }
 
 async function showGraph() {
   current = null;
-  document.querySelectorAll(".skill-item").forEach(el => el.classList.remove("active"));
-  document.getElementById("skill-name").textContent = "Skill Dependency Graph";
-  document.getElementById("skill-id").textContent   = "system.graph";
-  const container = document.getElementById("svg-container");
-  container.innerHTML = `<div class="loading">● BUILDING GRAPH…</div>`;
+  closeSidebar();
+  document.querySelectorAll('.skill-item').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('skill-name').textContent = 'Skill Graph';
+  document.getElementById('skill-id').textContent = 'system.graph';
+  var container = document.getElementById('svg-container');
+  container.textContent = '';
+  var loader = document.createElement('div'); loader.className = 'loading'; loader.textContent = '\u25CF BUILDING GRAPH\u2026';
+  container.appendChild(loader);
   try {
-    const r = await fetch(`${ENGINE}/graph`);
-    const svg = await r.text();
-    container.innerHTML = svg;
+    var r = await fetch(ENGINE + '/graph');
+    var svg = await r.text();
+    container.textContent = '';
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = svg;
+    while (wrapper.firstChild) container.appendChild(wrapper.firstChild);
   } catch(e) {
-    container.innerHTML = `<div style="color:var(--pink);font-family:var(--font);font-size:11px">Graph error: ${e.message}</div>`;
+    container.textContent = '';
+    var err = document.createElement('div');
+    err.style.cssText = 'color:var(--pink);font-family:var(--font);font-size:11px;padding:20px';
+    err.textContent = 'Graph error: ' + e.message;
+    container.appendChild(err);
+  }
+  updateBottomNav();
+}
+
+async function runAll() {
+  closeSidebar();
+  var container = document.getElementById('svg-container');
+  container.textContent = '';
+  var loader = document.createElement('div'); loader.className = 'loading'; loader.textContent = '\u25CF EXECUTING ALL SKILLS\u2026';
+  container.appendChild(loader);
+  try {
+    var r = await fetch(ENGINE + '/run-all');
+    var j = await r.json();
+    container.textContent = '';
+    var pre = document.createElement('pre');
+    pre.style.cssText = 'font-family:var(--font);font-size:11px;color:var(--cyan);background:var(--bg2);padding:16px;border-radius:12px;max-width:100%;white-space:pre-wrap;word-break:break-all;overflow:auto';
+    pre.textContent = JSON.stringify(j, null, 2);
+    container.appendChild(pre);
+    toast('Executed ' + j.executed + ' skills');
+    updateTelemetry();
+  } catch(e) {
+    container.textContent = '';
+    var err = document.createElement('div');
+    err.style.cssText = 'color:var(--pink);font-family:var(--font);font-size:11px;padding:20px';
+    err.textContent = e.message;
+    container.appendChild(err);
   }
 }
 
-function setMode(m) {
+async function teachAll() {
+  closeSidebar();
+  var container = document.getElementById('svg-container');
+  container.textContent = '';
+  var loader = document.createElement('div'); loader.className = 'loading'; loader.textContent = '\u25CF BUILDING ALL SVGs\u2026';
+  container.appendChild(loader);
+  try {
+    var r = await fetch(ENGINE + '/teach-all');
+    var j = await r.json();
+    container.textContent = '';
+    var pre = document.createElement('pre');
+    pre.style.cssText = 'font-family:var(--font);font-size:11px;color:var(--cyan);background:var(--bg2);padding:16px;border-radius:12px;max-width:100%;white-space:pre-wrap;word-break:break-all;overflow:auto';
+    pre.textContent = JSON.stringify(j, null, 2);
+    container.appendChild(pre);
+    toast('Built ' + j.svg_builds + ' SVGs');
+    updateTelemetry();
+  } catch(e) {
+    container.textContent = '';
+    var err = document.createElement('div');
+    err.style.cssText = 'color:var(--pink);font-family:var(--font);font-size:11px;padding:20px';
+    err.textContent = e.message;
+    container.appendChild(err);
+  }
+}
+
+function setMode(m, btn) {
   mode = m;
-  document.querySelectorAll(".mode-tab").forEach(t => t.classList.remove("active"));
-  event.target.classList.add("active");
-  renderMode();
+  document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  else document.querySelectorAll('.mode-tab').forEach(function(t) {
+    if (t.textContent.toLowerCase().indexOf(m.slice(0,3)) !== -1) t.classList.add('active');
+  });
+  if (current) renderMode();
+  updateBottomNav();
 }
 
 function refresh() {
-  renderMode();
-  if (current) fetchRunOutput(current);
-  toast("Refreshed");
+  if (current) { renderMode(); fetchRunOutput(current); }
+  toast('Refreshed');
 }
 
 function togglePanel() {
   panelOpen = !panelOpen;
-  document.getElementById("detail-panel").classList.toggle("hidden", !panelOpen);
+  document.getElementById('detail-panel').classList.toggle('hidden', !panelOpen);
 }
 
-let autoIdx = 0;
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  document.getElementById('sidebar').classList.toggle('open', sidebarOpen);
+  document.getElementById('sidebar-overlay').classList.toggle('visible', sidebarOpen);
+}
+
+function closeSidebar() {
+  sidebarOpen = false;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('visible');
+}
+
+function updateBottomNav() {
+  document.querySelectorAll('#bottom-nav .nav-item').forEach(function(n) { n.classList.remove('active'); });
+  var id = mode === 'teach' ? 'bnav-svg' : mode === 'run' ? 'bnav-exec' : 'bnav-learn';
+  var el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+var autoIdx = 0;
 function autoPlay() {
-  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; toast("Auto stopped"); return; }
-  autoTimer = setInterval(() => {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; toast('Auto stopped'); return; }
+  autoTimer = setInterval(function() {
     if (!skills.length) return;
     autoIdx = (autoIdx + 1) % skills.length;
     selectSkill(skills[autoIdx].id);
   }, 4000);
-  toast("Auto cycling skills…");
+  toast('Auto cycling\u2026');
 }
 
 function toast(msg) {
-  const el = document.getElementById("toast");
+  var el = document.getElementById('toast');
   el.textContent = msg;
-  el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 2200);
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2200);
 }
+
+// Swipe-to-open sidebar on mobile
+var touchStartX = 0;
+document.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', function(e) {
+  var dx = e.changedTouches[0].clientX - touchStartX;
+  if (dx > 80 && touchStartX < 30 && !sidebarOpen) toggleSidebar();
+  if (dx < -60 && sidebarOpen) closeSidebar();
+}, { passive: true });
 
 init();
 </script>
