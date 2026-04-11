@@ -540,6 +540,30 @@ app.get('/auth/audit/user/:uid',  (req, res) => proxyToAuth(req, res));
 // Referral — proxy to auth service on port 5001
 app.post('/referral/claim', (req, res) => proxyToAuth(req, res));
 
+// ── Platform-auth routes — proxy to unified-server (port 3000) ───────────────
+// /auth/me, /auth/logout, /auth/exchange-code live in server.js (unified-server)
+async function proxyToUnified(req, res) {
+  const url = `http://localhost:3000${req.originalUrl}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(10000) };
+    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+    if (req.headers['cookie']) opts.headers['Cookie'] = req.headers['cookie'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const ct = r.headers.get('content-type') || 'application/json';
+    const fwdCookie = r.headers.get('set-cookie');
+    if (fwdCookie) res.setHeader('Set-Cookie', fwdCookie);
+    const text = await r.text();
+    res.status(r.status).set('Content-Type', ct).send(text);
+  } catch (e) {
+    res.status(502).json({ error: 'unified-server unreachable', details: e.message });
+  }
+}
+app.get('/auth/me',              (req, res) => proxyToUnified(req, res));
+app.post('/auth/logout',         (req, res) => proxyToUnified(req, res));
+app.post('/auth/exchange-code',  (req, res) => proxyToUnified(req, res));
+
 // ── BAN PROXY ────────────────────────────────────────────────────────────────
 // Try BAN on 8001 (Python FastAPI), fall back to ban-home.html
 app.all('/ban', async (_req, res) => {
@@ -1765,6 +1789,24 @@ app.post('/api/proofs/merkle', async (_req, res) => {
 });
 
 // ── BRAIN PROXY — forward unknown /api/* to brain on 8000 ────────────────────
+// ── PLATFORM API — proxy /api/platform/* to unified-server (port 3000) ──────
+app.all('/api/platform/*path', async (req, res) => {
+  const url = `http://localhost:3000${req.originalUrl}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
+    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+    if (req.headers['cookie']) opts.headers['Cookie'] = req.headers['cookie'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const ct = r.headers.get('content-type') || 'application/json';
+    const text = await r.text();
+    res.status(r.status).set('Content-Type', ct).send(text);
+  } catch (e) {
+    res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
+  }
+});
+
 // This catches any /api/* route not handled above and proxies to the brain.
 // Intentionally unauthenticated: brain service handles its own auth and this
 // is internal routing only. Public API routes are handled above. (security: #H-2)
