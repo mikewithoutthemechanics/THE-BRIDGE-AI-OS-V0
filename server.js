@@ -1848,6 +1848,14 @@ app.post('/api/economy/run-cycle', async (_req, res) => {
 
 console.log('[SERVER] Economy engine + auto-task loop ACTIVE');
 
+// ================= Platform Productization Layer (/api/platform/*) =================
+const { handlePlatform } = require('./api/platform');
+app.all('/api/platform/{*path}', async (req, res, next) => {
+  const handled = await handlePlatform(req, res);
+  if (handled !== null) return; // platform handler wrote the response
+  next();
+});
+
 // ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE (catch-all — must be last) =================
 app.all('/api/{*path}', async (req, res) => {
   try {
