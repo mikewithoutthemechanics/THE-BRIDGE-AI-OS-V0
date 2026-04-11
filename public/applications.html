@@ -3,17 +3,313 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>50 Applications — Bridge AI OS</title>
+  <title>Bridge AI OS — Command Hub</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/apps-CYIODg8g.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="stylesheet" crossorigin href="/assets/apps-BnDKHHcp.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#060810;color:#fff;font-family:'Inter',system-ui,-apple-system,sans-serif;min-height:100vh;overflow-x:hidden}
+    .hub{max-width:1200px;margin:0 auto;padding:60px 20px 40px}
+    .hero{text-align:center;padding:40px 0 30px}
+    .hero h1{font-size:2.4rem;font-weight:800;background:linear-gradient(135deg,#63ffda,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+    .hero p{color:#94a3b8;font-size:0.95rem;max-width:600px;margin:0 auto}
+    .live-bar{display:flex;justify-content:center;gap:24px;margin:24px 0 36px;flex-wrap:wrap}
+    .live-stat{text-align:center;padding:12px 20px;background:#0a0e17;border:1px solid #1a2a3a;border-radius:10px;min-width:120px}
+    .live-val{font-size:1.5rem;font-weight:800;color:#63ffda}
+    .live-label{font-size:0.65rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+    .section-tabs{display:flex;justify-content:center;gap:6px;margin-bottom:30px;flex-wrap:wrap}
+    .tab{padding:10px 22px;border-radius:8px;font-size:0.78rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:1px solid rgba(99,255,218,0.15);background:rgba(99,255,218,0.04);color:#63ffda;transition:all 0.25s}
+    .tab:hover{background:rgba(99,255,218,0.1);border-color:rgba(99,255,218,0.3)}
+    .tab.active{background:#63ffda;color:#060810;border-color:#63ffda;box-shadow:0 0 20px rgba(99,255,218,0.3)}
+    .section-panel{display:none;animation:fadeSlide 0.4s ease}
+    .section-panel.active{display:block}
+    @keyframes fadeSlide{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .card{background:#0a0e17;border:1px solid #1a2a3a;border-radius:12px;padding:20px;cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden;text-decoration:none;display:block}
+    .card:hover{border-color:#63ffda;transform:translateY(-3px);box-shadow:0 8px 30px rgba(99,255,218,0.08)}
+    .card-icon{font-size:1.8rem;margin-bottom:10px;display:block}
+    .card-name{font-size:0.95rem;font-weight:700;color:#e2e8f0;margin-bottom:4px}
+    .card-desc{font-size:0.75rem;color:#64748b;line-height:1.5}
+    .card-dot{position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.5)}
+    .sitemap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+    .sitemap-link{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#0a0e17;border:1px solid #1a2a3a;border-radius:8px;color:#94a3b8;text-decoration:none;font-size:0.78rem;font-weight:600;letter-spacing:0.5px;transition:all 0.2s}
+    .sitemap-link:hover{color:#63ffda;border-color:rgba(99,255,218,0.3);background:rgba(99,255,218,0.04)}
+    .sitemap-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0}
+    .section-header{font-size:0.7rem;color:#63ffda;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(99,255,218,0.1)}
+    .balance-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+    .bal-card{flex:1;min-width:200px;background:#0a0e17;border:1px solid #1a2a3a;border-radius:10px;padding:16px;text-align:center}
+    .bal-val{font-size:1.8rem;font-weight:800;color:#63ffda}
+    .bal-label{font-size:0.65rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
+    @media(max-width:768px){
+      .hub{padding:50px 12px 30px}
+      .hero h1{font-size:1.6rem}
+      .hero p{font-size:0.82rem}
+      .live-bar{gap:10px}
+      .live-stat{min-width:90px;padding:10px 12px}
+      .live-val{font-size:1.1rem}
+      .section-tabs{gap:4px}
+      .tab{padding:8px 14px;font-size:0.7rem}
+      .card-grid{grid-template-columns:1fr}
+      .sitemap-grid{grid-template-columns:1fr 1fr}
+      .balance-row{flex-direction:column}
+      .bal-val{font-size:1.3rem}
+    }
+    @media(max-width:380px){
+      .hero h1{font-size:1.3rem}
+      .tab{padding:7px 10px;font-size:0.65rem;letter-spacing:1px}
+      .sitemap-grid{grid-template-columns:1fr}
+    }
+  </style>
 </head>
 <body>
-  <div id="app"></div>
-<script src="/bridge-nav.js" defer></script>
+<script src="/bridge-nav.js?v=3"></script>
+<div class="hub">
+
+  <div class="hero">
+    <h1>Bridge AI OS</h1>
+    <p>Unified AI operating system — 50+ applications, 10 autonomous agents, real treasury on Linea L2</p>
+  </div>
+
+  <div class="live-bar">
+    <div class="live-stat"><div class="live-val" id="lb-treasury">--</div><div class="live-label">Treasury (ZAR)</div></div>
+    <div class="live-stat"><div class="live-val" id="lb-brdg">--</div><div class="live-label">BRDG Supply</div></div>
+    <div class="live-stat"><div class="live-val" id="lb-agents">10</div><div class="live-label">AI Agents</div></div>
+    <div class="live-stat"><div class="live-val" id="lb-pages">87</div><div class="live-label">Pages</div></div>
+  </div>
+
+  <div class="section-tabs" id="tabs"></div>
+
+  <div id="panels"></div>
+
+</div>
+
+<script>
+(function(){
+  var data = {
+    platforms: {
+      label: '8 Social Impact Platforms',
+      items: [
+        { icon:'\u{1F3E5}', name:'EHSA', desc:'Enterprise Health System for Africa — clinic management, patient records, telemedicine', url:'/ehsa-home.html' },
+        { icon:'\u{1F3E8}', name:'Hospital', desc:'Hospital operations — bed tracking, staff scheduling, pharmacy', url:'/hospital-home.html' },
+        { icon:'\u{1F91D}', name:'AID', desc:'Humanitarian aid distribution — beneficiary tracking, resource allocation', url:'/aid-home.html' },
+        { icon:'\u{1F4B0}', name:'UBI', desc:'Universal Basic Income engine — eligibility, disbursement, impact', url:'/ubi-home.html' },
+        { icon:'\u{1F6E1}', name:'SUPAC', desc:'Supply chain anti-corruption — procurement audit, tender transparency', url:'/supac-home.html' },
+        { icon:'\u{1F3E6}', name:'BAN', desc:'Banking infrastructure — accounts, transfers, compliance', url:'/ban-home.html' },
+        { icon:'\u2728', name:'Aurora', desc:'AI education platform — adaptive learning, curriculum generation', url:'/aurora-home.html' },
+        { icon:'\u{1F331}', name:'Rooted Earth', desc:'Regenerative agriculture — soil health, carbon credits', url:'/rootedearth-home.html' }
+      ]
+    },
+    business: {
+      label: 'Business Suite — Full Enterprise Toolkit',
+      items: [
+        { icon:'\u{1F4CA}', name:'CRM', desc:'Contacts, deals, pipeline management', url:'/crm.html' },
+        { icon:'\u{1F4C4}', name:'Invoicing', desc:'Auto-generation, payment tracking', url:'/invoicing.html' },
+        { icon:'\u{1F4B1}', name:'Quotes', desc:'AI quote generation, proposal builder', url:'/quotes.html' },
+        { icon:'\u2696', name:'Legal', desc:'Contracts, compliance, document gen', url:'/legal.html' },
+        { icon:'\u{1F4E3}', name:'Marketing', desc:'Campaigns, email, social, calendar', url:'/marketing.html' },
+        { icon:'\u{1F3AB}', name:'Tickets', desc:'Support tickets, SLA, auto-routing', url:'/tickets.html' },
+        { icon:'\u{1F4E6}', name:'Vendors', desc:'Procurement, contracts, performance', url:'/vendors.html' },
+        { icon:'\u{1F465}', name:'Customers', desc:'Profiles, interactions, lifetime value', url:'/customers.html' },
+        { icon:'\u{1F477}', name:'Workforce', desc:'HR, scheduling, payroll, performance', url:'/workforce.html' },
+        { icon:'\u{1F3AF}', name:'Lead Gen', desc:'Scoring, nurture sequences, conversion', url:'/leadgen.html' },
+        { icon:'\u{1F517}', name:'Affiliate', desc:'Partner tracking, commissions, payouts', url:'/affiliate.html' },
+        { icon:'\u{1F3DB}', name:'Governance', desc:'Proposals, voting, treasury allocation', url:'/governance.html' }
+      ]
+    },
+    services: {
+      label: 'Core Infrastructure Services',
+      items: [
+        { icon:'\u{1F3AE}', name:'Control', desc:'Central orchestration, health monitoring', url:'/' },
+        { icon:'\u26A1', name:'God Mode', desc:'Full system override, emergency controls', url:'/control.html' },
+        { icon:'\u{1F4FA}', name:'Live Wall', desc:'Real-time 3D avatar wall, WebSocket', url:'/avatar.html' },
+        { icon:'\u{1F3A8}', name:'SVG Engine', desc:'HD animated SVG, real-time rendering', url:'/glyph.html' },
+        { icon:'\u{1F9E0}', name:'Brain', desc:'Universal AI brain — LLM, economy, governance', url:'/api/health' },
+        { icon:'\u{1F4BB}', name:'Terminal', desc:'Web terminal, direct server access', url:'/terminal.html' },
+        { icon:'\u{1F4C8}', name:'Status', desc:'System metrics, performance dashboards', url:'/system-status-dashboard.html' }
+      ]
+    },
+    system: {
+      label: 'System Operations and Monitoring',
+      items: [
+        { icon:'\u{1F3AF}', name:'Command Center', desc:'Agent control, task dispatch', url:'/command-center.html' },
+        { icon:'\u{1F916}', name:'Agents', desc:'10 autonomous AI agents, L1/L2/L3', url:'/agents.html' },
+        { icon:'\u{1F578}', name:'Topology', desc:'Network map, service connections', url:'/topology.html' },
+        { icon:'\u{1F4DA}', name:'Layers', desc:'L0-L4 architecture visualization', url:'/topology-layers.html' },
+        { icon:'\u{1F4CB}', name:'Registry', desc:'52 agents, capabilities, trust scores', url:'/registry.html' },
+        { icon:'\u{1F4DC}', name:'Logs', desc:'Structured logging, search, filters', url:'/logs.html' },
+        { icon:'\u{1F4B8}', name:'Treasury', desc:'Double-entry ledger, 4-bucket split', url:'/treasury-dashboard.html' },
+        { icon:'\u{1F3E6}', name:'Banks', desc:'Fiat rails, PayFast, Paystack', url:'/banks.html' },
+        { icon:'\u2699', name:'Infrastructure', desc:'Docker, nginx, PM2, DNS', url:'/infra.html' },
+        { icon:'\u{1F4CA}', name:'Dashboard', desc:'Executive KPIs, revenue, growth', url:'/aoe-dashboard.html' }
+      ]
+    },
+    more: {
+      label: 'Balances and Full Sitemap',
+      items: []
+    }
+  };
+
+  var sitemapPages = [
+    '50-applications','admin','admin-command','admin-revenue','admin-sitemap','admin-withdraw',
+    'affiliate','agents','aid-home','aoe-dashboard','applications','aurora-home','avatar',
+    'ban-home','banks','brand','bridge-audit-dashboard','command-center','control','corporate',
+    'crm','customers','defi','digital-twin-console','docs','ehsa-home','executive-dashboard',
+    'governance','glyph','hospital-home','infra','invoicing','join','leadgen','legal','logs',
+    'marketing','marketplace','payment','platforms','pricing','quotes','registry',
+    'rootedearth-home','sitemap','supac-home','system-status-dashboard','terminal',
+    'tickets','topology','topology-layers','trading','treasury-dashboard','ubi-home',
+    'vendors','workforce'
+  ];
+
+  // Build tabs
+  var tabsEl = document.getElementById('tabs');
+  var panelsEl = document.getElementById('panels');
+  var sectionKeys = Object.keys(data);
+  var first = true;
+
+  sectionKeys.forEach(function(key) {
+    var sec = data[key];
+    // Tab button
+    var tab = document.createElement('div');
+    tab.className = 'tab' + (first ? ' active' : '');
+    tab.dataset.section = key;
+    tab.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+    tab.addEventListener('click', function() {
+      tabsEl.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+      panelsEl.querySelectorAll('.section-panel').forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById('sec-' + key).classList.add('active');
+    });
+    tabsEl.appendChild(tab);
+
+    // Panel
+    var panel = document.createElement('div');
+    panel.className = 'section-panel' + (first ? ' active' : '');
+    panel.id = 'sec-' + key;
+
+    var header = document.createElement('div');
+    header.className = 'section-header';
+    header.textContent = sec.label;
+    panel.appendChild(header);
+
+    if (key === 'more') {
+      // Balances row
+      var balRow = document.createElement('div');
+      balRow.className = 'balance-row';
+      balRow.id = 'balances';
+      panel.appendChild(balRow);
+
+      var smHeader = document.createElement('div');
+      smHeader.className = 'section-header';
+      smHeader.style.marginTop = '24px';
+      smHeader.textContent = 'Full Sitemap — All ' + sitemapPages.length + ' Pages';
+      panel.appendChild(smHeader);
+
+      var smGrid = document.createElement('div');
+      smGrid.className = 'sitemap-grid';
+      sitemapPages.sort().forEach(function(page) {
+        var a = document.createElement('a');
+        a.className = 'sitemap-link';
+        a.href = '/' + page + '.html';
+        var dot = document.createElement('span');
+        dot.className = 'sitemap-dot';
+        a.appendChild(dot);
+        a.appendChild(document.createTextNode(page.replace(/-/g, ' ')));
+        smGrid.appendChild(a);
+      });
+      panel.appendChild(smGrid);
+
+      // Load balances when "more" tab is shown
+      tab.addEventListener('click', loadBalances);
+    } else {
+      var grid = document.createElement('div');
+      grid.className = 'card-grid';
+      var accents = ['#63ffda','#a78bfa','#f472b6','#fbbf24','#4ade80','#60a5fa'];
+      sec.items.forEach(function(c, i) {
+        var a = document.createElement('a');
+        a.className = 'card';
+        a.href = c.url;
+
+        var iconEl = document.createElement('span');
+        iconEl.className = 'card-icon';
+        iconEl.textContent = c.icon;
+        a.appendChild(iconEl);
+
+        var dotEl = document.createElement('span');
+        dotEl.className = 'card-dot';
+        a.appendChild(dotEl);
+
+        var nameEl = document.createElement('div');
+        nameEl.className = 'card-name';
+        nameEl.textContent = c.name;
+        a.appendChild(nameEl);
+
+        var descEl = document.createElement('div');
+        descEl.className = 'card-desc';
+        descEl.textContent = c.desc;
+        a.appendChild(descEl);
+
+        grid.appendChild(a);
+      });
+      panel.appendChild(grid);
+    }
+
+    panelsEl.appendChild(panel);
+    first = false;
+  });
+
+  // Load live stats
+  fetch('/api/treasury').then(function(r){return r.json()}).then(function(d){
+    if(d.balance) document.getElementById('lb-treasury').textContent = 'R' + Number(d.balance).toLocaleString();
+  }).catch(function(){});
+
+  fetch('/api/economy/stats').then(function(r){return r.json()}).then(function(d){
+    if(d.totalCirculating) document.getElementById('lb-brdg').textContent = (d.totalCirculating/1e6).toFixed(0) + 'M';
+  }).catch(function(){});
+
+  function loadBalances() {
+    var cont = document.getElementById('balances');
+    if (!cont || cont.children.length > 0) return;
+
+    fetch('/api/treasury').then(function(r){return r.json()}).then(function(d) {
+      function addBal(val, label) {
+        var div = document.createElement('div');
+        div.className = 'bal-card';
+        var v = document.createElement('div');
+        v.className = 'bal-val';
+        v.textContent = val;
+        var l = document.createElement('div');
+        l.className = 'bal-label';
+        l.textContent = label;
+        div.appendChild(v);
+        div.appendChild(l);
+        cont.appendChild(div);
+      }
+      addBal('R' + Number(d.balance).toLocaleString(), 'Total Treasury');
+      if (d.buckets) d.buckets.forEach(function(b) {
+        addBal('R' + Number(b.balance).toLocaleString(), b.label);
+      });
+    }).catch(function(){});
+
+    fetch('/api/brdg/price').then(function(r){return r.json()}).then(function(d) {
+      var cont2 = document.getElementById('balances');
+      function addBal2(val, label) {
+        var div = document.createElement('div');
+        div.className = 'bal-card';
+        var v = document.createElement('div');
+        v.className = 'bal-val';
+        v.textContent = val;
+        var l = document.createElement('div');
+        l.className = 'bal-label';
+        l.textContent = label;
+        div.appendChild(v);
+        div.appendChild(l);
+        cont2.appendChild(div);
+      }
+      addBal2('$' + (d.brdgUsd||0).toFixed(6), 'BRDG/USD Live');
+      addBal2('$' + (d.ethUsd||0).toLocaleString(), 'ETH/USD Chainlink');
+    }).catch(function(){});
+  }
+})();
+</script>
 </body>
 </html>
