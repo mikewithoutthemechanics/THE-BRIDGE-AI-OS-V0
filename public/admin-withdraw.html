@@ -298,8 +298,10 @@ async function loadBalances() {
             $('resBal').textContent = res ? res.balance.toLocaleString() + ' BRDG' : '--';
         }
         if (brdg && brdg.ok) {
-            $('brdgBal').textContent = Number(brdg.totalSupply || 0).toLocaleString() + ' BRDG';
-            $('ethBal').textContent = (brdg.ethBalance || '0') + ' ETH';
+            const brdgBal = brdg.treasury?.brdgBalance || brdg.token?.totalSupply || brdg.totalSupply || '0';
+            const ethBal = brdg.treasury?.vault?.ethBalance || brdg.ethBalance || '0';
+            $('brdgBal').textContent = Number(brdgBal).toLocaleString() + ' BRDG';
+            $('ethBal').textContent = ethBal + ' ETH';
         }
     } catch (e) { /* silent */ }
 }
