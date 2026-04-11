@@ -11,24 +11,39 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Deploy code and secrets
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          port: 22
-          script: |
-            cd /opt/ai-os || exit 1
-            git fetch origin main
-            git reset --hard origin/main
-            rsync -a --delete --exclude='node_modules' --exclude='.git' --exclude='.env' --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude='logs' /opt/ai-os/ /var/www/bridgeai/ 2>/dev/null || true
-            npm install --production --no-audit 2>&1 | tail -5
-            sed -i '/^SUPABASE_URL=/d;/^SUPABASE_SERVICE_KEY=/d;/^SUPABASE_ANON_KEY=/d;/^JWT_SECRET=/d' .env 2>/dev/null || true
-            printf 'SUPABASE_URL=%s\nSUPABASE_SERVICE_KEY=%s\nSUPABASE_ANON_KEY=%s\nJWT_SECRET=%s\n' '${{ secrets.SUPABASE_URL }}' '${{ secrets.SUPABASE_SERVICE_KEY }}' '${{ secrets.SUPABASE_ANON_KEY }}' '${{ secrets.JWT_SECRET }}' >> .env
-            echo "URL len: $(grep '^SUPABASE_URL=' .env | cut -d= -f2 | wc -c)"
-            echo "KEY len: $(grep '^SUPABASE_SERVICE_KEY=' .env | cut -d= -f2 | wc -c)"
-            cp .env /var/www/bridgeai/.env 2>/dev/null || true
-            pm2 restart all --update-env
-            pm2 save
-            pm2 status
+      - name: Deploy via raw SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          sudo apt-get install -y sshpass > /dev/null 2>&1
+          export SSHPASS="$VPS_PASSWORD"
+          SSH="sshpass -e ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST"
+
+          # Step 1: Pull latest code
+          $SSH "cd /opt/ai-os && git fetch origin main && git reset --hard origin/main"
+
+          # Step 2: Sync to /var/www/bridgeai
+          $SSH "rsync -a --delete --exclude='node_modules' --exclude='.git' --exclude='.env' --exclude='*.db' --exclude='logs' /opt/ai-os/ /var/www/bridgeai/ 2>/dev/null || true"
+
+          # Step 3: Install deps
+          $SSH "cd /opt/ai-os && npm install --production --no-audit 2>&1 | tail -3"
+
+          # Step 4: Inject secrets into .env
+          $SSH "cd /opt/ai-os && sed -i '/^SUPABASE_URL=/d;/^SUPABASE_SERVICE_KEY=/d;/^SUPABASE_ANON_KEY=/d;/^JWT_SECRET=/d' .env 2>/dev/null; touch .env"
+          $SSH "cd /opt/ai-os && echo 'SUPABASE_URL=$SUPABASE_URL' >> .env"
+          $SSH "cd /opt/ai-os && echo 'SUPABASE_SERVICE_KEY=$SUPABASE_SERVICE_KEY' >> .env"
+          $SSH "cd /opt/ai-os && echo 'SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY' >> .env"
+          $SSH "cd /opt/ai-os && echo 'JWT_SECRET=$JWT_SECRET' >> .env"
+          $SSH "cd /opt/ai-os && echo 'URL len:' \$(grep '^SUPABASE_URL=' .env | cut -d= -f2 | wc -c)"
+          $SSH "cd /opt/ai-os && echo 'KEY len:' \$(grep '^SUPABASE_SERVICE_KEY=' .env | cut -d= -f2 | wc -c)"
+          $SSH "cp /opt/ai-os/.env /var/www/bridgeai/.env 2>/dev/null || true"
+
+          # Step 5: Restart
+          $SSH "pm2 restart all --update-env && pm2 save && pm2 status"
+          echo "=== Deploy complete ==="
