@@ -191,6 +191,9 @@ const mail     = require('../lib/mail');
 // ── NeuroLink Serverless Cron Handlers ────────────────────────────────────────
 const cronHandlers = require('./neurolink/cron-handlers');
 
+// ── Platform Productization Layer ─────────────────────────────────────────────
+const { handlePlatform } = require('./platform');
+
 // ── Zero-Trust Verification Layer ──────────────────────────────────────────
 let zt, proofStore, chainVerify;
 try {
@@ -3407,6 +3410,12 @@ module.exports = async (req, res) => {
       } catch (_) {}
     }
     return json(res, { ok: true, text: body.text, spoken_at: new Date().toISOString(), ts: ts() });
+  }
+
+  // ── Platform Productization Layer (/api/platform/*) ─────────────────────────
+  if (p.startsWith('/api/platform/')) {
+    const handled = await handlePlatform(req, res);
+    if (handled !== null) return; // platform handler wrote the response
   }
 
   // ── 404 ──
