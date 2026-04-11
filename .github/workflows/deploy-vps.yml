@@ -31,10 +31,18 @@ jobs:
             npm install --production --no-audit 2>&1 | tail -5
 
             echo "=== Updating .env with current secrets ==="
-            sed -i '/^SUPABASE_URL=/d' .env 2>/dev/null; echo 'SUPABASE_URL=${{ secrets.SUPABASE_URL }}' >> .env
-            sed -i '/^SUPABASE_SERVICE_KEY=/d' .env 2>/dev/null; echo 'SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}' >> .env
-            sed -i '/^SUPABASE_ANON_KEY=/d' .env 2>/dev/null; echo 'SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}' >> .env
-            sed -i '/^JWT_SECRET=/d' .env 2>/dev/null; echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
+            touch .env
+            sed -i '/^SUPABASE_URL=/d' .env
+            sed -i '/^SUPABASE_SERVICE_KEY=/d' .env
+            sed -i '/^SUPABASE_ANON_KEY=/d' .env
+            sed -i '/^JWT_SECRET=/d' .env
+            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+            echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
+            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "=== Verifying .env has keys ==="
+            grep -c SUPABASE_URL .env
+            grep -c SUPABASE_SERVICE_KEY .env
             cp .env /var/www/bridgeai/.env 2>/dev/null || true
 
             echo "=== Restarting ALL services ==="
