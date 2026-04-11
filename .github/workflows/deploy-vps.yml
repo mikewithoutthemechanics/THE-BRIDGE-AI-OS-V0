@@ -34,8 +34,8 @@ jobs:
             grep -q SUPABASE_ANON_KEY .env 2>/dev/null || echo 'SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}' >> .env
             grep -q JWT_SECRET .env 2>/dev/null || echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
 
-            echo "=== Restarting services ==="
-            pm2 restart super-brain bridge-gateway --update-env
+            echo "=== Restarting ALL services ==="
+            pm2 restart all --update-env
             pm2 save
             echo "=== Deploy complete ==="
             pm2 status
