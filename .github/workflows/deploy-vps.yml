@@ -24,6 +24,9 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
+            echo "=== Syncing to /var/www/bridgeai ==="
+            rsync -a --delete --exclude='node_modules' --exclude='.git' --exclude='.env' --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude='logs' /opt/ai-os/ /var/www/bridgeai/ 2>/dev/null || cp -r /opt/ai-os/public/* /var/www/bridgeai/public/ 2>/dev/null || true
+
             echo "=== Installing dependencies ==="
             npm install --production --no-audit 2>&1 | tail -5
 
