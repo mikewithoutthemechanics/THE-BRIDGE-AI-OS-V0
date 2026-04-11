@@ -38,6 +38,6 @@ jobs:
               cp .env /var/www/bridgeai/.env 2>/dev/null || true
             fi
 
-            pm2 restart all --update-env 2>/dev/null || true
+            pm2 reload super-brain bridge-gateway --update-env
             pm2 save
             pm2 status
