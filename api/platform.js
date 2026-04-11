@@ -32,11 +32,13 @@
 
 'use strict';
 
+const crypto = require('crypto');
 const { supabase, isConfigured } = require('../lib/supabase');
 const projects = require('../lib/projects');
 const outputs = require('../lib/outputs');
 const { runIntegration, listTargets } = require('../lib/integrations');
 const userDb = require('../lib/user-identity');
+const llm = require('../lib/llm-client');
 
 // ── Auth helper ──────────────────────────────────────────────────────────────
 
@@ -145,11 +147,78 @@ async function handlePlatform(req, res) {
       }
 
       // Create run record
+      const startTime = Date.now();
       const run = await projects.createRun(projectId, { toolId, agentIds, inputs, trigger });
+      const runId = run.id;
 
-      // Async: emit to agent pipeline via /api/ask or /api/agents/dispatch
-      // For now return run ID — client polls or listens via SSE
-      return res.status(202).json({ ok: true, run, poll_url: `/api/platform/projects/${projectId}/runs/${run.id}` });
+      // Build agent prompt from project + inputs
+      const effectiveToolId = toolId || project.tool_id || 'unknown';
+      const intentContext = project.intent ? `\nProject intent: ${project.intent}` : '';
+      const scaffoldContext = project.scaffold ? `\nScaffold config: ${JSON.stringify(project.scaffold)}` : '';
+      const prompt = [
+        `You are an AI agent executing the Bridge AI OS tool: "${effectiveToolId}".`,
+        `Project: ${project.name}${intentContext}${scaffoldContext}`,
+        `Inputs: ${JSON.stringify(inputs, null, 2)}`,
+        '',
+        'Execute this tool and provide a detailed, actionable output. Be specific and thorough.',
+      ].join('\n');
+
+      try {
+        // Call LLM synchronously within this request
+        const llmResult = await llm.infer(prompt, {
+          system: `You are a specialized AI agent for Bridge AI OS. Tool: ${effectiveToolId}. Be precise and deliver real value.`,
+          maxTokens: 1024,
+        });
+
+        const outputText = llmResult.text || '';
+        const tokensUsed = llmResult.output_tokens || 0;
+        const latencyMs = Date.now() - startTime;
+
+        // Complete the run record
+        await projects.completeRun(runId, {
+          result: { output: outputText, provider: llmResult.provider, model: llmResult.model },
+          tokensUsed,
+          brdgCost: llmResult.cost_usd || 0,
+        });
+
+        // Create output record for this run
+        if (isConfigured) {
+          await supabase.from('outputs').insert({
+            id: crypto.randomUUID(),
+            project_id: projectId,
+            run_id: runId,
+            user_id: user.id,
+            title: `${effectiveToolId} output`,
+            type: 'export',
+            format: 'json',
+            payload: { text: outputText },
+            status: 'ready',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }).catch(e => console.error('[platform] output insert failed:', e.message));
+        }
+
+        // Record feedback for profile analytics
+        await recordFeedback(user.id, projectId, null, {
+          success: true,
+          latency: latencyMs,
+          tokens: tokensUsed,
+          brdgCost: llmResult.cost_usd || 0,
+        }).catch(() => {});
+
+        return res.status(200).json({
+          ok: true,
+          run: { ...run, status: 'completed', result: { output: outputText } },
+          output: outputText,
+          latency_ms: latencyMs,
+          tokens_used: tokensUsed,
+          provider: llmResult.provider,
+        });
+      } catch (err) {
+        console.error('[platform] run dispatch error:', err.message);
+        await projects.completeRun(runId, { error: err.message }).catch(() => {});
+        return res.status(500).json({ ok: false, error: err.message, run_id: runId });
+      }
     }
 
     const project = await projects.getProject(projectId, user.id);
