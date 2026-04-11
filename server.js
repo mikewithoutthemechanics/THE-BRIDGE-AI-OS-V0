@@ -794,7 +794,8 @@ function requireAuth(req, res, next) {
     '/api/health',
     '/api/status',
     '/api/uptime', // if exists
-    '/api/version' // if exists
+    '/api/version', // if exists
+    '/api/platform/', // platform layer handles its own auth via requireUser()
   ];
   
   if (publicEndpoints.some(endpoint => req.path.startsWith(endpoint))) {
