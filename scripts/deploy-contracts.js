@@ -132,7 +132,7 @@ async function main() {
   };
 
   const deploymentFile = path.join(__dirname, `../.env.deployed-${hre.network.name}`);
-  fs.writeFileSync(deploymentFile, JSON.stringify(addresses, null, 2));
+  fs.writeFileSync(deploymentFile, JSON.stringify(addresses, null, 2, (_, v) => typeof v === 'bigint' ? v.toString() : v));
   console.log(`  ✓ Addresses saved to: ${deploymentFile}\n`);
 
   // ───────────────────────────────────────────────────────────────

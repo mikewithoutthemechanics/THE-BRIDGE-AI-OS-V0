@@ -41,6 +41,16 @@ const server = http.createServer(app);
 app.use(express.json());
 let cookieParser; try { cookieParser = require('cookie-parser'); app.use(cookieParser()); } catch (_) {}
 
+// ── RATE LIMITING — financial endpoint protection ─────────────────────────
+const rateLimit = require('express-rate-limit');
+const payFastLimiter = rateLimit({ windowMs: 60_000, max: 10, keyGenerator: r => r.ip, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Too many payment requests' } });
+const treasuryReadLimiter = rateLimit({ windowMs: 60_000, max: 100, keyGenerator: r => r.headers['x-user-id'] || r.ip, standardHeaders: true, legacyHeaders: false });
+const treasuryWriteLimiter = rateLimit({ windowMs: 60_000, max: 5, keyGenerator: r => r.ip, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Withdrawal rate limit exceeded' } });
+app.use('/api/payments/webhook/payfast', payFastLimiter);
+app.use('/api/treasury/withdraw', treasuryWriteLimiter);
+app.use('/api/treasury', treasuryReadLimiter);
+console.log('[BRAIN] Rate limiting ACTIVE — payfast:10/min, treasury-read:100/min, withdraw:5/min');
+
 // ── REQUEST LOGGING ────────────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'test') {
   app.use((req, res, next) => {
@@ -1485,7 +1495,58 @@ app.post('/api/treasury/withdraw/authorize', (req, res) => {
   }
 });
 
+// ── CIRCUIT BREAKER STATUS & MANUAL RESET ───────────────────────────────────
+app.get('/api/treasury/circuit-breaker', (req, res) => {
+  const adminKey = req.headers['x-bridge-secret'];
+  if (adminKey !== process.env.BRIDGE_INTERNAL_SECRET) return res.status(403).json({ ok: false, error: 'Admin secret required' });
+  try {
+    const treasuryFactory = require('./lib/treasury-factory');
+    const treasury = treasuryFactory.getTreasuryService();
+    res.json({ ok: true, halted: treasury.paymentsHalted, reason: treasury.haltReason });
+  } catch (e) {
+    res.json({ ok: true, halted: false, reason: null, note: 'Treasury service not initialized' });
+  }
+});
+
+app.post('/api/treasury/circuit-breaker/reset', (req, res) => {
+  const adminKey = req.headers['x-bridge-secret'];
+  if (adminKey !== process.env.BRIDGE_INTERNAL_SECRET) return res.status(403).json({ ok: false, error: 'Admin secret required' });
+  try {
+    const treasuryFactory = require('./lib/treasury-factory');
+    const treasury = treasuryFactory.getTreasuryService();
+    const result = treasury.resetCircuitBreaker(req.headers['x-user-id'] || 'admin');
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Listen for circuit breaker events and log prominently
+process.on('treasury:circuit-breaker', ({ reason, failed }) => {
+  console.error('============================================');
+  console.error('  TREASURY CIRCUIT BREAKER TRIPPED');
+  console.error(`  Reason: ${reason}`);
+  console.error(`  Failed checks: ${failed.map(f => f.check).join(', ')}`);
+  console.error('  ALL FINANCIAL MUTATIONS ARE FROZEN');
+  console.error('  POST /api/treasury/circuit-breaker/reset to resume');
+  console.error('============================================');
+});
+
 // ── BRDG ON-CHAIN ENDPOINTS ─────────────────────────────────────────────────
+
+// ── BRDG PRICE ORACLE ───────────────────────────────────────────────────────
+let priceOracle;
+try { priceOracle = require('./lib/price-oracle'); } catch (e) { console.warn('[brain] price-oracle unavailable:', e.message); }
+
+app.get('/api/brdg/price', async (_req, res) => {
+  if (!priceOracle) return res.json({ ok: false, error: 'Price oracle not available' });
+  try {
+    const price = await priceOracle.getPrice();
+    res.json({ ok: true, ...price });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: 'Price oracle failed', detail: e.message });
+  }
+});
 
 app.get('/api/brdg/token', async (_req, res) => {
   if (!brdgChain) return res.json({ ok: false, error: 'brdg-chain module not available — install ethers on VPS' });
