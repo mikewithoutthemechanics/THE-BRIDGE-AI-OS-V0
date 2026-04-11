@@ -38,6 +38,6 @@ jobs:
               cp .env /var/www/bridgeai/.env 2>/dev/null || true
             fi
 
-            pm2 reload super-brain bridge-gateway --update-env
+            pm2 reload super-brain bridge-gateway unified-server god-mode-system auth-service --update-env 2>/dev/null || pm2 restart super-brain bridge-gateway unified-server --update-env
             pm2 save
             pm2 status
