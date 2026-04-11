@@ -3500,6 +3500,23 @@ app.get('/', (req, res) => {
   serveWithNav(path.join(__dirname, 'ui.html'), res);
 });
 
+// ── AGENT EXECUTION BRIDGE — maps /api/agents/run → POST /agent/:name ─────
+// Frontend (agents.html) calls POST /api/agents/run { agentName, input }
+// Backend registers POST /agent/:name { input, context }
+app.post('/api/agents/run', async (req, res) => {
+  const { agentName, input } = req.body || {};
+  if (!agentName) return res.status(400).json({ ok: false, error: 'agentName is required' });
+  try {
+    const { agents } = require('./lib/agent-execution-server');
+    const agent = agents[agentName];
+    if (!agent) return res.status(404).json({ ok: false, error: `Unknown agent: ${agentName}` });
+    const result = await agent(input || 'Execute default task', {});
+    res.json({ ok: true, agent: agentName, output: result.content || JSON.stringify(result), elapsed: result.elapsed });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ── CATCH-ALL for unknown /api/* routes ────────────────────────────────────
 app.all('/api/*path', (req, res) => {
   res.status(404).json({ ok: false, error: 'not_found', path: req.path, method: req.method, ts: Date.now() });
