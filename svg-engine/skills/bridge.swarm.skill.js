@@ -32,7 +32,7 @@ export default {
     const pulsing   = pulse(120, 110, 70, healthColor, "3s");
 
     // Sub-gauges
-    const g1 = gauge(300, 110, 44, 1 - d.latency / 200, "LATENCY",     THEME.blue);
+    const g1 = gauge(300, 110, 44, 1 - d.latency / 500, "LATENCY",     THEME.blue);
     const g2 = gauge(410, 110, 44, d.utilization,        "UTILIZATION", THEME.cyan);
     const g3 = gauge(520, 110, 44, 1 - d.failRate * 20,  "FAULT FREE",  THEME.green);
     const g4 = gauge(630, 110, 44, d.profit / 0.01,      "PROFIT",      THEME.purple);
@@ -56,4 +56,12 @@ export default {
       `SWARM HEALTH — composite score from ${['latency','utilization','profitability','fault_rate'].join(' · ')}`
     );
   },
+
+  steps: [
+    { title: "Metric Collection",  detail: "Sample queue latency, worker utilization, profit margins, and fault rates" },
+    { title: "Health Composite",   detail: "Calculate weighted health index: (1-latency/500) * utilization * (1-failRate) * (profit/0.005)" },
+    { title: "Gauge Rendering",    detail: "Render arc gauges for each metric plus composite health" },
+    { title: "Threshold Alerting", detail: "Color-code health: green >70%, orange >40%, pink/critical below" },
+    { title: "Status Broadcast",   detail: "Emit swarm health to all connected dashboards via SSE" },
+  ],
 };

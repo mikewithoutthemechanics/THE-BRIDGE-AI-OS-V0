@@ -14,6 +14,9 @@ export const THEME = {
   orange:   "#fb923c",
   green:    "#4ade80",
   muted:    "#64748b",
+  dim:      "#475569",
+  gold:     "#facc15",
+  red:      "#ef4444",
   border:   "rgba(99,255,218,0.18)",
   font:     "JetBrains Mono, monospace",
   fontUI:   "Outfit, -apple-system, sans-serif",
@@ -46,7 +49,7 @@ export function node(x, y, w, h, label, meta = "", color = THEME.cyan, rx = 8) {
   return `<g>
     <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}"
           fill="${THEME.bg2}" stroke="${color}" stroke-width="1.5"
-          filter="url(#g-flow)"/>
+          />
     <text x="${x + w/2}" y="${y + h/2 - 6}" text-anchor="middle"
           fill="${color}" font-family="${THEME.font}" font-size="11" font-weight="500">${label}</text>
     <text x="${x + w/2}" y="${y + h/2 + 10}" text-anchor="middle"
