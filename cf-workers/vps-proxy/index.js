@@ -3,14 +3,14 @@
  *
  * Dual-mode:
  *   1. Root supaco.ai  → serve static landing page from edge (zero VPS round-trip)
- *   2. app/admin.supaco.ai, live.bridge-ai-os.com → proxy to VPS via go.ai-os.co.za
+ *   2. app/admin.supaco.ai, live.bridge-ai-os.com → proxy to VPS via bridge-ai-os.com
  *
- * Why go.ai-os.co.za as origin:
+ * Why bridge-ai-os.com as origin:
  *   CF Workers block subrequests to their own proxied zone (anti-loop protection).
- *   go.ai-os.co.za bypasses this — it's on the same VPS but outside CF proxy.
+ *   bridge-ai-os.com bypasses this — it's on the same VPS but outside CF proxy.
  */
 
-const ORIGIN = "https://go.ai-os.co.za";
+const ORIGIN = "https://bridge-ai-os.com";
 
 // ── Static assets for supaco.ai root domain ────────────────────────────────
 
@@ -59,7 +59,7 @@ const LANDING_HTML = `<!DOCTYPE html>
             <ul class="flex flex-wrap gap-4 text-sm">
                 <li><a href="https://app.supaco.ai">App Dashboard</a></li>
                 <li><a href="https://admin.supaco.ai">Admin Panel</a></li>
-                <li><a href="https://go.ai-os.co.za">Bridge AI OS</a></li>
+                <li><a href="https://bridge-ai-os.com">Bridge AI OS</a></li>
             </ul>
         </nav>
         <main id="main-content">
@@ -99,7 +99,7 @@ const LANDING_HTML = `<!DOCTYPE html>
             <nav aria-label="Footer navigation" class="flex flex-wrap gap-4 text-sm mb-4">
                 <a href="https://app.supaco.ai">App</a>
                 <a href="https://admin.supaco.ai">Admin</a>
-                <a href="https://go.ai-os.co.za">Bridge AI OS</a>
+                <a href="https://bridge-ai-os.com">Bridge AI OS</a>
                 <a href="https://github.com/bridgeaios/Supa-Claw">GitHub</a>
             </nav>
             <p class="text-xs opacity-60">Sovereign Identity: Bridge AI OS | Repo: bridgeaios/Supa-Claw | Mode: Zero-Trust</p>

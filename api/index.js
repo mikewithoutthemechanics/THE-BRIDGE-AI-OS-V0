@@ -356,7 +356,7 @@ function requireAuthOrFail(req, res) {
 
 // ── Router ──────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
-  'https://go.ai-os.co.za',
+  'https://bridge-ai-os.com',
   'https://wall.bridge-ai-os.com',
   'https://bridge-ai-os.com',
   'http://localhost:3000',

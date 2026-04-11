@@ -382,8 +382,8 @@ function mount(app) {
             const templateFn = emailTemplates[item.template_type] || emailTemplates.general;
             const { subject, html } = templateFn({ company: item.company || 'your company', email: item.email });
 
-            const trackingPixel = `<img src="https://go.ai-os.co.za/api/outreach/pixel/${sentId}" width="1" height="1" />`;
-            const trackingLink = `https://go.ai-os.co.za/api/outreach/click/${sentId}?url=https://bridge-ai.co`;
+            const trackingPixel = `<img src="https://bridge-ai-os.com/api/outreach/pixel/${sentId}" width="1" height="1" />`;
+            const trackingLink = `https://bridge-ai-os.com/api/outreach/click/${sentId}?url=https://bridge-ai.co`;
             const fullHtml = html.replace('</p>\n', `</p>\n<p><a href="${trackingLink}">Learn more about Bridge AI</a></p>\n`) + trackingPixel;
 
             try {

@@ -177,7 +177,7 @@ D:\
 
 ---
 
-## II. VPS INFRASTRUCTURE — `go.ai-os.co.za`
+## II. VPS INFRASTRUCTURE — `bridge-ai-os.com`
 
 ### **Host Details**
 - **Provider:** Webway VPS
@@ -185,7 +185,7 @@ D:\
   - Primary: `102.208.231.53`
   - Secondary: `102.208.228.44`
 - **Deployment Path:** `/var/www/bridgeai/`
-- **Domain:** `go.ai-os.co.za` (production, always-on backend)
+- **Domain:** `bridge-ai-os.com` (production, always-on backend)
 - **OS:** Ubuntu 20.04 LTS or later
 
 ### **VPS Services Running**
@@ -214,11 +214,11 @@ Located on VPS at:
 server {
     listen 80;
     listen 443 ssl http2;
-    server_name go.ai-os.co.za www.go.ai-os.co.za;
+    server_name bridge-ai-os.com www.bridge-ai-os.com;
 
     # SSL Certificate (auto-renewed via certbot)
-    ssl_certificate /etc/letsencrypt/live/go.ai-os.co.za/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/go.ai-os.co.za/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/bridge-ai-os.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/bridge-ai-os.com/privkey.pem;
 
     # Main app (port 3000)
     location / {
@@ -262,7 +262,7 @@ Automated via `/c/aoe-unified-final/deploy-vps.sh`:
 # 6. Run migrations (if any)
 # 7. PM2 start/reload ecosystem.config.js
 # 8. Configure Nginx reverse proxy
-# 9. Run: certbot --nginx -d go.ai-os.co.za
+# 9. Run: certbot --nginx -d bridge-ai-os.com
 # 10. Enable UFW firewall
 ```
 
@@ -293,7 +293,7 @@ bash deploy-vps.sh 102.208.231.53 root
 | 12 | `bridge-ai-os.tech` | `spine` | SPINE (state mutations) | State API | 8001 | ⚙️ Testing |
 | 13 | `bridge-ai-os.co.za` | — | SA variant alias | All services | 443 | ✅ Live |
 | 14 | `bridge-ai-os.co.za` | `gateway` | Public gateway | Gateway.js | 8080 | ✅ Live |
-| 15 | `bridge-ai-os.co.za` | — (none) | — | **go.ai-os.co.za** | 443 | ✅ **VPS** |
+| 15 | `bridge-ai-os.co.za` | — (none) | — | **bridge-ai-os.com** | 443 | ✅ **VPS** |
 | 16 | `bridge-ai-os.org` | — | Alias to .com | Redirect | 443 | ✅ Live |
 | 17 | `bridge-ai-os.xyz` | — | Alias to .com | Redirect | 443 | ✅ Live |
 | 18 | `ai-os.co.za` | — | Treasury (Zero Trust) | Internal Finance | 8888 | 🔒 Admin |
@@ -406,7 +406,7 @@ bash deploy-vps.sh 102.208.231.53 root
 ### **Request Flow (User → VPS → Services)**
 
 ```
-1. User hits: https://go.ai-os.co.za
+1. User hits: https://bridge-ai-os.com
    ↓
 2. DNS → IP: 102.208.231.53
    ↓
@@ -682,8 +682,8 @@ bash deploy-vps.sh 102.208.231.53 root
 ```
 
 **Post-Deploy:**
-- [ ] Check `https://go.ai-os.co.za` loads (3000)
-- [ ] Check `https://go.ai-os.co.za/monitor/` loads (3001)
+- [ ] Check `https://bridge-ai-os.com` loads (3000)
+- [ ] Check `https://bridge-ai-os.com/monitor/` loads (3001)
 - [ ] Verify SSL cert auto-renewal setup
 - [ ] Test payment webhooks
 - [ ] Run `pm2 logs` on VPS to check for errors
@@ -728,8 +728,8 @@ ssh root@102.208.231.53
 ```
 
 **Application Health:**
-- `https://go.ai-os.co.za/health` → FastAPI health probe
-- `https://go.ai-os.co.za/api/notion/stats` → Notion stats endpoint
+- `https://bridge-ai-os.com/health` → FastAPI health probe
+- `https://bridge-ai-os.com/api/notion/stats` → Notion stats endpoint
 - `pm2 plus` → Real-time PM2 dashboard (optional)
 
 ---
@@ -751,14 +751,14 @@ ssh root@102.208.231.53
 
 ### **Payment Processing Failing**
 1. Verify PayFast merchant ID & key in `.env`
-2. Check webhook endpoint: `POST https://go.ai-os.co.za/payfast/notify`
+2. Check webhook endpoint: `POST https://bridge-ai-os.com/payfast/notify`
 3. Review payment logs in VPS: `pm2 logs` grep "payfast"
 4. Test with test merchant account (PayFast sandbox)
 
 ### **Authentication Not Working**
 1. Verify JWT_SECRET consistency
 2. Check auth.js running: `pm2 list` (should show running)
-3. Test SIWE: curl -X POST https://go.ai-os.co.za/api/auth/siwe
+3. Test SIWE: curl -X POST https://bridge-ai-os.com/api/auth/siwe
 4. Verify Redis: `redis-cli ping` → "PONG"
 
 ---

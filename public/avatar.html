@@ -25,100 +25,103 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Bridge AI OS Digital Twin — real-time 3D avatar with autonomous AI brain, multi-layer visualization (skin, bone, neural, quantum), wallet integration, marketplace, and swarm orchestration.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://go.ai-os.co.za/avatar.html">
+<link rel="canonical" href="https://bridge-ai-os.com/avatar.html">
 <title>BRIDGE AI OS — Unified Full Digital Twin</title>
 <script defer src="https://cdn.babylonjs.com/babylon.js" onload="window._babylonLoaded=true;window._tryBuildScene&&window._tryBuildScene()"></script>
 <script defer src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js" onload="window._loadersLoaded=true;window._tryBuildScene&&window._tryBuildScene()"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#03040a;font-family:'Segoe UI',monospace,sans-serif;overflow:hidden;color:#cde;}
+body{background:#03040a;font-family:'Inter','Segoe UI',system-ui,sans-serif;overflow:hidden;color:#e2e8f0;}
 canvas{width:100vw;height:100vh;display:block;touch-action:none;}
 
 /* ── PANELS ── */
 .panel{
-  background:rgba(4,8,20,.88);border:1px solid rgba(0,180,255,.18);
-  border-radius:10px;padding:10px 12px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);font-size:11px;
-  color:#9cf;overflow:hidden;
+  background:rgba(6,10,24,.92);border:1px solid rgba(99,255,218,.12);
+  border-radius:12px;padding:12px 14px;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);font-size:12px;
+  color:#94a3b8;overflow:hidden;transition:border-color 0.3s;
 }
-.panel h4{color:#4cf;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;border-bottom:1px solid rgba(0,180,255,.15);padding-bottom:4px;}
+.panel:hover{border-color:rgba(99,255,218,.25);}
+.panel h4{color:#63ffda;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;border-bottom:1px solid rgba(99,255,218,.1);padding-bottom:6px;}
 
 /* top bar */
-#topbar{position:fixed;top:0;left:0;right:0;height:38px;background:rgba(0,0,0,.85);
-  border-bottom:1px solid rgba(0,180,255,.2);display:flex;align-items:center;padding:0 12px;gap:8px;z-index:300;}
-#topbar .brand{color:#4cf;font-size:12px;font-weight:700;letter-spacing:.1em;white-space:nowrap;}
-#brain-dot{width:8px;height:8px;border-radius:50%;background:#f44;box-shadow:0 0 6px #f44;}
-#brain-dot.on{background:#2fa;box-shadow:0 0 6px #2fa;}
-#brain-lbl{font-size:10px;color:#677;margin-right:4px;}
+#topbar{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(6,8,16,.95);
+  border-bottom:1px solid rgba(99,255,218,.12);display:flex;align-items:center;padding:0 14px;gap:8px;z-index:300;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
+#topbar .brand{color:#63ffda;font-size:13px;font-weight:800;letter-spacing:.12em;white-space:nowrap;}
+#brain-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px #ef4444;transition:all 0.5s;}
+#brain-dot.on{background:#4ade80;box-shadow:0 0 8px #4ade80;}
+#brain-lbl{font-size:11px;color:#64748b;margin-right:4px;}
 
 .hud-btn{
-  padding:3px 10px;border:1px solid rgba(0,180,255,.25);border-radius:14px;
-  background:rgba(0,0,0,.6);color:#7af;font-size:10px;font-weight:600;
-  cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:.18s;white-space:nowrap;
+  padding:5px 14px;border:1px solid rgba(99,255,218,.2);border-radius:20px;
+  background:rgba(99,255,218,.04);color:#94a3b8;font-size:11px;font-weight:600;
+  cursor:pointer;letter-spacing:.04em;text-transform:uppercase;transition:all .2s;white-space:nowrap;
 }
-.hud-btn.active{background:rgba(0,160,255,.18);border-color:#0af;color:#0ef;box-shadow:0 0 8px rgba(0,180,255,.3);}
-.hud-btn:hover{border-color:#0af;color:#0ef;}
+.hud-btn.active{background:rgba(99,255,218,.15);border-color:#63ffda;color:#63ffda;box-shadow:0 0 12px rgba(99,255,218,.2);}
+.hud-btn:hover{border-color:rgba(99,255,218,.4);color:#63ffda;}
 
-#layer-label{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);
-  color:rgba(80,160,255,.7);font-size:12px;letter-spacing:.18em;text-transform:uppercase;z-index:100;pointer-events:none;}
+#layer-label{position:fixed;bottom:56px;left:50%;transform:translateX(-50%);
+  color:rgba(99,255,218,.5);font-size:13px;font-weight:600;letter-spacing:.12em;z-index:100;pointer-events:none;}
 
 /* left sidebar */
-#sidebar-left{position:fixed;left:8px;top:46px;width:180px;bottom:44px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;z-index:200;}
+#sidebar-left{position:fixed;left:8px;top:52px;width:200px;bottom:52px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;z-index:200;}
 
 /* right sidebar */
-#sidebar-right{position:fixed;right:8px;top:46px;width:185px;bottom:44px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;z-index:200;}
+#sidebar-right{position:fixed;right:8px;top:52px;width:200px;bottom:52px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;z-index:200;}
 
-/* twin canvas area — shifted down/inset */
-#renderCanvas{position:fixed!important;top:46px;left:0;right:0;bottom:0;width:100vw;height:calc(100vh - 46px);}
+/* twin canvas area */
+#renderCanvas{position:fixed!important;top:44px;left:0;right:0;bottom:0;width:100vw;height:calc(100vh - 44px);}
 
 /* skills */
 #skill-list{max-height:140px;overflow-y:auto;}
-.skill-tag{display:inline-block;background:rgba(0,160,80,.2);border:1px solid rgba(0,200,100,.25);
-  border-radius:10px;padding:1px 7px;margin:2px;font-size:9px;color:#3fa;cursor:default;}
-.skill-tag:hover{background:rgba(0,200,100,.3);}
+.skill-tag{display:inline-block;background:rgba(99,255,218,.08);border:1px solid rgba(99,255,218,.15);
+  border-radius:12px;padding:2px 10px;margin:2px;font-size:10px;color:#63ffda;cursor:default;transition:all .2s;}
+.skill-tag:hover{background:rgba(99,255,218,.15);border-color:rgba(99,255,218,.3);}
 
 /* mission board */
 .mission-col{display:flex;flex-direction:column;gap:2px;}
-.mc-h{font-size:9px;color:#567;text-transform:uppercase;letter-spacing:.1em;text-align:center;}
-.mc-v{font-size:18px;font-weight:700;text-align:center;color:#0df;}
+.mc-h{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;text-align:center;}
+.mc-v{font-size:20px;font-weight:800;text-align:center;color:#63ffda;}
 
 /* wallet */
-.wallet-addr{font-size:8px;color:#456;word-break:break-all;margin-top:3px;}
-.wallet-btn{width:100%;margin-top:4px;padding:4px;background:rgba(80,0,200,.2);border:1px solid rgba(120,0,255,.3);
-  border-radius:4px;color:#b8f;font-size:9px;cursor:pointer;}
-.wallet-btn:hover{background:rgba(100,0,240,.35);}
+.wallet-addr{font-size:9px;color:#475569;word-break:break-all;margin-top:4px;}
+.wallet-btn{width:100%;margin-top:6px;padding:6px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);
+  border-radius:8px;color:#a78bfa;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;}
+.wallet-btn:hover{background:rgba(167,139,250,.2);border-color:#a78bfa;}
 
 /* metrics */
-.metric-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05);}
-.metric-row .mk{color:#567;font-size:9px;}
-.metric-row .mv{color:#0df;font-weight:700;font-size:12px;}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.metric-row .mk{color:#64748b;font-size:10px;}
+.metric-row .mv{color:#63ffda;font-weight:800;font-size:13px;}
 
 /* scrollbar */
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:rgba(0,180,255,.25);border-radius:2px;}
+::-webkit-scrollbar-thumb{background:rgba(99,255,218,.2);border-radius:2px;}
 
 /* xterm-style log */
-#xterm-out{height:80px;overflow-y:auto;background:rgba(0,0,0,.8);border:1px solid rgba(0,200,255,.1);
-  border-radius:4px;padding:5px;font-size:9px;font-family:monospace;color:#5cf;white-space:pre-wrap;}
+#xterm-out{height:90px;overflow-y:auto;background:rgba(0,0,0,.6);border:1px solid rgba(99,255,218,.08);
+  border-radius:8px;padding:8px;font-size:10px;font-family:'JetBrains Mono',monospace;color:#94a3b8;white-space:pre-wrap;}
 
-.tag-green{color:#2fa;} .tag-red{color:#f55;} .tag-yellow{color:#fa5;} .tag-cyan{color:#0df;}
+.tag-green{color:#4ade80;} .tag-red{color:#ef4444;} .tag-yellow{color:#fbbf24;} .tag-cyan{color:#63ffda;}
 
 /* neural footer */
-#neural-pulse{position:fixed;left:12px;bottom:46px;color:rgba(0,200,120,.4);font-size:9px;letter-spacing:.04em;z-index:100;pointer-events:none;}
+#neural-pulse{position:fixed;left:14px;bottom:56px;color:rgba(99,255,218,.3);font-size:10px;letter-spacing:.04em;z-index:100;pointer-events:none;}
 
 /* ── BOTTOM NAV TAB BAR ── */
 #bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;height:40px;
-  background:rgba(0,0,0,.92);border-top:1px solid rgba(0,180,255,.15);
-  display:flex;align-items:center;justify-content:center;gap:4px;z-index:500;
+  position:fixed;bottom:0;left:0;right:0;height:48px;
+  background:rgba(6,8,16,.95);border-top:1px solid rgba(99,255,218,.1);
+  display:flex;align-items:center;justify-content:center;gap:6px;z-index:500;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
 }
 .bnav-btn{
-  padding:4px 16px;border:1px solid rgba(0,180,255,.2);border-radius:14px;
-  background:rgba(0,0,0,.7);color:#678;font-size:10px;font-weight:600;
-  cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:.18s;
+  padding:6px 18px;border:1px solid rgba(99,255,218,.12);border-radius:20px;
+  background:transparent;color:#64748b;font-size:11px;font-weight:600;
+  cursor:pointer;letter-spacing:.04em;text-transform:uppercase;transition:all .2s;
 }
-.bnav-btn.active{background:rgba(0,160,255,.18);border-color:#0af;color:#0ef;box-shadow:0 0 8px rgba(0,180,255,.25);}
-.bnav-btn:hover{color:#0df;border-color:#0af;}
+.bnav-btn.active{background:rgba(99,255,218,.12);border-color:#63ffda;color:#63ffda;box-shadow:0 0 12px rgba(99,255,218,.15);}
+.bnav-btn:hover{color:#e2e8f0;border-color:rgba(99,255,218,.25);}
 
 /* ── VIEWS ── */
 .view{display:none;}
@@ -126,8 +129,8 @@ canvas{width:100vw;height:100vh;display:block;touch-action:none;}
 
 /* All center views share the same fixed slot between sidebars */
 #view-terminal,#view-aoe,#view-muscle,#view-sysops,#view-dashboard{
-  position:fixed;left:196px;right:196px;top:46px;bottom:42px;
-  flex-direction:column;gap:4px;overflow-y:auto;z-index:150;
+  position:fixed;left:216px;right:216px;top:52px;bottom:50px;
+  flex-direction:column;gap:6px;overflow-y:auto;z-index:150;
 }
 
 /* ── MUSCLE INSPECTOR ── */
@@ -186,34 +189,35 @@ canvas{width:100vw;height:100vh;display:block;touch-action:none;}
 @media(max-width:900px){
   #sidebar-left,#sidebar-right{display:none;}
   #view-terminal,#view-aoe,#view-muscle,#view-sysops,#view-dashboard,
-  [id^="view-"]{left:8px!important;right:8px!important;}
+  [id^="view-"]{left:10px!important;right:10px!important;}
   #dashboard-grid{grid-template-columns:1fr!important;}
-  #topbar .hud-btn{padding:2px 6px;font-size:8px;}
-  .bnav-btn{padding:3px 8px;font-size:8px;}
+  #topbar .hud-btn{padding:3px 8px;font-size:9px;}
+  .bnav-btn{padding:5px 12px;font-size:9px;}
   #neural-pulse{display:none;}
-  #layer-label{font-size:10px;}
-  .proc-row{grid-template-columns:1fr 60px 50px 80px!important;font-size:9px;}
+  #layer-label{font-size:11px;}
+  .proc-row{grid-template-columns:1fr 60px 50px 80px!important;font-size:10px;}
   .muscle-row{grid-template-columns:100px 28px 1fr 60px!important;}
 }
 @media(max-width:600px){
-  #topbar{height:40px;padding:0 6px;gap:3px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
-  #topbar .brand{font-size:9px;letter-spacing:0.05em;}
-  #topbar .hud-btn{padding:2px 5px;font-size:7px;letter-spacing:0;}
-  #renderCanvas{top:40px!important;height:calc(100vh - 40px)!important;}
-  [id^="view-"]{top:40px!important;bottom:46px!important;}
-  #bottom-nav{height:46px;gap:2px;padding:0 4px;overflow-x:auto;justify-content:flex-start;}
-  .bnav-btn{padding:4px 10px;font-size:8px;flex-shrink:0;}
+  #topbar{height:44px;padding:0 8px;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
+  #topbar .brand{font-size:10px;letter-spacing:0.06em;}
+  #topbar .hud-btn{padding:4px 8px;font-size:8px;letter-spacing:0;}
+  #renderCanvas{top:44px!important;height:calc(100vh - 44px)!important;}
+  [id^="view-"]{top:44px!important;bottom:50px!important;}
+  #bottom-nav{height:50px;gap:3px;padding:0 6px;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;}
+  .bnav-btn{padding:6px 14px;font-size:9px;flex-shrink:0;}
   #skills-count{display:none;}
   #clock{display:none;}
   #brain-lbl{display:none;}
-  .panel{padding:8px;font-size:10px;}
-  .panel h4{font-size:9px;}
-  .metric-row .mv{font-size:10px;}
-  #term-out{height:calc(100% - 80px)!important;font-size:10px;}
-  #aoe-term-out{font-size:10px;}
+  .panel{padding:10px;font-size:11px;border-radius:10px;}
+  .panel h4{font-size:10px;}
+  .metric-row .mv{font-size:11px;}
+  #term-out{height:calc(100% - 80px)!important;font-size:11px;}
+  #aoe-term-out{font-size:11px;}
   .muscle-row{grid-template-columns:80px 24px 1fr!important;}
   .muscle-action{display:none;}
   .proc-row{grid-template-columns:1fr 50px 60px!important;}
+  #layer-label{bottom:54px;font-size:10px;}
 }
 </style>
 </head>
@@ -221,9 +225,9 @@ canvas{width:100vw;height:100vh;display:block;touch-action:none;}
 
 <!-- ── TOP BAR ── -->
 <div id="topbar">
-  <h1 class="brand" style="margin:0;font-size:12px;">⬡ BRIDGE AI OS · v24</h1>
+  <h1 class="brand" style="margin:0;">BRIDGE AI</h1>
   <div id="brain-dot"></div><div id="brain-lbl">Brain</div>
-  <div style="flex:0 0 1px;background:rgba(0,180,255,.2);height:18px;margin:0 4px;"></div>
+  <div style="flex:0 0 1px;background:rgba(99,255,218,.15);height:20px;margin:0 6px;"></div>
   <button class="hud-btn active" onclick="setLayer('skin')" id="btn-skin">Skin</button>
   <button class="hud-btn" onclick="setLayer('bone')" id="btn-bone">Bone</button>
   <button class="hud-btn" onclick="setLayer('xray')" id="btn-xray">X-Ray</button>
@@ -231,9 +235,9 @@ canvas{width:100vw;height:100vh;display:block;touch-action:none;}
   <button class="hud-btn" onclick="setLayer('quantum')" id="btn-quantum">Quantum</button>
   <button class="hud-btn" onclick="setLayer('all')" id="btn-all">All</button>
   <div style="flex:1;"></div>
-  <span id="skills-count" style="font-size:10px;color:#567;">Skills: 0</span>
-  <div style="flex:0 0 1px;background:rgba(0,180,255,.2);height:18px;margin:0 4px;"></div>
-  <span id="clock" style="font-size:10px;color:#345;font-family:monospace;"></span>
+  <span id="skills-count" style="font-size:11px;color:#64748b;font-weight:600;">Skills: 0</span>
+  <div style="flex:0 0 1px;background:rgba(99,255,218,.15);height:20px;margin:0 6px;"></div>
+  <span id="clock" style="font-size:11px;color:#475569;font-family:'JetBrains Mono',monospace;"></span>
 </div>
 
 <!-- ── 3D CANVAS (always visible behind panels) ── -->
@@ -1353,17 +1357,21 @@ function buildScene(){
   scleraMat.albedoColor = new BABYLON.Color3(0.96,0.95,0.93);
   scleraMat.roughness   = 0.12; scleraMat.metallic = 0;
 
-  // Bone PBR — off-white, slightly specular
+  // Bone PBR — anatomical ivory with subtle subsurface
   const boneMat = new BABYLON.PBRMaterial('boneMat', scene);
-  boneMat.albedoColor = new BABYLON.Color3(0.87,0.84,0.76);
-  boneMat.roughness   = 0.68; boneMat.metallic = 0.0;
-  boneMat.environmentIntensity = 0.3;
+  boneMat.albedoColor = new BABYLON.Color3(0.92,0.88,0.78);
+  boneMat.roughness   = 0.52; boneMat.metallic = 0.0;
+  boneMat.environmentIntensity = 0.45;
+  boneMat.subSurface.isTranslucencyEnabled = true;
+  boneMat.subSurface.translucencyIntensity = 0.2;
+  boneMat.subSurface.tintColor = new BABYLON.Color3(0.9,0.8,0.6);
 
-  // Neural axon — emissive cyan
+  // Neural axon — vivid cyan glow
   const neuralMat = new BABYLON.StandardMaterial('neuralMat', scene);
-  neuralMat.diffuseColor  = new BABYLON.Color3(0,0.75,1);
-  neuralMat.emissiveColor = new BABYLON.Color3(0,0.38,0.88);
-  neuralMat.specularColor = new BABYLON.Color3(0,0.8,1);
+  neuralMat.diffuseColor  = new BABYLON.Color3(0,0.85,1);
+  neuralMat.emissiveColor = new BABYLON.Color3(0,0.5,1);
+  neuralMat.specularColor = new BABYLON.Color3(0.2,0.9,1);
+  neuralMat.specularPower = 64;
 
   // Soma node — green-cyan glow
   const nodeMat = new BABYLON.StandardMaterial('nodeMat', scene);
@@ -1375,15 +1383,18 @@ function buildScene(){
   synMat.emissiveColor = new BABYLON.Color3(0.72,0.12,1);
   synMat.diffuseColor  = new BABYLON.Color3(0.55,0.06,0.82);
 
-  // Quantum particle
+  // Quantum particle — golden energy orbs
   const qMat = new BABYLON.StandardMaterial('qMat', scene);
-  qMat.diffuseColor  = new BABYLON.Color3(1,0.82,0.08);
-  qMat.emissiveColor = new BABYLON.Color3(0.75,0.52,0);
+  qMat.diffuseColor  = new BABYLON.Color3(1,0.85,0.15);
+  qMat.emissiveColor = new BABYLON.Color3(0.9,0.65,0);
+  qMat.specularColor = new BABYLON.Color3(1,0.9,0.3);
+  qMat.specularPower = 128;
 
-  // Entanglement line
+  // Entanglement line — hot pink energy threads
   const entMat = new BABYLON.StandardMaterial('entMat', scene);
-  entMat.emissiveColor = new BABYLON.Color3(1,0.22,0.55);
-  entMat.alpha = 0.42;
+  entMat.emissiveColor = new BABYLON.Color3(1,0.15,0.6);
+  entMat.diffuseColor = new BABYLON.Color3(0.8,0.1,0.5);
+  entMat.alpha = 0.55;
 
   // Step 7 — Peripheral materials
   const hairMat = new BABYLON.PBRMaterial('hairMat', scene);

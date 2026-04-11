@@ -58,7 +58,7 @@
 
 ### Zap 2: Notion → Supabase (Secrets Sync)
 - [ ] Trigger: "Database item created/updated" (Notion - Secrets Vault)
-- [ ] Action: "Webhook POST" → `https://go.ai-os.co.za/api/webhook/secrets-sync`
+- [ ] Action: "Webhook POST" → `https://bridge-ai-os.com/api/webhook/secrets-sync`
 - [ ] Body (JSON):
 ```json
 {
@@ -88,16 +88,16 @@ ZAPIER_WEBHOOK_SECRET=webhook-secret-xxx
 VERCEL_CRON_SECRET=cron-secret-xxx
 ```
 
-- [ ] Configure domain: `go.ai-os.co.za`
+- [ ] Configure domain: `bridge-ai-os.com`
   - [ ] Add to Vercel domain settings
   - [ ] Update DNS to Vercel nameservers
   - [ ] Or add CNAME: `cname-to-vercel.vercel-dns.com`
 
 - [ ] Enable auto-deployment on git push
 - [ ] Test endpoints:
-  - [ ] `https://go.ai-os.co.za/` (health check)
-  - [ ] `https://go.ai-os.co.za/api/crm/stats`
-  - [ ] `https://go.ai-os.co.za/api/cron/auto-send` (manual trigger, will fail without valid cron secret)
+  - [ ] `https://bridge-ai-os.com/` (health check)
+  - [ ] `https://bridge-ai-os.com/api/crm/stats`
+  - [ ] `https://bridge-ai-os.com/api/cron/auto-send` (manual trigger, will fail without valid cron secret)
 
 ## Phase 5: Database Migration ✓
 
@@ -115,13 +115,13 @@ VERCEL_CRON_SECRET=cron-secret-xxx
 
 - [ ] Update `workers.py` to use Vercel URL instead of localhost
   ```python
-  UNIFIED_URL = "https://go.ai-os.co.za"
+  UNIFIED_URL = "https://bridge-ai-os.com"
   ```
 
 - [ ] Update endpoints:
-  - [ ] POST `https://go.ai-os.co.za/api/crm/leads`
-  - [ ] POST `https://go.ai-os.co.za/api/outreach/queue`
-  - [ ] POST `https://go.ai-os.co.za/api/osint/register`
+  - [ ] POST `https://bridge-ai-os.com/api/crm/leads`
+  - [ ] POST `https://bridge-ai-os.com/api/outreach/queue`
+  - [ ] POST `https://bridge-ai-os.com/api/osint/register`
 
 - [ ] Test scraping pipeline end-to-end
 
@@ -130,7 +130,7 @@ VERCEL_CRON_SECRET=cron-secret-xxx
 - [ ] Set up Vercel function logs monitoring
 - [ ] Create Slack channel for alerts
 - [ ] Monitor auto-send cron job:
-  - [ ] Check `https://go.ai-os.co.za/api/cron/auto-send` (manual)
+  - [ ] Check `https://bridge-ai-os.com/api/cron/auto-send` (manual)
   - [ ] View Vercel dashboard → Crons section
   - [ ] Set up Slack notification on failures
 
@@ -206,7 +206,7 @@ curl -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   https://xxxxx.supabase.co/rest/v1/crm_leads?limit=1
 
 # 2. Check Vercel deployment
-curl https://go.ai-os.co.za/api/crm/stats
+curl https://bridge-ai-os.com/api/crm/stats
 
 # 3. Verify secrets in Supabase
 curl -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
@@ -214,7 +214,7 @@ curl -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
 
 # 4. Test cron (requires VERCEL_CRON_SECRET header)
 curl -H "x-vercel-cron-secret: $VERCEL_CRON_SECRET" \
-  https://go.ai-os.co.za/api/cron/auto-send
+  https://bridge-ai-os.com/api/cron/auto-send
 ```
 
 ---

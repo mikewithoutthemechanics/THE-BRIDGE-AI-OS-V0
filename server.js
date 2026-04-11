@@ -18,6 +18,10 @@ const { validate } = require('./lib/validation');
 const axios = require("axios");
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
+
+// Single canonical domain configuration
+const BASE_URL = process.env.BASE_URL || 'https://bridge-ai-os.com';
+const ALLOWED_ORIGINS = [BASE_URL, 'https://wall.bridge-ai-os.com', 'http://localhost:3000', 'http://localhost:8080'];
 const path = require("path");
 const fs = require("fs");
 const { Pool } = require('pg');
@@ -54,7 +58,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({ origin: ['https://wall.bridge-ai-os.com', 'http://localhost:3000', 'https://go.ai-os.co.za'], credentials: true }));
+app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 
 // Security headers — allow inline scripts/styles + CDN sources used by frontend pages
 app.use((req, res, next) => {
@@ -64,7 +68,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://cdnjs.cloudflare.com",
     "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://openrouter.ai https://api.openai.com https://www.payfast.co.za https://go.ai-os.co.za http://localhost:*",
+    `connect-src 'self' https://openrouter.ai https://api.openai.com https://www.payfast.co.za ${BASE_URL} http://localhost:*`,
     "object-src 'none'",
     "frame-src 'self'"
   ].join('; '));
@@ -988,7 +992,7 @@ app.post('/api/leadgen/auto-close', requireAdmin, [validate.leadgenAutoClose], a
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
     const resp = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
       model: 'nousresearch/hermes-3-llama-3.1-405b:free',
-      messages: [{ role: 'user', content: `Write a 3-sentence sales email to ${lead.company||'a business'} about Bridge AI OS. Offer: ${offer||'Pro plan R299/mo'}. CTA: https://go.ai-os.co.za/landing. Professional, direct.` }],
+      messages: [{ role: 'user', content: `Write a 3-sentence sales email to ${lead.company||'a business'} about Bridge AI OS. Offer: ${offer||'Pro plan R299/mo'}. CTA: https://bridge-ai-os.com/landing. Professional, direct.` }],
       max_tokens: 300
     }, { headers: { 'Authorization': 'Bearer ' + (process.env.OPENROUTER_API_KEY||''), 'Content-Type': 'application/json' }, timeout: 30000 });
     const email = resp.data.choices[0].message.content;

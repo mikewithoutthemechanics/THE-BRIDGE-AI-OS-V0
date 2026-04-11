@@ -51,7 +51,7 @@
 
 | Domain                        | Purpose                     | Status     |
 |-------------------------------|-----------------------------|------------|
-| go.ai-os.co.za                | Primary production URL      | ✅ Active  |
+| bridge-ai-os.com                | Primary production URL      | ✅ Active  |
 | bridge-ai-os.com              | Main brand domain           | ✅ Active  |
 | abaas.bridge-ai-os.com        | ABAAS control plane         | ✅ Active  |
 | god.bridge-ai-os.com          | GOD MODE topology           | ✅ Active  |
@@ -575,7 +575,7 @@ Column 4: Company
 Column 5: Legal & Support
   Terms of Service | Privacy Policy | Docs | Join | Contact
 
-Bottom bar: © 2026 Bridge AI OS | go.ai-os.co.za | ZA
+Bottom bar: © 2026 Bridge AI OS | bridge-ai-os.com | ZA
 ```
 
 ---
@@ -995,7 +995,7 @@ CLOUDFLARE_R2_SECRET_KEY=<secret>
 CLOUDFLARE_ACCOUNT_ID=<id>
 
 # Business Config
-ALLOWED_ORIGINS=https://go.ai-os.co.za,https://bridge-ai-os.com
+ALLOWED_ORIGINS=https://bridge-ai-os.com,https://bridge-ai-os.com
 BRDG_MINT_RATE=100
 UBI_POOL_PERCENT=10
 PLATFORM_FEE_PERCENT=5
@@ -1012,14 +1012,14 @@ PLATFORM_FEE_PERCENT=5
 - [ ] Run `pm2 save && pm2 startup` for auto-restart
 - [ ] Set UFW rules: allow only 22, 80, 443
 - [ ] Enable Cloudflare proxy for DDoS protection
-- [ ] Configure Paystack webhook URL → https://go.ai-os.co.za/api/invoices/reconcile
-- [ ] Set PayPal webhook URL → https://go.ai-os.co.za/api/payments/webhook/paypal
+- [ ] Configure Paystack webhook URL → https://bridge-ai-os.com/api/invoices/reconcile
+- [ ] Set PayPal webhook URL → https://bridge-ai-os.com/api/payments/webhook/paypal
 - [ ] Verify Neo4j accepting connections on bolt://localhost:7687
 - [ ] Redis password set and REDIS_URL configured
 - [ ] Run migration: `alembic upgrade head` or schema creation SQL
 - [ ] Verify all 9 PM2 services start cleanly: `pm2 list`
-- [ ] Run health check: `curl https://go.ai-os.co.za/health`
-- [ ] Verify SSE stream: `curl -N https://go.ai-os.co.za/api/control/events`
+- [ ] Run health check: `curl https://bridge-ai-os.com/health`
+- [ ] Verify SSE stream: `curl -N https://bridge-ai-os.com/api/control/events`
 - [ ] Smoke test treasury: POST /api/treasury/collect with test amount
 - [ ] Confirm SIWE login works end-to-end
 - [ ] Test Paystack sandbox payment flow

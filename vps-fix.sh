@@ -41,5 +41,5 @@ nginx -t
 echo ""
 echo "=== DONE ==="
 echo "Test: curl -I https://ehsa.ai-os.co.za/"
-echo "Test: curl https://go.ai-os.co.za/ban"
-echo "Test: curl -I https://go.ai-os.co.za/abaas.html"
+echo "Test: curl https://bridge-ai-os.com/ban"
+echo "Test: curl -I https://bridge-ai-os.com/abaas.html"

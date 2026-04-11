@@ -66,7 +66,7 @@ try {
 // ── CORS (restricted to known origins) ───────────────────────────────────────
 const ALLOWED_ORIGINS = new Set([
   'https://wall.bridge-ai-os.com',
-  'https://go.ai-os.co.za',
+  'https://bridge-ai-os.com',
   'http://localhost:3000',
   'http://localhost:8080',
 ]);
@@ -1840,7 +1840,7 @@ Object.entries(GATEWAY_SHORT_ROUTES).forEach(([short, target]) => {
 
 const SUBDOMAIN_MAP = {
   'ai-os.co.za': 'home.html',
-  'go.ai-os.co.za': 'landing.html',
+  'bridge-ai-os.com': 'landing.html',
   'gateway.ai-os.co.za': 'landing.html',
   'bridge.ai-os.co.za': 'bridge-home.html',
   'ban.ai-os.co.za': 'ban-home.html',

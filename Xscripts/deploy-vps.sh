@@ -2,7 +2,7 @@
 # =============================================================================
 # BRIDGE AI OS — Full VPS Deployment
 # Target: ai-os.co.za (102.208.231.53)
-# Subdomains: go.ai-os.co.za → gateway:8080
+# Subdomains: bridge-ai-os.com → gateway:8080
 # =============================================================================
 set -e
 
@@ -58,12 +58,12 @@ mkdir -p logs certs
 echo "  [6/8] Configuring Nginx..."
 sudo tee /etc/nginx/sites-available/bridge-ai-os > /dev/null << 'NGINX'
 # Bridge AI OS — Nginx reverse proxy
-# Serves: ai-os.co.za + go.ai-os.co.za
+# Serves: ai-os.co.za + bridge-ai-os.com
 
 # Main domain → gateway (port 8080)
 server {
     listen 80;
-    server_name ai-os.co.za go.ai-os.co.za;
+    server_name ai-os.co.za bridge-ai-os.com;
 
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;

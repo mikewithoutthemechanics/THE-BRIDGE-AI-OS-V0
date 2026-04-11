@@ -1,6 +1,6 @@
 #!/bin/bash
 # SAFE BRIDGEAI RECOVERY SCRIPT
-# Run on VPS: go.ai-os.co.za
+# Run on VPS: bridge-ai-os.com
 # This script is IDEMPOTENT and SAFE - can be run multiple times
 
 set -e
@@ -269,8 +269,8 @@ echo "=== RECOVERY COMPLETE ==="
 echo "Time: $(date)"
 echo ""
 echo "NEXT STEPS:"
-echo "1. Check OAuth: Visit https://go.ai-os.co.za/auth/github"
+echo "1. Check OAuth: Visit https://bridge-ai-os.com/auth/github"
 echo "2. Monitor logs: sudo journalctl -u bridgeai -f"
-echo "3. Verify GitHub OAuth callback URL matches: https://go.ai-os.co.za/auth/github/callback"
+echo "3. Verify GitHub OAuth callback URL matches: https://bridge-ai-os.com/auth/github/callback"
 echo ""
 echo "If issues persist, share the output of this script for further diagnosis."

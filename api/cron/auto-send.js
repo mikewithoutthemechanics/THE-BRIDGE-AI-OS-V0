@@ -112,7 +112,7 @@ module.exports = async (req, res) => {
         });
 
         // Add tracking pixel
-        const trackingPixel = `<img src="https://go.ai-os.co.za/api/tracking/pixel/${item.id}" width="1" height="1" style="display:none;" />`;
+        const trackingPixel = `<img src="https://bridge-ai-os.com/api/tracking/pixel/${item.id}" width="1" height="1" style="display:none;" />`;
         const fullHtml = html + trackingPixel;
 
         // Send email

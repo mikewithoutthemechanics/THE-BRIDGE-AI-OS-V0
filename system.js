@@ -498,7 +498,7 @@ function fullScan() {
 // ─── CORS origin allowlist (matches gateway.js pattern) ──────────────────────
 const ALLOWED_ORIGINS = new Set([
   'https://wall.bridge-ai-os.com',
-  'https://go.ai-os.co.za',
+  'https://bridge-ai-os.com',
   'http://localhost:3000',
   'http://localhost:8080',
 ]);
@@ -1081,7 +1081,7 @@ function aggregateEconomics() {
     type:     'referral',
     currency: 'N/A',
     location: 'C:/bridgeos/vps-referral',
-    base_url: 'https://go.ai-os.co.za',
+    base_url: 'https://bridge-ai-os.com',
     stats:    referralStats,
     status:   'deployed',
   });

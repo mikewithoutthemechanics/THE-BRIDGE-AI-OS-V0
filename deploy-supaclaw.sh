@@ -41,12 +41,12 @@ echo "[3/4] Done."
 # ── 4. Verify /api/core/invariants endpoint ──────────────────────────────────
 echo "[4/4] Checking invariants endpoint..."
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-  "https://go.ai-os.co.za/api/core/invariants" \
+  "https://bridge-ai-os.com/api/core/invariants" \
   --max-time 10 || echo "000")
 
 if [ "$HTTP_STATUS" = "200" ]; then
   echo "[4/4] /api/core/invariants → 200 OK"
-  curl -s "https://go.ai-os.co.za/api/core/invariants" | python3 -m json.tool 2>/dev/null || true
+  curl -s "https://bridge-ai-os.com/api/core/invariants" | python3 -m json.tool 2>/dev/null || true
 else
   echo "[4/4] WARNING: /api/core/invariants returned HTTP $HTTP_STATUS"
   echo "       The endpoint may not be registered yet — check brain.js router."

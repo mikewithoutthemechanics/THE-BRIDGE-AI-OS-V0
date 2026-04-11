@@ -1,12 +1,12 @@
 #!/bin/bash
 # CRITICAL FIXES FOR BRIDGEAI SYSTEM
-# Run on VPS: go.ai-os.co.za
+# Run on VPS: bridge-ai-os.com
 # Usage: bash fix-bridgeai.sh
 
 set -e
 
 echo "=== BRIDGEAI CRITICAL FIXES ==="
-echo "Target: go.ai-os.co.za"
+echo "Target: bridge-ai-os.com"
 echo ""
 
 cd /var/www/bridgeai
@@ -104,8 +104,8 @@ fi
 
 echo ""
 echo "=== FIX COMPLETE ==="
-echo "Test OAuth: Visit https://go.ai-os.co.za/auth/github"
+echo "Test OAuth: Visit https://bridge-ai-os.com/auth/github"
 echo "Monitor logs: sudo journalctl -u bridgeai -f"
 echo ""
 echo "If OAuth still fails, verify your GitHub OAuth app callback URL:"
-echo "Expected: https://go.ai-os.co.za/auth/github/callback"
+echo "Expected: https://bridge-ai-os.com/auth/github/callback"

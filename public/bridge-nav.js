@@ -1,25 +1,22 @@
 (function() {
   'use strict';
 
-  // Auto-detect: use VPS domains when on ai-os.co.za, tunnel when on bridge-ai-os.com, relative when same origin
-  var h = window.location.hostname;
-  var isVPS = h.indexOf('ai-os.co.za') !== -1;
-  var isTunnel = h.indexOf('bridge-ai-os.com') !== -1;
-  var svcBase = isVPS ? 'https://go.ai-os.co.za' : (isTunnel ? 'https://abaas.bridge-ai-os.com' : '');
-  var godUrl = isVPS ? 'https://go.ai-os.co.za/control.html' : 'https://god.bridge-ai-os.com';
-  var svgUrl = isVPS ? 'https://go.ai-os.co.za/avatar.html' : 'https://svg.bridge-ai-os.com';
-  var termUrl = isVPS ? 'https://terminal.ai-os.co.za' : 'https://terminal.bridge-ai-os.com';
-  var authUrl = isVPS ? 'https://auth.ai-os.co.za' : 'https://auth.bridge-ai-os.com';
-  var gwUrl = isVPS ? 'https://gateway.ai-os.co.za' : 'https://gateway.bridge-ai-os.com';
+  // Single canonical domain: bridge-ai-os.com
+  const BASE_URL = 'https://bridge-ai-os.com';
+  var svcBase = BASE_URL;
+  var godUrl = BASE_URL + '/control.html';
+  var svgUrl = BASE_URL + '/avatar.html';
+  var termUrl = 'https://terminal.bridge-ai-os.com';
+  var authUrl = 'https://auth.bridge-ai-os.com';
+  var gwUrl = 'https://gateway.bridge-ai-os.com';
   var sections = {
     'SERVICES': [
       { name: 'CONTROL', subdomain: 'abaas', port: '3000', url: svcBase || '/' },
       { name: 'GOD MODE', subdomain: 'god', port: '3001', url: godUrl },
-      { name: 'LIVE WALL', subdomain: 'live', port: '8001', url: isVPS ? svcBase : 'https://live.bridge-ai-os.com' },
-      { name: 'SVG ENGINE', subdomain: 'svg', port: '7070', url: svgUrl },
-      { name: 'BRAIN', subdomain: 'brain', port: '8000', url: svcBase + '/api/health' },
+      { name: 'LIVE WALL', subdomain: 'live', port: '8001', url: 'https://live.bridge-ai-os.com' },
+      { name: 'BRAIN', subdomain: 'brain', port: '8000', url: BASE_URL + '/api/health' },
       { name: 'TERMINAL', subdomain: 'terminal', port: '5002', url: termUrl },
-      { name: 'GRAFANA', subdomain: 'grafana', port: '3003', url: isVPS ? 'https://go.ai-os.co.za/status' : 'https://grafana.bridge-ai-os.com' }
+      { name: 'GRAFANA', subdomain: 'grafana', port: '3003', url: 'https://grafana.bridge-ai-os.com' }
     ],
     'PLATFORMS': [
       { name: 'EHSA', url: svcBase+'/ehsa-home.html' }, { name: 'HOSPITAL', url: svcBase+'/hospital-home.html' },

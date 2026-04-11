@@ -219,7 +219,7 @@ const HEALTH_ENDPOINTS = [
   { id: "treasury",  url: "http://localhost:7071/health" },         // SVG Engine v3 (1246 skills)
   { id: "pm2",       url: "http://localhost:6063/" },               // Exec Trace Graph UI
   { id: "nginx",     url: "http://localhost:9090/-/ready" },        // Prometheus (infra monitoring)
-  // ── VPS endpoints (go.ai-os.co.za) unreachable from localhost — omitted ──
+  // ── VPS endpoints (bridge-ai-os.com) unreachable from localhost — omitted ──
   // Nodes: core-brain, system, twin, swarm, quant, defi, crm, marketing, neurolink, vps
   // will hold their initial yellow status and simulate metrics until VPS is reachable
 ];
@@ -230,10 +230,10 @@ const nodes = [
   { id: "nginx",       name: "Prometheus",     type: "Network", endpoint: ":9090", status: "green", cpu: 2,  mem: 10, disk: 1, net: 60 },
   { id: "pm2",         name: "Trace UI",       type: "Server",  endpoint: ":6063", status: "green", cpu: 3,  mem: 15, disk: 1, net: 5 },
   { id: "treasury",    name: "SVG Engine",     type: "AI/ML",   endpoint: ":7071", status: "green", cpu: 10, mem: 25, disk: 2, net: 20 },
-  // ── VPS — go.ai-os.co.za ──
+  // ── VPS — bridge-ai-os.com ──
   { id: "vps",         name: "VPS (DUR)",      type: "Server",  endpoint: "102.208.228.44",  status: "yellow", cpu: 8,  mem: 10, disk: 4, net: 100 },
-  { id: "core-brain",  name: "Super Brain",    type: "AI/ML",   endpoint: "go.ai-os.co.za",  status: "yellow", cpu: 15, mem: 58, disk: 4, net: 45 },
-  { id: "system",      name: "GOD MODE",       type: "Server",  endpoint: "go.ai-os.co.za",  status: "yellow", cpu: 8,  mem: 56, disk: 4, net: 20 },
+  { id: "core-brain",  name: "Super Brain",    type: "AI/ML",   endpoint: "bridge-ai-os.com",  status: "yellow", cpu: 15, mem: 58, disk: 4, net: 45 },
+  { id: "system",      name: "GOD MODE",       type: "Server",  endpoint: "bridge-ai-os.com",  status: "yellow", cpu: 8,  mem: 56, disk: 4, net: 20 },
   { id: "twin",        name: "Digital Twin",   type: "AI/ML",   endpoint: "/api/twin",       status: "yellow", cpu: 20, mem: 40, disk: 2, net: 35 },
   { id: "swarm",       name: "Swarm Orch",     type: "AI/ML",   endpoint: "/api/swarm",      status: "yellow", cpu: 18, mem: 30, disk: 2, net: 35 },
   { id: "quant",       name: "Quant Engine",   type: "AI/ML",   endpoint: "/api/quant",      status: "yellow", cpu: 25, mem: 35, disk: 2, net: 40 },

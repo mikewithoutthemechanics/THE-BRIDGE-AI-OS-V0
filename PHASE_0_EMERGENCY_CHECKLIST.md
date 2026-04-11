@@ -87,7 +87,7 @@ cp /var/www/bridgeai/users.db /var/www/bridgeai/users.db.backup
 rm /var/www/bridgeai/users.db
 
 # Step 3: Verify app fails without DB
-curl https://go.ai-os.co.za/health
+curl https://bridge-ai-os.com/health
 # Expected: 500 error or connection refused
 
 # Step 4: Download backup from S3
@@ -100,7 +100,7 @@ cp /tmp/restore/users.db /var/www/bridgeai/users.db
 
 # Step 6: Verify app recovers
 systemctl restart pm2  # or: pm2 reload ecosystem.config.js
-curl https://go.ai-os.co.za/health
+curl https://bridge-ai-os.com/health
 # Expected: 200 OK
 
 # Step 7: Cleanup
@@ -128,7 +128,7 @@ ssh -o ConnectTimeout=5 root@102.208.228.44 "echo 'SSH OK' && uptime"
 # If NOT accessible:
 # Contact Webway VPS support
 # Email: support@webway.host
-# Verify IP is correct: go.ai-os.co.za secondary IP
+# Verify IP is correct: bridge-ai-os.com secondary IP
 # Request to provision identical Ubuntu 20.04 LTS instance
 ```
 
@@ -282,12 +282,12 @@ cat /var/www/bridgeai/.env.aws | head -5
 
 ```bash
 # Log into Cloudflare dashboard
-# Domain: go.ai-os.co.za
-# Zone: go.ai-os.co.za
+# Domain: bridge-ai-os.com
+# Zone: bridge-ai-os.com
 
 # 1. Add both VPS IPs as A records
-# A record 1: go.ai-os.co.za → 102.208.231.53 (Primary)
-# A record 2: go.ai-os.co.za → 102.208.228.44 (Secondary)
+# A record 1: bridge-ai-os.com → 102.208.231.53 (Primary)
+# A record 2: bridge-ai-os.com → 102.208.228.44 (Secondary)
 # TTL: 60 seconds (fast failover)
 
 # Via CLI:
@@ -295,14 +295,14 @@ ZONE_ID="YOUR_ZONE_ID"  # Get from Cloudflare dashboard
 
 wrangler dns create \
   --zone-id $ZONE_ID \
-  --name go.ai-os.co.za \
+  --name bridge-ai-os.com \
   --type A \
   --content 102.208.231.53 \
   --ttl 60
 
 wrangler dns create \
   --zone-id $ZONE_ID \
-  --name go.ai-os.co.za \
+  --name bridge-ai-os.com \
   --type A \
   --content 102.208.228.44 \
   --ttl 60
@@ -315,13 +315,13 @@ wrangler dns create \
 
 ```bash
 # Test DNS resolution (should return both IPs)
-dig go.ai-os.co.za +short
+dig bridge-ai-os.com +short
 # Expected: 
 # 102.208.231.53
 # 102.208.228.44
 
 # Test that app is accessible via both
-curl -I https://go.ai-os.co.za/health
+curl -I https://bridge-ai-os.com/health
 # Expected: 200 OK
 ```
 

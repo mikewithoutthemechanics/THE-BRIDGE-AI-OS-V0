@@ -21,6 +21,9 @@ const express = require('express');
 const http = require('http');
 const { WebSocket, WebSocketServer } = require('ws');
 const crypto = require('crypto');
+
+// Single canonical domain configuration
+const BASE_URL = process.env.BASE_URL || 'https://bridge-ai-os.com';
 const path = require('path');
 const fs = require('fs');
 // Graceful require — if ethers/hardhat not installed, these return null and endpoints degrade
@@ -78,7 +81,7 @@ try {
 
 const ALLOWED_ORIGINS = new Set([
   'https://wall.bridge-ai-os.com',
-  'https://go.ai-os.co.za',
+  'https://bridge-ai-os.com',
   'https://bridge-ai-os.com',
   'http://localhost:3000',
   'http://localhost:8080',
@@ -516,7 +519,7 @@ app.get('/api/founder-todo', (_req, res) => res.json({ ok: true, items: [
   { id: 1, text: 'Deploy to VPS', done: false, priority: 'high' },
   { id: 2, text: 'Wire 3D renderer to live data', done: false, priority: 'high' },
   { id: 3, text: 'Connect BAN task engine', done: true, priority: 'medium' },
-  { id: 4, text: 'Setup DNS for go.ai-os.co.za', done: false, priority: 'high' },
+  { id: 4, text: 'Setup DNS for bridge-ai-os.com', done: false, priority: 'high' },
   { id: 5, text: 'Enable cross-platform sharing', done: false, priority: 'medium' },
 ] }));
 
@@ -1265,7 +1268,7 @@ app.get('/api/twin/full', (_req, res) => {
       founder: { name: 'Ryan Saunders', email: 'ryan@ai-os.co.za', role: 'CEO/Founder' },
       swarm: { agents: swarmAgents.length, active: swarmAgents.filter(a => a.status === 'active').length, strategies: swarmStrategies.length },
       services: { gateway: ':8080', brain: ':8000', system: ':3000', terminal: ':5002', auth: ':5001' },
-      domain: 'go.ai-os.co.za',
+      domain: 'bridge-ai-os.com',
       vps: { ip: '102.208.228.44', provider: 'WebWay', ram: '6GB', disk: '200GB', region: 'ZA' },
     },
     state_version: stateVersion,
@@ -1357,9 +1360,9 @@ app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }
               <tr><td style="padding:.5rem;color:#666">Payment ID</td><td style="padding:.5rem;font-family:monospace">${pf_payment_id}</td></tr>
               <tr><td style="padding:.5rem;color:#666">Status</td><td style="padding:.5rem;color:#00e57b;font-weight:600">Confirmed</td></tr>
             </table>
-            <p>Your account is now active. <a href="https://go.ai-os.co.za/ui.html" style="color:#00c8ff">Open Dashboard</a></p>
+            <p>Your account is now active. <a href="https://bridge-ai-os.com/ui.html" style="color:#00c8ff">Open Dashboard</a></p>
             <hr style="border:none;border-top:1px solid #eee;margin:2rem 0">
-            <p style="color:#999;font-size:.8rem">Bridge AI OS &middot; <a href="https://go.ai-os.co.za" style="color:#00c8ff">go.ai-os.co.za</a></p>
+            <p style="color:#999;font-size:.8rem">Bridge AI OS &middot; <a href="https://bridge-ai-os.com" style="color:#00c8ff">bridge-ai-os.com</a></p>
           </div>`,
         }).catch(e => console.error('[MAIL] Payment confirmation failed:', e.message));
       } catch(_) {}
@@ -1869,7 +1872,7 @@ app.get('/api/governance/jv', (_req, res) => res.json({ ok: true,
 app.get('/api/ops/overview', (_req, res) => res.json({ ok: true,
   services_running: 5, pages_deployed: 15, endpoints_active: 99,
   uptime: process.uptime(), memory_mb: Math.round(process.memoryUsage().heapUsed / 1048576),
-  vps: { ip: '102.208.228.44', domain: 'go.ai-os.co.za', ssl: true, provider: 'WebWay' },
+  vps: { ip: '102.208.228.44', domain: 'bridge-ai-os.com', ssl: true, provider: 'WebWay' },
   git: { repo: 'bridgeaios/THE-BRIDGE-AI-OS-V0', branch: 'feature/supadash-consolidation' },
   pm2: ['bridge-gateway', 'super-brain', 'god-mode-system', 'terminal-proxy', 'auth-service'],
 }));
@@ -1879,7 +1882,7 @@ app.post('/api/deploy/plan', (req, res) => {
   const { target, services } = req.body || {};
   res.json({ ok: true, plan: {
     target: target || 'vps',
-    domain: 'go.ai-os.co.za',
+    domain: 'bridge-ai-os.com',
     ip: '102.208.231.53',
     services: services || ['gateway', 'brain', 'ban', 'system', 'terminal'],
     steps: ['git pull', 'npm install', 'pm2 restart', 'nginx reload', 'certbot renew'],
@@ -1889,7 +1892,7 @@ app.post('/api/deploy/plan', (req, res) => {
 
 // ── INDEX.JSON (system manifest) ────────────────────────────────────────────
 app.get('/index.json', (_req, res) => res.json({
-  name: 'Bridge AI OS', version: '3.0.0', domain: 'go.ai-os.co.za',
+  name: 'Bridge AI OS', version: '3.0.0', domain: 'bridge-ai-os.com',
   pages: [
     { path: '/', name: 'Dashboard' }, { path: '/topology.html', name: 'Topology' },
     { path: '/registry.html', name: 'Registry' }, { path: '/marketplace.html', name: 'Marketplace' },
@@ -1910,7 +1913,7 @@ app.get('/index.json', (_req, res) => res.json({
 app.get('/api/subdomain/resolve', (req, res) => {
   const host = req.query.host || req.hostname || '';
   const routes = {
-    'go.ai-os.co.za': '/',
+    'bridge-ai-os.com': '/',
     'bridge.ai-os.co.za': '/',
     'ban.ai-os.co.za': '/ban',
     'supac.ai-os.co.za': '/abaas.html',
@@ -2240,7 +2243,7 @@ app.get('/api/v3/spec', (_req, res) => res.json({ ok: true,
   applications: { web: 15, mobile: 'planned', installers: ['docker', 'pm2'] },
   integrations: { google: 'pending', microsoft: 'pending', notion: 'pending', payments: ['payfast', 'paystack', 'crypto'] },
   security: { tls: 'ENABLED_TLSv1.3', firewall: 'ACTIVE_UFW', mfa: 'ACTIVE_TOTP', audit: 'ACTIVE_APPEND_ONLY', rbac: 'ACTIVE_5_ROLES', keyforge: 'ACTIVE' },
-  deployment: { vps: '102.208.228.44', domain: 'go.ai-os.co.za', ssl: 'letsencrypt_A+', pm2: '5_services' },
+  deployment: { vps: '102.208.228.44', domain: 'bridge-ai-os.com', ssl: 'letsencrypt_A+', pm2: '5_services' },
   integrations_status: { google_oauth: 'READY (needs CLIENT_ID)', microsoft_azure: 'READY (needs CLIENT_ID)', github_oauth: 'READY (needs CLIENT_ID)', notion: 'READY (needs TOKEN)', mobile_pwa: 'ACTIVE', mobile_native: 'PLANNED' },
   gaps_remaining: ['Set GOOGLE_CLIENT_ID', 'Set AZURE_CLIENT_ID', 'Set NOTION_TOKEN', 'Native mobile apps'],
 }));
@@ -2249,8 +2252,8 @@ app.get('/api/v3/spec', (_req, res) => res.json({ ok: true,
 app.get('/api/testlab/status', (_req, res) => res.json({ ok: true,
   environments: [
     { id: 'dev', name: 'Development', status: 'active', url: 'http://localhost:8080' },
-    { id: 'staging', name: 'Staging', status: 'active', url: 'https://go.ai-os.co.za' },
-    { id: 'production', name: 'Production', status: 'active', url: 'https://go.ai-os.co.za' },
+    { id: 'staging', name: 'Staging', status: 'active', url: 'https://bridge-ai-os.com' },
+    { id: 'production', name: 'Production', status: 'active', url: 'https://bridge-ai-os.com' },
   ],
   capabilities: ['simulation', 'load_testing', 'security_scanning', 'integration_testing'],
   last_run: { type: 'full_audit', result: '113/113 pass', ts: Date.now() },
@@ -2455,8 +2458,8 @@ app.post('/api/notion/sync', async (req, res) => {
 app.get('/api/mobile/config', (_req, res) => res.json({ ok: true,
   app_name: 'Bridge AI OS',
   version: '1.0.0',
-  api_base: 'https://go.ai-os.co.za',
-  ws_base: 'wss://go.ai-os.co.za/ws',
+  api_base: BASE_URL,
+  ws_base: BASE_URL.replace('https://', 'wss://') + '/ws',
   features: ['dashboard', 'tasks', 'payments', 'notifications', 'twin', 'wallet'],
   platforms: { android: { status: 'planned', store: 'pending' }, ios: { status: 'planned', store: 'pending' }, pwa: { status: 'active', manifest: '/manifest.json' } },
   push_notifications: { provider: 'pending', vapid_key: '' },
@@ -2604,7 +2607,7 @@ app.get('/api/affiliate/logistics', (_req, res) => {
     clicks: refs * 7,
     earned: +earned.toFixed(2), paid: +(earned * 0.8).toFixed(2), pending: +(earned * 0.2).toFixed(2),
     currency: 'USD', joined: Date.now() - (180 - i * 30) * 86400000,
-    links: [`https://go.ai-os.co.za/?ref=${name}`, `https://ai-os.co.za/?ref=${name}`],
+    links: [`${BASE_URL}/?ref=${name}`],
     sub_affiliates: Math.floor(refs * 0.1),
     assets: { banners: 3, emails: 5, social: 8, landing_pages: 2 },
   });
@@ -2657,7 +2660,7 @@ app.post('/api/affiliate/join', (req, res) => {
   const id = name.toLowerCase().replace(/\s+/g, '_');
   if (affiliates.has(id)) return res.json({ ok: true, existing: true, ...affiliates.get(id) });
   const code = `AFF-${id.toUpperCase().slice(0, 4)}-${Date.now().toString(36).slice(-4)}`;
-  const aff = { id, name, email: email || '', code, tier: 'starter', referrals: 0, conversions: 0, clicks: 0, earned: 0, paid: 0, pending: 0, currency: 'USD', joined: Date.now(), links: [`https://go.ai-os.co.za/?ref=${id}`], sub_affiliates: 0, assets: { banners: 3, emails: 5, social: 8, landing_pages: 2 } };
+  const aff = { id, name, email: email || '', code, tier: 'starter', referrals: 0, conversions: 0, clicks: 0, earned: 0, paid: 0, pending: 0, currency: 'USD', joined: Date.now(), links: [`${BASE_URL}/?ref=${id}`], sub_affiliates: 0, assets: { banners: 3, emails: 5, social: 8, landing_pages: 2 } };
   affiliates.set(id, aff);
   res.json({ ok: true, ...aff });
 });
@@ -3485,7 +3488,7 @@ Object.entries(SHORT_ROUTES).forEach(([short, target]) => {
 
 // ── SUBDOMAIN ROUTING ──────────────────────────────────────────────────────
 const SUBDOMAIN_MAP = {
-  'ai-os.co.za': 'home.html', 'go.ai-os.co.za': 'landing.html',
+  'ai-os.co.za': 'home.html', 'bridge-ai-os.com': 'landing.html',
   'gateway.ai-os.co.za': 'landing.html', 'bridge.ai-os.co.za': 'bridge-home.html',
   'ban.ai-os.co.za': 'ban-home.html', 'supac.ai-os.co.za': 'supac-home.html',
   'ehsa.ai-os.co.za': 'ehsa-app.html', 'aurora.ai-os.co.za': 'aurora-home.html',

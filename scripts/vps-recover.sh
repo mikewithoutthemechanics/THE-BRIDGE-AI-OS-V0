@@ -50,4 +50,4 @@ echo "Watchdog cron installed."
 
 echo ""
 echo "=== Done. Sites should be live. ==="
-echo "Check: curl https://go.ai-os.co.za/health"
+echo "Check: curl https://bridge-ai-os.com/health"

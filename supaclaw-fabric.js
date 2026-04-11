@@ -42,22 +42,22 @@ function atlasScan() {
 
   // Scan pages
   const pages = [
-    { id: 'home', type: 'page', url: '/', domain: 'go.ai-os.co.za', layer: 'L0', visibility: 'public' },
-    { id: 'topology', type: 'page', url: '/topology.html', domain: 'go.ai-os.co.za', layer: 'L2', visibility: 'public' },
-    { id: 'registry', type: 'page', url: '/registry.html', domain: 'go.ai-os.co.za', layer: 'L2', visibility: 'public' },
-    { id: 'marketplace', type: 'page', url: '/marketplace.html', domain: 'go.ai-os.co.za', layer: 'L1', visibility: 'public' },
-    { id: 'avatar', type: 'page', url: '/avatar.html', domain: 'go.ai-os.co.za', layer: 'L1', visibility: 'public' },
-    { id: 'status', type: 'page', url: '/system-status-dashboard.html', domain: 'go.ai-os.co.za', layer: 'L2', visibility: 'public' },
-    { id: 'terminal', type: 'page', url: '/terminal.html', domain: 'go.ai-os.co.za', layer: 'L3', visibility: 'internal' },
-    { id: 'control', type: 'page', url: '/control.html', domain: 'go.ai-os.co.za', layer: 'L3', visibility: 'internal' },
+    { id: 'home', type: 'page', url: '/', domain: 'bridge-ai-os.com', layer: 'L0', visibility: 'public' },
+    { id: 'topology', type: 'page', url: '/topology.html', domain: 'bridge-ai-os.com', layer: 'L2', visibility: 'public' },
+    { id: 'registry', type: 'page', url: '/registry.html', domain: 'bridge-ai-os.com', layer: 'L2', visibility: 'public' },
+    { id: 'marketplace', type: 'page', url: '/marketplace.html', domain: 'bridge-ai-os.com', layer: 'L1', visibility: 'public' },
+    { id: 'avatar', type: 'page', url: '/avatar.html', domain: 'bridge-ai-os.com', layer: 'L1', visibility: 'public' },
+    { id: 'status', type: 'page', url: '/system-status-dashboard.html', domain: 'bridge-ai-os.com', layer: 'L2', visibility: 'public' },
+    { id: 'terminal', type: 'page', url: '/terminal.html', domain: 'bridge-ai-os.com', layer: 'L3', visibility: 'internal' },
+    { id: 'control', type: 'page', url: '/control.html', domain: 'bridge-ai-os.com', layer: 'L3', visibility: 'internal' },
     { id: 'ban', type: 'page', url: '/ban', domain: 'ban.ai-os.co.za', layer: 'L1', visibility: 'public' },
-    { id: 'onboarding', type: 'page', url: '/onboarding.html', domain: 'go.ai-os.co.za', layer: 'L0', visibility: 'public' },
-    { id: 'welcome', type: 'page', url: '/welcome.html', domain: 'go.ai-os.co.za', layer: 'L0', visibility: 'public' },
-    { id: 'sitemap', type: 'page', url: '/sitemap.html', domain: 'go.ai-os.co.za', layer: 'L0', visibility: 'public' },
+    { id: 'onboarding', type: 'page', url: '/onboarding.html', domain: 'bridge-ai-os.com', layer: 'L0', visibility: 'public' },
+    { id: 'welcome', type: 'page', url: '/welcome.html', domain: 'bridge-ai-os.com', layer: 'L0', visibility: 'public' },
+    { id: 'sitemap', type: 'page', url: '/sitemap.html', domain: 'bridge-ai-os.com', layer: 'L0', visibility: 'public' },
     { id: 'abaas', type: 'page', url: '/abaas.html', domain: 'abaas.ai-os.co.za', layer: 'L1', visibility: 'public' },
-    { id: 'aoe', type: 'page', url: '/aoe-dashboard.html', domain: 'go.ai-os.co.za', layer: 'L2', visibility: 'public' },
-    { id: 'platforms', type: 'page', url: '/platforms.html', domain: 'go.ai-os.co.za', layer: 'L0', visibility: 'public' },
-    { id: 'logs', type: 'page', url: '/logs.html', domain: 'go.ai-os.co.za', layer: 'L3', visibility: 'internal' },
+    { id: 'aoe', type: 'page', url: '/aoe-dashboard.html', domain: 'bridge-ai-os.com', layer: 'L2', visibility: 'public' },
+    { id: 'platforms', type: 'page', url: '/platforms.html', domain: 'bridge-ai-os.com', layer: 'L0', visibility: 'public' },
+    { id: 'logs', type: 'page', url: '/logs.html', domain: 'bridge-ai-os.com', layer: 'L3', visibility: 'internal' },
   ];
 
   // Scan services
@@ -156,10 +156,10 @@ function horizonCompose() {
   CLASS_INDEX.forEach(c => { if (UX_STRUCTURE.layers[c.layer]) UX_STRUCTURE.layers[c.layer].push(c.id); });
   UX_STRUCTURE.navigation = SYSTEM_MAP.edges.filter(e => e.type === 'navigation');
   UX_STRUCTURE.site_map = {
-    domains: ['ai-os.co.za', 'go.ai-os.co.za'],
+    domains: ['ai-os.co.za', 'bridge-ai-os.com'],
     subdomains: ['bridge', 'ban', 'supac', 'ehsa', 'aurora', 'ubi', 'aid', 'abaas', 'hospitalinabox', 'rootedearth'],
     pages: SYSTEM_MAP.nodes.filter(n => n.type === 'page').map(n => n.url),
-    urls: SYSTEM_MAP.nodes.filter(n => n.url).map(n => ({ id: n.id, url: n.url, domain: n.domain || 'go.ai-os.co.za' })),
+    urls: SYSTEM_MAP.nodes.filter(n => n.url).map(n => ({ id: n.id, url: n.url, domain: n.domain || 'bridge-ai-os.com' })),
   };
 }
 
@@ -194,7 +194,7 @@ function foundrySync() {
     subdomain: s, full: `${s}.ai-os.co.za`, ip: '102.208.228.44', ssl: true, status: 'live',
   }));
   SITE_STATE.pages = SYSTEM_MAP.nodes.filter(n => n.type === 'page').map(n => ({
-    id: n.id, url: n.url, domain: n.domain || 'go.ai-os.co.za', layer: n.layer, visibility: n.visibility,
+    id: n.id, url: n.url, domain: n.domain || 'bridge-ai-os.com', layer: n.layer, visibility: n.visibility,
   }));
   SITE_STATE.urls = SITE_STATE.pages.map(p => `https://${p.domain}${p.url}`);
 }
@@ -270,7 +270,7 @@ module.exports = function registerFabric(app, state, broadcast) {
     const { sitemap_url, pages: importPages } = req.body || {};
     if (importPages && Array.isArray(importPages)) {
       importPages.forEach(p => {
-        SYSTEM_MAP.nodes.push({ id: `imported_${p.url}`, type: 'page', url: p.url, domain: p.domain || 'go.ai-os.co.za', layer: p.layer || 'L0', visibility: 'public' });
+        SYSTEM_MAP.nodes.push({ id: `imported_${p.url}`, type: 'page', url: p.url, domain: p.domain || 'bridge-ai-os.com', layer: p.layer || 'L0', visibility: 'public' });
       });
       SITE_STATE.imported = true;
       fabricLoop(); // Re-run classification

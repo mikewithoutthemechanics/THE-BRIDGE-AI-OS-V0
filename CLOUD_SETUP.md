@@ -198,7 +198,7 @@ SMTP_PASS=[will load from Supabase secrets_vault]
 ```
 
 ### C. Deploy
-- Connect domain `go.ai-os.co.za`
+- Connect domain `bridge-ai-os.com`
 - Set DNS to Vercel nameservers
 - Enable auto-deploy on git push
 
@@ -229,7 +229,7 @@ export default async function handler(req, res) {
 
 Set up Vercel Cron: **Every 60 seconds**
 ```
-https://go.ai-os.co.za/api/cron/auto-send?token=xxx
+https://bridge-ai-os.com/api/cron/auto-send?token=xxx
 ```
 
 ---
@@ -299,6 +299,6 @@ Flow:
 2. **Create Notion databases** → send me Notion workspace URL
 3. **Create Zapier zaps** → connect Supabase ↔ Notion
 4. **Update Python backend** → point to Vercel instead of localhost:3000
-5. **Deploy to Vercel** → connect domain go.ai-os.co.za
+5. **Deploy to Vercel** → connect domain bridge-ai-os.com
 
 Ready?

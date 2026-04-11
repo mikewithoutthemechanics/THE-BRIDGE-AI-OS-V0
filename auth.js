@@ -34,7 +34,7 @@ const app = express();
 // CORS — same origins as gateway.js
 const ALLOWED_ORIGINS = [
   'https://wall.bridge-ai-os.com',
-  'https://go.ai-os.co.za',
+  'https://bridge-ai-os.com',
   'http://localhost:3000',
   'http://localhost:8080',
 ];

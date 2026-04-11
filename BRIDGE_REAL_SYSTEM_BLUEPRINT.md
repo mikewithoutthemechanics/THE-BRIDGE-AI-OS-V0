@@ -714,7 +714,7 @@ INSERT INTO accounts (id, name, type, subtype, currency, chain_address) VALUES
 - Stateless request router
 - JWT + KeyForge token validation on every request
 - Per-user rate limiting via Redis
-- CORS: `['https://go.ai-os.co.za', 'https://wall.bridge-ai-os.com']` only
+- CORS: `['https://bridge-ai-os.com', 'https://wall.bridge-ai-os.com']` only
 - No financial state. No in-memory data
 
 **Treasury Service** (treasury-service/)

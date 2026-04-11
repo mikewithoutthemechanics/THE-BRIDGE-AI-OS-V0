@@ -12,7 +12,7 @@ function expectCors(res) {
   // This is correct behavior — CORS headers are only needed for browser cross-origin requests
   const origin = res.headers['access-control-allow-origin'];
   if (origin) {
-    expect(['https://go.ai-os.co.za', 'https://wall.bridge-ai-os.com', 'http://localhost:3000', 'http://localhost:8080']).toContain(origin);
+    expect(['https://bridge-ai-os.com', 'https://wall.bridge-ai-os.com', 'http://localhost:3000', 'http://localhost:8080']).toContain(origin);
   }
   // If no origin header, that's fine — supertest doesn't send Origin
 }

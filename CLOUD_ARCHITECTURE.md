@@ -33,7 +33,7 @@
           ▼              ▼            ▼               ▼
 ┌────────────────────────────────────────────────────────────┐
 │            VERCEL (Serverless Functions)                   │
-│            Domain: go.ai-os.co.za                          │
+│            Domain: bridge-ai-os.com                          │
 │  ┌──────────────┬──────────────┬──────────────────────┐   │
 │  │ API Routes   │ Webhooks     │ Cron Jobs            │   │
 │  │              │              │                      │   │
@@ -77,7 +77,7 @@ Scrape companies
     ↓
 Extract emails + OSINT
     ↓
-POST https://go.ai-os.co.za/api/crm/leads {
+POST https://bridge-ai-os.com/api/crm/leads {
   email: "contact@company.com",
   company: "Company Name",
   osint_profile: {
@@ -128,7 +128,7 @@ Fetch 5 queued emails
     ↓
 For each email:
   1. Generate template (executive/tech_founder/etc)
-  2. Add tracking pixel: <img src="go.ai-os.co.za/pixel/{id}">
+  2. Add tracking pixel: <img src="bridge-ai-os.com/pixel/{id}">
   3. Send via Brevo
   4. Record in email_sent table
   5. Update status to "sent"
@@ -166,7 +166,7 @@ Notion dashboard updates in real-time
    ↓
 2. Zapier webhook triggered
    ↓
-3. POST https://go.ai-os.co.za/api/webhook/secrets-sync {
+3. POST https://bridge-ai-os.com/api/webhook/secrets-sync {
      keyName: "SMTP_PASS",
      keyValue: "new-secret-xyz",
      service: "SMTP",

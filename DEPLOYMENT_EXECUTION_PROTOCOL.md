@@ -54,7 +54,7 @@ echo "DEPLOYMENT COMPLETE ✅"
 
 #### Check 1: API Health (T+0-2 min)
 ```javascript
-// In browser console on https://go.ai-os.co.za/aoe-dashboard.html
+// In browser console on https://bridge-ai-os.com/aoe-dashboard.html
 
 // Verify API is responsive
 fetch('https://api-endpoint/health')

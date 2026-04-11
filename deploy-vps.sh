@@ -1,6 +1,6 @@
 #!/bin/bash
 # BridgeAI Unified Server — VPS Deploy Script
-# Target: go.ai-os.co.za (Webway VPS)
+# Target: bridge-ai-os.com (Webway VPS)
 # Usage: bash deploy-vps.sh [VPS_IP] [VPS_USER]
 
 set -e
@@ -8,7 +8,7 @@ set -e
 VPS_IP="${1:-YOUR_VPS_IP}"
 VPS_USER="${2:-root}"
 VPS_DIR="/var/www/bridgeai"
-DOMAIN="go.ai-os.co.za"
+DOMAIN="bridge-ai-os.com"
 
 echo "=== BridgeAI Deploy → $VPS_USER@$VPS_IP ==="
 
@@ -70,7 +70,7 @@ ssh "$VPS_USER@$VPS_IP" bash <<NGINX_SETUP
   cat > /etc/nginx/sites-available/bridgeai <<'NGINX_CONF'
 server {
     listen 80;
-    server_name go.ai-os.co.za www.go.ai-os.co.za;
+    server_name bridge-ai-os.com www.bridge-ai-os.com;
 
     location / {
         proxy_pass http://localhost:3000;
