@@ -1,0 +1,49 @@
+{
+  "id": "sme_automation",
+  "name": "SME Automation — AI Business Ops Agent",
+  "description": "Capture inbound messages, qualify leads with AI, book appointments, send reminders, report.",
+  "tags": ["automation", "SME", "AI-agent", "saas", "high-value"],
+  "steps": [
+    {
+      "type": "plugin",
+      "name": "scraper",
+      "input": { "url": "{{inbox_url}}", "operation": "fetch_messages" },
+      "label": "Fetch inbound messages",
+      "required": false
+    },
+    {
+      "type": "llm",
+      "prompt": "You are a business assistant. Classify and respond to this inbound message: {{_prev}}. Is this a lead? What do they need? Draft a helpful response. Return JSON: {is_lead, intent, response, urgency}",
+      "label": "AI qualify + draft response"
+    },
+    {
+      "type": "branch",
+      "label": "Route by lead qualification",
+      "condition": { "field": "is_lead", "op": "eq", "value": "true" },
+      "then": [
+        {
+          "type": "plugin",
+          "name": "crm_writer",
+          "input": { "collection": "qualified_leads" }
+        },
+        {
+          "type": "skill",
+          "name": "ban:email-systems",
+          "input": { "subject": "Thanks for reaching out!", "operation": "send_response" }
+        }
+      ],
+      "else": [
+        {
+          "type": "notify",
+          "message": "Non-lead inquiry received — manual review needed."
+        }
+      ]
+    },
+    {
+      "type": "plugin",
+      "name": "metrics_reporter",
+      "input": { "event": "sme_automation_processed" },
+      "label": "Log interaction"
+    }
+  ]
+}
