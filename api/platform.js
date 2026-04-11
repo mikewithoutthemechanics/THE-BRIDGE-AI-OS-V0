@@ -331,20 +331,54 @@ async function handlePlatform(req, res) {
       return res.status(409).json({ ok: false, error: 'Output not ready yet' });
     }
 
+    const runStart = Date.now();
     try {
       const result = await runIntegration(target, output, config);
       await outputs.markDelivered(outputId);
 
+      // Log integration run
+      if (isConfigured) {
+        await supabase.from('integration_runs').insert({
+          id: crypto.randomUUID(),
+          user_id: user.id,
+          project_id: projectId || output.project_id,
+          output_id: outputId,
+          target,
+          config,
+          status: 'success',
+          result,
+          attempt: (output.delivery_attempts || 0) + 1,
+          created_at: new Date().toISOString(),
+        }).catch(() => {});
+      }
+
       // Post feedback to profile
       await recordFeedback(user.id, projectId || output.project_id, outputId, {
         success: true,
-        latency: 0,
+        latency: Date.now() - runStart,
         usage: { target },
       }).catch(() => {});
 
       return res.json({ ok: true, result });
     } catch (err) {
       await outputs.markFailed(outputId, err.message);
+
+      // Log failed integration run
+      if (isConfigured) {
+        await supabase.from('integration_runs').insert({
+          id: crypto.randomUUID(),
+          user_id: user.id,
+          project_id: projectId || output.project_id,
+          output_id: outputId,
+          target,
+          config,
+          status: 'failed',
+          error: err.message,
+          attempt: (output.delivery_attempts || 0) + 1,
+          created_at: new Date().toISOString(),
+        }).catch(() => {});
+      }
+
       return res.status(502).json({ ok: false, error: err.message, retry: output.delivery_attempts < 3 });
     }
   }
@@ -512,6 +546,148 @@ async function handlePlatform(req, res) {
       console.error('[billing/ipn] Unexpected error:', err.message);
       return res.status(200).send('OK'); // Always 200 to PayFast
     }
+  }
+
+  // ── WIZARD COMPLETION ─────────────────────────────────────────────────────
+  // Called after registration to seed profile + default project from wizard data.
+  // Idempotent: if wizard_profiles row exists, returns existing data.
+  if (url === '/api/platform/wizard/complete' && method === 'POST') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+
+    const { intent, industry, integrations = [], plan = 'free' } = req.body || {};
+
+    // Check if already completed (idempotent)
+    if (isConfigured) {
+      const { data: existing } = await supabase
+        .from('wizard_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (existing) {
+        return res.json({ ok: true, wizard: existing, already_completed: true });
+      }
+    }
+
+    // Map intent to default tool
+    const INTENT_TOOL = {
+      build: 'marketplace-builder',
+      automate: 'data-flywheel',
+      analyze: 'analytics',
+      grow: 'growth-engine',
+      deploy: 'ap2-orchestrator',
+      integrate: 'data-flywheel',
+    };
+    const defaultTool = INTENT_TOOL[intent] || 'analytics';
+
+    // Create default project seeded from wizard
+    let defaultProject = null;
+    try {
+      defaultProject = await projects.createProject(user.id, {
+        name: intent ? `My ${intent.charAt(0).toUpperCase() + intent.slice(1)} Project` : 'My First Project',
+        toolId: defaultTool,
+        intent: intent || null,
+        integrationTargets: integrations,
+        scaffold: { industry: industry || null, source: 'wizard' },
+      });
+    } catch (e) {
+      console.error('[wizard] default project creation failed:', e.message);
+    }
+
+    // Save wizard profile
+    if (isConfigured) {
+      const wizardRow = {
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        intent: intent || null,
+        industry: industry || null,
+        integrations,
+        selected_plan: plan,
+        default_project_id: defaultProject?.id || null,
+        completed_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+      await supabase.from('wizard_profiles').insert(wizardRow).catch(e => {
+        console.error('[wizard] profile insert failed:', e.message);
+      });
+
+      // Update user record with wizard metadata
+      await supabase.from('users').update({
+        funnel_stage: plan === 'free' ? 'activated' : 'converting',
+        last_seen: new Date().toISOString(),
+      }).eq('id', user.id).catch(() => {});
+    }
+
+    // Record feedback for funnel analytics
+    await recordFeedback(user.id, defaultProject?.id, null, {
+      success: true,
+      usage: { event: 'wizard_complete', intent, industry, plan, integrations },
+    }).catch(() => {});
+
+    return res.status(201).json({
+      ok: true,
+      wizard: { intent, industry, integrations, plan },
+      project: defaultProject,
+      next: plan !== 'free' ? `/billing?plan=${plan}&onboarded=1` : '/profile?onboarded=1',
+    });
+  }
+
+  // ── PROFILE STATE (full user context for profile page) ─────────────────────
+  if (url === '/api/platform/profile/state' && method === 'GET') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+
+    // Gather all profile state in parallel
+    const [analytics, projectsList, outputsList, wizardRes] = await Promise.all([
+      getProfileAnalytics(user.id),
+      projects.listProjects(user.id, { limit: 50 }),
+      outputs.listUserOutputs(user.id, { limit: 50 }),
+      isConfigured
+        ? supabase.from('wizard_profiles').select('*').eq('user_id', user.id).single()
+        : Promise.resolve({ data: null }),
+    ]);
+
+    const { requireTier } = require('../middleware/subscription');
+    const tierCheck = await requireTier(req, 'free');
+    const { PLAN_CAPS } = require('../middleware/subscription');
+    const caps = PLAN_CAPS[tierCheck.tier || 'free'] || PLAN_CAPS.free;
+
+    return res.json({
+      ok: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        plan: user.plan || 'free',
+        brdg_balance: user.brdg_balance || 0,
+        funnel_stage: user.funnel_stage || 'visitor',
+      },
+      wizard: wizardRes.data || null,
+      analytics,
+      projects: projectsList,
+      outputs: outputsList,
+      capabilities: caps,
+      integrations: listTargets(),
+    });
+  }
+
+  // ── INTEGRATION RUN LOG (audit trail for dispatched integrations) ──────────
+  if (url === '/api/platform/integrations/history' && method === 'GET') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+
+    if (!isConfigured) return res.json({ ok: true, runs: [] });
+
+    const { data, error } = await supabase
+      .from('integration_runs')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(parseInt(req.query.limit || '50', 10));
+
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    return res.json({ ok: true, runs: data || [] });
   }
 
   // ── BRDG TREASURY BALANCE (authenticated) ──────────────────────────────────

@@ -7,8 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-apple-system,sans-serif;color:#c8dce8;overflow-x:hidden;padding-bottom:64px}
-@media(max-width:600px){#main{grid-template-columns:1fr!important;padding:8px!important}.tasks-cols{grid-template-columns:1fr!important}.stats-grid{grid-template-columns:1fr 1fr!important}.portfolio-grid{grid-template-columns:1fr!important}.balance-grid{grid-template-columns:1fr!important}}
+html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New',monospace;color:#0ff;overflow-x:hidden}
 
 /* HUD */
 #hud{
@@ -25,9 +24,8 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-a
 .conn-badge{padding:2px 8px;border-radius:2px;font-size:8px;letter-spacing:1px;font-weight:bold;background:#003300;border:1px solid #0f93;color:#0f9;}
 .conn-badge.err{background:#330000;border-color:#f003;color:#f00;}
 .nav-links{display:flex;gap:12px;}
-.nav-links a{color:#0ac;font-size:9px;letter-spacing:1px;text-decoration:none;transition:color .2s;}
-.nav-links a:hover{color:#0ff;}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.nav-links a{color:#0ac;font-size:9px;letter-spacing:1px;text-decoration:none;opacity:.7;transition:opacity .2s;}
+.nav-links a:hover{opacity:1;}
 
 /* MAIN GRID */
 #main{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:14px;}
@@ -70,7 +68,7 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-a
 .loading-text{color:#0ff4;font-size:9px;letter-spacing:2px;animation:blink 1s infinite;}
 @keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
 
-/* Task Marketplace */
+/* TASKS BOARD */
 .tasks-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .task-col-header{font-size:7px;letter-spacing:2px;color:#0ac;text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #0ff2;}
 .task-card{
@@ -168,20 +166,18 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-a
 </style>
 </head>
 <body>
-<h1 class="sr-only">BRIDGE AI OS — Marketplace</h1>
 
 <div id="hud">
   <div id="hud-left">
     <div class="live-dot"></div>
-    <span>Marketplace</span>
+    <span>BRIDGE AI OS &mdash; MARKETPLACE</span>
     <div class="nav-links">
-      <a href="/">Home</a>
-      <a href="/portal.html">Portal</a>
-      <a href="/economy.html">Economy</a>
-      <a href="/agents.html">Agents</a>
-      <a href="/admin-revenue.html">Revenue</a>
-      <a href="/control.html">Control</a>
-      <a href="/console.html">Terminal</a>
+      <a href="/ui.html">HOME</a>
+      <a href="/registry.html">REGISTRY</a>
+      <a href="/topology.html">TOPOLOGY</a>
+      <a href="/avatar.html">AVATAR</a>
+      <a href="/system-status-dashboard.html">STATUS</a>
+      <a href="/control.html">CONTROL</a>
     </div>
   </div>
   <div id="hud-right">
@@ -193,22 +189,10 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-a
 
 <div id="main">
 
-  <!-- AI SUMMARY -->
-  <div class="panel" style="grid-column:1/-1;border-color:rgba(0,200,255,.3)">
-    <div class="panel-header">
-      <span class="panel-title">AI Activity Summary</span>
-      <span class="panel-badge" id="summary-badge">LIVE</span>
-    </div>
-    <div class="panel-body" id="ai-summary" style="font-size:12px;color:#c8dce8;line-height:1.6">
-      Loading summary...
-    </div>
-    <div class="panel-footer" id="summary-footer">updates every 30s</div>
-  </div>
-
-  <!-- Task Marketplace -->
+  <!-- TASKS BOARD -->
   <div class="panel" style="grid-column:1/-1;">
     <div class="panel-header">
-      <span class="panel-title">Task Marketplace</span>
+      <span class="panel-title">TASKS BOARD</span>
       <span class="panel-badge" id="tasks-badge">LOADING</span>
     </div>
     <div class="panel-body" id="tasks-body">
@@ -221,7 +205,7 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-a
   <!-- DEX CHART -->
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title">Service Exchange</span>
+      <span class="panel-title">DEX TRADING</span>
       <span class="panel-badge" id="dex-badge">LOADING</span>
     </div>
     <div class="panel-body" id="dex-body">
@@ -244,10 +228,10 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-a
     <div class="panel-footer" id="wallet-ts">last update: —</div>
   </div>
 
-  <!-- Installed Packages -->
+  <!-- SKILLS STORE -->
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title">Installed Packages</span>
+      <span class="panel-title">SKILLS STORE</span>
       <span class="panel-badge" id="skills-badge">LOADING</span>
     </div>
     <div class="panel-body" id="skills-body">
@@ -273,7 +257,7 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-a
   <!-- PLATFORM STATS -->
   <div class="panel" style="grid-column:1/-1;">
     <div class="panel-header">
-      <span class="panel-title">Platform Overview</span>
+      <span class="panel-title">PLATFORM STATISTICS</span>
       <span class="panel-badge" id="stats-badge">LOADING</span>
     </div>
     <div class="panel-body" id="stats-body">
@@ -286,6 +270,8 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:system-ui,-a
 </div>
 
 <script>
+function esc(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML;}
+
 // ── CLOCK ──
 function updateClock(){document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);}
 setInterval(updateClock,1000);updateClock();
@@ -305,38 +291,91 @@ function animCounter(el,target,prefix='',suffix='',decimals=0){
   },dur/steps);
 }
 
-// ── OFFLINE FALLBACK (no mock data — shows empty state) ──
+// ── MOCK DATA ──
 function fakeFallback(ep){
-  return {_offline:true,open:[],in_progress:[],completed:[],listings:[],pairs:[],balances:[],assets:[],txns:[]};
+  const mocks={
+    '/api/marketplace/tasks':{
+      open:[
+        {id:'T-001',title:'Integrate DEX oracle feed',priority:'HIGH',age:'2h'},
+        {id:'T-002',title:'Fix auth token refresh',priority:'MED',age:'5h'},
+      ],
+      in_progress:[
+        {id:'T-003',title:'Build skills registry API',priority:'HIGH',age:'1h'},
+        {id:'T-004',title:'Optimize federation sync',priority:'LOW',age:'30m'},
+      ],
+      completed:[
+        {id:'T-005',title:'Deploy BridgeOS 2.4.1',priority:'HIGH',age:'1d'},
+        {id:'T-006',title:'Setup node monitoring',priority:'MED',age:'2d'},
+      ]
+    },
+    '/api/marketplace/dex':{
+      pairs:[
+        {pair:'ARC/USDT',price:4.22,change:+11.2,volume:1245000,prices:[3.8,3.9,4.0,3.95,4.1,4.18,4.22]},
+        {pair:'BTC/USDT',price:67234,change:+2.3,volume:89200000,prices:[65100,65800,66200,66900,67000,67100,67234]},
+        {pair:'ETH/USDT',price:3521,change:-0.8,volume:34500000,prices:[3550,3540,3530,3520,3515,3518,3521]},
+        {pair:'SOL/USDT',price:188.4,change:+4.1,volume:5600000,prices:[180,182,183,185,186,188,188.4]},
+      ],
+      activePair:'ARC/USDT'
+    },
+    '/api/marketplace/wallet':{
+      address:'0x3f4A...C9bE',
+      balances:[
+        {symbol:'ARC',amount:12450.5},
+        {symbol:'ETH',amount:4.82},
+        {symbol:'USDT',amount:8320.00},
+        {symbol:'BTC',amount:0.14},
+      ],
+      txns:[
+        {hash:'0xab12...ef34',dir:'in',amount:'+500 ARC',time:'2m ago'},
+        {hash:'0xcd56...ab78',dir:'out',amount:'-0.01 ETH',time:'15m ago'},
+        {hash:'0xef90...cd12',dir:'in',amount:'+1200 USDT',time:'1h ago'},
+      ]
+    },
+    '/api/marketplace/skills':[
+      {id:'sk-001',name:'ImageAnalyzer',desc:'Vision AI for image classification',version:'1.2.0',installed:true},
+      {id:'sk-002',name:'SentimentAI',desc:'NLP sentiment scoring module',version:'2.0.1',installed:false},
+      {id:'sk-003',name:'DataSyncer',desc:'Cross-chain data synchronization',version:'0.9.4',installed:true},
+      {id:'sk-004',name:'VoiceCodec',desc:'Audio processing and transcription',version:'1.1.0',installed:false},
+    ],
+    '/api/marketplace/portfolio':{
+      total:24850.33,
+      assets:[
+        {name:'ARC',value:12450,pct:50.1,color:'#0ff'},
+        {name:'ETH',value:16961,pct:34.3,color:'#8844ff'},
+        {name:'USDT',value:8320,pct:33.5,color:'#0f9'},
+        {name:'BTC',value:9413,pct:12.1,color:'#ff8c00'},
+      ]
+    },
+    '/api/marketplace/stats':{
+      tasks:{value:1247,trend:'+12%',up:true},
+      agents:{value:38,trend:'+3',up:true},
+      revenue:{value:84320,trend:'+8.4%',up:true,prefix:'$'},
+      uptime:{value:99.94,trend:'',up:true,suffix:'%',decimals:2},
+      volume:{value:128500000,trend:'+22%',up:true,prefix:'$'},
+      skills:{value:94,trend:'+7',up:true},
+    }
+  };
+  return mocks[ep]||{};
 }
 
-var _pollOk = 0, _pollFail = 0;
 async function poll(endpoint,callback){
   try{
-    const r=await fetch(endpoint,{signal:AbortSignal.timeout(8000)});
+    const r=await fetch(endpoint,{signal:AbortSignal.timeout(4000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const raw=await r.json();
-    _pollOk++;
-    // Only update badge once all polls have run
-    if (_pollOk + _pollFail >= 6) {
-      document.getElementById('conn-badge').textContent = _pollFail === 0 ? 'CONNECTED' : _pollFail + ' DEGRADED';
-      document.getElementById('conn-badge').className = _pollFail === 0 ? 'conn-badge' : 'conn-badge err';
-      _pollOk = 0; _pollFail = 0;
-    }
+    document.getElementById('conn-badge').textContent='CONNECTED';
+    document.getElementById('conn-badge').className='conn-badge';
+    // API wraps responses as {section, data, ts} — unwrap if present
     const data=(raw && raw.section && raw.data)?raw.data:raw;
     callback(data,false);
   }catch(e){
-    _pollFail++;
-    if (_pollOk + _pollFail >= 6) {
-      document.getElementById('conn-badge').textContent = _pollOk === 0 ? 'OFFLINE' : _pollFail + ' DEGRADED';
-      document.getElementById('conn-badge').className = 'conn-badge err';
-      _pollOk = 0; _pollFail = 0;
-    }
+    document.getElementById('conn-badge').textContent='OFFLINE';
+    document.getElementById('conn-badge').className='conn-badge err';
     callback(fakeFallback(endpoint),true);
   }
 }
 
-// ── Task Marketplace ──
+// ── TASKS BOARD ──
 function renderTasks(d,mock){
   // API returns {open:N, in_progress:N, completed:N, listings:[...]}
   // Mock returns {open:[...], in_progress:[...], completed:[...]}
@@ -381,8 +420,9 @@ function renderDex(d,mock){
   const hasPrice=typeof pair.price==='number';
   const up=hasPrice?(pair.change>=0):pair.active;
   const changeColor=up?'#0f9':'#f44';
-  const tabs=pairs.map(p=>`
-    <div class="dex-tab ${p.pair===currentPair?'active':''}" onclick="switchPair('${p.pair}')">${p.pair}</div>
+  // Use numeric indices in onclick — safe since idx is always a number
+  const tabs=pairs.map((p,idx)=>`
+    <div class="dex-tab ${p.pair===currentPair?'active':''}" onclick="switchPairByIndex(${idx})">${esc(p.pair)}</div>
   `).join('');
 
   const priceDisplay=hasPrice?'$'+pair.price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})
@@ -432,6 +472,10 @@ function renderDex(d,mock){
 function switchPair(p){
   currentPair=p;
   if(dexData) renderDex(dexData,false);
+}
+function switchPairByIndex(idx){
+  const pairs=(dexData&&dexData.pairs)||[];
+  if(pairs[idx]) switchPair(pairs[idx].pair);
 }
 window.switchPair=switchPair;
 
@@ -492,17 +536,18 @@ function renderSkills(d,mock){
   }else{
     skills=[];
   }
+  _skillsCache=skills;
   const installedCount=skills.filter(s=>s.installed).length;
   document.getElementById('skills-body').innerHTML=`
     <div style="font-size:8px;color:#0ac;margin-bottom:10px;">INSTALLED: <span style="color:#0f9;">${installedCount}/${skills.length}</span>${d.count?' &bull; TOTAL PACKAGES: '+d.count:''}</div>
     <div class="skills-grid">
-      ${skills.map(s=>`
+      ${skills.map((s,idx)=>`
         <div class="skill-card">
-          <div class="skill-name">${s.name}</div>
-          <div class="skill-desc">${s.desc||''}</div>
+          <div class="skill-name">${esc(s.name)}</div>
+          <div class="skill-desc">${esc(s.desc||'')}</div>
           <div class="skill-meta">
-            <span class="skill-version">${s.version!=='—'?'v'+s.version:''}</span>
-            <button class="skill-btn ${s.installed?'installed':'install'}" ${s.installed?'disabled':''} onclick="installSkill('${s.id}',this)">
+            <span class="skill-version">${s.version!=='—'?'v'+esc(s.version):''}</span>
+            <button class="skill-btn ${s.installed?'installed':'install'}" ${s.installed?'disabled':''} onclick="installSkillByIndex(${idx},this)">
               ${s.installed?'INSTALLED':'INSTALL'}
             </button>
           </div>
@@ -516,6 +561,11 @@ function renderSkills(d,mock){
 function installSkill(id,btn){
   btn.textContent='INSTALLING...';btn.disabled=true;
   setTimeout(()=>{btn.className='skill-btn installed';btn.textContent='INSTALLED';},1500);
+}
+let _skillsCache=[];
+function installSkillByIndex(idx,btn){
+  const s=_skillsCache[idx];
+  if(s) installSkill(s.id,btn);
 }
 window.installSkill=installSkill;
 
@@ -624,129 +674,20 @@ function renderStats(d,mock){
 
 // ── POLLING ──
 (()=>{
-  // Use real APIs instead of brain's static /api/marketplace/* endpoints
-  const pollTasks=()=>poll('/api/economy/tasks',function(d,mock){
-    // Map economy tasks format to marketplace format
-    var tasks = d.tasks || d.listings || [];
-    var mapped = {
-      open: tasks.filter(function(t){return t.status==='POSTED'||t.status==='open'||t.status==='pending';}),
-      in_progress: tasks.filter(function(t){return t.status==='CLAIMED'||t.status==='in_progress';}),
-      completed: tasks.filter(function(t){return t.status==='COMPLETED'||t.status==='completed';}),
-      listings: tasks.map(function(t){return {id:t.id,title:t.title||t.description,status:t.status==='POSTED'?'pending':t.status==='CLAIMED'?'in_progress':'completed',reward:(t.reward_brdg||0)+' BRDG',age:t.posted_at?'':''};})
-    };
-    renderTasks(mapped, mock);
-  });
-  const pollDex=()=>poll('/api/economy/flow',function(d,mock){
-    // Map transaction flow to DEX-like display
-    var txns = d.transactions || [];
-    var pairs = [];
-    var seen = {};
-    txns.slice(0,20).forEach(function(tx){
-      var key = (tx.from_agent||'System') + '/' + (tx.to_agent||'Agent');
-      if (!seen[key] && pairs.length < 20) { seen[key]=1; pairs.push({pair:key,ports:tx.amount||0,active:true}); }
-    });
-    renderDex({pairs:pairs,activePair:pairs[0]?pairs[0].pair:''},mock);
-  });
-  const pollWallet=()=>poll('/api/wallet/balance',function(d,mock){
-    // Map wallet balance to marketplace wallet format
-    var mapped = {
-      address: d.address || '0xAC301f...16F64',
-      balances: d.balances || [{symbol:'BRDG',amount:d.brdg||0},{symbol:'ETH',amount:d.eth||0},{symbol:'ZAR',amount:d.balance||0}],
-      txns: []
-    };
-    renderWallet(mapped, mock);
-  });
-  const pollSkills=()=>poll('/api/skills/unified',function(d,mock){
-    var skills = (d.skills || []).map(function(s){return {id:s.id,name:s.name||s.id,desc:s.description||s.source||'',version:'1.0',installed:true};});
-    renderSkills(skills, mock);
-  });
-  const pollPort=()=>poll('/api/treasury',function(d,mock){
-    // Map treasury to portfolio format
-    var balance = d.balance || d.total || 0;
-    var buckets = d.buckets || [];
-    var colors = ['#0ff','#8844ff','#0f9','#ff8c00'];
-    var mapped = {
-      total: balance,
-      assets: buckets.map(function(b,i){return {name:b.label||b.name,value:b.balance||b.value||0,pct:b.pct||0,color:colors[i%4]};})
-    };
-    renderPortfolio(mapped, mock);
-  });
-  const pollStats=()=>poll('/api/economy/stats',function(d,mock){
-    // Map economy stats to marketplace stats format
-    var mapped = {
-      tasks: {value:d.totalTransactions||0,trend:'',up:true},
-      agents: {value:d.activeAgents||d.agent_count||0,trend:'',up:true},
-      revenue: {value:d.totalCirculating||0,trend:'',up:true,prefix:''},
-      uptime: {value:99.9,trend:'',up:true,suffix:'%',decimals:1},
-      volume: {value:d.totalFeesCollected||0,trend:'',up:true,prefix:''},
-      skills: {value:27,trend:'',up:true},
-    };
-    renderStats(mapped, mock);
-  });
+  const pollTasks=()=>poll('/api/marketplace/tasks',renderTasks);
+  const pollDex=()=>poll('/api/marketplace/dex',renderDex);
+  const pollWallet=()=>poll('/api/marketplace/wallet',renderWallet);
+  const pollSkills=()=>poll('/api/marketplace/skills',renderSkills);
+  const pollPort=()=>poll('/api/marketplace/portfolio',renderPortfolio);
+  const pollStats=()=>poll('/api/marketplace/stats',renderStats);
 
-  // Stagger polls to avoid rate limiting and flashing
-  pollTasks();setInterval(pollTasks,15000);
-  setTimeout(function(){pollDex();setInterval(pollDex,15000);},2000);
-  setTimeout(function(){pollWallet();setInterval(pollWallet,20000);},4000);
-  setTimeout(function(){pollSkills();setInterval(pollSkills,60000);},6000);
-  setTimeout(function(){pollPort();setInterval(pollPort,20000);},8000);
-  setTimeout(function(){pollStats();setInterval(pollStats,15000);},10000);
-
-  // AI Summary — builds from real data every 30s
-  function updateAISummary() {
-    Promise.all([
-      fetch('/api/economy/stats').then(function(r){return r.json();}).catch(function(){return {};}),
-      fetch('/api/revenue-engine/status').then(function(r){return r.json();}).catch(function(){return {};}),
-      fetch('/api/economy/tasks').then(function(r){return r.json();}).catch(function(){return {};})
-    ]).then(function(results) {
-      var stats = results[0];
-      var engine = results[1];
-      var tasks = results[2];
-      var el = document.getElementById('ai-summary');
-      if (!el) return;
-      el.textContent = '';
-
-      var totalBrdg = (stats.totalCirculating || 0).toLocaleString();
-      var agents = stats.activeAgents || stats.agent_count || 0;
-      var txns = (stats.totalTransactions || 0).toLocaleString();
-      var burned = (stats.totalBurned || 0).toFixed(2);
-      var engLeads = engine.leadsGenerated || 0;
-      var engDeals = engine.dealsConverted || 0;
-      var engRev = (engine.revenueGenerated || 0).toLocaleString();
-      var engRunning = engine.running ? 'Active' : 'Stopped';
-      var taskList = tasks.tasks || [];
-      var posted = taskList.filter(function(t){return t.status==='POSTED';}).length;
-      var claimed = taskList.filter(function(t){return t.status==='CLAIMED';}).length;
-      var completed = taskList.filter(function(t){return t.status==='COMPLETED';}).length;
-
-      var lines = [
-        'Economy: ' + totalBrdg + ' BRDG circulating across ' + agents + ' agents with ' + txns + ' total transactions.',
-        'Marketplace: ' + posted + ' open tasks, ' + claimed + ' being executed, ' + completed + ' completed. ' + burned + ' BRDG burned (deflationary).',
-        'Revenue Engine: ' + engRunning + ' — ' + engLeads + ' leads generated, ' + engDeals + ' converted, R' + engRev + ' revenue earned.',
-      ];
-
-      // AI suggestion based on state
-      if (posted === 0 && claimed === 0) lines.push('Suggestion: Post new tasks to the marketplace to keep agents productive.');
-      else if (engDeals < 3) lines.push('Suggestion: Increase outreach volume to improve conversion rate.');
-      else lines.push('Suggestion: System is healthy. Consider raising prices to increase ARPU.');
-
-      lines.forEach(function(line) {
-        var p = document.createElement('div');
-        p.style.cssText = 'margin-bottom:6px;padding:4px 0;border-bottom:1px solid rgba(0,255,255,0.05)';
-        if (line.startsWith('Suggestion:')) {
-          p.style.cssText += ';color:#ffd166;font-weight:600;border:1px solid rgba(255,209,102,0.15);border-radius:4px;padding:6px 8px;background:rgba(255,209,102,0.03)';
-        }
-        p.textContent = line;
-        el.appendChild(p);
-      });
-
-      document.getElementById('summary-footer').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
-    });
-  }
-  updateAISummary();
-  setInterval(updateAISummary, 30000);
+  pollTasks();setInterval(pollTasks,5000);
+  pollDex();setInterval(pollDex,3000);
+  pollWallet();setInterval(pollWallet,10000);
+  pollSkills();setInterval(pollSkills,30000);
+  pollPort();setInterval(pollPort,10000);
+  pollStats();setInterval(pollStats,5000);
 })();
 </script>
-<script src="/global-nav.js" defer></script>
 </body>
 </html>

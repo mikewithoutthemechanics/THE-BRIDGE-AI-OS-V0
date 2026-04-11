@@ -1782,7 +1782,15 @@ const shortRoutes = {
   '/face-facs': '/anatomical_face_facs.html',
   '/face-tension': '/anatomical_face_tension_balanced.html',
   '/face-vector': '/anatomical_face_vector_muscle.html',
-  '/withdraw': '/admin-withdraw.html'
+  '/withdraw': '/admin-withdraw.html',
+  // Productization funnel routes
+  '/wizard': '/wizard.html',
+  '/profile': '/profile.html',
+  '/billing': '/billing.html',
+  '/demo': '/demo.html',
+  '/projects': '/projects.html',
+  '/auth-callback': '/auth-callback.html',
+  '/tvm': '/tvm.html',
 };
 Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));

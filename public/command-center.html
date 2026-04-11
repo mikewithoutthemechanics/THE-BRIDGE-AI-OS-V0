@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'">
   <title>Command Center | Bridge AI-OS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/bridge-tokens.css">
@@ -199,6 +201,11 @@
   <script>
     var prevTreasury = null;
 
+    function authFetch(url) {
+      var token = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_siwe_jwt') || '';
+      return fetch(url, token ? { headers: { 'Authorization': 'Bearer ' + token } } : undefined).then(function(r) { return r.json(); });
+    }
+
     var FUNNEL_LABELS = {
       osint_discovery: 'OSINT Discovery',
       lead_generated:  'Lead Generated',
@@ -215,9 +222,9 @@
     async function refresh() {
       try {
         var results = await Promise.allSettled([
-          fetch('/api/brain').then(function(r){return r.json();}),
-          fetch('/api/treasury').then(function(r){return r.json();}),
-          fetch('/api/neuro').then(function(r){return r.json();}),
+          authFetch('/api/brain'),
+          authFetch('/api/treasury'),
+          authFetch('/api/neuro'),
         ]);
 
         var brain    = results[0].status === 'fulfilled' ? results[0].value : {};
