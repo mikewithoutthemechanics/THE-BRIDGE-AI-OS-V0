@@ -11,6 +11,7 @@ jobs:
     timeout-minutes: 5
     env:
       VPS_ENV_BLOB: ${{ secrets.VPS_ENV_BLOB }}
+      GH_PAT: ${{ secrets.GH_PAT }}
 
     steps:
       - name: Deploy via SSH
@@ -20,11 +21,13 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
-          envs: VPS_ENV_BLOB
+          envs: VPS_ENV_BLOB,GH_PAT
           script: |
             cd /opt/ai-os || exit 1
+            git remote set-url origin https://x-access-token:$GH_PAT@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
             git fetch origin main
             git reset --hard origin/main
+            git remote set-url origin https://github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
             rsync -a --delete --exclude='node_modules' --exclude='.git' --exclude='.env' --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude='logs' /opt/ai-os/ /var/www/bridgeai/ 2>/dev/null || true
             npm install --production --no-audit 2>&1 | tail -3
 

@@ -1,8 +1,12 @@
 require("dotenv").config();
 
-// TLS security check
+// TLS security enforcement — if the system has TLS verification disabled
+// (e.g. a global NODE_TLS_REJECT_UNAUTHORIZED=0), forcibly re-enable it
+// instead of refusing to start.  This prevents crash loops on VPSes where
+// another tool or the shell profile sets the variable globally.
 if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
-  throw new Error('TLS verification is DISABLED — REFUSING TO START');
+  console.warn('[SERVER][SECURITY] NODE_TLS_REJECT_UNAUTHORIZED was 0 — overriding to 1 (TLS verification enforced)');
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
 }
 
 // JWT secret validation
