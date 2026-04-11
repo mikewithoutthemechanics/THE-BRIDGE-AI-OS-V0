@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
-const { supabase, isConfigured: supabaseConfigured } = require('../lib/supabase');
+const { supabase, supabaseAnon, isConfigured: supabaseConfigured } = require('../lib/supabase');
 const { computeBuckets } = require('../lib/treasury');
 const ROOT = path.resolve(__dirname, '..');
 const SHARED_DIR = path.join(ROOT, 'shared');
@@ -1948,6 +1948,15 @@ module.exports = async (req, res) => {
       agents.runAgent('Finance AI', `Payment received: R${amount} from ${body.email_address || 'customer'}. Plan: ${body.custom_str1 || 'unknown'}. New treasury: R${newBalance.toFixed(2)}.`)
         .catch(e => console.warn('[PAYFAST] Agent trigger failed:', e.message));
 
+      // 5b. Send payment confirmation email to customer (non-blocking)
+      if (body.email_address) {
+        mail.sendCampaignEmail(
+          { email: body.email_address, name: body.name_first ? `${body.name_first} ${body.name_last || ''}`.trim() : null },
+          'payment_success',
+          { plan: body.custom_str1 || 'Bridge AI OS', amount: amount.toFixed(2) }
+        ).catch(e => console.warn('[PAYFAST] Payment confirmation email failed:', e.message));
+      }
+
       // 6. Structured log (visible in Vercel function logs)
       console.log(JSON.stringify({ type: 'payment', amount, payment_id: paymentId, balance: newBalance, time: new Date().toISOString() }));
 
@@ -3416,6 +3425,109 @@ module.exports = async (req, res) => {
   if (p.startsWith('/api/platform/')) {
     const handled = await handlePlatform(req, res);
     if (handled !== null) return; // platform handler wrote the response
+  }
+
+  // ── Auth: Google OAuth — redirect to Supabase Google provider ──
+  if (p === '/auth/google') {
+    const authClient = supabaseAnon || supabase;
+    if (!authClient) return res.redirect('/join?error=oauth_not_configured');
+
+    const publicUrl = process.env.PUBLIC_URL || 'https://ai-os.co.za';
+    const wizardParams = new URLSearchParams();
+    if (req.query.wizard)   wizardParams.set('wizard',   req.query.wizard);
+    if (req.query.intent)   wizardParams.set('intent',   req.query.intent);
+    if (req.query.industry) wizardParams.set('industry', req.query.industry);
+    if (req.query.plan)     wizardParams.set('plan',     req.query.plan);
+
+    const callbackBase = `${publicUrl}/auth/callback`;
+    const redirectTo = wizardParams.toString()
+      ? `${callbackBase}?${wizardParams}`
+      : callbackBase;
+
+    const { data, error } = await authClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo, skipBrowserRedirect: false },
+    });
+
+    if (error || !data?.url) {
+      console.error('[AUTH] Google OAuth error:', error?.message);
+      return res.redirect('/join?error=oauth_failed');
+    }
+    return res.redirect(data.url);
+  }
+
+  // ── Auth: Exchange OAuth code for session ──
+  if (p === '/auth/exchange-code' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const { code } = body || {};
+    if (!code) return json(res, { ok: false, error: 'Missing code' }, 400);
+
+    const authClient = supabaseAnon || supabase;
+    if (!authClient) return json(res, { ok: false, error: 'Auth not configured' }, 503);
+
+    const { data, error } = await authClient.auth.exchangeCodeForSession(code);
+    if (error || !data?.session) {
+      console.error('[AUTH] exchangeCodeForSession error:', error?.message);
+      return json(res, { ok: false, error: error?.message || 'Auth failed' }, 401);
+    }
+
+    const oauthEmail = data.user?.email?.toLowerCase().trim();
+    const oauthName  = data.user?.user_metadata?.full_name || data.user?.user_metadata?.name || '';
+
+    // Look up or create user in our users table
+    let user = null;
+    if (supabase && oauthEmail) {
+      const { data: existing } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', oauthEmail)
+        .single();
+
+      if (existing) {
+        user = existing;
+        // Update last_seen and oauth fields
+        await supabase.from('users').update({
+          last_seen: new Date().toISOString(),
+          oauth_provider: 'google',
+        }).eq('id', user.id);
+      } else {
+        // Create new user
+        const userId = `usr_${Date.now()}`;
+        const nowIso = new Date().toISOString();
+        const { data: created, error: createErr } = await supabase.from('users').insert({
+          id: userId,
+          email: oauthEmail,
+          name: oauthName,
+          oauth_provider: 'google',
+          oauth_id: data.user.id,
+          plan: 'client',
+          funnel_stage: 'visitor',
+          lead_score: 0,
+          conversations: 0,
+          brdg_balance: 0,
+          role: 'user',
+          first_seen: nowIso,
+          last_seen: nowIso,
+        }).select().single();
+        if (createErr) console.error('[AUTH] User create error:', createErr.message);
+        user = created;
+      }
+    }
+
+    // Issue our own JWT so existing middleware keeps working
+    const token = makeToken({ sub: user?.id || data.user.id, email: oauthEmail });
+
+    res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`);
+    return json(res, {
+      ok: true,
+      token,
+      user: {
+        id: user?.id || data.user.id,
+        email: oauthEmail,
+        name: oauthName,
+        plan: user?.plan || 'client',
+      },
+    });
   }
 
   // ── 404 ──

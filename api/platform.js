@@ -40,6 +40,31 @@ const { runIntegration, listTargets } = require('../lib/integrations');
 const userDb = require('../lib/user-identity');
 const llm = require('../lib/llm-client');
 
+// ── PayFast helpers ──────────────────────────────────────────────────────────
+
+const PLAN_PRICES = {
+  starter:    '199.00',
+  pro:        '499.00',
+  admin:      '1499.00',
+  enterprise: '4999.00',
+};
+
+/**
+ * Build MD5 signature from ordered [key, value] pairs.
+ * Appends passphrase if PAYFAST_PASSPHRASE env is set.
+ */
+function payfastSignature(orderedPairs) {
+  const parts = orderedPairs.map(function (pair) {
+    return pair[0] + '=' + encodeURIComponent(pair[1]).replace(/%20/g, '+');
+  });
+  let str = parts.join('&');
+  const passphrase = process.env.PAYFAST_PASSPHRASE;
+  if (passphrase) {
+    str += '&passphrase=' + encodeURIComponent(passphrase).replace(/%20/g, '+');
+  }
+  return crypto.createHash('md5').update(str).digest('hex');
+}
+
 // ── Auth helper ──────────────────────────────────────────────────────────────
 
 async function requireUser(req) {
@@ -206,6 +231,14 @@ async function handlePlatform(req, res) {
           brdgCost: llmResult.cost_usd || 0,
         }).catch(() => {});
 
+        // Distribute BRDG reward for run completion if user has a wallet address
+        if (user.wallet_address) {
+          const { distributeReward } = require('../lib/brdg-distributor');
+          distributeReward(user.wallet_address, 'run_completed').catch(e =>
+            console.error('[brdg] run reward failed:', e.message)
+          );
+        }
+
         return res.status(200).json({
           ok: true,
           run: { ...run, status: 'completed', result: { output: outputText } },
@@ -333,6 +366,174 @@ async function handlePlatform(req, res) {
 
     const analytics = await getProfileAnalytics(user.id);
     return res.json({ ok: true, analytics });
+  }
+
+  // ── BILLING: INITIATE PAYMENT ──────────────────────────────────────────────
+  if (url === '/api/platform/billing/initiate' && method === 'POST') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+
+    const { plan } = req.body || {};
+    if (!plan || !PLAN_PRICES[plan]) {
+      return res.status(400).json({ ok: false, error: 'Invalid plan. Choose: starter, pro, admin, enterprise.' });
+    }
+
+    const merchantId  = process.env.PAYFAST_MERCHANT_ID;
+    const merchantKey = process.env.PAYFAST_MERCHANT_KEY;
+    if (!merchantId || !merchantKey) {
+      return res.status(500).json({ ok: false, error: 'Payment gateway not configured.' });
+    }
+
+    const paymentId = crypto.randomUUID();
+    const amount    = PLAN_PRICES[plan];
+    const itemName  = 'Bridge AI OS ' + plan.charAt(0).toUpperCase() + plan.slice(1) + ' Plan';
+
+    const orderedPairs = [
+      ['merchant_id',  merchantId],
+      ['merchant_key', merchantKey],
+      ['return_url',   'https://ai-os.co.za/billing?payment=success'],
+      ['cancel_url',   'https://ai-os.co.za/billing?payment=cancelled'],
+      ['notify_url',   'https://ai-os.co.za/api/platform/billing/ipn'],
+      ['m_payment_id', paymentId],
+      ['amount',       amount],
+      ['item_name',    itemName],
+      ['custom_str1',  String(user.id)],
+      ['custom_str2',  plan],
+    ];
+
+    const signature = payfastSignature(orderedPairs);
+
+    const queryString = orderedPairs
+      .map(function (pair) {
+        return encodeURIComponent(pair[0]) + '=' + encodeURIComponent(pair[1]);
+      })
+      .join('&') + '&signature=' + encodeURIComponent(signature);
+
+    const redirectUrl = 'https://www.payfast.co.za/eng/process?' + queryString;
+
+    return res.json({ ok: true, redirect_url: redirectUrl, payment_id: paymentId });
+  }
+
+  // ── BILLING: PAYFAST IPN ───────────────────────────────────────────────────
+  if (url === '/api/platform/billing/ipn' && method === 'POST') {
+    // Always return 200 to PayFast — even on validation failure — to suppress retries.
+    // Log errors internally.
+    try {
+      const body = req.body || {};
+
+      // Rebuild param string from all POST params except 'signature'
+      const pairs = Object.keys(body)
+        .filter(function (k) { return k !== 'signature'; })
+        .map(function (k) {
+          return [k, body[k]];
+        });
+
+      const parts = pairs.map(function (pair) {
+        return pair[0] + '=' + encodeURIComponent(String(pair[1])).replace(/%20/g, '+');
+      });
+      let paramStr = parts.join('&');
+
+      const passphrase = process.env.PAYFAST_PASSPHRASE;
+      if (passphrase) {
+        paramStr += '&passphrase=' + encodeURIComponent(passphrase).replace(/%20/g, '+');
+      }
+
+      const expectedSig = crypto.createHash('md5').update(paramStr).digest('hex');
+      if (body.signature !== expectedSig) {
+        console.error('[billing/ipn] Signature mismatch. Got:', body.signature, 'Expected:', expectedSig);
+        return res.status(400).send('Invalid signature');
+      }
+
+      if (body.payment_status !== 'COMPLETE') {
+        console.log('[billing/ipn] Non-complete status:', body.payment_status);
+        return res.status(200).send('OK');
+      }
+
+      const userId = body.custom_str1;
+      const plan   = body.custom_str2;
+
+      if (!userId || !plan) {
+        console.error('[billing/ipn] Missing custom_str1 or custom_str2');
+        return res.status(200).send('OK');
+      }
+
+      if (isConfigured) {
+        // Update user plan
+        const { error: updateErr } = await supabase
+          .from('users')
+          .update({ plan: plan, funnel_stage: 'customer' })
+          .eq('id', userId);
+
+        if (updateErr) {
+          console.error('[billing/ipn] plan update failed:', updateErr.message);
+        }
+
+        // Record in profile_feedback
+        await supabase.from('profile_feedback').insert({
+          id: crypto.randomUUID(),
+          user_id: userId,
+          project_id: null,
+          output_id: null,
+          success: true,
+          latency_ms: null,
+          tokens_used: null,
+          brdg_cost: null,
+          usage_data: {
+            event: 'payment_complete',
+            plan: plan,
+            amount: body.amount_gross || null,
+            m_payment_id: body.m_payment_id || null,
+          },
+          created_at: new Date().toISOString(),
+        }).catch(function (e) {
+          console.error('[billing/ipn] feedback insert failed:', e.message);
+        });
+      }
+
+      // Distribute BRDG reward for plan upgrade if user has a wallet address
+      if (isConfigured) {
+        const { data: upgradedUser } = await supabase
+          .from('users')
+          .select('wallet_address')
+          .eq('id', userId)
+          .single();
+        if (upgradedUser && upgradedUser.wallet_address) {
+          const { distributeReward } = require('../lib/brdg-distributor');
+          distributeReward(upgradedUser.wallet_address, 'plan_upgraded').catch(e =>
+            console.error('[brdg] upgrade reward failed:', e.message)
+          );
+        }
+      }
+
+      console.log('[billing/ipn] Payment complete. User:', userId, 'Plan:', plan);
+      return res.status(200).send('OK');
+
+    } catch (err) {
+      console.error('[billing/ipn] Unexpected error:', err.message);
+      return res.status(200).send('OK'); // Always 200 to PayFast
+    }
+  }
+
+  // ── BRDG TREASURY BALANCE (authenticated) ──────────────────────────────────
+  if (url === '/api/platform/brdg/balance' && method === 'GET') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+    const { getTreasuryBalance } = require('../lib/brdg-distributor');
+    const balance = await getTreasuryBalance();
+    return res.json(balance);
+  }
+
+  // ── BRDG MANUAL DISTRIBUTE (authenticated — admin / testing) ───────────────
+  if (url === '/api/platform/brdg/distribute' && method === 'POST') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+    const { address, rewardType, multiplier } = req.body || {};
+    if (!address || !rewardType) {
+      return res.status(400).json({ ok: false, error: 'address and rewardType required' });
+    }
+    const { distributeReward } = require('../lib/brdg-distributor');
+    const result = await distributeReward(address, rewardType, multiplier || 1);
+    return res.json(result);
   }
 
   return null; // Not handled here — caller continues to next handler
