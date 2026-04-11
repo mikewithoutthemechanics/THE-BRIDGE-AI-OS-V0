@@ -4,6 +4,8 @@
  * Processes monetization triggers and executes cross-user pattern monetization
  */
 
+const { sendCampaignEmail } = require('../../lib/mail');
+
 class LiveMonetizationOrchestrator {
   constructor(multiUserStream, intelligenceGraph, database) {
     this.stream = multiUserStream;
@@ -95,6 +97,24 @@ class LiveMonetizationOrchestrator {
   }
 
   /**
+   * Resolve a user object { email, name } from userId via Supabase.
+   * Returns null silently if DB unavailable or user not found.
+   */
+  async _resolveUser(userId) {
+    if (!this.db || !userId) return null;
+    try {
+      const { data } = await this.db
+        .from('users')
+        .select('email, name')
+        .eq('id', userId)
+        .single();
+      return data || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Execute premium offer campaign
    */
   async _executeOfferCampaign(trigger) {
@@ -139,6 +159,16 @@ class LiveMonetizationOrchestrator {
 
     console.log('[LiveMonetization→Offer] User', trigger.userId, '- SKU:', selectedOffer.sku, '- $' + selectedOffer.price);
 
+    // Send offer campaign email (non-blocking)
+    const user = await this._resolveUser(trigger.userId);
+    if (user) {
+      sendCampaignEmail(user, 'offer', {
+        offerTitle: selectedOffer.value,
+        offerBody: `You're in a high-conversion window. Grab ${selectedOffer.value} for $${selectedOffer.price}.`,
+        offerCode: selectedOffer.sku,
+      }).catch(e => console.error('[LiveMonetization] offer email failed:', e.message));
+    }
+
     return action;
   }
 
@@ -179,6 +209,14 @@ class LiveMonetizationOrchestrator {
     }
 
     console.log('[LiveMonetization→Retention] User', trigger.userId, '- Initiated support + retention offer');
+
+    // Send retention campaign email (non-blocking)
+    const user = await this._resolveUser(trigger.userId);
+    if (user) {
+      sendCampaignEmail(user, 'retention', {}).catch(
+        e => console.error('[LiveMonetization] retention email failed:', e.message)
+      );
+    }
 
     return retention;
   }
@@ -245,6 +283,15 @@ class LiveMonetizationOrchestrator {
     }
 
     console.log('[LiveMonetization→Productivity] User', trigger.userId, '- $9.99 Focus Timer offer');
+
+    // Send productivity offer email (non-blocking)
+    const user = await this._resolveUser(trigger.userId);
+    if (user) {
+      sendCampaignEmail(user, 'productivity_offer', {
+        offer: action.offer,
+        price: action.price,
+      }).catch(e => console.error('[LiveMonetization] productivity email failed:', e.message));
+    }
 
     return action;
   }
