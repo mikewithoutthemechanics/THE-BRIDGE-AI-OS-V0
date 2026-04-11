@@ -68,6 +68,16 @@
   }
   .toggle.on::after{left:16px;background:#38bdf8;}
 
+  /* Voice chat button */
+  .voice-btn{
+    padding:8px 16px;border-radius:6px;border:1px solid rgba(56,189,248,.3);
+    background:rgba(56,189,248,.1);color:#38bdf8;cursor:pointer;
+    font-family:inherit;font-size:10px;letter-spacing:.1em;white-space:nowrap;transition:.2s;
+  }
+  .voice-btn:hover{background:rgba(56,189,248,.2);}
+  .voice-btn.listening{background:#34d399;color:#000;}
+  #brain-dot.listening{animation:pulse 0.5s infinite;}
+
   /* ── BOTTOM PANEL ────────────────────────────────── */
   #bottom-panel{
     position:fixed;bottom:0;left:0;right:0;z-index:1000;
@@ -247,13 +257,10 @@
     <span id="brain-status-text" style="font-size:9px;color:#f87171;letter-spacing:.08em;">OFFLINE</span>
   </div>
   <div class="nav-links">
-    <div class="toggle-wrap">
-      <span class="toggle-label">Ninja</span>
-      <div class="toggle" id="hijab-toggle" onclick="toggleHijab()" title="Ninja mode"></div>
-    </div>
+    <button class="voice-btn" id="voice-btn" onclick="isListening ? stopVoiceChat() : startVoiceChat()">🎤 VOICE</button>
     <div class="nav-sep"></div>
     <a class="nav-link" href="/">Home</a>
-    <a class="nav-link" href="/avatar.html">Dashboard</a>
+    <a class="nav-link" href="/executive-dashboard.html">Dashboard</a>
     <a class="nav-link" href="/ehsa-brain.html">Brain</a>
     <a class="nav-link" href="/twin.html" class="active">Twin</a>
   </div>
@@ -312,19 +319,19 @@ setProgress(10, 'Creating cameras…');
 //  CAMERA SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Arc Rotate Camera (orbit / showcase)
-const arcCam = new BABYLON.ArcRotateCamera('arcCam', -Math.PI / 2, Math.PI / 3, 5, BABYLON.Vector3.Zero(), scene);
-arcCam.lowerRadiusLimit  = 1.5;
-arcCam.upperRadiusLimit  = 14;
-arcCam.lowerBetaLimit    = 0.2;
-arcCam.upperBetaLimit    = Math.PI / 2 - 0.1;
-arcCam.wheelPrecision    = 50;
-arcCam.pinchPrecision    = 60;
-arcCam.inertia           = 0.72;
-arcCam.panningInertia    = 0.8;
-arcCam.minZ              = 0.1;
-arcCam.checkCollisions   = true;
-arcCam.attachControl(canvas, true);
+  // Arc Rotate Camera (orbit / showcase) - FIXED: starts at body level
+  const arcCam = new BABYLON.ArcRotateCamera('arcCam', -Math.PI / 2, Math.PI / 2.5, 5, BABYLON.Vector3.Zero(), scene);
+  arcCam.lowerRadiusLimit  = 1.5;
+  arcCam.upperRadiusLimit  = 14;
+  arcCam.lowerBetaLimit    = 0.2;
+  arcCam.upperBetaLimit    = Math.PI / 2 - 0.1;
+  arcCam.wheelPrecision    = 50;
+  arcCam.pinchPrecision    = 60;
+  arcCam.inertia           = 0.72;
+  arcCam.panningInertia    = 0.8;
+  arcCam.minZ              = 0.1;
+  arcCam.checkCollisions   = true;
+  arcCam.attachControl(canvas, true);
 
 // Universal Camera (first / third person)
 const freeCam = new BABYLON.UniversalCamera('freeCam', new BABYLON.Vector3(0, 1.7, -5), scene);
@@ -542,8 +549,121 @@ BABYLON.SceneLoader.ImportMesh('', AVATAR_URL, '', scene,
 
     setProgress(90, 'Building post-processing…');
 
-    // ── Arc Camera — target avatar ────────────────────────────────────────
-    arcCam.target = new BABYLON.Vector3(0, 1.2, 0);
+  // ── Arc Camera — target avatar ────────────────────────────────────────
+  arcCam.target = new BABYLON.Vector3(0, 1.2, 0);
+
+  // ── VOICE CHAT SYSTEM ──────────────────────────────────────────────────
+  let recognition = null;
+  let isListening = false;
+
+  function initVoiceChat() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      console.warn('Speech recognition not supported');
+      return;
+    }
+
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      isListening = true;
+      updateVoiceButton();
+      document.getElementById('brain-dot').classList.add('listening');
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      updateVoiceButton();
+      document.getElementById('brain-dot').classList.remove('listening');
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+      processVoiceInput(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      speak("Sorry, I didn't catch that. Please try again.");
+    };
+  }
+
+  function startVoiceChat() {
+    if (!recognition) initVoiceChat();
+    if (!isListening) {
+      recognition.start();
+    }
+  }
+
+  function stopVoiceChat() {
+    if (recognition && isListening) {
+      recognition.stop();
+    }
+  }
+
+  function processVoiceInput(text) {
+    console.log('Voice input:', text);
+    speak(`You said: ${text}`);
+
+    // Process commands
+    const lowerText = text.toLowerCase();
+
+    if (lowerText.includes('walk') || lowerText.includes('move')) {
+      AnimController.playByKey('walk');
+      speak("Walking mode activated");
+    } else if (lowerText.includes('run') || lowerText.includes('sprint')) {
+      AnimController.playByKey('run');
+      speak("Running mode activated");
+    } else if (lowerText.includes('dance') || lowerText.includes('samba')) {
+      AnimController.playByKey('samba');
+      speak("Let's dance!");
+    } else if (lowerText.includes('wave') || lowerText.includes('hello')) {
+      AnimController.playByKey('wavehi');
+      speak("Hello there!");
+    } else if (lowerText.includes('stop') || lowerText.includes('idle')) {
+      AnimController.playByKey('idle');
+      speak("Going idle");
+    } else if (lowerText.includes('camera') || lowerText.includes('view')) {
+      switchCamera();
+      speak("Camera switched");
+    } else if (lowerText.includes('business') || lowerText.includes('treasury')) {
+      speak("Accessing business modules");
+      // Could open business panel or navigate
+    } else {
+      // Default response for unrecognized commands
+      speak("I understand. Let me process that for you.");
+    }
+  }
+
+  function speak(text) {
+    if (!('speechSynthesis' in window)) {
+      console.warn('Speech synthesis not supported');
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+
+    speechSynthesis.speak(utterance);
+
+    // Show speech bubble
+    showSpeechBubble(text);
+  }
+
+  function showSpeechBubble(text) {
+    const bubble = document.getElementById('speech-bubble');
+    if (bubble) {
+      bubble.textContent = text;
+      bubble.classList.add('show');
+      setTimeout(() => {
+        bubble.classList.remove('show');
+      }, 4000);
+    }
+  }
 
     // ── Physics capsule for avatar ────────────────────────────────────────
     Avatar.physicsRoot = BABYLON.MeshBuilder.CreateCapsule('avatarPhysics',
@@ -558,6 +678,7 @@ BABYLON.SceneLoader.ImportMesh('', AVATAR_URL, '', scene,
 
     buildPostProcessing();
     buildGUI();
+    initVoiceChat();
     hideLoadingScreen();
 
   },
@@ -1399,14 +1520,13 @@ function createNinjaMesh() {
   });
 }
 
-function toggleHijab() {
-  hijabEnabled = !hijabEnabled;
-  const tog = document.getElementById('hijab-toggle');
-  if (tog) tog.classList.toggle('on', hijabEnabled);
-
-  if (hijabMeshes.length === 0 && Avatar.isLoaded) createNinjaMesh();
-  hijabMeshes.forEach(m => { m.isVisible = hijabEnabled; });
-  if (typeof BrainWS !== 'undefined') BrainWS.log(hijabEnabled ? 'Ninja mode: ON' : 'Ninja mode: OFF');
+// Voice button state management
+function updateVoiceButton() {
+  const btn = document.getElementById('voice-btn');
+  if (btn) {
+    btn.classList.toggle('listening', isListening);
+    btn.textContent = isListening ? '🔴 LISTENING' : '🎤 VOICE';
+  }
 }
 
 // Create ninja meshes once avatar loads
