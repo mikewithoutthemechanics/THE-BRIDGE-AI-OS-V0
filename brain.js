@@ -1581,16 +1581,20 @@ app.post('/api/dex/swap', (req, res) => {
   res.json({ ok: true, trade });
 });
 
-// ── DEFI / UBI ──────────────────────────────────────────────────────────────
-// UBI pool = 40% of all earned treasury (the split ratio)
-function _ubiPool()     { return +(state.treasury.earned * 0.40).toFixed(2); }
-function _treasuryPool(){ return +(state.treasury.earned * 0.30).toFixed(2); }
-function _opsPool()    { return +(state.treasury.earned * 0.20).toFixed(2); }
-function _founderPool(){ return +(state.treasury.earned * 0.10).toFixed(2); }
-function _staking()    { return { tvl: _ubiPool(), apy: 18, stakers: Math.max(42, Math.floor(_ubiPool() / 500)), lockPeriod: '30d' }; }
-const _ubiClaims = new Map(); // address → last claim ts
+// ── DEFI STATUS — treasury-backed, staking sandboxed ───────────────────────
+// Treasury is the single source of truth. Staking is isolated (no treasury access).
+const treasuryWithdraw = require('./lib/treasury-withdraw');
+
+// Deterministic bucket helpers — derived from treasury balance, not staking
+function _ubiPool()      { return +(state.treasury.balance * 0.15).toFixed(2); }
+function _treasuryPool() { return +(state.treasury.balance * 0.15).toFixed(2); }
+function _opsPool()      { return +(state.treasury.balance * 0.45).toFixed(2); }
+function _founderPool()  { return +(state.treasury.balance * 0.25).toFixed(2); }
+function _staking()      { return { sandboxed: true, tvl: 0, apy: 0, stakers: 0, lockPeriod: 'N/A', note: 'Staking sandboxed — no treasury access' }; }
+
 app.get('/api/defi/status', async (_req, res) => {
-  // Try to get real on-chain data; fall back to off-chain estimates
+  // Treasury state (deterministic)
+  const tState = await treasuryWithdraw.getTreasuryState();
   let tokenStats = null;
   let vaultBuckets = null;
   try {
@@ -1598,43 +1602,29 @@ app.get('/api/defi/status', async (_req, res) => {
       tokenStats = await brdgChain.getTokenStats();
       vaultBuckets = await brdgChain.getVaultBuckets();
     }
-  } catch { /* chain query failed — use off-chain data */ }
+  } catch { /* chain unavailable */ }
 
-  const pool = _ubiPool();
   const now = new Date();
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().slice(0, 10);
 
-  // Real on-chain staking data when available, otherwise honest zeros
-  const staking = tokenStats ? {
-    total_staked: parseFloat(tokenStats.treasury.brdgBalance) || 0,
-    apy: 0,
-    stakers: 0,
-    min_stake: 100,
-    source: 'linea',
-    note: 'Staking contract not yet deployed — showing treasury BRDG holdings',
-  } : {
-    total_staked: 0,
-    apy: 0,
-    stakers: 0,
-    min_stake: 100,
-    source: 'unavailable',
-    note: 'On-chain data unavailable — ethers.js not loaded',
-  };
-
   res.json({ ok: true,
-    staking,
+    treasury: tState,
     token: tokenStats ? tokenStats.token : null,
     vault: vaultBuckets && !vaultBuckets.error ? vaultBuckets : null,
-    ubi: { pool, recipients: 0, rate: 'monthly', last: null, next: nextMonth, note: 'UBI distribution not yet active' },
+    // Staking is sandboxed — reported separately, zero impact on treasury
+    staking: { sandboxed: true, total_staked: 0, apy: 0, stakers: 0, note: 'Staking is sandboxed — no treasury access' },
+    ubi: { pool: tState.buckets.find(b => b.name === 'ubi')?.balance || 0, recipients: 0, rate: 'monthly', next: nextMonth, note: 'UBI via Merkle distribution' },
     governance: { proposals: 0, active_votes: 0, quorum: 0.51, note: 'Governance not yet active' },
+    rails: treasuryWithdraw.RAILS,
   });
 });
-app.get('/api/ubi/status', (_req, res) => {
-  const pool = _ubiPool();
-  res.json({ ok: true, pool, recipients: 0, rate: 'monthly', last_distribution: null, note: 'UBI distribution not yet active — on-chain disbursement contract pending' });
+app.get('/api/ubi/status', async (_req, res) => {
+  const tState = await treasuryWithdraw.getTreasuryState();
+  const ubiPool = tState.buckets.find(b => b.name === 'ubi')?.balance || 0;
+  res.json({ ok: true, pool: ubiPool, recipients: 0, rate: 'monthly', last_distribution: null, note: 'UBI via Merkle distribution — on-chain disbursement pending' });
 });
 app.post('/api/ubi/claim', (_req, res) => {
-  res.status(503).json({ ok: false, error: 'UBI claims not yet active. The on-chain UBI disbursement contract has not been deployed.' });
+  res.status(503).json({ ok: false, error: 'UBI claims require Merkle proof. On-chain disbursement contract not yet deployed.' });
 });
 
 // ── WALLET ──────────────────────────────────────────────────────────────────
@@ -3048,10 +3038,14 @@ try {
   console.warn('[BRAIN] Page economics failed to load:', e.message);
 }
 
-// ── Admin Withdraw (KeyForge-authorized) ──────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+// DETERMINISTIC WITHDRAWAL SYSTEM — treasury-withdraw.js engine
+// No staking deps. Merkle-verified. Treasury is single source of truth.
+// ══════════════════════════════════════════════════════════════════════════
 let _supaAdmin;
 try { const sb = require('./lib/supabase'); _supaAdmin = sb.supabaseAdmin || sb.supabase; } catch (_) { _supaAdmin = null; }
 
+// Authorize — issue KeyForge token
 app.post('/api/admin/withdraw/authorize', (req, res) => {
   const token = req.headers['x-admin-token'];
   const expected = process.env.ADMIN_TOKEN;
@@ -3065,17 +3059,52 @@ app.post('/api/admin/withdraw/authorize', (req, res) => {
   res.json({ ok: true, token: kfToken, expires_in: 300 });
 });
 
-// Available withdrawal rails
-const WITHDRAW_RAILS = {
-  brdg:    { name: 'BRDG Token',       chain: 'linea',    type: 'on-chain',  fee: 0,     min: 1 },
-  eth:     { name: 'ETH (Linea)',      chain: 'linea',    type: 'on-chain',  fee: 0.001, min: 0.01 },
-  dex:     { name: 'DEX Swap (BRDG→USDT)', chain: 'linea', type: 'dex',     fee: 0.003, min: 10 },
-  defi:    { name: 'DeFi Yield Vault', chain: 'linea',    type: 'defi',      fee: 0,     min: 100 },
-  payfast: { name: 'PayFast (ZAR)',    chain: 'off-chain', type: 'fiat-offramp', fee: 0.035, min: 50 },
-  eft:     { name: 'SA Bank EFT',      chain: 'off-chain', type: 'fiat-offramp', fee: 15,    min: 100 },
-};
-app.get('/api/withdraw/rails', (_req, res) => res.json({ ok: true, rails: WITHDRAW_RAILS }));
+// Rails — list available withdrawal rails
+app.get('/api/withdraw/rails', (_req, res) => res.json({ ok: true, rails: treasuryWithdraw.RAILS }));
 
+// Treasury state — deterministic snapshot
+app.get('/api/treasury/state', async (_req, res) => {
+  const tState = await treasuryWithdraw.getTreasuryState();
+  res.json({ ok: true, ...tState });
+});
+
+// Treasury wallet — derived deterministic address
+app.get('/api/treasury/wallet', async (_req, res) => {
+  try {
+    const ethT = require('./lib/eth-treasury');
+    const addr = ethT.getAddress();
+    const bal = await ethT.getBalance();
+    res.json({ ok: true, address: addr, eth_balance: bal.eth, chain: 'linea', chain_id: 59144 });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// Pre-compute withdrawal — idempotent, no side effects
+app.post('/api/withdraw/compute', async (req, res) => {
+  const { amount, rail } = req.body || {};
+  const tState = await treasuryWithdraw.getTreasuryState();
+  const result = treasuryWithdraw.computeWithdrawal({
+    treasuryBalance: tState.available,
+    requestedAmount: parseFloat(amount) || 0,
+    rail: rail || 'brdg',
+  });
+  res.json({ ...result, treasury: tState });
+});
+
+// Entitlements — build/query Merkle allocation tree
+app.post('/api/withdraw/entitlements/build', async (req, res) => {
+  const adminTk = req.headers['x-admin-token'];
+  if (!adminTk || adminTk !== process.env.ADMIN_TOKEN) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  const { allocations } = req.body || {};
+  if (!allocations || !Array.isArray(allocations) || !allocations.length) return res.status(400).json({ ok: false, error: 'allocations array required' });
+  const tree = treasuryWithdraw.buildEntitlementTree(allocations);
+  // Store root for later verification
+  if (_supaAdmin) {
+    try { await _supaAdmin.from('system_state').upsert({ key: 'entitlement_root', value: JSON.stringify({ root: tree.root, count: tree.count, built_at: new Date().toISOString() }) }); } catch (_) {}
+  }
+  res.json({ ok: true, root: tree.root, count: tree.count });
+});
+
+// Execute — deterministic withdrawal via treasury-withdraw engine
 app.post('/api/admin/withdraw/execute', async (req, res) => {
   const adminTk = req.headers['x-admin-token'];
   const expected = process.env.ADMIN_TOKEN;
@@ -3085,56 +3114,51 @@ app.post('/api/admin/withdraw/execute', async (req, res) => {
     return res.status(401).json({ ok: false, error: 'Invalid or expired KeyForge token — re-authorize first' });
   }
   delete global.__kfTokens[kfToken];
-  const { to, amount, rail, memo } = req.body || {};
+
+  const { to, amount, rail, memo, merkleProof } = req.body || {};
   const numAmount = parseFloat(amount);
   if (!amount || isNaN(numAmount) || numAmount <= 0) return res.status(400).json({ ok: false, error: 'Invalid amount' });
-  const railConfig = WITHDRAW_RAILS[rail] || WITHDRAW_RAILS.brdg;
-  if (numAmount < railConfig.min) return res.status(400).json({ ok: false, error: `Minimum for ${rail}: ${railConfig.min}` });
 
   // Validate address for on-chain rails
-  if (railConfig.type === 'on-chain' || railConfig.type === 'dex' || railConfig.type === 'defi') {
+  const railConfig = treasuryWithdraw.RAILS[rail] || treasuryWithdraw.RAILS.brdg;
+  if (railConfig.type === 'on-chain' || railConfig.type === 'dex' || railConfig.type === 'defi-deposit') {
     if (!to || !/^0x[a-fA-F0-9]{40}$/.test(to)) return res.status(400).json({ ok: false, error: 'Invalid destination address' });
   }
 
-  const fee = typeof railConfig.fee === 'number' && railConfig.fee < 1 ? +(numAmount * railConfig.fee).toFixed(4) : railConfig.fee;
-  const netAmount = +(numAmount - fee).toFixed(4);
-  const entry = { id: Date.now().toString(36), to: to || 'pending', amount: numAmount, fee, net: netAmount, rail: rail || 'brdg', memo: memo || '', admin: 'admin', ts: Date.now() };
-  try { if (_supaAdmin) await _supaAdmin.from('admin_withdrawals').insert(entry); } catch (e) { console.warn('[AdminWithdraw] DB log:', e.message); }
+  // Get treasury state (single source of truth)
+  const tState = await treasuryWithdraw.getTreasuryState();
 
-  let txHash = null;
-  try {
-    if (rail === 'eth') {
-      if (!brdgChain) throw new Error('brdg-chain module not available');
-      const result = await brdgChain.sendETH(to, amount);
-      txHash = result.tx_hash || result.txHash;
-    } else if (rail === 'dex') {
-      // DEX swap: BRDG → USDT via on-chain DEX
-      txHash = `dex_swap_${Date.now().toString(36)}`;
-      broadcast({ type: 'dex_swap', from: 'BRDG', to_currency: 'USDT', amount: numAmount, rate: 1.28, received: +(numAmount * 1.28).toFixed(2), destination: to, ts: Date.now() });
-    } else if (rail === 'defi') {
-      // DeFi: deposit into yield vault
-      txHash = `defi_deposit_${Date.now().toString(36)}`;
-      broadcast({ type: 'defi_deposit', vault: 'brdg-yield-v1', amount: numAmount, destination: to, ts: Date.now() });
-    } else if (rail === 'payfast' || rail === 'eft') {
-      // Fiat off-ramp: queue for PayFast payout or EFT
-      txHash = `offramp_${rail}_${Date.now().toString(36)}`;
-      const zarAmount = +(numAmount * 18.8).toFixed(2); // BRDG→ZAR conversion
-      entry.zar_amount = zarAmount;
-      entry.status = 'queued';
-      try { if (_supaAdmin) await _supaAdmin.from('admin_withdrawals').update({ zar_amount: zarAmount, status: 'queued' }).eq('id', entry.id); } catch (_) {}
-      broadcast({ type: 'fiat_offramp', rail, amount: numAmount, zar_amount: zarAmount, destination: to, ts: Date.now() });
-    } else {
-      // Default: BRDG token transfer
-      if (!brdgChain) throw new Error('brdg-chain module not available');
-      const result = await brdgChain.transferBRDG(to, amount);
-      txHash = result.tx_hash || result.txHash;
+  // On-chain execute function — passed to the deterministic engine
+  async function onChainExecute(execRail, execTo, execAmount) {
+    if (execRail === 'eth') {
+      if (!ethTreasury) throw new Error('eth-treasury not available');
+      return ethTreasury.withdraw(execTo, execAmount);
+    } else if (execRail === 'brdg') {
+      if (!brdgChain) throw new Error('brdg-chain not available');
+      return brdgChain.transferBRDG(execTo, execAmount);
     }
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: 'Transfer failed: ' + e.message });
+    // DEX/DeFi/fiat — handled internally by treasury-withdraw
+    return { tx_hash: `${execRail}_${Date.now().toString(36)}` };
   }
-  res.json({ ok: true, tx_hash: txHash, amount: numAmount, fee, net: netAmount, to, rail: rail || 'brdg', rail_config: railConfig });
+
+  const result = await treasuryWithdraw.executeWithdrawal({
+    treasuryBalance: tState.available,
+    to: to || 'pending',
+    amount: numAmount,
+    rail: rail || 'brdg',
+    memo,
+    merkleProof: merkleProof || null,
+    onChainExecute,
+  });
+
+  if (!result.ok) return res.status(400).json(result);
+
+  // Broadcast event
+  broadcast({ type: 'treasury_withdraw', ...result });
+  res.json(result);
 });
 
+// Audit log
 app.get('/api/admin/withdraw/audit', async (req, res) => {
   const adminTk = req.headers['x-admin-token'];
   const expected = process.env.ADMIN_TOKEN;
@@ -3144,7 +3168,7 @@ app.get('/api/admin/withdraw/audit', async (req, res) => {
   res.json({ ok: true, log });
 });
 
-console.log('[BRAIN] Admin withdraw routes ACTIVE');
+console.log('[BRAIN] Deterministic withdrawal system ACTIVE (treasury-withdraw engine)');
 
 // ── Zero-Trust Proof Chain & Merkle Anchoring ─────────────────────────────────
 let _zt, _proofStore;
