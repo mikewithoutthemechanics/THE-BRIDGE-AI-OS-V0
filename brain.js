@@ -3168,6 +3168,35 @@ app.get('/api/admin/withdraw/audit', async (req, res) => {
   res.json({ ok: true, log });
 });
 
+// Fiat payout queue — view queued and process payouts
+app.get('/api/admin/payouts', async (req, res) => {
+  const adminTk = req.headers['x-admin-token'];
+  if (!adminTk || adminTk !== process.env.ADMIN_TOKEN) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  const status = req.query.status || 'queued';
+  let payouts = [];
+  try { if (_supaAdmin) { const { data } = await _supaAdmin.from('fiat_payouts').select('*').eq('status', status).order('queued_at', { ascending: false }).limit(50); payouts = data || []; } } catch (_) {}
+  res.json({ ok: true, payouts, count: payouts.length });
+});
+
+app.post('/api/admin/payouts/process', async (req, res) => {
+  const adminTk = req.headers['x-admin-token'];
+  if (!adminTk || adminTk !== process.env.ADMIN_TOKEN) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  const { payout_id, bank_reference } = req.body || {};
+  if (!payout_id) return res.status(400).json({ ok: false, error: 'payout_id required' });
+  try {
+    if (_supaAdmin) {
+      await _supaAdmin.from('fiat_payouts').update({ status: 'processed', processed_at: new Date().toISOString(), bank_reference: bank_reference || null }).eq('payout_id', payout_id);
+    }
+    res.json({ ok: true, payout_id, status: 'processed', bank_reference });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Exchange rate endpoint
+app.get('/api/exchange/rate', (_req, res) => {
+  const conversion = treasuryWithdraw.brdgToZar(1);
+  res.json({ ok: true, brdg_per_zar: conversion.rate, zar_per_brdg: +(1 / conversion.rate).toFixed(4), ts: Date.now() });
+});
+
 console.log('[BRAIN] Deterministic withdrawal system ACTIVE (treasury-withdraw engine)');
 
 // ── Zero-Trust Proof Chain & Merkle Anchoring ─────────────────────────────────
