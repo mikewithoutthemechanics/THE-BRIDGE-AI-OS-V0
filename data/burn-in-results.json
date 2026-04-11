@@ -1,0 +1,54 @@
+[
+  {
+    "timestamp": "2026-04-11T02:19:57.338Z",
+    "elapsed_ms": 1319,
+    "passed": 5,
+    "total": 5,
+    "all_pass": true,
+    "checks": [
+      {
+        "check": "contracts",
+        "pass": true,
+        "detail": {
+          "name": "Bridge AI",
+          "totalSupply": "10000000.0",
+          "deployerBalance": "9500000.0",
+          "rewardPool": "500000.0",
+          "supplyIntact": true,
+          "rewardPoolIntact": true
+        }
+      },
+      {
+        "check": "oracle",
+        "pass": true,
+        "detail": {
+          "source": "fallback",
+          "brdgUsd": 0.36000000000000004,
+          "ethUsd": 3600
+        }
+      },
+      {
+        "check": "deployer_eth",
+        "pass": true,
+        "detail": {
+          "address": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+          "ethBalance": "0.000722"
+        }
+      },
+      {
+        "check": "chainlink_feed",
+        "pass": true,
+        "detail": {
+          "ethUsd": 2242.08563218
+        }
+      },
+      {
+        "check": "dex_pool",
+        "pass": true,
+        "detail": {
+          "poolAddress": "0x1873b75Fc9e85ef693B4Bcaa2a1e5C5Cef4c1F81"
+        }
+      }
+    ]
+  }
+]

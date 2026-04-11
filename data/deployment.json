@@ -3,14 +3,30 @@
   "chainId": 59144,
   "deployer": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
   "treasury": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
-  "constructorTreasury": "0xF22Bc18487764FEe106ca5Fb2EE27b11FDcB3756",
   "contracts": {
-    "BRDG": "0x5f0541302bd4fC672018b07a35FA5f294A322947",
-    "TreasuryVault": "0xDb8d8ca8A65d36eFbD5C84C145B58Ee62C872d88"
+    "BRDG": "0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f",
+    "TreasuryVault": "0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A",
+    "StakingVault": "0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB",
+    "DEXPool": "0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81"
   },
-  "deployedAt": "2026-04-08T18:34:28.407Z",
-  "notes": {
-    "addressDiscrepancy": "BRDG constructor minted 10M to constructorTreasury (0xF22Bc1...), but tokens were transferred to deployer wallet. Deployer holds 9.9M BRDG. TreasuryVault is deployed but currently holds 0 BRDG and 0 ETH — needs depositBrdg() call.",
-    "auditDate": "2026-04-10"
+  "dexConfig": {
+    "dex": "SyncSwap",
+    "pool": "0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81",
+    "status": "pool-created-needs-liquidity",
+    "note": "Add initial liquidity via https://syncswap.xyz/#/pool — pool exists, router liquidity add reverted on encoding",
+    "createdAt": "2026-04-11"
+  },
+  "deployedAt": "2026-04-11T00:00:00.000Z",
+  "settings": {
+    "initialBRDGMint": "10000000.0",
+    "initialStakingRewards": "500000.0",
+    "burnRate": "1%",
+    "treasurySplit": "ops:40% liquidity:25% reserve:20% founder:15%"
+  },
+  "previousDeployment": {
+    "BRDG": "0x5f0541302bd4fC672018b07a35FA5f294A322947",
+    "TreasuryVault": "0xDb8d8ca8A65d36eFbD5C84C145B58Ee62C872d88",
+    "deployedAt": "2026-04-08T18:34:28.407Z",
+    "status": "superseded"
   }
 }

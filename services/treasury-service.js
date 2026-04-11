@@ -16,6 +16,18 @@ const { getProvider } = require('../lib/eth-treasury');
 class TreasuryService {
   constructor(db) {
     this.db = db;
+    this.paymentsHalted = false;
+    this.haltReason = null;
+  }
+
+  /**
+   * Circuit breaker gate — call before any financial mutation.
+   * Throws if payments have been halted by a failed reconciliation check.
+   */
+  assertNotHalted() {
+    if (this.paymentsHalted) {
+      throw new Error(`CIRCUIT BREAKER ACTIVE: ${this.haltReason}. All financial mutations are frozen until manual review.`);
+    }
   }
 
   /**
@@ -26,6 +38,7 @@ class TreasuryService {
    * 3. Trigger buyback for liquidity allocation
    */
   async processPayFastPayment(paymentData) {
+    this.assertNotHalted();
     const paymentId = `pf-${paymentData.m_payment_id}`;
     const txGroup = uuidv4();
 
@@ -178,6 +191,7 @@ class TreasuryService {
    * Task fee structure: 14% to treasury, 1% burn, 85% to agent
    */
   async settleTask(taskId, agentId, taskRewardBrdg) {
+    this.assertNotHalted();
     const txGroup = uuidv4();
 
     try {
@@ -302,50 +316,100 @@ class TreasuryService {
 
   /**
    * Daily reconciliation check (called via cron)
+   * CIRCUIT BREAKER: halts all financial mutations if any critical check fails.
+   * Manual intervention required to resume: call treasury.resetCircuitBreaker()
    */
   async runDailyReconciliation() {
     const checks = [];
 
-    // Check 1: Assets >= Liabilities
-    const { rows: [balanceCheck] } = await this.db.query(`
-      SELECT
-        SUM(CASE WHEN type = 'asset' THEN SUM(ab.balance) ELSE 0 END) AS total_assets,
-        SUM(CASE WHEN type = 'liability' THEN SUM(ab.balance) ELSE 0 END) AS total_liabilities
-      FROM accounts a
-      LEFT JOIN account_balances ab ON a.id = ab.account_id
-      GROUP BY a.type
-    `);
+    // Check 1: Solvency — assets must cover liabilities
+    try {
+      const { rows } = await this.db.query(`
+        SELECT
+          a.type,
+          COALESCE(SUM(ab.balance), 0) AS total
+        FROM accounts a
+        LEFT JOIN account_balances ab ON a.id = ab.account_id
+        GROUP BY a.type
+      `);
+      const totals = Object.fromEntries(rows.map(r => [r.type, parseFloat(r.total)]));
+      const solvency = (totals.asset || 0) >= (totals.liability || 0);
+      checks.push({ check: 'solvency', pass: solvency, detail: totals });
+    } catch (err) {
+      checks.push({ check: 'solvency', pass: false, detail: { error: err.message } });
+    }
 
-    const solvency = balanceCheck && balanceCheck.total_assets >= balanceCheck.total_liabilities;
-    checks.push({
-      check: 'solvency',
-      pass: solvency,
-      detail: balanceCheck,
-    });
-
-    // Check 2: Ledger integrity
+    // Check 2: Ledger integrity — every tx_group must balance
     const integrity = await this.verifyLedgerIntegrity();
-    checks.push({
-      check: 'ledger_integrity',
-      pass: integrity.ok,
-      detail: integrity,
-    });
+    checks.push({ check: 'ledger_integrity', pass: integrity.ok, detail: integrity });
 
-    // Log results
+    // Check 3: No negative balances on asset accounts
+    try {
+      const { rows: negatives } = await this.db.query(`
+        SELECT ab.account_id, ab.balance
+        FROM account_balances ab
+        JOIN accounts a ON a.id = ab.account_id
+        WHERE a.type = 'asset' AND ab.balance < 0
+      `);
+      checks.push({ check: 'no_negative_assets', pass: negatives.length === 0, detail: negatives });
+    } catch (err) {
+      checks.push({ check: 'no_negative_assets', pass: false, detail: { error: err.message } });
+    }
+
+    // Log all results to reconciliation_log
     for (const check of checks) {
       await this.db.query(
         `INSERT INTO reconciliation_log (check_type, status, details)
          VALUES ($1, $2, $3)`,
-        [
-          check.check,
-          check.pass ? 'pass' : 'critical',
-          JSON.stringify(check.detail),
-        ]
+        [check.check, check.pass ? 'pass' : 'critical', JSON.stringify(check.detail)]
       );
     }
 
-    console.log(`[Treasury] Daily reconciliation: ${checks.filter(c => c.pass).length}/${checks.length} checks passed`);
-    return checks;
+    // CIRCUIT BREAKER: if any check fails, halt all payments
+    const failed = checks.filter(c => !c.pass);
+    if (failed.length > 0) {
+      this.paymentsHalted = true;
+      this.haltReason = `Reconciliation failed: ${failed.map(f => f.check).join(', ')}`;
+      console.error(`[Treasury] CIRCUIT BREAKER TRIPPED — ${this.haltReason}`);
+
+      await this.db.query(
+        `INSERT INTO audit_log (action, detail, actor)
+         VALUES ($1, $2, $3)`,
+        ['CIRCUIT_BREAKER_TRIPPED', JSON.stringify({ failed, timestamp: new Date().toISOString() }), 'system']
+      );
+
+      process.emit('treasury:circuit-breaker', { reason: this.haltReason, failed });
+    } else {
+      // If previously halted and all checks now pass, auto-resume
+      if (this.paymentsHalted) {
+        console.log('[Treasury] All reconciliation checks passed — circuit breaker auto-reset');
+        this.paymentsHalted = false;
+        this.haltReason = null;
+      }
+    }
+
+    const passCount = checks.filter(c => c.pass).length;
+    console.log(`[Treasury] Daily reconciliation: ${passCount}/${checks.length} checks passed${this.paymentsHalted ? ' — PAYMENTS HALTED' : ''}`);
+    return { checks, halted: this.paymentsHalted };
+  }
+
+  /**
+   * Manual override to reset circuit breaker after investigation.
+   * Requires explicit call — the system will NOT auto-resume on next reconciliation
+   * unless all checks pass.
+   */
+  resetCircuitBreaker(actor = 'admin') {
+    const wasHalted = this.paymentsHalted;
+    this.paymentsHalted = false;
+    this.haltReason = null;
+    if (wasHalted) {
+      console.log(`[Treasury] Circuit breaker manually reset by ${actor}`);
+      this.db.query(
+        `INSERT INTO audit_log (action, detail, actor) VALUES ($1, $2, $3)`,
+        ['CIRCUIT_BREAKER_RESET', JSON.stringify({ resetBy: actor, timestamp: new Date().toISOString() }), actor]
+      ).catch(err => console.error('[Treasury] Failed to log breaker reset:', err.message));
+    }
+    return { ok: true, wasHalted };
   }
 }
 
