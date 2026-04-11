@@ -38,6 +38,8 @@ jobs:
               cp .env /var/www/bridgeai/.env 2>/dev/null || true
             fi
 
-            pm2 reload super-brain bridge-gateway unified-server god-mode-system auth-service --update-env 2>/dev/null || pm2 restart super-brain bridge-gateway unified-server --update-env
+            for svc in bridge-gateway super-brain unified-server god-mode-system auth-service; do
+              pm2 reload $svc --update-env 2>/dev/null || pm2 restart $svc --update-env 2>/dev/null || echo "WARN: $svc not found"
+            done
             pm2 save
             pm2 status
