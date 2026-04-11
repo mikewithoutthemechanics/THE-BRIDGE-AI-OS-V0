@@ -119,5 +119,21 @@ module.exports = {
         NODE_ENV: 'production',
       },
     },
+
+    // ── SVG Skill Engine (port 7070) — skill execution + graph visualization ─
+    {
+      ...BASE,
+      name:        'svg-engine',
+      script:      'api/server.js',
+      cwd:         './svg-engine',
+      node_args:   '--experimental-modules',
+      out_file:    './logs/svg-engine-out.log',
+      error_file:  './logs/svg-engine-error.log',
+      env: {
+        NODE_ENV: 'production',
+        SVG_ENGINE_PORT: 7070,
+        BRIDGE_API_BASE: 'http://localhost:8000',
+      },
+    },
   ],
 };
