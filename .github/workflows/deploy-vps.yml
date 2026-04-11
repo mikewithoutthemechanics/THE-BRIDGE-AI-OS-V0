@@ -10,14 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
+    env:
+      SB_URL: ${{ secrets.SUPABASE_URL }}
+      SB_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      SB_ANON: ${{ secrets.SUPABASE_ANON_KEY }}
+      JW_SEC: ${{ secrets.JWT_SECRET }}
+
     steps:
       - name: Inject secrets and deploy
         uses: appleboy/ssh-action@v1
-        env:
-          SB_URL: ${{ secrets.SUPABASE_URL }}
-          SB_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          SB_ANON: ${{ secrets.SUPABASE_ANON_KEY }}
-          JW_SEC: ${{ secrets.JWT_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
