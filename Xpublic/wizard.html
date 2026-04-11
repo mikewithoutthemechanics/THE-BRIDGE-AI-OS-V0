@@ -481,6 +481,24 @@ async function createAccount() {
     const data = await res.json();
     if (data.ok && data.token) {
       document.cookie = 'bridge_token=' + data.token + ';path=/;max-age=2592000;SameSite=Lax';
+
+      // Seed profile + default project via wizard completion API
+      try {
+        await fetch('/api/platform/wizard/complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + data.token,
+          },
+          body: JSON.stringify({
+            intent: state.intent,
+            industry: state.industry,
+            integrations: state.integrations,
+            plan: state.plan,
+          }),
+        });
+      } catch (_) { /* non-fatal — profile page works without this */ }
+
       // Redirect to billing if paid plan selected, else straight to profile
       if (state.plan !== 'free') {
         window.location.href = '/billing?plan=' + state.plan + '&onboarded=1';
