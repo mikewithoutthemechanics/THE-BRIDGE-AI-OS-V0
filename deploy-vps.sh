@@ -50,6 +50,9 @@ ssh "$VPS_USER@$VPS_IP" bash <<REMOTE_DEPLOY
   echo "Installing npm dependencies..."
   npm ci --omit=dev
 
+  echo "Installing SVG Engine dependencies..."
+  cd svg-engine && npm ci --omit=dev && cd ..
+
   echo "Running database migrations..."
   node migrations/run-migrations.js
 
@@ -86,6 +89,17 @@ server {
         proxy_pass http://localhost:3001/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
+    }
+
+    location /svg-engine/ {
+        proxy_pass http://localhost:7070/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_cache_bypass \$http_upgrade;
     }
 }
 NGINX_CONF

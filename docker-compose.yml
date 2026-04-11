@@ -92,6 +92,22 @@ services:
       - bridge_net
     restart: unless-stopped
 
+  svg-engine:
+    build:
+      context: ./svg-engine
+    container_name: bridge_svg_engine
+    command: node api/server.js
+    ports:
+      - "7070:7070"
+    environment:
+      - NODE_ENV=production
+      - SVG_ENGINE_PORT=7070
+      - BRIDGE_API_BASE=http://brain:8000
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    networks:
+      - bridge_net
+    restart: unless-stopped
+
 networks:
   bridge_net:
     driver: bridge
