@@ -1,16 +1,22 @@
 'use strict';
 
 const { v4: uuidv4 } = require('uuid');
-const { getProvider } = require('../lib/eth-treasury');
 
 /**
  * Treasury Service — Real double-entry ledger operations
- * Replaces in-memory state with PostgreSQL truth
+ * Matches the hardened production schema (treasury-schema.sql):
  *
- * Every financial mutation creates a transaction group (UUID) with:
- * - Debit to one account
- * - Credit to another account
- * - Invariant: sum(debits) == sum(credits) per tx_group
+ * Column mapping:
+ *   ledger_entries.tx_id     → groups entries from same transaction
+ *   ledger_entries.direction → 'debit' | 'credit'
+ *   ledger_entries.reference → payment ID, task ID, etc.
+ *   ledger_entries.metadata  → JSONB context
+ *
+ * Invariant enforced by DB constraint trigger:
+ *   SUM(debit) == SUM(credit) per tx_id (DEFERRABLE INITIALLY DEFERRED)
+ *
+ * Balance auto-synced by DB trigger:
+ *   credit → +amount, debit → -amount in account_balances
  */
 
 class TreasuryService {
@@ -18,38 +24,65 @@ class TreasuryService {
     this.db = db;
     this.paymentsHalted = false;
     this.haltReason = null;
+    this._accountCache = new Map(); // name → UUID cache
   }
 
-  /**
-   * Circuit breaker gate — call before any financial mutation.
-   * Throws if payments have been halted by a failed reconciliation check.
-   */
+  // ── Circuit Breaker ──────────────────────────────────────────────────────
+
   assertNotHalted() {
     if (this.paymentsHalted) {
       throw new Error(`CIRCUIT BREAKER ACTIVE: ${this.haltReason}. All financial mutations are frozen until manual review.`);
     }
   }
 
+  // ── Account Resolution ───────────────────────────────────────────────────
+
   /**
-   * Process incoming PayFast payment → ledger entries
-   * Steps:
-   * 1. Record payment in payments table
-   * 2. Create ledger entries for split (ops/liquidity/reserve/founder)
-   * 3. Trigger buyback for liquidity allocation
+   * Resolve account name → UUID. Caches after first lookup.
    */
+  async resolveAccount(name) {
+    if (this._accountCache.has(name)) return this._accountCache.get(name);
+    const { rows } = await this.db.query(`SELECT id FROM accounts WHERE name = $1`, [name]);
+    if (rows.length === 0) throw new Error(`Account not found: ${name}`);
+    this._accountCache.set(name, rows[0].id);
+    return rows[0].id;
+  }
+
+  // ── Ledger Primitives ────────────────────────────────────────────────────
+
+  /**
+   * Record a double-entry pair. Both entries share the same tx_id.
+   * The DB constraint trigger enforces debit == credit per tx_id.
+   */
+  async recordEntry(txId, debitAccountName, creditAccountName, amount, reference, metadata) {
+    const debitId = await this.resolveAccount(debitAccountName);
+    const creditId = await this.resolveAccount(creditAccountName);
+
+    await this.db.query(
+      `INSERT INTO ledger_entries (tx_id, account_id, amount, direction, reference, metadata) VALUES ($1, $2, $3, 'debit', $4, $5)`,
+      [txId, debitId, amount, reference, JSON.stringify(metadata)]
+    );
+    await this.db.query(
+      `INSERT INTO ledger_entries (tx_id, account_id, amount, direction, reference, metadata) VALUES ($1, $2, $3, 'credit', $4, $5)`,
+      [txId, creditId, amount, reference, JSON.stringify(metadata)]
+    );
+  }
+
+  // ── PayFast Payment Processing ───────────────────────────────────────────
+
   async processPayFastPayment(paymentData) {
     this.assertNotHalted();
     const paymentId = `pf-${paymentData.m_payment_id}`;
-    const txGroup = uuidv4();
+    const txId = uuidv4();
 
     try {
-      // Step 1: Record payment
+      // 1. Record payment
       await this.db.query(
-        `INSERT INTO payments (id, user_id, gateway, amount, currency, status, gateway_reference, metadata, tx_group_id)
+        `INSERT INTO payments (id, user_id, gateway, amount, currency, status, gateway_reference, metadata, tx_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           paymentId,
-          paymentData.custom_str1 || 'unknown-user',  // user_id from custom field
+          paymentData.custom_str1 || 'unknown-user',
           'payfast',
           paymentData.amount_gross,
           'ZAR',
@@ -60,13 +93,11 @@ class TreasuryService {
             tier: paymentData.item_description || 'general',
             email: paymentData.email_address,
           }),
-          txGroup,
+          txId,
         ]
       );
 
-      // Step 2: Split revenue into 4 buckets (on-chain split in TreasuryVault)
-      // For now, record as single deposit to ops account
-      // Real TreasuryVault contract will enforce split on-chain
+      // 2. Double-entry: debit Treasury Operations, credit Subscription Revenue
       const splits = {
         ops: paymentData.amount_gross * 0.40,
         liquidity: paymentData.amount_gross * 0.25,
@@ -74,318 +105,174 @@ class TreasuryService {
         founder: paymentData.amount_gross * 0.15,
       };
 
-      // Record as revenue inflow → treasury ops
-      await this.db.query(
-        `SELECT record_ledger_entry($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          txGroup,
-          'asset-treasury-ops',           // debit (increase ops account)
-          'revenue-subscriptions',        // credit (revenue earned)
-          paymentData.amount_gross,
-          'ZAR',
-          `PayFast payment for ${paymentData.item_description || 'subscription'}`,
-          paymentId,
-          'payfast-webhook',
-        ]
+      await this.recordEntry(
+        txId,
+        'Treasury Operations',
+        'Subscription Revenue',
+        paymentData.amount_gross,
+        paymentId,
+        { gateway: 'payfast', item: paymentData.item_description, splits }
       );
 
-      // Update balances
-      await this.db.query(`SELECT update_account_balance($1)`, ['asset-treasury-ops']);
-      await this.db.query(`SELECT update_account_balance($1)`, ['revenue-subscriptions']);
-
-      // Step 3: Log for audit
+      // 3. Audit log (hash-chained by DB trigger)
       await this.db.query(
-        `INSERT INTO audit_log (actor, action, detail, tx_group_id)
-         VALUES ($1, $2, $3, $4)`,
-        [
-          'payfast-webhook',
-          'payment_processed',
-          JSON.stringify({ paymentId, amount: paymentData.amount_gross, splits }),
-          txGroup,
-        ]
+        `INSERT INTO audit_log (action, actor, detail, metadata) VALUES ($1, $2, $3, $4)`,
+        ['payment_processed', 'payfast-webhook', `PayFast ${paymentId}: ${paymentData.amount_gross} ZAR`, JSON.stringify({ paymentId, txId, splits })]
       );
 
       console.log(`[Treasury] PayFast payment ${paymentId} recorded: ${paymentData.amount_gross} ZAR`);
 
-      return {
-        ok: true,
-        paymentId,
-        txGroup,
-        amount: paymentData.amount_gross,
-        splits,
-      };
+      return { ok: true, paymentId, txId, amount: paymentData.amount_gross, splits };
     } catch (error) {
       console.error(`[Treasury] Error processing payment ${paymentId}:`, error);
       throw error;
     }
   }
 
-  /**
-   * Get account balance from ledger
-   */
-  async getAccountBalance(accountId) {
+  // ── Balance Queries ──────────────────────────────────────────────────────
+
+  async getAccountBalance(accountName) {
     const { rows } = await this.db.query(
-      `SELECT balance, currency, last_updated FROM account_balances WHERE account_id = $1`,
-      [accountId]
+      `SELECT ab.balance FROM account_balances ab JOIN accounts a ON ab.account_id = a.id WHERE a.name = $1`,
+      [accountName]
     );
-
-    if (rows.length === 0) {
-      return { accountId, balance: 0, currency: 'BRDG', lastUpdated: null };
-    }
-
-    return {
-      accountId,
-      balance: rows[0].balance,
-      currency: rows[0].currency,
-      lastUpdated: rows[0].last_updated,
-    };
+    return { account: accountName, balance: rows.length > 0 ? parseFloat(rows[0].balance) : 0 };
   }
 
-  /**
-   * Get treasury summary (all buckets)
-   */
   async getTreasurySummary() {
-    const ops = await this.getAccountBalance('asset-treasury-ops');
-    const liquidity = await this.getAccountBalance('asset-treasury-liquidity');
-    const reserve = await this.getAccountBalance('asset-treasury-reserve');
-    const founder = await this.getAccountBalance('asset-treasury-founder');
-
-    return {
-      ops: ops.balance,
-      liquidity: liquidity.balance,
-      reserve: reserve.balance,
-      founder: founder.balance,
-      total: ops.balance + liquidity.balance + reserve.balance + founder.balance,
-      lastUpdated: new Date().toISOString(),
-    };
+    const { rows } = await this.db.query(`
+      SELECT a.name, COALESCE(ab.balance, 0) AS balance
+      FROM accounts a
+      LEFT JOIN account_balances ab ON a.id = ab.account_id
+      WHERE a.type = 'treasury'
+    `);
+    const buckets = Object.fromEntries(rows.map(r => [r.name, parseFloat(r.balance)]));
+    return { ...buckets, total: Object.values(buckets).reduce((s, v) => s + v, 0), lastUpdated: new Date().toISOString() };
   }
 
-  /**
-   * Get user account balance
-   */
-  async getUserBalance(userId) {
-    const { rows } = await this.db.query(
-      `SELECT ab.balance, ab.currency
-       FROM account_balances ab
-       JOIN user_accounts ua ON ab.account_id = ua.account_id
-       WHERE ua.user_id = $1`,
-      [userId]
-    );
+  // ── Task Settlement ──────────────────────────────────────────────────────
 
-    if (rows.length === 0) {
-      return { userId, balance: 0, currency: 'BRDG' };
-    }
-
-    // Sum all user accounts (in case of multiple)
-    const balance = rows.reduce((sum, row) => sum + parseFloat(row.balance), 0);
-
-    return {
-      userId,
-      balance,
-      currency: rows[0].currency,
-    };
-  }
-
-  /**
-   * Record task completion → agent payment + treasury fee
-   * Task fee structure: 14% to treasury, 1% burn, 85% to agent
-   */
   async settleTask(taskId, agentId, taskRewardBrdg) {
     this.assertNotHalted();
-    const txGroup = uuidv4();
+    const txId = uuidv4();
 
     try {
-      // Calculate fee split
       const treasuryFee = taskRewardBrdg * 0.14;
       const burnAmount = taskRewardBrdg * 0.01;
       const agentEarnings = taskRewardBrdg - treasuryFee - burnAmount;
 
-      // 1. Credit agent with earnings
-      await this.db.query(
-        `SELECT record_ledger_entry($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          txGroup,
-          'asset-agents',                           // debit (agent account)
-          'revenue-task-fees',                      // credit (task fee revenue)
-          agentEarnings,
-          'BRDG',
-          `Task ${taskId} completion payment to ${agentId}`,
-          taskId,
-          'task-settlement',
-        ]
-      );
+      // 1. Agent earnings: debit Agent Earnings, credit Task Fee Revenue
+      await this.recordEntry(txId, 'Agent Earnings', 'Task Fee Revenue', agentEarnings, taskId, { type: 'agent-payment', agentId });
 
-      // 2. Credit treasury with fee
-      await this.db.query(
-        `SELECT record_ledger_entry($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          txGroup,
-          'asset-treasury-ops',                     // debit
-          'revenue-task-fees',                      // credit
-          treasuryFee,
-          'BRDG',
-          `Task ${taskId} treasury fee (14%)`,
-          taskId,
-          'task-settlement',
-        ]
-      );
+      // 2. Treasury fee: debit Treasury Operations, credit Task Fee Revenue
+      await this.recordEntry(txId, 'Treasury Operations', 'Task Fee Revenue', treasuryFee, taskId, { type: 'treasury-fee' });
 
-      // 3. Record burn (debit from revenue, no corresponding credit = destruction)
-      await this.db.query(
-        `SELECT record_ledger_entry($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          txGroup,
-          'expense-operations',                     // debit burn
-          'revenue-task-fees',                      // credit from revenue
-          burnAmount,
-          'BRDG',
-          `Task ${taskId} burn (1%)`,
-          taskId,
-          'task-settlement',
-        ]
-      );
+      // 3. Burn: debit Burn Address, credit Task Fee Revenue
+      await this.recordEntry(txId, 'Burn Address', 'Task Fee Revenue', burnAmount, taskId, { type: 'burn' });
 
       // Update task status
       await this.db.query(
-        `UPDATE tasks SET status = 'settled', settlement_tx_group = $1 WHERE id = $2`,
-        [txGroup, taskId]
+        `UPDATE tasks SET status = 'settled', settlement_tx_id = $1 WHERE id = $2`,
+        [txId, taskId]
       );
 
-      // Update balances
-      await this.db.query(`SELECT update_account_balance('asset-agents')`);
-      await this.db.query(`SELECT update_account_balance('asset-treasury-ops')`);
-
-      console.log(`[Treasury] Task ${taskId} settled: agent earned ${agentEarnings} BRDG, treasury fee ${treasuryFee}, burn ${burnAmount}`);
-
-      return {
-        ok: true,
-        taskId,
-        txGroup,
-        agentEarnings,
-        treasuryFee,
-        burnAmount,
-      };
+      console.log(`[Treasury] Task ${taskId} settled: agent ${agentEarnings} BRDG, fee ${treasuryFee}, burn ${burnAmount}`);
+      return { ok: true, taskId, txId, agentEarnings, treasuryFee, burnAmount };
     } catch (error) {
       console.error(`[Treasury] Error settling task ${taskId}:`, error);
       throw error;
     }
   }
 
-  /**
-   * Verify ledger integrity: all tx_groups have debit = credit
-   */
+  // ── Ledger Integrity ─────────────────────────────────────────────────────
+
   async verifyLedgerIntegrity() {
     const { rows } = await this.db.query(`
-      SELECT
-        tx_group,
-        SUM(CASE WHEN entry_type = 'debit' THEN amount ELSE -amount END) AS net
+      SELECT tx_id,
+        SUM(CASE WHEN direction = 'debit' THEN amount ELSE -amount END) AS net
       FROM ledger_entries
-      GROUP BY tx_group
-      HAVING ABS(SUM(CASE WHEN entry_type = 'debit' THEN amount ELSE -amount END)) > 0.00000001
+      GROUP BY tx_id
+      HAVING ABS(SUM(CASE WHEN direction = 'debit' THEN amount ELSE -amount END)) > 0.00000001
     `);
 
     if (rows.length > 0) {
       console.error('[Treasury] LEDGER IMBALANCE DETECTED:', rows);
       return { ok: false, imbalanced: rows };
     }
-
     return { ok: true, imbalanced: [] };
   }
 
-  /**
-   * Get recent transactions
-   */
+  // ── Recent Transactions ──────────────────────────────────────────────────
+
   async getRecentTransactions(limit = 50) {
     const { rows } = await this.db.query(
-      `SELECT
-        tx_group,
-        account_id,
-        entry_type,
-        amount,
-        description,
-        operator,
-        created_at
-      FROM ledger_entries
-      ORDER BY created_at DESC
-      LIMIT $1`,
+      `SELECT tx_id, account_id, direction, amount, reference, metadata, created_at
+       FROM ledger_entries ORDER BY created_at DESC LIMIT $1`,
       [limit]
     );
-
     return rows;
   }
 
-  /**
-   * Daily reconciliation check (called via cron)
-   * CIRCUIT BREAKER: halts all financial mutations if any critical check fails.
-   * Manual intervention required to resume: call treasury.resetCircuitBreaker()
-   */
+  // ── Daily Reconciliation + Circuit Breaker ───────────────────────────────
+
   async runDailyReconciliation() {
     const checks = [];
 
-    // Check 1: Solvency — assets must cover liabilities
+    // Check 1: Solvency
     try {
       const { rows } = await this.db.query(`
-        SELECT
-          a.type,
-          COALESCE(SUM(ab.balance), 0) AS total
+        SELECT a.type, COALESCE(SUM(ab.balance), 0) AS total
         FROM accounts a
         LEFT JOIN account_balances ab ON a.id = ab.account_id
         GROUP BY a.type
       `);
       const totals = Object.fromEntries(rows.map(r => [r.type, parseFloat(r.total)]));
-      const solvency = (totals.asset || 0) >= (totals.liability || 0);
+      const solvency = (totals.treasury || 0) + (totals.reserve || 0) >= 0;
       checks.push({ check: 'solvency', pass: solvency, detail: totals });
     } catch (err) {
       checks.push({ check: 'solvency', pass: false, detail: { error: err.message } });
     }
 
-    // Check 2: Ledger integrity — every tx_group must balance
+    // Check 2: Ledger integrity
     const integrity = await this.verifyLedgerIntegrity();
     checks.push({ check: 'ledger_integrity', pass: integrity.ok, detail: integrity });
 
-    // Check 3: No negative balances on asset accounts
+    // Check 3: No negative balances on treasury accounts
     try {
       const { rows: negatives } = await this.db.query(`
-        SELECT ab.account_id, ab.balance
+        SELECT a.name, ab.balance
         FROM account_balances ab
         JOIN accounts a ON a.id = ab.account_id
-        WHERE a.type = 'asset' AND ab.balance < 0
+        WHERE a.type IN ('treasury', 'reserve') AND ab.balance < 0
       `);
-      checks.push({ check: 'no_negative_assets', pass: negatives.length === 0, detail: negatives });
+      checks.push({ check: 'no_negative_treasury', pass: negatives.length === 0, detail: negatives });
     } catch (err) {
-      checks.push({ check: 'no_negative_assets', pass: false, detail: { error: err.message } });
+      checks.push({ check: 'no_negative_treasury', pass: false, detail: { error: err.message } });
     }
 
-    // Log all results to reconciliation_log
+    // Log results
     for (const check of checks) {
       await this.db.query(
-        `INSERT INTO reconciliation_log (check_type, status, details)
-         VALUES ($1, $2, $3)`,
+        `INSERT INTO reconciliation_log (check_type, status, details) VALUES ($1, $2, $3)`,
         [check.check, check.pass ? 'pass' : 'critical', JSON.stringify(check.detail)]
       );
     }
 
-    // CIRCUIT BREAKER: if any check fails, halt all payments
+    // Circuit breaker
     const failed = checks.filter(c => !c.pass);
     if (failed.length > 0) {
       this.paymentsHalted = true;
       this.haltReason = `Reconciliation failed: ${failed.map(f => f.check).join(', ')}`;
       console.error(`[Treasury] CIRCUIT BREAKER TRIPPED — ${this.haltReason}`);
-
       await this.db.query(
-        `INSERT INTO audit_log (action, detail, actor)
-         VALUES ($1, $2, $3)`,
-        ['CIRCUIT_BREAKER_TRIPPED', JSON.stringify({ failed, timestamp: new Date().toISOString() }), 'system']
+        `INSERT INTO audit_log (action, actor, detail) VALUES ($1, $2, $3)`,
+        ['CIRCUIT_BREAKER_TRIPPED', 'system', JSON.stringify({ failed, timestamp: new Date().toISOString() })]
       );
-
       process.emit('treasury:circuit-breaker', { reason: this.haltReason, failed });
-    } else {
-      // If previously halted and all checks now pass, auto-resume
-      if (this.paymentsHalted) {
-        console.log('[Treasury] All reconciliation checks passed — circuit breaker auto-reset');
-        this.paymentsHalted = false;
-        this.haltReason = null;
-      }
+    } else if (this.paymentsHalted) {
+      console.log('[Treasury] All reconciliation checks passed — circuit breaker auto-reset');
+      this.paymentsHalted = false;
+      this.haltReason = null;
     }
 
     const passCount = checks.filter(c => c.pass).length;
@@ -393,11 +280,8 @@ class TreasuryService {
     return { checks, halted: this.paymentsHalted };
   }
 
-  /**
-   * Manual override to reset circuit breaker after investigation.
-   * Requires explicit call — the system will NOT auto-resume on next reconciliation
-   * unless all checks pass.
-   */
+  // ── Circuit Breaker Reset ────────────────────────────────────────────────
+
   resetCircuitBreaker(actor = 'admin') {
     const wasHalted = this.paymentsHalted;
     this.paymentsHalted = false;
@@ -405,8 +289,8 @@ class TreasuryService {
     if (wasHalted) {
       console.log(`[Treasury] Circuit breaker manually reset by ${actor}`);
       this.db.query(
-        `INSERT INTO audit_log (action, detail, actor) VALUES ($1, $2, $3)`,
-        ['CIRCUIT_BREAKER_RESET', JSON.stringify({ resetBy: actor, timestamp: new Date().toISOString() }), actor]
+        `INSERT INTO audit_log (action, actor, detail) VALUES ($1, $2, $3)`,
+        ['CIRCUIT_BREAKER_RESET', actor, JSON.stringify({ resetBy: actor, timestamp: new Date().toISOString() })]
       ).catch(err => console.error('[Treasury] Failed to log breaker reset:', err.message));
     }
     return { ok: true, wasHalted };
