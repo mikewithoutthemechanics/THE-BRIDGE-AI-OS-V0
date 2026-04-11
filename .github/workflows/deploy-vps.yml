@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -18,6 +24,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          envs: SUPABASE_URL,SUPABASE_SERVICE_KEY,SUPABASE_ANON_KEY,JWT_SECRET
           script: |
             cd /opt/ai-os || exit 1
             echo "=== Pulling latest code ==="
@@ -36,13 +43,11 @@ jobs:
             sed -i '/^SUPABASE_SERVICE_KEY=/d' .env
             sed -i '/^SUPABASE_ANON_KEY=/d' .env
             sed -i '/^JWT_SECRET=/d' .env
-            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-            echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
-            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-            echo "=== Verifying .env has keys ==="
-            grep -c SUPABASE_URL .env
-            grep -c SUPABASE_SERVICE_KEY .env
+            echo "SUPABASE_URL=${SUPABASE_URL}" >> .env
+            echo "SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}" >> .env
+            echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >> .env
+            echo "JWT_SECRET=${JWT_SECRET}" >> .env
+            echo "=== Verifying .env ==="
             echo "URL length: $(grep SUPABASE_URL .env | tail -1 | wc -c)"
             echo "KEY length: $(grep SUPABASE_SERVICE_KEY .env | tail -1 | wc -c)"
             cp .env /var/www/bridgeai/.env 2>/dev/null || true
