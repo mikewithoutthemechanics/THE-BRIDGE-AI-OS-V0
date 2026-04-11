@@ -38,7 +38,7 @@
     }
     #topbar .logo { font-family: var(--font); font-size: 13px; color: var(--cyan); letter-spacing: 2px; white-space: nowrap; }
     #topbar .logo span { color: var(--muted); }
-    #topbar .tagline { font-size: 11px; color: var(--muted); margin-left: 4px; display: none; }
+    #topbar .tagline { font-size: 11px; color: var(--muted); margin-left: 4px; }
     #topbar .spacer { flex: 1; }
     #topbar .pill {
       font-family: var(--font); font-size: 10px; padding: 4px 10px;
@@ -108,12 +108,16 @@
     .spacer { flex: 1; }
 
     /* ── CANVAS ── */
-    #canvas { flex: 1; display: flex; flex-direction: column; overflow: auto; position: relative; -webkit-overflow-scrolling: touch; }
+    #canvas { flex: 1; display: flex; overflow: hidden; position: relative; -webkit-overflow-scrolling: touch; }
     #svg-container {
-      flex: 1; display: flex; align-items: flex-start; justify-content: center;
-      padding: 16px; min-height: 0; overflow: auto;
+      flex: 1; overflow: auto; padding: 20px;
+      display: flex; flex-direction: column; align-items: center;
     }
-    #svg-container svg { max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--glow); }
+    #svg-container svg {
+      max-width: 100%; width: auto; height: auto;
+      border-radius: 12px; box-shadow: var(--glow);
+      flex-shrink: 0;
+    }
     #svg-container .loading {
       font-family: var(--font); font-size: 12px; color: var(--muted);
       animation: blink 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -204,8 +208,8 @@
       .btn { padding: 4px 8px; font-size: 9px; }
       .mode-tab { font-size: 8px; padding: 3px 8px; }
 
-      #svg-container { padding: 8px; align-items: flex-start; }
-      #svg-container svg { border-radius: 8px; }
+      #svg-container { padding: 8px; }
+      #svg-container svg { border-radius: 8px; max-width: 100%; overflow-x: auto; }
 
       #detail-panel { display: none; }
 

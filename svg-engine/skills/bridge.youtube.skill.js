@@ -114,7 +114,7 @@ export function visualize(input = {}) {
   // Video title banner
   const titleBanner = `
     <text x="${W / 2}" y="92" text-anchor="middle" fill="${THEME.dim}" font-family="JetBrains Mono,monospace" font-size="9">LEARNING FROM</text>
-    <text x="${W / 2}" y="107" text-anchor="middle" fill="${THEME.gold}" font-family="JetBrains Mono,monospace" font-size="10" font-style="italic">${videoTitle.substring(0, 50)}</text>
+    <text x="${W / 2}" y="107" text-anchor="middle" fill="${THEME.gold}" font-family="JetBrains Mono,monospace" font-size="10" font-style="italic">${(videoTitle || "").substring(0, 50)}</text>
   `;
 
   const content = [

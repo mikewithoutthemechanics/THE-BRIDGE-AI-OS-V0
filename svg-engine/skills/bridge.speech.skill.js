@@ -70,4 +70,12 @@ export default {
       `SPEECH PIPELINE — confidence: ${d.confidence} | phonemes: ${d.phonemes.length} | TTS: ${d.tts_ms}ms | emotion: ${d.emotion}`
     );
   },
+
+  steps: [
+    { title: "Transcript Input",   detail: "Receive raw ASR transcript from speech-to-text" },
+    { title: "Reasoning Engine",   detail: "Extract intent, topic, and emotional context" },
+    { title: "Language Synthesis",  detail: "Build phoneme sequence from language model" },
+    { title: "Viseme Mapping",     detail: "Map phonemes to lip-sync viseme frames" },
+    { title: "TTS & Audio Output", detail: "Generate audio stream via text-to-speech engine" },
+  ],
 };

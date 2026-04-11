@@ -57,7 +57,13 @@ export class SVGEngine {
     for (const fileUrl of localFiles) {
       try {
         const mod   = await import(fileUrl);
-        const skill = mod.default || mod.skill;
+        let skill = mod.default || mod.skill;
+        // Support named-export skills (e.g. export const id, export function run)
+        if (!skill?.id && mod.id) {
+          skill = { id: mod.id, name: mod.name, description: mod.description,
+                    tags: mod.tags, version: mod.version, steps: mod.steps,
+                    run: mod.run, visualize: mod.visualize };
+        }
         if (skill?.id) {
           this.skills.set(skill.id, { ...skill, _source: "local", _loadedAt: Date.now() });
         }
