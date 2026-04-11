@@ -192,16 +192,28 @@ canvas{width:100vw;height:100vh;display:block;touch-action:none;}
   .bnav-btn{padding:3px 8px;font-size:8px;}
   #neural-pulse{display:none;}
   #layer-label{font-size:10px;}
+  .proc-row{grid-template-columns:1fr 60px 50px 80px!important;font-size:9px;}
+  .muscle-row{grid-template-columns:100px 28px 1fr 60px!important;}
 }
 @media(max-width:600px){
-  #topbar{height:34px;padding:0 6px;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  #topbar .brand{font-size:10px;}
-  #renderCanvas{top:34px!important;height:calc(100vh - 34px)!important;}
-  [id^="view-"]{top:34px!important;bottom:40px!important;}
-  #bottom-nav{height:36px;}
-  .bnav-btn{padding:2px 6px;font-size:7px;}
+  #topbar{height:40px;padding:0 6px;gap:3px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
+  #topbar .brand{font-size:9px;letter-spacing:0.05em;}
+  #topbar .hud-btn{padding:2px 5px;font-size:7px;letter-spacing:0;}
+  #renderCanvas{top:40px!important;height:calc(100vh - 40px)!important;}
+  [id^="view-"]{top:40px!important;bottom:46px!important;}
+  #bottom-nav{height:46px;gap:2px;padding:0 4px;overflow-x:auto;justify-content:flex-start;}
+  .bnav-btn{padding:4px 10px;font-size:8px;flex-shrink:0;}
   #skills-count{display:none;}
   #clock{display:none;}
+  #brain-lbl{display:none;}
+  .panel{padding:8px;font-size:10px;}
+  .panel h4{font-size:9px;}
+  .metric-row .mv{font-size:10px;}
+  #term-out{height:calc(100% - 80px)!important;font-size:10px;}
+  #aoe-term-out{font-size:10px;}
+  .muscle-row{grid-template-columns:80px 24px 1fr!important;}
+  .muscle-action{display:none;}
+  .proc-row{grid-template-columns:1fr 50px 60px!important;}
 }
 </style>
 </head>
@@ -627,12 +639,12 @@ canvas{width:100vw;height:100vh;display:block;touch-action:none;}
      BOTTOM NAVIGATION TAB BAR
 ══════════════════════════════════════════════════ -->
 <div id="bottom-nav">
-  <button class="bnav-btn active" onclick="switchView('terminal')" id="bnav-terminal">▸ Terminal</button>
-  <button class="bnav-btn" onclick="switchView('aoe')" id="bnav-aoe">⬛ AOE</button>
-  <button class="bnav-btn" onclick="switchView('muscle')" id="bnav-muscle">◈ Muscle</button>
-  <button class="bnav-btn" onclick="switchView('sysops')" id="bnav-sysops">⚙ SysOps</button>
-  <button class="bnav-btn" onclick="switchView('dashboard')" id="bnav-dashboard">📊 Dashboard</button>
-  <button class="bnav-btn" onclick="switchView('aios')" id="bnav-aios" style="border-color:rgba(0,255,100,.25);color:#3fa;">⚡ AI-OS</button>
+  <button class="bnav-btn active" onclick="switchView('terminal')" id="bnav-terminal">Chat</button>
+  <button class="bnav-btn" onclick="switchView('aoe')" id="bnav-aoe">Terminal</button>
+  <button class="bnav-btn" onclick="switchView('muscle')" id="bnav-muscle">Face</button>
+  <button class="bnav-btn" onclick="switchView('sysops')" id="bnav-sysops">System</button>
+  <button class="bnav-btn" onclick="switchView('dashboard')" id="bnav-dashboard">Finance</button>
+  <button class="bnav-btn" onclick="switchView('aios')" id="bnav-aios" style="border-color:rgba(0,255,100,.25);color:#3fa;">AI Core</button>
 </div>
 
 <script>
@@ -855,13 +867,13 @@ const WS_Engine = (() => {
 
     ws.onclose = () => {
       State.set({ wsConnected: false });
-      sysLog('Brain WS closed — reconnecting…', 'tag-yellow');
+      if(retry === 0) sysLog('Brain WS closed — reconnecting…', 'tag-yellow');
       scheduleRetry();
     };
 
     ws.onerror = () => {
       State.set({ wsConnected: false });
-      sysLog('Brain WS error', 'tag-red');
+      if(retry < 2) sysLog('Brain WS error — retrying (' + (retry+1) + '/' + MAX_RETRY + ')', 'tag-red');
     };
   }
 
@@ -1155,11 +1167,11 @@ function setBrainOnline(on){ State.set({ wsConnected: on }); }
    LAYER SYSTEM
 ══════════════════════════════════════════════ */
 const layerLabels = {
-  skin:    'FULL SKIN LAYER · PBR + SUBSURFACE SCATTERING',
-  bone:    'SKELETAL STRUCTURE · FULL BODY SKELETON',
-  xray:    'X-RAY MODE · TRANSLUCENT SKIN + BONE VISIBLE',
-  neural:  'NEURAL NETWORK · 128 NEURONS + 512 SYNAPSES',
-  quantum: 'QUANTUM FIELD · PROBABILITY CLOUDS + ENTANGLEMENT',
+  skin:    'Skin — Realistic Render',
+  bone:    'Skeleton — 23 Bone Structure',
+  xray:    'X-Ray — Translucent Overlay',
+  neural:  'Neural — Synapse Network',
+  quantum: 'Quantum — Data Flow Field',
   all:     'ALL LAYERS COMPOSITE · FULL ANATOMICAL VIEW'
 };
 
@@ -1315,17 +1327,21 @@ function buildScene(){
 
   /* ── STEP 8: Materials — Principled PBR (≈ Blender Principled BSDF) ── */
 
-  // Skin PBR — roughness 0.4, SSS translucency, no metallic
+  // Skin PBR — realistic human skin with subsurface scattering
   const skinMat = new BABYLON.PBRMaterial('skinMat', scene);
-  skinMat.albedoColor       = new BABYLON.Color3(0.96,0.72,0.6);
-  skinMat.roughness         = 0.42;
+  skinMat.albedoColor       = new BABYLON.Color3(0.87,0.68,0.56);
+  skinMat.roughness         = 0.48;
   skinMat.metallic          = 0.0;
-  skinMat.environmentIntensity = 0.65;
+  skinMat.environmentIntensity = 0.7;
   skinMat.subSurface.isTranslucencyEnabled  = true;
-  skinMat.subSurface.translucencyIntensity  = 0.55;
-  skinMat.subSurface.tintColor = new BABYLON.Color3(0.95,0.38,0.3);
-  skinMat.subSurface.minimumThickness = 0.04;
-  skinMat.subSurface.maximumThickness = 0.7;
+  skinMat.subSurface.translucencyIntensity  = 0.65;
+  skinMat.subSurface.tintColor = new BABYLON.Color3(0.92,0.35,0.28);
+  skinMat.subSurface.minimumThickness = 0.03;
+  skinMat.subSurface.maximumThickness = 0.8;
+  skinMat.subSurface.isScatteringEnabled = true;
+  skinMat.sheen.isEnabled = true;
+  skinMat.sheen.intensity = 0.15;
+  skinMat.sheen.color = new BABYLON.Color3(0.9,0.7,0.6);
 
   // Lip variant
   const lipMat = skinMat.clone('lipMat');
