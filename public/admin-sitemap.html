@@ -37,11 +37,11 @@ h1{font-size:1.4rem;font-weight:800;margin-bottom:.3rem}
 </head>
 <body>
 <h1>Admin Site Map</h1>
-<p class="sub">All 87 pages — admin-only navigation hub</p>
+<p class="sub">All pages — admin-only navigation hub</p>
 
 <div class="stats-bar">
-  <div class="stat-pill"><span class="num" id="total">87</span> pages</div>
-  <div class="stat-pill"><span class="num" id="visible">87</span> showing</div>
+  <div class="stat-pill"><span class="num" id="total">0</span> pages</div>
+  <div class="stat-pill"><span class="num" id="visible">0</span> showing</div>
 </div>
 
 <input type="text" class="search" id="search" placeholder="Search pages...">
@@ -66,6 +66,7 @@ const PAGES = {
     { name: 'Console (v3)', href: '/console.html', cat: 'core' },
     { name: 'Checkout', href: '/checkout.html', cat: 'core' },
     { name: 'Welcome', href: '/welcome.html', cat: 'core' },
+    { name: 'Welcome Tour', href: '/welcome-tour.html', cat: 'core' },
     { name: 'Main Dashboard', href: '/ui.html', cat: 'core' },
     { name: 'Home', href: '/home.html', cat: 'core' },
     { name: 'Avatar / Twin', href: '/avatar.html', cat: 'core' },
@@ -90,6 +91,7 @@ const PAGES = {
     { name: 'Supaco Agency', href: '/supac-home.html', cat: 'vertical' },
     { name: 'UBI Platform', href: '/ubi-home.html', cat: 'vertical' },
     { name: 'ABaaS Platform', href: '/abaas-home.html', cat: 'vertical' },
+    { name: 'ABaaS App', href: '/abaas.html', cat: 'vertical' },
     { name: 'Platforms', href: '/platforms.html', cat: 'vertical' },
   ],
   'Business Suite': [
@@ -97,6 +99,7 @@ const PAGES = {
     { name: 'Invoicing', href: '/invoicing.html', cat: 'business' },
     { name: 'Quotes', href: '/quotes.html', cat: 'business' },
     { name: 'Legal', href: '/legal.html', cat: 'business' },
+    { name: 'Legal AI', href: '/legal-ai.html', cat: 'business' },
     { name: 'Marketing', href: '/marketing.html', cat: 'business' },
     { name: 'Tickets', href: '/tickets.html', cat: 'business' },
     { name: 'Vendors', href: '/vendors.html', cat: 'business' },
@@ -123,6 +126,7 @@ const PAGES = {
     { name: 'Admin Command Center', href: '/admin-command.html', cat: 'admin' },
     { name: 'Admin Revenue', href: '/admin-revenue.html', cat: 'admin' },
     { name: 'Admin Panel', href: '/admin.html', cat: 'admin' },
+    { name: 'Admin Withdraw', href: '/admin-withdraw.html', cat: 'admin' },
     { name: 'Intelligence', href: '/intelligence.html', cat: 'admin' },
     { name: 'Executive Dashboard', href: '/executive-dashboard.html', cat: 'admin' },
     { name: 'AOE Dashboard', href: '/aoe-dashboard.html', cat: 'admin' },
@@ -132,6 +136,7 @@ const PAGES = {
   ],
   'Agents & System': [
     { name: 'Agents', href: '/agents.html', cat: 'system' },
+    { name: 'NeuroLink', href: '/neurolink.html', cat: 'system' },
     { name: 'Registry', href: '/registry.html', cat: 'system' },
     { name: 'Topology', href: '/topology.html', cat: 'system' },
     { name: 'Topology Layers', href: '/topology-layers.html', cat: 'system' },
@@ -140,12 +145,14 @@ const PAGES = {
     { name: 'System Status', href: '/system-status-dashboard.html', cat: 'system' },
     { name: 'Infrastructure', href: '/infra.html', cat: 'system' },
     { name: 'Terminal (legacy)', href: '/terminal.html', cat: 'system' },
+    { name: 'Terminal v3', href: '/terminal-v3.html', cat: 'system' },
     { name: 'Logs', href: '/logs.html', cat: 'system' },
     { name: 'View Logs', href: '/view-logs.html', cat: 'system' },
   ],
   'Settings & Docs': [
     { name: 'Settings', href: '/settings.html', cat: 'other' },
     { name: 'API Docs', href: '/docs.html', cat: 'other' },
+    { name: 'View', href: '/view.html', cat: 'other' },
     { name: 'Sitemap (public)', href: '/sitemap.html', cat: 'other' },
     { name: 'Landing (alt)', href: '/landing.html', cat: 'other' },
     { name: '50 Applications', href: '/50-applications.html', cat: 'other' },
@@ -153,11 +160,23 @@ const PAGES = {
     { name: '404 Page', href: '/404.html', cat: 'other' },
     { name: 'Offline', href: '/offline.html', cat: 'other' },
   ],
+  'Dev / Demo': [
+    { name: 'Anatomical Face', href: '/anatomical_face.html', cat: 'other' },
+    { name: 'Face — Constrained', href: '/anatomical_face_constrained_system.html', cat: 'other' },
+    { name: 'Face — Embodied', href: '/anatomical_face_embodied.html', cat: 'other' },
+    { name: 'Face — FACS', href: '/anatomical_face_facs.html', cat: 'other' },
+    { name: 'Face — Tension', href: '/anatomical_face_tension_balanced.html', cat: 'other' },
+    { name: 'Face — Vector Muscle', href: '/anatomical_face_vector_muscle.html', cat: 'other' },
+  ],
 };
 
 const container = document.getElementById('sections');
 const searchInput = document.getElementById('search');
 let allLinks = [];
+const totalPages = Object.values(PAGES).reduce((s, p) => s + p.length, 0);
+document.getElementById('total').textContent = totalPages;
+document.getElementById('visible').textContent = totalPages;
+document.querySelector('.sub').textContent = `All ${totalPages} pages — admin-only navigation hub`;
 
 Object.entries(PAGES).forEach(([sectionName, pages]) => {
   const section = document.createElement('div');
