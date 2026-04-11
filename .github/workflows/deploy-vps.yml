@@ -10,56 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
-    env:
-      SB_URL: ${{ secrets.SUPABASE_URL }}
-      SB_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-      SB_ANON: ${{ secrets.SUPABASE_ANON_KEY }}
-      JW_SEC: ${{ secrets.JWT_SECRET }}
-
     steps:
-      - name: Inject secrets and deploy
+      - name: Deploy code and secrets
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          envs: SB_URL,SB_KEY,SB_ANON,JW_SEC
+          port: 22
           script: |
             cd /opt/ai-os || exit 1
-            echo "=== Pulling latest code ==="
             git fetch origin main
             git reset --hard origin/main
-
-            echo "=== Syncing to /var/www/bridgeai ==="
-            rsync -a --delete --exclude='node_modules' --exclude='.git' --exclude='.env' --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude='logs' /opt/ai-os/ /var/www/bridgeai/ 2>/dev/null || cp -r /opt/ai-os/public/* /var/www/bridgeai/public/ 2>/dev/null || true
-
-            echo "=== Installing dependencies ==="
+            rsync -a --delete --exclude='node_modules' --exclude='.git' --exclude='.env' --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude='logs' /opt/ai-os/ /var/www/bridgeai/ 2>/dev/null || true
             npm install --production --no-audit 2>&1 | tail -5
-
-            echo "=== Injecting secrets ==="
-            if [ -n "$SB_URL" ]; then
-              sed -i '/^SUPABASE_URL=/d' .env 2>/dev/null
-              echo "SUPABASE_URL=$SB_URL" >> .env
-            fi
-            if [ -n "$SB_KEY" ]; then
-              sed -i '/^SUPABASE_SERVICE_KEY=/d' .env 2>/dev/null
-              echo "SUPABASE_SERVICE_KEY=$SB_KEY" >> .env
-            fi
-            if [ -n "$SB_ANON" ]; then
-              sed -i '/^SUPABASE_ANON_KEY=/d' .env 2>/dev/null
-              echo "SUPABASE_ANON_KEY=$SB_ANON" >> .env
-            fi
-            if [ -n "$JW_SEC" ]; then
-              sed -i '/^JWT_SECRET=/d' .env 2>/dev/null
-              echo "JWT_SECRET=$JW_SEC" >> .env
-            fi
+            sed -i '/^SUPABASE_URL=/d;/^SUPABASE_SERVICE_KEY=/d;/^SUPABASE_ANON_KEY=/d;/^JWT_SECRET=/d' .env 2>/dev/null || true
+            printf 'SUPABASE_URL=%s\nSUPABASE_SERVICE_KEY=%s\nSUPABASE_ANON_KEY=%s\nJWT_SECRET=%s\n' '${{ secrets.SUPABASE_URL }}' '${{ secrets.SUPABASE_SERVICE_KEY }}' '${{ secrets.SUPABASE_ANON_KEY }}' '${{ secrets.JWT_SECRET }}' >> .env
             echo "URL len: $(grep '^SUPABASE_URL=' .env | cut -d= -f2 | wc -c)"
             echo "KEY len: $(grep '^SUPABASE_SERVICE_KEY=' .env | cut -d= -f2 | wc -c)"
             cp .env /var/www/bridgeai/.env 2>/dev/null || true
-
-            echo "=== Restarting ALL services ==="
             pm2 restart all --update-env
             pm2 save
-            echo "=== Deploy complete ==="
             pm2 status
