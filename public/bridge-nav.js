@@ -104,7 +104,22 @@
     '.bn-fab-link.avatar{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.25);}',
     '.bn-fab-link.avatar:hover{background:rgba(167,139,250,0.2);border-color:#a78bfa;}',
     '.bn-fab-status{font-size:9px;color:#628ba0;text-align:center;padding-top:4px;}',
-    '.bn-fab-status .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;margin-right:4px;box-shadow:0 0 4px rgba(74,222,128,0.6);}'
+    '.bn-fab-status .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;margin-right:4px;box-shadow:0 0 4px rgba(74,222,128,0.6);}',
+    /* ── Mobile hamburger ─────────────────────────────────────────── */
+    '.bn-hamburger{display:none;background:none;border:1px solid rgba(99,255,218,0.2);color:#63ffda;font-size:18px;padding:4px 8px;border-radius:4px;cursor:pointer;flex-shrink:0;line-height:1;}',
+    '.bn-hamburger:hover{background:rgba(99,255,218,0.08);}',
+    '@media(max-width:768px){',
+    '  .bn-hamburger{display:flex;align-items:center;justify-content:center;}',
+    '  .bn-pod-twin,.bn-pod-avatar,.bn-pod-sep{display:none;}',
+    '  .bn-sections{display:none;position:fixed;top:40px;left:0;right:0;bottom:0;background:#060810;flex-direction:column;gap:0;overflow-y:auto;padding:8px;z-index:99998;}',
+    '  .bn-sections.open{display:flex;}',
+    '  .bn-group{width:100%;}',
+    '  .bn-group-btn{width:100%;text-align:left;padding:12px 14px;font-size:11px;border-radius:6px;border:1px solid rgba(99,255,218,0.08);margin-bottom:2px;}',
+    '  .bn-dropdown{position:static;margin:0;border:none;background:transparent;box-shadow:none;padding:0 0 8px 12px;}',
+    '  .bn-link{padding:10px 14px;font-size:11px;}',
+    '  .bn-logo{font-size:11px;}',
+    '  .bn-status{margin-left:auto;}',
+    '}'
   ].join('\n');
 
   var style = document.createElement('style');
@@ -168,6 +183,17 @@
     sectionsDiv.appendChild(group);
   });
 
+  var hamburger = document.createElement('button');
+  hamburger.className = 'bn-hamburger';
+  hamburger.textContent = '\u2630';
+  hamburger.setAttribute('aria-label', 'Toggle navigation menu');
+  hamburger.onclick = function(e) {
+    e.stopPropagation();
+    var isOpen = sectionsDiv.classList.toggle('open');
+    hamburger.textContent = isOpen ? '\u2715' : '\u2630';
+  };
+  bar.appendChild(hamburger);
+
   bar.appendChild(sectionsDiv);
 
   var dot = document.createElement('span');
@@ -180,6 +206,11 @@
   document.addEventListener('click', function() {
     document.querySelectorAll('.bn-group').forEach(function(g) { g.classList.remove('open'); });
     document.querySelectorAll('.bn-fab-panel').forEach(function(p) { p.classList.remove('open'); });
+    // Close mobile nav on outside click
+    if (sectionsDiv.classList.contains('open')) {
+      sectionsDiv.classList.remove('open');
+      hamburger.textContent = '\u2630';
+    }
   });
 
   // ── Floating Twin Control FAB ─────────────────────────────────────────
