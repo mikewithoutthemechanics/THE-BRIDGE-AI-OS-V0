@@ -28,7 +28,7 @@ services:
       - BRAIN_PORT=8000
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
-      - KEYFORGE_MASTER=${KEYFORGE_MASTER:?KEYFORGE_MASTER must be set in .env}
+      - KEYFORGE_MASTER=${KEYFORGE_MASTER:-demo}
     volumes:
       - ./shared:/app/shared
       - ./logs:/app/logs
@@ -83,8 +83,8 @@ services:
 
   ban:
     build:
-      context: ./BAN
-      dockerfile: ../Dockerfile.ban
+      context: .
+      dockerfile: Dockerfile.ban
     container_name: bridge_ban
     ports:
       - "8001:8001"
