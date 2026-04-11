@@ -16,10 +16,10 @@
     .live-stat{text-align:center;padding:12px 20px;background:#0a0e17;border:1px solid #1a2a3a;border-radius:10px;min-width:120px}
     .live-val{font-size:1.5rem;font-weight:800;color:#63ffda}
     .live-label{font-size:0.65rem;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
-    .section-tabs{display:flex;justify-content:center;gap:6px;margin-bottom:30px;flex-wrap:wrap}
-    .tab{padding:10px 22px;border-radius:8px;font-size:0.78rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:1px solid rgba(99,255,218,0.15);background:rgba(99,255,218,0.04);color:#63ffda;transition:all 0.25s}
-    .tab:hover{background:rgba(99,255,218,0.1);border-color:rgba(99,255,218,0.3)}
-    .tab.active{background:#63ffda;color:#060810;border-color:#63ffda;box-shadow:0 0 20px rgba(99,255,218,0.3)}
+    .section-tabs{display:flex;justify-content:center;gap:8px;margin-bottom:30px;flex-wrap:wrap;background:#0a0e17;border:1px solid #1a2a3a;border-radius:14px;padding:6px;max-width:600px;margin-left:auto;margin-right:auto}
+    .tab{padding:10px 22px;border-radius:10px;font-size:0.82rem;font-weight:700;letter-spacing:0.5px;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all 0.25s}
+    .tab:hover{color:#e2e8f0;background:rgba(255,255,255,0.05)}
+    .tab.active{background:linear-gradient(135deg,#63ffda,#4ade80);color:#060810;box-shadow:0 4px 16px rgba(99,255,218,0.25)}
     .section-panel{display:none;animation:fadeSlide 0.4s ease}
     .section-panel.active{display:block}
     @keyframes fadeSlide{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
@@ -76,7 +76,7 @@
     <div class="live-stat"><div class="live-val" id="lb-pages">87</div><div class="live-label">Pages</div></div>
   </div>
 
-  <div class="section-tabs" id="tabs"></div>
+  <div class="section-tabs" id="tabs" role="tablist"></div>
 
   <div id="panels"></div>
 
