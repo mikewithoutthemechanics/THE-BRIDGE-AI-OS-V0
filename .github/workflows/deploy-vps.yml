@@ -10,40 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-
     steps:
-      - name: Write secrets file
-        run: |
-          mkdir -p /tmp/deploy
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > /tmp/deploy/secrets.env
-          echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> /tmp/deploy/secrets.env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> /tmp/deploy/secrets.env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /tmp/deploy/secrets.env
-          echo "Lines: $(wc -l < /tmp/deploy/secrets.env)"
-
-      - name: Upload secrets to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          source: "/tmp/deploy/secrets.env"
-          target: "/tmp/"
-          strip_components: 2
-
-      - name: Deploy via SSH
+      - name: Inject secrets and deploy
         uses: appleboy/ssh-action@v1
+        env:
+          SB_URL: ${{ secrets.SUPABASE_URL }}
+          SB_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SB_ANON: ${{ secrets.SUPABASE_ANON_KEY }}
+          JW_SEC: ${{ secrets.JWT_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          envs: SB_URL,SB_KEY,SB_ANON,JW_SEC
           script: |
             cd /opt/ai-os || exit 1
             echo "=== Pulling latest code ==="
@@ -56,20 +36,25 @@ jobs:
             echo "=== Installing dependencies ==="
             npm install --production --no-audit 2>&1 | tail -5
 
-            echo "=== Merging secrets into .env ==="
-            if [ -f /tmp/secrets.env ]; then
-              while IFS='=' read -r key val; do
-                [ -z "$key" ] && continue
-                sed -i "/^${key}=/d" .env 2>/dev/null
-                echo "${key}=${val}" >> .env
-              done < /tmp/secrets.env
-              rm -f /tmp/secrets.env
-              echo "Secrets merged"
-            else
-              echo "WARNING: /tmp/secrets.env not found"
+            echo "=== Injecting secrets ==="
+            if [ -n "$SB_URL" ]; then
+              sed -i '/^SUPABASE_URL=/d' .env 2>/dev/null
+              echo "SUPABASE_URL=$SB_URL" >> .env
             fi
-            echo "URL length: $(grep SUPABASE_URL .env | tail -1 | wc -c)"
-            echo "KEY length: $(grep SUPABASE_SERVICE_KEY .env | tail -1 | wc -c)"
+            if [ -n "$SB_KEY" ]; then
+              sed -i '/^SUPABASE_SERVICE_KEY=/d' .env 2>/dev/null
+              echo "SUPABASE_SERVICE_KEY=$SB_KEY" >> .env
+            fi
+            if [ -n "$SB_ANON" ]; then
+              sed -i '/^SUPABASE_ANON_KEY=/d' .env 2>/dev/null
+              echo "SUPABASE_ANON_KEY=$SB_ANON" >> .env
+            fi
+            if [ -n "$JW_SEC" ]; then
+              sed -i '/^JWT_SECRET=/d' .env 2>/dev/null
+              echo "JWT_SECRET=$JW_SEC" >> .env
+            fi
+            echo "URL len: $(grep '^SUPABASE_URL=' .env | cut -d= -f2 | wc -c)"
+            echo "KEY len: $(grep '^SUPABASE_SERVICE_KEY=' .env | cut -d= -f2 | wc -c)"
             cp .env /var/www/bridgeai/.env 2>/dev/null || true
 
             echo "=== Restarting ALL services ==="
