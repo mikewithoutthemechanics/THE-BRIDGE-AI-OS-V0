@@ -1,0 +1,20 @@
+{
+  "name": "bridge-svg-skill-engine",
+  "version": "2.0.0",
+  "description": "Modular SVG skill engine: discover, adopt, execute, and teach skills as animated SVG visualizations.",
+  "type": "module",
+  "main": "api/server.js",
+  "scripts": {
+    "start":   "node api/server.js",
+    "dev":     "node --watch api/server.js",
+    "teach":   "node -e \"import('./core/engine.js').then(({SVGEngine})=>{const e=new SVGEngine();e.load().then(()=>console.log(e.list()))})\"",
+    "graph":   "node -e \"import('./core/engine.js').then(({SVGEngine})=>{const e=new SVGEngine();e.load().then(()=>{require('fs').writeFileSync('graph.svg',e.graph())})})\""
+  },
+  "dependencies": {
+    "cors":    "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "engines": { "node": ">=20.0.0" },
+  "keywords": ["svg", "skill", "engine", "bridge", "visualization", "teach", "discover"],
+  "license": "MIT"
+}

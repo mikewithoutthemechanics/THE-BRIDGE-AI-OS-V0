@@ -1,0 +1,6 @@
+@echo off
+echo [Bridge SVG Engine] Installing dependencies...
+cd /d "%~dp0"
+call npm install
+echo [Bridge SVG Engine] Starting on port 7070...
+node api/server.js

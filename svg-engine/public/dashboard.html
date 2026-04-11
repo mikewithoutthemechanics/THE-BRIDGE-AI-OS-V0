@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRIDGE SVG Skill Engine</title>
+  <link rel="stylesheet" href="/bridge-tokens.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Layout backgrounds (aliased from shared tokens) */
+      --bg:      var(--bg-0);
+      --bg2:     var(--bg-1);
+      --bg3:     var(--bg-2, #111827);
+      /* Colors: --cyan, --blue, --purple provided by bridge-tokens.css */
+      --pink:    var(--pink, #f472b6);
+      --orange:  var(--orange, #fb923c);
+      --green:   var(--green, #4ade80);
+      --muted:   var(--text-secondary);
+      /* --border provided by bridge-tokens.css */
+      --font:    var(--font-mono);
+      --fontUI:  var(--font-ui);
+      --glow:    var(--glow-cyan);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text-primary); font-family: var(--fontUI); overflow: hidden; }
+
+    /* ── LAYOUT ── */
+    #shell { display: grid; grid-template-columns: 240px 1fr; grid-template-rows: 56px 1fr; height: 100vh; }
+
+    /* ── TOPBAR ── */
+    #topbar {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+    }
+    #topbar .logo { font-family: var(--font); font-size: 13px; color: var(--cyan); letter-spacing: 2px; }
+    #topbar .logo span { color: var(--muted); }
+    #topbar .tagline { font-size: 11px; color: var(--muted); margin-left: 4px; }
+    #topbar .spacer { flex: 1; }
+    #topbar .pill {
+      font-family: var(--font); font-size: 10px; padding: 4px 12px;
+      background: color-mix(in srgb, var(--cyan) 8%, transparent); border: 1px solid var(--border);
+      border-radius: 99px; color: var(--cyan);
+    }
+    #telemetry-bar { display: flex; gap: 20px; font-family: var(--font); font-size: 10px; color: var(--muted); }
+    #telemetry-bar span { color: var(--cyan); }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    #sidebar-header { padding: 16px; font-family: var(--font); font-size: 9px; color: var(--muted); letter-spacing: 2px; }
+    .skill-item {
+      padding: 10px 16px; cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .skill-item:hover { background: color-mix(in srgb, var(--cyan) 4%, transparent); border-left-color: color-mix(in srgb, var(--cyan) 30%, transparent); }
+    .skill-item.active { background: color-mix(in srgb, var(--cyan) 8%, transparent); border-left-color: var(--cyan); }
+    .skill-item .sid { font-family: var(--font); font-size: 10px; color: var(--cyan); }
+    .skill-item .sname { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .skill-item .stags { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+    .tag { font-family: var(--font); font-size: 8px; padding: 1px 6px; border-radius: 99px;
+           background: color-mix(in srgb, var(--cyan) 6%, transparent); color: var(--muted); border: 1px solid var(--border); }
+
+    .sidebar-section { padding: 8px 16px 4px; font-family: var(--font); font-size: 8px; color: var(--muted); letter-spacing: 1px; margin-top: 8px; }
+
+    /* ── MAIN ── */
+    #main { display: flex; flex-direction: column; overflow: hidden; }
+    #toolbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .btn {
+      font-family: var(--font); font-size: 10px;
+      padding: 5px 14px; border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--cyan); cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn:hover { background: color-mix(in srgb, var(--cyan) 8%, transparent); border-color: var(--cyan); }
+    .btn.active { background: color-mix(in srgb, var(--cyan) 12%, transparent); border-color: var(--cyan); }
+    .btn.primary { background: var(--cyan); color: var(--bg-0); border-color: var(--cyan); font-weight: 700; }
+    .btn.primary:hover { opacity: 0.88; }
+    #skill-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-right: 4px; }
+    #skill-id   { font-family: var(--font); font-size: 10px; color: var(--muted); }
+    .spacer { flex: 1; }
+
+    /* ── CANVAS ── */
+    #canvas { flex: 1; display: flex; overflow: auto; position: relative; }
+    #svg-container {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 24px; min-height: 0;
+    }
+    #svg-container svg { max-width: 100%; border-radius: 12px; box-shadow: var(--glow); }
+    #svg-container .loading {
+      font-family: var(--font); font-size: 12px; color: var(--muted);
+      animation: blink 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+    /* ── PANEL ── */
+    #detail-panel {
+      width: 280px; border-left: 1px solid var(--border);
+      background: var(--bg2); overflow-y: auto;
+      padding: 16px; display: flex; flex-direction: column; gap: 16px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #detail-panel.hidden { width: 0; padding: 0; overflow: hidden; }
+    .detail-section h4 { font-family: var(--font); font-size: 9px; color: var(--muted); letter-spacing: 2px; margin-bottom: 8px; }
+    .detail-section p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .step-item { padding: 8px; border-left: 2px solid var(--border); margin-bottom: 6px; }
+    .step-item .step-title { font-size: 11px; font-weight: 600; color: var(--text-primary); }
+    .step-item .step-detail { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .run-output { font-family: var(--font); font-size: 9px; color: var(--cyan); background: var(--bg3); padding: 10px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; max-height: 220px; overflow-y: auto; }
+
+    /* ── GRAPH VIEW ── */
+    #graph-view { display: none; }
+    #graph-view.visible { display: flex; flex: 1; align-items: center; justify-content: center; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: var(--bg2); border: 1px solid var(--cyan);
+      color: var(--cyan); font-family: var(--font); font-size: 11px;
+      padding: 10px 20px; border-radius: 8px;
+      transform: translateY(60px); opacity: 0; transition: all 0.2s ease-out;
+      z-index: 9999;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── MODE TABS ── */
+    .mode-tabs { display: flex; gap: 1px; background: var(--bg3); border-radius: 8px; padding: 2px; }
+    .mode-tab { font-family: var(--font); font-size: 9px; padding: 4px 12px; border-radius: 6px; cursor: pointer; color: var(--muted); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: none; background: none; }
+    .mode-tab.active { background: var(--bg2); color: var(--cyan); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="shell">
+
+  <!-- TOPBAR -->
+  <header id="topbar">
+    <div class="logo">BRIDGE <span>SVG</span> ENGINE</div>
+    <div class="tagline">Discover · Adopt · Teach</div>
+    <div class="spacer"></div>
+    <div id="telemetry-bar">
+      <div>skills <span id="t-skills">—</span></div>
+      <div>p50 <span id="t-p50">—</span>ms</div>
+      <div>p95 <span id="t-p95">—</span>ms</div>
+      <div>runs <span id="t-runs">—</span></div>
+    </div>
+    <div class="pill" id="engine-status">● LOADING</div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div id="sidebar-header">SKILL REGISTRY</div>
+    <div id="skill-list"></div>
+    <div class="sidebar-section">VIEWS</div>
+    <div class="skill-item" onclick="showGraph()">
+      <div class="sid">system.graph</div>
+      <div class="sname">Skill Dependency Graph</div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main id="main">
+    <div id="toolbar">
+      <div id="skill-name">Select a skill</div>
+      <div id="skill-id"></div>
+      <div class="spacer"></div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="setMode('teach')">VISUALIZE</button>
+        <button class="mode-tab" onclick="setMode('run')">EXECUTE</button>
+        <button class="mode-tab" onclick="setMode('tutorial')">TUTORIAL</button>
+      </div>
+      <button class="btn" onclick="refresh()" title="Refresh">↺ REFRESH</button>
+      <button class="btn" onclick="togglePanel()">DETAIL</button>
+      <button class="btn primary" onclick="autoPlay()">▶ AUTO</button>
+    </div>
+
+    <div id="canvas">
+      <div id="svg-container"><div class="loading">● INITIALIZING SVG ENGINE…</div></div>
+      <div id="detail-panel">
+        <div class="detail-section">
+          <h4>DESCRIPTION</h4>
+          <p id="desc-text">—</p>
+        </div>
+        <div class="detail-section">
+          <h4>STEPS</h4>
+          <div id="steps-list"></div>
+        </div>
+        <div class="detail-section">
+          <h4>EXECUTION OUTPUT</h4>
+          <pre class="run-output" id="run-output">—</pre>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const ENGINE = `http://localhost:7070`;
+let skills   = [];
+let current  = null;
+let mode     = "teach";
+let autoTimer = null;
+let panelOpen = true;
+
+async function init() {
+  try {
+    const r = await fetch(`${ENGINE}/skills`);
+    const j = await r.json();
+    skills = j.skills || [];
+    renderSidebar();
+    updateTelemetry();
+    setInterval(updateTelemetry, 8000);
+    document.getElementById("engine-status").textContent = `● ${skills.length} SKILLS`;
+    document.getElementById("engine-status").style.color = "var(--cyan)";
+    if (skills.length) selectSkill(skills[0].id);
+  } catch(e) {
+    document.getElementById("svg-container").innerHTML =
+      `<div style="color:var(--pink);font-family:var(--font);font-size:12px;text-align:center">
+        ● SVG Engine offline<br><small style="color:var(--muted)">Start with: node api/server.js</small>
+      </div>`;
+    document.getElementById("engine-status").textContent = "● OFFLINE";
+    document.getElementById("engine-status").style.color = "var(--pink)";
+  }
+}
+
+function renderSidebar() {
+  const grouped = {};
+  skills.forEach(s => {
+    const group = s.tags[0] || "other";
+    (grouped[group] = grouped[group] || []).push(s);
+  });
+
+  let html = "";
+  Object.entries(grouped).forEach(([g, list]) => {
+    html += `<div class="sidebar-section">${g.toUpperCase()}</div>`;
+    list.forEach(s => {
+      html += `<div class="skill-item" id="item-${s.id.replace(/\./g,'_')}" onclick="selectSkill('${s.id}')">
+        <div class="sid">${s.id}</div>
+        <div class="sname">${s.name}</div>
+        <div class="stags">${(s.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+      </div>`;
+    });
+  });
+  document.getElementById("skill-list").innerHTML = html;
+}
+
+async function selectSkill(id) {
+  current = id;
+  document.querySelectorAll(".skill-item").forEach(el => el.classList.remove("active"));
+  const el = document.getElementById(`item-${id.replace(/\./g,'_')}`);
+  if (el) { el.classList.add("active"); el.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+
+  const skill = skills.find(s => s.id === id) || {};
+  document.getElementById("skill-name").textContent = skill.name || id;
+  document.getElementById("skill-id").textContent   = id;
+  document.getElementById("desc-text").textContent  = skill.description || "—";
+
+  await renderMode();
+  await fetchRunOutput(id);
+  renderSteps(skill.steps || []);
+}
+
+async function renderMode() {
+  if (!current) return;
+  const container = document.getElementById("svg-container");
+  container.innerHTML = `<div class="loading">● RENDERING ${current}…</div>`;
+
+  try {
+    if (mode === "teach") {
+      const r = await fetch(`${ENGINE}/teach/${current}`);
+      const svg = await r.text();
+      container.innerHTML = svg;
+    } else if (mode === "run") {
+      const r = await fetch(`${ENGINE}/run/${current}`);
+      const j = await r.json();
+      container.innerHTML = `<pre style="font-family:var(--font);font-size:11px;color:var(--cyan);background:var(--bg2);padding:24px;border-radius:12px;max-width:700px;white-space:pre-wrap">${JSON.stringify(j, null, 2)}</pre>`;
+    } else if (mode === "tutorial") {
+      const r = await fetch(`${ENGINE}/tutorial/${current}`);
+      const j = await r.json();
+      const tut = j.tutorial || {};
+      container.innerHTML = `
+        <div style="max-width:700px;width:100%">
+          <div style="margin-bottom:12px">
+            <div style="font-size:16px;font-weight:700;color:var(--text-primary)">${tut.name || current}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">${tut.description || ""}</div>
+          </div>
+          ${tut.svg || ""}
+          ${(tut.steps||[]).map((s,i)=>`
+            <div style="margin-top:12px;padding:10px 14px;background:var(--bg2);border-left:2px solid var(--cyan);border-radius:0 8px 8px 0">
+              <div style="font-size:11px;font-weight:600;color:var(--text-primary)">${i+1}. ${s.title}</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:3px">${s.detail}</div>
+            </div>`).join("")}
+        </div>`;
+    }
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--pink);font-family:var(--font);font-size:11px">Error: ${e.message}</div>`;
+  }
+}
+
+async function fetchRunOutput(id) {
+  try {
+    const r = await fetch(`${ENGINE}/run/${id}`);
+    const j = await r.json();
+    document.getElementById("run-output").textContent = JSON.stringify(j.data || j, null, 2);
+  } catch { document.getElementById("run-output").textContent = "—"; }
+}
+
+function renderSteps(steps) {
+  document.getElementById("steps-list").innerHTML = steps.map((s,i) => `
+    <div class="step-item">
+      <div class="step-title">${i+1}. ${s.title}</div>
+      <div class="step-detail">${s.detail}</div>
+    </div>`).join("") || "<div style='color:var(--muted);font-size:11px'>No steps defined</div>";
+}
+
+async function updateTelemetry() {
+  try {
+    const r = await fetch(`${ENGINE}/telemetry`);
+    const j = await r.json();
+    const t = j.telemetry || {};
+    document.getElementById("t-skills").textContent = t.skills_loaded || "—";
+    document.getElementById("t-p50").textContent    = t.p50_ms || "0";
+    document.getElementById("t-p95").textContent    = t.p95_ms || "0";
+    document.getElementById("t-runs").textContent   = t.total_executions || "0";
+  } catch {}
+}
+
+async function showGraph() {
+  current = null;
+  document.querySelectorAll(".skill-item").forEach(el => el.classList.remove("active"));
+  document.getElementById("skill-name").textContent = "Skill Dependency Graph";
+  document.getElementById("skill-id").textContent   = "system.graph";
+  const container = document.getElementById("svg-container");
+  container.innerHTML = `<div class="loading">● BUILDING GRAPH…</div>`;
+  try {
+    const r = await fetch(`${ENGINE}/graph`);
+    const svg = await r.text();
+    container.innerHTML = svg;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--pink);font-family:var(--font);font-size:11px">Graph error: ${e.message}</div>`;
+  }
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll(".mode-tab").forEach(t => t.classList.remove("active"));
+  event.target.classList.add("active");
+  renderMode();
+}
+
+function refresh() {
+  renderMode();
+  if (current) fetchRunOutput(current);
+  toast("Refreshed");
+}
+
+function togglePanel() {
+  panelOpen = !panelOpen;
+  document.getElementById("detail-panel").classList.toggle("hidden", !panelOpen);
+}
+
+let autoIdx = 0;
+function autoPlay() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; toast("Auto stopped"); return; }
+  autoTimer = setInterval(() => {
+    if (!skills.length) return;
+    autoIdx = (autoIdx + 1) % skills.length;
+    selectSkill(skills[autoIdx].id);
+  }, 4000);
+  toast("Auto cycling skills…");
+}
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+init();
+</script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

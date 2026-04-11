@@ -1,0 +1,54 @@
+{
+  "id": "content_factory",
+  "name": "AI Content Factory — Automated Media Engine",
+  "description": "Scrape trending topics, generate content with LLM, publish across platforms, track engagement.",
+  "tags": ["content", "AI", "media", "revenue", "high-value"],
+  "steps": [
+    {
+      "type": "skill",
+      "name": "ban:seo-keyword-strategist",
+      "input": { "limit": 10 },
+      "label": "Find trending topics"
+    },
+    {
+      "type": "llm",
+      "prompt": "Generate 3 high-quality blog post outlines for these trending topics: {{_prev}}. Format as JSON array with title, hook, sections[].",
+      "label": "Generate content outlines"
+    },
+    {
+      "type": "parallel",
+      "label": "Generate full articles (parallel)",
+      "steps": [
+        {
+          "type": "llm",
+          "name": "article_1",
+          "prompt": "Write a 600-word SEO article for the first topic outline: {{_prev}}",
+          "input": { "max_tokens": 800 }
+        },
+        {
+          "type": "llm",
+          "name": "article_2",
+          "prompt": "Write social media captions (LinkedIn, Twitter, TikTok) for the first topic: {{_prev}}",
+          "input": { "max_tokens": 300 }
+        }
+      ]
+    },
+    {
+      "type": "plugin",
+      "name": "crm_writer",
+      "input": { "collection": "content_queue" },
+      "label": "Queue for publishing"
+    },
+    {
+      "type": "plugin",
+      "name": "metrics_reporter",
+      "input": { "event": "content_factory_run" },
+      "label": "Track content output"
+    },
+    {
+      "type": "notify",
+      "message": "Content factory run complete. New content queued for publishing.",
+      "label": "Notify content team"
+    }
+  ]
+}
