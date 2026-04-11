@@ -75,6 +75,18 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
     const s = document.createElement('style');
     s.textContent = `
       .${PFX}root{position:fixed;bottom:20px;right:20px;z-index:999999;font-family:system-ui,-apple-system,sans-serif;}
+      .${PFX}ticket-btn{position:absolute;bottom:0;right:70px;width:36px;height:36px;border-radius:50%;background:rgba(10,21,32,.92);border:1px solid rgba(${CYAN_RGB},.3);color:${CYAN};font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 10px rgba(0,0,0,.3);}
+      .${PFX}ticket-btn:hover{background:rgba(${CYAN_RGB},.1);border-color:${CYAN};transform:scale(1.1);}
+      .${PFX}ticket-form{position:absolute;bottom:46px;right:0;width:300px;background:#0a1520;border:1px solid rgba(${CYAN_RGB},.25);border-radius:12px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.5);opacity:0;transform:scale(.9) translateY(10px);transition:all .25s;pointer-events:none;display:flex;flex-direction:column;gap:10px;}
+      .${PFX}ticket-form.${PFX}open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto;}
+      .${PFX}ticket-form h4{color:${CYAN};font-size:13px;font-weight:600;margin:0;}
+      .${PFX}ticket-form input,.${PFX}ticket-form textarea,.${PFX}ticket-form select{width:100%;padding:8px 10px;background:#050a0f;border:1px solid rgba(${CYAN_RGB},.2);border-radius:6px;color:#e0e8f0;font-size:12px;font-family:inherit;outline:none;}
+      .${PFX}ticket-form input:focus,.${PFX}ticket-form textarea:focus,.${PFX}ticket-form select:focus{border-color:${CYAN};}
+      .${PFX}ticket-form textarea{resize:vertical;min-height:60px;}
+      .${PFX}ticket-submit{background:rgba(${CYAN_RGB},.15);border:1px solid rgba(${CYAN_RGB},.3);color:${CYAN};padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;}
+      .${PFX}ticket-submit:hover{background:rgba(${CYAN_RGB},.25);}
+      .${PFX}ticket-success{display:flex;align-items:center;justify-content:center;gap:6px;color:#00e57b;font-size:13px;font-weight:600;padding:20px;}
+      .${PFX}ticket-error{color:#ff3c5a;font-size:11px;margin-top:-4px;}
       .${PFX}orb-wrap{width:${ORB_SIZE}px;height:${ORB_SIZE}px;cursor:pointer;position:relative;transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
       .${PFX}orb-wrap:hover{transform:scale(1.08);}
       .${PFX}orb-canvas{width:100%;height:100%;border-radius:50%;}
@@ -223,6 +235,28 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       this.orbWrap.appendChild(this.bubble);
       this.root.appendChild(this.orbWrap);
 
+      // ticket button
+      this.ticketBtn = el('button', 'ticket-btn');
+      this.ticketBtn.innerHTML = '&#9993;'; // envelope icon
+      this.ticketBtn.setAttribute('aria-label', 'Report Issue');
+      this.ticketBtn.addEventListener('click', (e) => { e.stopPropagation(); this._toggleTicketForm(); });
+      this.root.appendChild(this.ticketBtn);
+
+      // ticket form
+      this.ticketForm = el('div', 'ticket-form');
+      this.ticketForm.innerHTML = `<h4>Report an Issue</h4>
+        <input type="text" placeholder="Subject" class="${PFX}tf-subject">
+        <textarea placeholder="Describe the issue..." class="${PFX}tf-body"></textarea>
+        <select class="${PFX}tf-priority">
+          <option value="low">Low Priority</option>
+          <option value="medium" selected>Medium Priority</option>
+          <option value="high">High Priority</option>
+          <option value="urgent">Urgent</option>
+        </select>
+        <button class="${PFX}ticket-submit">Submit Ticket</button>`;
+      this.ticketForm.querySelector(`.${PFX}ticket-submit`).addEventListener('click', () => this._submitTicket());
+      this.root.appendChild(this.ticketForm);
+
       // panel
       this.panel = el('div', 'panel');
       this._buildPanel();
@@ -282,6 +316,67 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       this.panel.appendChild(inputRow);
     }
 
+    /* ── ticket form ──────────────────────────────────────────── */
+    _toggleTicketForm() {
+      this.ticketForm.classList.toggle(PFX + 'open');
+    }
+
+    async _submitTicket() {
+      const subjectEl = this.ticketForm.querySelector(`.${PFX}tf-subject`);
+      const bodyEl = this.ticketForm.querySelector(`.${PFX}tf-body`);
+      const priorityEl = this.ticketForm.querySelector(`.${PFX}tf-priority`);
+
+      const subject = subjectEl.value.trim();
+      const body = bodyEl.value.trim();
+      const priority = priorityEl.value;
+
+      if (!subject) { this._showTicketError('Subject is required'); return; }
+      if (!body) { this._showTicketError('Description is required'); return; }
+
+      try {
+        const token = localStorage.getItem(LS_TOKEN) || localStorage.getItem('bridge_token') || '';
+        const res = await fetch('/api/tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          credentials: 'include',
+          body: JSON.stringify({ subject, body, priority })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        // Success state
+        this.ticketForm.innerHTML = `<div class="${PFX}ticket-success">&#10003; Ticket submitted!</div>`;
+        setTimeout(() => {
+          this.ticketForm.classList.remove(PFX + 'open');
+          // Restore form
+          setTimeout(() => {
+            this.ticketForm.innerHTML = `<h4>Report an Issue</h4>
+              <input type="text" placeholder="Subject" class="${PFX}tf-subject">
+              <textarea placeholder="Describe the issue..." class="${PFX}tf-body"></textarea>
+              <select class="${PFX}tf-priority">
+                <option value="low">Low Priority</option>
+                <option value="medium" selected>Medium Priority</option>
+                <option value="high">High Priority</option>
+                <option value="urgent">Urgent</option>
+              </select>
+              <button class="${PFX}ticket-submit">Submit Ticket</button>`;
+            this.ticketForm.querySelector(`.${PFX}ticket-submit`).addEventListener('click', () => this._submitTicket());
+          }, 300);
+        }, 2000);
+      } catch (e) {
+        this._showTicketError('Failed: ' + e.message);
+      }
+    }
+
+    _showTicketError(msg) {
+      let errEl = this.ticketForm.querySelector(`.${PFX}ticket-error`);
+      if (!errEl) {
+        errEl = el('div', 'ticket-error');
+        this.ticketForm.appendChild(errEl);
+      }
+      errEl.textContent = msg;
+      setTimeout(() => { if (errEl.parentNode) errEl.remove(); }, 3000);
+    }
+
     /* ── open / close ──────────────────────────────────────────── */
     _toggle() {
       this.open = !this.open;
@@ -293,6 +388,8 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       this.open = true;
       this.panel.classList.add(PFX + 'open');
       this.orbWrap.style.display = 'none';
+      this.ticketBtn.style.display = 'none';
+      this.ticketForm.classList.remove(PFX + 'open');
       this.input.focus();
       this._scrollBottom();
       if (this.messages.length === 0) {
@@ -304,6 +401,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       this.open = false;
       this.panel.classList.remove(PFX + 'open');
       this.orbWrap.style.display = '';
+      this.ticketBtn.style.display = '';
     }
 
     /* ── messaging ─────────────────────────────────────────────── */

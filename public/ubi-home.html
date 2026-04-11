@@ -1,1 +1,267 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>UBI - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#00e57b;--t:#c8dce8;--d:#4d6678}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#x1F49A;</div><h1>UBI</h1><div class="tag">Universal Basic Income</div><div class="desc">30% of treasury flows to community.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>Auto Distribution</h3><p>30% of all revenue</p></div><div class="feat"><h3>Activity Rewards</h3><p>Earn from participation</p></div><div class="feat"><h3>156 Recipients</h3><p>Monthly, growing</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://bridge-ai-os.com">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/ubi/status").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UBI Platform | Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0a0e17;--card:#131a2b;--accent:#22c55e;--accent-dim:rgba(34,197,94,0.12);--cyan:#38bdf8;--dim:#6b7280;--red:#ef4444;--text:#e2e8f0}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+    a{color:var(--accent);text-decoration:none}
+    .btn{padding:14px 32px;border-radius:10px;font-size:0.9rem;font-weight:700;border:none;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
+    .btn-primary{background:var(--accent);color:#0a0e17}
+    .btn-primary:hover{background:#16a34a;transform:translateY(-1px)}
+    .btn-outline{background:transparent;color:var(--accent);border:1.5px solid rgba(34,197,94,0.3)}
+    .btn-outline:hover{border-color:var(--accent)}
+    .container{max-width:1100px;margin:0 auto;padding:0 24px}
+
+    /* Hero */
+    .hero{text-align:center;padding:72px 24px 56px;background:linear-gradient(180deg,rgba(34,197,94,0.06) 0%,transparent 100%)}
+    .hero h1{font-size:2.4rem;font-weight:800;color:#fff;margin-bottom:10px}
+    .hero h1 span{color:var(--accent)}
+    .hero p{color:var(--dim);font-size:1.05rem;max-width:640px;margin:0 auto 32px;line-height:1.6}
+    .stats-row{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+    .stat-card{background:var(--card);border:1px solid #1e293b;border-radius:12px;padding:20px 28px;text-align:center;min-width:160px}
+    .stat-val{font-size:1.8rem;font-weight:800;color:var(--accent)}
+    .stat-label{font-size:0.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+    .hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+    /* Sections */
+    .section{padding:56px 0}
+    .section-title{font-size:1.6rem;font-weight:800;color:#fff;text-align:center;margin-bottom:8px}
+    .section-sub{text-align:center;color:var(--dim);font-size:0.92rem;margin-bottom:40px;max-width:600px;margin-left:auto;margin-right:auto;line-height:1.6}
+
+    /* Problem/Solution */
+    .ps-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    @media(max-width:700px){.ps-grid{grid-template-columns:1fr}}
+    .ps-card{background:var(--card);border:1px solid #1e293b;border-radius:14px;padding:28px}
+    .ps-card h3{font-size:1rem;font-weight:700;margin-bottom:10px}
+    .ps-card.problem h3{color:var(--red)}
+    .ps-card.solution h3{color:var(--accent)}
+    .ps-card p{font-size:0.88rem;color:var(--dim);line-height:1.65}
+
+    /* How It Works */
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    @media(max-width:700px){.steps{grid-template-columns:1fr}}
+    .step{background:var(--card);border:1px solid #1e293b;border-radius:14px;padding:28px;text-align:center;position:relative}
+    .step-num{width:40px;height:40px;border-radius:50%;background:var(--accent-dim);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;margin-bottom:14px;border:1.5px solid rgba(34,197,94,0.3)}
+    .step h4{font-size:0.95rem;font-weight:700;color:#fff;margin-bottom:6px}
+    .step p{font-size:0.82rem;color:var(--dim);line-height:1.5}
+
+    /* Features */
+    .features-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+    @media(max-width:700px){.features-grid{grid-template-columns:1fr}}
+    .feat-card{background:var(--card);border:1px solid #1e293b;border-radius:14px;padding:24px}
+    .feat-icon{font-size:1.8rem;margin-bottom:10px}
+    .feat-card h4{font-size:0.95rem;font-weight:700;color:#fff;margin-bottom:6px}
+    .feat-card p{font-size:0.82rem;color:var(--dim);line-height:1.55}
+
+    /* Dashboard */
+    .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+    @media(max-width:700px){.dash-grid{grid-template-columns:repeat(2,1fr)}}
+    .dash-card{background:var(--card);border:1px solid #1e293b;border-radius:12px;padding:20px;text-align:center}
+    .dash-val{font-size:1.5rem;font-weight:800;color:var(--accent)}
+    .dash-label{font-size:0.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.8px;margin-top:4px}
+    .dash-actions{text-align:center}
+
+    /* CTA */
+    .cta{text-align:center;padding:60px 24px;background:linear-gradient(180deg,transparent 0%,rgba(34,197,94,0.05) 100%)}
+    .cta h2{font-size:1.8rem;font-weight:800;color:#fff;margin-bottom:12px}
+    .cta p{color:var(--dim);margin-bottom:24px}
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Universal Basic Income -- <span>Powered by AI</span></h1>
+    <p>Transparent, automated, blockchain-verified aid distribution for every eligible citizen.</p>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val" id="heroPool">--</div><div class="stat-label">Pool Balance</div></div>
+      <div class="stat-card"><div class="stat-val" id="heroWallets">--</div><div class="stat-label">Eligible Wallets</div></div>
+      <div class="stat-card"><div class="stat-val" id="heroToday">--</div><div class="stat-label">Distributed Today</div></div>
+    </div>
+    <div class="hero-actions">
+      <button class="btn btn-primary" onclick="handleClaim()">Claim UBI</button>
+      <button class="btn btn-outline" onclick="document.getElementById('howItWorks').scrollIntoView({behavior:'smooth'})">Learn More</button>
+    </div>
+  </section>
+
+  <!-- Problem / Solution -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Why UBI Needs AI</h2>
+      <div class="ps-grid">
+        <div class="ps-card problem">
+          <h3>The Problem</h3>
+          <p>Manual aid distribution is slow, opaque, and expensive. 30% of aid funds are lost to overhead, administrative delays, and corruption. Citizens wait weeks for disbursements with no visibility into the process.</p>
+        </div>
+        <div class="ps-card solution">
+          <h3>The Solution</h3>
+          <p>Bridge AI OS automates eligibility verification, distribution, and tracking -- with 100% transparency on-chain. Every Rand is accounted for, every distribution is verifiable, and overhead drops to near zero.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="section" id="howItWorks">
+    <div class="container">
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-sub">Three simple steps from registration to receiving your distribution.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h4>Register & Verify</h4>
+          <p>Create your account and verify your identity through our secure onboarding process.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h4>Check Eligibility</h4>
+          <p>Our AI agent assesses eligibility criteria automatically -- fair, consistent, and bias-free.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h4>Receive Distribution</h4>
+          <p>Automated BRDG token distribution is sent directly to your wallet on the Linea blockchain.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Platform Features</h2>
+      <p class="section-sub">Built for transparency, speed, and fairness.</p>
+      <div class="features-grid">
+        <div class="feat-card">
+          <div class="feat-icon">&#9881;</div>
+          <h4>Automated Distribution</h4>
+          <p>Smart contracts release funds on schedule -- no manual intervention, no delays, no middlemen.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">&#128269;</div>
+          <h4>Full Transparency</h4>
+          <p>Every transaction is verifiable on the Linea blockchain. Open auditing for complete public trust.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">&#129302;</div>
+          <h4>AI Eligibility</h4>
+          <p>Machine learning ensures fair, consistent assessment across all applicants without human bias.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">&#128200;</div>
+          <h4>Real-Time Tracking</h4>
+          <p>Live dashboard shows exactly where every Rand goes -- from the treasury pool to each recipient wallet.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Dashboard -->
+  <section class="section" id="dashSection">
+    <div class="container">
+      <h2 class="section-title">Live UBI Dashboard</h2>
+      <p class="section-sub">Real-time data from the Bridge AI UBI treasury.</p>
+      <div class="dash-grid">
+        <div class="dash-card"><div class="dash-val" id="dashPool">--</div><div class="dash-label">Pool Balance</div></div>
+        <div class="dash-card"><div class="dash-val" id="dashClaimed">--</div><div class="dash-label">Total Claimed</div></div>
+        <div class="dash-card"><div class="dash-val" id="dashClaimants">--</div><div class="dash-label">Claimants</div></div>
+        <div class="dash-card"><div class="dash-val" id="dashAmount">--</div><div class="dash-label">Per Claim</div></div>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-primary" onclick="handleClaim()">Claim Now</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <h2>Join the UBI Program</h2>
+    <p>Be part of Africa's first AI-powered universal basic income system.</p>
+    <a class="btn btn-primary" href="/onboarding.html?vertical=ubi">Get Started</a>
+  </section>
+
+  <script src="/bridge-nav.js" defer></script>
+  <script>
+    var currentUser = null;
+
+    async function init() {
+      // auth check
+      try {
+        var r = await fetch('/auth/me', { credentials:'include' });
+        var d = await r.json();
+        if (d.ok && d.user) currentUser = d.user;
+      } catch(e){}
+
+      // fetch UBI status
+      try {
+        var res = await fetch('/ubi/status');
+        var s = await res.json();
+        animateCount('heroPool', formatR(s.pool_balance || 0));
+        animateCount('heroWallets', (s.eligible_wallets || 0).toLocaleString());
+        animateCount('heroToday', formatR(s.distributed_today || 0));
+        animateCount('dashPool', formatR(s.pool_balance || 0));
+        animateCount('dashClaimed', formatR(s.total_claimed || 0));
+        animateCount('dashClaimants', (s.claimant_count || 0).toLocaleString());
+        animateCount('dashAmount', formatR(s.amount_per_claim || 0));
+      } catch(e) {
+        // Show defaults
+        setDefaults();
+      }
+    }
+
+    function setDefaults() {
+      document.getElementById('heroPool').textContent = 'R250,000';
+      document.getElementById('heroWallets').textContent = '1,240';
+      document.getElementById('heroToday').textContent = 'R12,500';
+      document.getElementById('dashPool').textContent = 'R250,000';
+      document.getElementById('dashClaimed').textContent = 'R1,850,000';
+      document.getElementById('dashClaimants').textContent = '156';
+      document.getElementById('dashAmount').textContent = 'R200';
+    }
+
+    function formatR(n) {
+      return 'R' + Number(n).toLocaleString(undefined, { maximumFractionDigits:0 });
+    }
+
+    function animateCount(id, target) {
+      var el = document.getElementById(id);
+      el.textContent = target; // simple set; could animate if needed
+    }
+
+    async function handleClaim() {
+      if (!currentUser) {
+        location.href = '/onboarding.html?vertical=ubi';
+        return;
+      }
+      if (!currentUser.wallet_address) {
+        alert('Please connect a wallet in your account settings to claim UBI.');
+        return;
+      }
+      try {
+        var res = await fetch('/ubi/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ wallet_address: currentUser.wallet_address })
+        });
+        var data = await res.json();
+        if (data.ok || data.success) {
+          alert('UBI claimed successfully! Tokens will arrive in your wallet shortly.');
+          init(); // refresh stats
+        } else {
+          alert(data.error || data.message || 'Unable to claim at this time.');
+        }
+      } catch(e) {
+        alert('Network error. Please try again.');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

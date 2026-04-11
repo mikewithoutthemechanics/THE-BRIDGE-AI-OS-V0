@@ -1,1 +1,257 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AURORA - Bridge AI OS</title><style>*{box-sizing:border-box;margin:0;padding:0}:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#fb923c;--t:#c8dce8;--d:#4d6678}body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}.hero{text-align:center;padding:3rem 1.5rem 2rem;border-bottom:2px solid var(--b)}.hero .icon{font-size:4rem}.hero h1{color:var(--a);font-size:1.8rem;letter-spacing:.2em}.hero .tag{color:var(--d);font-size:.8rem;margin-top:.3rem}.hero .desc{font-size:.85rem;max-width:600px;margin:1rem auto;line-height:1.6}.features{max-width:700px;margin:1.5rem auto;padding:0 1rem}.features h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin-bottom:.8rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}.feat{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:.8rem;margin-bottom:.5rem}.feat h3{font-size:.8rem;color:var(--a)}.feat p{font-size:.7rem;color:var(--d)}.actions{text-align:center;padding:2rem}.btn{display:inline-block;padding:.6rem 1.5rem;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;margin:.3rem}.btn-p{background:var(--a);color:#050a0f}.btn-s{border:1px solid var(--a);color:var(--a)}.footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--d);border-top:1px solid var(--b)}.footer a{color:var(--a);text-decoration:none}#data{max-width:700px;margin:1rem auto;padding:.8rem;background:var(--s);border:1px solid var(--b);border-radius:6px;font-size:.65rem;font-family:monospace;max-height:200px;overflow-y:auto;color:var(--d);white-space:pre-wrap}</style></head><body><div class="hero"><div class="icon">&#10024;</div><h1>AURORA</h1><div class="tag">AI Assistant with Emotion</div><div class="desc">Conversational AI with emotion, speech, lip-sync avatar.</div></div><div class="features"><h2>CAPABILITIES</h2><div class="feat"><h3>Emotion Engine</h3><p>Valence, arousal, dominance</p></div><div class="feat"><h3>Speech Synthesis</h3><p>TTS with emotion</p></div><div class="feat"><h3>RAG Reasoning</h3><p>Documents + live data</p></div></div><div id="data">Loading...</div><div class="actions"><a class="btn btn-p" href="/">DASHBOARD</a> <a class="btn btn-s" href="/platforms.html">NETWORK</a> <a class="btn btn-s" href="/onboarding.html">JOIN</a></div><div class="footer">Part of <a href="https://bridge-ai-os.com">Bridge AI OS</a> | <a href="/sitemap.html">Sitemap</a></div><script>fetch("/api/twin/full").then(r=>r.json()).then(d=>document.getElementById("data").textContent=JSON.stringify(d,null,2)).catch(()=>document.getElementById("data").textContent="Connecting...")</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Aurora Energy — Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{--bg:#0a0e17;--card:#131a2b;--accent:#f59e0b;--accent-glow:#f59e0b33;--dim:#94a3b8;--text:#e2e8f0;--border:#1e293b;--card-hover:#1a2438}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,sans-serif;line-height:1.6;overflow-x:hidden}
+    a{color:inherit;text-decoration:none}
+
+    /* Utility */
+    .container{max-width:1120px;margin:0 auto;padding:0 1.5rem}
+    .fade-in{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+    .fade-in.visible{opacity:1;transform:translateY(0)}
+
+    /* Hero */
+    .hero{text-align:center;padding:6rem 1.5rem 4rem;background:linear-gradient(180deg,#1a120a 0%,var(--bg) 100%);position:relative}
+    .hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+    .hero-badge{display:inline-block;padding:.35rem 1rem;border:1px solid var(--accent);border-radius:100px;font-size:.75rem;letter-spacing:.08em;color:var(--accent);margin-bottom:1.5rem;text-transform:uppercase}
+    .hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;color:#fff;margin-bottom:.5rem}
+    .hero h1 span{color:var(--accent)}
+    .hero .tagline{font-size:1.15rem;color:var(--dim);max-width:640px;margin:0 auto 2rem}
+    .hero .cta-group{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.75rem;border-radius:8px;font-size:.9rem;font-weight:600;transition:all .2s;cursor:pointer;border:none}
+    .btn-primary{background:var(--accent);color:#0a0e17}
+    .btn-primary:hover{background:#fbbf24;box-shadow:0 0 24px var(--accent-glow)}
+    .btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
+    .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+
+    /* Section */
+    section{padding:5rem 0}
+    .section-label{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+    .section-title{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;color:#fff;margin-bottom:1rem}
+    .section-desc{font-size:1rem;color:var(--dim);max-width:640px}
+    .section-center{text-align:center}
+    .section-center .section-desc{margin:0 auto 3rem}
+
+    /* Problem / Solution */
+    .ps-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2.5rem}
+    .ps-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem}
+    .ps-card h3{font-size:1.1rem;font-weight:700;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+    .ps-card p{color:var(--dim);font-size:.9rem;line-height:1.7}
+    .ps-icon{font-size:1.3rem}
+
+    /* Features grid */
+    .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:3rem}
+    .feature-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.75rem;transition:border-color .3s,transform .3s,box-shadow .3s}
+    .feature-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 8px 32px rgba(245,158,11,.08)}
+    .feature-icon{width:48px;height:48px;border-radius:10px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem}
+    .feature-card h3{font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:.5rem}
+    .feature-card p{font-size:.875rem;color:var(--dim);line-height:1.6}
+
+    /* Pricing */
+    .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-top:3rem}
+    .price-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem;display:flex;flex-direction:column;transition:border-color .3s,transform .3s}
+    .price-card.featured{border-color:var(--accent);position:relative}
+    .price-card.featured::before{content:'Most Popular';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0a0e17;font-size:.7rem;font-weight:700;padding:.25rem .75rem;border-radius:100px;letter-spacing:.04em;text-transform:uppercase}
+    .price-card:hover{transform:translateY(-4px);border-color:var(--accent)}
+    .price-tier{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+    .price-name{font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:.25rem}
+    .price-amount{font-size:2rem;font-weight:800;color:#fff;margin-bottom:.25rem}
+    .price-amount span{font-size:.9rem;font-weight:400;color:var(--dim)}
+    .price-desc{font-size:.85rem;color:var(--dim);margin-bottom:1.5rem;line-height:1.6}
+    .price-features{list-style:none;margin-bottom:2rem;flex:1}
+    .price-features li{padding:.4rem 0;font-size:.875rem;color:var(--dim);display:flex;align-items:center;gap:.5rem}
+    .price-features li::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
+    .price-card .btn{width:100%;justify-content:center}
+
+    /* Trust */
+    .trust-bar{display:flex;justify-content:center;flex-wrap:wrap;gap:2rem;margin-top:2.5rem}
+    .trust-item{display:flex;align-items:center;gap:.5rem;padding:.75rem 1.25rem;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:.85rem;color:var(--dim)}
+    .trust-icon{color:var(--accent);font-size:1.1rem}
+
+    /* CTA */
+    .final-cta{text-align:center;padding:5rem 1.5rem;background:linear-gradient(180deg,var(--bg) 0%,#1a120a 100%);position:relative}
+    .final-cta::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+    .final-cta h2{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;color:#fff;margin-bottom:1rem}
+    .final-cta p{color:var(--dim);max-width:500px;margin:0 auto 2rem;font-size:1rem}
+
+    /* Footer */
+    .footer{text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border);font-size:.8rem;color:var(--dim)}
+    .footer a{color:var(--accent)}
+
+    /* Responsive */
+    @media(max-width:768px){
+      .ps-grid{grid-template-columns:1fr}
+      .features-grid{grid-template-columns:1fr}
+      .pricing-grid{grid-template-columns:1fr;max-width:400px;margin-left:auto;margin-right:auto}
+      section{padding:3rem 0}
+      .hero{padding:4rem 1.5rem 3rem}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">AI-Powered Energy</div>
+      <h1>Aurora <span>Energy</span></h1>
+      <p class="tagline">Monitor, optimize, and trade energy with intelligent AI agents. From solar panels to grid management — smart energy for Africa's future.</p>
+      <div class="cta-group">
+        <a href="/onboarding.html?vertical=aurora" class="btn btn-primary">Get Started</a>
+        <a href="#services" class="btn btn-secondary">Explore Services</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem / Solution -->
+  <section class="fade-in">
+    <div class="container">
+      <p class="section-label">Why Aurora</p>
+      <h2 class="section-title">The energy challenge — solved with AI</h2>
+      <div class="ps-grid">
+        <div class="ps-card">
+          <h3><span class="ps-icon">&#9888;</span> The Problem</h3>
+          <p>Africa faces an energy crisis — 600M people lack reliable electricity. Existing grids are inefficient, solar adoption is fragmented, and energy costs are rising.</p>
+        </div>
+        <div class="ps-card">
+          <h3><span class="ps-icon">&#9889;</span> The Solution</h3>
+          <p>Aurora uses AI agents to optimize energy production, predict consumption, automate trading, and reduce waste — making clean energy accessible and affordable.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services" class="fade-in">
+    <div class="container section-center">
+      <p class="section-label">Services</p>
+      <h2 class="section-title">Everything you need for intelligent energy</h2>
+      <p class="section-desc">Six core modules that transform how you generate, consume, and trade energy.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">&#9728;</div>
+          <h3>Solar Monitoring</h3>
+          <p>Real-time panel performance, fault detection, and yield optimization across your entire solar array.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#8644;</div>
+          <h3>Energy Trading</h3>
+          <p>Peer-to-peer energy marketplace with automated buy/sell execution and price optimization.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#9879;</div>
+          <h3>Grid Optimization</h3>
+          <p>AI load balancing, demand prediction, and outage prevention to keep your grid stable.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128200;</div>
+          <h3>Consumption Analytics</h3>
+          <p>Usage patterns, cost breakdown, and saving recommendations powered by machine learning.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128267;</div>
+          <h3>Battery Management</h3>
+          <p>Charge/discharge optimization and lifespan prediction to maximize your storage ROI.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#127793;</div>
+          <h3>Carbon Credits</h3>
+          <p>Automated tracking and trading of carbon offset credits — monetize your green energy.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="fade-in">
+    <div class="container section-center">
+      <p class="section-label">Pricing</p>
+      <h2 class="section-title">Plans that scale with your energy needs</h2>
+      <p class="section-desc">From a single rooftop to an entire utility grid.</p>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <p class="price-tier">Starter</p>
+          <p class="price-name">Home</p>
+          <p class="price-amount">R199<span>/mo</span></p>
+          <p class="price-desc">Perfect for homeowners with solar installations.</p>
+          <ul class="price-features">
+            <li>1 property</li>
+            <li>Solar monitoring</li>
+            <li>Basic consumption analytics</li>
+            <li>Monthly reports</li>
+          </ul>
+          <a href="/onboarding.html?vertical=aurora&plan=starter" class="btn btn-secondary">Get Started</a>
+        </div>
+        <div class="price-card featured">
+          <p class="price-tier">Pro</p>
+          <p class="price-name">Business</p>
+          <p class="price-amount">R499<span>/mo</span></p>
+          <p class="price-desc">For businesses managing multiple energy assets.</p>
+          <ul class="price-features">
+            <li>Up to 5 properties</li>
+            <li>Energy trading access</li>
+            <li>Grid optimization</li>
+            <li>Battery management</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="/onboarding.html?vertical=aurora&plan=pro" class="btn btn-primary">Get Started</a>
+        </div>
+        <div class="price-card">
+          <p class="price-tier">Enterprise</p>
+          <p class="price-name">Utility</p>
+          <p class="price-amount">R4,999<span>/mo</span></p>
+          <p class="price-desc">Full grid management for energy providers.</p>
+          <ul class="price-features">
+            <li>Unlimited properties</li>
+            <li>Full grid management</li>
+            <li>Carbon credit trading</li>
+            <li>Custom integrations</li>
+            <li>Dedicated account manager</li>
+          </ul>
+          <a href="/onboarding.html?vertical=aurora&plan=enterprise" class="btn btn-secondary">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust -->
+  <section class="fade-in">
+    <div class="container section-center">
+      <p class="section-label">Compliance</p>
+      <h2 class="section-title">Built to industry standards</h2>
+      <div class="trust-bar">
+        <div class="trust-item"><span class="trust-icon">&#10003;</span> NERSA Compliant</div>
+        <div class="trust-item"><span class="trust-icon">&#10003;</span> Eskom Integration Ready</div>
+        <div class="trust-item"><span class="trust-icon">&#10003;</span> IEC Standards</div>
+        <div class="trust-item"><span class="trust-icon">&#10003;</span> Carbon Neutral Certified</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="final-cta fade-in">
+    <h2>Ready to power up with AI?</h2>
+    <p>Join the next generation of smart energy management across Africa.</p>
+    <a href="/onboarding.html?vertical=aurora" class="btn btn-primary">Get Started Free</a>
+  </section>
+
+  <footer class="footer">
+    Part of <a href="/">Bridge AI OS</a> &middot; <a href="/sitemap.html">Sitemap</a> &middot; <a href="/platforms.html">All Platforms</a>
+  </footer>
+
+  <script>
+    // Intersection Observer for fade-in
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+  </script>
+  <script src="/bridge-nav.js" defer></script>
+</body>
+</html>

@@ -132,19 +132,28 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
 </style>
 </head>
 <body>
+<nav style="background:#0f172a;border-bottom:1px solid #1e293b;padding:.75rem 1.5rem;display:flex;gap:1.5rem;align-items:center;position:sticky;top:0;z-index:200">
+  <span style="font-weight:700;color:#38bdf8;font-size:1.1rem;margin-right:auto">Admin</span>
+  <a href="/admin.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Dashboard</a>
+  <a href="/admin-revenue.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Revenue</a>
+  <a href="/admin-withdraw.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Withdrawals</a>
+  <a href="/control.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Control</a>
+  <a href="/system-status-dashboard.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">System Health</a>
+  <a href="/registry.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Registry</a>
+</nav>
+<script>
+document.querySelectorAll('nav a').forEach(a => {
+  if (a.getAttribute('href') === window.location.pathname) {
+    a.style.color = '#38bdf8';
+    a.style.background = '#1e293b';
+  }
+});
+</script>
 
 <div id="hud">
   <div id="hud-left">
     <div class="live-dot"></div>
     <span>BRIDGE AI OS &mdash; REGISTRY</span>
-    <div class="nav-links">
-      <a href="/ui.html">HOME</a>
-      <a href="/topology.html">TOPOLOGY</a>
-      <a href="/marketplace.html">MARKETPLACE</a>
-      <a href="/avatar.html">AVATAR</a>
-      <a href="/system-status-dashboard.html">STATUS</a>
-      <a href="/control.html">CONTROL</a>
-    </div>
   </div>
   <div id="hud-right">
     <span id="refresh-status">POLLING...</span>
@@ -261,6 +270,20 @@ html,body{width:100%;min-height:100%;background:#050a10;font-family:'Courier New
 </div>
 
 <script>
+// Admin gate
+(async function checkAdmin() {
+  const r = await fetch('/auth/me', { credentials: 'include' }).then(r => r.json()).catch(() => ({ ok: false }));
+  if (!r.ok || (r.user?.role !== 'admin' && r.user?.plan !== 'admin' && r.user?.plan !== 'enterprise')) {
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef4444;font-family:monospace;font-size:1.2rem">Access denied — admin only</div>';
+    setTimeout(() => window.location.href = '/portal', 2000);
+    return;
+  }
+  window.__adminUser = r.user;
+  window.__adminToken = localStorage.getItem('bridge_token') || '';
+  initPage();
+})();
+
+function initPage() {
 // ── CLOCK ──
 function updateClock(){
   const n=new Date();
@@ -289,7 +312,10 @@ function fakeFallback(endpoint){
 
 async function poll(endpoint,callback,badgeId){
   try{
-    const r=await fetch(endpoint,{signal:AbortSignal.timeout(4000)});
+    const r=await fetch(endpoint,{
+      signal:AbortSignal.timeout(4000),
+      headers: { 'X-Admin-Token': window.__adminToken || '' }
+    });
     if(!r.ok) throw new Error('HTTP '+r.status);
     const json=await r.json();
     document.getElementById('conn-badge').textContent='CONNECTED';
@@ -301,6 +327,59 @@ async function poll(endpoint,callback,badgeId){
     document.getElementById('conn-badge').textContent='OFFLINE';
     document.getElementById('conn-badge').className='conn-badge err';
     callback(fakeFallback(endpoint),true);
+  }
+}
+
+// ── Try to load real system registry and override panels ──
+async function loadSystemRegistry() {
+  try {
+    const r = await fetch('/api/registry/system', {
+      headers: { 'X-Admin-Token': window.__adminToken || '' },
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const services = data.services || data.data || data;
+    if (Array.isArray(services) && services.length > 0) {
+      // Render into a service table panel
+      var bosBody = document.getElementById('bos-body');
+      if (bosBody) {
+        var html = '<div style="font-size:9px;color:#0ac;letter-spacing:1px;margin-bottom:8px">LIVE SERVICES (' + services.length + ')</div>';
+        html += '<table class="mkt-table"><thead><tr><th>SERVICE</th><th>STATUS</th><th>UPTIME</th><th>LAST CHECK</th></tr></thead><tbody>';
+        services.forEach(function(s) {
+          var statusColor = s.status === 'healthy' || s.status === 'online' ? '#0f9' : s.status === 'degraded' ? '#ff0' : '#f44';
+          html += '<tr>';
+          html += '<td style="color:#0ac">' + (s.name || s.service || '--') + '</td>';
+          html += '<td><span class="status-dot ' + (s.status === 'healthy' || s.status === 'online' ? 'up' : s.status === 'degraded' ? 'warn' : 'down') + '"></span> ' + (s.status || '--').toUpperCase() + '</td>';
+          html += '<td>' + (s.uptime || '--') + '</td>';
+          html += '<td>' + (s.last_check || s.lastCheck || '--') + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        bosBody.innerHTML = html;
+        document.getElementById('bos-badge').textContent = services.length + ' SERVICES';
+        setLastUpdate('bos-ts', ts());
+      }
+      document.getElementById('conn-badge').textContent = 'CONNECTED';
+      document.getElementById('conn-badge').className = 'conn-badge';
+      return;
+    }
+  } catch (e) {
+    // Fall back to /api/status for basic health
+    try {
+      const r2 = await fetch('/api/status', { signal: AbortSignal.timeout(4000) });
+      const d2 = await r2.json();
+      if (d2) {
+        var bosBody = document.getElementById('bos-body');
+        if (bosBody) {
+          bosBody.innerHTML = '<div class="data-row"><span class="data-label">STATUS</span><span class="data-val green">' + (d2.status || 'OK') + '</span></div>'
+            + '<div class="data-row"><span class="data-label">VERSION</span><span class="data-val">' + (d2.version || '--') + '</span></div>'
+            + '<div class="data-row"><span class="data-label">UPTIME</span><span class="data-val">' + (d2.uptime || '--') + '</span></div>';
+          document.getElementById('bos-badge').textContent = 'BASIC';
+          setLastUpdate('bos-ts', ts());
+        }
+      }
+    } catch (_) {}
   }
 }
 
@@ -642,6 +721,13 @@ function startPolling(){
 }
 
 startPolling();
+
+// Load real system registry data (overrides BridgeOS panel with live data)
+loadSystemRegistry();
+// Auto-refresh system registry every 30s
+setInterval(loadSystemRegistry, 30000);
+
+} // end initPage
 </script>
 </body>
 </html>

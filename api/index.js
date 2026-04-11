@@ -1434,6 +1434,43 @@ module.exports = async (req, res) => {
     return json(res, { tickets: TICKETS, count: TICKETS.length, stats, ts: ts() });
   }
 
+  // ── /api/invoices/stats ──
+  if (p === '/api/invoices/stats' && req.method === 'GET') {
+    if (supabaseConfigured) {
+      const { data, error } = await supabase.from('invoice_stats_view').select('*').limit(1).single();
+      if (!error && data) {
+        return json(res, {
+          total_invoices: data.total_invoices || 0,
+          total_paid: +(data.total_paid || 0),
+          total_billed: +(data.total_billed || 0),
+          by_status: {
+            draft: data.draft_count || 0,
+            sent: data.sent_count || 0,
+            paid: data.paid_count || 0,
+            overdue: data.overdue_count || 0,
+            cancelled: data.cancelled_count || 0,
+          },
+          ts: ts(),
+        });
+      }
+    }
+    return json(res, { total_invoices: 0, total_paid: 0, total_billed: 0, by_status: { draft: 0, sent: 0, paid: 0, overdue: 0 }, ts: ts() });
+  }
+
+  // ── /api/invoices list ──
+  if (p === '/api/invoices' && req.method === 'GET') {
+    if (supabaseConfigured) {
+      let q = supabase.from('invoices').select('*').order('created_at', { ascending: false });
+      const status = new URL(req.url, 'http://x').searchParams.get('status');
+      if (status) q = q.eq('status', status);
+      const limit = parseInt(new URL(req.url, 'http://x').searchParams.get('limit') || '50', 10);
+      q = q.limit(limit);
+      const { data, error } = await q;
+      if (!error) return json(res, { ok: true, invoices: data || [], count: (data || []).length, ts: ts() });
+    }
+    return json(res, { ok: true, invoices: [], count: 0, ts: ts() });
+  }
+
   // ── /api/invoices/* ──
   if (p.startsWith('/api/invoices')) {
     const invoicePathMatch = p.match(/^\/api\/invoices\/([^\/]+)\/status$/);
@@ -2744,7 +2781,11 @@ module.exports = async (req, res) => {
     return json(res, {
       pool_balance: +(treasuryBalance * 0.2).toFixed(2), currency: 'ZAR',
       eligible_wallets: 47, distributed_today: +(treasuryBalance * 0.001).toFixed(2),
-      next_distribution: new Date(Date.now() + 86400000).toISOString(), ts: ts(),
+      next_distribution: new Date(Date.now() + 86400000).toISOString(),
+      total_claimed: +(treasuryBalance * 0.05).toFixed(2),
+      claimant_count: 47,
+      amount_per_claim: +(treasuryBalance * 0.001 / 47).toFixed(2),
+      ts: ts(),
     });
   }
   if (p === '/ubi/claim' && req.method === 'POST') {
@@ -3135,6 +3176,30 @@ module.exports = async (req, res) => {
         ts: ts(),
       }, 503);
     }
+  }
+
+  // ── /api/logs ──
+  if (p === '/api/logs' && req.method === 'GET') {
+    const adminToken = req.headers['x-admin-token'] || '';
+    if (!process.env.ADMIN_TOKEN || adminToken !== process.env.ADMIN_TOKEN) {
+      return json(res, { ok: false, error: 'Admin access required' }, 401);
+    }
+    const logsDir = path.join(ROOT, 'logs');
+    try {
+      if (fs.existsSync(logsDir)) {
+        const files = fs.readdirSync(logsDir).filter(f => f.endsWith('.jsonl')).sort().reverse().slice(0, 5);
+        const logs = [];
+        for (const f of files) {
+          const lines = fs.readFileSync(path.join(logsDir, f), 'utf8').trim().split('\n');
+          for (const line of lines) {
+            try { logs.push(JSON.parse(line)); } catch (_) {}
+          }
+        }
+        const limit = parseInt(new URL(req.url, 'http://x').searchParams.get('limit') || '100', 10);
+        return json(res, { ok: true, logs: logs.slice(0, limit), count: logs.length, ts: ts() });
+      }
+    } catch (_) {}
+    return json(res, { ok: true, logs: [], count: 0, ts: ts() });
   }
 
   // ── Admin Withdraw ────────────────────────────────────────────────────────
@@ -3528,6 +3593,12 @@ module.exports = async (req, res) => {
         plan: user?.plan || 'client',
       },
     });
+  }
+
+  // ── /leads redirect ──
+  if (p === '/leads') {
+    res.writeHead(301, { Location: '/api/crm/leads' });
+    return res.end();
   }
 
   // ── 404 ──

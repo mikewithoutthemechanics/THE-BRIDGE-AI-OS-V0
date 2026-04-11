@@ -197,7 +197,23 @@
     </style>
 </head>
 <body>
-<script src="/bridge-nav.js?v=2"></script>
+<nav style="background:#0f172a;border-bottom:1px solid #1e293b;padding:.75rem 1.5rem;display:flex;gap:1.5rem;align-items:center;position:sticky;top:0;z-index:100">
+  <span style="font-weight:700;color:#38bdf8;font-size:1.1rem;margin-right:auto">Admin</span>
+  <a href="/admin.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Dashboard</a>
+  <a href="/admin-revenue.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Revenue</a>
+  <a href="/admin-withdraw.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Withdrawals</a>
+  <a href="/control.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Control</a>
+  <a href="/system-status-dashboard.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">System Health</a>
+  <a href="/registry.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Registry</a>
+</nav>
+<script>
+document.querySelectorAll('nav a').forEach(a => {
+  if (a.getAttribute('href') === window.location.pathname) {
+    a.style.color = '#38bdf8';
+    a.style.background = '#1e293b';
+  }
+});
+</script>
 <div class="shell">
     <div class="header">
         <h1>Treasury Withdraw</h1>
@@ -273,8 +289,22 @@
 </div>
 
 <script>
+// Admin gate
+(async function checkAdmin() {
+  const r = await fetch('/auth/me', { credentials: 'include' }).then(r => r.json()).catch(() => ({ ok: false }));
+  if (!r.ok || (r.user?.role !== 'admin' && r.user?.plan !== 'admin' && r.user?.plan !== 'enterprise')) {
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef4444;font-family:monospace;font-size:1.2rem">Access denied — admin only</div>';
+    setTimeout(() => window.location.href = '/portal', 2000);
+    return;
+  }
+  window.__adminUser = r.user;
+  window.__adminToken = localStorage.getItem('bridge_token') || '';
+  initPage();
+})();
+
+function initPage() {
 const $ = id => document.getElementById(id);
-const adminToken = () => $('adminToken').value.trim();
+const adminToken = () => window.__adminToken || $('adminToken').value.trim();
 const headers = () => ({ 'Content-Type': 'application/json', 'x-admin-token': adminToken() });
 
 function showStatus(msg, type) {
@@ -430,8 +460,14 @@ function loadAudit() {
         });
 }
 
+// Expose to onclick handlers
+window.initiateWithdraw = initiateWithdraw;
+window.closeConfirm = closeConfirm;
+window.executeWithdraw = executeWithdraw;
+
 loadBalances();
 setInterval(loadBalances, 30000);
+} // end initPage
 </script>
 </body>
 </html>

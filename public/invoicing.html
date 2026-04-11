@@ -255,30 +255,17 @@ async function ensureAuth() {
   return false;
 }
 
-let _csrfToken = '';
-async function fetchCsrf() {
-  try {
-    const r = await fetch('/api/invoices/stats', { credentials: 'include',
-      headers: _authToken ? { Authorization: 'Bearer ' + _authToken } : {} });
-    const t = r.headers.get('X-CSRF-Token');
-    if (t) _csrfToken = t;
-  } catch {}
-}
+async function fetchCsrf() { /* no-op — API does not use CSRF tokens */ }
 
 async function apiFetch(path, opts = {}) {
   const method = (opts.method || 'GET').toUpperCase();
   const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
   if (_authToken) headers['Authorization'] = 'Bearer ' + _authToken;
-  if (['POST','PUT','DELETE','PATCH'].includes(method) && _csrfToken)
-    headers['X-CSRF-Token'] = _csrfToken;
   const res = await fetch('/api' + path, { credentials: 'include', ...opts, headers });
-  const newCsrf = res.headers.get('X-CSRF-Token');
-  if (newCsrf) _csrfToken = newCsrf;
   if (res.status === 401) {
     _authToken = ''; localStorage.removeItem('bridge_token');
-    await ensureAuth(); await fetchCsrf();
+    await ensureAuth();
     if (_authToken) headers['Authorization'] = 'Bearer ' + _authToken;
-    if (_csrfToken) headers['X-CSRF-Token'] = _csrfToken;
     const retry = await fetch('/api' + path, { credentials: 'include', ...opts, headers });
     if (!retry.ok) throw new Error(await retry.text());
     return retry.json();
@@ -473,13 +460,46 @@ async function markPaid(id) {
 }
 async function dlPdf(id, num) {
   try {
-    const headers = _authToken ? { Authorization:'Bearer '+_authToken } : {};
-    const res = await fetch('/api/invoices/'+encodeURIComponent(id)+'/pdf',{credentials:'include',headers});
-    if (!res.ok) { toast('PDF error: '+res.status,'var(--red)'); return; }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download=(num||id)+'.pdf';
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    const url = '/invoices' + (document.getElementById('filter-status').value ? '?status=' + document.getElementById('filter-status').value : '');
+    const r = await apiFetch(url);
+    const inv = (r.invoices||[]).find(i => i.id === id);
+    if (!inv) { toast('Invoice not found','var(--red)'); return; }
+    const sym = SYM[inv.currency] || inv.currency;
+    const items = inv.line_items || inv.items || [];
+    const w = window.open('', '_blank');
+    w.document.write('<!DOCTYPE html><html><head><title>Invoice '+inv.invoice_number+'</title><style>');
+    w.document.write('*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,system-ui,sans-serif;padding:2rem;max-width:800px;margin:0 auto;color:#1a1a1a;background:#fff}');
+    w.document.write('.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #e5e7eb}');
+    w.document.write('.hdr h1{font-size:1.5rem;color:#0284c7}.hdr .meta{text-align:right;font-size:.85rem;color:#6b7280}');
+    w.document.write('.client{margin-bottom:1.5rem}.client h3{font-size:.75rem;text-transform:uppercase;color:#6b7280;margin-bottom:.25rem}.client p{font-size:.9rem}');
+    w.document.write('table{width:100%;border-collapse:collapse;margin:1.5rem 0}th{background:#f9fafb;text-align:left;padding:.6rem;font-size:.75rem;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #e5e7eb}');
+    w.document.write('td{padding:.6rem;border-bottom:1px solid #f3f4f6;font-size:.85rem}.right{text-align:right}');
+    w.document.write('.totals{margin-left:auto;width:260px}.totals .row{display:flex;justify-content:space-between;padding:.3rem 0;font-size:.85rem}');
+    w.document.write('.totals .grand{font-size:1.1rem;font-weight:700;border-top:2px solid #1a1a1a;margin-top:.5rem;padding-top:.5rem}');
+    w.document.write('.status{display:inline-block;padding:3px 10px;border-radius:4px;font-size:.75rem;font-weight:600}');
+    w.document.write('.s-paid{background:#d1fae5;color:#065f46}.s-sent{background:#dbeafe;color:#1e40af}.s-draft{background:#f3f4f6;color:#6b7280}.s-overdue{background:#fee2e2;color:#991b1b}');
+    w.document.write('.notes{margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e5e7eb;font-size:.82rem;color:#6b7280}');
+    w.document.write('@media print{body{padding:1rem}}</style></head><body>');
+    w.document.write('<div class="hdr"><div><h1>BRIDGE AI</h1><p style="font-size:.8rem;color:#6b7280;margin-top:.25rem">Invoice</p></div>');
+    w.document.write('<div class="meta"><strong>'+inv.invoice_number+'</strong><br>Date: '+(inv.created_at?inv.created_at.slice(0,10):'—')+'<br>Due: '+(inv.due_date||'—')+'<br><span class="status s-'+inv.status+'">'+inv.status.toUpperCase()+'</span></div></div>');
+    w.document.write('<div class="client"><h3>Bill To</h3><p><strong>'+(inv.client_name||'—')+'</strong><br>'+(inv.client_email||'')+'</p></div>');
+    w.document.write('<table><thead><tr><th>Description</th><th class="right">Qty</th><th class="right">Unit Price</th><th class="right">Amount</th></tr></thead><tbody>');
+    items.forEach(item => {
+      const qty = item.quantity || item.qty || 1;
+      const price = item.unit_price || item.price || 0;
+      w.document.write('<tr><td>'+(item.description||item.desc||'—')+'</td><td class="right">'+qty+'</td><td class="right">'+sym+' '+price.toFixed(2)+'</td><td class="right">'+sym+' '+(qty*price).toFixed(2)+'</td></tr>');
+    });
+    w.document.write('</tbody></table>');
+    const sub = inv.subtotal || items.reduce((a,i)=>(i.quantity||i.qty||1)*(i.unit_price||i.price||0)+a,0);
+    const taxAmt = inv.tax_amount || sub * (inv.tax_rate||0.15);
+    const total = inv.total || sub + taxAmt;
+    w.document.write('<div class="totals"><div class="row"><span>Subtotal</span><span>'+sym+' '+sub.toFixed(2)+'</span></div>');
+    w.document.write('<div class="row"><span>Tax ('+((inv.tax_rate||0.15)*100).toFixed(0)+'%)</span><span>'+sym+' '+taxAmt.toFixed(2)+'</span></div>');
+    w.document.write('<div class="row grand"><span>TOTAL</span><span>'+sym+' '+total.toFixed(2)+'</span></div></div>');
+    if(inv.notes) w.document.write('<div class="notes"><strong>Notes:</strong> '+inv.notes+'</div>');
+    w.document.write('</body></html>');
+    w.document.close();
+    setTimeout(()=>w.print(), 400);
   } catch(e){ toast('PDF error: '+e.message,'var(--red)'); }
 }
 
@@ -501,6 +521,92 @@ async function loadStats() {
   await Promise.all([loadInvoices(), loadStats()]);
   setInterval(() => { loadInvoices(); loadStats(); }, 30000);
 })();
+</script>
+<!-- AI HELPER PANEL -->
+<style>
+.ai-toggle{position:fixed;bottom:1.5rem;right:1.5rem;width:48px;height:48px;border-radius:50%;
+  background:var(--accent2);border:none;color:#fff;font-size:1.3rem;cursor:pointer;
+  box-shadow:0 4px 16px rgba(2,132,199,.4);z-index:100;transition:transform .2s}
+.ai-toggle:hover{transform:scale(1.1)}
+.ai-toggle.open{background:var(--surface2);border:1px solid var(--border2)}
+.ai-panel{position:fixed;top:0;right:-380px;width:350px;height:100vh;background:var(--surface);
+  border-left:1px solid var(--border);z-index:90;display:flex;flex-direction:column;
+  transition:right .3s ease}
+.ai-panel.open{right:0}
+.ai-panel-hdr{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.ai-panel-hdr h3{font-size:.85rem;font-weight:600;color:#fff}
+.ai-panel-close{background:none;border:none;color:var(--text3);font-size:1.1rem;cursor:pointer}
+.ai-msgs{flex:1;overflow-y:auto;padding:.75rem 1rem;display:flex;flex-direction:column;gap:.6rem}
+.ai-msg{max-width:90%;padding:.55rem .8rem;border-radius:8px;font-size:.79rem;line-height:1.4;word-wrap:break-word}
+.ai-msg.user{align-self:flex-end;background:var(--accent2);color:#fff;border-bottom-right-radius:2px}
+.ai-msg.bot{align-self:flex-start;background:var(--surface2);color:var(--text);border-bottom-left-radius:2px}
+.ai-msg.typing .dots{display:inline-block}.ai-msg.typing .dots::after{content:'...';animation:dotPulse 1.2s infinite}
+@keyframes dotPulse{0%,20%{content:'.'}40%{content:'..'}60%,100%{content:'...'}}
+.ai-quick{display:flex;gap:.4rem;padding:.5rem 1rem;flex-wrap:wrap;border-top:1px solid var(--border)}
+.ai-quick button{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;
+  color:var(--text2);font-size:.68rem;padding:.3rem .55rem;cursor:pointer;font-family:var(--font)}
+.ai-quick button:hover{border-color:var(--accent);color:var(--accent)}
+.ai-input-row{display:flex;gap:.4rem;padding:.6rem 1rem;border-top:1px solid var(--border)}
+.ai-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;
+  padding:.45rem .65rem;color:#f1f5f9;font-size:.8rem;font-family:var(--font);outline:none}
+.ai-input:focus{border-color:var(--accent)}
+.ai-send{background:var(--accent2);border:none;border-radius:5px;padding:.45rem .75rem;
+  color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;font-family:var(--font)}
+</style>
+
+<button class="ai-toggle" id="aiToggle" title="AI Assistant">&#9889;</button>
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-hdr">
+    <h3>AI Finance Assistant</h3>
+    <button class="ai-panel-close" onclick="toggleAI()">&times;</button>
+  </div>
+  <div class="ai-msgs" id="aiMsgs">
+    <div class="ai-msg bot">Hi! I can help with invoices, payment follow-ups, and financial insights. Ask me anything.</div>
+  </div>
+  <div class="ai-quick">
+    <button onclick="aiQuick('Generate an invoice for my most recent client')">Generate invoice for...</button>
+    <button onclick="aiQuick('Follow up on all overdue invoices with a polite reminder')">Follow up on overdue</button>
+    <button onclick="aiQuick('Suggest optimal payment terms for a new B2B client')">Suggest payment terms</button>
+  </div>
+  <div class="ai-input-row">
+    <input type="text" class="ai-input" id="aiInput" placeholder="Ask the AI assistant..." onkeydown="if(event.key==='Enter')sendAI()"/>
+    <button class="ai-send" onclick="sendAI()">Send</button>
+  </div>
+</div>
+
+<script>
+function toggleAI(){
+  const p=document.getElementById('aiPanel');
+  const b=document.getElementById('aiToggle');
+  p.classList.toggle('open');
+  b.classList.toggle('open');
+}
+document.getElementById('aiToggle').addEventListener('click',toggleAI);
+
+function aiQuick(text){
+  document.getElementById('aiInput').value=text;
+  sendAI();
+}
+
+async function sendAI(){
+  const input=document.getElementById('aiInput');
+  const text=input.value.trim();
+  if(!text)return;
+  input.value='';
+  const msgs=document.getElementById('aiMsgs');
+  const userMsg=document.createElement('div');userMsg.className='ai-msg user';userMsg.textContent=text;msgs.appendChild(userMsg);
+  const typing=document.createElement('div');typing.className='ai-msg bot typing';typing.innerHTML='<span class="dots"></span>';msgs.appendChild(typing);
+  msgs.scrollTop=msgs.scrollHeight;
+  try{
+    const headers={'Content-Type':'application/json'};
+    if(_authToken)headers['Authorization']='Bearer '+_authToken;
+    const r=await fetch('/api/ask',{method:'POST',credentials:'include',headers,body:JSON.stringify({prompt:text,agent:'agent-biz-finance'})});
+    typing.remove();
+    if(!r.ok){const botMsg=document.createElement('div');botMsg.className='ai-msg bot';botMsg.textContent='Sorry, I could not process that request.';msgs.appendChild(botMsg);}
+    else{const d=await r.json();const botMsg=document.createElement('div');botMsg.className='ai-msg bot';botMsg.textContent=d.response||d.answer||d.text||JSON.stringify(d);msgs.appendChild(botMsg);}
+  }catch(e){typing.remove();const botMsg=document.createElement('div');botMsg.className='ai-msg bot';botMsg.textContent='Error: '+e.message;msgs.appendChild(botMsg);}
+  msgs.scrollTop=msgs.scrollHeight;
+}
 </script>
 <script src="/bridge-nav.js" defer></script>
 </body>
