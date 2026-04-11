@@ -132,7 +132,7 @@
   var logo = document.createElement('span');
   logo.className = 'bn-logo';
   logo.textContent = 'BRIDGE AI';
-  logo.onclick = function() { window.location.href = svcBase + '/applications.html'; };
+  logo.onclick = function() { window.location.href = svcBase + '/50-applications.html'; };
   bar.appendChild(logo);
 
   // ── Twin + Avatar pinned control pods ──────────────────────────────────
