@@ -831,7 +831,7 @@ module.exports = async (req, res) => {
   // ── Clerk removed — auth handled by Supabase Auth directly ──
 
   // ── Auth: Logout (invalidate token) ──
-  if (p === '/api/auth/logout' && req.method === 'POST') {
+  if ((p === '/auth/logout' || p === '/api/auth/logout') && req.method === 'POST') {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
     if (token) {
@@ -843,8 +843,8 @@ module.exports = async (req, res) => {
     return json(res, { ok: true, message: 'Signed out' });
   }
 
-  // ── Auth: Session check (/api/auth/me) ──
-  if (p === '/api/auth/me' && req.method === 'GET') {
+  // ── Auth: Session check (/auth/me or /api/auth/me) ──
+  if ((p === '/auth/me' || p === '/api/auth/me') && req.method === 'GET') {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
     if (!token) return json(res, { ok: false, error: 'Not authenticated' }, 401);
@@ -3439,7 +3439,7 @@ module.exports = async (req, res) => {
     if (req.query.industry) wizardParams.set('industry', req.query.industry);
     if (req.query.plan)     wizardParams.set('plan',     req.query.plan);
 
-    const callbackBase = `${publicUrl}/auth/callback`;
+    const callbackBase = `${publicUrl}/auth-callback`;
     const redirectTo = wizardParams.toString()
       ? `${callbackBase}?${wizardParams}`
       : callbackBase;
@@ -3517,7 +3517,7 @@ module.exports = async (req, res) => {
     // Issue our own JWT so existing middleware keeps working
     const token = makeToken({ sub: user?.id || data.user.id, email: oauthEmail });
 
-    res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`);
+    res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; SameSite=Lax; Max-Age=604800`);
     return json(res, {
       ok: true,
       token,
