@@ -124,13 +124,16 @@ app.use(express.static(path.join(ROOT, 'public')));
 
 // ── HEALTH ───────────────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {
-  try {
-    const r = await fetch('http://localhost:3000/health');
-    const j = await r.json();
-    res.json({ status: 'OK', core: j, gateway: 'up', ts: Date.now() });
-  } catch (e) {
-    res.json({ status: 'OK', gateway: 'up', core: 'unreachable', ts: Date.now() });
+  // Try unified-server (3000) first, fall back to brain (8000)
+  for (const port of [3000, 8000]) {
+    try {
+      const r = await fetch(`http://localhost:${port}/health`, { signal: AbortSignal.timeout(2000) });
+      const j = await r.json();
+      res.json({ status: 'OK', core: j, gateway: 'up', source: port, ts: Date.now() });
+      return;
+    } catch (_) {}
   }
+  res.json({ status: 'OK', gateway: 'up', core: 'unreachable', ts: Date.now() });
 });
 
 // ── SSE EVENT STREAM ─────────────────────────────────────────────────────────
