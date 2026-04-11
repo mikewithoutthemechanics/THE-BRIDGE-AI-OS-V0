@@ -24,6 +24,7 @@ jobs:
           envs: VPS_ENV_BLOB,GH_PAT
           script: |
             cd /opt/ai-os || exit 1
+            export GIT_SSL_NO_VERIFY=1
             git remote set-url origin https://x-access-token:$GH_PAT@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
             git fetch origin main
             git reset --hard origin/main
