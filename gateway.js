@@ -122,6 +122,19 @@ try {
 // Serve only the public/ directory — never expose the project root (security: #31)
 app.use(express.static(path.join(ROOT, 'public')));
 
+// ── OAUTH CONFIG (public — no auth) ─────────────────────────────────────────
+// Exposes client IDs so frontend pages can initiate OAuth without hardcoding.
+app.get('/api/config/oauth', (_req, res) => {
+  res.json({
+    googleClientId:    process.env.GOOGLE_CLIENT_ID || '',
+    githubClientId:    process.env.GITHUB_CLIENT_ID || '',
+    microsoftClientId: process.env.AZURE_CLIENT_ID || '',
+    supabaseUrl:       process.env.SUPABASE_URL || '',
+    supabaseAnonKey:   process.env.SUPABASE_ANON_KEY || '',
+    redirectBase:      process.env.BASE_URL || `https://${_req.get('host')}`,
+  });
+});
+
 // ── HEALTH ───────────────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   // Try unified-server (3000) first, fall back to brain (8000)
