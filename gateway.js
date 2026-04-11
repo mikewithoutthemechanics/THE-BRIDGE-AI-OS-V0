@@ -628,6 +628,11 @@ const BOOT_THEMES = {
   '/platforms.html': { layer: 'L0', name: 'NETWORK', theme: 'cosmic', color: '#fb923c', msg: 'Mapping platform network...' },
   '/sitemap.html': { layer: 'L0', name: 'SYSTEM MAP', theme: 'cosmic', color: '#00c8ff', msg: 'Scanning full ecosystem...' },
   '/landing.html': { layer: 'L0', name: 'BRIDGE AI', theme: 'cosmic', color: '#00c8ff', msg: 'Welcome to Bridge AI OS...' },
+  '/wizard.html': { layer: 'L0', name: 'SETUP', theme: 'cosmic', color: '#00e57b', msg: 'Configuring your AI workspace...' },
+  '/demo.html': { layer: 'L0', name: 'DEMO', theme: 'cosmic', color: '#a78bfa', msg: 'Loading interactive sandbox...' },
+  '/profile.html': { layer: 'L0', name: 'PROFILE', theme: 'cosmic', color: '#00c8ff', msg: 'Loading your control center...' },
+  '/billing.html': { layer: 'L0', name: 'BILLING', theme: 'cosmic', color: '#ffd166', msg: 'Loading subscription plans...' },
+  '/projects.html': { layer: 'L1', name: 'PROJECTS', theme: 'blueprint', color: '#00c8ff', msg: 'Loading your projects...' },
   // L1 PRODUCT
   '/marketplace.html': { layer: 'L1', name: 'MARKETPLACE', theme: 'blueprint', color: '#00c8ff', msg: 'Loading task marketplace...' },
   '/ban': { layer: 'L1', name: 'BAN ENGINE', theme: 'blueprint', color: '#ffd166', msg: 'Activating task engine...' },
@@ -716,6 +721,14 @@ const ALL_PAGES = [
 ALL_PAGES.forEach(p => {
   app.get(`/${p}.html`, (_req, res) => serveWithNav(path.join(XPUBLIC, `${p}.html`), res));
 });
+// Productization funnel pages (live in public/, not Xpublic/)
+const PUBLIC = path.join(ROOT, 'public');
+const PRODUCT_PAGES = ['wizard', 'profile', 'billing', 'demo', 'projects', 'auth-callback', 'tvm'];
+PRODUCT_PAGES.forEach(p => {
+  app.get(`/${p}.html`, (_req, res) => serveWithNav(path.join(PUBLIC, `${p}.html`), res));
+  app.get(`/${p}`, (_req, res) => serveWithNav(path.join(PUBLIC, `${p}.html`), res));
+});
+
 // Gateway sub-page
 app.get('/gateway/index.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'gateway', 'index.html'), res));
 app.get('/platforms.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'platforms.html'), res));
