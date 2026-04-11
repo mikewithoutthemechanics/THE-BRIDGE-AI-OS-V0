@@ -28,6 +28,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 const app = express();
+app.set('trust proxy', true);   // nginx sits in front — trust X-Forwarded-* headers
 
 const ROOT = __dirname;
 const SHARED_DIR = path.join(ROOT, 'shared');
@@ -131,7 +132,7 @@ app.get('/api/config/oauth', (_req, res) => {
     microsoftClientId: process.env.AZURE_CLIENT_ID || '',
     supabaseUrl:       process.env.SUPABASE_URL || '',
     supabaseAnonKey:   process.env.SUPABASE_ANON_KEY || '',
-    redirectBase:      process.env.BASE_URL || `https://${_req.get('host')}`,
+    redirectBase:      process.env.BASE_URL || `${_req.get('x-forwarded-proto') || _req.protocol}://${_req.get('x-forwarded-host') || _req.get('host')}`,
   });
 });
 
