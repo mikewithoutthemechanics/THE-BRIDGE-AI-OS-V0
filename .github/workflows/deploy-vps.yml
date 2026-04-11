@@ -43,6 +43,8 @@ jobs:
             echo "=== Verifying .env has keys ==="
             grep -c SUPABASE_URL .env
             grep -c SUPABASE_SERVICE_KEY .env
+            echo "URL length: $(grep SUPABASE_URL .env | tail -1 | wc -c)"
+            echo "KEY length: $(grep SUPABASE_SERVICE_KEY .env | tail -1 | wc -c)"
             cp .env /var/www/bridgeai/.env 2>/dev/null || true
 
             echo "=== Restarting ALL services ==="
