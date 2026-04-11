@@ -205,8 +205,8 @@ app.get('/orchestrator/status', gatewayAuth(), (req, res) => {
   });
 });
 
-// ── BILLING ───────────────────────────────────────────────────────────────────
-app.get('/billing', gatewayAuth(), async (req, res) => {
+// ── BILLING API (moved from /billing to avoid conflict with billing.html page) ─
+app.get('/api/billing/summary', gatewayAuth(), async (req, res) => {
   const treasury_balance = await db.getTreasuryBalance();
   res.json({
     source: 'live',
