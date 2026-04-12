@@ -420,6 +420,16 @@ module.exports = async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const p = url.pathname;
 
+  // ── Static HTML pages served via Express fallback ──
+  const HTML_PAGES = { '/claude-partner': 'claude-partner.html' };
+  if (HTML_PAGES[p]) {
+    try {
+      const html = fs.readFileSync(path.join(ROOT, 'public', HTML_PAGES[p]), 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(html);
+    } catch(e) { /* fall through */ }
+  }
+
   // ── Health ──
   if (p === '/health') {
     return json(res, { status: 'OK', gateway: 'up', core: 'serverless', ts: ts() });
