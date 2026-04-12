@@ -357,8 +357,12 @@ document.querySelectorAll('nav a').forEach(a => {
 
     <script>
 (async function checkAdmin() {
-  const r = await fetch('/auth/me', { credentials: 'include' }).then(r => r.json()).catch(() => ({ ok: false }));
-  if (!r.ok || (r.user?.role !== 'admin' && r.user?.plan !== 'admin' && r.user?.plan !== 'enterprise')) {
+  const _tok = localStorage.getItem('bridge_token') || '';
+  const _opts = { credentials: 'include' };
+  if (_tok) _opts.headers = { Authorization: 'Bearer ' + _tok };
+  const r = await fetch('/auth/me', _opts).then(function(res){ return res.json(); }).catch(function(){ return { ok: false }; });
+  const _role = (r.user && r.user.role) || ''; const _plan = (r.user && r.user.plan) || '';
+  if (!r.ok || !(_role === 'admin' || _role === 'superadmin' || _plan === 'admin' || _plan === 'enterprise')) {
     document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef4444;font-family:monospace;font-size:1.2rem">Access denied — admin only</div>';
     setTimeout(() => window.location.href = '/portal', 2000);
     return;

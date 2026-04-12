@@ -226,14 +226,20 @@ document.querySelectorAll('nav a').forEach(a => {
     <script>
 // Admin gate
 (async function checkAdmin() {
-  const r = await fetch('/auth/me', { credentials: 'include' }).then(r => r.json()).catch(() => ({ ok: false }));
-  if (!r.ok || (r.user?.role !== 'admin' && r.user?.plan !== 'admin' && r.user?.plan !== 'enterprise')) {
+  const tok = localStorage.getItem('bridge_token') || '';
+  const fetchOpts = { credentials: 'include' };
+  if (tok) fetchOpts.headers = { Authorization: 'Bearer ' + tok };
+  const r = await fetch('/auth/me', fetchOpts).then(function(res){ return res.json(); }).catch(function(){ return { ok: false }; });
+  const role = (r.user && r.user.role) || '';
+  const plan = (r.user && r.user.plan) || '';
+  const isAdmin = role === 'admin' || role === 'superadmin' || plan === 'admin' || plan === 'enterprise';
+  if (!r.ok || !isAdmin) {
     document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef4444;font-family:monospace;font-size:1.2rem">Access denied — admin only</div>';
-    setTimeout(() => window.location.href = '/portal', 2000);
+    setTimeout(function(){ window.location.href = '/portal'; }, 2000);
     return;
   }
   window.__adminUser = r.user;
-  window.__adminToken = localStorage.getItem('bridge_token') || '';
+  window.__adminToken = tok;
   initPage();
 })();
 
