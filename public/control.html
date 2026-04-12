@@ -472,50 +472,64 @@ function showToast(msg, color) {
   setTimeout(function() { toast.remove(); }, 4000);
 }
 
-// ── Fetch real treasury data from API ──
+// ── Fetch real live data from APIs ──
 async function fetchTreasuryData() {
+  // 1. Real revenue MTD from analytics overview
+  try {
+    var aRes = await fetch('/api/analytics/overview');
+    var a = await aRes.json();
+    if (a && a.ok !== false) {
+      // Revenue from subscriptions (ZAR → USD at 18:1 for display)
+      var revRaw = a.revenue ? (a.revenue.mtd || 0) : 0;
+      var rev = revRaw;
+      var costs = a.costs ? (a.costs.mtd || 0) : 0;
+      if (rev > 0) {
+        document.getElementById('revMtd').textContent = fmt(rev);
+        document.getElementById('costMtd').textContent = fmt(costs);
+        document.getElementById('netMtd').textContent = fmt(rev - costs);
+        treasury.revenueMtd = rev;
+        treasury.costsMtd = costs;
+      }
+    }
+  } catch (_) {}
+
+  // 2. Treasury balance
   try {
     var res = await fetch('/api/treasury/status', { headers: { 'X-Admin-Token': window.__adminToken } });
     var d = await res.json();
     if (d && (d.balance !== undefined || d.totalBalance !== undefined)) {
       var bal = d.totalBalance || d.balance || 0;
-      document.getElementById('balanceDisplay').textContent = fmt(bal);
-      // Bucket allocations
-      var buckets = d.buckets || d.allocations || {};
-      if (typeof buckets === 'object' && !Array.isArray(buckets)) {
-        var ops = buckets.ops || bal * 0.45;
-        var growth = buckets.growth || bal * 0.15;
-        var reserve = buckets.reserve || bal * 0.15;
-        var founder = buckets.founder || bal * 0.25;
-        document.getElementById('revMtd').textContent = fmt(d.revenueMtd || d.revenue_mtd || 0);
-        document.getElementById('costMtd').textContent = fmt(d.costsMtd || d.costs_mtd || 0);
-        document.getElementById('netMtd').textContent = fmt((d.revenueMtd || 0) - (d.costsMtd || 0));
+      if (bal > 0) {
+        document.getElementById('balanceDisplay').textContent = fmt(bal);
+        treasury.balance = bal;
       }
-      // Recent payments
-      if (d.recentPayments && Array.isArray(d.recentPayments)) {
-        var ledgerBody = document.getElementById('ledgerBody');
-        ledgerBody.innerHTML = '';
-        d.recentPayments.slice(0, 20).forEach(function(tx) {
-          var cls = (tx.amount || 0) >= 0 ? 'green' : 'red';
-          var typeClass = tx.type === 'subscription' ? 'badge-green' : tx.type === 'cost' ? 'badge-red' : 'badge-yellow';
-          ledgerBody.innerHTML += '<tr><td style="white-space:nowrap;color:var(--text-dim)">' + (tx.time || tx.created_at || '--') + '</td>'
-            + '<td><span class="badge ' + typeClass + '"><span class="dot"></span>' + (tx.type || 'payment') + '</span></td>'
-            + '<td>' + (tx.desc || tx.description || '--') + '</td>'
-            + '<td style="color:var(--' + cls + ')">' + fmt(Math.abs(tx.amount || 0)) + '</td>'
-            + '<td>' + fmt(tx.balance || 0) + '</td></tr>';
-        });
+      // Revenue fallback from treasury if analytics didn't have it
+      var revT = d.revenueMtd || d.revenue_mtd || d.mtd_revenue || 0;
+      var costsT = d.costsMtd || d.costs_mtd || d.mtd_costs || 0;
+      if (revT > 0 && treasury.revenueMtd === (defaultTreasury.revenueMtd)) {
+        document.getElementById('revMtd').textContent = fmt(revT);
+        document.getElementById('costMtd').textContent = fmt(costsT);
+        document.getElementById('netMtd').textContent = fmt(revT - costsT);
       }
       addEvent('TREASURY', 'system', 'Treasury data refreshed from API (balance: ' + fmt(bal) + ')');
     }
-  } catch (e) {
-    addEvent('TREASURY', 'system', 'Treasury API unavailable — using local data');
+  } catch (_) {
+    addEvent('TREASURY', 'system', 'Treasury API unavailable — using cached data');
   }
 
-  // Also try fetching ledger
+  // 3. Real payments ledger
   try {
     var lRes = await fetch('/api/treasury/ledger', { headers: { 'X-Admin-Token': window.__adminToken } });
     var lData = await lRes.json();
     var entries = lData.entries || lData.ledger || lData.data || [];
+    if (!Array.isArray(entries) || entries.length === 0) {
+      // Fallback: pull directly from payments table via invoices endpoint
+      var pRes = await fetch('/api/invoices');
+      var pData = await pRes.json();
+      entries = (pData.invoices || []).map(function(p) {
+        return { time: (p.created_at || '').slice(0,19).replace('T',' '), type: 'payment', desc: p.reference || p.client || 'Payment', amount: p.amount || 0, balance: 0 };
+      });
+    }
     if (Array.isArray(entries) && entries.length > 0) {
       var ledgerBody = document.getElementById('ledgerBody');
       ledgerBody.innerHTML = '';
@@ -524,11 +538,57 @@ async function fetchTreasuryData() {
         var cls = amt >= 0 ? 'green' : 'red';
         var typeClass = tx.type === 'subscription' ? 'badge-green' : tx.type === 'cost' ? 'badge-red' : tx.type === 'reward' ? 'badge-purple' : 'badge-yellow';
         ledgerBody.innerHTML += '<tr><td style="white-space:nowrap;color:var(--text-dim)">' + (tx.time || tx.date || tx.created_at || '--') + '</td>'
-          + '<td><span class="badge ' + typeClass + '"><span class="dot"></span>' + (tx.type || tx.bucket || 'payment') + '</span></td>'
+          + '<td><span class="badge ' + typeClass + '"><span class="dot"></span>' + (tx.type || 'payment') + '</span></td>'
           + '<td>' + (tx.desc || tx.description || '--') + '</td>'
           + '<td style="color:var(--' + cls + ')">' + (amt >= 0 ? '+' : '') + fmt(Math.abs(amt)) + '</td>'
           + '<td>' + fmt(tx.balance || tx.running_balance || 0) + '</td></tr>';
       });
+    }
+  } catch (_) {}
+
+  // 4. Real ABAAS agent stats
+  try {
+    var abRes = await fetch('/api/abaas/agents');
+    var abData = await abRes.json();
+    if (abData && abData.agents && Array.isArray(abData.agents)) {
+      abData.agents.forEach(function(a) {
+        var card = document.querySelector('[data-agent="' + a.id + '"]');
+        if (card) {
+          var taskEl = card.querySelector('.agent-tasks');
+          if (taskEl) taskEl.textContent = 'Tasks: ' + a.tasks_total;
+          var statusEl = card.querySelector('.agent-status');
+          if (statusEl) { statusEl.textContent = a.status.toUpperCase(); statusEl.className = 'agent-status badge ' + (a.status === 'active' ? 'badge-green' : 'badge-yellow'); }
+        }
+      });
+    }
+  } catch (_) {}
+}
+
+// ── Poll real pipeline + ABAAS events (replaces fake random feed) ──
+var _lastPipelineTs = null;
+var _lastAbaasLog = 0;
+async function fetchLiveEvents() {
+  try {
+    var pRes = await fetch('/api/pipeline/log');
+    var pData = await pRes.json();
+    var events_raw = pData.events || [];
+    events_raw.slice(-5).forEach(function(e) {
+      if (e.ts !== _lastPipelineTs) {
+        _lastPipelineTs = e.ts;
+        var typeMap = { intake:'LEADS', qualify:'LEADS', nurture:'LEADS', close:'DISPATCH', reinvest:'TREASURY', abaas:'TASKS', aoe:'TREASURY', pipeline:'DISPATCH' };
+        addEvent(typeMap[e.stage] || 'DISPATCH', e.stage, e.msg);
+      }
+    });
+  } catch (_) {}
+  try {
+    var abRes = await fetch('/api/abaas/log');
+    var abData = await abRes.json();
+    var log = abData.log || [];
+    if (log.length > _lastAbaasLog) {
+      log.slice(_lastAbaasLog).slice(-3).forEach(function(entry) {
+        addEvent('TASKS', 'abaas-cycle', 'Cycle ' + entry.cycle + ' — ' + entry.tasks + ' tasks | ' + (entry.revenue || 0) + ' BRDG revenue');
+      });
+      _lastAbaasLog = log.length;
     }
   } catch (_) {}
 }
@@ -1008,6 +1068,8 @@ function refreshAll() {
   renderAll();
   renderServices();
   updateGauges();
+  fetchTreasuryData();
+  fetchLiveEvents();
   addEvent('DISPATCH', 'system', 'Manual refresh triggered');
 }
 
@@ -1093,12 +1155,14 @@ async function init() {
     for (let i = 0; i < 15; i++) addEvent();
   }
 
-  // Polling
-  setInterval(() => addEvent(), 3000);
+  // Polling — real data, no simulation
+  setInterval(fetchLiveEvents, 8000);         // pipeline + ABAAS events every 8s
   setInterval(() => { renderServices(); updateGauges(); }, 10000);
   setInterval(simulateTasks, 5000);
-  // Re-fetch live treasury data every 30s
-  setInterval(fetchTreasuryData, 30000);
+  setInterval(fetchTreasuryData, 30000);      // revenue MTD + balance every 30s
+
+  // Initial live event fetch
+  fetchLiveEvents();
 }
 
 // Expose functions to onclick handlers
