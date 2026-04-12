@@ -797,6 +797,7 @@ function requireAuth(req, res, next) {
     '/api/version', // if exists
     '/api/platform/', // platform layer handles its own auth via requireUser()
     '/api/twin/',     // twin layer handles its own auth via resolveUser()
+    '/api/siwe/',     // SIWE is public — no token needed to get nonce or verify
   ];
   
   if (publicEndpoints.some(endpoint => req.path.startsWith(endpoint))) {
@@ -1797,6 +1798,7 @@ const shortRoutes = {
   '/projects': '/projects.html',
   '/auth-callback': '/auth-callback.html',
   '/tvm': '/tvm.html',
+  '/gateway': '/gateway.html',
 };
 Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));
@@ -1855,6 +1857,14 @@ const { handlePlatform } = require('./api/platform');
 app.all('/api/platform/{*path}', async (req, res, next) => {
   const handled = await handlePlatform(req, res);
   if (handled !== null) return; // platform handler wrote the response
+  next();
+});
+
+// ================= SIWE Authentication Layer (/api/siwe/*) =================
+const { handleSiwe } = require('./api/siwe');
+app.all('/api/siwe/{*path}', async (req, res, next) => {
+  const handled = await handleSiwe(req, res);
+  if (handled !== null) return;
   next();
 });
 

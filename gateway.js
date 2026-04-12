@@ -747,6 +747,7 @@ app.get('/aoe-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'a
 // ── New core pages (live in public/, not Xpublic/) ───────────────────────────
 app.get('/activate.html',  (_req, res) => res.sendFile(path.join(ROOT, 'public', 'activate.html')));
 app.get('/dashboard.html', (_req, res) => res.sendFile(path.join(ROOT, 'public', 'dashboard.html')));
+app.get('/gateway.html',   (_req, res) => res.sendFile(path.join(ROOT, 'public', 'gateway.html')));
 app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
 app.get('/view-logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
 // All dynamic pages (subdomain homes + imported BridgeLiveWall + everything)
@@ -1810,6 +1811,27 @@ app.all('/api/twin/*path', async (req, res) => {
   }
 });
 
+// ── SIWE API — proxy /api/siwe/* to unified-server (port 3000) ──────────────
+app.all('/api/siwe/*path', async (req, res) => {
+  const url = `http://localhost:3000${req.originalUrl}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
+    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+    if (req.headers['cookie']) opts.headers['Cookie'] = req.headers['cookie'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    // Forward Set-Cookie headers from the auth response
+    const setCookie = r.headers.get('set-cookie');
+    if (setCookie) res.setHeader('Set-Cookie', setCookie);
+    const ct = r.headers.get('content-type') || 'application/json';
+    const text = await r.text();
+    res.status(r.status).set('Content-Type', ct).send(text);
+  } catch (e) {
+    res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
+  }
+});
+
 // ── PLATFORM API — proxy /api/platform/* to unified-server (port 3000) ──────
 app.all('/api/platform/*path', async (req, res) => {
   const url = `http://localhost:3000${req.originalUrl}`;
@@ -1923,6 +1945,7 @@ const GATEWAY_SHORT_ROUTES = {
   '/face-facs': '/anatomical_face_facs.html',
   '/face-tension': '/anatomical_face_tension_balanced.html',
   '/face-vector': '/anatomical_face_vector_muscle.html',
+  '/gateway': '/gateway.html',
 };
 Object.entries(GATEWAY_SHORT_ROUTES).forEach(([short, target]) => {
   app.get(short, (_req, res) => res.redirect(target));

@@ -197,6 +197,9 @@ const { handlePlatform } = require('./platform');
 // ── Digital Twin Layer ────────────────────────────────────────────────────────
 const { handleTwin } = require('./twin');
 
+// ── SIWE Authentication Layer ─────────────────────────────────────────────────
+const { handleSiwe } = require('./siwe');
+
 // ── Zero-Trust Verification Layer ──────────────────────────────────────────
 let zt, proofStore, chainVerify;
 try {
