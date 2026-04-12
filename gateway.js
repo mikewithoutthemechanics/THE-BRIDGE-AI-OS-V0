@@ -525,9 +525,10 @@ async function proxyToAuth(req, res) {
 }
 
 // Auth routes — proxy to dedicated auth service on port 5001
-app.post('/auth/register', (req, res) => proxyToAuth(req, res));
-app.post('/auth/login',    (req, res) => proxyToAuth(req, res));
-app.get('/auth/verify',    (req, res) => proxyToAuth(req, res));
+app.post('/auth/register',       (req, res) => proxyToAuth(req, res));
+app.post('/auth/login',          (req, res) => proxyToAuth(req, res));
+app.get('/auth/verify',          (req, res) => proxyToAuth(req, res));
+app.post('/auth/token-exchange', (req, res) => proxyToAuth(req, res));
 
 // Audit endpoints
 app.get('/auth/audit/root',       (req, res) => proxyToAuth(req, res));

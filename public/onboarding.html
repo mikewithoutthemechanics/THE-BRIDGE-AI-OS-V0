@@ -192,6 +192,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     const data = await res.json();
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
+      document.cookie = 'bridge_token=' + data.token + ';path=/;max-age=2592000;SameSite=Lax';
       showMsg('reg-msg', 'Account created! Loading your dashboard...', true);
       const u = data.user || {};
       localStorage.setItem('bridge_user', JSON.stringify({
@@ -237,6 +238,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
+      document.cookie = 'bridge_token=' + data.token + ';path=/;max-age=2592000;SameSite=Lax';
       showMsg('login-msg', 'Signed in! Loading your dashboard...', true);
       const lu = data.user || {};
       localStorage.setItem('bridge_user', JSON.stringify({

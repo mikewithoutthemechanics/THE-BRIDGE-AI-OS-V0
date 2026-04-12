@@ -113,14 +113,43 @@ function verifyAccess(token) {
   }
 }
 
-// Auth middleware
+// Auth middleware — tries Bridge JWT first, then Supabase JWT (for OAuth users)
 async function authMiddleware(req, res, next) {
   const token = extractBearerToken(req);
+
+  // Try Bridge JWT
   const payload = verifyAccess(token);
-  if (!payload) return res.status(401).json({ ok: false, error: 'Missing or invalid auth token' });
-  req.user = payload;
-  req.token = token;
-  next();
+  if (payload) {
+    req.user = payload;
+    req.token = token;
+    return next();
+  }
+
+  // Fallback: Supabase JWT (OAuth users whose bridge_token is a Supabase access_token)
+  if (token) {
+    try {
+      const { supabase: supa } = require('./lib/supabase');
+      const { data: { user: supaUser }, error } = await supa.auth.getUser(token);
+      if (supaUser && !error) {
+        let dbUser = await userDb.getUserByEmail(supaUser.email);
+        if (!dbUser) {
+          dbUser = await userDb.createUser(
+            supaUser.email,
+            supaUser.user_metadata?.name || supaUser.user_metadata?.full_name || null,
+            'supabase',
+            supaUser.id,
+          );
+        }
+        if (dbUser) {
+          req.user = { sub: dbUser.id, email: dbUser.email, role: dbUser.role };
+          req.token = token;
+          return next();
+        }
+      }
+    } catch (_) {}
+  }
+
+  return res.status(401).json({ ok: false, error: 'Missing or invalid auth token' });
 }
 
 // ── Health ───────────────────────────────────────────────────────────────────
@@ -265,6 +294,35 @@ app.post('/auth/refresh', async (req, res) => {
   const newRefresh = signRefreshToken(user);
 
   res.json({ ok: true, token: newToken, refresh_token: newRefresh });
+});
+
+// POST /auth/token-exchange — convert a Supabase access_token to a Bridge JWT
+// Called by auth-callback.html implicit flow so all sessions use Bridge JWTs
+app.post('/auth/token-exchange', async (req, res) => {
+  const { access_token } = req.body || {};
+  if (!access_token) return res.status(400).json({ ok: false, error: 'access_token required' });
+  try {
+    const { supabase: supa } = require('./lib/supabase');
+    const { data: { user: supaUser }, error } = await supa.auth.getUser(access_token);
+    if (!supaUser || error) return res.status(401).json({ ok: false, error: 'Invalid Supabase token' });
+
+    let dbUser = await userDb.getUserByEmail(supaUser.email);
+    if (!dbUser) {
+      dbUser = await userDb.createUser(
+        supaUser.email,
+        supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || null,
+        'supabase',
+        supaUser.id,
+      );
+    }
+    if (!dbUser) return res.status(500).json({ ok: false, error: 'User lookup failed' });
+
+    const token = signAccessToken(dbUser);
+    const refreshToken = signRefreshToken(dbUser);
+    res.json({ ok: true, token, refresh_token: refreshToken, user: sanitizeUser(dbUser) });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // POST /auth/google

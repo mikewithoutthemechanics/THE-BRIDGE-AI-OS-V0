@@ -147,19 +147,28 @@
         }
       }
 
-      // ── Implicit flow: token already in hash ─────────────────────────────
+      // ── Implicit flow: exchange Supabase token → Bridge JWT ─────────────
       if (accessToken) {
-        // Store Supabase access token directly; the server already set the cookie via exchange-code,
-        // but for implicit flow we just store it locally and redirect.
+        try {
+          const exchRes = await fetch('/auth/token-exchange', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_token: accessToken }),
+          });
+          const exchData = await exchRes.json();
+          if (exchData.ok && exchData.token) {
+            return handleSuccess(exchData.token, exchData.user);
+          }
+        } catch (_) {}
+        // Fallback: store Supabase token directly (handled by auth/me Supabase fallback)
         localStorage.setItem('bridge_token', accessToken);
         const user = {};
         try {
-          // Decode JWT payload (no verification — just for display)
           const b64 = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
           const p = JSON.parse(atob(b64));
           user.email = p.email || '';
           user.id    = p.sub   || '';
-        } catch (_) { /* ignore */ }
+        } catch (_) {}
         return handleSuccess(accessToken, user);
       }
 
