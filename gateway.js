@@ -1862,6 +1862,43 @@ app.post('/api/treasury/reconcile', async (_req, res) => {
   }
 });
 
+// Full financial provisions + projections
+app.get('/api/financials/provisions', async (_req, res) => {
+  try {
+    const fin = require('./lib/financial-engine');
+    const data = await fin.calculate();
+    res.json(zt.signResponse({ ok: true, ...data }, 'api-response'));
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Summary shortcut — costs + burn + break-even
+app.get('/api/financials/summary', async (_req, res) => {
+  try {
+    const fin = require('./lib/financial-engine');
+    const data = await fin.calculate();
+    res.json({
+      ok: true,
+      users:        data.users,
+      revenue:      { accrued: data.revenue.accrued, netProvision: data.revenue.netProvision, payingUsers: data.revenue.payingUsers },
+      costs:        { total: data.costs.total, fixed: data.costs.fixed.total, breakdown: data.costs.fixed.byCategory },
+      profitability:{ ebitda: data.profitability.ebitda, burnRate: data.profitability.burnRateMtd, profitable: data.profitability.profitable },
+      breakEven:    data.breakEven,
+      scenarios:    {
+        actual:       data.projections.actual,
+        conservative: data.projections.conservative,
+        base:         data.projections.base,
+        optimistic:   data.projections.optimistic,
+      },
+      brdgTreasury: data.brdgTreasury,
+      asOf: data.asOf,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 app.get('/api/metrics/vault', async (_req, res) => {
   try {
     const vault = await chainVerify.getVerifiedVaultBuckets();
