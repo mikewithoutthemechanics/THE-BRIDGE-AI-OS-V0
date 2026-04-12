@@ -251,17 +251,32 @@ ALTER TABLE user_modules         ENABLE ROW LEVEL SECURITY;
 
 -- Service role bypasses RLS — app uses service_role key
 -- Users can read their own data via auth.uid() if using anon key
-CREATE POLICY IF NOT EXISTS "Users read own lifecycle events"
-  ON lifecycle_events FOR SELECT USING (auth.uid()::text = user_id::text);
+-- Note: CREATE POLICY does not support IF NOT EXISTS — use DO block to skip if already exists
+DO $$ BEGIN
 
-CREATE POLICY IF NOT EXISTS "Users read own subscriptions"
-  ON user_subscriptions FOR SELECT USING (auth.uid()::text = user_id::text);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own lifecycle events' AND tablename = 'lifecycle_events') THEN
+    CREATE POLICY "Users read own lifecycle events"
+      ON lifecycle_events FOR SELECT USING (auth.uid()::text = user_id::text);
+  END IF;
 
-CREATE POLICY IF NOT EXISTS "Users read own invoices"
-  ON invoices FOR SELECT USING (auth.uid()::text = user_id::text);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own subscriptions' AND tablename = 'user_subscriptions') THEN
+    CREATE POLICY "Users read own subscriptions"
+      ON user_subscriptions FOR SELECT USING (auth.uid()::text = user_id::text);
+  END IF;
 
-CREATE POLICY IF NOT EXISTS "Users read own wallet"
-  ON wallet_balances FOR SELECT USING (auth.uid()::text = user_id::text);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own invoices' AND tablename = 'invoices') THEN
+    CREATE POLICY "Users read own invoices"
+      ON invoices FOR SELECT USING (auth.uid()::text = user_id::text);
+  END IF;
 
-CREATE POLICY IF NOT EXISTS "Users read own modules"
-  ON user_modules FOR SELECT USING (auth.uid()::text = user_id::text);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own wallet' AND tablename = 'wallet_balances') THEN
+    CREATE POLICY "Users read own wallet"
+      ON wallet_balances FOR SELECT USING (auth.uid()::text = user_id::text);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own modules' AND tablename = 'user_modules') THEN
+    CREATE POLICY "Users read own modules"
+      ON user_modules FOR SELECT USING (auth.uid()::text = user_id::text);
+  END IF;
+
+END $$;
