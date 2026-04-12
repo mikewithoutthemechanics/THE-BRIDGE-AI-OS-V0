@@ -2255,9 +2255,12 @@ module.exports = async (req, res) => {
 
   // ── /api/wallet/balance ──
   if (p === '/api/wallet/balance') {
+    const liveBalance = await db.getTreasuryBalance();
+    // Withdrawable = 5% of treasury (held for operator). No synthetic pending.
+    const withdrawable = +(liveBalance * 0.05).toFixed(2);
     return json(res, {
-      balance: +(treasuryBalance * 0.05).toFixed(2), currency: 'ZAR',
-      pending: 82.50, available: +(treasuryBalance * 0.05 - 82.50).toFixed(2), ts: ts(),
+      balance: withdrawable, currency: 'ZAR',
+      pending: 0, available: withdrawable, ts: ts(),
     });
   }
 
