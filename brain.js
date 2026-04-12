@@ -1329,6 +1329,23 @@ app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }
       audit('payfast_webhook_treasury_error', 'payfast', error.message);
     }
 
+    // Auto-chain into payment_proofs (revenue dashboard source of truth)
+    try {
+      const proofStore = require('./lib/proof-store');
+      await proofStore.recordPayment({
+        id: 'pf_' + pf_payment_id,
+        amount: parseFloat(amount_gross || 0),
+        currency: 'ZAR',
+        source: 'payfast',
+        webhookId: pf_payment_id,
+        webhookSignature: { signature },
+        timestamp: new Date().toISOString(),
+        meta: { item_name, custom_str1: req.body.custom_str1, email: req.body.email_address },
+      });
+    } catch (proofErr) {
+      console.warn('[PayFast Webhook] proof-chain record failed:', proofErr.message);
+    }
+
     // Send confirmation email
     const meta = (() => {
       const raw = req.body.custom_str1 || '';
@@ -1388,6 +1405,20 @@ app.post('/api/payments/webhook/paystack', (req, res) => {
     state.treasury.balance += amt;
     state.treasury.earned += amt;
     broadcast({ type: 'payment_received', rail: 'paystack', amount: amt });
+    // Auto-chain into payment_proofs
+    try {
+      const proofStore = require('./lib/proof-store');
+      proofStore.recordPayment({
+        id: 'ps_' + (data?.reference || data?.id || Date.now()),
+        amount: amt,
+        currency: (data?.currency || 'ZAR').toUpperCase(),
+        source: 'paystack',
+        webhookId: data?.reference || null,
+        webhookSignature: null,
+        timestamp: data?.paid_at || new Date().toISOString(),
+        meta: { email: data?.customer?.email, plan: data?.metadata?.plan },
+      }).catch(e => console.warn('[Paystack Webhook] proof-chain:', e.message));
+    } catch (_) {}
   }
   res.json({ ok: true });
 });
@@ -1402,6 +1433,20 @@ app.post('/api/payments/webhook/crypto', (req, res) => {
   const { amount, currency, tx_hash } = req.body || {};
   state.treasury.balance += parseFloat(amount || 0);
   state.treasury.earned += parseFloat(amount || 0);
+  // Auto-chain into payment_proofs
+  try {
+    const proofStore = require('./lib/proof-store');
+    proofStore.recordPayment({
+      id: 'cr_' + (tx_hash || Date.now()),
+      amount: parseFloat(amount || 0),
+      currency: (currency || 'ETH').toUpperCase(),
+      source: 'crypto',
+      webhookId: tx_hash || null,
+      webhookSignature: null,
+      timestamp: new Date().toISOString(),
+      meta: { tx_hash },
+    }).catch(e => console.warn('[Crypto Webhook] proof-chain:', e.message));
+  } catch (_) {}
   broadcast({ type: 'payment_received', rail: 'crypto', amount, currency, tx_hash });
   res.json({ ok: true });
 });
