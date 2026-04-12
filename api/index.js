@@ -101,6 +101,21 @@ try { autoLoop = require('../lib/auto-task-loop'); } catch (_) { autoLoop = null
 let brdgChain;
 try { brdgChain = require('../lib/brdg-chain'); } catch (_) { brdgChain = null; }
 
+// ── Treasury initialization ────────────────────────────────────────────────────
+let treasuryInitialized = false;
+async function initializeTreasury() {
+  if (treasuryInitialized) return;
+  try {
+    const db = require('../lib/db');
+    treasuryBalance = await db.getTreasuryBalance(0);
+    treasuryInitialized = true;
+    console.log(`[INIT] Treasury balance loaded: R${treasuryBalance}`);
+  } catch (e) {
+    console.warn('[INIT] Failed to load treasury balance:', e.message);
+    treasuryBalance = 0;
+  }
+}
+
 function readContracts() {
   try {
     const files = fs.readdirSync(SHARED_DIR).filter(f => f.endsWith('.json'));
@@ -298,9 +313,8 @@ const agentNames = [
   'QuoteGen AI', 'Finance AI', 'Growth Hunter', 'Intelligence AI', 'Nurture AI',
   'Closer AI', 'Campaign AI', 'Creative AI', 'Support AI', 'Supply AI'
 ];
-// DEPRECATED: In-memory treasury cache removed — use Treasury Service + PostgreSQL ledger
-// const TREASURY_SEED = 1389208.00;
-// let   treasuryBalance = TREASURY_SEED;
+// Treasury balance initialization — loads from database on startup
+let treasuryBalance = 0; // Will be loaded from DB on first access
 const CYCLE_COUNT   = 2697;
 const REVENUE_TOTAL = 541225.00;
 
@@ -1151,6 +1165,7 @@ module.exports = async (req, res) => {
 
   // ── /api/treasury/status ──
   if (p === '/api/treasury/status') {
+    await initializeTreasury();
     return json(res, {
       balance: +treasuryBalance.toFixed(2), currency: 'ZAR',
       status: 'healthy', last_updated: new Date().toISOString(),
@@ -1284,8 +1299,9 @@ module.exports = async (req, res) => {
   // ── /api/crm/* ── Supabase-backed CRM (falls back to in-memory)
   if (p.startsWith('/api/crm')) {
     if (handleCRM) {
-      const handled = await handleCRM({ req, res, path: p, method: req.method, parseBody, json });
-      if (handled) return;
+      await handleCRM({ req, res, path: p, method: req.method, parseBody, json });
+      // handleCRM calls json() which returns undefined — always check headers to avoid double-send (502).
+      if (res.headersSent || res.writableEnded) return;
     }
     const sub = p.replace('/api/crm', '') || '/';
     if (sub === '/contacts' || sub === '/contacts/') {

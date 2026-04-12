@@ -1,6 +1,9 @@
 'use strict';
 const { supabase, isConfigured } = require('../../lib/supabase');
 
+/** Default tenant from business_suite seed — contacts.company_id is NOT NULL */
+const DEFAULT_COMPANY_ID = '00000000-0000-0000-0000-000000000001';
+
 /**
  * Handle CRM API routes backed by Supabase.
  * @param {object} opts - { req, res, path, method, parseBody, json }
@@ -58,6 +61,7 @@ async function handleCRM({ req, res, path: p, method, parseBody, json }) {
     if (!name && !body.email) return json(res, { error: 'name or email required' }, 400);
 
     const record = {
+      company_id: body.company_id || DEFAULT_COMPANY_ID,
       name: name || body.email.split('@')[0],
       email: body.email || null,
       phone: body.phone || null,
@@ -75,7 +79,8 @@ async function handleCRM({ req, res, path: p, method, parseBody, json }) {
 
     const { data, error } = await supabase.from('contacts').insert(record).select().single();
     if (error) return json(res, { error: error.message }, 500);
-    return json(res, { contact: mapContact(data) }, 201);
+    const mapped = mapContact(data);
+    return json(res, { contact: mapped, lead: mapped }, 201);
   }
 
   // ─── GET /api/crm/contacts/:id ─── single
@@ -154,6 +159,7 @@ async function handleCRM({ req, res, path: p, method, parseBody, json }) {
     if (!name && !body.email) return json(res, { error: 'name or email required' }, 400);
 
     const record = {
+      company_id: body.company_id || DEFAULT_COMPANY_ID,
       name: name || body.email.split('@')[0],
       email: body.email || null,
       phone: body.phone || null,
@@ -171,7 +177,91 @@ async function handleCRM({ req, res, path: p, method, parseBody, json }) {
 
     const { data, error } = await supabase.from('contacts').insert(record).select().single();
     if (error) return json(res, { error: error.message }, 500);
-    return json(res, { contact: mapContact(data) }, 201);
+    const mapped = mapContact(data);
+    return json(res, { lead: mapped, contact: mapped }, 201);
+  }
+
+  // ─── GET /api/crm/pipeline ─── aggregate open pipeline (leads page)
+  if (p === '/api/crm/pipeline' && method === 'GET') {
+    if (!isConfigured) {
+      return json(res, { by_status: {}, total_pipeline_value: 0, count: 0, ts: Date.now() });
+    }
+    const { data, error } = await supabase.from('contacts').select('status,stage,value').neq('status', 'customer');
+    if (error) return json(res, { error: error.message }, 500);
+    const by_status = {};
+    let total_pipeline_value = 0;
+    for (const row of data || []) {
+      const st = row.status || 'lead';
+      by_status[st] = (by_status[st] || 0) + 1;
+      total_pipeline_value += +(row.value || 0);
+    }
+    return json(res, {
+      by_status,
+      total_pipeline_value,
+      count: (data || []).length,
+      ts: Date.now(),
+    });
+  }
+
+  // ─── GET /api/crm/activities ─── stored on contact.meta.activities
+  if (p === '/api/crm/activities' && method === 'GET') {
+    const url = new URL(req.url, 'http://localhost');
+    const leadId = url.searchParams.get('lead_id') || '';
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10) || 20, 100);
+    if (!isConfigured || !leadId) return json(res, { activities: [], count: 0 });
+    const { data, error } = await supabase.from('contacts').select('meta').eq('id', leadId).single();
+    if (error || !data) return json(res, { activities: [], count: 0 });
+    const raw = (data.meta && data.meta.activities) || [];
+    const activities = raw.slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, limit);
+    return json(res, { activities, count: activities.length });
+  }
+
+  // ─── POST /api/crm/activities ─── append to contact.meta.activities
+  if (p === '/api/crm/activities' && method === 'POST') {
+    if (!isConfigured) return json(res, { error: 'Supabase not configured' }, 503);
+    const body = await parseBody(req);
+    const lead_id = body.lead_id;
+    if (!lead_id) return json(res, { error: 'lead_id required' }, 400);
+    const entry = {
+      id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      type: body.type || 'note',
+      body: body.body || '',
+      created_at: new Date().toISOString(),
+    };
+    const { data: existing, error: e1 } = await supabase.from('contacts').select('meta').eq('id', lead_id).single();
+    if (e1 || !existing) return json(res, { error: 'Lead not found' }, 404);
+    const meta = { ...(existing.meta || {}) };
+    if (!Array.isArray(meta.activities)) meta.activities = [];
+    meta.activities.unshift(entry);
+    const nowIso = new Date().toISOString();
+    const { data, error } = await supabase.from('contacts').update({ meta, updated_at: nowIso, last_activity: nowIso }).eq('id', lead_id).select().single();
+    if (error) return json(res, { error: error.message }, 500);
+    return json(res, { ok: true, activity: entry, contact: mapContact(data) });
+  }
+
+  // ─── PATCH /api/crm/leads/:id ─── partial update (status from leads.html)
+  const leadPatchMatch = p.match(/^\/api\/crm\/leads\/([^/]+)$/);
+  if (leadPatchMatch && (method === 'PATCH' || method === 'PUT')) {
+    if (!isConfigured) return json(res, { error: 'Not configured' }, 503);
+    const body = await parseBody(req);
+    const updates = { updated_at: new Date().toISOString() };
+    if (body.status !== undefined) updates.status = body.status;
+    if (body.stage !== undefined) updates.stage = body.stage;
+    if (body.score !== undefined) updates.score = body.score;
+    if (body.value !== undefined) updates.value = body.value;
+    if (body.deal_value !== undefined) updates.value = body.deal_value;
+    if (body.tags !== undefined) updates.tags = body.tags;
+    if (body.notes !== undefined) updates.notes = body.notes;
+    if (body.name !== undefined) updates.name = body.name;
+    if (body.email !== undefined) updates.email = body.email;
+    if (body.phone !== undefined) updates.phone = body.phone;
+    if (body.company !== undefined) updates.company_name = body.company;
+    if (body.company_name !== undefined) updates.company_name = body.company_name;
+    if (Object.keys(updates).length <= 1) return json(res, { error: 'no fields to update' }, 400);
+    const { data, error } = await supabase.from('contacts').update(updates).eq('id', leadPatchMatch[1]).select().single();
+    if (error) return json(res, { error: error.message }, 500);
+    const mapped = mapContact(data);
+    return json(res, { lead: mapped, contact: mapped });
   }
 
   // ─── PUT /api/crm/leads/:id/stage ─── update stage
@@ -239,8 +329,10 @@ function mapContact(row) {
   const parts = (row.name || '').split(' ');
   const first_name = parts[0] || '';
   const last_name = parts.slice(1).join(' ') || '';
+  const name = row.name || [first_name, last_name].filter(Boolean).join(' ') || (row.email ? String(row.email).split('@')[0] : '') || '—';
   return {
     id: row.id,
+    name,
     email: row.email,
     first_name,
     last_name,
