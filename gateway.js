@@ -2251,7 +2251,104 @@ app.post('/api/subscribe', express.json(), async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// ── BRAIN PROXY — forward unknown /api/* to brain on 8000 ────────────────────
+// ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server ──
+const dashboardApiRoutes = [
+  '/api/revenue/',
+  '/api/treasury/',
+  '/api/mission/',
+  '/api/projects',
+  '/api/skills',
+  '/api/marketplace/',
+  '/api/twin/env-keys',
+  '/api/ubi/',
+  '/api/sensors/',
+  '/api/economy/',
+  '/api/analytics/',
+  '/api/tools',
+  '/api/intelligence/',
+  '/api/governance/',
+  '/api/pricing',
+  '/api/crm/',
+  '/api/invoices',
+  '/api/marketing/',
+  '/api/compliance/',
+  '/api/intelligence/',
+  '/api/ehsa/',
+  '/api/banks',
+  '/api/defi/',
+  '/api/wallet/',
+  '/api/ledger',
+  '/api/founder/',
+  '/api/mail/',
+  '/api/subscriptions/',
+  '/api/economy/',
+  '/api/credits',
+  '/api/user/',
+  '/api/live/',
+  '/api/twins',
+  '/api/twins/',
+  '/api/sdg/',
+  '/api/reputation/',
+  '/api/replication/',
+  '/api/secrets',
+  '/api/admin/',
+  '/api/notion/',
+  '/api/leadgen/',
+  '/api/wordpress/',
+  '/api/email/',
+  '/api/tvm/',
+  '/api/banks/',
+  '/api/wallet/',
+  '/api/defi/',
+  '/api/treasury/',
+  '/api/economy/',
+];
+
+function isDashboardApi(path) {
+  return dashboardApiRoutes.some(route => path.startsWith(route));
+}
+
+// ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server (port 3000) ──
+app.all('/api/*path', async (req, res) => {
+  // Check if this is a dashboard API that should go to backend server (port 3000)
+  if (isDashboardApi(req.path)) {
+    const url = `http://localhost:3000${req.originalUrl}`;
+    try {
+      const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
+      if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+      if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+      if (req.headers['x-admin-token']) opts.headers['x-admin-token'] = req.headers['x-admin-token'];
+      if (req.headers['cookie']) opts.headers['Cookie'] = req.headers['cookie'];
+      if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+      const r = await fetch(url, opts);
+      const ct = r.headers.get('content-type') || 'application/json';
+      const text = await r.text();
+      res.status(r.status).set('Content-Type', ct).send(text);
+    } catch (e) {
+      res.status(502).json({ error: 'backend server unreachable', path: req.originalUrl, details: e.message });
+    }
+    return;
+  }
+
+  // ── BRAIN PROXY — forward remaining /api/* to brain on 8000 ────────────────────
+  const url = `http://localhost:8000${req.originalUrl}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
+    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+    if (req.headers['x-admin-token']) opts.headers['x-admin-token'] = req.headers['x-admin-token'];
+    if (req.headers['x-kf-token']) opts.headers['x-kf-token'] = req.headers['x-kf-token'];
+    if (req.headers['x-bridge-secret']) opts.headers['x-bridge-secret'] = req.headers['x-bridge-secret'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const ct = r.headers.get('content-type') || 'application/json';
+    const text = await r.text();
+    res.status(r.status).set('Content-Type', ct).send(text);
+  } catch (e) {
+    res.status(502).json({ error: 'brain unreachable', path: req.originalUrl, details: e.message });
+  }
+});
+
 // ── TWIN API — proxy /api/twin/* to unified-server (port 3000) ──────────────
 app.all('/api/twin/*path', async (req, res) => {
   const url = `http://localhost:3000${req.originalUrl}`;
