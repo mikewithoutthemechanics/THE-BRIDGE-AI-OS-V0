@@ -1875,7 +1875,7 @@ app.get('/ehsa-app.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'ehsa-a
 const GATEWAY_SHORT_ROUTES = {
   '/landing': '/landing.html', '/apps': '/50-applications.html',
   '/treasury-dash': '/aoe-dashboard.html', '/leadgen': '/leadgen.html',
-  '/control': '/control.html', '/dashboard': '/aoe-dashboard.html',
+  '/control': '/control.html', '/dashboard': '/dashboard.html',
   '/status': '/system-status-dashboard.html', '/registry': '/registry.html',
   '/crm': '/crm.html', '/invoicing': '/invoicing.html',
   '/marketing': '/marketing.html', '/legal': '/legal.html',
@@ -1895,7 +1895,7 @@ const GATEWAY_SHORT_ROUTES = {
   '/ban': '/ban-home.html', '/hospital': '/hospital-home.html',
   '/rootedearth': '/rootedearth-home.html', '/abaas': '/abaas.html',
   '/defi': '/defi.html', '/wallet': '/wallet.html', '/trading': '/trading.html',
-  '/affiliate': '/affiliate.html', '/join': '/join.html', '/admin': '/admin.html',
+  '/affiliate': '/affiliate.html', '/join': '/join.html', '/activate': '/activate.html', '/admin': '/admin.html',
   '/avatar': '/avatar.html', '/platforms': '/platforms.html',
   '/ehsa-app': '/ehsa-app.html', '/ehsa-brain': '/ehsa-brain.html',
   '/logs': '/logs.html', '/twin-wall': '/twin-wall.html',

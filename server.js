@@ -1759,7 +1759,7 @@ const shortRoutes = {
   '/settings': '/settings.html', '/affiliate': '/affiliate.html',
   '/brand': '/brand.html', '/corporate': '/corporate.html', '/join': '/join.html',
   '/admin': '/admin.html', '/agents': '/agents.html', '/avatar': '/avatar.html',
-  '/control': '/control.html', '/dashboard': '/aoe-dashboard.html',
+  '/control': '/control.html', '/dashboard': '/dashboard.html', '/activate': '/activate.html',
   '/ehsa-app': '/ehsa-app.html', '/ehsa-brain': '/ehsa-brain.html',
   '/executive': '/executive-dashboard.html', '/home': '/home.html',
   '/intelligence': '/intelligence.html', '/landing': '/landing.html',
