@@ -41,18 +41,11 @@ async function seedData() {
         ('deposit', 'invoicing', 7500.0, 'ZAR', 'operations', 'Invoice payment - XYZ Ltd', NOW() - INTERVAL '6 hours'),
         ('deposit', 'crm', 12000.0, 'ZAR', 'operations', 'Monthly retainer - Tech Solutions', NOW() - INTERVAL '3 hours')
       ON CONFLICT DO NOTHING
-    `);
+    `).catch(err => {
+      console.log('⚠️  Treasury ledger seeding skipped (table may not exist):', err.message);
+    });
 
-    // Seed some transaction history
-    await economyDb.query(`
-      INSERT INTO treasury_transactions (source_project, method, amount_brdg, description, created_at)
-      VALUES
-        ('crm', 'payfast', 5000.0, 'Client payment - ABC Corp', NOW() - INTERVAL '2 days'),
-        ('marketplace', 'crypto', 2500.0, 'Task completion payment', NOW() - INTERVAL '1 day'),
-        ('invoicing', 'stripe', 7500.0, 'Invoice payment - XYZ Ltd', NOW() - INTERVAL '6 hours'),
-        ('crm', 'eft', 12000.0, 'Monthly retainer - Tech Solutions', NOW() - INTERVAL '3 hours')
-      ON CONFLICT DO NOTHING
-    `);
+    // Transaction seeding is done above in treasury_ledger
 
     // Mission board data is hardcoded in API response - no seeding needed
 
