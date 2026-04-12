@@ -194,6 +194,9 @@ const cronHandlers = require('./neurolink/cron-handlers');
 // ── Platform Productization Layer ─────────────────────────────────────────────
 const { handlePlatform } = require('./platform');
 
+// ── Digital Twin Layer ────────────────────────────────────────────────────────
+const { handleTwin } = require('./twin');
+
 // ── Zero-Trust Verification Layer ──────────────────────────────────────────
 let zt, proofStore, chainVerify;
 try {
@@ -3490,6 +3493,12 @@ module.exports = async (req, res) => {
   if (p.startsWith('/api/platform/')) {
     const handled = await handlePlatform(req, res);
     if (handled !== null) return; // platform handler wrote the response
+  }
+
+  // ── Digital Twin Layer (/api/twin/*) ──────────────────────────────────────
+  if (p.startsWith('/api/twin/')) {
+    const handled = await handleTwin(req, res);
+    if (handled !== null) return;
   }
 
   // ── Auth: Google OAuth — redirect to Supabase Google provider ──

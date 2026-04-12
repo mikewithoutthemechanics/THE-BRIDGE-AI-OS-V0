@@ -209,7 +209,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
           body: JSON.stringify({ code: ref }),
         });
       }
-      setTimeout(() => { location.href = '/welcome.html'; }, 1000);
+      setTimeout(() => { location.href = '/activate'; }, 1000);
     } else {
       showMsg('reg-msg', data.error || 'Registration failed', false);
     }
@@ -242,7 +242,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         credits: data.credits || 100,
         plan: data.plan || 'free'
       }));
-      setTimeout(() => { location.href = '/welcome.html'; }, 1000);
+      setTimeout(() => { location.href = '/activate'; }, 1000);
     } else {
       showMsg('login-msg', data.error || 'Login failed', false);
     }

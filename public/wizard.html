@@ -523,12 +523,8 @@ async function createAccount() {
         });
       } catch (_) { /* non-fatal — profile page works without this */ }
 
-      // Redirect to billing if paid plan selected, else straight to profile
-      if (state.plan !== 'free') {
-        window.location.href = '/billing?plan=' + state.plan + '&onboarded=1';
-      } else {
-        window.location.href = '/profile?onboarded=1&intent=' + encodeURIComponent(state.intent || '');
-      }
+      // Always activate twin first, then continue to billing or profile
+      window.location.href = '/activate?plan=' + state.plan + '&intent=' + encodeURIComponent(state.intent || '');
     } else {
       authError.textContent = data.error || 'Registration failed. Please try again.';
       authError.classList.add('show');

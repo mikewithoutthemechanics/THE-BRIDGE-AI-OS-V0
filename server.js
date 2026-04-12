@@ -796,6 +796,7 @@ function requireAuth(req, res, next) {
     '/api/uptime', // if exists
     '/api/version', // if exists
     '/api/platform/', // platform layer handles its own auth via requireUser()
+    '/api/twin/',     // twin layer handles its own auth via resolveUser()
   ];
   
   if (publicEndpoints.some(endpoint => req.path.startsWith(endpoint))) {
@@ -1854,6 +1855,14 @@ const { handlePlatform } = require('./api/platform');
 app.all('/api/platform/{*path}', async (req, res, next) => {
   const handled = await handlePlatform(req, res);
   if (handled !== null) return; // platform handler wrote the response
+  next();
+});
+
+// ================= Digital Twin Layer (/api/twin/*) =================
+const { handleTwin } = require('./api/twin');
+app.all('/api/twin/{*path}', async (req, res, next) => {
+  const handled = await handleTwin(req, res);
+  if (handled !== null) return;
   next();
 });
 
