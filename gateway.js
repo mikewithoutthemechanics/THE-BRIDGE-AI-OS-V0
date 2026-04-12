@@ -987,6 +987,12 @@ try {
   revenueEngine.start(60000); // Run every 60 seconds
 } catch (e) { console.warn('[REVENUE-ENGINE] Failed to start:', e.message); revenueEngine = null; }
 
+// Start revenue compounding engine (5-minute cycles)
+try {
+  var compounder = require('./lib/revenue-compounder');
+  compounder.startCompounding();
+} catch (e) { console.warn('[COMPOUNDER] Failed to start:', e.message); }
+
 app.get('/api/revenue-engine/status', (_req, res) => {
   if (!revenueEngine) return res.json({ ok: false, running: false });
   res.json(revenueEngine.getStatus());
@@ -1012,6 +1018,27 @@ app.post('/api/revenue-engine/start', express.json(), (_req, res) => {
 app.post('/api/revenue-engine/stop', (_req, res) => {
   if (!revenueEngine) return res.status(503).json({ ok: false });
   res.json(revenueEngine.stop());
+});
+
+// ── AP2 stats ────────────────────────────────────────────────────────────────
+app.get('/api/ap2/stats', async (_req, res) => {
+  try {
+    var ap2Payment = require('./lib/ap2/ap2-payment');
+    var stats = await ap2Payment.getPaymentStats();
+    res.json({ ok: true, ...stats });
+  } catch (e) {
+    res.json({ ok: false, total_payments: 0, total_volume_brdg: 0, completed: 0, external_settlements: 0, total_receipts: 0 });
+  }
+});
+
+// ── Compounding stats ─────────────────────────────────────────────────────────
+app.get('/api/compounding/stats', (_req, res) => {
+  try {
+    var compounder = require('./lib/revenue-compounder');
+    res.json({ ok: true, ...compounder.getCompoundingStats() });
+  } catch (e) {
+    res.json({ ok: false, cycles: 0, total_reserved: 0, total_reinvested: 0, active: false });
+  }
 });
 
 app.get('/api/pricing', (_req, res) => {

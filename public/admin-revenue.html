@@ -168,6 +168,53 @@ document.querySelectorAll('nav a').forEach(a => {
 </div>
 
 <div class="section">
+  <h2>Agent Economy (BRDG)</h2>
+  <div class="grid" id="agent-economy-grid">
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">A2A Transfer Fees (All Time)</div>
+      <div class="value cyan" id="k-a2a-fees">--</div>
+      <div class="detail" id="k-a2a-txcount">-- agent transactions</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">Task Marketplace Volume</div>
+      <div class="value green" id="k-task-volume">--</div>
+      <div class="detail" id="k-task-count">-- tasks settled</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">AP2 Payment Volume</div>
+      <div class="value purple" id="k-ap2-volume">--</div>
+      <div class="detail" id="k-ap2-count">-- AP2 settlements</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">BRDG Circulating</div>
+      <div class="value cyan" id="k-brdg-circulating">--</div>
+      <div class="detail" id="k-brdg-burned-off">-- BRDG burned (off-chain)</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">Compounding Cycles</div>
+      <div class="value orange" id="k-compound-cycles">--</div>
+      <div class="detail" id="k-compound-reserved">-- BRDG reserved to treasury</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">Active Agents</div>
+      <div class="value green" id="k-agent-count">--</div>
+      <div class="detail" id="k-top-agent">Top earner: --</div>
+    </div>
+  </div>
+  <h3 style="font-size:.9rem;font-weight:600;margin:.75rem 0 .5rem;color:var(--dim)">Revenue Stream Breakdown (All Sources)</h3>
+  <table id="stream-table">
+    <thead><tr><th>Source</th><th>Transactions</th><th>Total (BRDG/ZAR)</th><th>% of Total</th></tr></thead>
+    <tbody id="stream-tbody"></tbody>
+  </table>
+</div>
+
+<div class="section">
   <h2>AI Revenue Recommendations</h2>
   <div id="ai-recs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem"></div>
 </div>
@@ -539,6 +586,66 @@ async function loadAll() {
       }
     } catch(_) {}
   } catch(_) {}
+
+  // ── Agent Economy (BRDG streams) ──────────────────────────────────────
+  try {
+    var econR = await fetch('/api/economy/stats').then(function(r){return r.json();}).catch(function(){return {};});
+    if (econR.ok !== false) {
+      $('k-a2a-fees').textContent = fmt(econR.totalFeesCollected || 0) + ' BRDG';
+      $('k-a2a-txcount').textContent = (econR.txCount || 0).toLocaleString() + ' agent transactions';
+      $('k-brdg-circulating').textContent = fmt(econR.totalCirculating || 0) + ' BRDG';
+      $('k-brdg-burned-off').textContent = fmt(econR.totalBurned || 0) + ' BRDG burned (off-chain)';
+      $('k-agent-count').textContent = (econR.agentCount || 0) + ' agents';
+      if (econR.topEarners && econR.topEarners.length > 0) {
+        $('k-top-agent').textContent = 'Top earner: ' + econR.topEarners[0].agent_id + ' (' + fmt(econR.topEarners[0].balance) + ' BRDG)';
+      }
+    }
+
+    // Task marketplace stats
+    var taskR = await fetch('/api/economy/tasks').then(function(r){return r.json();}).catch(function(){return {};});
+    var tasks = (taskR.tasks || []);
+    var settledTasks = tasks.filter(function(t){return t.status === 'SETTLED';});
+    var taskVolume = settledTasks.reduce(function(s,t){return s + (parseFloat(t.escrow_amount)||0);}, 0);
+    $('k-task-volume').textContent = fmt(taskVolume) + ' BRDG';
+    $('k-task-count').textContent = settledTasks.length + ' tasks settled';
+
+    // AP2 stats
+    var ap2R = await fetch('/api/ap2/stats').then(function(r){return r.json();}).catch(function(){return {};});
+    $('k-ap2-volume').textContent = fmt(ap2R.total_volume_brdg || 0) + ' BRDG';
+    $('k-ap2-count').textContent = (ap2R.total_payments || 0) + ' AP2 settlements';
+
+    // Compounding stats
+    var compR = await fetch('/api/compounding/stats').then(function(r){return r.json();}).catch(function(){return {};});
+    $('k-compound-cycles').textContent = (compR.cycles || 0) + ' cycles';
+    $('k-compound-reserved').textContent = fmt(compR.total_reserved || 0) + ' BRDG reserved to treasury';
+
+    // Revenue stream breakdown table (from proof chain by source)
+    var proofAll = await fetch('/api/proofs/payments?limit=10000').then(function(r){return r.json();}).catch(function(){return {};});
+    var allProofs = (proofAll.data && proofAll.data.proofs) || proofAll.proofs || [];
+    var bySource = {};
+    var grandTotal = 0;
+    allProofs.forEach(function(p) {
+      var src = p.source || 'unknown';
+      if (!bySource[src]) bySource[src] = { count: 0, total: 0 };
+      bySource[src].count++;
+      bySource[src].total += parseFloat(p.amount || 0);
+      grandTotal += parseFloat(p.amount || 0);
+    });
+    var tbody = $('stream-tbody');
+    if (tbody) {
+      tbody.innerHTML = '';
+      Object.keys(bySource).sort(function(a,b){return bySource[b].total - bySource[a].total;}).forEach(function(src) {
+        var s = bySource[src];
+        var pct = grandTotal > 0 ? (s.total / grandTotal * 100).toFixed(1) : '0.0';
+        var row = document.createElement('tr');
+        row.innerHTML = '<td>' + src + '</td><td>' + s.count.toLocaleString() + '</td><td>' + fmt(s.total) + '</td><td>' + pct + '%</td>';
+        tbody.appendChild(row);
+      });
+      if (Object.keys(bySource).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="color:var(--dim);text-align:center">No transactions recorded yet — awaiting first real payment</td></tr>';
+      }
+    }
+  } catch(e) { addLogEntry('Agent economy load failed: ' + e.message); }
 
   // AI Revenue Recommendations
   try {
