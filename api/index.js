@@ -3163,9 +3163,19 @@ module.exports = async (req, res) => {
     return cronHandlers.handleGraphUpdate(req, res);
   }
 
-  // POST /api/cron/distribute-rewards — distribute attribution rewards (hourly)
-  if (p === '/api/cron/distribute-rewards' && req.method === 'POST') {
+  // POST/GET /api/cron/distribute-rewards — distribute attribution rewards (hourly)
+  if (p === '/api/cron/distribute-rewards') {
     return cronHandlers.handleDistributeRewards(req, res);
+  }
+
+  // GET /api/cron/auto-send — send queued emails during optimal hours (cron)
+  if (p === '/api/cron/auto-send') {
+    try {
+      const autoSend = require('./cron/auto-send');
+      return autoSend(req, res);
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 500);
+    }
   }
 
   // GET /api/neurolink/attribution-stats — detailed reward attribution statistics
