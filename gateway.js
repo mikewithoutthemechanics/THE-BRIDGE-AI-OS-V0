@@ -1309,8 +1309,12 @@ app.get('/api/treasury', async (_req, res) => {
 
 app.get('/api/wallet/balance', async (_req, res) => {
   try {
-    const balance = await db.getTreasuryBalance();
-    // Get on-chain BRDG and ETH if available
+    // Withdrawable ZAR = verified payment proof chain total only
+    // Never derive from in-memory state or crypto valuation
+    const revenue = await proofStore.getVerifiedRevenue();
+    const zarBalance = revenue.totalRevenue || 0; // real paid ZAR, cryptographically verified
+
+    // On-chain BRDG + ETH — shown separately, not mixed into ZAR withdrawable
     var brdgBal = 0, ethBal = 0;
     try {
       var brdgChain = require('./lib/brdg-chain');
@@ -1318,22 +1322,30 @@ app.get('/api/wallet/balance', async (_req, res) => {
       brdgBal = parseFloat(stats.treasury.brdgBalance) || 0;
       ethBal = parseFloat(stats.treasury.vault.ethBalance) || 0;
     } catch (_) {}
-    var totalUsd = +(balance * 0.05 + brdgBal * 0.015 + ethBal * 3200).toFixed(2);
+
     res.json({
-      ok: true, balance: totalUsd, total: totalUsd, total_usd: totalUsd,
-      brdg: brdgBal, BRDG: brdgBal,
-      eth: ethBal, ETH: ethBal,
-      usdt: 0,
+      ok: true,
+      balance: zarBalance,          // withdrawable ZAR (verified proof chain)
+      total: zarBalance,
+      total_usd: zarBalance,
       currency: 'ZAR',
+      verified: true,
+      source: 'payment_proof_chain',
+      brdg: brdgBal, BRDG: brdgBal,
+      eth: ethBal,   ETH: ethBal,
       address: '0xAC301f984556c11ecf3818CaA6020d11c8616F64',
       balances: [
-        { symbol: 'BRDG', amount: brdgBal, usd: +(brdgBal * 0.015).toFixed(2) },
-        { symbol: 'ETH', amount: ethBal, usd: +(ethBal * 3200).toFixed(2) },
-        { symbol: 'ZAR', amount: +(balance * 0.05).toFixed(2), usd: +(balance * 0.05).toFixed(2) },
+        { symbol: 'ZAR',  amount: zarBalance, source: 'proof_chain', verified: true },
+        { symbol: 'BRDG', amount: brdgBal,    source: 'on_chain',    verified: true },
+        { symbol: 'ETH',  amount: ethBal,     source: 'on_chain',    verified: true },
       ],
+      proof_chain: {
+        transactions: revenue.transactionCount,
+        integrity: revenue.chainIntegrity?.valid ? 'intact' : 'broken',
+      },
       ts: Date.now(),
     });
-  } catch (e) { res.json({ ok: true, balance: 0, total: 0, brdg: 0, eth: 0 }); }
+  } catch (e) { res.json({ ok: true, balance: 0, total: 0, brdg: 0, eth: 0, verified: false }); }
 });
 
 app.get('/api/defi/status', async (_req, res) => {
