@@ -2803,6 +2803,25 @@ try {
   console.warn('[BRAIN] Agent economy failed to load:', e.message);
 }
 
+// ── ECONOMY GENESIS — seed agent balances and starter tasks on first boot ─────
+setImmediate(async () => {
+  try {
+    const ledger = require('./lib/agent-ledger');
+    await ledger.seedIfNeeded();
+    console.log('[BRAIN] Agent ledger genesis complete');
+  } catch (e) {
+    console.warn('[BRAIN] Agent ledger genesis failed:', e.message);
+  }
+
+  try {
+    const market = require('./lib/task-market');
+    await market.seedStarterTasks();
+    console.log('[BRAIN] Marketplace starter tasks seeded');
+  } catch (e) {
+    // seedStarterTasks may not exist yet — safe to ignore
+  }
+});
+
 // ── AGENT COMMAND API ──────────────────────────────────────────────────────────
 try {
   const { registerAgentCommands } = require('./lib/agent-commands');
