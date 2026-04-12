@@ -1736,11 +1736,6 @@ app.get('/api/pricing', (req, res) => {
   ]});
 });
 
-// CRM contacts (used by aoe-dashboard.html health check)
-app.get('/api/crm/contacts', (req, res) => {
-  res.json({ contacts: [], total: 0 });
-});
-
 // Invoices (used by aoe-dashboard.html health check)
 app.get('/api/invoices', (req, res) => {
   res.json({ invoices: [], total: 0 });
@@ -2080,6 +2075,43 @@ const { handlePipeline } = require('./api/pipeline');
 app.all('/api/orch/{*path}', async (req, res, next) => {
   const handled = await handlePipeline(req, res);
   if (handled !== null) return;
+  next();
+});
+
+// ================= CRM — Supabase contacts (same as gateway / Vercel) =================
+let handleCrmServer = null;
+try {
+  ({ handleCRM: handleCrmServer } = require('./api/crm/routes'));
+} catch (e) {
+  console.warn('[SERVER] CRM routes unavailable:', e.message);
+}
+
+function crmJsonServer(res, data, status = 200) {
+  res.status(status).setHeader('Content-Type', 'application/json').end(JSON.stringify(data));
+}
+
+async function crmParseBodyServer(req) {
+  if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) return req.body;
+  return new Promise((resolve) => {
+    let raw = '';
+    req.on('data', (c) => { raw += c; if (raw.length > 2e6) { resolve({}); return; } });
+    req.on('end', () => { try { resolve(JSON.parse(raw || '{}')); } catch (_) { resolve({}); } });
+    req.on('error', () => resolve({}));
+  });
+}
+
+app.all(/^\/api\/crm(?:\/|$)/, async (req, res, next) => {
+  if (!handleCrmServer) return next();
+  const pathname = (req.originalUrl || req.url || '/').split('?')[0];
+  await handleCrmServer({
+    req,
+    res,
+    path: pathname,
+    method: req.method,
+    parseBody: crmParseBodyServer,
+    json: crmJsonServer,
+  });
+  if (res.headersSent || res.writableEnded) return;
   next();
 });
 

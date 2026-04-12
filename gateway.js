@@ -2270,6 +2270,44 @@ app.post('/api/subscribe', express.json(), async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// ── CRM API — shared Supabase handler (contacts table). Must not depend on :3000
+// (dashboard proxy below would 502 when unified-server is down).
+let handleCrmGateway = null;
+try {
+  ({ handleCRM: handleCrmGateway } = require('./api/crm/routes'));
+} catch (e) {
+  console.warn('[GATEWAY] CRM module unavailable:', e.message);
+}
+
+function crmJson(res, data, status = 200) {
+  res.status(status).setHeader('Content-Type', 'application/json').end(JSON.stringify(data));
+}
+
+async function crmParseBody(req) {
+  if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) return req.body;
+  return new Promise((resolve) => {
+    let raw = '';
+    req.on('data', (chunk) => { raw += chunk; if (raw.length > 2e6) { resolve({}); return; } });
+    req.on('end', () => { try { resolve(JSON.parse(raw || '{}')); } catch (_) { resolve({}); } });
+    req.on('error', () => resolve({}));
+  });
+}
+
+app.all(/^\/api\/crm(?:\/|$)/, async (req, res, next) => {
+  if (!handleCrmGateway) return next();
+  const pathname = (req.originalUrl || req.url || '/').split('?')[0];
+  await handleCrmGateway({
+    req,
+    res,
+    path: pathname,
+    method: req.method,
+    parseBody: crmParseBody,
+    json: crmJson,
+  });
+  if (res.headersSent || res.writableEnded) return;
+  next();
+});
+
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server ──
 const dashboardApiRoutes = [
   '/api/revenue/',
@@ -2287,7 +2325,6 @@ const dashboardApiRoutes = [
   '/api/intelligence/',
   '/api/governance/',
   '/api/pricing',
-  '/api/crm/',
   '/api/invoices',
   '/api/marketing/',
   '/api/compliance/',
