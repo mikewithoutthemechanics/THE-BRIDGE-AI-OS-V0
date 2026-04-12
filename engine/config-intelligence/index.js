@@ -1,15 +1,16 @@
 // =============================================================================
-// BRIDGE AI OS — Config Intelligence Engine
+// BRIDGE AI OS — Config Intelligence Engine  v2
 // ─────────────────────────────────────────────────────────────────────────────
-// Entry point for the full 20-module config management system.
+// Entry point for the full 22-module config management system.
 //
 // Lifecycle:
 //   1. Start session in registry
 //   2. Load prior snapshot (fast-forward)
 //   3. Replay events since snapshot
 //   4. Run deterministic startup protocol (discover → parse → validate → score → select → activate)
-//   5. Start continuous reconciliation loop
-//   6. Expose engine API
+//   5. Start file watcher (instant hot-reload on .bridge* file changes)
+//   6. Start continuous reconciliation loop (60s safety net)
+//   7. Expose engine API
 //
 // Usage (in server.js):
 //   const configEngine = require('./engine/config-intelligence');
@@ -35,6 +36,8 @@ const dependency  = require('./dependency');
 const lineage     = require('./lineage');
 const convention  = require('./convention');
 const docs        = require('./docs');
+const watcher     = require('./watcher');
+const hotReload   = require('./hot-reload');
 const { globalStore } = require('./cio');
 
 let _started       = false;
@@ -45,7 +48,7 @@ let _startupResult = null;
 async function start(opts = {}) {
   if (_started) return _startupResult;
 
-  const { enableReconciler = true, silent = false } = opts;
+  const { enableReconciler = true, enableWatcher = true, silent = false } = opts;
 
   if (!silent) console.log('[CONFIG ENGINE] Starting Bridge AI OS Config Intelligence Engine...');
 
@@ -171,7 +174,16 @@ async function start(opts = {}) {
     console.log(`[CONFIG ENGINE] ✓ Started — ${activated} CIOs active, snapshot: ${snapResult.hash?.slice(0, 12)}...`);
   }
 
-  // 18. Start reconciliation loop
+  // 18. Start file watcher (instant hot-reload — Tier 1)
+  if (enableWatcher !== false) {
+    watcher.start(async ({ type, path: filePath }) => {
+      if (type === 'change') await hotReload.processChange(filePath);
+      if (type === 'delete') await hotReload.processDeletion(filePath);
+    });
+    if (!silent) console.log('[CONFIG ENGINE] File watcher active — hot-reload enabled');
+  }
+
+  // 19. Start reconciliation loop (60s safety net — Tier 2)
   if (enableReconciler) reconciler.start();
 
   _started = true;
@@ -181,6 +193,7 @@ async function start(opts = {}) {
 // ── Stop the engine ───────────────────────────────────────────────────────────
 function stop() {
   reconciler.stop();
+  watcher.stop();
   registry.emit('ENGINE_STOPPED', { pid: process.pid });
   _started = false;
 }
@@ -216,5 +229,6 @@ module.exports = {
   registry, discovery, parser, validator, scorer, resolver,
   sandbox: sandbox_, secrets: secrets_, snapshot, replay,
   drift, healer, reconciler, anomaly, dependency, lineage, convention, docs,
+  watcher, hotReload,
   store: globalStore,
 };

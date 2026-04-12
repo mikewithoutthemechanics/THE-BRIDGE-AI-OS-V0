@@ -134,9 +134,16 @@ function mergeToState(selected) {
     state.meta.namespaces.push(cio.namespace);
   }
 
+  // Sensitive variable name patterns — values masked in merged state
+  const SENSITIVE_PATTERNS = /secret|key|password|token|credential|private|auth|api_?key/i;
+
   for (const cio of selected.vars) {
     for (const [k, v] of Object.entries(cio.payload.variables || {})) {
-      state.variables[k] = v.default !== null ? v.default : (process.env[k] || null);
+      const resolved = v.default !== null ? v.default : (process.env[k] || null);
+      // Mask sensitive values — expose only whether the value is set
+      state.variables[k] = SENSITIVE_PATTERNS.test(k)
+        ? { masked: true, set: resolved !== null }
+        : resolved;
     }
   }
 

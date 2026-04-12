@@ -1,14 +1,17 @@
 // =============================================================================
-// BRIDGE AI OS — Continuous Reconciliation Loop
+// BRIDGE AI OS — Continuous Reconciliation Loop  v2
 //
-// Periodically re-scans filesystem, re-validates CIOs, detects drift,
-// runs anomaly detection, and triggers healing if needed.
+// Fixes vs v1:
+//   - Parser dedup means unchanged files skip the full parse pipeline (O(1))
+//   - Only activates CIOs whose hash differs from the currently active CIO
+//     for that namespace — stops the every-cycle re-activation flood
+//   - globalStore.prune() called after each cycle to prevent memory growth
+//   - Watcher integration: hot-reload handles instant changes; reconciler
+//     is now a safety net (catches renames, bulk edits, mount points)
 //
-// The loop runs inside the Node.js process — no external cron required.
-// Interval is configurable via CONFIG_ENGINE_RECONCILE_INTERVAL_MS (default: 60s)
-//
-// State machine:
-//   IDLE → SCANNING → VALIDATING → SCORING → SELECTING → RECONCILING → IDLE
+// The two-tier design:
+//   Tier 1 (watcher + hot-reload): instant, per-file, ~300ms latency
+//   Tier 2 (reconciler):           60s safety net for edge cases watcher misses
 // =============================================================================
 'use strict';
 
@@ -25,8 +28,9 @@ const anomaly    = require('./anomaly');
 const snapshot   = require('./snapshot');
 const { globalStore } = require('./cio');
 
-const INTERVAL_MS = parseInt(process.env.CONFIG_ENGINE_RECONCILE_INTERVAL_MS) || 60_000;
+const INTERVAL_MS       = parseInt(process.env.CONFIG_ENGINE_RECONCILE_INTERVAL_MS) || 60_000;
 const ANOMALY_INTERVAL_MS = parseInt(process.env.CONFIG_ENGINE_ANOMALY_INTERVAL_MS) || 30_000;
+const PRUNE_KEEP        = parseInt(process.env.CONFIG_ENGINE_PRUNE_KEEP) || 3;
 
 let _reconcileTimer  = null;
 let _anomalyTimer    = null;
@@ -34,12 +38,15 @@ let _state           = 'idle';
 let _lastFingerprint = null;
 let _lastSelected    = null;
 let _runCount        = 0;
+let _lastResult      = null;
+
+// No module-level isAlreadyActive — use snapshot captured before the pipeline runs
 
 // ── Single reconciliation cycle ───────────────────────────────────────────────
 async function runCycle() {
   if (_state !== 'idle') {
-    registry.emit('RECONCILE_SKIPPED', { reason: `already in state: ${_state}` });
-    return;
+    registry.emit('RECONCILE_SKIPPED', { reason: `already in state: ${_state}`, runCount: _runCount });
+    return _lastResult;
   }
 
   _runCount++;
@@ -47,15 +54,16 @@ async function runCycle() {
   registry.emit('RECONCILE_START', { runCount: _runCount });
 
   try {
+    // Snapshot active hashes BEFORE the pipeline to reliably skip unchanged CIOs
+    const activeHashesBefore = new Set(globalStore.allActive().map(c => c.hash));
+
     // 1. Discovery
     const discovered = discovery.discover();
 
-    // 2. Parse
+    // 2. Parse — dedup in parser means cache hits return immediately
     _state = 'parsing';
     const parsed = parser.parseAll(discovered);
     const allCIOs = [...parsed.configs, ...parsed.vars, ...parsed.secrets];
-
-    // Add all to global store
     for (const cio of allCIOs) globalStore.add(cio);
 
     // 3. Validate
@@ -70,18 +78,19 @@ async function runCycle() {
     _state = 'selecting';
     const selected = resolver.resolveAll(parsed, scoredResults);
 
-    // 6. Sandbox simulation on winners
+    // 6. Sandbox simulation on winners only
     const allSelected = [...selected.configs, ...selected.vars, ...selected.secrets];
     const sandboxFails = allSelected
       .map(cio => ({ cio, result: sandbox.simulate(cio) }))
       .filter(({ result }) => !result.passed);
+    const sandboxFailHashes = new Set(sandboxFails.map(({ cio }) => cio.hash));
 
     // 7. Drift check
     _state = 'reconciling';
-    const activeCIOs   = globalStore.allActive();
+    const activeCIOs    = globalStore.allActive();
     const activeVarCIOs = activeCIOs.filter(c => c.type === 'var');
-    const driftReport  = drift.scan(activeCIOs, activeVarCIOs, _lastFingerprint);
-    _lastFingerprint   = driftReport.fingerprint;
+    const driftReport   = drift.scan(activeCIOs, activeVarCIOs, _lastFingerprint);
+    _lastFingerprint    = driftReport.fingerprint;
 
     // 8. Heal if needed
     if (driftReport.drifted) {
@@ -91,47 +100,57 @@ async function runCycle() {
     // 9. Merge to state
     const merged = resolver.mergeToState(selected);
 
-    // 10. Activate valid + sandbox-passed CIOs
-    const sandboxFailHashes = new Set(sandboxFails.map(({ cio }) => cio.hash));
+    // 10. Activate — ONLY if hash wasn't already active when this cycle started
+    let newActivations = 0;
     for (const cio of allSelected) {
-      if (!sandboxFailHashes.has(cio.hash)) {
-        const activated = cio.withStatus('active', { activeSince: Date.now() });
-        globalStore.add(activated);
-        registry.emit('CIO_ACTIVATED', {
-          cioId:       activated.id,
-          namespace:   activated.namespace,
-          mergedState: merged,
-        }, activated.hash);
-      }
+      if (sandboxFailHashes.has(cio.hash)) continue;
+      if (activeHashesBefore.has(cio.hash)) continue;  // ← already active, skip
+
+      const activated = cio.withStatus('active', { activeSince: Date.now() });
+      globalStore.add(activated);
+      registry.emit('CIO_ACTIVATED', {
+        cioId:       activated.id,
+        namespace:   activated.namespace,
+        mergedState: merged,
+        trigger:     'reconciler',
+      }, activated.hash);
+      newActivations++;
     }
 
-    // 11. Save snapshot after successful cycle
+    // 11. Snapshot + prune
     const cioMeta = globalStore.all().map(c => c.toJSON());
     snapshot.save(merged, cioMeta);
+    const pruned = globalStore.prune(PRUNE_KEEP);
 
     _lastSelected = selected;
     _state = 'idle';
+
+    _lastResult = { ok: true, selected, merged, driftReport, scoredResults, validationResults };
 
     registry.emit('RECONCILE_COMPLETE', {
       runCount:        _runCount,
       configs:         selected.configs.length,
       vars:            selected.vars.length,
       secrets:         selected.secrets.length,
+      newActivations,
       drifted:         driftReport.drifted,
       sandboxFails:    sandboxFails.length,
       validationFails: validationResults.failed.length,
+      cacheHits:       parsed.cacheHits || 0,
+      pruned,
     });
 
-    return { ok: true, selected, merged, driftReport, scoredResults, validationResults };
+    return _lastResult;
 
   } catch (err) {
     _state = 'idle';
-    registry.emit('RECONCILE_ERROR', { runCount: _runCount, error: err.message, stack: err.stack });
+    registry.emit('RECONCILE_ERROR', { runCount: _runCount, error: err.message });
+    console.error('[RECONCILER] Cycle error:', err.message);
     return { ok: false, error: err.message };
   }
 }
 
-// ── Anomaly scan (runs on separate shorter interval) ─────────────────────────
+// ── Anomaly scan ──────────────────────────────────────────────────────────────
 function runAnomalyScan() {
   const report = anomaly.scan();
   if (report.critical > 0) {
@@ -140,23 +159,22 @@ function runAnomalyScan() {
   return report;
 }
 
-// ── Start the reconciliation loop ─────────────────────────────────────────────
+// ── Start loop ────────────────────────────────────────────────────────────────
 function start() {
-  if (_reconcileTimer) return; // already running
+  if (_reconcileTimer) return;
 
   registry.emit('RECONCILER_STARTED', { intervalMs: INTERVAL_MS });
 
-  // Run immediately at startup
-  runCycle().catch(err => console.error('[CONFIG ENGINE] startup cycle error:', err.message));
+  // Run at startup (watcher handles real-time; this is the safety-net baseline)
+  runCycle().catch(err => console.error('[RECONCILER] startup error:', err.message));
 
   _reconcileTimer = setInterval(() => {
-    runCycle().catch(err => console.error('[CONFIG ENGINE] reconcile error:', err.message));
+    runCycle().catch(err => console.error('[RECONCILER] cycle error:', err.message));
   }, INTERVAL_MS);
 
   _anomalyTimer = setInterval(runAnomalyScan, ANOMALY_INTERVAL_MS);
 }
 
-// ── Stop the loop ─────────────────────────────────────────────────────────────
 function stop() {
   if (_reconcileTimer) { clearInterval(_reconcileTimer); _reconcileTimer = null; }
   if (_anomalyTimer)   { clearInterval(_anomalyTimer);   _anomalyTimer   = null; }
@@ -165,11 +183,12 @@ function stop() {
 
 function status() {
   return {
-    state:       _state,
-    running:     !!_reconcileTimer,
-    runCount:    _runCount,
-    intervalMs:  INTERVAL_MS,
-    lastSelected: _lastSelected ? {
+    state:         _state,
+    running:       !!_reconcileTimer,
+    runCount:      _runCount,
+    intervalMs:    INTERVAL_MS,
+    storeStats:    globalStore.stats(),
+    lastSelected:  _lastSelected ? {
       configs: _lastSelected.configs?.length,
       vars:    _lastSelected.vars?.length,
       secrets: _lastSelected.secrets?.length,

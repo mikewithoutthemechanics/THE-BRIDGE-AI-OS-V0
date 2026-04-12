@@ -1,9 +1,11 @@
 {
   "version": "1",
-  "savedAt": 1775957936477,
-  "sessionId": "3c76b0f1-c3fb-4230-8b4e-d3df8fd20abb",
+  "savedAt": 1775959181277,
+  "sessionId": "9c2d7128-ad6e-4be8-b4fa-fdf3a5294209",
   "state": {
     "config": {
+      "feature": "hot-reload",
+      "live": true,
       "platform_name": "Bridge AI OS",
       "platform_version": "2.0.0",
       "chain_id": 59144,
@@ -18,55 +20,76 @@
       "jwt_ttl_seconds": 604800
     },
     "variables": {
-      "node_env": "production",
-      "port": 3000,
-      "base_url": "https://bridge-ai-os.com",
-      "supabase_url": "https://sdkysuvmtqjqopmdpvoz.supabase.co",
-      "jwt_secret": "d3dcfada1c285ebc400f600466e47f5781a84e13f6408364a3807dacfcab3d4a3aaecb4032e7b40c794ae95404f71bf3",
-      "agent_salt": "bridge-ai-os-v1",
-      "config_engine_reconcile_interval_ms": 60000
+      "NODE_ENV": "production",
+      "PORT": 3000,
+      "BASE_URL": "https://bridge-ai-os.com",
+      "SUPABASE_URL": "https://sdkysuvmtqjqopmdpvoz.supabase.co",
+      "JWT_SECRET": {
+        "masked": true,
+        "set": true
+      },
+      "AGENT_SALT": "bridge-ai-os-v1",
+      "CONFIG_ENGINE_RECONCILE_INTERVAL_MS": 60000
     },
     "secrets": {},
     "meta": {
-      "builtAt": 1775957936475,
-      "configCount": 1,
+      "builtAt": 1775959181277,
+      "configCount": 2,
       "varCount": 1,
       "secretCount": 0,
       "namespaces": [
+        "bridge.test.audit",
         "bridge.os.core"
       ]
     }
   },
   "cioMeta": [
     {
-      "id": "240061fc-0bd2-4bab-83ee-810db9b894f1",
+      "id": "e0d53e92-8de6-40d1-82b1-7922880b3210",
       "type": "config",
       "namespace": "bridge.os.core",
       "source": "C:\\aoe-unified-final\\config\\bridge-os-core.bridgecfg",
+      "fileHash": "54a1751b0fc8a0659060642c175f18a710c1ca56b69b226fad192bf672f8587a",
       "hash": "c695b5c4467285a0c545c9ce2482657f74a7785480ae829281291dbf53d87f07",
       "version": 1,
       "lineage": [],
-      "reason": "initial-parse",
+      "reason": "parsed",
       "status": "active",
       "score": 0,
-      "createdAt": 1775957936463,
-      "activeSince": 1775957936475
+      "createdAt": 1775959181180,
+      "activeSince": 1775959181191
     },
     {
-      "id": "99fb086a-2270-4577-9620-30578694fd9e",
+      "id": "d9df1fd9-470b-4718-9981-d3ace2ccd5d8",
       "type": "var",
       "namespace": "bridge.vars.runtime",
       "source": "C:\\aoe-unified-final\\vars\\runtime.bridgevar",
-      "hash": "430d9f92a9127408170ad725cac8ef264ad0cf066d9f1d9679a7fa4dff64490d",
+      "fileHash": "1922fbe64bdfd0eedd048e40a1917d932c247d70c1529f65fd106f53b84a1876",
+      "hash": "2c585a7d9cb17dc4636720e8d29ed5fd5217313b61b87e8e6acada8802a1bd39",
       "version": 1,
       "lineage": [],
-      "reason": "initial-parse",
+      "reason": "parsed",
       "status": "active",
       "score": 0,
-      "createdAt": 1775957936463,
-      "activeSince": 1775957936475
+      "createdAt": 1775959181181,
+      "activeSince": 1775959181191
+    },
+    {
+      "id": "d3a7977a-eab6-4fb8-8dd0-499c171aae50",
+      "type": "config",
+      "namespace": "bridge.test.audit",
+      "source": "C:\\aoe-unified-final\\config\\audit-test.bridgecfg",
+      "fileHash": "25ce65515a829c6a450d2c467fd3a5c275475cfee6f4c23cedcdd84e05fd5699",
+      "hash": "bf8d728294e590128244bc5ff2690f7247bc9146625f611717a6c725ba4a0566",
+      "version": 1,
+      "lineage": [],
+      "reason": "parsed",
+      "status": "active",
+      "score": 0,
+      "createdAt": 1775959181201,
+      "activeSince": 1775959181224
     }
   ],
-  "eventCount": 16,
-  "hash": "1c454296099959b87e788760ba9ae96ae75f2a6be56e9a4d4dd86d4f1f0a652a"
+  "eventCount": 103,
+  "hash": "b00742eb30e2698a4fb9e0b0b088176a031f2486152f6f2c2f463d27155212d0"
 }

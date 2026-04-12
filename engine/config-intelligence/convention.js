@@ -107,10 +107,20 @@ function normalize(data, type) {
   if (out.version)   out.version   = normalizeVersion(out.version);
   if (out.namespace) out.namespace = normalizeNamespace(out.namespace);
 
-  // Normalize payload/variables/secrets keys
-  if (out.payload   && typeof out.payload === 'object')   out.payload   = normalizeKeys(out.payload);
-  if (out.variables && typeof out.variables === 'object') out.variables = normalizeKeys(out.variables);
-  // secrets keys intentionally NOT snake_cased — they may be env var names like JWT_SECRET
+  // Normalize payload keys (config values)
+  if (out.payload && typeof out.payload === 'object') out.payload = normalizeKeys(out.payload);
+
+  // Variable NAMES are environment variable identifiers (NODE_ENV, JWT_SECRET, etc.)
+  // — do NOT normalize them. Only normalize the metadata fields WITHIN each variable object.
+  if (out.variables && typeof out.variables === 'object') {
+    const normalized = {};
+    for (const [k, v] of Object.entries(out.variables)) {
+      // Preserve original key (e.g. NODE_ENV stays NODE_ENV)
+      normalized[k] = typeof v === 'object' && v !== null ? normalizeKeys(v) : v;
+    }
+    out.variables = normalized;
+  }
+  // secrets keys intentionally NOT snake_cased — they are env var names like JWT_SECRET
 
   return out;
 }
