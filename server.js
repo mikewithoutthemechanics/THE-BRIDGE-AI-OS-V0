@@ -1917,6 +1917,19 @@ app.all('/api/uloe/{*path}', async (req, res, next) => {
   next();
 });
 
+// ================= eSIM + PBX — Global Telco Platform (/api/esim/* /api/pbx/*) =================
+const { handleESim } = require('./api/esim/routes');
+app.all('/api/esim/{*path}', async (req, res, next) => {
+  const handled = await handleESim(req, res);
+  if (handled !== null) return;
+  next();
+});
+app.all('/api/pbx/{*path}', async (req, res, next) => {
+  const handled = await handleESim(req, res);
+  if (handled !== null) return;
+  next();
+});
+
 // ================= HITL — Human-In-The-Loop approval queue (/api/hitl/*) =================
 const { handleHitl } = require('./api/hitl');
 app.all('/api/hitl/{*path}', async (req, res, next) => {

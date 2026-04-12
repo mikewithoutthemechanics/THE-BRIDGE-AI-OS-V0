@@ -242,7 +242,7 @@ nav{display:flex;align-items:center;gap:1rem;padding:.6rem 1.5rem;background:var
     </div>
     <div class="form-group">
       <label class="form-label">Tags (comma-separated)</label>
-      <input class="form-input" id="f-tags" placeholder="inbound, pricing-page, demo-request"/>
+      <input class="form-input" id="f-tags" placeholder="inbound, esim, pbx, demo-request"/>
     </div>
     <div class="form-group">
       <label class="form-label">Notes</label>
@@ -535,6 +535,7 @@ async function nurtureWithAI(lead) {
       }),
     });
 
+    // Show result panel
     const panel = document.createElement('div');
     panel.style.cssText = 'position:fixed;bottom:1.5rem;left:1.5rem;width:360px;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:1rem;z-index:500;font-size:.78rem;box-shadow:0 10px 40px rgba(0,0,0,.6)';
     panel.innerHTML = `
@@ -563,10 +564,10 @@ async function nurtureWithAI(lead) {
 }
 
 async function nurtureBulk() {
-  const active = _leads.filter(l => l.status !== 'closed_won' && l.status !== 'closed_lost').slice(0, 5);
-  if (!active.length) return toast('No active leads', 'err');
-  toast(`🤖 Nurturing ${active.length} leads with AI…`, 'ok');
-  for (const l of active) {
+  const top10 = _leads.filter(l => l.status !== 'closed_won' && l.status !== 'closed_lost').slice(0, 5);
+  if (!top10.length) return toast('No active leads', 'err');
+  toast(`🤖 Nurturing ${top10.length} leads with AI…`, 'ok');
+  for (const l of top10) {
     await nurtureWithAI({ id: l.id, name: l.name, email: l.email, company: l.company, phone: '', status: l.status, score: l.score, tags: l.tags || [], notes: '' });
     await new Promise(r => setTimeout(r, 800));
   }
