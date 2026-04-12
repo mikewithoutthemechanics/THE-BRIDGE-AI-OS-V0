@@ -75,18 +75,23 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
   .eco-bar{gap:1rem;font-size:0.6rem}
 }
 </style>
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 
 <nav class="nav">
-  <h1 class="nav-brand">Bridge AI</h1>
-  <div class="nav-links">
+  <div class="nav-brand"><span>Bridge</span> AI OS</div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+  <div class="nav-links" id="nav-links">
     <a href="/">Home</a>
-    <a href="/economy.html">Economy</a>
+    <a href="/pricing.html">Pricing</a>
+    <a href="/docs.html">API</a>
+    <a href="#voice">Voice</a>
     <div class="mic-indicator">
       <div class="mic-dot" id="micDot"></div>
       <span id="micLabel">Mic</span>
     </div>
+    <a href="/onboarding.html" class="nav-cta">Sign In</a>
   </div>
 </nav>
 
