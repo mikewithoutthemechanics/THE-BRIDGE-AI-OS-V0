@@ -58,6 +58,8 @@ const PAGE_META = {
   'abaas.html':            { desc: 'Agent-as-a-Service — deploy specialised AI agents for sales, support, legal, and operations.', canonical: '/abaas' },
   'invoicing.html':        { desc: 'AI invoicing — generate, send, and track invoices automatically. Integrated with treasury and PayFast payments.', canonical: '/invoicing' },
   'legal.html':            { desc: 'Bridge AI OS legal documentation — terms of service, privacy policy, and token disclaimer.', canonical: '/legal' },
+  'welcome.html':          { desc: 'Your Bridge AI OS dashboard — manage agents, view treasury, and access CRM, invoicing, and DeFi tools.', canonical: '/welcome' },
+  'pricing.html':          { desc: 'Bridge AI OS pricing — Starter R0/mo, Pro R499/mo, Enterprise R2,499/mo. Full AI agent workforce on every plan.', canonical: '/pricing' },
 };
 
 function titleToDesc(title) {

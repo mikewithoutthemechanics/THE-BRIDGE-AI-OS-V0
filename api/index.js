@@ -1595,6 +1595,94 @@ module.exports = async (req, res) => {
     return json(res, { error: 'unknown affiliate endpoint' }, 404);
   }
 
+  // ── /api/skills — full Bridge AI OS + Claude Code skill catalog ──
+  if (p === '/api/skills' || p.startsWith('/api/skills')) {
+    const sub = p.replace('/api/skills', '').replace(/^\//, '') || 'all';
+    const SKILL_CATALOG = {
+      ai_intelligence: {
+        label: 'AI Intelligence', icon: '🧠', color: '#38bdf8',
+        skills: [
+          { id: 'llm-routing',    name: 'Tiered LLM Routing',       desc: 'Kilo free → Claude Sonnet 4.6 → OpenRouter fallback chain', provider: 'claude' },
+          { id: 'twin-dispatch',  name: 'AI Twin Dispatch',          desc: 'Clone any agent, run parallel inference, merge outputs',     provider: 'claude' },
+          { id: 'neurolink',      name: 'NeuroLink Orchestrator',    desc: 'Multi-agent campaign coordinator with 5 campaign types',     provider: 'bridge' },
+          { id: 'super-brain',    name: 'Super Brain (port 8000)',   desc: 'Central AI nucleus — all agents route through this node',    provider: 'bridge' },
+          { id: 'prompt-cache',   name: 'Prompt Caching',            desc: 'Anthropic prompt cache with 5-min TTL, 90%+ cache hit',      provider: 'claude' },
+        ]
+      },
+      business_ops: {
+        label: 'Business Operations', icon: '💼', color: '#22c55e',
+        skills: [
+          { id: 'crm',         name: 'CRM + Leads Pipeline',   desc: '7-stage Kanban, Supabase-backed, full CRUD + analytics',       provider: 'bridge' },
+          { id: 'invoicing',   name: 'AI Invoicing',           desc: 'Invoice creation, PDF export, status tracking, AI helper',     provider: 'bridge' },
+          { id: 'hitl',        name: 'HITL Approval Gates',    desc: '18-state machine, 5 human-in-the-loop gates, approval UI',     provider: 'bridge' },
+          { id: 'affiliate',   name: 'Affiliate Program',      desc: '10% commission, 30-day cookie, ZAR payouts, leaderboard',      provider: 'bridge' },
+          { id: 'tickets',     name: 'Support Tickets',        desc: 'Priority AI auto-categorization, expand-in-place, SLA',        provider: 'bridge' },
+        ]
+      },
+      payments_defi: {
+        label: 'Payments & DeFi', icon: '🔗', color: '#a78bfa',
+        skills: [
+          { id: 'payfast',     name: 'PayFast ZAR Checkout',   desc: 'MD5-signed IPN, server-side ITN validation, auto-split',       provider: 'bridge' },
+          { id: 'brdg-token',  name: 'BRDG Token (Linea)',     desc: '100M supply, 1% burn, TreasuryVault on zkEVM mainnet',         provider: 'bridge' },
+          { id: 'banks',       name: 'Multi-Bank Treasury',    desc: 'Ops/Growth/Reserve/Founder/Partner banks, compound cycles',    provider: 'bridge' },
+          { id: 'ubi',         name: 'Universal Basic Income', desc: '30% of treasury auto-distributed to active citizens',          provider: 'bridge' },
+          { id: 'reconcile',   name: 'Treasury Reconciler',    desc: 'Drift detection, auto-heal, dual auth (admin + JWT)',          provider: 'bridge' },
+        ]
+      },
+      telco_esim: {
+        label: 'Telco & eSIM', icon: '📡', color: '#f59e0b',
+        skills: [
+          { id: 'esim',        name: 'eSIM Global Platform',   desc: 'AI-powered eSIM provisioning, 190+ countries coverage',        provider: 'bridge' },
+          { id: 'pbx',         name: 'PBX Voice System',       desc: 'Cloud PBX, call routing, IVR, SIP trunk management',          provider: 'bridge' },
+          { id: 'esim-nurture',name: 'eSIM AI Nurture',        desc: 'Claude-powered lead nurture for eSIM prospects via CRM',       provider: 'claude' },
+        ]
+      },
+      verticals: {
+        label: 'Industry Verticals', icon: '🏥', color: '#ef4444',
+        skills: [
+          { id: 'ehsa',        name: 'EHSA Health System',     desc: 'Patient records, appointments, telemedicine, pharmacy AI',     provider: 'bridge' },
+          { id: 'hospital',    name: 'Hospital in a Box',      desc: 'Full hospital stack in a container, deployable anywhere',      provider: 'bridge' },
+          { id: 'aid',         name: 'Aid Distribution',       desc: 'Transparent disbursement, NGO + government integration',       provider: 'bridge' },
+          { id: 'aurora',      name: 'Aurora AI Assistant',    desc: 'Emotion engine, lip-sync avatar, speech synthesis',            provider: 'bridge' },
+          { id: 'abaas',       name: 'Agent-as-a-Service',     desc: 'Enterprise API for custom AI agent deployment + SLAs',         provider: 'bridge' },
+        ]
+      },
+      infra_platform: {
+        label: 'Infrastructure', icon: '⚙️', color: '#64748b',
+        skills: [
+          { id: 'supabase',    name: 'Supabase (26 tables)',   desc: 'Full Postgres backend, RLS on all tables, service-role client', provider: 'bridge' },
+          { id: 'vercel',      name: 'Vercel Serverless',      desc: 'Single catch-all function, 12 crons, Fluid Compute runtime',   provider: 'vercel' },
+          { id: 'pm2',         name: 'VPS PM2 Services',       desc: '6 always-on processes: gateway, brain, auth, terminal, god',   provider: 'bridge' },
+          { id: 'oauth',       name: 'Google OAuth + JWT',     desc: 'Supabase Auth, HttpOnly cookie, session refresh flow',         provider: 'bridge' },
+          { id: 'logs',        name: 'Structured Log Reader',  desc: 'Admin-gated JSONL log stream from VPS + Vercel',               provider: 'bridge' },
+        ]
+      },
+      claude_code_skills: {
+        label: 'Claude Code Skills (Active)', icon: '⚡', color: '#38bdf8',
+        skills: [
+          { id: 'cc-commit',   name: 'Smart Commit & Push',    desc: 'Conventional commits, auto-stage, pre-hook safety checks',     provider: 'claude' },
+          { id: 'cc-gsd',      name: 'GSD Orchestrator',       desc: 'Phase planning, milestone execution, verification cycles',     provider: 'claude' },
+          { id: 'cc-memory',   name: 'Persistent Memory',      desc: 'Cross-session project/user/feedback/reference memory system',  provider: 'claude' },
+          { id: 'cc-deploy',   name: 'Vercel Deploy Skill',    desc: 'One-command deploy with env sync, preview + production',       provider: 'claude' },
+          { id: 'cc-review',   name: 'PR Review Toolkit',      desc: 'Code review, type analysis, silent-failure hunting, tests',    provider: 'claude' },
+          { id: 'cc-seo',      name: 'SEO Audit Skill',        desc: 'Meta tags, sitemap, robots.txt, canonical URL pipeline',       provider: 'claude' },
+          { id: 'cc-figma',    name: 'Figma → Code',           desc: 'Design-to-code with Code Connect, design system rules',        provider: 'claude' },
+          { id: 'cc-supabase', name: 'Supabase Automation',    desc: 'Migration authoring, edge functions, RLS policy generation',   provider: 'claude' },
+        ]
+      },
+    };
+
+    const catalog = Object.entries(SKILL_CATALOG).map(([key, cat]) => ({
+      category: key, label: cat.label, icon: cat.icon, color: cat.color,
+      count: cat.skills.length, skills: cat.skills,
+    }));
+    const totalSkills = catalog.reduce((n, c) => n + c.count, 0);
+    const claudeSkills = catalog.flatMap(c => c.skills).filter(s => s.provider === 'claude').length;
+
+    if (sub === 'summary') return json(res, { total: totalSkills, claude_powered: claudeSkills, categories: catalog.length, ts: ts() });
+    return json(res, { ok: true, total: totalSkills, claude_powered: claudeSkills, catalog, ts: ts() });
+  }
+
   // ── /api/agents/execute-paid ──
   if (p === '/api/agents/execute-paid' && req.method === 'POST') {
     const body = await parseBody(req);
@@ -1945,6 +2033,39 @@ module.exports = async (req, res) => {
       meta:     body.meta || '',
     });
     return json(res, { ok: true, ...result, ts: ts() }, 201);
+  }
+
+  // ── /api/checkout — plan-aware checkout used by checkout.html ──
+  if (p === '/api/checkout' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const { plan, email, name, vertical, vertical_name } = body;
+    if (!email) return json(res, { ok: false, error: 'email required' }, 400);
+
+    // ZAR plan pricing (matches pricing.html)
+    const PLAN_PRICES_ZAR = { starter: 0, pro: 499, enterprise: 2499 };
+    const planKey = (plan || 'starter').toLowerCase();
+    const amount  = PLAN_PRICES_ZAR[planKey];
+    if (amount === undefined) return json(res, { ok: false, error: 'invalid plan — use starter|pro|enterprise' }, 400);
+
+    // Free plan: skip PayFast, redirect directly to portal
+    if (amount === 0) {
+      return json(res, { ok: true, redirect: `/portal.html?plan=starter&email=${encodeURIComponent(email)}` });
+    }
+
+    try {
+      const [firstName, ...rest] = (name || 'Client').split(' ');
+      const result = pf.buildPaymentUrl({
+        amount,
+        email,
+        itemName:  `Bridge AI-OS ${planKey.charAt(0).toUpperCase() + planKey.slice(1)} Plan${vertical_name ? ` — ${vertical_name}` : ''}`,
+        firstName: firstName || 'Client',
+        meta:      JSON.stringify({ plan: planKey, vertical: vertical || 'default' }),
+      });
+      return json(res, { ok: true, payfast_url: result.url, payfast_fields: result.fields, ts: ts() });
+    } catch (e) {
+      console.error('[CHECKOUT] PayFast build failed:', e.message);
+      return json(res, { ok: false, error: 'Payment provider not configured. Contact support.' }, 503);
+    }
   }
 
   // ── /api/payfast-webhook (ITN — PayFast calls this on payment completion) ──
@@ -2394,7 +2515,12 @@ module.exports = async (req, res) => {
 
   // ── /api/treasury/reconcile ──
   if (p === '/api/treasury/reconcile') {
-    const user = requireAuthOrFail(req, res); if (!user) return;
+    // Accept X-Admin-Token (admin pages) OR user Bearer JWT
+    const adminTk = req.headers['x-admin-token'] || '';
+    const isAdminCall = process.env.ADMIN_TOKEN && adminTk === process.env.ADMIN_TOKEN;
+    if (!isAdminCall) {
+      const user = requireAuthOrFail(req, res); if (!user) return;
+    }
     const result = await db.reconcileTreasury();
     if (!result.ok && result.drift !== undefined) {
       notify.alertError({ context: 'treasury-reconcile', message: `Drift detected: R${result.drift} (${result.driftPct}%). Auto-healed.` }).catch(() => {});

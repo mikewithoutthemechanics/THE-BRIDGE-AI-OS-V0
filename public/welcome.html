@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Bridge AI OS — Your Dashboard — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="description" content="Your Bridge AI OS dashboard — manage agents, view treasury, and access CRM, invoicing, and DeFi tools.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://go.ai-os.co.za/welcome">
 <meta property="og:type" content="website">
@@ -57,6 +57,7 @@ h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin:1.5rem 0 .5rem;bor
 </style>
 </head>
 <body>
+<script src="/bridge-nav.js"></script>
 <a class="btn btn-danger logout" href="#" onclick="logout()">LOGOUT</a>
 <div class="page">
 <div class="welcome">
@@ -137,7 +138,7 @@ const freeTools = [
 const accessibleTools = freeTools.filter(t => t.roles.includes(role));
 document.getElementById('free-tools').innerHTML = accessibleTools.map(t => `
   <a class="card" href="${t.href}">
-    <h3><span class="icon">${t.icon}</span> ${t.name} <span class="badge ${t.tier}">${t.tier.toUpperCase()}</span></h3>
+    <h3><span class="icon" aria-hidden="true">${t.icon}</span> ${t.name} <span class="badge ${t.tier}">${t.tier.toUpperCase()}</span></h3>
     <p>${t.desc}</p>
   </a>
 `).join('');
@@ -168,16 +169,16 @@ async function load() {
     document.getElementById('stats').innerHTML = `
       <div class="stat"><div class="v">13</div><div class="l">TOOLS AVAILABLE</div></div>
       <div class="stat"><div class="v">${(agents.agents||[]).length}</div><div class="l">AI AGENTS</div></div>
-      <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
+      <div class="stat"><div class="v">${treasury.balance > 0 ? 'R' + Math.round(treasury.balance).toLocaleString() : '—'}</div><div class="l">TREASURY</div></div>
       <div class="stat"><div class="v">130+</div><div class="l">API ENDPOINTS</div></div>
     `;
 
     document.getElementById('agents').innerHTML = (agents.agents||[]).map(a => `
-      <div class="card"><h3><span class="icon">🤖</span> ${a.name} <span class="badge free">${a.status.toUpperCase()}</span></h3><p>${a.type} agent · ${a.deals_mtd||a.tickets_resolved||a.reports_generated||a.trades||0} actions this month</p></div>
+      <div class="card"><h3><span class="icon" aria-hidden="true">🤖</span> ${a.name} <span class="badge free">${a.status.toUpperCase()}</span></h3><p>${a.type} agent · ${a.deals_mtd||a.tickets_resolved||a.reports_generated||a.trades||0} actions this month</p></div>
     `).join('');
 
     document.getElementById('economy').innerHTML = `
-      <a class="card" href="/api/treasury/status"><h3><span class="icon">🏦</span> Treasury <span class="badge free">LIVE</span></h3><p>Balance: $${(treasury.balance||0).toLocaleString()} · Revenue: $${(treasury.earned||0).toLocaleString()}</p></a>
+      <a class="card" href="/api/treasury/status"><h3><span class="icon" aria-hidden="true">🏦</span> Treasury <span class="badge free">LIVE</span></h3><p>Balance: $${(treasury.balance||0).toLocaleString()} · Revenue: $${(treasury.earned||0).toLocaleString()}</p></a>
       <a class="card" href="/api/wallet/balance"><h3><span class="icon">👛</span> Wallet <span class="badge free">LIVE</span></h3><p>Total: $${(wallet.total_usd||0).toLocaleString()} · ${(wallet.balances||[]).length} currencies</p></a>
       <a class="card" href="/api/dex/pairs"><h3><span class="icon">📈</span> DEX Trading <span class="badge free">LIVE</span></h3><p>BRDG/ETH, BRDG/USDT, BRDG/SOL · Live pairs</p></a>
       <a class="card" href="/api/defi/status"><h3><span class="icon">🔗</span> DeFi / Staking <span class="badge free">LIVE</span></h3><p>Stake BRDG, earn 15% APY, 342 stakers</p></a>

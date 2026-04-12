@@ -1,290 +1,220 @@
-(function() {
-  'use strict';
+/**
+ * bridge-nav.js — Shared Navigation Component
+ * Injects a consistent top nav bar into every Bridge AI OS page.
+ * Usage: <script src="/bridge-nav.js"></script>
+ */
+(function(){
+'use strict';
 
-  // Single canonical domain: bridge-ai-os.com
-  const BASE_URL = 'https://bridge-ai-os.com';
-  var svcBase = BASE_URL;
-  var godUrl = BASE_URL + '/control.html';
-  var svgUrl = BASE_URL + '/avatar.html';
-  var termUrl = 'https://terminal.bridge-ai-os.com';
-  var authUrl = 'https://auth.bridge-ai-os.com';
-  var gwUrl = 'https://gateway.bridge-ai-os.com';
-  var sections = {
-    'SERVICES': [
-      { name: 'CONTROL', subdomain: 'abaas', port: '3000', url: svcBase || '/' },
-      { name: 'GOD MODE', subdomain: 'god', port: '3001', url: godUrl },
-      { name: 'LIVE WALL', subdomain: 'live', port: '8001', url: 'https://live.bridge-ai-os.com' },
-      { name: 'BRAIN', subdomain: 'brain', port: '8000', url: BASE_URL + '/api/health' },
-      { name: 'TERMINAL', subdomain: 'terminal', port: '5002', url: termUrl },
-      { name: 'GRAFANA', subdomain: 'grafana', port: '3003', url: 'https://grafana.bridge-ai-os.com' }
-    ],
-    'PLATFORMS': [
-      { name: 'EHSA', url: svcBase+'/ehsa-home.html' }, { name: 'HOSPITAL', url: svcBase+'/hospital-home.html' },
-      { name: 'AID', url: svcBase+'/aid-home.html' }, { name: 'UBI', url: svcBase+'/ubi-home.html' },
-      { name: 'SUPAC', url: svcBase+'/supac-home.html' }, { name: 'BAN', url: svcBase+'/ban-home.html' },
-      { name: 'AURORA', url: svcBase+'/aurora-home.html' }, { name: 'ROOTED EARTH', url: svcBase+'/rootedearth-home.html' },
-      { name: 'PLATFORMS', url: svcBase+'/platforms.html' }
-    ],
-    'BUSINESS': [
-      { name: 'CRM', url: svcBase+'/crm.html' }, { name: 'INVOICING', url: svcBase+'/invoicing.html' },
-      { name: 'QUOTES', url: svcBase+'/quotes.html' }, { name: 'LEGAL', url: svcBase+'/legal.html' },
-      { name: 'MARKETING', url: svcBase+'/marketing.html' }, { name: 'TICKETS', url: svcBase+'/tickets.html' },
-      { name: 'VENDORS', url: svcBase+'/vendors.html' }, { name: 'CUSTOMERS', url: svcBase+'/customers.html' },
-      { name: 'WORKFORCE', url: svcBase+'/workforce.html' }, { name: 'LEADGEN', url: svcBase+'/leadgen.html' },
-      { name: 'AFFILIATE', url: svcBase+'/affiliate.html' }, { name: 'GOVERNANCE', url: svcBase+'/governance.html' }
-    ],
-    'SYSTEM': [
-      { name: 'COMMAND', url: svcBase+'/command-center.html' }, { name: 'AGENTS', url: svcBase+'/agents.html' }, { name: 'TOPOLOGY', url: svcBase+'/topology.html' }, { name: 'LAYERS', url: svcBase+'/topology-layers.html' },
-      { name: 'STATUS', url: svcBase+'/system-status-dashboard.html' }, { name: 'REGISTRY', url: svcBase+'/registry.html' },
-      { name: 'LOGS', url: svcBase+'/logs.html' }, { name: 'TERMINAL', url: svcBase+'/terminal.html' },
-      { name: 'TREASURY', url: svcBase+'/treasury-dashboard.html' }, { name: 'BANKS', url: svcBase+'/banks.html' }, { name: 'INFRA', url: svcBase+'/infra.html' }, { name: 'DASHBOARD', url: svcBase+'/aoe-dashboard.html' }
-    ],
-    'MORE': [
-      { name: 'APPS', url: svcBase+'/50-applications.html' }, { name: 'MARKETPLACE', url: svcBase+'/marketplace.html' },
-      { name: 'DEFI', url: svcBase+'/defi.html' }, { name: 'TRADING', url: svcBase+'/trading.html' },
-      { name: 'PRICING', url: svcBase+'/pricing.html' }, { name: 'PAYMENT', url: svcBase+'/payment.html' }, { name: 'DOCS', url: svcBase+'/docs.html' },
-      { name: 'AVATAR', url: svcBase+'/avatar.html' }, { name: 'BRAND', url: svcBase+'/brand.html' },
-      { name: 'CORPORATE', url: svcBase+'/corporate.html' }, { name: 'SITEMAP', url: svcBase+'/sitemap.html' },
-      { name: 'JOIN', url: svcBase+'/join.html' }
-    ]
-  };
+// Load Outfit + JetBrains Mono once (idempotent)
+if (!document.querySelector('#bridge-fonts')) {
+  var lnk = document.createElement('link');
+  lnk.id = 'bridge-fonts';
+  lnk.rel = 'stylesheet';
+  lnk.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap';
+  document.head.appendChild(lnk);
+}
 
-  var currentHost = window.location.hostname;
-  var currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-  var currentPath = window.location.pathname;
-  var isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+// Load phere design system (idempotent)
+if (!document.querySelector('#bridge-phere-css')) {
+  var css = document.createElement('link');
+  css.id = 'bridge-phere-css';
+  css.rel = 'stylesheet';
+  css.href = '/bridge-phere.css';
+  document.head.appendChild(css);
+}
 
-  function isActive(item) {
-    if (item.subdomain) return isLocalhost ? item.port === currentPort : currentHost.indexOf(item.subdomain) !== -1;
-    try {
-      var u = new URL(item.url, window.location.origin);
-      return currentPath === u.pathname || currentPath === u.pathname + '.html';
-    } catch(e) { return currentPath === item.url; }
-  }
+var NAV_LINKS = [
+  { label: 'Home',        href: '/home',        public: true },
+  { label: 'Agents',      href: '/agents',      public: true },
+  { label: 'Marketplace', href: '/marketplace', public: true },
+  { label: 'CRM',         href: '/crm',         public: false },
+  { label: 'Leads',       href: '/leads',       public: false },
+  { label: 'Invoicing',   href: '/invoicing',   public: false },
+  { label: 'Wallet',      href: '/wallet',      public: false },
+  { label: 'Pricing',        href: '/pricing',       public: true  },
+  { label: 'Claude Partner', href: '/claude-partner', public: true  },
+  { label: 'Docs',           href: '/docs',           public: true  },
+];
 
-  var twinUrl   = svcBase + '/digital-twin-console.html';
-  var avatarUrl = svcBase + '/avatar.html';
+var STYLES = `
+#bridge-nav{
+  position:sticky;top:0;z-index:1000;
+  display:flex;align-items:center;
+  height:52px;padding:0 20px;
+  background:rgba(4,8,15,0.88);
+  border-bottom:1px solid rgba(99,255,218,0.08);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  font-family:'Outfit',system-ui,sans-serif;
+  flex-shrink:0;
+}
+#bridge-nav .bn-logo{
+  font-size:.92rem;font-weight:800;color:#63ffda;letter-spacing:.2em;
+  text-decoration:none;white-space:nowrap;margin-right:20px;
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
+}
+#bridge-nav .bn-logo span{color:#00e57b}
+#bridge-nav .bn-links{
+  display:flex;align-items:center;gap:2px;flex:1;overflow-x:auto;
+  scrollbar-width:none;
+}
+#bridge-nav .bn-links::-webkit-scrollbar{display:none}
+#bridge-nav .bn-link{
+  display:inline-block;padding:5px 10px;border-radius:6px;
+  color:rgba(200,220,230,0.55);font-size:.77rem;font-weight:500;
+  text-decoration:none;white-space:nowrap;
+  transition:color .15s,background .15s;letter-spacing:.02em;
+}
+#bridge-nav .bn-link:hover,#bridge-nav .bn-link.active{
+  color:#63ffda;background:rgba(99,255,218,0.07);
+}
+#bridge-nav .bn-right{
+  display:flex;align-items:center;gap:8px;margin-left:12px;flex-shrink:0;
+}
+#bridge-nav .bn-status{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 12px;border-radius:20px;
+  border:1px solid rgba(99,255,218,0.2);
+  background:rgba(99,255,218,0.05);
+  font-size:.68rem;font-weight:600;color:#63ffda;
+  letter-spacing:.05em;cursor:pointer;text-decoration:none;
+  transition:background .15s,border-color .15s;
+}
+#bridge-nav .bn-status:hover{
+  background:rgba(99,255,218,0.12);border-color:rgba(99,255,218,0.4);
+}
+#bridge-nav .bn-dot{
+  width:6px;height:6px;border-radius:50%;background:#00e57b;
+  box-shadow:0 0 6px rgba(0,229,123,.6);
+  animation:bn-pulse 2s ease-in-out infinite;flex-shrink:0;
+}
+#bridge-nav .bn-dot.offline{background:#ff3366;box-shadow:0 0 6px rgba(255,51,102,.6);animation:none}
+@keyframes bn-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#bridge-nav .bn-cta{
+  display:inline-flex;align-items:center;
+  padding:5px 14px;border-radius:6px;font-size:.75rem;font-weight:700;
+  background:linear-gradient(135deg,#63ffda,#00e57b);color:#020408;
+  text-decoration:none;letter-spacing:.04em;
+  transition:filter .15s,transform .15s;
+}
+#bridge-nav .bn-cta:hover{filter:brightness(1.1);transform:translateY(-1px)}
+#bridge-nav .bn-hamburger{
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;gap:4px;cursor:pointer;
+  padding:8px;border-radius:6px;background:none;border:none;
+}
+#bridge-nav .bn-hamburger span{
+  display:block;width:18px;height:2px;
+  background:rgba(200,220,230,.7);border-radius:2px;
+  transition:all .2s;pointer-events:none;
+}
+#bridge-nav-drawer{
+  display:none;position:fixed;top:52px;left:0;right:0;
+  background:rgba(4,8,15,0.97);border-bottom:1px solid rgba(99,255,218,0.1);
+  padding:12px 16px 16px;z-index:999;flex-direction:column;gap:2px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  max-height:calc(100vh - 52px);overflow-y:auto;
+}
+#bridge-nav-drawer.open{display:flex}
+#bridge-nav-drawer .bn-link{font-size:.85rem;padding:9px 14px;border-radius:8px}
+#bridge-nav-drawer .bn-divider{height:1px;background:rgba(99,255,218,0.08);margin:6px 0}
+@media(max-width:820px){
+  #bridge-nav .bn-links{display:none}
+  #bridge-nav .bn-hamburger{display:flex}
+  #bridge-nav .bn-status{display:none}
+}
+@media(max-width:480px){
+  #bridge-nav{padding:0 12px}
+  #bridge-nav .bn-cta{font-size:.7rem;padding:4px 10px}
+}
+`;
 
-  var css = [
-    '.bn-bar{position:fixed;top:0;left:0;right:0;height:40px;z-index:99999 !important;background:var(--bg-1,#0a0e17);display:flex;align-items:center;padding:0 8px;font-family:"JetBrains Mono",monospace;border-bottom:1px solid rgba(99,255,218,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.4);gap:6px;pointer-events:all !important;}',
-    '.bn-logo{color:var(--cyan,#63ffda);font-size:12px;font-weight:700;letter-spacing:2px;white-space:nowrap;cursor:pointer;flex-shrink:0;}',
-    /* Twin + Avatar pinned pods */
-    '.bn-pod{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;white-space:nowrap;flex-shrink:0;transition:all .2s;cursor:pointer;border:none;}',
-    '.bn-pod-twin{color:#050a0f;background:#63ffda;box-shadow:0 0 10px rgba(99,255,218,0.4);}',
-    '.bn-pod-twin:hover{background:#00ffcc;box-shadow:0 0 18px rgba(99,255,218,0.7);}',
-    '.bn-pod-avatar{color:#050a0f;background:#a78bfa;box-shadow:0 0 10px rgba(167,139,250,0.4);}',
-    '.bn-pod-avatar:hover{background:#c4b5fd;box-shadow:0 0 18px rgba(167,139,250,0.7);}',
-    '.bn-pod-sep{width:1px;height:20px;background:rgba(99,255,218,0.15);flex-shrink:0;}',
-    /* sections */
-    '.bn-sections{display:flex;gap:4px;align-items:center;flex:1;overflow:visible;scrollbar-width:none;}',
-    '.bn-sections::-webkit-scrollbar{display:none;}',
-    '.bn-group{position:relative;z-index:10001;}',
-    '.bn-group-btn{color:var(--cyan,#63ffda);font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:6px 12px;border-radius:4px;cursor:pointer;border:1px solid rgba(99,255,218,0.15);background:rgba(99,255,218,0.04);white-space:nowrap;transition:all 0.2s;pointer-events:all;position:relative;z-index:9999;}',
-    '.bn-group-btn:hover,.bn-group.open .bn-group-btn{background:rgba(99,255,218,0.08);border-color:rgba(99,255,218,0.3);}',
-    '.bn-dropdown{display:none;position:absolute;top:100%;left:0;margin-top:4px;background:#0a0e17;border:1px solid rgba(99,255,218,0.25);border-radius:6px;padding:6px;min-width:160px;box-shadow:0 8px 30px rgba(0,0,0,0.8);z-index:100000;}',
-    '.bn-group.open .bn-dropdown{display:block;}',
-    '.bn-link{display:block;color:var(--text-secondary,#94a3b8);text-decoration:none;font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;border-radius:3px;transition:all 0.15s;white-space:nowrap;}',
-    '.bn-link:hover{color:#e2e8f0;background:rgba(99,255,218,0.06);}',
-    '.bn-link.bn-active{color:var(--cyan,#63ffda);background:rgba(99,255,218,0.1);}',
-    '.bn-status{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.5);flex-shrink:0;}',
-    /* floating twin control FAB */
-    '.bn-fab{position:fixed;bottom:20px;right:20px;z-index:99998;display:flex;flex-direction:column;align-items:flex-end;gap:8px;font-family:"JetBrains Mono",monospace;}',
-    '.bn-fab-btn{width:48px;height:48px;border-radius:50%;border:2px solid #63ffda;background:#050a0f;color:#63ffda;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 14px rgba(99,255,218,0.35);transition:all .2s;}',
-    '.bn-fab-btn:hover{background:#0a1a1a;box-shadow:0 0 24px rgba(99,255,218,0.6);}',
-    '.bn-fab-panel{display:none;background:#060810;border:1px solid rgba(99,255,218,0.2);border-radius:10px;padding:12px;width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.7);}',
-    '.bn-fab-panel.open{display:block;}',
-    '.bn-fab-title{color:#63ffda;font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(99,255,218,0.1);}',
-    '.bn-fab-row{display:flex;gap:6px;margin-bottom:6px;}',
-    '.bn-fab-link{flex:1;display:block;text-align:center;padding:8px 4px;border-radius:6px;font-size:9px;letter-spacing:1px;font-weight:700;text-decoration:none;text-transform:uppercase;transition:all .2s;}',
-    '.bn-fab-link.twin{background:rgba(99,255,218,0.1);color:#63ffda;border:1px solid rgba(99,255,218,0.25);}',
-    '.bn-fab-link.twin:hover{background:rgba(99,255,218,0.2);border-color:#63ffda;}',
-    '.bn-fab-link.avatar{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.25);}',
-    '.bn-fab-link.avatar:hover{background:rgba(167,139,250,0.2);border-color:#a78bfa;}',
-    '.bn-fab-status{font-size:9px;color:#628ba0;text-align:center;padding-top:4px;}',
-    '.bn-fab-status .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;margin-right:4px;box-shadow:0 0 4px rgba(74,222,128,0.6);}',
-    /* ── Mobile hamburger ─────────────────────────────────────────── */
-    '.bn-hamburger{display:none;background:none;border:1px solid rgba(99,255,218,0.2);color:#63ffda;font-size:18px;padding:4px 8px;border-radius:4px;cursor:pointer;flex-shrink:0;line-height:1;}',
-    '.bn-hamburger:hover{background:rgba(99,255,218,0.08);}',
-    '@media(max-width:768px){',
-    '  .bn-hamburger{display:flex;align-items:center;justify-content:center;}',
-    '  .bn-pod-twin,.bn-pod-avatar,.bn-pod-sep{display:none;}',
-    '  .bn-sections{display:none;position:fixed;top:40px;left:0;right:0;bottom:0;background:#060810;flex-direction:column;gap:0;overflow-y:auto;padding:8px;z-index:99998;}',
-    '  .bn-sections.open{display:flex;}',
-    '  .bn-group{width:100%;}',
-    '  .bn-group-btn{width:100%;text-align:left;padding:12px 14px;font-size:11px;border-radius:6px;border:1px solid rgba(99,255,218,0.08);margin-bottom:2px;}',
-    '  .bn-dropdown{position:static;margin:0;border:none;background:transparent;box-shadow:none;padding:0 0 8px 12px;}',
-    '  .bn-link{padding:10px 14px;font-size:11px;}',
-    '  .bn-logo{font-size:11px;}',
-    '  .bn-status{margin-left:auto;}',
-    '}'
-  ].join('\n');
+function getCurrentPath(){
+  return window.location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+}
 
-  var style = document.createElement('style');
-  style.textContent = css;
-  document.head.appendChild(style);
+function isActive(href){
+  var path = getCurrentPath();
+  var hrefClean = href.replace(/\.html$/, '');
+  if (hrefClean === '/home' && (path === '/' || path === '/home')) return true;
+  return path === hrefClean;
+}
 
-  var bar = document.createElement('div');
-  bar.className = 'bn-bar';
+function getUser(){
+  try{ return JSON.parse(localStorage.getItem('bridge_user')||'{}'); } catch(e){ return {}; }
+}
 
-  var logo = document.createElement('span');
-  logo.className = 'bn-logo';
-  logo.textContent = 'BRIDGE AI';
-  logo.onclick = function() { window.location.href = svcBase + '/50-applications.html'; };
-  bar.appendChild(logo);
+function inject(){
+  if (document.getElementById('bridge-nav')) return;
 
-  // ── Twin + Avatar pinned control pods ──────────────────────────────────
-  var twinPod = document.createElement('a');
-  twinPod.className = 'bn-pod bn-pod-twin';
-  twinPod.href = twinUrl;
-  twinPod.title = 'Digital Twin \u2014 central orchestration';
-  twinPod.textContent = '\u25b3 TWIN';
-  bar.appendChild(twinPod);
+  var s = document.createElement('style');
+  s.id = 'bridge-nav-style';
+  s.textContent = STYLES;
+  document.head.appendChild(s);
 
-  var avatarPod = document.createElement('a');
-  avatarPod.className = 'bn-pod bn-pod-avatar';
-  avatarPod.href = avatarUrl;
-  avatarPod.title = 'Avatar \u2014 AI embodiment interface';
-  avatarPod.textContent = '\u25cb AVATAR';
-  bar.appendChild(avatarPod);
+  var user = getUser();
+  var isLoggedIn = !!(localStorage.getItem('bridge_token') || user.email);
 
-  var sep = document.createElement('span');
-  sep.className = 'bn-pod-sep';
-  bar.appendChild(sep);
+  var linksHtml = NAV_LINKS.filter(function(l){
+    return l.public || isLoggedIn;
+  }).map(function(l){
+    return '<a class="bn-link'+(isActive(l.href)?' active':'')+'" href="'+l.href+'">'+l.label+'</a>';
+  }).join('');
 
-  var sectionsDiv = document.createElement('div');
-  sectionsDiv.className = 'bn-sections';
+  var drawerLinksHtml = NAV_LINKS.map(function(l){
+    return '<a class="bn-link'+(isActive(l.href)?' active':'')+'" href="'+l.href+'">'+l.label+'</a>';
+  }).join('');
 
-  Object.keys(sections).forEach(function(sectionName) {
-    var group = document.createElement('div');
-    group.className = 'bn-group';
-    var btn = document.createElement('button');
-    btn.className = 'bn-group-btn';
-    btn.textContent = sectionName;
-    btn.onclick = function(e) {
-      e.stopPropagation();
-      document.querySelectorAll('.bn-group').forEach(function(g) { if (g !== group) g.classList.remove('open'); });
-      group.classList.toggle('open');
-    };
-    group.appendChild(btn);
+  var authHtml = isLoggedIn
+    ? '<a class="bn-status" href="/welcome"><span class="bn-dot" id="bn-dot"></span>'+(user.name ? user.name.split(' ')[0] : 'Dashboard')+'</a>'
+    : '<a class="bn-status" href="/onboarding"><span class="bn-dot offline" id="bn-dot"></span>Sign In</a>';
 
-    var dropdown = document.createElement('div');
-    dropdown.className = 'bn-dropdown';
-    sections[sectionName].forEach(function(item) {
-      var a = document.createElement('a');
-      a.className = 'bn-link' + (isActive(item) ? ' bn-active' : '');
-      a.href = item.url;
-      a.textContent = item.name;
-      dropdown.appendChild(a);
-    });
-    group.appendChild(dropdown);
-    sectionsDiv.appendChild(group);
+  var nav = document.createElement('nav');
+  nav.id = 'bridge-nav';
+  nav.setAttribute('aria-label','Main navigation');
+  nav.innerHTML =
+    '<a class="bn-logo" href="/home">BRIDGE <span>AI</span></a>'+
+    '<div class="bn-links" role="menubar">'+linksHtml+'</div>'+
+    '<div class="bn-right">'+
+      authHtml+
+      '<a class="bn-cta" href="/onboarding">Get Started</a>'+
+      '<button class="bn-hamburger" id="bn-ham" aria-label="Toggle navigation" aria-expanded="false">'+
+        '<span></span><span></span><span></span>'+
+      '</button>'+
+    '</div>';
+
+  var drawer = document.createElement('div');
+  drawer.id = 'bridge-nav-drawer';
+  drawer.setAttribute('aria-label','Mobile navigation');
+  drawer.innerHTML = drawerLinksHtml +
+    '<div class="bn-divider"></div>'+
+    (isLoggedIn
+      ? '<a class="bn-link" href="/welcome">Dashboard</a>'
+      : '<a class="bn-link" href="/onboarding">Sign In / Register</a>');
+
+  var body = document.body;
+  body.insertBefore(drawer, body.firstChild);
+  body.insertBefore(nav, body.firstChild);
+
+  // Hamburger
+  document.getElementById('bn-ham').addEventListener('click', function(){
+    var d = document.getElementById('bridge-nav-drawer');
+    var open = d.classList.toggle('open');
+    this.setAttribute('aria-expanded', String(open));
   });
 
-  var hamburger = document.createElement('button');
-  hamburger.className = 'bn-hamburger';
-  hamburger.textContent = '\u2630';
-  hamburger.setAttribute('aria-label', 'Toggle navigation menu');
-  hamburger.onclick = function(e) {
-    e.stopPropagation();
-    var isOpen = sectionsDiv.classList.toggle('open');
-    hamburger.textContent = isOpen ? '\u2715' : '\u2630';
-  };
-  bar.appendChild(hamburger);
-
-  bar.appendChild(sectionsDiv);
-
-  var dot = document.createElement('span');
-  dot.className = 'bn-status';
-  bar.appendChild(dot);
-
-  document.body.insertBefore(bar, document.body.firstChild);
-  document.body.style.paddingTop = '40px';
-
-  document.addEventListener('click', function() {
-    document.querySelectorAll('.bn-group').forEach(function(g) { g.classList.remove('open'); });
-    document.querySelectorAll('.bn-fab-panel').forEach(function(p) { p.classList.remove('open'); });
-    // Close mobile nav on outside click
-    if (sectionsDiv.classList.contains('open')) {
-      sectionsDiv.classList.remove('open');
-      hamburger.textContent = '\u2630';
-    }
+  // Live health ping
+  fetch('/api/health').catch(function(){
+    var dot = document.getElementById('bn-dot');
+    if (dot) dot.classList.add('offline');
   });
+}
 
-  // ── Floating Twin Control FAB ─────────────────────────────────────────
-  var fab = document.createElement('div');
-  fab.className = 'bn-fab';
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', inject);
+} else {
+  inject();
+}
 
-  var fabPanel = document.createElement('div');
-  fabPanel.className = 'bn-fab-panel';
-
-  var fabTitle = document.createElement('div');
-  fabTitle.className = 'bn-fab-title';
-  fabTitle.textContent = 'TWIN CONTROL';
-  fabPanel.appendChild(fabTitle);
-
-  var fabRow = document.createElement('div');
-  fabRow.className = 'bn-fab-row';
-
-  var fabTwin = document.createElement('a');
-  fabTwin.className = 'bn-fab-link twin';
-  fabTwin.href = twinUrl;
-  fabTwin.textContent = '\u25b3 DIGITAL TWIN';
-  fabRow.appendChild(fabTwin);
-
-  var fabAvatar = document.createElement('a');
-  fabAvatar.className = 'bn-fab-link avatar';
-  fabAvatar.href = avatarUrl;
-  fabAvatar.textContent = '\u25cb AVATAR';
-  fabRow.appendChild(fabAvatar);
-
-  fabPanel.appendChild(fabRow);
-
-  var fabStatus = document.createElement('div');
-  fabStatus.className = 'bn-fab-status';
-  fabPanel.appendChild(fabStatus);
-
-  var fabBtn = document.createElement('button');
-  fabBtn.className = 'bn-fab-btn';
-  fabBtn.title = 'Twin Control';
-  fabBtn.textContent = '\u29c6';
-  fabBtn.setAttribute('aria-label', 'Open Twin Control panel');
-  fabBtn.onclick = function(e) {
-    e.stopPropagation();
-    fabPanel.classList.toggle('open');
-    if (fabPanel.classList.contains('open')) pingBrain();
-  };
-
-  fab.appendChild(fabPanel);
-  fab.appendChild(fabBtn);
-  document.body.appendChild(fab);
-
-  function pingBrain() {
-    fabStatus.textContent = 'Connecting...';
-    fetch('/api/health', { method: 'GET', signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined })
-      .then(function(r) {
-        var dot = document.createElement('span');
-        dot.className = 'dot';
-        fabStatus.textContent = '';
-        fabStatus.appendChild(dot);
-        fabStatus.appendChild(document.createTextNode(r.ok ? 'Brain online' : 'Brain degraded'));
-      })
-      .catch(function() {
-        fabStatus.textContent = 'Brain offline';
-      });
-  }
-
-  // Auto-inject PHERE design system if not already loaded
-  if (!document.getElementById('bridge-phere-css')) {
-    var phereLink = document.createElement('link');
-    phereLink.id = 'bridge-phere-css';
-    phereLink.rel = 'stylesheet';
-    phereLink.href = '/bridge-phere.css';
-    document.head.appendChild(phereLink);
-  }
-  if (!document.querySelector('script[src*="bridge-phere"]')) {
-    var phereScript = document.createElement('script');
-    phereScript.src = '/bridge-phere.js';
-    phereScript.defer = true;
-    document.head.appendChild(phereScript);
-  }
 })();
