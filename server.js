@@ -1512,7 +1512,7 @@ app.post('/api/admin/keys', requireAdmin, (req, res) => {
 });
 
 // UBI claim (used by executive-dashboard.html)
-app.post('/api/ubi/claim', (req, res) => {
+app.post('/api/ubi/claim', async (req, res) => {
   const { address } = req.body;
   if (!address) return res.status(400).json({ error: 'Address required' });
   try {
