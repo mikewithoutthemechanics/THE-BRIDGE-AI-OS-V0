@@ -353,9 +353,29 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
     res.json({ ok: true, task });
   });
 
+  // Minimum output length by task type
+  const taskTypeMinLength = {
+    writer: 100,
+    coder: 50,
+    analyst: 50,
+    scroller: 20,
+  };
+
+  // Validate work output quality
+  function validateWorkOutput(output, taskType) {
+    if (!output || typeof output !== 'string') {
+      return { valid: false, reason: 'work_output must be a non-empty string' };
+    }
+    const minLen = taskTypeMinLength[taskType] || 20;
+    if (output.length < minLen) {
+      return { valid: false, reason: `work_output must be at least ${minLen} characters for ${taskType} tasks` };
+    }
+    return { valid: true };
+  }
+
   // POST /api/tasks/:id/complete - mark task complete, calculate payout, credit agent
   app.post('/api/tasks/:id/complete', (req, res) => {
-    const { agent_id, cost = 0, time_ms = 0 } = req.body;
+    const { agent_id, cost = 0, time_ms = 0, work_output } = req.body;
     const task = taskQueue.find(t => t.id === req.params.id);
     if (!task) {
       return res.status(404).json({ ok: false, error: 'Task not found' });
@@ -365,6 +385,12 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
     }
     if (!agent_id) {
       return res.status(400).json({ ok: false, error: 'agent_id required' });
+    }
+    const outputValidation = validateWorkOutput(work_output, task.agent_type_needed);
+    if (!outputValidation.valid) {
+      task.status = 'validation_failed';
+      task.validation_reason = outputValidation.reason;
+      return res.status(400).json({ ok: false, error: outputValidation.reason });
     }
     const payout = task.price;
     task.status = 'completed';
