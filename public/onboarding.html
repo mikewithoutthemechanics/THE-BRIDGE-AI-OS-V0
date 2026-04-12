@@ -139,11 +139,24 @@ select option{background:#080d18}
 /* Loading spinner */
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;margin-left:6px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── GAMIFICATION XP HUD ── */
+.xp-hud{display:flex;align-items:center;gap:12px;max-width:480px;width:100%;margin-bottom:1rem;padding:10px 14px;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:8px}
+.xp-hud-level{font-size:.65rem;font-weight:800;color:var(--cyan);letter-spacing:.2em;white-space:nowrap}
+.xp-hud-rank{font-size:.6rem;color:var(--green);letter-spacing:.1em;flex:1}
+.xp-bar-wrap{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;min-width:60px}
+.xp-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .6s cubic-bezier(.4,0,.2,1);width:0%}
+.xp-count{font-size:.62rem;color:var(--dim);white-space:nowrap}
+.xp-toast{position:fixed;bottom:24px;right:24px;background:rgba(0,212,255,.15);border:1px solid var(--cyan);color:var(--cyan);padding:8px 16px;border-radius:8px;font-size:.75rem;font-weight:700;letter-spacing:.08em;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.xp-toast.show{opacity:1;transform:translateY(0)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
 </head>
 <body>
+
+<!-- XP toast notification -->
+<div class="xp-toast" id="xpToast"></div>
 
 <!-- Starfield canvas -->
 <canvas id="stars"></canvas>
@@ -166,6 +179,14 @@ select option{background:#080d18}
 
   <!-- ── LEFT: Commander Brief ── -->
   <div class="left">
+
+    <!-- XP / Level HUD -->
+    <div class="xp-hud" id="xpHud">
+      <div class="xp-hud-level">LVL <span id="xpLevel">1</span></div>
+      <div class="xp-bar-wrap"><div class="xp-bar" id="xpBar"></div></div>
+      <div class="xp-count"><span id="xpCount">0</span> XP</div>
+      <div class="xp-hud-rank" id="xpRank">CREW MEMBER</div>
+    </div>
 
     <div style="max-width:480px;width:100%">
       <div class="command-title">
@@ -617,12 +638,17 @@ document.getElementById('register-form').addEventListener('submit', async functi
       var u = data.user || {};
       localStorage.setItem('bridge_user', JSON.stringify({ email: u.email||body.email, role: u.role||'user', name: u.name||body.name||body.email.split('@')[0], plan: u.plan||'free', funnel_stage: u.funnel_stage||'identified', brdg_balance: u.brdg_balance||0 }));
       var ref = document.getElementById('reg-referral').value.trim();
+      // Gamification XP
+      GAMIFICATION.gainXP(50, 'Account Created');
       if (ref) {
+        GAMIFICATION.gainXP(100, 'Referral Bonus');
+        GAMIFICATION.state.referrals++;
         fetch('/referral/claim', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+data.token}, body: JSON.stringify({ code: ref }) }).catch(function(){});
       }
       // Record usage event
       fetch('/api/usage/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: u.id||u.email, feature:'register', meta:{ method:'email', ref: ref||null } }) }).catch(function(){});
-      setTimeout(function(){ location.href = '/activate'; }, 1200);
+      setTimeout(function(){ GAMIFICATION.gainXP(200, 'Agents Deployed'); }, 800);
+      setTimeout(function(){ location.href = '/activate'; }, 2200);
     } else {
       showMsg('reg-msg', data.error || 'Registration failed', false);
       setLoading('regBtn', false, 'LAUNCH INTO THE NETWORK');
@@ -700,10 +726,11 @@ async function deployAgent() {
 
     if (agentData.ok || agentData.device_id || agentData.agent_id) {
       showMsg('agent-msg', '✓ Agent deployed! ID: ' + (agentData.agent_id || agentData.device_id || 'generated') + ' · API key issued · BRDG earning active', true);
+      GAMIFICATION.gainXP(150, 'Agent Deployed');
       // Store token and redirect operator to dashboard
       localStorage.setItem('bridge_token', loginData.token);
       document.cookie = 'bridge_token=' + loginData.token + ';path=/;max-age=2592000;SameSite=Lax';
-      setTimeout(function(){ location.href = '/agents'; }, 2000);
+      setTimeout(function(){ location.href = '/agents'; }, 2200);
     } else {
       showMsg('agent-msg', agentData.error || 'Agent deployment failed — ensure your account has the required plan', false);
     }
@@ -752,7 +779,72 @@ function postAuthDest() {
   return '/activate';
 }
 
-// ── PixiJS Captain Avatar Overlay ──────────────────────────────────────────
+// ── Gamification Engine (from preview template) ────────────────────────────
+var GAMIFICATION = (function() {
+  var RANKS = [
+    { min:0,    label:'CREW MEMBER',    color:'#6b7280' },
+    { min:100,  label:'NAVIGATOR',      color:'#00d4ff' },
+    { min:300,  label:'COMMANDER',      color:'#00ff88' },
+    { min:600,  label:'FLEET CAPTAIN',  color:'#a855f7' },
+    { min:1000, label:'ADMIRAL',        color:'#f59e0b' },
+    { min:2000, label:'GRAND MARSHAL',  color:'#ff3c5a' },
+  ];
+
+  var state = { xp: 0, level: 1, referrals: 0 };
+  var xpNeeded = function(lvl) { return lvl * 100; };
+
+  var shipEl = null; // set by PixiJS init
+
+  function getRank(xp) {
+    for (var i = RANKS.length - 1; i >= 0; i--) {
+      if (xp >= RANKS[i].min) return RANKS[i];
+    }
+    return RANKS[0];
+  }
+
+  function updateHUD() {
+    var needed = xpNeeded(state.level);
+    var pct = Math.min(100, (state.xp % needed) / needed * 100);
+    var rank = getRank(state.xp);
+    document.getElementById('xpLevel').textContent = state.level;
+    document.getElementById('xpCount').textContent = state.xp;
+    document.getElementById('xpBar').style.width = pct + '%';
+    var rankEl = document.getElementById('xpRank');
+    rankEl.textContent = rank.label;
+    rankEl.style.color = rank.color;
+    // Persist to runtime via localStorage
+    try {
+      var pos = { xp: state.xp, level: state.level, rank: rank.label, referrals: state.referrals, ts: Date.now() };
+      localStorage.setItem('brdg_position', JSON.stringify(pos));
+    } catch(e) {}
+  }
+
+  function showToast(msg, sub) {
+    var el = document.getElementById('xpToast');
+    el.textContent = msg + (sub ? ' — ' + sub : '');
+    el.classList.add('show');
+    setTimeout(function() { el.classList.remove('show'); }, 2800);
+  }
+
+  function burstShip() {
+    // Signal to PixiJS to do a burst animation
+    if (typeof window._pixiBurst === 'function') window._pixiBurst();
+  }
+
+  function gainXP(amount, reason) {
+    state.xp += amount;
+    var needed = xpNeeded(state.level);
+    if (state.xp >= needed * state.level) { state.level++; }
+    updateHUD();
+    showToast('+' + amount + ' XP', reason);
+    burstShip();
+  }
+
+  updateHUD();
+  return { gainXP: gainXP, state: state };
+})();
+
+// ── PixiJS Captain Ship Avatar Overlay ────────────────────────────────────
 (function initPixiOrbit() {
   var container = document.getElementById('orbitSystem');
   var pixiCanvas = document.getElementById('pixi-onboard');
@@ -769,29 +861,25 @@ function postAuthDest() {
     autoDensity: true,
   });
 
-  // Particle pool for energy trails
   var particles = [];
   var MAX_PARTS = 80;
-
-  // Emitter positions — track the orbit node positions in PixiJS coords
-  // The orbitSystem div is 320×320; nodes are positioned at absolute px within it
-  var nodePositions = []; // updated each frame from DOM
+  var burstParticles = [];
+  var nodePositions = [];
 
   function syncNodePositions() {
     nodePositions = [];
     var nodes = container.querySelectorAll('.orbit-node');
     nodes.forEach(function(n) {
-      var l = parseFloat(n.style.left) + 18; // +18 = half of 36px node
+      var l = parseFloat(n.style.left) + 18;
       var t = parseFloat(n.style.top)  + 18;
       if (!isNaN(l) && !isNaN(t)) nodePositions.push({ x: l, y: t });
     });
   }
 
-  // Graphics layer for particles and beams
   var gfx = new PIXI.Graphics();
   app.stage.addChild(gfx);
 
-  // Captain avatar sprite — try to load from session storage / profile
+  // Avatar sprite (load user avatar texture, fall back to ship)
   var avatarUrl = (function() {
     try { return JSON.parse(localStorage.getItem('brdg_user') || '{}').avatar_url || null; } catch(e) { return null; }
   })();
@@ -801,109 +889,126 @@ function postAuthDest() {
   captainContainer.y = SIZE / 2;
   app.stage.addChild(captainContainer);
 
-  // Glowing halo circle behind avatar
+  // Halo rings
   var halo = new PIXI.Graphics();
-  halo.lineStyle(1.5, 0x00d4ff, 0.35);
-  halo.drawCircle(0, 0, 38);
-  halo.lineStyle(1, 0x00ff88, 0.2);
-  halo.drawCircle(0, 0, 44);
+  halo.lineStyle(1.5, 0x00d4ff, 0.3);
+  halo.drawCircle(0, 0, 36);
+  halo.lineStyle(1, 0x00ff88, 0.18);
+  halo.drawCircle(0, 0, 42);
   captainContainer.addChild(halo);
 
-  // Avatar sprite (circular mask)
-  var avatarSprite = null;
-  var fallbackOrb = new PIXI.Graphics();
+  // Ship (triangle — the captain avatar proxy from the preview template)
+  var ship = new PIXI.Graphics();
+  ship.beginFill(0x00ffc3, 0.9);
+  ship.drawPolygon([0, -16, 11, 14, -11, 14]);
+  ship.endFill();
+  ship.lineStyle(1.5, 0x00d4ff, 0.6);
+  ship.drawPolygon([0, -16, 11, 14, -11, 14]);
+  // Engine glow at base
+  ship.beginFill(0xa855f7, 0.5);
+  ship.drawCircle(0, 12, 4);
+  ship.endFill();
+  captainContainer.addChild(ship);
 
+  // If user has an avatar, overlay it as a circular sprite above the ship
   if (avatarUrl) {
     try {
       var tex = PIXI.Texture.from(avatarUrl);
-      avatarSprite = new PIXI.Sprite(tex);
-      avatarSprite.width = 52;
-      avatarSprite.height = 52;
+      var avatarSprite = new PIXI.Sprite(tex);
+      avatarSprite.width = 28;
+      avatarSprite.height = 28;
       avatarSprite.anchor.set(0.5);
-      var mask = new PIXI.Graphics();
-      mask.beginFill(0xffffff);
-      mask.drawCircle(0, 0, 26);
-      mask.endFill();
-      captainContainer.addChild(mask);
-      avatarSprite.mask = mask;
+      avatarSprite.y = -2;
+      var amask = new PIXI.Graphics();
+      amask.beginFill(0xffffff);
+      amask.drawCircle(0, -2, 14);
+      amask.endFill();
+      captainContainer.addChild(amask);
+      avatarSprite.mask = amask;
       captainContainer.addChild(avatarSprite);
-    } catch(e) { avatarSprite = null; }
+    } catch(e) {}
   }
 
-  if (!avatarSprite) {
-    // Fallback — cyan orb with inner glow
-    fallbackOrb.beginFill(0x00d4ff, 0.15);
-    fallbackOrb.lineStyle(2, 0x00d4ff, 0.8);
-    fallbackOrb.drawCircle(0, 0, 26);
-    fallbackOrb.endFill();
-    var innerGlow = new PIXI.Graphics();
-    innerGlow.beginFill(0x00d4ff, 0.3);
-    innerGlow.drawCircle(0, 0, 14);
-    innerGlow.endFill();
-    captainContainer.addChild(fallbackOrb);
-    captainContainer.addChild(innerGlow);
-  }
-
-  // Floating BRDG label under captain
   var label = new PIXI.Text('CAPTAIN', {
-    fontFamily: 'Segoe UI, system-ui, sans-serif',
-    fontSize: 7,
+    fontFamily: 'Segoe UI, monospace',
+    fontSize: 6,
     fill: 0x00d4ff,
     letterSpacing: 3,
-    align: 'center',
   });
   label.anchor.set(0.5, 0);
-  label.y = 32;
+  label.y = 22;
   captainContainer.addChild(label);
 
+  // XP burst effect
+  window._pixiBurst = function() {
+    for (var b = 0; b < 20; b++) {
+      var ang = Math.random() * Math.PI * 2;
+      var spd = 2 + Math.random() * 3;
+      burstParticles.push({
+        x: SIZE / 2, y: SIZE / 2,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd,
+        life: 1,
+        r: 2 + Math.random() * 3,
+        color: [0x00ffc3, 0x00d4ff, 0xa855f7, 0xf59e0b][Math.floor(Math.random() * 4)],
+      });
+    }
+  };
+
   var t = 0;
-
   app.ticker.add(function(delta) {
-    t += delta * 0.016; // seconds
+    t += delta * 0.016;
     gfx.clear();
-
     syncNodePositions();
 
-    // Pulse halo
-    var pulse = 0.3 + Math.sin(t * 2.5) * 0.15;
-    halo.alpha = pulse;
-    captainContainer.scale.set(1 + Math.sin(t * 1.8) * 0.025);
+    // Pulse halo + gentle ship bob
+    halo.alpha = 0.3 + Math.sin(t * 2.5) * 0.15;
+    ship.y = Math.sin(t * 1.4) * 2.5;
+    ship.rotation = Math.sin(t * 0.6) * 0.06;
+    captainContainer.scale.set(1 + Math.sin(t * 1.8) * 0.018);
 
-    // Draw energy beams from center to each orbit node
+    // Energy beams to orbit nodes
     nodePositions.forEach(function(pos, i) {
-      var alpha = 0.08 + Math.sin(t * 1.2 + i * 0.8) * 0.05;
+      var alpha = 0.06 + Math.sin(t * 1.2 + i * 0.8) * 0.04;
       gfx.lineStyle(0.8, 0x00d4ff, alpha);
       gfx.moveTo(SIZE / 2, SIZE / 2);
       gfx.lineTo(pos.x, pos.y);
 
-      // Emit tiny particle near each node occasionally
-      if (particles.length < MAX_PARTS && Math.random() < 0.12) {
+      if (particles.length < MAX_PARTS && Math.random() < 0.10) {
         particles.push({
-          x: pos.x + (Math.random() - 0.5) * 6,
-          y: pos.y + (Math.random() - 0.5) * 6,
-          vx: (SIZE / 2 - pos.x) * 0.004 + (Math.random() - 0.5) * 0.4,
-          vy: (SIZE / 2 - pos.y) * 0.004 + (Math.random() - 0.5) * 0.4,
-          life: 1,
-          r: Math.random() * 2 + 1,
+          x: pos.x + (Math.random() - 0.5) * 5,
+          y: pos.y + (Math.random() - 0.5) * 5,
+          vx: (SIZE / 2 - pos.x) * 0.005 + (Math.random() - 0.5) * 0.3,
+          vy: (SIZE / 2 - pos.y) * 0.005 + (Math.random() - 0.5) * 0.3,
+          life: 1, r: Math.random() * 2 + 0.8,
           color: [0x00d4ff, 0x00ff88, 0xa855f7][i % 3],
         });
       }
     });
 
-    // Update + draw particles (flow toward center = orbit energy)
+    // Update orbit particles
     for (var k = particles.length - 1; k >= 0; k--) {
       var p = particles[k];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life -= 0.018;
+      p.x += p.vx; p.y += p.vy; p.life -= 0.016;
       if (p.life <= 0) { particles.splice(k, 1); continue; }
-      gfx.beginFill(p.color, p.life * 0.7);
+      gfx.beginFill(p.color, p.life * 0.65);
       gfx.drawCircle(p.x, p.y, p.r * p.life);
       gfx.endFill();
     }
 
-    // Rotate label gently
-    label.alpha = 0.6 + Math.sin(t * 3) * 0.2;
+    // XP burst particles
+    for (var b = burstParticles.length - 1; b >= 0; b--) {
+      var bp = burstParticles[b];
+      bp.x += bp.vx; bp.y += bp.vy;
+      bp.vx *= 0.94; bp.vy *= 0.94;
+      bp.life -= 0.025;
+      if (bp.life <= 0) { burstParticles.splice(b, 1); continue; }
+      gfx.beginFill(bp.color, bp.life * 0.9);
+      gfx.drawCircle(bp.x, bp.y, bp.r * bp.life);
+      gfx.endFill();
+    }
+
+    label.alpha = 0.5 + Math.sin(t * 3) * 0.2;
   });
 })();
 </script>

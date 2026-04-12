@@ -78,6 +78,13 @@
       <div class="scard-sub" id="sRole">--</div>
     </div>
 
+    <div class="scard" id="positionCard" style="background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.14)">
+      <b style="color:#00d4ff">Position Index</b>
+      <div class="scard-row"><span>Level</span><span id="sLevel" style="color:#00ffc3">--</span></div>
+      <div class="scard-row"><span>Rank</span><span id="sRank" style="color:#a855f7;font-size:.7rem">--</span></div>
+      <div class="scard-row"><span>XP</span><span id="sXP">--</span></div>
+    </div>
+
     <div class="scard">
       <b>BRDG Balance</b>
       <div class="scard-val" id="sBrdg">-- BRDG</div>
@@ -194,6 +201,16 @@ async function loadData() {
     } catch(_) {}
   }
 
+  // Position Index (from gamification localStorage)
+  try {
+    var pos = JSON.parse(localStorage.getItem('brdg_position') || '{}');
+    if (pos.level) {
+      document.getElementById('sLevel').textContent = pos.level;
+      document.getElementById('sRank').textContent = pos.rank || 'CREW MEMBER';
+      document.getElementById('sXP').textContent = (pos.xp || 0) + ' XP';
+    }
+  } catch(_) {}
+
   // Treasury
   try {
     var tr = await fetch('/api/treasury/status');
@@ -251,6 +268,7 @@ var COMMANDS = {
     logDim('  agents              — list active AI agents');
     logDim('  pipeline            — activation pipeline status');
     logDim('  lifecycle           — run lifecycle engine');
+    logDim('  position            — your XP rank and position index');
     logDim('  clear               — clear terminal');
     logInfo('═══════════════════════════════════════');
   },
@@ -403,6 +421,31 @@ var COMMANDS = {
       var d = await r.json();
       logOk('Lifecycle complete — ' + (d.processed||0) + ' subscribers processed');
     } catch(_) { logErr('Lifecycle API unreachable'); }
+  },
+
+  position: function() {
+    logInfo('◉ POSITION INDEX');
+    try {
+      var pos = JSON.parse(localStorage.getItem('brdg_position') || '{}');
+      if (pos.level) {
+        logOk('  Level:     ' + pos.level);
+        logOk('  Rank:      ' + (pos.rank || 'CREW MEMBER'));
+        logDim('  XP:        ' + (pos.xp || 0));
+        logDim('  Referrals: ' + (pos.referrals || 0));
+        logDim('  Updated:   ' + (pos.ts ? new Date(pos.ts).toLocaleString() : 'not set'));
+      } else {
+        logDim('  No position data — register at /onboarding to begin');
+      }
+    } catch(_) { logDim('  No position data found'); }
+    logDim('  Registry:  /registry · Network topology: /topology');
+  },
+
+  rank: function() {
+    COMMANDS.position();
+  },
+
+  xp: function() {
+    COMMANDS.position();
   },
 
   clear: function() {
