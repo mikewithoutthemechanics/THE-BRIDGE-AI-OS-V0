@@ -2010,6 +2010,160 @@ app.post('/api/proofs/merkle', async (_req, res) => {
   }
 });
 
+// ── ACTIVATION PIPELINE ──────────────────────────────────────────────────────
+
+app.post('/api/activation/seed', async (_req, res) => {
+  try {
+    const activation = require('./lib/revenue-activation');
+    const result = await activation.seedActivationPipeline();
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/activation/process', async (req, res) => {
+  try {
+    const limit = parseInt(req.body?.limit || req.query.limit || '20');
+    const activation = require('./lib/revenue-activation');
+    const result = await activation.processDueTouches(limit);
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/activation/pipeline', async (req, res) => {
+  try {
+    const activation = require('./lib/revenue-activation');
+    const data = await activation.getPipelineDashboard();
+    res.json({ ok: true, ...data });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/activation/won', express.json(), async (req, res) => {
+  try {
+    const { userId, plan } = req.body || {};
+    if (!userId || !plan) return res.status(400).json({ error: 'userId and plan required' });
+    const activation = require('./lib/revenue-activation');
+    await activation.markWon(userId, plan);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/activation/lost', express.json(), async (req, res) => {
+  try {
+    const { userId, reason } = req.body || {};
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    const activation = require('./lib/revenue-activation');
+    await activation.markLost(userId, reason || 'manual');
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ── BILLING ACTIVATION ────────────────────────────────────────────────────────
+
+app.post('/api/billing/activate', express.json(), async (req, res) => {
+  try {
+    const { user, plan } = req.body || {};
+    if (!user?.email || !plan) return res.status(400).json({ error: 'user.email and plan required' });
+    const billing = require('./lib/billing-activation');
+    const link = billing.generatePaymentLink(user, plan);
+    const emailResult = await billing.sendActivationEmail(user, plan, link.url);
+    res.json({ ok: true, paymentUrl: link.url, ref: link.ref, emailSent: emailResult.sent });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/billing/link', async (req, res) => {
+  try {
+    const { userId, email, name, plan } = req.query;
+    if (!email || !plan) return res.status(400).json({ error: 'email and plan required' });
+    const billing = require('./lib/billing-activation');
+    const link = billing.generatePaymentLink({ id: userId || email, email, name: name || '' }, plan);
+    res.json({ ok: true, url: link.url, ref: link.ref, amount: link.amount, plan: link.plan });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/billing/confirmed', express.json(), async (req, res) => {
+  // Called when PayFast IPN confirms payment — also triggers renewal billing stage
+  try {
+    const payfastData = req.body || {};
+    const billing = require('./lib/billing-activation');
+    const result = await billing.handlePaymentConfirmed(payfastData);
+
+    // Also run renewal lifecycle stage
+    if (result.ok) {
+      const lifecycle = require('./lib/lifecycle-engine');
+      await lifecycle.stageRenewalBilling({ id: result.userId, email: result.email, plan: result.plan }).catch(() => {});
+    }
+
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/billing/plans', (_req, res) => {
+  const billing = require('./lib/billing-activation');
+  res.json({ ok: true, plans: billing.PLANS });
+});
+
+// ── LIFECYCLE ENGINE ──────────────────────────────────────────────────────────
+
+app.post('/api/lifecycle/process', async (req, res) => {
+  try {
+    const limit = parseInt(req.body?.limit || req.query.limit || '25');
+    const lifecycle = require('./lib/lifecycle-engine');
+    const result = await lifecycle.processActiveSubscribers(limit);
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/lifecycle/user/:userId', async (req, res) => {
+  try {
+    const { supabaseAdmin, isConfigured } = require('./lib/supabase');
+    if (!isConfigured) return res.status(503).json({ error: 'db_not_configured' });
+    const { data: user } = await supabaseAdmin.from('users').select('*').eq('id', req.params.userId).single();
+    if (!user) return res.status(404).json({ error: 'user_not_found' });
+    const lifecycle = require('./lib/lifecycle-engine');
+    const result = await lifecycle.runLifecycleForUser(user);
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/lifecycle/scores', async (req, res) => {
+  try {
+    const { supabaseAdmin, isConfigured } = require('./lib/supabase');
+    if (!isConfigured) return res.json({ ok: true, scores: [] });
+    const limit = parseInt(req.query.limit || '100');
+    const { data } = await supabaseAdmin
+      .from('engagement_scores')
+      .select('user_id, score, routing, action, updated_at')
+      .order('score', { ascending: false })
+      .limit(limit);
+    res.json({ ok: true, scores: data || [], count: (data || []).length });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/lifecycle/events/:userId', async (req, res) => {
+  try {
+    const { supabaseAdmin, isConfigured } = require('./lib/supabase');
+    if (!isConfigured) return res.json({ ok: true, events: [] });
+    const { data } = await supabaseAdmin
+      .from('lifecycle_events')
+      .select('*')
+      .eq('user_id', req.params.userId)
+      .order('ts', { ascending: false })
+      .limit(50);
+    res.json({ ok: true, events: data || [] });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Usage event beacon (called from frontend page loads)
+app.post('/api/usage/event', express.json(), async (req, res) => {
+  try {
+    const { userId, feature, meta } = req.body || {};
+    if (!userId || !feature) return res.status(400).json({ error: 'userId and feature required' });
+    const lifecycle = require('./lib/lifecycle-engine');
+    await lifecycle.recordUsageEvent(userId, feature, meta || {});
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // ── BRAIN PROXY — forward unknown /api/* to brain on 8000 ────────────────────
 // ── TWIN API — proxy /api/twin/* to unified-server (port 3000) ──────────────
 app.all('/api/twin/*path', async (req, res) => {
@@ -2237,7 +2391,8 @@ const GATEWAY_SHORT_ROUTES = {
   '/face-facs': '/anatomical_face_facs.html',
   '/face-tension': '/anatomical_face_tension_balanced.html',
   '/face-vector': '/anatomical_face_vector_muscle.html',
-  '/gateway': '/gateway.html',
+  '/gateway':    '/gateway.html',
+  '/activation': '/activation.html',
 };
 Object.entries(GATEWAY_SHORT_ROUTES).forEach(([short, target]) => {
   app.get(short, (_req, res) => res.redirect(target));

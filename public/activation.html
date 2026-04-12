@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activation Pipeline — Bridge AI OS</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,sans-serif;background:#0a0e1a;color:#e2e8f0;min-height:100vh}
+    .header{background:#111827;border-bottom:1px solid #1e2d4a;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+    .header h1{color:#00d4ff;font-size:1.2rem;font-weight:700}
+    .header p{color:#64748b;font-size:.85rem}
+    .actions{display:flex;gap:.75rem;flex-wrap:wrap}
+    .btn{padding:.5rem 1rem;border-radius:6px;border:none;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s}
+    .btn-primary{background:#00d4ff;color:#0a0e1a}
+    .btn-success{background:#00ff88;color:#0a0e1a}
+    .btn-warn{background:#ffd166;color:#0a0e1a}
+    .btn-sm{padding:.35rem .7rem;font-size:.78rem}
+    .btn:hover{filter:brightness(1.15)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+
+    /* Stats bar */
+    .stats-bar{display:flex;gap:1rem;padding:1.25rem 2rem;background:#0d1221;border-bottom:1px solid #1e2d4a;flex-wrap:wrap}
+    .stat{flex:1;min-width:140px;background:#111827;border:1px solid #1e2d4a;border-radius:8px;padding:1rem 1.25rem}
+    .stat-label{color:#64748b;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+    .stat-value{color:#e2e8f0;font-size:1.5rem;font-weight:700;margin-top:.25rem}
+    .stat-value.green{color:#00ff88}
+    .stat-value.cyan{color:#00d4ff}
+    .stat-value.yellow{color:#ffd166}
+
+    /* Pipeline board */
+    .board-wrap{padding:1.5rem 2rem;overflow-x:auto}
+    .board{display:flex;gap:1rem;min-width:900px}
+    .col{flex:1;min-width:180px;background:#111827;border:1px solid #1e2d4a;border-radius:10px;overflow:hidden}
+    .col-header{padding:.85rem 1rem;border-bottom:1px solid #1e2d4a;display:flex;align-items:center;justify-content:space-between}
+    .col-title{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .col-count{background:#1e2d4a;color:#94a3b8;font-size:.75rem;padding:.2rem .5rem;border-radius:12px;font-weight:700}
+    .col-body{padding:.75rem;max-height:60vh;overflow-y:auto;display:flex;flex-direction:column;gap:.5rem}
+    .card{background:#0a0e1a;border:1px solid #1e2d4a;border-radius:8px;padding:.85rem;cursor:default;transition:border-color .2s}
+    .card:hover{border-color:#00d4ff44}
+    .card-email{font-size:.82rem;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .card-meta{font-size:.75rem;color:#64748b;margin-top:.3rem}
+    .card-score{display:inline-block;padding:.15rem .45rem;border-radius:4px;font-size:.72rem;font-weight:700;margin-top:.3rem}
+    .score-hot{background:#ff4d6d22;color:#ff4d6d;border:1px solid #ff4d6d44}
+    .score-warm{background:#ffd16622;color:#ffd166;border:1px solid #ffd16644}
+    .score-cold{background:#1e2d4a;color:#64748b;border:1px solid #1e2d4a}
+    .score-ent{background:#00d4ff22;color:#00d4ff;border:1px solid #00d4ff44}
+
+    /* Stage colors */
+    .col-new      .col-title{color:#94a3b8}
+    .col-contacted .col-title{color:#00d4ff}
+    .col-nurturing .col-title{color:#ffd166}
+    .col-demo     .col-title{color:#c084fc}
+    .col-closing  .col-title{color:#f97316}
+    .col-won      .col-title{color:#00ff88}
+    .col-lost     .col-title{color:#ef4444}
+
+    /* Lifecycle scores section */
+    .section{padding:0 2rem 2rem}
+    .section-title{color:#00d4ff;font-size:1rem;font-weight:700;margin-bottom:1rem;padding-top:1.5rem;border-top:1px solid #1e2d4a}
+    .scores-table{width:100%;border-collapse:collapse;font-size:.82rem}
+    .scores-table th{background:#111827;color:#64748b;padding:.6rem 1rem;text-align:left;border-bottom:1px solid #1e2d4a;font-weight:600;text-transform:uppercase;font-size:.72rem;letter-spacing:.05em}
+    .scores-table td{padding:.6rem 1rem;border-bottom:1px solid #1e2d4a10;vertical-align:middle}
+    .scores-table tr:hover td{background:#111827}
+    .routing-badge{padding:.2rem .55rem;border-radius:4px;font-size:.72rem;font-weight:700;text-transform:uppercase}
+    .rb-champion{background:#00ff8822;color:#00ff88}
+    .rb-healthy{background:#00d4ff22;color:#00d4ff}
+    .rb-at_risk{background:#ffd16622;color:#ffd166}
+    .rb-churned{background:#ef444422;color:#ef4444}
+
+    .score-bar-wrap{display:flex;align-items:center;gap:.5rem}
+    .score-bar{height:6px;border-radius:3px;background:#1e2d4a;flex:1;overflow:hidden}
+    .score-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#00d4ff,#00ff88);transition:width .4s}
+    .score-num{font-weight:700;color:#e2e8f0;min-width:28px;text-align:right}
+
+    /* Controls */
+    .controls{display:flex;gap:.75rem;align-items:center;padding:1rem 2rem;background:#0d1221;border-bottom:1px solid #1e2d4a;flex-wrap:wrap}
+    .controls label{color:#64748b;font-size:.82rem}
+    .badge-live{display:inline-flex;align-items:center;gap:.4rem;background:#00ff8815;border:1px solid #00ff8840;color:#00ff88;padding:.25rem .7rem;border-radius:20px;font-size:.75rem;font-weight:600}
+    .dot{width:6px;height:6px;border-radius:50%;background:#00ff88;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .log{font-family:monospace;font-size:.78rem;color:#64748b;background:#111827;border:1px solid #1e2d4a;border-radius:8px;padding:1rem;max-height:150px;overflow-y:auto;margin:0 2rem 2rem}
+    .log-entry{margin-bottom:.25rem}
+    .log-entry.ok{color:#00ff88}
+    .log-entry.err{color:#ef4444}
+    .log-entry.info{color:#00d4ff}
+
+    .empty{color:#64748b;font-size:.8rem;padding:.75rem;text-align:center}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Activation Pipeline</h1>
+    <p>Lead-to-customer conversion · Revenue activation · Lifecycle management</p>
+  </div>
+  <div class="actions">
+    <span class="badge-live"><span class="dot"></span>LIVE</span>
+    <button class="btn btn-primary" onclick="refresh()">↺ Refresh</button>
+    <button class="btn btn-success" id="seedBtn" onclick="seedPipeline()">⚡ Seed Pipeline</button>
+    <button class="btn btn-warn" id="processBtn" onclick="processNow()">▶ Process Touches</button>
+    <button class="btn btn-primary" onclick="processLifecycle()">♻ Run Lifecycle</button>
+  </div>
+</div>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat"><div class="stat-label">Total Users</div><div class="stat-value cyan" id="totalUsers">—</div></div>
+  <div class="stat"><div class="stat-label">In Pipeline</div><div class="stat-value" id="inPipeline">—</div></div>
+  <div class="stat"><div class="stat-label">Customers Won</div><div class="stat-value green" id="totalWon">—</div></div>
+  <div class="stat"><div class="stat-label">Due for Touch</div><div class="stat-value yellow" id="dueTouches">—</div></div>
+  <div class="stat"><div class="stat-label">Lifecycle Active</div><div class="stat-value green" id="lifecycleActive">—</div></div>
+  <div class="stat"><div class="stat-label">Engagement: Champion</div><div class="stat-value green" id="champions">—</div></div>
+</div>
+
+<div class="controls">
+  <label>Auto-refresh:</label>
+  <select id="autoRefresh" onchange="setAutoRefresh(this.value)" style="background:#111827;border:1px solid #1e2d4a;color:#e2e8f0;padding:.3rem .6rem;border-radius:5px;font-size:.82rem">
+    <option value="0">Off</option>
+    <option value="30000" selected>30s</option>
+    <option value="60000">60s</option>
+  </select>
+  <label style="margin-left:1rem">Process limit:</label>
+  <input id="processLimit" type="number" value="20" min="1" max="100" style="width:60px;background:#111827;border:1px solid #1e2d4a;color:#e2e8f0;padding:.3rem .5rem;border-radius:5px;font-size:.82rem">
+  <span id="lastRefreshed" style="color:#64748b;font-size:.78rem;margin-left:auto"></span>
+</div>
+
+<!-- Kanban board -->
+<div class="board-wrap">
+  <div class="board" id="board">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- Engagement scores -->
+<div class="section">
+  <div class="section-title">Subscriber Engagement Scores</div>
+  <table class="scores-table">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Score</th>
+        <th>Routing</th>
+        <th>Action</th>
+        <th>Last Updated</th>
+      </tr>
+    </thead>
+    <tbody id="scoresBody">
+      <tr><td colspan="5" class="empty">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Activity log -->
+<div style="padding:0 2rem .5rem;color:#64748b;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Activity Log</div>
+<div class="log" id="activityLog">
+  <div class="log-entry info">Ready. Click an action or wait for auto-refresh.</div>
+</div>
+
+<script>
+const STAGES = [
+  { key:'new',       label:'New',      cls:'col-new' },
+  { key:'contacted', label:'Contacted',cls:'col-contacted' },
+  { key:'nurturing', label:'Nurturing',cls:'col-nurturing' },
+  { key:'demo',      label:'Demo',     cls:'col-demo' },
+  { key:'closing',   label:'Closing',  cls:'col-closing' },
+  { key:'won',       label:'Won',      cls:'col-won' },
+  { key:'lost',      label:'Lost',     cls:'col-lost' },
+];
+
+let autoRefreshTimer = null;
+let pipelineData = null;
+
+function logEntry(msg, cls = '') {
+  const el = document.getElementById('activityLog');
+  const ts = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + cls;
+  div.textContent = `[${ts}] ${msg}`;
+  el.prepend(div);
+  while (el.children.length > 50) el.lastChild.remove();
+}
+
+function scoreClass(score) {
+  if (score >= 80) return 'score-ent';
+  if (score >= 60) return 'score-hot';
+  if (score >= 30) return 'score-warm';
+  return 'score-cold';
+}
+
+function scoreLabel(score) {
+  if (score >= 80) return 'ENTERPRISE';
+  if (score >= 60) return 'HOT';
+  if (score >= 30) return 'WARM';
+  return 'COLD';
+}
+
+function buildBoard(data) {
+  const byStage = {};
+  STAGES.forEach(s => byStage[s.key] = []);
+  (data.users || []).forEach(u => {
+    const stage = u.stage || 'new';
+    if (byStage[stage]) byStage[stage].push(u);
+    else byStage['new'].push(u);
+  });
+
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  STAGES.forEach(s => {
+    const users = byStage[s.key] || [];
+    const col = document.createElement('div');
+    col.className = 'col ' + s.cls;
+    col.innerHTML = `
+      <div class="col-header">
+        <span class="col-title">${s.label}</span>
+        <span class="col-count">${users.length}</span>
+      </div>
+      <div class="col-body" id="col-${s.key}"></div>`;
+    board.appendChild(col);
+
+    const body = col.querySelector('.col-body');
+    if (users.length === 0) {
+      body.innerHTML = '<div class="empty">—</div>';
+      return;
+    }
+
+    users.slice(0, 30).forEach(u => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const score = u.score || 0;
+      const next = u.next_touch_at ? new Date(u.next_touch_at).toLocaleDateString('en-ZA') : '—';
+      card.innerHTML = `
+        <div class="card-email">${u.email || u.user_id || '?'}</div>
+        <div class="card-meta">Campaign: ${u.campaign || '—'} · Step ${(u.step_index || 0) + 1}</div>
+        <div class="card-meta">Next touch: ${next}</div>
+        <span class="card-score ${scoreClass(score)}">${scoreLabel(score)} · ${score}pts</span>`;
+      body.appendChild(card);
+    });
+
+    if (users.length > 30) {
+      const more = document.createElement('div');
+      more.className = 'empty';
+      more.textContent = `+${users.length - 30} more`;
+      body.appendChild(more);
+    }
+  });
+}
+
+function buildScores(scores) {
+  const tbody = document.getElementById('scoresBody');
+  if (!scores || !scores.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">No engagement data yet. Run Lifecycle to populate.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = scores.map(s => {
+    const pct = Math.min(s.score, 100);
+    const rb  = 'rb-' + (s.routing || 'churned');
+    const ts  = s.updated_at ? new Date(s.updated_at).toLocaleString('en-ZA') : '—';
+    return `<tr>
+      <td style="color:#e2e8f0">${s.user_id}</td>
+      <td>
+        <div class="score-bar-wrap">
+          <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div>
+          <span class="score-num">${s.score}</span>
+        </div>
+      </td>
+      <td><span class="routing-badge ${rb}">${s.routing || 'churned'}</span></td>
+      <td style="color:#64748b;font-size:.78rem">${s.action || '—'}</td>
+      <td style="color:#64748b;font-size:.78rem">${ts}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStats(pipeline, scores) {
+  const users = pipeline.users || [];
+  const won   = users.filter(u => u.stage === 'won').length;
+  const due   = users.filter(u => u.next_touch_at && new Date(u.next_touch_at) <= new Date() && u.stage !== 'won' && u.stage !== 'lost').length;
+
+  document.getElementById('totalUsers').textContent    = pipeline.total || users.length;
+  document.getElementById('inPipeline').textContent    = users.filter(u => u.stage !== 'won' && u.stage !== 'lost').length;
+  document.getElementById('totalWon').textContent      = won;
+  document.getElementById('dueTouches').textContent    = due;
+  document.getElementById('lifecycleActive').textContent = (scores || []).length;
+
+  const champions = (scores || []).filter(s => s.routing === 'champion').length;
+  document.getElementById('champions').textContent     = champions;
+
+  document.getElementById('lastRefreshed').textContent = 'Last refresh: ' + new Date().toLocaleTimeString('en-ZA');
+}
+
+async function refresh() {
+  try {
+    const [pipelineRes, scoresRes] = await Promise.all([
+      fetch('/api/activation/pipeline'),
+      fetch('/api/lifecycle/scores?limit=200'),
+    ]);
+    const pipeline = await pipelineRes.json();
+    const scoresData = await scoresRes.json();
+
+    if (pipeline.ok) {
+      pipelineData = pipeline;
+      buildBoard(pipeline);
+      updateStats(pipeline, scoresData.scores || []);
+    }
+    buildScores(scoresData.scores || []);
+    logEntry('Refreshed pipeline + engagement scores', 'info');
+  } catch (e) {
+    logEntry('Refresh failed: ' + e.message, 'err');
+  }
+}
+
+async function seedPipeline() {
+  const btn = document.getElementById('seedBtn');
+  btn.disabled = true;
+  btn.textContent = 'Seeding…';
+  logEntry('Seeding activation pipeline for all registered users…', 'info');
+  try {
+    const r = await fetch('/api/activation/seed', { method: 'POST' });
+    const d = await r.json();
+    logEntry(`Seed complete — ${d.seeded || 0} users loaded into pipeline`, 'ok');
+    await refresh();
+  } catch (e) {
+    logEntry('Seed failed: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ Seed Pipeline';
+  }
+}
+
+async function processNow() {
+  const btn = document.getElementById('processBtn');
+  const limit = parseInt(document.getElementById('processLimit').value || '20');
+  btn.disabled = true;
+  btn.textContent = 'Processing…';
+  logEntry(`Processing up to ${limit} due touches…`, 'info');
+  try {
+    const r = await fetch('/api/activation/process?limit=' + limit, { method: 'POST' });
+    const d = await r.json();
+    logEntry(`Touches processed — ${d.touched || 0} emails sent`, 'ok');
+    await refresh();
+  } catch (e) {
+    logEntry('Process failed: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶ Process Touches';
+  }
+}
+
+async function processLifecycle() {
+  logEntry('Running lifecycle engine for active subscribers…', 'info');
+  try {
+    const r = await fetch('/api/lifecycle/process', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ limit: 25 }) });
+    const d = await r.json();
+    logEntry(`Lifecycle complete — ${d.processed || 0} subscribers processed`, 'ok');
+    await refresh();
+  } catch (e) {
+    logEntry('Lifecycle failed: ' + e.message, 'err');
+  }
+}
+
+function setAutoRefresh(ms) {
+  clearInterval(autoRefreshTimer);
+  if (parseInt(ms) > 0) {
+    autoRefreshTimer = setInterval(refresh, parseInt(ms));
+    logEntry(`Auto-refresh set to every ${parseInt(ms)/1000}s`, 'info');
+  }
+}
+
+// Init
+refresh();
+setAutoRefresh(30000);
+</script>
+</body>
+</html>

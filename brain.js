@@ -1362,6 +1362,18 @@ app.post('/api/payments/webhook/payfast', express.urlencoded({ extended: false }
       }
     } catch (_) {}
 
+    // Trigger full billing lifecycle (activation + renewal + onboarding)
+    try {
+      const billing = require('./lib/billing-activation');
+      await billing.handlePaymentConfirmed({
+        m_payment_id: pf_payment_id,
+        pf_payment_id,
+        amount_gross,
+        custom_str1: req.body.custom_str1 || '',
+        email_address: req.body.email_address || meta.email || '',
+      }).catch(() => {});
+    } catch (_) {}
+
     if (meta.email) {
       try {
         const mail = require('./lib/mail');
