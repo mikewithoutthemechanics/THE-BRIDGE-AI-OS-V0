@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bridge AI · Global eSIM + PBX Command Deck</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/browser/pixi.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080f;--surface:#0b0f1a;--surface2:#111827;--surface3:#1f2937;
+  --border:#1e293b;--border2:#334155;
+  --cyan:#00ffc3;--cyan2:#00d4ff;--green:#22c55e;--yellow:#f59e0b;
+  --red:#ef4444;--purple:#a855f7;--blue:#3b82f6;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;height:100vh}
+canvas#bg{position:fixed;inset:0;z-index:0}
+#ui{position:relative;z-index:10;display:grid;grid-template-columns:1fr 440px;height:100vh}
+@media(max-width:800px){#ui{grid-template-columns:1fr}#panel{display:none}}
+
+/* ── LEFT PANEL ── */
+#left{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:1.5rem;text-align:center}
+.brand{font-size:.75rem;letter-spacing:.2em;color:var(--cyan);text-transform:uppercase;opacity:.8}
+h1{font-size:2.4rem;font-weight:800;line-height:1.1;color:#fff}
+h1 span{color:var(--cyan)}
+.tagline{font-size:1rem;color:var(--text2);max-width:460px;line-height:1.6}
+.globe-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;width:100%;max-width:460px}
+.gstat{background:rgba(0,255,195,.04);border:1px solid rgba(0,255,195,.15);border-radius:10px;padding:.9rem .75rem;text-align:center}
+.gstat-num{font-size:1.5rem;font-weight:800;color:var(--cyan);font-family:var(--mono)}
+.gstat-label{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+.features-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;max-width:460px;width:100%}
+.feat{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text2);background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem}
+.feat-icon{font-size:1rem;flex-shrink:0}
+
+/* ── RIGHT PANEL ── */
+#panel{background:rgba(11,15,26,.97);border-left:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.panel-header{padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--border)}
+.panel-header h2{font-size:1.1rem;font-weight:700;color:#fff}
+.panel-header p{font-size:.8rem;color:var(--text2);margin-top:.3rem}
+.panel-body{padding:1.25rem 1.5rem;flex:1}
+
+/* Tabs */
+.tabs{display:flex;gap:.25rem;margin-bottom:1.25rem;background:var(--surface2);border-radius:8px;padding:3px}
+.tab{flex:1;padding:.45rem;border-radius:6px;border:none;background:transparent;color:var(--text2);font-size:.78rem;font-family:var(--font);cursor:pointer;font-weight:600;transition:all .15s}
+.tab.active{background:var(--cyan);color:#000}
+
+/* Forms */
+.form-group{margin-bottom:.85rem}
+.form-label{display:block;font-size:.72rem;color:var(--text2);margin-bottom:.3rem;font-weight:600;letter-spacing:.03em}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:.85rem;font-family:var(--font);outline:none;transition:border .15s}
+.form-input:focus{border-color:var(--cyan)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+
+/* Plan selector */
+.plans{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem}
+.plan-card{border:1px solid var(--border2);border-radius:8px;padding:.9rem 1rem;cursor:pointer;transition:all .15s;position:relative}
+.plan-card:hover{border-color:var(--cyan2)}
+.plan-card.selected{border-color:var(--cyan);background:rgba(0,255,195,.05)}
+.plan-card.popular::after{content:'MOST POPULAR';position:absolute;top:-.6rem;right:.75rem;font-size:.6rem;font-weight:800;padding:2px 7px;background:var(--cyan);color:#000;border-radius:4px;letter-spacing:.08em}
+.plan-name{font-weight:700;font-size:.88rem;color:#fff}
+.plan-desc{font-size:.73rem;color:var(--text3);margin-top:2px}
+.plan-price{font-size:1.1rem;font-weight:800;color:var(--cyan);font-family:var(--mono);margin-top:.4rem}
+.plan-feats{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem}
+.plan-feat{font-size:.64rem;padding:2px 6px;border-radius:4px;background:rgba(0,212,255,.08);color:var(--cyan2)}
+
+/* CTA button */
+.btn-launch{width:100%;padding:.85rem;border-radius:8px;border:none;background:var(--cyan);color:#000;font-weight:800;font-size:.95rem;font-family:var(--font);cursor:pointer;transition:all .2s;letter-spacing:.02em}
+.btn-launch:hover{background:#00e6b0;transform:translateY(-1px);box-shadow:0 8px 25px rgba(0,255,195,.25)}
+.btn-launch:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{width:100%;padding:.6rem;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:.82rem;font-family:var(--font);cursor:pointer;transition:all .15s;margin-top:.5rem}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* Success screen */
+#success{display:none;padding:1.5rem;text-align:center;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1rem}
+#success.visible{display:flex}
+.success-icon{font-size:2.5rem}
+.success-title{font-size:1.2rem;font-weight:800;color:var(--cyan)}
+.success-sub{font-size:.83rem;color:var(--text2);line-height:1.5}
+.qr-box{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:1rem;display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.qr-box img{width:140px;height:140px;border-radius:6px}
+.qr-label{font-size:.7rem;color:var(--text3)}
+.cred-box{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:.85rem 1rem;width:100%;text-align:left}
+.cred-row{display:flex;justify-content:space-between;font-size:.77rem;padding:.25rem 0;border-bottom:1px solid var(--border)}
+.cred-row:last-child{border:none}
+.cred-key{color:var(--text3)}
+.cred-val{color:var(--cyan);font-family:var(--mono);font-size:.72rem}
+.link-btn{padding:.5rem 1rem;border-radius:6px;border:1px solid var(--cyan);background:transparent;color:var(--cyan);font-size:.8rem;font-family:var(--font);cursor:pointer;text-decoration:none;display:inline-block}
+
+/* HUD overlay */
+.hud{position:fixed;top:1rem;left:50%;transform:translateX(-50%);z-index:50;display:flex;gap:.75rem;pointer-events:none}
+.hud-pill{background:rgba(11,15,26,.9);border:1px solid rgba(0,255,195,.2);border-radius:20px;padding:.35rem .9rem;font-size:.7rem;color:var(--cyan);font-family:var(--mono)}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:1rem;padding:.6rem 1.5rem;background:rgba(4,8,15,.9);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.05)}
+.nav-brand{font-size:.85rem;font-weight:700;color:var(--cyan);text-decoration:none;letter-spacing:.04em}
+.nav-links{display:flex;gap:.15rem;flex:1}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:.76rem;padding:.3rem .65rem;border-radius:4px;transition:all .15s}
+.nav-links a:hover{color:#fff;background:var(--surface2)}
+.nav-right a{padding:.35rem .9rem;border-radius:6px;border:1px solid var(--cyan);color:var(--cyan);font-size:.77rem;text-decoration:none;transition:all .15s}
+.nav-right a:hover{background:var(--cyan);color:#000}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);padding:.65rem 1.2rem;border-radius:8px;font-size:.82rem;font-weight:700;z-index:9999;animation:fadeUp .25s ease}
+.toast.ok{background:#0f2e1f;border:1px solid var(--green);color:var(--green)}
+.toast.err{background:#2e0f0f;border:1px solid var(--red);color:var(--red)}
+@keyframes fadeUp{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<nav>
+  <a class="nav-brand" href="/">⬡ Bridge AI</a>
+  <div class="nav-links">
+    <a href="/leads.html">Leads</a>
+    <a href="/admin-esim.html">eSIM Admin</a>
+    <a href="/hitl.html">HITL</a>
+    <a href="/crm.html">CRM</a>
+  </div>
+  <div class="nav-right">
+    <a href="/admin-esim.html">Admin Dashboard →</a>
+  </div>
+</nav>
+
+<div class="hud">
+  <div class="hud-pill" id="hud-esims">● ESIMS: —</div>
+  <div class="hud-pill" id="hud-countries">190+ COUNTRIES</div>
+  <div class="hud-pill" id="hud-pbx">PBX ACTIVE</div>
+</div>
+
+<div id="ui" style="padding-top:44px">
+
+  <!-- LEFT: Command Deck -->
+  <div id="left">
+    <div class="brand">⬡ Bridge AI · Global Communications</div>
+    <h1>COMMAND YOUR<br/><span>GLOBAL FLEET</span></h1>
+    <p class="tagline">One eSIM. One PBX. 190+ countries. AI-powered calling, data, and lead nurture — all from a single account.</p>
+
+    <div class="globe-stats">
+      <div class="gstat">
+        <div class="gstat-num">190+</div>
+        <div class="gstat-label">Countries</div>
+      </div>
+      <div class="gstat">
+        <div class="gstat-num">50+</div>
+        <div class="gstat-label">Virtual Numbers</div>
+      </div>
+      <div class="gstat">
+        <div class="gstat-num">AI</div>
+        <div class="gstat-label">Call Summaries</div>
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feat"><span class="feat-icon">📡</span>Global eSIM QR</div>
+      <div class="feat"><span class="feat-icon">☎️</span>Cloud PBX + IVR</div>
+      <div class="feat"><span class="feat-icon">🤖</span>AI Lead Scoring</div>
+      <div class="feat"><span class="feat-icon">💳</span>Unified Wallet</div>
+      <div class="feat"><span class="feat-icon">🔊</span>Call Recording</div>
+      <div class="feat"><span class="feat-icon">🪙</span>BRDG Rewards</div>
+      <div class="feat"><span class="feat-icon">📊</span>CRM Sync</div>
+      <div class="feat"><span class="feat-icon">🛡️</span>SIP Secure</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Signup Panel -->
+  <div id="panel">
+    <div class="panel-header">
+      <h2>🚀 Activate Your Fleet</h2>
+      <p>eSIM + PBX live in 60 seconds</p>
+    </div>
+    <div class="panel-body" id="formArea">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('signup')">Sign Up</button>
+        <button class="tab" onclick="switchTab('plans')">Plans</button>
+        <button class="tab" onclick="switchTab('demo')">Get Demo</button>
+      </div>
+
+      <!-- SIGNUP TAB -->
+      <div id="tab-signup">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input class="form-input" id="f-name" placeholder="Ryan Cowan"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email *</label>
+            <input class="form-input" id="f-email" type="email" placeholder="you@company.com"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Company</label>
+            <input class="form-input" id="f-company" placeholder="Acme Corp"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input class="form-input" id="f-phone" placeholder="+27 …"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Choose Your Plan</label>
+          <div class="plans" id="planSelector">
+            <div class="plan-card" data-plan="Global Starter" onclick="selectPlan(this)">
+              <div class="plan-name">Global Starter</div>
+              <div class="plan-desc">1 GB · 50 countries · QR activation</div>
+              <div class="plan-price">R99/mo</div>
+              <div class="plan-feats"><span class="plan-feat">eSIM QR</span><span class="plan-feat">Global Data</span></div>
+            </div>
+            <div class="plan-card popular selected" data-plan="Global Pro" onclick="selectPlan(this)">
+              <div class="plan-name">Global Pro</div>
+              <div class="plan-desc">5 GB + 200 voice mins · 100 countries · PBX Extension</div>
+              <div class="plan-price">R299/mo</div>
+              <div class="plan-feats"><span class="plan-feat">eSIM QR</span><span class="plan-feat">Voice</span><span class="plan-feat">SMS</span><span class="plan-feat">PBX</span></div>
+            </div>
+            <div class="plan-card" data-plan="Business Elite" onclick="selectPlan(this)">
+              <div class="plan-name">Business Elite</div>
+              <div class="plan-desc">20 GB + Unlimited voice · 190+ countries · AI Calls</div>
+              <div class="plan-price">R799/mo</div>
+              <div class="plan-feats"><span class="plan-feat">Unlimited Voice</span><span class="plan-feat">AI Summary</span><span class="plan-feat">Recording</span></div>
+            </div>
+          </div>
+        </div>
+        <button class="btn-launch" id="launchBtn" onclick="launchFleet()">⚡ ACTIVATE MY FLEET</button>
+        <button class="btn-ghost" onclick="switchTab('demo')">Schedule a demo instead</button>
+      </div>
+
+      <!-- PLANS TAB -->
+      <div id="tab-plans" style="display:none">
+        <div class="plans">
+          <div class="plan-card"><div class="plan-name">Global Starter</div><div class="plan-desc">1 GB data · 50 countries · QR code activation</div><div class="plan-price">R99/mo</div><div class="plan-feats"><span class="plan-feat">eSIM QR</span><span class="plan-feat">Global Data</span><span class="plan-feat">30-day validity</span></div></div>
+          <div class="plan-card popular"><div class="plan-name">Global Pro</div><div class="plan-desc">5 GB + 200 voice mins + 50 SMS · 100 countries</div><div class="plan-price">R299/mo</div><div class="plan-feats"><span class="plan-feat">eSIM QR</span><span class="plan-feat">Voice + SMS</span><span class="plan-feat">PBX Extension</span></div></div>
+          <div class="plan-card"><div class="plan-name">Business Elite</div><div class="plan-desc">20 GB + unlimited voice + 200 SMS · 190+ countries</div><div class="plan-price">R799/mo</div><div class="plan-feats"><span class="plan-feat">AI Summaries</span><span class="plan-feat">Call Recording</span><span class="plan-feat">Dedicated Number</span></div></div>
+          <div class="plan-card"><div class="plan-name">Commander Fleet</div><div class="plan-desc">100 GB + full PBX + AI Suite · Global · Team management</div><div class="plan-price">R2 499/mo</div><div class="plan-feats"><span class="plan-feat">Fleet Mgmt</span><span class="plan-feat">IVR</span><span class="plan-feat">CRM Sync</span><span class="plan-feat">BRDG Rewards</span></div></div>
+        </div>
+        <button class="btn-launch" onclick="switchTab('signup')">Get Started →</button>
+      </div>
+
+      <!-- DEMO TAB -->
+      <div id="tab-demo" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Name *</label>
+          <input class="form-input" id="d-name" placeholder="Your name"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input class="form-input" id="d-email" type="email" placeholder="you@company.com"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company + Team Size</label>
+          <input class="form-input" id="d-company" placeholder="e.g. Acme Corp — 25 people"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">What's your use case?</label>
+          <select class="form-input" id="d-usecase">
+            <option value="">Select…</option>
+            <option value="global_team">Global remote team</option>
+            <option value="sales_team">Sales + outbound calling</option>
+            <option value="call_center">Call centre / contact centre</option>
+            <option value="travel">Business travel</option>
+            <option value="agentic">AI agent communications</option>
+          </select>
+        </div>
+        <button class="btn-launch" onclick="requestDemo()">📅 REQUEST DEMO</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div id="success">
+      <div class="success-icon">🚀</div>
+      <div class="success-title" id="s-title">Fleet Activated!</div>
+      <div class="success-sub" id="s-sub">Your global eSIM + PBX is live.</div>
+      <div class="qr-box" id="qrBox" style="display:none">
+        <img id="qrImg" src="" alt="eSIM QR Code"/>
+        <div class="qr-label">Scan in Settings → Mobile Data → Add eSIM</div>
+      </div>
+      <div class="cred-box" id="credBox" style="display:none">
+        <div class="cred-row"><span class="cred-key">iccid</span><span class="cred-val" id="c-iccid">—</span></div>
+        <div class="cred-row"><span class="cred-key">Extension</span><span class="cred-val" id="c-ext">—</span></div>
+        <div class="cred-row"><span class="cred-key">DID Number</span><span class="cred-val" id="c-did">—</span></div>
+        <div class="cred-row"><span class="cred-key">SIP Domain</span><span class="cred-val">pbx.bridge-ai-os.com</span></div>
+        <div class="cred-row"><span class="cred-key">SIP User</span><span class="cred-val" id="c-sip">—</span></div>
+      </div>
+      <a href="/admin-esim.html" class="link-btn">Open Dashboard →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PIXI ENGINE ──────────────────────────────────────────────────────────────
+const app = new PIXI.Application({
+  view: document.getElementById('bg'),
+  resizeTo: window,
+  backgroundColor: 0x04080f,
+  resolution: Math.min(window.devicePixelRatio || 1, 2),
+});
+
+// Stars
+const stars = [];
+for (let i = 0; i < 280; i++) {
+  const s = new PIXI.Graphics();
+  s.beginFill(i % 5 === 0 ? 0x00ffc3 : 0x334155, i % 5 === 0 ? 0.8 : 0.4);
+  s.drawCircle(0, 0, Math.random() * 1.5 + 0.3);
+  s.endFill();
+  s.x = Math.random() * window.innerWidth;
+  s.y = Math.random() * window.innerHeight;
+  s.speed = Math.random() * 0.6 + 0.1;
+  s.twinkle = Math.random() * Math.PI * 2;
+  stars.push(s);
+  app.stage.addChild(s);
+}
+
+// Command ship
+const ship = new PIXI.Graphics();
+ship.beginFill(0x00ffc3, 0.9);
+ship.drawPolygon([0, -14, 12, 14, -12, 14]);
+ship.endFill();
+ship.beginFill(0x00d4ff, 0.5);
+ship.drawPolygon([0, -7, 6, 5, -6, 5]);
+ship.endFill();
+ship.x = (window.innerWidth - 440) / 2;
+ship.y = window.innerHeight / 2;
+app.stage.addChild(ship);
+
+// Orbiting agents (8)
+const agents = [];
+const agentColors = [0x00ffc3, 0x00d4ff, 0x22c55e, 0xa855f7, 0xf59e0b, 0x3b82f6, 0xef4444, 0xffffff];
+for (let i = 0; i < 8; i++) {
+  const a = new PIXI.Graphics();
+  a.beginFill(agentColors[i], 0.85);
+  a.drawCircle(0, 0, 4);
+  a.endFill();
+
+  // Trail
+  const trail = new PIXI.Graphics();
+  trail.beginFill(agentColors[i], 0.15);
+  trail.drawCircle(0, 0, 8);
+  trail.endFill();
+
+  a.angle = (i / 8) * Math.PI * 2;
+  a.radius = 50 + (i % 3) * 30;
+  a.speed  = 0.012 + i * 0.002;
+  a.trail = trail;
+  agents.push(a);
+  app.stage.addChild(trail);
+  app.stage.addChild(a);
+}
+
+// Connection lines
+const lines = new PIXI.Graphics();
+app.stage.addChild(lines);
+
+// Tick
+app.ticker.add((delta) => {
+  const cx = ship.x, cy = ship.y;
+
+  stars.forEach(s => {
+    s.y += s.speed * delta;
+    s.twinkle += 0.03;
+    s.alpha = 0.3 + Math.sin(s.twinkle) * 0.3;
+    if (s.y > window.innerHeight) { s.y = 0; s.x = Math.random() * window.innerWidth; }
+  });
+
+  ship.rotation += 0.005 * delta;
+
+  lines.clear();
+  agents.forEach(a => {
+    a.angle += a.speed * delta;
+    a.x = cx + Math.cos(a.angle) * a.radius;
+    a.y = cy + Math.sin(a.angle) * a.radius;
+    a.trail.x = a.x;
+    a.trail.y = a.y;
+
+    lines.lineStyle(0.5, 0x00ffc3, 0.08);
+    lines.moveTo(cx, cy);
+    lines.lineTo(a.x, a.y);
+  });
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  ship.x = (window.innerWidth - 440) / 2;
+  ship.y = window.innerHeight / 2;
+});
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let selectedPlan = 'Global Pro';
+let isLoading = false;
+
+function selectPlan(el) {
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedPlan = el.dataset.plan;
+}
+
+function switchTab(tab) {
+  ['signup','plans','demo'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
+    document.querySelectorAll('.tab')[['signup','plans','demo'].indexOf(t)].classList.toggle('active', t === tab);
+  });
+}
+
+// ── LAUNCH FLEET ─────────────────────────────────────────────────────────────
+async function launchFleet() {
+  if (isLoading) return;
+  const name  = document.getElementById('f-name').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  if (!name || !email) return toast('Name and email are required', 'err');
+
+  isLoading = true;
+  const btn = document.getElementById('launchBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Provisioning…';
+
+  try {
+    const res = await fetch('/api/esim/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, email,
+        company:      document.getElementById('f-company').value.trim(),
+        phone:        document.getElementById('f-phone').value.trim(),
+        plan_name:    selectedPlan,
+        country_code: 'ZA',
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Provisioning failed');
+
+    showSuccess(data);
+  } catch (e) {
+    toast(e.message, 'err');
+    btn.disabled = false;
+    btn.textContent = '⚡ ACTIVATE MY FLEET';
+  }
+  isLoading = false;
+}
+
+function showSuccess(data) {
+  document.getElementById('formArea').style.display = 'none';
+  const s = document.getElementById('success');
+  s.classList.add('visible');
+
+  document.getElementById('s-title').textContent = '🚀 Fleet Activated!';
+  document.getElementById('s-sub').textContent = `Your global eSIM + PBX is live. Check your email for credentials.`;
+
+  if (data.esim) {
+    document.getElementById('c-iccid').textContent = data.esim.iccid || '—';
+    if (data.esim.activation_qr) {
+      document.getElementById('qrImg').src = data.esim.activation_qr;
+      document.getElementById('qrBox').style.display = 'flex';
+    }
+    document.getElementById('credBox').style.display = '';
+  }
+  if (data.pbx) {
+    document.getElementById('c-ext').textContent  = data.pbx.extension || '—';
+    document.getElementById('c-did').textContent  = data.pbx.did_number || 'Assigning…';
+    document.getElementById('c-sip').textContent  = data.pbx.sip_username || '—';
+  }
+
+  // Animate agents towards center
+  agents.forEach(a => { a.radius *= 0.5; });
+  ship.tint = 0x22c55e;
+}
+
+// ── DEMO REQUEST ─────────────────────────────────────────────────────────────
+async function requestDemo() {
+  const name  = document.getElementById('d-name').value.trim();
+  const email = document.getElementById('d-email').value.trim();
+  if (!name || !email) return toast('Name and email required', 'err');
+
+  try {
+    await fetch('/api/crm/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, email,
+        company: document.getElementById('d-company').value.trim(),
+        status: 'new', score: 70,
+        tags: ['demo_request', 'esim', 'pbx', document.getElementById('d-usecase').value],
+        notes: `Demo request from eSIM/PBX landing page. Use case: ${document.getElementById('d-usecase').value}`,
+        source: 'esim_demo_request',
+      }),
+    });
+    toast('Demo request received! We\'ll be in touch within 24 hours.', 'ok');
+    switchTab('signup');
+  } catch { toast('Request sent — we\'ll be in touch!', 'ok'); }
+}
+
+// ── STATS HUD ────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await fetch('/api/esim/stats');
+    const d = await r.json();
+    document.getElementById('hud-esims').textContent = `● ACTIVE: ${d.active_esims || 0}`;
+  } catch {}
+}
+loadStats();
+setInterval(loadStats, 30000);
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+</script>
+</body>
+</html>
