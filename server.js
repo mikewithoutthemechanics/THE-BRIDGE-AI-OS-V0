@@ -1970,7 +1970,8 @@ app.get('/api/defi/status', (_req, res) => {
   res.json({ tvl: 0, total_value: 0, liquidity: 0, pools: [], ts: Date.now() });
 });
 
-app.get('/api/treasury/status', async (_req, res) => {
+// Renamed to avoid conflict with dashboard treasury status endpoint
+app.get('/api/banks/status', async (_req, res) => {
   try {
     const all = await banksModule.getAllBanks();
     const total = all.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
