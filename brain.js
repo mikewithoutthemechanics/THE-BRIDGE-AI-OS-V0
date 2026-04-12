@@ -3552,6 +3552,144 @@ app.post('/api/agents/run', async (req, res) => {
   }
 });
 
+// ── REVENUE DASHBOARD ENDPOINTS ──────────────────────────────────────────────
+
+// /api/metrics/revenue — proof-chain MTD revenue (primary source for revenue dashboard)
+app.get('/api/metrics/revenue', async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    const now = new Date();
+    const mtdStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+    // Proof chain (zero-trust source)
+    const { data: chainTxs } = await sb.from('payment_proof_chain')
+      .select('id, amount, currency, source, gateway, created_at, entry_hash, chain_index')
+      .gte('created_at', mtdStart)
+      .order('chain_index', { ascending: true });
+
+    const { count: totalChainCount } = await sb.from('payment_proof_chain')
+      .select('*', { count: 'exact', head: true });
+
+    const mtdTotal = (chainTxs || []).reduce((s, t) => s + (t.amount || 0), 0);
+    const transactionCount = (chainTxs || []).length;
+
+    // Chain integrity: last entry hash
+    const { data: lastEntry } = await sb.from('payment_proof_chain')
+      .select('entry_hash, chain_index').order('chain_index', { ascending: false }).limit(1).maybeSingle();
+
+    const _zt = (() => { try { return require('./lib/zero-trust'); } catch { return null; } })();
+    const sign = d => _zt && _zt.signResponse ? _zt.signResponse(d, 'api-response') : d;
+
+    res.json(sign({
+      ok: true,
+      data: {
+        revenueMtd: mtdTotal,
+        transactionCount,
+        totalChainCount: totalChainCount || 0,
+        chainHead: lastEntry?.entry_hash || null,
+        chainIndex: lastEntry?.chain_index || 0,
+        recentTx: (chainTxs || []).slice(-10).reverse(),
+        source: 'payment_proof_chain',
+      },
+    }));
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// /api/metrics/treasury — full treasury breakdown for revenue dashboard
+app.get('/api/metrics/treasury', async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    // Try supaclaw state first (real-time), fall back to treasury/status data
+    let bal = 0, earned = 0;
+    try {
+      const tRes = await fetch('http://localhost:' + (process.env.BRAIN_PORT || 8000) + '/api/treasury/status');
+      const td = await tRes.json();
+      bal = td.balance || 0;
+      earned = td.earned || 0;
+    } catch (_) {}
+
+    // Also get proof chain total
+    const { data: proofRows } = await sb.from('payment_proof_chain').select('amount');
+    const proofTotal = (proofRows || []).reduce((s, r) => s + (r.amount || 0), 0);
+
+    const _zt = (() => { try { return require('./lib/zero-trust'); } catch { return null; } })();
+    const sign = d => _zt && _zt.signResponse ? _zt.signResponse(d, 'api-response') : d;
+
+    res.json(sign({
+      ok: true,
+      balance: bal,
+      earned,
+      proof_chain_total: proofTotal,
+      buckets: {
+        ops:     +(bal * 0.45).toFixed(2),
+        growth:  +(bal * 0.15).toFixed(2),
+        reserve: +(bal * 0.15).toFixed(2),
+        founder: +(bal * 0.25).toFixed(2),
+      },
+      currency: 'ZAR',
+    }));
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// /api/treasury/reconcile — backfill real payments into proof chain
+app.post('/api/treasury/reconcile', async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    const crypto = require('crypto');
+
+    // Get paid payments not yet in proof chain
+    const { data: payments } = await sb.from('payments')
+      .select('id, reference, client, amount, status, created_at')
+      .eq('status', 'paid')
+      .order('created_at', { ascending: true });
+
+    if (!payments || payments.length === 0) {
+      return res.json({ ok: true, message: 'No paid payments to reconcile', added: 0 });
+    }
+
+    // Get existing proof chain IDs to avoid dupes
+    const { data: existing } = await sb.from('payment_proof_chain').select('payment_id');
+    const existingIds = new Set((existing || []).map(r => r.payment_id));
+
+    // Get current chain head
+    const { data: head } = await sb.from('payment_proof_chain')
+      .select('entry_hash, chain_index').order('chain_index', { ascending: false }).limit(1).maybeSingle();
+
+    let prevHash = head?.entry_hash || '0'.repeat(64);
+    let chainIdx = (head?.chain_index ?? -1) + 1;
+    let added = 0;
+
+    for (const p of payments) {
+      if (existingIds.has(p.id)) continue;
+
+      const entryData = JSON.stringify({ payment_id: p.id, amount: p.amount, created_at: p.created_at, prev_hash: prevHash });
+      const entryHash = crypto.createHash('sha256').update(entryData).digest('hex');
+
+      await sb.from('payment_proof_chain').insert({
+        payment_id:   p.id,
+        email:        p.client || null,
+        amount:       p.amount || 0,
+        currency:     'ZAR',
+        source:       'payfast',
+        gateway:      'payfast',
+        status:       'completed',
+        prev_hash:    prevHash,
+        entry_hash:   entryHash,
+        chain_index:  chainIdx,
+        reinvested:   false,
+        metadata:     JSON.stringify({ reference: p.reference }),
+        created_at:   p.created_at,
+      });
+
+      prevHash = entryHash;
+      chainIdx++;
+      added++;
+    }
+
+    res.json({ ok: true, message: `Reconciled ${added} payments into proof chain`, added, total_in_chain: chainIdx });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // ── MISSING ENDPOINTS — analytics, crm, finance, marketing, ops ─────────────
 
 // Analytics overview — aggregates across all revenue-generating modules

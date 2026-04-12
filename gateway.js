@@ -1762,6 +1762,94 @@ app.get('/api/metrics/revenue', async (_req, res) => {
   }
 });
 
+// Backfill billing_transactions → payment_proofs hash chain
+app.post('/api/treasury/reconcile', async (_req, res) => {
+  try {
+    const { supabaseAdmin } = require('./lib/supabase');
+
+    // 1. Find all completed billing transactions not yet in payment_proofs
+    const { data: txns, error: txErr } = await supabaseAdmin
+      .from('billing_transactions')
+      .select('id, amount_cents, currency, type, provider_ref, created_at, completed_at')
+      .eq('status', 'completed')
+      .order('created_at', { ascending: true });
+
+    if (txErr) throw new Error('billing_transactions read failed: ' + txErr.message);
+    if (!txns || txns.length === 0) {
+      return res.json({ ok: true, reconciled: 0, message: 'No completed billing transactions found' });
+    }
+
+    // 2. Get already-proofed transaction IDs to avoid duplicates
+    const { data: existingProofs } = await supabaseAdmin
+      .from('payment_proofs')
+      .select('transaction_id');
+    const proofedIds = new Set((existingProofs || []).map(p => p.transaction_id));
+
+    // 3. Backfill each unproofed transaction into payment_proofs via recordPayment
+    let reconciled = 0;
+    const errors = [];
+
+    for (const tx of txns) {
+      const txId = 'bt_' + tx.id; // prefix to avoid collision with PayFast IDs
+      if (proofedIds.has(txId)) continue;
+
+      try {
+        await proofStore.recordPayment({
+          id: txId,
+          amount: (tx.amount_cents || 0) / 100,
+          currency: tx.currency || 'ZAR',
+          source: 'billing_backfill',
+          webhookId: tx.provider_ref || null,
+          webhookSignature: null,
+          timestamp: tx.completed_at || tx.created_at || new Date().toISOString(),
+          meta: { type: tx.type, billing_tx_id: tx.id, backfilled: true },
+        });
+        reconciled++;
+      } catch (e) {
+        errors.push({ id: tx.id, error: e.message });
+      }
+    }
+
+    // 4. Also backfill PayFast payments table (status=paid, not yet proofed)
+    const { data: pfPayments } = await supabaseAdmin
+      .from('payments')
+      .select('id, amount, currency, reference, created_at, updated_at')
+      .eq('status', 'paid')
+      .order('created_at', { ascending: true });
+
+    for (const pf of (pfPayments || [])) {
+      const txId = 'pf_' + pf.reference;
+      if (proofedIds.has(txId)) continue;
+
+      try {
+        await proofStore.recordPayment({
+          id: txId,
+          amount: parseFloat(pf.amount) || 0,
+          currency: pf.currency || 'ZAR',
+          source: 'payfast',
+          webhookId: pf.reference || null,
+          webhookSignature: null,
+          timestamp: pf.updated_at || pf.created_at || new Date().toISOString(),
+          meta: { payfast_id: pf.id, reference: pf.reference, backfilled: true },
+        });
+        reconciled++;
+      } catch (e) {
+        errors.push({ id: pf.reference, error: e.message });
+      }
+    }
+
+    const revenue = await proofStore.getVerifiedRevenue();
+    res.json({
+      ok: true,
+      reconciled,
+      errors: errors.length > 0 ? errors : undefined,
+      revenue,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 app.get('/api/metrics/vault', async (_req, res) => {
   try {
     const vault = await chainVerify.getVerifiedVaultBuckets();
