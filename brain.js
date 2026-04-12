@@ -3340,6 +3340,68 @@ app.get('/api/exchange/rate', (_req, res) => {
 
 console.log('[BRAIN] Deterministic withdrawal system ACTIVE (treasury-withdraw engine)');
 
+// ── IoT Agent Economy ─────────────────────────────────────────────────────────
+{
+  let iot;
+  try { iot = require('./lib/iot-agent'); } catch (e) { console.warn('[BRAIN] iot-agent:', e.message); iot = null; }
+
+  if (iot) {
+    // Register a new IoT device → returns device_id, api_key, agent_id
+    app.post('/api/iot/register', express.json(), async (req, res) => {
+      try {
+        const { name, type, owner_user_id, metadata } = req.body || {};
+        const result = await iot.registerDevice({ name, type, owner_user_id, metadata });
+        res.json({ ok: true, ...result });
+      } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+    });
+
+    // Push telemetry batch → earn BRDG
+    // Auth: X-Device-Key header = api_key issued at registration
+    app.post('/api/iot/telemetry', express.json(), async (req, res) => {
+      try {
+        const api_key = req.headers['x-device-key'] || req.body?.api_key;
+        const readings = req.body?.readings || req.body?.data || [];
+        if (!api_key) return res.status(401).json({ ok: false, error: 'x-device-key header required' });
+        const result = await iot.pushTelemetry(api_key, Array.isArray(readings) ? readings : [readings]);
+        if (!result.ok) return res.status(403).json(result);
+        res.json(result);
+      } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+    });
+
+    // Economy overview — total devices, total BRDG earned, total readings
+    app.get('/api/iot/economy', async (_req, res) => {
+      try {
+        const stats = await iot.getEconomyStats();
+        res.json({ ok: true, ...stats, earn_rates: iot.EARN_RATES, device_types: Object.keys(iot.DEVICE_TYPES) });
+      } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+    });
+
+    // List all devices (admin)
+    app.get('/api/iot/devices', async (req, res) => {
+      try {
+        const limit = parseInt(req.query.limit || '50');
+        const devices = await iot.listDevices(limit);
+        res.json({ ok: true, devices, count: devices.length });
+      } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+    });
+
+    // Single device status + recent earnings
+    app.get('/api/iot/device/:device_id', async (req, res) => {
+      try {
+        const device = await iot.getDevice(req.params.device_id);
+        if (!device) return res.status(404).json({ ok: false, error: 'device_not_found' });
+        const [earnings, telemetry] = await Promise.all([
+          iot.getDeviceEarnings(req.params.device_id, 10),
+          iot.getLatestTelemetry(req.params.device_id, 20),
+        ]);
+        res.json({ ok: true, device, earnings, recent_telemetry: telemetry });
+      } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+    });
+
+    console.log('[BRAIN] IoT Agent Economy ACTIVE — /api/iot/*');
+  }
+}
+
 // ── Zero-Trust Proof Chain & Merkle Anchoring ─────────────────────────────────
 let _zt, _proofStore;
 try { _zt = require('./lib/zero-trust'); } catch (_) { _zt = null; }

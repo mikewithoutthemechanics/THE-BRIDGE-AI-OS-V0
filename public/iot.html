@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IoT Agent Economy — Bridge AI OS</title>
+<style>
+  :root{--bg:#0a0e1a;--surface:#111827;--border:#1e2d4a;--accent:#00d4ff;--green:#00ff88;--orange:#ff8c00;--red:#ff4444;--text:#e2e8f0;--muted:#64748b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;min-height:100vh;padding:1.5rem}
+  h1{color:var(--accent);font-size:1.4rem;margin-bottom:.25rem}
+  .sub{color:var(--muted);font-size:.8rem;margin-bottom:1.5rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem}
+  .card .label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+  .card .value{font-size:1.6rem;font-weight:700;color:var(--accent)}
+  .card .unit{font-size:.75rem;color:var(--muted);margin-top:.2rem}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1.2rem}
+  .panel h2{font-size:.85rem;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;border-bottom:1px solid var(--border);padding-bottom:.5rem}
+  table{width:100%;border-collapse:collapse;font-size:.8rem}
+  th{text-align:left;color:var(--muted);font-weight:400;padding:.4rem .6rem;border-bottom:1px solid var(--border)}
+  td{padding:.45rem .6rem;border-bottom:1px solid rgba(30,45,74,.5)}
+  tr:hover td{background:rgba(0,212,255,.04)}
+  .badge{display:inline-block;padding:.15rem .5rem;border-radius:3px;font-size:.65rem;font-weight:700;text-transform:uppercase}
+  .badge-active{background:rgba(0,255,136,.15);color:var(--green)}
+  .badge-template{background:rgba(100,116,139,.15);color:var(--muted)}
+  .badge-paused{background:rgba(255,140,0,.15);color:var(--orange)}
+  .btn{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:.8rem;font-family:inherit;transition:.2s}
+  .btn:hover{background:rgba(0,212,255,.1)}
+  .btn-green{border-color:var(--green);color:var(--green)}
+  .btn-green:hover{background:rgba(0,255,136,.1)}
+  .form-row{display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem}
+  .form-group{display:flex;flex-direction:column;gap:.3rem}
+  .form-group label{font-size:.7rem;color:var(--muted);text-transform:uppercase}
+  input,select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.45rem .7rem;border-radius:5px;font-family:inherit;font-size:.8rem}
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  .log{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:.8rem;font-size:.72rem;max-height:160px;overflow-y:auto;color:var(--muted)}
+  .log .ok{color:var(--green)}
+  .log .err{color:var(--red)}
+  .key-box{background:var(--bg);border:1px solid var(--green);border-radius:5px;padding:.7rem;font-size:.72rem;color:var(--green);word-break:break-all;margin-top:.8rem;display:none}
+  .earn-rates{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem}
+  .rate-pill{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:4px;padding:.2rem .6rem;font-size:.7rem}
+  .rate-val{color:var(--accent);font-weight:700}
+</style>
+</head>
+<body>
+
+<h1>IoT Agent Economy</h1>
+<p class="sub">Physical devices as first-class agents — register, push telemetry, earn BRDG</p>
+
+<!-- Economy Stats -->
+<div class="grid" id="statsGrid">
+  <div class="card"><div class="label">Total Devices</div><div class="value" id="s-devices">—</div><div class="unit">registered</div></div>
+  <div class="card"><div class="label">Active Agents</div><div class="value" id="s-active">—</div><div class="unit">online</div></div>
+  <div class="card"><div class="label">Total BRDG Earned</div><div class="value" id="s-brdg">—</div><div class="unit">by IoT agents</div></div>
+  <div class="card"><div class="label">Total Readings</div><div class="value" id="s-readings">—</div><div class="unit">telemetry points</div></div>
+  <div class="card"><div class="label">Total Pushes</div><div class="value" id="s-pushes">—</div><div class="unit">data batches</div></div>
+</div>
+
+<!-- BRDG Earn Rates -->
+<div class="panel">
+  <h2>BRDG Earn Rates</h2>
+  <div class="earn-rates" id="earnRates">Loading...</div>
+</div>
+
+<!-- Register Device -->
+<div class="panel">
+  <h2>Register New Device</h2>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Device Name</label>
+      <input id="reg-name" placeholder="e.g. Rooftop Solar Monitor" style="width:220px">
+    </div>
+    <div class="form-group">
+      <label>Device Type</label>
+      <select id="reg-type">
+        <option value="sensor">Sensor</option>
+        <option value="environmental">Environmental</option>
+        <option value="energy">Energy Monitor</option>
+        <option value="camera">Camera / Vision</option>
+        <option value="actuator">Actuator</option>
+        <option value="gateway">Edge Gateway</option>
+        <option value="edge_compute">Edge Compute</option>
+        <option value="wearable">Wearable</option>
+      </select>
+    </div>
+    <button class="btn btn-green" onclick="registerDevice()">Register Device →</button>
+  </div>
+  <div class="key-box" id="keyBox"></div>
+</div>
+
+<!-- Push Telemetry (test) -->
+<div class="panel">
+  <h2>Push Telemetry (Test)</h2>
+  <div class="form-row">
+    <div class="form-group">
+      <label>API Key</label>
+      <input id="push-key" placeholder="brdg_iot_..." style="width:320px">
+    </div>
+    <div class="form-group">
+      <label>Metric</label>
+      <input id="push-metric" value="temperature" style="width:120px">
+    </div>
+    <div class="form-group">
+      <label>Value</label>
+      <input id="push-value" value="23.5" style="width:80px">
+    </div>
+    <div class="form-group">
+      <label>Unit</label>
+      <input id="push-unit" value="°C" style="width:60px">
+    </div>
+    <button class="btn" onclick="pushTelemetry()">Push → Earn BRDG</button>
+  </div>
+  <div class="log" id="pushLog"><span class="ok">Ready. Push telemetry to earn BRDG.</span></div>
+</div>
+
+<!-- Device Table -->
+<div class="panel">
+  <h2>Registered Devices <button class="btn" style="float:right;padding:.3rem .8rem;font-size:.7rem" onclick="loadDevices()">Refresh</button></h2>
+  <table>
+    <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>BRDG Earned</th><th>Pushes</th><th>Last Seen</th></tr></thead>
+    <tbody id="deviceTable"><tr><td colspan="6" style="color:var(--muted);text-align:center">Loading...</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+const API = '';
+
+async function loadEconomy() {
+  try {
+    const r = await fetch(API + '/api/iot/economy');
+    const d = await r.json();
+    if (!d.ok) return;
+    document.getElementById('s-devices').textContent  = d.total_devices ?? '0';
+    document.getElementById('s-active').textContent   = d.active_devices ?? '0';
+    document.getElementById('s-brdg').textContent     = (d.total_brdg_earned ?? 0).toLocaleString();
+    document.getElementById('s-readings').textContent = (d.total_readings ?? 0).toLocaleString();
+    document.getElementById('s-pushes').textContent   = (d.total_pushes ?? 0).toLocaleString();
+
+    if (d.earn_rates) {
+      const labels = {
+        telemetry_batch: 'Per batch', anomaly_detected: 'Anomaly bonus',
+        uptime_daily: 'Daily uptime', high_frequency: 'High-freq (10+ readings)',
+        first_push: 'First push bonus'
+      };
+      document.getElementById('earnRates').innerHTML = Object.entries(d.earn_rates)
+        .map(([k,v]) => `<div class="rate-pill"><span class="rate-val">+${v} BRDG</span> ${labels[k]||k}</div>`)
+        .join('');
+    }
+  } catch(e) {
+    console.warn('economy load:', e);
+  }
+}
+
+async function loadDevices() {
+  try {
+    const r = await fetch(API + '/api/iot/devices');
+    const d = await r.json();
+    const tbody = document.getElementById('deviceTable');
+    if (!d.ok || !d.devices.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center">No devices registered yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.devices.map(dev => `
+      <tr>
+        <td>${dev.name}</td>
+        <td>${dev.type}</td>
+        <td><span class="badge badge-${dev.status}">${dev.status}</span></td>
+        <td style="color:var(--accent)">${(dev.brdg_earned||0).toLocaleString()} BRDG</td>
+        <td>${dev.push_count||0}</td>
+        <td style="color:var(--muted)">${dev.last_seen ? new Date(dev.last_seen).toLocaleString() : 'Never'}</td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('deviceTable').innerHTML = '<tr><td colspan="6" style="color:var(--red)">Error loading devices</td></tr>';
+  }
+}
+
+async function registerDevice() {
+  const name = document.getElementById('reg-name').value.trim();
+  const type = document.getElementById('reg-type').value;
+  if (!name) return alert('Device name required');
+  try {
+    const r = await fetch(API + '/api/iot/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, type })
+    });
+    const d = await r.json();
+    if (!d.ok) return alert('Error: ' + d.error);
+    const box = document.getElementById('keyBox');
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div style="margin-bottom:.4rem;color:var(--accent)">✓ Device registered! Save these credentials — API key shown once:</div>
+      <div><strong>Device ID:</strong> ${d.device_id}</div>
+      <div><strong>API Key:</strong> ${d.api_key}</div>
+      <div><strong>Agent ID:</strong> ${d.agent_id}</div>
+      <div><strong>Skills:</strong> ${(d.caps||[]).join(', ')}</div>
+      <div style="margin-top:.5rem;color:var(--muted);font-size:.68rem">Use X-Device-Key: ${d.api_key} header on POST /api/iot/telemetry</div>`;
+    document.getElementById('push-key').value = d.api_key;
+    loadDevices();
+    loadEconomy();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function pushTelemetry() {
+  const api_key = document.getElementById('push-key').value.trim();
+  const metric  = document.getElementById('push-metric').value.trim() || 'reading';
+  const value   = parseFloat(document.getElementById('push-value').value) || 0;
+  const unit    = document.getElementById('push-unit').value.trim();
+  if (!api_key) return alert('Paste API key first');
+  const log = document.getElementById('pushLog');
+  try {
+    const r = await fetch(API + '/api/iot/telemetry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Key': api_key },
+      body: JSON.stringify({ readings: [{ metric, value, unit, timestamp: new Date().toISOString() }] })
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      log.innerHTML = `<span class="err">✗ ${d.error}</span>\n` + log.innerHTML;
+      return;
+    }
+    log.innerHTML = `<span class="ok">✓ ${new Date().toLocaleTimeString()} — Earned +${d.brdg_earned} BRDG | Total: ${d.total_brdg} BRDG | Readings: ${d.readings_recorded}</span>\n` + log.innerHTML;
+    loadEconomy();
+    loadDevices();
+  } catch(e) {
+    log.innerHTML = `<span class="err">✗ ${e.message}</span>\n` + log.innerHTML;
+  }
+}
+
+// Init
+loadEconomy();
+loadDevices();
+setInterval(loadEconomy, 15000);
+</script>
+
+</body>
+</html>
