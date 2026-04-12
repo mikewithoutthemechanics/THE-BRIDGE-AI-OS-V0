@@ -2,21 +2,26 @@
 -- BRIDGE AI OS — Unified User Lifecycle Orchestration Engine (ULOE)
 -- Migration 005: All lifecycle tables
 --
--- Tables:
---   lifecycle_events      — immutable append-only audit log (all user actions)
---   user_subscriptions    — subscription plans + billing cycles
---   billing_transactions  — all money movements (charges, refunds, credits)
---   invoices              — generated invoice records
---   usage_events          — per-call/task/resource usage events
---   usage_quotas          — current usage totals against plan limits (materialized)
---   wallet_balances       — multi-ledger wallet state (main, promo, credits, brdg)
---   wallet_transactions   — every wallet debit/credit with source reference
---   api_keys              — issued API keys with rate limits and credit pools
---   user_modules          — which modules each user has unlocked + activation state
+-- Idempotent: drops all ULOE tables first so re-runs always produce a clean state.
+-- user_id columns are TEXT (not UUID) to match the existing users.id TEXT column.
+-- No foreign keys to users — logical reference only (matches migration 004 pattern).
 -- =============================================================================
 
+-- ── Drop in dependency order (children before parents) ───────────────────────
+DROP TABLE IF EXISTS user_modules         CASCADE;
+DROP TABLE IF EXISTS uloe_api_keys        CASCADE;
+DROP TABLE IF EXISTS wallet_transactions  CASCADE;
+DROP TABLE IF EXISTS wallet_balances      CASCADE;
+DROP TABLE IF EXISTS usage_quotas         CASCADE;
+DROP TABLE IF EXISTS usage_events         CASCADE;
+DROP TABLE IF EXISTS invoices             CASCADE;
+DROP TABLE IF EXISTS billing_transactions CASCADE;
+DROP TABLE IF EXISTS user_subscriptions   CASCADE;
+DROP TABLE IF EXISTS lifecycle_events     CASCADE;
+DROP SEQUENCE IF EXISTS invoice_seq;
+
 -- ── Lifecycle Events (immutable audit log) ───────────────────────────────────
-CREATE TABLE IF NOT EXISTS lifecycle_events (
+CREATE TABLE lifecycle_events (
   event_id        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   timestamp       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -29,12 +34,12 @@ CREATE TABLE IF NOT EXISTS lifecycle_events (
   checksum        TEXT        NOT NULL DEFAULT ''  -- SHA-256(event_id + user_id + action + details + prev_checksum)
 );
 
-CREATE INDEX IF NOT EXISTS idx_lifecycle_user ON lifecycle_events(user_id, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_lifecycle_category ON lifecycle_events(category, action);
-CREATE INDEX IF NOT EXISTS idx_lifecycle_correlation ON lifecycle_events(correlation_id) WHERE correlation_id IS NOT NULL;
+CREATE INDEX idx_lifecycle_user ON lifecycle_events(user_id, timestamp DESC);
+CREATE INDEX idx_lifecycle_category ON lifecycle_events(category, action);
+CREATE INDEX idx_lifecycle_correlation ON lifecycle_events(correlation_id) WHERE correlation_id IS NOT NULL;
 
 -- ── User Subscriptions ───────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS user_subscriptions (
+CREATE TABLE user_subscriptions (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   plan            TEXT        NOT NULL DEFAULT 'free',  -- free | starter | pro | enterprise | custom
@@ -53,15 +58,15 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_active_user
+CREATE UNIQUE INDEX idx_subscriptions_active_user
   ON user_subscriptions(user_id)
   WHERE status IN ('active', 'trialing', 'past_due');
 
-CREATE INDEX IF NOT EXISTS idx_subscriptions_plan ON user_subscriptions(plan, status);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_period_end ON user_subscriptions(current_period_end) WHERE status = 'active';
+CREATE INDEX idx_subscriptions_plan ON user_subscriptions(plan, status);
+CREATE INDEX idx_subscriptions_period_end ON user_subscriptions(current_period_end) WHERE status = 'active';
 
 -- ── Billing Transactions ─────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS billing_transactions (
+CREATE TABLE billing_transactions (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   subscription_id UUID        REFERENCES user_subscriptions(id),
@@ -78,12 +83,12 @@ CREATE TABLE IF NOT EXISTS billing_transactions (
   completed_at    TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS idx_billing_user ON billing_transactions(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_billing_status ON billing_transactions(status) WHERE status = 'pending';
-CREATE INDEX IF NOT EXISTS idx_billing_invoice ON billing_transactions(invoice_id) WHERE invoice_id IS NOT NULL;
+CREATE INDEX idx_billing_user ON billing_transactions(user_id, created_at DESC);
+CREATE INDEX idx_billing_status ON billing_transactions(status) WHERE status = 'pending';
+CREATE INDEX idx_billing_invoice ON billing_transactions(invoice_id) WHERE invoice_id IS NOT NULL;
 
 -- ── Invoices ─────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS invoices (
+CREATE TABLE invoices (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   subscription_id UUID        REFERENCES user_subscriptions(id),
@@ -102,12 +107,12 @@ CREATE TABLE IF NOT EXISTS invoices (
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_invoices_user ON invoices(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status) WHERE status NOT IN ('paid', 'void');
+CREATE INDEX idx_invoices_user ON invoices(user_id, created_at DESC);
+CREATE INDEX idx_invoices_status ON invoices(status) WHERE status NOT IN ('paid', 'void');
 CREATE SEQUENCE IF NOT EXISTS invoice_seq START 1;
 
 -- ── Usage Events ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS usage_events (
+CREATE TABLE usage_events (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   api_key_id      UUID,                  -- null for non-API usage
@@ -119,12 +124,12 @@ CREATE TABLE IF NOT EXISTS usage_events (
   recorded_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_usage_user ON usage_events(user_id, recorded_at DESC);
-CREATE INDEX IF NOT EXISTS idx_usage_resource ON usage_events(resource_type, recorded_at DESC);
-CREATE INDEX IF NOT EXISTS idx_usage_apikey ON usage_events(api_key_id) WHERE api_key_id IS NOT NULL;
+CREATE INDEX idx_usage_user ON usage_events(user_id, recorded_at DESC);
+CREATE INDEX idx_usage_resource ON usage_events(resource_type, recorded_at DESC);
+CREATE INDEX idx_usage_apikey ON usage_events(api_key_id) WHERE api_key_id IS NOT NULL;
 
 -- ── Usage Quotas (materialized current-period totals) ────────────────────────
-CREATE TABLE IF NOT EXISTS usage_quotas (
+CREATE TABLE usage_quotas (
   id                  UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id             TEXT    NOT NULL,  -- TEXT matches users.id column type
   period_start        TIMESTAMPTZ NOT NULL,
@@ -140,10 +145,10 @@ CREATE TABLE IF NOT EXISTS usage_quotas (
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_quotas_user_period ON usage_quotas(user_id, period_start);
+CREATE UNIQUE INDEX idx_quotas_user_period ON usage_quotas(user_id, period_start);
 
 -- ── Wallet Balances ──────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS wallet_balances (
+CREATE TABLE wallet_balances (
   id              UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         TEXT    NOT NULL,  -- TEXT matches users.id column type
   ledger          TEXT    NOT NULL,  -- main | promo | credits | brdg
@@ -153,10 +158,10 @@ CREATE TABLE IF NOT EXISTS wallet_balances (
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_wallet_user_ledger ON wallet_balances(user_id, ledger);
+CREATE UNIQUE INDEX idx_wallet_user_ledger ON wallet_balances(user_id, ledger);
 
 -- ── Wallet Transactions ──────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS wallet_transactions (
+CREATE TABLE wallet_transactions (
   id              UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         TEXT    NOT NULL,  -- TEXT matches users.id column type
   ledger          TEXT    NOT NULL,
@@ -170,13 +175,13 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_wallet_tx_user ON wallet_transactions(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_wallet_tx_ledger ON wallet_transactions(ledger, created_at DESC);
+CREATE INDEX idx_wallet_tx_user ON wallet_transactions(user_id, created_at DESC);
+CREATE INDEX idx_wallet_tx_ledger ON wallet_transactions(ledger, created_at DESC);
 
 -- ── API Keys ─────────────────────────────────────────────────────────────────
 -- Note: supplements lib/api-keys.js which uses a separate api_keys table.
 -- This table stores ULOE-managed lifecycle fields.
-CREATE TABLE IF NOT EXISTS uloe_api_keys (
+CREATE TABLE uloe_api_keys (
   id              UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         TEXT    NOT NULL,  -- TEXT matches users.id column type
   key_hash        TEXT    NOT NULL UNIQUE,  -- sha256 of raw key (never store raw)
@@ -194,11 +199,11 @@ CREATE TABLE IF NOT EXISTS uloe_api_keys (
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_uloe_apikeys_user ON uloe_api_keys(user_id) WHERE status = 'active';
-CREATE INDEX IF NOT EXISTS idx_uloe_apikeys_expiry ON uloe_api_keys(expires_at) WHERE expires_at IS NOT NULL AND status = 'active';
+CREATE INDEX idx_uloe_apikeys_user ON uloe_api_keys(user_id) WHERE status = 'active';
+CREATE INDEX idx_uloe_apikeys_expiry ON uloe_api_keys(expires_at) WHERE expires_at IS NOT NULL AND status = 'active';
 
 -- ── User Modules ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS user_modules (
+CREATE TABLE user_modules (
   id              UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         TEXT    NOT NULL,  -- TEXT matches users.id column type
   module_id       TEXT    NOT NULL,  -- neurolink | agent_registry | legal_agent | crm | analytics | twin | api_gateway
@@ -213,8 +218,8 @@ CREATE TABLE IF NOT EXISTS user_modules (
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_modules_user_module ON user_modules(user_id, module_id);
-CREATE INDEX IF NOT EXISTS idx_modules_status ON user_modules(status) WHERE status IN ('active', 'trial');
+CREATE UNIQUE INDEX idx_modules_user_module ON user_modules(user_id, module_id);
+CREATE INDEX idx_modules_status ON user_modules(status) WHERE status IN ('active', 'trial');
 
 -- ── Triggers: updated_at maintenance ────────────────────────────────────────
 CREATE OR REPLACE FUNCTION uloe_set_updated_at()
@@ -222,20 +227,11 @@ RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trig_subscriptions_updated_at') THEN
-    CREATE TRIGGER trig_subscriptions_updated_at BEFORE UPDATE ON user_subscriptions FOR EACH ROW EXECUTE FUNCTION uloe_set_updated_at();
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trig_invoices_updated_at') THEN
-    CREATE TRIGGER trig_invoices_updated_at BEFORE UPDATE ON invoices FOR EACH ROW EXECUTE FUNCTION uloe_set_updated_at();
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trig_apikeys_updated_at') THEN
-    CREATE TRIGGER trig_apikeys_updated_at BEFORE UPDATE ON uloe_api_keys FOR EACH ROW EXECUTE FUNCTION uloe_set_updated_at();
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trig_modules_updated_at') THEN
-    CREATE TRIGGER trig_modules_updated_at BEFORE UPDATE ON user_modules FOR EACH ROW EXECUTE FUNCTION uloe_set_updated_at();
-  END IF;
-END $$;
+-- Triggers are recreated fresh (tables were dropped above so old triggers are gone)
+CREATE TRIGGER trig_subscriptions_updated_at BEFORE UPDATE ON user_subscriptions FOR EACH ROW EXECUTE FUNCTION uloe_set_updated_at();
+CREATE TRIGGER trig_invoices_updated_at      BEFORE UPDATE ON invoices            FOR EACH ROW EXECUTE FUNCTION uloe_set_updated_at();
+CREATE TRIGGER trig_apikeys_updated_at       BEFORE UPDATE ON uloe_api_keys       FOR EACH ROW EXECUTE FUNCTION uloe_set_updated_at();
+CREATE TRIGGER trig_modules_updated_at       BEFORE UPDATE ON user_modules        FOR EACH ROW EXECUTE FUNCTION uloe_set_updated_at();
 
 -- ── Row Level Security ───────────────────────────────────────────────────────
 ALTER TABLE lifecycle_events     ENABLE ROW LEVEL SECURITY;
@@ -251,32 +247,18 @@ ALTER TABLE user_modules         ENABLE ROW LEVEL SECURITY;
 
 -- Service role bypasses RLS — app uses service_role key
 -- Users can read their own data via auth.uid() if using anon key
--- Note: CREATE POLICY does not support IF NOT EXISTS — use DO block to skip if already exists
-DO $$ BEGIN
+-- Tables are freshly created above so no pre-existing policies to check
+CREATE POLICY "Users read own lifecycle events"
+  ON lifecycle_events FOR SELECT USING (auth.uid()::text = user_id);
 
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own lifecycle events' AND tablename = 'lifecycle_events') THEN
-    CREATE POLICY "Users read own lifecycle events"
-      ON lifecycle_events FOR SELECT USING (auth.uid()::text = user_id::text);
-  END IF;
+CREATE POLICY "Users read own subscriptions"
+  ON user_subscriptions FOR SELECT USING (auth.uid()::text = user_id);
 
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own subscriptions' AND tablename = 'user_subscriptions') THEN
-    CREATE POLICY "Users read own subscriptions"
-      ON user_subscriptions FOR SELECT USING (auth.uid()::text = user_id::text);
-  END IF;
+CREATE POLICY "Users read own invoices"
+  ON invoices FOR SELECT USING (auth.uid()::text = user_id);
 
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own invoices' AND tablename = 'invoices') THEN
-    CREATE POLICY "Users read own invoices"
-      ON invoices FOR SELECT USING (auth.uid()::text = user_id::text);
-  END IF;
+CREATE POLICY "Users read own wallet"
+  ON wallet_balances FOR SELECT USING (auth.uid()::text = user_id);
 
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own wallet' AND tablename = 'wallet_balances') THEN
-    CREATE POLICY "Users read own wallet"
-      ON wallet_balances FOR SELECT USING (auth.uid()::text = user_id::text);
-  END IF;
-
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users read own modules' AND tablename = 'user_modules') THEN
-    CREATE POLICY "Users read own modules"
-      ON user_modules FOR SELECT USING (auth.uid()::text = user_id::text);
-  END IF;
-
-END $$;
+CREATE POLICY "Users read own modules"
+  ON user_modules FOR SELECT USING (auth.uid()::text = user_id);
