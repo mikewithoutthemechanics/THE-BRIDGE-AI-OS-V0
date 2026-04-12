@@ -417,14 +417,7 @@ module.exports = function registerBusinessSuite(app, state, broadcast) {
   // ══════════════════════════════════════════════════════════════════════════
   // 17. ANALYTICS & REPORTS
   // ══════════════════════════════════════════════════════════════════════════
-  app.get('/api/analytics/overview', (_req, res) => res.json({ ok: true,
-    revenue: { mtd: state.treasury.earned, arr: state.treasury.earned * 12, growth: 0.15 },
-    customers: { total: customers.size + 85, active: 62, churn: 0.03 },
-    support: { open_tickets: [...tickets.values()].filter(t => t.status === 'open').length, avg_resolution_hrs: 4.2, csat: 4.1 },
-    agents: { total: 8, tasks_completed_mtd: 2100, efficiency: 0.94 },
-    legal: { active_contracts: [...legalDocs.values()].filter(d => d.status === 'active').length, compliance: 'POPIA compliant' },
-    marketing: { leads_mtd: 587, conversion: 0.035, cac: 42 },
-  }));
+  // analytics/overview — handled by gateway.js (financial engine); skip duplicate here
 
   // ══════════════════════════════════════════════════════════════════════════
   // BUSINESS SUITE MANIFEST

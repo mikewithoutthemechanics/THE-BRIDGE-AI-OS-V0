@@ -206,17 +206,17 @@ document.querySelectorAll('nav a').forEach(a => {
 <!-- TREASURY -->
 <div class="panel col-full" id="treasuryPanel">
   <div class="panel-header">TREASURY</div>
-  <div class="balance-display" id="balanceDisplay">$137,284.50</div>
+  <div class="balance-display" id="balanceDisplay">Loading...</div>
   <div class="stat-row" id="treasuryStats">
-    <div class="stat-card"><div class="stat-label">Revenue MTD</div><div class="stat-value green" id="revMtd">$28,450.00</div></div>
-    <div class="stat-card"><div class="stat-label">Costs MTD</div><div class="stat-value red" id="costMtd">$4,210.50</div></div>
-    <div class="stat-card"><div class="stat-label">Net MTD</div><div class="stat-value accent" id="netMtd">$24,239.50</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue MTD (Accrued)</div><div class="stat-value green" id="revMtd">—</div></div>
+    <div class="stat-card"><div class="stat-label">Costs MTD (Provisions)</div><div class="stat-value red" id="costMtd">—</div></div>
+    <div class="stat-card"><div class="stat-label">Net MTD</div><div class="stat-value accent" id="netMtd">—</div></div>
   </div>
   <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
   <div class="plan-row" id="planCards">
-    <div class="plan-card"><div class="plan-name">Starter</div><div class="plan-subs">64 subs</div><div class="plan-rev">$3,136.00</div></div>
-    <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-subs">51 subs</div><div class="plan-rev">$7,599.00</div></div>
-    <div class="plan-card"><div class="plan-name">Enterprise</div><div class="plan-subs">27 subs</div><div class="plan-rev">$13,473.00</div></div>
+    <div class="plan-card"><div class="plan-name">Starter</div><div class="plan-subs" id="pc-starter-subs">0 subs</div><div class="plan-rev" id="pc-starter-rev">R0</div></div>
+    <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-subs" id="pc-pro-subs">0 subs</div><div class="plan-rev" id="pc-pro-rev">R0</div></div>
+    <div class="plan-card"><div class="plan-name">Enterprise</div><div class="plan-subs" id="pc-ent-subs">0 subs</div><div class="plan-rev" id="pc-ent-rev">R0</div></div>
   </div>
   <div class="panel-header">TRANSACTION LEDGER</div>
   <div class="scroll-table" id="ledgerWrap">
@@ -474,22 +474,36 @@ function showToast(msg, color) {
 
 // ── Fetch real live data from APIs ──
 async function fetchTreasuryData() {
-  // 1. Real revenue MTD from analytics overview
+  // 1. Financial provisions — revenue accrued + real costs from financial engine
   try {
     var aRes = await fetch('/api/analytics/overview');
     var a = await aRes.json();
     if (a && a.ok !== false) {
-      // Revenue from subscriptions (ZAR → USD at 18:1 for display)
-      var revRaw = a.revenue ? (a.revenue.mtd || 0) : 0;
-      var rev = revRaw;
-      var costs = a.costs ? (a.costs.mtd || 0) : 0;
-      if (rev > 0) {
-        document.getElementById('revMtd').textContent = fmt(rev);
-        document.getElementById('costMtd').textContent = fmt(costs);
-        document.getElementById('netMtd').textContent = fmt(rev - costs);
-        treasury.revenueMtd = rev;
-        treasury.costsMtd = costs;
+      var rev   = a.revenue ? (a.revenue.accrued || a.revenue.mtd || 0) : 0;
+      var costs = a.costs   ? (a.costs.mtd || a.costs.total || 0) : 0;
+      var net   = rev - costs;
+      // Always show — even if zero, that's the real number
+      document.getElementById('revMtd').textContent  = fmt(rev);
+      document.getElementById('costMtd').textContent = fmt(costs);
+      document.getElementById('netMtd').textContent  = fmt(net);
+      treasury.revenueMtd = rev;
+      treasury.costsMtd   = costs;
+      // Update plan cards from real user counts
+      if (a.revenue && a.revenue.byPlan) {
+        var bp = a.revenue.byPlan;
+        var el = function(id){ return document.getElementById(id); };
+        if (el('pc-starter-subs'))  el('pc-starter-subs').textContent  = (bp.starter    ? bp.starter.count    : 0) + ' subs';
+        if (el('pc-pro-subs'))      el('pc-pro-subs').textContent      = (bp.pro        ? bp.pro.count        : 0) + ' subs';
+        if (el('pc-ent-subs'))      el('pc-ent-subs').textContent      = (bp.enterprise ? bp.enterprise.count : 0) + ' subs';
+        if (el('pc-starter-rev'))   el('pc-starter-rev').textContent   = 'R' + fmt(bp.starter    ? bp.starter.subtotal    : 0);
+        if (el('pc-pro-rev'))       el('pc-pro-rev').textContent       = 'R' + fmt(bp.pro        ? bp.pro.subtotal        : 0);
+        if (el('pc-ent-rev'))       el('pc-ent-rev').textContent       = 'R' + fmt(bp.enterprise ? bp.enterprise.subtotal : 0);
       }
+      // Balance display: BRDG treasury ZAR value
+      if (a.brdgTreasury) {
+        document.getElementById('balanceDisplay').textContent = 'R' + fmt(a.brdgTreasury.zarValue || 0) + ' BRDG est.';
+      }
+      addEvent('TREASURY', 'system', 'Revenue R' + fmt(rev) + ' | Costs R' + fmt(costs) + ' | Net R' + fmt(net));
     }
   } catch (_) {}
 
