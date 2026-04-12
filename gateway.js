@@ -1333,6 +1333,21 @@ app.get('/api/treasury/status', async (_req, res) => {
   } catch (e) { res.json({ balance: 0, distributed: 0, ubi: 0, treasury: 0, ops: 0, founder: 0 }); }
 });
 
+app.get('/api/treasury/ledger', async (req, res) => {
+  try {
+    // Return mock transaction data for dashboard
+    const limit = parseInt(req.query.limit) || 10;
+    res.json({
+      entries: [
+        { ts: new Date(Date.now() - 2*24*60*60*1000).toISOString(), source_project: 'crm', method: 'payfast', amount_brdg: 5000 },
+        { ts: new Date(Date.now() - 1*24*60*60*1000).toISOString(), source_project: 'marketplace', method: 'crypto', amount_brdg: 2500 },
+        { ts: new Date(Date.now() - 6*60*60*1000).toISOString(), source_project: 'invoicing', method: 'stripe', amount_brdg: 7500 },
+        { ts: new Date(Date.now() - 3*60*60*1000).toISOString(), source_project: 'crm', method: 'eft', amount_brdg: 12000 }
+      ].slice(0, limit)
+    });
+  } catch (e) { res.json({ entries: [] }); }
+});
+
 // ── AGENT EXECUTION ─────────────────────────────────────────────────────────
 app.post('/api/agents/run', express.json(), async (req, res) => {
   if (!agents) return res.status(503).json({ ok: false, error: 'Agent module not loaded' });
