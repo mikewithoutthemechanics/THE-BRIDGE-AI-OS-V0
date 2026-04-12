@@ -18,7 +18,7 @@
 -- ── Lifecycle Events (immutable audit log) ───────────────────────────────────
 CREATE TABLE IF NOT EXISTS lifecycle_events (
   event_id        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID        NOT NULL,
+  user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   timestamp       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   category        TEXT        NOT NULL,  -- identity | subscription | billing | usage | wallet | api | module | system
   action          TEXT        NOT NULL,  -- e.g. subscription.created, wallet.credited, module.activated
@@ -36,7 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_lifecycle_correlation ON lifecycle_events(correla
 -- ── User Subscriptions ───────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS user_subscriptions (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   plan            TEXT        NOT NULL DEFAULT 'free',  -- free | starter | pro | enterprise | custom
   user_type       TEXT        NOT NULL DEFAULT 'personal',  -- personal | business
   status          TEXT        NOT NULL DEFAULT 'active',  -- active | trialing | past_due | cancelled | expired | paused
@@ -63,7 +63,7 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_period_end ON user_subscriptions(cu
 -- ── Billing Transactions ─────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS billing_transactions (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   subscription_id UUID        REFERENCES user_subscriptions(id),
   type            TEXT        NOT NULL,  -- charge | refund | credit | adjustment | writeoff
   status          TEXT        NOT NULL DEFAULT 'pending',  -- pending | completed | failed | voided
@@ -85,7 +85,7 @@ CREATE INDEX IF NOT EXISTS idx_billing_invoice ON billing_transactions(invoice_i
 -- ── Invoices ─────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS invoices (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   subscription_id UUID        REFERENCES user_subscriptions(id),
   invoice_number  TEXT        NOT NULL UNIQUE,  -- INV-2026-000001
   status          TEXT        NOT NULL DEFAULT 'draft',  -- draft | issued | paid | void | overdue
@@ -109,7 +109,7 @@ CREATE SEQUENCE IF NOT EXISTS invoice_seq START 1;
 -- ── Usage Events ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS usage_events (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id         TEXT        NOT NULL,  -- TEXT matches users.id column type
   api_key_id      UUID,                  -- null for non-API usage
   resource_type   TEXT        NOT NULL,  -- api_call | agent_task | llm_tokens | storage_bytes | bandwidth_bytes | contract_gen
   quantity        BIGINT      NOT NULL DEFAULT 1,
@@ -126,7 +126,7 @@ CREATE INDEX IF NOT EXISTS idx_usage_apikey ON usage_events(api_key_id) WHERE ap
 -- ── Usage Quotas (materialized current-period totals) ────────────────────────
 CREATE TABLE IF NOT EXISTS usage_quotas (
   id                  UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id             UUID    NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id             TEXT    NOT NULL,  -- TEXT matches users.id column type
   period_start        TIMESTAMPTZ NOT NULL,
   period_end          TIMESTAMPTZ NOT NULL,
   api_calls_used      BIGINT  NOT NULL DEFAULT 0,
@@ -145,7 +145,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_quotas_user_period ON usage_quotas(user_id
 -- ── Wallet Balances ──────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS wallet_balances (
   id              UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID    NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id         TEXT    NOT NULL,  -- TEXT matches users.id column type
   ledger          TEXT    NOT NULL,  -- main | promo | credits | brdg
   balance_cents   BIGINT  NOT NULL DEFAULT 0,  -- in smallest unit (cents or BRDG wei equivalent)
   currency        TEXT    NOT NULL DEFAULT 'USD',
@@ -158,7 +158,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_wallet_user_ledger ON wallet_balances(user
 -- ── Wallet Transactions ──────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS wallet_transactions (
   id              UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID    NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id         TEXT    NOT NULL,  -- TEXT matches users.id column type
   ledger          TEXT    NOT NULL,
   direction       TEXT    NOT NULL,  -- credit | debit
   amount_cents    BIGINT  NOT NULL,
@@ -178,7 +178,7 @@ CREATE INDEX IF NOT EXISTS idx_wallet_tx_ledger ON wallet_transactions(ledger, c
 -- This table stores ULOE-managed lifecycle fields.
 CREATE TABLE IF NOT EXISTS uloe_api_keys (
   id              UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID    NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id         TEXT    NOT NULL,  -- TEXT matches users.id column type
   key_hash        TEXT    NOT NULL UNIQUE,  -- sha256 of raw key (never store raw)
   key_prefix      TEXT    NOT NULL,         -- first 12 chars for display (brdg_live_xxx)
   plan            TEXT    NOT NULL DEFAULT 'starter',
@@ -200,7 +200,7 @@ CREATE INDEX IF NOT EXISTS idx_uloe_apikeys_expiry ON uloe_api_keys(expires_at) 
 -- ── User Modules ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS user_modules (
   id              UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID    NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id         TEXT    NOT NULL,  -- TEXT matches users.id column type
   module_id       TEXT    NOT NULL,  -- neurolink | agent_registry | legal_agent | crm | analytics | twin | api_gateway
   status          TEXT    NOT NULL DEFAULT 'inactive',  -- inactive | trial | active | suspended | expired
   activation_source TEXT  NOT NULL DEFAULT 'plan',  -- plan | manual | promo | api
