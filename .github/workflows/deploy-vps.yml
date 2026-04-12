@@ -26,7 +26,7 @@ jobs:
             cd /opt/ai-os || exit 1
             export GIT_SSL_NO_VERIFY=1
             git remote set-url origin https://x-access-token:$GH_PAT@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
-            git fetch origin main
+            git fetch origin
             git reset --hard origin/main
             git remote set-url origin https://github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
             rsync -a --delete --exclude='node_modules' --exclude='.git' --exclude='.env' --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude='logs' /opt/ai-os/ /var/www/bridgeai/ 2>/dev/null || true
