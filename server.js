@@ -1059,6 +1059,101 @@ creditsService.init(economyDb);
     } catch(e) { res.json({ ok: true, total: 0, month: 0 }); }
   });
 
+// Daily revenue dashboard
+  app.get('/api/revenue/daily', [validate.revenueDaily], async (req, res) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const weekStart = new Date(today);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      const revenueToday = await economyDb.query(
+        "SELECT COALESCE(SUM(amount),0) as total FROM payments_received WHERE received_at >= $1",
+        [today.toISOString()]
+      );
+      const revenueYesterday = await economyDb.query(
+        "SELECT COALESCE(SUM(amount),0) as total FROM payments_received WHERE received_at >= $1 AND received_at < $2",
+        [yesterday.toISOString(), today.toISOString()]
+      );
+      const revenueThisWeek = await economyDb.query(
+        "SELECT COALESCE(SUM(amount),0) as total FROM payments_received WHERE received_at >= $1",
+        [weekStart.toISOString()]
+      );
+      const revenueThisMonth = await economyDb.query(
+        "SELECT COALESCE(SUM(amount),0) as total FROM payments_received WHERE received_at >= $1",
+        [monthStart.toISOString()]
+      );
+
+      const transactionsToday = await economyDb.query(
+        "SELECT COUNT(*) as count FROM payments_received WHERE received_at >= $1",
+        [today.toISOString()]
+      );
+
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, created_at, last_active')
+        .gte('created_at', today.toISOString());
+      const newSignupsToday = usersData?.length || 0;
+
+      const { data: activeUsersData } = await supabase
+        .from('users')
+        .select('id')
+        .gte('last_active', today.toISOString());
+      const activeUsers = activeUsersData?.length || 0;
+
+      const topAgents = await economyDb.query(`
+        SELECT agent_id, SUM(amount) as total_earned
+        FROM agent_balances
+        GROUP BY agent_id
+        ORDER BY total_earned DESC
+        LIMIT 10
+      `);
+
+      const lastMonthStart = new Date(monthStart);
+      lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
+      const lastMonthRevenue = await economyDb.query(
+        "SELECT COALESCE(SUM(amount),0) as total FROM payments_received WHERE received_at >= $1 AND received_at < $2",
+        [lastMonthStart.toISOString(), monthStart.toISOString()]
+      );
+
+      const revenueYesterdayVal = parseFloat(revenueYesterday.rows[0]?.total) || 0;
+      const revenueTodayVal = parseFloat(revenueToday.rows[0]?.total) || 0;
+      const growthPercentage = revenueYesterdayVal > 0
+        ? ((revenueTodayVal - revenueYesterdayVal) / revenueYesterdayVal * 100).toFixed(1)
+        : revenueTodayVal > 0 ? '100.0' : '0.0';
+
+      const conversionRate = activeUsers > 0 && newSignupsToday > 0
+        ? (Math.min(1, transactionsToday.rows[0]?.count / Math.max(1, activeUsers)) * 100).toFixed(1)
+        : '0.0';
+
+      res.json({
+        revenue_today: parseFloat(revenueToday.rows[0]?.total) || 0,
+        revenue_yesterday: revenueYesterdayVal,
+        revenue_this_week: parseFloat(revenueThisWeek.rows[0]?.total) || 0,
+        revenue_this_month: parseFloat(revenueThisMonth.rows[0]?.total) || 0,
+        active_users: activeUsers,
+        new_signups_today: newSignupsToday,
+        transactions_today: parseInt(transactionsToday.rows[0]?.count) || 0,
+        top_earning_agents: topAgents.rows.map(a => ({
+          agent_id: a.agent_id,
+          total_earned: parseFloat(a.total_earned) || 0
+        })),
+        conversion_rate: parseFloat(conversionRate),
+        growth_percentage: parseFloat(growthPercentage)
+      });
+    } catch(e) {
+      res.json({
+        revenue_today: 0, revenue_yesterday: 0, revenue_this_week: 0,
+        revenue_this_month: 0, active_users: 0, new_signups_today: 0,
+        transactions_today: 0, top_earning_agents: [], conversion_rate: 0,
+        growth_percentage: 0, error: e.message
+      });
+    }
+  });
+
 // Economy intelligence
   app.get('/api/economy/intelligence', [validate.economyIntelligence], async (req, res) => {
     try {
