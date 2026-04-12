@@ -3982,6 +3982,109 @@ app.get('/api/vendors', async (_req, res) => {
   } catch (e) { res.json({ ok: true, vendors: [], error: e.message }); }
 });
 
+// ── CRM: Leads (full CRUD) ─────────────────────────────────────────────────
+app.get('/api/crm/leads', async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+    const status = req.query.status;
+    let q = sb.from('crm_leads').select('*').order('created_at', { ascending: false }).limit(limit);
+    if (status) q = q.eq('status', status);
+    const { data, error } = await q;
+    if (error) return res.json({ ok: true, leads: [], error: error.message });
+    res.json({ ok: true, leads: data || [], total: (data || []).length });
+  } catch (e) { res.json({ ok: true, leads: [], error: e.message }); }
+});
+
+app.post('/api/crm/leads', express.json(), async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    const { name, email, company, phone, source, status, score, notes, tags, assigned_to } = req.body || {};
+    if (!email && !name) return res.status(400).json({ ok: false, error: 'name or email required' });
+    const lead = {
+      name:        name || email || 'Unknown',
+      email:       email || null,
+      company:     company || null,
+      phone:       phone || null,
+      source:      source || 'manual',
+      status:      status || 'new',
+      score:       score != null ? Number(score) : 50,
+      notes:       notes || null,
+      tags:        tags || [],
+      assigned_to: assigned_to || null,
+      created_at:  new Date().toISOString(),
+      updated_at:  new Date().toISOString(),
+    };
+    const { data: row, error } = await sb.from('crm_leads').insert(lead).select().single();
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    res.json({ ok: true, lead: row });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.patch('/api/crm/leads/:id', express.json(), async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    const updates = { ...req.body, updated_at: new Date().toISOString() };
+    delete updates.id; delete updates.created_at;
+    const { data: row, error } = await sb.from('crm_leads').update(updates).eq('id', req.params.id).select().single();
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    res.json({ ok: true, lead: row });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.delete('/api/crm/leads/:id', async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    const { error } = await sb.from('crm_leads').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// CRM: Activities / Notes
+app.get('/api/crm/activities', async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    const lead_id = req.query.lead_id;
+    let q = sb.from('crm_activities').select('*').order('created_at', { ascending: false }).limit(100);
+    if (lead_id) q = q.eq('lead_id', lead_id);
+    const { data, error } = await q;
+    if (error) return res.json({ ok: true, activities: [], error: error.message });
+    res.json({ ok: true, activities: data || [] });
+  } catch (e) { res.json({ ok: true, activities: [], error: e.message }); }
+});
+
+app.post('/api/crm/activities', express.json(), async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    const { lead_id, type, subject, body, scheduled_at } = req.body || {};
+    if (!lead_id) return res.status(400).json({ ok: false, error: 'lead_id required' });
+    const { data: row, error } = await sb.from('crm_activities').insert({
+      lead_id, type: type || 'note', subject: subject || 'Note', body: body || '',
+      scheduled_at: scheduled_at || null, created_at: new Date().toISOString(),
+    }).select().single();
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    res.json({ ok: true, activity: row });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// CRM: Pipeline stats
+app.get('/api/crm/pipeline', async (req, res) => {
+  try {
+    const sb = (require('./lib/supabase') || {}).supabase;
+    const { data, error } = await sb.from('crm_leads').select('status, score');
+    if (error) return res.json({ ok: true, pipeline: {}, error: error.message });
+    const rows = data || [];
+    const stages = ['new','contacted','qualified','proposal','negotiation','closed_won','closed_lost'];
+    const pipeline = {};
+    stages.forEach(function(s) {
+      const matched = rows.filter(function(r) { return r.status === s; });
+      pipeline[s] = { count: matched.length, avg_score: matched.length ? Math.round(matched.reduce(function(a,r) { return a+(r.score||0); }, 0) / matched.length) : 0 };
+    });
+    res.json({ ok: true, pipeline, total: rows.length, qualified: rows.filter(function(r) { return (r.score||0) >= 70; }).length });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // ── CATCH-ALL for unknown /api/* routes ────────────────────────────────────
 app.all('/api/*path', (req, res) => {
   res.status(404).json({ ok: false, error: 'not_found', path: req.path, method: req.method, ts: Date.now() });
