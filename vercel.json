@@ -8,7 +8,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 60,
-      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,lib/**,engine/**,api/hitl.js,api/pipeline.js,api/crm/**,api/cron/**"
+      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,lib/**,engine/**,api/hitl.js,api/pipeline.js,api/crm/**,api/cron/**,api/esim/**"
     }
   },
   "crons": [
@@ -188,7 +188,12 @@
     { "source": "/health", "destination": "/api" },
     { "source": "/events/stream", "destination": "/api" },
     { "source": "/orchestrator/status", "destination": "/api" },
-    { "source": "/tokenomics", "destination": "/tokenomics.html" },
+    { "source": "/tokenomics",  "destination": "/tokenomics.html" },
+    { "source": "/esim",        "destination": "/esim-pbx.html" },
+    { "source": "/esim-pbx",    "destination": "/esim-pbx.html" },
+    { "source": "/admin-esim",  "destination": "/admin-esim.html" },
+    { "source": "/api/esim/:path*", "destination": "/api" },
+    { "source": "/api/pbx/:path*",  "destination": "/api" },
     { "source": "/billing", "destination": "/billing.html" },
     { "source": "/ask", "destination": "/api" },
     { "source": "/api/l1/:path*", "destination": "/api" },

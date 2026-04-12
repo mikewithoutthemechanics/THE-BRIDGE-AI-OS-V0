@@ -2483,6 +2483,9 @@ const GATEWAY_SHORT_ROUTES = {
   '/runtime':    '/runtime.html',
   '/leads':      '/leads.html',
   '/tokenomics': '/tokenomics.html',
+  '/esim':       '/esim-pbx.html',
+  '/esim-pbx':   '/esim-pbx.html',
+  '/admin-esim': '/admin-esim.html',
 };
 Object.entries(GATEWAY_SHORT_ROUTES).forEach(([short, target]) => {
   app.get(short, (_req, res) => res.redirect(target));

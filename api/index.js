@@ -208,6 +208,10 @@ try {
 let handleCRM = null;
 try { ({ handleCRM } = require('./crm/routes')); } catch (e) { console.warn('[CRM] routes unavailable:', e.message); }
 
+// ── eSIM + PBX Routes ─────────────────────────────────────────────────────────
+let handleESim = null;
+try { ({ handleESim } = require('./esim/routes')); } catch (e) { console.warn('[eSIM] routes unavailable:', e.message); }
+
 // ── Digital Twin Layer ────────────────────────────────────────────────────────
 const { handleTwin } = require('./twin');
 
@@ -3537,6 +3541,11 @@ module.exports = async (req, res) => {
   // ── Lead Pipeline Orchestrator (/api/orch/*) ──────────────────────────────
   if (p.startsWith('/api/orch/') && handlePipeline) {
     return handlePipeline(req, res);
+  }
+
+  // ── eSIM + PBX (/api/esim/* and /api/pbx/*) ──────────────────────────────
+  if ((p.startsWith('/api/esim/') || p.startsWith('/api/pbx/')) && handleESim) {
+    return handleESim(req, res);
   }
 
   // ── Digital Twin Layer (/api/twin/*) ──────────────────────────────────────
