@@ -781,7 +781,7 @@
       return;
     }
 
-    fetch('/api/agents/' + encodeURIComponent(currentAgentId) + '/withdraw', {
+    fetch('/api/economy/accounts/' + encodeURIComponent(currentAgentId) + '/withdraw', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: amount })
