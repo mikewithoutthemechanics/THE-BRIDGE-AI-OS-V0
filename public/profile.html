@@ -101,6 +101,16 @@
 
     .empty{color:var(--dim);font-size:.82rem;text-align:center;padding:24px;border:1px dashed var(--border);border-radius:8px}
     .loading{color:var(--dim);font-size:.82rem;text-align:center;padding:32px}
+    .cap-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+    .cap-value{font-size:1.1rem;font-weight:800;color:var(--cyan);margin-bottom:2px}
+    .cap-label{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+    .meter{margin-bottom:14px}
+    .meter-row{display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:4px}
+    .meter-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+    .meter-fill{height:100%;border-radius:3px;background:var(--cyan);transition:width .4s}
+    .meter-fill.warn{background:var(--orange)}
+    .meter-fill.over{background:var(--red)}
+    .int-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.15);font-size:.75rem;color:var(--cyan);margin:4px}
   </style>
 </head>
 <body>
@@ -114,6 +124,7 @@
     <a class="nav-item" data-section="wallet">BRDG Wallet</a>
     <a class="nav-item" data-section="analytics">Usage Analytics</a>
     <a class="nav-item" data-section="projects">Project History</a>
+    <a class="nav-item" data-section="subscription">Subscription</a>
     <a class="nav-item" data-section="plans">Plan Comparison</a>
     <div class="nav-divider"></div>
     <a class="nav-item" href="/settings">Settings</a>
@@ -184,6 +195,51 @@
       <div id="projectHistoryList"><div class="loading">Loading projects...</div></div>
     </div>
 
+    <!-- Subscription -->
+    <div class="page-section" id="sec-subscription">
+      <div class="section-heading">Subscription</div>
+      <div class="section-desc">Your current plan, usage, and billing details</div>
+
+      <!-- Active plan card -->
+      <div class="card" id="subPlanCard">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Current Plan</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="plan-badge plan-free" id="subPlanBadge">--</span>
+              <span id="subPlanStatus" style="font-size:.72rem;color:var(--green)"></span>
+            </div>
+            <div id="subRenewal" style="font-size:.75rem;color:var(--dim);margin-top:6px"></div>
+          </div>
+          <a href="/billing" class="btn btn-primary" id="subUpgradeBtn" style="font-size:.75rem">Upgrade Plan</a>
+        </div>
+      </div>
+
+      <!-- Capabilities / limits -->
+      <div class="card">
+        <div style="font-size:.85rem;font-weight:600;margin-bottom:14px">Plan Capabilities</div>
+        <div id="capsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px"></div>
+      </div>
+
+      <!-- Usage meters -->
+      <div class="card">
+        <div style="font-size:.85rem;font-weight:600;margin-bottom:14px">This Period Usage</div>
+        <div id="usageMeters"></div>
+      </div>
+
+      <!-- Active integrations / modules -->
+      <div class="card">
+        <div style="font-size:.85rem;font-weight:600;margin-bottom:12px">Active Integrations</div>
+        <div id="activeIntegrations" class="empty">None configured yet. <a href="/settings">Add integrations</a></div>
+      </div>
+
+      <!-- Billing history link -->
+      <div style="margin-top:4px;display:flex;gap:12px">
+        <a href="/billing" class="btn btn-outline" style="font-size:.75rem">Billing &amp; Invoices</a>
+        <a href="/settings" class="btn btn-outline" style="font-size:.75rem">Manage Integrations</a>
+      </div>
+    </div>
+
     <!-- Plans -->
     <div class="page-section" id="sec-plans">
       <div class="section-heading">Plan Comparison</div>
@@ -230,7 +286,7 @@
   }
 
   // Section nav
-  var sections = ['overview','wallet','analytics','projects','plans'];
+  var sections = ['overview','wallet','analytics','projects','subscription','plans'];
 
   function showSection(id) {
     sections.forEach(function(s) {
@@ -316,6 +372,9 @@
       // Plan table highlight
       highlightPlan(plan);
 
+      // Subscription section
+      renderSubscription(user, data.capabilities || {}, data.analytics || {}, data.wizard || null);
+
       // Projects
       renderProjects(data.projects || []);
 
@@ -324,17 +383,24 @@
       try {
         var res2 = await fetch('/auth/me', { credentials: 'include', headers: { Authorization: 'Bearer ' + token } });
         var d2 = await res2.json();
-        if (!d2.ok || !d2.user) { window.location.href = '/join?next=/profile'; return; }
+        if (!d2.ok || !d2.user) { window.location.href = '/onboarding?redirect=/profile'; return; }
         user = d2.user;
+        var initials2 = (user.name || user.email || '?').charAt(0).toUpperCase();
+        var av2 = document.getElementById('avatarXl');
+        av2.textContent = initials2;
+        av2.style.background = hashColor(user.name || user.email || '');
         document.getElementById('userName').textContent = user.name || user.email || 'User';
         document.getElementById('userEmail').textContent = user.email || '--';
         var plan2 = user.plan || 'free';
         var pe2 = document.getElementById('userPlan');
         pe2.textContent = plan2.charAt(0).toUpperCase() + plan2.slice(1);
         pe2.className = 'plan-badge plan-' + plan2;
+        document.getElementById('userRole').textContent = (user.role||'user').charAt(0).toUpperCase()+(user.role||'user').slice(1);
+        document.getElementById('memberSince').textContent = user.first_seen ? new Date(user.first_seen).toLocaleDateString() : '--';
         highlightPlan(plan2);
+        renderSubscription(user, {}, {}, null);
       } catch(e2) {
-        window.location.href = '/join?next=/profile';
+        window.location.href = '/onboarding?redirect=/profile';
       }
     }
   }
@@ -352,6 +418,69 @@
       row.innerHTML = '<div class="project-info"><div class="pname">' + (p.name || 'Untitled') + '</div><div class="pmeta">' + (p.tool_id || '--') + ' &middot; ' + (p.status || 'active') + '</div></div><div class="project-stats"><div class="runs">' + (p.run_count || 0) + ' runs</div><div class="outputs">' + (p.output_count || 0) + ' outputs</div></div>';
       container.appendChild(row);
     });
+  }
+
+  function renderSubscription(u, caps, analytics, wizard) {
+    var plan = u.plan || 'free';
+    var role = u.role || 'user';
+    var isPrivileged = role === 'superadmin' || role === 'admin' || plan === 'enterprise';
+
+    // Plan badge + status
+    var badge = document.getElementById('subPlanBadge');
+    badge.textContent = (plan.charAt(0).toUpperCase() + plan.slice(1)) + (role === 'superadmin' ? ' · Superadmin' : role === 'admin' ? ' · Admin' : '');
+    badge.className = 'plan-badge plan-' + plan;
+    document.getElementById('subPlanStatus').textContent = isPrivileged ? '✓ Full access' : '✓ Active';
+    document.getElementById('subRenewal').textContent = u.created_at ? 'Member since ' + new Date(u.created_at).toLocaleDateString() : '';
+    if (isPrivileged) document.getElementById('subUpgradeBtn').textContent = 'Manage Plan';
+
+    // Capabilities grid
+    var CAPS_DEF = {
+      free:       { projects:2, runs_per_day:10, outputs_per_month:5, agents_per_run:1, api_calls_per_min:5, integrations:false },
+      starter:    { projects:10, runs_per_day:100, outputs_per_month:50, agents_per_run:3, api_calls_per_min:30, integrations:true },
+      pro:        { projects:100, runs_per_day:1000, outputs_per_month:500, agents_per_run:10, api_calls_per_min:120, integrations:true },
+      admin:      { projects:-1, runs_per_day:-1, outputs_per_month:-1, agents_per_run:-1, api_calls_per_min:600, integrations:true },
+      enterprise: { projects:-1, runs_per_day:-1, outputs_per_month:-1, agents_per_run:-1, api_calls_per_min:-1, integrations:true },
+    };
+    var planCaps = caps.projects !== undefined ? caps : (CAPS_DEF[plan] || CAPS_DEF.free);
+    var capItems = [
+      { label:'Projects', val: planCaps.projects === -1 ? '∞' : planCaps.projects },
+      { label:'Runs/Day', val: planCaps.runs_per_day === -1 ? '∞' : planCaps.runs_per_day },
+      { label:'Outputs/Mo', val: planCaps.outputs_per_month === -1 ? '∞' : planCaps.outputs_per_month },
+      { label:'Agents/Run', val: planCaps.agents_per_run === -1 ? '∞' : planCaps.agents_per_run },
+      { label:'API Calls/Min', val: planCaps.api_calls_per_min === -1 ? '∞' : planCaps.api_calls_per_min },
+      { label:'Integrations', val: planCaps.integrations ? '✓' : '—' },
+    ];
+    var capsGrid = document.getElementById('capsGrid');
+    capsGrid.innerHTML = capItems.map(function(c) {
+      return '<div class="cap-item"><div class="cap-value">' + c.val + '</div><div class="cap-label">' + c.label + '</div></div>';
+    }).join('');
+
+    // Usage meters (use analytics where available)
+    var execTotal = (analytics.executions && analytics.executions.total) || analytics.total_executions || 0;
+    var meters = [
+      { label:'Runs used', used: execTotal, limit: planCaps.runs_per_day === -1 ? null : planCaps.runs_per_day, unit:'today' },
+      { label:'Tokens used', used: analytics.tokens_used || 0, limit: null, unit:'total' },
+    ];
+    var metersEl = document.getElementById('usageMeters');
+    metersEl.innerHTML = meters.map(function(m) {
+      var pct = m.limit ? Math.min(100, Math.round((m.used / m.limit) * 100)) : null;
+      var fillClass = pct === null ? '' : pct >= 90 ? 'over' : pct >= 70 ? 'warn' : '';
+      var barHtml = m.limit
+        ? '<div class="meter-bar"><div class="meter-fill ' + fillClass + '" style="width:' + (pct||0) + '%"></div></div>'
+        : '<div class="meter-bar"><div class="meter-fill" style="width:100%;opacity:.25"></div></div>';
+      var rightLabel = m.limit ? (m.used + ' / ' + m.limit) : m.used.toLocaleString();
+      return '<div class="meter"><div class="meter-row"><span>' + m.label + '</span><span style="color:var(--dim)">' + rightLabel + (m.limit ? '' : ' ' + m.unit) + '</span></div>' + barHtml + '</div>';
+    }).join('');
+
+    // Active integrations (from wizard profile or empty)
+    var intEl = document.getElementById('activeIntegrations');
+    var ints = (wizard && wizard.integrations) ? wizard.integrations : [];
+    if (ints.length > 0) {
+      intEl.className = '';
+      intEl.innerHTML = ints.map(function(i) {
+        return '<span class="int-chip">● ' + i + '</span>';
+      }).join('');
+    }
   }
 
   var editMode = false;

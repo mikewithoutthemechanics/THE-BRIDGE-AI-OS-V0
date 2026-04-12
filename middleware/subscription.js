@@ -101,6 +101,11 @@ async function requireTier(req, required = 'starter') {
     return { ok: false, status: 401, error: 'Authentication required', redirect: '/join' };
   }
 
+  // Superadmin and admin roles bypass all tier restrictions
+  if (user.role === 'superadmin' || user.role === 'admin') {
+    return { ok: true, user, tier: user.plan || 'enterprise' };
+  }
+
   const tier = user.plan || 'free';
   const has = TIER_RANK[tier] ?? 0;
   const needs = TIER_RANK[required] ?? 1;
