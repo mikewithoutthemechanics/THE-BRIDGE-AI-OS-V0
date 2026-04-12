@@ -58,8 +58,12 @@ async function handleESim(req, res) {
 
     // ── GET /api/esim/stats ───────────────────────────────────────────────────
     if (p === '/api/esim/stats' && method === 'GET') {
-      const stats = await svc.getStats();
-      return json(res, stats);
+      const [stats, llmUsage, llmProviders] = await Promise.all([
+        svc.getStats(),
+        Promise.resolve(svc.getLLMUsage()),
+        Promise.resolve(svc.getLLMProviders()),
+      ]);
+      return json(res, { ...stats, llm: { usage: llmUsage, providers: llmProviders } });
     }
 
     // ── GET /api/esim/list ────────────────────────────────────────────────────

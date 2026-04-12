@@ -145,6 +145,8 @@ tr:hover td{background:var(--surface2)}
   <div class="stat-card purple"><div class="stat-num" id="st-numbers">—</div><div class="stat-label">Assigned Numbers</div></div>
   <div class="stat-card yellow"><div class="stat-num" id="st-revenue">—</div><div class="stat-label">Revenue (ZAR)</div></div>
   <div class="stat-card"><div class="stat-num" id="st-nurture">—</div><div class="stat-label">Nurture Queue</div></div>
+  <div class="stat-card"><div class="stat-num" id="st-llm" style="font-size:.8rem;letter-spacing:0">—</div><div class="stat-label">AI Engine</div></div>
+  <div class="stat-card"><div class="stat-num" id="st-llm-cost" style="color:var(--orange)">—</div><div class="stat-label">LLM Cost Today</div></div>
 </div>
 
 <div class="main-grid">
@@ -298,12 +300,23 @@ function loadAll() {
 async function loadStats() {
   try {
     const d = await api('/api/esim/stats');
-    document.getElementById('st-total').textContent     = d.total_esims      ?? '—';
-    document.getElementById('st-active').textContent    = d.active_esims     ?? '—';
-    document.getElementById('st-extensions').textContent= d.total_extensions ?? '—';
-    document.getElementById('st-numbers').textContent   = d.assigned_numbers ?? '—';
-    document.getElementById('st-revenue').textContent   = d.revenue_zar != null ? 'R'+d.revenue_zar.toLocaleString() : '—';
-    document.getElementById('st-nurture').textContent   = d.nurture_queue    ?? '—';
+    document.getElementById('st-total').textContent      = d.total_esims      ?? '—';
+    document.getElementById('st-active').textContent     = d.active_esims     ?? '—';
+    document.getElementById('st-extensions').textContent = d.total_extensions ?? '—';
+    document.getElementById('st-numbers').textContent    = d.assigned_numbers ?? '—';
+    document.getElementById('st-revenue').textContent    = d.revenue_zar != null ? 'R'+d.revenue_zar.toLocaleString() : '—';
+    document.getElementById('st-nurture').textContent    = d.nurture_queue    ?? '—';
+
+    // LLM engine status
+    if (d.llm?.providers?.length) {
+      document.getElementById('st-llm').textContent = d.llm.providers[0].id.toUpperCase();
+      document.getElementById('st-llm').title = d.llm.providers.map(p => p.name).join(' → ');
+    } else {
+      document.getElementById('st-llm').textContent = 'STUB';
+      document.getElementById('st-llm').style.color = 'var(--text3)';
+    }
+    const dailyCost = d.llm?.usage?.daily_cost_usd;
+    document.getElementById('st-llm-cost').textContent = dailyCost != null ? '$' + dailyCost.toFixed(4) : '$0.0000';
   } catch {}
 }
 
