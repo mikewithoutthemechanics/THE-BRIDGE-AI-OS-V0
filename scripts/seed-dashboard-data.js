@@ -20,15 +20,27 @@ async function seedData() {
   try {
     // Seed treasury data
     await economyDb.query(`
-      INSERT INTO treasury_buckets (name, balance_brdg, last_updated)
+      INSERT INTO treasury_buckets (name, balance, percentage, updated_at)
       VALUES
-        ('operations', 50000.0, NOW()),
-        ('ubi_pool', 25000.0, NOW()),
-        ('treasury', 100000.0, NOW()),
-        ('founder', 25000.0, NOW())
+        ('operations', 50000.0, 20, NOW()),
+        ('ubi', 25000.0, 40, NOW()),
+        ('treasury', 100000.0, 30, NOW()),
+        ('founder', 25000.0, 10, NOW())
       ON CONFLICT (name) DO UPDATE SET
-        balance_brdg = EXCLUDED.balance_brdg,
-        last_updated = NOW()
+        balance = EXCLUDED.balance,
+        percentage = EXCLUDED.percentage,
+        updated_at = NOW()
+    `);
+
+    // Seed some transaction history
+    await economyDb.query(`
+      INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference, timestamp)
+      VALUES
+        ('deposit', 'crm', 5000.0, 'ZAR', 'operations', 'Client payment - ABC Corp', NOW() - INTERVAL '2 days'),
+        ('deposit', 'marketplace', 2500.0, 'BRDG', 'treasury', 'Task completion payment', NOW() - INTERVAL '1 day'),
+        ('deposit', 'invoicing', 7500.0, 'ZAR', 'operations', 'Invoice payment - XYZ Ltd', NOW() - INTERVAL '6 hours'),
+        ('deposit', 'crm', 12000.0, 'ZAR', 'operations', 'Monthly retainer - Tech Solutions', NOW() - INTERVAL '3 hours')
+      ON CONFLICT DO NOTHING
     `);
 
     // Seed some transaction history
@@ -42,18 +54,7 @@ async function seedData() {
       ON CONFLICT DO NOTHING
     `);
 
-    // Seed mission board data
-    await economyDb.query(`
-      INSERT INTO mission_board (status, count, last_updated)
-      VALUES
-        ('backlog', 12, NOW()),
-        ('in_progress', 5, NOW()),
-        ('review', 3, NOW()),
-        ('done', 28, NOW())
-      ON CONFLICT (status) DO UPDATE SET
-        count = EXCLUDED.count,
-        last_updated = NOW()
-    `);
+    // Mission board data is hardcoded in API response - no seeding needed
 
     console.log('✅ Dashboard data seeded successfully');
     console.log('💰 Treasury: R157,500 BRDG across 4 buckets');
