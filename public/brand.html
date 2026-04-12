@@ -38,8 +38,22 @@ h2{color:var(--a);font-size:.85rem;letter-spacing:.12em;margin:1.5rem 0 .6rem;bo
 .link .dot{width:6px;height:6px;border-radius:50%;background:var(--g)}
 #live{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;margin:1rem 0;font-size:.7rem;font-family:monospace;max-height:250px;overflow-y:auto;color:var(--d);white-space:pre-wrap}
 </style>
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+
+<nav class="nav">
+  <div class="nav-brand"><span>Bridge</span> AI OS</div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+  <div class="nav-links" id="nav-links">
+    <a href="/">Home</a>
+    <a href="/portal.html">Portal</a>
+    <a href="/docs.html">API</a>
+    <a href="/pricing.html">Pricing</a>
+    <a href="/onboarding.html" class="nav-cta">Sign In</a>
+  </div>
+</nav>
+
 <div class="c">
 <h1>BRIDGE AI OS — BRAND & METRICS</h1>
 <div class="sub">Logos, visual assets, system metrics, and platform links</div>
@@ -175,5 +189,17 @@ async function load() {
 load();
 </script>
 <script src="/bridge-nav.js" defer></script>
+
+<footer>
+  <div class="footer-links">
+    <a href="/portal.html">Client Portal</a>
+    <a href="/pricing.html">Pricing</a>
+    <a href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947">BRDG Token</a>
+    <a href="/sitemap.xml">Sitemap</a>
+    <a href="/health">Status</a>
+  </div>
+  <p>Bridge AI OS &middot; <a href="https://bridge-ai-os.com">bridge-ai-os.com</a></p>
+</footer>
+
 </body>
 </html>
