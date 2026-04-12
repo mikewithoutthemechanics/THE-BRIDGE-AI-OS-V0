@@ -136,7 +136,7 @@ app.get('/health', (_req, res) => {
 // POST /auth/register
 app.post('/auth/register', registerLimiter, async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, referralCode } = req.body;
 
     // Validation
     if (!email || typeof email !== 'string') {
@@ -156,6 +156,16 @@ app.post('/auth/register', registerLimiter, async (req, res) => {
     const existing = await userDb.getUserByEmail(email);
     if (existing) {
       return res.status(409).json({ ok: false, error: 'Email already registered' });
+    }
+
+    // Credit referrer if valid referral code provided
+    if (referralCode && typeof referralCode === 'string') {
+      const normalizedRefCode = referralCode.trim().toUpperCase();
+      const ref = referrals.get(normalizedRefCode);
+      if (ref && !ref.claimed_by && ref.referred_email === email.toLowerCase().trim()) {
+        ref.claimed_by = email.toLowerCase().trim();
+        ref.claimed_at = new Date().toISOString();
+      }
     }
 
     const user = await userDb.createUser(email, name || null, 'email', null, password);
@@ -372,7 +382,19 @@ app.post('/referral/create', authMiddleware, async (req, res) => {
     const { referred_email, reward_credits } = req.body;
     if (!referred_email) return res.status(400).json({ ok: false, error: 'referred_email is required' });
 
-    const code = crypto.randomBytes(6).toString('hex').toUpperCase();
+    // Generate unique code with collision check
+    let code;
+    let attempts = 0;
+    const maxAttempts = 10;
+    do {
+      code = crypto.randomBytes(6).toString('hex').toUpperCase();
+      attempts++;
+    } while (referrals.has(code) && attempts < maxAttempts);
+
+    if (referrals.has(code)) {
+      return res.status(500).json({ ok: false, error: 'Failed to generate unique referral code' });
+    }
+
     const referral = {
       code,
       referrer_id: req.user.sub,
@@ -401,10 +423,10 @@ app.post('/referral/claim', async (req, res) => {
     const referral = referrals.get(code.toUpperCase());
     if (!referral) return res.status(404).json({ ok: false, error: 'Referral code not found' });
 
-    if (referral.claimed_by) return res.status(404).json({ ok: false, error: 'Already claimed' });
+    if (referral.claimed_by) return res.status(409).json({ ok: false, error: 'Already claimed' });
 
     const normalizedEmail = email.toLowerCase().trim();
-    if (normalizedEmail !== referral.referred_email) {
+    if (!referral.referred_email || normalizedEmail !== referral.referred_email) {
       return res.status(403).json({ ok: false, error: 'Email does not match referral target' });
     }
 
