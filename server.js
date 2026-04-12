@@ -797,7 +797,8 @@ function requireAuth(req, res, next) {
     '/api/version', // if exists
     '/api/platform/', // platform layer handles its own auth via requireUser()
     '/api/twin/',     // twin layer handles its own auth via resolveUser()
-    '/api/siwe/',     // SIWE is public — no token needed to get nonce or verify
+    '/api/siwe/',               // SIWE is public — no token needed to get nonce or verify
+    '/api/config-engine/health', // engine health is public
   ];
   
   if (publicEndpoints.some(endpoint => req.path.startsWith(endpoint))) {
@@ -1876,6 +1877,14 @@ app.all('/api/twin/{*path}', async (req, res, next) => {
   next();
 });
 
+// ================= Config Intelligence Engine (/api/config-engine/*) =================
+const { handleConfigEngine } = require('./api/config-engine');
+app.all('/api/config-engine/{*path}', async (req, res, next) => {
+  const handled = await handleConfigEngine(req, res);
+  if (handled !== null) return;
+  next();
+});
+
 // ================= PROXY UNHANDLED /api/* TO BRAIN SERVICE (catch-all — must be last) =================
 app.all('/api/{*path}', async (req, res) => {
   try {
@@ -1894,6 +1903,14 @@ app.all('/api/{*path}', async (req, res) => {
 
 // ================= SERVER =================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
+
+  // Start Config Intelligence Engine after server is bound
+  try {
+    const configEngine = require('./engine/config-intelligence');
+    await configEngine.start({ enableReconciler: true });
+  } catch (err) {
+    console.warn('[SERVER] Config Intelligence Engine failed to start:', err.message);
+  }
 });

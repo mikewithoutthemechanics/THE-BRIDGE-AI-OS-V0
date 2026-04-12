@@ -1,0 +1,52 @@
+{
+  "version": "1.0.0",
+  "namespace": "bridge.vars.runtime",
+  "meta": {
+    "description": "Runtime environment variable declarations for Bridge AI OS",
+    "owner": "bridge-ai-os"
+  },
+  "variables": {
+    "NODE_ENV": {
+      "type": "string",
+      "default": "production",
+      "required": false,
+      "description": "Node.js environment"
+    },
+    "PORT": {
+      "type": "number",
+      "default": 3000,
+      "required": false,
+      "description": "Unified server port"
+    },
+    "BASE_URL": {
+      "type": "url",
+      "default": "https://bridge-ai-os.com",
+      "required": false,
+      "description": "Canonical public URL"
+    },
+    "SUPABASE_URL": {
+      "type": "url",
+      "default": null,
+      "required": true,
+      "description": "Supabase project URL"
+    },
+    "JWT_SECRET": {
+      "type": "string",
+      "default": null,
+      "required": true,
+      "description": "JWT signing secret — must be >= 32 chars"
+    },
+    "AGENT_SALT": {
+      "type": "string",
+      "default": "bridge-ai-os-v1",
+      "required": false,
+      "description": "Salt for deterministic agent ID derivation"
+    },
+    "CONFIG_ENGINE_RECONCILE_INTERVAL_MS": {
+      "type": "number",
+      "default": 60000,
+      "required": false,
+      "description": "How often the reconciliation loop runs (ms)"
+    }
+  }
+}
