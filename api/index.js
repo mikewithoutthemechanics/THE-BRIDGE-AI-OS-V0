@@ -204,6 +204,10 @@ try {
   handleHitl = handlePipeline = null;
 }
 
+// ── CRM Supabase Routes ───────────────────────────────────────────────────────
+let handleCRM = null;
+try { ({ handleCRM } = require('./crm/routes')); } catch (e) { console.warn('[CRM] routes unavailable:', e.message); }
+
 // ── Digital Twin Layer ────────────────────────────────────────────────────────
 const { handleTwin } = require('./twin');
 
@@ -1263,8 +1267,12 @@ module.exports = async (req, res) => {
     });
   }
 
-  // ── /api/crm/* ── (READ-ONLY OBSERVABILITY)
+  // ── /api/crm/* ── Supabase-backed CRM (falls back to in-memory)
   if (p.startsWith('/api/crm')) {
+    if (handleCRM) {
+      const handled = await handleCRM({ req, res, path: p, method: req.method, parseBody, json });
+      if (handled) return;
+    }
     const sub = p.replace('/api/crm', '') || '/';
     if (sub === '/contacts' || sub === '/contacts/') {
       if (req.method === 'POST') {
