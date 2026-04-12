@@ -1835,6 +1835,85 @@ app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIO
 // ================= WALLET / DEFI STATUS (dashboard dependencies) =================
 const banksModule = require('./lib/banks');
 
+// ── GET /api/banks — full bank list + totals ──────────────────────────────────
+app.get('/api/banks', async (_req, res) => {
+  try {
+    const banks = await banksModule.getAllBanks();
+    const total = banks.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+    const nextGain = banks.reduce((s, b) => s + parseFloat(b.balance || 0) * parseFloat(b.compound_rate || 0), 0);
+    const largest = banks.reduce((m, b) => parseFloat(b.balance || 0) > parseFloat(m?.balance || 0) ? b : m, banks[0]);
+    res.json({ ok: true, banks, total, nextGain: +nextGain.toFixed(2), largest: largest?.name, count: banks.length });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ── POST /api/banks — register partner | compound | trade ─────────────────────
+app.post('/api/banks', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const { action } = body;
+
+    if (action === 'register') {
+      const { id, name, owner, splitPct, compoundRate } = body;
+      if (!id || !name || !owner) return res.status(400).json({ ok: false, error: 'id, name, owner required' });
+      const bank = await banksModule.registerPartnerBank({
+        id, name, owner,
+        splitPct:     parseFloat(splitPct) || 0,
+        compoundRate: parseFloat(compoundRate) || 0.008,
+        meta: body.meta || {},
+      });
+      return res.status(201).json({ ok: true, bank });
+    }
+
+    if (action === 'compound') {
+      const result = await banksModule.runCompoundCycle();
+      return res.json({ ok: true, ...result });
+    }
+
+    if (action === 'trade') {
+      const { from, to, amount, reason } = body;
+      if (!from || !to || !amount) return res.status(400).json({ ok: false, error: 'from, to, amount required' });
+      const result = await banksModule.tradeBetween(from, to, parseFloat(amount), reason || 'manual trade');
+      return res.json({ ok: true, ...result });
+    }
+
+    res.status(400).json({ ok: false, error: `Unknown action: ${action}` });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ── GET /api/banks/compound  (cron-compatible GET trigger) ───────────────────
+app.get('/api/banks/compound', async (_req, res) => {
+  try {
+    const result = await banksModule.runCompoundCycle();
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ── POST /api/banks/compound ─────────────────────────────────────────────────
+app.post('/api/banks/compound', async (_req, res) => {
+  try {
+    const result = await banksModule.runCompoundCycle();
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ── POST /api/banks/trade ─────────────────────────────────────────────────────
+app.post('/api/banks/trade', async (req, res) => {
+  try {
+    const { from, to, amount, reason } = req.body || {};
+    if (!from || !to || !amount) return res.status(400).json({ ok: false, error: 'from, to, amount required' });
+    const result = await banksModule.tradeBetween(from, to, parseFloat(amount), reason || 'manual trade');
+    res.json({ ok: true, ...result });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ── GET /api/banks/:id/history ────────────────────────────────────────────────
+app.get('/api/banks/:id/history', async (req, res) => {
+  try {
+    const history = await banksModule.getBankHistory(req.params.id, 50);
+    res.json({ ok: true, history });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 app.get('/api/wallet/balance', async (_req, res) => {
   try {
     const all = await banksModule.getAllBanks();
