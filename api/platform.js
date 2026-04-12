@@ -66,15 +66,12 @@ function payfastSignature(orderedPairs) {
 }
 
 // ── Auth helper ──────────────────────────────────────────────────────────────
+// Uses the same multi-strategy extractor as access-control so that both
+// Bridge JWTs (email+password) and Supabase JWTs (OAuth) are accepted.
+const { extractUser } = require('../middleware/access-control');
 
 async function requireUser(req) {
-  let token = null;
-  const authHeader = req.headers.authorization || '';
-  if (authHeader.startsWith('Bearer ')) token = authHeader.slice(7);
-  if (!token && req.cookies?.bridge_token) token = req.cookies.bridge_token;
-  if (!token && req.query?.token) token = req.query.token;
-  if (!token) return null;
-  return userDb.verifyAuthToken(token);
+  return extractUser(req);
 }
 
 function unauthorized(res, msg = 'Authentication required') {

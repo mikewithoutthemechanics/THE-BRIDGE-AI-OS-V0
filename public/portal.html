@@ -211,10 +211,10 @@ a:hover{text-decoration:underline}
     try {
       var res = await fetch('/auth/me', { credentials: 'include', headers: token ? { Authorization: 'Bearer ' + token } : {} });
       var data = await res.json();
-      if (!data.ok || !data.user) { window.location.href = '/join?next=/portal'; return; }
+      if (!data.ok || !data.user) { window.location.href = '/onboarding?redirect=/portal'; return; }
       user = data.user;
     } catch(e) {
-      window.location.href = '/join?next=/portal';
+      window.location.href = '/onboarding?redirect=/portal';
       return;
     }
 

@@ -211,6 +211,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
           body: JSON.stringify({ code: ref }),
         });
       }
+      // New users always go through activation flow; existing redirect is ignored for first-time setup
       setTimeout(() => { location.href = '/activate'; }, 1000);
     } else {
       showMsg('reg-msg', data.error || 'Registration failed', false);
@@ -246,7 +247,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         funnel_stage: lu.funnel_stage || 'identified',
         brdg_balance: lu.brdg_balance || 0,
       }));
-      setTimeout(() => { location.href = '/activate'; }, 1000);
+      setTimeout(() => { location.href = postAuthDest(); }, 1000);
     } else {
       showMsg('login-msg', data.error || 'Login failed', false);
     }
@@ -284,6 +285,15 @@ async function githubAuth() {
 // Auto-fill referral from URL
 const urlRef = new URLSearchParams(location.search).get('ref');
 if (urlRef) document.getElementById('reg-referral').value = urlRef;
+
+// Post-auth redirect destination: ?redirect=/portal or ?next=/portal, else /activate
+function postAuthDest() {
+  const p = new URLSearchParams(location.search);
+  const dest = p.get('redirect') || p.get('next') || '';
+  // Only allow relative paths on the same origin
+  if (dest && dest.startsWith('/') && !dest.startsWith('//')) return dest;
+  return '/activate';
+}
 </script>
 </body>
 </html>
