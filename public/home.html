@@ -2,7 +2,48 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bridge AI OS — AI Operating System</title>
+<title>Bridge AI OS — AI Operating System for Africa & Beyond</title>
+<meta name="description" content="Bridge AI OS is a full-stack AI operating system with 71 agents, CRM, invoicing, DeFi treasury, and tokenised economy. Automate your business in 5 minutes. Start free.">
+<link rel="canonical" href="https://go.ai-os.co.za/home">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/">
+<meta property="og:title" content="Bridge AI OS — AI Operating System">
+<meta property="og:description" content="71 AI agents. CRM, invoicing, DeFi treasury, and tokenised economy — live on Linea. Start free in 5 minutes.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta property="og:locale" content="en_ZA">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bridge AI OS — AI Operating System">
+<meta name="twitter:description" content="71 AI agents. CRM, invoicing, DeFi treasury — live on Linea zkEVM. Start free in 5 minutes.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Bridge AI OS",
+  "url": "https://go.ai-os.co.za",
+  "description": "Full-stack AI operating system with 71 agents, CRM, invoicing, DeFi treasury and tokenised economy on Linea zkEVM.",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "ZAR",
+    "description": "Free starter plan available"
+  },
+  "provider": {
+    "@type": "Organization",
+    "name": "The Bridge AI Agency",
+    "url": "https://go.ai-os.co.za"
+  }
+}
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#020617;--s:#0d1620;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--t:#e5e7eb;--d:#4d6678}
@@ -50,7 +91,7 @@ body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,san
   <div class="logo">BRIDGE <span>AI</span></div>
   <div class="tagline">The AI Operating System that thinks, trades, governs, and grows autonomously. 71 agents. 150+ APIs. 11 domains. One brain.</div>
   <div class="stats" id="stats">
-    <div class="stat"><div class="v" id="s-treasury">$0</div><div class="l">TREASURY</div></div>
+    <div class="stat"><div class="v" id="s-treasury" style="font-size:1.4rem;opacity:.7">Loading…</div><div class="l">TREASURY</div></div>
     <div class="stat"><div class="v">71+</div><div class="l">AGENTS</div></div>
     <div class="stat"><div class="v">150+</div><div class="l">ENDPOINTS</div></div>
     <div class="stat"><div class="v">11</div><div class="l">DOMAINS</div></div>
@@ -60,7 +101,7 @@ body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,san
     <a class="btn btn-p" href="/welcome.html">GET STARTED</a>
     <a class="btn btn-g" href="/brain-live">LIVE BRAIN</a>
     <a class="btn btn-s" href="/platforms.html">NETWORK</a>
-    <a class="btn btn-s" href="/api/pricing">PRICING</a>
+    <a class="btn btn-s" href="/pricing">PRICING</a>
   </div>
 </div>
 
@@ -102,9 +143,22 @@ body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,san
 </div>
 
 <script>
-fetch('/api/treasury/status').then(r=>r.json()).then(d=>{
-  document.getElementById('s-treasury').textContent='$'+(d.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
-}).catch(()=>{});
+(function(){
+  var el = document.getElementById('s-treasury');
+  fetch('/api/treasury/status').then(function(r){return r.json();}).then(function(d){
+    var bal = d.balance || d.treasury_balance || 0;
+    el.style.fontSize = '';
+    el.style.opacity = '';
+    if (bal > 0) {
+      el.textContent = 'R' + Math.round(bal).toLocaleString();
+    } else {
+      // Hide the entire treasury stat if balance is 0 — never show R0 on a marketing page
+      el.closest('.stat').style.display = 'none';
+    }
+  }).catch(function(){
+    el.closest('.stat').style.display = 'none';
+  });
+})();
 </script>
 </body>
 </html>
