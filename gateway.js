@@ -1,7 +1,11 @@
 // =============================================================================
 // BRIDGE AI OS — UNIFIED GATEWAY
 // Port: 8080
-//
+// =============================================================================
+
+const BRAIN_HOST = process.env.BRAIN_HOST || 'brain';
+const SYSTEM_HOST = process.env.SYSTEM_HOST || 'system';
+
 // AVAILABLE ENDPOINTS
 // ─────────────────────────────────────────────────────────────────────────────
 // Core / Legacy
@@ -68,7 +72,7 @@ try {
 const ALLOWED_ORIGINS = new Set([
   'https://wall.bridge-ai-os.com',
   'https://bridge-ai-os.com',
-  'http://localhost:3000',
+  'http://${SYSTEM_HOST}:3000',
   'http://localhost:8080',
 ]);
 app.use((req, res, next) => {
@@ -252,7 +256,7 @@ app.post('/ask', gatewayAuth(), async (req, res) => {
   } catch (_) {
     // Fallback: proxy to brain's LLM endpoint
     try {
-      const r2 = await fetch('http://localhost:8000/api/llm/infer', {
+      const r2 = await fetch('http://${BRAIN_HOST}:8000/api/llm/infer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, system: 'You are Bridge AI, an autonomous business intelligence assistant.' }),
@@ -271,7 +275,7 @@ app.post('/ask', gatewayAuth(), async (req, res) => {
 // ── API: TOPOLOGY ─────────────────────────────────────────────────────────────
 app.get('/api/topology', async (req, res) => {
   try {
-    const r = await fetch('http://localhost:3000/topology', { signal: AbortSignal.timeout(2000) });
+    const r = await fetch('http://${SYSTEM_HOST}:3000/topology', { signal: AbortSignal.timeout(2000) });
     const j = await r.json();
     return res.json(j);
   } catch (_) {
@@ -375,10 +379,10 @@ app.get('/api/marketplace/*path', async (req, res) => {
 app.get('/api/status', async (req, res) => {
   const services = [
     { id: 'gateway',      url: null,                         port: 8080 },
-    { id: 'system',       url: 'http://localhost:3000/health', port: 3000 },
-    { id: 'brain',        url: 'http://localhost:8000/health', port: 8000 },
-    { id: 'terminal',     url: 'http://localhost:5002/health', port: 5002 },
-    { id: 'auth',         url: 'http://localhost:5001/health', port: 5001 },
+    { id: 'system',       url: 'http://${SYSTEM_HOST}:3000/health', port: 3000 },
+    { id: 'brain',        url: 'http://${BRAIN_HOST}:8000/health', port: 8000 },
+    { id: 'terminal',     url: 'http://terminal:5002/health', port: 5002 },
+    { id: 'auth',         url: 'http://auth:5001/health', port: 5001 },
   ];
 
   const results = await Promise.all(
@@ -539,7 +543,7 @@ app.get('/api/contracts', gatewayAuth(), (req, res) => {
 // for security (#8). All auth routes now proxy to port 5001.
 
 // ── AUTH PROXY → port 5001 ───────────────────────────────────────────────────
-const AUTH_SVC = 'http://localhost:5001';
+const AUTH_SVC = 'http://auth:5001';
 
 async function proxyToAuth(req, res) {
   try {
@@ -578,7 +582,7 @@ app.post('/referral/claim', (req, res) => proxyToAuth(req, res));
 // ── Platform-auth routes — proxy to unified-server (port 3000) ───────────────
 // /auth/me, /auth/logout, /auth/exchange-code live in server.js (unified-server)
 async function proxyToUnified(req, res) {
-  const url = `http://localhost:3000${req.originalUrl}`;
+  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(10000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
@@ -604,7 +608,7 @@ app.post('/auth/exchange-code',  (req, res) => proxyToUnified(req, res));
 app.all('/ban', async (_req, res) => {
   // Try BAN FastAPI first
   try {
-    const r = await fetch('http://localhost:8001/', { signal: AbortSignal.timeout(2000) });
+    const r = await fetch('http://ban:8001/', { signal: AbortSignal.timeout(2000) });
     if (r.ok) { const html = await r.text(); return res.type('html').send(html); }
   } catch (_) {}
   // Fallback: serve ban-home.html from Xpublic (preferred) or public/
@@ -825,7 +829,7 @@ const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/
 BRAIN_ROUTES.forEach(prefix => {
   app.all(prefix, async (req, res, next) => {
     try {
-      const r = await fetch(`http://localhost:8000${req.originalUrl}`, { signal: AbortSignal.timeout(3000) });
+      const r = await fetch(`http://${BRAIN_HOST}:8000${req.originalUrl}`, { signal: AbortSignal.timeout(3000) });
       const ct = r.headers.get('content-type') || 'application/json';
       const text = await r.text();
       res.status(r.status).set('Content-Type', ct).send(text);
@@ -833,7 +837,7 @@ BRAIN_ROUTES.forEach(prefix => {
   });
   app.all(`${prefix}/*path`, async (req, res, next) => {
     try {
-      const r = await fetch(`http://localhost:8000${req.originalUrl}`, { signal: AbortSignal.timeout(3000) });
+      const r = await fetch(`http://${BRAIN_HOST}:8000${req.originalUrl}`, { signal: AbortSignal.timeout(3000) });
       const ct = r.headers.get('content-type') || 'application/json';
       const text = await r.text();
       res.status(r.status).set('Content-Type', ct).send(text);
@@ -935,7 +939,7 @@ app.get('/api/treasury/summary', async (req, res) => {
   try {
     const db = require('./lib/db');
     const [data, pnl] = await Promise.all([
-      fetchJSON('http://localhost:3000/api/treasury').catch(() => ({ buckets: [] })),
+      fetchJSON('http://${SYSTEM_HOST}:3000/api/treasury').catch(() => ({ buckets: [] })),
       db.getRevenueMTD(),
     ]);
     const total = (data.buckets || []).reduce((s, b) => s + parseFloat(b.balance || 0), 0);
@@ -1248,12 +1252,12 @@ app.get('/api/skills/unified', async (_req, res) => {
     // Merge skills from brain + SVG engine into one registry
     var skills = [];
     try {
-      var brainR = await fetch('http://localhost:8000/skills/definitions', { signal: AbortSignal.timeout(3000) });
+      var brainR = await fetch('http://${BRAIN_HOST}:8000/skills/definitions', { signal: AbortSignal.timeout(3000) });
       var brainD = await brainR.json();
       (brainD.definitions || []).forEach(function(s) { skills.push({ ...s, source: 'brain' }); });
     } catch (_) {}
     try {
-      var twinR = await fetch('http://localhost:8000/api/twin/profile', { signal: AbortSignal.timeout(3000) });
+      var twinR = await fetch('http://${BRAIN_HOST}:8000/api/twin/profile', { signal: AbortSignal.timeout(3000) });
       var twinD = await twinR.json();
       (twinD.skills || []).forEach(function(id) {
         if (!skills.find(function(s) { return s.id === id; })) {
@@ -1273,7 +1277,7 @@ app.get('/api/skills/unified', async (_req, res) => {
 // ── SWARM AGENTS (full list) ────────────────────────────────────────────────
 app.get('/api/swarm/agents', async (_req, res) => {
   try {
-    var r = await fetch('http://localhost:8000/api/swarm/agents', { signal: AbortSignal.timeout(3000) });
+    var r = await fetch('http://${BRAIN_HOST}:8000/api/swarm/agents', { signal: AbortSignal.timeout(3000) });
     var d = await r.json();
     res.json(d);
   } catch (_) {
@@ -1292,7 +1296,7 @@ app.get('/api/revenue/status', async (_req, res) => {
 app.get('/api/swarm/health', async (_req, res) => {
   try {
     // Try brain for real data, fall back to gateway counts
-    const r = await fetch('http://localhost:8000/api/swarm/health', { signal: AbortSignal.timeout(3000) });
+    const r = await fetch('http://${BRAIN_HOST}:8000/api/swarm/health', { signal: AbortSignal.timeout(3000) });
     const d = await r.json();
     res.json(d);
   } catch (_) {
@@ -2327,7 +2331,7 @@ function isDashboardApi(path) {
 app.all('/api/*path', async (req, res) => {
   // Check if this is a dashboard API that should go to backend server (port 3000)
   if (isDashboardApi(req.path)) {
-    const url = `http://localhost:3000${req.originalUrl}`;
+    const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
     try {
       const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
       if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
@@ -2345,8 +2349,11 @@ app.all('/api/*path', async (req, res) => {
     return;
   }
 
+// Docker internal network - use service names instead of localhost
+// (BRAIN_HOST and SYSTEM_HOST are defined at the top of the file)
+
   // ── BRAIN PROXY — forward remaining /api/* to brain on 8000 ────────────────────
-  const url = `http://localhost:8000${req.originalUrl}`;
+  const url = `http://${BRAIN_HOST}:8000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
@@ -2366,7 +2373,7 @@ app.all('/api/*path', async (req, res) => {
 
 // ── TWIN API — proxy /api/twin/* to unified-server (port 3000) ──────────────
 app.all('/api/twin/*path', async (req, res) => {
-  const url = `http://localhost:3000${req.originalUrl}`;
+  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
@@ -2384,7 +2391,7 @@ app.all('/api/twin/*path', async (req, res) => {
 
 // ── SIWE API — proxy /api/siwe/* to unified-server (port 3000) ──────────────
 app.all('/api/siwe/*path', async (req, res) => {
-  const url = `http://localhost:3000${req.originalUrl}`;
+  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
@@ -2405,7 +2412,7 @@ app.all('/api/siwe/*path', async (req, res) => {
 
 // ── CONFIG ENGINE API — proxy /api/config-engine/* to unified-server ────────
 app.all('/api/config-engine/*path', async (req, res) => {
-  const url = `http://localhost:3000${req.originalUrl}`;
+  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
@@ -2423,7 +2430,7 @@ app.all('/api/config-engine/*path', async (req, res) => {
 
 // ── ULOE API — proxy /api/uloe/* to unified-server (port 3000) ───────────────
 app.all('/api/uloe/*path', async (req, res) => {
-  const url = `http://localhost:3000${req.originalUrl}`;
+  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
     if (req.headers['content-type'])  opts.headers['Content-Type']   = req.headers['content-type'];
@@ -2443,7 +2450,7 @@ app.all('/api/uloe/*path', async (req, res) => {
 
 // ── HITL API — proxy /api/hitl/* to unified-server (port 3000) ─────────────
 app.all('/api/hitl/*path', async (req, res) => {
-  const url = `http://localhost:3000${req.originalUrl}`;
+  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
     if (req.headers['content-type'])   opts.headers['Content-Type']   = req.headers['content-type'];
@@ -2461,7 +2468,7 @@ app.all('/api/hitl/*path', async (req, res) => {
 
 // ── Pipeline API — proxy /api/orch/* to unified-server (port 3000) ──────────
 app.all('/api/orch/*path', async (req, res) => {
-  const url = `http://localhost:3000${req.originalUrl}`;
+  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
     if (req.headers['content-type'])   opts.headers['Content-Type']   = req.headers['content-type'];
@@ -2479,7 +2486,7 @@ app.all('/api/orch/*path', async (req, res) => {
 
 // ── PLATFORM API — proxy /api/platform/* to unified-server (port 3000) ──────
 app.all('/api/platform/*path', async (req, res) => {
-  const url = `http://localhost:3000${req.originalUrl}`;
+  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
@@ -2499,7 +2506,7 @@ app.all('/api/platform/*path', async (req, res) => {
 // Intentionally unauthenticated: brain service handles its own auth and this
 // is internal routing only. Public API routes are handled above. (security: #H-2)
 app.all('/api/*path', async (req, res) => {
-  const url = `http://localhost:8000${req.originalUrl}`;
+  const url = `http://${BRAIN_HOST}:8000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
@@ -2519,7 +2526,7 @@ app.all('/api/*path', async (req, res) => {
 
 // ── AGENT PROXY — forward /agent/* to brain on 8000 ─────────────────────────
 app.all('/agent/*path', async (req, res) => {
-  const url = `http://localhost:8000${req.originalUrl}`;
+  const url = `http://${BRAIN_HOST}:8000${req.originalUrl}`;
   try {
     const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
     if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];

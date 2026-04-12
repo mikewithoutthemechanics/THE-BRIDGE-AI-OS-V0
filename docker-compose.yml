@@ -10,6 +10,8 @@ services:
     environment:
       - NODE_ENV=production
       - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - BRAIN_HOST=brain
+      - SYSTEM_HOST=system
     volumes:
       - ./shared:/app/shared
       - ./logs:/app/logs
