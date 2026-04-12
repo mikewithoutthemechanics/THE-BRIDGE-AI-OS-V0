@@ -330,55 +330,77 @@ module.exports = function setupNeuroLink(app, wsServer) {
 
   // ────── REVENUE HOOKS ──────
 
+  const mail = (() => { try { return require('../../lib/mail'); } catch (_) { return null; } })();
+  const db   = (() => { try { return require('../../lib/db');   } catch (_) { return null; } })();
+
+  // Rate-limit: one focus-window email per user per 24h
+  const _offerSent = new Map(); // userId/email → timestamp
+  function _canSendOffer(key) {
+    const last = _offerSent.get(key);
+    return !last || (Date.now() - last) > 86_400_000;
+  }
+
   /**
-   * Hook NeuroLink state into revenue engine
-   * Called whenever state updates
+   * Hook NeuroLink state into revenue engine — wired to real mail + Supabase logging.
+   * Called whenever state updates.
    */
   async function hookRevenueEngine(state) {
+    // Resolve active user email from Supabase (non-blocking, best-effort)
+    let activeUser = null;
+    if (db) {
+      try {
+        const { supabaseAdmin } = require('../../lib/supabase');
+        const { data } = await supabaseAdmin
+          .from('users')
+          .select('id, email, name, plan')
+          .eq('funnel_stage', 'active')
+          .order('last_seen', { ascending: false })
+          .limit(1)
+          .single();
+        if (data?.email) activeUser = data;
+      } catch (_) {}
+    }
+
     const systemAPIs = {
       pricingEngine: {
         enableHighIntentOffers: async (config) => {
-          console.log('[NeuroLink→Revenue] High-intent offers enabled:', config);
-          // Wire to actual pricing engine
+          // Send productivity_offer email during focus peak — once per 24h
+          if (!activeUser || !mail) return;
+          const key = activeUser.email;
+          if (!_canSendOffer(key)) return;
+          _offerSent.set(key, Date.now());
+          const result = await mail.sendCampaignEmail(
+            { email: activeUser.email, name: activeUser.name },
+            'productivity_offer',
+            { offerTitle: 'Bridge AI OS Pro — 30% off today only', plan: activeUser.plan }
+          );
+          console.log(`[NeuroLink→Mail] focus_offer sent to ${activeUser.email}: ${result.ok ? 'ok' : result.reason}`);
+          // Log to Supabase for audit trail
+          if (db) db.setState(`neuro_offer:${activeUser.email}:${Date.now()}`, {
+            action: 'focus_offer_sent', email: activeUser.email, config, ts: new Date().toISOString(),
+          }).catch(() => {});
         }
       },
       orchestrator: {
-        switchToAutopilot: async (config) => {
-          console.log('[NeuroLink→Revenue] Autopilot activated:', config);
-          // Wire to actual orchestrator
-        },
-        reduceSystemLoad: async (config) => {
-          console.log('[NeuroLink→Revenue] System load reduced:', config);
-        },
-        silenceNotifications: async (config) => {
-          console.log('[NeuroLink→Revenue] Notifications silenced:', config);
-        },
-        prepareSessionEnd: async (config) => {
-          console.log('[NeuroLink→Revenue] Session end prepared:', config);
-        }
+        switchToAutopilot: async () => {},
+        reduceSystemLoad:  async () => {},
+        silenceNotifications: async () => {},
+        prepareSessionEnd: async () => {},
       },
       ux: {
-        setMode: async (mode) => {
-          console.log('[NeuroLink→Revenue] UX mode changed:', mode);
-        },
-        suggestFocusMode: async (config) => {
-          console.log('[NeuroLink→Revenue] Focus mode suggested:', config);
-        }
+        setMode: async () => {},
+        suggestFocusMode: async () => {},
       },
       supportAI: {
-        increaseProactiveHelp: async (config) => {
-          console.log('[NeuroLink→Revenue] Proactive support increased:', config);
-        }
+        increaseProactiveHelp: async () => {},
       }
     };
 
     const result = await processNeuroState(state, systemAPIs);
 
-    // Optionally log to audit trail
     if (result.ok && result.actions.length > 0) {
       result.actions.forEach(action => {
         const auditEntry = buildAuditEntry(state, action);
-        // Log to audit system if available
         console.log('[NeuroLink→Audit]', auditEntry.type, auditEntry.action);
       });
     }

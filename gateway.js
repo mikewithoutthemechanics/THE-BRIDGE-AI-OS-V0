@@ -932,14 +932,45 @@ function fetchJSON(url) {
 
 app.get('/api/treasury/summary', async (req, res) => {
   try {
-    const data = await fetchJSON('http://localhost:3000/api/treasury');
+    const db = require('./lib/db');
+    const [data, pnl] = await Promise.all([
+      fetchJSON('http://localhost:3000/api/treasury').catch(() => ({ buckets: [] })),
+      db.getRevenueMTD(),
+    ]);
     const total = (data.buckets || []).reduce((s, b) => s + parseFloat(b.balance || 0), 0);
     res.json({
-      balance: total, earned: total, spent: 0, currency: 'ZAR',
+      balance: total, earned: total, currency: 'ZAR',
+      revenue_mtd: pnl.revenue_mtd,
+      costs_mtd:   pnl.costs_mtd,
+      net_mtd:     pnl.net_mtd,
+      ai_spend:    pnl.ai_spend,
+      tx_count:    pnl.tx_count,
+      period_start: pnl.period_start,
       subscriptions: 0, plans: [],
-      source: 'postgresql', buckets: data.buckets || []
+      source: pnl.source, buckets: data.buckets || []
     });
-  } catch { res.json({ balance: 0, earned: 0, spent: 0, currency: 'ZAR', subscriptions: 0, plans: [] }); }
+  } catch (e) {
+    res.json({ balance: 0, earned: 0, revenue_mtd: 0, costs_mtd: 0, net_mtd: 0, currency: 'ZAR', subscriptions: 0, plans: [] });
+  }
+});
+
+app.get('/api/finance/pnl', async (_req, res) => {
+  try {
+    const db = require('./lib/db');
+    const [pnl, balance] = await Promise.all([
+      db.getRevenueMTD(),
+      db.getTreasuryBalance(),
+    ]);
+    res.json({
+      ok: true,
+      balance: +balance.toFixed(2),
+      ...pnl,
+      margin_pct: pnl.revenue_mtd > 0
+        ? +(pnl.net_mtd / pnl.revenue_mtd * 100).toFixed(1)
+        : null,
+      ts: Date.now(),
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 // ── BANK SYSTEM ──────────────────────────────────────────────────────────────
