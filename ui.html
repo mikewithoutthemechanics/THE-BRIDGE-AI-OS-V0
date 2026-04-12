@@ -279,6 +279,69 @@
       .hero{padding:40px 16px 24px}
       .hero-actions{flex-direction:column;align-items:center}
     }
+
+    /* ── MARKETPLACE ───────────────────────────────────────────── */
+    .marketplace-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+      gap:16px;
+      max-width:1100px;margin:0 auto;
+      padding:0 20px 20px;
+    }
+    .market-form-card{padding:24px}
+    .market-form{display:flex;flex-direction:column;gap:14px}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group label{
+      font-size:10px;font-weight:600;
+      color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;
+    }
+    .form-group input,.form-group textarea,.form-group select{
+      background:var(--bg);border:1px solid rgba(99,255,218,0.15);
+      border-radius:6px;padding:10px 12px;color:var(--text);
+      font-family:var(--font-ui);font-size:13px;
+      transition:border-color 0.2s,box-shadow 0.2s;
+    }
+    .form-group input:focus,.form-group textarea:focus,.form-group select:focus{
+      outline:none;border-color:var(--cyan);
+      box-shadow:0 0 0 3px rgba(99,255,218,0.1);
+    }
+    .form-group input::placeholder,.form-group textarea::placeholder{color:var(--muted)}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .submit-btn{width:100%;justify-content:center;margin-top:4px}
+    .form-result{margin-top:12px;font-size:12px;padding:10px;border-radius:6px}
+    .form-result.success{background:rgba(0,229,123,0.1);color:var(--green);border:1px solid rgba(0,229,123,0.2)}
+    .form-result.error{background:rgba(255,0,51,0.1);color:var(--red);border:1px solid rgba(255,0,51,0.2)}
+
+    .market-earnings-card{padding:24px}
+    .earnings-input-group{display:flex;gap:8px;margin-bottom:16px}
+    .earnings-input-group input{flex:1;background:var(--bg);border:1px solid rgba(99,255,218,0.15);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--font-ui);font-size:13px}
+    .earnings-input-group input:focus{outline:none;border-color:var(--cyan)}
+    .earnings-display{min-height:80px;padding:12px;background:var(--bg);border-radius:6px;margin-bottom:12px}
+    .earnings-display .stat-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(99,255,218,0.05)}
+    .earnings-display .stat-row:last-child{border-bottom:none}
+    .earnings-display .stat-label{font-size:11px;color:var(--muted)}
+    .earnings-display .stat-value{font-family:var(--font-mono);font-size:13px;color:var(--cyan);font-weight:600}
+    .withdraw-section{border-top:1px solid rgba(99,255,218,0.1);padding-top:16px;margin-top:8px}
+    .withdraw-section .form-group{margin-bottom:12px}
+    .muted-text{color:var(--muted);font-size:12px;font-style:italic}
+
+    .market-filter{display:flex;align-items:center;gap:12px;max-width:1100px;margin:0 auto;padding:0 20px 12px}
+    .market-filter label{font-size:11px;color:var(--muted)}
+    .market-filter select{background:var(--bg);border:1px solid rgba(99,255,218,0.15);border-radius:4px;padding:6px 10px;color:var(--text);font-size:12px}
+
+    .tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:13px;max-width:1100px;margin:0 auto;padding:0 20px 40px}
+    .task-card{background:var(--bg2);border:1px solid rgba(99,255,218,0.07);border-radius:11px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;transition:border-color 0.3s,transform 0.3s}
+    .task-card:hover{border-color:rgba(99,255,218,0.22);transform:translateY(-2px)}
+    .task-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+    .task-title{font-size:14px;font-weight:700;color:var(--text);line-height:1.3}
+    .task-price{font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--green)}
+    .task-desc{font-size:12px;color:var(--muted);line-height:1.5}
+    .task-meta{display:flex;gap:8px;flex-wrap:wrap}
+    .task-tag{font-size:9px;font-weight:600;padding:3px 8px;border-radius:10px;letter-spacing:0.05em;text-transform:uppercase}
+    .task-tag.type{background:rgba(99,255,218,0.1);color:var(--cyan);border:1px solid rgba(99,255,218,0.2)}
+    .task-tag.status{background:rgba(0,229,123,0.1);color:var(--green);border:1px solid rgba(0,229,123,0.2)}
+    .task-tag.status.pending{background:rgba(245,158,11,0.1);color:var(--gold);border:1px solid rgba(245,158,11,0.2)}
+    .task-deadline{font-size:10px;color:var(--muted);font-family:var(--font-mono)}
   </style>
 </head>
 <body>
@@ -429,6 +492,93 @@
     <a href="/aurora" class="card"><div class="card-header"><span class="card-icon" aria-hidden="true">✨</span><span class="card-title">Aurora</span></div><p class="card-desc">Emotionally intelligent AI assistant</p></a>
   </nav>
 
+  <!-- TASK MARKETPLACE -->
+  <div class="section-header">Task Marketplace</div>
+  
+  <div class="marketplace-grid">
+    <!-- Submit Task Form -->
+    <div class="card market-form-card">
+      <div class="card-header">
+        <span class="card-icon" aria-hidden="true">📝</span>
+        <span class="card-title">Submit New Task</span>
+      </div>
+      <form id="task-submit-form" class="market-form">
+        <div class="form-group">
+          <label for="task-title">Title</label>
+          <input type="text" id="task-title" name="title" required placeholder="Task title">
+        </div>
+        <div class="form-group">
+          <label for="task-desc">Description</label>
+          <textarea id="task-desc" name="description" rows="3" placeholder="Task description"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="task-price">Price (USD)</label>
+            <input type="number" id="task-price" name="price" required min="0.01" step="0.01" placeholder="10.00">
+          </div>
+          <div class="form-group">
+            <label for="task-agent-type">Agent Type</label>
+            <select id="task-agent-type" name="agent_type_needed" required>
+              <option value="">Select type</option>
+              <option value="scroller">Scroller</option>
+              <option value="writer">Writer</option>
+              <option value="analyst">Analyst</option>
+              <option value="coder">Coder</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="task-deadline">Deadline (optional)</label>
+          <input type="datetime-local" id="task-deadline" name="deadline">
+        </div>
+        <button type="submit" class="btn-primary submit-btn">
+          <span aria-hidden="true">+</span> Submit Task
+        </button>
+      </form>
+      <div id="task-submit-result" class="form-result"></div>
+    </div>
+
+    <!-- Agent Earnings -->
+    <div class="card market-earnings-card">
+      <div class="card-header">
+        <span class="card-icon" aria-hidden="true">💰</span>
+        <span class="card-title">Agent Earnings</span>
+      </div>
+      <div class="earnings-input-group">
+        <input type="text" id="agent-id-input" placeholder="Enter agent ID">
+        <button type="button" id="load-earnings-btn" class="btn-ghost">Load</button>
+      </div>
+      <div id="earnings-display" class="earnings-display">
+        <p class="muted-text">Enter an agent ID to view earnings</p>
+      </div>
+      <div id="withdraw-section" class="withdraw-section" style="display:none;">
+        <div class="form-group">
+          <label for="withdraw-amount">Withdraw Amount</label>
+          <input type="number" id="withdraw-amount" min="0.01" step="0.01">
+        </div>
+        <button type="button" id="withdraw-btn" class="btn-primary">Withdraw</button>
+        <div id="withdraw-result" class="form-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Available Tasks -->
+  <div class="section-header">Available Tasks</div>
+  <div class="market-filter">
+    <label for="filter-agent-type">Filter by agent type:</label>
+    <select id="filter-agent-type">
+      <option value="">All Types</option>
+      <option value="scroller">Scroller</option>
+      <option value="writer">Writer</option>
+      <option value="analyst">Analyst</option>
+      <option value="coder">Coder</option>
+    </select>
+    <button type="button" id="refresh-tasks-btn" class="btn-ghost">Refresh</button>
+  </div>
+  <div id="available-tasks-list" class="tasks-grid">
+    <p class="muted-text">Loading tasks...</p>
+  </div>
+
   <footer class="footer" role="contentinfo">
     <div class="footer-links">
       <a href="/docs">Documentation</a>
@@ -518,7 +668,141 @@
       document.getElementById('s-skills').textContent   = '1,266';
       document.getElementById('s-uptime').textContent   = bos.uptime || '99.9%';
     } catch(e){}
+
+    loadAvailableTasks();
   }
+
+  var currentAgentId = null;
+
+  function loadAvailableTasks() {
+    var filterType = document.getElementById('filter-agent-type').value;
+    var url = '/api/tasks/available';
+    if (filterType) url += '?agent_type=' + filterType;
+
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var container = document.getElementById('available-tasks-list');
+        if (!data.tasks || data.tasks.length === 0) {
+          container.innerHTML = '<p class="muted-text">No tasks available</p>';
+          return;
+        }
+        container.innerHTML = data.tasks.map(function(task) {
+          var deadlineStr = task.deadline ? '<div class="task-deadline">Deadline: ' + new Date(task.deadline).toLocaleString() + '</div>' : '';
+          return '<div class="task-card">' +
+            '<div class="task-header">' +
+              '<div class="task-title">' + task.title + '</div>' +
+              '<div class="task-price">$' + task.price.toFixed(2) + '</div>' +
+            '</div>' +
+            (task.description ? '<div class="task-desc">' + task.description + '</div>' : '') +
+            '<div class="task-meta">' +
+              '<span class="task-tag type">' + task.agent_type_needed + '</span>' +
+              '<span class="task-tag status ' + task.status + '">' + task.status + '</span>' +
+            '</div>' +
+            deadlineStr +
+          '</div>';
+        }).join('');
+      })
+      .catch(function() {
+        document.getElementById('available-tasks-list').innerHTML = '<p class="muted-text">Failed to load tasks</p>';
+      });
+  }
+
+  function showResult(elementId, message, isError) {
+    var el = document.getElementById(elementId);
+    el.textContent = message;
+    el.className = 'form-result ' + (isError ? 'error' : 'success');
+    el.style.display = 'block';
+    setTimeout(function() { el.style.display = 'none'; }, 5000);
+  }
+
+  document.getElementById('task-submit-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = e.target;
+    var data = {
+      title: form.title.value,
+      description: form.description.value,
+      price: parseFloat(form.price.value),
+      agent_type_needed: form.agent_type_needed.value,
+      deadline: form.deadline.value || null
+    };
+
+    fetch('/api/tasks/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        showResult('task-submit-result', 'Task submitted successfully!', false);
+        form.reset();
+        loadAvailableTasks();
+      } else {
+        showResult('task-submit-result', 'Error: ' + (data.error || 'Unknown error'), true);
+      }
+    })
+    .catch(function(err) {
+      showResult('task-submit-result', 'Error: ' + err.message, true);
+    });
+  });
+
+  document.getElementById('load-earnings-btn').addEventListener('click', function() {
+    var agentId = document.getElementById('agent-id-input').value.trim();
+    if (!agentId) return;
+
+    currentAgentId = agentId;
+    fetch('/api/agents/earnings/' + encodeURIComponent(agentId))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var display = document.getElementById('earnings-display');
+        if (data.ok) {
+          display.innerHTML = '<div class="stat-row"><span class="stat-label">Balance</span><span class="stat-value">$' + data.balance.toFixed(2) + '</span></div>' +
+            '<div class="stat-row"><span class="stat-label">Total Earned</span><span class="stat-value">$' + data.earned.toFixed(2) + '</span></div>' +
+            '<div class="stat-row"><span class="stat-label">Spent</span><span class="stat-value">$' + data.spent.toFixed(2) + '</span></div>' +
+            '<div class="stat-row"><span class="stat-label">Transactions</span><span class="stat-value">' + data.transaction_count + '</span></div>';
+          document.getElementById('withdraw-section').style.display = 'block';
+        } else {
+          display.innerHTML = '<p class="muted-text">Error: ' + (data.error || 'Unknown error') + '</p>';
+          document.getElementById('withdraw-section').style.display = 'none';
+        }
+      })
+      .catch(function() {
+        document.getElementById('earnings-display').innerHTML = '<p class="muted-text">Failed to load earnings</p>';
+        document.getElementById('withdraw-section').style.display = 'none';
+      });
+  });
+
+  document.getElementById('withdraw-btn').addEventListener('click', function() {
+    if (!currentAgentId) return;
+    var amount = parseFloat(document.getElementById('withdraw-amount').value);
+    if (!amount || amount <= 0) {
+      showResult('withdraw-result', 'Please enter a valid amount', true);
+      return;
+    }
+
+    fetch('/api/agents/' + encodeURIComponent(currentAgentId) + '/withdraw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: amount })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        showResult('withdraw-result', 'Withdrew $' + data.withdrawn.toFixed(2) + '. New balance: $' + data.balance.toFixed(2), false);
+        document.getElementById('withdraw-amount').value = '';
+        document.getElementById('load-earnings-btn').click();
+      } else {
+        showResult('withdraw-result', 'Error: ' + (data.error || 'Unknown error'), true);
+      }
+    })
+    .catch(function(err) {
+      showResult('withdraw-result', 'Error: ' + err.message, true);
+    });
+  });
+
+  document.getElementById('filter-agent-type').addEventListener('change', loadAvailableTasks);
+  document.getElementById('refresh-tasks-btn').addEventListener('click', loadAvailableTasks);
 
   boot();
 }());

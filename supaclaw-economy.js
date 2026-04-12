@@ -67,6 +67,8 @@ const settlements = { pending: [], completed: [], batched: 0, total_settled: 0 }
 const accumulation = { total_in: 0, total_out: 0, net: 0, peak: 0, growth_rate: 0, snapshots: [] };
 
 const taskQueue = []; // Real tasks submitted via API, processed each cycle
+const availableTasks = []; // Tasks available for agents to pick up
+const completedTasks = []; // Completed tasks
 let econCycle = 0;
 let econActive = true;
 
@@ -295,4 +297,184 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
   // Control
   app.post('/api/economy/pause', (_req, res) => { econActive = false; res.json({ ok: true }); });
   app.post('/api/economy/resume', (_req, res) => { econActive = true; res.json({ ok: true }); });
+
+  // === TASK MARKETPLACE API ===
+
+  // POST /api/tasks/submit - Submit a new task
+  app.post('/api/tasks/submit', (req, res) => {
+    const { title, description, price, agent_type_needed, deadline } = req.body;
+    
+    if (!title || !price || !agent_type_needed) {
+      return res.status(400).json({ ok: false, error: 'Missing required fields: title, price, agent_type_needed' });
+    }
+
+    const task = {
+      id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      title,
+      description: description || '',
+      price: parseFloat(price),
+      agent_type_needed,
+      deadline: deadline || null,
+      status: 'pending',
+      created: Date.now(),
+      assigned_agent: null,
+      completed_at: null,
+      payout: null,
+    };
+
+    taskQueue.push(task);
+    availableTasks.push(task);
+    
+    res.json({ ok: true, task });
+  });
+
+  // GET /api/tasks/available - Get available tasks (with optional filtering)
+  app.get('/api/tasks/available', (req, res) => {
+    const { agent_type, status } = req.query;
+    
+    let tasks = availableTasks.filter(t => t.status === 'pending');
+    
+    if (agent_type) {
+      tasks = tasks.filter(t => t.agent_type_needed === agent_type);
+    }
+    
+    if (status) {
+      tasks = availableTasks.filter(t => t.status === status);
+    }
+    
+    res.json({ ok: true, tasks, count: tasks.length });
+  });
+
+  // GET /api/tasks/all - Get all tasks
+  app.get('/api/tasks/all', (_req, res) => {
+    res.json({ 
+      ok: true, 
+      available: availableTasks,
+      completed: completedTasks.slice(-50),
+      count: { available: availableTasks.length, completed: completedTasks.length }
+    });
+  });
+
+  // POST /api/tasks/:id/assign - Assign task to an agent
+  app.post('/api/tasks/:id/assign', (req, res) => {
+    const task = availableTasks.find(t => t.id === req.params.id);
+    
+    if (!task) {
+      return res.status(404).json({ ok: false, error: 'Task not found' });
+    }
+    
+    if (task.status !== 'pending') {
+      return res.status(400).json({ ok: false, error: 'Task is not available' });
+    }
+
+    const agentId = req.body.agent_id || req.body.agentId;
+    
+    task.status = 'assigned';
+    task.assigned_agent = agentId;
+    task.assigned_at = Date.now();
+    
+    res.json({ ok: true, task });
+  });
+
+  // POST /api/tasks/:id/complete - Mark task as completed
+  app.post('/api/tasks/:id/complete', (req, res) => {
+    const taskIndex = availableTasks.findIndex(t => t.id === req.params.id);
+    
+    if (taskIndex === -1) {
+      return res.status(404).json({ ok: false, error: 'Task not found' });
+    }
+
+    const task = availableTasks[taskIndex];
+    
+    if (task.status === 'completed') {
+      return res.status(400).json({ ok: false, error: 'Task already completed' });
+    }
+
+    const agentId = task.assigned_agent;
+    
+    // Calculate payout (90% to agent, 10% system tax)
+    const payout = task.price * 0.90;
+    const tax = task.price * 0.10;
+    
+    task.status = 'completed';
+    task.completed_at = Date.now();
+    task.payout = payout;
+    task.tax = tax;
+
+    // Credit agent's shadow account
+    if (agentId) {
+      const account = getAccount(agentId);
+      account.balance += payout;
+      account.earned += payout;
+      account.transactions.push({
+        type: 'task_completed',
+        task_id: task.id,
+        amount: payout,
+        ts: Date.now()
+      });
+    }
+
+    // Move to completed
+    availableTasks.splice(taskIndex, 1);
+    completedTasks.push(task);
+
+    // Update tax pool
+    taxPool.total_collected += tax;
+    taxPool.founders += tax * 0.40;
+    taxPool.operations += tax * 0.30;
+    taxPool.reserve += tax * 0.20;
+    taxPool.expansion += tax * 0.10;
+
+    res.json({ ok: true, task, payout, tax });
+  });
+
+  // GET /api/agents/earnings/:agentId - Get agent earnings
+  app.get('/api/agents/earnings/:agentId', (req, res) => {
+    const account = getAccount(req.params.agentId);
+    
+    const completedTaskEarnings = account.transactions
+      .filter(t => t.type === 'task_completed')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    res.json({
+      ok: true,
+      agent_id: req.params.agentId,
+      balance: account.balance,
+      earned: account.earned,
+      spent: account.spent,
+      tax_paid: account.tax_paid,
+      completed_tasks: completedTaskEarnings,
+      transaction_count: account.transactions.length,
+      created: account.created,
+    });
+  });
+
+  // POST /api/agents/:agentId/withdraw - Withdraw from agent account
+  app.post('/api/agents/:agentId/withdraw', (req, res) => {
+    const account = getAccount(req.params.agentId);
+    const amount = parseFloat(req.body.amount) || 0;
+    
+    if (amount <= 0) {
+      return res.status(400).json({ ok: false, error: 'Invalid amount' });
+    }
+    
+    if (amount > account.balance) {
+      return res.status(400).json({ ok: false, error: 'Insufficient balance' });
+    }
+    
+    account.balance -= amount;
+    account.spent += amount;
+    account.transactions.push({
+      type: 'withdraw',
+      amount: amount,
+      ts: Date.now()
+    });
+    
+    res.json({
+      ok: true,
+      agent_id: req.params.agentId,
+      balance: account.balance,
+      withdrawn: amount
+    });
+  });
 };
