@@ -2393,6 +2393,7 @@ const GATEWAY_SHORT_ROUTES = {
   '/face-vector': '/anatomical_face_vector_muscle.html',
   '/gateway':    '/gateway.html',
   '/activation': '/activation.html',
+  '/runtime':    '/runtime.html',
 };
 Object.entries(GATEWAY_SHORT_ROUTES).forEach(([short, target]) => {
   app.get(short, (_req, res) => res.redirect(target));

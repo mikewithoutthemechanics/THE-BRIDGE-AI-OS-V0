@@ -111,6 +111,50 @@
     .meter-fill.warn{background:var(--orange)}
     .meter-fill.over{background:var(--red)}
     .int-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.15);font-size:.75rem;color:var(--cyan);margin:4px}
+
+    /* Avatar upload */
+    .avatar-wrap{position:relative;cursor:pointer;flex-shrink:0}
+    .avatar-wrap:hover .avatar-overlay{opacity:1}
+    .avatar-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:.6rem;color:#fff;font-weight:700;letter-spacing:.05em}
+    .avatar-xl-img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan)}
+
+    /* DeFi wallet rails */
+    .defi-connect{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(167,139,250,.04));border:1px solid rgba(56,189,248,.2);border-radius:12px;padding:20px;margin-bottom:16px}
+    .defi-connect h3{font-size:.85rem;font-weight:700;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+    .rail-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:border-color .2s}
+    .rail-row:hover{border-color:rgba(56,189,248,.3)}
+    .rail-ico{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;flex-shrink:0}
+    .rail-label{flex:1}
+    .rail-label .rail-name{font-size:.82rem;font-weight:700;color:#e2e8f0}
+    .rail-label .rail-desc{font-size:.72rem;color:var(--dim)}
+    .rail-action{padding:.35rem .85rem;border-radius:6px;font-size:.72rem;font-weight:700;border:none;cursor:pointer;transition:all .2s}
+    .btn-connect{background:var(--cyan);color:#0a0e17}
+    .btn-connect:hover{opacity:.85}
+    .btn-connected{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3);cursor:default}
+    .chain-badge{display:inline-flex;align-items:center;gap:4px;padding:.15rem .5rem;border-radius:12px;font-size:.65rem;font-weight:700}
+    .chain-linea{background:rgba(99,255,218,.1);color:#63ffda;border:1px solid rgba(99,255,218,.2)}
+    .chain-payfast{background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2)}
+    .chain-zar{background:rgba(245,158,11,.1);color:var(--orange);border:1px solid rgba(245,158,11,.2)}
+
+    /* SVG Asset Registry */
+    .asset-registry{margin-bottom:16px}
+    .asset-registry h3{font-size:.82rem;font-weight:700;color:#e2e8f0;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+    .asset-token{background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:border-color .2s,transform .2s;position:relative;overflow:hidden}
+    .asset-token:hover{border-color:var(--cyan);transform:translateY(-2px)}
+    .asset-token.monetized::after{content:'●';position:absolute;top:6px;right:8px;font-size:.6rem;color:var(--green);animation:pulse-green 2s infinite}
+    @keyframes pulse-green{0%,100%{opacity:1}50%{opacity:.3}}
+    .asset-svg-wrap{width:64px;height:64px;margin:0 auto 8px;position:relative}
+    .asset-name{font-size:.68rem;font-weight:700;color:#e2e8f0;margin-bottom:2px;line-height:1.2}
+    .asset-type{font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+    .asset-earn{font-size:.62rem;color:var(--green);margin-top:4px;font-weight:700}
+
+    /* Governance rail */
+    .governance-bar{background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .governance-bar .gov-title{font-size:.75rem;font-weight:700;color:var(--purple);flex-shrink:0}
+    .gov-stat{text-align:center;flex:1;min-width:70px}
+    .gov-stat .gv{font-size:.9rem;font-weight:800;color:#e2e8f0}
+    .gov-stat .gl{font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
   </style>
 </head>
 <body>
@@ -138,7 +182,11 @@
       <div class="section-heading">Profile</div>
       <div class="section-desc">Your account at a glance</div>
       <div class="user-header">
-        <div class="avatar-xl" id="avatarXl" style="background:var(--cyan)">?</div>
+        <div class="avatar-wrap" onclick="document.getElementById('avatarUpload').click()" title="Click to change profile picture">
+          <div class="avatar-xl" id="avatarXl" style="background:var(--cyan)">?</div>
+          <div class="avatar-overlay">CHANGE</div>
+        </div>
+        <input type="file" id="avatarUpload" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
         <div class="user-details">
           <h2 id="userName">Loading...</h2>
           <div class="email" id="userEmail">--</div>
@@ -148,6 +196,7 @@
       </div>
       <div id="editForm" style="display:none;margin-bottom:24px">
         <div style="margin-bottom:12px"><label style="font-size:.72rem;color:var(--dim);display:block;margin-bottom:4px">Display Name</label><input class="edit-input" id="editName" placeholder="Your name"></div>
+        <div style="margin-bottom:12px"><label style="font-size:.72rem;color:var(--dim);display:block;margin-bottom:4px">Profile Picture</label><button class="btn btn-outline" onclick="document.getElementById('avatarUpload').click()" style="font-size:.72rem">Upload Image</button><span id="avatarFileName" style="font-size:.7rem;color:var(--dim);margin-left:8px"></span></div>
         <button class="btn btn-primary" onclick="saveEdit()">Save</button>
         <button class="btn btn-outline" onclick="toggleEdit()" style="margin-left:8px">Cancel</button>
       </div>
@@ -162,15 +211,111 @@
     <!-- Wallet -->
     <div class="page-section" id="sec-wallet">
       <div class="section-heading">BRDG Wallet</div>
-      <div class="section-desc">Your token balance and wallet</div>
-      <div class="card wallet-card">
-        <div style="font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Balance</div>
-        <div class="wallet-balance" id="walletBalance">-- BRDG</div>
-        <div style="font-size:.78rem;color:var(--dim)" id="walletUsd">-- USD</div>
-        <div class="wallet-address" id="walletAddress">No wallet connected</div>
+      <div class="section-desc">Token balance · DeFi rails · Banking · Digital asset registry</div>
+
+      <!-- Balance header -->
+      <div class="card wallet-card" style="margin-bottom:12px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">BRDG Balance</div>
+            <div class="wallet-balance" id="walletBalance">-- BRDG</div>
+            <div style="font-size:.78rem;color:var(--dim);margin-top:2px" id="walletUsd">-- USD</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:.7rem;color:var(--dim);margin-bottom:6px">Chain</div>
+            <span class="chain-badge chain-linea">⬡ Linea Mainnet</span>
+            <div style="font-size:.65rem;color:var(--dim);margin-top:4px" id="brdgContract">0xAF5...4B2e</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn btn-primary" style="font-size:.72rem;padding:.4rem .9rem" onclick="sendBrdg()">Send</button>
+          <button class="btn btn-outline" style="font-size:.72rem;padding:.4rem .9rem" onclick="receiveBrdg()">Receive</button>
+          <button class="btn btn-outline" style="font-size:.72rem;padding:.4rem .9rem;color:var(--green);border-color:rgba(34,197,94,.3)" onclick="stakeBrdg()">Stake</button>
+        </div>
       </div>
+
+      <!-- Governance summary -->
+      <div class="governance-bar">
+        <span class="gov-title">⚖ BRIDGE GOVERNANCE</span>
+        <div class="gov-stat"><div class="gv" id="govWeight">--</div><div class="gl">Vote Weight</div></div>
+        <div class="gov-stat"><div class="gv" id="govStaked">--</div><div class="gl">Staked BRDG</div></div>
+        <div class="gov-stat"><div class="gv" id="govTier">--</div><div class="gl">Sovereign Tier</div></div>
+        <div class="gov-stat"><div class="gv" id="govProposals">--</div><div class="gl">Open Proposals</div></div>
+      </div>
+
+      <!-- DeFi + Banking Rails -->
+      <div class="defi-connect">
+        <h3>⚡ DeFi &amp; Banking Rails</h3>
+
+        <!-- Web3 / MetaMask -->
+        <div class="rail-row">
+          <div class="rail-ico" style="background:rgba(245,158,11,.12);color:#f59e0b">⬡</div>
+          <div class="rail-label">
+            <div class="rail-name">MetaMask / Web3 Wallet</div>
+            <div class="rail-desc" id="web3AddressLabel">Connect to earn BRDG on Linea mainnet</div>
+          </div>
+          <span class="chain-badge chain-linea" style="margin-right:8px;font-size:.6rem" id="web3ChainBadge" style="display:none">Linea</span>
+          <button class="rail-action btn-connect" id="web3ConnectBtn" onclick="connectWeb3()">Connect</button>
+        </div>
+
+        <!-- PayFast -->
+        <div class="rail-row">
+          <div class="rail-ico" style="background:rgba(0,200,255,.1);color:var(--cyan)">PF</div>
+          <div class="rail-label">
+            <div class="rail-name">PayFast</div>
+            <div class="rail-desc">ZAR subscriptions · Recurring billing · Instant EFT</div>
+          </div>
+          <span class="chain-badge chain-payfast">ZAR</span>
+          <button class="rail-action btn-connected" style="margin-left:8px">Active</button>
+        </div>
+
+        <!-- Paystack -->
+        <div class="rail-row">
+          <div class="rail-ico" style="background:rgba(34,197,94,.1);color:var(--green)">PS</div>
+          <div class="rail-label">
+            <div class="rail-name">Paystack</div>
+            <div class="rail-desc">NGN · GHS · KES — Pan-African rails</div>
+          </div>
+          <span class="chain-badge" style="background:rgba(34,197,94,.1);color:var(--green);border-color:rgba(34,197,94,.2)">Africa</span>
+          <button class="rail-action btn-connected" style="margin-left:8px">Active</button>
+        </div>
+
+        <!-- BRDG On-Chain -->
+        <div class="rail-row">
+          <div class="rail-ico" style="background:rgba(99,255,218,.08);color:#63ffda">BR</div>
+          <div class="rail-label">
+            <div class="rail-name">BRDG Token · Linea L2</div>
+            <div class="rail-desc">ERC-20 · Earn from tasks · Stake for governance weight</div>
+          </div>
+          <span class="chain-badge chain-linea">On-chain</span>
+          <button class="rail-action btn-connect" style="margin-left:8px;background:rgba(99,255,218,.15);color:#63ffda;border:1px solid rgba(99,255,218,.3)" onclick="viewOnChain()">View</button>
+        </div>
+
+        <!-- Sovereign / UBI -->
+        <div class="rail-row">
+          <div class="rail-ico" style="background:rgba(167,139,250,.1);color:var(--purple)">UBI</div>
+          <div class="rail-label">
+            <div class="rail-name">Universal Basic Income Pool</div>
+            <div class="rail-desc" id="ubiPoolLabel">Loading UBI allocation...</div>
+          </div>
+          <button class="rail-action" style="background:rgba(167,139,250,.15);color:var(--purple);border:1px solid rgba(167,139,250,.3)" onclick="claimUbi()">Claim</button>
+        </div>
+      </div>
+
+      <!-- SVG Asset Registry -->
+      <div class="asset-registry">
+        <h3>◆ Digital Asset Registry <span style="font-size:.65rem;color:var(--dim);font-weight:400;margin-left:6px">Monetized brand assets earning BRDG on every view</span></h3>
+        <div class="asset-grid" id="assetGrid">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <!-- Transactions -->
       <div class="card">
-        <div style="font-size:.85rem;font-weight:600;margin-bottom:12px">Recent Transactions</div>
+        <div style="font-size:.85rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+          Recent Transactions
+          <span style="font-size:.7rem;color:var(--dim)"><span id="txCount">0</span> records</span>
+        </div>
         <div id="walletTxList" class="empty">No recent transactions</div>
       </div>
     </div>
@@ -302,7 +447,11 @@
   }
 
   document.querySelectorAll('.nav-item[data-section]').forEach(function(el) {
-    el.addEventListener('click', function(e) { e.preventDefault(); showSection(el.dataset.section); });
+    el.addEventListener('click', function(e) {
+      e.preventDefault();
+      showSection(el.dataset.section);
+      if (el.dataset.section === 'wallet') loadWalletExtras();
+    });
   });
 
   // Mobile tabs
@@ -344,8 +493,13 @@
       // Overview
       var initials = (user.name || user.email || '?').charAt(0).toUpperCase();
       var avatar = document.getElementById('avatarXl');
-      avatar.textContent = initials;
-      avatar.style.background = hashColor(user.name || user.email || '');
+      var avatarUrl = (user.settings && user.settings.avatar_url) || user.avatar_url || null;
+      if (avatarUrl) {
+        avatar.outerHTML = '<img id="avatarXl" class="avatar-xl-img" src="' + avatarUrl + '" alt="Avatar">';
+      } else {
+        avatar.textContent = initials;
+        avatar.style.background = hashColor(user.name || user.email || '');
+      }
       document.getElementById('userName').textContent = user.name || user.email || 'User';
       document.getElementById('userEmail').textContent = user.email || '--';
       var plan = user.plan || 'free';
@@ -483,6 +637,162 @@
     }
   }
 
+  // ── Avatar upload ───────────────────────────────────────────────────────────
+  var pendingAvatarDataUrl = null;
+
+  window.handleAvatarUpload = function(input) {
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      pendingAvatarDataUrl = e.target.result;
+      var avatarEl = document.getElementById('avatarXl');
+      // Replace initials with actual image
+      avatarEl.outerHTML = '<img id="avatarXl" class="avatar-xl-img" src="' + pendingAvatarDataUrl + '" alt="Avatar">';
+      var fn = document.getElementById('avatarFileName');
+      if (fn) fn.textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ── SVG Asset Registry ────────────────────────────────────────────────────
+  var ASSETS = [
+    { id:'taurus-global-star',   label:'Taurus Global Star',    type:'logo',     cat:'#f59e0b', earn:'2.4 BRDG' },
+    { id:'taurus-global-star-v', label:'Taurus Star Variant',   type:'logo',     cat:'#f59e0b', earn:'1.8 BRDG' },
+    { id:'supac-unified-agents', label:'SUPAC Unified Agents',  type:'logo',     cat:'var(--cyan)', earn:'3.1 BRDG' },
+    { id:'supac-prime-agents',   label:'SUPAC Prime Agents',    type:'logo',     cat:'var(--cyan)', earn:'2.9 BRDG' },
+    { id:'supac-prime-agents-v', label:'SUPAC Prime Variant',   type:'logo',     cat:'var(--cyan)', earn:'2.2 BRDG' },
+    { id:'supac-logo',           label:'SUPAC Logo',            type:'logo',     cat:'var(--cyan)', earn:'1.5 BRDG' },
+    { id:'living-system-bible',  label:'Living System Bible',   type:'document', cat:'var(--purple)', earn:'5.0 BRDG' },
+    { id:'bridge-living-map',    label:'Bridge Living Map',     type:'document', cat:'var(--green)',  earn:'4.2 BRDG' },
+  ];
+
+  function buildAssetSVG(color) {
+    var c = color.startsWith('#') ? color : '#38bdf8';
+    return '<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
+      + '<circle cx="32" cy="32" r="26" fill="none" stroke="' + c + '" stroke-width="1" opacity="0.3">'
+      + '<animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="12s" repeatCount="indefinite"/>'
+      + '</circle>'
+      + '<circle cx="32" cy="32" r="18" fill="none" stroke="' + c + '" stroke-width="1.5" stroke-dasharray="4 3">'
+      + '<animateTransform attributeName="transform" type="rotate" from="360 32 32" to="0 32 32" dur="8s" repeatCount="indefinite"/>'
+      + '</circle>'
+      + '<circle cx="32" cy="32" r="8" fill="' + c + '" opacity="0.15"/>'
+      + '<circle cx="32" cy="32" r="4" fill="' + c + '">'
+      + '<animate attributeName="r" values="4;5.5;4" dur="2s" repeatCount="indefinite"/>'
+      + '<animate attributeName="opacity" values="1;0.6;1" dur="2s" repeatCount="indefinite"/>'
+      + '</circle>'
+      + '</svg>';
+  }
+
+  function renderAssetGrid() {
+    var grid = document.getElementById('assetGrid');
+    if (!grid) return;
+    grid.innerHTML = ASSETS.map(function(a) {
+      var colorHex = a.cat.startsWith('#') ? a.cat : '#38bdf8';
+      return '<div class="asset-token monetized" onclick="viewAsset(\'' + a.id + '\')" title="' + a.label + '">'
+        + '<div class="asset-svg-wrap">' + buildAssetSVG(colorHex) + '</div>'
+        + '<div class="asset-name">' + a.label + '</div>'
+        + '<div class="asset-type">' + a.type + '</div>'
+        + '<div class="asset-earn">+' + a.earn + '/view</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  window.viewAsset = function(id) {
+    var asset = ASSETS.find(function(a){ return a.id === id; });
+    if (asset) {
+      var path = asset.type === 'document'
+        ? '/documents/' + id + '.html'
+        : '/logos/' + id + '.svg';
+      window.open(path, '_blank');
+    }
+  };
+
+  // ── DeFi / Web3 ────────────────────────────────────────────────────────────
+  var LINEA_CHAIN_ID = '0xE708'; // 59144
+  var BRDG_ADDRESS   = '0xAF5F9E19FF3CD00f5b02B84e51e1d97E89Be4B2e';
+
+  window.connectWeb3 = async function() {
+    if (!window.ethereum) {
+      alert('MetaMask not detected. Install MetaMask or use a Web3-enabled browser.');
+      return;
+    }
+    try {
+      var accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      var addr = accounts[0];
+      // Switch to Linea
+      try {
+        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: LINEA_CHAIN_ID }] });
+      } catch (switchErr) {
+        if (switchErr.code === 4902) {
+          await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{ chainId: LINEA_CHAIN_ID, chainName: 'Linea Mainnet', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: ['https://rpc.linea.build'], blockExplorerUrls: ['https://lineascan.build'] }] });
+        }
+      }
+      // Update UI
+      var short = addr.slice(0, 6) + '...' + addr.slice(-4);
+      document.getElementById('web3AddressLabel').textContent = short + ' · Linea Mainnet';
+      document.getElementById('web3ConnectBtn').textContent = 'Connected';
+      document.getElementById('web3ConnectBtn').className = 'rail-action btn-connected';
+      // Read BRDG balance via eth_call
+      try {
+        var balData = '0x70a08231' + addr.replace('0x','').padStart(64,'0');
+        var raw = await window.ethereum.request({ method: 'eth_call', params: [{ to: BRDG_ADDRESS, data: balData }, 'latest'] });
+        var brdgBal = parseInt(raw, 16) / 1e18;
+        document.getElementById('walletBalance').textContent = brdgBal.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' BRDG';
+        document.getElementById('walletUsd').textContent = '≈ $' + (brdgBal * 0.20).toFixed(2) + ' USD';
+      } catch (_) {}
+    } catch (e) {
+      if (e.code !== 4001) alert('Connection failed: ' + e.message);
+    }
+  };
+
+  window.viewOnChain = function() {
+    window.open('https://lineascan.build/token/' + BRDG_ADDRESS, '_blank');
+  };
+
+  window.stakeBrdg = function() {
+    alert('BRDG Staking portal launching — Governance weight: 1 BRDG = 1 vote. Coming Q2 2026.');
+  };
+
+  window.sendBrdg = function() {
+    if (!window.ethereum) { alert('Connect a Web3 wallet to send BRDG'); return; }
+    var to = prompt('Recipient address:');
+    if (to && to.startsWith('0x')) alert('Send flow — use MetaMask to confirm the BRDG transfer to ' + to);
+  };
+
+  window.receiveBrdg = function() {
+    var addr = document.getElementById('web3AddressLabel').textContent;
+    if (addr.includes('0x')) {
+      navigator.clipboard.writeText(addr.split(' ')[0]).then(function(){ alert('Address copied!'); });
+    } else {
+      alert('Connect a Web3 wallet first to receive BRDG.');
+    }
+  };
+
+  window.claimUbi = function() {
+    alert('UBI Claim: Your share of the UBI pool is calculated from BRDG staked × uptime. Full claim portal launching soon.');
+  };
+
+  // Load governance + UBI stats
+  async function loadWalletExtras() {
+    try {
+      var r = await fetch('/api/treasury/status', { headers: token ? { Authorization: 'Bearer ' + token } : {} });
+      var d = await r.json();
+      var treasury = d.treasury || d;
+      document.getElementById('ubiPoolLabel').textContent = 'UBI pool: ' + parseFloat(treasury.ubi_pool || treasury.ubi || 0).toLocaleString() + ' BRDG available';
+    } catch(_) {
+      document.getElementById('ubiPoolLabel').textContent = 'UBI pool: loading...';
+    }
+    // Governance placeholders (tie to BRDG balance)
+    var brdg = parseFloat((document.getElementById('walletBalance').textContent || '0').replace(/[^0-9.]/g,'')) || 0;
+    document.getElementById('govWeight').textContent = brdg > 0 ? (brdg * 1.0).toFixed(0) + ' pts' : '--';
+    document.getElementById('govStaked').textContent = '0 BRDG';
+    document.getElementById('govTier').textContent = brdg >= 1000 ? 'Sovereign' : brdg >= 100 ? 'Citizen' : brdg > 0 ? 'Member' : 'Observer';
+    document.getElementById('govProposals').textContent = '3';
+    renderAssetGrid();
+  }
+
   var editMode = false;
   window.toggleEdit = function() {
     editMode = !editMode;
@@ -496,19 +806,34 @@
   window.saveEdit = async function() {
     var name = document.getElementById('editName').value.trim();
     if (!name) return;
+    var payload = { settings: { name: name } };
+    if (pendingAvatarDataUrl) payload.settings.avatar_url = pendingAvatarDataUrl;
     try {
       var res = await fetch('/api/user/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ settings: { name: name } })
+        body: JSON.stringify(payload)
       });
       var d = await res.json();
       if (!d.ok) { alert(d.error || 'Save failed'); return; }
       // Update DOM
       document.getElementById('userName').textContent = name;
-      var initials = name.charAt(0).toUpperCase();
-      document.getElementById('avatarXl').textContent = initials;
-      document.getElementById('avatarXl').style.background = hashColor(name);
+      var avatarEl = document.getElementById('avatarXl');
+      if (pendingAvatarDataUrl) {
+        // Swap to image element
+        if (avatarEl.tagName === 'IMG') {
+          avatarEl.src = pendingAvatarDataUrl;
+        } else {
+          avatarEl.outerHTML = '<img id="avatarXl" class="avatar-xl-img" src="' + pendingAvatarDataUrl + '" alt="Avatar">';
+        }
+        pendingAvatarDataUrl = null;
+      } else {
+        var initials = name.charAt(0).toUpperCase();
+        if (avatarEl.tagName !== 'IMG') {
+          avatarEl.textContent = initials;
+          avatarEl.style.background = hashColor(name);
+        }
+      }
       // Keep localStorage in sync
       try {
         var stored = JSON.parse(localStorage.getItem('bridge_user') || '{}');
