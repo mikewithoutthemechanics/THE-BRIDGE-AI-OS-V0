@@ -194,6 +194,16 @@ const cronHandlers = require('./neurolink/cron-handlers');
 // ── Platform Productization Layer ─────────────────────────────────────────────
 const { handlePlatform } = require('./platform');
 
+// ── HITL Approval Pipeline ────────────────────────────────────────────────────
+let handleHitl, handlePipeline;
+try {
+  ({ handleHitl } = require('./hitl'));
+  ({ handlePipeline } = require('./pipeline'));
+} catch (e) {
+  console.warn('[HITL] Failed to load HITL/pipeline handlers:', e.message);
+  handleHitl = handlePipeline = null;
+}
+
 // ── Digital Twin Layer ────────────────────────────────────────────────────────
 const { handleTwin } = require('./twin');
 
@@ -3501,6 +3511,16 @@ module.exports = async (req, res) => {
     if (handled !== null) return; // platform handler wrote the response
   }
 
+  // ── HITL Approval Queue (/api/hitl/*) ────────────────────────────────────
+  if (p.startsWith('/api/hitl/') && handleHitl) {
+    return handleHitl(req, res);
+  }
+
+  // ── Lead Pipeline Orchestrator (/api/orch/*) ──────────────────────────────
+  if (p.startsWith('/api/orch/') && handlePipeline) {
+    return handlePipeline(req, res);
+  }
+
   // ── Digital Twin Layer (/api/twin/*) ──────────────────────────────────────
   if (p.startsWith('/api/twin/')) {
     const handled = await handleTwin(req, res);
@@ -3642,6 +3662,9 @@ module.exports = async (req, res) => {
     '/api/verify/payment/:id', '/api/verify/chain', '/api/verify/info', '/api/verify/response (POST)',
     '/api/proofs/payments', '/api/proofs/merkle',
     '/api/admin/withdraw/authorize (POST)', '/api/admin/withdraw/execute (POST)', '/api/admin/withdraw/audit',
+    // HITL Lead Pipeline
+    '/api/hitl/stats', '/api/hitl/queue', '/api/hitl/queue/:id/approve', '/api/hitl/queue/:id/reject',
+    '/api/orch/health', '/api/orch/contacts', '/api/orch/contacts/:id', '/api/orch/runs/:id/signal',
     // Digital Twin Console
     '/api/twin/profile', '/api/emotion/status', '/api/network/status',
     '/api/mission/board', '/api/sdg/metrics', '/api/esim/status',
