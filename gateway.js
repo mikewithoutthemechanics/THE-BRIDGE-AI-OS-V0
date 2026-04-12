@@ -560,8 +560,8 @@ async function proxyToUnified(req, res) {
     res.status(502).json({ error: 'unified-server unreachable', details: e.message });
   }
 }
-app.get('/auth/me',              (req, res) => proxyToUnified(req, res));
-app.post('/auth/logout',         (req, res) => proxyToUnified(req, res));
+app.get('/auth/me',              (req, res) => proxyToAuth(req, res));
+app.post('/auth/logout',         (req, res) => proxyToAuth(req, res));
 app.post('/auth/exchange-code',  (req, res) => proxyToUnified(req, res));
 
 // ── BAN PROXY ────────────────────────────────────────────────────────────────
