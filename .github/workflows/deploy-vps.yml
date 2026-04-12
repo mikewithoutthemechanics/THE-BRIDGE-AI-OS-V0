@@ -25,10 +25,17 @@ jobs:
           script: |
             cd /opt/ai-os || exit 1
             export GIT_SSL_NO_VERIFY=1
-            git remote set-url origin https://x-access-token:$GH_PAT@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
-            git fetch origin
-            git reset --hard origin/main
+            # Fetch using PAT if available, otherwise fall back to public URL
+            REPO_URL="https://github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git"
+            if [ -n "$GH_PAT" ]; then
+              REPO_URL="https://x-access-token:$GH_PAT@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git"
+            fi
+            git remote set-url origin "$REPO_URL"
+            git fetch origin main --force
+            git reset --hard FETCH_HEAD
             git remote set-url origin https://github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
+            echo "=== Deployed HEAD ==="
+            git log --oneline -1
             rsync -a --delete --exclude='node_modules' --exclude='.git' --exclude='.env' --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude='logs' /opt/ai-os/ /var/www/bridgeai/ 2>/dev/null || true
             npm install --production --no-audit 2>&1 | tail -3
 
@@ -42,8 +49,6 @@ jobs:
               cp .env /var/www/bridgeai/.env 2>/dev/null || true
             fi
 
-            echo "=== Current HEAD ==="
-            git log --oneline -3
             echo "=== Restarting services ==="
             for svc in bridge-gateway super-brain unified-server god-mode-system auth-service; do
               pm2 restart $svc --update-env 2>/dev/null || echo "WARN: $svc not found"
