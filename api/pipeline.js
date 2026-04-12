@@ -161,7 +161,7 @@ async function handlePipeline(req, res) {
   }
 
   // ── Cron tick ─────────────────────────────────────────────────────────────
-  if (url === '/api/orch/tick' && method === 'POST') {
+  if (url === '/api/orch/tick' && (method === 'POST' || method === 'GET')) {
     try {
       const result = await orch.tick();
       return res.json({ ok: true, ...result });
