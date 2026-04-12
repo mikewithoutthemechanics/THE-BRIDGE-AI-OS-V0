@@ -70,6 +70,103 @@ const taskQueue = []; // Real tasks submitted via API, processed each cycle
 let econCycle = 0;
 let econActive = true;
 
+// ── AGENT SKILL REGISTRY ───────────────────────────────────────────────────────
+const agentSkills = {
+  scraper: { capabilities: ['scraping', 'data_collection', 'web_crawling', 'html_parsing'], score: 1.0 },
+  writer: { capabilities: ['content_writing', 'copywriting', 'documentation', 'editing'], score: 1.0 },
+  analyst: { capabilities: ['data_analysis', 'visualization', 'reporting', 'statistics'], score: 1.0 },
+  coder: { capabilities: ['programming', 'debugging', 'code_review', 'refactoring'], score: 1.0 },
+  designer: { capabilities: ['ui_design', 'visual_design', 'prototyping', 'graphic_design'], score: 1.0 },
+  researcher: { capabilities: ['research', 'data_gathering', 'fact_checking', 'analysis'], score: 1.0 },
+  qa: { capabilities: ['testing', 'quality_assurance', 'bug_reporting', 'test_automation'], score: 1.0 },
+};
+
+// Agent registry tracks available agents and their workload
+const agentRegistry = new Map(); // agent_id -> { type, capabilities, active_tasks: 0, last_active, available: true }
+
+// Register an agent with the system
+function registerAgent(agentId, agentType) {
+  if (!agentSkills[agentType]) return null;
+  const agent = {
+    id: agentId,
+    type: agentType,
+    capabilities: agentSkills[agentType].capabilities,
+    active_tasks: 0,
+    last_active: Date.now(),
+    available: true,
+  };
+  agentRegistry.set(agentId, agent);
+  return agent;
+}
+
+// Get all agents of a specific type
+function getAgentsByType(agentType) {
+  return [...agentRegistry.values()].filter(a => a.type === agentType && a.available);
+}
+
+// Calculate agent score based on type match, workload, and availability
+function calculateAgentScore(agent, requiredType) {
+  let score = 0;
+  
+  // Type match score (0-100)
+  if (agent.type === requiredType) {
+    score += 100;
+  } else if (agentSkills[requiredType] && agentSkills[agent.type]) {
+    // Partial match based on capability overlap
+    const overlap = agent.capabilities.filter(c => 
+      agentSkills[requiredType].capabilities.includes(c)
+    ).length;
+    score += (overlap / agentSkills[requiredType].capabilities.length) * 50;
+  }
+  
+  // Workload penalty: reduce score based on active tasks
+  // Fewer active tasks = higher score
+  const workloadPenalty = Math.min(50, agent.active_tasks * 10);
+  score -= workloadPenalty;
+  
+  // Availability bonus
+  if (agent.available) score += 20;
+  
+  // Recent activity bonus (agent is responsive)
+  const idleTime = Date.now() - agent.last_active;
+  if (idleTime < 60000) score += 10; // Active in last minute
+  
+  return score;
+}
+
+// Find best-fit agent for a task
+function findBestAgent(agentTypeNeeded) {
+  const candidates = getAgentsByType(agentTypeNeeded);
+  if (candidates.length === 0) return null;
+  
+  let bestAgent = null;
+  let bestScore = -1;
+  
+  for (const agent of candidates) {
+    const score = calculateAgentScore(agent, agentTypeNeeded);
+    if (score > bestScore) {
+      bestScore = score;
+      bestAgent = agent;
+    }
+  }
+  
+  return bestAgent;
+}
+
+// Auto-assign task to best-fit agent
+function autoAssignTask(task) {
+  const bestAgent = findBestAgent(task.agent_type_needed);
+  if (bestAgent) {
+    task.assigned_to = bestAgent.id;
+    task.status = 'assigned';
+    task.assigned_at = Date.now();
+    bestAgent.active_tasks++;
+    bestAgent.last_active = Date.now();
+    return bestAgent;
+  }
+  return null;
+}
+
 // ── ECONOMY LOOP ────────────────────────────────────────────────────────────
 // Async: treasury credit must await SQLite commit before loop continues (𝓛₁)
 async function economyLoop(state, broadcast) {
@@ -303,9 +400,9 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
     if (!title || !price || !agent_type_needed) {
       return res.status(400).json({ ok: false, error: 'title, price, and agent_type_needed are required' });
     }
-    const validTypes = ['scroller', 'writer', 'analyst', 'coder'];
+    const validTypes = ['scraper', 'writer', 'analyst', 'coder', 'designer', 'researcher', 'qa'];
     if (!validTypes.includes(agent_type_needed)) {
-      return res.status(400).json({ ok: false, error: 'agent_type_needed must be scroller/writer/analyst/coder' });
+      return res.status(400).json({ ok: false, error: 'agent_type_needed must be scraper/writer/analyst/coder/designer/researcher/qa' });
     }
     const task = {
       id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -320,8 +417,15 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
       payout: null,
       created_at: Date.now(),
     };
+    
+    // Auto-assign to best-fit agent
+    const assignedAgent = autoAssignTask(task);
+    if (assignedAgent) {
+      task.auto_assigned = true;
+    }
+    
     taskQueue.push(task);
-    res.json({ ok: true, task });
+    res.json({ ok: true, task, auto_assigned: !!assignedAgent, assigned_agent: assignedAgent?.id || null });
   });
 
   // GET /api/tasks/available - list pending tasks with optional filtering
@@ -355,7 +459,7 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
 
   // POST /api/tasks/:id/complete - mark task complete, calculate payout, credit agent
   app.post('/api/tasks/:id/complete', (req, res) => {
-    const { agent_id, cost = 0, time_ms = 0 } = req.body;
+    const { agent_id, cost = 0, time_ms = 0, work_output } = req.body;
     const task = taskQueue.find(t => t.id === req.params.id);
     if (!task) {
       return res.status(404).json({ ok: false, error: 'Task not found' });
@@ -372,10 +476,18 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
     task.payout = payout;
     task.cost = parseFloat(cost) || 0;
     task.time_ms = parseInt(time_ms) || 0;
+    task.work_output = work_output || '';
     const account = getAccount(agent_id);
     account.balance += payout;
     account.earned += payout;
     account.transactions.push({ type: 'task_payout', task_id: task.id, amount: payout, ts: Date.now() });
+    
+    // Decrement agent workload
+    const agent = agentRegistry.get(agent_id);
+    if (agent && agent.active_tasks > 0) {
+      agent.active_tasks--;
+    }
+    
     res.json({ ok: true, task, payout, account_balance: account.balance });
   });
 
@@ -404,5 +516,58 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
     account.spent += amt;
     account.transactions.push({ type: 'withdraw', amount: amt, ts: Date.now() });
     res.json({ ok: true, balance: account.balance, withdrawn: amt });
+  });
+
+  // ── AGENT REGISTRY ENDPOINTS ─────────────────────────────────────────────────
+  // POST /api/agents/register - register an agent with the system
+  app.post('/api/agents/register', (req, res) => {
+    const { agent_id, agent_type } = req.body;
+    if (!agent_id || !agent_type) {
+      return res.status(400).json({ ok: false, error: 'agent_id and agent_type are required' });
+    }
+    const validTypes = Object.keys(agentSkills);
+    if (!validTypes.includes(agent_type)) {
+      return res.status(400).json({ ok: false, error: `agent_type must be one of: ${validTypes.join(', ')}` });
+    }
+    const agent = registerAgent(agent_id, agent_type);
+    res.json({ ok: true, agent });
+  });
+
+  // GET /api/agents - list all registered agents
+  app.get('/api/agents', (_req, res) => {
+    const agents = [...agentRegistry.values()].map(a => ({
+      id: a.id,
+      type: a.type,
+      capabilities: a.capabilities,
+      active_tasks: a.active_tasks,
+      available: a.available,
+      last_active: a.last_active,
+    }));
+    res.json({ ok: true, count: agents.length, agents });
+  });
+
+  // GET /api/agents/:agentId - get agent details
+  app.get('/api/agents/:agentId', (req, res) => {
+    const agent = agentRegistry.get(req.params.agentId);
+    if (!agent) {
+      return res.status(404).json({ ok: false, error: 'Agent not found' });
+    }
+    res.json({ ok: true, agent });
+  });
+
+  // PUT /api/agents/:agentId/availability - update agent availability
+  app.put('/api/agents/:agentId/availability', (req, res) => {
+    const { available } = req.body;
+    const agent = agentRegistry.get(req.params.agentId);
+    if (!agent) {
+      return res.status(404).json({ ok: false, error: 'Agent not found' });
+    }
+    agent.available = available !== undefined ? !!available : true;
+    res.json({ ok: true, agent });
+  });
+
+  // GET /api/agents/skills - get agent skill registry
+  app.get('/api/agents/skills', (_req, res) => {
+    res.json({ ok: true, skills: agentSkills });
   });
 };
