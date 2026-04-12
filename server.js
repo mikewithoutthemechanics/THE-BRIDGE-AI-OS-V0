@@ -1520,13 +1520,33 @@ app.post('/api/ubi/claim', requireAdmin, async (req, res) => {
   } catch(e) { res.json({ ok: true, amount: 0, detail: 'Already claimed today or pool empty' }); }
 });
 
-// User settings (used by settings.html)
+// User settings (used by settings.html and profile.html)
 app.get('/api/user/settings', (req, res) => {
   res.json({ settings: { theme: 'dark', apiBase: '', notifications: false, liveRefresh: true, userId: '' } });
 });
 
-app.put('/api/user/settings', (req, res) => {
-  res.json({ ok: true });
+app.put('/api/user/settings', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    if (!token) return res.status(401).json({ ok: false, error: 'Auth required' });
+
+    const userDb = require('./lib/user-identity');
+    const currentUser = await userDb.verifyAuthToken(token);
+    if (!currentUser) return res.status(401).json({ ok: false, error: 'Invalid token' });
+
+    // Accept both { settings: { name, company, ... } } and { name, company, ... } directly
+    const payload = req.body.settings || req.body || {};
+    const fields = {};
+    if (payload.name     !== undefined) fields.name     = payload.name;
+    if (payload.company  !== undefined) fields.company  = payload.company;
+
+    const updated = await userDb.updateUser(currentUser.id, fields);
+    res.json({ ok: true, user: (({ password_hash, ...u }) => u)(updated) });
+  } catch (e) {
+    console.error('[settings PUT]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // Live report / twins (used by agents.html)
