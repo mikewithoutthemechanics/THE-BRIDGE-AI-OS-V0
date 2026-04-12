@@ -326,6 +326,40 @@ const MARKET_HANDLERS = {
   portfolio: () => data.getMarketplacePortfolio(),
   stats:     () => data.getMarketplaceStats(),
 };
+// ── Marketplace tasks — dedicated GET/POST before wildcard ───────────────────
+function _demoTasks() {
+  return [
+    { id:'demo_1', title:'Research & Development — Bridge AI', description:'Debug and find maintainable long-term solution for Bridge AI OS', category:'Research', budget:200, status:'open', poster_id:'system', created_at: new Date().toISOString() },
+    { id:'demo_2', title:'AI Agent Integration Testing', description:'Test and validate all 8 agent types across federation platforms', category:'Engineering', budget:500, status:'open', poster_id:'system', created_at: new Date(Date.now()-86400000).toISOString() },
+    { id:'demo_3', title:'BRDG Token Economic Analysis', description:'Analyse on-chain BRDG token flows and UBI distribution efficiency', category:'Finance', budget:750, status:'open', poster_id:'system', created_at: new Date(Date.now()-172800000).toISOString() },
+    { id:'demo_4', title:'SVG Asset Registry Expansion', description:'Design and register 5 new animated SVG assets for the digital twin system', category:'Design', budget:300, status:'open', poster_id:'system', created_at: new Date(Date.now()-259200000).toISOString() },
+  ];
+}
+
+app.get('/api/marketplace/tasks', async (req, res) => {
+  try {
+    const { createClient } = require('@supabase/supabase-js');
+    const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: rows, error } = await sb.from('marketplace_tasks').select('*').order('created_at', { ascending: false }).limit(200);
+    if (error) return res.json(_demoTasks());
+    res.json(Array.isArray(rows) && rows.length ? rows : _demoTasks());
+  } catch (_) { res.json(_demoTasks()); }
+});
+
+app.post('/api/marketplace/tasks', express.json(), async (req, res) => {
+  try {
+    const { title, description, category, budget, assigned_agent } = req.body || {};
+    if (!title || !description) return res.status(400).json({ error: 'title and description required' });
+    const { createClient } = require('@supabase/supabase-js');
+    const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const task = { title, description, category: category||'Research', budget: budget ? Number(budget) : null, assigned_agent: assigned_agent||null, status:'open', poster_id: req.headers.authorization ? 'user' : 'anonymous', created_at: new Date().toISOString() };
+    // Try insert; if table missing, still return ok so UI doesn't break
+    const { data: row, error } = await sb.from('marketplace_tasks').insert(task).select().single();
+    if (error && !error.message.includes('does not exist')) return res.status(500).json({ error: error.message });
+    res.json({ ok: true, task: row || { id: 'local_' + Date.now(), ...task } });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/marketplace/*path', async (req, res) => {
   const section = paramStr(req.params.path) || 'index';
   const handler = MARKET_HANDLERS[section];

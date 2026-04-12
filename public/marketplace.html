@@ -91,6 +91,20 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 .toast.show{transform:translateX(0)}
 .toast-success{background:#065f46;color:#6ee7b7;border:1px solid #10b981}
 .toast-error{background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444}
+
+/* Wallet pill */
+.wallet-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:24px;border:1px solid var(--border);background:var(--card);font-size:.78rem;cursor:pointer;transition:all .2s;color:var(--text-dim)}
+.wallet-pill:hover{border-color:var(--cyan);color:var(--cyan)}
+.wallet-pill.connected{border-color:rgba(34,197,94,.4);color:var(--green);background:rgba(34,197,94,.06)}
+.wallet-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex-shrink:0}
+.wallet-dot.live{background:var(--green);box-shadow:0 0 6px var(--green)}
+.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+@media(max-width:600px){
+  .shell{padding:16px 14px}
+  .header h1{font-size:1.3rem}
+  .header-actions{width:100%}
+  .wallet-pill,.btn-primary{flex:1;justify-content:center}
+}
 </style>
 </head>
 <body>
@@ -98,7 +112,14 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 <div class="shell">
   <div class="header">
     <h1>AI Agent Marketplace</h1>
-    <button class="btn-primary" onclick="handlePostJob()">+ Post a Job</button>
+    <div class="header-actions">
+      <!-- MetaMask BRDG wallet pill -->
+      <button class="wallet-pill" id="walletBtn" onclick="connectWallet()">
+        <span class="wallet-dot" id="walletDot"></span>
+        <span id="walletLabel">Connect Wallet</span>
+      </button>
+      <button class="btn-primary" onclick="handlePostJob()">+ Post a Job</button>
+    </div>
   </div>
 
   <div class="filter-bar">
@@ -438,7 +459,122 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
   checkAuth();
   loadTasks();
   loadSkills();
+  initWalletState();
 })();
+
+// ── MetaMask BRDG Wallet ───────────────────────────────────────────────────
+var BRDG_CONTRACT  = '0xAF5F9E19FF3CD00f5b02B84e51e1d97E89Be4B2e';
+var LINEA_CHAIN_ID = '0xE708'; // 59144
+
+function setWalletUI(address, brdg) {
+  var btn  = document.getElementById('walletBtn');
+  var dot  = document.getElementById('walletDot');
+  var lbl  = document.getElementById('walletLabel');
+  if (address) {
+    btn.classList.add('connected');
+    dot.classList.add('live');
+    lbl.textContent = (brdg !== null ? brdg.toFixed(2) + ' BRDG · ' : '') + address.slice(0,6) + '…' + address.slice(-4);
+  } else {
+    btn.classList.remove('connected');
+    dot.classList.remove('live');
+    lbl.textContent = 'Connect Wallet';
+  }
+}
+
+async function readBrdgBalance(address) {
+  if (!window.ethereum) return null;
+  try {
+    var data = '0x70a08231' + address.slice(2).toLowerCase().padStart(64, '0');
+    var result = await window.ethereum.request({
+      method: 'eth_call',
+      params: [{ to: BRDG_CONTRACT, data: data }, 'latest'],
+    });
+    if (!result || result === '0x') return 0;
+    var raw = BigInt(result);
+    return Number(raw) / 1e18;
+  } catch (_) { return null; }
+}
+
+async function switchToLinea() {
+  try {
+    await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: LINEA_CHAIN_ID }] });
+  } catch (e) {
+    if (e.code === 4902) {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [{ chainId: LINEA_CHAIN_ID, chainName: 'Linea Mainnet', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: ['https://rpc.linea.build'], blockExplorerUrls: ['https://lineascan.build'] }],
+      });
+    }
+  }
+}
+
+window.connectWallet = async function() {
+  var btn = document.getElementById('walletBtn');
+  // If already connected, open Lineascan
+  var cached = localStorage.getItem('brdg_wallet_address');
+  if (cached && btn.classList.contains('connected')) {
+    window.open('https://lineascan.build/address/' + cached, '_blank');
+    return;
+  }
+
+  if (!window.ethereum) {
+    // No MetaMask — open install page
+    window.open('https://metamask.io/download/', '_blank');
+    document.getElementById('walletLabel').textContent = 'Install MetaMask →';
+    return;
+  }
+
+  try {
+    document.getElementById('walletLabel').textContent = 'Connecting…';
+    var accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (!accounts || !accounts.length) throw new Error('No accounts');
+    var address = accounts[0];
+
+    // Switch to Linea
+    await switchToLinea();
+
+    // Read BRDG balance
+    var brdg = await readBrdgBalance(address);
+
+    // Persist
+    localStorage.setItem('brdg_wallet_address', address);
+    if (brdg !== null) localStorage.setItem('brdg_balance', brdg.toFixed(4));
+
+    setWalletUI(address, brdg);
+
+    // Sync to profile backend
+    var token = localStorage.getItem('bridge_token');
+    if (token) {
+      fetch('/api/user/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ wallet_address: address, brdg_balance: brdg || 0 }),
+      }).catch(function() {});
+    }
+
+    // Listen for account/chain changes
+    window.ethereum.on('accountsChanged', function(accs) {
+      if (!accs.length) { localStorage.removeItem('brdg_wallet_address'); setWalletUI(null, null); }
+      else { localStorage.setItem('brdg_wallet_address', accs[0]); connectWallet(); }
+    });
+
+  } catch (e) {
+    document.getElementById('walletLabel').textContent = 'Not connected';
+    console.warn('Wallet connect error:', e);
+  }
+};
+
+function initWalletState() {
+  var cached = localStorage.getItem('brdg_wallet_address');
+  var bal = parseFloat(localStorage.getItem('brdg_balance') || '0');
+  if (cached) {
+    setWalletUI(cached, bal || null);
+    // Refresh balance in background
+    if (window.ethereum) readBrdgBalance(cached).then(function(b) {
+      if (b !== null) { localStorage.setItem('brdg_balance', b.toFixed(4)); setWalletUI(cached, b); }
+    });
+  }
+}
 </script>
 <script src="/bridge-nav.js?v=2" defer></script>
 </body>
