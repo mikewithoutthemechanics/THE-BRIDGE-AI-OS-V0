@@ -801,6 +801,8 @@ function requireAuth(req, res, next) {
     '/api/config-engine/health', // engine health is public
     '/api/uloe/health',          // ULOE health is public
     '/api/uloe/validate/',       // API key validation is public (used by gateway)
+    '/api/hitl/stats',           // HITL stats public for dashboard health checks
+    '/api/orch/health',          // Pipeline engine health is public
   ];
   
   if (publicEndpoints.some(endpoint => req.path.startsWith(endpoint))) {
@@ -1891,6 +1893,22 @@ app.all('/api/config-engine/{*path}', async (req, res, next) => {
 const { handleUloe } = require('./api/uloe');
 app.all('/api/uloe/{*path}', async (req, res, next) => {
   const handled = await handleUloe(req, res);
+  if (handled !== null) return;
+  next();
+});
+
+// ================= HITL — Human-In-The-Loop approval queue (/api/hitl/*) =================
+const { handleHitl } = require('./api/hitl');
+app.all('/api/hitl/{*path}', async (req, res, next) => {
+  const handled = await handleHitl(req, res);
+  if (handled !== null) return;
+  next();
+});
+
+// ================= Pipeline — Lead-to-Close Engine (/api/orch/*) =================
+const { handlePipeline } = require('./api/pipeline');
+app.all('/api/orch/{*path}', async (req, res, next) => {
+  const handled = await handlePipeline(req, res);
   if (handled !== null) return;
   next();
 });

@@ -1870,6 +1870,42 @@ app.all('/api/uloe/*path', async (req, res) => {
   }
 });
 
+// ── HITL API — proxy /api/hitl/* to unified-server (port 3000) ─────────────
+app.all('/api/hitl/*path', async (req, res) => {
+  const url = `http://localhost:3000${req.originalUrl}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
+    if (req.headers['content-type'])   opts.headers['Content-Type']   = req.headers['content-type'];
+    if (req.headers['authorization'])  opts.headers['Authorization']  = req.headers['authorization'];
+    if (req.headers['cookie'])         opts.headers['Cookie']         = req.headers['cookie'];
+    if (req.headers['x-bridge-admin']) opts.headers['X-Bridge-Admin'] = req.headers['x-bridge-admin'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const ct = r.headers.get('content-type') || 'application/json';
+    res.status(r.status).set('Content-Type', ct).send(await r.text());
+  } catch (e) {
+    res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
+  }
+});
+
+// ── Pipeline API — proxy /api/orch/* to unified-server (port 3000) ──────────
+app.all('/api/orch/*path', async (req, res) => {
+  const url = `http://localhost:3000${req.originalUrl}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
+    if (req.headers['content-type'])   opts.headers['Content-Type']   = req.headers['content-type'];
+    if (req.headers['authorization'])  opts.headers['Authorization']  = req.headers['authorization'];
+    if (req.headers['cookie'])         opts.headers['Cookie']         = req.headers['cookie'];
+    if (req.headers['x-bridge-admin']) opts.headers['X-Bridge-Admin'] = req.headers['x-bridge-admin'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const ct = r.headers.get('content-type') || 'application/json';
+    res.status(r.status).set('Content-Type', ct).send(await r.text());
+  } catch (e) {
+    res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
+  }
+});
+
 // ── PLATFORM API — proxy /api/platform/* to unified-server (port 3000) ──────
 app.all('/api/platform/*path', async (req, res) => {
   const url = `http://localhost:3000${req.originalUrl}`;
