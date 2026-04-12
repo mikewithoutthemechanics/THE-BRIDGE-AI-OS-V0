@@ -190,14 +190,15 @@ app.post("/create-payment",
   validation.validateRequest({
     client: { type: 'string', required: true, min: 1, max: 100 },
     amount: { type: 'positive', required: true },
-    email: { type: 'string', required: false, validate: validation.validateEmail }
+    email: { type: 'string', required: false, validate: validation.validateEmail },
+    user_id: { type: 'string', required: false, max: 255 }
   }),
   async (req, res) => {
-    const { client, amount, email } = req.body;
+    const { client, amount, email, user_id } = req.body;
     const parsedAmount = parseFloat(amount);
     const reference = `REF_${Date.now()}`;
     try {
-      await supabase.from('payments').insert({ client, amount: parsedAmount, status: 'pending', reference });
+      await supabase.from('payments').insert({ client, amount: parsedAmount, status: 'pending', reference, user_id: user_id || null });
     } catch (_) { /* best-effort */ }
     // Redirect to internal checkout page instead of PayFast
     res.json({ payment_url: `/checkout?ref=${reference}&amount=${amount || 10}&client=${encodeURIComponent(client || 'Customer')}&email=${encodeURIComponent(email || '')}` });
@@ -352,6 +353,23 @@ app.post("/payfast/notify", async (req, res) => {
       'INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7)',
       ['income', 'payfast', gross, 'ZAR', 'all', reference, JSON.stringify({ pf_payment_id: pfId, splits: splits.map(s => ({ ...s, amount: (gross * s.pct / 100).toFixed(2) })) })]
     );
+
+    const referredUserId = paymentRow.user_id || null;
+    if (referredUserId) {
+      const referredRow = await economyDb.query(
+        `SELECT referrer_code FROM referral_referrals WHERE referred_user_id = $1`,
+        [referredUserId]
+      );
+      if (referredRow.rows.length > 0 && referredRow.rows[0].referrer_code) {
+        creditReferrerOnPayment(
+          referredRow.rows[0].referrer_code,
+          referredUserId,
+          String(unsigned.email_address || ''),
+          gross,
+          reference
+        );
+      }
+    }
   } catch (econErr) {
     console.error('[economy] Failed to record payment split:', econErr.message);
   }
@@ -1816,6 +1834,9 @@ registerEconomyRoutes(app);
 
 const { registerPrimeRoutes } = require('./lib/prime-routes');
 registerPrimeRoutes(app);
+
+const { registerReferralRoutes, creditReferrerOnPayment } = require('./lib/referral-routes');
+registerReferralRoutes(app);
 
 // Auto-task loop — starts generating/claiming/completing tasks autonomously
 const autoLoop = require('./lib/auto-task-loop');
