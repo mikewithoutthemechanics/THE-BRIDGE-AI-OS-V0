@@ -782,6 +782,7 @@ app.get('/aoe-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'a
 app.get('/pipeline.html', (_req, res) => res.sendFile(path.join(ROOT, 'public', 'pipeline.html')));
 app.get('/pipeline',      (_req, res) => res.sendFile(path.join(ROOT, 'public', 'pipeline.html')));
 // ── New core pages (live in public/, not Xpublic/) ───────────────────────────
+app.get('/leads.html',     (_req, res) => res.sendFile(path.join(ROOT, 'public', 'leads.html')));
 app.get('/activate.html',  (_req, res) => res.sendFile(path.join(ROOT, 'public', 'activate.html')));
 app.get('/dashboard.html', (_req, res) => res.sendFile(path.join(ROOT, 'public', 'dashboard.html')));
 app.get('/gateway.html',   (_req, res) => res.sendFile(path.join(ROOT, 'public', 'gateway.html')));
@@ -2480,6 +2481,7 @@ const GATEWAY_SHORT_ROUTES = {
   '/gateway':    '/gateway.html',
   '/activation': '/activation.html',
   '/runtime':    '/runtime.html',
+  '/leads':      '/leads.html',
 };
 Object.entries(GATEWAY_SHORT_ROUTES).forEach(([short, target]) => {
   app.get(short, (_req, res) => res.redirect(target));
