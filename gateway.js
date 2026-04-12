@@ -744,6 +744,9 @@ app.get('/sitemap.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'sitemap
 app.get('/topology-layers.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'topology-layers.html'), res));
 app.get('/abaas.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'abaas.html'), res));
 app.get('/aoe-dashboard.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'aoe-dashboard.html'), res));
+// ── New core pages (live in public/, not Xpublic/) ───────────────────────────
+app.get('/activate.html',  (_req, res) => res.sendFile(path.join(ROOT, 'public', 'activate.html')));
+app.get('/dashboard.html', (_req, res) => res.sendFile(path.join(ROOT, 'public', 'dashboard.html')));
 app.get('/logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
 app.get('/view-logs.html', (_req, res) => serveWithNav(path.join(XPUBLIC, 'logs.html'), res));
 // All dynamic pages (subdomain homes + imported BridgeLiveWall + everything)
