@@ -25,14 +25,10 @@ jobs:
           script: |
             cd /opt/ai-os || exit 1
             export GIT_SSL_NO_VERIFY=1
-            # Fetch using PAT if available, otherwise fall back to public URL
-            REPO_URL="https://github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git"
-            if [ -n "$GH_PAT" ]; then
-              REPO_URL="https://x-access-token:$GH_PAT@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git"
-            fi
-            git remote set-url origin "$REPO_URL"
-            git fetch origin main --force
-            git reset --hard FETCH_HEAD
+            if [ -z "$GH_PAT" ]; then echo "ERROR: GH_PAT secret is empty — cannot fetch private repo" && exit 1; fi
+            git remote set-url origin "https://x-access-token:$GH_PAT@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git"
+            git fetch origin main || { echo "ERROR: git fetch failed"; exit 1; }
+            git reset --hard origin/main
             git remote set-url origin https://github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
             echo "=== Deployed HEAD ==="
             git log --oneline -1
