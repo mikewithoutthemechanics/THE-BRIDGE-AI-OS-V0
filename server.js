@@ -799,6 +799,8 @@ function requireAuth(req, res, next) {
     '/api/twin/',     // twin layer handles its own auth via resolveUser()
     '/api/siwe/',               // SIWE is public — no token needed to get nonce or verify
     '/api/config-engine/health', // engine health is public
+    '/api/uloe/health',          // ULOE health is public
+    '/api/uloe/validate/',       // API key validation is public (used by gateway)
   ];
   
   if (publicEndpoints.some(endpoint => req.path.startsWith(endpoint))) {
@@ -1881,6 +1883,14 @@ app.all('/api/twin/{*path}', async (req, res, next) => {
 const { handleConfigEngine } = require('./api/config-engine');
 app.all('/api/config-engine/{*path}', async (req, res, next) => {
   const handled = await handleConfigEngine(req, res);
+  if (handled !== null) return;
+  next();
+});
+
+// ================= ULOE — Unified User Lifecycle Orchestration Engine (/api/uloe/*) =================
+const { handleUloe } = require('./api/uloe');
+app.all('/api/uloe/{*path}', async (req, res, next) => {
+  const handled = await handleUloe(req, res);
   if (handled !== null) return;
   next();
 });
