@@ -4,6 +4,136 @@
 // =============================================================================
 const crypto = require('crypto');
 
+// ── KILO GATEWAY INTEGRATION ─────────────────────────────────────────────────
+const KILO_API_BASE = 'https://api.kilo.ai/api/gateway';
+const KILO_API_KEY = process.env.KILO_API_KEY || '';
+
+const kiloModels = {
+  researcher: { model: 'minimax/minimax-m2.5:free', max_tokens: 4000, temp: 0.7 },
+  writer: { model: 'minimax/minimax-m2.5:free', max_tokens: 3000, temp: 0.8 },
+  analyst: { model: 'minimax/minimax-m2.5:free', max_tokens: 2500, temp: 0.5 },
+  coder: { model: 'minimax/minimax-m2.5:free', max_tokens: 3000, temp: 0.3 },
+};
+
+const freeModelFallbacks = [
+  'kilo-auto/free',
+  'x-ai/grok-code-fast-1:optimized:free',
+  'anthropic/claude-3-haiku:free',
+  'google/gemini-2.0-flash-exp:free',
+];
+
+const kiloStats = {
+  requests_made: 0,
+  requests_failed: 0,
+  total_tokens: 0,
+  total_cost_saved: 0,
+  model_fallbacks: 0,
+  by_agent: { researcher: 0, writer: 0, analyst: 0, coder: 0 },
+  history: [],
+};
+
+const TRADITIONAL_COST_PER_1K_TOKENS = 0.015;
+
+async function callKiloGateway(prompt, agentType, systemPrompt = '') {
+  const modelConfig = kiloModels[agentType] || kiloModels.writer;
+  let model = modelConfig.model;
+  
+  const requestBody = {
+    model,
+    messages: [
+      ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+      { role: 'user', content: prompt }
+    ],
+    max_tokens: modelConfig.max_tokens,
+    temperature: modelConfig.temp,
+  };
+
+  if (KILO_API_KEY) {
+    requestBody.api_key = KILO_API_KEY;
+  }
+
+  try {
+    const response = await fetch(KILO_API_BASE, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(KILO_API_KEY ? { 'Authorization': `Bearer ${KILO_API_KEY}` } : {})
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      if (response.status === 429 && freeModelFallbacks.length > 0) {
+        const fallback = freeModelFallbacks.shift();
+        kiloStats.model_fallbacks++;
+        requestBody.model = fallback;
+        const retryRes = await fetch(KILO_API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(KILO_API_KEY ? { 'Authorization': `Bearer ${KILO_API_KEY}` } : {}) },
+          body: JSON.stringify(requestBody),
+        });
+        if (!retryRes.ok) throw new Error(`Kilo fallback failed: ${retryRes.status}`);
+        const data = await retryRes.json();
+        return processKiloResponse(data, agentType);
+      }
+      throw new Error(`Kilo API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return processKiloResponse(data, agentType);
+  } catch (err) {
+    kiloStats.requests_failed++;
+    throw err;
+  }
+}
+
+function processKiloResponse(data, agentType) {
+  kiloStats.requests_made++;
+  kiloStats.by_agent[agentType] = (kiloStats.by_agent[agentType] || 0) + 1;
+  
+  const content = data.choices?.[0]?.message?.content || data.response || '';
+  const usage = data.usage || {};
+  const tokens = usage.total_tokens || usage.prompt_tokens + usage.completion_tokens || 0;
+  
+  kiloStats.total_tokens += tokens;
+  const saved = (tokens / 1000) * TRADITIONAL_COST_PER_1K_TOKENS;
+  kiloStats.total_cost_saved += saved;
+
+  kiloStats.history.push({
+    agent: agentType,
+    tokens,
+    saved: +saved.toFixed(4),
+    ts: Date.now(),
+  });
+  if (kiloStats.history.length > 100) kiloStats.history.shift();
+
+  return { content, usage: tokens, saved: +saved.toFixed(4) };
+}
+
+const kiloAgentPrompts = {
+  researcher: {
+    system: 'You are a Research Agent. Perform web research, analyze information, and generate comprehensive reports.',
+    task: 'Research the following topic and provide detailed findings: ',
+  },
+  writer: {
+    system: 'You are a Writing Agent. Create marketing copy, blogs, emails, and content that engages readers.',
+    task: 'Write content for the following request: ',
+  },
+  analyst: {
+    system: 'You are an Analyst Agent. Analyze data, generate reports, and provide insights.',
+    task: 'Analyze and provide insights on: ',
+  },
+  coder: {
+    system: 'You are a Coder Agent. Generate code, debug issues, and provide technical solutions.',
+    task: 'Solve this coding task: ',
+  },
+};
+
+async function executeKiloAgent(agentType, taskInput) {
+  const prompts = kiloAgentPrompts[agentType] || kiloAgentPrompts.writer;
+  return callKiloGateway(prompts.task + taskInput, agentType, prompts.system);
+}
+
 // ── SHADOW ACCOUNTS (virtual bank for every agent/user) ─────────────────────
 const shadowAccounts = new Map();
 function getAccount(id) {
@@ -430,5 +560,60 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
     account.spent += amt;
     account.transactions.push({ type: 'withdraw', amount: amt, ts: Date.now() });
     res.json({ ok: true, balance: account.balance, withdrawn: amt });
+  });
+
+  // ── KILO AI INTEGRATION ENDPOINTS ───────────────────────────────────────
+  app.get('/api/kilo/models', (_req, res) => {
+    res.json({ ok: true, models: kiloModels, fallback_models: freeModelFallbacks });
+  });
+
+  app.get('/api/kilo/status', (_req, res) => {
+    const recent = kiloStats.history.slice(-20);
+    const totalSaved = kiloStats.total_cost_saved;
+    const traditionalCost = (kiloStats.total_tokens / 1000) * TRADITIONAL_COST_PER_1K_TOKENS;
+    res.json({
+      ok: true,
+      integration: 'active',
+      stats: {
+        ...kiloStats,
+        total_cost_saved: +totalSaved.toFixed(4),
+        traditional_cost: +traditionalCost.toFixed(4),
+        savings_percent: traditionalCost > 0 ? +((totalSaved / traditionalCost) * 100).toFixed(1) + '%' : '0%',
+      },
+      recent_requests: recent,
+      api_key_configured: !!KILO_API_KEY,
+    });
+  });
+
+  app.post('/api/kilo/test', async (req, res) => {
+    const { agent_type, test_prompt } = req.body;
+    const validAgents = ['researcher', 'writer', 'analyst', 'coder'];
+    const agent = validAgents.includes(agent_type) ? agent_type : 'writer';
+    const prompt = test_prompt || 'Say "Kilo integration working" in 5 words or less.';
+    
+    try {
+      const result = await callKiloGateway(prompt, agent);
+      res.json({ ok: true, agent_type: agent, result, kilo_stats: kiloStats });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
+  app.post('/api/kilo/agent/execute', async (req, res) => {
+    const { agent_type, task_input } = req.body;
+    if (!agent_type || !task_input) {
+      return res.status(400).json({ ok: false, error: 'agent_type and task_input required' });
+    }
+    const validAgents = ['researcher', 'writer', 'analyst', 'coder'];
+    if (!validAgents.includes(agent_type)) {
+      return res.status(400).json({ ok: false, error: 'agent_type must be researcher/writer/analyst/coder' });
+    }
+
+    try {
+      const result = await executeKiloAgent(agent_type, task_input);
+      res.json({ ok: true, agent_type, ...result });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
   });
 };
