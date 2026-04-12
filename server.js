@@ -805,7 +805,7 @@ function requireAuth(req, res, next) {
     '/api/orch/health',          // Pipeline engine health is public
     // Dashboard endpoints (public for executive dashboard)
     '/api/revenue/status',
-    '/api/treasury/',
+    '/api/treasury',
     '/api/mission/board',
     '/api/projects',
     '/api/skills',
