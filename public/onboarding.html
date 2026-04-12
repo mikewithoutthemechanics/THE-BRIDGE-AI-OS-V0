@@ -141,6 +141,7 @@ select option{background:#080d18}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
 </head>
 <body>
 
@@ -181,12 +182,14 @@ select option{background:#080d18}
       </p>
     </div>
 
-    <!-- Orbit visualization -->
-    <div class="orbit-system" id="orbitSystem">
+    <!-- Orbit visualization + PixiJS avatar layer -->
+    <div class="orbit-system" id="orbitSystem" style="position:relative">
       <div class="orbit-ring orbit-ring-1"></div>
       <div class="orbit-ring orbit-ring-2"></div>
       <div class="orbit-ring orbit-ring-3"></div>
       <div class="orbit-center">BRIDGE<br>AI OS</div>
+      <!-- PixiJS canvas overlaid on orbit (pointer-events:none so clicks pass through) -->
+      <canvas id="pixi-onboard" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:6;border-radius:50%"></canvas>
     </div>
 
     <!-- Feature cards -->
@@ -748,6 +751,161 @@ function postAuthDest() {
   if (dest && dest.startsWith('/') && !dest.startsWith('//')) return dest;
   return '/activate';
 }
+
+// ── PixiJS Captain Avatar Overlay ──────────────────────────────────────────
+(function initPixiOrbit() {
+  var container = document.getElementById('orbitSystem');
+  var pixiCanvas = document.getElementById('pixi-onboard');
+  if (!container || !pixiCanvas || typeof PIXI === 'undefined') return;
+
+  var SIZE = 320;
+  var app = new PIXI.Application({
+    view: pixiCanvas,
+    width: SIZE,
+    height: SIZE,
+    backgroundAlpha: 0,
+    antialias: true,
+    resolution: window.devicePixelRatio || 1,
+    autoDensity: true,
+  });
+
+  // Particle pool for energy trails
+  var particles = [];
+  var MAX_PARTS = 80;
+
+  // Emitter positions — track the orbit node positions in PixiJS coords
+  // The orbitSystem div is 320×320; nodes are positioned at absolute px within it
+  var nodePositions = []; // updated each frame from DOM
+
+  function syncNodePositions() {
+    nodePositions = [];
+    var nodes = container.querySelectorAll('.orbit-node');
+    nodes.forEach(function(n) {
+      var l = parseFloat(n.style.left) + 18; // +18 = half of 36px node
+      var t = parseFloat(n.style.top)  + 18;
+      if (!isNaN(l) && !isNaN(t)) nodePositions.push({ x: l, y: t });
+    });
+  }
+
+  // Graphics layer for particles and beams
+  var gfx = new PIXI.Graphics();
+  app.stage.addChild(gfx);
+
+  // Captain avatar sprite — try to load from session storage / profile
+  var avatarUrl = (function() {
+    try { return JSON.parse(localStorage.getItem('brdg_user') || '{}').avatar_url || null; } catch(e) { return null; }
+  })();
+
+  var captainContainer = new PIXI.Container();
+  captainContainer.x = SIZE / 2;
+  captainContainer.y = SIZE / 2;
+  app.stage.addChild(captainContainer);
+
+  // Glowing halo circle behind avatar
+  var halo = new PIXI.Graphics();
+  halo.lineStyle(1.5, 0x00d4ff, 0.35);
+  halo.drawCircle(0, 0, 38);
+  halo.lineStyle(1, 0x00ff88, 0.2);
+  halo.drawCircle(0, 0, 44);
+  captainContainer.addChild(halo);
+
+  // Avatar sprite (circular mask)
+  var avatarSprite = null;
+  var fallbackOrb = new PIXI.Graphics();
+
+  if (avatarUrl) {
+    try {
+      var tex = PIXI.Texture.from(avatarUrl);
+      avatarSprite = new PIXI.Sprite(tex);
+      avatarSprite.width = 52;
+      avatarSprite.height = 52;
+      avatarSprite.anchor.set(0.5);
+      var mask = new PIXI.Graphics();
+      mask.beginFill(0xffffff);
+      mask.drawCircle(0, 0, 26);
+      mask.endFill();
+      captainContainer.addChild(mask);
+      avatarSprite.mask = mask;
+      captainContainer.addChild(avatarSprite);
+    } catch(e) { avatarSprite = null; }
+  }
+
+  if (!avatarSprite) {
+    // Fallback — cyan orb with inner glow
+    fallbackOrb.beginFill(0x00d4ff, 0.15);
+    fallbackOrb.lineStyle(2, 0x00d4ff, 0.8);
+    fallbackOrb.drawCircle(0, 0, 26);
+    fallbackOrb.endFill();
+    var innerGlow = new PIXI.Graphics();
+    innerGlow.beginFill(0x00d4ff, 0.3);
+    innerGlow.drawCircle(0, 0, 14);
+    innerGlow.endFill();
+    captainContainer.addChild(fallbackOrb);
+    captainContainer.addChild(innerGlow);
+  }
+
+  // Floating BRDG label under captain
+  var label = new PIXI.Text('CAPTAIN', {
+    fontFamily: 'Segoe UI, system-ui, sans-serif',
+    fontSize: 7,
+    fill: 0x00d4ff,
+    letterSpacing: 3,
+    align: 'center',
+  });
+  label.anchor.set(0.5, 0);
+  label.y = 32;
+  captainContainer.addChild(label);
+
+  var t = 0;
+
+  app.ticker.add(function(delta) {
+    t += delta * 0.016; // seconds
+    gfx.clear();
+
+    syncNodePositions();
+
+    // Pulse halo
+    var pulse = 0.3 + Math.sin(t * 2.5) * 0.15;
+    halo.alpha = pulse;
+    captainContainer.scale.set(1 + Math.sin(t * 1.8) * 0.025);
+
+    // Draw energy beams from center to each orbit node
+    nodePositions.forEach(function(pos, i) {
+      var alpha = 0.08 + Math.sin(t * 1.2 + i * 0.8) * 0.05;
+      gfx.lineStyle(0.8, 0x00d4ff, alpha);
+      gfx.moveTo(SIZE / 2, SIZE / 2);
+      gfx.lineTo(pos.x, pos.y);
+
+      // Emit tiny particle near each node occasionally
+      if (particles.length < MAX_PARTS && Math.random() < 0.12) {
+        particles.push({
+          x: pos.x + (Math.random() - 0.5) * 6,
+          y: pos.y + (Math.random() - 0.5) * 6,
+          vx: (SIZE / 2 - pos.x) * 0.004 + (Math.random() - 0.5) * 0.4,
+          vy: (SIZE / 2 - pos.y) * 0.004 + (Math.random() - 0.5) * 0.4,
+          life: 1,
+          r: Math.random() * 2 + 1,
+          color: [0x00d4ff, 0x00ff88, 0xa855f7][i % 3],
+        });
+      }
+    });
+
+    // Update + draw particles (flow toward center = orbit energy)
+    for (var k = particles.length - 1; k >= 0; k--) {
+      var p = particles[k];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= 0.018;
+      if (p.life <= 0) { particles.splice(k, 1); continue; }
+      gfx.beginFill(p.color, p.life * 0.7);
+      gfx.drawCircle(p.x, p.y, p.r * p.life);
+      gfx.endFill();
+    }
+
+    // Rotate label gently
+    label.alpha = 0.6 + Math.sin(t * 3) * 0.2;
+  });
+})();
 </script>
 </body>
 </html>

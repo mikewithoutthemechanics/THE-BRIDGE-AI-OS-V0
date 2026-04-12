@@ -182,9 +182,11 @@
       <div class="section-heading">Profile</div>
       <div class="section-desc">Your account at a glance</div>
       <div class="user-header">
-        <div class="avatar-wrap" onclick="document.getElementById('avatarUpload').click()" title="Click to change profile picture">
-          <div class="avatar-xl" id="avatarXl" style="background:var(--cyan)">?</div>
-          <div class="avatar-overlay">CHANGE</div>
+        <div class="avatar-wrap" onclick="document.getElementById('avatarUpload').click()" title="Click to change profile picture" style="position:relative">
+          <!-- PixiJS aura canvas behind the avatar -->
+          <canvas id="pixi-avatar" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;width:120px;height:120px" width="120" height="120"></canvas>
+          <div class="avatar-xl" id="avatarXl" style="background:var(--cyan);position:relative;z-index:1">?</div>
+          <div class="avatar-overlay" style="position:relative;z-index:2">CHANGE</div>
         </div>
         <input type="file" id="avatarUpload" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
         <div class="user-details">
@@ -852,6 +854,91 @@
   };
 
   init();
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
+<script>
+// ── PixiJS Avatar Aura ──────────────────────────────────────────────────────
+(function initAvatarAura() {
+  var pixiCanvas = document.getElementById('pixi-avatar');
+  if (!pixiCanvas || typeof PIXI === 'undefined') return;
+
+  var SIZE = 120;
+  var app = new PIXI.Application({
+    view: pixiCanvas,
+    width: SIZE,
+    height: SIZE,
+    backgroundAlpha: 0,
+    antialias: true,
+    resolution: window.devicePixelRatio || 1,
+    autoDensity: true,
+  });
+
+  var cx = SIZE / 2, cy = SIZE / 2;
+  var gfx = new PIXI.Graphics();
+  app.stage.addChild(gfx);
+
+  // Floating BRDG token particles orbiting the avatar
+  var tokens = [];
+  for (var i = 0; i < 6; i++) {
+    tokens.push({
+      angle: (i / 6) * Math.PI * 2,
+      radius: 46 + Math.random() * 8,
+      speed: (0.4 + Math.random() * 0.3) * (Math.random() < 0.5 ? 1 : -1),
+      size: 2.5 + Math.random() * 2,
+      color: [0x00d4ff, 0x00ff88, 0xa855f7, 0xf59e0b][i % 4],
+      pulse: Math.random() * Math.PI * 2,
+    });
+  }
+
+  // Sovereign ring particles
+  var rings = [];
+  for (var j = 0; j < 28; j++) {
+    rings.push({
+      angle: (j / 28) * Math.PI * 2,
+      r: 50,
+      alpha: 0.1 + Math.random() * 0.25,
+    });
+  }
+
+  var t = 0;
+  app.ticker.add(function(delta) {
+    t += delta * 0.016;
+    gfx.clear();
+
+    // Outer sovereignty ring
+    rings.forEach(function(rp) {
+      var px = cx + Math.cos(rp.angle + t * 0.3) * rp.r;
+      var py = cy + Math.sin(rp.angle + t * 0.3) * rp.r;
+      var a = rp.alpha * (0.5 + Math.sin(t * 2 + rp.angle) * 0.4);
+      gfx.beginFill(0x00d4ff, a);
+      gfx.drawCircle(px, py, 1.2);
+      gfx.endFill();
+    });
+
+    // Inner pulse halo
+    var pr = 42 + Math.sin(t * 2.5) * 2;
+    gfx.lineStyle(1, 0x00d4ff, 0.18 + Math.sin(t * 3) * 0.06);
+    gfx.drawCircle(cx, cy, pr);
+    gfx.lineStyle(0.5, 0x00ff88, 0.1);
+    gfx.drawCircle(cx, cy, pr + 4);
+
+    // BRDG floating tokens
+    tokens.forEach(function(tk) {
+      tk.angle += tk.speed * delta * 0.016;
+      tk.pulse += delta * 0.016 * 2.5;
+      var tx = cx + Math.cos(tk.angle) * tk.radius;
+      var ty = cy + Math.sin(tk.angle) * tk.radius;
+      var sc = 0.7 + Math.sin(tk.pulse) * 0.3;
+      gfx.beginFill(tk.color, 0.75 * sc);
+      gfx.drawCircle(tx, ty, tk.size * sc);
+      gfx.endFill();
+      // trail line to center
+      gfx.lineStyle(0.5, tk.color, 0.07 * sc);
+      gfx.moveTo(cx, cy);
+      gfx.lineTo(tx, ty);
+    });
+  });
 })();
 </script>
 <script src="/bridge-nav.js" defer></script>

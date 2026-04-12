@@ -57,8 +57,10 @@
 </style>
 </head>
 <body>
+<!-- PixiJS data stream canvas (fullscreen, behind everything) -->
+<canvas id="pixi-runtime" style="position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.45"></canvas>
 
-<div id="topbar">
+<div id="topbar" style="position:relative;z-index:10">
   <span class="logo">BRIDGE<span>OS</span></span>
   <span class="pill ok"><span class="dot"></span>Runtime</span>
   <span class="pill ok" id="brainPill"><span class="dot"></span>Brain</span>
@@ -67,7 +69,7 @@
   <span id="clock"></span>
 </div>
 
-<div id="app">
+<div id="app" style="position:relative;z-index:5">
   <div id="sidebar">
 
     <div class="scard">
@@ -435,6 +437,111 @@ function run() {
   logDim('Federation: AID · EHSA · HospitalInABox · RootedEarth · SUPAC · BAN · UBI · ABAAS');
   logInfo('Type "help" for commands. Type "assets" to view the digital asset registry.');
   log('', '');
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
+<script>
+// ── PixiJS Data Stream Background ──────────────────────────────────────────
+(function initDataStream() {
+  var pixiCanvas = document.getElementById('pixi-runtime');
+  if (!pixiCanvas || typeof PIXI === 'undefined') return;
+
+  var W = window.innerWidth, H = window.innerHeight;
+  pixiCanvas.width  = W;
+  pixiCanvas.height = H;
+
+  var app = new PIXI.Application({
+    view: pixiCanvas,
+    width: W,
+    height: H,
+    backgroundAlpha: 0,
+    antialias: false,
+    resolution: 1,
+  });
+
+  window.addEventListener('resize', function() {
+    W = window.innerWidth; H = window.innerHeight;
+    app.renderer.resize(W, H);
+    initColumns();
+  });
+
+  // Matrix-style falling code columns
+  var COLS = [];
+  var CHARS = 'ABRDGビリジIA01∑∆Ω⬡◈⧆▶◉⎔Ξ';
+
+  function initColumns() {
+    COLS = [];
+    var colCount = Math.floor(W / 14);
+    for (var i = 0; i < colCount; i++) {
+      COLS.push({
+        x: i * 14 + 7,
+        y: -Math.random() * H,
+        speed: 0.8 + Math.random() * 1.8,
+        len: 8 + Math.floor(Math.random() * 14),
+        chars: [],
+        opacity: 0.04 + Math.random() * 0.08,
+        color: Math.random() < 0.7 ? 0x00ffc3 : (Math.random() < 0.5 ? 0x00d4ff : 0xa855f7),
+      });
+      for (var j = 0; j < 20; j++) {
+        COLS[COLS.length-1].chars.push(CHARS[Math.floor(Math.random() * CHARS.length)]);
+      }
+    }
+  }
+  initColumns();
+
+  var gfx = new PIXI.Graphics();
+  app.stage.addChild(gfx);
+
+  // Horizontal scan lines
+  var scanLines = [];
+  for (var s = 0; s < 3; s++) {
+    scanLines.push({ y: Math.random() * H, speed: 0.3 + Math.random() * 0.5, alpha: 0.06 + Math.random() * 0.06 });
+  }
+
+  app.ticker.add(function() {
+    gfx.clear();
+
+    // Scan lines (horizontal glow streaks)
+    scanLines.forEach(function(sl) {
+      sl.y += sl.speed;
+      if (sl.y > H) sl.y = 0;
+      gfx.lineStyle(1, 0x00ffc3, sl.alpha);
+      gfx.moveTo(0, sl.y);
+      gfx.lineTo(W, sl.y);
+    });
+
+    // Matrix column drops — lightweight version using Graphics dots
+    COLS.forEach(function(col) {
+      col.y += col.speed;
+      if (col.y > H + col.len * 14) {
+        col.y = -Math.random() * 200;
+        col.speed = 0.8 + Math.random() * 1.8;
+      }
+
+      for (var k = 0; k < col.len; k++) {
+        var ky = col.y - k * 13;
+        if (ky < 0 || ky > H) continue;
+        var fade = (1 - k / col.len) * col.opacity;
+        // Head char is brighter
+        if (k === 0) fade = Math.min(0.35, col.opacity * 4);
+        gfx.beginFill(col.color, fade);
+        gfx.drawRect(col.x - 4, ky, 8, 2);
+        gfx.endFill();
+      }
+    });
+
+    // Avatar-linked sparkle burst — fires from top of sidebar area on load
+    // (subtle: 3 random sparkle particles per frame)
+    for (var i = 0; i < 2; i++) {
+      gfx.beginFill(0x00ffc3, 0.05 + Math.random() * 0.06);
+      gfx.drawCircle(
+        Math.random() * 220,   // sidebar width ~220px
+        Math.random() * 160,   // top of sidebar
+        0.8 + Math.random() * 1.5
+      );
+      gfx.endFill();
+    }
+  });
 })();
 </script>
 <script src="/bridge-nav.js" defer></script>
