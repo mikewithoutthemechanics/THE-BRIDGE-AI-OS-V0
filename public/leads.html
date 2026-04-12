@@ -119,8 +119,11 @@ nav{display:flex;align-items:center;gap:1rem;padding:.6rem 1.5rem;background:var
     <a href="/pipeline">Pipeline</a>
     <a href="/hitl.html">HITL</a>
     <a href="/marketplace">Marketplace</a>
+    <a href="/esim-pbx.html">eSIM+PBX</a>
+    <a href="/admin-esim.html">eSIM Admin</a>
   </div>
   <div class="nav-right">
+    <button class="btn btn-ghost btn-sm" onclick="nurtureBulk()" style="font-size:.75rem">🤖 AI Nurture All</button>
     <button class="btn btn-primary" onclick="openModal()">+ New Lead</button>
   </div>
 </nav>
@@ -180,7 +183,7 @@ nav{display:flex;align-items:center;gap:1rem;padding:.6rem 1.5rem;background:var
           <th>Status</th>
           <th>Score</th>
           <th>Tags</th>
-          <th style="width:80px"></th>
+          <th style="width:110px"></th>
         </tr>
       </thead>
       <tbody id="leadsBody">
@@ -349,6 +352,7 @@ function renderTable() {
         <div class="action-btns">
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();quickStatus('${l.id}','contacted')" title="Mark contacted">📞</button>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();quickStatus('${l.id}','qualified')" title="Qualify">✓</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();nurtureWithAI(${JSON.stringify({id:l.id,name:l.name,email:l.email,company:l.company,phone:l.phone||'',status:l.status,score:l.score,tags:l.tags||[],notes:l.notes||''})})" title="AI eSIM Nurture" style="color:var(--cyan);font-size:.72rem">🤖</button>
         </div>
       </td>
     </tr>
@@ -512,6 +516,60 @@ function toast(msg, type = 'ok') {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3000);
+}
+
+// ── AI eSIM Nurture ────────────────────────────────────────────────────────────
+let _nurturePanel = null;
+
+async function nurtureWithAI(lead) {
+  toast('🤖 Running AI nurture analysis…', 'ok');
+  try {
+    const res = await api('/api/esim/nurture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lead_id: lead.id,
+        name: lead.name, email: lead.email, company: lead.company,
+        phone: lead.phone, status: lead.status, score: lead.score,
+        tags: lead.tags, notes: lead.notes, source: 'crm_leads',
+      }),
+    });
+
+    const panel = document.createElement('div');
+    panel.style.cssText = 'position:fixed;bottom:1.5rem;left:1.5rem;width:360px;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:1rem;z-index:500;font-size:.78rem;box-shadow:0 10px 40px rgba(0,0,0,.6)';
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <div style="font-weight:700;color:#fff">🤖 AI Nurture — <span style="color:var(--cyan)">${esc(lead.name)}</span></div>
+        <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:1rem">✕</button>
+      </div>
+      <div style="color:var(--text2);margin-bottom:.5rem"><span style="color:var(--cyan);font-weight:700">Score: ${res.ai_score || '—'}/100</span> · ${esc(res.recommended_plan || 'Global Pro')}</div>
+      <div style="color:var(--text2);line-height:1.5;margin-bottom:.5rem">${esc(res.recommendation || '—')}</div>
+      <div style="color:#38bdf8;font-size:.73rem;margin-bottom:.75rem">→ ${esc(res.next_action || '—')}</div>
+      ${res.email_subject ? `
+        <div style="font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3rem">Email Draft</div>
+        <div style="background:#161b22;border-radius:6px;padding:.6rem .75rem;font-size:.75rem;color:#e6edf3;border:1px solid #21262d">
+          <div style="font-weight:700;margin-bottom:.4rem">${esc(res.email_subject)}</div>
+          <div style="white-space:pre-wrap;color:#8b949e;font-size:.71rem;max-height:100px;overflow:hidden">${esc((res.email_body||'').slice(0, 200))}…</div>
+        </div>
+        <button onclick="navigator.clipboard.writeText(${JSON.stringify(res.email_body||'')})" style="margin-top:.5rem;width:100%;padding:.4rem;border-radius:5px;border:1px solid #30363d;background:transparent;color:#00d4ff;font-size:.75rem;cursor:pointer">Copy Email</button>
+      ` : ''}
+      <div style="font-size:.65rem;color:var(--text3);margin-top:.5rem;text-align:right">Model: ${res.model_used || 'AI'} · Conv. prob: ${Math.round((res.conversion_probability||0)*100)}%</div>
+    `;
+    if (_nurturePanel) _nurturePanel.remove();
+    _nurturePanel = panel;
+    document.body.appendChild(panel);
+    setTimeout(() => panel.remove(), 20000);
+  } catch (e) { toast('Nurture failed: ' + e.message, 'err'); }
+}
+
+async function nurtureBulk() {
+  const active = _leads.filter(l => l.status !== 'closed_won' && l.status !== 'closed_lost').slice(0, 5);
+  if (!active.length) return toast('No active leads', 'err');
+  toast(`🤖 Nurturing ${active.length} leads with AI…`, 'ok');
+  for (const l of active) {
+    await nurtureWithAI({ id: l.id, name: l.name, email: l.email, company: l.company, phone: '', status: l.status, score: l.score, tags: l.tags || [], notes: '' });
+    await new Promise(r => setTimeout(r, 800));
+  }
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
