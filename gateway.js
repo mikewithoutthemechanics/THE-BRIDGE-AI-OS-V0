@@ -1850,6 +1850,26 @@ app.all('/api/config-engine/*path', async (req, res) => {
   }
 });
 
+// ── ULOE API — proxy /api/uloe/* to unified-server (port 3000) ───────────────
+app.all('/api/uloe/*path', async (req, res) => {
+  const url = `http://localhost:3000${req.originalUrl}`;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
+    if (req.headers['content-type'])  opts.headers['Content-Type']   = req.headers['content-type'];
+    if (req.headers['authorization']) opts.headers['Authorization']  = req.headers['authorization'];
+    if (req.headers['cookie'])        opts.headers['Cookie']         = req.headers['cookie'];
+    if (req.headers['x-bridge-admin']) opts.headers['X-Bridge-Admin'] = req.headers['x-bridge-admin'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const setCookie = r.headers.get('set-cookie');
+    if (setCookie) res.setHeader('Set-Cookie', setCookie);
+    const ct = r.headers.get('content-type') || 'application/json';
+    res.status(r.status).set('Content-Type', ct).send(await r.text());
+  } catch (e) {
+    res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
+  }
+});
+
 // ── PLATFORM API — proxy /api/platform/* to unified-server (port 3000) ──────
 app.all('/api/platform/*path', async (req, res) => {
   const url = `http://localhost:3000${req.originalUrl}`;
