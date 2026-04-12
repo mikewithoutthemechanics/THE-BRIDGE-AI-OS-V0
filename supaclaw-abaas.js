@@ -151,14 +151,26 @@ function abaasLoop(state, broadcast) {
   }
 }
 
+// ── Signal injection: push real data into ABAAS scan queues ─────────────────
+// Called by autonomous-pipeline.js every 15s with live lead/market/issue data.
+function pushSignal(type, payload) {
+  if (type === 'market' && Array.isArray(scanQueue.market))  scanQueue.market.push(payload);
+  if (type === 'leads'  && Array.isArray(scanQueue.leads))   scanQueue.leads.push(payload);
+  if (type === 'issues' && Array.isArray(scanQueue.issues))  scanQueue.issues.push(payload);
+  // Cap queue depth so we don't accumulate unbounded data
+  if (scanQueue.market.length > 20)  scanQueue.market.splice(0, scanQueue.market.length - 20);
+  if (scanQueue.leads.length > 20)   scanQueue.leads.splice(0, scanQueue.leads.length - 20);
+  if (scanQueue.issues.length > 20)  scanQueue.issues.splice(0, scanQueue.issues.length - 20);
+}
+
 // ── REGISTER ROUTES ─────────────────────────────────────────────────────────
-module.exports = function registerAbaasLayer(app, state, broadcast) {
+function registerAbaasLayer(app, state, broadcast) {
 
   // Start ABAAS loop (7 second interval, offset from SUPACLAW's 5s)
   setInterval(() => {
     try { abaasLoop(state, broadcast); } catch (e) { console.error('[ABAAS] Loop error:', e.message); }
   }, 7000);
-  console.log('[ABAAS] Agent loop started (7s interval)');
+  console.log('[ABAAS] Agent loop started (7s interval) — live signal injection enabled');
 
   // System
   app.get('/api/abaas/system', (_req, res) => res.json({ ok: true,
@@ -226,4 +238,13 @@ module.exports = function registerAbaasLayer(app, state, broadcast) {
   app.post('/api/abaas/pause', (_req, res) => { abaasActive = false; res.json({ ok: true, paused: true }); });
   app.post('/api/abaas/resume', (_req, res) => { abaasActive = true; res.json({ ok: true, resumed: true }); });
   app.post('/api/abaas/tick', (_req, res) => { abaasLoop(state, broadcast); res.json({ ok: true, cycle: cycleCount }); });
-};
+
+  // Signal injection status
+  app.get('/api/abaas/signals', (_req, res) => res.json({ ok: true,
+    queue_depths: { market: scanQueue.market.length, leads: scanQueue.leads.length, issues: scanQueue.issues.length },
+    cycle: cycleCount,
+  }));
+}
+
+module.exports = registerAbaasLayer;
+module.exports.pushSignal = pushSignal;

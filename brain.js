@@ -2822,6 +2822,19 @@ setImmediate(async () => {
   }
 });
 
+// ── AUTONOMOUS REVENUE PIPELINE (ARP) — master orchestrator ──────────────────
+// Wires: lead intake → qualify → nurture → close → payment → reinvest → ABAAS → AOE
+try {
+  const arp  = require('./lib/autonomous-pipeline');
+  const abaas = require('./supaclaw-abaas');
+  arp.mount(app, {
+    abaasPush: typeof abaas.pushSignal === 'function' ? abaas.pushSignal : null,
+  });
+  console.log('[BRAIN] Autonomous Revenue Pipeline ACTIVE — always running, always compounding');
+} catch (e) {
+  console.warn('[BRAIN] Autonomous pipeline failed:', e.message);
+}
+
 // ── AGENT COMMAND API ──────────────────────────────────────────────────────────
 try {
   const { registerAgentCommands } = require('./lib/agent-commands');
