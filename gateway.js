@@ -928,7 +928,7 @@ app.get('/api/system/state', async (_req, res) => {
 var revenueEngine;
 try {
   revenueEngine = require('./lib/revenue-engine');
-  revenueEngine.start(60000); // Run every 60 seconds
+  revenueEngine.startup(); // Auto-start on server boot
 } catch (e) { console.warn('[REVENUE-ENGINE] Failed to start:', e.message); revenueEngine = null; }
 
 app.get('/api/revenue-engine/status', (_req, res) => {
@@ -956,6 +956,28 @@ app.post('/api/revenue-engine/start', express.json(), (_req, res) => {
 app.post('/api/revenue-engine/stop', (_req, res) => {
   if (!revenueEngine) return res.status(503).json({ ok: false });
   res.json(revenueEngine.stop());
+});
+
+// ── NEW: Revenue Trigger, History, Milestones ────────────────────────────────
+app.post('/api/revenue/trigger', express.json(), async (_req, res) => {
+  if (!revenueEngine) return res.status(503).json({ ok: false, error: 'Revenue engine not loaded' });
+  try {
+    var result = await revenueEngine.tick();
+    res.json({ ok: true, triggered: true, ...result });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/revenue/history', (_req, res) => {
+  if (!revenueEngine) return res.json({ ok: false, history: [] });
+  var limit = parseInt(_req.query.limit, 10) || 50;
+  res.json({ ok: true, history: revenueEngine.getRevenueHistory(limit) });
+});
+
+app.get('/api/revenue/milestones', (_req, res) => {
+  if (!revenueEngine) return res.json({ ok: false, milestones: [] });
+  res.json({ ok: true, ...revenueEngine.getMilestones() });
 });
 
 app.get('/api/pricing', (_req, res) => {
