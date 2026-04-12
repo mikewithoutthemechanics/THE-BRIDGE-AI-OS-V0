@@ -84,7 +84,7 @@ function sanitizeUser(user) {
 
 function signAccessToken(user) {
   return jwt.sign(
-    { sub: user.id, email: user.email, role: user.role || 'user', plan: user.plan || 'visitor' },
+    { sub: user.id, email: user.email, role: user.role || 'user', plan: user.plan || 'free' },
     JWT_SECRET,
     { expiresIn: '7d' },
   );

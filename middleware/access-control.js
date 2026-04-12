@@ -80,7 +80,18 @@ async function extractUser(req) {
 
   // Try Bridge JWT first (backward compat)
   const bridgeUser = await userDb.verifyAuthToken(token);
-  if (bridgeUser) return bridgeUser;
+  if (bridgeUser) {
+    // Upgrade any stale 'visitor' plan — email+password users were previously created with visitor
+    if (bridgeUser.plan === 'visitor') {
+      try {
+        const { supabase: supa } = require('../lib/supabase');
+        await supa.from('users').update({ plan: 'free', funnel_stage: 'identified' }).eq('id', bridgeUser.id);
+        bridgeUser.plan = 'free';
+        bridgeUser.funnel_stage = 'identified';
+      } catch (_) {}
+    }
+    return bridgeUser;
+  }
 
   // Try Supabase JWT
   try {
