@@ -295,4 +295,114 @@ module.exports = function registerEconomyEngine(app, state, broadcast) {
   // Control
   app.post('/api/economy/pause', (_req, res) => { econActive = false; res.json({ ok: true }); });
   app.post('/api/economy/resume', (_req, res) => { econActive = true; res.json({ ok: true }); });
+
+  // ── TASK MARKETPLACE ─────────────────────────────────────────────────────
+  // POST /api/tasks/submit - submit new task for processing
+  app.post('/api/tasks/submit', (req, res) => {
+    const { title, description, price, agent_type_needed, deadline } = req.body;
+    if (!title || !price || !agent_type_needed) {
+      return res.status(400).json({ ok: false, error: 'title, price, and agent_type_needed are required' });
+    }
+    const validTypes = ['scroller', 'writer', 'analyst', 'coder'];
+    if (!validTypes.includes(agent_type_needed)) {
+      return res.status(400).json({ ok: false, error: 'agent_type_needed must be scroller/writer/analyst/coder' });
+    }
+    const task = {
+      id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      title,
+      description: description || '',
+      price: parseFloat(price) || 0,
+      agent_type_needed,
+      deadline: deadline || null,
+      status: 'pending',
+      assigned_to: null,
+      completed_at: null,
+      payout: null,
+      created_at: Date.now(),
+    };
+    taskQueue.push(task);
+    res.json({ ok: true, task });
+  });
+
+  // GET /api/tasks/available - list pending tasks with optional filtering
+  app.get('/api/tasks/available', (req, res) => {
+    const { agent_type, status = 'pending' } = req.query;
+    let tasks = taskQueue.filter(t => t.status === status || !status);
+    if (agent_type) {
+      tasks = tasks.filter(t => t.agent_type_needed === agent_type);
+    }
+    res.json({ ok: true, count: tasks.length, tasks });
+  });
+
+  // POST /api/tasks/:id/assign - assign task to an agent
+  app.post('/api/tasks/:id/assign', (req, res) => {
+    const { agent_id } = req.body;
+    const task = taskQueue.find(t => t.id === req.params.id);
+    if (!task) {
+      return res.status(404).json({ ok: false, error: 'Task not found' });
+    }
+    if (task.status !== 'pending') {
+      return res.status(400).json({ ok: false, error: 'Task is not available' });
+    }
+    if (!agent_id) {
+      return res.status(400).json({ ok: false, error: 'agent_id required' });
+    }
+    task.status = 'assigned';
+    task.assigned_to = agent_id;
+    task.assigned_at = Date.now();
+    res.json({ ok: true, task });
+  });
+
+  // POST /api/tasks/:id/complete - mark task complete, calculate payout, credit agent
+  app.post('/api/tasks/:id/complete', (req, res) => {
+    const { agent_id, cost = 0, time_ms = 0 } = req.body;
+    const task = taskQueue.find(t => t.id === req.params.id);
+    if (!task) {
+      return res.status(404).json({ ok: false, error: 'Task not found' });
+    }
+    if (task.status !== 'assigned') {
+      return res.status(400).json({ ok: false, error: 'Task is not assigned' });
+    }
+    if (!agent_id) {
+      return res.status(400).json({ ok: false, error: 'agent_id required' });
+    }
+    const payout = task.price;
+    task.status = 'completed';
+    task.completed_at = Date.now();
+    task.payout = payout;
+    task.cost = parseFloat(cost) || 0;
+    task.time_ms = parseInt(time_ms) || 0;
+    const account = getAccount(agent_id);
+    account.balance += payout;
+    account.earned += payout;
+    account.transactions.push({ type: 'task_payout', task_id: task.id, amount: payout, ts: Date.now() });
+    res.json({ ok: true, task, payout, account_balance: account.balance });
+  });
+
+  // GET /api/agents/earnings/:agentId - get agent earnings
+  app.get('/api/agents/earnings/:agentId', (req, res) => {
+    const account = getAccount(req.params.agentId);
+    res.json({ ok: true,
+      agent_id: req.params.agentId,
+      balance: account.balance,
+      earned: account.earned,
+      spent: account.spent,
+      transaction_count: account.transactions.length,
+    });
+  });
+
+  // POST /api/agents/earnings/:agentId/withdraw - withdraw from agent earnings
+  app.post('/api/agents/earnings/:agentId/withdraw', (req, res) => {
+    const { amount } = req.body;
+    const agentId = req.params.agentId;
+    const account = getAccount(agentId);
+    const amt = parseFloat(amount) || 0;
+    if (amt <= 0 || amt > account.balance) {
+      return res.status(400).json({ ok: false, error: 'Invalid withdrawal amount' });
+    }
+    account.balance -= amt;
+    account.spent += amt;
+    account.transactions.push({ type: 'withdraw', amount: amt, ts: Date.now() });
+    res.json({ ok: true, balance: account.balance, withdrawn: amt });
+  });
 };
