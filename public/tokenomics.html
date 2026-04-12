@@ -1058,23 +1058,30 @@
       Real on-chain revenue.
     </p>
 
-    <div class="hero-stats" style="margin-top: 0; margin-bottom: 48px;">
+    <div class="hero-stats" style="margin-top: 0; margin-bottom: 24px;">
       <div class="hero-stat">
         <div class="hero-stat-value hero-stat-accent">100M</div>
         <div class="hero-stat-label">Hard Cap</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-value hero-stat-accent-gold">1%</div>
-        <div class="hero-stat-label">Burn / Transfer</div>
+        <div id="stat-burned" class="hero-stat-value hero-stat-accent-gold">—</div>
+        <div class="hero-stat-label">BRDG Burned</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-value hero-stat-accent-green">Linea</div>
-        <div class="hero-stat-label">Chain 59144</div>
+        <div id="stat-circulating" class="hero-stat-value hero-stat-accent-green">—</div>
+        <div class="hero-stat-label">Circulating</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-value" style="color: var(--accent-purple);">ERC-20</div>
-        <div class="hero-stat-label">Standard</div>
+        <div id="stat-treasury" class="hero-stat-value" style="color: var(--accent-purple);">—</div>
+        <div class="hero-stat-label">Treasury BRDG</div>
       </div>
+    </div>
+
+    <!-- Live chain status bar -->
+    <div id="live-chain-bar" style="display:flex;align-items:center;gap:16px;padding:10px 20px;background:rgba(99,179,237,0.06);border:1px solid var(--border-bright);border-radius:8px;margin-bottom:32px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-secondary);">
+      <span style="color:var(--accent-cyan);font-weight:700;">⬡ LIVE</span>
+      <span>Contract: <a id="live-contract" href="#" target="_blank" style="color:var(--accent-blue);text-decoration:none;">loading...</a></span>
+      <span style="margin-left:auto;opacity:0.5;" id="live-ts"></span>
     </div>
 
     <div class="hero-actions">
@@ -2171,6 +2178,52 @@
       animation: { duration: 1600, easing: 'easeInOutQuart' }
     }
   });
+
+  // ── LIVE ON-CHAIN DATA ───────────────────────────────────
+  (async function loadLiveData() {
+    try {
+      const res = await fetch('/api/brdg/token');
+      if (!res.ok) return;
+      const d = await res.json();
+
+      const fmt = (n) => {
+        const num = parseFloat(n);
+        if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+        if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+        return num.toFixed(2);
+      };
+
+      // Hero stats
+      const burned = document.getElementById('stat-burned');
+      const circ   = document.getElementById('stat-circulating');
+      const treas  = document.getElementById('stat-treasury');
+
+      if (burned && d.token?.totalBurned !== undefined)
+        burned.textContent = fmt(d.token.totalBurned) + ' BRDG';
+
+      if (circ && d.token?.circulatingSupply !== undefined)
+        circ.textContent = fmt(d.token.circulatingSupply) + ' BRDG';
+
+      if (treas && d.treasury?.brdgBalance !== undefined)
+        treas.textContent = fmt(d.treasury.brdgBalance) + ' BRDG';
+
+      // Contract link
+      const contractEl = document.getElementById('live-contract');
+      if (contractEl && d.token?.address) {
+        const addr = d.token.address;
+        const short = addr.slice(0, 6) + '…' + addr.slice(-4);
+        contractEl.textContent = short;
+        contractEl.href = d.lineascan || ('#');
+      }
+
+      // Timestamp
+      const tsEl = document.getElementById('live-ts');
+      if (tsEl) tsEl.textContent = 'updated ' + new Date().toLocaleTimeString();
+
+    } catch (_) {
+      // Fail silently — static content remains visible
+    }
+  })();
 </script>
 
 </body>

@@ -2482,6 +2482,7 @@ const GATEWAY_SHORT_ROUTES = {
   '/activation': '/activation.html',
   '/runtime':    '/runtime.html',
   '/leads':      '/leads.html',
+  '/tokenomics': '/tokenomics.html',
 };
 Object.entries(GATEWAY_SHORT_ROUTES).forEach(([short, target]) => {
   app.get(short, (_req, res) => res.redirect(target));
