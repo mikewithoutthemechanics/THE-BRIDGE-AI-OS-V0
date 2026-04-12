@@ -47,22 +47,36 @@ input:focus{border-color:var(--a)}
 .section h3{font-size:1rem;font-weight:700;margin-bottom:.75rem;color:var(--a);padding-bottom:.3rem;border-bottom:1px solid #1a2a3a}
 @media(max-width:600px){main{padding:1rem}h1{font-size:1.4rem}.ep-header{flex-direction:column;align-items:flex-start}}
 </style>
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<nav class="topnav">
-  <a href="/" class="logo">Bridge AI</a>
-  <a href="/">Dashboard</a>
-  <a href="/trading.html">Trading</a>
-  <a href="/defi.html">DeFi</a>
-  <a href="/wallet.html">Wallet</a>
-  <a href="/governance.html">Governance</a>
-  <a href="/intelligence.html">Intelligence</a>
-  <a href="/docs.html" class="active">Docs</a>
-  <a href="/settings.html">Settings</a>
+
+<nav class="nav">
+  <div class="nav-brand"><span>Bridge</span> AI OS</div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">&#9776;</button>
+  <div class="nav-links" id="nav-links">
+    <a href="/">Home</a>
+    <a href="#features">Features</a>
+    <a href="#try-it">Try It</a>
+    <a href="#economy">Economy</a>
+    <a href="/pricing.html">Pricing</a>
+    <a href="#api">API</a>
+    <a href="/portal.html">Client Portal</a>
+    <a href="/onboarding.html" class="nav-cta" id="nav-auth-btn">Sign In</a>
+  </div>
 </nav>
+
+<div class="hero" style="min-height:auto;padding:6rem 1.5rem 3rem">
+  <div class="badge"><span class="pulse"></span> API Reference</div>
+  <h1>Documentation</h1>
+  <p class="sub" style="max-width:600px;margin:0 auto 2rem">Complete API reference with curl examples for economy, BRDG, agents, primes, and more.</p>
+  <div class="cta-row">
+    <a href="#endpoints" class="btn btn-primary">Browse Endpoints</a>
+    <a href="/onboarding.html" class="btn btn-outline">Get API Key</a>
+  </div>
+</div>
+<section id="endpoints">
 <main>
-  <h1>API Documentation</h1>
-  <p class="subtitle">Complete endpoint reference with curl examples</p>
 
   <div class="card" style="padding:.75rem 1rem;margin-bottom:1rem">
     <div style="display:flex;align-items:center;gap:.5rem;font-size:.85rem">
@@ -82,6 +96,7 @@ input:focus{border-color:var(--a)}
   <div class="category-nav" id="cat-nav"></div>
   <div id="endpoints-container"></div>
 </main>
+</section>
 
 <script>
 (function(){
@@ -272,5 +287,17 @@ input:focus{border-color:var(--a)}
 </script>
 <script src="/global-nav.js" defer></script>
 <script src="/bridge-widget.js" defer></script>
+
+<footer>
+  <div class="footer-links">
+    <a href="/portal.html">Client Portal</a>
+    <a href="/pricing.html">Pricing</a>
+    <a href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947">BRDG Token</a>
+    <a href="/sitemap.xml">Sitemap</a>
+    <a href="/health">Status</a>
+  </div>
+  <p>Bridge AI OS &middot; <a href="https://bridge-ai-os.com">bridge-ai-os.com</a></p>
+</footer>
+
 </body>
 </html>
