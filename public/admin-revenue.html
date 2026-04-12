@@ -510,22 +510,32 @@ async function loadAll() {
     try {
       var proofR = await fetch('/api/proofs/payments?limit=100').then(function(r){return r.json();}).catch(function(){return {};});
       var proofs = (proofR.data && proofR.data.proofs) || proofR.proofs || [];
+      var totalRev = proofs.reduce(function(s, p) { return s + parseFloat(p.amount || 0); }, 0);
       if (proofs.length >= 2) {
         var firstTs = new Date(proofs[proofs.length - 1].created_at || proofs[proofs.length - 1].timestamp).getTime();
         var lastTs = new Date(proofs[0].created_at || proofs[0].timestamp).getTime();
-        var hours = Math.max((lastTs - firstTs) / 3600000, 0.01);
-        var totalRev = proofs.reduce(function(s, p) { return s + parseFloat(p.amount || 0); }, 0);
-        var perHour = totalRev / hours;
-        $('k-rev-per-hour').textContent = 'R' + fmt(perHour);
-        $('k-rev-per-hour-detail').textContent = fmt(proofs.length) + ' transactions over ' + hours.toFixed(1) + ' hours';
-        var projected = perHour * 24 * 30;
-        $('k-rev-projected').textContent = 'R' + fmt(projected);
-        $('k-rev-projected-detail').textContent = 'R' + fmt(perHour * 24) + '/day at current rate';
+        var hours = (lastTs - firstTs) / 3600000;
+        // Require at least 24h of spread before projecting a rate — otherwise
+        // a burst of sign-ups in minutes would produce billions/month.
+        var MIN_HOURS_FOR_RATE = 24;
+        if (hours >= MIN_HOURS_FOR_RATE) {
+          var perHour = totalRev / hours;
+          $('k-rev-per-hour').textContent = 'R' + fmt(perHour);
+          $('k-rev-per-hour-detail').textContent = fmt(proofs.length) + ' transactions over ' + hours.toFixed(1) + ' hours';
+          var projected = perHour * 24 * 30;
+          $('k-rev-projected').textContent = 'R' + fmt(projected);
+          $('k-rev-projected-detail').textContent = 'R' + fmt(perHour * 24) + '/day at current rate';
+        } else {
+          $('k-rev-per-hour').textContent = '--';
+          $('k-rev-per-hour-detail').textContent = fmt(proofs.length) + ' transactions — need 24h of data for rate';
+          $('k-rev-projected').textContent = '--';
+          $('k-rev-projected-detail').textContent = 'Total so far: R' + fmt(totalRev);
+        }
       } else if (proofs.length === 1) {
-        $('k-rev-per-hour').textContent = 'R' + fmt(parseFloat(proofs[0].amount || 0));
-        $('k-rev-per-hour-detail').textContent = '1 transaction (rate TBD)';
+        $('k-rev-per-hour').textContent = '--';
+        $('k-rev-per-hour-detail').textContent = '1 transaction — need more data points';
         $('k-rev-projected').textContent = '--';
-        $('k-rev-projected-detail').textContent = 'Need more data points';
+        $('k-rev-projected-detail').textContent = 'Total so far: R' + fmt(totalRev);
       }
     } catch(_) {}
   } catch(_) {}

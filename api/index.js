@@ -764,7 +764,7 @@ module.exports = async (req, res) => {
     const { data: user, error: insertErr } = await supabase.from('users').insert({
       id: userId, email: body.email.toLowerCase().trim(), password_hash,
       brdg_balance: 0, first_seen: now, last_seen: now,
-      oauth_provider: 'email', plan: 'client', funnel_stage: 'visitor',
+      oauth_provider: 'email', plan: 'free', funnel_stage: 'identified',
       lead_score: 0, conversations: 0, role: 'user',
     }).select().single();
     if (insertErr) return json(res, { error: 'Registration failed: ' + insertErr.message }, 500);
