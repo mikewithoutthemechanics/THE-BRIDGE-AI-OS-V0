@@ -140,6 +140,28 @@ select option{background:#080d18}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;margin-left:6px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ── Small screen fine-tuning ── */
+@media(max-width:640px){
+  .topbar{padding:6px 12px;gap:8px}
+  .topbar-right{gap:5px}
+  .platform-pill{padding:2px 7px;font-size:.58rem}
+  .platform-pill:nth-child(n+4){display:none}
+  .command-title{font-size:1.8rem}
+  .command-subtitle{font-size:.78rem}
+  .features-strip{grid-template-columns:1fr 1fr}
+  .revenue-strip{padding:8px 12px}
+  .form-header{padding:16px 18px 12px}
+  .form-body{padding:0 18px 18px}
+  .mode-toggle{margin:12px 18px}
+  .footer-links{padding:10px 18px;font-size:.58rem}
+  .xp-hud{padding:7px 10px;gap:8px}
+}
+@media(max-width:380px){
+  .command-title{font-size:1.5rem}
+  .features-strip{grid-template-columns:1fr}
+  .platform-pill:nth-child(n+3){display:none}
+}
+
 /* ── GAMIFICATION XP HUD ── */
 .xp-hud{display:flex;align-items:center;gap:12px;max-width:480px;width:100%;margin-bottom:1rem;padding:10px 14px;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:8px}
 .xp-hud-level{font-size:.65rem;font-weight:800;color:var(--cyan);letter-spacing:.2em;white-space:nowrap}

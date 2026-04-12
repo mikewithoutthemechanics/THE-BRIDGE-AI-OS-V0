@@ -54,6 +54,27 @@
   /* Asset SVG animations */
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   @keyframes spinr{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}
+
+  /* ── Mobile responsive ── */
+  @media(max-width:768px){
+    body{min-height:100dvh;overflow:auto}
+    #topbar{flex-wrap:wrap;gap:6px;height:auto;padding:8px 12px}
+    #topbar .pill:nth-child(n+4){display:none}
+    #app{flex-direction:column;overflow:visible;min-height:0}
+    #sidebar{width:100%;height:auto;max-height:260px;border-right:none;border-bottom:1px solid #0ff2;flex-direction:row;flex-wrap:wrap;overflow-x:auto;overflow-y:hidden;gap:6px;padding:8px}
+    .scard{min-width:140px;flex:1}
+    #positionCard{order:-1;min-width:100%}
+    #main{min-height:60dvh;overflow:hidden}
+    #terminal{font-size:.72rem}
+    #cmd{font-size:.78rem;padding:8px 10px}
+    #execBtn{padding:8px 12px;font-size:.75rem}
+    #pixi-runtime{display:none}
+  }
+  @media(max-width:480px){
+    .scard{min-width:120px;font-size:.72rem}
+    .fed-link{font-size:.65rem}
+    #topbar .logo{font-size:11px}
+  }
 </style>
 </head>
 <body>

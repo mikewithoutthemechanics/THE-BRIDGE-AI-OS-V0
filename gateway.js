@@ -2164,6 +2164,27 @@ app.post('/api/usage/event', express.json(), async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// ── Newsletter subscription ────────────────────────────────────────────────
+app.post('/api/subscribe', express.json(), async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email || !email.includes('@')) return res.status(400).json({ ok: false, error: 'Valid email required' });
+    const { createClient } = require('@supabase/supabase-js');
+    const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    // Upsert into newsletter_subscribers table (create if not exists gracefully)
+    const { error } = await sb.from('newsletter_subscribers').upsert(
+      { email: email.toLowerCase().trim(), subscribed_at: new Date().toISOString(), source: 'portal' },
+      { onConflict: 'email', ignoreDuplicates: false }
+    );
+    if (error && !error.message.includes('does not exist')) {
+      return res.status(500).json({ ok: false, error: error.message });
+    }
+    // Also tag any matching user in users table
+    await sb.from('users').update({ newsletter: true }).eq('email', email.toLowerCase().trim()).catch(() => {});
+    res.json({ ok: true, message: 'Subscribed successfully' });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // ── BRAIN PROXY — forward unknown /api/* to brain on 8000 ────────────────────
 // ── TWIN API — proxy /api/twin/* to unified-server (port 3000) ──────────────
 app.all('/api/twin/*path', async (req, res) => {
