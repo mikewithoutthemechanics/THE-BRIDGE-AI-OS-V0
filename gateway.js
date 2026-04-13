@@ -45,7 +45,9 @@ let agents; try { agents = require('./lib/agents'); } catch (_) { agents = null;
 let neurolink;
 try {
   neurolink = require('./lib/neurolink/runtime');
-  if (process.env.NODE_ENV !== 'test') {
+  // Jest sets JEST_WORKER_ID even when a test file forgets NODE_ENV=test (e.g. gateway.test.js).
+  // Auto-starting the streaming pipeline there leaks the async processLoop and forces worker exit.
+  if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
     neurolink.start().then(meta => {
       console.log('[NEUROLINK] Pipeline active:', meta.device, meta.channels + 'ch');
     }).catch(e => console.warn('[NEUROLINK] Start failed:', e.message));
@@ -61,7 +63,7 @@ try {
   zt          = require('./lib/zero-trust');
   proofStore  = require('./lib/proof-store');
   chainVerify = require('./lib/chain-verify');
-  if (process.env.NODE_ENV !== 'test') {
+  if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
     require('./lib/migrate-zero-trust').ensureTables().catch(() => {});
   }
 } catch (e) {
@@ -129,7 +131,8 @@ try {
 } catch(e) { console.warn('[GATEWAY] Access control not loaded:', e.message); }
 
 // Serve only the public/ directory — never expose the project root (security: #31)
-app.use(express.static(path.join(ROOT, 'public')));
+// extensions:['html'] enables clean URLs: /claude-partner → claude-partner.html
+app.use(express.static(path.join(ROOT, 'public'), { extensions: ['html'] }));
 
 // ── OAUTH CONFIG (public — no auth) ─────────────────────────────────────────
 // Exposes client IDs so frontend pages can initiate OAuth without hardcoding.
