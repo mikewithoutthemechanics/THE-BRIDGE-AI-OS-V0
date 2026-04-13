@@ -3,11 +3,254 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Autonomous Solution Architecture Engine v4</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Bridge AI OS — Orchestrating the Future of AI</title>
+  <meta name="description" content="Bridge AI OS — AI-powered business automation platform. 71 AI agents, Digital Twins, treasury, CRM, and more on Linea zkEVM.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://go.ai-os.co.za/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://go.ai-os.co.za/">
+  <meta property="og:title" content="Bridge AI OS — Orchestrating the Future of AI">
+  <meta property="og:description" content="AI-powered business automation. 71 agents, Digital Twins, CRM, treasury, and more.">
+  <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+  <meta property="og:site_name" content="Bridge AI OS">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bridge AI OS — Orchestrating the Future of AI">
+  <meta name="twitter:description" content="AI-powered business automation. 71 agents, Digital Twins, CRM, treasury, and more.">
+  <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050a0f;
+      --surface: #0d1620;
+      --border: #1a2d40;
+      --accent: #00c8ff;
+      --green: #00e57b;
+      --text: #c8dce8;
+      --dim: #4d6678;
+      --purple: #a78bfa;
+    }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+    /* ── Nav ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 2rem; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: rgba(5,10,15,.95); backdrop-filter: blur(8px); z-index: 100;
+    }
+    .nav-logo { font-size: 1.2rem; font-weight: 800; color: var(--accent); letter-spacing: .2em; }
+    .nav-logo span { color: var(--green); }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--dim); text-decoration: none; font-size: .82rem; letter-spacing: .08em; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta { padding: .5rem 1.2rem; background: var(--accent); color: #050a0f; border-radius: 6px; font-weight: 700; font-size: .8rem; letter-spacing: .08em; text-decoration: none; transition: filter .2s; }
+    .nav-cta:hover { filter: brightness(1.15); color: #050a0f; }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center; padding: 6rem 2rem 4rem;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,200,255,.08) 0%, transparent 70%);
+    }
+    .hero-badge { display: inline-block; padding: .3rem .9rem; background: rgba(0,200,255,.1); border: 1px solid rgba(0,200,255,.3); border-radius: 20px; font-size: .7rem; letter-spacing: .15em; color: var(--accent); margin-bottom: 1.5rem; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.15; margin-bottom: 1.2rem; }
+    .hero h1 .grad { background: linear-gradient(135deg, var(--accent), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p { font-size: 1.05rem; color: var(--dim); max-width: 580px; margin: 0 auto 2.5rem; line-height: 1.7; }
+    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-hero { padding: .85rem 2rem; border-radius: 8px; font-size: .88rem; font-weight: 700; letter-spacing: .06em; text-decoration: none; transition: filter .2s, transform .15s; display: inline-block; }
+    .btn-hero:hover { filter: brightness(1.12); transform: translateY(-1px); }
+    .btn-primary { background: var(--accent); color: #050a0f; }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--accent); }
+
+    /* ── Stats strip ── */
+    .stats { display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; padding: 2rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface); }
+    .stat { text-align: center; }
+    .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+    .stat-label { font-size: .7rem; color: var(--dim); letter-spacing: .1em; margin-top: .2rem; }
+
+    /* ── Features grid ── */
+    .features { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+    .section-label { text-align: center; font-size: .7rem; letter-spacing: .2em; color: var(--accent); margin-bottom: .8rem; }
+    .section-title { text-align: center; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; margin-bottom: 3rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; transition: border-color .2s, transform .2s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card-icon { font-size: 1.8rem; margin-bottom: .8rem; }
+    .card h3 { font-size: .95rem; font-weight: 700; color: var(--text); margin-bottom: .4rem; }
+    .card p { font-size: .8rem; color: var(--dim); line-height: 1.6; }
+
+    /* ── Auth panel ── */
+    .auth-section { padding: 5rem 2rem; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .auth-inner { max-width: 440px; margin: 0 auto; text-align: center; }
+    .auth-inner h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: .5rem; }
+    .auth-inner p { font-size: .85rem; color: var(--dim); margin-bottom: 2rem; }
+    .oauth-btn {
+      display: flex; align-items: center; justify-content: center; gap: .6rem;
+      width: 100%; padding: .8rem; border-radius: 8px; font-size: .85rem; font-weight: 600;
+      cursor: pointer; border: none; margin-bottom: .8rem; transition: filter .2s;
+    }
+    .oauth-btn:hover { filter: brightness(1.1); }
+    .btn-google { background: #fff; color: #333; border: 1px solid #ddd; }
+    .btn-github { background: #24292e; color: #fff; }
+    .divider { display: flex; align-items: center; gap: .8rem; margin: 1rem 0; font-size: .65rem; color: var(--dim); letter-spacing: .1em; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .auth-link { font-size: .8rem; color: var(--dim); margin-top: 1rem; }
+    .auth-link a { color: var(--accent); text-decoration: none; }
+    .msg { padding: .5rem .8rem; border-radius: 6px; font-size: .75rem; margin-top: .8rem; display: none; }
+    .msg.err { display: block; background: rgba(255,60,90,.1); border: 1px solid #ff3c5a; color: #ff3c5a; }
+
+    /* ── Footer ── */
+    footer { text-align: center; padding: 2rem; font-size: .7rem; color: var(--dim); border-top: 1px solid var(--border); }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    @media (max-width: 600px) {
+      nav { padding: 1rem; }
+      .nav-links { gap: .8rem; }
+      .hero { padding: 4rem 1.5rem 3rem; }
+      .stats { gap: 1.5rem; }
+    }
+  </style>
 </head>
 <body>
-  <div id="terminal"></div>
-  <script src="script.js"></script>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">BRIDGE <span>AI</span></div>
+  <div class="nav-links">
+    <a href="/apps">50 Apps</a>
+    <a href="/pricing">Pricing</a>
+    <a href="/docs">Docs</a>
+    <a href="/onboarding" class="nav-cta">Get Started</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">AI OPERATING SYSTEM · LINEA ZKEVM</div>
+  <h1>Orchestrating the<br><span class="grad">Future of AI</span></h1>
+  <p>Bridge AI OS gives your business 71 AI agents, a Digital Twin, CRM, treasury automation, and blockchain-native revenue sharing — all in one platform.</p>
+  <div class="hero-actions">
+    <a href="/onboarding" class="btn-hero btn-primary">Start Free</a>
+    <a href="/apps" class="btn-hero btn-outline">See 50 Applications</a>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat"><div class="stat-num">71</div><div class="stat-label">AI AGENTS</div></div>
+  <div class="stat"><div class="stat-num">50+</div><div class="stat-label">APPLICATIONS</div></div>
+  <div class="stat"><div class="stat-num">R0</div><div class="stat-label">TO START</div></div>
+  <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">AUTONOMOUS</div></div>
+</div>
+
+<!-- Features -->
+<section class="features">
+  <div class="section-label">PLATFORM CAPABILITIES</div>
+  <h2 class="section-title">Everything your business needs</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">🤖</div>
+      <h3>71 AI Agents</h3>
+      <p>Autonomous agents for sales, support, finance, legal, marketing, and operations — all running 24/7 without supervision.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🧬</div>
+      <h3>Digital Twins</h3>
+      <p>Live digital replicas of your business, staff, and processes. Make decisions with real-time simulation before you act.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💰</div>
+      <h3>Treasury & UBI</h3>
+      <p>On-chain treasury with BRDG token, automated payouts, UBI pool distribution, and full audit trail on Linea zkEVM.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h3>CRM & Lead Pipeline</h3>
+      <p>Full lead-to-close automation with HITL approval gates, nurture sequences, and real-time deal intelligence.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📡</div>
+      <h3>eSIM & PBX</h3>
+      <p>Built-in business telephony. Virtual SIMs, call routing, voice AI, and carrier management — no third-party PBX needed.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔐</div>
+      <h3>Zero-Trust Security</h3>
+      <p>JWT authentication, HMAC-signed TVM matrix, RLS policies, and cryptographic proof chains across all modules.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Quick sign-in -->
+<section class="auth-section">
+  <div class="auth-inner">
+    <h2>Get started in seconds</h2>
+    <p>Sign in with Google or GitHub — no credit card needed for the free tier.</p>
+
+    <button class="oauth-btn btn-google" onclick="googleAuth()">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continue with Google
+    </button>
+    <button class="oauth-btn btn-github" onclick="githubAuth()">
+      <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      Continue with GitHub
+    </button>
+
+    <div class="divider">OR</div>
+    <a href="/onboarding" class="btn-hero btn-outline" style="display:block;text-align:center;width:100%;padding:.75rem;">Sign up with Email</a>
+    <p class="auth-link">Already have an account? <a href="/onboarding">Sign in</a></p>
+    <div class="msg err" id="auth-err"></div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Bridge AI OS · <a href="/legal">Legal</a> · <a href="/docs">Docs</a> · <a href="/pricing">Pricing</a> · Built on Linea zkEVM</p>
+</footer>
+
+<script>
+  let _supabase = null;
+  (async function () {
+    try {
+      const r = await fetch('/api/config/oauth');
+      if (!r.ok) return;
+      const cfg = await r.json();
+      if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {
+        _supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+      }
+    } catch (_) {}
+  })();
+
+  function showErr(msg) {
+    const el = document.getElementById('auth-err');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function callbackUrl() {
+    return window.location.origin + '/auth-callback';
+  }
+
+  async function googleAuth() {
+    if (!_supabase) { showErr('OAuth initialising — please wait a moment and try again.'); return; }
+    const { error } = await _supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: callbackUrl() },
+    });
+    if (error) showErr(error.message);
+  }
+
+  async function githubAuth() {
+    if (!_supabase) { showErr('OAuth initialising — please wait a moment and try again.'); return; }
+    const { error } = await _supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: { redirectTo: callbackUrl() },
+    });
+    if (error) showErr(error.message);
+  }
+</script>
 </body>
 </html>

@@ -3739,6 +3739,16 @@ module.exports = async (req, res) => {
     return json(res, { ok: true, users, count: users.length });
   }
 
+  // ── /api/config/oauth — public endpoint for client-side Supabase Auth init ──
+  if (p === '/api/config/oauth' && req.method === 'GET') {
+    const supabaseUrl  = process.env.SUPABASE_URL  || '';
+    const anonKey      = process.env.SUPABASE_ANON_KEY || '';
+    if (!supabaseUrl || !anonKey) {
+      return json(res, { ok: false, error: 'OAuth not configured' }, 503);
+    }
+    return json(res, { ok: true, supabaseUrl, supabaseAnonKey: anonKey });
+  }
+
   // ── /api/admin/config — system config read ──
   if (p === '/api/admin/config') {
     const user = requireAuthOrFail(req, res); if (!user) return;
@@ -4017,7 +4027,7 @@ module.exports = async (req, res) => {
     const authClient = supabaseAnon || supabase;
     if (!authClient) return res.redirect('/join?error=oauth_not_configured');
 
-    const publicUrl = process.env.PUBLIC_URL || 'https://ai-os.co.za';
+    const publicUrl = process.env.PUBLIC_URL || 'https://go.ai-os.co.za';
     const wizardParams = new URLSearchParams();
     if (req.query.wizard)   wizardParams.set('wizard',   req.query.wizard);
     if (req.query.intent)   wizardParams.set('intent',   req.query.intent);
