@@ -3,6 +3,8 @@
 // Port: 8080
 // =============================================================================
 
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+
 const BRAIN_HOST = process.env.BRAIN_HOST || 'localhost';
 const SYSTEM_HOST = process.env.SYSTEM_HOST || 'localhost';
 
