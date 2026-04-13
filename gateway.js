@@ -3,6 +3,8 @@
 // Port: 8080
 // =============================================================================
 
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+
 const BRAIN_HOST = process.env.BRAIN_HOST || 'localhost';
 const SYSTEM_HOST = process.env.SYSTEM_HOST || 'localhost';
 
@@ -2831,7 +2833,7 @@ app.get('/', (req, res) => {
 // Default 0.0.0.0 so curl http://127.0.0.1:PORT works on typical Linux VPS (IPv6-only :: often rejects IPv4 loopback).
 // Override: PORT=8080 GATEWAY_LISTEN_HOST=:: node gateway.js
 if (require.main === module) {
-  const port = parseInt(process.env.PORT || '8080', 10);
+  const port = parseInt(process.env.GATEWAY_PORT || process.env.PORT || '8080', 10);
   const host = process.env.GATEWAY_LISTEN_HOST || '0.0.0.0';
   const server = app.listen(port, host, () => {
     console.log('[GATEWAY] Bridge AI OS unified gateway listening on http://' + host + ':' + port);

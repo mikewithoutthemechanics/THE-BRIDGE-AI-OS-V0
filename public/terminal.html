@@ -140,7 +140,11 @@
 <script>
   const MAX_TABS = 4;
   const WS_PROTO = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const WS_URL = `${WS_PROTO}//${location.host}/terminal`;
+  // In production nginx proxies /terminal → :5002. Locally the proxy runs on :5002 directly.
+  const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const WS_URL   = IS_LOCAL
+    ? `${WS_PROTO}//localhost:5002`
+    : `${WS_PROTO}//${location.host}/terminal`;
   const IS_SERVERLESS = location.hostname.includes('vercel.app') || location.hostname.includes('.vercel.');
   const tabs = [];
   let activeTab = -1;
@@ -272,12 +276,8 @@
     }
     switchTab(idx);
 
-    // Input -> WS
-    term.onData(data => {
-      if (tab.ws && tab.ws.readyState === WebSocket.OPEN) {
-        tab.ws.send(data);
-      }
-    });
+    // Input -> buffered command handler (routes exec protocol, not raw PTY)
+    term.onData(data => handleTerminalInput(tab, data));
 
     // Resize
     term.onResize(({ cols, rows }) => {
@@ -299,31 +299,50 @@
 
     ws.onopen = () => {
       tab.retries = 0;
-      document.getElementById('conn-status').textContent = 'CONNECTED';
-      document.getElementById('conn-status').style.color = '#00e57b';
+      document.getElementById('conn-status').textContent = 'AUTHENTICATING...';
+      document.getElementById('conn-status').style.color = '#ffd166';
       document.getElementById('reconnect-banner').classList.remove('show');
+
+      // Send JWT immediately — proxy closes connection after 10s if no auth received
+      const token = localStorage.getItem('bridge_token') || '';
+      ws.send(JSON.stringify({ type: 'auth', token }));
     };
 
     ws.onmessage = (e) => {
       const data = e.data;
-      // Try parsing as JSON control message
       try {
         const msg = JSON.parse(data);
+
+        if (msg.type === 'init') {
+          // Auth accepted — show available commands
+          document.getElementById('conn-status').textContent = 'CONNECTED';
+          document.getElementById('conn-status').style.color = '#00e57b';
+          const cmds = (msg.commands || []).map(c => `\x1b[32m${c.key}\x1b[0m`).join('  ');
+          tab.term.writeln('\x1b[32m[Authenticated]\x1b[0m  Available: ' + cmds);
+          tab.term.writeln('\x1b[2mType a command key and press Enter\x1b[0m\r\n');
+          return;
+        }
+        if (msg.type === 'output') {
+          tab.term.write(msg.data);
+          return;
+        }
+        if (msg.type === 'done') {
+          tab.term.writeln(`\r\n\x1b[2m[exit ${msg.code}]\x1b[0m`);
+          return;
+        }
         if (msg.type === 'error') {
           tab.term.writeln(`\r\n\x1b[31m[ERROR] ${msg.message}\x1b[0m`);
+          if (msg.message === 'Auth timeout' || msg.message === 'Invalid token') {
+            document.getElementById('conn-status').textContent = 'AUTH FAILED';
+            document.getElementById('conn-status').style.color = '#ff3c5a';
+          }
           return;
         }
-        if (msg.type === 'connected') {
-          tab.term.writeln('\x1b[32m[Connected to PTY]\x1b[0m\r\n');
-          return;
-        }
-        if (msg.type === 'pty-closed') {
-          tab.term.writeln('\r\n\x1b[33m[PTY session ended]\x1b[0m');
-          return;
-        }
+        if (msg.type === 'connected') { tab.term.writeln('\x1b[32m[Connected]\x1b[0m\r\n'); return; }
+        if (msg.type === 'pty-closed') { tab.term.writeln('\r\n\x1b[33m[Session ended]\x1b[0m'); return; }
         if (msg.type === 'session') return;
       } catch (_) {}
-      // Raw terminal data
+      // Raw terminal data (passthrough)
       tab.term.write(data);
     };
 
@@ -331,17 +350,37 @@
       document.getElementById('conn-status').textContent = 'DISCONNECTED';
       document.getElementById('conn-status').style.color = '#ff3c5a';
       document.getElementById('reconnect-banner').classList.add('show');
-      // Exponential backoff reconnect
       const delay = Math.min(1000 * Math.pow(2, tab.retries), 30000);
       tab.retries++;
       setTimeout(() => {
-        if (tabs[idx] && tabs[idx] === tab) {
-          connectTab(idx);
-        }
+        if (tabs[idx] && tabs[idx] === tab) connectTab(idx);
       }, delay);
     };
 
     ws.onerror = () => {};
+  }
+
+  // Route typed commands to the proxy exec protocol
+  function handleTerminalInput(tab, data) {
+    if (!tab.ws || tab.ws.readyState !== WebSocket.OPEN) return;
+    // Buffer keystrokes into a command line, send on Enter
+    if (!tab._lineBuf) tab._lineBuf = '';
+    if (data === '\r' || data === '\n') {
+      const cmd = tab._lineBuf.trim();
+      tab._lineBuf = '';
+      tab.term.writeln('');
+      if (cmd) tab.ws.send(JSON.stringify({ type: 'exec', command: cmd }));
+      else tab.term.write('\x1b[32m> \x1b[0m');
+    } else if (data === '\x7f') {
+      // Backspace
+      if (tab._lineBuf.length > 0) {
+        tab._lineBuf = tab._lineBuf.slice(0, -1);
+        tab.term.write('\b \b');
+      }
+    } else {
+      tab._lineBuf += data;
+      tab.term.write(data);
+    }
   }
 
   function switchTab(idx) {

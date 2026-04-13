@@ -5,6 +5,7 @@
 // SECURITY: No PTY / no arbitrary shell — only pre-approved commands run
 // =============================================================================
 
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const http    = require('http');
 const WebSocket = require('ws');

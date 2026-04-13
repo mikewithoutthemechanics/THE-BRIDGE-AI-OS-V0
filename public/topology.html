@@ -1128,7 +1128,12 @@ let economicsData = null;
 
 async function loadEconomics() {
   try {
-    const raw = await fetch(BASE + '/api/marketplace/stats').then(r => r.json()).then(d => d.data || d);
+    const token = localStorage.getItem('bridge_token') || '';
+    const res = await fetch(BASE + '/api/marketplace/stats', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const raw = await res.json().then(d => d.data || d);
     // Map API stats to economics format
     economicsData = {
       totals: {
@@ -1160,6 +1165,16 @@ async function loadEconomics() {
     renderEconomicsOverlay();
   } catch (e) {
     console.warn('Economics API unavailable:', e.message);
+    // Render offline fallback so the panel never stays stuck
+    economicsData = {
+      totals: { usd_monthly: 0, usd_yearly: 0, zar_invoice: 0 },
+      platforms: [
+        { id: 'saas', name: 'Bridge AI SaaS', type: 'subscription', status: 'offline',
+          mrr_potential: 0, plans: [] },
+      ],
+    };
+    const panel = document.getElementById('econ-container');
+    if (panel) panel.innerHTML = '<div style="padding:8px;color:#ffd166;font-size:0.75rem;">Economics offline — ' + (e.message || 'check auth token') + '</div>';
   }
 }
 
