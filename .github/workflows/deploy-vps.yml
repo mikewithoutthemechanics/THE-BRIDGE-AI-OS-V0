@@ -23,31 +23,49 @@ jobs:
           port: 22
           envs: VPS_ENV_BLOB,GH_PAT
           script: |
-            cd /opt/ai-os || exit 1
-            export GIT_SSL_NO_VERIFY=1
-            if [ -z "$GH_PAT" ]; then echo "ERROR: GH_PAT secret is empty — cannot fetch private repo" && exit 1; fi
+            set -e
+            DEPLOY_DIR=/var/www/bridgeai
+
+            if [ -z "$GH_PAT" ]; then
+              echo "ERROR: GH_PAT secret is empty — cannot fetch private repo"
+              exit 1
+            fi
+
+            cd "$DEPLOY_DIR" || { echo "ERROR: $DEPLOY_DIR not found"; exit 1; }
+
+            # Point to authenticated remote, fetch, hard-reset — no merge, no conflicts
             git remote set-url origin "https://x-access-token:$GH_PAT@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git"
-            git fetch origin main || { echo "ERROR: git fetch failed"; exit 1; }
+            git fetch origin main
             git reset --hard origin/main
+            # Remove auth token from remote URL after fetch
             git remote set-url origin https://github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
+
             echo "=== Deployed HEAD ==="
             git log --oneline -1
-            rsync -a --delete --exclude='node_modules' --exclude='.git' --exclude='.env' --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' --exclude='logs' /opt/ai-os/ /var/www/bridgeai/ 2>/dev/null || true
-            npm install --production --no-audit 2>&1 | tail -3
 
+            # Install production deps
+            npm install --omit=dev --no-audit 2>&1 | tail -5
+
+            # Inject secrets if blob is provided
             if [ -n "$VPS_ENV_BLOB" ]; then
-              echo "=== Injecting secrets from blob ==="
+              echo "=== Injecting secrets ==="
+              # Remove any existing values for these keys so we don't duplicate
               sed -i '/^SUPABASE_URL=/d;/^SUPABASE_SERVICE_KEY=/d;/^SUPABASE_ANON_KEY=/d;/^JWT_SECRET=/d' .env 2>/dev/null || true
               echo "$VPS_ENV_BLOB" | base64 -d >> .env
               echo "" >> .env
-              echo "URL len: $(grep '^SUPABASE_URL=' .env | cut -d= -f2 | wc -c)"
-              echo "KEY len: $(grep '^SUPABASE_SERVICE_KEY=' .env | cut -d= -f2 | wc -c)"
-              cp .env /var/www/bridgeai/.env 2>/dev/null || true
+              echo "SUPABASE_URL len: $(grep '^SUPABASE_URL=' .env | cut -d= -f2 | wc -c)"
+              echo "SERVICE_KEY len:  $(grep '^SUPABASE_SERVICE_KEY=' .env | cut -d= -f2 | wc -c)"
             fi
 
+            # Restart all services with updated env
             echo "=== Restarting services ==="
             for svc in bridge-gateway super-brain unified-server god-mode-system auth-service; do
-              pm2 restart $svc --update-env 2>/dev/null || echo "WARN: $svc not found"
+              pm2 restart "$svc" --update-env 2>/dev/null && echo "  ✓ $svc" || echo "  WARN: $svc not running (skipped)"
             done
             pm2 save
+
+            # Quick health check
+            sleep 3
+            curl -sf http://127.0.0.1:8080/health && echo " ✓ gateway healthy" || echo " WARN: gateway health check failed"
+
             pm2 status
