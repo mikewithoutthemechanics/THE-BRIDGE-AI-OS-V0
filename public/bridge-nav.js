@@ -90,6 +90,15 @@
     return path === clean;
   }
 
+  // ── Theme: apply stored preference before first paint ────────────────────
+  (function () {
+    var t = localStorage.getItem('bridge_theme');
+    if (!t) return;
+    var resolved = t;
+    if (t === 'system') resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', resolved);
+  })();
+
   // ── Fonts (idempotent) ────────────────────────────────────────────────────
   if (!document.querySelector('#bridge-fonts')) {
     var lnk = document.createElement('link');
