@@ -3,8 +3,8 @@
 // Port: 8080
 // =============================================================================
 
-const BRAIN_HOST = process.env.BRAIN_HOST || 'brain';
-const SYSTEM_HOST = process.env.SYSTEM_HOST || 'system';
+const BRAIN_HOST = process.env.BRAIN_HOST || 'localhost';
+const SYSTEM_HOST = process.env.SYSTEM_HOST || 'localhost';
 
 // AVAILABLE ENDPOINTS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -563,7 +563,7 @@ app.get('/api/contracts', gatewayAuth(), (req, res) => {
 // for security (#8). All auth routes now proxy to port 5001.
 
 // ── AUTH PROXY → port 5001 ───────────────────────────────────────────────────
-const AUTH_SVC = 'http://auth:5001';
+const AUTH_SVC = process.env.AUTH_SVC || 'http://localhost:5001';
 
 async function proxyToAuth(req, res) {
   try {
