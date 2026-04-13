@@ -78,8 +78,9 @@ class NeuroHistory {
         const data = fs.readFileSync(filePath, 'utf-8');
         return JSON.parse(data);
       }
-    } catch (err) {
-      console.error(`Failed to load neuro-history for ${dateKey}:`, err.message);
+    } catch {
+      // Corrupted file — delete it so next save starts fresh
+      try { fs.unlinkSync(filePath); } catch { /* ignore */ }
     }
     return this.createEmptyDay(dateKey);
   }
