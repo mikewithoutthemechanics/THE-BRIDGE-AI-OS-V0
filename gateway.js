@@ -620,7 +620,39 @@ async function proxyToUnified(req, res) {
     res.status(502).json({ error: 'unified-server unreachable', details: e.message });
   }
 }
-app.get('/auth/me',              (req, res) => proxyToAuth(req, res));
+// /auth/me — inline JWT verification (no auth.js:5001 dependency)
+// Falls back to Supabase lookup so OAuth users get full profile
+app.get('/auth/me', async (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/, '') || req.cookies?.access_token;
+  if (!token) return res.status(401).json({ ok: false, error: 'Not authenticated' });
+
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return res.status(500).json({ ok: false, error: 'Server misconfigured' });
+
+  let payload;
+  try {
+    payload = require('jsonwebtoken').verify(token, secret);
+  } catch (_) {
+    return res.status(401).json({ ok: false, error: 'Invalid or expired token' });
+  }
+
+  // Try Supabase for full user record
+  try {
+    const { supabaseAdmin } = require('./lib/supabase');
+    if (supabaseAdmin && payload.email) {
+      const { data: user } = await supabaseAdmin
+        .from('users')
+        .select('id,email,name,plan,role,brdg_balance,funnel_stage,lead_score,created_at')
+        .eq('email', payload.email.toLowerCase().trim())
+        .single();
+      if (user) return res.json({ ok: true, user });
+    }
+  } catch (_) {}
+
+  // Fallback: return JWT payload fields
+  return res.json({ ok: true, user: { id: payload.sub, email: payload.email, plan: payload.plan || 'free', role: payload.role || 'user' } });
+});
+
 app.post('/auth/logout',         (req, res) => proxyToAuth(req, res));
 app.post('/auth/exchange-code',  (req, res) => proxyToUnified(req, res));
 
