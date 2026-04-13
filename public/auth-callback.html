@@ -122,7 +122,7 @@
 
         // Priority: explicit redirect param > wizard flow > plan checkout > default profile
         const redirectDest = params.get('redirect') || '';
-        let dest = redirectDest ? decodeURIComponent(redirectDest) : '/profile';
+        let dest = redirectDest ? decodeURIComponent(redirectDest) : '/portal';
 
         if (wizard === '1') {
           dest = '/wizard';

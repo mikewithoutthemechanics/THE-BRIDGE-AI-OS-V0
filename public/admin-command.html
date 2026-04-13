@@ -321,6 +321,7 @@
   </style>
 </head>
 <body>
+<script>(function(){var t=localStorage.getItem('bridge_token')||(document.cookie.match(/(?:^|; )access_token=([^;]*)/)||[])[1];if(!t){location.replace('/onboarding?redirect='+encodeURIComponent(location.pathname));return;}fetch('/auth/me',{headers:{Authorization:'Bearer '+t}}).then(function(r){if(!r.ok)throw new Error();}).catch(function(){localStorage.removeItem('bridge_token');location.replace('/onboarding');});})()</script>
 
 <!-- Navigation -->
 <nav class="top-nav">
