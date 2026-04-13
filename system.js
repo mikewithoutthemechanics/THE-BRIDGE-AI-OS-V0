@@ -6,7 +6,7 @@
 *******************************************************************************************/
 'use strict';
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const http   = require('http');
 const https  = require('https');
