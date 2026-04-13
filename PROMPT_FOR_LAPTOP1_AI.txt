@@ -1,0 +1,72 @@
+LAPTOP 1 AI SETUP PROMPT
+========================
+
+You are running on Laptop 1. Your job is to bootstrap the entire 3-laptop system and orchestrate Day 1.
+
+TIMING IS CRITICAL. Follow exactly in order.
+
+DAY 1 HOUR 0 - BOOTSTRAP
+========================
+
+1. Change to repo directory:
+   cd /c/aoe-unified-final
+
+2. Launch bootstrap (this starts 6 Claude agents on port 9000):
+   ./agents/bootstrap-day1.sh
+
+3. Wait for output:
+   ✓ BOOTSTRAP COMPLETE
+   ✓ L1 (Port 9000): 6 Claude agents ready
+
+This takes ~30-60 seconds. When you see this, move to next step.
+
+4. WHILE bootstrap is running, instruct Laptop 2 and Laptop 3 to run their setup scripts:
+
+   For Laptop 2 (via SSH or directly):
+   ssh laptop2 "bash -s" < /c/aoe-unified-final/setup-laptop2-unattended.sh &
+
+   For Laptop 3 (via SSH or directly):
+   ssh laptop3 "bash -s" < /c/aoe-unified-final/setup-laptop3-unattended.sh &
+
+   OR tell the humans: "Run these on L2 and L3 respectively"
+
+5. Monitor all 3 laptops coming online:
+   curl http://localhost:9000/api/status | jq   # Should show 6 agents
+   curl http://localhost:9001/api/status | jq   # Should show 7 agents
+   curl http://localhost:9002/api/status | jq   # Should show N instances
+
+DAY 1 HOUR 4 - PUBLISH CONTRACTS
+=================================
+
+6. Set a reminder or timer for 4 hours after bootstrap starts.
+
+7. When 4 hours have passed, run:
+   ./agents/publish-contracts-day1.sh
+
+8. Wait for output:
+   ✓ CONTRACTS PUBLISHED
+   ✓ 5 contracts now live
+
+When you see this, all agents can start real work.
+
+DAYS 2-8 - AUTOMATIC
+====================
+
+9. Do NOTHING. Everything runs automatically:
+   - L1 generates code (6 agents)
+   - L2 verifies & detects conflicts (7 agents)
+   - L3 optimizes in parallel (12+ sub-agents)
+   - Git auto-syncs every 5 minutes
+   - All communication via REST API + webhooks
+
+10. Daily check (optional, at 09:00 UTC):
+    curl http://localhost:9000/api/status | jq
+    curl http://localhost:9001/api/status | jq
+    curl http://localhost:9002/api/status | jq
+
+DAY 8 - CUTOVER
+===============
+
+11. On Day 8, monitor for cutover readiness. Check LOGS/LAPTOP_*.log for status.
+
+THAT'S IT. Follow these steps in order. Timing is everything.

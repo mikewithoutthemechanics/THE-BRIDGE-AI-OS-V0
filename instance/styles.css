@@ -1,0 +1,158 @@
+/* AUTONOMOUS ENGINE v5 — COGNITIVE ARCHITECTURE UI */
+
+:root {
+  --bg: #0b0f14;
+  --panel: #0f1620;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --primary: #58a6ff;
+  --success: #3fb950;
+  --warning: #d29922;
+  --danger: #f85149;
+  --accent: #79c0ff;
+  --border: #1f2933;
+  --dim: #484f58;
+}
+
+/* BASE */
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at top, #0f1620 0%, #0b0f14 60%);
+  color: var(--text);
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 13px;
+}
+
+/* TERMINAL CONTAINER */
+#terminal {
+  padding: 20px 24px;
+  height: 100vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  box-sizing: border-box;
+  line-height: 1.5;
+}
+
+/* SCROLLBAR */
+#terminal::-webkit-scrollbar {
+  width: 6px;
+}
+#terminal::-webkit-scrollbar-track {
+  background: transparent;
+}
+#terminal::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+#terminal::-webkit-scrollbar-thumb:hover {
+  background: var(--dim);
+}
+
+/* INPUT LINE */
+.input-line {
+  outline: none;
+  padding: 8px 0;
+  border-left: 2px solid transparent;
+  transition: border-color 0.2s, padding-left 0.2s;
+  margin-top: 4px;
+  caret-color: var(--primary);
+}
+.input-line:focus {
+  border-left: 2px solid var(--primary);
+  padding-left: 8px;
+}
+.input-line::before {
+  content: ">> ";
+  color: var(--primary);
+  font-weight: bold;
+}
+
+/* TEXT TYPES */
+.output {
+  color: var(--muted);
+  margin: 1px 0;
+}
+
+.highlight {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.warn {
+  color: var(--warning);
+}
+
+.critical {
+  color: var(--danger);
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(248, 81, 73, 0.4);
+}
+
+.insight {
+  color: var(--accent);
+}
+
+/* BLOCK SPACING */
+.output,
+.highlight,
+.warn,
+.critical,
+.insight {
+  display: block;
+  line-height: 1.5;
+}
+
+/* PHASE HEADERS — green glow */
+.highlight + .output {
+  margin-top: 2px;
+}
+
+/* SEPARATOR LINES */
+.output:has(+ .highlight) {
+  margin-bottom: 4px;
+}
+
+/* SECTION CARD STYLE */
+.section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* GLOW EFFECTS */
+.critical {
+  text-shadow: 0 0 10px rgba(248, 81, 73, 0.5);
+}
+
+.highlight {
+  text-shadow: 0 0 6px rgba(63, 185, 80, 0.25);
+}
+
+.insight {
+  text-shadow: 0 0 4px rgba(121, 192, 255, 0.2);
+}
+
+/* SMOOTH FADE-IN */
+#terminal div {
+  animation: fadeSlide 0.12s ease-out;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* SELECTION */
+::selection {
+  background: rgba(88, 166, 255, 0.3);
+  color: var(--text);
+}

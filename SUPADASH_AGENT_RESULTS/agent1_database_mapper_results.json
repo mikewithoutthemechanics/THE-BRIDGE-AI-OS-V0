@@ -1,0 +1,73 @@
+{
+  "databases": [
+    {
+      "DATABASE_NAME": "bridgeos",
+      "DB_TYPE": "SQLite",
+      "CONNECTION_FILE": "/c/bridgeos/server/db.js",
+      "LOCATION": "/c/bridgeos/",
+      "DATABASE_FILE": "/c/bridgeos/bridgeos.db",
+      "SCHEMA_FILE": "/c/bridgeos/server/schema.sql",
+      "TABLES_COLLECTIONS": ["users", "referrals", "commissions", "payments", "api_keys", "sessions", "modules"],
+      "USED_BY_SERVERS": ["/c/bridgeos/server/server.js", "/c/bridgeos/server/index.js"],
+      "STATUS": "ACTIVE",
+      "NOTES": "Currently active. PostgreSQL also configured in .env but not used."
+    },
+    {
+      "DATABASE_NAME": "bridgeos",
+      "DB_TYPE": "PostgreSQL",
+      "CONNECTION_FILE": "/c/bridgeos/.env",
+      "LOCATION": "/c/bridgeos/",
+      "CONNECTION_STRING": "postgresql://postgres:password@localhost:5432/bridgeos",
+      "SCHEMA_FILE": "/c/bridgeos/server/schema.sql",
+      "TABLES_COLLECTIONS": ["users", "referrals", "commissions", "payments", "api_keys", "sessions", "modules"],
+      "USED_BY_SERVERS": [],
+      "STATUS": "CONFIGURED_INACTIVE",
+      "NOTES": "Configured in .env but system currently uses SQLite instead"
+    },
+    {
+      "DATABASE_NAME": "bridgedb",
+      "DB_TYPE": "PostgreSQL",
+      "CONNECTION_FILE": "/c/BridgeAI/ainode/server.js",
+      "LOCATION": "/c/BridgeAI/ainode/",
+      "HOST": "bridge-postgres:5432",
+      "CREDENTIALS": "DB_USER=bridge, DB_PASSWORD=bridgepass",
+      "MIGRATION_FILE": "/c/BridgeAI/ainode/migrate.js",
+      "TABLES_COLLECTIONS": ["interactions", "audit_logs", "tenants", "subscription_plans", "subscriptions", "credit_purchases", "usage_records", "billing_history"],
+      "USED_BY_SERVERS": ["/c/BridgeAI/ainode/server.js"],
+      "STATUS": "ACTIVE",
+      "NOTES": "Docker container (bridge-postgres). Has full migration system."
+    },
+    {
+      "DATABASE_NAME": "supadash-unified",
+      "DB_TYPE": "PostgreSQL",
+      "CONNECTION_FILE": "/c/aoe-unified-final/shared/database-schema.json",
+      "LOCATION": "/c/aoe-unified-final/",
+      "TABLES_COLLECTIONS": [],
+      "USED_BY_SERVERS": [],
+      "STATUS": "PLANNED",
+      "NOTES": "Consolidation target for 3 SQLite variants. Namespaces: aoe_unified, bridgeos, bridge_ai_os"
+    }
+  ],
+  "projects_without_databases": [
+    { "PATH": "/c/aoe-unified-final", "REASON": "No active database — only schema documentation" },
+    { "PATH": "/c/bridge", "REASON": "No database configuration found" },
+    { "PATH": "/c/bridge-ubi", "REASON": "Ethereum/Hardhat blockchain project — no SQL database" },
+    { "PATH": "/c/BRIDGE_AI_OS", "REASON": "Gateway/avatar only — no database" },
+    { "PATH": "/c/BridgeAI/referral-system", "REASON": "Express only — no active database" },
+    { "PATH": "/c/BridgeAI/server", "REASON": "Gateway/proxy only — no database" }
+  ],
+  "summary": {
+    "total_active_databases": 2,
+    "total_configured_inactive": 1,
+    "total_planned": 1,
+    "db_types": { "SQLite": 1, "PostgreSQL": 3 },
+    "total_unique_tables": 15,
+    "servers_using_databases": 2,
+    "notable_findings": [
+      "BridgeOS has BOTH SQLite (active) and PostgreSQL (configured but inactive) — migration path already partially set up",
+      "BridgeAI/ainode uses Dockerized PostgreSQL with full migration system — most mature DB setup",
+      "aoe-unified-final has NO active database despite being the consolidation target",
+      "Planned unified schema already documented at /c/aoe-unified-final/shared/database-schema.json"
+    ]
+  }
+}
