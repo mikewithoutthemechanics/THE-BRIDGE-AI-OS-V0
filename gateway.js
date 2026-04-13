@@ -2725,11 +2725,13 @@ app.get('/', (req, res) => {
 });
 
 // ── START (skipped when required by tests) ───────────────────────────────────
-// Bind to '::' so it covers both IPv6 (::1) and IPv4 (127.0.0.1) on Windows
-// This ensures 'localhost' resolves correctly regardless of OS preference
+// Default 0.0.0.0 so curl http://127.0.0.1:PORT works on typical Linux VPS (IPv6-only :: often rejects IPv4 loopback).
+// Override: PORT=8080 GATEWAY_LISTEN_HOST=:: node gateway.js
 if (require.main === module) {
-  const server = app.listen(8080, '::', () => {
-    console.log('[GATEWAY] Bridge AI OS unified gateway running on http://localhost:8080');
+  const port = parseInt(process.env.PORT || '8080', 10);
+  const host = process.env.GATEWAY_LISTEN_HOST || '0.0.0.0';
+  const server = app.listen(port, host, () => {
+    console.log('[GATEWAY] Bridge AI OS unified gateway listening on http://' + host + ':' + port);
     console.log('[GATEWAY] Core endpoints : /health  /events/stream  /orchestrator/status  /billing  /ask');
     console.log('[GATEWAY] Unified API    : /api/topology  /api/avatar/*  /api/registry/*  /api/marketplace/*');
     console.log('[GATEWAY]                  /api/status  /api/agents  /api/contracts');
@@ -2737,13 +2739,9 @@ if (require.main === module) {
   });
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error('[GATEWAY] Port 8080 in use — retrying on IPv4 only');
-      app.listen(8080, '0.0.0.0', () => {
-        console.log('[GATEWAY] Fallback: listening on 0.0.0.0:8080');
-      });
-    } else {
-      throw err;
+      console.error('[GATEWAY] Port ' + port + ' in use — pick another PORT or stop the conflicting process');
     }
+    throw err;
   });
 }
 
