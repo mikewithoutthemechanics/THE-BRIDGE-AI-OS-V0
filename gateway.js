@@ -1378,7 +1378,7 @@ app.get('/api/treasury/ledger', async (req, res) => {
 });
 
 // ── AGENT EXECUTION ─────────────────────────────────────────────────────────
-app.post('/api/agents/run', express.json(), async (req, res) => {
+app.post('/api/agents/run', express.json(), gatewayAuth(), async (req, res) => {
   if (!agents) return res.status(503).json({ ok: false, error: 'Agent module not loaded' });
   var agentName = (req.body || {}).agentName || (req.body || {}).agent;
   if (!agentName) return res.status(400).json({ error: 'agentName required' });
@@ -1390,7 +1390,7 @@ app.post('/api/agents/run', express.json(), async (req, res) => {
   }
 });
 
-app.post('/api/agents/run-all', express.json(), async (req, res) => {
+app.post('/api/agents/run-all', express.json(), gatewayAuth(), async (req, res) => {
   if (!agents) return res.status(503).json({ ok: false, error: 'Agent module not loaded' });
   try {
     var { results, valid, discarded, executionStatus } = await agents.runAllAgentsValidated();
@@ -2442,6 +2442,15 @@ async function tryBrainOfflineApiFallback(req, res) {
 
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server (port 3000) ──
 app.all('/api/*path', async (req, res) => {
+  // Require auth for any mutating request that reaches this catch-all
+  const MUTATION_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
+  if (MUTATION_METHODS.includes(req.method)) {
+    const token = req.cookies?.access_token
+      || (req.headers.authorization || '').replace(/^Bearer\s+/, '')
+      || req.query?.token;
+    if (!token) return res.status(401).json({ error: 'authentication required' });
+  }
+
   // Check if this is a dashboard API that should go to backend server (port 3000)
   if (isDashboardApi(req.path)) {
     const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
