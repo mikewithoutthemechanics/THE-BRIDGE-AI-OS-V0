@@ -45,9 +45,11 @@ let agents; try { agents = require('./lib/agents'); } catch (_) { agents = null;
 let neurolink;
 try {
   neurolink = require('./lib/neurolink/runtime');
-  neurolink.start().then(meta => {
-    console.log('[NEUROLINK] Pipeline active:', meta.device, meta.channels + 'ch');
-  }).catch(e => console.warn('[NEUROLINK] Start failed:', e.message));
+  if (process.env.NODE_ENV !== 'test') {
+    neurolink.start().then(meta => {
+      console.log('[NEUROLINK] Pipeline active:', meta.device, meta.channels + 'ch');
+    }).catch(e => console.warn('[NEUROLINK] Start failed:', e.message));
+  }
 } catch (e) {
   console.warn('[NEUROLINK] Module unavailable:', e.message);
   neurolink = null;
@@ -59,7 +61,9 @@ try {
   zt          = require('./lib/zero-trust');
   proofStore  = require('./lib/proof-store');
   chainVerify = require('./lib/chain-verify');
-  require('./lib/migrate-zero-trust').ensureTables().catch(() => {});
+  if (process.env.NODE_ENV !== 'test') {
+    require('./lib/migrate-zero-trust').ensureTables().catch(() => {});
+  }
 } catch (e) {
   console.warn('[ZERO-TRUST] Failed to load verification layer:', e.message);
   const stub = () => ({ ok: false, error: 'verification layer unavailable' });
@@ -72,7 +76,7 @@ try {
 const ALLOWED_ORIGINS = new Set([
   'https://wall.bridge-ai-os.com',
   'https://bridge-ai-os.com',
-  'http://${SYSTEM_HOST}:3000',
+  `http://${SYSTEM_HOST}:3000`,
   'http://localhost:8080',
 ]);
 app.use((req, res, next) => {
@@ -143,11 +147,15 @@ app.get('/api/config/oauth', (_req, res) => {
 // ── HEALTH ───────────────────────────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   // Try unified-server (3000) first, fall back to brain (8000)
-  for (const port of [3000, 8000]) {
+  const services = [
+    { host: SYSTEM_HOST, port: 3000 },
+    { host: BRAIN_HOST, port: 8000 }
+  ];
+  for (const service of services) {
     try {
-      const r = await fetch(`http://localhost:${port}/health`, { signal: AbortSignal.timeout(2000) });
+      const r = await fetch(`http://${service.host}:${service.port}/health`, { signal: AbortSignal.timeout(2000) });
       const j = await r.json();
-      res.json({ status: 'OK', core: j, gateway: 'up', source: port, ts: Date.now() });
+      res.json({ status: 'OK', core: j, gateway: 'up', source: service.port, ts: Date.now() });
       return;
     } catch (_) {}
   }
@@ -256,7 +264,7 @@ app.post('/ask', gatewayAuth(), async (req, res) => {
   } catch (_) {
     // Fallback: proxy to brain's LLM endpoint
     try {
-      const r2 = await fetch('http://${BRAIN_HOST}:8000/api/llm/infer', {
+      const r2 = await fetch(`http://${BRAIN_HOST}:8000/api/llm/infer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, system: 'You are Bridge AI, an autonomous business intelligence assistant.' }),
@@ -265,7 +273,13 @@ app.post('/ask', gatewayAuth(), async (req, res) => {
       const j2 = await r2.json();
       return res.json(j2);
     } catch (llmErr) {
-      return res.status(503).json({ error: 'No LLM available', detail: llmErr.message });
+      try {
+        const llm = require('./lib/llm-client');
+        const out = await llm.infer(prompt, { system: 'You are Bridge AI, an autonomous business intelligence assistant.' });
+        return res.json({ ok: true, text: out.text, provider: out.provider, model: out.model, cost_usd: out.cost_usd, source: 'gateway-llm' });
+      } catch (gwErr) {
+        return res.status(503).json({ error: 'No LLM available', detail: llmErr.message, gateway_detail: gwErr.message });
+      }
     }
   }
 });
@@ -275,7 +289,7 @@ app.post('/ask', gatewayAuth(), async (req, res) => {
 // ── API: TOPOLOGY ─────────────────────────────────────────────────────────────
 app.get('/api/topology', async (req, res) => {
   try {
-    const r = await fetch('http://${SYSTEM_HOST}:3000/topology', { signal: AbortSignal.timeout(2000) });
+    const r = await fetch(`http://${SYSTEM_HOST}:3000/topology`, { signal: AbortSignal.timeout(2000) });
     const j = await r.json();
     return res.json(j);
   } catch (_) {
@@ -341,13 +355,16 @@ function _demoTasks() {
 }
 
 app.get('/api/marketplace/tasks', async (req, res) => {
+  const wrap = (list) => res.json({ section: 'tasks', data: { listings: list }, listings: list, ts: Date.now() });
   try {
     const { createClient } = require('@supabase/supabase-js');
     const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     const { data: rows, error } = await sb.from('marketplace_tasks').select('*').order('created_at', { ascending: false }).limit(200);
-    if (error) return res.json(_demoTasks());
-    res.json(Array.isArray(rows) && rows.length ? rows : _demoTasks());
-  } catch (_) { res.json(_demoTasks()); }
+    if (error) return wrap(_demoTasks());
+    return wrap(Array.isArray(rows) && rows.length ? rows : _demoTasks());
+  } catch (_) {
+    return wrap(_demoTasks());
+  }
 });
 
 app.post('/api/marketplace/tasks', express.json(), async (req, res) => {
@@ -379,8 +396,8 @@ app.get('/api/marketplace/*path', async (req, res) => {
 app.get('/api/status', async (req, res) => {
   const services = [
     { id: 'gateway',      url: null,                         port: 8080 },
-    { id: 'system',       url: 'http://${SYSTEM_HOST}:3000/health', port: 3000 },
-    { id: 'brain',        url: 'http://${BRAIN_HOST}:8000/health', port: 8000 },
+    { id: 'system',       url: `http://${SYSTEM_HOST}:3000/health`, port: 3000 },
+    { id: 'brain',        url: `http://${BRAIN_HOST}:8000/health`, port: 8000 },
     { id: 'terminal',     url: 'http://terminal:5002/health', port: 5002 },
     { id: 'auth',         url: 'http://auth:5001/health', port: 5001 },
   ];
@@ -551,6 +568,7 @@ async function proxyToAuth(req, res) {
     const opts = {
       method: req.method,
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(8000),
     };
     if (req.headers.authorization) opts.headers['Authorization'] = req.headers.authorization;
     if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
@@ -939,7 +957,7 @@ app.get('/api/treasury/summary', async (req, res) => {
   try {
     const db = require('./lib/db');
     const [data, pnl] = await Promise.all([
-      fetchJSON('http://${SYSTEM_HOST}:3000/api/treasury').catch(() => ({ buckets: [] })),
+      fetchJSON(`http://${SYSTEM_HOST}:3000/api/treasury`).catch(() => ({ buckets: [] })),
       db.getRevenueMTD(),
     ]);
     const total = (data.buckets || []).reduce((s, b) => s + parseFloat(b.balance || 0), 0);
@@ -1056,13 +1074,17 @@ app.get('/api/system/state', async (_req, res) => {
 var revenueEngine;
 try {
   revenueEngine = require('./lib/revenue-engine');
-  revenueEngine.start(60000); // Run every 60 seconds
+  if (process.env.NODE_ENV !== 'test') {
+    revenueEngine.start(60000); // Run every 60 seconds
+  }
 } catch (e) { console.warn('[REVENUE-ENGINE] Failed to start:', e.message); revenueEngine = null; }
 
 // Start revenue compounding engine (5-minute cycles)
 try {
   var compounder = require('./lib/revenue-compounder');
-  compounder.startCompounding();
+  if (process.env.NODE_ENV !== 'test') {
+    compounder.startCompounding();
+  }
 } catch (e) { console.warn('[COMPOUNDER] Failed to start:', e.message); }
 
 app.get('/api/revenue-engine/status', (_req, res) => {
@@ -1252,12 +1274,12 @@ app.get('/api/skills/unified', async (_req, res) => {
     // Merge skills from brain + SVG engine into one registry
     var skills = [];
     try {
-      var brainR = await fetch('http://${BRAIN_HOST}:8000/skills/definitions', { signal: AbortSignal.timeout(3000) });
+      var brainR = await fetch(`http://${BRAIN_HOST}:8000/skills/definitions`, { signal: AbortSignal.timeout(3000) });
       var brainD = await brainR.json();
       (brainD.definitions || []).forEach(function(s) { skills.push({ ...s, source: 'brain' }); });
     } catch (_) {}
     try {
-      var twinR = await fetch('http://${BRAIN_HOST}:8000/api/twin/profile', { signal: AbortSignal.timeout(3000) });
+      var twinR = await fetch(`http://${BRAIN_HOST}:8000/api/twin/profile`, { signal: AbortSignal.timeout(3000) });
       var twinD = await twinR.json();
       (twinD.skills || []).forEach(function(id) {
         if (!skills.find(function(s) { return s.id === id; })) {
@@ -1277,7 +1299,7 @@ app.get('/api/skills/unified', async (_req, res) => {
 // ── SWARM AGENTS (full list) ────────────────────────────────────────────────
 app.get('/api/swarm/agents', async (_req, res) => {
   try {
-    var r = await fetch('http://${BRAIN_HOST}:8000/api/swarm/agents', { signal: AbortSignal.timeout(3000) });
+    var r = await fetch(`http://${BRAIN_HOST}:8000/api/swarm/agents`, { signal: AbortSignal.timeout(3000) });
     var d = await r.json();
     res.json(d);
   } catch (_) {
@@ -1296,7 +1318,7 @@ app.get('/api/revenue/status', async (_req, res) => {
 app.get('/api/swarm/health', async (_req, res) => {
   try {
     // Try brain for real data, fall back to gateway counts
-    const r = await fetch('http://${BRAIN_HOST}:8000/api/swarm/health', { signal: AbortSignal.timeout(3000) });
+    const r = await fetch(`http://${BRAIN_HOST}:8000/api/swarm/health`, { signal: AbortSignal.timeout(3000) });
     const d = await r.json();
     res.json(d);
   } catch (_) {
@@ -1378,6 +1400,15 @@ app.post('/api/agents/run-all', express.json(), async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
+
+// POST /api/agents/:id/command — LLM-backed demo (no brain required; must run before /api/* brain proxy)
+try {
+  const { registerAgentCommands } = require('./lib/agent-commands');
+  registerAgentCommands(app);
+  console.log('[GATEWAY] Agent command API registered (Try it / landing)');
+} catch (e) {
+  console.warn('[GATEWAY] Agent command API not loaded:', e.message);
+}
 
 app.get('/api/treasury', async (_req, res) => {
   try {
@@ -2364,6 +2395,48 @@ function isDashboardApi(path) {
   return dashboardApiRoutes.some(route => path.startsWith(route));
 }
 
+/**
+ * When brain (:8000) is down, answer POST /api/llm/infer on the gateway via lib/llm-client.
+ * Returns true if a response was sent.
+ */
+async function tryBrainOfflineApiFallback(req, res) {
+  const pathname = (req.path || '').split('?')[0];
+  if (req.method !== 'POST' || pathname !== '/api/llm/infer') return false;
+
+  const body = req.body || {};
+  let prompt = body.prompt || body.message || '';
+  if (!prompt && Array.isArray(body.messages)) {
+    prompt = body.messages.map((m) => ((m && m.content) ? String(m.content) : '')).filter(Boolean).join('\n');
+  }
+  if (!prompt || typeof prompt !== 'string') {
+    res.status(400).json({ ok: false, error: 'prompt required', source: 'gateway-fallback' });
+    return true;
+  }
+  try {
+    const llm = require('./lib/llm-client');
+    const out = await llm.infer(prompt, {
+      system: body.system || 'You are Bridge AI, an autonomous business intelligence assistant.',
+    });
+    res.json({
+      ok: true,
+      text: out.text,
+      provider: out.provider,
+      model: out.model,
+      cost_usd: out.cost_usd,
+      source: 'gateway-llm',
+    });
+    return true;
+  } catch (err) {
+    res.status(503).json({
+      ok: false,
+      error: 'Brain offline and gateway LLM unavailable',
+      detail: err.message,
+      source: 'gateway-fallback',
+    });
+    return true;
+  }
+}
+
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server (port 3000) ──
 app.all('/api/*path', async (req, res) => {
   // Check if this is a dashboard API that should go to backend server (port 3000)
@@ -2404,6 +2477,7 @@ app.all('/api/*path', async (req, res) => {
     const text = await r.text();
     res.status(r.status).set('Content-Type', ct).send(text);
   } catch (e) {
+    if (await tryBrainOfflineApiFallback(req, res)) return;
     res.status(502).json({ error: 'brain unreachable', path: req.originalUrl, details: e.message });
   }
 });
@@ -2536,28 +2610,6 @@ app.all('/api/platform/*path', async (req, res) => {
     res.status(r.status).set('Content-Type', ct).send(text);
   } catch (e) {
     res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
-  }
-});
-
-// This catches any /api/* route not handled above and proxies to the brain.
-// Intentionally unauthenticated: brain service handles its own auth and this
-// is internal routing only. Public API routes are handled above. (security: #H-2)
-app.all('/api/*path', async (req, res) => {
-  const url = `http://${BRAIN_HOST}:8000${req.originalUrl}`;
-  try {
-    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
-    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
-    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
-    if (req.headers['x-admin-token']) opts.headers['x-admin-token'] = req.headers['x-admin-token'];
-    if (req.headers['x-kf-token']) opts.headers['x-kf-token'] = req.headers['x-kf-token'];
-    if (req.headers['x-bridge-secret']) opts.headers['x-bridge-secret'] = req.headers['x-bridge-secret'];
-    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
-    const r = await fetch(url, opts);
-    const ct = r.headers.get('content-type') || 'application/json';
-    const text = await r.text();
-    res.status(r.status).set('Content-Type', ct).send(text);
-  } catch (e) {
-    res.status(502).json({ error: 'brain unreachable', path: req.originalUrl, details: e.message });
   }
 });
 
