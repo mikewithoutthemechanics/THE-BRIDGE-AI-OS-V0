@@ -1578,28 +1578,54 @@ app.post('/api/ubi/claim', async (req, res) => {
 });
 
 // User settings (used by settings.html and profile.html)
-app.get('/api/user/settings', (req, res) => {
-  res.json({ settings: { theme: 'dark', apiBase: '', notifications: false, liveRefresh: true, userId: '' } });
+const SETTINGS_DEFAULTS = { name: '', company: '', theme: 'dark', apiBase: '', notifications: false, liveRefresh: true, userId: '' };
+
+app.get('/api/user/settings', async (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/, '') || req.cookies?.access_token;
+  if (!token) return res.json({ settings: SETTINGS_DEFAULTS });
+  try {
+    const { supabaseAdmin } = require('./lib/supabase');
+    const jwt = require('jsonwebtoken');
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (!supabaseAdmin || !payload.email) return res.json({ settings: SETTINGS_DEFAULTS });
+    const { data: user } = await supabaseAdmin.from('users')
+      .select('name,company,settings')
+      .eq('email', payload.email.toLowerCase().trim())
+      .single();
+    if (!user) return res.json({ settings: SETTINGS_DEFAULTS });
+    const s = user.settings || {};
+    return res.json({ settings: { ...SETTINGS_DEFAULTS, name: user.name || '', company: user.company || '', ...s } });
+  } catch (_) {
+    return res.json({ settings: SETTINGS_DEFAULTS });
+  }
 });
 
 app.put('/api/user/settings', async (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/, '') || req.cookies?.access_token;
+  if (!token) return res.status(401).json({ ok: false, error: 'Authentication required' });
   try {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-    if (!token) return res.status(401).json({ ok: false, error: 'Auth required' });
-
-    const userDb = require('./lib/user-identity');
-    const currentUser = await userDb.verifyAuthToken(token);
-    if (!currentUser) return res.status(401).json({ ok: false, error: 'Invalid token' });
-
-    // Accept both { settings: { name, company, ... } } and { name, company, ... } directly
-    const payload = req.body.settings || req.body || {};
-    const fields = {};
-    if (payload.name     !== undefined) fields.name     = payload.name;
-    if (payload.company  !== undefined) fields.company  = payload.company;
-
-    const updated = await userDb.updateUser(currentUser.id, fields);
-    res.json({ ok: true, user: (({ password_hash, ...u }) => u)(updated) });
+    const jwt = require('jsonwebtoken');
+    const { supabaseAdmin } = require('./lib/supabase');
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (!supabaseAdmin) return res.status(503).json({ ok: false, error: 'DB unavailable' });
+    const body = req.body.settings || req.body || {};
+    const settingsJson = {};
+    if (body.theme         !== undefined) settingsJson.theme         = body.theme;
+    if (body.apiBase       !== undefined) settingsJson.apiBase       = String(body.apiBase || '');
+    if (body.notifications !== undefined) settingsJson.notifications = !!body.notifications;
+    if (body.liveRefresh   !== undefined) settingsJson.liveRefresh   = !!body.liveRefresh;
+    if (body.userId        !== undefined) settingsJson.userId        = String(body.userId || '').slice(0, 128);
+    const userUpdates = { settings: settingsJson };
+    if (body.name    !== undefined) userUpdates.name    = String(body.name    || '').slice(0, 120);
+    if (body.company !== undefined) userUpdates.company = String(body.company || '').slice(0, 120);
+    const { data: updated, error } = await supabaseAdmin.from('users')
+      .update(userUpdates)
+      .eq('email', payload.email.toLowerCase().trim())
+      .select('id,email,name,company,plan,role,settings')
+      .single();
+    if (error) throw error;
+    const s = updated.settings || {};
+    return res.json({ ok: true, settings: { name: updated.name || '', company: updated.company || '', ...s } });
   } catch (e) {
     console.error('[settings PUT]', e.message);
     res.status(500).json({ ok: false, error: e.message });

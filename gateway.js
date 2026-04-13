@@ -2472,6 +2472,64 @@ async function tryBrainOfflineApiFallback(req, res) {
   }
 }
 
+// ── User Settings (inline — no dependency on system:3000 or brain:8000) ─────
+app.get('/api/user/settings', async (req, res) => {
+  const DEFAULTS = { name: '', company: '', theme: 'dark', apiBase: '', notifications: false, liveRefresh: true, userId: '' };
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/, '') || req.cookies?.access_token;
+  if (!token) return res.json({ settings: DEFAULTS });
+  try {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return res.json({ settings: DEFAULTS });
+    const payload = require('jsonwebtoken').verify(token, secret);
+    const { supabaseAdmin } = require('./lib/supabase');
+    if (!supabaseAdmin || !payload.email) return res.json({ settings: DEFAULTS });
+    const { data: user } = await supabaseAdmin.from('users')
+      .select('name,company,settings')
+      .eq('email', payload.email.toLowerCase().trim())
+      .single();
+    if (!user) return res.json({ settings: DEFAULTS });
+    const s = user.settings || {};
+    return res.json({ settings: { ...DEFAULTS, name: user.name || '', company: user.company || '', ...s } });
+  } catch (_) {
+    return res.json({ settings: DEFAULTS });
+  }
+});
+
+app.put('/api/user/settings', express.json(), async (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/, '') || req.cookies?.access_token;
+  if (!token) return res.status(401).json({ ok: false, error: 'Authentication required' });
+  try {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return res.status(500).json({ ok: false, error: 'Server misconfigured' });
+    const payload = require('jsonwebtoken').verify(token, secret);
+    const { supabaseAdmin } = require('./lib/supabase');
+    if (!supabaseAdmin) return res.status(503).json({ ok: false, error: 'DB unavailable' });
+
+    const body = req.body.settings || req.body || {};
+    const settingsJson = {};
+    if (body.theme         !== undefined) settingsJson.theme         = body.theme;
+    if (body.apiBase       !== undefined) settingsJson.apiBase       = String(body.apiBase || '');
+    if (body.notifications !== undefined) settingsJson.notifications = !!body.notifications;
+    if (body.liveRefresh   !== undefined) settingsJson.liveRefresh   = !!body.liveRefresh;
+    if (body.userId        !== undefined) settingsJson.userId        = String(body.userId || '').slice(0, 128);
+
+    const userUpdates = { settings: settingsJson };
+    if (body.name    !== undefined) userUpdates.name    = String(body.name    || '').slice(0, 120);
+    if (body.company !== undefined) userUpdates.company = String(body.company || '').slice(0, 120);
+
+    const { data: updated, error } = await supabaseAdmin.from('users')
+      .update(userUpdates)
+      .eq('email', payload.email.toLowerCase().trim())
+      .select('id,email,name,company,plan,role,settings')
+      .single();
+    if (error) throw error;
+    const s = updated.settings || {};
+    return res.json({ ok: true, settings: { name: updated.name || '', company: updated.company || '', ...s } });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server (port 3000) ──
 app.all('/api/*path', async (req, res) => {
   // Require auth for any mutating request that reaches this catch-all
