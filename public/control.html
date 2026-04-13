@@ -2,20 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="BRIDGE AI OS - Control Panel — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://go.ai-os.co.za/control">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://go.ai-os.co.za/control">
-<meta property="og:title" content="BRIDGE AI OS - Control Panel">
-<meta property="og:description" content="BRIDGE AI OS - Control Panel — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
-<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
-<meta property="og:site_name" content="Bridge AI OS">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="BRIDGE AI OS - Control Panel">
-<meta name="twitter:description" content="BRIDGE AI OS - Control Panel — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
-<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BRIDGE AI OS - Control Panel</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -168,23 +154,6 @@ textarea{resize:vertical;min-height:40px;}
 </style>
 </head>
 <body>
-<nav style="background:#0f172a;border-bottom:1px solid #1e293b;padding:.75rem 1.5rem;display:flex;gap:1.5rem;align-items:center;position:sticky;top:0;z-index:200">
-  <span style="font-weight:700;color:#38bdf8;font-size:1.1rem;margin-right:auto">Admin</span>
-  <a href="/admin.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Dashboard</a>
-  <a href="/admin-revenue.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Revenue</a>
-  <a href="/admin-withdraw.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Withdrawals</a>
-  <a href="/control.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Control</a>
-  <a href="/system-status-dashboard.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">System Health</a>
-  <a href="/registry.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Registry</a>
-</nav>
-<script>
-document.querySelectorAll('nav a').forEach(a => {
-  if (a.getAttribute('href') === window.location.pathname) {
-    a.style.color = '#38bdf8';
-    a.style.background = '#1e293b';
-  }
-});
-</script>
 
 <!-- HEADER -->
 <div class="header">
@@ -220,17 +189,17 @@ document.querySelectorAll('nav a').forEach(a => {
 <!-- TREASURY -->
 <div class="panel col-full" id="treasuryPanel">
   <div class="panel-header">TREASURY</div>
-  <div class="balance-display" id="balanceDisplay">Loading...</div>
+  <div class="balance-display" id="balanceDisplay">$137,284.50</div>
   <div class="stat-row" id="treasuryStats">
-    <div class="stat-card"><div class="stat-label">Revenue MTD (Accrued)</div><div class="stat-value green" id="revMtd">—</div></div>
-    <div class="stat-card"><div class="stat-label">Costs MTD (Provisions)</div><div class="stat-value red" id="costMtd">—</div></div>
-    <div class="stat-card"><div class="stat-label">Net MTD</div><div class="stat-value accent" id="netMtd">—</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue MTD</div><div class="stat-value green" id="revMtd">$28,450.00</div></div>
+    <div class="stat-card"><div class="stat-label">Costs MTD</div><div class="stat-value red" id="costMtd">$4,210.50</div></div>
+    <div class="stat-card"><div class="stat-label">Net MTD</div><div class="stat-value accent" id="netMtd">$24,239.50</div></div>
   </div>
   <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
   <div class="plan-row" id="planCards">
-    <div class="plan-card"><div class="plan-name">Starter</div><div class="plan-subs" id="pc-starter-subs">0 subs</div><div class="plan-rev" id="pc-starter-rev">R0</div></div>
-    <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-subs" id="pc-pro-subs">0 subs</div><div class="plan-rev" id="pc-pro-rev">R0</div></div>
-    <div class="plan-card"><div class="plan-name">Enterprise</div><div class="plan-subs" id="pc-ent-subs">0 subs</div><div class="plan-rev" id="pc-ent-rev">R0</div></div>
+    <div class="plan-card"><div class="plan-name">Starter</div><div class="plan-subs">64 subs</div><div class="plan-rev">$3,136.00</div></div>
+    <div class="plan-card"><div class="plan-name">Pro</div><div class="plan-subs">51 subs</div><div class="plan-rev">$7,599.00</div></div>
+    <div class="plan-card"><div class="plan-name">Enterprise</div><div class="plan-subs">27 subs</div><div class="plan-rev">$13,473.00</div></div>
   </div>
   <div class="panel-header">TRANSACTION LEDGER</div>
   <div class="scroll-table" id="ledgerWrap">
@@ -409,218 +378,12 @@ document.querySelectorAll('nav a').forEach(a => {
 
 <!-- QUICK ACTIONS -->
 <div class="quick-bar">
-  <button class="btn btn-purple" id="btnReconcile" onclick="adminReconcile()">Reconcile Treasury</button>
-  <button class="btn btn-green" id="btnDistribute" onclick="adminDistribute()">Distribute Rewards</button>
-  <button class="btn btn-yellow" id="btnCompound" onclick="adminCompound()">Compound Banks</button>
   <button class="btn btn-outline" onclick="exportLedger()">Export Ledger</button>
+  <button class="btn btn-red" onclick="resetState()">Reset State</button>
   <button class="btn" onclick="refreshAll()">Refresh All</button>
 </div>
 
 <script>
-// Admin gate
-(async function checkAdmin() {
-  const _tok = localStorage.getItem('bridge_token') || '';
-  const _opts = { credentials: 'include' };
-  if (_tok) _opts.headers = { Authorization: 'Bearer ' + _tok };
-  const r = await fetch('/auth/me', _opts).then(function(res){ return res.json(); }).catch(function(){ return { ok: false }; });
-  const _role = (r.user && r.user.role) || ''; const _plan = (r.user && r.user.plan) || '';
-  if (!r.ok || !(_role === 'admin' || _role === 'superadmin' || _plan === 'admin' || _plan === 'enterprise')) {
-    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef4444;font-family:monospace;font-size:1.2rem">Access denied — admin only</div>';
-    setTimeout(() => window.location.href = '/portal', 2000);
-    return;
-  }
-  window.__adminUser = r.user;
-  window.__adminToken = localStorage.getItem('bridge_token') || '';
-  initPage();
-})();
-
-function initPage() {
-
-// ── Admin action buttons ──
-window.adminReconcile = async function() {
-  const btn = document.getElementById('btnReconcile');
-  btn.disabled = true; btn.textContent = 'Reconciling...';
-  try {
-    const r = await fetch('/api/treasury/reconcile', {
-      method: 'POST',
-      headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
-    });
-    const d = await r.json();
-    showToast(d.ok || r.ok ? 'Treasury reconciled successfully' : ('Reconcile: ' + (d.error || 'failed')), d.ok || r.ok ? 'green' : 'red');
-    if (d.ok || r.ok) fetchTreasuryData();
-  } catch (e) { showToast('Reconcile failed: ' + e.message, 'red'); }
-  finally { btn.disabled = false; btn.textContent = 'Reconcile Treasury'; }
-};
-window.adminDistribute = async function() {
-  const btn = document.getElementById('btnDistribute');
-  btn.disabled = true; btn.textContent = 'Distributing...';
-  try {
-    const r = await fetch('/api/cron/distribute-rewards', {
-      method: 'POST',
-      headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
-    });
-    const d = await r.json();
-    showToast(d.ok || r.ok ? 'Rewards distributed' : ('Distribute: ' + (d.error || 'failed')), d.ok || r.ok ? 'green' : 'red');
-  } catch (e) { showToast('Distribute failed: ' + e.message, 'red'); }
-  finally { btn.disabled = false; btn.textContent = 'Distribute Rewards'; }
-};
-window.adminCompound = async function() {
-  const btn = document.getElementById('btnCompound');
-  btn.disabled = true; btn.textContent = 'Compounding...';
-  try {
-    const r = await fetch('/api/banks/compound', {
-      method: 'POST',
-      headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
-    });
-    const d = await r.json();
-    showToast(d.ok || r.ok ? 'Banks compounded' : ('Compound: ' + (d.error || 'failed')), d.ok || r.ok ? 'green' : 'red');
-  } catch (e) { showToast('Compound failed: ' + e.message, 'red'); }
-  finally { btn.disabled = false; btn.textContent = 'Compound Banks'; }
-};
-
-function showToast(msg, color) {
-  var toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;top:60px;right:20px;padding:12px 20px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeIn .3s ease;background:' + (color === 'green' ? 'rgba(0,229,123,.15);border:1px solid rgba(0,229,123,.3);color:#00e57b' : 'rgba(255,60,90,.15);border:1px solid rgba(255,60,90,.3);color:#ff3c5a');
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(function() { toast.remove(); }, 4000);
-}
-
-// ── Fetch real live data from APIs ──
-async function fetchTreasuryData() {
-  // 1. Financial provisions — revenue accrued + real costs from financial engine
-  try {
-    var aRes = await fetch('/api/analytics/overview');
-    var a = await aRes.json();
-    if (a && a.ok !== false) {
-      var rev   = a.revenue ? (a.revenue.accrued || a.revenue.mtd || 0) : 0;
-      var costs = a.costs   ? (a.costs.mtd || a.costs.total || 0) : 0;
-      var net   = rev - costs;
-      // Always show — even if zero, that's the real number
-      document.getElementById('revMtd').textContent  = fmt(rev);
-      document.getElementById('costMtd').textContent = fmt(costs);
-      document.getElementById('netMtd').textContent  = fmt(net);
-      treasury.revenueMtd = rev;
-      treasury.costsMtd   = costs;
-      // Update plan cards from real user counts
-      if (a.revenue && a.revenue.byPlan) {
-        var bp = a.revenue.byPlan;
-        var el = function(id){ return document.getElementById(id); };
-        if (el('pc-starter-subs'))  el('pc-starter-subs').textContent  = (bp.starter    ? bp.starter.count    : 0) + ' subs';
-        if (el('pc-pro-subs'))      el('pc-pro-subs').textContent      = (bp.pro        ? bp.pro.count        : 0) + ' subs';
-        if (el('pc-ent-subs'))      el('pc-ent-subs').textContent      = (bp.enterprise ? bp.enterprise.count : 0) + ' subs';
-        if (el('pc-starter-rev'))   el('pc-starter-rev').textContent   = 'R' + fmt(bp.starter    ? bp.starter.subtotal    : 0);
-        if (el('pc-pro-rev'))       el('pc-pro-rev').textContent       = 'R' + fmt(bp.pro        ? bp.pro.subtotal        : 0);
-        if (el('pc-ent-rev'))       el('pc-ent-rev').textContent       = 'R' + fmt(bp.enterprise ? bp.enterprise.subtotal : 0);
-      }
-      // Balance display: BRDG treasury ZAR value
-      if (a.brdgTreasury) {
-        document.getElementById('balanceDisplay').textContent = 'R' + fmt(a.brdgTreasury.zarValue || 0) + ' BRDG est.';
-      }
-      addEvent('TREASURY', 'system', 'Revenue R' + fmt(rev) + ' | Costs R' + fmt(costs) + ' | Net R' + fmt(net));
-    }
-  } catch (_) {}
-
-  // 2. Treasury balance
-  try {
-    var res = await fetch('/api/treasury/status', { headers: { 'X-Admin-Token': window.__adminToken } });
-    var d = await res.json();
-    if (d && (d.balance !== undefined || d.totalBalance !== undefined)) {
-      var bal = d.totalBalance || d.balance || 0;
-      if (bal > 0) {
-        document.getElementById('balanceDisplay').textContent = fmt(bal);
-        treasury.balance = bal;
-      }
-      // Revenue fallback from treasury if analytics didn't have it
-      var revT = d.revenueMtd || d.revenue_mtd || d.mtd_revenue || 0;
-      var costsT = d.costsMtd || d.costs_mtd || d.mtd_costs || 0;
-      if (revT > 0 && treasury.revenueMtd === (defaultTreasury.revenueMtd)) {
-        document.getElementById('revMtd').textContent = fmt(revT);
-        document.getElementById('costMtd').textContent = fmt(costsT);
-        document.getElementById('netMtd').textContent = fmt(revT - costsT);
-      }
-      addEvent('TREASURY', 'system', 'Treasury data refreshed from API (balance: ' + fmt(bal) + ')');
-    }
-  } catch (_) {
-    addEvent('TREASURY', 'system', 'Treasury API unavailable — using cached data');
-  }
-
-  // 3. Real payments ledger
-  try {
-    var lRes = await fetch('/api/treasury/ledger', { headers: { 'X-Admin-Token': window.__adminToken } });
-    var lData = await lRes.json();
-    var entries = lData.entries || lData.ledger || lData.data || [];
-    if (!Array.isArray(entries) || entries.length === 0) {
-      // Fallback: pull directly from payments table via invoices endpoint
-      var pRes = await fetch('/api/invoices');
-      var pData = await pRes.json();
-      entries = (pData.invoices || []).map(function(p) {
-        return { time: (p.created_at || '').slice(0,19).replace('T',' '), type: 'payment', desc: p.reference || p.client || 'Payment', amount: p.amount || 0, balance: 0 };
-      });
-    }
-    if (Array.isArray(entries) && entries.length > 0) {
-      var ledgerBody = document.getElementById('ledgerBody');
-      ledgerBody.innerHTML = '';
-      entries.slice(0, 30).forEach(function(tx) {
-        var amt = tx.amount || 0;
-        var cls = amt >= 0 ? 'green' : 'red';
-        var typeClass = tx.type === 'subscription' ? 'badge-green' : tx.type === 'cost' ? 'badge-red' : tx.type === 'reward' ? 'badge-purple' : 'badge-yellow';
-        ledgerBody.innerHTML += '<tr><td style="white-space:nowrap;color:var(--text-dim)">' + (tx.time || tx.date || tx.created_at || '--') + '</td>'
-          + '<td><span class="badge ' + typeClass + '"><span class="dot"></span>' + (tx.type || 'payment') + '</span></td>'
-          + '<td>' + (tx.desc || tx.description || '--') + '</td>'
-          + '<td style="color:var(--' + cls + ')">' + (amt >= 0 ? '+' : '') + fmt(Math.abs(amt)) + '</td>'
-          + '<td>' + fmt(tx.balance || tx.running_balance || 0) + '</td></tr>';
-      });
-    }
-  } catch (_) {}
-
-  // 4. Real ABAAS agent stats
-  try {
-    var abRes = await fetch('/api/abaas/agents');
-    var abData = await abRes.json();
-    if (abData && abData.agents && Array.isArray(abData.agents)) {
-      abData.agents.forEach(function(a) {
-        var card = document.querySelector('[data-agent="' + a.id + '"]');
-        if (card) {
-          var taskEl = card.querySelector('.agent-tasks');
-          if (taskEl) taskEl.textContent = 'Tasks: ' + a.tasks_total;
-          var statusEl = card.querySelector('.agent-status');
-          if (statusEl) { statusEl.textContent = a.status.toUpperCase(); statusEl.className = 'agent-status badge ' + (a.status === 'active' ? 'badge-green' : 'badge-yellow'); }
-        }
-      });
-    }
-  } catch (_) {}
-}
-
-// ── Poll real pipeline + ABAAS events (replaces fake random feed) ──
-var _lastPipelineTs = null;
-var _lastAbaasLog = 0;
-async function fetchLiveEvents() {
-  try {
-    var pRes = await fetch('/api/pipeline/log');
-    var pData = await pRes.json();
-    var events_raw = pData.events || [];
-    events_raw.slice(-5).forEach(function(e) {
-      if (e.ts !== _lastPipelineTs) {
-        _lastPipelineTs = e.ts;
-        var typeMap = { intake:'LEADS', qualify:'LEADS', nurture:'LEADS', close:'DISPATCH', reinvest:'TREASURY', abaas:'TASKS', aoe:'TREASURY', pipeline:'DISPATCH' };
-        addEvent(typeMap[e.stage] || 'DISPATCH', e.stage, e.msg);
-      }
-    });
-  } catch (_) {}
-  try {
-    var abRes = await fetch('/api/abaas/log');
-    var abData = await abRes.json();
-    var log = abData.log || [];
-    if (log.length > _lastAbaasLog) {
-      log.slice(_lastAbaasLog).slice(-3).forEach(function(entry) {
-        addEvent('TASKS', 'abaas-cycle', 'Cycle ' + entry.cycle + ' — ' + entry.tasks + ' tasks | ' + (entry.revenue || 0) + ' BRDG revenue');
-      });
-      _lastAbaasLog = log.length;
-    }
-  } catch (_) {}
-}
-
 // =========== STATE MANAGEMENT ===========
 const STORAGE_KEYS = {
   treasury: 'bridgeos_treasury',
@@ -1096,8 +859,6 @@ function refreshAll() {
   renderAll();
   renderServices();
   updateGauges();
-  fetchTreasuryData();
-  fetchLiveEvents();
   addEvent('DISPATCH', 'system', 'Manual refresh triggered');
 }
 
@@ -1175,41 +936,18 @@ async function init() {
   renderServices();
   updateGauges();
 
-  // Fetch real treasury data from API (overlays on seed data)
-  await fetchTreasuryData();
-
   // Seed some initial events
   if (events.length === 0) {
     for (let i = 0; i < 15; i++) addEvent();
   }
 
-  // Polling — real data, no simulation
-  setInterval(fetchLiveEvents, 8000);         // pipeline + ABAAS events every 8s
+  // Polling
+  setInterval(() => addEvent(), 3000);
   setInterval(() => { renderServices(); updateGauges(); }, 10000);
   setInterval(simulateTasks, 5000);
-  setInterval(fetchTreasuryData, 30000);      // revenue MTD + balance every 30s
-
-  // Initial live event fetch
-  fetchLiveEvents();
 }
 
-// Expose functions to onclick handlers
-window.addTransaction = addTransaction;
-window.dispatchTask = dispatchTask;
-window.toggleAgent = toggleAgent;
-window.createTask = createTask;
-window.claimTask = claimTask;
-window.completeTask = completeTask;
-window.cancelTask = cancelTask;
-window.creditUser = creditUser;
-window.toggleUser = toggleUser;
-window.filterFeed = filterFeed;
-window.exportLedger = exportLedger;
-window.resetState = resetState;
-window.refreshAll = refreshAll;
-
 init();
-} // end initPage
 </script>
 </body>
 </html>

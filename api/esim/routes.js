@@ -19,9 +19,24 @@
  *  POST   /api/pbx/cdr                    — log a call
  *  GET    /api/pbx/cdr                    — call history
  *  POST   /api/esim/register              — self-serve signup (leads.html CTA)
+ *
+ *  Carrier dashboard (auth required):
+ *  GET    /api/pbx/dashboard              — aggregated carrier overview
+ *  GET    /api/pbx/flows                  — list call flows (IVR/queues)
+ *  POST   /api/pbx/flows                  — create/update call flow
+ *  DELETE /api/pbx/flows/:id              — delete call flow
+ *  GET    /api/pbx/wallet                 — wallet balance + recent topups
+ *  POST   /api/pbx/wallet/topup           — add funds (generates invoice)
+ *  POST   /api/pbx/carrier/activate       — marketplace one-click: project + PBX tenant
  */
 
+const crypto = require('crypto');
 const svc = require('../../lib/esim-pbx-service');
+const { extractUser } = require('../../middleware/access-control');
+const { supabase, isConfigured } = require('../../lib/supabase');
+const { handleReseller }      = require('../pbx/reseller');
+const { handleFederation }    = require('../pbx/federation');
+const { handlePBXMarketplace } = require('../pbx/marketplace');
 
 // ─── Body parser helper (matches rest of codebase) ────────────────────────────
 async function parseBody(req) {
@@ -241,6 +256,257 @@ async function handleESim(req, res) {
       const offset = parseInt(url.searchParams.get('offset') || '0');
       const result = await svc.getCallHistory({ extension_id, limit, offset });
       return json(res, result);
+    }
+
+    // ═══ CARRIER DASHBOARD (auth-gated) ═══════════════════════════════════════
+
+    // ── GET /api/pbx/dashboard ─────────────────────────────────────────────────
+    if (p === '/api/pbx/dashboard' && method === 'GET') {
+      const user = await extractUser(req);
+      if (!user) return json(res, { error: 'Authentication required' }, 401);
+      if (!isConfigured) return json(res, { extensions: [], calls: [], wallet_balance: 0, active_esims: 0 });
+
+      const [extRes, cdrRes, esimRes, flowRes] = await Promise.all([
+        supabase.from('pbx_extensions').select('*').order('created_at', { ascending: false }).limit(20),
+        supabase.from('pbx_cdr').select('*').order('started_at', { ascending: false }).limit(10),
+        supabase.from('esim_accounts').select('id, iccid, status, wallet_balance, plan_name, data_gb, country_code').order('created_at', { ascending: false }).limit(5),
+        supabase.from('pbx_flows').select('*').order('created_at', { ascending: false }).limit(20).catch(() => ({ data: [] })),
+      ]);
+
+      const totalWallet = (esimRes.data || []).reduce((s, e) => s + (parseFloat(e.wallet_balance) || 0), 0);
+      return json(res, {
+        ok: true,
+        extensions:     extRes.data  || [],
+        recent_calls:   cdrRes.data  || [],
+        esims:          esimRes.data || [],
+        flows:          flowRes.data || [],
+        wallet_balance: Math.round(totalWallet * 100) / 100,
+        stats: {
+          total_extensions: (extRes.data || []).length,
+          active_esims:     (esimRes.data || []).filter(e => e.status === 'active').length,
+          total_flows:      (flowRes.data || []).length,
+          calls_today:      (cdrRes.data || []).filter(c => c.started_at && c.started_at.slice(0, 10) === new Date().toISOString().slice(0, 10)).length,
+        },
+      });
+    }
+
+    // ── GET /api/pbx/flows ─────────────────────────────────────────────────────
+    if (p === '/api/pbx/flows' && method === 'GET') {
+      const user = await extractUser(req);
+      if (!user) return json(res, { error: 'Authentication required' }, 401);
+      if (!isConfigured) return json(res, { flows: [] });
+
+      const { data, error } = await supabase.from('pbx_flows').select('*').order('created_at', { ascending: false });
+      if (error) return json(res, { flows: [] });
+      return json(res, { ok: true, flows: data || [], count: (data || []).length });
+    }
+
+    // ── POST /api/pbx/flows ────────────────────────────────────────────────────
+    if (p === '/api/pbx/flows' && method === 'POST') {
+      const user = await extractUser(req);
+      if (!user) return json(res, { error: 'Authentication required' }, 401);
+      if (!isConfigured) return json(res, { error: 'Database not configured' }, 500);
+
+      const body = await parseBody(req);
+      const { name, type, description, config } = body;
+      if (!name || !type) return json(res, { error: 'name and type required' }, 400);
+
+      // type: ivr | queue | ring_group | voicemail | forward
+      const now = new Date().toISOString();
+      const flowConfig = config || {};
+      if (type === 'ivr' && !flowConfig.greeting) flowConfig.greeting = `Welcome to ${name}. Press 1 for sales, 2 for support, 0 for operator.`;
+      if (type === 'ivr' && !flowConfig.options) flowConfig.options = { '1': 'sales', '2': 'support', '0': 'operator' };
+      if (type === 'queue' && !flowConfig.timeout_seconds) flowConfig.timeout_seconds = 60;
+      if (type === 'ring_group' && !flowConfig.strategy) flowConfig.strategy = 'simultaneous';
+
+      const { data, error } = await supabase.from('pbx_flows').insert({
+        id: crypto.randomUUID(),
+        name, type, description: description || null,
+        config: flowConfig,
+        status: 'active',
+        created_at: now,
+        updated_at: now,
+      }).select().single();
+
+      if (error) return json(res, { error: error.message }, 500);
+      return json(res, { ok: true, flow: data }, 201);
+    }
+
+    // ── DELETE /api/pbx/flows/:id ──────────────────────────────────────────────
+    const flowDelMatch = p.match(/^\/api\/pbx\/flows\/([a-f0-9-]{36})$/);
+    if (flowDelMatch && method === 'DELETE') {
+      const user = await extractUser(req);
+      if (!user) return json(res, { error: 'Authentication required' }, 401);
+      await supabase.from('pbx_flows').update({ status: 'archived' }).eq('id', flowDelMatch[1]);
+      return json(res, { ok: true });
+    }
+
+    // ── GET /api/pbx/wallet ────────────────────────────────────────────────────
+    if (p === '/api/pbx/wallet' && method === 'GET') {
+      const user = await extractUser(req);
+      if (!user) return json(res, { error: 'Authentication required' }, 401);
+      if (!isConfigured) return json(res, { wallet_balance: 0, topups: [] });
+
+      const { data: esims } = await supabase.from('esim_accounts').select('id, wallet_balance, plan_name').limit(10);
+      const esimIds = (esims || []).map(e => e.id);
+      const totalBalance = (esims || []).reduce((s, e) => s + (parseFloat(e.wallet_balance) || 0), 0);
+
+      let topups = [];
+      if (esimIds.length) {
+        const { data: t } = await supabase.from('esim_topups').select('*').in('esim_id', esimIds).order('created_at', { ascending: false }).limit(20);
+        topups = t || [];
+      }
+      return json(res, { ok: true, wallet_balance: Math.round(totalBalance * 100) / 100, topups, esims: esims || [] });
+    }
+
+    // ── POST /api/pbx/wallet/topup ─────────────────────────────────────────────
+    if (p === '/api/pbx/wallet/topup' && method === 'POST') {
+      const user = await extractUser(req);
+      if (!user) return json(res, { error: 'Authentication required' }, 401);
+      if (!isConfigured) return json(res, { error: 'Database not configured' }, 500);
+
+      const body = await parseBody(req);
+      const { esim_id, amount, type = 'wallet', payment_ref } = body;
+      if (!esim_id || !amount) return json(res, { error: 'esim_id and amount required' }, 400);
+
+      const result = await svc.topupESim({ esim_id, type, amount: parseFloat(amount), currency: 'ZAR', payment_ref: payment_ref || `manual_${Date.now()}` });
+      if (!result.ok) return json(res, { error: result.error }, 500);
+
+      // Emit invoice to treasury
+      if (isConfigured) {
+        const now = new Date().toISOString();
+        supabase.from('invoices').insert({
+          id: crypto.randomUUID(),
+          user_id: user.id,
+          line_items: [{ description: 'PBX Wallet Top-up', quantity: 1, unit_price: parseFloat(amount), total: parseFloat(amount) }],
+          total_amount: parseFloat(amount),
+          currency: 'ZAR',
+          status: 'paid',
+          paid_at: now,
+          created_at: now,
+          meta: { source: 'pbx_wallet_topup', esim_id, payment_ref: payment_ref || '' },
+        }).catch(() => {});
+      }
+
+      return json(res, { ok: true, topup: result.topup, new_balance: result.topup?.amount });
+    }
+
+    // ── POST /api/pbx/carrier/activate ────────────────────────────────────────
+    // Marketplace one-click: creates Bridge AI project + provisions PBX tenant
+    if (p === '/api/pbx/carrier/activate' && method === 'POST') {
+      const user = await extractUser(req);
+      if (!user) return json(res, { error: 'Authentication required' }, 401);
+      if (!isConfigured) return json(res, { error: 'Database not configured' }, 500);
+
+      const body = await parseBody(req);
+      const { plan_name = 'Global Pro', display_name, country_code = 'ZA' } = body;
+      const now = new Date().toISOString();
+
+      // 1. Provision eSIM (carrier account anchor)
+      const esimResult = await svc.provisionESim({
+        user_id: user.id,
+        plan_name,
+        country_code,
+        name: display_name || user.name || user.email,
+        email: user.email,
+      });
+      if (!esimResult.ok) return json(res, { error: esimResult.error }, 500);
+
+      // 2. Provision PBX extension for this carrier account
+      const pbxResult = await svc.provisionPBXExtension({
+        esim_id: esimResult.esim.id,
+        display_name: display_name || user.name || user.email,
+        country: country_code,
+      });
+
+      // 3. Create a Bridge AI project representing the carrier account
+      const projectId = crypto.randomUUID();
+      await supabase.from('projects').insert({
+        id: projectId,
+        user_id: user.id,
+        name: `PBX Carrier — ${display_name || user.email}`,
+        tool_id: 'esim',
+        intent: `Carrier-grade PBX platform. Plan: ${plan_name}. eSIM + cloud PBX with AI call management.`,
+        integration_targets: ['crm', 'billing', 'treasury'],
+        scaffold: {
+          catalog_id:    'pbx-carrier',
+          category:      'telco_esim',
+          market:        'Global',
+          tech:          ['FreeSWITCH', 'SIP', 'WebRTC', 'AI'],
+          esim_id:       esimResult.esim.id,
+          iccid:         esimResult.esim.iccid,
+          extension:     pbxResult.ok ? pbxResult.extension?.extension : null,
+          sip_domain:    'pbx.bridge-ai-os.com',
+          app_page_url:  '/esim',
+          provisioned_at: now,
+        },
+        status: 'active',
+        run_count: 1,
+        output_count: 0,
+        created_at: now,
+        updated_at: now,
+      }).catch(() => {});
+
+      // 4. Seed project run
+      await supabase.from('project_runs').insert({
+        id: crypto.randomUUID(),
+        project_id: projectId,
+        tool_id: 'esim',
+        agent_ids: [],
+        inputs: { source: 'marketplace_activate', plan: plan_name },
+        trigger: 'provision',
+        status: 'completed',
+        started_at: now,
+        completed_at: now,
+        result: { message: 'PBX carrier account activated', esim_id: esimResult.esim.id },
+        error: null, latency_ms: 200, tokens_used: 0, brdg_cost: 0,
+      }).catch(() => {});
+
+      // 5. Create CRM contact
+      supabase.from('contacts').insert({
+        name: display_name || user.name || user.email,
+        email: user.email,
+        status: 'customer', stage: 'closed_won',
+        source: 'pbx_marketplace',
+        score: 90,
+        tags: ['pbx', 'carrier', plan_name.toLowerCase().replace(/\s+/g, '_')],
+        notes: `Activated PBX carrier via marketplace. Plan: ${plan_name}. iccid: ${esimResult.esim.iccid}`,
+        meta: { esim_id: esimResult.esim.id, project_id: projectId },
+      }).catch(() => {});
+
+      return json(res, {
+        ok: true,
+        message: 'Carrier account activated',
+        project_id: projectId,
+        esim: {
+          id:           esimResult.esim.id,
+          iccid:        esimResult.esim.iccid,
+          plan:         plan_name,
+          status:       esimResult.esim.status,
+          activation_qr: esimResult.qr_url,
+          lpa:          esimResult.lpa,
+        },
+        pbx: pbxResult.ok ? {
+          extension:    pbxResult.extension?.extension,
+          did_number:   pbxResult.extension?.did_number,
+          sip_domain:   'pbx.bridge-ai-os.com',
+          sip_username: pbxResult.sip_credentials?.username,
+          sip_password: pbxResult.sip_credentials?.password,
+        } : null,
+        dashboard_url: '/esim',
+      }, 201);
+    }
+
+    // ── Federation + Reseller + Marketplace ─────────────────────────────────
+    const path = url.pathname;
+    if (path.startsWith('/api/pbx/reseller')) {
+      return handleReseller(req, res);
+    }
+    if (path.startsWith('/api/pbx/federation')) {
+      return handleFederation(req, res);
+    }
+    if (path.startsWith('/api/pbx/marketplace')) {
+      return handlePBXMarketplace(req, res);
     }
 
     return null; // Not handled — pass to next middleware

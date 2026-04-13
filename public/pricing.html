@@ -2,416 +2,224 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pricing &amp; Plans — Bridge AI OS</title>
-<meta name="description" content="Bridge AI OS pricing — Starter R0/mo, Pro R499/mo, Enterprise R2,499/mo. Full AI agent workforce on every plan. Prices in ZAR.">
+<meta name="description" content="Bridge AI OS pricing — Starter R0/mo, Pro R499/mo, Enterprise R2,499/mo. Full AI agent workforce on every plan.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://go.ai-os.co.za/pricing">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://go.ai-os.co.za/pricing">
-<meta property="og:title" content="Pricing &amp; Plans — Bridge AI OS">
+<meta property="og:title" content="Pricing & Plans - Bridge AI OS">
 <meta property="og:description" content="Bridge AI OS pricing — Starter R0/mo, Pro R499/mo, Enterprise R2,499/mo. Full AI agent workforce on every plan.">
 <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
 <meta property="og:site_name" content="Bridge AI OS">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Pricing &amp; Plans — Bridge AI OS">
-<meta name="twitter:description" content="Starter R0 · Pro R499 · Enterprise R2,499. Full AI agent platform on every plan.">
+<meta name="twitter:title" content="Pricing & Plans - Bridge AI OS">
+<meta name="twitter:description" content="Bridge AI OS pricing — Starter R0/mo, Pro R499/mo, Enterprise R2,499/mo. Full AI agent workforce on every plan.">
 <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/bridge-phere.css">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pricing & Plans - Bridge AI OS</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#020408;color:#e2e8f0;font-family:'Outfit',system-ui,sans-serif;min-height:100vh}
-
-/* Page header */
-.page-header{
-  text-align:center;padding:60px 24px 20px;
-  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(99,255,218,.05),transparent 70%);
-}
-.page-eyebrow{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:4px 12px;border-radius:20px;margin-bottom:16px;
-  background:rgba(99,255,218,.06);border:1px solid rgba(99,255,218,.2);
-  font-size:.68rem;font-weight:700;color:#63ffda;letter-spacing:.1em;
-}
-.page-title{
-  font-size:clamp(1.8rem,4vw,3rem);font-weight:800;
-  color:#e2e8f0;letter-spacing:-.02em;margin-bottom:8px;
-}
-.page-sub{font-size:.9rem;color:rgba(200,220,230,.5);margin-bottom:8px}
-.zar-note{
-  font-size:.72rem;color:rgba(200,220,230,.35);
-  display:inline-flex;align-items:center;gap:6px;
-  padding:4px 12px;border-radius:20px;
-  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);
-}
-
-/* Toggle annual */
-.toggle-wrap{display:flex;align-items:center;justify-content:center;gap:10px;margin:24px 0;font-size:.8rem;color:rgba(200,220,230,.5)}
-.toggle{
-  width:40px;height:22px;border-radius:11px;cursor:pointer;
-  background:rgba(99,255,218,.12);border:1px solid rgba(99,255,218,.25);
-  position:relative;transition:background .2s;
-}
-.toggle.on{background:rgba(99,255,218,.3)}
-.toggle-knob{
-  position:absolute;top:3px;left:3px;width:14px;height:14px;
-  border-radius:50%;background:#63ffda;transition:left .2s;
-}
-.toggle.on .toggle-knob{left:21px}
-.save-badge{
-  padding:2px 8px;border-radius:20px;
-  background:rgba(0,229,123,.12);color:#00e57b;
-  border:1px solid rgba(0,229,123,.25);font-size:.65rem;font-weight:700;
-}
-
-/* Plans grid */
-.plans-section{max-width:1080px;margin:0 auto;padding:20px 24px 60px}
-.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:60px}
-
-.plan{
-  background:rgba(8,15,26,.7);border:1px solid rgba(99,255,218,.08);
-  border-radius:16px;padding:28px 24px;display:flex;flex-direction:column;
-  position:relative;transition:border-color .2s,transform .2s,box-shadow .2s;
-}
-.plan:hover{
-  border-color:rgba(99,255,218,.22);transform:translateY(-4px);
-  box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 0 1px rgba(99,255,218,.08);
-}
-.plan.featured{
-  border-color:rgba(99,255,218,.3);
-  background:rgba(10,18,30,.9);
-  box-shadow:0 0 0 1px rgba(99,255,218,.12),0 0 40px rgba(99,255,218,.05);
-}
-.plan-badge{
-  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-  background:linear-gradient(135deg,#63ffda,#00e57b);color:#020408;
-  padding:3px 12px;border-radius:20px;font-size:.62rem;font-weight:800;
-  white-space:nowrap;letter-spacing:.06em;
-}
-.plan-name{font-size:.75rem;font-weight:700;letter-spacing:.12em;color:rgba(200,220,230,.5);margin-bottom:8px}
-.plan-price{
-  font-size:2.8rem;font-weight:800;color:#e2e8f0;line-height:1;
-  font-family:'JetBrains Mono',monospace;margin-bottom:4px;
-}
-.plan-price .currency{font-size:1.4rem;font-weight:600;color:rgba(200,220,230,.5);vertical-align:super}
-.plan-price .period{font-size:.8rem;font-weight:400;color:rgba(200,220,230,.4);font-family:'Outfit',sans-serif}
-.plan-desc{font-size:.78rem;color:rgba(200,220,230,.45);margin:12px 0 20px;line-height:1.5}
-.plan-features{list-style:none;flex:1;margin-bottom:24px;display:flex;flex-direction:column;gap:8px}
-.plan-features li{
-  display:flex;align-items:flex-start;gap:8px;font-size:.78rem;color:rgba(200,220,230,.7);
-}
-.plan-features li::before{
-  content:'';width:6px;height:6px;border-radius:50%;background:#00e57b;
-  flex-shrink:0;margin-top:5px;
-}
-.plan-features li.dim{color:rgba(200,220,230,.35)}
-.plan-features li.dim::before{background:rgba(200,220,230,.2)}
-.plan-btn{
-  display:block;text-align:center;padding:11px 20px;border-radius:8px;
-  font-size:.8rem;font-weight:700;letter-spacing:.05em;text-decoration:none;
-  transition:filter .15s,transform .15s;
-}
-.plan-btn-primary{
-  background:linear-gradient(135deg,#63ffda,#00e57b);color:#020408;
-}
-.plan-btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.plan-btn-outline{
-  border:1px solid rgba(99,255,218,.3);color:#63ffda;background:rgba(99,255,218,.04);
-}
-.plan-btn-outline:hover{background:rgba(99,255,218,.1);border-color:rgba(99,255,218,.6)}
-.plan-btn-gold{
-  background:linear-gradient(135deg,#f59e0b,#ff8800);color:#020408;
-}
-.plan-btn-gold:hover{filter:brightness(1.08);transform:translateY(-1px)}
-
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
+.topnav{background:var(--bg2);border-bottom:1px solid #1a2a3a;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;overflow-x:auto;flex-shrink:0}
+.topnav .logo{font-weight:700;font-size:1.1rem;color:var(--a);white-space:nowrap}
+.topnav a{color:var(--t);font-size:.85rem;white-space:nowrap;padding:.35rem .6rem;border-radius:6px;transition:all .2s}
+.topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
+main{flex:1;padding:1.5rem;max-width:1200px;width:100%;margin:0 auto}
+h1{font-size:2rem;text-align:center;margin-bottom:.25rem}
+.subtitle{color:var(--t);text-align:center;margin-bottom:2rem;font-size:1.05rem}
+/* Plan cards */
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem;margin-bottom:2rem}
+.plan{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.5rem;display:flex;flex-direction:column;position:relative;transition:transform .2s}
+.plan:hover{transform:translateY(-4px)}
+.plan.featured{border-color:var(--a);box-shadow:0 0 30px #00c8ff15}
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--a);color:#000;padding:.2rem .75rem;border-radius:20px;font-size:.7rem;font-weight:700}
+.plan-name{font-size:1.1rem;font-weight:700;margin-bottom:.25rem}
+.plan-price{font-size:2.5rem;font-weight:800;line-height:1}
+.plan-price span{font-size:.9rem;font-weight:400;color:var(--t)}
+.plan-desc{color:var(--t);font-size:.85rem;margin:.75rem 0}
+.plan-features{list-style:none;flex:1;margin-bottom:1.25rem}
+.plan-features li{padding:.35rem 0;font-size:.85rem;display:flex;align-items:start;gap:.5rem}
+.plan-features li::before{content:"\\2713";color:var(--g);font-weight:700;flex-shrink:0}
+.btn{display:inline-block;padding:.7rem 1.5rem;border-radius:8px;font-weight:600;font-size:.9rem;border:none;cursor:pointer;transition:all .2s;text-align:center;width:100%}
+.btn-primary{background:var(--a);color:#000}.btn-green{background:var(--g);color:#000}
+.btn-outline{border:1px solid #334;color:var(--w);background:transparent}
+.btn-gold{background:linear-gradient(135deg,var(--y),#ff8800);color:#000}
+.btn:hover{opacity:.85;text-decoration:none}
 /* Comparison table */
-.cmp-wrap{overflow-x:auto;margin-bottom:60px;border-radius:14px;border:1px solid rgba(99,255,218,.08)}
-.cmp{width:100%;border-collapse:collapse;font-size:.8rem}
-.cmp th{
-  padding:14px 16px;text-align:center;
-  background:rgba(8,15,26,.9);color:rgba(200,220,230,.5);
-  font-size:.7rem;letter-spacing:.1em;font-weight:600;
-  border-bottom:1px solid rgba(99,255,218,.08);
-}
+.cmp{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:2rem}
+.cmp th{padding:.65rem .5rem;text-align:center;border-bottom:2px solid #1a2a3a;color:var(--w);font-size:.85rem}
 .cmp th:first-child{text-align:left}
-.cmp th.hl{color:#63ffda}
-.cmp td{padding:11px 16px;text-align:center;border-bottom:1px solid rgba(99,255,218,.04);color:rgba(200,220,230,.6)}
-.cmp td:first-child{text-align:left;color:rgba(200,220,230,.45);font-size:.75rem}
-.cmp tr:hover td{background:rgba(99,255,218,.02)}
-.cmp tr:last-child td{border-bottom:none}
-.ck{color:#00e57b;font-weight:700}
-.cx{color:rgba(200,220,230,.15)}
-.cmp-group td{
-  background:rgba(4,8,15,.5);color:rgba(99,255,218,.5);
-  font-size:.65rem;letter-spacing:.1em;font-weight:700;padding:8px 16px;
-}
-
+.cmp td{padding:.55rem .5rem;text-align:center;border-bottom:1px solid #0d1520}
+.cmp td:first-child{text-align:left;color:var(--t)}
+.cmp tr:hover{background:#0d151f}
+.ck{color:var(--g)}.cx{color:#334}
 /* FAQ */
-.faq-section{margin-bottom:60px}
-.faq-title{font-size:1.3rem;font-weight:700;color:#e2e8f0;text-align:center;margin-bottom:24px}
-.faq{display:flex;flex-direction:column;gap:8px}
-.faq-item{
-  background:rgba(8,15,26,.7);border:1px solid rgba(99,255,218,.08);
-  border-radius:10px;overflow:hidden;
-}
-.faq-q{
-  padding:16px 20px;cursor:pointer;font-size:.85rem;font-weight:600;
-  color:#e2e8f0;display:flex;justify-content:space-between;align-items:center;
-  user-select:none;transition:background .15s;
-}
-.faq-q:hover{background:rgba(99,255,218,.03)}
-.faq-arrow{color:rgba(99,255,218,.4);transition:transform .25s;font-size:.7rem}
-.faq-item.open .faq-arrow{transform:rotate(180deg);color:#63ffda}
-.faq-a{
-  padding:0 20px;max-height:0;overflow:hidden;
-  transition:max-height .3s ease,padding .3s ease;
-  font-size:.82rem;color:rgba(200,220,230,.5);line-height:1.7;
-}
-.faq-item.open .faq-a{max-height:300px;padding:0 20px 16px}
-
-/* CTA strip */
-.cta-strip{
-  background:rgba(8,15,26,.8);border:1px solid rgba(99,255,218,.1);
-  border-radius:16px;padding:40px;text-align:center;
-}
-.cta-strip h2{font-size:1.5rem;font-weight:700;color:#e2e8f0;margin-bottom:8px}
-.cta-strip p{color:rgba(200,220,230,.45);font-size:.85rem;margin-bottom:24px;max-width:480px;margin-left:auto;margin-right:auto}
-.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.btn-p{
-  padding:11px 24px;border-radius:8px;font-size:.82rem;font-weight:700;
-  background:linear-gradient(135deg,#63ffda,#00e57b);color:#020408;
-  text-decoration:none;letter-spacing:.04em;transition:filter .15s,transform .15s;
-}
-.btn-p:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.btn-o{
-  padding:10px 20px;border-radius:8px;font-size:.82rem;font-weight:600;
-  border:1px solid rgba(99,255,218,.3);color:#63ffda;background:rgba(99,255,218,.04);
-  text-decoration:none;transition:background .15s,border-color .15s;
-}
-.btn-o:hover{background:rgba(99,255,218,.1)}
-
-@media(max-width:600px){
-  .plans{grid-template-columns:1fr}
-  .cta-strip{padding:28px 20px}
-}
+.faq{margin-bottom:2rem}
+.faq-item{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);margin-bottom:.5rem;overflow:hidden}
+.faq-q{padding:1rem 1.25rem;cursor:pointer;font-weight:600;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.faq-q:hover{background:#0d151f}
+.faq-a{padding:0 1.25rem;max-height:0;overflow:hidden;transition:max-height .3s,padding .3s;color:var(--t);font-size:.9rem;line-height:1.6}
+.faq-item.open .faq-a{max-height:300px;padding:0 1.25rem 1rem}
+.faq-item.open .faq-arrow{transform:rotate(180deg)}
+.faq-arrow{transition:transform .3s;color:var(--t)}
+.section-title{font-size:1.3rem;font-weight:700;margin-bottom:1rem;text-align:center}
+@media(max-width:600px){main{padding:1rem}.plans{grid-template-columns:1fr}h1{font-size:1.5rem}.plan-price{font-size:2rem}.cmp{font-size:.75rem}}
 </style>
 </head>
 <body>
-<script src="/bridge-nav.js"></script>
+<nav class="topnav">
+  <a href="/" class="logo">Bridge AI</a>
+  <a href="/">Dashboard</a>
+  <a href="/trading.html">Trading</a>
+  <a href="/defi.html">DeFi</a>
+  <a href="/wallet.html">Wallet</a>
+  <a href="/governance.html">Governance</a>
+  <a href="/intelligence.html">Intelligence</a>
+  <a href="/pricing.html" class="active">Pricing</a>
+  <a href="/corporate.html">Corporate</a>
+  <a href="/onboarding.html">Onboarding</a>
+</nav>
+<main>
+  <h1>Simple, Transparent Pricing</h1>
+  <p class="subtitle">Start free. Scale as you grow. No hidden fees.</p>
 
-<header class="page-header">
-  <div class="page-eyebrow">TRANSPARENT PRICING</div>
-  <h1 class="page-title">Start free. Scale as you grow.</h1>
-  <p class="page-sub">No hidden fees. Cancel anytime.</p>
-  <div class="zar-note">
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><circle cx="5" cy="5" r="4" stroke="#63ffda" stroke-width="1.2"/></svg>
-    All prices in South African Rand (ZAR)
-  </div>
-
-  <div class="toggle-wrap">
-    <span>Monthly</span>
-    <div class="toggle" id="toggle-annual" role="switch" aria-checked="false" aria-label="Annual billing" tabindex="0">
-      <div class="toggle-knob"></div>
-    </div>
-    <span>Annual</span>
-    <span class="save-badge">Save 20%</span>
-  </div>
-</header>
-
-<div class="plans-section">
-
-  <div class="plans" id="plan-grid">
-    <!-- Starter -->
+  <div class="plans" id="plan-cards">
     <div class="plan">
-      <div class="plan-name">STARTER</div>
-      <div class="plan-price"><span class="currency">R</span>0<span class="period">/mo</span></div>
-      <p class="plan-desc">Explore the platform. No credit card required.</p>
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0<span>/mo</span></div>
+      <div class="plan-desc">Explore the platform with basic access to all public features.</div>
       <ul class="plan-features">
         <li>100 API calls / day</li>
         <li>1 AI agent</li>
         <li>Public trading signals</li>
         <li>Read-only governance</li>
         <li>Community support</li>
-        <li class="dim">CRM &amp; Invoicing</li>
-        <li class="dim">Live trade execution</li>
       </ul>
-      <a href="/onboarding?plan=free" class="plan-btn plan-btn-outline">Get Started Free</a>
+      <a href="/onboarding.html?plan=free" class="btn btn-outline">Get Started Free</a>
     </div>
-
-    <!-- Pro -->
     <div class="plan featured">
       <div class="plan-badge">MOST POPULAR</div>
-      <div class="plan-name">PRO</div>
-      <div class="plan-price"><span class="currency">R</span><span id="pro-price">499</span><span class="period">/mo</span></div>
-      <p class="plan-desc">For founders and SMBs who need the full platform.</p>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$49<span>/mo</span></div>
+      <div class="plan-desc">For individuals and small teams who need full platform access.</div>
       <ul class="plan-features">
         <li>10,000 API calls / day</li>
         <li>5 AI agents</li>
-        <li>CRM + Leads pipeline</li>
-        <li>AI invoicing &amp; P&amp;L</li>
         <li>Live trade execution</li>
+        <li>2 BossBots</li>
         <li>DeFi yield farming</li>
-        <li>BRDG token rewards</li>
+        <li>Governance voting</li>
+        <li>Opportunity scanner (Basic)</li>
         <li>Email support</li>
       </ul>
-      <a href="/onboarding?plan=pro" class="plan-btn plan-btn-primary">Get Started</a>
+      <a href="/onboarding.html?plan=pro" class="btn btn-primary">Get Started</a>
     </div>
-
-    <!-- Enterprise -->
     <div class="plan">
-      <div class="plan-name">ENTERPRISE</div>
-      <div class="plan-price"><span class="currency">R</span><span id="ent-price">2,499</span><span class="period">/mo</span></div>
-      <p class="plan-desc">For teams needing advanced intelligence and integrations.</p>
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">$499<span>/mo</span></div>
+      <div class="plan-desc">For organizations needing advanced intelligence and custom integrations.</div>
       <ul class="plan-features">
         <li>100,000 API calls / day</li>
         <li>50 AI agents</li>
-        <li>Full CRM + Invoicing + eSIM</li>
-        <li>HITL approval workflows</li>
-        <li>Cognitive agent routing</li>
+        <li>10 BossBots</li>
+        <li>Cognitive routing</li>
+        <li>Advanced opportunity scanner</li>
         <li>Custom integrations</li>
-        <li>SSO / Team management</li>
         <li>Priority support</li>
+        <li>SSO / Team management</li>
       </ul>
-      <a href="/onboarding?plan=enterprise" class="plan-btn plan-btn-outline">Contact Sales</a>
+      <a href="/onboarding.html?plan=enterprise" class="btn btn-green">Contact Sales</a>
     </div>
-
-    <!-- Platform -->
     <div class="plan">
-      <div class="plan-name">PLATFORM</div>
-      <div class="plan-price" style="font-size:1.8rem;padding-top:4px">Custom</div>
-      <p class="plan-desc">White-label Bridge AI OS under your own brand and domain.</p>
+      <div class="plan-name">Platform</div>
+      <div class="plan-price">$2,499<span>/mo</span></div>
+      <div class="plan-desc">White-label the entire platform. Run your own AI-powered operation.</div>
       <ul class="plan-features">
         <li>Unlimited API calls</li>
         <li>Unlimited AI agents</li>
+        <li>Unlimited BossBots</li>
         <li>Full cognitive routing</li>
         <li>White-label deployment</li>
         <li>Dedicated infrastructure</li>
-        <li>Revenue sharing model</li>
-        <li>Custom SLAs &amp; uptime</li>
         <li>24/7 dedicated support</li>
+        <li>Custom SLAs</li>
       </ul>
-      <a href="/onboarding?plan=platform" class="plan-btn plan-btn-gold">Contact Sales</a>
+      <a href="/onboarding.html?plan=platform" class="btn btn-gold">Contact Sales</a>
     </div>
   </div>
 
-  <!-- Comparison table -->
-  <div class="cmp-wrap" role="region" aria-label="Plan feature comparison">
-    <table class="cmp">
-      <thead>
-        <tr>
-          <th scope="col">Feature</th>
-          <th scope="col">Starter</th>
-          <th scope="col" class="hl">Pro</th>
-          <th scope="col">Enterprise</th>
-          <th scope="col">Platform</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="cmp-group"><td colspan="5">USAGE</td></tr>
-        <tr><td>API Calls / day</td><td>100</td><td>10,000</td><td>100,000</td><td>Unlimited</td></tr>
-        <tr><td>AI Agents</td><td>1</td><td>5</td><td>50</td><td>Unlimited</td></tr>
-        <tr class="cmp-group"><td colspan="5">BUSINESS TOOLS</td></tr>
-        <tr><td>CRM + Leads</td><td class="cx" aria-label="Not included">—</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr><td>AI Invoicing</td><td class="cx" aria-label="Not included">—</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr><td>HITL Workflows</td><td class="cx" aria-label="Not included">—</td><td class="cx" aria-label="Not included">—</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr><td>eSIM + PBX</td><td class="cx" aria-label="Not included">—</td><td class="cx" aria-label="Not included">—</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr class="cmp-group"><td colspan="5">TRADING &amp; DEFI</td></tr>
-        <tr><td>Trading Signals</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr><td>Live Execution</td><td class="cx" aria-label="Not included">—</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr><td>DeFi Yield Farming</td><td class="cx" aria-label="Not included">—</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr><td>BRDG Governance</td><td>Read-only</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr class="cmp-group"><td colspan="5">ENTERPRISE</td></tr>
-        <tr><td>White-label</td><td class="cx" aria-label="Not included">—</td><td class="cx" aria-label="Not included">—</td><td class="cx" aria-label="Not included">—</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr><td>SSO / Teams</td><td class="cx" aria-label="Not included">—</td><td class="cx" aria-label="Not included">—</td><td class="ck" aria-label="Included">✓</td><td class="ck" aria-label="Included">✓</td></tr>
-        <tr><td>Custom SLA</td><td class="cx" aria-label="Not included">—</td><td>99.5%</td><td>99.9%</td><td>Custom</td></tr>
-        <tr><td>Support</td><td>Community</td><td>Email</td><td>Priority</td><td>24/7 Dedicated</td></tr>
-      </tbody>
-    </table>
+  <div class="section-title">Feature Comparison</div>
+  <div style="overflow-x:auto;margin-bottom:2rem">
+  <table class="cmp">
+    <thead>
+      <tr><th style="text-align:left">Feature</th><th>Free</th><th style="color:var(--a)">Pro</th><th>Enterprise</th><th>Platform</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>API Calls / day</td><td>100</td><td>10,000</td><td>100,000</td><td>Unlimited</td></tr>
+      <tr><td>AI Agents</td><td>1</td><td>5</td><td>50</td><td>Unlimited</td></tr>
+      <tr><td>Trading Signals</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>Live Execution</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>BossBots</td><td class="cx">&#10007;</td><td>2</td><td>10</td><td>Unlimited</td></tr>
+      <tr><td>DeFi Yield Farming</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>Governance Voting</td><td>Read-only</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>Cognitive Routing</td><td class="cx">&#10007;</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>Opportunity Scanner</td><td class="cx">&#10007;</td><td>Basic</td><td>Advanced</td><td>Full</td></tr>
+      <tr><td>Custom Integrations</td><td class="cx">&#10007;</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>White-label</td><td class="cx">&#10007;</td><td class="cx">&#10007;</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>SSO / Teams</td><td class="cx">&#10007;</td><td class="cx">&#10007;</td><td class="ck">&#10003;</td><td class="ck">&#10003;</td></tr>
+      <tr><td>Support</td><td>Community</td><td>Email</td><td>Priority</td><td>24/7 Dedicated</td></tr>
+      <tr><td>SLA</td><td class="cx">&#10007;</td><td>99.5%</td><td>99.9%</td><td>Custom</td></tr>
+    </tbody>
+  </table>
   </div>
 
-  <!-- FAQ -->
-  <div class="faq-section">
-    <div class="faq-title">Frequently asked questions</div>
-    <div class="faq">
-      <div class="faq-item">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
-          Can I switch plans at any time?
-          <span class="faq-arrow">▼</span>
-        </div>
-        <div class="faq-a">Yes. Upgrade or downgrade at any time. When upgrading, you pay the prorated difference. Downgrades apply at the next billing cycle.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
-          What payment methods do you accept?
-          <span class="faq-arrow">▼</span>
-        </div>
-        <div class="faq-a">We accept Visa, Mastercard via PayFast (South Africa), Paystack (Africa), and cryptocurrency (BTC, ETH, USDT, BRDG). Annual plans via EFT available on request.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
-          Is there a free trial for paid plans?
-          <span class="faq-arrow">▼</span>
-        </div>
-        <div class="faq-a">The Starter tier gives permanent access to public features. Paid plans include a 14-day money-back guarantee — try risk-free.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
-          What happens if I exceed my API limits?
-          <span class="faq-arrow">▼</span>
-        </div>
-        <div class="faq-a">Requests beyond your daily limit are queued and throttled — not blocked. You'll receive an alert to upgrade. Enterprise and Platform tiers have burst capacity built in.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
-          Do you offer annual discounts?
-          <span class="faq-arrow">▼</span>
-        </div>
-        <div class="faq-a">Yes — toggle annual billing above to save 20% on all paid plans. Custom multi-year agreements available for Enterprise and Platform.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
-          What is the white-label Platform option?
-          <span class="faq-arrow">▼</span>
-        </div>
-        <div class="faq-a">Platform customers get a fully branded deployment of Bridge AI OS under their own domain with custom theming, dedicated infrastructure, their own user base, and a revenue-sharing model.</div>
-      </div>
+  <div class="section-title">Frequently Asked Questions</div>
+  <div class="faq">
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Can I switch plans at any time?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">Yes. Upgrade or downgrade at any time. When upgrading, you pay the prorated difference. When downgrading, the new rate applies at the next billing cycle.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What payment methods do you accept?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">We accept Visa, Mastercard, and American Express via Stripe, local payments via PayFast (South Africa) and Paystack (Africa), cryptocurrency (BTC, ETH, USDT, SOL), and IBAN bank transfers for EU customers.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Is there a free trial for paid plans?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">The Free tier gives you permanent access to public features. Paid plans include a 14-day money-back guarantee so you can try risk-free.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What happens if I exceed my API limits?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">Requests beyond your daily limit are queued and throttled rather than blocked. You will receive a notification to upgrade. Enterprise and Platform tiers have burst capacity built in.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Do you offer annual discounts?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">Yes. Annual billing saves 20% on all paid plans. Contact sales for custom multi-year agreements on Enterprise and Platform tiers.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">How does the white-label option work?<span class="faq-arrow">&#9662;</span></div>
+      <div class="faq-a">Platform tier customers get a fully branded deployment of Bridge AI OS under their own domain with custom theming, dedicated infrastructure, and their own billing system for end users.</div>
     </div>
   </div>
 
-  <!-- CTA strip -->
-  <div class="cta-strip">
-    <h2>Need a custom solution?</h2>
-    <p>Enterprise and Platform customers get dedicated onboarding, custom SLAs, and priority engineering access.</p>
-    <div class="cta-btns">
-      <a href="/onboarding?plan=enterprise" class="btn-p">Contact Sales</a>
-      <a href="/home" class="btn-o">Back to Home</a>
-    </div>
+  <div style="text-align:center;padding:2rem 0;border-top:1px solid #1a2a3a">
+    <h2 style="margin-bottom:.5rem">Need a custom solution?</h2>
+    <p style="color:var(--t);margin-bottom:1rem">Enterprise and Platform customers get dedicated onboarding, custom SLAs, and priority engineering support.</p>
+    <a href="/onboarding.html?plan=enterprise" class="btn btn-green" style="width:auto;display:inline-block;margin-right:.5rem">Contact Sales</a>
+    <a href="/" class="btn btn-outline" style="width:auto;display:inline-block">Back to Dashboard</a>
   </div>
-
-</div>
-
+</main>
 <script>
-(function(){
-  var annual = false;
-  var toggle = document.getElementById('toggle-annual');
-  var PRICES = { pro: { monthly: 499, annual: 399 }, ent: { monthly: 2499, annual: 1999 } };
-
-  function update(){
-    document.getElementById('pro-price').textContent = (annual ? PRICES.pro.annual : PRICES.pro.monthly).toLocaleString();
-    document.getElementById('ent-price').textContent = (annual ? PRICES.ent.annual : PRICES.ent.monthly).toLocaleString();
-    toggle.setAttribute('aria-checked', String(annual));
-  }
-
-  toggle.addEventListener('click', function(){
-    annual = !annual;
-    toggle.classList.toggle('on', annual);
-    update();
-  });
-  toggle.addEventListener('keydown', function(e){
-    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle.click(); }
-  });
+// Optionally fetch dynamic pricing
+(async()=>{
+  try{
+    const r=await fetch('/api/pricing');
+    if(!r.ok)return;
+    const data=await r.json();
+    // Could override plan cards with API data if available
+  }catch{}
 })();
 </script>
 </body>

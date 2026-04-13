@@ -695,6 +695,155 @@ app.get("/api/logs", requireAdmin, [validate.logs], (req, res) => {
   res.type('text/plain').send(lines.join('\n'));
 });
 
+// ================= ACTIVITY STREAM + LOOP STATUS =================
+
+// GET /api/activity — unified real-time activity feed for dashboard
+// Aggregates: pipeline events + task completions + activation touches + app signals
+app.get('/api/activity', async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+  const events = [];
+
+  // 1. Pipeline log (in-memory, always available)
+  try {
+    const pipe = require('./lib/autonomous-pipeline');
+    const s = pipe.getState ? pipe.getState() : {};
+    const pipeEvents = (s.pipeline_log || []).slice(-20).reverse().map(e => ({
+      source: 'pipeline',
+      type:   e.stage,
+      title:  `[${e.stage.toUpperCase()}] ${e.msg}`,
+      ts:     e.ts,
+      data:   e.data,
+    }));
+    events.push(...pipeEvents);
+  } catch (_) {}
+
+  // 2. Auto-task loop stats
+  try {
+    const loop = require('./lib/auto-task-loop');
+    const s = loop.getLoopStats();
+    if (s.last_action) {
+      events.push({
+        source: 'task_loop',
+        type:   'economy',
+        title:  `Economy loop: ${s.tasks_completed} tasks completed, ${s.total_brdg_moved.toFixed(0)} BRDG moved`,
+        ts:     s.last_action,
+        data:   { cycles: s.cycles, generated: s.tasks_generated, completed: s.tasks_completed, errors: s.errors },
+      });
+    }
+  } catch (_) {}
+
+  // 3. DB: recent task completions
+  try {
+    const { supabase: sb } = require('./lib/supabase');
+    const { data: tasks } = await sb
+      .from('tasks_market')
+      .select('title, claimer_agent, reward_brdg, completed_at')
+      .eq('status', 'COMPLETED')
+      .order('completed_at', { ascending: false })
+      .limit(15);
+    (tasks || []).forEach(t => events.push({
+      source: 'task_market',
+      type:   'task_complete',
+      title:  `Task completed: "${t.title}" by ${t.claimer_agent}`,
+      ts:     t.completed_at,
+      data:   { reward_brdg: t.reward_brdg, agent: t.claimer_agent },
+    }));
+  } catch (_) {}
+
+  // 4. DB: recent activation touches
+  try {
+    const { supabase: sb } = require('./lib/supabase');
+    const { data: touches } = await sb
+      .from('activation_touches')
+      .select('email, template, status, sent_at')
+      .order('sent_at', { ascending: false })
+      .limit(10);
+    (touches || []).forEach(t => events.push({
+      source: 'crm',
+      type:   'outreach',
+      title:  `CRM touch: ${t.template} → ${t.email} [${t.status}]`,
+      ts:     t.sent_at,
+      data:   { template: t.template, status: t.status },
+    }));
+  } catch (_) {}
+
+  // 5. DB: activity_log (app loop signals)
+  try {
+    const { supabase: sb } = require('./lib/supabase');
+    const { data: acts } = await sb
+      .from('activity_log')
+      .select('source, event_type, title, detail, brdg_value, ts')
+      .order('ts', { ascending: false })
+      .limit(15);
+    (acts || []).forEach(a => events.push({
+      source:     a.source,
+      type:       a.event_type,
+      title:      a.title,
+      ts:         a.ts,
+      data:       { detail: a.detail, brdg_value: a.brdg_value },
+    }));
+  } catch (_) {}
+
+  // Sort all events by timestamp desc, return top N
+  events.sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0));
+  const result = events.slice(0, limit);
+
+  // If nothing at all — return synthetic heartbeat so UI never shows empty state
+  if (result.length === 0) {
+    result.push({
+      source: 'system',
+      type:   'heartbeat',
+      title:  'Bridge AI OS — system online, waiting for pipeline events',
+      ts:     new Date().toISOString(),
+      data:   {},
+    });
+  }
+
+  res.json({ ok: true, count: result.length, events: result, ts: new Date().toISOString() });
+});
+
+// GET /api/loop/status — full closed-loop audit across all 10 modules
+app.get('/api/loop/status', async (req, res) => {
+  try {
+    const loopClosure = require('./lib/loop-closure');
+    const report = await loopClosure.runFullAudit();
+    res.json({ ok: true, ...report });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /api/loop/repair — trigger auto-repair on a specific module
+app.post('/api/loop/repair', requireAdmin, async (req, res) => {
+  const { module } = req.body || {};
+  const repairs = [];
+
+  try {
+    if (!module || module === 'CRM_REVENUE') {
+      const activation = require('./lib/revenue-activation');
+      const result = await activation.seedActivationPipeline();
+      repairs.push({ module: 'CRM_REVENUE', action: 'seedActivationPipeline', result });
+    }
+    if (!module || module === 'APPLICATION') {
+      const lc = require('./lib/loop-closure');
+      const emitted = await lc.emitAppCrmSignals();
+      repairs.push({ module: 'APPLICATION', action: 'emitAppCrmSignals', emitted });
+    }
+    if (!module || module === 'CONTINUOUS') {
+      const loop = require('./lib/auto-task-loop');
+      if (!loop.getLoopStats().running) {
+        loop.startAutoLoop();
+        repairs.push({ module: 'CONTINUOUS', action: 'startAutoLoop', result: 'started' });
+      } else {
+        repairs.push({ module: 'CONTINUOUS', action: 'startAutoLoop', result: 'already_running' });
+      }
+    }
+    res.json({ ok: true, repairs, ts: new Date().toISOString() });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message, repairs });
+  }
+});
+
 // ================= UNIVERSAL SHARE ENDPOINTS =================
 
 // Share ID sanitizer — prevent path traversal (alphanumeric + hyphens only)
@@ -2082,11 +2231,27 @@ app.all('/api/esim/{*path}', async (req, res, next) => {
   if (handled !== null) return;
   next();
 });
+
+// PBX Federated Carrier Ecosystem — reseller hierarchy, wallets, federation, number marketplace
+const { handleReseller }       = require('./api/pbx/reseller');
+const { handleFederation }     = require('./api/pbx/federation');
+const { handlePBXMarketplace } = require('./api/pbx/marketplace');
 app.all('/api/pbx/{*path}', async (req, res, next) => {
-  const handled = await handleESim(req, res);
+  // Try federation routes first (carrier connect/route/status)
+  let handled = await handleFederation(req, res);
+  if (handled !== null) return;
+  // Then reseller hierarchy + wallet ops
+  handled = await handleReseller(req, res);
+  if (handled !== null) return;
+  // Then number marketplace (buy/sell DIDs)
+  handled = await handlePBXMarketplace(req, res);
+  if (handled !== null) return;
+  // Fallback: eSIM handler for any legacy /api/pbx/* paths
+  handled = await handleESim(req, res);
   if (handled !== null) return;
   next();
 });
+console.log('[PBX] Federation + Reseller + Marketplace routes mounted');
 
 // ================= HITL — Human-In-The-Loop approval queue (/api/hitl/*) =================
 const { handleHitl } = require('./api/hitl');

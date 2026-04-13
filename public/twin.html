@@ -1675,7 +1675,7 @@ async function loadMarket() {
   const d = await safeFetch('market', API_BASE + '/api/marketplace/tasks');
   const el = document.getElementById('market-list');
   if (!el) return;
-  const tasks = d?.tasks || d || [];
+  const tasks = Array.isArray(d) ? d : (d?.listings || d?.tasks || (d?.data && d.data.listings) || []);
   while (el.firstChild) el.removeChild(el.firstChild);
   if (!tasks.length) { el.textContent = 'No tasks'; return; }
   tasks.slice(0, 5).forEach(t => {

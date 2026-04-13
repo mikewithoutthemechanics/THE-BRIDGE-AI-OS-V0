@@ -234,51 +234,6 @@ let _sb = null;
   } catch (_) {}
 })();
 
-/* ── Session check on load: if already logged in, skip registration step ── */
-let _wizardUser = null;
-(async function detectSession() {
-  const tok = localStorage.getItem('bridge_token') || '';
-  if (!tok) return;
-  try {
-    const r = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + tok }, credentials: 'include' });
-    const d = await r.json();
-    if (d.ok && d.user) {
-      _wizardUser = d.user;
-      // Transform step 5: hide registration form, show "continue as" panel
-      const step5 = document.getElementById('step5');
-      if (step5) {
-        step5.innerHTML = `
-          <div class="step-title">You're already signed in</div>
-          <div class="step-subtitle">Your selections will be applied to your existing account.</div>
-          <div style="background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.2);border-radius:.6rem;padding:1rem 1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem">
-            <div style="width:40px;height:40px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:#0a0e17;flex-shrink:0">${(d.user.name||d.user.email||'?').charAt(0).toUpperCase()}</div>
-            <div>
-              <div style="font-weight:600;font-size:.9rem">${d.user.name || d.user.email}</div>
-              <div style="font-size:.72rem;color:var(--dim)">${d.user.email} &nbsp;·&nbsp; ${(d.user.plan||'free').charAt(0).toUpperCase()+(d.user.plan||'free').slice(1)} plan</div>
-            </div>
-          </div>
-          <div id="summaryBlock" style="margin-bottom:1.5rem"></div>
-          <div class="nav-row">
-            <button class="btn btn-ghost" onclick="prevStep(5)">← Back</button>
-            <button class="btn btn-green" onclick="launchExistingUser()">Apply &amp; Launch →</button>
-          </div>`;
-      }
-    }
-  } catch (_) {}
-})();
-
-async function launchExistingUser() {
-  const tok = localStorage.getItem('bridge_token') || '';
-  try {
-    await fetch('/api/platform/wizard/complete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
-      body: JSON.stringify({ intent: state.intent, industry: state.industry, integrations: state.integrations, plan: state.plan }),
-    });
-  } catch (_) {}
-  window.location.href = '/portal';
-}
-
 /* State */
 const state = {
   intent: null,
@@ -498,29 +453,11 @@ function updateSummary() {
   const industryObj = INDUSTRIES.find(i => i.id === state.industry);
   const planObj = PLANS.find(p => p.id === state.plan);
 
-  const intentLabel = intentObj ? intentObj.label : '—';
-  const industryLabel = industryObj ? industryObj.label : '—';
-  const integrationsLabel = state.integrations.length > 0 ? state.integrations.join(', ') : 'None';
-  const planLabel = planObj ? planObj.name + ' (' + planObj.price + '/mo)' : 'Free (R0/mo)';
-
-  // Standard registration form summary
-  const si = document.getElementById('summIntent');
-  if (si) si.textContent = intentLabel;
-  const sy = document.getElementById('summIndustry');
-  if (sy) sy.textContent = industryLabel;
-  const sg = document.getElementById('summIntegrations');
-  if (sg) sg.textContent = integrationsLabel;
-  const sp = document.getElementById('summPlan');
-  if (sp) sp.textContent = planLabel;
-
-  // Logged-in view summary block
-  const sb = document.getElementById('summaryBlock');
-  if (sb) {
-    sb.innerHTML = [
-      ['Goal', intentLabel], ['Industry', industryLabel],
-      ['Integrations', integrationsLabel], ['Plan', planLabel],
-    ].map(([k, v]) => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.82rem"><span style="color:var(--dim)">${k}</span><span style="font-weight:600">${v}</span></div>`).join('');
-  }
+  document.getElementById('summIntent').textContent = intentObj ? intentObj.label : '—';
+  document.getElementById('summIndustry').textContent = industryObj ? industryObj.label : '—';
+  document.getElementById('summIntegrations').textContent = state.integrations.length > 0
+    ? state.integrations.join(', ') : 'None';
+  document.getElementById('summPlan').textContent = planObj ? planObj.name + ' (' + planObj.price + '/mo)' : 'Free';
 }
 
 async function googleOAuth() {
@@ -600,8 +537,12 @@ async function createAccount() {
         });
       } catch (_) { /* non-fatal — profile page works without this */ }
 
-      // Always activate twin first, then continue to billing or profile
-      window.location.href = '/activate?plan=' + state.plan + '&intent=' + encodeURIComponent(state.intent || '');
+      // Redirect to billing if paid plan selected, else straight to profile
+      if (state.plan !== 'free') {
+        window.location.href = '/billing?plan=' + state.plan + '&onboarded=1';
+      } else {
+        window.location.href = '/profile?onboarded=1&intent=' + encodeURIComponent(state.intent || '');
+      }
     } else {
       authError.textContent = data.error || 'Registration failed. Please try again.';
       authError.classList.add('show');

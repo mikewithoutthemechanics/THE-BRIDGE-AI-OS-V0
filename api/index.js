@@ -223,6 +223,10 @@ try {
 let handleCRM = null;
 try { ({ handleCRM } = require('./crm/routes')); } catch (e) { console.warn('[CRM] routes unavailable:', e.message); }
 
+// ── Corporate OS Routes (quotes, invoices, debts, vendors, tickets, inventory, hr, marketing, analytics) ──
+let handleCorporate = null;
+try { ({ handleCorporate } = require('./corporate/routes')); } catch (e) { console.warn('[CORP] routes unavailable:', e.message); }
+
 // ── Affiliate Program Routes ───────────────────────────────────────────────────
 let handleAffiliate = null;
 try { ({ handleAffiliate } = require('./affiliate/routes')); } catch (e) { console.warn('[AFFILIATE] routes unavailable:', e.message); }
@@ -470,7 +474,7 @@ module.exports = async (req, res) => {
     const user = requireAuthOrFail(req, res); if (!user) return;
     const bal = await db.getTreasuryBalance(TREASURY_SEED);
     return json(res, {
-      treasury_balance: +bal.toFixed(2), currency: 'USD', period: 'monthly',
+      treasury_balance: +bal.toFixed(2), currency: 'ZAR', period: 'monthly',
       revenue_mtd: null, costs_mtd: null, net_mtd: null, subscriptions: 0,
       active_plans: [],
       source: 'live',
@@ -805,6 +809,7 @@ module.exports = async (req, res) => {
 
   // POST /api/llm/infer — serverless LLM (no brain); same contract as gateway fallback
   if (p === '/api/llm/infer' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     let prompt = body.prompt || body.message || '';
     if (!prompt && Array.isArray(body.messages)) {
@@ -1033,7 +1038,7 @@ module.exports = async (req, res) => {
       last_tx_amount: +(totalBrdg / Math.max(totalTx, 1)).toFixed(4),
       buckets,
       buckets_list: bkArr,
-      currency: 'USD',
+      currency: 'ZAR',
       revenue_mtd: 28450,
       costs_mtd: 4210.50,
       net_mtd: 24239.50,
@@ -1062,7 +1067,7 @@ module.exports = async (req, res) => {
       else if (type === 'ai_inference') data = { agent, model: 'bridge-llm', tokens: 0, latency_ms: 0 };
       else if (type === 'swarm_dispatch') data = { agent, task: `task_${evtTs}`, priority: ['low', 'medium', 'high'][i % 3] };
       else if (type === 'task_completed') data = { agent, task: `task_${evtTs - 5000}`, duration_ms: 0 };
-      else data = { balance: +treasuryBalance.toFixed(2), delta: 0, currency: 'USD' };
+      else data = { balance: +treasuryBalance.toFixed(2), delta: 0, currency: 'ZAR' };
       events.push({ id: `evt_${i}`, type, data, ts: evtTs });
     }
     return json(res, { events, count: events.length, ts: ts() });
@@ -1250,7 +1255,7 @@ module.exports = async (req, res) => {
   // ── /api/economics ──
   if (p === '/api/economics') {
     return json(res, {
-      revenue: { monthly: +(treasuryBalance * 0.08).toFixed(2), annual: +(treasuryBalance * 0.96).toFixed(2), currency: 'USD' },
+      revenue: { monthly: +(treasuryBalance * 0.08).toFixed(2), annual: +(treasuryBalance * 0.96).toFixed(2), currency: 'ZAR' },
       costs: { monthly: +(treasuryBalance * 0.03).toFixed(2), breakdown: { infra: 40, agents: 35, marketing: 25 } },
       margin_pct: 62.5, mrr_growth_pct: 12.3, ts: ts()
     });
@@ -1476,6 +1481,34 @@ module.exports = async (req, res) => {
     });
   }
 
+  // ── /api/corporate/* + corporate module routes ──────────────────────────────
+  // Covers: /api/corporate/*, /api/quotes, /api/invoices, /api/debts,
+  //         /api/vendors, /api/tickets, /api/inventory, /api/hr/*,
+  //         /api/marketing/*, /api/customers, /api/legal/*, /api/compliance/*,
+  //         /api/analytics/overview + summary
+  const isCorporateRoute = (
+    p.startsWith('/api/corporate') ||
+    p === '/api/quotes' || p.match(/^\/api\/quotes\//) ||
+    p === '/api/invoices' || p.match(/^\/api\/invoices\//) ||
+    p === '/api/debts' || p.match(/^\/api\/debts\//) ||
+    p === '/api/vendors' ||
+    p === '/api/tickets' || p.match(/^\/api\/tickets\//) ||
+    p === '/api/inventory' ||
+    p.startsWith('/api/hr') ||
+    p.startsWith('/api/marketing') ||
+    p === '/api/customers' || p.match(/^\/api\/customers\//) ||
+    p.startsWith('/api/legal') ||
+    p.startsWith('/api/compliance') ||
+    p === '/api/analytics/overview' ||
+    p === '/api/analytics/summary'
+  );
+  if (isCorporateRoute && handleCorporate) {
+    const handled = await handleCorporate({ req, res, path: p, method: req.method, parseBody, json });
+    if (handled !== false) {
+      if (res.headersSent || res.writableEnded) return;
+    }
+  }
+
   // ── /api/crm/* ── Supabase-backed CRM (falls back to in-memory)
   if (p.startsWith('/api/crm')) {
     if (handleCRM) {
@@ -1634,6 +1667,7 @@ module.exports = async (req, res) => {
       });
     }
     if (sub === '/campaign' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       if (!body.name) return json(res, { error: 'campaign name required' }, 400);
       return json(res, {
@@ -1819,11 +1853,14 @@ module.exports = async (req, res) => {
         ]
       },
       telco_esim: {
-        label: 'Telco & eSIM', icon: '📡', color: '#f59e0b',
+        label: 'Telco & Carrier', icon: '📡', color: '#f59e0b',
         skills: [
-          { id: 'esim',        name: 'eSIM Global Platform',   desc: 'AI-powered eSIM provisioning, 190+ countries coverage',        provider: 'bridge' },
-          { id: 'pbx',         name: 'PBX Voice System',       desc: 'Cloud PBX, call routing, IVR, SIP trunk management',          provider: 'bridge' },
-          { id: 'esim-nurture',name: 'eSIM AI Nurture',        desc: 'Claude-powered lead nurture for eSIM prospects via CRM',       provider: 'claude' },
+          { id: 'esim',        name: 'eSIM Global Platform',   desc: 'AI-powered eSIM provisioning, 190+ countries coverage, QR activation',    provider: 'bridge', activate_url: '/esim', tier: 'starter' },
+          { id: 'pbx-carrier', name: 'Carrier PBX (FusionPBX)', desc: 'Multi-tenant carrier-grade PBX: FreeSWITCH core, IVR flows, SIP trunks, global DID numbers, AI call summaries, BRDG billing wallet', provider: 'bridge', activate_url: '/esim', tier: 'pro', featured: true },
+          { id: 'pbx-ivr',     name: 'IVR Flow Builder',       desc: 'Visual IVR, call queues, ring groups — drag-and-drop flow editor with real-time testing', provider: 'bridge', activate_url: '/esim', tier: 'pro' },
+          { id: 'pbx-numbers', name: 'Global DID Numbers',     desc: 'Virtual numbers in 50+ countries, instant porting, SMS-capable, 2FA-ready', provider: 'bridge', activate_url: '/esim', tier: 'starter' },
+          { id: 'pbx-billing', name: 'Telco Billing Engine',   desc: 'CDR-to-invoice pipeline, per-minute rating, wallet top-up, BRDG token rewards, auto-treasury sweep', provider: 'bridge', activate_url: '/esim', tier: 'pro' },
+          { id: 'esim-nurture',name: 'eSIM AI Nurture',        desc: 'Claude-powered lead nurture for eSIM prospects: scoring, email generation, CRM sync', provider: 'claude', activate_url: '/esim', tier: 'starter' },
         ]
       },
       verticals: {
@@ -1874,6 +1911,7 @@ module.exports = async (req, res) => {
 
   // ── /api/agents/execute-paid ──
   if (p === '/api/agents/execute-paid' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     const agentName = body.agentName || body.agent || 'Growth Hunter';
     const input     = body.input || '';
@@ -2067,6 +2105,7 @@ module.exports = async (req, res) => {
 
   // POST /api/infra/approve — human approves a queued action
   if (p === '/api/infra/approve' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     if (!body.actionId) return json(res, { error: 'actionId required' }, 400);
     try {
@@ -2078,6 +2117,7 @@ module.exports = async (req, res) => {
 
   // POST /api/infra/deny — human denies a queued action
   if (p === '/api/infra/deny' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     if (!body.actionId) return json(res, { error: 'actionId required' }, 400);
     try {
@@ -3663,6 +3703,58 @@ module.exports = async (req, res) => {
     return json(res, { ok: true, tx_hash: txHash, amount: numAmount, to, rail: rail || 'brdg' });
   }
 
+  // ── /api/admin/stats — aggregate admin dashboard stats ──
+  if (p === '/api/admin/stats') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    if (!['admin', 'superadmin', 'owner'].includes(user.role)) return json(res, { ok: false, error: 'Forbidden' }, 403);
+    let stats = { users: 0, revenue_mtd: 0, active_agents: 0, open_tickets: 0, hitl_pending: 0 };
+    try {
+      if (supabaseConfigured()) {
+        const [usersR, ticketsR, hitlR] = await Promise.all([
+          supabase.from('users').select('id', { count: 'exact', head: true }),
+          supabase.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+          supabase.from('hitl_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        ]);
+        stats.users = usersR.count || 0;
+        stats.open_tickets = ticketsR.count || 0;
+        stats.hitl_pending = hitlR.count || 0;
+      }
+    } catch (e) { console.warn('[Admin] stats fetch error:', e.message); }
+    return json(res, { ok: true, stats });
+  }
+
+  // ── /api/admin/users — paginated user list ──
+  if (p === '/api/admin/users') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    if (!['admin', 'superadmin', 'owner'].includes(user.role)) return json(res, { ok: false, error: 'Forbidden' }, 403);
+    let users = [];
+    try {
+      if (supabaseConfigured()) {
+        const { data } = await supabase.from('users')
+          .select('id, email, role, plan, created_at, funnel_stage, lead_score')
+          .order('created_at', { ascending: false }).limit(100);
+        users = data || [];
+      }
+    } catch (e) { console.warn('[Admin] users fetch error:', e.message); }
+    return json(res, { ok: true, users, count: users.length });
+  }
+
+  // ── /api/admin/config — system config read ──
+  if (p === '/api/admin/config') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    if (!['superadmin', 'owner'].includes(user.role)) return json(res, { ok: false, error: 'Forbidden' }, 403);
+    return json(res, {
+      ok: true,
+      config: {
+        environment: process.env.NODE_ENV || 'production',
+        supabase_configured: supabaseConfigured(),
+        jwt_set: !!process.env.JWT_SECRET,
+        admin_token_set: !!process.env.ADMIN_TOKEN,
+        economy_enabled: !!process.env.ENABLE_ECONOMY,
+      }
+    });
+  }
+
   if (p === '/api/admin/withdraw/audit') {
     const adminTk = req.headers['x-admin-token'];
     const expected = process.env.ADMIN_TOKEN;
@@ -3910,7 +4002,7 @@ module.exports = async (req, res) => {
   }
 
   // ── eSIM + PBX (/api/esim/* and /api/pbx/*) ──────────────────────────────
-  if ((p.startsWith('/api/esim/') || p.startsWith('/api/pbx/')) && handleESim) {
+  if ((p === '/api/esim' || p.startsWith('/api/esim/') || p.startsWith('/api/pbx/')) && handleESim) {
     return handleESim(req, res);
   }
 

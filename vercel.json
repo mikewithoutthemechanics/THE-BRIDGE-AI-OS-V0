@@ -3,12 +3,12 @@
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false,
-  "buildCommand": "node build-static.js",
+  "buildCommand": "node scripts/build-static.js",
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
       "maxDuration": 60,
-      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,lib/**,engine/**,api/hitl.js,api/pipeline.js,api/crm/**,api/cron/**,api/esim/**,public/claude-partner.html"
+      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,lib/**,engine/**,api/hitl.js,api/pipeline.js,api/crm/**,api/cron/**,api/esim/**,api/pbx/**,api/corporate/**,public/claude-partner.html"
     }
   },
   "crons": [
@@ -26,7 +26,11 @@
     { "path": "/api/cron/distribute-rewards",     "schedule": "0 * * * *" },
     { "path": "/api/cron/auto-send",              "schedule": "0 9,10,14,15 * * 1-5" },
 
-    { "path": "/api/orch/tick",                   "schedule": "*/15 * * * *" }
+    { "path": "/api/orch/tick",                   "schedule": "*/15 * * * *" },
+
+    { "path": "/api/cron/provision-heal",         "schedule": "0 */4 * * *" },
+
+    { "path": "/api/cron/corporate-engine",       "schedule": "*/1 * * * *" }
   ],
   "redirects": [
     {
@@ -112,6 +116,7 @@
     { "source": "/auth-callback", "destination": "/auth-callback.html" },
     { "source": "/wizard",        "destination": "/wizard.html" },
     { "source": "/profile",       "destination": "/profile.html" },
+    { "source": "/outputs",        "destination": "/outputs.html" },
     { "source": "/projects",      "destination": "/projects.html" },
     { "source": "/join",          "destination": "/join.html" },
     { "source": "/welcome",       "destination": "/welcome.html" },
@@ -189,6 +194,7 @@
     { "source": "/tokenomics",  "destination": "/tokenomics.html" },
     { "source": "/claude-partner", "destination": "/claude-partner.html" },
     { "source": "/esim",        "destination": "/esim-pbx.html" },
+    { "source": "/carrier",     "destination": "/carrier-admin.html" },
     { "source": "/admin-esim",  "destination": "/admin-esim.html" },
     { "source": "/api/esim/:path*", "destination": "/api" },
     { "source": "/api/pbx/:path*",  "destination": "/api" },

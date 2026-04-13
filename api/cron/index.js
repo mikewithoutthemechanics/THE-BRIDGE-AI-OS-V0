@@ -7,22 +7,28 @@
 
 const { Router } = require('express');
 const distributeRewardsCron = require('./distribute-rewards');
+const { provisionHeal } = require('./provision-heal');
+let corporateEngine = null;
+try { corporateEngine = require('./corporate-engine'); } catch (e) { console.warn('[CRON] corporate-engine unavailable:', e.message); }
 
 module.exports = function setupCronRoutes(app) {
   const router = Router();
 
-  /**
-   * POST /api/cron/distribute-rewards
-   * Manually trigger reward distribution (or called by external cron)
-   * Query params:
-   *   - eventType: event type to process (default: 'neurolink_output')
-   *   - hoursBack: hours window to process (default: 1)
-   *   - token: cron secret for authentication
-   */
   router.post('/distribute-rewards', distributeRewardsCron);
 
+  // Provision-heal: runs every 4h to ensure all 50 catalog apps exist per user
+  router.get('/provision-heal',  function (req, res) { return provisionHeal(req, res); });
+  router.post('/provision-heal', function (req, res) { return provisionHeal(req, res); });
+
+  // Corporate Autonomous Engine — runs every 1 minute
+  // Generates leads, quotes, invoices, tickets, heals stuck workflows
+  if (corporateEngine) {
+    router.get('/corporate-engine',  corporateEngine);
+    router.post('/corporate-engine', corporateEngine);
+  }
+
   // Optionally: GET for health check
-  router.get('/health', (req, res) => {
+  router.get('/health', function (req, res) {
     res.json({ ok: true, timestamp: new Date().toISOString() });
   });
 

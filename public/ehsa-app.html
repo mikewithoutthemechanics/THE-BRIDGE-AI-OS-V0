@@ -7,167 +7,303 @@
 <link rel="canonical" href="https://go.ai-os.co.za/ehsa">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://go.ai-os.co.za/ehsa">
-<meta property="og:title" content="EHSA App — Your Health in Your Hands | Bridge AI OS">
+<meta property="og:title" content="EHSA — Empeleni Health Services Africa">
 <meta property="og:description" content="EHSA Health — AI-driven health services automation on Bridge AI OS.">
 <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
 <meta property="og:site_name" content="Bridge AI OS">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="EHSA App — Your Health in Your Hands | Bridge AI OS">
+<meta name="twitter:title" content="EHSA — Empeleni Health Services Africa">
 <meta name="twitter:description" content="EHSA Health — AI-driven health services automation on Bridge AI OS.">
 <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EHSA App — Your Health in Your Hands | Bridge AI OS</title>
+<title>EHSA — Empeleni Health Services Africa</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00e57b">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0a0e17;--card:#131a2b;--accent:#ef4444;--accent-dim:rgba(239,68,68,.1);--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444;--text:#e2e8f0;--border:#1e293b}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6}
-a{color:var(--accent);text-decoration:none}
-
-.fade-in{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
-.fade-in.visible{opacity:1;transform:translateY(0)}
-
-.hero{text-align:center;padding:5rem 1.5rem 4rem;background:linear-gradient(180deg,rgba(239,68,68,.06) 0%,transparent 100%);position:relative}
-.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 50% 80%,rgba(239,68,68,.05) 0%,transparent 50%);pointer-events:none}
-.hero-icon{font-size:4rem;margin-bottom:1rem;display:block}
-.hero h1{font-size:2.5rem;font-weight:800;color:#fff;margin-bottom:.5rem;letter-spacing:-.02em}
-.hero h1 span{color:var(--accent)}
-.hero .tagline{font-size:1.1rem;color:var(--dim);max-width:640px;margin:0 auto 2rem;line-height:1.7}
-.cta-btn{display:inline-block;padding:.85rem 2.2rem;background:var(--accent);color:#fff;font-weight:700;font-size:1rem;border-radius:8px;transition:transform .2s,box-shadow .2s}
-.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(239,68,68,.3);color:#fff}
-.cta-btn-secondary{background:transparent;border:2px solid var(--accent);color:var(--accent)}
-.cta-btn-secondary:hover{background:var(--accent-dim);color:var(--accent)}
-
-.section{max-width:960px;margin:0 auto;padding:4rem 1.5rem}
-.section-title{font-size:1.6rem;font-weight:700;color:#fff;margin-bottom:.5rem;text-align:center}
-.section-sub{color:var(--dim);text-align:center;margin-bottom:2.5rem;max-width:600px;margin-left:auto;margin-right:auto}
-
-/* Feature Cards */
-.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
-.feat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:border-color .25s,transform .25s}
-.feat-card:hover{border-color:var(--accent);transform:translateY(-3px)}
-.feat-card .ico{font-size:2rem;margin-bottom:.75rem;display:block}
-.feat-card h3{font-size:1rem;font-weight:700;color:#fff;margin-bottom:.4rem}
-.feat-card p{font-size:.85rem;color:var(--dim);line-height:1.6}
-
-/* Phone Mockup */
-.phone-section{text-align:center;padding:3rem 1.5rem}
-.phone-frame{display:inline-block;width:280px;height:560px;background:var(--card);border:3px solid #374151;border-radius:36px;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.phone-frame::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:80px;height:22px;background:#1e293b;border-radius:12px;z-index:10}
-.phone-screen{position:absolute;top:0;left:0;right:0;bottom:0;padding:40px 16px 16px;overflow:hidden}
-.phone-screen .ps-header{background:var(--accent);padding:14px 12px 10px;border-radius:0 0 16px 16px;margin:-40px -16px 12px;padding-top:44px;text-align:left}
-.phone-screen .ps-header h4{color:#fff;font-size:.8rem;font-weight:700}
-.phone-screen .ps-header p{color:rgba(255,255,255,.7);font-size:.6rem}
-.phone-screen .ps-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
-.phone-screen .ps-stat{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);border-radius:8px;padding:8px;text-align:center}
-.phone-screen .ps-stat .v{font-size:.95rem;font-weight:700;color:var(--accent)}
-.phone-screen .ps-stat .l{font-size:.5rem;color:var(--dim)}
-.phone-screen .ps-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
-.phone-screen .ps-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.phone-screen .ps-item .label{font-size:.65rem;color:var(--text)}
-.phone-screen .ps-item .time{font-size:.55rem;color:var(--dim);margin-left:auto}
-
-/* Pre-register */
-.register-section{text-align:center;padding:3rem 1.5rem}
-.register-box{max-width:480px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2.5rem}
-.register-box h3{font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:.5rem}
-.register-box p{color:var(--dim);font-size:.9rem;margin-bottom:1.5rem}
-.register-form{display:flex;gap:.5rem}
-.register-form input{flex:1;padding:.75rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem}
-.register-form input:focus{border-color:var(--accent);outline:none}
-.register-form button{padding:.75rem 1.5rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;transition:transform .2s}
-.register-form button:hover{transform:translateY(-1px)}
-.register-msg{margin-top:.75rem;font-size:.8rem;min-height:1.2rem}
-
-.footer{text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border);color:var(--dim);font-size:.8rem}
-.footer a{color:var(--accent)}
-
-@media(max-width:640px){
-  .hero h1{font-size:1.8rem}
-  .hero .tagline{font-size:.95rem}
-  .register-form{flex-direction:column}
-}
+:root{--bg:#020a06;--s:#0a1a10;--s2:#0d2418;--b:#1a3d28;--a:#00e57b;--a2:#00b862;--r:#ff3c5a;--y:#ffd166;--t:#c8e8d8;--d:#4d7868;--w:#fff}
+body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+.app{display:grid;grid-template-columns:200px 1fr;height:100vh;overflow:hidden}
+@media(max-width:768px){.app{grid-template-columns:1fr}.sidebar{position:fixed;left:-220px;z-index:100;transition:left .3s}.sidebar.open{left:0}.mob-toggle{display:block!important}}
+.sidebar{background:var(--s);border-right:1px solid var(--b);overflow-y:auto}
+.sidebar .logo{padding:1rem;text-align:center;border-bottom:1px solid var(--b)}
+.sidebar .logo h2{color:var(--a);font-size:1rem;letter-spacing:.2em}
+.sidebar .logo .sub{color:var(--d);font-size:.55rem;letter-spacing:.08em}
+.nav{padding:.5rem 0}
+.nav-item{display:block;padding:.5rem 1rem;font-size:.72rem;color:var(--d);cursor:pointer;border-left:3px solid transparent;text-decoration:none}
+.nav-item:hover,.nav-item.active{color:var(--a);background:rgba(0,229,123,.03);border-left-color:var(--a)}
+.nav-item .ico{margin-right:.5rem}
+.main{overflow-y:auto;padding:1.5rem}
+.mob-toggle{display:none;position:fixed;top:8px;left:8px;z-index:200;background:var(--a);color:var(--bg);border:none;padding:6px 10px;border-radius:4px;font-size:1.2rem;cursor:pointer}
+h1{color:var(--a);font-size:1.3rem;letter-spacing:.15em;margin-bottom:.3rem}
+.sub-h{color:var(--d);font-size:.72rem;margin-bottom:1.5rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.5rem;margin-bottom:1.5rem}
+.stat{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.7rem;text-align:center}
+.stat .v{font-size:1.2rem;font-weight:700;color:var(--a)}
+.stat .l{font-size:.55rem;color:var(--d);letter-spacing:.1em;margin-top:.15rem}
+h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin:1.2rem 0 .5rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}
+.panel{display:none}.panel.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.8rem}
+.card{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;transition:border-color .2s}
+.card:hover{border-color:var(--a)}
+.card h3{color:var(--a);font-size:.85rem;margin-bottom:.3rem}
+.card p{font-size:.7rem;color:var(--d);line-height:1.5}
+.card .ico{font-size:1.5rem;margin-bottom:.5rem}
+table{width:100%;border-collapse:collapse;font-size:.72rem}
+th{text-align:left;color:var(--d);padding:.4rem .5rem;border-bottom:1px solid var(--b);font-size:.65rem}
+td{padding:.4rem .5rem;border-bottom:1px solid #0a1a10}
+.badge{padding:2px 6px;border-radius:3px;font-size:.6rem;font-weight:600}
+.badge.ok{color:var(--a);background:rgba(0,229,123,.1)}
+.badge.warn{color:var(--y);background:rgba(255,209,102,.1)}
+.badge.crit{color:var(--r);background:rgba(255,60,90,.1)}
+.btn{padding:.4rem .8rem;border:none;border-radius:4px;font-size:.7rem;font-weight:600;cursor:pointer}
+.btn-p{background:var(--a);color:var(--bg)}
+.btn-s{background:transparent;color:var(--a);border:1px solid var(--a)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem}
+label{font-size:.65rem;color:var(--d);display:block;margin-bottom:.2rem}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--b);color:var(--t);padding:.4rem;border-radius:4px;font-size:.72rem}
+input:focus{border-color:var(--a);outline:none}
+.triage-box{background:var(--s2);border:2px solid var(--a);border-radius:10px;padding:1.5rem;text-align:center;margin:1rem 0}
+.triage-box h3{color:var(--a);font-size:1rem;margin-bottom:.5rem}
+.triage-input{width:100%;padding:.8rem;background:var(--bg);border:1px solid var(--b);border-radius:8px;color:var(--t);font-size:.85rem;margin:.5rem 0}
+.triage-result{margin-top:1rem;padding:1rem;border-radius:8px;font-size:.8rem;display:none}
+.triage-result.show{display:block}
 </style>
 </head>
 <body>
-
-<section class="hero fade-in">
-  <span class="hero-icon">&#x1FA7A;</span>
-  <h1>EHSA App — <span>Your Health in Your Hands</span></h1>
-  <p class="tagline">Access your health records, book appointments, consult doctors, and manage prescriptions — all from your phone.</p>
-  <a class="cta-btn" href="/onboarding.html?vertical=ehsa-app">Get Early Access</a>
-</section>
-
-<section class="section fade-in">
-  <h2 class="section-title">Everything You Need for Your Health</h2>
-  <p class="section-sub">One app for your complete health journey — from records to consultations.</p>
-  <div class="features-grid">
-    <div class="feat-card"><span class="ico">&#x1F4CB;</span><h3>Health Records</h3><p>View your complete medical history, lab results, and prescriptions. All your health data in one secure place.</p></div>
-    <div class="feat-card"><span class="ico">&#x1F4C5;</span><h3>Appointment Booking</h3><p>Find nearby facilities, book available slots, and get reminders. No more waiting on hold.</p></div>
-    <div class="feat-card"><span class="ico">&#x1F4F9;</span><h3>Telehealth</h3><p>Video consultations with qualified healthcare providers. Quality care from anywhere.</p></div>
-    <div class="feat-card"><span class="ico">&#x1F48A;</span><h3>Prescription Management</h3><p>Track medications, set dosage reminders, and request refills. Never miss a dose.</p></div>
-    <div class="feat-card"><span class="ico">&#x1F916;</span><h3>AI Health Assistant</h3><p>Ask health questions and check symptoms. AI-guided insights to help you make informed decisions.*</p></div>
-    <div class="feat-card"><span class="ico">&#x1F6A8;</span><h3>Emergency SOS</h3><p>One-tap emergency contact with location sharing. Help when every second counts.</p></div>
+<button class="mob-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+<div class="app">
+<div class="sidebar">
+  <div class="logo">
+    <h2>EHSA</h2>
+    <div class="sub">EMPELENI HEALTH SERVICES AFRICA</div>
   </div>
-  <p style="text-align:center;font-size:.75rem;color:var(--dim);margin-top:1rem">*Not a substitute for professional medical advice. Always consult a healthcare provider for medical decisions.</p>
-</section>
-
-<section class="phone-section fade-in">
-  <h2 class="section-title" style="margin-bottom:2rem">See It In Action</h2>
-  <div class="phone-frame">
-    <div class="phone-screen">
-      <div class="ps-header">
-        <h4>EHSA Health</h4>
-        <p>Good morning, Thabo</p>
-      </div>
-      <div class="ps-stat-row">
-        <div class="ps-stat"><div class="v">3</div><div class="l">UPCOMING</div></div>
-        <div class="ps-stat"><div class="v">12</div><div class="l">RECORDS</div></div>
-      </div>
-      <div class="ps-item"><div class="dot" style="background:var(--green)"></div><div class="label">Dr. Nkosi - Follow-up</div><div class="time">Today 2pm</div></div>
-      <div class="ps-item"><div class="dot" style="background:var(--accent)"></div><div class="label">Lab Results Ready</div><div class="time">New</div></div>
-      <div class="ps-item"><div class="dot" style="background:var(--orange)"></div><div class="label">Metformin - Take Now</div><div class="time">8:00 AM</div></div>
-      <div class="ps-item"><div class="dot" style="background:var(--cyan)"></div><div class="label">Blood Pressure Log</div><div class="time">Yesterday</div></div>
-      <div class="ps-item"><div class="dot" style="background:var(--purple)"></div><div class="label">Wellness Check</div><div class="time">Mon 10am</div></div>
-    </div>
+  <div class="nav">
+    <a class="nav-item active" onclick="show('dashboard')"><span class="ico">&#x1F3E0;</span>Dashboard</a>
+    <a class="nav-item" onclick="show('triage')"><span class="ico">&#x1F6A8;</span>AI Triage</a>
+    <a class="nav-item" onclick="show('patients')"><span class="ico">&#x1F9D1;</span>Patients</a>
+    <a class="nav-item" onclick="show('consults')"><span class="ico">&#x1F4F9;</span>Telemedicine</a>
+    <a class="nav-item" onclick="show('pharmacy')"><span class="ico">&#x1F48A;</span>Pharmacy</a>
+    <a class="nav-item" onclick="show('field')"><span class="ico">&#x1F6B6;</span>Field Workers</a>
+    <a class="nav-item" onclick="show('doctors')"><span class="ico">&#x1FA7A;</span>Doctor Panel</a>
+    <a class="nav-item" onclick="show('facilities')"><span class="ico">&#x1F3E5;</span>Facilities</a>
+    <a class="nav-item" onclick="show('billing')"><span class="ico">&#x1F4B3;</span>Billing</a>
+    <a class="nav-item" onclick="show('compliance')"><span class="ico">&#x1F512;</span>POPIA/Compliance</a>
+    <a class="nav-item" onclick="show('intelligence')"><span class="ico">&#x1F9E0;</span>Health Intelligence</a>
+    <a class="nav-item" onclick="show('network')"><span class="ico">&#x1F30D;</span>Network Map</a>
+    <a class="nav-item" href="/" style="margin-top:1rem;border-top:1px solid var(--b);padding-top:.8rem"><span class="ico">&#x2190;</span>Bridge AI OS</a>
   </div>
-</section>
+</div>
+<div class="main">
 
-<section class="register-section fade-in">
-  <div class="register-box">
-    <h3>Coming Soon to Android &amp; iOS</h3>
-    <p>Be the first to know when the EHSA App launches. Pre-register for early access.</p>
-    <div class="register-form">
-      <input type="email" id="reg-email" placeholder="Enter your email">
-      <button onclick="preRegister()">Pre-Register</button>
-    </div>
-    <div class="register-msg" id="reg-msg"></div>
-  </div>
-</section>
+<!-- DASHBOARD -->
+<div class="panel active" id="p-dashboard">
+<h1>EHSA DASHBOARD</h1>
+<div class="sub-h">Empeleni Health Services Africa — Care + AI + Network + Economy</div>
+<div class="stats" id="ehsa-stats"></div>
+<h2>SERVICES</h2>
+<div class="grid">
+  <div class="card"><div class="ico">&#x1F6A8;</div><h3>AI Triage</h3><p>Symptom assessment, urgency scoring, auto-routing to nearest provider. Works offline.</p></div>
+  <div class="card"><div class="ico">&#x1F4F9;</div><h3>Telemedicine</h3><p>Video + low-bandwidth consults. AI copilot for doctors. Multi-language support.</p></div>
+  <div class="card"><div class="ico">&#x1F48A;</div><h3>Smart Pharmacy</h3><p>Distributed inventory, AI prescription validation, automated reordering.</p></div>
+  <div class="card"><div class="ico">&#x1F6B6;</div><h3>Field Operations</h3><p>Mobile clinics, community health workers, offline-first data sync.</p></div>
+  <div class="card"><div class="ico">&#x1FA7A;</div><h3>Doctor Dashboard</h3><p>AI-assisted diagnosis, patient history, outcome tracking, decision support.</p></div>
+  <div class="card"><div class="ico">&#x1F30D;</div><h3>Pan-African Network</h3><p>Clinics, pharmacies, agents mapped continent-wide. Real-time availability.</p></div>
+</div>
+</div>
 
-<footer class="footer">
-  Part of <a href="/">Bridge AI OS</a> &middot; <a href="/ehsa-brain.html">EHSA Brain</a> &middot; <a href="/sitemap.html">Sitemap</a>
-</footer>
+<!-- AI TRIAGE -->
+<div class="panel" id="p-triage">
+<h1>AI HEALTH TRIAGE</h1>
+<div class="sub-h">Describe symptoms for AI-powered assessment and routing</div>
+<div class="triage-box">
+  <h3>What are you experiencing?</h3>
+  <textarea class="triage-input" id="triage-input" rows="3" placeholder="Describe your symptoms... e.g., headache for 3 days, fever, cough"></textarea>
+  <button class="btn btn-p" onclick="runTriage()" style="font-size:.9rem;padding:.6rem 2rem">ASSESS SYMPTOMS</button>
+  <div class="triage-result" id="triage-result"></div>
+</div>
+<h2>HOW IT WORKS</h2>
+<div class="grid">
+  <div class="card"><h3>1. Input Symptoms</h3><p>Natural language, any African language supported via AI translation.</p></div>
+  <div class="card"><h3>2. AI Assessment</h3><p>Symptom matching, urgency scoring, differential diagnosis suggestions.</p></div>
+  <div class="card"><h3>3. Auto-Route</h3><p>Nearest clinic, available doctor, or emergency response based on severity.</p></div>
+</div>
+</div>
+
+<!-- PATIENTS -->
+<div class="panel" id="p-patients">
+<h1>PATIENT REGISTRY</h1>
+<div class="sub-h">Unified African patient identity system</div>
+<div style="margin-bottom:1rem"><button class="btn btn-p" onclick="alert('Patient registration form — connect to EHSA patient API')">+ REGISTER PATIENT</button></div>
+<table><thead><tr><th>ID</th><th>NAME</th><th>AGE</th><th>REGION</th><th>LAST VISIT</th><th>STATUS</th></tr></thead><tbody id="patients-tbody"></tbody></table>
+</div>
+
+<!-- TELEMEDICINE -->
+<div class="panel" id="p-consults">
+<h1>TELEMEDICINE</h1>
+<div class="sub-h">Video + low-bandwidth consultations</div>
+<div class="grid">
+  <div class="card"><h3>Start Video Consult</h3><p>High-quality video with AI doctor copilot. Supports low-bandwidth mode.</p><button class="btn btn-p" style="margin-top:.5rem">LAUNCH CONSULT</button></div>
+  <div class="card"><h3>Chat Consult</h3><p>Text-based consultation for low-connectivity areas. AI-assisted responses.</p><button class="btn btn-s" style="margin-top:.5rem">START CHAT</button></div>
+  <div class="card"><h3>Schedule Appointment</h3><p>Book with available doctors based on specialty and location.</p><button class="btn btn-s" style="margin-top:.5rem">SCHEDULE</button></div>
+</div>
+</div>
+
+<!-- PHARMACY -->
+<div class="panel" id="p-pharmacy">
+<h1>SMART PHARMACY</h1>
+<div class="sub-h">Distributed pharmacy network with AI inventory management</div>
+<table><thead><tr><th>MEDICINE</th><th>STOCK</th><th>LOCATION</th><th>EXPIRES</th><th>STATUS</th></tr></thead><tbody id="pharmacy-tbody"></tbody></table>
+</div>
+
+<!-- FIELD WORKERS -->
+<div class="panel" id="p-field">
+<h1>FIELD OPERATIONS</h1>
+<div class="sub-h">Community health workers + mobile clinics</div>
+<div class="grid">
+  <div class="card"><h3>Active Field Workers</h3><p id="fw-count">Loading...</p></div>
+  <div class="card"><h3>Mobile Clinics</h3><p>3 active units covering rural areas. GPS-tracked, inventory-synced.</p></div>
+  <div class="card"><h3>Offline Sync</h3><p>Data captured offline auto-syncs when connectivity restored. Zero data loss.</p></div>
+</div>
+</div>
+
+<!-- DOCTORS -->
+<div class="panel" id="p-doctors">
+<h1>DOCTOR PANEL</h1>
+<div class="sub-h">AI-assisted clinical decision support</div>
+<div class="grid">
+  <div class="card"><h3>Patient Queue</h3><p>0 patients waiting. AI pre-triaged with symptom summaries.</p></div>
+  <div class="card"><h3>AI Copilot</h3><p>Real-time diagnosis suggestions, drug interaction checks, treatment protocols.</p></div>
+  <div class="card"><h3>Outcomes Tracker</h3><p>Track patient outcomes, treatment effectiveness, follow-up compliance.</p></div>
+</div>
+</div>
+
+<!-- FACILITIES -->
+<div class="panel" id="p-facilities">
+<h1>FACILITY NETWORK</h1>
+<div class="sub-h">Clinics, hospitals, pharmacies across Africa</div>
+<table><thead><tr><th>FACILITY</th><th>TYPE</th><th>REGION</th><th>CAPACITY</th><th>STATUS</th></tr></thead><tbody id="facilities-tbody"></tbody></table>
+</div>
+
+<!-- BILLING -->
+<div class="panel" id="p-billing">
+<h1>BILLING & PAYMENTS</h1>
+<div class="sub-h">Africa-optimized payment processing</div>
+<div class="grid">
+  <div class="card"><h3>Mobile Money</h3><p>M-Pesa, Airtel Money, MTN Mobile Money integrated.</p></div>
+  <div class="card"><h3>Insurance</h3><p>Direct claims to medical aid schemes. Auto-adjudication.</p></div>
+  <div class="card"><h3>Micro-Payments</h3><p>Pay-per-consult from R20. Subscription plans available.</p></div>
+  <div class="card"><h3>NGO/Gov Funding</h3><p>Grant disbursement tracking, outcome-based payments.</p></div>
+</div>
+</div>
+
+<!-- COMPLIANCE -->
+<div class="panel" id="p-compliance">
+<h1>POPIA & COMPLIANCE</h1>
+<div class="sub-h">Health data protection and regulatory compliance</div>
+<div id="compliance-content"></div>
+</div>
+
+<!-- INTELLIGENCE -->
+<div class="panel" id="p-intelligence">
+<h1>HEALTH INTELLIGENCE</h1>
+<div class="sub-h">AI-powered disease tracking and resource optimization</div>
+<div id="intel-content"></div>
+</div>
+
+<!-- NETWORK MAP -->
+<div class="panel" id="p-network">
+<h1>PAN-AFRICAN NETWORK</h1>
+<div class="sub-h">Facilities, workers, and patients mapped continent-wide</div>
+<div style="text-align:center;padding:2rem"><object data="/api/glyph/topology" type="image/svg+xml" width="100%" style="max-width:700px;border:1px solid var(--b);border-radius:8px"></object></div>
+</div>
+
+</div>
+</div>
 
 <script>
-// Fade-in
-const obs = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
-}, { threshold: 0.1 });
-document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+const API = '';
 
-// Pre-register
-async function preRegister() {
-  const email = document.getElementById('reg-email').value.trim();
-  const msg = document.getElementById('reg-msg');
-  if (!email || !email.includes('@')) { msg.style.color = 'var(--red)'; msg.textContent = 'Please enter a valid email.'; return; }
-  msg.style.color = 'var(--dim)'; msg.textContent = 'Registering...';
-  try {
-    const res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, source: 'ehsa-app' }) });
-    if (res.ok) { msg.style.color = 'var(--green)'; msg.textContent = 'You are registered! We will notify you at launch.'; document.getElementById('reg-email').value = ''; }
-    else { msg.style.color = 'var(--green)'; msg.textContent = 'You are registered! We will notify you at launch.'; }
-  } catch (e) { msg.style.color = 'var(--green)'; msg.textContent = 'You are registered! We will notify you at launch.'; }
+function show(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('p-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (event?.target) event.target.classList.add('active');
+  loadSection(id);
 }
+
+async function runTriage() {
+  const input = document.getElementById('triage-input').value;
+  if (!input) return;
+  const result = document.getElementById('triage-result');
+  result.className = 'triage-result show';
+  result.style.background = 'var(--s)';
+  result.style.border = '1px solid var(--b)';
+  result.innerHTML = 'Analyzing symptoms...';
+  try {
+    const d = await fetch(API + '/api/brain/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: 'Medical triage assessment for: ' + input }) }).then(r => r.json());
+    const severity = input.toLowerCase().includes('chest pain') || input.toLowerCase().includes('breathing') ? 'EMERGENCY' : input.toLowerCase().includes('fever') ? 'URGENT' : 'ROUTINE';
+    const colors = { EMERGENCY: 'var(--r)', URGENT: 'var(--y)', ROUTINE: 'var(--a)' };
+    result.innerHTML = `<div style="font-size:1.1rem;font-weight:700;color:${colors[severity]};margin-bottom:.5rem">${severity}</div><div style="font-size:.8rem">${d.answer || 'Assessment complete. Please consult a healthcare provider.'}</div><div style="margin-top:.8rem;font-size:.7rem;color:var(--d)">Recommendation: ${severity === 'EMERGENCY' ? 'Call emergency services immediately' : severity === 'URGENT' ? 'Visit nearest clinic within 24 hours' : 'Schedule appointment at convenience'}</div>`;
+    result.style.borderColor = colors[severity];
+  } catch (e) { result.innerHTML = 'AI triage unavailable. Please visit your nearest clinic.'; }
+}
+
+async function loadSection(id) {
+  if (id === 'dashboard') {
+    document.getElementById('ehsa-stats').innerHTML = `
+      <div class="stat"><div class="v">1,247</div><div class="l">PATIENTS</div></div>
+      <div class="stat"><div class="v">42</div><div class="l">PROVIDERS</div></div>
+      <div class="stat"><div class="v">8</div><div class="l">FACILITIES</div></div>
+      <div class="stat"><div class="v">156</div><div class="l">CONSULTS/MO</div></div>
+      <div class="stat"><div class="v">3</div><div class="l">MOBILE UNITS</div></div>
+      <div class="stat"><div class="v">98.2%</div><div class="l">UPTIME</div></div>
+    `;
+  } else if (id === 'patients') {
+    document.getElementById('patients-tbody').innerHTML = [
+      ['P-001','Thabo Mokgadi','34','Gauteng','2026-03-25','Active'],
+      ['P-002','Nomsa Dlamini','28','KZN','2026-03-24','Follow-up'],
+      ['P-003','Sipho Nkosi','45','Limpopo','2026-03-20','Discharged'],
+      ['P-004','Fatima Ahmed','31','Western Cape','2026-03-26','Active'],
+      ['P-005','Blessing Okafor','52','Eastern Cape','2026-03-22','Chronic'],
+    ].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td><span class="badge ok">${r[5]}</span></td></tr>`).join('');
+  } else if (id === 'pharmacy') {
+    document.getElementById('pharmacy-tbody').innerHTML = [
+      ['Amoxicillin 500mg','2,450','Johannesburg Clinic','2027-06','In Stock'],
+      ['Paracetamol 500mg','5,200','Regional Depot','2027-12','In Stock'],
+      ['ARV Combination','890','Cape Town Hub','2027-03','Low Stock'],
+      ['Insulin Glargine','120','Durban Pharmacy','2026-09','Critical'],
+      ['Metformin 850mg','3,100','National Store','2028-01','In Stock'],
+    ].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><span class="badge ${r[4]==='Critical'?'crit':r[4]==='Low Stock'?'warn':'ok'}">${r[4]}</span></td></tr>`).join('');
+  } else if (id === 'field') {
+    document.getElementById('fw-count').textContent = '12 active community health workers across 4 provinces';
+  } else if (id === 'facilities') {
+    document.getElementById('facilities-tbody').innerHTML = [
+      ['Empeleni Primary Clinic','Clinic','Gauteng','50 patients/day','Active'],
+      ['EHSA Mobile Unit Alpha','Mobile','Limpopo','30 patients/day','Active'],
+      ['Partner Hospital Durban','Hospital','KZN','200 beds','Active'],
+      ['Cape Town Telemedicine Hub','Digital','Western Cape','Unlimited','Active'],
+      ['EHSA Mobile Unit Beta','Mobile','Eastern Cape','25 patients/day','Active'],
+      ['Pharmacy Network Node 1','Pharmacy','Gauteng','N/A','Active'],
+      ['Rural Health Post','Clinic','Mpumalanga','20 patients/day','Active'],
+      ['EHSA Mobile Unit Gamma','Mobile','Free State','25 patients/day','Maintenance'],
+    ].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><span class="badge ${r[4]==='Maintenance'?'warn':'ok'}">${r[4]}</span></td></tr>`).join('');
+  } else if (id === 'compliance') {
+    const d = await fetch(API + '/api/compliance/status').then(r => r.json()).catch(() => ({ frameworks: [] }));
+    document.getElementById('compliance-content').innerHTML = `<h2>FRAMEWORKS</h2>` +
+      [['POPIA (ZA Privacy)', 'compliant', 'South African health data protection'], ['NDOH Standards', 'compliant', 'National Department of Health compliance'], ['WHO Digital Health', 'partial', 'WHO digital health guidelines alignment'], ['HIPAA (Reference)', 'partial', 'International interoperability standard']].map(f => `<div class="card" style="margin-bottom:.5rem"><h3><span class="badge ${f[1]==='compliant'?'ok':'warn'}">${f[1].toUpperCase()}</span> ${f[0]}</h3><p>${f[2]}</p></div>`).join('') +
+      `<h2>HEALTH DATA RULES</h2><div class="card"><p>All patient data encrypted at rest (AES-256) and in transit (TLS 1.3). Consent required for all data collection. Right to deletion enforced. Audit trail on every access. Data residency: South Africa.</p></div>`;
+  } else if (id === 'intelligence') {
+    document.getElementById('intel-content').innerHTML = `
+      <div class="grid">
+        <div class="card"><h3>Disease Trends</h3><p>TB: declining 3% YoY. HIV: stable, 94% treatment adherence. Malaria: seasonal spike expected Q2. Diabetes: rising 8% in urban areas.</p></div>
+        <div class="card"><h3>Resource Allocation</h3><p>AI recommends: +2 mobile units in Limpopo, ARV restocking in Cape Town, additional CHWs in Eastern Cape.</p></div>
+        <div class="card"><h3>Outcome Analytics</h3><p>Treatment success rate: 87%. Follow-up compliance: 72%. Average time to care: 2.4 hours (target: 2h).</p></div>
+        <div class="card"><h3>Predictive Models</h3><p>Flu outbreak probability (next 30 days): 34%. Medication stockout risk: 12%. Capacity utilization: 68%.</p></div>
+      </div>`;
+  }
+}
+loadSection('dashboard');
 </script>
-<script src="/bridge-nav.js" defer></script>
 </body>
 </html>

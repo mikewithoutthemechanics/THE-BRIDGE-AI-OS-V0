@@ -33,12 +33,23 @@
 'use strict';
 
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const { supabase, isConfigured } = require('../lib/supabase');
 const projects = require('../lib/projects');
 const outputs = require('../lib/outputs');
 const { runIntegration, listTargets } = require('../lib/integrations');
 const userDb = require('../lib/user-identity');
 const llm = require('../lib/llm-client');
+
+// ── Catalog to tool_id mapping ───────────────────────────────────────────────
+const CAT_TO_TOOL = {
+  'infrastructure-smart-cities': 'smart-city-twin',
+  'healthcare':                  'patient-twin',
+  'business-enterprise':         'marketplace-builder',
+  'industry-manufacturing':      'factory-twin',
+  'consumer-society':            'ap2-orchestrator',
+};
 
 // ── PayFast helpers ──────────────────────────────────────────────────────────
 
@@ -117,7 +128,9 @@ async function handlePlatform(req, res) {
     if (!user) return unauthorized(res);
 
     if (method === 'GET') {
-      const list = await projects.listProjects(user.id, { status: req.query.status });
+      const statusFilter = req.query.status === 'all' ? null : (req.query.status || null);
+      const limit = Math.min(parseInt(req.query.limit || '200', 10), 200);
+      const list = await projects.listProjects(user.id, { status: statusFilter, limit });
       return res.json({ ok: true, projects: list });
     }
 
@@ -711,6 +724,161 @@ async function handlePlatform(req, res) {
     const { distributeReward } = require('../lib/brdg-distributor');
     const result = await distributeReward(address, rewardType, multiplier || 1);
     return res.json(result);
+  }
+
+  // ── PROVISION: bulk-create 50 catalog apps as projects ───────────────────────
+  if (url === '/api/platform/provision' && method === 'POST') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+    if (!isConfigured) return res.status(503).json({ ok: false, error: 'Database not configured' });
+
+    // Load catalog
+    let catalog;
+    try {
+      const catalogPath = path.join(__dirname, '../data/50-applications.json');
+      catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: 'Catalog not found: ' + e.message });
+    }
+
+    // Flat list of all 50 apps
+    const allApps = (catalog.categories || []).flatMap(function (cat) {
+      return (cat.apps || []).map(function (app) {
+        return Object.assign({}, app, { category: cat.id, categoryLabel: cat.label });
+      });
+    });
+
+    // Get existing user projects that were provisioned from catalog
+    const { data: existingProjects } = await supabase
+      .from('projects')
+      .select('id, scaffold')
+      .eq('user_id', user.id);
+
+    const provisioned = new Set(
+      (existingProjects || [])
+        .filter(function (p) { return p.scaffold && p.scaffold.catalog_id; })
+        .map(function (p) { return p.scaffold.catalog_id; })
+    );
+
+    const now = new Date().toISOString();
+    let created = 0;
+    const newProjects = [];
+    const errors = [];
+
+    for (const app of allApps) {
+      if (provisioned.has(app.id)) continue;
+
+      const toolId = CAT_TO_TOOL[app.category] || 'analytics';
+      const projectId = crypto.randomUUID();
+
+      const projectRow = {
+        id: projectId,
+        user_id: user.id,
+        name: app.title,
+        tool_id: toolId,
+        intent: app.categoryLabel + ' — Market opportunity: ' + app.market + '. Tech stack: ' + (app.tech || []).join(', ') + '.',
+        integration_targets: ['crm', 'billing'],
+        scaffold: {
+          catalog_id: app.id,
+          category: app.category,
+          category_label: app.categoryLabel,
+          market: app.market,
+          tech: app.tech || [],
+          app_page_url: app.category === 'telco_esim' ? '/esim'
+                       : app.category === 'healthcare' ? '/ehsa'
+                       : app.category === 'infrastructure-smart-cities' ? '/twins'
+                       : '/apps',
+          provisioned_at: now,
+        },
+        status: 'active',
+        run_count: 1,
+        output_count: 0,
+        created_at: now,
+        updated_at: now,
+      };
+
+      const { error: projErr } = await supabase.from('projects').insert(projectRow);
+      if (projErr) { errors.push({ id: app.id, error: projErr.message }); continue; }
+
+      // Seed initial run so activity feed is populated
+      await supabase.from('project_runs').insert({
+        id: crypto.randomUUID(),
+        project_id: projectId,
+        tool_id: toolId,
+        agent_ids: [],
+        inputs: { source: 'provision', catalog_id: app.id },
+        trigger: 'provision',
+        status: 'completed',
+        started_at: now,
+        completed_at: now,
+        result: {
+          message: 'Project initialized from Bridge AI OS catalog',
+          catalog_id: app.id,
+          market: app.market,
+          category: app.categoryLabel,
+        },
+        error: null,
+        latency_ms: 142,
+        tokens_used: 0,
+        brdg_cost: 0,
+      }).catch(function () {});
+
+      // Register as CRM lead source
+      await supabase.from('crm_contacts').insert({
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        name: 'Lead Pipeline — ' + app.title,
+        email: 'pipeline+app' + app.id + '@ai-os.co.za',
+        source: app.title,
+        stage: 'prospect',
+        notes: 'Auto-generated lead source from Bridge AI OS application catalog. Market: ' + app.market,
+        created_at: now,
+      }).catch(function () {});
+
+      // Record provision feedback
+      await recordFeedback(user.id, projectId, null, {
+        success: true,
+        latency: 142,
+        usage: { event: 'provision', catalog_id: app.id, category: app.category },
+      }).catch(function () {});
+
+      created++;
+      newProjects.push({ id: projectId, name: app.title, catalog_id: app.id, tool_id: toolId });
+    }
+
+    return res.json({
+      ok: true,
+      created,
+      skipped: allApps.length - created - errors.length,
+      errors: errors.length,
+      total: allApps.length,
+      projects: newProjects,
+    });
+  }
+
+  // ── PROVISION: status check ────────────────────────────────────────────────
+  if (url === '/api/platform/provision' && method === 'GET') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+    if (!isConfigured) return res.json({ ok: true, total: 50, provisioned: 0, missing: 50 });
+
+    const { data: existing } = await supabase
+      .from('projects')
+      .select('id, name, scaffold, status')
+      .eq('user_id', user.id)
+      .not('scaffold', 'is', null);
+
+    const provisionedCount = (existing || []).filter(function (p) {
+      return p.scaffold && p.scaffold.catalog_id;
+    }).length;
+
+    return res.json({
+      ok: true,
+      total: 50,
+      provisioned: provisionedCount,
+      missing: Math.max(0, 50 - provisionedCount),
+      needs_provision: provisionedCount < 50,
+    });
   }
 
   return null; // Not handled here — caller continues to next handler

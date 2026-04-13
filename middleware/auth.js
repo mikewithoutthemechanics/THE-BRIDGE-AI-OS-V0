@@ -4,30 +4,44 @@ const jwt = require('jsonwebtoken');
 let redisClient = null;
 const revokedTokens = new Map(); // token → expiry timestamp (ms)
 
-// Attempt Redis connection, fall back silently
-(async () => {
-  try {
-    const redis = require('redis');
-    redisClient = redis.createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-      socket: { connectTimeout: 3000, reconnectStrategy: (retries) => retries > 3 ? false : 1000 }
-    });
-    redisClient.on('error', () => {});
-    await redisClient.connect();
-    console.log('[AUTH-MW] Redis connected for token revocation');
-  } catch (_) {
-    redisClient = null;
-    console.log('[AUTH-MW] Redis unavailable — using in-memory token revocation');
-  }
-})();
+// Skip eager Redis in Jest — async connect() completes after suites and leaks handles / logs "after tests done"
+const skipEagerRedis = !!process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test';
 
-// TTL-based cleanup: remove expired revocations every 5 minutes
-setInterval(() => {
+// Attempt Redis connection, fall back silently
+if (!skipEagerRedis) {
+  (async () => {
+    try {
+      const redis = require('redis');
+      redisClient = redis.createClient({
+        url: process.env.REDIS_URL || 'redis://localhost:6379',
+        socket: { connectTimeout: 3000, reconnectStrategy: (retries) => retries > 3 ? false : 1000 }
+      });
+      redisClient.on('error', () => {});
+      await redisClient.connect();
+      console.log('[AUTH-MW] Redis connected for token revocation');
+    } catch (_) {
+      redisClient = null;
+      console.log('[AUTH-MW] Redis unavailable — using in-memory token revocation');
+    }
+  })();
+}
+
+// TTL-based cleanup: remove expired revocations every 5 minutes (.unref so Jest can exit)
+const revokeCleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [token, expiresAt] of revokedTokens) {
     if (expiresAt <= now) revokedTokens.delete(token);
   }
 }, 5 * 60 * 1000);
+revokeCleanupTimer.unref();
+
+async function shutdownAuthMiddleware() {
+  clearInterval(revokeCleanupTimer);
+  if (redisClient) {
+    try { await redisClient.quit(); } catch (_) {}
+    redisClient = null;
+  }
+}
 
 function isTokenRevoked(token) {
   const expiresAt = revokedTokens.get(token);
@@ -102,4 +116,4 @@ async function revokeToken(token, ttlSeconds = 7 * 24 * 3600) {
   }
 }
 
-module.exports = { requireAuth, revokeToken };
+module.exports = { requireAuth, revokeToken, isTokenRevoked, shutdownAuthMiddleware };

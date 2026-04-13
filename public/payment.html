@@ -16,46 +16,55 @@
 <meta name="twitter:description" content="Subscribe | Bridge AI-OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
 <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#060810">
   <title>Subscribe | Bridge AI-OS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/bridge-tokens.css">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:#060810;color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-    .container{max-width:860px;width:100%}
+    body{background:#060810;color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:env(safe-area-inset-top,20px) env(safe-area-inset-right,16px) env(safe-area-inset-bottom,24px) env(safe-area-inset-left,16px)}
+    .container{max-width:860px;width:100%;margin:0 auto;padding:24px 0 40px}
     h1{font-size:2rem;font-weight:800;color:#63ffda;margin-bottom:8px;text-align:center}
-    .sub{text-align:center;color:#94a3b8;font-size:0.95rem;margin-bottom:40px}
-    .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
-    .plan{background:#0a0e17;border:1px solid #1a2a3a;border-radius:14px;padding:28px 24px;transition:all 0.2s;cursor:pointer;position:relative}
+    .sub{text-align:center;color:#94a3b8;font-size:0.95rem;margin-bottom:32px;padding:0 8px}
+    .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .plan{background:#0a0e17;border:1px solid #1a2a3a;border-radius:14px;padding:22px 18px;transition:border-color 0.2s,box-shadow 0.2s;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
     .plan:hover,.plan.selected{border-color:#63ffda;box-shadow:0 0 20px rgba(99,255,218,0.1)}
     .plan.popular{border-color:rgba(99,255,218,0.4)}
-    .badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#63ffda;color:#060810;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;letter-spacing:1px}
-    .plan-name{font-size:1.1rem;font-weight:700;margin-bottom:6px}
-    .plan-price{font-size:2.2rem;font-weight:800;color:#63ffda;margin-bottom:4px}
-    .plan-price span{font-size:1rem;color:#94a3b8;font-weight:400}
-    .plan-desc{font-size:0.82rem;color:#94a3b8;margin-bottom:16px;line-height:1.5}
+    .badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#63ffda;color:#060810;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;letter-spacing:1px;white-space:nowrap}
+    .plan-name{font-size:1.05rem;font-weight:700;margin-bottom:6px}
+    .plan-price{font-size:2rem;font-weight:800;color:#63ffda;margin-bottom:4px;word-break:keep-all}
+    .plan-price span{font-size:0.95rem;color:#94a3b8;font-weight:400}
+    .plan-desc{font-size:0.82rem;color:#94a3b8;margin-bottom:14px;line-height:1.5}
     .plan-features{list-style:none;font-size:0.82rem;color:#cbd5e1}
-    .plan-features li{padding:4px 0;padding-left:16px;position:relative}
+    .plan-features li{padding:4px 0;padding-left:18px;position:relative}
     .plan-features li::before{content:'✓';position:absolute;left:0;color:#63ffda}
-    .pay-section{margin-top:32px;background:#0a0e17;border:1px solid #1a2a3a;border-radius:14px;padding:28px}
-    .pay-section h2{font-size:1rem;font-weight:700;color:#63ffda;margin-bottom:16px;letter-spacing:1px;text-transform:uppercase}
-    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+    .pay-section{margin-top:24px;background:#0a0e17;border:1px solid #1a2a3a;border-radius:14px;padding:22px 18px}
+    .pay-section h2{font-size:0.9rem;font-weight:700;color:#63ffda;margin-bottom:14px;letter-spacing:1px;text-transform:uppercase}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
     .form-row.single{grid-template-columns:1fr}
     label{font-size:0.78rem;color:#94a3b8;display:block;margin-bottom:4px;letter-spacing:0.5px}
-    input{width:100%;padding:10px 14px;background:#111827;border:1px solid #1a2a3a;border-radius:8px;color:#fff;font-size:0.9rem;outline:none;transition:border-color 0.2s}
+    /* font-size:16px prevents iOS auto-zoom on input focus */
+    input{width:100%;padding:12px 14px;background:#111827;border:1px solid #1a2a3a;border-radius:8px;color:#fff;font-size:16px;outline:none;transition:border-color 0.2s;-webkit-appearance:none;appearance:none}
     input:focus{border-color:#63ffda}
-    .selected-plan-display{background:#111827;border:1px solid #1a2a3a;border-radius:8px;padding:12px 16px;font-size:0.88rem;color:#cbd5e1;margin-bottom:16px}
-    .pay-btn{width:100%;padding:14px;background:#63ffda;color:#060810;border:none;border-radius:10px;font-size:1rem;font-weight:800;cursor:pointer;letter-spacing:0.5px;transition:background 0.2s}
-    .pay-btn:hover{background:#00dda8}
+    .selected-plan-display{background:#111827;border:1px solid #1a2a3a;border-radius:8px;padding:12px 16px;font-size:0.88rem;color:#cbd5e1;margin-bottom:14px}
+    .pay-btn{width:100%;padding:16px;background:#63ffda;color:#060810;border:none;border-radius:10px;font-size:1.05rem;font-weight:800;cursor:pointer;letter-spacing:0.5px;transition:background 0.15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .pay-btn:active{background:#00dda8}
     .pay-btn:disabled{background:#2a3a4a;color:#94a3b8;cursor:not-allowed}
-    .msg{font-size:0.82rem;color:#f87171;margin-top:8px;min-height:1.2em}
+    .msg{font-size:0.82rem;color:#f87171;margin-top:10px;min-height:1.2em}
     .msg.ok{color:#4ade80}
-    .secure-note{text-align:center;font-size:0.75rem;color:#4a5568;margin-top:12px}
-    @media(max-width:640px){
+    .secure-note{text-align:center;font-size:0.75rem;color:#4a5568;margin-top:12px;padding:0 8px;line-height:1.5}
+    @media(max-width:600px){
       .form-row{grid-template-columns:1fr}
       h1{font-size:1.5rem}
       .plans{grid-template-columns:1fr}
+      .plan{padding:18px 16px}
+      .pay-section{padding:18px 16px}
+      .plan-price{font-size:1.75rem}
+    }
+    @media(max-width:380px){
+      h1{font-size:1.3rem}
+      .container{padding:16px 0 32px}
     }
   </style>
 </head>
@@ -133,6 +142,7 @@
 
   <script>
     var selectedPlan = { plan: 'pro', amount: 299, name: 'Pro' };
+    var refCode = '';
 
     function selectPlan(el) {
       document.querySelectorAll('.plan').forEach(function(p) { p.classList.remove('selected'); });
@@ -143,8 +153,21 @@
         name:   el.dataset.name,
       };
       var display = document.getElementById('planDisplay');
-      display.textContent = 'Selected: ' + selectedPlan.name + ' — R' + selectedPlan.amount + '/mo';
+      display.textContent = 'Selected: ' + selectedPlan.name + ' — R' + selectedPlan.amount.toLocaleString() + '/mo';
     }
+
+    // Pre-select plan and capture ref from URL params
+    (function initFromUrl() {
+      var params = new URLSearchParams(window.location.search);
+      var planParam = (params.get('plan') || '').toLowerCase();
+      var ref       = params.get('ref') || '';
+      if (ref) refCode = ref;
+
+      if (planParam) {
+        var target = document.querySelector('[data-plan="' + planParam + '"]');
+        if (target) selectPlan(target);
+      }
+    })();
 
     async function initiatePayment() {
       var btn       = document.getElementById('payBtn');
@@ -175,6 +198,7 @@
             firstName: firstName,
             itemName:  'Bridge AI-OS ' + selectedPlan.name + ' Subscription',
             meta:      selectedPlan.plan,
+            ref:       refCode || undefined,
           }),
         });
         var data = await res.json();

@@ -28,6 +28,8 @@
     { label: 'Agents',         href: '/agents',         role: 'user' },
     { label: 'Economy',        href: '/economy',        role: 'user' },
     { label: 'Marketplace',    href: '/marketplace',    role: 'user' },
+    { label: 'Carrier/eSIM',  href: '/esim',           role: 'user' },
+    { label: 'Carrier Admin', href: '/carrier',        role: 'admin' },
     { label: 'CRM',            href: '/crm',            role: 'user' },
     { label: 'Leads',          href: '/leads',          role: 'user' },
     { label: 'Invoicing',      href: '/invoicing',      role: 'user' },

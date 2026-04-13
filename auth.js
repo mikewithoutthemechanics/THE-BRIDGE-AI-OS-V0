@@ -21,13 +21,11 @@ const jwt = require('jsonwebtoken');
 const userDb = require('./lib/user-identity');
 const nurture = require('./lib/nurture-engine');
 const revokedStore = (() => { try { return require('./lib/revoked-tokens'); } catch(_) { return null; } })();
+const { revokeToken, isTokenRevoked } = require('./middleware/auth');
 
 // ── Secrets ─────────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || process.env.BRIDGE_SIWE_JWT_SECRET || 'aoe-unified-super-secret-change-in-prod';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'aoe-refresh-secret-change-in-prod';
-
-// Token blacklist (in-memory; cleared on restart — acceptable for single-process)
-const blacklistedTokens = new Set();
 
 // ── App Setup ───────────────────────────────────────────────────────────────
 const app = express();
@@ -104,9 +102,9 @@ function extractBearerToken(req) {
   return h.startsWith('Bearer ') ? h.slice(7).trim() : null;
 }
 
-function verifyAccess(token) {
+async function verifyAccess(token) {
   if (!token) return null;
-  if (blacklistedTokens.has(token)) return null;
+  if (await isTokenRevoked(token)) return null;
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (_) {
@@ -119,7 +117,7 @@ async function authMiddleware(req, res, next) {
   const token = extractBearerToken(req);
 
   // Try Bridge JWT
-  const payload = verifyAccess(token);
+  const payload = await verifyAccess(token);
   if (payload) {
     req.user = payload;
     req.token = token;
@@ -254,7 +252,7 @@ app.get('/auth/verify', async (req, res) => {
   const token = extractBearerToken(req);
   if (!token) return res.status(401).json({ ok: false, valid: false, error: 'Missing auth token' });
 
-  const payload = verifyAccess(token);
+  const payload = await verifyAccess(token);
   if (!payload) return res.status(401).json({ ok: false, valid: false, error: 'Invalid or expired token' });
 
   const user = await userDb.getUserById(payload.sub);
@@ -268,10 +266,10 @@ app.post('/auth/logout', async (req, res) => {
   const token = extractBearerToken(req);
   if (!token) return res.status(401).json({ ok: false, error: 'Bearer token required' });
 
-  const payload = verifyAccess(token);
+  const payload = await verifyAccess(token);
   if (!payload) return res.status(401).json({ ok: false, error: 'Token invalid or already revoked' });
 
-  blacklistedTokens.add(token);
+  await revokeToken(token);
   if (revokedStore) revokedStore.revoke(token).catch(() => {});
 
   res.json({ ok: true, status: 'logged_out', ts: Date.now() });
@@ -360,7 +358,7 @@ app.post('/auth/google', async (req, res) => {
 app.get('/auth/me', authMiddleware, async (req, res) => {
   // Check persistent revocation (survives restarts, shared with Vercel)
   if (revokedStore && await revokedStore.isRevoked(req.token)) {
-    blacklistedTokens.add(req.token); // warm local cache
+    await revokeToken(req.token); // warm authoritative store
     return res.status(401).json({ ok: false, error: 'Token revoked' });
   }
   const user = await userDb.getUserById(req.user.sub);

@@ -406,18 +406,39 @@ exports.getMarketplaceWallet = function() {
   const freeMem = os.freemem();
   const cpus = os.cpus();
 
-  // Get disk info
+  // Get disk info (Windows: wmic is removed on many builds — try PowerShell first, stderr silenced)
   let diskTotal = 0, diskFree = 0;
   try {
     if (os.platform() === 'win32') {
-      const out = execSync('wmic logicaldisk get size,freespace,caption /format:csv', { encoding: 'utf8', timeout: 3000 });
-      const lines = out.trim().split('\n').slice(1).filter(l => l.trim());
-      for (const line of lines) {
-        const parts = line.split(',');
-        if (parts.length >= 3) {
-          diskFree += parseInt(parts[1]) || 0;
-          diskTotal += parseInt(parts[2]) || 0;
+      const stdio = ['ignore', 'pipe', 'pipe'];
+      const tryPs = () => {
+        const ps = 'powershell -NoProfile -Command "Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | ForEach-Object { \"$($_.FreeSpace),$($_.Size)\" }"';
+        return execSync(ps, { encoding: 'utf8', timeout: 5000, windowsHide: true, stdio });
+      };
+      const tryWmic = () => execSync('wmic logicaldisk get size,freespace,caption /format:csv', { encoding: 'utf8', timeout: 3000, windowsHide: true, stdio });
+      let out = '';
+      try {
+        out = tryPs();
+        for (const line of out.split(/\r?\n/)) {
+          const s = line.replace(/"/g, '').trim();
+          const m = s.match(/^(\d+),(\d+)$/);
+          if (m) {
+            diskFree += parseInt(m[1], 10) || 0;
+            diskTotal += parseInt(m[2], 10) || 0;
+          }
         }
+      } catch (_) {
+        try {
+          out = tryWmic();
+          const lines = out.trim().split('\n').slice(1).filter(l => l.trim());
+          for (const line of lines) {
+            const parts = line.split(',');
+            if (parts.length >= 3) {
+              diskFree += parseInt(parts[1], 10) || 0;
+              diskTotal += parseInt(parts[2], 10) || 0;
+            }
+          }
+        } catch (_) { /* no disk probe */ }
       }
     }
   } catch (_) {}

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "jest --testPathPattern=tests/",
+    "ci": "npm test",
     "start": "node system.js",
     "dev": "nodemon system.js",
     "start:80": "cross-env PORT=80  NODE_ENV=production node system.js",
@@ -71,6 +72,14 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "\\.kilo",
+      "/dist/"
+    ],
     "setupFilesAfterEnv": [
       "./jest.setup.js"
     ]

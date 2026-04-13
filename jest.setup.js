@@ -1,7 +1,11 @@
 'use strict';
-// Global Jest teardown — drains the event loop after every suite.
-// Gives Node.js one tick to close any lingering handles before Jest
-// force-exits and prints the "worker process failed to exit" warning.
+// Global Jest teardown — close Redis + timers from middleware loaded with gateway/auth tests.
 afterAll(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  try {
+    const auth = require('./middleware/auth');
+    if (typeof auth.shutdownAuthMiddleware === 'function') {
+      await auth.shutdownAuthMiddleware();
+    }
+  } catch (_) {}
+  await new Promise((resolve) => setTimeout(resolve, 150));
 });

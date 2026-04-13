@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrier Admin — Bridge AI OS</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+  :root {
+    --c-bg:     #0d0f14;
+    --c-surface:#13161e;
+    --c-border: #1e2330;
+    --c-text:   #e2e8f0;
+    --c-muted:  #64748b;
+    --c-accent: #f59e0b;
+    --c-green:  #22c55e;
+    --c-red:    #ef4444;
+    --c-blue:   #3b82f6;
+    --c-purple: #a855f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--c-bg); color: var(--c-text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+
+  /* Layout */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 220px; flex-shrink: 0; background: var(--c-surface);
+    border-right: 1px solid var(--c-border); display: flex; flex-direction: column;
+    padding: 1.5rem 0;
+  }
+  .sidebar-logo { padding: 0 1.25rem 1.5rem; font-size: 0.85rem; color: var(--c-accent); font-weight: 700; letter-spacing: .05em; }
+  .sidebar-role { padding: 0 1.25rem 1rem; font-size: 0.7rem; color: var(--c-muted); text-transform: uppercase; letter-spacing: .1em; }
+  .nav-item {
+    padding: 0.6rem 1.25rem; cursor: pointer; font-size: 0.85rem; color: var(--c-muted);
+    display: flex; align-items: center; gap: 0.6rem; border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { color: var(--c-text); background: rgba(255,255,255,.03); }
+  .nav-item.active { color: var(--c-accent); border-left-color: var(--c-accent); background: rgba(245,158,11,.06); }
+  .sidebar-spacer { flex: 1; }
+  .sidebar-user { padding: 1rem 1.25rem; border-top: 1px solid var(--c-border); font-size: 0.8rem; color: var(--c-muted); }
+
+  /* Main */
+  .main { flex: 1; overflow: auto; padding: 2rem; }
+  .page { display: none; }
+  .page.active { display: block; }
+  h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .sub { color: var(--c-muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+  /* Stat cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px; padding: 1.1rem; }
+  .stat-label { font-size: 0.7rem; color: var(--c-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 0.4rem; }
+  .stat-value { font-size: 1.6rem; font-weight: 700; }
+  .stat-value.green  { color: var(--c-green); }
+  .stat-value.amber  { color: var(--c-accent); }
+  .stat-value.blue   { color: var(--c-blue); }
+  .stat-value.purple { color: var(--c-purple); }
+
+  /* Tables */
+  .card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+  .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--c-border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 0.9rem; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 0.65rem 1rem; text-align: left; font-size: 0.72rem; color: var(--c-muted); text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid var(--c-border); }
+  td { padding: 0.75rem 1rem; font-size: 0.82rem; border-bottom: 1px solid rgba(30,35,48,.7); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 0.2em 0.6em; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+  .badge-green  { background: rgba(34,197,94,.15);  color: var(--c-green); }
+  .badge-amber  { background: rgba(245,158,11,.15); color: var(--c-accent); }
+  .badge-red    { background: rgba(239,68,68,.15);  color: var(--c-red); }
+  .badge-blue   { background: rgba(59,130,246,.15); color: var(--c-blue); }
+  .badge-purple { background: rgba(168,85,247,.15); color: var(--c-purple); }
+  .badge-gray   { background: rgba(100,116,139,.15);color: var(--c-muted); }
+
+  /* Buttons */
+  .btn { padding: 0.4rem 0.9rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; border: none; font-weight: 600; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--c-accent); color: #000; }
+  .btn-ghost   { background: transparent; color: var(--c-muted); border: 1px solid var(--c-border); }
+  .btn-danger  { background: var(--c-red); color: #fff; }
+  .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.72rem; }
+
+  /* Form */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+  label { font-size: 0.75rem; color: var(--c-muted); }
+  input, select, textarea {
+    background: var(--c-bg); border: 1px solid var(--c-border); color: var(--c-text);
+    border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.83rem; outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--c-accent); }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; padding: 1.5rem; width: 480px; max-width: 95vw; }
+  .modal-title { font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; }
+  .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
+
+  /* Route table */
+  .prefix-chip { display: inline-block; background: rgba(59,130,246,.1); color: var(--c-blue); border: 1px solid rgba(59,130,246,.2); border-radius: 4px; padding: 0.1em 0.5em; font-size: 0.7rem; margin: 0.1em; }
+
+  /* Loading */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--c-border); border-top-color: var(--c-accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading { display: flex; align-items: center; gap: 0.5rem; color: var(--c-muted); font-size: 0.85rem; padding: 1.5rem; }
+  .empty { color: var(--c-muted); font-size: 0.85rem; padding: 2rem; text-align: center; }
+
+  /* Alert */
+  .alert { padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.83rem; margin-bottom: 1rem; }
+  .alert-error { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.2); color: var(--c-red); }
+  .alert-success { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.2); color: var(--c-green); }
+
+  /* Revenue tree */
+  .tree-node { padding: 0.6rem 0.75rem; border: 1px solid var(--c-border); border-radius: 8px; background: var(--c-surface); margin-bottom: 0.5rem; }
+  .tree-children { margin-left: 1.5rem; margin-top: 0.5rem; border-left: 2px solid var(--c-border); padding-left: 1rem; }
+  .tree-label { font-size: 0.82rem; font-weight: 600; }
+  .tree-meta { font-size: 0.72rem; color: var(--c-muted); margin-top: 0.2rem; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">⚡ BRIDGE CARRIER</div>
+    <div class="sidebar-role" id="roleLabel">Loading...</div>
+
+    <!-- Root-only items -->
+    <div id="rootNav" style="display:none">
+      <div class="nav-item active" onclick="showPage('overview')">📊 Overview</div>
+      <div class="nav-item" onclick="showPage('resellers')">🏢 Resellers</div>
+      <div class="nav-item" onclick="showPage('federation')">🔗 Federation</div>
+      <div class="nav-item" onclick="showPage('numbers')">📞 Numbers</div>
+      <div class="nav-item" onclick="showPage('revenue')">💰 Revenue</div>
+      <div class="nav-item" onclick="showPage('wallet')">👛 Wallet</div>
+    </div>
+
+    <!-- Master reseller items -->
+    <div id="masterNav" style="display:none">
+      <div class="nav-item active" onclick="showPage('overview')">📊 Overview</div>
+      <div class="nav-item" onclick="showPage('resellers')">🏢 Sub-Resellers</div>
+      <div class="nav-item" onclick="showPage('numbers')">📞 Numbers</div>
+      <div class="nav-item" onclick="showPage('revenue')">💰 Revenue</div>
+      <div class="nav-item" onclick="showPage('wallet')">👛 Wallet</div>
+    </div>
+
+    <!-- Reseller items -->
+    <div id="resellerNav" style="display:none">
+      <div class="nav-item active" onclick="showPage('overview')">📊 Overview</div>
+      <div class="nav-item" onclick="showPage('numbers')">📞 Numbers</div>
+      <div class="nav-item" onclick="showPage('revenue')">💰 Revenue</div>
+      <div class="nav-item" onclick="showPage('wallet')">👛 Wallet</div>
+    </div>
+
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-user" id="sidebarUser">—</div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- Overview Page -->
+    <div id="page-overview" class="page active">
+      <h1>Carrier Overview</h1>
+      <p class="sub">Real-time federation health and revenue summary</p>
+      <div id="overviewStats" class="stat-grid"><div class="loading"><span class="spinner"></span> Loading...</div></div>
+      <div id="overviewCarriers" class="card">
+        <div class="card-header"><span class="card-title">Active Federation Carriers</span></div>
+        <div id="carriersBody"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- Resellers Page -->
+    <div id="page-resellers" class="page">
+      <h1>Reseller Hierarchy</h1>
+      <p class="sub">Manage sub-resellers and pricing margins</p>
+      <div style="margin-bottom:1rem; display:flex; gap:0.5rem;">
+        <button class="btn btn-primary" onclick="openCreateReseller()">+ Add Reseller</button>
+      </div>
+      <div id="resellerTree" class="card">
+        <div class="card-header"><span class="card-title">Reseller Tree</span></div>
+        <div id="resellerTreeBody" style="padding:1rem;"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- Federation Page -->
+    <div id="page-federation" class="page">
+      <h1>Federation Carriers</h1>
+      <p class="sub">SIP interconnects and least-cost routing configuration</p>
+      <div style="margin-bottom:1rem; display:flex; gap:0.5rem;">
+        <button class="btn btn-primary" onclick="openConnectCarrier()">+ Connect Carrier</button>
+        <button class="btn btn-ghost" onclick="openTestRoute()">🔍 Test Route</button>
+      </div>
+      <div id="federationCard" class="card">
+        <div class="card-header"><span class="card-title">Carriers</span></div>
+        <table>
+          <thead><tr>
+            <th>Carrier</th><th>Endpoint</th><th>Prefixes</th>
+            <th>Cost/min</th><th>Latency</th><th>Success</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody id="federationBody"><tr><td colspan="8"><div class="loading"><span class="spinner"></span></div></td></tr></tbody>
+        </table>
+      </div>
+      <div id="routeTableCard" class="card">
+        <div class="card-header"><span class="card-title">Route Table (active prefixes)</span></div>
+        <div id="routeTableBody" style="padding:1rem;"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- Numbers Page -->
+    <div id="page-numbers" class="page">
+      <h1>Number Marketplace</h1>
+      <p class="sub">Buy and manage DID numbers and virtual phone numbers</p>
+      <div style="margin-bottom:1rem; display:flex; gap:0.5rem; align-items:center;">
+        <select id="filterCountry" onchange="loadNumbers()" style="width:140px;">
+          <option value="">All Countries</option>
+          <option value="ZA">South Africa</option>
+          <option value="US">United States</option>
+          <option value="GB">United Kingdom</option>
+          <option value="NG">Nigeria</option>
+          <option value="KE">Kenya</option>
+        </select>
+        <select id="filterType" onchange="loadNumbers()" style="width:130px;">
+          <option value="">All Types</option>
+          <option value="did">DID</option>
+          <option value="toll_free">Toll Free</option>
+          <option value="mobile">Mobile</option>
+          <option value="virtual">Virtual</option>
+        </select>
+        <button class="btn btn-ghost" onclick="loadMyNumbers()">My Numbers</button>
+        <div id="rootListBtn" style="display:none"><button class="btn btn-primary" onclick="openListNumber()">+ List Number</button></div>
+      </div>
+      <div id="numbersAlert"></div>
+      <div id="numbersCard" class="card">
+        <div class="card-header"><span class="card-title" id="numbersTitle">Available Numbers</span></div>
+        <table>
+          <thead><tr><th>Number</th><th>Country</th><th>Type</th><th>Capabilities</th><th>Monthly</th><th>Setup</th><th></th></tr></thead>
+          <tbody id="numbersBody"><tr><td colspan="7"><div class="loading"><span class="spinner"></span></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Revenue Page -->
+    <div id="page-revenue" class="page">
+      <h1>Revenue Analytics</h1>
+      <p class="sub">Split events and chain distribution</p>
+      <div id="revenueStats" class="stat-grid"></div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Recent Revenue Splits</span></div>
+        <table>
+          <thead><tr><th>Reference</th><th>Total</th><th>Your Cut</th><th>Root</th><th>Splits</th><th>Date</th></tr></thead>
+          <tbody id="revenueBody"><tr><td colspan="6"><div class="loading"><span class="spinner"></span></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Wallet Page -->
+    <div id="page-wallet" class="page">
+      <h1>Wallet</h1>
+      <p class="sub">Balance, credit line, and transaction ledger</p>
+      <div id="walletStats" class="stat-grid"></div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recent Transactions</span>
+          <button class="btn btn-primary btn-sm" id="topupBtn" onclick="openTopup()" style="display:none">+ Top Up</button>
+        </div>
+        <table>
+          <thead><tr><th>Type</th><th>Amount</th><th>Balance After</th><th>Reference</th><th>Date</th></tr></thead>
+          <tbody id="walletBody"><tr><td colspan="5"><div class="loading"><span class="spinner"></span></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal: Create Reseller -->
+<div class="modal-overlay" id="modalReseller">
+  <div class="modal">
+    <div class="modal-title">Add Reseller</div>
+    <div class="form-row">
+      <div class="form-group"><label>Name *</label><input id="rName" placeholder="Acme Telecom"></div>
+      <div class="form-group"><label>Email</label><input id="rEmail" type="email" placeholder="ops@acme.com"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Phone</label><input id="rPhone" placeholder="+27..."></div>
+      <div class="form-group"><label>Level</label>
+        <select id="rLevel"><option value="2">L2 Reseller</option><option value="1">L1 Master</option></select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:.75rem"><label>Revenue Share %</label><input id="rShare" type="number" value="20" min="0" max="80"></div>
+    <div id="resellerErr" class="alert alert-error" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalReseller')">Cancel</button>
+      <button class="btn btn-primary" onclick="createReseller()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Connect Carrier -->
+<div class="modal-overlay" id="modalCarrier">
+  <div class="modal">
+    <div class="modal-title">Connect Federation Carrier</div>
+    <div class="form-row">
+      <div class="form-group"><label>Carrier ID *</label><input id="cId" placeholder="carrier_za_2"></div>
+      <div class="form-group"><label>Name *</label><input id="cName" placeholder="My SIP Provider"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:.75rem"><label>SIP Endpoint *</label><input id="cEndpoint" placeholder="sip.provider.com"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Cost per Minute (ZAR)</label><input id="cCost" type="number" step="0.001" value="0.05"></div>
+      <div class="form-group"><label>Priority (1=highest)</label><input id="cPriority" type="number" value="5" min="1" max="10"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:.75rem"><label>Route Prefixes (comma-separated, e.g. +27,+1)</label><input id="cRoutes" placeholder="+27,+1,+44"></div>
+    <div id="carrierErr" class="alert alert-error" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalCarrier')">Cancel</button>
+      <button class="btn btn-primary" onclick="connectCarrier()">Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Test Route -->
+<div class="modal-overlay" id="modalRoute">
+  <div class="modal">
+    <div class="modal-title">Test Routing</div>
+    <div class="form-group" style="margin-bottom:.75rem"><label>Destination Number</label><input id="routeDest" placeholder="+27821234567"></div>
+    <div id="routeResult" style="background:var(--c-bg);border-radius:8px;padding:1rem;font-size:.8rem;font-family:monospace;display:none;white-space:pre-wrap;max-height:220px;overflow:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalRoute')">Close</button>
+      <button class="btn btn-primary" onclick="testRoute()">Test</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: List Number -->
+<div class="modal-overlay" id="modalListNum">
+  <div class="modal">
+    <div class="modal-title">List Number for Sale</div>
+    <div class="form-row">
+      <div class="form-group"><label>Number *</label><input id="lNum" placeholder="+27 10 001 0010"></div>
+      <div class="form-group"><label>Country *</label><input id="lCountry" placeholder="South Africa"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Country Code</label><input id="lCC" placeholder="ZA" maxlength="2"></div>
+      <div class="form-group"><label>Type</label><select id="lType"><option>did</option><option>toll_free</option><option>mobile</option><option>virtual</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Monthly Price *</label><input id="lMonthly" type="number" step="0.01" value="12.00"></div>
+      <div class="form-group"><label>Setup Fee</label><input id="lSetup" type="number" step="0.01" value="0.00"></div>
+    </div>
+    <div id="listNumErr" class="alert alert-error" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalListNum')">Cancel</button>
+      <button class="btn btn-primary" onclick="listNumber()">List</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ─── State ────────────────────────────────────────────────────────────────── */
+let USER = null;
+let ROLE = 'tenant';
+const ROLE_LABELS = { root: 'Root Admin', master_reseller: 'Master Reseller', reseller: 'Reseller', tenant: 'Tenant' };
+
+/* ─── Init ─────────────────────────────────────────────────────────────────── */
+async function init() {
+  try {
+    const r = await fetch('/auth/me');
+    if (!r.ok) { window.location.href = '/join?next=/carrier'; return; }
+    USER = await r.json();
+    USER = USER.user || USER;
+    ROLE = deriveRole(USER);
+    document.getElementById('roleLabel').textContent = ROLE_LABELS[ROLE] || 'Carrier Admin';
+    document.getElementById('sidebarUser').textContent = USER.email || USER.name || '—';
+
+    // Show role-appropriate nav
+    const navMap = { root: 'rootNav', master_reseller: 'masterNav', reseller: 'resellerNav' };
+    const navId = navMap[ROLE] || 'resellerNav';
+    document.getElementById(navId).style.display = '';
+
+    // Root-only features
+    if (ROLE === 'root') {
+      document.getElementById('rootListBtn').style.display = '';
+    }
+    if (ROLE === 'root') {
+      document.getElementById('topupBtn').style.display = '';
+    }
+
+    loadOverview();
+  } catch (e) {
+    window.location.href = '/join?next=/carrier';
+  }
+}
+
+function deriveRole(u) {
+  if (!u) return 'tenant';
+  const r = u.role || '', p = u.plan || '';
+  if (r === 'admin' || r === 'superadmin' || p === 'admin') return 'root';
+  if (p === 'enterprise') return 'master_reseller';
+  if (p === 'pro') return 'reseller';
+  return 'tenant';
+}
+
+/* ─── Navigation ───────────────────────────────────────────────────────────── */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  const loaders = { overview: loadOverview, resellers: loadResellers, federation: loadFederation, numbers: loadNumbers, revenue: loadRevenue, wallet: loadWallet };
+  if (loaders[name]) loaders[name]();
+}
+
+/* ─── Overview ─────────────────────────────────────────────────────────────── */
+async function loadOverview() {
+  const [fedRes, resellerRes] = await Promise.all([
+    fetch('/api/pbx/federation/routes').then(r => r.json()).catch(() => ({})),
+    ROLE !== 'tenant' ? fetch('/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({})) : Promise.resolve({}),
+  ]);
+
+  const activeCarriers = fedRes.active_carriers || 0;
+  const totalPrefixes  = fedRes.total_prefixes || 0;
+  const totalResellers = resellerRes.total || 0;
+
+  document.getElementById('overviewStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Active Carriers</div><div class="stat-value green">${activeCarriers}</div></div>
+    <div class="stat-card"><div class="stat-label">Route Prefixes</div><div class="stat-value blue">${totalPrefixes}</div></div>
+    <div class="stat-card"><div class="stat-label">Resellers</div><div class="stat-value amber">${totalResellers}</div></div>
+    <div class="stat-card"><div class="stat-label">Your Role</div><div class="stat-value purple" style="font-size:1rem;padding-top:.2rem">${ROLE_LABELS[ROLE]}</div></div>
+  `;
+
+  const carriers = (fedRes.carriers || []).filter(c => c.status === 'active');
+  if (!carriers.length) {
+    document.getElementById('carriersBody').innerHTML = '<div class="empty">No active federation carriers. <a href="#" onclick="showPage(\'federation\')" style="color:var(--c-accent)">Connect one →</a></div>';
+    return;
+  }
+  document.getElementById('carriersBody').innerHTML = `
+    <table>
+      <thead><tr><th>Name</th><th>Endpoint</th><th>Cost/min</th><th>Latency</th><th>Success</th></tr></thead>
+      <tbody>${carriers.map(c => `
+        <tr>
+          <td><strong>${esc(c.name)}</strong></td>
+          <td style="color:var(--c-muted);font-family:monospace;font-size:.78rem">${esc(c.endpoint)}</td>
+          <td>${fmtZar(c.rates?.per_min)}/min</td>
+          <td>${c.latency_ms || '—'}ms</td>
+          <td><span class="badge ${c.success_rate >= 99 ? 'badge-green' : 'badge-amber'}">${c.success_rate || '—'}%</span></td>
+        </tr>
+      `).join('')}</tbody>
+    </table>
+  `;
+}
+
+/* ─── Resellers ────────────────────────────────────────────────────────────── */
+async function loadResellers() {
+  const data = await fetch('/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({}));
+  const body = document.getElementById('resellerTreeBody');
+  if (!data.tree || !data.tree.length) {
+    body.innerHTML = '<div class="empty">No resellers yet. Create one to start your channel network.</div>';
+    return;
+  }
+  body.innerHTML = renderTree(data.tree);
+}
+
+function renderTree(nodes, depth = 0) {
+  if (!nodes || !nodes.length) return '';
+  return nodes.map(n => `
+    <div class="tree-node">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="tree-label">${esc(n.name)} <span class="badge badge-blue">L${n.level}</span> <span class="badge ${n.status === 'active' ? 'badge-green' : 'badge-red'}">${n.status}</span></div>
+          <div class="tree-meta">${esc(n.email || '')} · Revenue share: ${n.markup_rules?.revenue_share_pct || 20}%</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="viewReseller('${n.id}')">Analytics →</button>
+      </div>
+      ${n.children && n.children.length ? `<div class="tree-children">${renderTree(n.children, depth + 1)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+async function viewReseller(id) {
+  const data = await fetch('/api/pbx/reseller/' + id + '/analytics').then(r => r.json()).catch(() => null);
+  if (!data) return;
+  alert(JSON.stringify({ name: data.reseller?.name, revenue: data.analytics?.total_revenue_received, subs: data.analytics?.sub_resellers }, null, 2));
+}
+
+/* ─── Federation ────────────────────────────────────────────────────────────── */
+async function loadFederation() {
+  const data = await fetch('/api/pbx/federation/routes').then(r => r.json()).catch(() => ({}));
+  const carriers = data.carriers || [];
+
+  document.getElementById('federationBody').innerHTML = carriers.length
+    ? carriers.map(c => `
+      <tr>
+        <td><strong>${esc(c.name)}</strong><br><span style="color:var(--c-muted);font-size:.72rem">${esc(c.carrier_id)}</span></td>
+        <td style="font-family:monospace;font-size:.78rem">${esc(c.endpoint)}</td>
+        <td>${(c.routes || []).map(r => `<span class="prefix-chip">${esc(r)}</span>`).join('')}</td>
+        <td>${fmtZar(c.rates?.per_min)}</td>
+        <td>${c.latency_ms || '—'}ms</td>
+        <td>${c.success_rate || '—'}%</td>
+        <td><span class="badge ${c.status === 'active' ? 'badge-green' : c.status === 'testing' ? 'badge-amber' : 'badge-gray'}">${c.status}</span></td>
+        <td>
+          ${ROLE === 'root' ? `<button class="btn btn-ghost btn-sm" onclick="toggleCarrier('${c.id}','${c.status === 'active' ? 'inactive' : 'active'}')">${c.status === 'active' ? 'Deactivate' : 'Activate'}</button>` : ''}
+        </td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="8"><div class="empty">No federation carriers configured.</div></td></tr>';
+
+  // Route table
+  const rt = data.route_table || {};
+  const prefixes = Object.keys(rt).sort();
+  document.getElementById('routeTableBody').innerHTML = prefixes.length
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.5rem;padding:.25rem 0">
+        ${prefixes.map(p => `
+          <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:.6rem .75rem">
+            <div style="font-size:.78rem;font-weight:700;margin-bottom:.35rem"><span class="prefix-chip">${esc(p)}</span></div>
+            ${rt[p].slice(0,3).map((c,i) => `<div style="font-size:.72rem;color:${i === 0 ? 'var(--c-green)' : 'var(--c-muted)'}">${i === 0 ? '★ ' : ''}${esc(c.name)} — ${fmtZar(c.per_min)}/min</div>`).join('')}
+          </div>
+        `).join('')}
+      </div>`
+    : '<div class="empty">No active routes. Activate a carrier to populate the route table.</div>';
+}
+
+async function toggleCarrier(id, newStatus) {
+  const r = await fetch('/api/pbx/federation/' + id, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus }),
+  }).then(r => r.json()).catch(() => null);
+  if (r?.ok) loadFederation();
+}
+
+/* ─── Numbers ────────────────────────────────────────────────────────────────── */
+async function loadNumbers() {
+  const country = document.getElementById('filterCountry').value;
+  const type    = document.getElementById('filterType').value;
+  let url = '/api/pbx/marketplace/numbers?limit=50';
+  if (country) url += '&country=' + country;
+  if (type)    url += '&type=' + type;
+
+  document.getElementById('numbersTitle').textContent = 'Available Numbers';
+  document.getElementById('numbersBody').innerHTML = '<tr><td colspan="7"><div class="loading"><span class="spinner"></span></div></td></tr>';
+
+  const data = await fetch(url).then(r => r.json()).catch(() => ({ numbers: [] }));
+  const nums = data.numbers || [];
+
+  document.getElementById('numbersBody').innerHTML = nums.length
+    ? nums.map(n => `
+      <tr>
+        <td><strong style="font-family:monospace">${esc(n.number)}</strong></td>
+        <td>${esc(n.country)}</td>
+        <td><span class="badge badge-blue">${n.type}</span></td>
+        <td>${(n.capabilities || []).join(', ')}</td>
+        <td>${fmtZar(n.price_monthly)}/mo</td>
+        <td>${n.price_setup > 0 ? fmtZar(n.price_setup) : 'Free'}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="buyNumber('${n.id}','${esc(n.number)}',${n.price_monthly})">Buy</button></td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="7"><div class="empty">No numbers available for the selected filters.</div></td></tr>';
+}
+
+async function loadMyNumbers() {
+  document.getElementById('numbersTitle').textContent = 'My Numbers';
+  document.getElementById('numbersBody').innerHTML = '<tr><td colspan="7"><div class="loading"><span class="spinner"></span></div></td></tr>';
+
+  const data = await fetch('/api/pbx/marketplace/my-numbers').then(r => r.json()).catch(() => ({ numbers: [] }));
+  const nums = data.numbers || [];
+
+  document.getElementById('numbersBody').innerHTML = nums.length
+    ? nums.map(n => `
+      <tr>
+        <td><strong style="font-family:monospace">${esc(n.number)}</strong></td>
+        <td>${esc(n.country)}</td>
+        <td><span class="badge badge-blue">${n.type}</span></td>
+        <td>${(n.capabilities || []).join(', ')}</td>
+        <td>${fmtZar(n.price_monthly)}/mo</td>
+        <td><span class="badge ${n.status === 'sold' ? 'badge-green' : 'badge-gray'}">${n.status}</span></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="releaseNumber('${encodeURIComponent(n.number)}')">Release</button></td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="7"><div class="empty">You have no numbers yet.</div></td></tr>';
+}
+
+async function buyNumber(id, number, price) {
+  if (!confirm(`Purchase ${number} for ZAR ${price}/month?\nThis will debit your wallet.`)) return;
+  const r = await fetch('/api/pbx/marketplace/buy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ number_id: id }),
+  }).then(r => r.json()).catch(() => null);
+
+  const alert = document.getElementById('numbersAlert');
+  if (r?.ok) {
+    alert.className = 'alert alert-success';
+    alert.textContent = `✓ ${number} purchased successfully! Valid until ${new Date(r.valid_until).toLocaleDateString()}.`;
+    loadNumbers();
+  } else {
+    alert.className = 'alert alert-error';
+    alert.textContent = r?.error || 'Purchase failed';
+  }
+  alert.style.display = '';
+  setTimeout(() => { alert.style.display = 'none'; }, 5000);
+}
+
+async function releaseNumber(encodedNum) {
+  if (!confirm('Release this number back to the marketplace?')) return;
+  const r = await fetch('/api/pbx/marketplace/release/' + encodedNum, { method: 'POST' }).then(r => r.json()).catch(() => null);
+  if (r?.ok) loadMyNumbers();
+}
+
+/* ─── Revenue ────────────────────────────────────────────────────────────────── */
+async function loadRevenue() {
+  // Use the first reseller in tree (or self) for analytics
+  const treeRes = await fetch('/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({}));
+  const firstReseller = (treeRes.tree || [])[0];
+
+  if (!firstReseller) {
+    document.getElementById('revenueStats').innerHTML = '<div class="empty" style="padding:0">No reseller data available.</div>';
+    document.getElementById('revenueBody').innerHTML = '<tr><td colspan="6"><div class="empty">Create a reseller to see revenue analytics.</div></td></tr>';
+    return;
+  }
+
+  const data = await fetch('/api/pbx/reseller/' + firstReseller.id + '/analytics').then(r => r.json()).catch(() => ({}));
+  const a = data.analytics || {};
+  const splits = data.recent_splits || [];
+
+  document.getElementById('revenueStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Received</div><div class="stat-value green">${fmtZar(a.total_revenue_received)}</div></div>
+    <div class="stat-card"><div class="stat-label">Split Events</div><div class="stat-value blue">${a.split_events || 0}</div></div>
+    <div class="stat-card"><div class="stat-label">Sub-Resellers</div><div class="stat-value amber">${a.sub_resellers || 0}</div></div>
+    <div class="stat-card"><div class="stat-label">Active Subs</div><div class="stat-value green">${a.active_sub_resellers || 0}</div></div>
+  `;
+
+  document.getElementById('revenueBody').innerHTML = splits.length
+    ? splits.map(s => {
+        const myCut = (s.splits || []).find(sp => sp.reseller_id === firstReseller.id);
+        return `<tr>
+          <td style="font-family:monospace;font-size:.78rem">${esc(s.transaction_ref || '—')}</td>
+          <td>${fmtZar(s.total_amount)}</td>
+          <td class="${myCut ? 'green' : ''}">${myCut ? fmtZar(myCut.amount) : '—'}</td>
+          <td>${fmtZar(s.root_amount)}</td>
+          <td>${(s.splits || []).length}</td>
+          <td style="color:var(--c-muted)">${fmtDate(s.created_at)}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6"><div class="empty">No revenue splits yet.</div></td></tr>';
+}
+
+/* ─── Wallet ─────────────────────────────────────────────────────────────────── */
+async function loadWallet() {
+  const treeRes = await fetch('/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({}));
+  const firstReseller = (treeRes.tree || [])[0];
+  if (!firstReseller) {
+    document.getElementById('walletStats').innerHTML = '<div class="empty" style="padding:0">No wallet data available.</div>';
+    document.getElementById('walletBody').innerHTML = '<tr><td colspan="5"><div class="empty">No wallet yet.</div></td></tr>';
+    return;
+  }
+
+  const data = await fetch('/api/pbx/reseller/' + firstReseller.id + '/analytics').then(r => r.json()).catch(() => ({}));
+  const w = data.wallet || {};
+  const txns = data.recent_transactions || [];
+
+  document.getElementById('walletStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value green">${fmtZar(w.balance)}</div></div>
+    <div class="stat-card"><div class="stat-label">Reserved</div><div class="stat-value amber">${fmtZar(w.reserved)}</div></div>
+    <div class="stat-card"><div class="stat-label">Credit Line</div><div class="stat-value blue">${fmtZar(w.credit_line)}</div></div>
+    <div class="stat-card"><div class="stat-label">Currency</div><div class="stat-value" style="font-size:1.2rem">${w.currency || 'ZAR'}</div></div>
+  `;
+
+  document.getElementById('walletBody').innerHTML = txns.length
+    ? txns.map(t => `<tr>
+        <td><span class="badge ${t.type === 'credit' ? 'badge-green' : t.type === 'debit' ? 'badge-red' : 'badge-gray'}">${t.type}</span></td>
+        <td class="${t.type === 'credit' ? 'green' : ''}">${fmtZar(t.amount)}</td>
+        <td>${fmtZar(t.balance_after)}</td>
+        <td style="font-family:monospace;font-size:.75rem">${esc(t.reference || '—')}</td>
+        <td style="color:var(--c-muted)">${fmtDate(t.created_at)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5"><div class="empty">No transactions yet.</div></td></tr>';
+}
+
+/* ─── Modal Actions ──────────────────────────────────────────────────────────── */
+function openCreateReseller() { document.getElementById('modalReseller').classList.add('open'); }
+function openConnectCarrier()  { document.getElementById('modalCarrier').classList.add('open'); }
+function openTestRoute()       { document.getElementById('modalRoute').classList.add('open'); }
+function openListNumber()      { document.getElementById('modalListNum').classList.add('open'); }
+function closeModal(id)        { document.getElementById(id).classList.remove('open'); }
+
+async function createReseller() {
+  const err = document.getElementById('resellerErr');
+  err.style.display = 'none';
+  const body = {
+    name:  document.getElementById('rName').value.trim(),
+    email: document.getElementById('rEmail').value.trim(),
+    phone: document.getElementById('rPhone').value.trim(),
+    level: parseInt(document.getElementById('rLevel').value),
+    markup_rules: { min_margin: 10, max_discount: 30, revenue_share_pct: parseInt(document.getElementById('rShare').value) || 20 },
+  };
+  if (!body.name) { err.textContent = 'Name is required'; err.style.display = ''; return; }
+
+  const r = await fetch('/api/pbx/reseller/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+  if (r?.ok) { closeModal('modalReseller'); loadResellers(); }
+  else { err.textContent = r?.error || 'Failed to create reseller'; err.style.display = ''; }
+}
+
+async function connectCarrier() {
+  const err = document.getElementById('carrierErr');
+  err.style.display = 'none';
+  const routesRaw = document.getElementById('cRoutes').value;
+  const routes = routesRaw.split(',').map(s => s.trim()).filter(s => s.startsWith('+'));
+  const body = {
+    carrier_id: document.getElementById('cId').value.trim(),
+    name:       document.getElementById('cName').value.trim(),
+    endpoint:   document.getElementById('cEndpoint').value.trim(),
+    routes,
+    rates:    { per_min: parseFloat(document.getElementById('cCost').value) || 0.05, connect_fee: 0.01 },
+    priority: parseInt(document.getElementById('cPriority').value) || 5,
+  };
+  if (!body.carrier_id || !body.name || !body.endpoint) { err.textContent = 'All fields are required'; err.style.display = ''; return; }
+
+  const r = await fetch('/api/pbx/federation/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+  if (r?.ok) { closeModal('modalCarrier'); loadFederation(); }
+  else { err.textContent = r?.error || 'Failed to connect carrier'; err.style.display = ''; }
+}
+
+async function testRoute() {
+  const dest = document.getElementById('routeDest').value.trim();
+  if (!dest) return;
+  const result = document.getElementById('routeResult');
+  result.textContent = 'Routing...';
+  result.style.display = '';
+
+  const r = await fetch('/api/pbx/federation/route', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ destination: dest }) }).then(r => r.json()).catch(() => null);
+  result.textContent = r ? JSON.stringify(r, null, 2) : 'Request failed';
+}
+
+async function listNumber() {
+  const err = document.getElementById('listNumErr');
+  err.style.display = 'none';
+  const body = {
+    number:        document.getElementById('lNum').value.trim(),
+    country:       document.getElementById('lCountry').value.trim(),
+    country_code:  document.getElementById('lCC').value.trim().toUpperCase(),
+    type:          document.getElementById('lType').value,
+    price_monthly: parseFloat(document.getElementById('lMonthly').value) || 12,
+    price_setup:   parseFloat(document.getElementById('lSetup').value) || 0,
+  };
+  if (!body.number || !body.country) { err.textContent = 'Number and country are required'; err.style.display = ''; return; }
+
+  const r = await fetch('/api/pbx/marketplace/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+  if (r?.ok) { closeModal('modalListNum'); loadNumbers(); }
+  else { err.textContent = r?.error || 'Failed to list number'; err.style.display = ''; }
+}
+
+/* ─── Helpers ─────────────────────────────────────────────────────────────────── */
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML; }
+function fmtZar(v) { return 'R' + (parseFloat(v) || 0).toFixed(2); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-ZA', { day:'2-digit', month:'short', year:'2-digit' }) : '—'; }
+
+/* ─── Bootstrap ───────────────────────────────────────────────────────────────── */
+init();
+</script>
+<script src="/bridge-nav.js" defer></script>
+</body>
+</html>

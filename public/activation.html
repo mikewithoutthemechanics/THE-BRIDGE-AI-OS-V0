@@ -161,6 +161,36 @@
 </div>
 
 <script>
+/** Optional override when the page is not served from the Node gateway (e.g. static preview). Set sessionStorage.bridgeApiBase = 'https://your-gateway' */
+function apiUrl(path) {
+  try {
+    const q = new URLSearchParams(location.search).get('api');
+    const stored = sessionStorage.getItem('bridgeApiBase');
+    const base = (q || stored || '').replace(/\/$/, '');
+    return base ? base + path : path;
+  } catch (_) {
+    return path;
+  }
+}
+
+async function readJsonResponse(res, label) {
+  const ct = (res.headers.get('content-type') || '').toLowerCase();
+  const text = await res.text();
+  if (ct.includes('application/json')) {
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error(label + ': invalid JSON (' + e.message + ')');
+    }
+  }
+  const snippet = text.replace(/\s+/g, ' ').slice(0, 120);
+  throw new Error(
+    label + ': expected JSON but got ' + (ct || 'unknown type') + '. ' +
+    'Open this page from the Bridge gateway (npm run gateway, port 8080) or unified-server (port 3000), ' +
+    'or set sessionStorage.bridgeApiBase to your API origin. Body: ' + snippet
+  );
+}
+
 const STAGES = [
   { key:'new',       label:'New',      cls:'col-new' },
   { key:'contacted', label:'Contacted',cls:'col-contacted' },
@@ -295,11 +325,11 @@ function updateStats(pipeline, scores) {
 async function refresh() {
   try {
     const [pipelineRes, scoresRes] = await Promise.all([
-      fetch('/api/activation/pipeline'),
-      fetch('/api/lifecycle/scores?limit=200'),
+      fetch(apiUrl('/api/activation/pipeline')),
+      fetch(apiUrl('/api/lifecycle/scores?limit=200')),
     ]);
-    const pipeline = await pipelineRes.json();
-    const scoresData = await scoresRes.json();
+    const pipeline = await readJsonResponse(pipelineRes, 'Pipeline');
+    const scoresData = await readJsonResponse(scoresRes, 'Engagement scores');
 
     if (pipeline.ok) {
       pipelineData = pipeline;
@@ -319,8 +349,8 @@ async function seedPipeline() {
   btn.textContent = 'Seeding…';
   logEntry('Seeding activation pipeline for all registered users…', 'info');
   try {
-    const r = await fetch('/api/activation/seed', { method: 'POST' });
-    const d = await r.json();
+    const r = await fetch(apiUrl('/api/activation/seed'), { method: 'POST' });
+    const d = await readJsonResponse(r, 'Seed');
     logEntry(`Seed complete — ${d.seeded || 0} users loaded into pipeline`, 'ok');
     await refresh();
   } catch (e) {
@@ -338,8 +368,8 @@ async function processNow() {
   btn.textContent = 'Processing…';
   logEntry(`Processing up to ${limit} due touches…`, 'info');
   try {
-    const r = await fetch('/api/activation/process?limit=' + limit, { method: 'POST' });
-    const d = await r.json();
+    const r = await fetch(apiUrl('/api/activation/process?limit=' + limit), { method: 'POST' });
+    const d = await readJsonResponse(r, 'Process touches');
     logEntry(`Touches processed — ${d.touched || 0} emails sent`, 'ok');
     await refresh();
   } catch (e) {
@@ -353,8 +383,8 @@ async function processNow() {
 async function processLifecycle() {
   logEntry('Running lifecycle engine for active subscribers…', 'info');
   try {
-    const r = await fetch('/api/lifecycle/process', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ limit: 25 }) });
-    const d = await r.json();
+    const r = await fetch(apiUrl('/api/lifecycle/process'), { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ limit: 25 }) });
+    const d = await readJsonResponse(r, 'Lifecycle');
     logEntry(`Lifecycle complete — ${d.processed || 0} subscribers processed`, 'ok');
     await refresh();
   } catch (e) {

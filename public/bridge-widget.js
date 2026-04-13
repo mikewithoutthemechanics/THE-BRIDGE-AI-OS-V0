@@ -448,7 +448,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
     async _callLLM(userText) {
       this._showTyping(true);
       const path = location.pathname;
-      const pageCtx = PAGE_CONTEXT[path] || 'The user is browsing Bridge AI OS.';
+      const pageCtx = PAGE_CONTEXT[path] || PAGE_CONTEXT[path.replace(/\.html$/, '')] || PAGE_CONTEXT[path + '.html'] || 'The user is browsing Bridge AI OS.';
       const journeyDesc = this.journey.pages.map(p => p.path).join(' -> ');
       const history = this.messages.slice(-10).map(m => (m.role === 'user' ? 'User' : 'Bridge') + ': ' + m.text).join('\n');
 

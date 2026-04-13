@@ -142,33 +142,6 @@
   ::-webkit-scrollbar{width:4px;height:4px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-
-  /* ── Mobile responsive ── */
-  @media(max-width:900px){
-    body{height:auto;min-height:100dvh;overflow:auto}
-    #layout{flex-direction:column;overflow:visible}
-    #sidebar{width:100%;height:auto;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border);overflow-x:auto;overflow-y:hidden;padding:4px}
-    .nav-section{display:flex;flex-wrap:wrap;gap:2px;border-bottom:none;padding:2px}
-    .nav-header{display:none}
-    .nav-item{padding:5px 10px;font-size:10px;border-left:none;border-bottom:2px solid transparent;white-space:nowrap}
-    #main{overflow:visible}
-    #content{flex-direction:column;overflow:visible}
-    #canvas-area{overflow:visible}
-    #detail{width:100%;height:auto;border-left:none;border-top:1px solid var(--border)}
-    .grid2{grid-template-columns:1fr}
-    .grid3{grid-template-columns:1fr 1fr}
-    #tabs{overflow-x:auto;flex-wrap:nowrap;padding:4px 8px 0}
-    .tab{white-space:nowrap;font-size:9px;padding:4px 8px}
-    #topbar{flex-wrap:wrap;height:auto;gap:4px;padding:6px 10px}
-    #topbar .spacer{display:none}
-    #clock{display:none}
-  }
-  @media(max-width:480px){
-    .grid3{grid-template-columns:1fr}
-    .card-val{font-size:14px}
-    #svg-frame{min-height:200px}
-    .gallery{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
-  }
 </style>
 </head>
 <body>
@@ -205,31 +178,25 @@
     <a class="nav-item" href="#" onclick="sw('yt')"><span class="nav-ico">▶</span>YouTube Discover</a>
   </div>
   <div class="nav-section">
-    <div class="nav-header">ASSETS</div>
+    <div class="nav-header">ASSETS · E:\A</div>
     <a class="nav-item" href="#" onclick="sw('output')"><span class="nav-ico">◆</span>Build Output<span class="nav-badge" id="nb-out">0</span></a>
+    <a class="nav-item" href="/output/" target="_blank"><span class="nav-ico">📁</span>Output Dir</a>
+    <a class="nav-item" href="/assets/logos/supac_logo.svg" target="_blank"><span class="nav-ico">🖼</span>Logos</a>
+    <a class="nav-item" href="/index.json" target="_blank"><span class="nav-ico">🗂</span>SVG Index</a>
     <a class="nav-item" href="/view-logs.html" target="_blank"><span class="nav-ico">📋</span>Log Viewer</a>
   </div>
   <div class="nav-section">
-    <div class="nav-header">SYSTEM</div>
+    <div class="nav-header">APPS</div>
     <a class="nav-item" href="/docs" target="_blank"><span class="nav-ico">🔌</span>API Docs</a>
-    <a class="nav-item" href="/runtime" target="_blank"><span class="nav-ico">⌨</span>Runtime Terminal</a>
-    <a class="nav-item" href="/control" target="_blank"><span class="nav-ico">◈</span>Control Panel</a>
-    <a class="nav-item" href="/activation" target="_blank"><span class="nav-ico">▶</span>Pipeline</a>
+    <a class="nav-item" href="/api/svg" target="_blank"><span class="nav-ico">🎨</span>SVG Engine</a>
+    <a class="nav-item" href="/" target="_blank"><span class="nav-ico">🌐</span>Frontend</a>
+    <a class="nav-item" href="/live-map" target="_blank"><span class="nav-ico">🗺</span>Live Map API</a>
+    <a class="nav-item" href="/ban" target="_blank" title="Task Mesh scaffold (port 8002)"><span class="nav-ico">⚙</span>Task Mesh</a>
   </div>
   <div class="nav-section">
     <div class="nav-header">ECONOMY</div>
     <a class="nav-item" href="#" onclick="sw('econ')"><span class="nav-ico">⟁</span>Circuit Breaker</a>
     <a class="nav-item" href="#" onclick="sw('ubi')"><span class="nav-ico">◐</span>UBI System</a>
-    <a class="nav-item" href="/wallet" target="_blank"><span class="nav-ico">⧆</span>BRDG Wallet</a>
-  </div>
-  <div class="nav-section">
-    <div class="nav-header">FEDERATION</div>
-    <a class="nav-item" href="/aid-home.html" target="_blank"><span class="nav-ico" style="color:#00d4ff">◉</span>AID</a>
-    <a class="nav-item" href="/ehsa-app.html" target="_blank"><span class="nav-ico" style="color:#00ff88">◉</span>EHSA</a>
-    <a class="nav-item" href="/hospital-home.html" target="_blank"><span class="nav-ico" style="color:#f59e0b">◉</span>Hospital</a>
-    <a class="nav-item" href="/rootedearth-home.html" target="_blank"><span class="nav-ico" style="color:#22c55e">◉</span>RootedEarth</a>
-    <a class="nav-item" href="/supac-home.html" target="_blank"><span class="nav-ico" style="color:#a855f7">◉</span>SUPAC</a>
-    <a class="nav-item" href="/ubi-home.html" target="_blank"><span class="nav-ico" style="color:#63ffda">◉</span>UBI</a>
   </div>
 </div>
 
@@ -263,6 +230,13 @@
         <div class="grid2">
           <div class="card"><div class="card-title">SVG ENGINE TELEMETRY</div><div id="ov-tele" style="margin-top:4px"></div></div>
           <div class="card"><div class="card-title">RECENT BUILDS · E:\A\output</div><div id="ov-builds" style="margin-top:4px"></div></div>
+        </div>
+        <div class="card" style="margin-top:8px">
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+            LIVE ACTIVITY STREAM
+            <span id="act-badge" style="font-size:9px;color:var(--cyan);font-family:var(--mono)">● LIVE</span>
+          </div>
+          <div id="ov-activity" style="margin-top:6px;max-height:220px;overflow-y:auto"></div>
         </div>
       </div>
 
@@ -521,7 +495,7 @@ async function poll(){
     document.getElementById('nb-out').textContent=files.length;
     document.getElementById('ov-builds').innerHTML=files.map(f=>
       `<div class="srow"><span class="slbl">${f}</span><a href="/output/${f}" target="_blank" style="color:var(--cyan);font-size:9px">VIEW</a></div>`
-    ).join('')||SR('No builds yet','—');
+    ).join('')||SR('No local SVG builds','Loading from server…');
   }catch{document.getElementById('ov-builds').innerHTML=SR('Output dir','offline','err');}
 }
 
@@ -537,7 +511,7 @@ async function loadTr(){
     document.getElementById('tr-bkts').innerHTML=Object.entries(bk).map(([k,v])=>{
       const pct=Math.min((v/tot)*100,100);
       return `<div style="margin-bottom:7px">${SR(k.toUpperCase(),(v??0).toFixed(4)+' BRDG')}<div class="pbar"><div class="pfill" style="width:${pct}%"></div></div></div>`;
-    }).join('')||'<div style="color:var(--dim);font-size:10px">No buckets</div>';
+    }).join('')||'<div style="color:var(--dim);font-size:10px">Treasury initialising — ingest first revenue event to populate buckets</div>';
     pill('p-trs','ok','TREASURY');
   }catch{document.getElementById('tr-tot').textContent='OFFLINE';toast('Treasury API unavailable','err');}
 }
@@ -767,8 +741,41 @@ async function claimUbi(){
   }catch(e){toast('Claim failed: '+e.message,'err');}
 }
 
+// ── LIVE ACTIVITY STREAM ──
+const ACT_COLORS = {
+  pipeline: 'var(--cyan)',
+  task_market: 'var(--alive)',
+  crm: '#f59e0b',
+  app_loop: '#a78bfa',
+  economy: 'var(--cyan)',
+  system: 'var(--dim)',
+};
+async function loadActivity(){
+  try{
+    const el=document.getElementById('ov-activity');
+    const data=await fetch('/api/activity?limit=30').then(r=>r.json());
+    if(!data.ok||!data.events?.length){
+      el.innerHTML='<div style="color:var(--dim);font-size:10px;padding:4px">Waiting for pipeline events…</div>';
+      return;
+    }
+    el.innerHTML=data.events.map(e=>{
+      const col=ACT_COLORS[e.source]||'var(--text)';
+      const ts=e.ts?new Date(e.ts).toLocaleTimeString():'';
+      return `<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:10px">
+        <span style="color:${col};min-width:70px;font-family:var(--mono)">${e.source.toUpperCase()}</span>
+        <span style="flex:1;color:var(--text)">${e.title}</span>
+        <span style="color:var(--dim);white-space:nowrap">${ts}</span>
+      </div>`;
+    }).join('');
+  }catch(e){
+    const el=document.getElementById('ov-activity');
+    if(el)el.innerHTML=`<div style="color:var(--dim);font-size:10px;padding:4px">Activity API offline: ${e.message}</div>`;
+  }
+}
+
 // BOOT
 poll();setInterval(poll,8000);
+loadActivity();setInterval(loadActivity,10000);
 </script>
 </body>
 </html>

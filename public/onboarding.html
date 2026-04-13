@@ -238,7 +238,9 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
           body: JSON.stringify({ code: ref }),
         });
       }
-      const regRedirect = new URLSearchParams(location.search).get('redirect') || '/welcome.html';
+      const _regUser = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+      const regRedirect = new URLSearchParams(location.search).get('redirect') ||
+        (window.BridgeAuth && window.BridgeAuth.getPostLoginRoute ? window.BridgeAuth.getPostLoginRoute(_regUser, null) : '/portal');
       setTimeout(() => { location.href = regRedirect; }, 1000);
     } else {
       showMsg('reg-msg', data.error || 'Registration failed', false);
@@ -272,7 +274,9 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         credits: data.credits || 100,
         plan: data.plan || 'free'
       }));
-      const loginRedirect = new URLSearchParams(location.search).get('redirect') || '/profile';
+      const _loginUser = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+      const loginRedirect = new URLSearchParams(location.search).get('redirect') ||
+        (window.BridgeAuth && window.BridgeAuth.getPostLoginRoute ? window.BridgeAuth.getPostLoginRoute(_loginUser, null) : '/portal');
       setTimeout(() => { location.href = loginRedirect; }, 1000);
     } else {
       showMsg('login-msg', data.error || 'Login failed', false);

@@ -1562,7 +1562,7 @@ app.get('/api/legal/contracts/active', (_req, res) => {
 // ── AI LEGAL AGENT ──────────────────────────────────────────────────────────
 var legalAgent; try { legalAgent = require('./lib/legal-agent'); } catch (_) { legalAgent = null; }
 
-app.post('/api/legal-agent', express.json(), async (req, res) => {
+app.post('/api/legal-agent', express.json(), gatewayAuth(), async (req, res) => {
   if (!legalAgent) return res.status(503).json({ ok: false, error: 'Legal agent module not loaded' });
   var query = (req.body || {}).query || (req.body || {}).prompt || '';
   if (!query) return res.status(400).json({ ok: false, error: 'query required' });
@@ -1572,7 +1572,7 @@ app.post('/api/legal-agent', express.json(), async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/legal/generate', express.json(), async (req, res) => {
+app.post('/api/legal/generate', express.json(), gatewayAuth(), async (req, res) => {
   if (!legalAgent) return res.status(503).json({ ok: false, error: 'Legal agent module not loaded' });
   var type = (req.body || {}).type;
   var variables = (req.body || {}).variables || {};
@@ -1594,7 +1594,7 @@ app.post('/api/legal/proxy', express.json(), async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/legal/analyze', express.json(), async (req, res) => {
+app.post('/api/legal/analyze', express.json(), gatewayAuth(), async (req, res) => {
   if (!legalAgent) return res.status(503).json({ ok: false, error: 'Legal agent module not loaded' });
   var text = (req.body || {}).text || '';
   var docType = (req.body || {}).type || 'document';
