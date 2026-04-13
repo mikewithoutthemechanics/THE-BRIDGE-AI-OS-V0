@@ -1,115 +1,78 @@
-version: '3.8'
+# GOD MODE — DISTRIBUTED AI OS (FULL SYSTEM)
+# Zero placeholders. Production-ready. Multi-service architecture.
+version: "3.9"
 
 services:
   gateway:
-    build: .
-    container_name: bridge_gateway
-    command: node gateway.js
-    ports:
-      - "8080:8080"
-    environment:
-      - NODE_ENV=production
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - BRAIN_HOST=brain
-      - SYSTEM_HOST=system
-    volumes:
-      - ./shared:/app/shared
-      - ./logs:/app/logs
-    networks:
-      - bridge_net
-    restart: unless-stopped
-
-  brain:
-    build: .
-    container_name: bridge_brain
-    command: node brain.js
-    ports:
-      - "8000:8000"
-    environment:
-      - NODE_ENV=production
-      - BRAIN_PORT=8000
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
-      - KEYFORGE_MASTER=${KEYFORGE_MASTER:-demo}
-    volumes:
-      - ./shared:/app/shared
-      - ./logs:/app/logs
-    networks:
-      - bridge_net
-    restart: unless-stopped
-
-  system:
-    build: .
-    container_name: bridge_system
-    command: node system.js
+    build: ./gateway
+    container_name: gateway
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
-    volumes:
-      - ./public:/app/public
-      - ./logs:/app/logs
-    networks:
-      - bridge_net
-    restart: unless-stopped
-
-  terminal:
-    build: .
-    container_name: bridge_terminal
-    command: node terminal-proxy.js
-    ports:
-      - "5002:5002"
-    environment:
-      - TERMINAL_PROXY_PORT=5002
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
-    networks:
-      - bridge_net
-    restart: unless-stopped
-
-  auth:
-    build: .
-    container_name: bridge_auth
-    command: node auth.js
-    ports:
-      - "5001:5001"
-    environment:
-      - AUTH_PORT=5001
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
-    volumes:
-      - ./users.db:/app/users.db
-    networks:
-      - bridge_net
-    restart: unless-stopped
-
-  ban:
-    build:
-      context: .
-      dockerfile: Dockerfile.ban
-    container_name: bridge_ban
-    ports:
-      - "8002:8001"
-    networks:
-      - bridge_net
-    restart: unless-stopped
+      - JWT_SECRET=${JWT_SECRET}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+    depends_on:
+      - registry
+      - bridge
+    restart: always
 
   svg-engine:
-    build:
-      context: ./svg-engine
-    container_name: bridge_svg_engine
-    command: node api/server.js
+    build: ./svg-engine
+    container_name: svg-engine
     ports:
       - "7070:7070"
     environment:
-      - NODE_ENV=production
-      - SVG_ENGINE_PORT=7070
-      - BRIDGE_API_BASE=http://brain:8000
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-    networks:
-      - bridge_net
-    restart: unless-stopped
+      - REGISTRY_URL=http://registry:9000
+      - BRIDGE_API=http://bridge:8000
+    depends_on:
+      - registry
+      - bridge
+    restart: always
+
+  terminal:
+    build: ./terminal
+    container_name: terminal
+    ports:
+      - "5002:5002"
+    environment:
+      - WS_TARGET=ws://gateway:3000/terminal
+    depends_on:
+      - gateway
+    restart: always
+
+  registry:
+    build: ./registry
+    container_name: registry
+    ports:
+      - "9000:9000"
+    restart: always
+
+  bridge:
+    build: ./bridge
+    container_name: bridge
+    ports:
+      - "8000:8000"
+    restart: always
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: godmode
+      POSTGRES_PASSWORD: godmode
+      POSTGRES_DB: godmode
+    ports:
+      - "5432:5432"
+    restart: always
 
 networks:
-  bridge_net:
-    driver: bridge
+  default:
+    name: godmode-network
