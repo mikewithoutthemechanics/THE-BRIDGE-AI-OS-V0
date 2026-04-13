@@ -98,7 +98,7 @@
         box.textContent = msg;
         box.style.display = 'block';
         setTimeout(() => {
-          window.location.href = '/join?error=oauth_failed';
+          window.location.href = '/onboarding?error=oauth_failed';
         }, 2000);
       }
 
@@ -106,7 +106,7 @@
         if (token) {
           localStorage.setItem('bridge_token', token);
           // Set cookie so server-side middleware can also read the token
-          document.cookie = 'bridge_token=' + token + '; path=/; SameSite=Lax; max-age=604800';
+          document.cookie = 'access_token=' + token + '; path=/; SameSite=Lax; max-age=604800';
         }
         if (user) localStorage.setItem('bridge_user', JSON.stringify(user));
 

@@ -303,13 +303,14 @@ async function cachedQuery(key, ttl, fn) {
   return promise;
 }
 
-// Clear cache on schedule (5 min)
-setInterval(() => {
+// Clear cache on schedule (5 min) — .unref so test/serverless workers can exit cleanly
+const _apiCacheSweep = setInterval(() => {
   const now = Date.now();
   for (const [k, v] of apiCache.entries()) {
     if (now - v.ts > 300000) apiCache.delete(k);
   }
 }, 60000);
+if (_apiCacheSweep.unref) _apiCacheSweep.unref();
 
 // ── Route handlers ──────────────────────────────────────────────────────────
 // Live system state (as at 2026-04-04)
@@ -1470,6 +1471,7 @@ module.exports = async (req, res) => {
   if (p.startsWith('/api/leadgen')) {
     const sub = p.replace('/api/leadgen', '') || '/';
     if (sub === '/auto-prospect' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, {
         id: `prospect_${ts()}`,
@@ -1482,6 +1484,7 @@ module.exports = async (req, res) => {
       });
     }
     if (sub === '/auto-nurture' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, {
         id: `nurture_${ts()}`,
@@ -1494,6 +1497,7 @@ module.exports = async (req, res) => {
       });
     }
     if (sub === '/auto-close' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, {
         id: `close_${ts()}`,
@@ -1588,6 +1592,7 @@ module.exports = async (req, res) => {
       }, 201);
     }
     if (p === '/api/tickets' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       if (!body.subject) return json(res, { error: 'subject required' }, 400);
       return json(res, {
@@ -1648,6 +1653,7 @@ module.exports = async (req, res) => {
       return json(res, { id: invoicePathMatch[1], status: body.status || 'sent', updated_at: new Date().toISOString(), ts: ts() });
     }
     if (p === '/api/invoices/ai-generate' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       const contact = CONTACTS.find(c => c.id === body.contact_id) || CONTACTS[0];
       return json(res, {
@@ -1661,6 +1667,7 @@ module.exports = async (req, res) => {
       }, 201);
     }
     if (p === '/api/invoices/smart-create' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, {
         id: `inv_${ts()}`, ...body,
@@ -1670,11 +1677,13 @@ module.exports = async (req, res) => {
       }, 201);
     }
     if (p === '/api/invoices/send' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       if (!body.invoice_id) return json(res, { error: 'invoice_id required' }, 400);
       return json(res, { invoice_id: body.invoice_id, status: 'sent', sent_at: new Date().toISOString(), ts: ts() });
     }
     if (p === '/api/invoices/follow-up' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, { invoice_id: body.invoice_id, follow_up_sent: true, method: 'email', ts: ts() });
     }
@@ -1820,6 +1829,7 @@ module.exports = async (req, res) => {
 
   // ── /api/agents/run ──
   if (p === '/api/agents/run' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
     if (rateLimit(ip, 'agent-run', 10)) return json(res, { error: 'rate_limited', retry_after: 60 }, 429);
     const body = await parseBody(req);
@@ -1837,6 +1847,7 @@ module.exports = async (req, res) => {
 
   // ── /api/agents/run-all — manual override with full pipeline enforcement ──
   if (p === '/api/agents/run-all' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
     if (rateLimit(ip, 'agent-run-all', 2)) return json(res, { error: 'rate_limited', retry_after: 60 }, 429);
 
@@ -1927,8 +1938,9 @@ module.exports = async (req, res) => {
     } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
   }
 
-  // GET /api/infra/snapshot — trigger fresh DA poll and persist
+  // POST /api/infra/snapshot — trigger fresh DA poll and persist
   if (p === '/api/infra/snapshot' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     try {
       const snapshot = await da.snapshotInfra();
       // Run Infra AI agent against the snapshot
@@ -1978,6 +1990,7 @@ module.exports = async (req, res) => {
 
   // POST /api/infra/action — queue a write action (agent or human requests)
   if (p === '/api/infra/action' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     const { type, params, requestedBy } = body;
     if (!type) return json(res, { error: 'type required' }, 400);

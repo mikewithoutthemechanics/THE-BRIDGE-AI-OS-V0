@@ -162,12 +162,14 @@ function inject(){
     return '<a class="bn-link'+(isActive(l.href)?' active':'')+'" href="'+l.href+'">'+l.label+'</a>';
   }).join('');
 
-  var drawerLinksHtml = NAV_LINKS.map(function(l){
+  var drawerLinksHtml = NAV_LINKS.filter(function(l){
+    return l.public || isLoggedIn;
+  }).map(function(l){
     return '<a class="bn-link'+(isActive(l.href)?' active':'')+'" href="'+l.href+'">'+l.label+'</a>';
   }).join('');
 
   var authHtml = isLoggedIn
-    ? '<a class="bn-status" href="/welcome"><span class="bn-dot" id="bn-dot"></span>'+(user.name ? user.name.split(' ')[0] : 'Dashboard')+'</a>'
+    ? '<a class="bn-status" href="/portal"><span class="bn-dot" id="bn-dot"></span>'+(user.name ? user.name.split(' ')[0] : 'Dashboard')+'</a>'
     : '<a class="bn-status" href="/onboarding"><span class="bn-dot offline" id="bn-dot"></span>Sign In</a>';
 
   var nav = document.createElement('nav');
@@ -190,7 +192,7 @@ function inject(){
   drawer.innerHTML = drawerLinksHtml +
     '<div class="bn-divider"></div>'+
     (isLoggedIn
-      ? '<a class="bn-link" href="/welcome">Dashboard</a>'
+      ? '<a class="bn-link" href="/portal">Dashboard</a>'
       : '<a class="bn-link" href="/onboarding">Sign In / Register</a>');
 
   var body = document.body;
