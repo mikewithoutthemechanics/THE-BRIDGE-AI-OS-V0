@@ -240,10 +240,14 @@ class NeuroHistory {
    */
   _saveDayLocal(dateKey, day) {
     const filePath = path.join(this.storagePath, `${dateKey}.json`);
+    const tmpPath = filePath + '.tmp';
     try {
-      fs.writeFileSync(filePath, JSON.stringify(day, null, 2), 'utf-8');
+      // Atomic write: write to temp file then rename to prevent corruption from concurrent reads
+      fs.writeFileSync(tmpPath, JSON.stringify(day, null, 2), 'utf-8');
+      fs.renameSync(tmpPath, filePath);
     } catch (err) {
-      console.error(`Failed to save neuro-history for ${dateKey}:`, err.message);
+      // Clean up temp file on failure
+      try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
     }
   }
 
