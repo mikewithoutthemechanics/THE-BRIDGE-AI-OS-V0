@@ -57,9 +57,9 @@ class NeuroLinkService {
     // Initialize live orchestrator
     if (!this.liveOrchestrator) {
       this.liveOrchestrator = new LiveMonetizationOrchestrator(this.multiUserStream, this.intelligenceGraph, this.multiUserStream.db);
-      // In serverless: orchestrator processing triggered by external cron
-      // In local: can start processing
-      if (process.env.NODE_ENV !== 'production') {
+      // Only start live orchestrator if running on Vercel (real users)
+      // In local dev, real-user sessions drive monetization via the API layer — don't poll
+      if (process.env.VERCEL === '1') {
         this.liveOrchestrator.startProcessing(1000);
       }
       console.log('[NeuroLink] Live monetization orchestrator initialized');
@@ -181,14 +181,8 @@ class NeuroLinkService {
       }
 
       // ─── LEVEL 3: REAL-TIME MULTI-USER STREAMING ───
-      // Ingest current user state into multi-user stream
-      if (this.multiUserStream) {
-        try {
-          await this.multiUserStream.ingestState('default-user', state, this.lastPrediction);
-        } catch (err) {
-          console.warn('[NeuroLink] Stream ingest error:', err.message);
-        }
-      }
+      // Only ingest real authenticated users — 'default-user' is a local dev placeholder
+      // Real user sessions call /api/neurolink/ingest directly with their userId
 
       // Emit to WebSocket subscribers
       this.broadcastStateUpdate(state);

@@ -120,6 +120,8 @@ class NeuroHistory {
     };
 
     day.points.push(point);
+    // Rolling window — cap at 2000 points (~3.3 hours at 100ms) to prevent unbounded file growth
+    if (day.points.length > 2000) day.points = day.points.slice(-2000);
 
     // Detect anomalies
     this.detectAnomalies(day);
