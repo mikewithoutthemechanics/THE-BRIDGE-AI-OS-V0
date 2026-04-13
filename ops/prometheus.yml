@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "gateway"
+    static_configs:
+      - targets: ["gateway:3000"]
+
+  - job_name: "svg-engine"
+    static_configs:
+      - targets: ["svg-engine:7070"]
+
+  - job_name: "revenue-engine"
+    static_configs:
+      - targets: ["revenue-engine:6070"]
+
+  - job_name: "billing"
+    static_configs:
+      - targets: ["billing-service:6060"]
+
+  - job_name: "subscriptions"
+    static_configs:
+      - targets: ["subscription-service:6061"]
+
+  - job_name: "ops-daemon"
+    static_configs:
+      - targets: ["ops-daemon:6080"]
+
+  - job_name: "bridge"
+    static_configs:
+      - targets: ["bridge:8000"]

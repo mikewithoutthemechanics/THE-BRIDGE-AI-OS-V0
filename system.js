@@ -1017,7 +1017,10 @@ setInterval(() => {
   Brain.ingest(m);
   const actions  = Brain.decide(m);
   const riskLevel = FailureModel.evaluate(Brain.history);
-  if (actions.length > 0) log('INFO','AI',`Risk:${riskLevel} actions:[${actions.join(',')}]`);
+  // Only log when risk changes or non-routine actions detected
+  if (riskLevel !== 'STABLE' || actions.some(a => a !== 'cost_downscale')) {
+    log('INFO','AI',`Risk:${riskLevel} actions:[${actions.join(',')}]`);
+  }
   AgentSwarm.execute(actions);
 }, 15000).unref();
 
