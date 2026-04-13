@@ -1,5 +1,12 @@
 {
   "version": 2,
-  "buildCommand": "echo Static build",
-  "outputDirectory": "public"
+  "builds": [
+    { "src": "api/*.js", "use": "@vercel/node" },
+    { "src": "app.js", "use": "@vercel/node" },
+    { "src": "public/**", "use": "static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/app.js" }
+  ]
 }
