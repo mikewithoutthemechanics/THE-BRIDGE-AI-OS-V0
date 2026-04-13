@@ -140,7 +140,7 @@ app.get("/skills/:id", (req, res) => {
   }
 });
 
-app.get("/run/:id(*)", async (req, res) => {
+app.get("/run/:id", async (req, res) => {
   try {
     const result = await engine.execute(req.params.id, req.query);
     res.json(result);
@@ -177,7 +177,7 @@ app.get("/teach-all", (req, res) => {
   res.json({ ok: true, svg_builds: results.length, results, telemetry: engine.telemetry() });
 });
 
-app.get("/teach/:id(*)", (req, res) => {
+app.get("/teach/:id", (req, res) => {
   try {
     const svg = engine.teach(req.params.id, req.query);
     res.setHeader("Content-Type", "image/svg+xml");
@@ -188,7 +188,7 @@ app.get("/teach/:id(*)", (req, res) => {
   }
 });
 
-app.get("/tutorial/:id(*)", (req, res) => {
+app.get("/tutorial/:id", (req, res) => {
   try {
     const tut = engine.tutorial(req.params.id, req.query);
     res.json({ ok: true, tutorial: tut });

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GOD MODE TERMINAL ENGINE</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0b0f14;
+      color: #00ffcc;
+      font-family: monospace;
+    }
+    #terminal {
+      padding: 16px;
+      height: 100vh;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .input-line {
+      display: flex;
+    }
+    .prompt {
+      margin-right: 8px;
+    }
+    input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #00ffcc;
+      width: 100%;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .output {
+      margin: 4px 0 12px 0;
+      color: #e6f1ff;
+    }
+  </style>
+</head>
+<body>
+
+<div id="terminal"></div>
+
+<script>
+const terminal = document.getElementById("terminal");
+
+function createInput() {
+  const line = document.createElement("div");
+  line.className = "input-line";
+
+  const prompt = document.createElement("span");
+  prompt.className = "prompt";
+  prompt.textContent = "GODMODE> ";
+
+  const input = document.createElement("input");
+  input.autofocus = true;
+
+  line.appendChild(prompt);
+  line.appendChild(input);
+  terminal.appendChild(line);
+
+  input.focus();
+
+  input.addEventListener("keydown", async (e) => {
+    if (e.key === "Enter") {
+      const value = input.value;
+      input.disabled = true;
+
+      const output = await processPrompt(value);
+      printOutput(output);
+
+      createInput();
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+  });
+}
+
+function printOutput(text) {
+  const out = document.createElement("div");
+  out.className = "output";
+  out.textContent = text;
+  terminal.appendChild(out);
+}
+
+function buildSystemPrompt(userInput) {
+  return `
+[ROLE]
+Elite AI Prompt Architect + Autonomous System Designer
+
+[TASK]
+Transform raw input into an optimized executable prompt or system directive.
+
+[CONTEXT]
+User input: "${userInput}"
+
+[INSTRUCTIONS]
+- Extract intent
+- Remove ambiguity
+- Expand into structured prompt system
+- Optimize for deterministic output
+- No fluff, no commentary
+
+[CONSTRAINTS]
+- Precision over verbosity
+- No missing components
+- Fully executable logic
+
+[OUTPUT FORMAT]
+Structured prompt block OR system design
+`;
+}
+
+async function processPrompt(input) {
+  const systemPrompt = buildSystemPrompt(input);
+
+  // Simulated deterministic engine
+  return generateOutput(systemPrompt);
+}
+
+function generateOutput(prompt) {
+  // Core transformation engine (deterministic)
+  const inputMatch = prompt.match(/User input: "(.*)"/);
+  const raw = inputMatch ? inputMatch[1] : "";
+
+  const intent = raw.length < 5 ? "general task" : raw;
+
+  return `
+[ROLE]
+Domain Expert System
+
+[TASK]
+${intent}
+
+[CONTEXT]
+User requires high-precision execution
+
+[INSTRUCTIONS]
+1. Interpret input strictly
+2. Execute logically
+3. Produce structured result
+4. Avoid assumptions
+
+[CONSTRAINTS]
+- Deterministic output
+- No filler
+- No ambiguity
+
+[OUTPUT FORMAT]
+Final answer only
+`.trim();
+}
+
+// Boot
+printOutput("GOD MODE TERMINAL READY");
+createInput();
+</script>
+
+</body>
+</html>

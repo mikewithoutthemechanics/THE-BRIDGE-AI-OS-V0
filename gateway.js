@@ -2831,7 +2831,7 @@ app.get('/', (req, res) => {
 // Default 0.0.0.0 so curl http://127.0.0.1:PORT works on typical Linux VPS (IPv6-only :: often rejects IPv4 loopback).
 // Override: PORT=8080 GATEWAY_LISTEN_HOST=:: node gateway.js
 if (require.main === module) {
-  const port = parseInt(process.env.PORT || '8080', 10);
+  const port = parseInt(process.env.GATEWAY_PORT || process.env.PORT || '8080', 10);
   const host = process.env.GATEWAY_LISTEN_HOST || '0.0.0.0';
   const server = app.listen(port, host, () => {
     console.log('[GATEWAY] Bridge AI OS unified gateway listening on http://' + host + ':' + port);
