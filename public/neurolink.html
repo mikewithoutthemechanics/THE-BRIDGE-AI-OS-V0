@@ -74,14 +74,9 @@ body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;fon
 </head>
 <body>
 <script>(function(){var t=localStorage.getItem('bridge_token')||(document.cookie.match(/(?:^|; )access_token=([^;]*)/)||[])[1];if(!t){location.replace('/onboarding?redirect='+encodeURIComponent(location.pathname));return;}fetch('/auth/me',{headers:{Authorization:'Bearer '+t}}).then(function(r){if(!r.ok)throw new Error();}).catch(function(){localStorage.removeItem('bridge_token');location.replace('/onboarding');});})()</script>
+<script src="/bridge-nav.js"></script>
 <div class="header">
   <h1>Neuro<span>Link</span> BCI</h1>
-  <nav>
-    <a href="/">Home</a>
-    <a href="/digital-twin-console.html">Twin</a>
-    <a href="/console.html">Terminal</a>
-    <a href="/aoe-dashboard.html">Hub</a>
-  </nav>
   <div class="status">
     <span class="status-text" id="status-text">Loading...</span>
     <span class="dot off" id="status-dot"></span>

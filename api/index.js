@@ -366,6 +366,7 @@ function rateLimit(ip, key, maxPerMinute) {
 
 // Auth store — backed by Supabase 'users' table (persistent across cold starts)
 const JWT_SECRET = process.env.JWT_SECRET;
+const revokedStore = (() => { try { return require('../lib/revoked-tokens'); } catch(_) { return null; } })();
 const REFERRAL_CODES = { BRIDGE2025: 500, AILAUNCH: 250, BETA100: 100 };
 const _revokedTokens = new Set();
 
@@ -375,7 +376,7 @@ try { bcrypt = require('bcryptjs'); } catch (_) { bcrypt = null; }
 
 function makeToken(payload) {
   if (!jwt) return `stub-token-${Date.now()}`;
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 function verifyToken(token) {
   if (!jwt) return null;
@@ -934,10 +935,11 @@ module.exports = async (req, res) => {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
     if (token) {
-      // Add to server-side blacklist (survives until JWT expires)
+      // Fast-path in-memory blacklist (current instance)
       _revokedTokens.add(token);
-      // Prune if too large (in serverless, this resets per cold start anyway)
       if (_revokedTokens.size > 10000) _revokedTokens.clear();
+      // Persistent revocation across cold starts + shared with auth.js
+      if (revokedStore) revokedStore.revoke(token).catch(() => {});
     }
     return json(res, { ok: true, message: 'Signed out' });
   }
@@ -947,7 +949,12 @@ module.exports = async (req, res) => {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
     if (!token) return json(res, { ok: false, error: 'Not authenticated' }, 401);
+    // Fast in-memory check first, then persistent Supabase check (survives cold starts)
     if (_revokedTokens.has(token)) return json(res, { ok: false, error: 'Token revoked' }, 401);
+    if (revokedStore && await revokedStore.isRevoked(token)) {
+      _revokedTokens.add(token); // warm local cache
+      return json(res, { ok: false, error: 'Token revoked' }, 401);
+    }
     const payload = verifyToken(token);
     if (!payload) return json(res, { ok: false, error: 'Invalid or expired token' }, 401);
 

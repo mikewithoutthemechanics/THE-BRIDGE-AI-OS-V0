@@ -20,6 +20,7 @@ const jwt = require('jsonwebtoken');
 
 const userDb = require('./lib/user-identity');
 const nurture = require('./lib/nurture-engine');
+const revokedStore = (() => { try { return require('./lib/revoked-tokens'); } catch(_) { return null; } })();
 
 // ── Secrets ─────────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || process.env.BRIDGE_SIWE_JWT_SECRET || 'aoe-unified-super-secret-change-in-prod';
@@ -271,6 +272,7 @@ app.post('/auth/logout', async (req, res) => {
   if (!payload) return res.status(401).json({ ok: false, error: 'Token invalid or already revoked' });
 
   blacklistedTokens.add(token);
+  if (revokedStore) revokedStore.revoke(token).catch(() => {});
 
   res.json({ ok: true, status: 'logged_out', ts: Date.now() });
 });
@@ -356,6 +358,11 @@ app.post('/auth/google', async (req, res) => {
 
 // GET /auth/me
 app.get('/auth/me', authMiddleware, async (req, res) => {
+  // Check persistent revocation (survives restarts, shared with Vercel)
+  if (revokedStore && await revokedStore.isRevoked(req.token)) {
+    blacklistedTokens.add(req.token); // warm local cache
+    return res.status(401).json({ ok: false, error: 'Token revoked' });
+  }
   const user = await userDb.getUserById(req.user.sub);
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
 
