@@ -1088,7 +1088,7 @@
     </div>
 
     <div class="hero-actions">
-      <a href="https://lineascan.build/address/0xF22Bc18487764FEe106ca5Fb2EE27b11FDcB3756" target="_blank" class="btn-primary">
+      <a href="https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A" target="_blank" class="btn-primary">
         ◈ View Treasury on Lineascan
       </a>
       <a href="#overview" class="btn-secondary">
@@ -1132,10 +1132,31 @@
           <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
             <div class="contract-card">
               <div style="flex: 1;">
-                <div class="contract-card-label">Treasury Vault</div>
-                <div class="contract-card-addr">0xF22Bc18487764FEe106ca5Fb2EE27b11FDcB3756</div>
+                <div class="contract-card-label">BRDG Token (ERC-20)</div>
+                <div class="contract-card-addr">0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f</div>
               </div>
-              <div class="criteria-check pass">✓</div>
+              <a href="https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank" rel="noopener" class="criteria-check pass" style="text-decoration:none;">✓</a>
+            </div>
+            <div class="contract-card">
+              <div style="flex: 1;">
+                <div class="contract-card-label">Treasury Vault</div>
+                <div class="contract-card-addr">0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A</div>
+              </div>
+              <a href="https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A" target="_blank" rel="noopener" class="criteria-check pass" style="text-decoration:none;">✓</a>
+            </div>
+            <div class="contract-card">
+              <div style="flex: 1;">
+                <div class="contract-card-label">Staking Vault</div>
+                <div class="contract-card-addr">0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB</div>
+              </div>
+              <a href="https://lineascan.build/address/0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB" target="_blank" rel="noopener" class="criteria-check pass" style="text-decoration:none;">✓</a>
+            </div>
+            <div class="contract-card">
+              <div style="flex: 1;">
+                <div class="contract-card-label">SyncSwap BRDG/ETH Pool</div>
+                <div class="contract-card-addr">0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81</div>
+              </div>
+              <a href="https://lineascan.build/address/0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81" target="_blank" rel="noopener" class="criteria-check pass" style="text-decoration:none;">✓</a>
             </div>
             <div class="contract-card">
               <div style="flex: 1;">
@@ -1184,7 +1205,7 @@
         <div class="thesis-item">
           <div class="thesis-icon" style="background: rgba(159,122,234,0.12);">🏛️</div>
           <div class="thesis-title">On-Chain Treasury Backing</div>
-          <div class="thesis-body">Protocol revenue is split on-chain: 40% operations, 25% liquidity, 20% reserve, 15% founders. The 25% liquidity allocation continuously deepens DEX pools, tightening spreads and reducing volatility — a structured price support mechanism.</div>
+          <div class="thesis-body">Protocol revenue is split on-chain by the <a href="https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A" target="_blank" rel="noopener" style="color:var(--accent-cyan);text-decoration:none;">TreasuryVault contract</a>: 40% operations, 25% liquidity, 20% reserve, 15% founders — enforced in Solidity, not governance. The 25% liquidity allocation continuously deepens DEX pools, tightening spreads and reducing volatility — a structured price support mechanism.</div>
         </div>
         <div class="thesis-item">
           <div class="thesis-icon" style="background: rgba(236,201,75,0.12);">📊</div>
@@ -2229,5 +2250,6 @@
   })();
 </script>
 
+  <script src="/ehsa-brain-status.js" defer></script>
 </body>
 </html>

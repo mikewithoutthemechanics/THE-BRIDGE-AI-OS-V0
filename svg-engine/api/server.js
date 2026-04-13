@@ -274,12 +274,20 @@ app.post("/plugins/:name/run", async (req, res) => {
 
 app.get("/events", (req, res) => {
   res.setHeader("Content-Type",  "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
   res.setHeader("Connection",    "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders();
+  res.write(":\n\n");
   res.write(`data: ${JSON.stringify({ event: "connected", ts: new Date().toISOString() })}\n\n`);
   sseClients.add(res);
-  req.on("close", () => sseClients.delete(res));
+  const keepAlive = setInterval(() => {
+    try { res.write(":\n\n"); } catch (_) { clearInterval(keepAlive); }
+  }, 25000);
+  req.on("close", () => {
+    clearInterval(keepAlive);
+    sseClients.delete(res);
+  });
 });
 
 // ─── 404 ─────────────────────────────────────────────────────────────────────

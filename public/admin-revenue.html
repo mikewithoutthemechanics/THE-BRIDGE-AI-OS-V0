@@ -98,21 +98,21 @@ document.querySelectorAll('nav a').forEach(a => {
     <div class="v-source" id="src-revenue">Source: proof chain</div>
   </div>
   <div class="card" id="card-brdg">
-    <a class="v-badge v-onchain" id="badge-brdg" href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947" target="_blank" rel="noopener">On-chain</a>
+    <a class="v-badge v-onchain" id="badge-brdg" href="https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank" rel="noopener">On-chain</a>
     <div class="label">BRDG Supply</div>
     <div class="value purple" id="k-brdg">--</div>
     <div class="detail">On-chain (Linea L2) — read from contract</div>
     <div class="v-source" id="src-brdg">Source: LineaScan | Block: <span id="brdg-block">--</span></div>
   </div>
   <div class="card" id="card-burned">
-    <a class="v-badge v-onchain" id="badge-burned" href="https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947" target="_blank" rel="noopener">On-chain</a>
+    <a class="v-badge v-onchain" id="badge-burned" href="https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank" rel="noopener">On-chain</a>
     <div class="label">BRDG Burned</div>
     <div class="value orange" id="k-burned">--</div>
     <div class="detail">Deflationary 1% burn on transfers</div>
     <div class="v-source" id="src-burned">Source: totalBurned() contract call</div>
   </div>
   <div class="card" id="card-vault">
-    <a class="v-badge v-onchain" id="badge-vault" href="https://lineascan.build/address/0xDb8d8ca8A65d36eFbD5C84C145B58Ee62C872d88" target="_blank" rel="noopener">On-chain</a>
+    <a class="v-badge v-onchain" id="badge-vault" href="https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A" target="_blank" rel="noopener">On-chain</a>
     <div class="label">Vault ETH</div>
     <div class="value cyan" id="k-vault-eth">--</div>
     <div class="detail">TreasuryVault contract balance</div>
@@ -707,8 +707,8 @@ async function loadAll() {
   var rails = [
     { name: 'PayFast', status: 'live', currency: 'ZAR', proof: 'MD5-HMAC webhook + server validation', verifyText: 'Proof chain', verifyHref: '/api/verify/chain' },
     { name: 'Paystack', status: 'pending', currency: 'NGN/USD', proof: 'SHA-512 webhook signature', verifyText: 'Not yet connected', verifyHref: null },
-    { name: 'Crypto (ETH)', status: 'live', currency: 'ETH', proof: 'On-chain transaction hash', verifyText: 'LineaScan', verifyHref: 'https://lineascan.build/address/0xDb8d8ca8A65d36eFbD5C84C145B58Ee62C872d88' },
-    { name: 'BRDG Token', status: 'live', currency: 'BRDG', proof: 'ERC-20 Transfer event log', verifyText: 'LineaScan', verifyHref: 'https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947' },
+    { name: 'Crypto (ETH)', status: 'live', currency: 'ETH', proof: 'On-chain transaction hash', verifyText: 'LineaScan', verifyHref: 'https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
+    { name: 'BRDG Token', status: 'live', currency: 'BRDG', proof: 'ERC-20 Transfer event log', verifyText: 'LineaScan', verifyHref: 'https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f' },
     { name: 'Stripe', status: 'pending', currency: 'USD/EUR', proof: 'Stripe webhook signature (v1)', verifyText: 'Not configured', verifyHref: null },
   ];
   rails.forEach(function(rail) {
@@ -760,5 +760,6 @@ setInterval(loadAll, 30000);
 } // end initPage
 </script>
 </div>
+  <script src="/ehsa-brain-status.js" defer></script>
 </body>
 </html>

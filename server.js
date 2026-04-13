@@ -243,6 +243,10 @@ app.post("/api/checkout/confirm",
         // Apply founder tax first, then split remainder
         const founderTax = parseFloat(amount) * (founderTaxRate / 100);
         const remaining = parseFloat(amount) - founderTax;
+        // Off-chain ZAR loop: fiat batch pool serving UBI + ops in SA rand.
+        // This is a distinct asset class from the on-chain BRDG/ETH TreasuryVault
+        // (which uses ops 40 / liq 25 / reserve 20 / founder 15 — see contracts/TreasuryVault.sol).
+        // Crypto-denominated revenue flows on-chain via the vault; ZAR flows here.
         const splits = [{ bucket: 'ubi', pct: 40 }, { bucket: 'treasury', pct: 30 }, { bucket: 'ops', pct: 20 }, { bucket: 'founder', pct: 10 }];
         // Add founder tax as separate entry
         if (founderTax > 0) {
@@ -1931,9 +1935,47 @@ app.get('/api/intelligence/route', (req, res) => {
   res.json({ routes: 12, avgLatency: 45 });
 });
 
-// EHSA dashboard (used by aoe-dashboard.html health check)
-app.get('/api/ehsa/dashboard', (req, res) => {
-  res.json({ patients: 0, appointments: 0, revenue: 0 });
+// EHSA dashboard — proxies to brain (FastAPI) with safe fallback.
+// Used by founders/admin pages AND public ehsa-*.html pages via /ehsa-brain-status.js.
+app.get('/api/ehsa/dashboard', async (req, res) => {
+  try {
+    const resp = await axios.get(BRAIN_URL + '/api/ehsa/dashboard', { timeout: 4000 });
+    if (resp.status === 200 && resp.data) {
+      return res.json({ ...resp.data, source: 'brain', degraded: false });
+    }
+  } catch (_) { /* fall through */ }
+  res.json({ patients: 0, appointments: 0, revenue: 0, source: 'stub', degraded: true });
+});
+
+// Unified brain status for the floating widget and any page that wants a single payload.
+// Never 502s — degrades gracefully so public pages always render.
+app.get('/api/brain/status', async (req, res) => {
+  const out = {
+    brain: { healthy: false, latency_ms: null },
+    ehsa:  { patients: 0, appointments: 0, revenue: 0 },
+    treasury: { bucket_splits: { ops: 40, liquidity: 25, reserve: 20, founder: 15 } },
+    chain: { network: 'linea', chainId: 59144, brdg: '0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
+    degraded: true,
+    ts: Date.now(),
+  };
+  const t0 = Date.now();
+  try {
+    const health = await axios.get(BRAIN_URL + '/api/health', { timeout: 2500 });
+    out.brain.healthy = health.status === 200;
+    out.brain.latency_ms = Date.now() - t0;
+    out.degraded = !out.brain.healthy;
+  } catch (_) {}
+  try {
+    const ehsa = await axios.get(BRAIN_URL + '/api/ehsa/dashboard', { timeout: 2500 });
+    if (ehsa.status === 200 && ehsa.data) Object.assign(out.ehsa, ehsa.data);
+  } catch (_) {}
+  try {
+    if (typeof economyDb !== 'undefined') {
+      const r = await economyDb.query('SELECT name, balance FROM treasury_buckets');
+      out.treasury.buckets = Object.fromEntries(r.rows.map(x => [x.name, parseFloat(x.balance) || 0]));
+    }
+  } catch (_) {}
+  res.json(out);
 });
 
 // Agent dispatch (used by control.html)

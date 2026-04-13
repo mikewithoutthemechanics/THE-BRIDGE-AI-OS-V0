@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Treasury wallet address (from eth-treasury.js)
-const TREASURY_ADDRESS = process.env.TREASURY_ADDRESS || '0xF22Bc18487764FEe106ca5Fb2EE27b11FDcB3756';
+const TREASURY_ADDRESS = process.env.TREASURY_ADDRESS || '0xAC301f984556c11ecf3818CaA6020d11c8616F64';
 
 // Initial staking reward pool
 const INITIAL_STAKING_REWARDS = hre.ethers.parseEther('500000'); // 500K BRDG

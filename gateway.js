@@ -198,17 +198,24 @@ module.exports.pushEvent = pushEvent;
 
 app.get('/events/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
-  // Send immediate hello event
+  // Initial CF-safe comment frame + hello event
+  res.write(':\n\n');
   res.write(`data: ${JSON.stringify({ type: 'connected', ts: Date.now() })}\n\n`);
 
   sseClients.add(res);
 
+  // Keepalive every 25s — Cloudflare free plan idles at 100s
+  const keepAlive = setInterval(() => {
+    try { res.write(':\n\n'); } catch (_) { clearInterval(keepAlive); }
+  }, 25000);
+
   req.on('close', () => {
+    clearInterval(keepAlive);
     sseClients.delete(res);
   });
 });
@@ -1779,8 +1786,8 @@ RISKS:
 NO GUARANTEES:
 Bridge AI makes no representations about future token value, returns, or profitability. Past performance is not indicative of future results.
 
-CONTRACT: 0x5f0541302bd4fC672018b07a35FA5f294A322947 (Linea Mainnet)
-VERIFY: https://lineascan.build/token/0x5f0541302bd4fC672018b07a35FA5f294A322947
+CONTRACT: 0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f (Linea Mainnet)
+VERIFY: https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f
 
 ` },
     'sla-v1': { name: 'Service Level Agreement', content: `BRIDGE AI OS — SERVICE LEVEL AGREEMENT
