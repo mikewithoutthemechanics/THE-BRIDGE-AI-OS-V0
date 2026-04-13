@@ -2,6 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<link rel="canonical" href="https://go.ai-os.co.za/welcome-tour">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/welcome-tour">
+<meta property="og:title" content="Bridge AI OS — Welcome Tour">
+<meta property="og:description" content="Bridge AI OS — Welcome Tour — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bridge AI OS — Welcome Tour">
+<meta name="twitter:description" content="Bridge AI OS — Welcome Tour — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bridge AI OS — Welcome Tour</title>
 <meta name="description" content="Launch your first AI agent in 60 seconds. Interactive onboarding for Bridge AI OS.">
@@ -9,15 +21,17 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
-  var SUPABASE_URL = 'https://sdkysuvmtqjqopmdpvoz.supabase.co';
-  var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNka3lzdXZtdHFqcW9wbWRwdm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2ODU4MzQsImV4cCI6MjA5MTI2MTgzNH0.fE28i7UyAmvun7046Jn4taHFN756-s70KFRnG863bV0';
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   var token = localStorage.getItem('bridge_token');
-  sb.auth.getSession().then(function(res){
-    var hasSession = res && res.data && res.data.session;
-    if (!hasSession && !token) {
-      window.location.replace('/onboarding.html');
-    }
+  fetch('/api/config/oauth').then(function(r){ return r.json(); }).then(function(cfg){
+    var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+    sb.auth.getSession().then(function(res){
+      var hasSession = res && res.data && res.data.session;
+      if (!hasSession && !token) {
+        window.location.replace('/onboarding.html');
+      }
+    }).catch(function(){
+      if (!token) window.location.replace('/onboarding.html');
+    });
   }).catch(function(){
     if (!token) window.location.replace('/onboarding.html');
   });
@@ -254,6 +268,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
   renderStep();
 })();
 </script>
-<script src="/global-nav.js" defer></script>
+<script src="/bridge-nav.js" defer></script>
 </body>
 </html>

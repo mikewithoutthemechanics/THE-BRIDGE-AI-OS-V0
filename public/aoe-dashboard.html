@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="description" content="BRIDGE AI OS · Live Nav Hub — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/aoe-dashboard">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/aoe-dashboard">
+<meta property="og:title" content="BRIDGE AI OS · Live Nav Hub">
+<meta property="og:description" content="BRIDGE AI OS · Live Nav Hub — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BRIDGE AI OS · Live Nav Hub">
+<meta name="twitter:description" content="BRIDGE AI OS · Live Nav Hub — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BRIDGE AI OS · Live Nav Hub</title>
 <style>
@@ -216,6 +230,13 @@
         <div class="grid2">
           <div class="card"><div class="card-title">SVG ENGINE TELEMETRY</div><div id="ov-tele" style="margin-top:4px"></div></div>
           <div class="card"><div class="card-title">RECENT BUILDS · E:\A\output</div><div id="ov-builds" style="margin-top:4px"></div></div>
+        </div>
+        <div class="card" style="margin-top:8px">
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+            LIVE ACTIVITY STREAM
+            <span id="act-badge" style="font-size:9px;color:var(--cyan);font-family:var(--mono)">● LIVE</span>
+          </div>
+          <div id="ov-activity" style="margin-top:6px;max-height:220px;overflow-y:auto"></div>
         </div>
       </div>
 
@@ -474,7 +495,7 @@ async function poll(){
     document.getElementById('nb-out').textContent=files.length;
     document.getElementById('ov-builds').innerHTML=files.map(f=>
       `<div class="srow"><span class="slbl">${f}</span><a href="/output/${f}" target="_blank" style="color:var(--cyan);font-size:9px">VIEW</a></div>`
-    ).join('')||SR('No builds yet','—');
+    ).join('')||SR('No local SVG builds','Loading from server…');
   }catch{document.getElementById('ov-builds').innerHTML=SR('Output dir','offline','err');}
 }
 
@@ -490,7 +511,7 @@ async function loadTr(){
     document.getElementById('tr-bkts').innerHTML=Object.entries(bk).map(([k,v])=>{
       const pct=Math.min((v/tot)*100,100);
       return `<div style="margin-bottom:7px">${SR(k.toUpperCase(),(v??0).toFixed(4)+' BRDG')}<div class="pbar"><div class="pfill" style="width:${pct}%"></div></div></div>`;
-    }).join('')||'<div style="color:var(--dim);font-size:10px">No buckets</div>';
+    }).join('')||'<div style="color:var(--dim);font-size:10px">Treasury initialising — ingest first revenue event to populate buckets</div>';
     pill('p-trs','ok','TREASURY');
   }catch{document.getElementById('tr-tot').textContent='OFFLINE';toast('Treasury API unavailable','err');}
 }
@@ -720,8 +741,41 @@ async function claimUbi(){
   }catch(e){toast('Claim failed: '+e.message,'err');}
 }
 
+// ── LIVE ACTIVITY STREAM ──
+const ACT_COLORS = {
+  pipeline: 'var(--cyan)',
+  task_market: 'var(--alive)',
+  crm: '#f59e0b',
+  app_loop: '#a78bfa',
+  economy: 'var(--cyan)',
+  system: 'var(--dim)',
+};
+async function loadActivity(){
+  try{
+    const el=document.getElementById('ov-activity');
+    const data=await fetch('/api/activity?limit=30').then(r=>r.json());
+    if(!data.ok||!data.events?.length){
+      el.innerHTML='<div style="color:var(--dim);font-size:10px;padding:4px">Waiting for pipeline events…</div>';
+      return;
+    }
+    el.innerHTML=data.events.map(e=>{
+      const col=ACT_COLORS[e.source]||'var(--text)';
+      const ts=e.ts?new Date(e.ts).toLocaleTimeString():'';
+      return `<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:10px">
+        <span style="color:${col};min-width:70px;font-family:var(--mono)">${e.source.toUpperCase()}</span>
+        <span style="flex:1;color:var(--text)">${e.title}</span>
+        <span style="color:var(--dim);white-space:nowrap">${ts}</span>
+      </div>`;
+    }).join('');
+  }catch(e){
+    const el=document.getElementById('ov-activity');
+    if(el)el.innerHTML=`<div style="color:var(--dim);font-size:10px;padding:4px">Activity API offline: ${e.message}</div>`;
+  }
+}
+
 // BOOT
 poll();setInterval(poll,8000);
+loadActivity();setInterval(loadActivity,10000);
 </script>
 </body>
 </html>

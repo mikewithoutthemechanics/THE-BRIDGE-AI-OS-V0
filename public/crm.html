@@ -99,40 +99,9 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.6rem 
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
 .modal-actions{display:flex;gap:.65rem;margin-top:1rem;justify-content:flex-end}
 #toast{position:fixed;bottom:1.25rem;right:1.25rem;background:var(--surface);border:1px solid var(--accent);color:var(--accent);font-size:.82rem;padding:.6rem 1.1rem;border-radius:6px;display:none;z-index:999}
-/* ── PIPELINE VIEW ── */
-.pipeline-wrap{display:flex;gap:.6rem;overflow-x:auto;padding:1rem 1.5rem;height:100%}
-.pipeline-col{min-width:220px;max-width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;max-height:100%}
-.pipeline-col-hdr{padding:.6rem .75rem;border-bottom:1px solid var(--border);font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:flex;justify-content:space-between;align-items:center}
-.pipeline-col-hdr .cnt{background:var(--surface2);padding:2px 7px;border-radius:10px;font-size:.65rem;color:var(--text3)}
-.pipeline-col-body{overflow-y:auto;padding:.5rem;flex:1}
-.pipe-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.6rem .7rem;margin-bottom:.45rem;cursor:pointer;transition:border-color .15s}
-.pipe-card:hover{border-color:var(--accent)}
-.pipe-card-name{font-size:.78rem;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pipe-card-company{font-size:.67rem;color:var(--text3);margin-top:2px}
-.pipe-card-meta{display:flex;justify-content:space-between;align-items:center;margin-top:.4rem}
-.pipe-card-value{font-size:.72rem;font-weight:600;color:var(--accent)}
-.pipe-card-score{font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:3px}
 </style>
 </head>
 <body>
-
-<nav>
-  <div class="nav-brand">BRIDGE AI</div>
-  <div class="nav-links">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/crm" class="active">CRM</a>
-    <a href="/leads">Leads</a>
-    <a href="/invoicing">Invoicing</a>
-    <a href="/agents">Agents</a>
-    <a href="/settings">Settings</a>
-  </div>
-  <div class="nav-actions">
-    <button class="nav-btn btn-secondary" onclick="exportCsv()">⬇ Export</button>
-    <button class="nav-btn btn-secondary" id="btnImport">⬆ Import</button>
-    <input type="file" id="csvFile" accept=".csv" style="display:none"/>
-    <button class="nav-btn btn-primary" onclick="openModal()">+ Add Contact</button>
-  </div>
-</nav>
 
 <div class="toolbar">
   <input type="text" class="search-box" id="searchBox" placeholder="Search contacts, company, email…" oninput="render()"/>
@@ -152,10 +121,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.6rem 
     <option value="lost">Lost</option>
   </select>
   <button class="nav-btn btn-secondary btn-sm" onclick="loadAll()">↺ Refresh</button>
-  <div style="margin-left:auto;display:flex;gap:.25rem">
-    <button class="nav-btn btn-secondary btn-sm" id="viewGrid" onclick="setView('grid')" style="border-color:var(--accent);color:var(--accent)">Grid</button>
-    <button class="nav-btn btn-secondary btn-sm" id="viewPipeline" onclick="setView('pipeline')">Pipeline</button>
-  </div>
 </div>
 
 <div class="layout">
@@ -228,15 +193,18 @@ async function ensureAuth(){
   window.location.href='/join?next=/crm';
 }
 
-async function fetchCsrf(){/* no-op — API does not use CSRF tokens */}
+let _csrf='';
+async function fetchCsrf(){try{const r=await fetch('/api/crm/stats',{credentials:'include',headers:_token?{Authorization:'Bearer '+_token}:{}});const t=r.headers.get('X-CSRF-Token');if(t)_csrf=t;}catch{}}
 
 async function api(path,opts={}){
   const method=(opts.method||'GET').toUpperCase();
   const h={'Content-Type':'application/json',...(opts.headers||{})};
   if(_token)h['Authorization']='Bearer '+_token;
+  if(['POST','PUT','DELETE','PATCH'].includes(method)&&_csrf)h['X-CSRF-Token']=_csrf;
   const r=await fetch('/api'+path,{credentials:'include',...opts,headers:h});
-  if(r.status===401){_token='';localStorage.removeItem('bridge_token');await ensureAuth();
-    if(_token)h['Authorization']='Bearer '+_token;
+  const nc=r.headers.get('X-CSRF-Token');if(nc)_csrf=nc;
+  if(r.status===401){_token='';localStorage.removeItem('bridge_token');await ensureAuth();await fetchCsrf();
+    if(_token)h['Authorization']='Bearer '+_token;if(_csrf)h['X-CSRF-Token']=_csrf;
     const r2=await fetch('/api'+path,{credentials:'include',...opts,headers:h});
     if(!r2.ok)throw new Error(await r2.text());return r2.json();}
   if(!r.ok)throw new Error(await r.text());return r.json();
@@ -431,54 +399,6 @@ document.getElementById('csvFile').addEventListener('change',async e=>{
   }
   toast('Imported '+n+' contacts','var(--green)');await loadAll();e.target.value='';
 });
-
-let _view='grid';
-function setView(v){
-  _view=v;
-  document.getElementById('viewGrid').style.borderColor=v==='grid'?'var(--accent)':'';
-  document.getElementById('viewGrid').style.color=v==='grid'?'var(--accent)':'';
-  document.getElementById('viewPipeline').style.borderColor=v==='pipeline'?'var(--accent)':'';
-  document.getElementById('viewPipeline').style.color=v==='pipeline'?'var(--accent)':'';
-  render();
-}
-
-const PIPELINE_STAGES=['new','outreach','demo','proposal','negotiation','closed','lost'];
-const STAGE_LABELS={new:'New',outreach:'Outreach',demo:'Demo',proposal:'Proposal',negotiation:'Negotiation',closed:'Closed',lost:'Lost'};
-
-function renderPipeline(){
-  const el=document.getElementById('grid');el.textContent='';
-  el.style.overflow='hidden';
-  const data=filtered();
-  const wrap=document.createElement('div');wrap.className='pipeline-wrap';
-  PIPELINE_STAGES.forEach(stage=>{
-    const col=document.createElement('div');col.className='pipeline-col';
-    const group=data.filter(c=>(c.stage||'new')===stage);
-    const hdr=document.createElement('div');hdr.className='pipeline-col-hdr';
-    hdr.innerHTML=(STAGE_LABELS[stage]||stage)+'<span class="cnt">'+group.length+'</span>';
-    col.appendChild(hdr);
-    const body=document.createElement('div');body.className='pipeline-col-body';
-    group.forEach(c=>{
-      const card=document.createElement('div');card.className='pipe-card';
-      card.onclick=()=>select(c.id);
-      const nm=document.createElement('div');nm.className='pipe-card-name';nm.textContent=c._name;card.appendChild(nm);
-      if(c.company){const co=document.createElement('div');co.className='pipe-card-company';co.textContent=c.company;card.appendChild(co);}
-      const meta=document.createElement('div');meta.className='pipe-card-meta';
-      const val=document.createElement('span');val.className='pipe-card-value';val.textContent=c.deal_value?'R '+parseFloat(c.deal_value).toLocaleString():'';meta.appendChild(val);
-      if(c.score!=null){const sc=document.createElement('span');sc.className='pipe-card-score';sc.style.background=c.score>=70?'#064e3b':c.score>=35?'#451a03':'var(--surface)';sc.style.color=c.score>=70?'var(--green)':c.score>=35?'var(--yellow)':'var(--text3)';sc.textContent=c.score;meta.appendChild(sc);}
-      card.appendChild(meta);body.appendChild(card);
-    });
-    col.appendChild(body);wrap.appendChild(col);
-  });
-  el.appendChild(wrap);
-}
-
-// Patch render to support pipeline view
-const _origRender=render;
-render=function(){
-  if(_view==='pipeline'){renderPipeline();return;}
-  document.getElementById('grid').style.overflow='';
-  _origRender();
-};
 
 (async()=>{await ensureAuth();await fetchCsrf();await loadAll();setInterval(loadAll,60000);})();
 </script>

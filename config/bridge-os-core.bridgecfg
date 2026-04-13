@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "namespace": "bridge.os.core",
+  "priority": 100,
+  "tags": ["core", "production"],
+  "meta": {
+    "description": "Core Bridge AI OS runtime configuration",
+    "owner": "bridge-ai-os",
+    "environment": "production"
+  },
+  "payload": {
+    "platform_name": "Bridge AI OS",
+    "platform_version": "2.0.0",
+    "chain_id": 59144,
+    "chain_name": "Linea Mainnet",
+    "rpc_url": "https://rpc.linea.build",
+    "brdg_contract": "0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f",
+    "agent_salt_prefix": "bridge-ai-os-v1",
+    "twin_activation_enabled": true,
+    "autonomous_loop_enabled": true,
+    "max_agents_per_user": 1,
+    "nonce_ttl_seconds": 300,
+    "jwt_ttl_seconds": 604800
+  },
+  "validation": {
+    "required": ["platform_name", "chain_id", "brdg_contract"],
+    "rules": [
+      {
+        "name": "chain-id-is-linea",
+        "check": "return cfg.chain_id === 59144",
+        "message": "chain_id must be 59144 (Linea Mainnet)"
+      }
+    ]
+  }
+}

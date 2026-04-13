@@ -154,23 +154,6 @@ textarea{resize:vertical;min-height:40px;}
 </style>
 </head>
 <body>
-<nav style="background:#0f172a;border-bottom:1px solid #1e293b;padding:.75rem 1.5rem;display:flex;gap:1.5rem;align-items:center;position:sticky;top:0;z-index:200">
-  <span style="font-weight:700;color:#38bdf8;font-size:1.1rem;margin-right:auto">Admin</span>
-  <a href="/admin.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Dashboard</a>
-  <a href="/admin-revenue.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Revenue</a>
-  <a href="/admin-withdraw.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Withdrawals</a>
-  <a href="/control.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Control</a>
-  <a href="/system-status-dashboard.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">System Health</a>
-  <a href="/registry.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Registry</a>
-</nav>
-<script>
-document.querySelectorAll('nav a').forEach(a => {
-  if (a.getAttribute('href') === window.location.pathname) {
-    a.style.color = '#38bdf8';
-    a.style.background = '#1e293b';
-  }
-});
-</script>
 
 <!-- HEADER -->
 <div class="header">
@@ -395,140 +378,12 @@ document.querySelectorAll('nav a').forEach(a => {
 
 <!-- QUICK ACTIONS -->
 <div class="quick-bar">
-  <button class="btn btn-purple" id="btnReconcile" onclick="adminReconcile()">Reconcile Treasury</button>
-  <button class="btn btn-green" id="btnDistribute" onclick="adminDistribute()">Distribute Rewards</button>
-  <button class="btn btn-yellow" id="btnCompound" onclick="adminCompound()">Compound Banks</button>
   <button class="btn btn-outline" onclick="exportLedger()">Export Ledger</button>
+  <button class="btn btn-red" onclick="resetState()">Reset State</button>
   <button class="btn" onclick="refreshAll()">Refresh All</button>
 </div>
 
 <script>
-// Admin gate
-(async function checkAdmin() {
-  const r = await fetch('/auth/me', { credentials: 'include' }).then(r => r.json()).catch(() => ({ ok: false }));
-  if (!r.ok || (r.user?.role !== 'admin' && r.user?.plan !== 'admin' && r.user?.plan !== 'enterprise')) {
-    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef4444;font-family:monospace;font-size:1.2rem">Access denied — admin only</div>';
-    setTimeout(() => window.location.href = '/portal', 2000);
-    return;
-  }
-  window.__adminUser = r.user;
-  window.__adminToken = localStorage.getItem('bridge_token') || '';
-  initPage();
-})();
-
-function initPage() {
-
-// ── Admin action buttons ──
-window.adminReconcile = async function() {
-  const btn = document.getElementById('btnReconcile');
-  btn.disabled = true; btn.textContent = 'Reconciling...';
-  try {
-    const r = await fetch('/api/treasury/reconcile', {
-      method: 'POST',
-      headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
-    });
-    const d = await r.json();
-    showToast(d.ok || r.ok ? 'Treasury reconciled successfully' : ('Reconcile: ' + (d.error || 'failed')), d.ok || r.ok ? 'green' : 'red');
-    if (d.ok || r.ok) fetchTreasuryData();
-  } catch (e) { showToast('Reconcile failed: ' + e.message, 'red'); }
-  finally { btn.disabled = false; btn.textContent = 'Reconcile Treasury'; }
-};
-window.adminDistribute = async function() {
-  const btn = document.getElementById('btnDistribute');
-  btn.disabled = true; btn.textContent = 'Distributing...';
-  try {
-    const r = await fetch('/api/cron/distribute-rewards', {
-      method: 'POST',
-      headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
-    });
-    const d = await r.json();
-    showToast(d.ok || r.ok ? 'Rewards distributed' : ('Distribute: ' + (d.error || 'failed')), d.ok || r.ok ? 'green' : 'red');
-  } catch (e) { showToast('Distribute failed: ' + e.message, 'red'); }
-  finally { btn.disabled = false; btn.textContent = 'Distribute Rewards'; }
-};
-window.adminCompound = async function() {
-  const btn = document.getElementById('btnCompound');
-  btn.disabled = true; btn.textContent = 'Compounding...';
-  try {
-    const r = await fetch('/api/banks/compound', {
-      method: 'POST',
-      headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
-    });
-    const d = await r.json();
-    showToast(d.ok || r.ok ? 'Banks compounded' : ('Compound: ' + (d.error || 'failed')), d.ok || r.ok ? 'green' : 'red');
-  } catch (e) { showToast('Compound failed: ' + e.message, 'red'); }
-  finally { btn.disabled = false; btn.textContent = 'Compound Banks'; }
-};
-
-function showToast(msg, color) {
-  var toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;top:60px;right:20px;padding:12px 20px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeIn .3s ease;background:' + (color === 'green' ? 'rgba(0,229,123,.15);border:1px solid rgba(0,229,123,.3);color:#00e57b' : 'rgba(255,60,90,.15);border:1px solid rgba(255,60,90,.3);color:#ff3c5a');
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(function() { toast.remove(); }, 4000);
-}
-
-// ── Fetch real treasury data from API ──
-async function fetchTreasuryData() {
-  try {
-    var res = await fetch('/api/treasury/status', { headers: { 'X-Admin-Token': window.__adminToken } });
-    var d = await res.json();
-    if (d && (d.balance !== undefined || d.totalBalance !== undefined)) {
-      var bal = d.totalBalance || d.balance || 0;
-      document.getElementById('balanceDisplay').textContent = fmt(bal);
-      // Bucket allocations
-      var buckets = d.buckets || d.allocations || {};
-      if (typeof buckets === 'object' && !Array.isArray(buckets)) {
-        var ops = buckets.ops || bal * 0.45;
-        var growth = buckets.growth || bal * 0.15;
-        var reserve = buckets.reserve || bal * 0.15;
-        var founder = buckets.founder || bal * 0.25;
-        document.getElementById('revMtd').textContent = fmt(d.revenueMtd || d.revenue_mtd || 0);
-        document.getElementById('costMtd').textContent = fmt(d.costsMtd || d.costs_mtd || 0);
-        document.getElementById('netMtd').textContent = fmt((d.revenueMtd || 0) - (d.costsMtd || 0));
-      }
-      // Recent payments
-      if (d.recentPayments && Array.isArray(d.recentPayments)) {
-        var ledgerBody = document.getElementById('ledgerBody');
-        ledgerBody.innerHTML = '';
-        d.recentPayments.slice(0, 20).forEach(function(tx) {
-          var cls = (tx.amount || 0) >= 0 ? 'green' : 'red';
-          var typeClass = tx.type === 'subscription' ? 'badge-green' : tx.type === 'cost' ? 'badge-red' : 'badge-yellow';
-          ledgerBody.innerHTML += '<tr><td style="white-space:nowrap;color:var(--text-dim)">' + (tx.time || tx.created_at || '--') + '</td>'
-            + '<td><span class="badge ' + typeClass + '"><span class="dot"></span>' + (tx.type || 'payment') + '</span></td>'
-            + '<td>' + (tx.desc || tx.description || '--') + '</td>'
-            + '<td style="color:var(--' + cls + ')">' + fmt(Math.abs(tx.amount || 0)) + '</td>'
-            + '<td>' + fmt(tx.balance || 0) + '</td></tr>';
-        });
-      }
-      addEvent('TREASURY', 'system', 'Treasury data refreshed from API (balance: ' + fmt(bal) + ')');
-    }
-  } catch (e) {
-    addEvent('TREASURY', 'system', 'Treasury API unavailable — using local data');
-  }
-
-  // Also try fetching ledger
-  try {
-    var lRes = await fetch('/api/treasury/ledger', { headers: { 'X-Admin-Token': window.__adminToken } });
-    var lData = await lRes.json();
-    var entries = lData.entries || lData.ledger || lData.data || [];
-    if (Array.isArray(entries) && entries.length > 0) {
-      var ledgerBody = document.getElementById('ledgerBody');
-      ledgerBody.innerHTML = '';
-      entries.slice(0, 30).forEach(function(tx) {
-        var amt = tx.amount || 0;
-        var cls = amt >= 0 ? 'green' : 'red';
-        var typeClass = tx.type === 'subscription' ? 'badge-green' : tx.type === 'cost' ? 'badge-red' : tx.type === 'reward' ? 'badge-purple' : 'badge-yellow';
-        ledgerBody.innerHTML += '<tr><td style="white-space:nowrap;color:var(--text-dim)">' + (tx.time || tx.date || tx.created_at || '--') + '</td>'
-          + '<td><span class="badge ' + typeClass + '"><span class="dot"></span>' + (tx.type || tx.bucket || 'payment') + '</span></td>'
-          + '<td>' + (tx.desc || tx.description || '--') + '</td>'
-          + '<td style="color:var(--' + cls + ')">' + (amt >= 0 ? '+' : '') + fmt(Math.abs(amt)) + '</td>'
-          + '<td>' + fmt(tx.balance || tx.running_balance || 0) + '</td></tr>';
-      });
-    }
-  } catch (_) {}
-}
-
 // =========== STATE MANAGEMENT ===========
 const STORAGE_KEYS = {
   treasury: 'bridgeos_treasury',
@@ -1081,9 +936,6 @@ async function init() {
   renderServices();
   updateGauges();
 
-  // Fetch real treasury data from API (overlays on seed data)
-  await fetchTreasuryData();
-
   // Seed some initial events
   if (events.length === 0) {
     for (let i = 0; i < 15; i++) addEvent();
@@ -1093,27 +945,9 @@ async function init() {
   setInterval(() => addEvent(), 3000);
   setInterval(() => { renderServices(); updateGauges(); }, 10000);
   setInterval(simulateTasks, 5000);
-  // Re-fetch live treasury data every 30s
-  setInterval(fetchTreasuryData, 30000);
 }
 
-// Expose functions to onclick handlers
-window.addTransaction = addTransaction;
-window.dispatchTask = dispatchTask;
-window.toggleAgent = toggleAgent;
-window.createTask = createTask;
-window.claimTask = claimTask;
-window.completeTask = completeTask;
-window.cancelTask = cancelTask;
-window.creditUser = creditUser;
-window.toggleUser = toggleUser;
-window.filterFeed = filterFeed;
-window.exportLedger = exportLedger;
-window.resetState = resetState;
-window.refreshAll = refreshAll;
-
 init();
-} // end initPage
 </script>
 </body>
 </html>

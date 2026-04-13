@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+<meta name="description" content="Signing in — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="noindex, nofollow">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Signing in — Bridge AI OS</title>
   <style>
@@ -95,19 +98,32 @@
         box.textContent = msg;
         box.style.display = 'block';
         setTimeout(() => {
-          window.location.href = '/join?error=oauth_failed';
+          window.location.href = '/onboarding?error=oauth_failed';
         }, 2000);
       }
 
       function handleSuccess(token, user) {
-        if (token) localStorage.setItem('bridge_token', token);
-        if (user)  localStorage.setItem('bridge_user', JSON.stringify(user));
+        if (token) {
+          localStorage.setItem('bridge_token', token);
+          // Set cookie so server-side middleware can also read the token
+          document.cookie = 'access_token=' + token + '; path=/; SameSite=Lax; max-age=604800';
+        }
+        if (user) localStorage.setItem('bridge_user', JSON.stringify(user));
+
+        // Clear the Supabase SDK session — we only need the Bridge JWT (kills session #1)
+        try {
+          Object.keys(localStorage).forEach(k => {
+            if (k.startsWith('sb-') && k.includes('auth')) localStorage.removeItem(k);
+          });
+        } catch (_) {}
 
         document.getElementById('message').textContent = 'Welcome, ' + (user?.name || user?.email || 'there') + '!';
         document.getElementById('sub').textContent = 'Redirecting you now...';
 
-        // Decide where to send the user
-        let dest = '/dashboard';
+        // Priority: explicit redirect param > wizard flow > plan checkout > default profile
+        const redirectDest = params.get('redirect') || '';
+        let dest = redirectDest ? decodeURIComponent(redirectDest) : '/portal';
+
         if (wizard === '1') {
           dest = '/wizard';
           const qs = new URLSearchParams();
@@ -117,8 +133,6 @@
           if (qs.toString()) dest += '?' + qs.toString();
         } else if (plan && plan !== 'free') {
           dest = '/checkout?plan=' + encodeURIComponent(plan);
-        } else {
-          dest = '/profile';
         }
 
         setTimeout(() => { window.location.href = dest; }, 800);
@@ -147,19 +161,28 @@
         }
       }
 
-      // ── Implicit flow: token already in hash ─────────────────────────────
+      // ── Implicit flow: exchange Supabase token for a Bridge JWT ─────────────
       if (accessToken) {
-        // Store Supabase access token directly; the server already set the cookie via exchange-code,
-        // but for implicit flow we just store it locally and redirect.
-        localStorage.setItem('bridge_token', accessToken);
+        try {
+          const exchRes = await fetch('/auth/token-exchange', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_token: accessToken }),
+          });
+          const exchData = await exchRes.json();
+          if (exchRes.ok && exchData.ok && exchData.token) {
+            return handleSuccess(exchData.token, exchData.user);
+          }
+        } catch (_) { /* fall through to raw token */ }
+
+        // Fallback: use raw Supabase token if exchange fails
         const user = {};
         try {
-          // Decode JWT payload (no verification — just for display)
           const b64 = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
           const p = JSON.parse(atob(b64));
           user.email = p.email || '';
           user.id    = p.sub   || '';
-        } catch (_) { /* ignore */ }
+        } catch (_) {}
         return handleSuccess(accessToken, user);
       }
 

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "jest --testPathPattern=tests/",
+    "ci": "npm test",
     "start": "node system.js",
     "dev": "nodemon system.js",
     "start:80": "cross-env PORT=80  NODE_ENV=production node system.js",
@@ -28,7 +29,12 @@
     "deploy:fly": "node scripts/deploy.js fly",
     "deploy:public": "powershell -ExecutionPolicy Bypass -File scripts/deploy-public.ps1",
     "gateway": "node gateway.js",
-    "gateway:dev": "nodemon gateway.js"
+    "gateway:dev": "nodemon gateway.js",
+    "cli": "node cli.js",
+    "cli:status": "node cli.js status",
+    "cli:skills": "node cli.js skills",
+    "cli:econ": "node cli.js econ",
+    "cli:cloud": "node cli.js cloud"
   },
   "keywords": [
     "topology",
@@ -71,6 +77,14 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "\\.kilo",
+      "/dist/"
+    ],
     "setupFilesAfterEnv": [
       "./jest.setup.js"
     ]

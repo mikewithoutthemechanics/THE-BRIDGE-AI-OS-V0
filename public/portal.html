@@ -2,6 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<link rel="canonical" href="https://go.ai-os.co.za/portal">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/portal">
+<meta property="og:title" content="Portal — Bridge AI OS">
+<meta property="og:description" content="Portal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Portal — Bridge AI OS">
+<meta name="twitter:description" content="Portal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Portal — Bridge AI OS</title>
 <meta name="description" content="Your personalized client dashboard for Bridge AI OS.">
@@ -96,6 +108,31 @@ a:hover{text-decoration:underline}
 .modal-dismiss{font-size:.78rem;color:var(--dim);cursor:pointer;border:none;background:none;font-family:inherit}
 .modal-dismiss:hover{color:#e2e8f0}
 .modal-msg{font-size:.75rem;color:var(--green);margin-top:8px;min-height:1.2em}
+
+/* Pulse animation for provision button */
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+
+/* ── Mobile responsive ── */
+@media(max-width:640px){
+  body{padding-bottom:40px}
+  .welcome-bar{flex-direction:column;align-items:flex-start;margin-bottom:20px}
+  .welcome-left h1{font-size:1.2rem}
+  .brdg-balance{font-size:.75rem;padding:6px 10px}
+  .stats-grid{gap:8px;margin-bottom:20px}
+  .stat-value{font-size:1.4rem}
+  .quick-actions{gap:6px;margin-bottom:20px}
+  .action-btn{padding:8px 12px;font-size:.72rem}
+  .projects-grid{grid-template-columns:1fr;margin-bottom:20px}
+  h2{font-size:.9rem}
+  .modal-box{padding:20px;border-radius:12px;max-width:92vw}
+  .modal-title{font-size:1rem}
+  .modal-btn{padding:10px;font-size:.82rem}
+}
+@media(max-width:380px){
+  .stat-card{padding:12px}
+  .stat-value{font-size:1.2rem}
+  .funnel-step{max-width:40px}
+}
 </style>
 </head>
 <body>
@@ -141,16 +178,24 @@ a:hover{text-decoration:underline}
 
   <!-- Projects -->
   <div class="section-header">
-    <div class="section-title">Your Projects</div>
-    <a href="/wizard" style="font-size:.8rem;font-weight:600">+ New Project</a>
+    <div class="section-title">Your Projects <span id="projectCountBadge" style="font-size:.72rem;font-weight:400;color:var(--dim);margin-left:6px"></span></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button id="provisionBtn" class="action-btn" style="font-size:.72rem;padding:7px 14px;background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:var(--green)" onclick="provisionApps()">⚡ Provision All 50 Apps</button>
+      <a href="/wizard" style="font-size:.8rem;font-weight:600">+ New</a>
+    </div>
   </div>
-  <div class="projects-grid" id="projectsGrid">
+
+  <!-- Category filter -->
+  <div id="categoryFilter" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"></div>
+
+  <div class="projects-grid" id="projectsGrid" style="max-height:540px;overflow-y:auto;padding-right:4px">
     <div class="empty-state">Loading projects...</div>
   </div>
 
   <!-- Activity Feed -->
-  <div class="section-header">
+  <div class="section-header" style="margin-top:32px">
     <div class="section-title">Recent Activity</div>
+    <span id="activityCount" style="font-size:.72rem;color:var(--dim)"></span>
   </div>
   <div class="activity-feed" id="activityFeed">
     <div class="empty-state">Loading activity...</div>
@@ -173,12 +218,26 @@ a:hover{text-decoration:underline}
 (function(){
   'use strict';
 
-  let user = null;
-  let token = null;
+  var user = null;
+  var token = null;
+  var allProjects = [];
+  var activeCategory = 'all';
+
+  var CAT_LABELS = {
+    'smart-city-twin':    'Infrastructure',
+    'patient-twin':       'Healthcare',
+    'marketplace-builder':'Business',
+    'factory-twin':       'Industry',
+    'ap2-orchestrator':   'Consumer',
+  };
 
   function getToken() {
     var match = document.cookie.split(';').map(function(c){return c.trim()}).find(function(c){return c.startsWith('bridge_token=')});
-    return match ? match.split('=')[1] : localStorage.getItem('bridge_token');
+    return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : localStorage.getItem('bridge_token');
+  }
+
+  function authHeader() {
+    return token ? { Authorization: 'Bearer ' + token } : {};
   }
 
   function relativeTime(dateStr) {
@@ -186,16 +245,16 @@ a:hover{text-decoration:underline}
     var diff = Date.now() - new Date(dateStr).getTime();
     var mins = Math.floor(diff / 60000);
     if (mins < 1) return 'Just now';
-    if (mins < 60) return mins + ' min ago';
+    if (mins < 60) return mins + 'm ago';
     var hrs = Math.floor(mins / 60);
-    if (hrs < 24) return hrs + ' hour' + (hrs > 1 ? 's' : '') + ' ago';
+    if (hrs < 24) return hrs + 'h ago';
     var days = Math.floor(hrs / 24);
     if (days === 1) return 'Yesterday';
-    return days + ' days ago';
+    if (days < 30) return days + 'd ago';
+    return new Date(dateStr).toLocaleDateString();
   }
 
   var FUNNEL_STAGES = ['visitor', 'activated', 'converting', 'customer'];
-
   function setFunnel(stage) {
     var idx = FUNNEL_STAGES.indexOf(stage);
     if (idx < 0) idx = 0;
@@ -204,19 +263,292 @@ a:hover{text-decoration:underline}
     document.getElementById('funnelLabel').textContent = (stage || 'visitor').charAt(0).toUpperCase() + (stage || 'visitor').slice(1);
   }
 
+  // ── Deduplication helper ────────────────────────────────────────────────────
+  function dedupProjects(list) {
+    var seen = new Set();
+    return list.filter(function(p) {
+      // Prefer scaffold.catalog_id dedup; fallback to name+tool dedup
+      var key = p.scaffold && p.scaffold.catalog_id
+        ? 'cat:' + p.scaffold.catalog_id
+        : (p.name || '').toLowerCase().trim() + '|' + (p.tool_id || '');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  // ── Category filter UI ──────────────────────────────────────────────────────
+  function buildCategoryFilter(projects) {
+    var bar = document.getElementById('categoryFilter');
+    bar.innerHTML = '';
+    // Collect categories present
+    var cats = new Map();
+    cats.set('all', 0);
+    projects.forEach(function(p) {
+      var cat = (p.scaffold && p.scaffold.category) || p.tool_id || 'other';
+      cats.set(cat, (cats.get(cat) || 0) + 1);
+      cats.set('all', cats.get('all') + 1);
+    });
+
+    var catNames = {
+      'all': 'All',
+      'infrastructure-smart-cities': 'Infrastructure',
+      'healthcare': 'Healthcare',
+      'business-enterprise': 'Business',
+      'industry-manufacturing': 'Industry',
+      'consumer-society': 'Consumer',
+    };
+
+    cats.forEach(function(count, key) {
+      var btn = document.createElement('button');
+      btn.style.cssText = 'padding:4px 10px;border-radius:12px;font-size:.68rem;font-weight:600;border:1px solid var(--border);background:' + (key === activeCategory ? 'rgba(56,189,248,.12)' : 'var(--card)') + ';color:' + (key === activeCategory ? 'var(--cyan)' : 'var(--dim)') + ';cursor:pointer;transition:all .15s';
+      btn.textContent = (catNames[key] || key) + ' (' + count + ')';
+      btn.dataset.cat = key;
+      btn.addEventListener('click', function() {
+        activeCategory = key;
+        buildCategoryFilter(allProjects);
+        renderProjectGrid(allProjects);
+      });
+      bar.appendChild(btn);
+    });
+  }
+
+  // ── Project grid ────────────────────────────────────────────────────────────
+  function renderProjectGrid(projects) {
+    var grid = document.getElementById('projectsGrid');
+    grid.innerHTML = '';
+
+    var filtered = activeCategory === 'all' ? projects : projects.filter(function(p) {
+      return (p.scaffold && p.scaffold.category) === activeCategory || p.tool_id === activeCategory;
+    });
+
+    // Count badge
+    var active = filtered.filter(function(p){return p.status==='active'}).length;
+    document.getElementById('projectCountBadge').textContent = active + ' active · ' + filtered.length + ' total';
+    document.getElementById('statProjects').textContent = projects.filter(function(p){return p.status==='active'}).length;
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div class="empty-state">No projects in this category. <button class="action-btn" style="margin-top:8px;font-size:.72rem" onclick="provisionApps()">⚡ Provision All 50 Apps</button></div>';
+      return;
+    }
+
+    filtered.forEach(function(p) {
+      var card = document.createElement('div');
+      card.className = 'project-card';
+
+      var catLabel = (p.scaffold && p.scaffold.category_label) || CAT_LABELS[p.tool_id] || (p.tool_id || 'Platform');
+      var market = (p.scaffold && p.scaffold.market) ? ' · ' + p.scaffold.market : '';
+      var statusClass = 'status-' + (p.status || 'active');
+      // Resolve the "open" link: explicit app_page_url wins, then smart defaults by category
+      var catalogId = p.scaffold && p.scaffold.catalog_id;
+      var catId = p.scaffold && p.scaffold.category;
+      var defaultLink = catId === 'telco_esim' || catalogId === 'pbx-carrier' ? '/esim'
+                      : catId === 'healthcare' ? '/ehsa'
+                      : catId === 'infrastructure-smart-cities' ? '/twins'
+                      : '/apps';
+      var appPageLink = (p.scaffold && p.scaffold.app_page_url) ? p.scaffold.app_page_url : defaultLink;
+
+      card.innerHTML =
+        '<div class="project-name">' + escHtml(p.name || 'Untitled') + '</div>' +
+        '<div class="project-meta">' + escHtml(catLabel) + market + ' &middot; ' + relativeTime(p.updated_at) + '</div>' +
+        '<span class="project-status ' + statusClass + '">' + (p.status || 'active') + '</span>' +
+        '<div class="project-actions">' +
+          '<button class="project-btn project-btn-run" onclick="runProject(\'' + p.id + '\')">Run</button>' +
+          '<button class="project-btn" onclick="location.href=\'/projects#' + p.id + '\'">Details</button>' +
+          '<button class="project-btn" style="font-size:.62rem;color:var(--purple);border-color:rgba(167,139,250,.3)" onclick="location.href=\'' + appPageLink + '\'">Catalog</button>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+
+    // New project card
+    var newCard = document.createElement('div');
+    newCard.className = 'project-card new-project-card';
+    newCard.onclick = function() { location.href = '/wizard'; };
+    newCard.innerHTML = '<div class="new-icon">+</div><div style="font-size:.82rem;color:var(--dim)">New Project</div>';
+    grid.appendChild(newCard);
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Load + auto-provision ────────────────────────────────────────────────────
+  async function loadProjects() {
+    try {
+      var res = await fetch('/api/platform/projects?status=all&limit=200', { headers: authHeader() });
+      var data = await res.json();
+      allProjects = dedupProjects(data.projects || []);
+
+      buildCategoryFilter(allProjects);
+      renderProjectGrid(allProjects);
+
+      // Auto-provision if fewer than 50 catalog apps
+      var catalogCount = allProjects.filter(function(p) { return p.scaffold && p.scaffold.catalog_id; }).length;
+      if (catalogCount < 50) {
+        showProvisionBanner(catalogCount);
+      }
+    } catch(e) {
+      document.getElementById('projectsGrid').innerHTML = '<div class="empty-state">Unable to load projects. <button class="action-btn" style="margin-top:8px" onclick="loadProjects()">Retry</button></div>';
+    }
+  }
+
+  function showProvisionBanner(current) {
+    var btn = document.getElementById('provisionBtn');
+    if (btn) {
+      btn.textContent = '⚡ Provision ' + (50 - current) + ' Missing Apps';
+      btn.style.animation = 'pulse 2s infinite';
+    }
+  }
+
+  window.provisionApps = async function() {
+    var btn = document.getElementById('provisionBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '⚡ Provisioning…'; }
+
+    try {
+      var res = await fetch('/api/platform/provision', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeader()),
+        body: JSON.stringify({}),
+      });
+      var data = await res.json();
+      if (data.ok) {
+        var msg = 'Created ' + data.created + ' projects' + (data.skipped ? ', ' + data.skipped + ' already existed' : '') + '.';
+        showToast(msg, 'green');
+        await loadProjects();
+        await loadActivity();
+      } else {
+        showToast('Provision failed: ' + (data.error || 'unknown'), 'red');
+      }
+    } catch(e) {
+      showToast('Network error during provision.', 'red');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '⚡ Provision All 50 Apps'; btn.style.animation = ''; }
+    }
+  };
+
+  window.runProject = async function(projectId) {
+    showToast('Starting run…', 'cyan');
+    location.href = '/projects?run=' + projectId;
+  };
+
+  // ── Activity feed (from project runs) ──────────────────────────────────────
+  async function loadActivity() {
+    var feed = document.getElementById('activityFeed');
+    try {
+      // Fetch recent project runs (most activity-rich source)
+      var res = await fetch('/api/platform/projects?status=all&limit=200', { headers: authHeader() });
+      var data = await res.json();
+      var projects = dedupProjects(data.projects || []);
+
+      // Build activity from project metadata (run_count, updated_at)
+      var events = projects
+        .filter(function(p) { return p.run_count > 0 || p.updated_at; })
+        .sort(function(a, b) { return new Date(b.updated_at) - new Date(a.updated_at); })
+        .slice(0, 12)
+        .map(function(p) {
+          var isNew = p.run_count <= 1 && p.scaffold && p.scaffold.catalog_id;
+          return {
+            type: 'project',
+            description: isNew
+              ? 'Initialized: ' + (p.name || 'Project') + (p.scaffold && p.scaffold.market ? ' (' + p.scaffold.market + ')' : '')
+              : 'Run completed: ' + (p.name || 'Project') + (p.run_count > 1 ? ' · ' + p.run_count + ' runs' : ''),
+            created_at: p.updated_at,
+          };
+        });
+
+      feed.innerHTML = '';
+      document.getElementById('activityCount').textContent = events.length + ' recent';
+
+      if (events.length === 0) {
+        feed.innerHTML = '<div class="empty-state">No activity yet. Run a project or provision the 50-app catalog.</div>';
+        return;
+      }
+
+      events.forEach(function(ev) {
+        var item = document.createElement('div');
+        item.className = 'activity-item';
+        item.innerHTML =
+          '<div class="activity-dot activity-dot-project"></div>' +
+          '<div class="activity-content">' +
+            '<div class="activity-text">' + escHtml(ev.description) + '</div>' +
+            '<div class="activity-time">' + relativeTime(ev.created_at) + '</div>' +
+          '</div>';
+        feed.appendChild(item);
+      });
+    } catch(e) {
+      feed.innerHTML = '<div class="empty-state">Unable to load activity</div>';
+    }
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  function showToast(msg, type) {
+    var t = document.createElement('div');
+    var color = type === 'green' ? 'var(--green)' : type === 'red' ? 'var(--red)' : 'var(--cyan)';
+    t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid ' + color + ';color:' + color + ';border-radius:8px;padding:10px 16px;font-size:.8rem;z-index:9999;animation:none;max-width:340px';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() { t.remove(); }, 4000);
+  }
+
+  // ── Invoice stats ────────────────────────────────────────────────────────────
+  async function loadInvoiceStats() {
+    try {
+      var res = await fetch('/api/invoices/stats', { headers: authHeader() });
+      var data = await res.json();
+      var byStatus = data.by_status || {};
+      document.getElementById('statInvoices').textContent = (byStatus.sent || 0) + (byStatus.overdue || 0);
+    } catch(e) { document.getElementById('statInvoices').textContent = '0'; }
+  }
+
+  async function loadTickets() {
+    try {
+      var res = await fetch('/api/tickets', { headers: authHeader() });
+      var data = await res.json();
+      var tickets = Array.isArray(data) ? data : (data.tickets || []);
+      document.getElementById('statTickets').textContent = tickets.filter(function(t) { return t.status !== 'closed'; }).length;
+    } catch(e) { document.getElementById('statTickets').textContent = '0'; }
+  }
+
+  // ── Newsletter ───────────────────────────────────────────────────────────────
+  function checkNewsletter() {
+    if (localStorage.getItem('bridge_newsletter_dismissed')) return;
+    if (localStorage.getItem('bridge_newsletter_subscribed')) return;
+    setTimeout(function() {
+      document.getElementById('newsletterModal').classList.add('show');
+      if (user && user.email) document.getElementById('newsletterEmail').value = user.email;
+    }, 5000);
+  }
+
+  window.subscribeNewsletter = async function() {
+    var email = document.getElementById('newsletterEmail').value.trim();
+    var msg = document.getElementById('newsletterMsg');
+    if (!email || email.indexOf('@') < 0) { msg.textContent = 'Enter a valid email'; msg.style.color = 'var(--red)'; return; }
+    try {
+      var res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
+      var data = await res.json();
+      if (data.ok) {
+        msg.style.color = 'var(--green)'; msg.textContent = 'Subscribed! Thanks.';
+        localStorage.setItem('bridge_newsletter_subscribed', '1');
+        setTimeout(function() { document.getElementById('newsletterModal').classList.remove('show'); }, 1500);
+      } else { msg.style.color = 'var(--red)'; msg.textContent = data.error || 'Error'; }
+    } catch(e) { msg.style.color = 'var(--red)'; msg.textContent = 'Network error'; }
+  };
+
+  window.dismissNewsletter = function() {
+    localStorage.setItem('bridge_newsletter_dismissed', '1');
+    document.getElementById('newsletterModal').classList.remove('show');
+  };
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
   async function init() {
     token = getToken();
 
-    // Auth check
     try {
       var res = await fetch('/auth/me', { credentials: 'include', headers: token ? { Authorization: 'Bearer ' + token } : {} });
       var data = await res.json();
-      if (!data.ok || !data.user) { window.location.href = '/join?next=/portal'; return; }
+      if (!data.ok || !data.user) { window.location.href = '/onboarding?redirect=/portal'; return; }
       user = data.user;
-    } catch(e) {
-      window.location.href = '/join?next=/portal';
-      return;
-    }
+    } catch(e) { window.location.href = '/onboarding?redirect=/portal'; return; }
 
     // Personalization
     var firstName = (user.name || user.email.split('@')[0] || '').split(' ')[0];
@@ -230,140 +562,15 @@ a:hover{text-decoration:underline}
     document.getElementById('statBrdg').textContent = user.brdg_balance || 0;
     setFunnel(user.funnel_stage);
 
-    // Load data in parallel
     Promise.all([
       loadProjects(),
       loadInvoiceStats(),
       loadTickets(),
-      loadActivity()
+      loadActivity(),
     ]);
 
-    // Newsletter popup
     checkNewsletter();
   }
-
-  async function loadProjects() {
-    try {
-      var res = await fetch('/api/platform/projects', { headers: { Authorization: 'Bearer ' + token } });
-      var data = await res.json();
-      var projects = data.projects || [];
-      document.getElementById('statProjects').textContent = projects.filter(function(p){return p.status === 'active'}).length;
-
-      var grid = document.getElementById('projectsGrid');
-      grid.innerHTML = '';
-
-      if (projects.length === 0) {
-        grid.innerHTML = '<div class="project-card new-project-card" onclick="location.href=\'/wizard\'"><div class="new-icon">+</div><div style="font-size:.82rem;color:var(--dim)">Create your first project</div></div>';
-        return;
-      }
-
-      projects.slice(0, 6).forEach(function(p) {
-        var card = document.createElement('div');
-        card.className = 'project-card';
-        var statusClass = 'status-' + (p.status || 'active');
-        card.innerHTML = '<div class="project-name">' + (p.name || 'Untitled') + '</div><div class="project-meta">' + (p.tool_id || 'No tool') + ' &middot; Last run: ' + relativeTime(p.updated_at) + '</div><span class="project-status ' + statusClass + '">' + (p.status || 'active') + '</span><div class="project-actions"><button class="project-btn project-btn-run" onclick="location.href=\'/projects?run=' + p.id + '\'">Run</button><button class="project-btn" onclick="location.href=\'/projects#' + p.id + '\'">Details</button></div>';
-        grid.appendChild(card);
-      });
-
-      // New project card
-      var newCard = document.createElement('div');
-      newCard.className = 'project-card new-project-card';
-      newCard.onclick = function() { location.href = '/wizard'; };
-      newCard.innerHTML = '<div class="new-icon">+</div><div style="font-size:.82rem;color:var(--dim)">New Project</div>';
-      grid.appendChild(newCard);
-    } catch(e) {
-      document.getElementById('projectsGrid').innerHTML = '<div class="empty-state">Unable to load projects</div>';
-    }
-  }
-
-  async function loadInvoiceStats() {
-    try {
-      var res = await fetch('/api/invoices/stats', { headers: { Authorization: 'Bearer ' + token } });
-      var data = await res.json();
-      var byStatus = data.by_status || {};
-      var pending = (byStatus.sent || 0) + (byStatus.overdue || 0);
-      document.getElementById('statInvoices').textContent = pending;
-    } catch(e) {
-      document.getElementById('statInvoices').textContent = '--';
-    }
-  }
-
-  async function loadTickets() {
-    try {
-      var res = await fetch('/api/tickets', { headers: { Authorization: 'Bearer ' + token } });
-      var data = await res.json();
-      var tickets = Array.isArray(data) ? data : (data.tickets || []);
-      var open = tickets.filter(function(t) { return t.status !== 'closed'; }).length;
-      document.getElementById('statTickets').textContent = open;
-    } catch(e) {
-      document.getElementById('statTickets').textContent = '--';
-    }
-  }
-
-  async function loadActivity() {
-    var feed = document.getElementById('activityFeed');
-    try {
-      var res = await fetch('/api/platform/profile/state', { headers: { Authorization: 'Bearer ' + token } });
-      var data = await res.json();
-      var analytics = data.analytics || {};
-      var events = analytics.recent_events || analytics.activity || [];
-
-      feed.innerHTML = '';
-      if (events.length === 0) {
-        feed.innerHTML = '<div class="empty-state">No recent activity</div>';
-        return;
-      }
-
-      events.slice(0, 8).forEach(function(ev) {
-        var dotClass = 'activity-dot-project';
-        if (ev.type === 'invoice' || ev.type === 'payment') dotClass = 'activity-dot-invoice';
-        else if (ev.type === 'ticket') dotClass = 'activity-dot-ticket';
-        else if (ev.type === 'login' || ev.type === 'auth') dotClass = 'activity-dot-login';
-
-        var item = document.createElement('div');
-        item.className = 'activity-item';
-        item.innerHTML = '<div class="activity-dot ' + dotClass + '"></div><div class="activity-content"><div class="activity-text">' + (ev.description || ev.message || ev.type || 'Event') + '</div><div class="activity-time">' + relativeTime(ev.created_at || ev.timestamp) + '</div></div>';
-        feed.appendChild(item);
-      });
-    } catch(e) {
-      feed.innerHTML = '<div class="empty-state">Unable to load activity</div>';
-    }
-  }
-
-  function checkNewsletter() {
-    if (localStorage.getItem('bridge_newsletter_dismissed')) return;
-    if (localStorage.getItem('bridge_newsletter_subscribed')) return;
-    setTimeout(function() {
-      document.getElementById('newsletterModal').classList.add('show');
-      if (user && user.email) {
-        document.getElementById('newsletterEmail').value = user.email;
-      }
-    }, 3000);
-  }
-
-  window.subscribeNewsletter = async function() {
-    var email = document.getElementById('newsletterEmail').value.trim();
-    var msg = document.getElementById('newsletterMsg');
-    if (!email || email.indexOf('@') < 0) { msg.textContent = 'Enter a valid email'; msg.style.color = 'var(--red)'; return; }
-    try {
-      var res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
-      var data = await res.json();
-      if (data.ok) {
-        msg.style.color = 'var(--green)';
-        msg.textContent = 'Subscribed! Thanks.';
-        localStorage.setItem('bridge_newsletter_subscribed', '1');
-        setTimeout(function() { document.getElementById('newsletterModal').classList.remove('show'); }, 1500);
-      } else {
-        msg.style.color = 'var(--red)';
-        msg.textContent = data.error || 'Error subscribing';
-      }
-    } catch(e) { msg.style.color = 'var(--red)'; msg.textContent = 'Network error'; }
-  };
-
-  window.dismissNewsletter = function() {
-    localStorage.setItem('bridge_newsletter_dismissed', '1');
-    document.getElementById('newsletterModal').classList.remove('show');
-  };
 
   init();
 })();

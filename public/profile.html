@@ -2,393 +2,592 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+<meta name="description" content="Profile — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/profile">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/profile">
+<meta property="og:title" content="Profile — Bridge AI OS">
+<meta property="og:description" content="Profile — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Profile — Bridge AI OS">
+<meta name="twitter:description" content="Profile — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile — Bridge AI OS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <style>
-    :root{--bg:#0a0e17;--card:#131a2b;--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444;--border:#1e293b;--input-bg:#0f1724}
+    :root{--bg:#050a0f;--surface:#0d1620;--surface2:#111d2b;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa}
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--bg);color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
-    a{color:var(--cyan);text-decoration:none}
-    a:hover{text-decoration:underline}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,'Segoe UI',sans-serif;min-height:100vh}
+    a{color:inherit;text-decoration:none}
+    .btn{padding:.5rem 1rem;border-radius:.4rem;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-block}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--dim)}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-primary{background:var(--accent);color:#050a0f}
+    .btn-primary:hover{opacity:.88}
+    .btn-sm{padding:.35rem .75rem;font-size:.73rem}
+    .badge{display:inline-block;padding:.15rem .5rem;border-radius:2rem;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .badge-free{background:rgba(255,255,255,.06);color:var(--dim)}
+    .badge-starter{background:rgba(0,200,255,.12);color:var(--accent)}
+    .badge-pro{background:rgba(167,139,250,.14);color:var(--purple)}
+    .badge-admin{background:rgba(0,229,123,.1);color:var(--green)}
 
-    .layout{display:grid;grid-template-columns:240px 1fr;max-width:1200px;margin:0 auto;min-height:100vh}
-    @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.mobile-tabs{display:flex}}
+    /* Layout */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:.9rem 2rem;border-bottom:1px solid var(--border);background:var(--surface)}
+    .logo{font-size:1.3rem;font-weight:800;color:var(--accent);letter-spacing:.2em}
+    .logo span{color:var(--green)}
+    .topbar-nav{display:flex;gap:1.5rem;align-items:center;font-size:.82rem}
+    .topbar-nav a{color:var(--dim);transition:color .2s}
+    .topbar-nav a:hover,.topbar-nav a.active{color:var(--text)}
+    .avatar-circle{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#050a0f;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;cursor:pointer}
 
-    /* Sidebar */
-    .sidebar{border-right:1px solid var(--border);padding:24px 16px;background:var(--card)}
-    .sidebar-brand{font-size:1.1rem;font-weight:800;color:var(--cyan);letter-spacing:.15em;margin-bottom:24px;padding:0 12px}
-    .sidebar-brand span{color:var(--green)}
-    .nav-item{display:block;padding:10px 12px;border-radius:8px;font-size:.82rem;color:var(--dim);cursor:pointer;margin-bottom:2px;transition:all .15s;text-decoration:none}
-    .nav-item:hover{background:rgba(56,189,248,.05);color:#e2e8f0;text-decoration:none}
-    .nav-item.active{background:rgba(56,189,248,.1);color:var(--cyan);font-weight:600}
-    .nav-divider{height:1px;background:var(--border);margin:16px 0}
-    .nav-item-danger{color:var(--red)}
-    .nav-item-danger:hover{background:rgba(239,68,68,.05);color:var(--red)}
+    .layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 49px)}
+    @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
+    .sidebar{border-right:1px solid var(--border);background:var(--surface);padding:1.5rem 1rem}
+    .nav-group{margin-bottom:1.5rem}
+    .nav-group-label{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem;padding:0 .5rem}
+    .nav-item{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border-radius:.4rem;font-size:.82rem;color:var(--dim);cursor:pointer;transition:all .2s;margin-bottom:.15rem}
+    .nav-item:hover{background:var(--surface2);color:var(--text)}
+    .nav-item.active{background:rgba(0,200,255,.08);color:var(--accent);border:1px solid rgba(0,200,255,.15)}
+    .nav-item .icon{width:16px;text-align:center;font-size:.9rem}
 
-    /* Mobile tabs */
-    .mobile-tabs{display:none;overflow-x:auto;border-bottom:1px solid var(--border);padding:8px;gap:4px;background:var(--card)}
-    .m-tab{padding:8px 14px;border-radius:6px;font-size:.72rem;color:var(--dim);border:none;background:none;cursor:pointer;white-space:nowrap;font-family:inherit}
-    .m-tab.active{background:rgba(56,189,248,.1);color:var(--cyan);font-weight:600}
-
-    /* Main */
-    .main{padding:32px;overflow-y:auto}
-    @media(max-width:768px){.main{padding:16px}}
+    .main{padding:2rem;overflow-y:auto}
     .page-section{display:none}
     .page-section.active{display:block}
 
-    /* Common elements */
-    .section-heading{font-size:1.4rem;font-weight:700;margin-bottom:6px}
-    .section-desc{font-size:.82rem;color:var(--dim);margin-bottom:24px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+    /* Section: Overview */
+    .welcome-strip{background:linear-gradient(135deg,rgba(0,200,255,.07),rgba(0,229,123,.04));border:1px solid rgba(0,200,255,.15);border-radius:.7rem;padding:1.5rem;margin-bottom:2rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+    .welcome-name{font-size:1.3rem;font-weight:700;margin-bottom:.3rem}
+    .welcome-sub{font-size:.8rem;color:var(--dim)}
+    .metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+    @media(max-width:900px){.metrics-grid{grid-template-columns:1fr 1fr}}
+    .metric-card{background:var(--surface);border:1px solid var(--border);border-radius:.6rem;padding:1.1rem}
+    .metric-label{font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+    .metric-val{font-size:1.6rem;font-weight:800;color:var(--accent)}
+    .metric-sub{font-size:.72rem;color:var(--dim);margin-top:.2rem}
 
-    /* User info */
-    .user-header{display:flex;align-items:center;gap:20px;margin-bottom:24px;flex-wrap:wrap}
-    .avatar-xl{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#0a0e17;flex-shrink:0}
-    .user-details h2{font-size:1.3rem;font-weight:700;margin-bottom:4px}
-    .user-details .email{font-size:.85rem;color:var(--dim);margin-bottom:6px}
-    .plan-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-    .plan-free{background:rgba(255,255,255,.06);color:var(--dim)}
-    .plan-starter{background:rgba(56,189,248,.12);color:var(--cyan)}
-    .plan-pro{background:rgba(167,139,250,.14);color:var(--purple)}
-    .plan-admin{background:rgba(34,197,94,.12);color:var(--green)}
-    .plan-enterprise{background:rgba(245,158,11,.12);color:var(--orange)}
+    /* Projects mini list */
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+    .section-title{font-size:.95rem;font-weight:700}
+    .project-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:.5rem;padding:.85rem 1rem;margin-bottom:.5rem;cursor:pointer;transition:all .2s}
+    .project-row:hover{border-color:var(--accent)}
+    .project-name{font-size:.85rem;font-weight:600;margin-bottom:.15rem}
+    .project-meta{font-size:.72rem;color:var(--dim)}
+    .project-status{font-size:.65rem;font-weight:700;text-transform:uppercase;padding:.2rem .5rem;border-radius:2rem}
+    .status-active{background:rgba(0,229,123,.1);color:var(--green)}
+    .status-archived{background:rgba(255,255,255,.05);color:var(--dim)}
 
-    .info-row{display:flex;justify-content:space-between;padding:10px 0;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.04)}
-    .info-row:last-child{border-bottom:none}
-    .info-label{color:var(--dim)}
-    .info-value{font-weight:600}
+    /* Outputs mini list */
+    .output-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:.5rem}
+    .output-name{font-size:.83rem;font-weight:500}
+    .output-meta{font-size:.7rem;color:var(--dim)}
+    .output-format{font-size:.65rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--purple)}
 
-    /* Wallet */
-    .wallet-card{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(167,139,250,.04));border:1px solid rgba(56,189,248,.15)}
-    .wallet-balance{font-size:2rem;font-weight:800;color:var(--cyan);margin-bottom:4px}
-    .wallet-address{font-size:.75rem;color:var(--dim);font-family:monospace;word-break:break-all;margin-top:12px;padding:8px 12px;background:var(--bg);border-radius:6px}
+    /* Integrations */
+    .integration-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.5rem}
+    @media(max-width:600px){.integration-grid{grid-template-columns:1fr}}
+    .integration-card{background:var(--surface);border:1.5px solid var(--border);border-radius:.6rem;padding:1rem;display:flex;flex-direction:column;gap:.4rem}
+    .integration-card.connected{border-color:rgba(0,229,123,.3)}
+    .int-name{font-size:.85rem;font-weight:600}
+    .int-status{font-size:.68rem;font-weight:700;text-transform:uppercase}
+    .int-connected{color:var(--green)}
+    .int-not{color:var(--dim)}
+    .int-btn{margin-top:.3rem;align-self:flex-start}
 
     /* Analytics */
-    .analytics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px}
-    .analytics-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
-    .analytics-value{font-size:1.5rem;font-weight:800;margin-bottom:4px}
-    .analytics-label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+    .analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    @media(max-width:700px){.analytics-grid{grid-template-columns:1fr}}
+    .analytics-card{background:var(--surface);border:1px solid var(--border);border-radius:.6rem;padding:1.2rem}
+    .analytics-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:.75rem}
+    .bar-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.45rem;font-size:.78rem}
+    .bar-label{width:90px;color:var(--dim);flex-shrink:0}
+    .bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+    .bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .5s}
+    .bar-val{width:40px;text-align:right;color:var(--text);font-weight:600}
 
-    /* Project history */
-    .project-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:border-color .15s}
-    .project-row:hover{border-color:rgba(56,189,248,.3)}
-    .project-info .pname{font-size:.88rem;font-weight:600;margin-bottom:2px}
-    .project-info .pmeta{font-size:.72rem;color:var(--dim)}
-    .project-stats{text-align:right}
-    .project-stats .runs{font-size:.85rem;font-weight:700;color:var(--cyan)}
-    .project-stats .outputs{font-size:.7rem;color:var(--dim)}
+    /* Billing */
+    .billing-card{background:var(--surface);border:1px solid var(--border);border-radius:.7rem;padding:1.5rem;margin-bottom:1.5rem}
+    .billing-tier{font-size:1.1rem;font-weight:800;margin-bottom:.3rem}
+    .billing-price{font-size:.85rem;color:var(--dim);margin-bottom:1rem}
+    .cap-row{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;padding:.4rem 0;border-bottom:1px solid var(--border)}
+    .cap-label{color:var(--dim)}
+    .cap-val{font-weight:600}
 
-    /* Plan comparison */
-    .plan-table{width:100%;border-collapse:collapse;font-size:.78rem}
-    .plan-table th,.plan-table td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)}
-    .plan-table th{color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:.68rem}
-    .plan-table td{color:#e2e8f0}
-    .plan-table .current-plan{background:rgba(56,189,248,.06);border-left:2px solid var(--cyan);border-right:2px solid var(--cyan)}
-    .plan-table .current-plan-header{background:rgba(56,189,248,.1);border-left:2px solid var(--cyan);border-right:2px solid var(--cyan);border-top:2px solid var(--cyan);color:var(--cyan);font-weight:700}
-    .plan-table .feature-name{text-align:left;color:var(--dim)}
-    .check{color:var(--green)}
-    .cross{color:var(--dim)}
-
-    /* Edit mode */
-    .edit-input{padding:8px 12px;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;color:#e2e8f0;font-size:.88rem;font-family:inherit;width:100%;max-width:300px}
-    .edit-input:focus{outline:none;border-color:var(--cyan)}
-    .btn{padding:8px 16px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
-    .btn-primary{background:var(--cyan);color:#0a0e17}
-    .btn-primary:hover{opacity:.9}
-    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--dim)}
-    .btn-outline:hover{border-color:var(--cyan);color:var(--cyan)}
-
-    .empty{color:var(--dim);font-size:.82rem;text-align:center;padding:24px;border:1px dashed var(--border);border-radius:8px}
-    .loading{color:var(--dim);font-size:.82rem;text-align:center;padding:32px}
+    .loading{color:var(--dim);font-size:.85rem;text-align:center;padding:3rem}
+    .empty{color:var(--dim);font-size:.82rem;text-align:center;padding:2rem;border:1px dashed var(--border);border-radius:.5rem}
   </style>
+  <script>
+  (function() {
+    function getCookie(n) { var m = document.cookie.match('(^|;)\\s*' + n + '\\s*=\\s*([^;]+)'); return m ? m.pop() : ''; }
+    var token = localStorage.getItem('bridge_token') || getCookie('access_token');
+    if (!token) { location.replace('/onboarding?redirect=' + encodeURIComponent(location.pathname)); return; }
+    fetch('/auth/me', { headers: { 'Authorization': 'Bearer ' + token }, credentials: 'include' })
+      .then(function(r) { if (!r.ok) throw new Error('unauth'); })
+      .catch(function() { localStorage.removeItem('bridge_token'); location.replace('/onboarding?redirect=/profile'); });
+  })();
+  </script>
 </head>
 <body>
 
-<div class="mobile-tabs" id="mobileTabs"></div>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:1.5rem">
+    <a href="/" class="logo">BRIDGE<span>AI</span></a>
+    <div class="topbar-nav">
+      <a href="/profile" class="active">Profile</a>
+      <a href="/projects">Projects</a>
+      <a href="/dashboard">Dashboard</a>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:.75rem">
+    <a href="/billing" class="btn btn-outline btn-sm">Upgrade</a>
+    <div class="avatar-circle" id="avatarCircle">?</div>
+  </div>
+</div>
 
 <div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-brand">BRIDGE<span>AI</span></div>
-    <a class="nav-item active" data-section="overview">Overview</a>
-    <a class="nav-item" data-section="wallet">BRDG Wallet</a>
-    <a class="nav-item" data-section="analytics">Usage Analytics</a>
-    <a class="nav-item" data-section="projects">Project History</a>
-    <a class="nav-item" data-section="plans">Plan Comparison</a>
-    <div class="nav-divider"></div>
-    <a class="nav-item" href="/settings">Settings</a>
-    <a class="nav-item" href="/portal">Portal</a>
-    <a class="nav-item nav-item-danger" onclick="logout()">Sign Out</a>
-  </aside>
+  <div class="sidebar">
+    <div class="nav-group">
+      <div class="nav-group-label">Profile</div>
+      <div class="nav-item active" onclick="showSection('overview')"><span class="icon">🏠</span> Overview</div>
+      <div class="nav-item" onclick="showSection('projects')"><span class="icon">📁</span> Projects</div>
+      <div class="nav-item" onclick="showSection('outputs')"><span class="icon">📤</span> Outputs</div>
+      <div class="nav-item" onclick="showSection('integrations')"><span class="icon">🔗</span> Integrations</div>
+      <div class="nav-item" onclick="showSection('analytics')"><span class="icon">📊</span> Analytics</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Account</div>
+      <div class="nav-item" onclick="showSection('billing')"><span class="icon">💳</span> Billing</div>
+      <div class="nav-item" onclick="showSection('settings')"><span class="icon">⚙️</span> Settings</div>
+      <div class="nav-item" onclick="logout()" style="color:var(--red)"><span class="icon">↩</span> Sign Out</div>
+    </div>
+  </div>
 
   <div class="main">
     <!-- Overview -->
-    <div class="page-section active" id="sec-overview">
-      <div class="section-heading">Profile</div>
-      <div class="section-desc">Your account at a glance</div>
-      <div class="user-header">
-        <div class="avatar-xl" id="avatarXl" style="background:var(--cyan)">?</div>
-        <div class="user-details">
-          <h2 id="userName">Loading...</h2>
-          <div class="email" id="userEmail">--</div>
-          <span class="plan-badge plan-free" id="userPlan">--</span>
+    <div class="page-section active" id="section-overview">
+      <div class="welcome-strip">
+        <div>
+          <div class="welcome-name" id="welcomeName">Loading…</div>
+          <div class="welcome-sub" id="welcomeSub">Bridge AI OS</div>
         </div>
-        <button class="btn btn-outline" id="editBtn" onclick="toggleEdit()" style="margin-left:auto">Edit Profile</button>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+          <a href="/projects" class="btn btn-outline btn-sm">View Projects</a>
+          <a href="/wizard" class="btn btn-primary btn-sm">New Project</a>
+        </div>
       </div>
-      <div id="editForm" style="display:none;margin-bottom:24px">
-        <div style="margin-bottom:12px"><label style="font-size:.72rem;color:var(--dim);display:block;margin-bottom:4px">Display Name</label><input class="edit-input" id="editName" placeholder="Your name"></div>
-        <button class="btn btn-primary" onclick="saveEdit()">Save</button>
-        <button class="btn btn-outline" onclick="toggleEdit()" style="margin-left:8px">Cancel</button>
+      <div class="metrics-grid" id="metricsGrid">
+        <div class="metric-card"><div class="metric-label">Total Runs</div><div class="metric-val" id="mRuns">—</div><div class="metric-sub">Agent executions</div></div>
+        <div class="metric-card"><div class="metric-label">Outputs</div><div class="metric-val" id="mOutputs">—</div><div class="metric-sub">Generated artifacts</div></div>
+        <div class="metric-card"><div class="metric-label">Success Rate</div><div class="metric-val" id="mSuccess">—</div><div class="metric-sub">Execution success</div></div>
+        <div class="metric-card"><div class="metric-label">Avg Latency</div><div class="metric-val" id="mLatency">—</div><div class="metric-sub">Per run (ms)</div></div>
       </div>
-      <div class="card">
-        <div class="info-row"><span class="info-label">Member Since</span><span class="info-value" id="memberSince">--</span></div>
-        <div class="info-row"><span class="info-label">Funnel Stage</span><span class="info-value" id="funnelStage">--</span></div>
-        <div class="info-row"><span class="info-label">Role</span><span class="info-value" id="userRole">--</span></div>
-        <div class="info-row"><span class="info-label">BRDG Balance</span><span class="info-value" id="overviewBrdg">--</span></div>
+      <div class="section-header">
+        <div class="section-title">Recent Projects</div>
+        <a href="/projects" class="btn btn-outline btn-sm">All projects →</a>
       </div>
-    </div>
-
-    <!-- Wallet -->
-    <div class="page-section" id="sec-wallet">
-      <div class="section-heading">BRDG Wallet</div>
-      <div class="section-desc">Your token balance and wallet</div>
-      <div class="card wallet-card">
-        <div style="font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Balance</div>
-        <div class="wallet-balance" id="walletBalance">-- BRDG</div>
-        <div style="font-size:.78rem;color:var(--dim)" id="walletUsd">-- USD</div>
-        <div class="wallet-address" id="walletAddress">No wallet connected</div>
+      <div id="recentProjects"><div class="loading">Loading projects…</div></div>
+      <div class="section-header" style="margin-top:1.5rem">
+        <div class="section-title">Recent Outputs</div>
+        <button class="btn btn-outline btn-sm" onclick="showSection('outputs')">All outputs →</button>
       </div>
-      <div class="card">
-        <div style="font-size:.85rem;font-weight:600;margin-bottom:12px">Recent Transactions</div>
-        <div id="walletTxList" class="empty">No recent transactions</div>
-      </div>
-    </div>
-
-    <!-- Analytics -->
-    <div class="page-section" id="sec-analytics">
-      <div class="section-heading">Usage Analytics</div>
-      <div class="section-desc">Your platform usage metrics</div>
-      <div class="analytics-grid" id="analyticsGrid">
-        <div class="analytics-card"><div class="analytics-value" id="aExec" style="color:var(--cyan)">--</div><div class="analytics-label">Total Executions</div></div>
-        <div class="analytics-card"><div class="analytics-value" id="aSuccess" style="color:var(--green)">--</div><div class="analytics-label">Success Rate</div></div>
-        <div class="analytics-card"><div class="analytics-value" id="aLatency" style="color:var(--orange)">--</div><div class="analytics-label">Avg Latency (ms)</div></div>
-        <div class="analytics-card"><div class="analytics-value" id="aTokens" style="color:var(--purple)">--</div><div class="analytics-label">Tokens Used</div></div>
-        <div class="analytics-card"><div class="analytics-value" id="aBrdg" style="color:var(--cyan)">--</div><div class="analytics-label">BRDG Spent</div></div>
-      </div>
+      <div id="recentOutputs"><div class="loading">Loading outputs…</div></div>
     </div>
 
     <!-- Projects -->
-    <div class="page-section" id="sec-projects">
-      <div class="section-heading">Project History</div>
-      <div class="section-desc">All your projects and their run counts</div>
-      <div id="projectHistoryList"><div class="loading">Loading projects...</div></div>
+    <div class="page-section" id="section-projects">
+      <div class="section-header">
+        <div class="section-title">Projects</div>
+        <a href="/projects" class="btn btn-primary btn-sm">+ New Project</a>
+      </div>
+      <div id="allProjectsList"><div class="loading">Loading…</div></div>
     </div>
 
-    <!-- Plans -->
-    <div class="page-section" id="sec-plans">
-      <div class="section-heading">Plan Comparison</div>
-      <div class="section-desc">See what each plan offers</div>
-      <div style="overflow-x:auto">
-        <table class="plan-table" id="planTable">
-          <thead><tr><th class="feature-name">Feature</th><th>Free</th><th>Starter</th><th>Pro</th><th>Enterprise</th></tr></thead>
-          <tbody>
-            <tr><td class="feature-name">Projects</td><td>2</td><td>10</td><td>100</td><td>Unlimited</td></tr>
-            <tr><td class="feature-name">Runs / Day</td><td>10</td><td>100</td><td>1,000</td><td>Unlimited</td></tr>
-            <tr><td class="feature-name">Outputs / Month</td><td>5</td><td>50</td><td>500</td><td>Unlimited</td></tr>
-            <tr><td class="feature-name">Agents per Run</td><td>1</td><td>3</td><td>10</td><td>Unlimited</td></tr>
-            <tr><td class="feature-name">API Calls / Min</td><td>5</td><td>30</td><td>120</td><td>Unlimited</td></tr>
-            <tr><td class="feature-name">Staking</td><td class="cross">--</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td></tr>
-            <tr><td class="feature-name">White-label</td><td class="cross">--</td><td class="cross">--</td><td class="cross">--</td><td class="check">Yes</td></tr>
-            <tr><td class="feature-name">Priority Support</td><td class="cross">--</td><td class="cross">--</td><td class="check">Yes</td><td class="check">Yes</td></tr>
-            <tr><td class="feature-name">Price</td><td>R0</td><td>R299/mo</td><td>R799/mo</td><td>Custom</td></tr>
-          </tbody>
-        </table>
+    <!-- Outputs -->
+    <div class="page-section" id="section-outputs">
+      <div class="section-header">
+        <div class="section-title">Outputs</div>
+        <select id="outputTypeFilter" onchange="loadOutputs()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.3rem .6rem;border-radius:.3rem;font-size:.78rem">
+          <option value="">All types</option>
+          <option value="export">Export</option>
+          <option value="integration">Integration</option>
+          <option value="hybrid">Hybrid</option>
+        </select>
       </div>
-      <div style="margin-top:20px"><a href="/billing" class="btn btn-primary">Upgrade Plan</a></div>
+      <div id="allOutputsList"><div class="loading">Loading…</div></div>
+    </div>
+
+    <!-- Integrations -->
+    <div class="page-section" id="section-integrations">
+      <div class="section-header">
+        <div class="section-title">Integrations</div>
+        <a href="/api/platform/integrations/targets" target="_blank" class="btn btn-outline btn-sm">API Reference</a>
+      </div>
+      <div class="integration-grid" id="integrationGrid"></div>
+    </div>
+
+    <!-- Analytics -->
+    <div class="page-section" id="section-analytics">
+      <div class="section-header"><div class="section-title">Analytics</div></div>
+      <div class="analytics-grid" id="analyticsGrid"><div class="loading">Loading analytics…</div></div>
+    </div>
+
+    <!-- Billing -->
+    <div class="page-section" id="section-billing">
+      <div class="section-header"><div class="section-title">Billing &amp; Plan</div></div>
+      <div class="billing-card" id="billingCard"><div class="loading">Loading…</div></div>
+      <a href="/billing" class="btn btn-primary">Manage Subscription →</a>
+    </div>
+
+    <!-- Settings -->
+    <div class="page-section" id="section-settings">
+      <div class="section-header"><div class="section-title">Account Settings</div></div>
+      <div style="color:var(--dim);font-size:.85rem;padding:1rem 0">Settings panel — manage email, password, API keys, and notification preferences.</div>
+      <a href="/settings" class="btn btn-outline">Open Full Settings</a>
     </div>
   </div>
 </div>
 
 <script>
-(function(){
-  'use strict';
+let token = null;
+let user = null;
 
-  let user = null;
-  let token = null;
-  let profileData = null;
+const PLAN_CAPS = {
+  free:       { projects:2,       runs_per_day:10,    outputs_per_month:5,   agents_per_run:1,  api_calls_per_min:5 },
+  starter:    { projects:10,      runs_per_day:100,   outputs_per_month:50,  agents_per_run:3,  api_calls_per_min:30 },
+  pro:        { projects:100,     runs_per_day:1000,  outputs_per_month:500, agents_per_run:10, api_calls_per_min:120 },
+  admin:      { projects:'∞',    runs_per_day:'∞',   outputs_per_month:'∞', agents_per_run:'∞',api_calls_per_min:600 },
+  enterprise: { projects:'∞',    runs_per_day:'∞',   outputs_per_month:'∞', agents_per_run:'∞',api_calls_per_min:'∞' },
+};
 
-  function getToken() {
-    var match = document.cookie.split(';').map(function(c){return c.trim()}).find(function(c){return c.startsWith('bridge_token=')});
-    return match ? match.split('=')[1] : localStorage.getItem('bridge_token');
-  }
+const INTEGRATIONS_LIST = [
+  { id:'slack',   label:'Slack',   icon:'💬', desc:'Post outputs to Slack channels' },
+  { id:'github',  label:'GitHub',  icon:'🐙', desc:'Create issues or trigger dispatches' },
+  { id:'notion',  label:'Notion',  icon:'📝', desc:'Create pages in a Notion database' },
+  { id:'zapier',  label:'Zapier',  icon:'⚡', desc:'Trigger Zapier zaps via webhook' },
+  { id:'mcp',     label:'MCP',     icon:'🧠', desc:'Push to Model Context Protocol runtimes' },
+  { id:'clr',     label:'CLR',     icon:'🔧', desc:'Trigger Composable Logic Runtimes' },
+];
 
-  function hashColor(str) {
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    var colors = ['#38bdf8','#22c55e','#a78bfa','#f59e0b','#ef4444','#ec4899','#06b6d4'];
-    return colors[Math.abs(hash) % colors.length];
-  }
+function getToken() {
+  const match = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('bridge_token='));
+  return match ? match.split('=')[1] : localStorage.getItem('bridge_token');
+}
 
-  // Section nav
-  var sections = ['overview','wallet','analytics','projects','plans'];
+async function authFetch(url, opts = {}) {
+  return fetch(url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...(opts.headers || {}) },
+  });
+}
 
-  function showSection(id) {
-    sections.forEach(function(s) {
-      var el = document.getElementById('sec-' + s);
-      if (el) el.classList.toggle('active', s === id);
-    });
-    document.querySelectorAll('.nav-item[data-section]').forEach(function(el) {
-      el.classList.toggle('active', el.dataset.section === id);
-    });
-    document.querySelectorAll('.m-tab').forEach(function(el) {
-      el.classList.toggle('active', el.dataset.section === id);
-    });
-  }
-
-  document.querySelectorAll('.nav-item[data-section]').forEach(function(el) {
-    el.addEventListener('click', function(e) { e.preventDefault(); showSection(el.dataset.section); });
+function showSection(id) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(id)) n.classList.add('active');
   });
 
-  // Mobile tabs
-  var tabsEl = document.getElementById('mobileTabs');
-  sections.forEach(function(s) {
-    var btn = document.createElement('button');
-    btn.className = 'm-tab' + (s === 'overview' ? ' active' : '');
-    btn.dataset.section = s;
-    btn.textContent = s.charAt(0).toUpperCase() + s.slice(1);
-    btn.addEventListener('click', function() { showSection(s); });
-    tabsEl.appendChild(btn);
+  if (id === 'outputs') loadOutputs();
+  if (id === 'analytics') loadAnalytics();
+  if (id === 'billing') renderBilling();
+  if (id === 'integrations') renderIntegrations();
+}
+
+function makeProjectRow(p) {
+  const row = document.createElement('div');
+  row.className = 'project-row';
+  row.addEventListener('click', () => { window.location.href = '/projects#' + p.id; });
+
+  const left = document.createElement('div');
+
+  const name = document.createElement('div');
+  name.className = 'project-name';
+  name.textContent = p.name;
+
+  const meta = document.createElement('div');
+  meta.className = 'project-meta';
+  meta.textContent = (p.tool_id || 'No tool') + ' · ' + (p.run_count || 0) + ' runs · ' + new Date(p.updated_at).toLocaleDateString();
+
+  left.appendChild(name); left.appendChild(meta);
+
+  const status = document.createElement('span');
+  status.className = 'project-status status-' + p.status;
+  status.textContent = p.status;
+
+  row.appendChild(left); row.appendChild(status);
+  return row;
+}
+
+function makeOutputRow(o) {
+  const row = document.createElement('div');
+  row.className = 'output-row';
+
+  const info = document.createElement('div');
+  const name = document.createElement('div');
+  name.className = 'output-name';
+  name.textContent = o.title || 'Output';
+  const meta = document.createElement('div');
+  meta.className = 'output-meta';
+  meta.textContent = new Date(o.created_at).toLocaleDateString() + ' · ' + o.status;
+  info.appendChild(name); info.appendChild(meta);
+
+  const fmt = document.createElement('div');
+  fmt.className = 'output-format';
+  fmt.textContent = o.format;
+
+  const actions = document.createElement('div');
+  actions.style.display = 'flex'; actions.style.gap = '.4rem';
+  if (o.status === 'ready' || o.status === 'delivered') {
+    const dl = document.createElement('a');
+    dl.href = '/api/platform/outputs/' + encodeURIComponent(o.id) + '/export?token=' + token;
+    dl.className = 'btn btn-outline btn-sm';
+    dl.textContent = '↓ Export';
+    actions.appendChild(dl);
+  }
+
+  row.appendChild(info); row.appendChild(fmt); row.appendChild(actions);
+  return row;
+}
+
+async function loadOutputs() {
+  const list = document.getElementById('allOutputsList');
+  const type = document.getElementById('outputTypeFilter').value;
+  list.textContent = '';
+  const loading = document.createElement('div');
+  loading.className = 'loading'; loading.textContent = 'Loading…';
+  list.appendChild(loading);
+
+  try {
+    const url = '/api/platform/outputs' + (type ? '?type=' + encodeURIComponent(type) : '');
+    const res = await authFetch(url);
+    const data = await res.json();
+    list.textContent = '';
+    if (!data.outputs || data.outputs.length === 0) {
+      const empty = document.createElement('div'); empty.className = 'empty';
+      empty.textContent = 'No outputs yet. Run a project to generate your first output.';
+      list.appendChild(empty);
+    } else {
+      data.outputs.forEach(o => list.appendChild(makeOutputRow(o)));
+    }
+  } catch {
+    list.textContent = '';
+    const err = document.createElement('div'); err.className = 'empty';
+    err.textContent = 'Failed to load outputs.'; list.appendChild(err);
+  }
+}
+
+async function loadAnalytics() {
+  const grid = document.getElementById('analyticsGrid');
+  grid.textContent = '';
+  const loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = 'Loading…';
+  grid.appendChild(loading);
+
+  try {
+    const res = await authFetch('/api/platform/profile/analytics');
+    const { analytics } = await res.json();
+    grid.textContent = '';
+
+    // Executions card
+    const card1 = document.createElement('div'); card1.className = 'analytics-card';
+    const t1 = document.createElement('div'); t1.className = 'analytics-title'; t1.textContent = 'Execution Summary';
+    card1.appendChild(t1);
+    [
+      ['Total runs', analytics.executions?.total || 0, analytics.executions?.total || 1],
+      ['Successful', analytics.executions?.successful || 0, analytics.executions?.total || 1],
+      ['Failed', analytics.executions?.failed || 0, analytics.executions?.total || 1],
+    ].forEach(([label, val, max]) => {
+      const row = document.createElement('div'); row.className = 'bar-row';
+      const lbl = document.createElement('div'); lbl.className = 'bar-label'; lbl.textContent = label;
+      const track = document.createElement('div'); track.className = 'bar-track';
+      const fill = document.createElement('div'); fill.className = 'bar-fill';
+      fill.style.width = Math.round((val / (max || 1)) * 100) + '%';
+      track.appendChild(fill);
+      const valEl = document.createElement('div'); valEl.className = 'bar-val'; valEl.textContent = val;
+      row.appendChild(lbl); row.appendChild(track); row.appendChild(valEl);
+      card1.appendChild(row);
+    });
+    grid.appendChild(card1);
+
+    // Outputs card
+    const card2 = document.createElement('div'); card2.className = 'analytics-card';
+    const t2 = document.createElement('div'); t2.className = 'analytics-title'; t2.textContent = 'Output Breakdown';
+    card2.appendChild(t2);
+    const byType = analytics.outputs?.by_type || {};
+    const total = analytics.outputs?.total || 1;
+    Object.entries(byType).forEach(([type, count]) => {
+      const row = document.createElement('div'); row.className = 'bar-row';
+      const lbl = document.createElement('div'); lbl.className = 'bar-label'; lbl.textContent = type;
+      const track = document.createElement('div'); track.className = 'bar-track';
+      const fill = document.createElement('div'); fill.className = 'bar-fill';
+      fill.style.width = Math.round((count / total) * 100) + '%';
+      fill.style.background = 'var(--purple)';
+      track.appendChild(fill);
+      const valEl = document.createElement('div'); valEl.className = 'bar-val'; valEl.textContent = count;
+      row.appendChild(lbl); row.appendChild(track); row.appendChild(valEl);
+      card2.appendChild(row);
+    });
+    if (Object.keys(byType).length === 0) {
+      const empty = document.createElement('div'); empty.style.color = 'var(--dim)';
+      empty.style.fontSize = '.8rem'; empty.textContent = 'No outputs yet.';
+      card2.appendChild(empty);
+    }
+    grid.appendChild(card2);
+
+  } catch {
+    grid.textContent = '';
+    const err = document.createElement('div'); err.className = 'loading'; err.textContent = 'Analytics unavailable.';
+    grid.appendChild(err);
+  }
+}
+
+function renderIntegrations() {
+  const grid = document.getElementById('integrationGrid');
+  grid.textContent = '';
+  const connectedIds = (user?.meta?.integrations) || [];
+
+  INTEGRATIONS_LIST.forEach(intg => {
+    const card = document.createElement('div');
+    const isConnected = connectedIds.includes(intg.id);
+    card.className = 'integration-card' + (isConnected ? ' connected' : '');
+
+    const nameEl = document.createElement('div'); nameEl.className = 'int-name';
+    nameEl.textContent = intg.icon + '  ' + intg.label;
+
+    const status = document.createElement('div');
+    status.className = 'int-status ' + (isConnected ? 'int-connected' : 'int-not');
+    status.textContent = isConnected ? '● Connected' : '○ Not connected';
+
+    const desc = document.createElement('div');
+    desc.style.fontSize = '.72rem'; desc.style.color = 'var(--dim)';
+    desc.textContent = intg.desc;
+
+    const btn = document.createElement('a');
+    btn.href = '/settings#integration-' + intg.id;
+    btn.className = 'btn btn-outline btn-sm int-btn';
+    btn.textContent = isConnected ? 'Configure' : 'Connect';
+
+    card.appendChild(nameEl); card.appendChild(status); card.appendChild(desc); card.appendChild(btn);
+    grid.appendChild(card);
   });
+}
 
-  // Highlight current plan in table
-  function highlightPlan(plan) {
-    var colMap = { free: 1, starter: 2, pro: 3, enterprise: 4 };
-    var col = colMap[plan] || 1;
-    var table = document.getElementById('planTable');
-    var rows = table.querySelectorAll('tr');
-    rows.forEach(function(row, idx) {
-      var cells = row.querySelectorAll('th, td');
-      if (cells[col]) {
-        cells[col].classList.add(idx === 0 ? 'current-plan-header' : 'current-plan');
-      }
-    });
-  }
+function renderBilling() {
+  const card = document.getElementById('billingCard');
+  card.textContent = '';
+  if (!user) { card.textContent = 'Loading…'; return; }
 
-  async function init() {
-    token = getToken();
-    if (!token) { window.location.href = '/join?next=/profile'; return; }
+  const tier = user.plan || 'free';
+  const caps = PLAN_CAPS[tier] || PLAN_CAPS.free;
 
-    // Load profile state
-    try {
-      var res = await fetch('/api/platform/profile/state', { headers: { Authorization: 'Bearer ' + token } });
-      var data = await res.json();
-      profileData = data;
-      user = data.user || {};
+  const nameEl = document.createElement('div'); nameEl.className = 'billing-tier';
+  nameEl.textContent = tier.charAt(0).toUpperCase() + tier.slice(1) + ' Plan';
+  const badge = document.createElement('span');
+  badge.className = 'badge badge-' + tier; badge.textContent = tier;
+  nameEl.appendChild(document.createTextNode(' ')); nameEl.appendChild(badge);
 
-      // Overview
-      var initials = (user.name || user.email || '?').charAt(0).toUpperCase();
-      var avatar = document.getElementById('avatarXl');
-      avatar.textContent = initials;
-      avatar.style.background = hashColor(user.name || user.email || '');
-      document.getElementById('userName').textContent = user.name || user.email || 'User';
-      document.getElementById('userEmail').textContent = user.email || '--';
-      var plan = user.plan || 'free';
-      var planEl = document.getElementById('userPlan');
-      planEl.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
-      planEl.className = 'plan-badge plan-' + plan;
-      document.getElementById('funnelStage').textContent = (user.funnel_stage || 'visitor').charAt(0).toUpperCase() + (user.funnel_stage || 'visitor').slice(1);
-      document.getElementById('userRole').textContent = (user.role || 'user').charAt(0).toUpperCase() + (user.role || 'user').slice(1);
-      document.getElementById('overviewBrdg').textContent = (user.brdg_balance || 0).toLocaleString() + ' BRDG';
-      document.getElementById('memberSince').textContent = user.created_at ? new Date(user.created_at).toLocaleDateString() : '--';
+  const priceEl = document.createElement('div'); priceEl.className = 'billing-price';
+  const prices = { free:'R0/month', starter:'R299/month', pro:'R799/month', admin:'Custom', enterprise:'Custom' };
+  priceEl.textContent = prices[tier] || 'Custom pricing';
 
-      // Wallet
-      document.getElementById('walletBalance').textContent = (user.brdg_balance || 0).toLocaleString() + ' BRDG';
-      document.getElementById('walletAddress').textContent = user.wallet_address || 'No wallet connected';
+  card.appendChild(nameEl); card.appendChild(priceEl);
 
-      // Analytics
-      var analytics = data.analytics || {};
-      document.getElementById('aExec').textContent = analytics.executions?.total || analytics.total_executions || 0;
-      document.getElementById('aSuccess').textContent = (analytics.executions?.success_rate || analytics.success_rate || 100) + '%';
-      document.getElementById('aLatency').textContent = analytics.performance?.avg_latency_ms || analytics.avg_latency || '--';
-      document.getElementById('aTokens').textContent = (analytics.tokens_used || 0).toLocaleString();
-      document.getElementById('aBrdg').textContent = (analytics.brdg_spent || 0).toLocaleString();
+  Object.entries(caps).forEach(([key, val]) => {
+    const row = document.createElement('div'); row.className = 'cap-row';
+    const label = document.createElement('span'); label.className = 'cap-label';
+    label.textContent = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const valEl = document.createElement('span'); valEl.className = 'cap-val';
+    valEl.textContent = val === -1 || val === '∞' ? '∞ Unlimited' : val;
+    row.appendChild(label); row.appendChild(valEl);
+    card.appendChild(row);
+  });
+}
 
-      // Plan table highlight
-      highlightPlan(plan);
+async function init() {
+  token = getToken();
+  if (!token) { window.location.href = '/onboarding?redirect=/profile'; return; }
 
-      // Projects
-      renderProjects(data.projects || []);
+  // Load profile
+  try {
+    const res = await authFetch('/auth/me');
+    const data = await res.json();
+    if (!data.ok || !data.user) { window.location.href = '/onboarding?redirect=/profile'; return; }
+    user = data.user;
 
-    } catch(e) {
-      // Fallback: try auth/me
-      try {
-        var res2 = await fetch('/auth/me', { credentials: 'include', headers: { Authorization: 'Bearer ' + token } });
-        var d2 = await res2.json();
-        if (!d2.ok || !d2.user) { window.location.href = '/join?next=/profile'; return; }
-        user = d2.user;
-        document.getElementById('userName').textContent = user.name || user.email || 'User';
-        document.getElementById('userEmail').textContent = user.email || '--';
-        var plan2 = user.plan || 'free';
-        var pe2 = document.getElementById('userPlan');
-        pe2.textContent = plan2.charAt(0).toUpperCase() + plan2.slice(1);
-        pe2.className = 'plan-badge plan-' + plan2;
-        highlightPlan(plan2);
-      } catch(e2) {
-        window.location.href = '/join?next=/profile';
-      }
+    const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
+    document.getElementById('avatarCircle').textContent = initials;
+
+    const tier = user.plan || 'free';
+    document.getElementById('welcomeName').textContent = 'Welcome back, ' + (user.name || user.email.split('@')[0]);
+    document.getElementById('welcomeSub').textContent = tier.charAt(0).toUpperCase() + tier.slice(1) + ' Plan · ' + (user.email || '');
+  } catch { /* non-fatal */ }
+
+  // Load analytics for metrics
+  try {
+    const res = await authFetch('/api/platform/profile/analytics');
+    const { analytics } = await res.json();
+    if (analytics) {
+      document.getElementById('mRuns').textContent = analytics.projects?.total_runs || 0;
+      document.getElementById('mOutputs').textContent = analytics.outputs?.total || 0;
+      document.getElementById('mSuccess').textContent = (analytics.executions?.success_rate || 100) + '%';
+      document.getElementById('mLatency').textContent = analytics.performance?.avg_latency_ms || '—';
     }
-  }
+  } catch { /* non-fatal */ }
 
-  function renderProjects(projects) {
-    var container = document.getElementById('projectHistoryList');
-    container.innerHTML = '';
-    if (!projects || projects.length === 0) {
-      container.innerHTML = '<div class="empty">No projects yet. <a href="/wizard">Create your first project</a></div>';
-      return;
+  // Load recent projects
+  try {
+    const res = await authFetch('/api/platform/projects?status=active');
+    const data = await res.json();
+    const container = document.getElementById('recentProjects');
+    container.textContent = '';
+    if (!data.projects || data.projects.length === 0) {
+      const empty = document.createElement('div'); empty.className = 'empty';
+      empty.textContent = 'No projects yet. ';
+      const link = document.createElement('a'); link.href = '/projects'; link.style.color = 'var(--accent)';
+      link.textContent = 'Create your first project →';
+      empty.appendChild(link); container.appendChild(empty);
+    } else {
+      data.projects.slice(0, 5).forEach(p => container.appendChild(makeProjectRow(p)));
     }
-    projects.forEach(function(p) {
-      var row = document.createElement('div');
-      row.className = 'project-row';
-      row.innerHTML = '<div class="project-info"><div class="pname">' + (p.name || 'Untitled') + '</div><div class="pmeta">' + (p.tool_id || '--') + ' &middot; ' + (p.status || 'active') + '</div></div><div class="project-stats"><div class="runs">' + (p.run_count || 0) + ' runs</div><div class="outputs">' + (p.output_count || 0) + ' outputs</div></div>';
-      container.appendChild(row);
-    });
-  }
 
-  var editMode = false;
-  window.toggleEdit = function() {
-    editMode = !editMode;
-    document.getElementById('editForm').style.display = editMode ? 'block' : 'none';
-    document.getElementById('editBtn').textContent = editMode ? 'Cancel' : 'Edit Profile';
-    if (editMode) {
-      document.getElementById('editName').value = user.name || '';
+    // Same for all projects section
+    const allContainer = document.getElementById('allProjectsList');
+    allContainer.textContent = '';
+    if (!data.projects || data.projects.length === 0) {
+      const e = document.createElement('div'); e.className = 'empty';
+      e.textContent = 'No projects yet.'; allContainer.appendChild(e);
+    } else {
+      data.projects.forEach(p => allContainer.appendChild(makeProjectRow(p)));
     }
-  };
+  } catch { /* non-fatal */ }
 
-  window.saveEdit = async function() {
-    var name = document.getElementById('editName').value.trim();
-    if (!name) return;
-    try {
-      await fetch('/api/user/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ settings: { name: name } })
-      });
-      document.getElementById('userName').textContent = name;
-      var initials = name.charAt(0).toUpperCase();
-      document.getElementById('avatarXl').textContent = initials;
-      toggleEdit();
-    } catch(e) { /* silent */ }
-  };
+  // Load recent outputs
+  try {
+    const res = await authFetch('/api/platform/outputs?limit=5');
+    const data = await res.json();
+    const container = document.getElementById('recentOutputs');
+    container.textContent = '';
+    if (!data.outputs || data.outputs.length === 0) {
+      const empty = document.createElement('div'); empty.className = 'empty';
+      empty.textContent = 'No outputs yet. Run a project to generate your first output.';
+      container.appendChild(empty);
+    } else {
+      data.outputs.forEach(o => container.appendChild(makeOutputRow(o)));
+    }
+  } catch { /* non-fatal */ }
+}
 
-  window.logout = function() {
-    document.cookie = 'bridge_token=;path=/;max-age=0';
-    localStorage.removeItem('bridge_token');
-    window.location.href = '/';
-  };
+function logout() {
+  document.cookie = 'bridge_token=;path=/;max-age=0';
+  localStorage.removeItem('bridge_token');
+  window.location.href = '/';
+}
 
-  init();
-})();
+init();
 </script>
-<script src="/bridge-nav.js" defer></script>
 </body>
 </html>

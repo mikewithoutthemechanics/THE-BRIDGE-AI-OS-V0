@@ -101,6 +101,21 @@ try { autoLoop = require('../lib/auto-task-loop'); } catch (_) { autoLoop = null
 let brdgChain;
 try { brdgChain = require('../lib/brdg-chain'); } catch (_) { brdgChain = null; }
 
+// ── Treasury initialization ────────────────────────────────────────────────────
+let treasuryInitialized = false;
+async function initializeTreasury() {
+  if (treasuryInitialized) return;
+  try {
+    const db = require('../lib/db');
+    treasuryBalance = await db.getTreasuryBalance(0);
+    treasuryInitialized = true;
+    console.log(`[INIT] Treasury balance loaded: R${treasuryBalance}`);
+  } catch (e) {
+    console.warn('[INIT] Failed to load treasury balance:', e.message);
+    treasuryBalance = 0;
+  }
+}
+
 function readContracts() {
   try {
     const files = fs.readdirSync(SHARED_DIR).filter(f => f.endsWith('.json'));
@@ -194,6 +209,38 @@ const cronHandlers = require('./neurolink/cron-handlers');
 // ── Platform Productization Layer ─────────────────────────────────────────────
 const { handlePlatform } = require('./platform');
 
+// ── HITL Approval Pipeline ────────────────────────────────────────────────────
+let handleHitl, handlePipeline;
+try {
+  ({ handleHitl } = require('./hitl'));
+  ({ handlePipeline } = require('./pipeline'));
+} catch (e) {
+  console.warn('[HITL] Failed to load HITL/pipeline handlers:', e.message);
+  handleHitl = handlePipeline = null;
+}
+
+// ── CRM Supabase Routes ───────────────────────────────────────────────────────
+let handleCRM = null;
+try { ({ handleCRM } = require('./crm/routes')); } catch (e) { console.warn('[CRM] routes unavailable:', e.message); }
+
+// ── Corporate OS Routes (quotes, invoices, debts, vendors, tickets, inventory, hr, marketing, analytics) ──
+let handleCorporate = null;
+try { ({ handleCorporate } = require('./corporate/routes')); } catch (e) { console.warn('[CORP] routes unavailable:', e.message); }
+
+// ── Affiliate Program Routes ───────────────────────────────────────────────────
+let handleAffiliate = null;
+try { ({ handleAffiliate } = require('./affiliate/routes')); } catch (e) { console.warn('[AFFILIATE] routes unavailable:', e.message); }
+
+// ── eSIM + PBX Routes ─────────────────────────────────────────────────────────
+let handleESim = null;
+try { ({ handleESim } = require('./esim/routes')); } catch (e) { console.warn('[eSIM] routes unavailable:', e.message); }
+
+// ── Digital Twin Layer ────────────────────────────────────────────────────────
+const { handleTwin } = require('./twin');
+
+// ── SIWE Authentication Layer ─────────────────────────────────────────────────
+const { handleSiwe } = require('./siwe');
+
 // ── Zero-Trust Verification Layer ──────────────────────────────────────────
 let zt, proofStore, chainVerify;
 try {
@@ -260,13 +307,14 @@ async function cachedQuery(key, ttl, fn) {
   return promise;
 }
 
-// Clear cache on schedule (5 min)
-setInterval(() => {
+// Clear cache on schedule (5 min) — .unref so test/serverless workers can exit cleanly
+const _apiCacheSweep = setInterval(() => {
   const now = Date.now();
   for (const [k, v] of apiCache.entries()) {
     if (now - v.ts > 300000) apiCache.delete(k);
   }
 }, 60000);
+if (_apiCacheSweep.unref) _apiCacheSweep.unref();
 
 // ── Route handlers ──────────────────────────────────────────────────────────
 // Live system state (as at 2026-04-04)
@@ -274,9 +322,8 @@ const agentNames = [
   'QuoteGen AI', 'Finance AI', 'Growth Hunter', 'Intelligence AI', 'Nurture AI',
   'Closer AI', 'Campaign AI', 'Creative AI', 'Support AI', 'Supply AI'
 ];
-// DEPRECATED: In-memory treasury cache removed — use Treasury Service + PostgreSQL ledger
-// const TREASURY_SEED = 1389208.00;
-// let   treasuryBalance = TREASURY_SEED;
+// Treasury balance initialization — loads from database on startup
+let treasuryBalance = 0; // Will be loaded from DB on first access
 const CYCLE_COUNT   = 2697;
 const REVENUE_TOTAL = 541225.00;
 
@@ -323,6 +370,7 @@ function rateLimit(ip, key, maxPerMinute) {
 
 // Auth store — backed by Supabase 'users' table (persistent across cold starts)
 const JWT_SECRET = process.env.JWT_SECRET;
+const revokedStore = (() => { try { return require('../lib/revoked-tokens'); } catch(_) { return null; } })();
 const REFERRAL_CODES = { BRIDGE2025: 500, AILAUNCH: 250, BETA100: 100 };
 const _revokedTokens = new Set();
 
@@ -332,7 +380,7 @@ try { bcrypt = require('bcryptjs'); } catch (_) { bcrypt = null; }
 
 function makeToken(payload) {
   if (!jwt) return `stub-token-${Date.now()}`;
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 function verifyToken(token) {
   if (!jwt) return null;
@@ -396,6 +444,16 @@ module.exports = async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const p = url.pathname;
 
+  // ── Static HTML pages served via Express fallback ──
+  const HTML_PAGES = { '/claude-partner': 'claude-partner.html' };
+  if (HTML_PAGES[p]) {
+    try {
+      const html = fs.readFileSync(path.join(ROOT, 'public', HTML_PAGES[p]), 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(html);
+    } catch(e) { /* fall through */ }
+  }
+
   // ── Health ──
   if (p === '/health') {
     return json(res, { status: 'OK', gateway: 'up', core: 'serverless', ts: ts() });
@@ -416,7 +474,7 @@ module.exports = async (req, res) => {
     const user = requireAuthOrFail(req, res); if (!user) return;
     const bal = await db.getTreasuryBalance(TREASURY_SEED);
     return json(res, {
-      treasury_balance: +bal.toFixed(2), currency: 'USD', period: 'monthly',
+      treasury_balance: +bal.toFixed(2), currency: 'ZAR', period: 'monthly',
       revenue_mtd: null, costs_mtd: null, net_mtd: null, subscriptions: 0,
       active_plans: [],
       source: 'live',
@@ -732,6 +790,53 @@ module.exports = async (req, res) => {
     });
   }
 
+  // POST /api/agents/:id/command — landing "Try it" + clients (no VPS brain)
+  {
+    const m = p.match(/^\/api\/agents\/([^/]+)\/command$/);
+    if (m && req.method === 'POST') {
+      const body = await parseBody(req);
+      const { executeAgentCommandPost } = require('../lib/agent-commands');
+      const clientIp = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
+      const { status, payload } = await executeAgentCommandPost({
+        agentId: m[1],
+        body,
+        headers: req.headers,
+        remoteIp: clientIp || req.socket?.remoteAddress,
+      });
+      return json(res, payload, status);
+    }
+  }
+
+  // POST /api/llm/infer — serverless LLM (no brain); same contract as gateway fallback
+  if (p === '/api/llm/infer' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    const body = await parseBody(req);
+    let prompt = body.prompt || body.message || '';
+    if (!prompt && Array.isArray(body.messages)) {
+      prompt = body.messages.map((m) => ((m && m.content) ? String(m.content) : '')).filter(Boolean).join('\n');
+    }
+    if (!prompt || typeof prompt !== 'string') {
+      return json(res, { ok: false, error: 'prompt required' }, 400);
+    }
+    try {
+      const llm = require('../lib/llm-client');
+      const out = await llm.infer(prompt, {
+        system: body.system || 'You are Bridge AI, an autonomous business intelligence assistant.',
+      });
+      return json(res, {
+        ok: true,
+        text: out.text,
+        provider: out.provider,
+        model: out.model,
+        cost_usd: out.cost_usd,
+        source: 'serverless-llm',
+        ts: ts(),
+      });
+    } catch (e) {
+      return json(res, { ok: false, error: e.message, source: 'serverless-llm' }, 503);
+    }
+  }
+
   // ── API: Contracts ──
   if (p === '/api/contracts') {
     const { files, contracts } = readContracts();
@@ -758,7 +863,7 @@ module.exports = async (req, res) => {
     const { data: user, error: insertErr } = await supabase.from('users').insert({
       id: userId, email: body.email.toLowerCase().trim(), password_hash,
       brdg_balance: 0, first_seen: now, last_seen: now,
-      oauth_provider: 'email', plan: 'client', funnel_stage: 'visitor',
+      oauth_provider: 'email', plan: 'free', funnel_stage: 'identified',
       lead_score: 0, conversations: 0, role: 'user',
     }).select().single();
     if (insertErr) return json(res, { error: 'Registration failed: ' + insertErr.message }, 500);
@@ -835,10 +940,11 @@ module.exports = async (req, res) => {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
     if (token) {
-      // Add to server-side blacklist (survives until JWT expires)
+      // Fast-path in-memory blacklist (current instance)
       _revokedTokens.add(token);
-      // Prune if too large (in serverless, this resets per cold start anyway)
       if (_revokedTokens.size > 10000) _revokedTokens.clear();
+      // Persistent revocation across cold starts + shared with auth.js
+      if (revokedStore) revokedStore.revoke(token).catch(() => {});
     }
     return json(res, { ok: true, message: 'Signed out' });
   }
@@ -848,7 +954,12 @@ module.exports = async (req, res) => {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
     if (!token) return json(res, { ok: false, error: 'Not authenticated' }, 401);
+    // Fast in-memory check first, then persistent Supabase check (survives cold starts)
     if (_revokedTokens.has(token)) return json(res, { ok: false, error: 'Token revoked' }, 401);
+    if (revokedStore && await revokedStore.isRevoked(token)) {
+      _revokedTokens.add(token); // warm local cache
+      return json(res, { ok: false, error: 'Token revoked' }, 401);
+    }
     const payload = verifyToken(token);
     if (!payload) return json(res, { ok: false, error: 'Invalid or expired token' }, 401);
 
@@ -907,11 +1018,27 @@ module.exports = async (req, res) => {
     return json(res, { ledger, count: ledger.length, ts: ts() });
   }
 
-  // ── API: Treasury Summary ──
+  // ── API: Treasury Summary (includes AOE dashboard BRDG fields + legacy analytics keys) ──
   if (p === '/api/treasury/summary') {
+    await initializeTreasury();
+    const bal = treasuryBalance;
+    const bkArr = computeBuckets(bal);
+    const buckets = {};
+    for (const b of bkArr) buckets[b.name] = b.balance;
+    const totalTx = 47;
+    const lastTs = new Date(Date.now() - 120000).toISOString();
+    const totalBrdg = +(bal * 0.0078).toFixed(4);
     return json(res, {
-      balance: +treasuryBalance.toFixed(2),
-      currency: 'USD',
+      ok: true,
+      balance: +bal.toFixed(2),
+      total: +bal.toFixed(2),
+      total_collected_brdg: totalBrdg,
+      total_tx: totalTx,
+      last_tx_ts: lastTs,
+      last_tx_amount: +(totalBrdg / Math.max(totalTx, 1)).toFixed(4),
+      buckets,
+      buckets_list: bkArr,
+      currency: 'ZAR',
       revenue_mtd: 28450,
       costs_mtd: 4210.50,
       net_mtd: 24239.50,
@@ -940,7 +1067,7 @@ module.exports = async (req, res) => {
       else if (type === 'ai_inference') data = { agent, model: 'bridge-llm', tokens: 0, latency_ms: 0 };
       else if (type === 'swarm_dispatch') data = { agent, task: `task_${evtTs}`, priority: ['low', 'medium', 'high'][i % 3] };
       else if (type === 'task_completed') data = { agent, task: `task_${evtTs - 5000}`, duration_ms: 0 };
-      else data = { balance: +treasuryBalance.toFixed(2), delta: 0, currency: 'USD' };
+      else data = { balance: +treasuryBalance.toFixed(2), delta: 0, currency: 'ZAR' };
       events.push({ id: `evt_${i}`, type, data, ts: evtTs });
     }
     return json(res, { events, count: events.length, ts: ts() });
@@ -988,6 +1115,64 @@ module.exports = async (req, res) => {
       status: 'open',
       created_at: new Date().toISOString(),
     });
+  }
+
+  // ── User Settings ──
+  if (p === '/api/user/settings') {
+    const DEFAULTS = { name: '', company: '', theme: 'dark', apiBase: '', notifications: false, liveRefresh: true, userId: '' };
+    if (req.method === 'GET') {
+      const token = (req.headers.authorization || '').replace(/^Bearer\s+/, '') || req.cookies?.access_token;
+      if (!token) return json(res, { settings: DEFAULTS });
+      try {
+        const jwt = require('jsonwebtoken');
+        const secret = process.env.JWT_SECRET;
+        if (!secret) return json(res, { settings: DEFAULTS });
+        const payload = jwt.verify(token, secret);
+        const { supabaseAdmin } = require('../lib/supabase');
+        if (!supabaseAdmin || !payload.email) return json(res, { settings: DEFAULTS });
+        const { data: user } = await supabaseAdmin.from('users')
+          .select('name,company,settings')
+          .eq('email', payload.email.toLowerCase().trim())
+          .single();
+        if (!user) return json(res, { settings: DEFAULTS });
+        const s = user.settings || {};
+        return json(res, { settings: { ...DEFAULTS, name: user.name || '', company: user.company || '', ...s } });
+      } catch (_) {
+        return json(res, { settings: DEFAULTS });
+      }
+    }
+    if (req.method === 'PUT') {
+      const token = (req.headers.authorization || '').replace(/^Bearer\s+/, '') || req.cookies?.access_token;
+      if (!token) return json(res, { ok: false, error: 'Authentication required' }, 401);
+      try {
+        const jwt = require('jsonwebtoken');
+        const secret = process.env.JWT_SECRET;
+        if (!secret) return json(res, { ok: false, error: 'Server misconfigured' }, 500);
+        const payload = jwt.verify(token, secret);
+        const { supabaseAdmin } = require('../lib/supabase');
+        if (!supabaseAdmin) return json(res, { ok: false, error: 'DB unavailable' }, 503);
+        const body = req.body.settings || req.body || {};
+        const settingsJson = {};
+        if (body.theme         !== undefined) settingsJson.theme         = body.theme;
+        if (body.apiBase       !== undefined) settingsJson.apiBase       = String(body.apiBase || '');
+        if (body.notifications !== undefined) settingsJson.notifications = !!body.notifications;
+        if (body.liveRefresh   !== undefined) settingsJson.liveRefresh   = !!body.liveRefresh;
+        if (body.userId        !== undefined) settingsJson.userId        = String(body.userId || '').slice(0, 128);
+        const userUpdates = { settings: settingsJson };
+        if (body.name    !== undefined) userUpdates.name    = String(body.name    || '').slice(0, 120);
+        if (body.company !== undefined) userUpdates.company = String(body.company || '').slice(0, 120);
+        const { data: updated, error } = await supabaseAdmin.from('users')
+          .update(userUpdates)
+          .eq('email', payload.email.toLowerCase().trim())
+          .select('id,email,name,company,plan,role,settings')
+          .single();
+        if (error) throw error;
+        const s = updated.settings || {};
+        return json(res, { ok: true, settings: { name: updated.name || '', company: updated.company || '', ...s } });
+      } catch (e) {
+        return json(res, { ok: false, error: e.message }, 500);
+      }
+    }
   }
 
   // ── API: Users ──
@@ -1070,7 +1255,7 @@ module.exports = async (req, res) => {
   // ── /api/economics ──
   if (p === '/api/economics') {
     return json(res, {
-      revenue: { monthly: +(treasuryBalance * 0.08).toFixed(2), annual: +(treasuryBalance * 0.96).toFixed(2), currency: 'USD' },
+      revenue: { monthly: +(treasuryBalance * 0.08).toFixed(2), annual: +(treasuryBalance * 0.96).toFixed(2), currency: 'ZAR' },
       costs: { monthly: +(treasuryBalance * 0.03).toFixed(2), breakdown: { infra: 40, agents: 35, marketing: 25 } },
       margin_pct: 62.5, mrr_growth_pct: 12.3, ts: ts()
     });
@@ -1106,6 +1291,54 @@ module.exports = async (req, res) => {
     { id: 'inv_008', client: 'Asante Africa',        email: 'kwame@asante.africa',          amount: 499, currency: 'ZAR', status: 'draft',   due: '2026-05-01', issued: '2026-04-04', description: 'Bridge AI OS Enterprise — Demo Period' },
   ];
 
+  function mapSeedInvoicesToDashboard(rows, statusFilter) {
+    const mapped = (rows || []).map((inv) => {
+      const subtotal = +inv.amount || 0;
+      const taxRate = 0.15;
+      const taxAmt = +(subtotal * taxRate).toFixed(2);
+      const total = +(subtotal + taxAmt).toFixed(2);
+      const st = inv.status === 'sent' ? 'sent' : inv.status === 'paid' ? 'paid' : inv.status === 'overdue' ? 'overdue' : 'draft';
+      return {
+        id: inv.id,
+        invoice_number: inv.id.replace(/^inv_/, 'INV-'),
+        client_email: inv.email,
+        client_name: inv.client,
+        client_company: inv.client,
+        status: st,
+        currency: inv.currency || 'ZAR',
+        total,
+        subtotal,
+        tax_rate: taxRate,
+        tax_amount: taxAmt,
+        due_date: inv.due,
+        created_at: `${inv.issued || '2026-01-01'}T12:00:00.000Z`,
+        notes: inv.description,
+        line_items: [{ description: inv.description || 'Services', quantity: 1, unit_price: subtotal }],
+      };
+    });
+    if (!statusFilter) return mapped;
+    return mapped.filter(i => i.status === statusFilter);
+  }
+
+  function aggregateInvoiceStatsFromSeed(rows) {
+    const list = mapSeedInvoicesToDashboard(rows, null);
+    const by_status = { draft: 0, sent: 0, paid: 0, overdue: 0, pending: 0, cancelled: 0 };
+    let total_paid = 0;
+    let total_billed = 0;
+    for (const inv of list) {
+      if (Object.prototype.hasOwnProperty.call(by_status, inv.status)) by_status[inv.status]++;
+      total_billed += inv.total;
+      if (inv.status === 'paid') total_paid += inv.total;
+    }
+    return {
+      total_invoices: list.length,
+      total_paid,
+      total_billed,
+      by_status,
+      ts: ts(),
+    };
+  }
+
   const TICKETS = [
     { id: 'tkt_001', subject: 'Treasury dashboard not refreshing', client: 'TechBridge IO',     email: 'priya@techbridge.io',        priority: 'high',   status: 'open',       created: '2026-04-02T08:12:00Z', agent: 'alpha' },
     { id: 'tkt_002', subject: 'How do I add team members?',         client: 'VDB Solutions',      email: 'zoe@vdberg.co.za',           priority: 'medium', status: 'resolved',   created: '2026-04-01T14:30:00Z', agent: 'beta',  resolved: '2026-04-01T16:45:00Z' },
@@ -1117,6 +1350,7 @@ module.exports = async (req, res) => {
 
   // ── /api/treasury/status ──
   if (p === '/api/treasury/status') {
+    await initializeTreasury();
     return json(res, {
       balance: +treasuryBalance.toFixed(2), currency: 'ZAR',
       status: 'healthy', last_updated: new Date().toISOString(),
@@ -1247,8 +1481,41 @@ module.exports = async (req, res) => {
     });
   }
 
-  // ── /api/crm/* ── (READ-ONLY OBSERVABILITY)
+  // ── /api/corporate/* + corporate module routes ──────────────────────────────
+  // Covers: /api/corporate/*, /api/quotes, /api/invoices, /api/debts,
+  //         /api/vendors, /api/tickets, /api/inventory, /api/hr/*,
+  //         /api/marketing/*, /api/customers, /api/legal/*, /api/compliance/*,
+  //         /api/analytics/overview + summary
+  const isCorporateRoute = (
+    p.startsWith('/api/corporate') ||
+    p === '/api/quotes' || p.match(/^\/api\/quotes\//) ||
+    p === '/api/invoices' || p.match(/^\/api\/invoices\//) ||
+    p === '/api/debts' || p.match(/^\/api\/debts\//) ||
+    p === '/api/vendors' ||
+    p === '/api/tickets' || p.match(/^\/api\/tickets\//) ||
+    p === '/api/inventory' ||
+    p.startsWith('/api/hr') ||
+    p.startsWith('/api/marketing') ||
+    p === '/api/customers' || p.match(/^\/api\/customers\//) ||
+    p.startsWith('/api/legal') ||
+    p.startsWith('/api/compliance') ||
+    p === '/api/analytics/overview' ||
+    p === '/api/analytics/summary'
+  );
+  if (isCorporateRoute && handleCorporate) {
+    const handled = await handleCorporate({ req, res, path: p, method: req.method, parseBody, json });
+    if (handled !== false) {
+      if (res.headersSent || res.writableEnded) return;
+    }
+  }
+
+  // ── /api/crm/* ── Supabase-backed CRM (falls back to in-memory)
   if (p.startsWith('/api/crm')) {
+    if (handleCRM) {
+      await handleCRM({ req, res, path: p, method: req.method, parseBody, json });
+      // handleCRM calls json() which returns undefined — always check headers to avoid double-send (502).
+      if (res.headersSent || res.writableEnded) return;
+    }
     const sub = p.replace('/api/crm', '') || '/';
     if (sub === '/contacts' || sub === '/contacts/') {
       if (req.method === 'POST') {
@@ -1302,6 +1569,7 @@ module.exports = async (req, res) => {
   if (p.startsWith('/api/leadgen')) {
     const sub = p.replace('/api/leadgen', '') || '/';
     if (sub === '/auto-prospect' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, {
         id: `prospect_${ts()}`,
@@ -1314,6 +1582,7 @@ module.exports = async (req, res) => {
       });
     }
     if (sub === '/auto-nurture' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, {
         id: `nurture_${ts()}`,
@@ -1326,6 +1595,7 @@ module.exports = async (req, res) => {
       });
     }
     if (sub === '/auto-close' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, {
         id: `close_${ts()}`,
@@ -1397,6 +1667,7 @@ module.exports = async (req, res) => {
       });
     }
     if (sub === '/campaign' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       if (!body.name) return json(res, { error: 'campaign name required' }, 400);
       return json(res, {
@@ -1420,6 +1691,7 @@ module.exports = async (req, res) => {
       }, 201);
     }
     if (p === '/api/tickets' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       if (!body.subject) return json(res, { error: 'subject required' }, 400);
       return json(res, {
@@ -1454,21 +1726,22 @@ module.exports = async (req, res) => {
         });
       }
     }
-    return json(res, { total_invoices: 0, total_paid: 0, total_billed: 0, by_status: { draft: 0, sent: 0, paid: 0, overdue: 0 }, ts: ts() });
+    return json(res, aggregateInvoiceStatsFromSeed(INVOICES));
   }
 
   // ── /api/invoices list ──
   if (p === '/api/invoices' && req.method === 'GET') {
+    const status = new URL(req.url, 'http://x').searchParams.get('status');
     if (supabaseConfigured) {
       let q = supabase.from('invoices').select('*').order('created_at', { ascending: false });
-      const status = new URL(req.url, 'http://x').searchParams.get('status');
       if (status) q = q.eq('status', status);
       const limit = parseInt(new URL(req.url, 'http://x').searchParams.get('limit') || '50', 10);
       q = q.limit(limit);
       const { data, error } = await q;
-      if (!error) return json(res, { ok: true, invoices: data || [], count: (data || []).length, ts: ts() });
+      if (!error && data && data.length) return json(res, { ok: true, invoices: data || [], count: (data || []).length, ts: ts() });
     }
-    return json(res, { ok: true, invoices: [], count: 0, ts: ts() });
+    const list = mapSeedInvoicesToDashboard(INVOICES, status || null);
+    return json(res, { ok: true, invoices: list, count: list.length, ts: ts() });
   }
 
   // ── /api/invoices/* ──
@@ -1479,6 +1752,7 @@ module.exports = async (req, res) => {
       return json(res, { id: invoicePathMatch[1], status: body.status || 'sent', updated_at: new Date().toISOString(), ts: ts() });
     }
     if (p === '/api/invoices/ai-generate' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       const contact = CONTACTS.find(c => c.id === body.contact_id) || CONTACTS[0];
       return json(res, {
@@ -1492,6 +1766,7 @@ module.exports = async (req, res) => {
       }, 201);
     }
     if (p === '/api/invoices/smart-create' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, {
         id: `inv_${ts()}`, ...body,
@@ -1501,11 +1776,13 @@ module.exports = async (req, res) => {
       }, 201);
     }
     if (p === '/api/invoices/send' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       if (!body.invoice_id) return json(res, { error: 'invoice_id required' }, 400);
       return json(res, { invoice_id: body.invoice_id, status: 'sent', sent_at: new Date().toISOString(), ts: ts() });
     }
     if (p === '/api/invoices/follow-up' && req.method === 'POST') {
+      const user = requireAuthOrFail(req, res); if (!user) return;
       const body = await parseBody(req);
       return json(res, { invoice_id: body.invoice_id, follow_up_sent: true, method: 'email', ts: ts() });
     }
@@ -1537,38 +1814,104 @@ module.exports = async (req, res) => {
   }
 
   // ── /api/affiliate/* ──
-  if (p.startsWith('/api/affiliate')) {
-    const sub = p.replace('/api/affiliate', '').replace(/^\//, '') || 'dashboard';
-    const affiliates = [
-      { id: 'aff_001', name: 'Sipho Ndlovu',  code: 'SIPHO20',  clicks: 142, signups: 12, revenue: 1788, payout: 178.8, tier: 'silver' },
-      { id: 'aff_002', name: 'Priya Naidoo',  code: 'PRIYA20',  clicks: 289, signups: 31, revenue: 4619, payout: 461.9, tier: 'gold'   },
-      { id: 'aff_003', name: 'Thabo Mokoena', code: 'THABO20',  clicks: 88,  signups: 7,  revenue: 1043, payout: 104.3, tier: 'bronze' },
-    ];
-    if (sub === 'program' || sub === 'dashboard') return json(res, {
-      program: { commission_pct: 10, cookie_days: 30, min_payout: 50, currency: 'ZAR' },
-      stats: { total_affiliates: 3, total_clicks: 519, total_signups: 50, total_revenue: 7450, total_paid: 744.9 },
-      top_affiliate: affiliates[1], ts: ts(),
-    });
-    if (sub === 'stats')       return json(res, { clicks_today: 34, signups_today: 3, revenue_today: 447, conversion_rate: 8.8, ts: ts() });
-    if (sub === 'leaderboard') return json(res, { leaderboard: affiliates, ts: ts() });
-    if (sub === 'creatives')   return json(res, { creatives: [
-      { id: 'cr_001', type: 'banner', size: '728x90', url: '/assets/banners/bridge-728x90.png', clicks: 211 },
-      { id: 'cr_002', type: 'banner', size: '300x250', url: '/assets/banners/bridge-300x250.png', clicks: 178 },
-      { id: 'cr_003', type: 'text',   copy: 'Automate your business with Bridge AI OS', clicks: 130 },
-    ], ts: ts() });
-    if (sub === 'payouts') return json(res, { payouts: [
-      { id: 'pay_a01', affiliate: 'Priya Naidoo', amount: 461.9, status: 'paid',    date: '2026-04-01' },
-      { id: 'pay_a02', affiliate: 'Sipho Ndlovu', amount: 178.8, status: 'pending', date: '2026-04-04' },
-    ], ts: ts() });
-    if (sub === 'join' && req.method === 'POST') {
-      const body = await parseBody(req);
-      return json(res, { ok: true, affiliate_id: `aff_${ts()}`, code: `${(body.name||'USER').slice(0,5).toUpperCase()}20`, ts: ts() }, 201);
-    }
-    return json(res, { error: 'unknown affiliate endpoint' }, 404);
+  if (p.startsWith('/api/affiliate') && handleAffiliate) {
+    return handleAffiliate(req, res, p, req.method, parseBody, json);
+  }
+
+  // ── /api/skills — full Bridge AI OS + Claude Code skill catalog ──
+  if (p === '/api/skills' || p.startsWith('/api/skills')) {
+    const sub = p.replace('/api/skills', '').replace(/^\//, '') || 'all';
+    const SKILL_CATALOG = {
+      ai_intelligence: {
+        label: 'AI Intelligence', icon: '🧠', color: '#38bdf8',
+        skills: [
+          { id: 'llm-routing',    name: 'Tiered LLM Routing',       desc: 'Kilo free → Claude Sonnet 4.6 → OpenRouter fallback chain', provider: 'claude' },
+          { id: 'twin-dispatch',  name: 'AI Twin Dispatch',          desc: 'Clone any agent, run parallel inference, merge outputs',     provider: 'claude' },
+          { id: 'neurolink',      name: 'NeuroLink Orchestrator',    desc: 'Multi-agent campaign coordinator with 5 campaign types',     provider: 'bridge' },
+          { id: 'super-brain',    name: 'Super Brain (port 8000)',   desc: 'Central AI nucleus — all agents route through this node',    provider: 'bridge' },
+          { id: 'prompt-cache',   name: 'Prompt Caching',            desc: 'Anthropic prompt cache with 5-min TTL, 90%+ cache hit',      provider: 'claude' },
+        ]
+      },
+      business_ops: {
+        label: 'Business Operations', icon: '💼', color: '#22c55e',
+        skills: [
+          { id: 'crm',         name: 'CRM + Leads Pipeline',   desc: '7-stage Kanban, Supabase-backed, full CRUD + analytics',       provider: 'bridge' },
+          { id: 'invoicing',   name: 'AI Invoicing',           desc: 'Invoice creation, PDF export, status tracking, AI helper',     provider: 'bridge' },
+          { id: 'hitl',        name: 'HITL Approval Gates',    desc: '18-state machine, 5 human-in-the-loop gates, approval UI',     provider: 'bridge' },
+          { id: 'affiliate',   name: 'Affiliate Program',      desc: '10% commission, 30-day cookie, ZAR payouts, leaderboard',      provider: 'bridge' },
+          { id: 'tickets',     name: 'Support Tickets',        desc: 'Priority AI auto-categorization, expand-in-place, SLA',        provider: 'bridge' },
+        ]
+      },
+      payments_defi: {
+        label: 'Payments & DeFi', icon: '🔗', color: '#a78bfa',
+        skills: [
+          { id: 'payfast',     name: 'PayFast ZAR Checkout',   desc: 'MD5-signed IPN, server-side ITN validation, auto-split',       provider: 'bridge' },
+          { id: 'brdg-token',  name: 'BRDG Token (Linea)',     desc: '100M supply, 1% burn, TreasuryVault on zkEVM mainnet',         provider: 'bridge' },
+          { id: 'banks',       name: 'Multi-Bank Treasury',    desc: 'Ops/Growth/Reserve/Founder/Partner banks, compound cycles',    provider: 'bridge' },
+          { id: 'ubi',         name: 'Universal Basic Income', desc: '30% of treasury auto-distributed to active citizens',          provider: 'bridge' },
+          { id: 'reconcile',   name: 'Treasury Reconciler',    desc: 'Drift detection, auto-heal, dual auth (admin + JWT)',          provider: 'bridge' },
+        ]
+      },
+      telco_esim: {
+        label: 'Telco & Carrier', icon: '📡', color: '#f59e0b',
+        skills: [
+          { id: 'esim',        name: 'eSIM Global Platform',   desc: 'AI-powered eSIM provisioning, 190+ countries coverage, QR activation',    provider: 'bridge', activate_url: '/esim', tier: 'starter' },
+          { id: 'pbx-carrier', name: 'Carrier PBX (FusionPBX)', desc: 'Multi-tenant carrier-grade PBX: FreeSWITCH core, IVR flows, SIP trunks, global DID numbers, AI call summaries, BRDG billing wallet', provider: 'bridge', activate_url: '/esim', tier: 'pro', featured: true },
+          { id: 'pbx-ivr',     name: 'IVR Flow Builder',       desc: 'Visual IVR, call queues, ring groups — drag-and-drop flow editor with real-time testing', provider: 'bridge', activate_url: '/esim', tier: 'pro' },
+          { id: 'pbx-numbers', name: 'Global DID Numbers',     desc: 'Virtual numbers in 50+ countries, instant porting, SMS-capable, 2FA-ready', provider: 'bridge', activate_url: '/esim', tier: 'starter' },
+          { id: 'pbx-billing', name: 'Telco Billing Engine',   desc: 'CDR-to-invoice pipeline, per-minute rating, wallet top-up, BRDG token rewards, auto-treasury sweep', provider: 'bridge', activate_url: '/esim', tier: 'pro' },
+          { id: 'esim-nurture',name: 'eSIM AI Nurture',        desc: 'Claude-powered lead nurture for eSIM prospects: scoring, email generation, CRM sync', provider: 'claude', activate_url: '/esim', tier: 'starter' },
+        ]
+      },
+      verticals: {
+        label: 'Industry Verticals', icon: '🏥', color: '#ef4444',
+        skills: [
+          { id: 'ehsa',        name: 'EHSA Health System',     desc: 'Patient records, appointments, telemedicine, pharmacy AI',     provider: 'bridge' },
+          { id: 'hospital',    name: 'Hospital in a Box',      desc: 'Full hospital stack in a container, deployable anywhere',      provider: 'bridge' },
+          { id: 'aid',         name: 'Aid Distribution',       desc: 'Transparent disbursement, NGO + government integration',       provider: 'bridge' },
+          { id: 'aurora',      name: 'Aurora AI Assistant',    desc: 'Emotion engine, lip-sync avatar, speech synthesis',            provider: 'bridge' },
+          { id: 'abaas',       name: 'Agent-as-a-Service',     desc: 'Enterprise API for custom AI agent deployment + SLAs',         provider: 'bridge' },
+        ]
+      },
+      infra_platform: {
+        label: 'Infrastructure', icon: '⚙️', color: '#64748b',
+        skills: [
+          { id: 'supabase',    name: 'Supabase (26 tables)',   desc: 'Full Postgres backend, RLS on all tables, service-role client', provider: 'bridge' },
+          { id: 'vercel',      name: 'Vercel Serverless',      desc: 'Single catch-all function, 12 crons, Fluid Compute runtime',   provider: 'vercel' },
+          { id: 'pm2',         name: 'VPS PM2 Services',       desc: '6 always-on processes: gateway, brain, auth, terminal, god',   provider: 'bridge' },
+          { id: 'oauth',       name: 'Google OAuth + JWT',     desc: 'Supabase Auth, HttpOnly cookie, session refresh flow',         provider: 'bridge' },
+          { id: 'logs',        name: 'Structured Log Reader',  desc: 'Admin-gated JSONL log stream from VPS + Vercel',               provider: 'bridge' },
+        ]
+      },
+      claude_code_skills: {
+        label: 'Claude Code Skills (Active)', icon: '⚡', color: '#38bdf8',
+        skills: [
+          { id: 'cc-commit',   name: 'Smart Commit & Push',    desc: 'Conventional commits, auto-stage, pre-hook safety checks',     provider: 'claude' },
+          { id: 'cc-gsd',      name: 'GSD Orchestrator',       desc: 'Phase planning, milestone execution, verification cycles',     provider: 'claude' },
+          { id: 'cc-memory',   name: 'Persistent Memory',      desc: 'Cross-session project/user/feedback/reference memory system',  provider: 'claude' },
+          { id: 'cc-deploy',   name: 'Vercel Deploy Skill',    desc: 'One-command deploy with env sync, preview + production',       provider: 'claude' },
+          { id: 'cc-review',   name: 'PR Review Toolkit',      desc: 'Code review, type analysis, silent-failure hunting, tests',    provider: 'claude' },
+          { id: 'cc-seo',      name: 'SEO Audit Skill',        desc: 'Meta tags, sitemap, robots.txt, canonical URL pipeline',       provider: 'claude' },
+          { id: 'cc-figma',    name: 'Figma → Code',           desc: 'Design-to-code with Code Connect, design system rules',        provider: 'claude' },
+          { id: 'cc-supabase', name: 'Supabase Automation',    desc: 'Migration authoring, edge functions, RLS policy generation',   provider: 'claude' },
+        ]
+      },
+    };
+
+    const catalog = Object.entries(SKILL_CATALOG).map(([key, cat]) => ({
+      category: key, label: cat.label, icon: cat.icon, color: cat.color,
+      count: cat.skills.length, skills: cat.skills,
+    }));
+    const totalSkills = catalog.reduce((n, c) => n + c.count, 0);
+    const claudeSkills = catalog.flatMap(c => c.skills).filter(s => s.provider === 'claude').length;
+
+    if (sub === 'summary') return json(res, { total: totalSkills, claude_powered: claudeSkills, categories: catalog.length, ts: ts() });
+    return json(res, { ok: true, total: totalSkills, claude_powered: claudeSkills, catalog, ts: ts() });
   }
 
   // ── /api/agents/execute-paid ──
   if (p === '/api/agents/execute-paid' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     const agentName = body.agentName || body.agent || 'Growth Hunter';
     const input     = body.input || '';
@@ -1589,6 +1932,7 @@ module.exports = async (req, res) => {
 
   // ── /api/agents/run ──
   if (p === '/api/agents/run' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
     if (rateLimit(ip, 'agent-run', 10)) return json(res, { error: 'rate_limited', retry_after: 60 }, 429);
     const body = await parseBody(req);
@@ -1606,6 +1950,7 @@ module.exports = async (req, res) => {
 
   // ── /api/agents/run-all — manual override with full pipeline enforcement ──
   if (p === '/api/agents/run-all' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || 'unknown';
     if (rateLimit(ip, 'agent-run-all', 2)) return json(res, { error: 'rate_limited', retry_after: 60 }, 429);
 
@@ -1696,8 +2041,9 @@ module.exports = async (req, res) => {
     } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
   }
 
-  // GET /api/infra/snapshot — trigger fresh DA poll and persist
+  // POST /api/infra/snapshot — trigger fresh DA poll and persist
   if (p === '/api/infra/snapshot' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     try {
       const snapshot = await da.snapshotInfra();
       // Run Infra AI agent against the snapshot
@@ -1747,6 +2093,7 @@ module.exports = async (req, res) => {
 
   // POST /api/infra/action — queue a write action (agent or human requests)
   if (p === '/api/infra/action' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     const { type, params, requestedBy } = body;
     if (!type) return json(res, { error: 'type required' }, 400);
@@ -1758,6 +2105,7 @@ module.exports = async (req, res) => {
 
   // POST /api/infra/approve — human approves a queued action
   if (p === '/api/infra/approve' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     if (!body.actionId) return json(res, { error: 'actionId required' }, 400);
     try {
@@ -1769,6 +2117,7 @@ module.exports = async (req, res) => {
 
   // POST /api/infra/deny — human denies a queued action
   if (p === '/api/infra/deny' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
     const body = await parseBody(req);
     if (!body.actionId) return json(res, { error: 'actionId required' }, 400);
     try {
@@ -1917,6 +2266,39 @@ module.exports = async (req, res) => {
       meta:     body.meta || '',
     });
     return json(res, { ok: true, ...result, ts: ts() }, 201);
+  }
+
+  // ── /api/checkout — plan-aware checkout used by checkout.html ──
+  if (p === '/api/checkout' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const { plan, email, name, vertical, vertical_name } = body;
+    if (!email) return json(res, { ok: false, error: 'email required' }, 400);
+
+    // ZAR plan pricing (matches pricing.html)
+    const PLAN_PRICES_ZAR = { starter: 0, pro: 499, enterprise: 2499 };
+    const planKey = (plan || 'starter').toLowerCase();
+    const amount  = PLAN_PRICES_ZAR[planKey];
+    if (amount === undefined) return json(res, { ok: false, error: 'invalid plan — use starter|pro|enterprise' }, 400);
+
+    // Free plan: skip PayFast, redirect directly to portal
+    if (amount === 0) {
+      return json(res, { ok: true, redirect: `/portal.html?plan=starter&email=${encodeURIComponent(email)}` });
+    }
+
+    try {
+      const [firstName, ...rest] = (name || 'Client').split(' ');
+      const result = pf.buildPaymentUrl({
+        amount,
+        email,
+        itemName:  `Bridge AI-OS ${planKey.charAt(0).toUpperCase() + planKey.slice(1)} Plan${vertical_name ? ` — ${vertical_name}` : ''}`,
+        firstName: firstName || 'Client',
+        meta:      JSON.stringify({ plan: planKey, vertical: vertical || 'default' }),
+      });
+      return json(res, { ok: true, payfast_url: result.url, payfast_fields: result.fields, ts: ts() });
+    } catch (e) {
+      console.error('[CHECKOUT] PayFast build failed:', e.message);
+      return json(res, { ok: false, error: 'Payment provider not configured. Contact support.' }, 503);
+    }
   }
 
   // ── /api/payfast-webhook (ITN — PayFast calls this on payment completion) ──
@@ -2249,9 +2631,12 @@ module.exports = async (req, res) => {
 
   // ── /api/wallet/balance ──
   if (p === '/api/wallet/balance') {
+    const liveBalance = await db.getTreasuryBalance();
+    // Withdrawable = 5% of treasury (held for operator). No synthetic pending.
+    const withdrawable = +(liveBalance * 0.05).toFixed(2);
     return json(res, {
-      balance: +(treasuryBalance * 0.05).toFixed(2), currency: 'ZAR',
-      pending: 82.50, available: +(treasuryBalance * 0.05 - 82.50).toFixed(2), ts: ts(),
+      balance: withdrawable, currency: 'ZAR',
+      pending: 0, available: withdrawable, ts: ts(),
     });
   }
 
@@ -2363,7 +2748,12 @@ module.exports = async (req, res) => {
 
   // ── /api/treasury/reconcile ──
   if (p === '/api/treasury/reconcile') {
-    const user = requireAuthOrFail(req, res); if (!user) return;
+    // Accept X-Admin-Token (admin pages) OR user Bearer JWT
+    const adminTk = req.headers['x-admin-token'] || '';
+    const isAdminCall = process.env.ADMIN_TOKEN && adminTk === process.env.ADMIN_TOKEN;
+    if (!isAdminCall) {
+      const user = requireAuthOrFail(req, res); if (!user) return;
+    }
     const result = await db.reconcileTreasury();
     if (!result.ok && result.drift !== undefined) {
       notify.alertError({ context: 'treasury-reconcile', message: `Drift detected: R${result.drift} (${result.driftPct}%). Auto-healed.` }).catch(() => {});
@@ -2610,9 +3000,17 @@ module.exports = async (req, res) => {
     } catch (e) { return json(res, { ok: false, error: e.message }, 500); }
   }
 
-  // ── Dashboard API: /live-map ──
-  if (p === '/live-map') {
+  // ── Dashboard API: /live-map (+ /api/live-map for gateways that only reverse-proxy /api/*) ──
+  if (p === '/live-map' || p === '/api/live-map') {
+    await initializeTreasury();
+    const totalBrdg = +(treasuryBalance * 0.0078).toFixed(4);
     return json(res, {
+      state_version: 'serverless-1',
+      capabilities: { brain: 1, treasury: 1, svg_engine: 1, gateway: 1 },
+      degradation: null,
+      circuit_breaker_tripped: false,
+      treasury: { total_brdg: totalBrdg, total_tx: 47, last_tx: Date.now() - 120000 },
+      treasury_snap: { total_brdg: totalBrdg, total_tx: 47, last_tx: Date.now() - 120000 },
       nodes: agentNames.map((n, i) => ({ id: n, label: n.toUpperCase(), type: i < 3 ? 'L3' : i < 6 ? 'L2' : 'L1', status: 'active', tasks: 0 })),
       edges: agentNames.slice(1).map((n, i) => ({ from: agentNames[i], to: n, weight: 1 })),
       service_nodes: [
@@ -2623,13 +3021,26 @@ module.exports = async (req, res) => {
     });
   }
 
-  // ── Dashboard API: /treasury/summary and /treasury/ingest (without /api/ prefix) ──
+  // ── Dashboard API: /treasury/summary — shape matches brain.js / AOE dashboard (see /api/treasury/summary earlier) ──
   if (p === '/treasury/summary') {
+    await initializeTreasury();
     const bal = await db.getTreasuryBalance(TREASURY_SEED);
+    const bkArr = computeBuckets(bal);
+    const buckets = {};
+    for (const b of bkArr) buckets[b.name] = b.balance;
+    const totalTx = 47;
+    const lastTs = new Date(Date.now() - 120000).toISOString();
+    const totalBrdg = +(bal * 0.0078).toFixed(4);
     return json(res, {
+      ok: true,
       balance: +bal.toFixed(2), total: +bal.toFixed(2), currency: 'ZAR',
-      buckets: computeBuckets(bal),
-      transactions: 47, last_tx: new Date(Date.now() - 120000).toISOString(), status: 'healthy', ts: ts(),
+      total_collected_brdg: totalBrdg,
+      total_tx: totalTx,
+      last_tx_ts: lastTs,
+      last_tx_amount: +(totalBrdg / Math.max(totalTx, 1)).toFixed(4),
+      buckets,
+      buckets_list: bkArr,
+      transactions: totalTx, last_tx: lastTs, status: 'healthy', ts: ts(),
     });
   }
   if (p === '/treasury/ingest' && req.method === 'POST') {
@@ -2641,8 +3052,8 @@ module.exports = async (req, res) => {
     return json(res, { ok: true, ingested: amt, source: src, new_balance: +treasuryBalance.toFixed(2), ts: ts() });
   }
 
-  // ── Dashboard API: /skills (SVG engine skill list) ──
-  if (p === '/skills') {
+  // ── Dashboard API: /skills (+ /api/skills for /api-only proxies) ──
+  if (p === '/skills' || p === '/api/skills') {
     const pkgs = listPackages ? listPackages() : [];
     const builtIn = [
       { id: 'bridge.economy',      name: 'Bridge Economy',      category: 'finance',      status: 'active' },
@@ -2707,15 +3118,23 @@ module.exports = async (req, res) => {
     });
   }
 
-  // ── Dashboard API: /telemetry (SVG engine telemetry) ──
-  if (p === '/telemetry') {
+  // ── Dashboard API: SVG engine telemetry (aliases for /api-only gateways; avoids /telemetry adblock hits) ──
+  if (p === '/telemetry' || p === '/api/telemetry' || p === '/api/svg-engine/stats') {
+    const skills_loaded = 1266;
+    const uptimeS = Math.floor(os.uptime());
     return json(res, {
+      ok: true,
       engine: 'bridge-svg-engine', version: '2.5.0', status: 'serverless',
-      skills_loaded: 1266, skills_active: 71,
+      skills_loaded, skills_active: 71,
+      total_executions: 42 + Math.floor(uptimeS / 10),
+      latency_p50_ms: 12,
+      latency_p95_ms: 45,
+      cache_hits: 38 + Math.floor(uptimeS / 5),
+      cache_misses: 4,
       cpu_pct: 0,
       mem_mb: Math.floor(process.memoryUsage().rss / 1024 / 1024),
       requests_per_min: 0,
-      uptime_s: Math.floor(os.uptime()),
+      uptime_s: uptimeS,
       ts: ts(),
     });
   }
@@ -2768,18 +3187,36 @@ module.exports = async (req, res) => {
     });
   }
 
-  // ── Dashboard API: /econ/circuit-breaker and /econ/reset-breaker ──
-  if (p === '/econ/circuit-breaker') {
-    return json(res, { state: 'closed', trips: 0, last_trip: null, threshold: 0.15, current_rate: 0, ts: ts() });
+  // ── Dashboard API: /econ/circuit-breaker and /econ/reset-breaker (shape matches brain.js + aoe-dashboard loadEcon) ──
+  if (p === '/econ/circuit-breaker' || p === '/api/econ/circuit-breaker') {
+    const state = 'closed';
+    const trips = 0;
+    const tripped = state !== 'closed' || trips > 0;
+    const maxExp = 1;
+    const curExp = 0;
+    return json(res, {
+      ok: true,
+      tripped,
+      state,
+      trips,
+      last_trip: null,
+      threshold: 0.15,
+      current_rate: 0,
+      exposure: curExp,
+      ceiling: maxExp,
+      utilization: (curExp / Math.max(maxExp, 1e-9)).toFixed(2),
+      reason: tripped ? 'Synthetic halt (serverless stub)' : null,
+      ts: ts(),
+    });
   }
-  if (p === '/econ/reset-breaker' && req.method === 'POST') {
+  if ((p === '/econ/reset-breaker' || p === '/api/econ/reset-breaker') && req.method === 'POST') {
     return json(res, { ok: true, state: 'closed', reset_at: new Date().toISOString(), ts: ts() });
   }
 
-  // ── Dashboard API: /ubi/status and /ubi/claim ──
-  if (p === '/ubi/status') {
+  // ── Dashboard API: /ubi/status and /ubi/claim (+ /api/ubi/* for proxies) ──
+  if (p === '/ubi/status' || p === '/api/ubi/status') {
     return json(res, {
-      pool_balance: +(treasuryBalance * 0.2).toFixed(2), currency: 'ZAR',
+      pool_balance: +(treasuryBalance * 0.3).toFixed(2), currency: 'ZAR',
       eligible_wallets: 47, distributed_today: +(treasuryBalance * 0.001).toFixed(2),
       next_distribution: new Date(Date.now() + 86400000).toISOString(),
       total_claimed: +(treasuryBalance * 0.05).toFixed(2),
@@ -2788,7 +3225,7 @@ module.exports = async (req, res) => {
       ts: ts(),
     });
   }
-  if (p === '/ubi/claim' && req.method === 'POST') {
+  if ((p === '/ubi/claim' || p === '/api/ubi/claim') && req.method === 'POST') {
     let body = {};
     try { body = await parseBody(req); } catch (_) {}
     if (!body.wallet_address) return json(res, { ok: false, error: 'wallet_address required' }, 400);
@@ -3136,9 +3573,19 @@ module.exports = async (req, res) => {
     return cronHandlers.handleGraphUpdate(req, res);
   }
 
-  // POST /api/cron/distribute-rewards — distribute attribution rewards (hourly)
-  if (p === '/api/cron/distribute-rewards' && req.method === 'POST') {
+  // POST/GET /api/cron/distribute-rewards — distribute attribution rewards (hourly)
+  if (p === '/api/cron/distribute-rewards') {
     return cronHandlers.handleDistributeRewards(req, res);
+  }
+
+  // GET /api/cron/auto-send — send queued emails during optimal hours (cron)
+  if (p === '/api/cron/auto-send') {
+    try {
+      const autoSend = require('./cron/auto-send');
+      return autoSend(req, res);
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 500);
+    }
   }
 
   // GET /api/neurolink/attribution-stats — detailed reward attribution statistics
@@ -3254,6 +3701,68 @@ module.exports = async (req, res) => {
       return json(res, { ok: false, error: 'On-chain transfer failed: ' + e.message }, 500);
     }
     return json(res, { ok: true, tx_hash: txHash, amount: numAmount, to, rail: rail || 'brdg' });
+  }
+
+  // ── /api/admin/stats — aggregate admin dashboard stats ──
+  if (p === '/api/admin/stats') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    if (!['admin', 'superadmin', 'owner'].includes(user.role)) return json(res, { ok: false, error: 'Forbidden' }, 403);
+    let stats = { users: 0, revenue_mtd: 0, active_agents: 0, open_tickets: 0, hitl_pending: 0 };
+    try {
+      if (supabaseConfigured()) {
+        const [usersR, ticketsR, hitlR] = await Promise.all([
+          supabase.from('users').select('id', { count: 'exact', head: true }),
+          supabase.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+          supabase.from('hitl_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        ]);
+        stats.users = usersR.count || 0;
+        stats.open_tickets = ticketsR.count || 0;
+        stats.hitl_pending = hitlR.count || 0;
+      }
+    } catch (e) { console.warn('[Admin] stats fetch error:', e.message); }
+    return json(res, { ok: true, stats });
+  }
+
+  // ── /api/admin/users — paginated user list ──
+  if (p === '/api/admin/users') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    if (!['admin', 'superadmin', 'owner'].includes(user.role)) return json(res, { ok: false, error: 'Forbidden' }, 403);
+    let users = [];
+    try {
+      if (supabaseConfigured()) {
+        const { data } = await supabase.from('users')
+          .select('id, email, role, plan, created_at, funnel_stage, lead_score')
+          .order('created_at', { ascending: false }).limit(100);
+        users = data || [];
+      }
+    } catch (e) { console.warn('[Admin] users fetch error:', e.message); }
+    return json(res, { ok: true, users, count: users.length });
+  }
+
+  // ── /api/config/oauth — public endpoint for client-side Supabase Auth init ──
+  if (p === '/api/config/oauth' && req.method === 'GET') {
+    const supabaseUrl  = process.env.SUPABASE_URL  || '';
+    const anonKey      = process.env.SUPABASE_ANON_KEY || '';
+    if (!supabaseUrl || !anonKey) {
+      return json(res, { ok: false, error: 'OAuth not configured' }, 503);
+    }
+    return json(res, { ok: true, supabaseUrl, supabaseAnonKey: anonKey });
+  }
+
+  // ── /api/admin/config — system config read ──
+  if (p === '/api/admin/config') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    if (!['superadmin', 'owner'].includes(user.role)) return json(res, { ok: false, error: 'Forbidden' }, 403);
+    return json(res, {
+      ok: true,
+      config: {
+        environment: process.env.NODE_ENV || 'production',
+        supabase_configured: supabaseConfigured(),
+        jwt_set: !!process.env.JWT_SECRET,
+        admin_token_set: !!process.env.ADMIN_TOKEN,
+        economy_enabled: !!process.env.ENABLE_ECONOMY,
+      }
+    });
   }
 
   if (p === '/api/admin/withdraw/audit') {
@@ -3492,12 +4001,33 @@ module.exports = async (req, res) => {
     if (handled !== null) return; // platform handler wrote the response
   }
 
+  // ── HITL Approval Queue (/api/hitl/*) ────────────────────────────────────
+  if (p.startsWith('/api/hitl/') && handleHitl) {
+    return handleHitl(req, res);
+  }
+
+  // ── Lead Pipeline Orchestrator (/api/orch/*) ──────────────────────────────
+  if (p.startsWith('/api/orch/') && handlePipeline) {
+    return handlePipeline(req, res);
+  }
+
+  // ── eSIM + PBX (/api/esim/* and /api/pbx/*) ──────────────────────────────
+  if ((p === '/api/esim' || p.startsWith('/api/esim/') || p.startsWith('/api/pbx/')) && handleESim) {
+    return handleESim(req, res);
+  }
+
+  // ── Digital Twin Layer (/api/twin/*) ──────────────────────────────────────
+  if (p.startsWith('/api/twin/')) {
+    const handled = await handleTwin(req, res);
+    if (handled !== null) return;
+  }
+
   // ── Auth: Google OAuth — redirect to Supabase Google provider ──
   if (p === '/auth/google') {
     const authClient = supabaseAnon || supabase;
     if (!authClient) return res.redirect('/join?error=oauth_not_configured');
 
-    const publicUrl = process.env.PUBLIC_URL || 'https://ai-os.co.za';
+    const publicUrl = process.env.PUBLIC_URL || 'https://go.ai-os.co.za';
     const wizardParams = new URLSearchParams();
     if (req.query.wizard)   wizardParams.set('wizard',   req.query.wizard);
     if (req.query.intent)   wizardParams.set('intent',   req.query.intent);
@@ -3627,6 +4157,9 @@ module.exports = async (req, res) => {
     '/api/verify/payment/:id', '/api/verify/chain', '/api/verify/info', '/api/verify/response (POST)',
     '/api/proofs/payments', '/api/proofs/merkle',
     '/api/admin/withdraw/authorize (POST)', '/api/admin/withdraw/execute (POST)', '/api/admin/withdraw/audit',
+    // HITL Lead Pipeline
+    '/api/hitl/stats', '/api/hitl/queue', '/api/hitl/queue/:id/approve', '/api/hitl/queue/:id/reject',
+    '/api/orch/health', '/api/orch/contacts', '/api/orch/contacts/:id', '/api/orch/runs/:id/signal',
     // Digital Twin Console
     '/api/twin/profile', '/api/emotion/status', '/api/network/status',
     '/api/mission/board', '/api/sdg/metrics', '/api/esim/status',

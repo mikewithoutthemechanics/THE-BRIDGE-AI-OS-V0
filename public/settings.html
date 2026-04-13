@@ -2,494 +2,382 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="description" content="Settings — Bridge AI OS. Manage your profile, preferences, and developer options.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://go.ai-os.co.za/settings">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://go.ai-os.co.za/settings">
+  <meta property="og:title" content="Settings — Bridge AI OS">
+  <meta property="og:description" content="Settings — Bridge AI OS. Manage your profile, preferences, and developer options.">
+  <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+  <meta property="og:site_name" content="Bridge AI OS">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Settings — Bridge AI OS">
+  <meta name="twitter:description" content="Settings — Bridge AI OS. Manage your profile, preferences, and developer options.">
+  <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings — Bridge AI OS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <!-- Apply stored theme before first paint to avoid flash -->
+  <script>(function(){var t=localStorage.getItem('bridge_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);else if(t==='system'&&window.matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light');})()</script>
   <style>
-    :root{--bg:#0a0e17;--card:#131a2b;--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444;--border:#1e293b;--input-bg:#0f1724}
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{background:var(--bg);color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;min-height:100vh}
-    a{color:var(--cyan);text-decoration:none}
-    a:hover{text-decoration:underline}
-
-    .settings-layout{display:grid;grid-template-columns:220px 1fr;max-width:1100px;margin:0 auto;min-height:calc(100vh - 60px);padding-top:24px}
-    @media(max-width:768px){
-      .settings-layout{grid-template-columns:1fr;padding-top:0}
-      .settings-sidebar{display:none}
-      .settings-tabs{display:flex}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#020408;--surface:rgba(10,18,30,0.85);--surface2:rgba(15,25,40,0.7);
+      --border:rgba(99,255,218,0.1);--border2:rgba(99,255,218,0.06);
+      --accent:#63ffda;--accent2:#00e57b;
+      --text:rgba(200,220,235,0.9);--dim:rgba(150,175,195,0.55);
+      --red:#ff5a5a;--font:'Outfit',system-ui,sans-serif;
+      --card-title:#fff;
     }
+    /* Light theme overrides */
+    [data-theme="light"]{
+      --bg:#f0f4f8;--surface:rgba(255,255,255,0.95);--surface2:rgba(235,242,250,0.8);
+      --border:rgba(0,150,120,0.15);--border2:rgba(0,150,120,0.08);
+      --accent:#00897b;--accent2:#00a86b;
+      --text:rgba(20,35,50,0.9);--dim:rgba(60,85,110,0.6);
+      --red:#d32f2f;--card-title:#0d1f2d;
+    }
+    body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;line-height:1.5;transition:background .25s,color .25s}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--text)}
 
-    /* Sidebar */
-    .settings-sidebar{padding:24px 16px;border-right:1px solid var(--border)}
-    .sidebar-title{font-size:1.2rem;font-weight:700;color:#f1f5f9;margin-bottom:24px;padding:0 12px}
-    .sidebar-item{display:block;padding:10px 12px;border-radius:8px;font-size:.85rem;color:var(--dim);cursor:pointer;margin-bottom:2px;transition:all .15s}
-    .sidebar-item:hover{background:rgba(56,189,248,.05);color:#e2e8f0;text-decoration:none}
-    .sidebar-item.active{background:rgba(56,189,248,.1);color:var(--cyan);font-weight:600}
-
-    /* Mobile tabs */
-    .settings-tabs{display:none;overflow-x:auto;border-bottom:1px solid var(--border);padding:8px 12px;gap:4px;background:var(--card)}
-    .tab-btn{padding:8px 14px;border-radius:6px;font-size:.75rem;color:var(--dim);cursor:pointer;white-space:nowrap;border:none;background:transparent;font-family:inherit}
-    .tab-btn.active{background:rgba(56,189,248,.1);color:var(--cyan);font-weight:600}
-
-    /* Main content */
-    .settings-main{padding:24px 32px;overflow-y:auto}
-    @media(max-width:768px){.settings-main{padding:16px}}
-    .settings-section{display:none}
-    .settings-section.active{display:block}
-    .section-heading{font-size:1.3rem;font-weight:700;margin-bottom:8px}
-    .section-desc{font-size:.82rem;color:var(--dim);margin-bottom:24px}
-
-    /* Form elements */
-    .form-group{margin-bottom:20px}
-    .form-label{display:block;font-size:.78rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-    .form-input{width:100%;max-width:400px;padding:10px 14px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;color:#e2e8f0;font-size:.88rem;font-family:inherit;transition:border-color .2s}
-    .form-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 2px rgba(56,189,248,.15)}
-    .form-input:read-only{opacity:.6;cursor:not-allowed}
-    .form-input::placeholder{color:var(--dim)}
-    select.form-input{cursor:pointer}
-
-    .btn{padding:10px 20px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
-    .btn-primary{background:var(--cyan);color:#0a0e17}
-    .btn-primary:hover{opacity:.9}
-    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--dim)}
-    .btn-outline:hover{border-color:var(--cyan);color:var(--cyan)}
-    .btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red)}
-    .btn-danger:hover{background:rgba(239,68,68,.2)}
-
-    /* Avatar */
-    .avatar-lg{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:#0a0e17;margin-bottom:16px}
-    .plan-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-    .plan-starter{background:rgba(56,189,248,.12);color:var(--cyan)}
-    .plan-pro{background:rgba(167,139,250,.14);color:var(--purple)}
-    .plan-admin{background:rgba(34,197,94,.12);color:var(--green)}
-    .plan-enterprise{background:rgba(245,158,11,.12);color:var(--orange)}
-    .plan-free{background:rgba(255,255,255,.06);color:var(--dim)}
-
-    /* Toggle switch */
-    .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.04)}
-    .toggle-row:last-child{border-bottom:none}
-    .toggle-label{font-size:.88rem}
-    .toggle-desc{font-size:.72rem;color:var(--dim);margin-top:2px}
-    .toggle{position:relative;width:44px;height:24px;flex-shrink:0}
-    .toggle input{opacity:0;width:0;height:0}
-    .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border);border-radius:24px;transition:.2s}
-    .toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
-    .toggle input:checked+.toggle-slider{background:var(--cyan)}
-    .toggle input:checked+.toggle-slider::before{transform:translateX(20px)}
-
-    /* API Key */
-    .api-key-display{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;font-family:monospace;font-size:.85rem;max-width:400px}
-    .api-key-display span{flex:1;overflow:hidden;text-overflow:ellipsis}
-    .usage-stat{display:flex;justify-content:space-between;padding:8px 0;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.04)}
-    .usage-stat:last-child{border-bottom:none}
-
-    /* Integration cards */
-    .integration-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-    .integration-card{background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:16px;transition:border-color .2s}
-    .integration-card:hover{border-color:rgba(56,189,248,.3)}
-    .int-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .int-name{font-size:.9rem;font-weight:600}
-    .int-desc{font-size:.75rem;color:var(--dim);margin-bottom:12px}
-    .int-status{font-size:.68rem;font-weight:700;text-transform:uppercase}
-    .int-connected{color:var(--green)}
-    .int-disconnected{color:var(--dim)}
-
-    /* Billing progress bars */
-    .billing-usage{margin-top:16px}
-    .usage-row{margin-bottom:16px}
-    .usage-header{display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:6px}
-    .usage-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-    .usage-fill{height:100%;border-radius:3px;background:var(--cyan);transition:width .5s}
-
-    /* Security */
-    .session-card{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:12px}
-    .session-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
-    .session-info{flex:1;font-size:.82rem}
+    .page{max-width:680px;margin:0 auto;padding:32px 20px 80px}
+    .page-header{margin-bottom:32px}
+    .page-header h1{font-size:1.6rem;font-weight:700;color:#fff;letter-spacing:-.01em}
+    .page-header p{color:var(--dim);font-size:.85rem;margin-top:4px}
 
     /* Toast */
-    .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:.82rem;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
-    .toast.show{opacity:1;transform:translateY(0)}
-    .toast-success{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--green)}
-    .toast-error{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+    #toast{position:fixed;top:70px;right:20px;padding:10px 18px;border-radius:8px;font-size:.82rem;font-weight:600;z-index:9999;opacity:0;transform:translateY(-8px);transition:opacity .25s,transform .25s;pointer-events:none}
+    #toast.show{opacity:1;transform:translateY(0)}
+    #toast.ok{background:rgba(0,229,123,.15);border:1px solid rgba(0,229,123,.35);color:var(--accent2)}
+    #toast.err{background:rgba(255,60,60,.1);border:1px solid rgba(255,60,60,.3);color:var(--red)}
 
-    /* Confirm dialog */
-    .dialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:10000}
-    .dialog-overlay.show{display:flex}
-    .dialog-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:360px;width:90%;text-align:center}
-    .dialog-title{font-size:1rem;font-weight:700;margin-bottom:8px}
-    .dialog-desc{font-size:.82rem;color:var(--dim);margin-bottom:20px}
-    .dialog-actions{display:flex;gap:8px;justify-content:center}
+    /* Cards */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:20px;overflow:hidden}
+    .card-header{padding:16px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
+    .card-header h2{font-size:.95rem;font-weight:700;color:var(--card-title);letter-spacing:.03em;text-transform:uppercase}
+    .card-header .ch-icon{font-size:1.1rem;opacity:.7}
+    .card-body{padding:20px;display:flex;flex-direction:column;gap:18px}
+
+    /* Read-only badge row */
+    .info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border2)}
+    .info-label{font-size:.77rem;color:var(--dim);font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+    .info-value{font-size:.88rem;color:var(--text);font-weight:600}
+    .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+    .badge-plan{background:rgba(99,255,218,.1);border:1px solid rgba(99,255,218,.25);color:var(--accent)}
+
+    /* Form fields */
+    .field{display:flex;flex-direction:column;gap:5px}
+    .field label{font-size:.78rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+    .field input[type=text],.field input[type=email],.field select{
+      background:rgba(5,12,22,.6);border:1px solid rgba(99,255,218,.12);
+      border-radius:8px;padding:9px 13px;color:var(--text);font-size:.88rem;
+      font-family:var(--font);width:100%;transition:border-color .15s;outline:none;
+    }
+    .field input:focus,.field select:focus{border-color:rgba(99,255,218,.4)}
+    .field select option{background:#0a1220;color:var(--text)}
+    .field .hint{font-size:.73rem;color:var(--dim);margin-top:2px}
+
+    /* Toggle row */
+    .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);cursor:pointer}
+    .toggle-row:hover{border-color:rgba(99,255,218,.2)}
+    .toggle-info .toggle-title{font-size:.88rem;font-weight:600;color:var(--text)}
+    .toggle-info .toggle-sub{font-size:.75rem;color:var(--dim);margin-top:1px}
+    .toggle-switch{position:relative;width:38px;height:22px;flex-shrink:0}
+    .toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+    .toggle-track{position:absolute;inset:0;background:rgba(99,255,218,.1);border:1px solid rgba(99,255,218,.2);border-radius:11px;transition:background .2s,border-color .2s}
+    .toggle-switch input:checked ~ .toggle-track{background:rgba(99,255,218,.25);border-color:rgba(99,255,218,.5)}
+    .toggle-knob{position:absolute;top:3px;left:3px;width:14px;height:14px;background:var(--dim);border-radius:50%;transition:transform .2s,background .2s}
+    .toggle-switch input:checked ~ .toggle-knob{transform:translateX(16px);background:var(--accent)}
+
+    /* Action buttons */
+    .actions{display:flex;gap:10px;padding-top:4px}
+    .btn-primary{padding:9px 24px;background:linear-gradient(135deg,#63ffda,#00e57b);color:#020408;border:none;border-radius:8px;font-size:.83rem;font-weight:700;cursor:pointer;font-family:var(--font);letter-spacing:.04em;transition:filter .15s,transform .15s}
+    .btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+    .btn-secondary{padding:9px 20px;background:none;border:1px solid rgba(99,255,218,.2);color:var(--dim);border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;font-family:var(--font);transition:border-color .15s,color .15s}
+    .btn-secondary:hover{border-color:rgba(99,255,218,.4);color:var(--text)}
+
+    /* Danger zone */
+    .danger-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,60,60,.15);background:rgba(255,60,60,.04)}
+    .danger-label .dt{font-size:.88rem;font-weight:600;color:var(--text)}
+    .danger-label .ds{font-size:.75rem;color:var(--dim);margin-top:2px}
+    .btn-danger{padding:7px 16px;background:none;border:1px solid rgba(255,90,90,.4);color:var(--red);border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:var(--font);transition:background .15s}
+    .btn-danger:hover{background:rgba(255,60,60,.1)}
+
+    @media(max-width:480px){.page{padding:20px 14px 80px}.actions{flex-direction:column}}
   </style>
 </head>
 <body>
+<!-- Auth guard -->
+<script>(function(){var t=localStorage.getItem('bridge_token')||(document.cookie.match(/(?:^|; )access_token=([^;]*)/)||[])[1];if(!t){location.replace('/onboarding?redirect='+encodeURIComponent(location.pathname));return;}fetch('/auth/me',{headers:{Authorization:'Bearer '+t}}).then(function(r){if(!r.ok)throw new Error();}).catch(function(){localStorage.removeItem('bridge_token');location.replace('/onboarding');});})()</script>
+<script src="/bridge-nav.js"></script>
 
-<div class="settings-tabs" id="mobileTabs"></div>
+<div class="page">
+  <div class="page-header">
+    <h1>Settings</h1>
+    <p>Profile, preferences and developer options — synced across devices.</p>
+  </div>
 
-<div class="settings-layout">
-  <aside class="settings-sidebar">
-    <div class="sidebar-title">Settings</div>
-    <a class="sidebar-item active" data-section="profile">Profile</a>
-    <a class="sidebar-item" data-section="notifications">Notifications</a>
-    <a class="sidebar-item" data-section="apikeys">API Keys</a>
-    <a class="sidebar-item" data-section="integrations">Integrations</a>
-    <a class="sidebar-item" data-section="billing">Billing</a>
-    <a class="sidebar-item" data-section="security">Security</a>
-  </aside>
+  <div id="toast"></div>
 
-  <main class="settings-main">
-    <!-- Profile -->
-    <div class="settings-section active" id="sec-profile">
-      <div class="section-heading">Profile</div>
-      <div class="section-desc">Manage your account information</div>
-      <div class="avatar-lg" id="profileAvatar" style="background:var(--cyan)">?</div>
-      <div class="form-group">
-        <label class="form-label">Display Name</label>
-        <input type="text" class="form-input" id="profileName" placeholder="Your name">
+  <!-- ── Profile ─────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header"><span class="ch-icon">👤</span><h2>Profile</h2></div>
+    <div class="card-body">
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <span class="info-value" id="disp-email">—</span>
       </div>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-input" id="profileEmail" readonly placeholder="Loading...">
+      <div class="info-row">
+        <span class="info-label">Plan</span>
+        <span class="info-value"><span class="badge badge-plan" id="disp-plan">free</span></span>
       </div>
-      <div class="form-group">
-        <label class="form-label">Plan</label>
-        <div><span class="plan-badge plan-free" id="profilePlan">--</span></div>
+      <div class="field">
+        <label for="name">Display name</label>
+        <input type="text" id="name" name="name" placeholder="Your name" maxlength="120">
       </div>
-      <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+      <div class="field">
+        <label for="company">Company / Organisation</label>
+        <input type="text" id="company" name="company" placeholder="Your company" maxlength="120">
+      </div>
     </div>
+  </div>
 
-    <!-- Notifications -->
-    <div class="settings-section" id="sec-notifications">
-      <div class="section-heading">Notifications</div>
-      <div class="section-desc">Control how you receive updates</div>
-      <div class="toggle-row">
-        <div><div class="toggle-label">Email Notifications</div><div class="toggle-desc">Receive updates via email</div></div>
-        <label class="toggle"><input type="checkbox" id="notifEmail" checked><span class="toggle-slider"></span></label>
+  <!-- ── Preferences ─────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header"><span class="ch-icon">⚙️</span><h2>Preferences</h2></div>
+    <div class="card-body">
+      <div class="field">
+        <label for="theme">Theme</label>
+        <select id="theme" name="theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="system">System default</option>
+        </select>
       </div>
-      <div class="toggle-row">
-        <div><div class="toggle-label">Browser Push Notifications</div><div class="toggle-desc">Desktop push alerts for important events</div></div>
-        <label class="toggle"><input type="checkbox" id="notifPush"><span class="toggle-slider"></span></label>
-      </div>
-      <div class="toggle-row">
-        <div><div class="toggle-label">Weekly Digest</div><div class="toggle-desc">Summary of activity sent every Monday</div></div>
-        <label class="toggle"><input type="checkbox" id="notifDigest" checked><span class="toggle-slider"></span></label>
-      </div>
-      <div style="margin-top:20px"><button class="btn btn-primary" onclick="saveNotifications()">Save Preferences</button></div>
-    </div>
 
-    <!-- API Keys -->
-    <div class="settings-section" id="sec-apikeys">
-      <div class="section-heading">API Keys</div>
-      <div class="section-desc">Manage your API access credentials</div>
-      <div class="form-group">
-        <label class="form-label">Current API Key</label>
-        <div class="api-key-display">
-          <span id="apiKeyMasked">sk-••••••••••••</span>
-          <button class="btn btn-outline" style="padding:6px 12px;font-size:.72rem" onclick="copyApiKey()">Copy</button>
+      <label class="toggle-row" for="notifications">
+        <div class="toggle-info">
+          <div class="toggle-title">Notifications</div>
+          <div class="toggle-sub">Browser push notifications for agent events</div>
         </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="notifications" name="notifications">
+          <div class="toggle-track"></div>
+          <div class="toggle-knob"></div>
+        </div>
+      </label>
+
+      <label class="toggle-row" for="liveRefresh">
+        <div class="toggle-info">
+          <div class="toggle-title">Live refresh</div>
+          <div class="toggle-sub">Auto-poll dashboard and agents view every 10s</div>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="liveRefresh" name="liveRefresh" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-knob"></div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <!-- ── Developer ───────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header"><span class="ch-icon">🔧</span><h2>Developer</h2></div>
+    <div class="card-body">
+      <div class="field">
+        <label for="apiBase">API base URL</label>
+        <input type="text" id="apiBase" name="apiBase" placeholder="Leave empty for same origin">
+        <span class="hint">Override the backend URL used by all Bridge apps. Empty = same origin.</span>
       </div>
-      <div style="margin-bottom:24px">
-        <button class="btn btn-danger" onclick="confirmRegenerate()">Regenerate Key</button>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Usage This Month</label>
-        <div class="usage-stat"><span>API Calls</span><span id="apiCalls">--</span></div>
-        <div class="usage-stat"><span>Remaining Quota</span><span id="apiRemaining">--</span></div>
+      <div class="field">
+        <label for="userId">Cross-device user ID</label>
+        <input type="text" id="userId" name="userId" placeholder="default" maxlength="128">
+        <span class="hint">Sent as <code style="font-size:.72rem;color:var(--accent)">X-User-Id</code> header. Sync settings between devices using the same ID.</span>
       </div>
     </div>
+  </div>
 
-    <!-- Integrations -->
-    <div class="settings-section" id="sec-integrations">
-      <div class="section-heading">Integrations</div>
-      <div class="section-desc">Connect external services to your workspace</div>
-      <div class="integration-grid" id="integrationsGrid"><div style="color:var(--dim);font-size:.85rem">Loading integrations...</div></div>
-    </div>
+  <!-- ── Actions ─────────────────────────────────────────────── -->
+  <div class="actions">
+    <button class="btn-primary" id="save-btn">Save settings</button>
+    <button class="btn-secondary" id="reset-btn">Reset to defaults</button>
+  </div>
 
-    <!-- Billing -->
-    <div class="settings-section" id="sec-billing">
-      <div class="section-heading">Billing</div>
-      <div class="section-desc">Manage your subscription and usage</div>
-      <div style="margin-bottom:20px">
-        <div style="font-size:1.1rem;font-weight:700;margin-bottom:4px" id="billingPlanName">--</div>
-        <span class="plan-badge plan-free" id="billingBadge">--</span>
-      </div>
-      <div class="billing-usage" id="billingUsage">
-        <div class="usage-row">
-          <div class="usage-header"><span>API Calls</span><span id="billApiCalls">-- / --</span></div>
-          <div class="usage-bar"><div class="usage-fill" id="billApiBar" style="width:0%"></div></div>
+  <!-- ── Account ─────────────────────────────────────────────── -->
+  <div class="card" style="margin-top:32px">
+    <div class="card-header"><span class="ch-icon">🔐</span><h2>Account</h2></div>
+    <div class="card-body">
+      <div class="danger-row">
+        <div class="danger-label">
+          <div class="dt">Sign out</div>
+          <div class="ds">Sign out from this device and clear local session</div>
         </div>
-        <div class="usage-row">
-          <div class="usage-header"><span>Tokens Consumed</span><span id="billTokens">-- / --</span></div>
-          <div class="usage-bar"><div class="usage-fill" id="billTokenBar" style="width:0%;background:var(--purple)"></div></div>
-        </div>
-        <div class="usage-row">
-          <div class="usage-header"><span>BRDG Spent</span><span id="billBrdg">--</span></div>
-          <div class="usage-bar"><div class="usage-fill" id="billBrdgBar" style="width:0%;background:var(--orange)"></div></div>
-        </div>
+        <button class="btn-danger" id="signout-btn">Sign out</button>
       </div>
-      <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap">
-        <a href="/billing" class="btn btn-primary">Upgrade Plan</a>
-        <a href="/invoicing" class="btn btn-outline">View Invoices</a>
-      </div>
-    </div>
-
-    <!-- Security -->
-    <div class="settings-section" id="sec-security">
-      <div class="section-heading">Security</div>
-      <div class="section-desc">Manage your account security</div>
-      <div class="form-group">
-        <label class="form-label">Change Password</label>
-        <input type="password" class="form-input" id="secCurrentPw" placeholder="Current password" style="margin-bottom:8px">
-        <input type="password" class="form-input" id="secNewPw" placeholder="New password" style="margin-bottom:8px">
-        <input type="password" class="form-input" id="secConfirmPw" placeholder="Confirm new password">
-      </div>
-      <button class="btn btn-primary" onclick="changePassword()" style="margin-bottom:24px">Update Password</button>
-      <div class="form-group">
-        <label class="form-label">Connected Wallet</label>
-        <div class="api-key-display"><span id="walletAddr">Not connected</span></div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Active Sessions</label>
-        <div class="session-card">
-          <div class="session-dot"></div>
-          <div class="session-info"><strong>Current session</strong><br><span style="color:var(--dim);font-size:.72rem">This device</span></div>
-        </div>
-      </div>
-      <button class="btn btn-danger" onclick="logoutEverywhere()">Log Out Everywhere</button>
-    </div>
-  </main>
-</div>
-
-<!-- Confirm dialog -->
-<div class="dialog-overlay" id="confirmDialog">
-  <div class="dialog-box">
-    <div class="dialog-title">Regenerate API Key?</div>
-    <div class="dialog-desc">Your current key will be invalidated immediately. This action cannot be undone.</div>
-    <div class="dialog-actions">
-      <button class="btn btn-outline" onclick="closeDialog()">Cancel</button>
-      <button class="btn btn-danger" onclick="regenerateKey()">Regenerate</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
 <script>
-(function(){
+(function () {
   'use strict';
 
-  let user = null;
-  let token = null;
-
   function getToken() {
-    var match = document.cookie.split(';').map(function(c){return c.trim()}).find(function(c){return c.startsWith('bridge_token=')});
-    return match ? match.split('=')[1] : localStorage.getItem('bridge_token');
+    return localStorage.getItem('bridge_token')
+      || (document.cookie.match(/(?:^|; )access_token=([^;]*)/) || [])[1]
+      || null;
   }
 
-  function showToast(msg, type) {
-    var t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast toast-' + (type || 'success') + ' show';
-    setTimeout(function(){ t.classList.remove('show'); }, 3000);
+  function authHeaders() {
+    var h = { 'Content-Type': 'application/json' };
+    var t = getToken();
+    if (t) h['Authorization'] = 'Bearer ' + t;
+    var uid = (document.getElementById('userId') || {}).value;
+    if (uid && uid.trim()) h['X-User-Id'] = uid.trim().slice(0, 128);
+    return h;
   }
 
-  function hashColor(str) {
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    var colors = ['#38bdf8','#22c55e','#a78bfa','#f59e0b','#ef4444','#ec4899','#06b6d4'];
-    return colors[Math.abs(hash) % colors.length];
+  // ── Toast ──────────────────────────────────────────────────
+  function toast(msg, isErr) {
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show ' + (isErr ? 'err' : 'ok');
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.className = el.className.replace('show', '').trim(); }, 3500);
   }
 
-  // Section navigation
-  var sections = ['profile','notifications','apikeys','integrations','billing','security'];
-
-  function showSection(id) {
-    sections.forEach(function(s) {
-      var el = document.getElementById('sec-' + s);
-      if (el) el.classList.toggle('active', s === id);
-    });
-    document.querySelectorAll('.sidebar-item').forEach(function(el) {
-      el.classList.toggle('active', el.dataset.section === id);
-    });
-    document.querySelectorAll('.tab-btn').forEach(function(el) {
-      el.classList.toggle('active', el.dataset.section === id);
-    });
+  // ── Field helpers ──────────────────────────────────────────
+  function setField(id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!val;
+    else el.value = (val == null) ? '' : val;
   }
 
-  document.querySelectorAll('.sidebar-item').forEach(function(el) {
-    el.addEventListener('click', function(e) { e.preventDefault(); showSection(el.dataset.section); });
-  });
+  function getField(id) {
+    var el = document.getElementById(id);
+    if (!el) return undefined;
+    return el.type === 'checkbox' ? el.checked : el.value;
+  }
 
-  // Mobile tabs
-  var tabsEl = document.getElementById('mobileTabs');
-  sections.forEach(function(s) {
-    var btn = document.createElement('button');
-    btn.className = 'tab-btn' + (s === 'profile' ? ' active' : '');
-    btn.dataset.section = s;
-    btn.textContent = s.charAt(0).toUpperCase() + s.slice(1);
-    btn.addEventListener('click', function() { showSection(s); });
-    tabsEl.appendChild(btn);
-  });
-
-  async function init() {
-    token = getToken();
-    if (!token) { window.location.href = '/join?next=/settings'; return; }
+  // ── Load ───────────────────────────────────────────────────
+  async function load() {
+    try {
+      // Get user identity from /auth/me (email, plan)
+      var meRes = await fetch('/auth/me', { headers: authHeaders() });
+      if (meRes.ok) {
+        var me = await meRes.json();
+        var u = me.user || {};
+        document.getElementById('disp-email').textContent = u.email || '—';
+        document.getElementById('disp-plan').textContent = (u.plan || 'free').toUpperCase();
+      }
+    } catch (_) {}
 
     try {
-      var res = await fetch('/auth/me', { credentials: 'include', headers: { Authorization: 'Bearer ' + token } });
-      var data = await res.json();
-      if (!data.ok || !data.user) { window.location.href = '/join?next=/settings'; return; }
-      user = data.user;
-
-      // Profile
-      var initials = (user.name || user.email || '?').charAt(0).toUpperCase();
-      var avatar = document.getElementById('profileAvatar');
-      avatar.textContent = initials;
-      avatar.style.background = hashColor(user.name || user.email || '');
-      document.getElementById('profileName').value = user.name || '';
-      document.getElementById('profileEmail').value = user.email || '';
-      var plan = user.plan || 'free';
-      var planEl = document.getElementById('profilePlan');
-      planEl.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
-      planEl.className = 'plan-badge plan-' + plan;
-
-      // Billing
-      document.getElementById('billingPlanName').textContent = plan.charAt(0).toUpperCase() + plan.slice(1) + ' Plan';
-      var bb = document.getElementById('billingBadge');
-      bb.textContent = plan; bb.className = 'plan-badge plan-' + plan;
-
-      // Wallet
-      if (user.wallet_address) {
-        document.getElementById('walletAddr').textContent = user.wallet_address;
-      }
-
-      // API Key display
-      var apiKey = localStorage.getItem('brdg_api_key') || '';
-      if (apiKey) {
-        document.getElementById('apiKeyMasked').textContent = 'sk-' + '••••••••' + apiKey.slice(-4);
-      }
-
-    } catch(e) {
-      showToast('Failed to load profile', 'error');
-    }
-
-    // Load integrations
-    loadIntegrations();
-    // Load analytics for billing
-    loadBillingUsage();
-  }
-
-  async function loadIntegrations() {
-    try {
-      var res = await fetch('/api/platform/integrations/targets', { headers: { Authorization: 'Bearer ' + token } });
-      var data = await res.json();
-      var grid = document.getElementById('integrationsGrid');
-      grid.innerHTML = '';
-      var targets = data.targets || [];
-      if (targets.length === 0) {
-        grid.innerHTML = '<div style="color:var(--dim);font-size:.85rem">No integrations available</div>';
-        return;
-      }
-      targets.forEach(function(t) {
-        var card = document.createElement('div');
-        card.className = 'integration-card';
-        var connected = t.connected || t.status === 'connected';
-        card.innerHTML = '<div class="int-header"><span class="int-name">' + (t.name || t.id) + '</span><span class="int-status ' + (connected ? 'int-connected' : 'int-disconnected') + '">' + (connected ? 'Connected' : 'Not connected') + '</span></div><div class="int-desc">' + (t.description || '') + '</div><button class="btn btn-outline" style="padding:6px 12px;font-size:.72rem">' + (connected ? 'Configure' : 'Connect') + '</button>';
-        grid.appendChild(card);
-      });
-    } catch(e) {
-      document.getElementById('integrationsGrid').innerHTML = '<div style="color:var(--dim);font-size:.85rem">Unable to load integrations</div>';
+      var r = await fetch('/api/user/settings', { headers: authHeaders() });
+      if (!r.ok) return;
+      var data = await r.json();
+      var s = data.settings || {};
+      setField('name',          s.name);
+      setField('company',       s.company);
+      setField('theme',         s.theme || 'dark');
+      setField('notifications', s.notifications);
+      setField('liveRefresh',   s.liveRefresh !== false);
+      setField('apiBase',       s.apiBase);
+      setField('userId',        s.userId || localStorage.getItem('bridge_user_id') || '');
+    } catch (_) {
+      toast('Could not load settings', true);
     }
   }
 
-  async function loadBillingUsage() {
-    try {
-      var res = await fetch('/api/platform/profile/state', { headers: { Authorization: 'Bearer ' + token } });
-      var data = await res.json();
-      var analytics = data.analytics || {};
-      var apiCalls = analytics.api_calls || analytics.executions?.total || 0;
-      var tokens = analytics.tokens_used || 0;
-      var brdg = analytics.brdg_spent || 0;
-      var limits = { api: 1000, tokens: 50000 };
-
-      document.getElementById('billApiCalls').textContent = apiCalls + ' / ' + limits.api;
-      document.getElementById('billApiBar').style.width = Math.min((apiCalls / limits.api) * 100, 100) + '%';
-      document.getElementById('billTokens').textContent = tokens + ' / ' + limits.tokens;
-      document.getElementById('billTokenBar').style.width = Math.min((tokens / limits.tokens) * 100, 100) + '%';
-      document.getElementById('billBrdg').textContent = brdg + ' BRDG';
-      document.getElementById('billBrdgBar').style.width = Math.min(brdg * 2, 100) + '%';
-      document.getElementById('apiCalls').textContent = apiCalls;
-      document.getElementById('apiRemaining').textContent = Math.max(limits.api - apiCalls, 0);
-    } catch(e) { /* non-fatal */ }
-  }
-
-  // Actions
-  window.saveProfile = async function() {
-    var name = document.getElementById('profileName').value.trim();
-    if (!name) { showToast('Name cannot be empty', 'error'); return; }
-    try {
-      await fetch('/api/user/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ settings: { name: name } })
-      });
-      showToast('Profile saved');
-    } catch(e) { showToast('Failed to save', 'error'); }
-  };
-
-  window.saveNotifications = function() {
-    var prefs = {
-      email: document.getElementById('notifEmail').checked,
-      push: document.getElementById('notifPush').checked,
-      digest: document.getElementById('notifDigest').checked
+  // ── Save ───────────────────────────────────────────────────
+  document.getElementById('save-btn').addEventListener('click', async function () {
+    var payload = {
+      name:          getField('name') || '',
+      company:       getField('company') || '',
+      theme:         getField('theme') || 'dark',
+      notifications: !!getField('notifications'),
+      liveRefresh:   !!getField('liveRefresh'),
+      apiBase:       getField('apiBase') || '',
+      userId:        (getField('userId') || '').trim().slice(0, 128),
     };
-    localStorage.setItem('bridge_notif_prefs', JSON.stringify(prefs));
-    showToast('Notification preferences saved');
-  };
+    try {
+      var r = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ settings: payload }),
+      });
+      var data = await r.json();
+      if (r.ok && data.ok !== false) {
+        // Apply and persist theme locally
+        applyTheme(payload.theme || 'dark');
+        // Persist userId locally as fallback
+        var uid = payload.userId;
+        if (uid) localStorage.setItem('bridge_user_id', uid);
+        else localStorage.removeItem('bridge_user_id');
+        // Update cached user name
+        try {
+          var stored = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+          if (payload.name) stored.name = payload.name;
+          localStorage.setItem('bridge_user', JSON.stringify(stored));
+        } catch (_) {}
+        toast('Settings saved successfully');
+      } else {
+        toast(data.error || 'Failed to save settings', true);
+      }
+    } catch (err) {
+      toast('Network error — could not save', true);
+    }
+  });
 
-  window.copyApiKey = function() {
-    var key = localStorage.getItem('brdg_api_key') || 'sk-demo-key-placeholder';
-    navigator.clipboard.writeText(key).then(function() { showToast('API key copied'); }).catch(function() { showToast('Copy failed', 'error'); });
-  };
+  // ── Reset ──────────────────────────────────────────────────
+  document.getElementById('reset-btn').addEventListener('click', function () {
+    setField('theme',         'dark');
+    setField('notifications', false);
+    setField('liveRefresh',   true);
+    setField('apiBase',       '');
+    setField('userId',        '');
+    toast('Reset to defaults — click Save to persist');
+  });
 
-  window.confirmRegenerate = function() {
-    document.getElementById('confirmDialog').classList.add('show');
-  };
-
-  window.closeDialog = function() {
-    document.getElementById('confirmDialog').classList.remove('show');
-  };
-
-  window.regenerateKey = function() {
-    closeDialog();
-    var newKey = 'sk-' + Array.from({length:32}, function(){return 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*36)]}).join('');
-    localStorage.setItem('brdg_api_key', newKey);
-    document.getElementById('apiKeyMasked').textContent = 'sk-' + '••••••••' + newKey.slice(-4);
-    showToast('New API key generated');
-  };
-
-  window.changePassword = async function() {
-    var curr = document.getElementById('secCurrentPw').value;
-    var newPw = document.getElementById('secNewPw').value;
-    var confirm = document.getElementById('secConfirmPw').value;
-    if (!curr || !newPw) { showToast('Fill in all fields', 'error'); return; }
-    if (newPw !== confirm) { showToast('Passwords do not match', 'error'); return; }
-    if (newPw.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
-    showToast('Password updated');
-    document.getElementById('secCurrentPw').value = '';
-    document.getElementById('secNewPw').value = '';
-    document.getElementById('secConfirmPw').value = '';
-  };
-
-  window.logoutEverywhere = function() {
-    document.cookie = 'bridge_token=;path=/;max-age=0';
+  // ── Sign out ───────────────────────────────────────────────
+  document.getElementById('signout-btn').addEventListener('click', function () {
+    var token = getToken();
+    if (token) {
+      fetch('/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      }).catch(function () {});
+    }
     localStorage.removeItem('bridge_token');
-    window.location.href = '/join';
-  };
+    localStorage.removeItem('bridge_user_token');
+    localStorage.removeItem('bridge_user');
+    document.cookie = 'access_token=;path=/;max-age=0';
+    document.cookie = 'bridge_token=;path=/;max-age=0';
+    window.location.href = '/onboarding';
+  });
 
-  init();
+  // ── Theme applier (live preview + localStorage) ────────────
+  function applyTheme(t) {
+    var resolved = t;
+    if (t === 'system') {
+      resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', resolved);
+    localStorage.setItem('bridge_theme', t === 'system' ? 'system' : resolved);
+  }
+
+  document.getElementById('theme').addEventListener('change', function () {
+    applyTheme(this.value);
+  });
+
+  // ── Init ───────────────────────────────────────────────────
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
 })();
 </script>
-<script src="/bridge-nav.js" defer></script>
 </body>
 </html>

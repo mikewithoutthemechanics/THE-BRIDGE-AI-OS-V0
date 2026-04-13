@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="description" content="Sovereign Gateway — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/gateway">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/gateway">
+<meta property="og:title" content="Sovereign Gateway — Bridge AI OS">
+<meta property="og:description" content="Sovereign Gateway — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sovereign Gateway — Bridge AI OS">
+<meta name="twitter:description" content="Sovereign Gateway — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sovereign Gateway — Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #040810;
+      --surface: #080f1a;
+      --surface2: #0c1624;
+      --border: rgba(0,200,255,0.12);
+      --border2: rgba(0,200,255,0.06);
+      --cyan: #00c8ff;
+      --green: #00e57b;
+      --purple: #a78bfa;
+      --yellow: #ffd166;
+      --red: #ff3c5a;
+      --dim: #3a566a;
+      --text: #b8d0e0;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID BG ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.025) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── SCANNER LINE ── */
+    @keyframes scan {
+      0%   { top: -2px; }
+      100% { top: 100%; }
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,200,255,0.4), transparent);
+      animation: scan 8s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── CONTAINER ── */
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── OS HEADER ── */
+    .os-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .os-name {
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      color: var(--dim);
+      margin-bottom: 8px;
+    }
+    .os-title {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+    .os-title span { color: var(--cyan); }
+    .os-sub {
+      font-size: 0.72rem;
+      color: var(--dim);
+      margin-top: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── MAIN CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+      box-shadow: 0 0 80px rgba(0,200,255,0.04);
+    }
+
+    /* ── STAGES ── */
+    .stage { display: none; flex-direction: column; }
+    .stage.active { display: flex; }
+    .stage-header {
+      padding: 24px 24px 16px;
+      border-bottom: 1px solid var(--border2);
+    }
+    .stage-num {
+      font-size: 0.58rem;
+      letter-spacing: 0.15em;
+      color: var(--dim);
+      margin-bottom: 4px;
+    }
+    .stage-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .stage-body { padding: 24px; }
+
+    /* ── STATUS CHIP ── */
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.08em;
+      margin-bottom: 16px;
+    }
+    .status-chip.pending {
+      background: rgba(255,209,102,0.1);
+      border: 1px solid rgba(255,209,102,0.2);
+      color: var(--yellow);
+    }
+    .status-chip.ok {
+      background: rgba(0,229,123,0.1);
+      border: 1px solid rgba(0,229,123,0.2);
+      color: var(--green);
+    }
+    .status-chip.err {
+      background: rgba(255,60,90,0.1);
+      border: 1px solid rgba(255,60,90,0.2);
+      color: var(--red);
+    }
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .status-chip.pending .dot { animation: blink 1.2s infinite; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    /* ── CHAIN DATA GRID ── */
+    .chain-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .chain-stat {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .chain-stat-label { font-size: 0.58rem; color: var(--dim); letter-spacing: 0.1em; margin-bottom: 4px; }
+    .chain-stat-value {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--cyan);
+      font-family: 'SF Mono', 'Consolas', monospace;
+      word-break: break-all;
+    }
+    .chain-stat-value.loading { color: var(--dim); }
+
+    /* ── WALLET DISPLAY ── */
+    .wallet-addr {
+      background: rgba(0,200,255,0.05);
+      border: 1px solid rgba(0,200,255,0.15);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.78rem;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      word-break: break-all;
+    }
+
+    /* ── TERMINAL LOG ── */
+    .log {
+      background: #020810;
+      border: 1px solid rgba(0,200,255,0.07);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.62rem;
+      color: var(--dim);
+      line-height: 1.7;
+      max-height: 120px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+    .log .line { opacity: 0; animation: fadeIn 0.3s forwards; }
+    .log .line.ok  { color: var(--green); }
+    .log .line.err { color: var(--red); }
+    .log .line.hi  { color: var(--cyan); }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    /* ── PROGRESS BAR ── */
+    .progress-track {
+      height: 3px;
+      background: var(--border2);
+      border-radius: 2px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--cyan);
+      border-radius: 2px;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 8px rgba(0,200,255,0.5);
+    }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      width: 100%;
+      background: var(--cyan);
+      color: #040810;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: all 0.2s;
+      box-shadow: 0 0 25px rgba(0,200,255,0.2);
+    }
+    .btn-primary:hover { background: #33dcff; transform: translateY(-1px); box-shadow: 0 0 35px rgba(0,200,255,0.35); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      width: 100%;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 10px;
+    }
+    .btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    /* ── ERROR BOX ── */
+    .err-box {
+      background: rgba(255,60,90,0.08);
+      border: 1px solid rgba(255,60,90,0.25);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.72rem;
+      color: var(--red);
+      margin-bottom: 16px;
+      display: none;
+    }
+    .err-box.visible { display: block; }
+
+    /* ── NO WALLET WARNING ── */
+    .no-wallet-msg {
+      background: rgba(255,209,102,0.07);
+      border: 1px solid rgba(255,209,102,0.2);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.72rem;
+      color: var(--yellow);
+      line-height: 1.5;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .no-wallet-msg.visible { display: block; }
+    .no-wallet-msg a { color: var(--yellow); font-weight: 700; }
+
+    /* ── STEP INDICATOR ── */
+    .steps-bar {
+      display: flex;
+      align-items: center;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border2);
+      gap: 6px;
+    }
+    .step-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    .step-dot.done { background: var(--green); }
+    .step-dot.current { background: var(--cyan); box-shadow: 0 0 6px rgba(0,200,255,0.6); }
+    .step-sep {
+      flex: 1;
+      height: 1px;
+      background: var(--border2);
+    }
+
+    /* ── SUCCESS FINAL ── */
+    .success-icon {
+      font-size: 3rem;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .success-id {
+      background: rgba(0,229,123,0.08);
+      border: 1px solid rgba(0,229,123,0.2);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .success-id-label { font-size: 0.58rem; color: var(--dim); letter-spacing: 0.1em; margin-bottom: 4px; }
+    .success-id-value { font-family: 'SF Mono', monospace; font-size: 0.95rem; color: var(--green); font-weight: 700; }
+
+    /* ── FOOTER ── */
+    .gateway-footer {
+      text-align: center;
+      padding: 16px 24px;
+      border-top: 1px solid var(--border2);
+      font-size: 0.62rem;
+      color: var(--dim);
+    }
+    .gateway-footer a { color: var(--cyan); text-decoration: none; }
+
+    /* ── ALTERNATIVE ENTRY ── */
+    .alt-entry {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.72rem;
+      color: var(--dim);
+    }
+    .alt-entry a { color: var(--cyan); font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="os-header">
+    <div class="os-name">BRIDGE AI OS · LINEA MAINNET · CHAIN ID 59144</div>
+    <div class="os-title">Sovereign <span>Gateway</span></div>
+    <div class="os-sub">Authenticate with your wallet · Activate your Digital Twin</div>
+  </div>
+
+  <div class="card" id="mainCard">
+
+    <!-- Step indicator -->
+    <div class="steps-bar">
+      <div class="step-dot current" id="dot-0"></div>
+      <div class="step-sep"></div>
+      <div class="step-dot" id="dot-1"></div>
+      <div class="step-sep"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <div class="step-sep"></div>
+      <div class="step-dot" id="dot-3"></div>
+      <div class="step-sep"></div>
+      <div class="step-dot" id="dot-4"></div>
+    </div>
+
+    <!-- ── STAGE 0: INITIALIZING ── -->
+    <div class="stage active" id="stage-0">
+      <div class="stage-header">
+        <div class="stage-num">STEP 01 / 05</div>
+        <div class="stage-title">Initializing Gateway</div>
+      </div>
+      <div class="stage-body">
+        <div class="status-chip pending" id="init-status"><div class="dot"></div> LOADING</div>
+
+        <div class="chain-grid">
+          <div class="chain-stat">
+            <div class="chain-stat-label">NETWORK</div>
+            <div class="chain-stat-value loading" id="cd-network">Detecting...</div>
+          </div>
+          <div class="chain-stat">
+            <div class="chain-stat-label">BLOCK HEIGHT</div>
+            <div class="chain-stat-value loading" id="cd-block">—</div>
+          </div>
+          <div class="chain-stat">
+            <div class="chain-stat-label">GAS PRICE (GWEI)</div>
+            <div class="chain-stat-value loading" id="cd-gas">—</div>
+          </div>
+          <div class="chain-stat">
+            <div class="chain-stat-label">BRDG CONTRACT</div>
+            <div class="chain-stat-value loading" id="cd-brdg">—</div>
+          </div>
+        </div>
+
+        <div class="log" id="init-log"></div>
+
+        <div class="no-wallet-msg" id="no-wallet-msg">
+          ⚠️ No Web3 wallet detected.<br>
+          Install <a href="https://metamask.io" target="_blank">MetaMask</a> or another browser wallet to continue.<br><br>
+          Alternatively, <a href="/onboarding">sign in with email →</a>
+        </div>
+
+        <button class="btn-primary" id="btnConnect" disabled onclick="connectWallet()">
+          🔗 Connect Wallet
+        </button>
+        <div class="alt-entry">or <a href="/onboarding">sign in with email</a></div>
+      </div>
+    </div>
+
+    <!-- ── STAGE 1: WALLET CONNECTED ── -->
+    <div class="stage" id="stage-1">
+      <div class="stage-header">
+        <div class="stage-num">STEP 02 / 05</div>
+        <div class="stage-title">Verify Identity</div>
+      </div>
+      <div class="stage-body">
+        <div class="status-chip ok"><div class="dot"></div> WALLET CONNECTED</div>
+        <div class="wallet-addr" id="walletAddr">0x...</div>
+
+        <div class="chain-grid">
+          <div class="chain-stat">
+            <div class="chain-stat-label">BLOCK HEIGHT</div>
+            <div class="chain-stat-value" id="cd-block2">—</div>
+          </div>
+          <div class="chain-stat">
+            <div class="chain-stat-label">GAS (GWEI)</div>
+            <div class="chain-stat-value" id="cd-gas2">—</div>
+          </div>
+        </div>
+
+        <p style="font-size:0.75rem;color:var(--dim);margin-bottom:16px;line-height:1.6">
+          Sign a message to prove ownership of this address. This does not cost gas and
+          does not grant any spending permissions.
+        </p>
+
+        <div class="err-box" id="siwe-err"></div>
+
+        <button class="btn-primary" id="btnSign" onclick="signIn()">
+          ✍️ Sign to Authenticate
+        </button>
+        <button class="btn-secondary" onclick="goStage(0)">← Use different wallet</button>
+      </div>
+    </div>
+
+    <!-- ── STAGE 2: SIGNING / VERIFYING ── -->
+    <div class="stage" id="stage-2">
+      <div class="stage-header">
+        <div class="stage-num">STEP 03 / 05</div>
+        <div class="stage-title">Verifying Signature</div>
+      </div>
+      <div class="stage-body">
+        <div class="status-chip pending"><div class="dot"></div> AUTHENTICATING</div>
+        <div class="log" id="sign-log"></div>
+        <div class="progress-track"><div class="progress-fill" id="sign-progress" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- ── STAGE 3: ACTIVATING TWIN ── -->
+    <div class="stage" id="stage-3">
+      <div class="stage-header">
+        <div class="stage-num">STEP 04 / 05</div>
+        <div class="stage-title">Activating Digital Twin</div>
+      </div>
+      <div class="stage-body">
+        <div class="status-chip pending"><div class="dot"></div> INSTANTIATING</div>
+        <div class="log" id="twin-log"></div>
+        <div class="progress-track"><div class="progress-fill" id="twin-progress" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- ── STAGE 4: ONLINE ── -->
+    <div class="stage" id="stage-4">
+      <div class="stage-header">
+        <div class="stage-num">STEP 05 / 05</div>
+        <div class="stage-title">Agent Online</div>
+      </div>
+      <div class="stage-body">
+        <div class="status-chip ok"><div class="dot"></div> AGENT ACTIVE</div>
+        <div class="success-icon">⚡</div>
+        <div class="success-id">
+          <div class="success-id-label">AGENT ID</div>
+          <div class="success-id-value" id="finalAgentId">AGT-...</div>
+        </div>
+        <p style="font-size:0.75rem;color:var(--dim);margin-bottom:20px;text-align:center;line-height:1.6">
+          Your Digital Twin is live in the Bridge AI OS network.<br>
+          Autonomous systems are starting...
+        </p>
+        <button class="btn-primary" onclick="location.href='/dashboard'">
+          ⚡ Enter Dashboard
+        </button>
+        <p style="font-size:0.62rem;color:var(--dim);text-align:center;margin-top:10px">
+          Redirecting in <span id="redirectCount">3</span>s...
+        </p>
+      </div>
+    </div>
+
+    <div class="gateway-footer">
+      <a href="/join">← Back to join page</a> ·
+      <a href="/onboarding">Email sign-in</a> ·
+      <span>Linea Mainnet · Chain ID 59144</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Wait for ethers.js UMD ────────────────────────────────────────────────────
+(function waitForEthers() {
+  if (typeof ethers === 'undefined') {
+    document.getElementById('init-log').innerHTML +=
+      '<div class="line err">ERR  ethers.js not loaded — retrying...</div>';
+    return setTimeout(waitForEthers, 500);
+  }
+  init();
+})();
+
+// ── State ────────────────────────────────────────────────────────────────────
+let provider = null;
+let signer   = null;
+let address  = null;
+let authToken = null;
+let nonceToken = null;
+let chainData  = {};
+
+const LINEA_CHAIN_ID    = 59144;
+const LINEA_RPC         = 'https://rpc.linea.build';
+const BRDG_ADDRESS      = '0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f';
+const BRDG_SHORT        = BRDG_ADDRESS.slice(0,6) + '…' + BRDG_ADDRESS.slice(-4);
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function log(containerId, text, cls = '') {
+  const ctn = document.getElementById(containerId);
+  if (!ctn) return;
+  const el = document.createElement('div');
+  el.className = 'line' + (cls ? ' ' + cls : '');
+  el.textContent = text;
+  ctn.appendChild(el);
+  ctn.scrollTop = ctn.scrollHeight;
+}
+
+function setProgress(id, pct) {
+  const el = document.getElementById(id);
+  if (el) el.style.width = pct + '%';
+}
+
+function goStage(n) {
+  document.querySelectorAll('.stage').forEach((s, i) => {
+    s.classList.toggle('active', i === n);
+  });
+  // Update step dots
+  for (let i = 0; i <= 4; i++) {
+    const d = document.getElementById('dot-' + i);
+    if (!d) continue;
+    if (i < n)  d.className = 'step-dot done';
+    else if (i === n) d.className = 'step-dot current';
+    else d.className = 'step-dot';
+  }
+}
+
+// ── INIT: Load chain data from public RPC ─────────────────────────────────────
+async function init() {
+  log('init-log', 'SYS  ethers.js v' + ethers.version + ' loaded', 'ok');
+  log('init-log', 'RPC  connecting to Linea mainnet...');
+
+  // Fetch live chain data
+  try {
+    const rpcProvider = new ethers.JsonRpcProvider(LINEA_RPC);
+    const [blockNumber, feeData] = await Promise.all([
+      rpcProvider.getBlockNumber(),
+      rpcProvider.getFeeData(),
+    ]);
+    const gasGwei = feeData.gasPrice
+      ? (Number(feeData.gasPrice) / 1e9).toFixed(4)
+      : '—';
+
+    chainData = { blockNumber, gasGwei };
+
+    document.getElementById('cd-network').textContent = 'Linea Mainnet';
+    document.getElementById('cd-network').classList.remove('loading');
+    document.getElementById('cd-block').textContent = blockNumber.toLocaleString();
+    document.getElementById('cd-block').classList.remove('loading');
+    document.getElementById('cd-gas').textContent = gasGwei;
+    document.getElementById('cd-gas').classList.remove('loading');
+    document.getElementById('cd-brdg').textContent = BRDG_SHORT;
+    document.getElementById('cd-brdg').classList.remove('loading');
+
+    log('init-log', `RPC  block #${blockNumber.toLocaleString()} · gas ${gasGwei} gwei`, 'ok');
+  } catch (e) {
+    log('init-log', 'WARN RPC unreachable: ' + e.message.slice(0,60), 'err');
+    document.getElementById('cd-network').textContent = 'Linea (offline)';
+    document.getElementById('cd-brdg').textContent = BRDG_SHORT;
+  }
+
+  // Fetch nonce for SIWE
+  try {
+    const r = await fetch('/api/siwe/nonce');
+    const d = await r.json();
+    nonceToken = d.token;
+    log('init-log', 'NONCE  generated · valid 5 min', 'ok');
+  } catch (_) {
+    log('init-log', 'WARN  nonce server unavailable — will retry on connect', '');
+  }
+
+  // Check wallet availability
+  if (window.ethereum) {
+    log('init-log', 'WALLET  injected provider detected', 'ok');
+    document.getElementById('init-status').innerHTML =
+      '<div class="dot"></div> READY TO CONNECT';
+    document.getElementById('init-status').className = 'status-chip ok';
+    document.getElementById('btnConnect').disabled = false;
+  } else {
+    log('init-log', 'WALLET  no injected provider found', 'err');
+    document.getElementById('no-wallet-msg').classList.add('visible');
+    document.getElementById('init-status').innerHTML =
+      '<div class="dot"></div> NO WALLET';
+    document.getElementById('init-status').className = 'status-chip err';
+    document.getElementById('btnConnect').disabled = true;
+  }
+}
+
+// ── CONNECT WALLET ────────────────────────────────────────────────────────────
+async function connectWallet() {
+  const btn = document.getElementById('btnConnect');
+  btn.disabled = true;
+  btn.textContent = '⟳ Connecting...';
+
+  try {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send('eth_requestAccounts', []);
+    signer = await provider.getSigner();
+    address = await signer.getAddress();
+
+    // Verify chain
+    const network = await provider.getNetwork();
+    const connectedChainId = Number(network.chainId);
+
+    if (connectedChainId !== LINEA_CHAIN_ID) {
+      // Prompt switch to Linea
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x' + LINEA_CHAIN_ID.toString(16) }],
+        });
+        // Re-init provider after chain switch
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+      } catch (switchErr) {
+        if (switchErr.code === 4902) {
+          // Add Linea network
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x' + LINEA_CHAIN_ID.toString(16),
+              chainName: 'Linea Mainnet',
+              nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+              rpcUrls: ['https://rpc.linea.build'],
+              blockExplorerUrls: ['https://lineascan.build'],
+            }],
+          });
+        } else {
+          // Proceed on wrong chain — SIWE will still work
+          console.warn('[GATEWAY] Could not switch to Linea:', switchErr.message);
+        }
+      }
+    }
+
+    // Refresh chain data for stage 1
+    try {
+      const feeData = await provider.getFeeData();
+      const block = await provider.getBlockNumber();
+      document.getElementById('cd-block2').textContent = block.toLocaleString();
+      document.getElementById('cd-gas2').textContent = feeData.gasPrice
+        ? (Number(feeData.gasPrice) / 1e9).toFixed(4) + ' gwei'
+        : '—';
+    } catch (_) {}
+
+    document.getElementById('walletAddr').textContent = address;
+    goStage(1);
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '🔗 Connect Wallet';
+    log('init-log', 'ERR  ' + err.message, 'err');
+  }
+}
+
+// ── SIGN IN WITH ETHEREUM ────────────────────────────────────────────────────
+async function signIn() {
+  const btn = document.getElementById('btnSign');
+  btn.disabled = true;
+  btn.textContent = '⟳ Waiting for signature...';
+  document.getElementById('siwe-err').classList.remove('visible');
+
+  goStage(2);
+  setProgress('sign-progress', 10);
+  log('sign-log', 'SIWE  fetching nonce from server...');
+
+  // Ensure fresh nonce
+  try {
+    const r = await fetch('/api/siwe/nonce');
+    const d = await r.json();
+    nonceToken = d.token;
+    log('sign-log', 'NONCE  received · valid 5 min', 'ok');
+  } catch (_) {
+    log('sign-log', 'WARN  could not fetch nonce — using cached', '');
+  }
+
+  if (!nonceToken) {
+    log('sign-log', 'ERR  no nonce available — server unreachable', 'err');
+    goStage(1);
+    document.getElementById('siwe-err').textContent = 'Server unreachable — please try again.';
+    document.getElementById('siwe-err').classList.add('visible');
+    btn.disabled = false;
+    btn.textContent = '✍️ Sign to Authenticate';
+    return;
+  }
+
+  setProgress('sign-progress', 30);
+
+  // Build SIWE message from nonce payload
+  const nonceB64 = nonceToken.split(':')[0] || nonceToken; // extract raw nonce for display
+  let rawNonce;
+  try {
+    const decoded = atob(nonceToken.replace(/-/g,'+').replace(/_/g,'/'));
+    rawNonce = decoded.split(':')[0];
+  } catch(_) { rawNonce = nonceToken.slice(0, 16); }
+
+  const domain   = window.location.host;
+  const issuedAt = new Date().toISOString();
+  const message  = [
+    `${domain} wants you to sign in with your Ethereum account:`,
+    address,
+    '',
+    'Sign in to Bridge AI OS — Autonomous Agent Network',
+    '',
+    `URI: https://${domain}`,
+    `Version: 1`,
+    `Chain ID: 59144`,
+    `Nonce: ${rawNonce}`,
+    `Issued At: ${issuedAt}`,
+  ].join('\n');
+
+  log('sign-log', 'SIGN  requesting signature from wallet...');
+  setProgress('sign-progress', 50);
+
+  let signature;
+  try {
+    signature = await signer.signMessage(message);
+    log('sign-log', 'SIGN  signature received', 'ok');
+  } catch (err) {
+    log('sign-log', 'ERR  user rejected: ' + err.message.slice(0,50), 'err');
+    goStage(1);
+    document.getElementById('siwe-err').textContent = 'Signature rejected. Please approve the sign request in your wallet.';
+    document.getElementById('siwe-err').classList.add('visible');
+    btn.disabled = false;
+    btn.textContent = '✍️ Sign to Authenticate';
+    return;
+  }
+
+  setProgress('sign-progress', 70);
+  log('sign-log', 'VERIFY  sending to server...');
+
+  // Verify with backend
+  try {
+    const res = await fetch('/api/siwe/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, signature, nonce_token: nonceToken, message }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      log('sign-log', 'ERR  ' + (data.error || 'verification failed'), 'err');
+      goStage(1);
+      document.getElementById('siwe-err').textContent = data.error || 'Verification failed. Please try again.';
+      document.getElementById('siwe-err').classList.add('visible');
+      btn.disabled = false;
+      btn.textContent = '✍️ Sign to Authenticate';
+      return;
+    }
+
+    authToken = data.token;
+    localStorage.setItem('bridge_token', authToken);
+    document.cookie = `bridge_token=${authToken}; Path=/; SameSite=Lax; Max-Age=604800`;
+    localStorage.setItem('bridge_user', JSON.stringify({ email: data.userId, wallet: address, plan: data.plan || 'free' }));
+
+    log('sign-log', 'AUTH  identity verified ✓', 'ok');
+    setProgress('sign-progress', 100);
+
+  } catch (err) {
+    log('sign-log', 'ERR  ' + err.message, 'err');
+    // If server unreachable, still allow proceeding with locally stored token
+    if (!authToken) {
+      goStage(1);
+      document.getElementById('siwe-err').textContent = 'Server unreachable. Please try again.';
+      document.getElementById('siwe-err').classList.add('visible');
+      btn.disabled = false;
+      btn.textContent = '✍️ Sign to Authenticate';
+      return;
+    }
+  }
+
+  await sleep(600);
+  activateTwin();
+}
+
+// ── ACTIVATE TWIN ─────────────────────────────────────────────────────────────
+async function activateTwin() {
+  goStage(3);
+  setProgress('twin-progress', 10);
+  log('twin-log', 'TWIN  requesting activation...');
+
+  try {
+    const r = await fetch('/api/twin/activate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authToken,
+      },
+    });
+    const data = await r.json();
+
+    if (data.ok) {
+      setProgress('twin-progress', 50);
+      log('twin-log', `TWIN  agent_id=${data.agent_id}`, 'hi');
+      log('twin-log', `TWIN  capabilities: ${(data.capabilities||[]).join(', ')}`, 'ok');
+      await sleep(400);
+      setProgress('twin-progress', 80);
+      log('twin-log', 'REG   registered in Bridge AI OS network', 'ok');
+      await sleep(400);
+      setProgress('twin-progress', 100);
+      log('twin-log', 'SYS   autonomous systems starting...', 'ok');
+
+      localStorage.setItem('bridge_agent_id', data.agent_id);
+      document.getElementById('finalAgentId').textContent = data.agent_id;
+    } else {
+      log('twin-log', 'WARN  ' + (data.error || 'activation error') + ' — continuing', 'err');
+    }
+
+  } catch (err) {
+    log('twin-log', 'WARN  twin activation unreachable — agent id generated locally', 'err');
+    // Generate local agent ID from wallet
+    const hash = Array.from(address.toLowerCase()).reduce((h, c) => (h * 31 + c.charCodeAt(0)) & 0xffffffff, 0);
+    const localId = 'AGT-' + Math.abs(hash).toString(16).toUpperCase().padStart(8,'0');
+    document.getElementById('finalAgentId').textContent = localId;
+    localStorage.setItem('bridge_agent_id', localId);
+  }
+
+  await sleep(500);
+  goStage(4);
+
+  // Auto-redirect countdown
+  let count = 3;
+  const interval = setInterval(() => {
+    count--;
+    const el = document.getElementById('redirectCount');
+    if (el) el.textContent = count;
+    if (count <= 0) {
+      clearInterval(interval);
+      location.href = '/dashboard';
+    }
+  }, 1000);
+}
+</script>
+</body>
+</html>

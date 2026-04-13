@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="HITL — Human-In-The-Loop | Bridge AI OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/hitl">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/hitl">
+<meta property="og:title" content="HITL — Human-In-The-Loop | Bridge AI OS">
+<meta property="og:description" content="HITL — Human-In-The-Loop | Bridge AI OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HITL — Human-In-The-Loop | Bridge AI OS">
+<meta name="twitter:description" content="HITL — Human-In-The-Loop | Bridge AI OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HITL — Human-In-The-Loop | Bridge AI OS</title>
+<style>
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --border: #1e2535;
+    --accent: #6366f1;
+    --accent2: #22c55e;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --urgent: #f43f5e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+
+  /* ── Header ── */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header .badge { background: var(--accent); color: #fff; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 600; }
+  .header .badge.urgent { background: var(--urgent); }
+  .header-right { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  .admin-key { padding: 6px 12px; background: var(--border); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; width: 220px; }
+  .btn-refresh { padding: 6px 14px; background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+
+  /* ── Stats bar ── */
+  .stats-bar { display: flex; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--surface); overflow-x: auto; }
+  .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; min-width: 120px; }
+  .stat-value { font-size: 24px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .05em; }
+  .stat-value.pending { color: var(--warn); }
+  .stat-value.running { color: var(--accent2); }
+  .stat-value.paused  { color: var(--accent); }
+  .stat-value.done    { color: var(--muted); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; padding: 16px 24px 0; border-bottom: 1px solid var(--border); }
+  .tab { padding: 8px 18px; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); border: 1px solid transparent; border-bottom: none; }
+  .tab.active { background: var(--surface); border-color: var(--border); color: var(--text); }
+
+  /* ── Main layout ── */
+  .main { padding: 24px; display: grid; grid-template-columns: 1fr 400px; gap: 20px; }
+  @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+
+  /* ── Queue list ── */
+  .queue-list { display: flex; flex-direction: column; gap: 12px; }
+  .approval-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; cursor: pointer; transition: border-color .15s; }
+  .approval-card:hover { border-color: var(--accent); }
+  .approval-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .approval-card.priority-urgent { border-left: 3px solid var(--urgent); }
+  .approval-card.priority-high   { border-left: 3px solid var(--warn); }
+  .approval-card.priority-normal { border-left: 3px solid var(--accent); }
+
+  .card-header { display: flex; align-items: flex-start; gap: 10px; }
+  .card-type-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+  .type-qualify       { background: #1e3a5f; color: #60a5fa; }
+  .type-send_pitch    { background: #1e2f1e; color: #4ade80; }
+  .type-send_quote    { background: #2d1b69; color: #a78bfa; }
+  .type-close_deal    { background: #451a03; color: #fb923c; }
+  .type-send_invoice  { background: #1c2d1c; color: #34d399; }
+  .type-custom        { background: #1e2535; color: var(--muted); }
+
+  .card-title { font-size: 14px; font-weight: 600; flex: 1; }
+  .card-age { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .card-desc { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  .card-meta { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .meta-pill { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: 11px; color: var(--muted); }
+  .meta-pill strong { color: var(--text); }
+
+  /* ── Detail panel ── */
+  .detail-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; position: sticky; top: 20px; height: fit-content; }
+  .detail-panel h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  .detail-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 40px 0; }
+  .detail-section { margin-bottom: 16px; }
+  .detail-section label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .detail-value { font-size: 13px; color: var(--text); }
+  .detail-context { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px; line-height: 1.6; }
+  .detail-context dt { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+  .detail-context dd { color: var(--text); margin-bottom: 6px; }
+
+  .notes-input { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; resize: vertical; min-height: 72px; margin-top: 6px; }
+  .action-row { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-approve { flex: 1; padding: 10px; background: var(--accent2); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .btn-reject  { flex: 1; padding: 10px; background: var(--danger); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .btn-hold    { flex: 1; padding: 10px; background: var(--border); color: var(--muted); border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .btn:disabled { opacity: .5; pointer-events: none; }
+
+  /* ── Runs list ── */
+  .runs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .runs-table th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+  .runs-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .runs-table tr:hover td { background: var(--border); }
+  .status-pill { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .status-running   { background: #1e3a1e; color: #4ade80; }
+  .status-paused    { background: #1e2d4f; color: #60a5fa; }
+  .status-completed { background: #1e2535; color: var(--muted); }
+  .status-failed    { background: #2d1414; color: #f87171; }
+  .status-cancelled { background: #1e1e1e; color: var(--muted); }
+
+  .progress-bar { width: 80px; height: 4px; background: var(--border); border-radius: 2px; display: inline-block; vertical-align: middle; }
+  .progress-fill { height: 100%; background: var(--accent2); border-radius: 2px; }
+
+  /* ── Toast ── */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1e2535; border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; font-size: 13px; transform: translateY(80px); opacity: 0; transition: all .3s; z-index: 1000; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--accent2); color: var(--accent2); }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 60px 0; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Bridge AI OS</div>
+    <h1>Human-In-The-Loop Control Center</h1>
+  </div>
+  <span class="badge urgent" id="pending-badge" style="display:none">0 pending</span>
+  <div class="header-right">
+    <input class="admin-key" type="password" id="admin-key" placeholder="Admin key..." value="">
+    <button class="btn-refresh" onclick="loadAll()">Refresh</button>
+  </div>
+</div>
+
+<div class="stats-bar" id="stats-bar">
+  <div class="stat"><div class="stat-value pending" id="s-pending">—</div><div class="stat-label">Pending Approvals</div></div>
+  <div class="stat"><div class="stat-value running" id="s-running">—</div><div class="stat-label">Runs Active</div></div>
+  <div class="stat"><div class="stat-value paused"  id="s-paused">—</div><div class="stat-label">Runs Paused</div></div>
+  <div class="stat"><div class="stat-value done"    id="s-done">—</div><div class="stat-label">Completed</div></div>
+  <div class="stat"><div class="stat-value"         id="s-contacts">—</div><div class="stat-label">Total Contacts</div></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('queue', this)">Approval Queue</div>
+  <div class="tab" onclick="switchTab('runs', this)">Pipeline Runs</div>
+  <div class="tab" onclick="switchTab('contacts', this)">Contacts</div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT: queue / runs / contacts list -->
+  <div id="tab-queue">
+    <div class="queue-list" id="queue-list">
+      <div class="empty-state"><div class="icon">✅</div><h3>All clear</h3><p>No pending approvals</p></div>
+    </div>
+  </div>
+
+  <div id="tab-runs" style="display:none">
+    <div style="overflow-x:auto">
+      <table class="runs-table">
+        <thead><tr>
+          <th>Contact</th><th>State</th><th>Status</th><th>Progress</th><th>Created</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="runs-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-contacts" style="display:none">
+    <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center">
+      <input id="new-email" placeholder="Email" style="flex:1;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+      <input id="new-name"  placeholder="Name"  style="flex:1;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+      <select id="new-plan" style="padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+        <option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option>
+      </select>
+      <button onclick="addContact()" style="padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">Add + Start</button>
+    </div>
+    <div id="contacts-list"></div>
+  </div>
+
+  <!-- RIGHT: decision panel -->
+  <div id="detail-panel" class="detail-panel">
+    <h3>Decision Panel</h3>
+    <div class="detail-empty" id="detail-empty">Select an approval request to review</div>
+    <div id="detail-content" style="display:none">
+      <div class="detail-section">
+        <label>Request</label>
+        <div class="detail-value" id="d-title" style="font-weight:600;font-size:14px"></div>
+      </div>
+      <div class="detail-section">
+        <label>Description</label>
+        <div class="detail-value" id="d-desc"></div>
+      </div>
+      <div class="detail-section">
+        <label>Context</label>
+        <dl class="detail-context" id="d-context"></dl>
+      </div>
+      <div class="detail-section">
+        <label>Your notes (optional)</label>
+        <textarea class="notes-input" id="d-notes" placeholder="Add context, conditions, or reasons..."></textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn-approve" id="btn-approve" onclick="decide('approve')">✓ Approve</button>
+        <button class="btn-reject"  id="btn-reject"  onclick="decide('reject')">✗ Reject</button>
+      </div>
+      <div class="action-row">
+        <button class="btn-hold" onclick="decide('hold')">⏸ Hold (reject + pause)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let ADMIN_KEY = '';
+let selectedId = null;
+let currentTab = 'queue';
+
+function adminKey() {
+  ADMIN_KEY = document.getElementById('admin-key').value || localStorage.getItem('hitl_admin_key') || '';
+  if (document.getElementById('admin-key').value) {
+    localStorage.setItem('hitl_admin_key', ADMIN_KEY);
+  }
+  return ADMIN_KEY;
+}
+
+function headers(extra = {}) {
+  return { 'Content-Type': 'application/json', 'X-Bridge-Admin': adminKey(), ...extra };
+}
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function ago(iso) {
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['queue','runs','contacts'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
+  });
+  currentTab = name;
+  loadAll();
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await fetch('/api/hitl/stats', { headers: headers() });
+    const d = await r.json();
+    if (!d.ok) return;
+    const runs = d.runs || {};
+    document.getElementById('s-pending').textContent  = d.pending_approvals ?? '—';
+    document.getElementById('s-running').textContent  = runs.running ?? '—';
+    document.getElementById('s-paused').textContent   = runs.paused ?? '—';
+    document.getElementById('s-done').textContent     = runs.completed ?? '—';
+    document.getElementById('s-contacts').textContent = d.total_contacts ?? '—';
+    const pending = d.pending_approvals || 0;
+    const badge = document.getElementById('pending-badge');
+    badge.textContent = pending + ' pending';
+    badge.style.display = pending > 0 ? '' : 'none';
+  } catch (_) {}
+}
+
+// ── Approval Queue ─────────────────────────────────────────────────────────────
+async function loadQueue() {
+  try {
+    const r = await fetch('/api/hitl/queue', { headers: headers() });
+    const d = await r.json();
+    const list = document.getElementById('queue-list');
+    if (!d.ok || !d.items?.length) {
+      list.innerHTML = '<div class="empty-state"><div class="icon">✅</div><h3>All clear</h3><p>No pending approvals</p></div>';
+      return;
+    }
+    list.innerHTML = d.items.map(item => {
+      const run = item.workflow_runs || {};
+      const contact = run.crm_contacts || {};
+      const meta = [];
+      if (item.context?.contact_name)  meta.push(`<span class="meta-pill"><strong>Contact</strong> ${item.context.contact_name}</span>`);
+      if (item.context?.company)       meta.push(`<span class="meta-pill"><strong>Company</strong> ${item.context.company}</span>`);
+      if (item.context?.plan)          meta.push(`<span class="meta-pill"><strong>Plan</strong> ${item.context.plan}</span>`);
+      if (item.context?.ai_score)      meta.push(`<span class="meta-pill"><strong>Score</strong> ${item.context.ai_score}/100</span>`);
+      if (item.context?.deal_value)    meta.push(`<span class="meta-pill"><strong>Value</strong> ${item.context.deal_value}</span>`);
+      if (item.context?.quote_number)  meta.push(`<span class="meta-pill"><strong>Quote</strong> ${item.context.quote_number}</span>`);
+      return `<div class="approval-card priority-${item.priority} ${item.id === selectedId ? 'selected' : ''}" onclick="selectApproval(${JSON.stringify(item).replace(/"/g,'&quot;')})">
+        <div class="card-header">
+          <span class="card-type-badge type-${item.type}">${item.type.replace(/_/g,' ')}</span>
+          <span class="card-title">${item.title}</span>
+          <span class="card-age">${ago(item.created_at)}</span>
+        </div>
+        ${item.description ? `<div class="card-desc">${item.description}</div>` : ''}
+        <div class="card-meta">${meta.join('')}</div>
+      </div>`;
+    }).join('');
+  } catch (e) { console.error('Queue load error:', e); }
+}
+
+function selectApproval(item) {
+  selectedId = item.id;
+  document.querySelectorAll('.approval-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+
+  document.getElementById('detail-empty').style.display = 'none';
+  document.getElementById('detail-content').style.display = '';
+  document.getElementById('d-title').textContent = item.title;
+  document.getElementById('d-desc').textContent = item.description || '—';
+  document.getElementById('d-notes').value = '';
+
+  const ctx = item.context || {};
+  const ctxKeys = [
+    ['contact_name', 'Contact'], ['contact_email', 'Email'], ['company', 'Company'],
+    ['plan', 'Plan Interest'], ['ai_score', 'AI Score'], ['deal_value', 'Deal Value'],
+    ['quote_number', 'Quote #'], ['invoice_number', 'Invoice #'], ['emails_sent', 'Emails Sent'],
+    ['state', 'Current State'],
+  ];
+  document.getElementById('d-context').innerHTML = ctxKeys
+    .filter(([k]) => ctx[k] !== undefined && ctx[k] !== null)
+    .map(([k, label]) => `<dt>${label}</dt><dd>${ctx[k]}</dd>`).join('');
+}
+
+async function decide(action) {
+  if (!selectedId) return;
+  const notes = document.getElementById('d-notes').value;
+  const decided_by = adminKey() ? 'admin' : 'system';
+
+  try {
+    let url, body;
+    if (action === 'approve') {
+      url = `/api/hitl/queue/${selectedId}/approve`;
+      body = { decided_by, notes };
+    } else {
+      url = `/api/hitl/queue/${selectedId}/reject`;
+      body = { decided_by, notes, action: action === 'hold' ? 'hold' : 'cancel' };
+    }
+
+    const r = await fetch(url, { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+    const d = await r.json();
+    if (d.ok) {
+      toast(action === 'approve' ? '✓ Approved — pipeline resumed' : '✗ Rejected — run on hold');
+      selectedId = null;
+      document.getElementById('detail-empty').style.display = '';
+      document.getElementById('detail-content').style.display = 'none';
+      loadAll();
+    } else {
+      toast(d.error || 'Action failed', 'error');
+    }
+  } catch (e) {
+    toast('Network error: ' + e.message, 'error');
+  }
+}
+
+// ── Pipeline Runs ──────────────────────────────────────────────────────────────
+async function loadRuns() {
+  try {
+    const r = await fetch('/api/orch/runs', { headers: headers() });
+    const d = await r.json();
+    const tbody = document.getElementById('runs-body');
+    if (!d.ok || !d.runs?.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No pipeline runs yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.runs.map(run => {
+      const c = run.crm_contacts || {};
+      const pct = run.progress_pct || 0;
+      return `<tr>
+        <td>
+          <div style="font-weight:500">${c.name || '—'}</div>
+          <div style="font-size:11px;color:var(--muted)">${c.email || ''}</div>
+        </td>
+        <td style="font-size:12px;color:var(--muted)">${run.state?.replace(/_/g,' ') || '—'}</td>
+        <td><span class="status-pill status-${run.status}">${run.status}</span></td>
+        <td>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <span style="font-size:11px;color:var(--muted);margin-left:6px">${pct}%</span>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">${ago(run.created_at)}</td>
+        <td>
+          ${run.status === 'running' || run.status === 'on_hold'
+            ? `<button onclick="advanceRun('${run.id}')" style="padding:3px 8px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px">Advance</button>`
+            : ''}
+          ${run.status !== 'cancelled' && run.status !== 'completed'
+            ? `<button onclick="cancelRun('${run.id}')" style="padding:3px 8px;background:var(--border);color:var(--muted);border:none;border-radius:4px;cursor:pointer;font-size:11px;margin-left:4px">Cancel</button>`
+            : ''}
+        </td>
+      </tr>`;
+    }).join('');
+  } catch (e) { console.error('Runs load error:', e); }
+}
+
+async function advanceRun(id) {
+  const r = await fetch(`/api/orch/runs/${id}/advance`, { method: 'POST', headers: headers() });
+  const d = await r.json();
+  toast(d.ok ? 'Run advanced' : d.error, d.ok ? 'success' : 'error');
+  loadAll();
+}
+
+async function cancelRun(id) {
+  if (!confirm('Cancel this run?')) return;
+  const r = await fetch(`/api/orch/runs/${id}/cancel`, { method: 'POST', headers: headers() });
+  const d = await r.json();
+  toast(d.ok ? 'Run cancelled' : d.error, d.ok ? 'success' : 'error');
+  loadAll();
+}
+
+// ── Contacts ───────────────────────────────────────────────────────────────────
+async function loadContacts() {
+  try {
+    const r = await fetch('/api/orch/contacts', { headers: headers() });
+    const d = await r.json();
+    const list = document.getElementById('contacts-list');
+    if (!d.ok || !d.contacts?.length) {
+      list.innerHTML = '<div class="empty-state"><div class="icon">👥</div><h3>No contacts yet</h3><p>Add a contact above to start a pipeline run</p></div>';
+      return;
+    }
+    list.innerHTML = `<table class="runs-table">
+      <thead><tr><th>Name</th><th>Company</th><th>Stage</th><th>Score</th><th>Plan</th><th>Added</th></tr></thead>
+      <tbody>${d.contacts.map(c => `<tr>
+        <td><div style="font-weight:500">${c.name||'—'}</div><div style="font-size:11px;color:var(--muted)">${c.email}</div></td>
+        <td style="font-size:12px">${c.company||'—'}</td>
+        <td><span class="status-pill status-running" style="background:#1e2535">${c.funnel_stage?.replace(/_/g,' ')||'—'}</span></td>
+        <td style="font-size:13px;font-weight:600;color:${(c.lead_score||0)>=75?'var(--warn)':'var(--text)'}">${c.lead_score||0}</td>
+        <td style="font-size:12px">${c.plan_interest||'—'}</td>
+        <td style="font-size:11px;color:var(--muted)">${ago(c.created_at)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  } catch (e) { console.error('Contacts load error:', e); }
+}
+
+async function addContact() {
+  const email = document.getElementById('new-email').value.trim();
+  const name  = document.getElementById('new-name').value.trim();
+  const plan  = document.getElementById('new-plan').value;
+  if (!email) { toast('Email required', 'error'); return; }
+  try {
+    const r = await fetch('/api/orch/contacts', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ email, name, plan_interest: plan }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast('Contact added — pipeline started!');
+      document.getElementById('new-email').value = '';
+      document.getElementById('new-name').value = '';
+      loadAll();
+    } else {
+      toast(d.error || 'Failed', 'error');
+    }
+  } catch (e) { toast('Network error', 'error'); }
+}
+
+function loadAll() {
+  adminKey();
+  loadStats();
+  if (currentTab === 'queue')    loadQueue();
+  if (currentTab === 'runs')     loadRuns();
+  if (currentTab === 'contacts') loadContacts();
+}
+
+// Init
+document.getElementById('admin-key').value = localStorage.getItem('hitl_admin_key') || '';
+loadAll();
+setInterval(loadAll, 30000); // auto-refresh every 30s
+</script>
+</body>
+</html>

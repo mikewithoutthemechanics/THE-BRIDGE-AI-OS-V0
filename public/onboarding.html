@@ -1,7 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="description" content="Get started with Bridge AI OS — quick setup wizard to configure your AI agents, CRM, and treasury.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/onboarding">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/onboarding">
+<meta property="og:title" content="Bridge AI OS — Join">
+<meta property="og:description" content="Get started with Bridge AI OS — quick setup wizard to configure your AI agents, CRM, and treasury.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bridge AI OS — Join">
+<meta name="twitter:description" content="Get started with Bridge AI OS — quick setup wizard to configure your AI agents, CRM, and treasury.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bridge AI OS — Join</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -130,6 +144,21 @@
 </div>
 
 <script>
+// ── Already-logged-in guard: redirect immediately if a valid session exists ──
+(async function checkExistingAuth() {
+  const cookieMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('bridge_token='));
+  const token = (cookieMatch ? cookieMatch.split('=').slice(1).join('=') : null) || localStorage.getItem('bridge_token');
+  if (!token) return;
+  try {
+    const res = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    if (data.ok && data.user) {
+      const redirect = new URLSearchParams(location.search).get('redirect') || '/profile';
+      window.location.replace(redirect);
+    }
+  } catch (_) { /* not authenticated — show form normally */ }
+})();
+
 // Supabase Auth — OAuth flows handled by Supabase, not raw client IDs
 let _supabaseClient = null;
 (async function initSupabaseAuth() {
@@ -209,7 +238,10 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
           body: JSON.stringify({ code: ref }),
         });
       }
-      setTimeout(() => { location.href = '/welcome.html'; }, 1000);
+      const _regUser = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+      const regRedirect = new URLSearchParams(location.search).get('redirect') ||
+        (window.BridgeAuth && window.BridgeAuth.getPostLoginRoute ? window.BridgeAuth.getPostLoginRoute(_regUser, null) : '/portal');
+      setTimeout(() => { location.href = regRedirect; }, 1000);
     } else {
       showMsg('reg-msg', data.error || 'Registration failed', false);
     }
@@ -242,7 +274,10 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         credits: data.credits || 100,
         plan: data.plan || 'free'
       }));
-      setTimeout(() => { location.href = '/welcome.html'; }, 1000);
+      const _loginUser = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+      const loginRedirect = new URLSearchParams(location.search).get('redirect') ||
+        (window.BridgeAuth && window.BridgeAuth.getPostLoginRoute ? window.BridgeAuth.getPostLoginRoute(_loginUser, null) : '/portal');
+      setTimeout(() => { location.href = loginRedirect; }, 1000);
     } else {
       showMsg('login-msg', data.error || 'Login failed', false);
     }
@@ -250,6 +285,13 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     showMsg('login-msg', 'Network error: ' + err.message, false);
   }
 });
+
+// Build the auth-callback URL, threading any ?redirect param through
+function _callbackUrl() {
+  const dest = new URLSearchParams(location.search).get('redirect') || '';
+  const qs = dest ? '?redirect=' + encodeURIComponent(dest) : '';
+  return location.origin + '/auth-callback' + qs;
+}
 
 // Google OAuth via Supabase Auth
 async function googleAuth() {
@@ -259,7 +301,7 @@ async function googleAuth() {
   }
   const { error } = await _supabaseClient.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: location.origin + '/auth-callback' },
+    options: { redirectTo: _callbackUrl() },
   });
   if (error) showMsg('reg-msg', error.message, false);
 }
@@ -272,7 +314,7 @@ async function githubAuth() {
   }
   const { error } = await _supabaseClient.auth.signInWithOAuth({
     provider: 'github',
-    options: { redirectTo: location.origin + '/auth-callback' },
+    options: { redirectTo: _callbackUrl() },
   });
   if (error) showMsg('reg-msg', error.message, false);
 }

@@ -78,8 +78,9 @@ class NeuroHistory {
         const data = fs.readFileSync(filePath, 'utf-8');
         return JSON.parse(data);
       }
-    } catch (err) {
-      console.error(`Failed to load neuro-history for ${dateKey}:`, err.message);
+    } catch {
+      // Corrupted file — delete it so next save starts fresh
+      try { fs.unlinkSync(filePath); } catch { /* ignore */ }
     }
     return this.createEmptyDay(dateKey);
   }
@@ -119,6 +120,8 @@ class NeuroHistory {
     };
 
     day.points.push(point);
+    // Rolling window — cap at 2000 points (~3.3 hours at 100ms) to prevent unbounded file growth
+    if (day.points.length > 2000) day.points = day.points.slice(-2000);
 
     // Detect anomalies
     this.detectAnomalies(day);
@@ -237,10 +240,14 @@ class NeuroHistory {
    */
   _saveDayLocal(dateKey, day) {
     const filePath = path.join(this.storagePath, `${dateKey}.json`);
+    const tmpPath = filePath + '.tmp';
     try {
-      fs.writeFileSync(filePath, JSON.stringify(day, null, 2), 'utf-8');
+      // Atomic write: write to temp file then rename to prevent corruption from concurrent reads
+      fs.writeFileSync(tmpPath, JSON.stringify(day, null, 2), 'utf-8');
+      fs.renameSync(tmpPath, filePath);
     } catch (err) {
-      console.error(`Failed to save neuro-history for ${dateKey}:`, err.message);
+      // Clean up temp file on failure
+      try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
     }
   }
 

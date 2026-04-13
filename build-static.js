@@ -77,4 +77,11 @@ if (!fs.existsSync(path.join(OUT, 'index.html'))) {
   console.log('  Created index.html -> ui.html redirect');
 }
 
+// Inject SEO meta tags into all HTML files that are missing them
+try {
+  require('./inject-meta');
+} catch (e) {
+  console.warn('inject-meta failed:', e.message);
+}
+
 console.log('Done!');

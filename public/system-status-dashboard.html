@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+<meta name="description" content="System Status Dashboard - Full Ecosystem — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/system-status-dashboard">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/system-status-dashboard">
+<meta property="og:title" content="System Status Dashboard - Full Ecosystem">
+<meta property="og:description" content="System Status Dashboard - Full Ecosystem — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="System Status Dashboard - Full Ecosystem">
+<meta name="twitter:description" content="System Status Dashboard - Full Ecosystem — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
   <title>System Status Dashboard - Full Ecosystem</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -94,23 +108,6 @@
     </style>
 </head>
 <body>
-<nav style="background:#0f172a;border-bottom:1px solid #1e293b;padding:.75rem 1.5rem;display:flex;gap:1.5rem;align-items:center;position:sticky;top:0;z-index:100">
-  <span style="font-weight:700;color:#38bdf8;font-size:1.1rem;margin-right:auto">Admin</span>
-  <a href="/admin.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Dashboard</a>
-  <a href="/admin-revenue.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Revenue</a>
-  <a href="/admin-withdraw.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Withdrawals</a>
-  <a href="/control.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Control</a>
-  <a href="/system-status-dashboard.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">System Health</a>
-  <a href="/registry.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Registry</a>
-</nav>
-<script>
-document.querySelectorAll('nav a').forEach(a => {
-  if (a.getAttribute('href') === window.location.pathname) {
-    a.style.color = '#38bdf8';
-    a.style.background = '#1e293b';
-  }
-});
-</script>
 <div class="app-shell">
         <header>
     <div class="title-block">
@@ -224,20 +221,6 @@ document.querySelectorAll('nav a').forEach(a => {
     </div>
 
     <script>
-// Admin gate
-(async function checkAdmin() {
-  const r = await fetch('/auth/me', { credentials: 'include' }).then(r => r.json()).catch(() => ({ ok: false }));
-  if (!r.ok || (r.user?.role !== 'admin' && r.user?.plan !== 'admin' && r.user?.plan !== 'enterprise')) {
-    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef4444;font-family:monospace;font-size:1.2rem">Access denied — admin only</div>';
-    setTimeout(() => window.location.href = '/portal', 2000);
-    return;
-  }
-  window.__adminUser = r.user;
-  window.__adminToken = localStorage.getItem('bridge_token') || '';
-  initPage();
-})();
-
-function initPage() {
 const STATUS_COLORS = { green: "#22c55e", yellow: "#facc15", orange: "#fb923c", red: "#f97373", gray: "#6b7280" };
 const TYPE_COLORS = { Server: "#38bdf8", Container: "#a855f7", API: "#22c55e", Database: "#f97316", Network: "#0ea5e9", Cache: "#facc15", Queue: "#e5e7eb", "AI/ML": "#ec4899" };
 
@@ -640,61 +623,6 @@ setTimeout(fitToScreen, 500);
 
 const dashboardNode = nodeById.get("dashboard");
 if (dashboardNode) selectNode(dashboardNode);
-
-// ── TVM (Topic Vector Matrix) fetch ──
-async function loadTVM() {
-  try {
-    const r = await fetch('/api/tvm', { headers: { 'X-Admin-Token': window.__adminToken } });
-    if (!r.ok) return;
-    const d = await r.json();
-    const components = d.components || d.data || d.topics || [];
-    if (components.length === 0) return;
-    // Create TVM panel in drill body
-    var drillBody = document.querySelector('.drill-body');
-    var existing = document.getElementById('tvm-panel');
-    if (existing) existing.remove();
-    var tvmPanel = document.createElement('div');
-    tvmPanel.id = 'tvm-panel';
-    tvmPanel.style.cssText = 'background:var(--bg-panel-soft);border-radius:8px;border:1px solid var(--border-soft);padding:8px;font-size:10px;margin-top:8px';
-    tvmPanel.innerHTML = '<div style="color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-weight:600">Topic Vector Matrix (' + components.length + ' components)</div>';
-    components.forEach(function(c) {
-      var statusColor = c.status === 'healthy' ? 'var(--healthy)' : c.status === 'degraded' ? 'var(--degraded)' : 'var(--danger)';
-      var row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-soft)';
-      var left = '<span style="color:var(--text-main);font-weight:500">' + (c.name || c.topic || 'Unknown') + '</span>';
-      var badge = '<span style="color:' + statusColor + ';font-size:9px;text-transform:uppercase;font-weight:600">' + (c.status || 'unknown') + '</span>';
-      var risk = c.risk_score !== undefined ? '<span style="color:var(--text-muted);font-size:9px;margin-left:6px">Risk: ' + c.risk_score + '</span>' : '';
-      row.innerHTML = left + '<span>' + badge + risk + '</span>';
-      tvmPanel.appendChild(row);
-      if (c.recommendation || c.rec_code) {
-        var recRow = document.createElement('div');
-        recRow.style.cssText = 'font-size:9px;color:var(--text-muted);padding:2px 0 4px 8px';
-        recRow.textContent = (c.rec_code ? '[' + c.rec_code + '] ' : '') + (c.recommendation || c.description || '');
-        if (c.status === 'action_required' || c.status === 'degraded') {
-          var fixBtn = document.createElement('button');
-          fixBtn.style.cssText = 'margin-left:8px;padding:2px 6px;border-radius:4px;border:1px solid var(--accent-soft);background:rgba(14,165,233,.1);color:var(--accent-soft);font-size:8px;cursor:pointer';
-          fixBtn.textContent = 'Apply Fix';
-          fixBtn.onclick = function() {
-            fixBtn.textContent = 'Applying...';
-            fetch('/api/tvm/fix', {
-              method: 'POST',
-              headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ component: c.name || c.topic, rec_code: c.rec_code })
-            }).then(function() { fixBtn.textContent = 'Done'; fixBtn.disabled = true; setTimeout(loadTVM, 2000); })
-              .catch(function() { fixBtn.textContent = 'Failed'; });
-          };
-          recRow.appendChild(fixBtn);
-        }
-        tvmPanel.appendChild(recRow);
-      }
-    });
-    drillBody.appendChild(tvmPanel);
-  } catch (_) {}
-}
-loadTVM();
-setInterval(loadTVM, 60000);
-
-} // end initPage
     </script>
 </body>
 </html>

@@ -2,466 +2,349 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+<meta name="description" content="Deploy 71 specialised AI agents — sales, support, trading, legal, dev, and more. Each agent earns BRDG rewards.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/agents">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/agents">
+<meta property="og:title" content="Agent Control | Bridge AI-OS">
+<meta property="og:description" content="Deploy 71 specialised AI agents — sales, support, trading, legal, dev, and more. Each agent earns BRDG rewards.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Agent Control | Bridge AI-OS">
+<meta name="twitter:description" content="Deploy 71 specialised AI agents — sales, support, trading, legal, dev, and more. Each agent earns BRDG rewards.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Agents | Bridge AI-OS</title>
+  <title>Agent Control | Bridge AI-OS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/bridge-tokens.css">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#0a0e17;--card:#131a2b;--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444}
-    body{background:var(--bg);color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;min-height:100vh}
-    a{color:var(--cyan);text-decoration:none}
-
-    /* Hero */
-    .hero{text-align:center;padding:60px 24px 48px;background:linear-gradient(180deg,rgba(56,189,248,0.06) 0%,transparent 100%)}
-    .hero h1{font-size:2.2rem;font-weight:800;color:#fff;margin-bottom:8px}
-    .hero h1 span{color:var(--cyan)}
-    .hero p{color:var(--dim);font-size:1rem;max-width:560px;margin:0 auto 24px}
-    .hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-    .btn{padding:12px 28px;border-radius:10px;font-size:0.88rem;font-weight:700;border:none;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
-    .btn-primary{background:var(--cyan);color:#0a0e17}
-    .btn-primary:hover{background:#60cbfc;transform:translateY(-1px)}
-    .btn-outline{background:transparent;color:var(--cyan);border:1.5px solid rgba(56,189,248,0.3)}
-    .btn-outline:hover{border-color:var(--cyan);background:rgba(56,189,248,0.06)}
-
-    /* Filter Bar */
-    .filter-bar{max-width:1200px;margin:0 auto;padding:0 24px 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .filter-btn{padding:7px 18px;border-radius:20px;font-size:0.8rem;font-weight:600;border:1.5px solid #1e293b;background:transparent;color:var(--dim);cursor:pointer;transition:all 0.2s}
-    .filter-btn:hover{border-color:var(--cyan);color:#e2e8f0}
-    .filter-btn.active{background:rgba(56,189,248,0.12);border-color:var(--cyan);color:var(--cyan)}
-    .search-input{flex:1;min-width:180px;padding:8px 16px;border-radius:20px;border:1.5px solid #1e293b;background:rgba(19,26,43,0.6);color:#e2e8f0;font-size:0.85rem;outline:none;margin-left:auto}
-    .search-input:focus{border-color:var(--cyan)}
-    .search-input::placeholder{color:var(--dim)}
-
-    /* Agent Grid */
-    .grid-wrap{max-width:1200px;margin:0 auto;padding:0 24px 40px}
-    .agents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-    @media(max-width:960px){.agents-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:600px){.agents-grid{grid-template-columns:1fr}.hero h1{font-size:1.5rem}.filter-bar{gap:6px}}
-
-    .agent-card{background:var(--card);border:1px solid #1e293b;border-radius:14px;padding:24px;transition:all 0.25s;position:relative;overflow:hidden}
-    .agent-card:hover{border-color:rgba(56,189,248,0.3);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
-    .agent-card.glow{border-color:var(--cyan);box-shadow:0 0 20px rgba(56,189,248,0.25);animation:glowPulse 1.5s ease-in-out 3}
-    @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(56,189,248,0.25)}50%{box-shadow:0 0 35px rgba(56,189,248,0.45)}}
-    .card-icon{font-size:2rem;margin-bottom:10px}
-    .card-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-    .card-name{font-size:1.05rem;font-weight:700;color:#fff}
-    .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    .status-dot.active{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,0.5)}
-    .status-dot.idle{background:var(--dim)}
-    .card-desc{font-size:0.82rem;color:var(--dim);line-height:1.55;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-    .tag{padding:3px 10px;border-radius:12px;font-size:0.7rem;font-weight:600;background:rgba(56,189,248,0.08);color:var(--cyan);border:1px solid rgba(56,189,248,0.15)}
-    .hire-btn{width:100%;padding:10px;border-radius:8px;font-size:0.85rem;font-weight:700;background:rgba(56,189,248,0.1);border:1.5px solid rgba(56,189,248,0.25);color:var(--cyan);cursor:pointer;transition:all 0.2s}
-    .hire-btn:hover{background:rgba(56,189,248,0.18);border-color:var(--cyan)}
-
-    /* Modal */
-    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:24px}
-    .modal-overlay.open{display:flex}
-    .modal{background:var(--card);border:1px solid #1e293b;border-radius:16px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;padding:32px}
-    .modal-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-    .modal-icon{font-size:2rem}
-    .modal-title{font-size:1.3rem;font-weight:800;color:#fff}
-    .modal-close{margin-left:auto;background:none;border:none;color:var(--dim);font-size:1.5rem;cursor:pointer;padding:4px 8px}
-    .modal-close:hover{color:#fff}
-    .modal-desc{color:var(--dim);font-size:0.85rem;line-height:1.6;margin-bottom:16px}
-    .modal-pricing{background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.12);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.82rem;color:var(--cyan)}
-    .modal textarea{width:100%;min-height:100px;padding:12px;border-radius:8px;border:1.5px solid #1e293b;background:var(--bg);color:#e2e8f0;font-size:0.88rem;resize:vertical;outline:none;font-family:inherit}
-    .modal textarea:focus{border-color:var(--cyan)}
-    .modal-actions{display:flex;gap:10px;margin-top:16px;align-items:center}
-    .modal-link{font-size:0.8rem;color:var(--dim);margin-left:auto}
-    .modal-link:hover{color:var(--cyan)}
-    .modal-result{margin-top:16px;padding:16px;background:var(--bg);border:1px solid #1e293b;border-radius:8px;font-size:0.85rem;line-height:1.6;color:#e2e8f0;display:none;white-space:pre-wrap}
-    .loader{display:none;margin-top:16px;text-align:center;color:var(--cyan);font-size:0.85rem}
-    .loader.show{display:block}
-    .loader .dots span{animation:dotBlink 1.4s infinite both}
-    .loader .dots span:nth-child(2){animation-delay:0.2s}
-    .loader .dots span:nth-child(3){animation-delay:0.4s}
-    @keyframes dotBlink{0%,80%,100%{opacity:0.2}40%{opacity:1}}
-
-    /* Quiz */
-    .quiz-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:999;display:none;align-items:center;justify-content:center;padding:24px}
-    .quiz-overlay.open{display:flex}
-    .quiz-box{background:var(--card);border:1px solid #1e293b;border-radius:16px;max-width:480px;width:100%;padding:32px}
-    .quiz-box h3{font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:20px}
-    .quiz-step{display:none}
-    .quiz-step.active{display:block}
-    .quiz-label{color:var(--dim);font-size:0.85rem;margin-bottom:12px}
-    .quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .quiz-opt{padding:12px;border-radius:8px;border:1.5px solid #1e293b;background:transparent;color:#e2e8f0;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-align:center}
-    .quiz-opt:hover{border-color:var(--cyan);color:var(--cyan)}
-    .quiz-opt.selected{border-color:var(--cyan);background:rgba(56,189,248,0.1);color:var(--cyan)}
-    .quiz-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--dim);font-size:1.3rem;cursor:pointer}
-
-    /* Pricing Section */
-    .pricing-section{max-width:1200px;margin:0 auto;padding:24px 24px 60px}
-    .pricing-section h2{text-align:center;font-size:1.5rem;font-weight:800;color:#fff;margin-bottom:8px}
-    .pricing-section .sub{text-align:center;color:var(--dim);font-size:0.88rem;margin-bottom:32px}
-    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-    @media(max-width:768px){.pricing-grid{grid-template-columns:1fr}}
-    .pricing-card{background:var(--card);border:1px solid #1e293b;border-radius:14px;padding:28px;text-align:center}
-    .pricing-card.popular{border-color:var(--cyan);position:relative}
-    .pricing-card.popular::before{content:'MOST POPULAR';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--cyan);color:#0a0e17;padding:3px 16px;border-radius:12px;font-size:0.68rem;font-weight:800;letter-spacing:0.5px}
-    .pricing-plan{font-size:0.85rem;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-    .pricing-price{font-size:2rem;font-weight:800;color:#fff;margin-bottom:4px}
-    .pricing-period{font-size:0.78rem;color:var(--dim);margin-bottom:20px}
-    .pricing-features{list-style:none;text-align:left;margin-bottom:24px}
-    .pricing-features li{padding:6px 0;font-size:0.82rem;color:#94a3b8;border-bottom:1px solid rgba(30,41,59,0.5)}
-    .pricing-features li::before{content:'\\2713 ';color:var(--green);font-weight:700;margin-right:6px}
-    .pricing-btn{width:100%;padding:12px;border-radius:8px;font-size:0.88rem;font-weight:700;border:none;cursor:pointer;transition:all 0.2s}
-    .pricing-btn-fill{background:var(--cyan);color:#0a0e17}
-    .pricing-btn-fill:hover{background:#60cbfc}
-    .pricing-btn-outline{background:transparent;color:var(--cyan);border:1.5px solid rgba(56,189,248,0.3)}
-    .pricing-btn-outline:hover{border-color:var(--cyan)}
+    body{background:#060810;color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+    .dashboard{max-width:1100px;margin:0 auto;padding:24px}
+    h1{font-size:1.6rem;font-weight:800;color:#63ffda;margin-bottom:6px}
+    .sub{color:#94a3b8;font-size:0.85rem;margin-bottom:28px}
+    .toolbar{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
+    .btn{padding:9px 20px;border-radius:8px;font-size:0.82rem;font-weight:700;border:none;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s}
+    .btn-primary{background:#63ffda;color:#060810}
+    .btn-primary:hover{background:#00dda8}
+    .btn-secondary{background:#0a0e17;color:#63ffda;border:1px solid rgba(99,255,218,0.2)}
+    .btn-secondary:hover{border-color:#63ffda}
+    .btn:disabled{opacity:0.4;cursor:not-allowed}
+    .run-status{font-size:0.8rem;color:#94a3b8;margin-left:auto}
+    .run-status.running{color:#fbbf24}
+    .run-status.done{color:#4ade80}
+    .agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+    .agent-card{background:#0a0e17;border:1px solid #1a2a3a;border-radius:12px;padding:20px;transition:border-color 0.2s}
+    .agent-card.running{border-color:#fbbf24;animation:pulse 1.5s ease-in-out infinite}
+    .agent-card.done{border-color:#4ade80}
+    .agent-card.error{border-color:#f87171}
+    .agent-card.cached{border-color:rgba(99,255,218,0.25)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+    .agent-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .agent-dot{width:8px;height:8px;border-radius:50%;background:#1a2a3a;flex-shrink:0}
+    .agent-dot.active{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.5)}
+    .agent-dot.cached{background:#63ffda;box-shadow:0 0 6px rgba(99,255,218,0.4)}
+    .agent-dot.running{background:#fbbf24;box-shadow:0 0 6px rgba(251,191,36,0.5)}
+    .agent-dot.error{background:#f87171}
+    .agent-name{font-size:0.92rem;font-weight:700}
+    .agent-layer{font-size:0.7rem;color:#63ffda;background:rgba(99,255,218,0.1);padding:2px 8px;border-radius:10px;margin-left:auto}
+    .agent-output{font-size:0.78rem;color:#94a3b8;line-height:1.5;min-height:40px;margin-bottom:12px;word-break:break-word;max-height:160px;overflow-y:auto}
+    .agent-output.loaded{color:#cbd5e1}
+    .agent-footer{display:flex;align-items:center;gap:8px}
+    .agent-run-btn{padding:5px 14px;font-size:0.75rem;font-weight:700;background:rgba(99,255,218,0.08);border:1px solid rgba(99,255,218,0.2);color:#63ffda;border-radius:6px;cursor:pointer;transition:all 0.15s}
+    .agent-run-btn:hover{background:rgba(99,255,218,0.15)}
+    .agent-run-btn:disabled{opacity:0.3;cursor:not-allowed}
+    .agent-time{font-size:0.7rem;color:#4a5568;margin-left:auto}
+    .input-row{display:flex;gap:8px;margin-bottom:8px}
+    .agent-input{flex:1;padding:6px 10px;background:#111827;border:1px solid #1a2a3a;border-radius:6px;color:#fff;font-size:0.78rem;outline:none}
+    .agent-input:focus{border-color:#63ffda}
+    .stats-bar{background:#0a0e17;border:1px solid #1a2a3a;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+    .t-stat{text-align:center}
+    .t-val{font-size:1.4rem;font-weight:800;color:#63ffda}
+    .t-label{font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+    .auto-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;background:rgba(99,255,218,0.08);border:1px solid rgba(99,255,218,0.2);color:#63ffda;margin-left:auto}
+    .auto-badge .dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:blink 2s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+    .spend-bar{width:100%;height:3px;background:#1e293b;border-radius:2px;margin-top:6px;overflow:hidden}
+    .spend-fill{height:100%;background:linear-gradient(90deg,#63ffda,#fbbf24);border-radius:2px;transition:width 0.5s}
+    @media(max-width:640px){
+      .agents-grid{grid-template-columns:1fr}
+      .dashboard{padding:14px}
+      h1{font-size:1.3rem}
+      .stats-bar{gap:14px}
+    }
   </style>
 </head>
 <body>
+<script>(function(){var t=localStorage.getItem('bridge_token')||(document.cookie.match(/(?:^|; )access_token=([^;]*)/)||[])[1];if(!t){location.replace('/onboarding?redirect='+encodeURIComponent(location.pathname));return;}fetch('/auth/me',{headers:{Authorization:'Bearer '+t}}).then(function(r){if(!r.ok)throw new Error();}).catch(function(){localStorage.removeItem('bridge_token');location.replace('/onboarding');});})()</script>
+  <script src="/bridge-nav.js?v=2"></script>
+  <div class="dashboard">
+    <h1>Agent Control Centre</h1>
+    <p class="sub">10 autonomous AI agents — auto-cycle every 6 hours, or run manually</p>
 
-  <!-- Hero -->
-  <section class="hero">
-    <h1>Your <span>AI Workforce</span> -- 35 Specialized Agents Ready to Work</h1>
-    <p>Browse, hire, and deploy autonomous AI agents for sales, marketing, research, legal, finance, and more. Pay per execution or subscribe for unlimited access.</p>
-    <div class="hero-actions">
-      <button class="btn btn-primary" onclick="document.getElementById('agentsGrid').scrollIntoView({behavior:'smooth'})">Browse Agents</button>
-      <button class="btn btn-outline" onclick="openQuiz()">Which agent do I need?</button>
+    <div class="stats-bar">
+      <div class="t-stat"><div class="t-val" id="treasury">—</div><div class="t-label">Treasury</div></div>
+      <div class="t-stat"><div class="t-val" id="agentCount">10</div><div class="t-label">Agents</div></div>
+      <div class="t-stat"><div class="t-val" id="tasksRun">0</div><div class="t-label">Tasks Run</div></div>
+      <div class="t-stat" style="min-width:120px">
+        <div class="t-val" id="aiSpend">R0.00</div>
+        <div class="t-label">AI Spend / Month</div>
+        <div class="spend-bar"><div class="spend-fill" id="spendBar" style="width:0%"></div></div>
+      </div>
+      <div class="auto-badge">
+        <span class="dot"></span>
+        <span id="lastRunLabel">Loading…</span>
+      </div>
     </div>
-  </section>
 
-  <!-- Filter Bar -->
-  <div class="filter-bar" id="filterBar">
-    <button class="filter-btn active" data-filter="all">All</button>
-    <button class="filter-btn" data-filter="sales">Sales</button>
-    <button class="filter-btn" data-filter="support">Support</button>
-    <button class="filter-btn" data-filter="research">Research</button>
-    <button class="filter-btn" data-filter="marketing">Marketing</button>
-    <button class="filter-btn" data-filter="legal">Legal</button>
-    <button class="filter-btn" data-filter="finance">Finance</button>
-    <button class="filter-btn" data-filter="dev">Dev</button>
-    <button class="filter-btn" data-filter="trading">Trading</button>
-    <input class="search-input" id="searchInput" type="text" placeholder="Search agents...">
-  </div>
+    <div class="toolbar">
+      <button class="btn btn-primary" id="runAllBtn" onclick="runAll()">Run All Agents</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear Outputs</button>
+      <button class="btn btn-secondary" onclick="loadOutputs()">&#8635; Reload Cached</button>
+      <span class="run-status" id="runStatus">Ready</span>
+    </div>
 
-  <!-- Agent Grid -->
-  <div class="grid-wrap">
     <div class="agents-grid" id="agentsGrid"></div>
   </div>
 
-  <!-- Pricing -->
-  <section class="pricing-section">
-    <h2>Agent Access by Plan</h2>
-    <p class="sub">Choose the plan that fits your workflow</p>
-    <div class="pricing-grid">
-      <div class="pricing-card">
-        <div class="pricing-plan">Starter</div>
-        <div class="pricing-price">R199<span style="font-size:0.9rem;color:var(--dim)">/mo</span></div>
-        <div class="pricing-period">For solo operators</div>
-        <ul class="pricing-features">
-          <li>3 agents available</li>
-          <li>100 executions / month</li>
-          <li>Standard response time</li>
-          <li>Email support</li>
-        </ul>
-        <button class="pricing-btn pricing-btn-outline" onclick="location.href='/onboarding.html?plan=starter'">Get Started</button>
-      </div>
-      <div class="pricing-card popular">
-        <div class="pricing-plan">Pro</div>
-        <div class="pricing-price">R499<span style="font-size:0.9rem;color:var(--dim)">/mo</span></div>
-        <div class="pricing-period">For growing teams</div>
-        <ul class="pricing-features">
-          <li>All 35 agents</li>
-          <li>5,000 executions / month</li>
-          <li>Priority response time</li>
-          <li>API access</li>
-          <li>Custom agent prompts</li>
-        </ul>
-        <button class="pricing-btn pricing-btn-fill" onclick="location.href='/onboarding.html?plan=pro'">Get Started</button>
-      </div>
-      <div class="pricing-card">
-        <div class="pricing-plan">Enterprise</div>
-        <div class="pricing-price">R4,999<span style="font-size:0.9rem;color:var(--dim)">/mo</span></div>
-        <div class="pricing-period">For organisations</div>
-        <ul class="pricing-features">
-          <li>All 35 agents + custom</li>
-          <li>Unlimited executions</li>
-          <li>Dedicated agent training</li>
-          <li>SLA guarantee</li>
-          <li>White-label option</li>
-        </ul>
-        <button class="pricing-btn pricing-btn-outline" onclick="location.href='/onboarding.html?plan=enterprise'">Contact Sales</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Execute Modal -->
-  <div class="modal-overlay" id="executeModal">
-    <div class="modal">
-      <div class="modal-head">
-        <span class="modal-icon" id="modalIcon"></span>
-        <span class="modal-title" id="modalTitle"></span>
-        <button class="modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <p class="modal-desc" id="modalDesc"></p>
-      <div class="modal-pricing" id="modalPricing"></div>
-      <textarea id="modalPrompt" placeholder="What would you like this agent to do?"></textarea>
-      <div class="modal-actions">
-        <button class="btn btn-primary" id="modalExecBtn" onclick="executeAgent()">Execute</button>
-        <a class="modal-link" id="modalMarketLink" href="#">Post as Marketplace Job</a>
-      </div>
-      <div class="loader" id="modalLoader">Agent is thinking<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
-      <div class="modal-result" id="modalResult"></div>
-    </div>
-  </div>
-
-  <!-- Quiz Overlay -->
-  <div class="quiz-overlay" id="quizOverlay">
-    <div class="quiz-box" style="position:relative">
-      <button class="quiz-close" onclick="closeQuiz()">&times;</button>
-      <h3>Find Your Perfect Agent</h3>
-
-      <div class="quiz-step active" id="quizStep1">
-        <div class="quiz-label">Step 1: What is your primary goal?</div>
-        <div class="quiz-options">
-          <button class="quiz-opt" onclick="quizSelect(1,'sell')">Sell more</button>
-          <button class="quiz-opt" onclick="quizSelect(1,'time')">Save time</button>
-          <button class="quiz-opt" onclick="quizSelect(1,'cost')">Reduce costs</button>
-          <button class="quiz-opt" onclick="quizSelect(1,'grow')">Grow audience</button>
-        </div>
-      </div>
-
-      <div class="quiz-step" id="quizStep2">
-        <div class="quiz-label">Step 2: Which area?</div>
-        <div class="quiz-options">
-          <button class="quiz-opt" onclick="quizSelect(2,'sales')">Sales</button>
-          <button class="quiz-opt" onclick="quizSelect(2,'marketing')">Marketing</button>
-          <button class="quiz-opt" onclick="quizSelect(2,'finance')">Finance</button>
-          <button class="quiz-opt" onclick="quizSelect(2,'legal')">Legal</button>
-          <button class="quiz-opt" onclick="quizSelect(2,'dev')">Technical</button>
-          <button class="quiz-opt" onclick="quizSelect(2,'research')">Research</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="/bridge-nav.js" defer></script>
   <script>
-    /* ---- Default Agent Roster ---- */
-    var DEFAULT_AGENTS = [
-      { id:'agent-sales',     name:'Sales Agent',     type:'sales',     icon:'\uD83D\uDCBC', status:'active', description:'Automates outreach, follow-ups, lead scoring, and deal closing. Your 24/7 sales rep that never sleeps.', capabilities:['Lead Gen','Email','CRM','Pipeline'], pricing:'R0.50 / execution' },
-      { id:'agent-support',   name:'Support Agent',   type:'support',   icon:'\uD83D\uDEDF', status:'active', description:'Handles customer queries, ticket triage, and escalation with instant response times and human handoff.', capabilities:['Tickets','Live Chat','FAQ','Escalation'], pricing:'R0.30 / execution' },
-      { id:'agent-research',  name:'Research Agent',  type:'research',  icon:'\uD83D\uDD2C', status:'active', description:'Competitive intelligence, market analysis, and data synthesis. Turns raw data into actionable insights.', capabilities:['Analysis','Reports','Data Mining','Trends'], pricing:'R0.80 / execution' },
-      { id:'agent-marketing', name:'Marketing Agent', type:'marketing', icon:'\uD83D\uDCE2', status:'active', description:'Content creation, SEO optimization, social media management, and campaign strategy powered by AI.', capabilities:['Content','SEO','Social','Campaigns'], pricing:'R0.60 / execution' },
-      { id:'agent-legal',     name:'Legal Agent',     type:'legal',     icon:'\u2696\uFE0F',  status:'active', description:'Contract review, NDA generation, compliance checking, and regulatory guidance for South African law.', capabilities:['Contracts','NDAs','Compliance','POPIA'], pricing:'R1.00 / execution' },
-      { id:'agent-finance',   name:'Finance Agent',   type:'finance',   icon:'\uD83D\uDCB0', status:'active', description:'Invoicing, financial forecasting, budget analysis, and reconciliation. Your AI CFO assistant.', capabilities:['Invoicing','Forecasting','Budgets','Tax'], pricing:'R0.70 / execution' },
-      { id:'agent-dev',       name:'Dev Agent',       type:'dev',       icon:'\u2692\uFE0F',  status:'active', description:'Code generation, debugging, architecture review, and deployment automation for modern stacks.', capabilities:['Code Gen','Debug','CI/CD','Review'], pricing:'R0.90 / execution' },
-      { id:'agent-trading',   name:'Trading Agent',   type:'trading',   icon:'\uD83D\uDCC8', status:'idle',   description:'Market signals, portfolio analysis, risk assessment, and automated trading strategy recommendations.', capabilities:['Signals','Portfolio','Risk','Alerts'], pricing:'R1.20 / execution' },
+    var agentDefs = [
+      { name: 'QuoteGen AI',     layer: 'L1', desc: 'Generates high-conversion sales quotes' },
+      { name: 'Finance AI',      layer: 'L1', desc: 'Financial forecasting and budget analysis' },
+      { name: 'Growth Hunter',   layer: 'L1', desc: 'Aggressive growth tactics and lead strategy' },
+      { name: 'Intelligence AI', layer: 'L2', desc: 'Competitive intelligence and market signals' },
+      { name: 'Nurture AI',      layer: 'L2', desc: 'Email nurture sequences for prospects' },
+      { name: 'Closer AI',       layer: 'L2', desc: 'Sales closing strategies and objection handling' },
+      { name: 'Campaign AI',     layer: 'L2', desc: 'Paid advertising campaigns and targeting' },
+      { name: 'Creative AI',     layer: 'L3', desc: 'Marketing creative briefs and ad copy' },
+      { name: 'Support AI',      layer: 'L3', desc: 'Support triage and resolution' },
+      { name: 'Supply AI',       layer: 'L3', desc: 'Infrastructure cost optimisation' },
     ];
 
-    var agents = [];
-    var currentFilter = 'all';
-    var currentSearch = '';
-    var selectedAgent = null;
-    var currentUser = null;
+    var tasksRun = 0;
 
-    /* ---- Init ---- */
-    async function init() {
-      try {
-        var res = await fetch('/api/agents');
-        var data = await res.json();
-        if (data.agents && data.agents.length > 0) {
-          agents = data.agents.map(function(a) {
-            var def = DEFAULT_AGENTS.find(function(d){ return d.type === a.type; });
-            return Object.assign({}, def || {}, a, { icon: (def && def.icon) || '\uD83E\uDD16' });
-          });
-        } else { agents = DEFAULT_AGENTS; }
-      } catch(e) { agents = DEFAULT_AGENTS; }
-      renderGrid();
-
-      // check auth silently
-      try {
-        var r = await fetch('/auth/me', { credentials:'include' });
-        var d = await r.json();
-        if (d.ok && d.user) currentUser = d.user;
-      } catch(e){}
+    function timeAgo(iso) {
+      if (!iso) return 'never';
+      var s = Math.floor((Date.now() - new Date(iso)) / 1000);
+      if (s < 60) return s + 's ago';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      return Math.floor(s / 86400) + 'd ago';
     }
 
-    /* ---- Render ---- */
-    function renderGrid() {
+    function buildGrid() {
       var grid = document.getElementById('agentsGrid');
-      grid.innerHTML = '';
-      var filtered = agents.filter(function(a) {
-        if (currentFilter !== 'all' && a.type !== currentFilter) return false;
-        if (currentSearch) {
-          var q = currentSearch.toLowerCase();
-          return (a.name.toLowerCase().indexOf(q) !== -1 || a.description.toLowerCase().indexOf(q) !== -1);
-        }
-        return true;
-      });
-      if (filtered.length === 0) {
-        grid.innerHTML = '<p style="color:var(--dim);grid-column:1/-1;text-align:center;padding:40px">No agents match your search.</p>';
-        return;
-      }
-      filtered.forEach(function(a) {
+      agentDefs.forEach(function(a) {
+        var slug = a.name.replace(/\s/g, '-');
         var card = document.createElement('div');
         card.className = 'agent-card';
-        card.id = 'card-' + a.id;
-        var statusClass = a.status === 'active' ? 'active' : 'idle';
-        var caps = (a.capabilities || []).map(function(c){ return '<span class="tag">' + c + '</span>'; }).join('');
-        card.innerHTML =
-          '<div class="card-icon">' + a.icon + '</div>' +
-          '<div class="card-header"><span class="card-name">' + a.name + '</span><span class="status-dot ' + statusClass + '"></span></div>' +
-          '<p class="card-desc">' + a.description + '</p>' +
-          '<div class="card-tags">' + caps + '</div>' +
-          '<button class="hire-btn" data-id="' + a.id + '">Hire Agent</button>';
-        card.querySelector('.hire-btn').addEventListener('click', function(){ openModal(a); });
+        card.id = 'card-' + slug;
+
+        var header = document.createElement('div');
+        header.className = 'agent-header';
+
+        var dot = document.createElement('div');
+        dot.className = 'agent-dot active';
+        dot.id = 'dot-' + slug;
+
+        var nameEl = document.createElement('div');
+        nameEl.className = 'agent-name';
+        nameEl.textContent = a.name;
+
+        var layerEl = document.createElement('div');
+        layerEl.className = 'agent-layer';
+        layerEl.textContent = a.layer;
+
+        header.appendChild(dot);
+        header.appendChild(nameEl);
+        header.appendChild(layerEl);
+
+        var output = document.createElement('div');
+        output.className = 'agent-output';
+        output.id = 'out-' + slug;
+        output.textContent = a.desc;
+
+        var inputRow = document.createElement('div');
+        inputRow.className = 'input-row';
+        var inp = document.createElement('input');
+        inp.className = 'agent-input';
+        inp.placeholder = 'Optional context for this agent…';
+        inp.id = 'inp-' + slug;
+        inputRow.appendChild(inp);
+
+        var footer = document.createElement('div');
+        footer.className = 'agent-footer';
+
+        var runBtn = document.createElement('button');
+        runBtn.className = 'agent-run-btn';
+        runBtn.textContent = 'Run';
+        runBtn.id = 'btn-' + slug;
+        runBtn.setAttribute('data-agent', a.name);
+        runBtn.onclick = function() { runAgent(this.getAttribute('data-agent')); };
+
+        var timeEl = document.createElement('div');
+        timeEl.className = 'agent-time';
+        timeEl.id = 'time-' + slug;
+
+        footer.appendChild(runBtn);
+        footer.appendChild(timeEl);
+
+        card.appendChild(header);
+        card.appendChild(output);
+        card.appendChild(inputRow);
+        card.appendChild(footer);
         grid.appendChild(card);
       });
     }
 
-    /* ---- Filters ---- */
-    document.getElementById('filterBar').addEventListener('click', function(e) {
-      if (!e.target.classList.contains('filter-btn')) return;
-      currentFilter = e.target.dataset.filter;
-      document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
-      e.target.classList.add('active');
-      renderGrid();
-    });
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-      currentSearch = e.target.value;
-      renderGrid();
-    });
-
-    /* ---- Modal ---- */
-    function openModal(agent) {
-      if (!currentUser) { location.href = '/join'; return; }
-      selectedAgent = agent;
-      document.getElementById('modalIcon').textContent = agent.icon;
-      document.getElementById('modalTitle').textContent = agent.name;
-      document.getElementById('modalDesc').textContent = agent.description;
-      document.getElementById('modalPricing').textContent = 'Pricing: ' + (agent.pricing || 'Included in plan');
-      document.getElementById('modalPrompt').value = '';
-      document.getElementById('modalResult').style.display = 'none';
-      document.getElementById('modalResult').textContent = '';
-      document.getElementById('modalLoader').classList.remove('show');
-      document.getElementById('modalExecBtn').disabled = false;
-      document.getElementById('modalMarketLink').href = '/marketplace?agent=' + agent.id;
-      document.getElementById('executeModal').classList.add('open');
+    // Apply cached output to a card
+    function applyOutput(name, entry) {
+      var slug = name.replace(/\s/g, '-');
+      var card = document.getElementById('card-' + slug);
+      var dot  = document.getElementById('dot-'  + slug);
+      var out  = document.getElementById('out-'  + slug);
+      var time = document.getElementById('time-' + slug);
+      if (!card) return;
+      if (entry.error) {
+        out.textContent = 'Last error: ' + entry.error;
+        card.className  = 'agent-card error';
+        dot.className   = 'agent-dot error';
+      } else if (entry.output) {
+        out.textContent = entry.output;
+        out.className   = 'agent-output loaded';
+        card.className  = 'agent-card cached';
+        dot.className   = 'agent-dot cached';
+      }
+      if (entry.timestamp) time.textContent = timeAgo(entry.timestamp);
     }
-    function closeModal() {
-      document.getElementById('executeModal').classList.remove('open');
-      selectedAgent = null;
-    }
-    document.getElementById('executeModal').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
 
-    /* ---- Execute ---- */
-    async function executeAgent() {
-      if (!selectedAgent) return;
-      var prompt = document.getElementById('modalPrompt').value.trim();
-      if (!prompt) { document.getElementById('modalPrompt').focus(); return; }
-      var btn = document.getElementById('modalExecBtn');
-      var loader = document.getElementById('modalLoader');
-      var result = document.getElementById('modalResult');
-      btn.disabled = true;
-      loader.classList.add('show');
-      result.style.display = 'none';
+    // Status colour map for execution_status field
+    var STATUS_COLOUR = {
+      complete: '#4ade80',
+      partial:  '#fbbf24',
+      failed:   '#f87171',
+      never:    '#64748b',
+      running:  '#fbbf24',
+    };
+
+    async function loadOutputs() {
       try {
-        var res = await fetch('/api/agents/execute-paid', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ agent_id: selectedAgent.id, prompt: prompt })
-        });
-        var data = await res.json();
-        loader.classList.remove('show');
-        result.style.display = 'block';
-        if (data.output || data.result) {
-          typeEffect(result, data.output || data.result);
-        } else if (data.error) {
-          result.textContent = 'Error: ' + data.error;
-        } else {
-          result.textContent = JSON.stringify(data, null, 2);
+        // Single source of truth — reads system_state, never triggers execution
+        var res   = await fetch('/api/system/state');
+        var state = await res.json();
+
+        var agents  = state.agents  || {};
+        var aiState = state.ai      || {};
+
+        // Last run + status badge
+        var lbl    = document.getElementById('lastRunLabel');
+        var status = agents.execution_status || 'never';
+        var colour = STATUS_COLOUR[status] || '#64748b';
+        lbl.textContent = agents.last_run
+          ? status.toUpperCase() + ' · ' + timeAgo(agents.last_run)
+          : 'No cycle yet';
+        lbl.style.color = colour;
+        document.querySelector('.auto-badge .dot').style.background = colour;
+
+        // AI spend bar
+        var spend  = aiState.spend  || 0;
+        var budget = aiState.budget || 500;
+        document.getElementById('aiSpend').textContent = 'R' + spend.toFixed(2);
+        var pct = budget > 0 ? Math.min(100, (spend / budget) * 100) : 0;
+        document.getElementById('spendBar').style.width = pct.toFixed(1) + '%';
+
+        // Treasury
+        if (state.treasury && state.treasury.balance) {
+          document.getElementById('treasury').textContent = 'R' + Math.round(state.treasury.balance).toLocaleString();
         }
-      } catch(e) {
-        loader.classList.remove('show');
-        result.style.display = 'block';
-        result.textContent = 'Network error. Please try again.';
+
+        // Apply cached outputs — only value-positive entries exist in state
+        var outputs = agents.outputs || {};
+        Object.keys(outputs).forEach(function(name) {
+          applyOutput(name, outputs[name]);
+        });
+      } catch (_) {}
+    }
+
+    async function runAgent(name) {
+      var slug   = name.replace(/\s/g, '-');
+      var card   = document.getElementById('card-' + slug);
+      var dot    = document.getElementById('dot-' + slug);
+      var out    = document.getElementById('out-' + slug);
+      var btn    = document.getElementById('btn-' + slug);
+      var timeEl = document.getElementById('time-' + slug);
+      var inp    = document.getElementById('inp-' + slug);
+
+      card.className  = 'agent-card running';
+      dot.className   = 'agent-dot running';
+      out.className   = 'agent-output';
+      out.textContent = 'Running…';
+      btn.disabled    = true;
+
+      var t0 = Date.now();
+      try {
+        var r = await fetch('/api/agents/run', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ agentName: name, input: inp.value }),
+        });
+        var data    = await r.json();
+        var elapsed = ((Date.now() - t0) / 1000).toFixed(1) + 's';
+
+        if (data.ok && data.output) {
+          out.textContent  = data.output;
+          out.className    = 'agent-output loaded';
+          card.className   = 'agent-card done';
+          dot.className    = 'agent-dot active';
+          timeEl.textContent = elapsed;
+          tasksRun++;
+          document.getElementById('tasksRun').textContent = tasksRun;
+        } else {
+          out.textContent = 'Error: ' + (data.error || 'Unknown');
+          card.className  = 'agent-card error';
+          dot.className   = 'agent-dot error';
+        }
+      } catch (e) {
+        out.textContent = 'Network error: ' + e.message;
+        card.className  = 'agent-card error';
+        dot.className   = 'agent-dot error';
       }
       btn.disabled = false;
     }
 
-    function typeEffect(el, text) {
-      el.textContent = '';
-      var i = 0;
-      var iv = setInterval(function() {
-        el.textContent += text.charAt(i);
-        i++;
-        if (i >= text.length) clearInterval(iv);
-      }, 12);
+    async function runAll() {
+      var btn      = document.getElementById('runAllBtn');
+      var statusEl = document.getElementById('runStatus');
+      btn.disabled = true;
+      statusEl.className   = 'run-status running';
+      statusEl.textContent = 'Running all agents…';
+      await Promise.all(agentDefs.map(function(a) { return runAgent(a.name); }));
+      btn.disabled = false;
+      statusEl.className   = 'run-status done';
+      statusEl.textContent = 'Cycle complete — reloading state…';
+      loadOutputs(); // pull fresh system_state from Supabase
+      setTimeout(function() {
+        statusEl.className   = 'run-status';
+        statusEl.textContent = 'Ready';
+      }, 5000);
     }
 
-    /* ---- Quiz ---- */
-    var quizAnswers = {};
-    function openQuiz() {
-      quizAnswers = {};
-      document.getElementById('quizStep1').classList.add('active');
-      document.getElementById('quizStep2').classList.remove('active');
-      document.querySelectorAll('.quiz-opt').forEach(function(o){ o.classList.remove('selected'); });
-      document.getElementById('quizOverlay').classList.add('open');
-    }
-    function closeQuiz() {
-      document.getElementById('quizOverlay').classList.remove('open');
-    }
-    document.getElementById('quizOverlay').addEventListener('click', function(e) {
-      if (e.target === this) closeQuiz();
-    });
-
-    var QUIZ_MAP = {
-      'sell-sales':'agent-sales', 'sell-marketing':'agent-marketing', 'sell-finance':'agent-finance',
-      'sell-legal':'agent-legal', 'sell-dev':'agent-dev', 'sell-research':'agent-research',
-      'time-sales':'agent-sales', 'time-marketing':'agent-marketing', 'time-finance':'agent-finance',
-      'time-legal':'agent-legal', 'time-dev':'agent-dev', 'time-research':'agent-research',
-      'cost-sales':'agent-sales', 'cost-marketing':'agent-marketing', 'cost-finance':'agent-finance',
-      'cost-legal':'agent-legal', 'cost-dev':'agent-dev', 'cost-research':'agent-research',
-      'grow-sales':'agent-sales', 'grow-marketing':'agent-marketing', 'grow-finance':'agent-trading',
-      'grow-legal':'agent-legal', 'grow-dev':'agent-dev', 'grow-research':'agent-research',
-    };
-
-    function quizSelect(step, val) {
-      // highlight selected
-      var stepEl = document.getElementById('quizStep' + step);
-      stepEl.querySelectorAll('.quiz-opt').forEach(function(o){ o.classList.remove('selected'); });
-      event.target.classList.add('selected');
-
-      if (step === 1) {
-        quizAnswers.goal = val;
-        setTimeout(function() {
-          document.getElementById('quizStep1').classList.remove('active');
-          document.getElementById('quizStep2').classList.add('active');
-        }, 300);
-      } else {
-        quizAnswers.area = val;
-        var key = quizAnswers.goal + '-' + val;
-        var matchId = QUIZ_MAP[key] || 'agent-sales';
-        closeQuiz();
-        // reset filter to all so card is visible
-        currentFilter = 'all';
-        currentSearch = '';
-        document.getElementById('searchInput').value = '';
-        document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
-        document.querySelector('[data-filter="all"]').classList.add('active');
-        renderGrid();
-        setTimeout(function() {
-          var card = document.getElementById('card-' + matchId);
-          if (card) {
-            card.scrollIntoView({ behavior:'smooth', block:'center' });
-            card.classList.add('glow');
-            setTimeout(function(){ card.classList.remove('glow'); }, 5000);
-          }
-        }, 200);
-      }
+    function clearAll() {
+      agentDefs.forEach(function(a) {
+        var slug = a.name.replace(/\s/g, '-');
+        document.getElementById('card-' + slug).className = 'agent-card';
+        document.getElementById('dot-'  + slug).className = 'agent-dot active';
+        document.getElementById('out-'  + slug).className = 'agent-output';
+        document.getElementById('out-'  + slug).textContent = a.desc;
+        document.getElementById('time-' + slug).textContent = '';
+      });
     }
 
-    init();
+    buildGrid();
+    loadOutputs(); // loads treasury, spend, outputs — all from system_state
   </script>
 </body>
 </html>

@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/topology">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/topology">
+<meta property="og:title" content="GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID">
+<meta property="og:description" content="GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID">
+<meta name="twitter:description" content="GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GOD MODE — UNIFIED TOPOLOGY + TERMINAL GRID</title>
 
@@ -16,9 +30,9 @@ base-uri 'self';
 ">
 
 <!-- P5 + XTERM with SRI -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js" integrity="sha384-7aZ9BzDqjZG7K7U7FqJtJkXffufZBkT2F4PrVqPLiLgmJ5J3St2nGLCkIRXqFFs" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js" integrity="sha384-7aZ9BzDqjZG7K7U7FqJtJkT3nF3PXUOVc9kT3nF3hKJA+v17K3wcmVMTwFV+6J6L6rSqOQ0j2VMT5x5" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" integrity="sha384-HN订D6R9CnLNQa7F0H8UOCoqDPLQfWwZLnTqTHRNPzLeFlYcCXE9XjKS8EneT/2" crossorigin="anonymous"/>
-<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" integrity="sha384-n7rVq3MZhH9K1bKTod86jT3nF3PXUOVc9kT3N7kK3R2LGMxRvTFLF3N5hNq7uN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" integrity="sha384-n7rVq3MZhH9K1bKTod86jT3nF3PXUOVc9kT3nF3hKJA+v17K3wcmVMTwFV+6J6L6rSqOQ0j2VMT5x5" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js" integrity="sha384-8MGM9qZ3D5J5/9M7YKhKxkH3hKJA+v17K3wcmVMTwFV+6J6L6rSqOQ0j2VMT5x5" crossorigin="anonymous"></script>
 
 <style>
@@ -39,7 +53,7 @@ canvas{display:block;}
   border-bottom:1px solid rgba(0,255,255,.18);
 }
 #hud-left{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:2px;color:#0ff;}
-#hud-right{display:flex;align-items:center;gap:12px;font-size:9px;color:#0f9;}
+#hud-right{display:flex;align-items:center;gap:12px;font-size:9px;color:#0ac;}
 #live-dot{width:8px;height:8px;border-radius:50%;background:#0f9;animation:pulse 1.5s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 #stats{font-size:9px;color:#0ac;letter-spacing:1px;}
@@ -183,59 +197,223 @@ canvas{display:block;}
 @media (max-width: 900px) {
   html,body{overflow:auto;height:auto;}
 
+  /* Canvas container - make it prominent on mobile */
   #p5-canvas-container{
-    position:relative;top:0;left:0;right:0;height:300px;
+    position:relative;top:0;left:0;right:0;
+    height:250px; /* Reduced height for mobile */
+    margin:0;
+    order:1; /* Ensure proper stacking order */
   }
 
-  #hud{position:sticky;z-index:100;}
-
-  #control-panel{
-    position:relative;right:auto;top:auto;
-    width:100%;border-radius:0;
-    flex-direction:row;flex-wrap:wrap;
-    min-width:auto;
+  /* HUD - make sticky for navigation */
+  #hud{
+    position:sticky;
+    top:0;
+    z-index:100;
+    height:50px; /* Slightly taller for touch */
+    order:2;
   }
-  #control-panel button{flex:1;min-width:80px;text-align:center;}
+  #hud-left{font-size:10px;} /* Slightly larger text */
+  #hud-right{font-size:7px;} /* Smaller stats text */
 
-  #left-sidebar, #right-sidebar{
-    position:relative;top:auto;bottom:auto;left:auto;right:auto;
-    width:100%;height:auto;overflow:visible;padding:4px;
+  /* Left sidebar - stack after canvas */
+  #left-sidebar{
+    position:relative;
+    top:auto;
+    bottom:auto;
+    left:auto;
+    right:auto;
+    width:100%;
+    height:auto;
+    overflow:visible;
+    padding:8px 4px; /* More padding for touch */
+    order:3;
   }
   .left-panel{
-    width:100%;min-width:auto;border-radius:0;
-    margin-bottom:4px;
+    width:100%;
+    min-width:auto;
+    border-radius:0;
+    margin-bottom:8px; /* More spacing */
+    padding:12px 8px; /* More padding */
+  }
+  .left-panel .lp-title{font-size:10px;} /* Larger title */
+  .left-panel button{
+    padding:6px 10px; /* Larger touch targets */
+    font-size:10px;
+    min-height:44px; /* Minimum touch target */
+  }
+  .left-panel .stat-row{
+    padding:6px 8px; /* Larger touch targets */
+    min-height:44px; /* Ensure touchable */
+    font-size:10px;
   }
 
+  /* Right sidebar - stack after left */
+  #right-sidebar{
+    position:relative;
+    top:auto;
+    bottom:auto;
+    left:auto;
+    right:auto;
+    width:100%;
+    height:auto;
+    overflow:visible;
+    padding:8px 4px;
+    order:4;
+  }
+
+  /* Control panel - better mobile layout */
+  #control-panel{
+    position:relative;
+    right:auto;
+    top:auto;
+    width:100%;
+    border-radius:0;
+    flex-direction:row;
+    flex-wrap:wrap;
+    min-width:auto;
+    padding:12px 8px;
+    gap:6px;
+    order:1; /* Within right sidebar */
+  }
+  #control-panel .cp-title{font-size:10px; margin-bottom:8px;}
+  #control-panel button{
+    flex:1;
+    min-width:80px;
+    text-align:center;
+    padding:8px 6px;
+    font-size:10px;
+    min-height:44px; /* Touch target */
+  }
+
+  /* Economics panel */
   #econ-panel{
-    position:relative;top:auto;bottom:auto;right:auto;left:auto;
-    padding:0;display:block;
+    position:relative;
+    top:auto;
+    bottom:auto;
+    right:auto;
+    left:auto;
+    padding:0;
+    display:block;
+    order:2; /* Within right sidebar */
   }
-  #econ-container{width:100%;max-height:300px;}
-
-  #terminals{
-    position:relative;bottom:auto;height:auto;min-height:400px;
+  #econ-container{
+    width:100%;
+    max-height:400px; /* Taller for mobile */
+    margin-top:8px;
   }
-  .term-slot{width:100% !important;height:200px;}
-
-  #btn-new-term{
-    position:relative;left:auto;bottom:auto;
-    width:100%;border-radius:0;
+  .econ-title{font-size:10px; padding:8px 12px;}
+  .econ-totals{
+    grid-template-columns:1fr 1fr; /* 2 columns on mobile */
+    gap:4px;
+    padding:8px 12px;
+    font-size:9px;
   }
-
-  #status-bar{position:relative;}
-  #terminals{bottom:0;}
-  #btn-new-term{bottom:auto;}
-
-  /* Econ overlay chips */
-  .econ-chip{display:none;}
+  .econ-val{font-size:10px;}
+  .econ-ph{
+    padding:8px 12px;
+    min-height:44px; /* Touch target */
+  }
+  .econ-body{padding:6px 12px 10px;}
 
   /* AI Controls panel */
   #ai-ctrl-panel{
-    position:relative !important;right:auto !important;bottom:auto !important;
-    width:100% !important;min-width:auto !important;border-radius:0 !important;
-    flex-direction:row !important;flex-wrap:wrap !important;
+    position:relative !important;
+    right:auto !important;
+    bottom:auto !important;
+    width:100% !important;
+    min-width:auto !important;
+    border-radius:0 !important;
+    flex-direction:row !important;
+    flex-wrap:wrap !important;
+    padding:12px 8px !important;
+    gap:6px !important;
+    order:3; /* Within right sidebar */
   }
-  #ai-ctrl-panel button{flex:1;min-width:80px;text-align:center;}
+  #ai-ctrl-panel button{
+    flex:1;
+    min-width:80px;
+    text-align:center;
+    padding:8px 6px;
+    font-size:10px;
+    min-height:44px; /* Touch target */
+  }
+
+  /* New Terminal Button */
+  #btn-new-term{
+    position:relative;
+    left:auto;
+    bottom:auto;
+    width:100%;
+    border-radius:0;
+    height:50px; /* Taller for touch */
+    font-size:12px;
+    order:5;
+    margin-top:10px;
+  }
+
+  /* Terminal Grid */
+  #terminals{
+    position:relative;
+    bottom:auto;
+    height:auto;
+    min-height:300px;
+    order:6;
+    margin-top:10px;
+  }
+  .term-slot{
+    width:100% !important;
+    height:250px !important; /* Taller for mobile */
+  }
+  .term-label{font-size:9px;}
+  .term-close{
+    font-size:10px;
+    width:24px;
+    height:24px;
+    min-width:24px;
+    min-height:24px;
+  }
+
+  /* Status Bar */
+  #status-bar{
+    position:relative;
+    height:30px;
+    font-size:9px;
+    padding:0 12px;
+    order:7;
+    margin-top:5px;
+  }
+
+  /* Detail popup - better mobile sizing */
+  #detail-card{
+    width:95vw !important;
+    max-width:95vw !important;
+    max-height:80vh !important;
+    margin:0 auto;
+  }
+
+  /* Hide or reduce non-essential elements on mobile */
+  .econ-chip{display:none;}
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 600px) {
+  /* Extra small screens */
+  #p5-canvas-container{height:200px;}
+  .term-slot{height:200px !important;}
+
+  #hud{height:45px;}
+  #hud-left{font-size:9px;}
+  #hud-right{font-size:6px;}
+
+  .left-panel .stat-row{font-size:9px;}
+  .left-panel button{font-size:9px;}
+
+  #control-panel button{min-width:70px; font-size:9px;}
+  #ai-ctrl-panel button{min-width:70px; font-size:9px;}
+
+  .econ-totals{font-size:8px;}
+  .econ-val{font-size:9px;}
 }
 </style>
 </head>
@@ -337,7 +515,7 @@ canvas{display:block;}
     <button onclick="execCmd('npm run health')">HEALTH</button>
     <button onclick="execCmd('node -e \'console.log(process.versions)\'')">NODE INFO</button>
     <button onclick="execCmd(WIN ? 'netstat -ano | findstr LISTENING' : 'ss -tulnp')">PORTS</button>
-    <button onclick="runScan()">SCAN</button>
+    <button onclick="execCmd('runScan()')">SCAN</button>
   </div>
 </div>
 
@@ -509,7 +687,7 @@ function createTerminal() {
   const R = '\x1b[0m';
   term.writeln('');
   term.writeln(C + '  ____       _     __              ___    ____' + R);
-  term.writeln(C + ' / __ )_____(_)___/ /___ _____    /   |  /  _/' + R);
+  term.writeln(C + '/ __ )_____(_)___/ /___ _____    /   |  /  _/' + R);
   term.writeln(C + '/ __  / ___/ / __  / __ `/ _ \\   / /| |  / /  ' + R);
   term.writeln(C + '/ /_/ / /  / / /_/ / /_/ /  __/  / ___ |_/ /   ' + R);
   term.writeln(C + '/_____/_/  /_/\\__,_/\\__, /\\___/  /_/  |_/___/  ' + R);
@@ -950,7 +1128,12 @@ let economicsData = null;
 
 async function loadEconomics() {
   try {
-    const raw = await fetch(BASE + '/api/marketplace/stats').then(r => r.json()).then(d => d.data || d);
+    const token = localStorage.getItem('bridge_token') || '';
+    const res = await fetch(BASE + '/api/marketplace/stats', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const raw = await res.json().then(d => d.data || d);
     // Map API stats to economics format
     economicsData = {
       totals: {
@@ -982,6 +1165,16 @@ async function loadEconomics() {
     renderEconomicsOverlay();
   } catch (e) {
     console.warn('Economics API unavailable:', e.message);
+    // Render offline fallback so the panel never stays stuck
+    economicsData = {
+      totals: { usd_monthly: 0, usd_yearly: 0, zar_invoice: 0 },
+      platforms: [
+        { id: 'saas', name: 'Bridge AI SaaS', type: 'subscription', status: 'offline',
+          mrr_potential: 0, plans: [] },
+      ],
+    };
+    const panel = document.getElementById('econ-container');
+    if (panel) panel.innerHTML = '<div style="padding:8px;color:#ffd166;font-size:0.75rem;">Economics offline — ' + (e.message || 'check auth token') + '</div>';
   }
 }
 
@@ -1216,107 +1409,12 @@ async function showDetail(type) {
   }
 }
 
-// ── HEALTH CHECK PANEL ──
-async function pollHealth() {
-  const checks = [
-    { id: 'hp-gateway', url: BASE + '/health', label: 'GATEWAY' },
-    { id: 'hp-api', url: BASE + '/api/status', label: 'API' },
-    { id: 'hp-agents', url: BASE + '/api/agents', label: 'AGENTS' },
-    { id: 'hp-treasury', url: BASE + '/api/treasury/summary', label: 'TREASURY' },
-  ];
-  let allOk = true;
-  for (const c of checks) {
-    const el = document.getElementById(c.id);
-    try {
-      const t0 = performance.now();
-      const r = await fetch(c.url, { signal: AbortSignal.timeout(5000) });
-      const ms = Math.floor(performance.now() - t0);
-      if (r.ok) {
-        el.textContent = 'OK ' + ms + 'ms';
-        el.style.color = '#0f9';
-      } else {
-        el.textContent = 'ERR ' + r.status;
-        el.style.color = '#f44';
-        allOk = false;
-      }
-    } catch (e) {
-      el.textContent = 'DOWN';
-      el.style.color = '#f44';
-      allOk = false;
-    }
-  }
-  const ov = document.getElementById('hp-overall');
-  ov.textContent = allOk ? 'ALL SYSTEMS GO' : 'DEGRADED';
-  ov.style.color = allOk ? '#0f9' : '#f44';
-}
-pollHealth();
-setInterval(pollHealth, 15000);
-
-// System monitor: use WebSocket if available, else poll API
-if (IS_SERVERLESS) {
-  async function pollSysMonitor() {
-    try {
-      const r = await fetch(BASE + '/api/registry/kernel');
-      const j = await r.json();
-      const d = j.data || j;
-      const totalMem = d.total_memory_bytes || 0;
-      const freeMem = d.free_memory_bytes || 0;
-      const usedMB = Math.floor((totalMem - freeMem) / 1048576);
-      const memPct = totalMem > 0 ? Math.round((1 - freeMem / totalMem) * 100) : 0;
-      document.getElementById('mon-cpu').textContent = d.memory_usage_pct ? d.loadavg[0].toFixed(2) : (d.cpu_cores || 0) + ' cores';
-      document.getElementById('mon-mem').textContent = usedMB + 'MB (' + memPct + '%)';
-      const upSec = d.uptime_seconds || 0;
-      const upH = Math.floor(upSec / 3600);
-      const upM = Math.floor((upSec % 3600) / 60);
-      document.getElementById('mon-up').textContent = upH + 'h ' + upM + 'm';
-      const load = d.loadavg || [0, 0, 0];
-      document.getElementById('mon-load').textContent = load.map(v => v.toFixed(2)).join(' ');
-    } catch (e) {}
-  }
-  pollSysMonitor();
-  setInterval(pollSysMonitor, 10000);
-} else {
-  setInterval(() => { wsSend({ type:'monitor' }); }, 5000);
-}
-
 /*****************************************************************************
-  BOOT
+  BOOT SEQUENCE
 *****************************************************************************/
-// Check for valid token before connecting
-function getAuthToken() {
-  return localStorage.getItem('bridge_terminal_token') || sessionStorage.getItem('bridge_terminal_token') || null;
-}
-
-function saveAuthToken(token) {
-  localStorage.setItem('bridge_terminal_token', token);
-}
-
 wsConnect();
-// Authenticate with JWT token (required)
-setTimeout(() => { 
-  const token = getAuthToken();
-  if (token) {
-    wsSend({ type:'auth', token });
-  } else {
-    // Prompt for token if not available
-    const tokenInput = prompt('Enter terminal access token:');
-    if (tokenInput) {
-      saveAuthToken(tokenInput);
-      wsSend({ type:'auth', token: tokenInput });
-    } else {
-      document.getElementById('ws-status').textContent = 'WS: auth required';
-      document.getElementById('ws-status').style.color = '#f44';
-    }
-  }
-}, 400);
-// Auto-start 2 terminals (only if authenticated)
-setTimeout(() => { 
-  if (getAuthToken()) {
-    createTerminal(); createTerminal(); 
-  }
-}, 700);
-// Load economics data
-setTimeout(() => { loadEconomics(); }, 1000);
+addAIControls();
+loadEconomics();
 </script>
 </body>
 </html>
