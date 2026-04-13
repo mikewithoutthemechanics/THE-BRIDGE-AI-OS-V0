@@ -24,7 +24,8 @@ const REFERRALS_FILE = path.join(SHARED, 'referrals.json');
 
 // ─── CONFIG ────────────────────────────────────────────────────────────
 const CONFIG = {
-  superAdminEmail: 'ryanpcowan@gmail.com',
+  // SUPERADMINS (array - all get superadmin privileges)
+  superAdmins: ['ryanpcowan@gmail.com', 'michaelgraemek@gmail.com'],
   superAdminPassword: 'BridgeAdmin2026!',
   authServicePort: 9005,
   stagingPort: 8080,
