@@ -1,8 +1,9 @@
-# GOD MODE — DISTRIBUTED AI OS (FULL SYSTEM)
-# Zero placeholders. Production-ready. Multi-service architecture.
+# GOD MODE — DISTRIBUTED AI OS + REVENUE + AUTONOMOUS OPS
+# Full production mesh: core services + monetization + observability
 version: "3.9"
 
 services:
+  # ── CORE SERVICES ────────────────────────────────────────────────────────────
   gateway:
     build: ./gateway
     container_name: gateway
@@ -55,6 +56,76 @@ services:
       - "8000:8000"
     restart: always
 
+  # ── REVENUE + BILLING ────────────────────────────────────────────────────────
+  revenue-engine:
+    build: ./revenue-engine
+    container_name: revenue-engine
+    ports:
+      - "6070:6070"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - BILLING_INTERVAL=${BILLING_INTERVAL:-60000}
+    depends_on:
+      - gateway
+    restart: always
+
+  billing-service:
+    build: ./billing
+    container_name: billing-service
+    ports:
+      - "6060:6060"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always
+
+  subscription-service:
+    build: ./subscriptions
+    container_name: subscription-service
+    ports:
+      - "6061:6061"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+    restart: always
+
+  # ── AUTONOMOUS OPS ───────────────────────────────────────────────────────────
+  ops-daemon:
+    build: ./ops-daemon
+    container_name: ops-daemon
+    ports:
+      - "6080:6080"
+    environment:
+      - REGISTRY_URL=http://registry:9000
+      - HEALTH_INTERVAL=${HEALTH_INTERVAL:-15000}
+    depends_on:
+      - registry
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # ── OBSERVABILITY ────────────────────────────────────────────────────────────
+  metrics:
+    image: prom/prometheus
+    container_name: metrics
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./ops/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: always
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3005:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-bridgeai}
+    restart: always
+
+  # ── INFRASTRUCTURE ───────────────────────────────────────────────────────────
   redis:
     image: redis:7
     container_name: redis
@@ -67,7 +138,7 @@ services:
     container_name: postgres
     environment:
       POSTGRES_USER: godmode
-      POSTGRES_PASSWORD: godmode
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-godmode}
       POSTGRES_DB: godmode
     ports:
       - "5432:5432"

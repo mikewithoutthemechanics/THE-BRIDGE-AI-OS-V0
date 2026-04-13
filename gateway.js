@@ -2255,6 +2255,65 @@ app.get('/api/billing/plans', (_req, res) => {
   res.json({ ok: true, plans: billing.PLANS });
 });
 
+// ── MICROSERVICE PROXIES (billing + subscriptions) ──────────────────────────
+app.post('/api/billing/charge', gatewayAuth(), async (req, res) => {
+  try {
+    const r = await fetch('http://localhost:6060/charge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+    });
+    const data = await r.json();
+    res.json(data);
+  } catch {
+    res.status(503).json({ error: 'billing service unavailable' });
+  }
+});
+
+app.get('/api/subscriptions/tier/:userId', async (req, res) => {
+  try {
+    const r = await fetch(`http://localhost:6061/tier/${req.params.userId}`);
+    const data = await r.json();
+    res.json(data);
+  } catch {
+    res.json({ tier: 'free', _fallback: true });
+  }
+});
+
+app.post('/api/subscriptions/upgrade', gatewayAuth(), async (req, res) => {
+  try {
+    const r = await fetch('http://localhost:6061/upgrade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+    });
+    const data = await r.json();
+    res.json(data);
+  } catch {
+    res.status(503).json({ error: 'subscription service unavailable' });
+  }
+});
+
+app.get('/api/ops/status', gatewayAuth(), async (req, res) => {
+  try {
+    const r = await fetch('http://localhost:6080/status');
+    const data = await r.json();
+    res.json(data);
+  } catch {
+    res.status(503).json({ error: 'ops daemon unavailable' });
+  }
+});
+
+app.get('/api/revenue/stats', gatewayAuth(), async (req, res) => {
+  try {
+    const r = await fetch('http://localhost:6070/stats');
+    const data = await r.json();
+    res.json(data);
+  } catch {
+    res.status(503).json({ error: 'revenue engine unavailable' });
+  }
+});
+
 // ── LIFECYCLE ENGINE ──────────────────────────────────────────────────────────
 
 app.post('/api/lifecycle/process', async (req, res) => {
