@@ -1,25 +1,14 @@
 {
   "version": 2,
   "framework": null,
-  "cleanUrls": true,
-  "trailingSlash": false,
   "buildCommand": null,
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
       "maxDuration": 60,
-      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,lib/**,engine/**,api/hitl.js,api/pipeline.js,api/crm/**,api/cron/**,api/esim/**,api/pbx/**,api/corporate/**,public/claude-partner.html"
+      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,lib/**,engine/**,public/**"
     }
   },
-  "crons": [],
-  "redirects": [
-    { "source": "/", "has": [{ "type": "host", "value": "ehsa.ai-os.co.za" }], "destination": "/ehsa", "permanent": false },
-    { "source": "/", "has": [{ "type": "host", "value": "hospitalinabox.ai-os.co.za" }], "destination": "/hospital", "permanent": false },
-    { "source": "/", "has": [{ "type": "host", "value": "aid.ai-os.co.za" }], "destination": "/aid", "permanent": false },
-    { "source": "/", "has": [{ "type": "host", "value": "rootedearth.ai-os.co.za" }], "destination": "/rootedearth", "permanent": false },
-    { "source": "/", "has": [{ "type": "host", "value": "aurora.ai-os.co.za" }], "destination": "/aurora", "permanent": false },
-    { "source": "/", "has": [{ "type": "host", "value": "ubi.ai-os.co.za" }], "destination": "/ubi", "permanent": false }
-  ],
   "headers": [
     { "source": "/api/(.*)", "headers": [
       { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
@@ -27,15 +16,11 @@
     ]}
   ],
   "rewrites": [
-    { "source": "/apps",          "destination": "/50-applications.html" },
-    { "source": "/dashboard",     "destination": "/aoe-dashboard.html" },
-    { "source": "/status",        "destination": "/system-status-dashboard.html" },
     { "source": "/terminal",      "destination": "/terminal.html" },
     { "source": "/wallet",        "destination": "/wallet.html" },
     { "source": "/avatar",        "destination": "/avatar.html" },
-    { "source": "/marketplace",   "destination": "/marketplace.html" },
-    { "source": "/outputs",        "destination": "/outputs.html" },
-    { "source": "/projects",      "destination": "/projects.html" },
-    { "source": "/api/:path*", "destination": "/api" }
+    { "source": "/outputs",      "destination": "/outputs.html" },
+    { "source": "/projects",     "destination": "/projects.html" },
+    { "source": "/api/:path*",   "destination": "/api/index.js" }
   ]
 }
