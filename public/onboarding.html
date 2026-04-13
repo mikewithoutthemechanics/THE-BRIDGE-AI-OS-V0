@@ -7,1047 +7,317 @@
 <link rel="canonical" href="https://go.ai-os.co.za/onboarding">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://go.ai-os.co.za/onboarding">
-<meta property="og:title" content="Bridge AI OS — Command Deck Access">
+<meta property="og:title" content="Bridge AI OS — Join">
 <meta property="og:description" content="Get started with Bridge AI OS — quick setup wizard to configure your AI agents, CRM, and treasury.">
 <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
 <meta property="og:site_name" content="Bridge AI OS">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Bridge AI OS — Command Deck Access">
+<meta name="twitter:title" content="Bridge AI OS — Join">
 <meta name="twitter:description" content="Get started with Bridge AI OS — quick setup wizard to configure your AI agents, CRM, and treasury.">
 <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bridge AI OS — Command Deck Access</title>
+<title>Bridge AI OS — Join</title>
 <style>
-:root{
-  --bg:#04080f;--bg2:#080d18;--bg3:#0c1220;
-  --cyan:#00d4ff;--green:#00ff88;--purple:#a855f7;
-  --gold:#f59e0b;--red:#ff3c5a;--dim:#3d5166;
-  --text:#b8cfe0;--border:#0f2035;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow:hidden;display:flex;flex-direction:column}
-@media(max-width:900px){body{overflow:auto}}
-
-/* ── STARFIELD ── */
-#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
-
-/* ── TOPBAR ── */
-.topbar{position:relative;z-index:10;display:flex;align-items:center;gap:14px;padding:10px 24px;background:rgba(8,13,24,.9);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);flex-shrink:0}
-.logo{font-size:1.1rem;font-weight:800;color:var(--cyan);letter-spacing:.2em}
-.logo span{color:var(--green)}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.platform-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:700;border:1px solid;text-decoration:none;transition:all .2s;letter-spacing:.04em}
-.platform-pill:hover{filter:brightness(1.3);transform:translateY(-1px)}
-.pill-aid{color:#00d4ff;border-color:#00d4ff33;background:#00d4ff08}
-.pill-ehsa{color:#00ff88;border-color:#00ff8833;background:#00ff8808}
-.pill-supac{color:#a855f7;border-color:#a855f733;background:#a855f708}
-.pill-ban{color:#ef4444;border-color:#ef444433;background:#ef444408}
-.pill-ubi{color:#63ffda;border-color:#63ffda33;background:#63ffda08}
-.pill-more{color:var(--dim);border-color:var(--border);background:transparent}
-
-/* ── LAYOUT ── */
-.layout{position:relative;z-index:5;display:flex;flex:1;min-height:0;overflow:hidden}
-@media(max-width:900px){.layout{flex-direction:column;overflow:auto}}
-
-/* ── LEFT PANEL ── */
-.left{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden}
-.command-title{font-size:2.8rem;font-weight:900;line-height:1.1;margin-bottom:1rem;max-width:480px}
-.command-title .line1{color:#e2e8f0}
-.command-title .line2{background:linear-gradient(90deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.command-subtitle{font-size:.88rem;color:var(--dim);max-width:420px;line-height:1.7;margin-bottom:2rem}
-.command-subtitle strong{color:var(--text)}
-
-/* Orbit system */
-.orbit-system{position:relative;width:320px;height:320px;margin:0 auto}
-.orbit-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,#00d4ff33,#00d4ff08);border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;color:var(--cyan);letter-spacing:.1em;text-align:center;z-index:5;box-shadow:0 0 30px #00d4ff22}
-.orbit-ring{position:absolute;top:50%;left:50%;border:1px solid;border-radius:50%;transform:translate(-50%,-50%);animation:orbit-spin linear infinite}
-.orbit-ring-1{width:120px;height:120px;border-color:rgba(0,212,255,.15);animation-duration:8s}
-.orbit-ring-2{width:190px;height:190px;border-color:rgba(0,255,136,.12);animation-duration:14s;animation-direction:reverse}
-.orbit-ring-3{width:270px;height:270px;border-color:rgba(168,85,247,.1);animation-duration:22s}
-@keyframes orbit-spin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
-
-.orbit-node{position:absolute;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;cursor:pointer;transition:all .2s;text-decoration:none;border:1px solid;letter-spacing:.03em;white-space:nowrap}
-.orbit-node:hover{transform:scale(1.2);box-shadow:0 0 12px currentColor}
-/* Nodes are positioned by JS so they orbit correctly */
-
-/* Feature cards */
-.features-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:480px;margin-top:2rem}
-@media(max-width:900px){.orbit-system{display:none}.features-strip{grid-template-columns:repeat(2,1fr)}}
-.feat-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:10px 12px;transition:border-color .2s;cursor:default}
-.feat-card:hover{border-color:rgba(0,212,255,.25)}
-.feat-icon{font-size:1.2rem;margin-bottom:4px}
-.feat-name{font-size:.7rem;font-weight:700;color:#e2e8f0;margin-bottom:2px}
-.feat-desc{font-size:.62rem;color:var(--dim);line-height:1.4}
-.feat-earn{font-size:.62rem;color:var(--green);margin-top:3px;font-weight:700}
-
-/* Platform revenue strip */
-.revenue-strip{max-width:480px;margin-top:1.5rem;background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.12);border-radius:8px;padding:12px 16px}
-.revenue-strip-title{font-size:.65rem;font-weight:700;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.revenue-strip-title::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-g 2s infinite}
-@keyframes pulse-g{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,136,.4)}50%{opacity:.6;box-shadow:0 0 0 6px rgba(0,255,136,0)}}
-.revenue-platforms{display:flex;flex-wrap:wrap;gap:6px}
-.rev-plat{display:inline-flex;align-items:center;gap:4px;font-size:.62rem;color:var(--dim);padding:3px 8px;border-radius:4px;background:rgba(255,255,255,.03);border:1px solid var(--border)}
-.rev-plat .dot{width:5px;height:5px;border-radius:50%}
-
-/* ── RIGHT PANEL ── */
-.right{width:440px;flex-shrink:0;background:rgba(8,13,24,.95);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;backdrop-filter:blur(20px)}
-@media(max-width:900px){.right{width:100%;border-left:none;border-top:1px solid var(--border)}}
-
-.form-header{padding:24px 28px 16px;border-bottom:1px solid var(--border)}
-.form-header-title{font-size:1rem;font-weight:800;color:#e2e8f0;margin-bottom:4px}
-.form-header-sub{font-size:.72rem;color:var(--dim)}
-
-/* Mode toggle: Human / Agent */
-.mode-toggle{display:flex;gap:0;margin:16px 28px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.mode-btn{flex:1;padding:8px;text-align:center;cursor:pointer;font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--dim);transition:all .2s;border:none;background:transparent;font-family:inherit}
-.mode-btn.active{background:rgba(0,212,255,.1);color:var(--cyan)}
-.mode-btn:hover:not(.active){color:var(--text);background:rgba(255,255,255,.03)}
-
-.form-body{padding:0 28px 28px;flex:1}
-
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
-.tab{flex:1;padding:8px;text-align:center;font-size:.68rem;letter-spacing:.1em;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
-.tab:hover{color:var(--text)}
-.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
-.form-panel{display:none}
-.form-panel.active{display:block}
-
-label{display:block;font-size:.65rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.25rem;margin-top:.75rem}
-label:first-child{margin-top:0}
-input,select{width:100%;background:#040810;border:1px solid var(--border);color:var(--text);padding:.55rem .75rem;border-radius:6px;font-size:.8rem;outline:none;transition:border-color .2s;font-family:inherit}
-input:focus,select:focus{border-color:var(--cyan)}
-input::placeholder{color:#1e3048}
-select option{background:#080d18}
-
-.btn{width:100%;padding:.65rem;border:none;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.1em;margin-top:.8rem;transition:all .2s;font-family:inherit}
-.btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
-.btn:active{transform:translateY(0)}
-.btn-primary{background:linear-gradient(135deg,var(--cyan),#0099cc);color:#04080f;box-shadow:0 0 20px rgba(0,212,255,.2)}
-.btn-agent{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;box-shadow:0 0 20px rgba(168,85,247,.2)}
-.btn-google{background:#fff;color:#333;display:flex;align-items:center;justify-content:center;gap:.5rem;border:1px solid #ddd}
-.btn-github{background:#24292e;color:#fff;display:flex;align-items:center;justify-content:center;gap:.5rem}
-.btn-google svg,.btn-github svg{width:16px;height:16px;flex-shrink:0}
-.divider{display:flex;align-items:center;gap:.6rem;margin:.75rem 0;font-size:.6rem;color:var(--dim);letter-spacing:.1em}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-
-.pw-strength{height:3px;border-radius:2px;margin-top:.25rem;background:var(--border);overflow:hidden}
-.pw-bar{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
-
-.msg{padding:.45rem .75rem;border-radius:6px;font-size:.7rem;margin-top:.6rem;display:none}
-.msg.ok{display:block;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);color:var(--green)}
-.msg.err{display:block;background:rgba(255,60,90,.08);border:1px solid rgba(255,60,90,.3);color:var(--red)}
-
-.referral-box{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;margin-top:.75rem}
-.referral-box label{margin:0;font-size:.62rem}
-
-.agent-type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:.4rem}
-.agent-type-btn{padding:7px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,.02);cursor:pointer;font-size:.65rem;font-weight:700;color:var(--dim);text-align:center;transition:all .2s;font-family:inherit}
-.agent-type-btn.selected{border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.08)}
-.agent-type-btn:hover:not(.selected){border-color:rgba(255,255,255,.12);color:var(--text)}
-.agent-icon{font-size:1rem;display:block;margin-bottom:2px}
-
-.footer-links{padding:14px 28px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:.62rem;color:var(--dim);flex-wrap:wrap;gap:6px}
-.footer-links a{color:var(--dim);text-decoration:none;transition:color .2s}
-.footer-links a:hover{color:var(--cyan)}
-
-/* Loading spinner */
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,212,255,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;margin-left:6px;vertical-align:middle}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ── Small screen fine-tuning ── */
-@media(max-width:640px){
-  .topbar{padding:6px 12px;gap:8px}
-  .topbar-right{gap:5px}
-  .platform-pill{padding:2px 7px;font-size:.58rem}
-  .platform-pill:nth-child(n+4){display:none}
-  .command-title{font-size:1.8rem}
-  .command-subtitle{font-size:.78rem}
-  .features-strip{grid-template-columns:1fr 1fr}
-  .revenue-strip{padding:8px 12px}
-  .form-header{padding:16px 18px 12px}
-  .form-body{padding:0 18px 18px}
-  .mode-toggle{margin:12px 18px}
-  .footer-links{padding:10px 18px;font-size:.58rem}
-  .xp-hud{padding:7px 10px;gap:8px}
-}
-@media(max-width:380px){
-  .command-title{font-size:1.5rem}
-  .features-strip{grid-template-columns:1fr}
-  .platform-pill:nth-child(n+3){display:none}
-}
-
-/* ── GAMIFICATION XP HUD ── */
-.xp-hud{display:flex;align-items:center;gap:12px;max-width:480px;width:100%;margin-bottom:1rem;padding:10px 14px;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:8px}
-.xp-hud-level{font-size:.65rem;font-weight:800;color:var(--cyan);letter-spacing:.2em;white-space:nowrap}
-.xp-hud-rank{font-size:.6rem;color:var(--green);letter-spacing:.1em;flex:1}
-.xp-bar-wrap{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;min-width:60px}
-.xp-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .6s cubic-bezier(.4,0,.2,1);width:0%}
-.xp-count{font-size:.62rem;color:var(--dim);white-space:nowrap}
-.xp-toast{position:fixed;bottom:24px;right:24px;background:rgba(0,212,255,.15);border:1px solid var(--cyan);color:var(--cyan);padding:8px 16px;border-radius:8px;font-size:.75rem;font-weight:700;letter-spacing:.08em;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
-.xp-toast.show{opacity:1;transform:translateY(0)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#050a0f;--surface:#0d1620;--surface2:#111d2b;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa}
+  body{background:var(--bg);color:var(--text);font-family:system-ui,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+  .page{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:440px;overflow:hidden}
+  .card-header{padding:2rem 2rem 1rem;text-align:center;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0d1620 0%,#0a1218 100%)}
+  .logo{font-size:1.8rem;font-weight:800;color:var(--accent);letter-spacing:.25em;margin-bottom:.3rem}
+  .logo span{color:var(--green)}
+  .tagline{font-size:.72rem;color:var(--dim);letter-spacing:.1em}
+  .card-body{padding:1.5rem 2rem 2rem}
+  .tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid var(--border)}
+  .tab{flex:1;padding:.6rem;text-align:center;font-size:.72rem;letter-spacing:.1em;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .form-panel{display:none}
+  .form-panel.active{display:block}
+  label{display:block;font-size:.68rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem;margin-top:.8rem}
+  label:first-child{margin-top:0}
+  input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.6rem .8rem;border-radius:6px;font-size:.82rem;outline:none;transition:border-color .2s}
+  input:focus{border-color:var(--accent)}
+  input::placeholder{color:#2a3a4a}
+  .btn{width:100%;padding:.7rem;border:none;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;letter-spacing:.08em;margin-top:1rem;transition:filter .2s}
+  .btn:hover{filter:brightness(1.15)}
+  .btn-primary{background:var(--accent);color:#050a0f}
+  .btn-google{background:#fff;color:#333;display:flex;align-items:center;justify-content:center;gap:.5rem;border:1px solid #ddd}
+  .btn-google svg{width:18px;height:18px}
+  .btn-github{background:#24292e;color:#fff;display:flex;align-items:center;justify-content:center;gap:.5rem}
+  .divider{display:flex;align-items:center;gap:.8rem;margin:1rem 0;font-size:.65rem;color:var(--dim);letter-spacing:.1em}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+  .referral-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.6rem .8rem;margin-top:.8rem}
+  .referral-box label{margin:0}
+  .msg{padding:.5rem .8rem;border-radius:6px;font-size:.72rem;margin-top:.8rem;display:none}
+  .msg.ok{display:block;background:rgba(0,229,123,.1);border:1px solid var(--green);color:var(--green)}
+  .msg.err{display:block;background:rgba(255,60,90,.1);border:1px solid var(--red);color:var(--red)}
+  .features{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+  .feat{font-size:.65rem;color:var(--dim);display:flex;align-items:center;gap:.3rem}
+  .feat .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+  .footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--dim)}
+  .footer a{color:var(--accent);text-decoration:none}
+  .pw-strength{height:3px;border-radius:2px;margin-top:.3rem;background:var(--border);overflow:hidden}
+  .pw-strength-bar{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
 </head>
 <body>
-<script src="/bridge-nav.js"></script>
+<div class="page">
+<div class="card">
+  <div class="card-header">
+    <div class="logo">BRIDGE <span>AI</span></div>
+    <div class="tagline">AI OPERATING SYSTEM — JOIN THE NETWORK</div>
+  </div>
+  <div class="card-body">
+    <div class="tabs">
+      <div class="tab active" data-panel="register">REGISTER</div>
+      <div class="tab" data-panel="login">LOGIN</div>
+    </div>
 
-<!-- XP toast notification -->
-<div class="xp-toast" id="xpToast"></div>
+    <!-- REGISTER -->
+    <div class="form-panel active" id="panel-register">
+      <button class="btn btn-google" onclick="googleAuth()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
 
-<!-- Starfield canvas -->
-<canvas id="stars"></canvas>
+      <button class="btn btn-github" onclick="githubAuth()">
+        <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        Continue with GitHub
+      </button>
 
-<!-- Top navigation bar -->
-<div class="topbar">
-  <span class="logo">BRIDGE <span>AI</span></span>
-  <span style="font-size:.65rem;color:var(--dim);letter-spacing:.08em">COMMAND DECK</span>
-  <div class="topbar-right">
-    <a class="platform-pill pill-aid" href="/aid-home.html" target="_blank">◉ AID</a>
-    <a class="platform-pill pill-ehsa" href="/ehsa-app.html" target="_blank">◉ EHSA</a>
-    <a class="platform-pill pill-supac" href="/supac-home.html" target="_blank">◉ SUPAC</a>
-    <a class="platform-pill pill-ban" href="/ban-home.html" target="_blank">◉ BAN</a>
-    <a class="platform-pill pill-ubi" href="/ubi-home.html" target="_blank">◉ UBI</a>
-    <a class="platform-pill pill-more" href="/platforms.html" target="_blank">+ 12 more →</a>
+      <div class="divider">OR REGISTER WITH EMAIL</div>
+
+      <form id="register-form">
+        <label>FULL NAME</label>
+        <input id="reg-name" placeholder="Ryan Saunders" autocomplete="name">
+        <label>EMAIL</label>
+        <input id="reg-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>PASSWORD</label>
+        <input id="reg-password" type="password" placeholder="Min 8 characters" autocomplete="new-password" required minlength="8">
+        <div class="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
+
+        <div class="referral-box">
+          <label>REFERRAL CODE (optional)</label>
+          <input id="reg-referral" placeholder="e.g. BRIDGE2025" style="margin-top:.3rem;background:var(--bg)">
+        </div>
+
+        <button type="submit" class="btn btn-primary">CREATE ACCOUNT</button>
+      </form>
+      <div class="msg" id="reg-msg"></div>
+
+      <div class="features">
+        <div class="feat"><span class="dot"></span> 8 AI Agents</div>
+        <div class="feat"><span class="dot"></span> Task Marketplace</div>
+        <div class="feat"><span class="dot"></span> Digital Twin</div>
+        <div class="feat"><span class="dot"></span> Trading Bots</div>
+        <div class="feat"><span class="dot"></span> PTY Terminal</div>
+        <div class="feat"><span class="dot"></span> Revenue Sharing</div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="form-panel" id="panel-login">
+      <button class="btn btn-google" onclick="googleAuth()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+
+      <div class="divider">OR LOGIN WITH EMAIL</div>
+
+      <form id="login-form">
+        <label>EMAIL</label>
+        <input id="login-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>PASSWORD</label>
+        <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit" class="btn btn-primary">SIGN IN</button>
+      </form>
+      <div class="msg" id="login-msg"></div>
+    </div>
+  </div>
+  <div class="footer">
+    By joining you agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a><br>
+    <a href="/">Back to Dashboard</a>
   </div>
 </div>
-
-<div class="layout">
-
-  <!-- ── LEFT: Commander Brief ── -->
-  <div class="left">
-
-    <!-- XP / Level HUD -->
-    <div class="xp-hud" id="xpHud">
-      <div class="xp-hud-level">LVL <span id="xpLevel">1</span></div>
-      <div class="xp-bar-wrap"><div class="xp-bar" id="xpBar"></div></div>
-      <div class="xp-count"><span id="xpCount">0</span> XP</div>
-      <div class="xp-hud-rank" id="xpRank">CREW MEMBER</div>
-    </div>
-
-    <div style="max-width:480px;width:100%">
-      <div class="command-title">
-        <div class="line1">You are the</div>
-        <div class="line2">captain of this ship.</div>
-      </div>
-      <p class="command-subtitle">
-        Every platform, every agent, every transaction flows through <strong>Bridge AI OS</strong> —
-        your command deck for an autonomous revenue economy that spans
-        <strong>health systems, sovereign AI, decentralised finance,
-        humanitarian development, and universal basic income.</strong>
-        <br><br>
-        Your agents are your crew. The economy is your galaxy. Revenue compounds while you sleep.
-      </p>
-    </div>
-
-    <!-- Orbit visualization + PixiJS avatar layer -->
-    <div class="orbit-system" id="orbitSystem" style="position:relative">
-      <div class="orbit-ring orbit-ring-1"></div>
-      <div class="orbit-ring orbit-ring-2"></div>
-      <div class="orbit-ring orbit-ring-3"></div>
-      <div class="orbit-center">BRIDGE<br>AI OS</div>
-      <!-- PixiJS canvas overlaid on orbit (pointer-events:none so clicks pass through) -->
-      <canvas id="pixi-onboard" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:6;border-radius:50%"></canvas>
-    </div>
-
-    <!-- Feature cards -->
-    <div class="features-strip" style="max-width:480px;width:100%">
-      <div class="feat-card">
-        <div class="feat-icon">⬢</div>
-        <div class="feat-name">AI Agent Fleet</div>
-        <div class="feat-desc">Deploy autonomous agents across sales, ops, support, finance</div>
-        <div class="feat-earn">+ BRDG per task</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">⧆</div>
-        <div class="feat-name">BRDG Economy</div>
-        <div class="feat-desc">On-chain token earned by agents, staked for governance</div>
-        <div class="feat-earn">Linea L2 mainnet</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">◈</div>
-        <div class="feat-name">Digital Twin</div>
-        <div class="feat-desc">Mirror your business as a live AI entity with real-time telemetry</div>
-        <div class="feat-earn">IoT + real-world data</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">▶</div>
-        <div class="feat-name">Trading Bots</div>
-        <div class="feat-desc">Autonomous trading across DeFi, forex, and commodity markets</div>
-        <div class="feat-earn">Compound returns</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">⌨</div>
-        <div class="feat-name">PTY Terminal</div>
-        <div class="feat-desc">Full command-line access to the OS — SSH, deploy, monitor</div>
-        <div class="feat-earn">root access</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">⟁</div>
-        <div class="feat-name">Revenue Mesh</div>
-        <div class="feat-desc">Earn from all connected platforms — AID, EHSA, SUPAC and more</div>
-        <div class="feat-earn">Cross-platform flow</div>
-      </div>
-    </div>
-
-    <!-- Revenue sharing strip -->
-    <div class="revenue-strip" style="max-width:480px;width:100%">
-      <div class="revenue-strip-title">Revenue flows from every connected system</div>
-      <div class="revenue-platforms">
-        <span class="rev-plat"><span class="dot" style="background:#00d4ff"></span>AID · Development</span>
-        <span class="rev-plat"><span class="dot" style="background:#00ff88"></span>EHSA · Health</span>
-        <span class="rev-plat"><span class="dot" style="background:#f59e0b"></span>Hospital in a Box</span>
-        <span class="rev-plat"><span class="dot" style="background:#22c55e"></span>Rooted Earth</span>
-        <span class="rev-plat"><span class="dot" style="background:#a855f7"></span>SUPAC · Sovereign AI</span>
-        <span class="rev-plat"><span class="dot" style="background:#ef4444"></span>BAN · Nodes</span>
-        <span class="rev-plat"><span class="dot" style="background:#63ffda"></span>UBI · Basic Income</span>
-        <span class="rev-plat"><span class="dot" style="background:#ffd166"></span>ABAAS · Agents</span>
-        <span class="rev-plat"><span class="dot" style="background:#f472b6"></span>TVM · Twin Market</span>
-        <span class="rev-plat"><span class="dot" style="background:#818cf8"></span>DeFi · On-chain</span>
-        <span class="rev-plat"><span class="dot" style="background:#fb923c"></span>Marketplace</span>
-        <span class="rev-plat"><span class="dot" style="background:#38bdf8"></span>IoT Devices</span>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── RIGHT: Form Panel ── -->
-  <div class="right">
-    <div class="form-header">
-      <div class="form-header-title">Access the Command Deck</div>
-      <div class="form-header-sub" id="formSubtitle">Register as a human operator or deploy an autonomous agent into the network</div>
-    </div>
-
-    <!-- Human / Agent mode toggle -->
-    <div class="mode-toggle">
-      <button class="mode-btn active" id="mode-human" onclick="setMode('human')">👤 HUMAN OPERATOR</button>
-      <button class="mode-btn" id="mode-agent" onclick="setMode('agent')">⬢ DEPLOY AGENT</button>
-    </div>
-
-    <div class="form-body">
-
-      <!-- ══ HUMAN MODE ══ -->
-      <div id="human-mode">
-        <div class="tabs">
-          <div class="tab active" data-panel="register">REGISTER</div>
-          <div class="tab" data-panel="login">SIGN IN</div>
-        </div>
-
-        <!-- Register -->
-        <div class="form-panel active" id="panel-register">
-          <button class="btn btn-google" onclick="googleAuth()">
-            <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            Continue with Google
-          </button>
-          <button class="btn btn-github" onclick="githubAuth()">
-            <svg viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-            Continue with GitHub
-          </button>
-          <div class="divider">OR REGISTER WITH EMAIL</div>
-          <form id="register-form">
-            <label>FULL NAME</label>
-            <input id="reg-name" placeholder="Ryan Saunders" autocomplete="name">
-            <label>EMAIL</label>
-            <input id="reg-email" type="email" placeholder="you@example.com" autocomplete="email" required>
-            <label>PASSWORD</label>
-            <input id="reg-password" type="password" placeholder="Min 8 characters" autocomplete="new-password" required minlength="8">
-            <div class="pw-strength"><div class="pw-bar" id="pw-bar"></div></div>
-            <div class="referral-box">
-              <label>REFERRAL CODE (optional)</label>
-              <input id="reg-referral" placeholder="e.g. BRIDGE2025" style="margin-top:.25rem;background:#04080f">
-            </div>
-            <button type="submit" class="btn btn-primary" id="regBtn">
-              LAUNCH INTO THE NETWORK
-            </button>
-          </form>
-          <div class="msg" id="reg-msg"></div>
-          <div style="margin-top:12px;font-size:.62rem;color:var(--dim);line-height:1.6">
-            Instantly access: 8 AI agents · BRDG wallet · Digital twin · Task marketplace · PTY terminal · Revenue sharing across all 12+ platforms
-          </div>
-        </div>
-
-        <!-- Login -->
-        <div class="form-panel" id="panel-login">
-          <button class="btn btn-google" onclick="googleAuth()">
-            <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            Sign in with Google
-          </button>
-          <div class="divider">OR SIGN IN WITH EMAIL</div>
-          <form id="login-form">
-            <label>EMAIL</label>
-            <input id="login-email" type="email" placeholder="you@example.com" autocomplete="email" required>
-            <label>PASSWORD</label>
-            <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" required>
-            <button type="submit" class="btn btn-primary" id="loginBtn">ENTER COMMAND DECK</button>
-          </form>
-          <div class="msg" id="login-msg"></div>
-          <div style="margin-top:12px;font-size:.62rem;color:var(--dim)">
-            <a href="/join?tab=reset" style="color:var(--dim);text-decoration:underline">Forgot password?</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ AGENT MODE ══ -->
-      <div id="agent-mode" style="display:none">
-        <div style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:12px 14px;margin-bottom:16px">
-          <div style="font-size:.72rem;font-weight:700;color:var(--purple);margin-bottom:4px">⬢ AUTONOMOUS AGENT DEPLOYMENT</div>
-          <div style="font-size:.65rem;color:var(--dim);line-height:1.5">Deploy an AI agent into the Bridge AI OS network. The agent will earn BRDG by completing tasks, interacting with systems, and generating value across connected platforms.</div>
-        </div>
-
-        <label>AGENT NAME</label>
-        <input id="agent-name" placeholder="e.g. SalesBot Alpha, HealthAgent-007">
-
-        <label>AGENT TYPE</label>
-        <div class="agent-type-grid" id="agentTypeGrid">
-          <button class="agent-type-btn selected" data-type="sales" onclick="selectAgentType(this)"><span class="agent-icon">💼</span>Sales</button>
-          <button class="agent-type-btn" data-type="support" onclick="selectAgentType(this)"><span class="agent-icon">🎧</span>Support</button>
-          <button class="agent-type-btn" data-type="ops" onclick="selectAgentType(this)"><span class="agent-icon">⚙</span>Operations</button>
-          <button class="agent-type-btn" data-type="finance" onclick="selectAgentType(this)"><span class="agent-icon">📊</span>Finance</button>
-          <button class="agent-type-btn" data-type="research" onclick="selectAgentType(this)"><span class="agent-icon">🔍</span>Research</button>
-          <button class="agent-type-btn" data-type="health" onclick="selectAgentType(this)"><span class="agent-icon">🏥</span>Health</button>
-          <button class="agent-type-btn" data-type="trading" onclick="selectAgentType(this)"><span class="agent-icon">📈</span>Trading</button>
-          <button class="agent-type-btn" data-type="iot" onclick="selectAgentType(this)"><span class="agent-icon">📡</span>IoT Device</button>
-        </div>
-
-        <label>DEPLOY ON PLATFORM</label>
-        <select id="agent-platform">
-          <option value="bridge">Bridge AI OS (core)</option>
-          <option value="aid">AID — AI for Development</option>
-          <option value="ehsa">EHSA — Electronic Health Systems</option>
-          <option value="hospital">Hospital in a Box</option>
-          <option value="supac">SUPAC — Sovereign AI Platform</option>
-          <option value="ban">BAN — Bridge AI Node</option>
-          <option value="ubi">UBI — Universal Basic Income</option>
-          <option value="abaas">ABAAS — Agent Architecture</option>
-          <option value="rootedearth">Rooted Earth</option>
-          <option value="defi">DeFi — Decentralised Finance</option>
-          <option value="marketplace">Task Marketplace</option>
-          <option value="iot">IoT Network</option>
-        </select>
-
-        <label>OWNER ACCOUNT EMAIL (operator)</label>
-        <input id="agent-owner-email" type="email" placeholder="operator@example.com">
-
-        <label>OWNER PASSWORD (to link agent)</label>
-        <input id="agent-owner-pw" type="password" placeholder="Your account password">
-
-        <button class="btn btn-agent" id="deployAgentBtn" onclick="deployAgent()">
-          ⬢ DEPLOY AGENT INTO NETWORK
-        </button>
-        <div class="msg" id="agent-msg"></div>
-
-        <div style="margin-top:12px;font-size:.62rem;color:var(--dim);line-height:1.6">
-          Agent will receive: autonomous API key · BRDG earning capability · task marketplace access · cross-platform revenue routing
-        </div>
-      </div>
-
-    </div>
-
-    <div class="footer-links">
-      <div>
-        <a href="/pricing">Pricing</a> &nbsp;·&nbsp;
-        <a href="/docs">API Docs</a> &nbsp;·&nbsp;
-        <a href="/platforms">Platforms</a> &nbsp;·&nbsp;
-        <a href="/governance">Governance</a>
-      </div>
-      <div>
-        <a href="/">Dashboard</a> &nbsp;·&nbsp;
-        <a href="/runtime">Terminal</a> &nbsp;·&nbsp;
-        <a href="/wallet">Wallet</a>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <script>
-'use strict';
-
-// ── Starfield ──────────────────────────────────────────────────────────────
-(function() {
-  var canvas = document.getElementById('stars');
-  var ctx = canvas.getContext('2d');
-  var stars = [];
-  var shooting = null;
-
-  function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  // Seed stars
-  for (var i = 0; i < 200; i++) {
-    stars.push({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      r: Math.random() * 1.2 + 0.2,
-      a: Math.random(),
-      da: (Math.random() - 0.5) * 0.005,
-      speed: Math.random() * 0.15 + 0.02,
-    });
-  }
-
-  function shootingStar() {
-    shooting = {
-      x: Math.random() * canvas.width * 0.7,
-      y: Math.random() * canvas.height * 0.4,
-      len: 0, maxLen: 80 + Math.random() * 120,
-      angle: Math.PI / 4 + (Math.random() - 0.5) * 0.5,
-      speed: 6 + Math.random() * 4,
-      alpha: 1,
-    };
-  }
-  shootingStar();
-  setInterval(shootingStar, 4000);
-
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Stars
-    stars.forEach(function(s) {
-      s.a += s.da;
-      if (s.a > 1 || s.a < 0.05) s.da *= -1;
-      s.y -= s.speed * 0.2;
-      if (s.y < 0) { s.y = canvas.height; s.x = Math.random() * canvas.width; }
-      ctx.globalAlpha = s.a * 0.8;
-      ctx.fillStyle = '#a0c8e0';
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    // Shooting star
-    if (shooting) {
-      shooting.len = Math.min(shooting.len + shooting.speed, shooting.maxLen);
-      var ex = shooting.x + Math.cos(shooting.angle) * shooting.len;
-      var ey = shooting.y + Math.sin(shooting.angle) * shooting.len;
-      var grad = ctx.createLinearGradient(shooting.x, shooting.y, ex, ey);
-      grad.addColorStop(0, 'rgba(0,212,255,' + shooting.alpha + ')');
-      grad.addColorStop(1, 'rgba(0,212,255,0)');
-      ctx.globalAlpha = shooting.alpha;
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(shooting.x, shooting.y);
-      ctx.lineTo(ex, ey);
-      ctx.stroke();
-      if (shooting.len >= shooting.maxLen) {
-        shooting.alpha -= 0.04;
-        if (shooting.alpha <= 0) shooting = null;
-      }
+// ── Already-logged-in guard: redirect immediately if a valid session exists ──
+(async function checkExistingAuth() {
+  const cookieMatch = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('bridge_token='));
+  const token = (cookieMatch ? cookieMatch.split('=').slice(1).join('=') : null) || localStorage.getItem('bridge_token');
+  if (!token) return;
+  try {
+    const res = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    if (data.ok && data.user) {
+      const redirect = new URLSearchParams(location.search).get('redirect') || '/profile';
+      window.location.replace(redirect);
     }
-    ctx.globalAlpha = 1;
-    requestAnimationFrame(draw);
-  }
-  draw();
+  } catch (_) { /* not authenticated — show form normally */ }
 })();
 
-// ── Orbit nodes ────────────────────────────────────────────────────────────
-(function() {
-  var sys = document.getElementById('orbitSystem');
-  if (!sys) return;
-  var cx = 160, cy = 160;
-  var platforms = [
-    { label:'AID',       color:'#00d4ff', r:60,  angle:0,   url:'/aid-home.html' },
-    { label:'EHSA',      color:'#00ff88', r:60,  angle:120, url:'/ehsa-app.html' },
-    { label:'SUPAC',     color:'#a855f7', r:60,  angle:240, url:'/supac-home.html' },
-    { label:'BAN',       color:'#ef4444', r:95,  angle:30,  url:'/ban-home.html' },
-    { label:'UBI',       color:'#63ffda', r:95,  angle:150, url:'/ubi-home.html' },
-    { label:'ABAAS',     color:'#ffd166', r:95,  angle:270, url:'/abaas.html' },
-    { label:'HOSP',      color:'#f59e0b', r:135, angle:60,  url:'/hospital-home.html' },
-    { label:'EARTH',     color:'#22c55e', r:135, angle:180, url:'/rootedearth-home.html' },
-    { label:'DeFi',      color:'#818cf8', r:135, angle:300, url:'/defi.html' },
-  ];
-
-  var angleOffsets = {};
-  platforms.forEach(function(p) { angleOffsets[p.label] = p.angle * Math.PI / 180; });
-  var speeds = { 60:0.5, 95:0.3, 135:0.18 };
-
-  platforms.forEach(function(p) {
-    var node = document.createElement('a');
-    node.className = 'orbit-node';
-    node.href = p.url;
-    node.target = '_blank';
-    node.textContent = p.label;
-    node.style.color = p.color;
-    node.style.borderColor = p.color + '44';
-    node.style.background = p.color + '12';
-    node.style.boxShadow = '0 0 8px ' + p.color + '22';
-    node.style.position = 'absolute';
-    sys.appendChild(node);
-    p._el = node;
-  });
-
-  var last = performance.now();
-  function animate(now) {
-    var dt = (now - last) / 1000;
-    last = now;
-    platforms.forEach(function(p) {
-      var spd = speeds[p.r] || 0.2;
-      angleOffsets[p.label] += spd * dt;
-      var a = angleOffsets[p.label];
-      var x = cx + p.r * Math.cos(a) - 18;
-      var y = cy + p.r * Math.sin(a) - 18;
-      p._el.style.left = x + 'px';
-      p._el.style.top  = y + 'px';
-    });
-    requestAnimationFrame(animate);
-  }
-  requestAnimationFrame(animate);
+// Supabase Auth — OAuth flows handled by Supabase, not raw client IDs
+let _supabaseClient = null;
+(async function initSupabaseAuth() {
+  try {
+    const res = await fetch('/api/config/oauth');
+    if (!res.ok) return;
+    const cfg = await res.json();
+    if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {
+      _supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+    }
+  } catch (_) {}
 })();
 
-// ── Mode toggle ────────────────────────────────────────────────────────────
-var currentMode = 'human';
-var selectedAgentType = 'sales';
-
-function setMode(mode) {
-  currentMode = mode;
-  document.getElementById('human-mode').style.display = mode === 'human' ? '' : 'none';
-  document.getElementById('agent-mode').style.display  = mode === 'agent'  ? '' : 'none';
-  document.getElementById('mode-human').classList.toggle('active', mode === 'human');
-  document.getElementById('mode-agent').classList.toggle('active', mode === 'agent');
-  document.getElementById('formSubtitle').textContent = mode === 'human'
-    ? 'Register as a human operator or sign in to your existing account'
-    : 'Deploy an autonomous agent into the Bridge AI OS network';
-}
-
-function selectAgentType(btn) {
-  document.querySelectorAll('.agent-type-btn').forEach(function(b){ b.classList.remove('selected'); });
-  btn.classList.add('selected');
-  selectedAgentType = btn.dataset.type;
-}
-
-// ── Tab switching ──────────────────────────────────────────────────────────
-document.querySelectorAll('.tab').forEach(function(tab) {
-  tab.addEventListener('click', function() {
-    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-    document.querySelectorAll('.form-panel').forEach(function(p){ p.classList.remove('active'); });
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
   });
 });
 
-// ── Password strength ──────────────────────────────────────────────────────
-document.getElementById('reg-password').addEventListener('input', function(e) {
-  var pw = e.target.value, score = 0;
-  if (pw.length >= 8)  score++;
+// Password strength
+document.getElementById('reg-password').addEventListener('input', (e) => {
+  const pw = e.target.value;
+  const bar = document.getElementById('pw-bar');
+  let score = 0;
+  if (pw.length >= 8) score++;
   if (pw.length >= 12) score++;
   if (/[A-Z]/.test(pw)) score++;
   if (/[0-9]/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
-  var pct = Math.min(100, score * 20);
-  var colors = ['#ff3c5a','#ff3c5a','#ffd166','#ffd166','#00ff88','#00ff88'];
-  var bar = document.getElementById('pw-bar');
+  const pct = Math.min(100, score * 20);
+  const colors = ['var(--red)', 'var(--red)', 'var(--yellow)', 'var(--yellow)', 'var(--green)', 'var(--green)'];
   bar.style.width = pct + '%';
-  bar.style.background = colors[score] || '#ff3c5a';
+  bar.style.background = colors[score] || 'var(--red)';
 });
 
-// ── Message helper ─────────────────────────────────────────────────────────
 function showMsg(id, text, ok) {
-  var el = document.getElementById(id);
+  const el = document.getElementById(id);
   el.textContent = text;
   el.className = 'msg ' + (ok ? 'ok' : 'err');
 }
 
-function setLoading(btnId, loading, label) {
-  var btn = document.getElementById(btnId);
-  if (!btn) return;
-  btn.disabled = loading;
-  btn.innerHTML = loading ? label + '<span class="spinner"></span>' : label;
-}
-
-// ── Register ───────────────────────────────────────────────────────────────
-document.getElementById('register-form').addEventListener('submit', async function(e) {
+// Register
+document.getElementById('register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  setLoading('regBtn', true, 'LAUNCHING...');
-  var body = {
-    email:    document.getElementById('reg-email').value,
+  const body = {
+    email: document.getElementById('reg-email').value,
     password: document.getElementById('reg-password').value,
-    name:     document.getElementById('reg-name').value,
+    name: document.getElementById('reg-name').value,
   };
   try {
-    var res  = await fetch('/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    var data = await res.json();
+    const res = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
-      document.cookie = 'bridge_token=' + data.token + ';path=/;max-age=2592000;SameSite=Lax';
-      showMsg('reg-msg', '✓ Account created — loading your command deck...', true);
-      var u = data.user || {};
-      localStorage.setItem('bridge_user', JSON.stringify({ email: u.email||body.email, role: u.role||'user', name: u.name||body.name||body.email.split('@')[0], plan: u.plan||'free', funnel_stage: u.funnel_stage||'identified', brdg_balance: u.brdg_balance||0 }));
-      var ref = document.getElementById('reg-referral').value.trim();
-      // Gamification XP
-      GAMIFICATION.gainXP(50, 'Account Created');
+      showMsg('reg-msg', 'Account created! Loading your dashboard...', true);
+      localStorage.setItem('bridge_user', JSON.stringify({
+        email: body.email,
+        role: data.role || 'member',
+        name: data.name || body.email.split('@')[0],
+        credits: data.credits || 100,
+        plan: data.plan || 'free'
+      }));
+      // Claim referral if provided
+      const ref = document.getElementById('reg-referral').value.trim();
       if (ref) {
-        GAMIFICATION.gainXP(100, 'Referral Bonus');
-        GAMIFICATION.state.referrals++;
-        fetch('/referral/claim', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+data.token}, body: JSON.stringify({ code: ref }) }).catch(function(){});
+        await fetch('/referral/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + data.token },
+          body: JSON.stringify({ code: ref }),
+        });
       }
-      // Record usage event
-      fetch('/api/usage/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: u.id||u.email, feature:'register', meta:{ method:'email', ref: ref||null } }) }).catch(function(){});
-      setTimeout(function(){ GAMIFICATION.gainXP(200, 'Agents Deployed'); }, 800);
-      setTimeout(function(){ location.href = '/activate'; }, 2200);
+      const regRedirect = new URLSearchParams(location.search).get('redirect') || '/welcome.html';
+      setTimeout(() => { location.href = regRedirect; }, 1000);
     } else {
       showMsg('reg-msg', data.error || 'Registration failed', false);
-      setLoading('regBtn', false, 'LAUNCH INTO THE NETWORK');
     }
   } catch (err) {
     showMsg('reg-msg', 'Network error: ' + err.message, false);
-    setLoading('regBtn', false, 'LAUNCH INTO THE NETWORK');
   }
 });
 
-// ── Login ──────────────────────────────────────────────────────────────────
-document.getElementById('login-form').addEventListener('submit', async function(e) {
+// Login
+document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  setLoading('loginBtn', true, 'ENTERING...');
-  var body = {
-    email:    document.getElementById('login-email').value,
+  const body = {
+    email: document.getElementById('login-email').value,
     password: document.getElementById('login-password').value,
   };
   try {
-    var res  = await fetch('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    var data = await res.json();
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
-      document.cookie = 'bridge_token=' + data.token + ';path=/;max-age=2592000;SameSite=Lax';
-      showMsg('login-msg', '✓ Signed in — loading your command deck...', true);
-      var lu = data.user || {};
-      localStorage.setItem('bridge_user', JSON.stringify({ email: lu.email||body.email, role: lu.role||'user', name: lu.name||body.email.split('@')[0], plan: lu.plan||'free', funnel_stage: lu.funnel_stage||'identified', brdg_balance: lu.brdg_balance||0 }));
-      fetch('/api/usage/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: lu.id||body.email, feature:'login' }) }).catch(function(){});
-      setTimeout(function(){ location.href = postAuthDest(); }, 1200);
+      showMsg('login-msg', 'Signed in! Loading your dashboard...', true);
+      localStorage.setItem('bridge_user', JSON.stringify({
+        email: body.email,
+        role: data.role || 'member',
+        name: data.name || body.email.split('@')[0],
+        credits: data.credits || 100,
+        plan: data.plan || 'free'
+      }));
+      const loginRedirect = new URLSearchParams(location.search).get('redirect') || '/profile';
+      setTimeout(() => { location.href = loginRedirect; }, 1000);
     } else {
       showMsg('login-msg', data.error || 'Login failed', false);
-      setLoading('loginBtn', false, 'ENTER COMMAND DECK');
     }
   } catch (err) {
     showMsg('login-msg', 'Network error: ' + err.message, false);
-    setLoading('loginBtn', false, 'ENTER COMMAND DECK');
   }
 });
 
-// ── Deploy Agent ───────────────────────────────────────────────────────────
-async function deployAgent() {
-  var name     = document.getElementById('agent-name').value.trim();
-  var platform = document.getElementById('agent-platform').value;
-  var email    = document.getElementById('agent-owner-email').value.trim();
-  var password = document.getElementById('agent-owner-pw').value;
-  if (!name)     { showMsg('agent-msg', 'Agent name required', false); return; }
-  if (!email)    { showMsg('agent-msg', 'Owner email required to link agent', false); return; }
-  if (!password) { showMsg('agent-msg', 'Owner password required', false); return; }
-
-  setLoading('deployAgentBtn', true, '⬢ DEPLOYING...');
-
-  try {
-    // First authenticate the operator
-    var loginRes = await fetch('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
-    var loginData = await loginRes.json();
-    if (!loginRes.ok || !loginData.token) {
-      showMsg('agent-msg', 'Operator auth failed: ' + (loginData.error || 'invalid credentials'), false);
-      setLoading('deployAgentBtn', false, '⬢ DEPLOY AGENT INTO NETWORK');
-      return;
-    }
-
-    // Register agent via IoT/agent endpoint
-    var agentRes = await fetch('/api/iot/register', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+loginData.token },
-      body: JSON.stringify({
-        name,
-        type: selectedAgentType,
-        platform,
-        owner_user_id: (loginData.user && loginData.user.id) || email,
-        metadata: { deployed_from: 'onboarding', platform, agent_type: selectedAgentType },
-      }),
-    });
-    var agentData = await agentRes.json();
-
-    if (agentData.ok || agentData.device_id || agentData.agent_id) {
-      showMsg('agent-msg', '✓ Agent deployed! ID: ' + (agentData.agent_id || agentData.device_id || 'generated') + ' · API key issued · BRDG earning active', true);
-      GAMIFICATION.gainXP(150, 'Agent Deployed');
-      // Store token and redirect operator to dashboard
-      localStorage.setItem('bridge_token', loginData.token);
-      document.cookie = 'bridge_token=' + loginData.token + ';path=/;max-age=2592000;SameSite=Lax';
-      setTimeout(function(){ location.href = '/agents'; }, 2200);
-    } else {
-      showMsg('agent-msg', agentData.error || 'Agent deployment failed — ensure your account has the required plan', false);
-    }
-  } catch (err) {
-    showMsg('agent-msg', 'Network error: ' + err.message, false);
-  }
-  setLoading('deployAgentBtn', false, '⬢ DEPLOY AGENT INTO NETWORK');
+// Build the auth-callback URL, threading any ?redirect param through
+function _callbackUrl() {
+  const dest = new URLSearchParams(location.search).get('redirect') || '';
+  const qs = dest ? '?redirect=' + encodeURIComponent(dest) : '';
+  return location.origin + '/auth-callback' + qs;
 }
 
-// ── OAuth ──────────────────────────────────────────────────────────────────
-var _supabaseClient = null;
-(async function() {
-  try {
-    var res = await fetch('/api/config/oauth');
-    if (!res.ok) return;
-    var cfg = await res.json();
-    if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {
-      _supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-    }
-  } catch(_) {}
-})();
-
+// Google OAuth via Supabase Auth
 async function googleAuth() {
-  if (!_supabaseClient) { showMsg('reg-msg', 'OAuth loading — try again in a moment', false); return; }
-  var err = (await _supabaseClient.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.origin + '/auth-callback' } })).error;
-  if (err) showMsg('reg-msg', err.message, false);
+  if (!_supabaseClient) {
+    showMsg('reg-msg', 'OAuth loading… try again in a moment.', false);
+    return;
+  }
+  const { error } = await _supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: _callbackUrl() },
+  });
+  if (error) showMsg('reg-msg', error.message, false);
 }
+
+// GitHub OAuth via Supabase Auth
 async function githubAuth() {
-  if (!_supabaseClient) { showMsg('reg-msg', 'OAuth loading — try again in a moment', false); return; }
-  var err = (await _supabaseClient.auth.signInWithOAuth({ provider:'github', options:{ redirectTo: location.origin + '/auth-callback' } })).error;
-  if (err) showMsg('reg-msg', err.message, false);
+  if (!_supabaseClient) {
+    showMsg('reg-msg', 'OAuth loading… try again in a moment.', false);
+    return;
+  }
+  const { error } = await _supabaseClient.auth.signInWithOAuth({
+    provider: 'github',
+    options: { redirectTo: _callbackUrl() },
+  });
+  if (error) showMsg('reg-msg', error.message, false);
 }
 
-// ── Auto-fill referral from URL ────────────────────────────────────────────
-var urlRef = new URLSearchParams(location.search).get('ref');
+// Auto-fill referral from URL
+const urlRef = new URLSearchParams(location.search).get('ref');
 if (urlRef) document.getElementById('reg-referral').value = urlRef;
-
-// Check if ?mode=agent in URL
-if (new URLSearchParams(location.search).get('mode') === 'agent') setMode('agent');
-
-// ── Post-auth redirect ─────────────────────────────────────────────────────
-function postAuthDest() {
-  var p = new URLSearchParams(location.search);
-  var dest = p.get('redirect') || p.get('next') || '';
-  if (dest && dest.startsWith('/') && !dest.startsWith('//')) return dest;
-  return '/activate';
-}
-
-// ── Gamification Engine (from preview template) ────────────────────────────
-var GAMIFICATION = (function() {
-  var RANKS = [
-    { min:0,    label:'CREW MEMBER',    color:'#6b7280' },
-    { min:100,  label:'NAVIGATOR',      color:'#00d4ff' },
-    { min:300,  label:'COMMANDER',      color:'#00ff88' },
-    { min:600,  label:'FLEET CAPTAIN',  color:'#a855f7' },
-    { min:1000, label:'ADMIRAL',        color:'#f59e0b' },
-    { min:2000, label:'GRAND MARSHAL',  color:'#ff3c5a' },
-  ];
-
-  var state = { xp: 0, level: 1, referrals: 0 };
-  var xpNeeded = function(lvl) { return lvl * 100; };
-
-  var shipEl = null; // set by PixiJS init
-
-  function getRank(xp) {
-    for (var i = RANKS.length - 1; i >= 0; i--) {
-      if (xp >= RANKS[i].min) return RANKS[i];
-    }
-    return RANKS[0];
-  }
-
-  function updateHUD() {
-    var needed = xpNeeded(state.level);
-    var pct = Math.min(100, (state.xp % needed) / needed * 100);
-    var rank = getRank(state.xp);
-    document.getElementById('xpLevel').textContent = state.level;
-    document.getElementById('xpCount').textContent = state.xp;
-    document.getElementById('xpBar').style.width = pct + '%';
-    var rankEl = document.getElementById('xpRank');
-    rankEl.textContent = rank.label;
-    rankEl.style.color = rank.color;
-    // Persist to runtime via localStorage
-    try {
-      var pos = { xp: state.xp, level: state.level, rank: rank.label, referrals: state.referrals, ts: Date.now() };
-      localStorage.setItem('brdg_position', JSON.stringify(pos));
-    } catch(e) {}
-  }
-
-  function showToast(msg, sub) {
-    var el = document.getElementById('xpToast');
-    el.textContent = msg + (sub ? ' — ' + sub : '');
-    el.classList.add('show');
-    setTimeout(function() { el.classList.remove('show'); }, 2800);
-  }
-
-  function burstShip() {
-    // Signal to PixiJS to do a burst animation
-    if (typeof window._pixiBurst === 'function') window._pixiBurst();
-  }
-
-  function gainXP(amount, reason) {
-    state.xp += amount;
-    var needed = xpNeeded(state.level);
-    if (state.xp >= needed * state.level) { state.level++; }
-    updateHUD();
-    showToast('+' + amount + ' XP', reason);
-    burstShip();
-  }
-
-  updateHUD();
-  return { gainXP: gainXP, state: state };
-})();
-
-// ── PixiJS Captain Ship Avatar Overlay ────────────────────────────────────
-(function initPixiOrbit() {
-  var container = document.getElementById('orbitSystem');
-  var pixiCanvas = document.getElementById('pixi-onboard');
-  if (!container || !pixiCanvas || typeof PIXI === 'undefined') return;
-
-  var SIZE = 320;
-  var app = new PIXI.Application({
-    view: pixiCanvas,
-    width: SIZE,
-    height: SIZE,
-    backgroundAlpha: 0,
-    antialias: true,
-    resolution: window.devicePixelRatio || 1,
-    autoDensity: true,
-  });
-
-  var particles = [];
-  var MAX_PARTS = 80;
-  var burstParticles = [];
-  var nodePositions = [];
-
-  function syncNodePositions() {
-    nodePositions = [];
-    var nodes = container.querySelectorAll('.orbit-node');
-    nodes.forEach(function(n) {
-      var l = parseFloat(n.style.left) + 18;
-      var t = parseFloat(n.style.top)  + 18;
-      if (!isNaN(l) && !isNaN(t)) nodePositions.push({ x: l, y: t });
-    });
-  }
-
-  var gfx = new PIXI.Graphics();
-  app.stage.addChild(gfx);
-
-  // Avatar sprite (load user avatar texture, fall back to ship)
-  var avatarUrl = (function() {
-    try { return JSON.parse(localStorage.getItem('brdg_user') || '{}').avatar_url || null; } catch(e) { return null; }
-  })();
-
-  var captainContainer = new PIXI.Container();
-  captainContainer.x = SIZE / 2;
-  captainContainer.y = SIZE / 2;
-  app.stage.addChild(captainContainer);
-
-  // Halo rings
-  var halo = new PIXI.Graphics();
-  halo.lineStyle(1.5, 0x00d4ff, 0.3);
-  halo.drawCircle(0, 0, 36);
-  halo.lineStyle(1, 0x00ff88, 0.18);
-  halo.drawCircle(0, 0, 42);
-  captainContainer.addChild(halo);
-
-  // Ship (triangle — the captain avatar proxy from the preview template)
-  var ship = new PIXI.Graphics();
-  ship.beginFill(0x00ffc3, 0.9);
-  ship.drawPolygon([0, -16, 11, 14, -11, 14]);
-  ship.endFill();
-  ship.lineStyle(1.5, 0x00d4ff, 0.6);
-  ship.drawPolygon([0, -16, 11, 14, -11, 14]);
-  // Engine glow at base
-  ship.beginFill(0xa855f7, 0.5);
-  ship.drawCircle(0, 12, 4);
-  ship.endFill();
-  captainContainer.addChild(ship);
-
-  // If user has an avatar, overlay it as a circular sprite above the ship
-  if (avatarUrl) {
-    try {
-      var tex = PIXI.Texture.from(avatarUrl);
-      var avatarSprite = new PIXI.Sprite(tex);
-      avatarSprite.width = 28;
-      avatarSprite.height = 28;
-      avatarSprite.anchor.set(0.5);
-      avatarSprite.y = -2;
-      var amask = new PIXI.Graphics();
-      amask.beginFill(0xffffff);
-      amask.drawCircle(0, -2, 14);
-      amask.endFill();
-      captainContainer.addChild(amask);
-      avatarSprite.mask = amask;
-      captainContainer.addChild(avatarSprite);
-    } catch(e) {}
-  }
-
-  var label = new PIXI.Text('CAPTAIN', {
-    fontFamily: 'Segoe UI, monospace',
-    fontSize: 6,
-    fill: 0x00d4ff,
-    letterSpacing: 3,
-  });
-  label.anchor.set(0.5, 0);
-  label.y = 22;
-  captainContainer.addChild(label);
-
-  // XP burst effect
-  window._pixiBurst = function() {
-    for (var b = 0; b < 20; b++) {
-      var ang = Math.random() * Math.PI * 2;
-      var spd = 2 + Math.random() * 3;
-      burstParticles.push({
-        x: SIZE / 2, y: SIZE / 2,
-        vx: Math.cos(ang) * spd,
-        vy: Math.sin(ang) * spd,
-        life: 1,
-        r: 2 + Math.random() * 3,
-        color: [0x00ffc3, 0x00d4ff, 0xa855f7, 0xf59e0b][Math.floor(Math.random() * 4)],
-      });
-    }
-  };
-
-  var t = 0;
-  app.ticker.add(function(delta) {
-    t += delta * 0.016;
-    gfx.clear();
-    syncNodePositions();
-
-    // Pulse halo + gentle ship bob
-    halo.alpha = 0.3 + Math.sin(t * 2.5) * 0.15;
-    ship.y = Math.sin(t * 1.4) * 2.5;
-    ship.rotation = Math.sin(t * 0.6) * 0.06;
-    captainContainer.scale.set(1 + Math.sin(t * 1.8) * 0.018);
-
-    // Energy beams to orbit nodes
-    nodePositions.forEach(function(pos, i) {
-      var alpha = 0.06 + Math.sin(t * 1.2 + i * 0.8) * 0.04;
-      gfx.lineStyle(0.8, 0x00d4ff, alpha);
-      gfx.moveTo(SIZE / 2, SIZE / 2);
-      gfx.lineTo(pos.x, pos.y);
-
-      if (particles.length < MAX_PARTS && Math.random() < 0.10) {
-        particles.push({
-          x: pos.x + (Math.random() - 0.5) * 5,
-          y: pos.y + (Math.random() - 0.5) * 5,
-          vx: (SIZE / 2 - pos.x) * 0.005 + (Math.random() - 0.5) * 0.3,
-          vy: (SIZE / 2 - pos.y) * 0.005 + (Math.random() - 0.5) * 0.3,
-          life: 1, r: Math.random() * 2 + 0.8,
-          color: [0x00d4ff, 0x00ff88, 0xa855f7][i % 3],
-        });
-      }
-    });
-
-    // Update orbit particles
-    for (var k = particles.length - 1; k >= 0; k--) {
-      var p = particles[k];
-      p.x += p.vx; p.y += p.vy; p.life -= 0.016;
-      if (p.life <= 0) { particles.splice(k, 1); continue; }
-      gfx.beginFill(p.color, p.life * 0.65);
-      gfx.drawCircle(p.x, p.y, p.r * p.life);
-      gfx.endFill();
-    }
-
-    // XP burst particles
-    for (var b = burstParticles.length - 1; b >= 0; b--) {
-      var bp = burstParticles[b];
-      bp.x += bp.vx; bp.y += bp.vy;
-      bp.vx *= 0.94; bp.vy *= 0.94;
-      bp.life -= 0.025;
-      if (bp.life <= 0) { burstParticles.splice(b, 1); continue; }
-      gfx.beginFill(bp.color, bp.life * 0.9);
-      gfx.drawCircle(bp.x, bp.y, bp.r * bp.life);
-      gfx.endFill();
-    }
-
-    label.alpha = 0.5 + Math.sin(t * 3) * 0.2;
-  });
-})();
 </script>
 </body>
 </html>
