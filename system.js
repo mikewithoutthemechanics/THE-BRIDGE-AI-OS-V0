@@ -6,6 +6,8 @@
 *******************************************************************************************/
 'use strict';
 
+require('dotenv').config();
+
 const http   = require('http');
 const https  = require('https');
 const fs     = require('fs');
@@ -568,6 +570,11 @@ function handler(req, res) {
       }).catch(err => json({ error: err.message }, 500));
     }
   }
+
+  // Public read-only endpoints (no auth required)
+  if (url === '/api/marketplace/stats') return json(aggregateEconomics());
+  if (url === '/api/economics')         return json(aggregateEconomics());
+  if (url === '/api/status')            return json({ ok: true, ts: Date.now() });
 
   // All other /api/* endpoints require JWT authentication
   if (url.startsWith('/api/')) {

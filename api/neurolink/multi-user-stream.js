@@ -97,6 +97,8 @@ class MultiUserStream extends EventEmitter {
    * Check if state change triggers monetization action
    */
   _checkMonetizationTriggers(userId, state, predictions) {
+    // Skip monetization for unauthenticated placeholder user
+    if (!userId || userId === 'default-user') return;
     const triggers = [];
 
     // Trigger 1: High-value moment detected
