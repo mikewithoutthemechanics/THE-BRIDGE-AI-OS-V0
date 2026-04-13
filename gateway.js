@@ -2376,6 +2376,7 @@ app.all(/^\/api\/crm(?:\/|$)/, async (req, res, next) => {
 
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server ──
 const dashboardApiRoutes = [
+  '/api/platform/',
   '/api/revenue/',
   '/api/treasury/',
   '/api/mission/',
