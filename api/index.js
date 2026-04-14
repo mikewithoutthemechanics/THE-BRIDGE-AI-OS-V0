@@ -193,15 +193,17 @@ const AVATAR_MODES = {
 };
 
 // ── Persistent DB layer ──────────────────────────────────────────────────────
-const db      = require('../lib/db');
-const pf      = require('../lib/payfast');
-const agents  = require('../lib/agents');
-const notify  = require('../lib/notify');
-const banks    = require('../lib/banks');
-const da       = require('../lib/directadmin');
-const infraFb  = require('../lib/infra-feedback');
-const wp       = require('../lib/wordpress');
-const mail     = require('../lib/mail');
+const db            = require('../lib/db');
+const pf            = require('../lib/payfast');
+const agents        = require('../lib/agents');
+const notify        = require('../lib/notify');
+const banks         = require('../lib/banks');
+const da            = require('../lib/directadmin');
+const infraFb       = require('../lib/infra-feedback');
+const wp            = require('../lib/wordpress');
+const mail          = require('../lib/mail');
+const brdgDist      = require('../lib/brdg-distributor');
+const userIdentity  = require('../lib/user-identity');
 
 // ── NeuroLink Serverless Cron Handlers ────────────────────────────────────────
 const cronHandlers = require('./neurolink/cron-handlers');
@@ -433,7 +435,14 @@ async function parseBody(req) {
   return new Promise((resolve) => {
     let data = '';
     req.on('data', c => { data += c; });
-    req.on('end', () => { try { resolve(JSON.parse(data)); } catch (_) { resolve({}); } });
+    req.on('end', () => {
+      const ct = (req.headers['content-type'] || '').toLowerCase();
+      if (ct.includes('application/x-www-form-urlencoded')) {
+        try { resolve(Object.fromEntries(new URLSearchParams(data))); } catch (_) { resolve({}); }
+      } else {
+        try { resolve(JSON.parse(data)); } catch (_) { resolve({}); }
+      }
+    });
   });
 }
 
@@ -2346,7 +2355,20 @@ module.exports = async (req, res) => {
       const newBalance = await db.addToTreasury(amount, `PayFast:${paymentId}`);
       treasuryBalance = newBalance;
 
-      // 4b. Record cryptographic payment proof (zero-trust chain)
+      // 4b. Distribute BRDG tokens to paying user's wallet (non-blocking)
+      if (body.email_address) {
+        userIdentity.getUserByEmail(body.email_address)
+          .then(user => user && userIdentity.getUserWallets(user.id))
+          .then(wallets => {
+            const wallet = wallets && wallets[0];
+            if (wallet && wallet.wallet_address) {
+              return brdgDist.distributeAmount(wallet.wallet_address, amount, `PayFast:${paymentId}`);
+            }
+          })
+          .catch(e => console.warn('[PAYFAST] BRDG distribution failed:', e.message));
+      }
+
+      // 4c. Record cryptographic payment proof (zero-trust chain)
       proofStore.recordPayment({
         id: paymentId,
         amount,
