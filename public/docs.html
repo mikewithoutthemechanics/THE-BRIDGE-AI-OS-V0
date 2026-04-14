@@ -1,571 +1,570 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bridge AI OS — Documentation</title>
-<meta name="description" content="Bridge AI OS documentation — architecture, API reference, economy, skills engine, agent swarm, and white papers.">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://go.ai-os.co.za/docs">
-<meta property="og:title" content="Bridge AI OS — Documentation">
-<meta property="og:description" content="System architecture, API reference, economy design, agent swarm and white papers for Bridge AI OS.">
-<meta property="og:url" content="https://go.ai-os.co.za/docs">
-<meta property="og:site_name" content="Bridge AI OS">
-<style>
-  :root {
-    --bg:     #060810;
-    --bg2:    #0a0e17;
-    --bg3:    #0d1424;
-    --border: #1a2540;
-    --cyan:   #63ffda;
-    --purple: #a855f7;
-    --gold:   #f59e0b;
-    --green:  #22c55e;
-    --red:    #ef4444;
-    --blue:   #3b82f6;
-    --dim:    #64748b;
-    --text:   #cbd5e1;
-    --font:   'JetBrains Mono','Fira Code',monospace;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;line-height:1.65}
+  <meta charset="UTF-8">
+  <meta name="description" content="Bridge AI OS documentation — architecture, API reference, BRDG economy, agent SDK, SVG skills engine, and deployment guides.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://go.ai-os.co.za/docs">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://go.ai-os.co.za/docs">
+  <meta property="og:title" content="Docs — Bridge AI OS">
+  <meta property="og:description" content="Bridge AI OS documentation — architecture, API reference, BRDG economy, agent SDK, SVG skills engine, and deployment guides.">
+  <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+  <meta property="og:site_name" content="Bridge AI OS">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Docs — Bridge AI OS">
+  <meta name="twitter:description" content="Bridge AI OS documentation — architecture, API reference, BRDG economy, agent SDK, SVG skills engine.">
+  <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docs — Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg: #060810; --bg2: #0d1426; --bg3: #111827;
+      --border: #1a2540; --border2: #243050;
+      --cyan: #63ffda; --purple: #a855f7; --amber: #f59e0b;
+      --blue: #3b82f6; --green: #22c55e; --red: #ef4444; --pink: #f472b6;
+      --text: #e2e8f0; --muted: #64748b; --sub: #94a3b8;
+      --font: 'JetBrains Mono', 'Fira Mono', 'Cascadia Code', monospace;
+      --sans: system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; }
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; opacity: 0.85; }
+    code, pre, .mono { font-family: var(--font); }
 
-  /* TOPBAR */
-  #topbar{position:sticky;top:0;z-index:100;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:12px;height:46px}
-  .logo{color:var(--cyan);font-size:14px;font-weight:700;letter-spacing:2px;white-space:nowrap;text-decoration:none}
-  .logo span{color:var(--gold)}
-  .nav-links{display:flex;gap:2px;margin-left:16px;flex:1}
-  .nav-links a{color:var(--dim);text-decoration:none;font-size:10px;padding:4px 9px;border-radius:4px;letter-spacing:1px;transition:color .12s,background .12s}
-  .nav-links a:hover,.nav-links a.active{color:var(--cyan);background:var(--bg3)}
-  #topbar-right{margin-left:auto;display:flex;gap:8px}
-  .tpill{font-size:9px;padding:2px 7px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--dim)}
-  .tpill.ok{color:var(--green);border-color:#0d3a1e}
-  .tpill.warn{color:var(--gold);border-color:#3a2a0a}
+    /* NAV */
+    nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 52px; position: sticky; top: 0; z-index: 100; }
+    nav .logo { color: var(--cyan); font-family: var(--font); font-weight: 700; font-size: 15px; letter-spacing: .04em; }
+    nav ul { list-style: none; display: flex; gap: 20px; flex-wrap: wrap; }
+    nav ul a { color: var(--sub); font-size: 13px; }
+    nav ul a:hover, nav ul a.active { color: var(--cyan); text-decoration: none; }
 
-  /* LAYOUT */
-  #layout{display:flex;min-height:calc(100vh - 46px)}
+    /* LAYOUT */
+    .layout { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 52px); }
+    aside { background: var(--bg2); border-right: 1px solid var(--border); padding: 24px 0; position: sticky; top: 52px; height: calc(100vh - 52px); overflow-y: auto; }
+    aside .section-label { font-family: var(--font); font-size: 10px; letter-spacing: .12em; color: var(--muted); padding: 16px 20px 6px; text-transform: uppercase; }
+    aside a { display: block; padding: 6px 20px; font-size: 13px; color: var(--sub); border-left: 2px solid transparent; }
+    aside a:hover { color: var(--text); text-decoration: none; border-left-color: var(--border2); }
+    aside a.active { color: var(--cyan); border-left-color: var(--cyan); background: rgba(99,255,218,.05); }
+    main { padding: 40px 48px; max-width: 960px; }
 
-  /* SIDEBAR */
-  #sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);position:sticky;top:46px;height:calc(100vh - 46px);overflow-y:auto;padding:16px 0}
-  .sh{font-size:8px;letter-spacing:2px;color:var(--dim);padding:8px 16px 4px;margin-top:6px}
-  .slink{display:block;padding:5px 16px;color:var(--dim);text-decoration:none;font-size:10px;border-left:2px solid transparent;transition:color .1s,border-color .1s}
-  .slink:hover,.slink.active{color:var(--cyan);border-left-color:var(--cyan);background:var(--bg3)}
-  .slink.sub{padding-left:28px;font-size:9px}
+    /* SECTIONS */
+    section { margin-bottom: 56px; scroll-margin-top: 72px; }
+    h1 { font-family: var(--font); font-size: 28px; font-weight: 700; color: var(--cyan); margin-bottom: 8px; }
+    h2 { font-family: var(--font); font-size: 19px; font-weight: 700; color: var(--text); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { font-family: var(--font); font-size: 14px; font-weight: 700; color: var(--cyan); margin: 20px 0 8px; }
+    p { color: var(--sub); margin-bottom: 12px; }
+    ul, ol { color: var(--sub); padding-left: 20px; margin-bottom: 12px; }
+    li { margin-bottom: 4px; }
 
-  /* CONTENT */
-  #content{flex:1;max-width:900px;padding:32px 40px;overflow-x:hidden}
-  @media(max-width:768px){#sidebar{display:none}#content{padding:20px 16px}}
+    /* CARDS */
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+    .card-title { font-family: var(--font); font-size: 11px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
 
-  /* SECTIONS */
-  .section{margin-bottom:48px;scroll-margin-top:60px}
-  h1{color:var(--cyan);font-size:22px;font-weight:700;letter-spacing:1px;margin-bottom:6px}
-  h2{color:var(--cyan);font-size:16px;font-weight:700;letter-spacing:1px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-  h3{color:var(--text);font-size:12px;font-weight:700;letter-spacing:1px;margin:18px 0 8px}
-  p{margin-bottom:12px;color:var(--text)}
-  a{color:var(--cyan);text-decoration:none}
-  a:hover{text-decoration:underline}
+    /* BADGE */
+    .badge { display: inline-block; font-family: var(--font); font-size: 10px; padding: 2px 8px; border-radius: 4px; margin-right: 4px; font-weight: 700; }
+    .badge-get { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+    .badge-post { background: rgba(59,130,246,.15); color: var(--blue); border: 1px solid rgba(59,130,246,.3); }
+    .badge-put { background: rgba(245,158,11,.15); color: var(--amber); border: 1px solid rgba(245,158,11,.3); }
+    .badge-patch { background: rgba(168,85,247,.15); color: var(--purple); border: 1px solid rgba(168,85,247,.3); }
+    .badge-delete { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
 
-  /* CODE */
-  code{background:var(--bg3);color:var(--cyan);padding:1px 5px;border-radius:3px;font-size:11px}
-  pre{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px 16px;overflow-x:auto;margin:10px 0}
-  pre code{background:none;padding:0;font-size:11px;line-height:1.7;color:var(--text)}
-  .kw{color:var(--purple)} .str{color:var(--green)} .cm{color:var(--dim)} .num{color:var(--gold)}
+    /* TABLE */
+    .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tbl th { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--muted); font-family: var(--font); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+    .tbl td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--sub); vertical-align: top; }
+    .tbl td:first-child { font-family: var(--font); color: var(--text); white-space: nowrap; }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: rgba(255,255,255,.02); }
 
-  /* CARDS */
-  .card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:10px}
-  .card-title{font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:8px}
-  .badge{display:inline-block;font-size:9px;padding:2px 6px;border-radius:3px;margin-right:4px;background:var(--bg3);color:var(--dim)}
-  .badge.get{color:var(--cyan);background:#0a1f1a}.badge.post{color:var(--green);background:#0a1f12}
-  .badge.del{color:var(--red);background:#1f0a0a}.badge.patch{color:var(--gold);background:#1f180a}
-  .badge.live{color:var(--green)}.badge.warn{color:var(--gold)}.badge.offline{color:var(--red)}
+    /* CODE */
+    pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-size: 12px; color: var(--cyan); margin: 12px 0; }
+    .inline-code { background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; padding: 1px 6px; font-family: var(--font); font-size: 12px; color: var(--cyan); }
 
-  /* TABLES */
-  table{width:100%;border-collapse:collapse;font-size:11px;margin:10px 0}
-  th{text-align:left;padding:7px 10px;color:var(--dim);font-size:9px;letter-spacing:1px;border-bottom:2px solid var(--border)}
-  td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-  td:first-child code{color:var(--cyan)}
-  tr:hover td{background:var(--bg3)}
+    /* TIER GRID */
+    .tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 16px 0; }
+    .tier-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
+    .tier-card .tier-num { font-family: var(--font); font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+    .tier-card .tier-name { font-family: var(--font); font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .tier-card .tier-desc { font-size: 12px; color: var(--muted); }
 
-  /* ARCH DIAGRAM */
-  .arch{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:16px;font-size:10px;overflow-x:auto;margin:10px 0}
-  .arch-layer{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;margin-bottom:4px}
-  .arch-layer.t0{background:#0a1020;border:1px solid #1a2a40}
-  .arch-layer.t1{background:#0d1428;border:1px solid #1a3050}
-  .arch-layer.t2{background:#0d1624;border:1px solid var(--border)}
-  .arch-layer.t3{background:#080e1c;border:1px solid #14203c}
-  .arch-layer.t4{background:#060c18;border:1px solid #0f1830}
-  .arch-lbl{color:var(--dim);font-size:9px;width:80px;flex-shrink:0;letter-spacing:1px}
-  .arch-content{color:var(--text);flex:1}
-  .arch-arrow{color:var(--border);font-size:8px;text-align:center;padding:1px 0}
+    /* ENDPOINT */
+    .endpoint { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+    .endpoint .path { font-family: var(--font); color: var(--text); font-size: 13px; flex: 1; min-width: 200px; }
+    .endpoint .desc { color: var(--sub); font-size: 12px; flex: 2; }
 
-  /* FLOW */
-  .flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0;font-size:10px}
-  .flow-step{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:4px 10px;color:var(--text)}
-  .flow-arrow{color:var(--dim)}
+    /* SKILL CHIPS */
+    .skill-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--sub); }
+    .chip .dot { width: 7px; height: 7px; border-radius: 50%; }
 
-  /* STAT ROWS */
-  .srow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:10px}
-  .srow:last-child{border:none}
-  .slbl{color:var(--dim)}
-  .sval{color:var(--text)}
-  .sval.ok{color:var(--green)}.sval.warn{color:var(--gold)}.sval.err{color:var(--red)}
+    /* BUCKET TABLE */
+    .bucket-row td:nth-child(2) { font-family: var(--font); color: var(--amber); }
+    .bucket-row td:nth-child(3) { font-family: var(--font); color: var(--green); }
 
-  /* WHITEPAPER CARDS */
-  .wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin:10px 0}
-  .wp-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;transition:border-color .12s}
-  .wp-card:hover{border-color:var(--cyan)}
-  .wp-card h4{color:var(--cyan);font-size:11px;margin-bottom:4px}
-  .wp-card p{font-size:10px;color:var(--dim);margin:0}
+    /* ENV TABLE */
+    .env-required { color: var(--red); font-family: var(--font); font-size: 10px; }
+    .env-optional { color: var(--muted); font-family: var(--font); font-size: 10px; }
 
-  /* ENDPOINT TABLE */
-  .ep-section{margin-bottom:16px}
-  .ep-section h4{font-size:9px;letter-spacing:2px;color:var(--dim);padding:4px 0;margin-bottom:4px;border-bottom:1px solid var(--border)}
-  .ep-row{display:flex;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px solid rgba(26,37,64,0.5);font-size:10px}
-  .ep-method{min-width:44px;font-size:8px;padding:1px 5px;border-radius:2px;text-align:center}
-  .ep-path{color:var(--cyan);font-family:var(--font);flex:1}
-  .ep-desc{color:var(--dim);font-size:9px}
-
-  /* TAG */
-  .tag{display:inline-block;font-size:8px;padding:1px 5px;border-radius:3px;background:#1a1040;color:var(--purple);margin:1px}
-
-  /* CALLOUT */
-  .callout{border-left:3px solid var(--cyan);background:var(--bg3);padding:10px 14px;border-radius:0 4px 4px 0;margin:12px 0;font-size:11px}
-  .callout.warn{border-left-color:var(--gold)}.callout.info{border-left-color:var(--blue)}
-  .callout strong{color:var(--cyan)}
-  .callout.warn strong{color:var(--gold)}
-
-  ::-webkit-scrollbar{width:4px;height:4px}
-  ::-webkit-scrollbar-track{background:transparent}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-</style>
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { display: none; }
+      main { padding: 24px 20px; }
+    }
+  </style>
 </head>
 <body>
 
-<div id="topbar">
-  <a class="logo" href="/">BRIDGE<span>OS</span></a>
-  <nav class="nav-links">
-    <a href="/">Home</a>
-    <a href="/aoe-dashboard">Dashboard</a>
-    <a href="/docs" class="active">Docs</a>
-    <a href="/50-applications">Applications</a>
-    <a href="/agents">Agents</a>
-    <a href="/ban">Task Mesh</a>
-  </nav>
-  <div id="topbar-right">
-    <div class="tpill ok" id="p-api">API</div>
-    <div class="tpill" id="p-chain">LINEA</div>
-  </div>
-</div>
-
-<div id="layout">
-<nav id="sidebar">
-  <div class="sh">GETTING STARTED</div>
-  <a class="slink active" href="#overview">What is Bridge AI OS</a>
-  <a class="slink" href="#architecture">System Architecture</a>
-  <a class="slink sub" href="#tiers">5-Tier Stack</a>
-  <a class="slink sub" href="#services">Microservices</a>
-  <a class="slink" href="#how-it-works">How It Works</a>
-  <a class="slink sub" href="#data-flow">Data Flow</a>
-  <a class="slink sub" href="#agent-layers">Agent Layers</a>
-
-  <div class="sh">API REFERENCE</div>
-  <a class="slink" href="#api-core">Core Endpoints</a>
-  <a class="slink" href="#api-treasury">Treasury</a>
-  <a class="slink" href="#api-swarm">Swarm</a>
-  <a class="slink" href="#api-skills">Skills Engine</a>
-  <a class="slink" href="#api-economy">Economy</a>
-  <a class="slink" href="#api-auth">Auth</a>
-
-  <div class="sh">PLATFORM</div>
-  <a class="slink" href="#economy">BRDG Economy</a>
-  <a class="slink sub" href="#token">BRDG Token</a>
-  <a class="slink sub" href="#treasury-buckets">Treasury Buckets</a>
-  <a class="slink sub" href="#ubi">UBI System</a>
-  <a class="slink" href="#skills">SVG Skill Engine</a>
-  <a class="slink" href="#swarm">Agent Swarm</a>
-  <a class="slink" href="#verticals">Verticals</a>
-
-  <div class="sh">WHITE PAPERS</div>
-  <a class="slink" href="#whitepapers">Documents</a>
-  <a class="slink" href="#living-map">Living Map</a>
-
-  <div class="sh">DEVELOPER</div>
-  <a class="slink" href="#deployment">Deployment</a>
-  <a class="slink" href="#env">Environment Vars</a>
+<nav>
+  <a class="logo" href="/">&#x2B21; Bridge AI OS</a>
+  <ul>
+    <li><a href="/">Digital Twin</a></li>
+    <li><a href="/executive-dashboard.html">Dashboard</a></li>
+    <li><a href="/svg-engine.html">Skills Engine</a></li>
+    <li><a href="/agents.html">Agents</a></li>
+    <li><a href="/gateway/">Gateway</a></li>
+    <li><a href="/docs.html" class="active">Docs</a></li>
+  </ul>
 </nav>
 
-<main id="content">
+<div class="layout">
+  <aside>
+    <div class="section-label">Overview</div>
+    <a href="#intro">Introduction</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#pages">Frontend Pages</a>
+    <div class="section-label">API Reference</div>
+    <a href="#api-health">System</a>
+    <a href="#api-twins">Twins & Agents</a>
+    <a href="#api-svg">SVG Skills Engine</a>
+    <a href="#api-economy">Economy & Treasury</a>
+    <a href="#api-crm">CRM & Pipeline</a>
+    <a href="#api-stream">Streaming</a>
+    <a href="#api-market">Marketplace</a>
+    <div class="section-label">Economy</div>
+    <a href="#brdg">BRDG Token</a>
+    <a href="#buckets">Revenue Buckets</a>
+    <a href="#ubi">UBI System</a>
+    <div class="section-label">Skills Engine</div>
+    <a href="#skills-overview">Overview</a>
+    <a href="#skills-list">Skill List</a>
+    <a href="#skills-api">Skill API</a>
+    <div class="section-label">Deployment</div>
+    <a href="#env">Environment Variables</a>
+    <a href="#ports">Ports</a>
+    <a href="#deploy">Deploy</a>
+  </aside>
 
-<!-- OVERVIEW -->
-<section class="section" id="overview">
-  <h1>BRIDGE AI OS</h1>
-  <p style="color:var(--dim);font-size:11px;letter-spacing:1px;margin-bottom:20px">AUTONOMOUS · ON-CHAIN · SOVEREIGN FINANCIAL INFRASTRUCTURE</p>
-  <p>Bridge AI OS is a full-stack autonomous AI operating system deployed on <strong style="color:var(--cyan)">Vercel (serverless)</strong> + <strong style="color:var(--cyan)">VPS (brain.js)</strong>, backed by the <strong style="color:var(--cyan)">Linea L2 zkEVM</strong> blockchain. It combines a real-time agent swarm, an SVG skill engine, an on-chain treasury, and a modular vertical SaaS stack into a single unified platform.</p>
+  <main>
+    <section id="intro">
+      <h1>Bridge AI OS Docs</h1>
+      <p>Bridge AI OS is a sovereign, agent-driven operating system for real-world economic automation. It runs AI agents, mints BRDG tokens, distributes UBI, orchestrates sales pipelines, and exposes every capability as an executable skill.</p>
+      <div class="card">
+        <div class="card-title">Quick Links</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;">
+          <a href="/executive-dashboard.html">&#x25A0; Executive Dashboard</a>
+          <a href="/svg-engine.html">&#x25A0; SVG Skills Engine</a>
+          <a href="/agents.html">&#x25A0; Digital Twins</a>
+          <a href="/gateway/">&#x25A0; Sovereign Gateway</a>
+          <a href="/join.html">&#x25A0; Join as Agent</a>
+          <a href="/50-applications.html">&#x25A0; 50 Applications</a>
+          <a id="swagger-link" href="#" target="_blank" rel="noopener">&#x25A0; Swagger UI</a>
+        </div>
+      </div>
+    </section>
 
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0">
-    <div class="card"><div class="card-title">AGENT NETWORK</div>8 L1/L2/L3 agents · autonomous task dispatch · swarm consensus</div>
-    <div class="card"><div class="card-title">ON-CHAIN ECONOMY</div>BRDG token (Linea mainnet) · 4-bucket treasury · UBI distribution</div>
-    <div class="card"><div class="card-title">SKILL ENGINE</div>SVG-native skill visualizer · 8+ skill types · LLM-powered learning</div>
-  </div>
+    <section id="architecture">
+      <h2>Architecture</h2>
+      <p>The system is a 5-tier stack, each layer building on the one below:</p>
+      <div class="tier-grid">
+        <div class="tier-card">
+          <div class="tier-num">TIER 1</div>
+          <div class="tier-name" style="color:var(--cyan)">Infrastructure</div>
+          <div class="tier-desc">Vercel Edge, Supabase (PostgreSQL), on-chain BRDG+TreasuryVault (Linea mainnet), PayFast ITN</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num">TIER 2</div>
+          <div class="tier-name" style="color:var(--purple)">Agent Runtime</div>
+          <div class="tier-desc">8 live agents, swarm health scoring, task dispatch queue, digital twin replication</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num">TIER 3</div>
+          <div class="tier-name" style="color:var(--amber)">Economy Layer</div>
+          <div class="tier-desc">Revenue ingestion, 5-bucket split, BRDG minting, treasury parity, reconciler cron</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num">TIER 4</div>
+          <div class="tier-name" style="color:var(--blue)">Skills Engine</div>
+          <div class="tier-desc">8 executable SVG skills, interactive graph, YouTube AI skill discovery, telemetry</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-num">TIER 5</div>
+          <div class="tier-name" style="color:var(--green)">Product Surface</div>
+          <div class="tier-desc">CRM pipeline, HITL approval gates, eSIM dispatch, subscription enforcement, 87-page output registry</div>
+        </div>
+      </div>
 
-  <div class="callout">
-    <strong>Live production:</strong> <a href="https://go.ai-os.co.za">go.ai-os.co.za</a> — Vercel frontend + <a href="/health">API</a> + <a href="/live-map">live-map</a> + <a href="/aoe-dashboard">dashboard</a>
-  </div>
-</section>
+      <h3>Data Flow</h3>
+      <pre>Payment (PayFast ITN)
+  → /api/payfast/itn
+  → treasury.ingest(amount_zar)
+  → 5-bucket split (ops/growth/ubi/reserve/founder)
+  → BRDG mint on Linea via TreasuryVault.mintFor()
+  → reconciler cron validates on-chain parity
+  → /api/live/report reflects updated economy state</pre>
 
-<!-- ARCHITECTURE -->
-<section class="section" id="architecture">
-  <h2>System Architecture</h2>
+      <h3>Microservices</h3>
+      <table class="tbl">
+        <thead><tr><th>Service</th><th>Path</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>API</td><td><span class="inline-code">api/index.js</span></td><td>Main Node.js HTTP handler — all /api/* routes</td></tr>
+          <tr><td>SVG Engine</td><td><span class="inline-code">api/svg-skills.js</span></td><td>CommonJS renderer for 8 skills + interactive graph JSON</td></tr>
+          <tr><td>LLM Client</td><td><span class="inline-code">lib/llm-client.js</span></td><td>Provider fallback: Kilo → Anthropic → OpenRouter → OpenAI</td></tr>
+          <tr><td>Treasury</td><td><span class="inline-code">lib/treasury-client.js</span></td><td>On-chain BRDG mint + parity reconciliation</td></tr>
+          <tr><td>Supabase</td><td><span class="inline-code">lib/supabase.js</span></td><td>26-table schema — users, leads, twins, CRM, economy</td></tr>
+          <tr><td>Build</td><td><span class="inline-code">build-static.js</span></td><td>Vercel build step — static SVG generation, Xpublic copy</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-  <h3 id="tiers">5-Tier Stack</h3>
-  <div class="arch">
-    <div class="arch-layer t0">
-      <span class="arch-lbl">TIER 0</span>
-      <span class="arch-content">DNS / CDN — <strong style="color:var(--cyan)">Cloudflare</strong> → 26 domains → <code>102.208.231.53</code></span>
-    </div>
-    <div class="arch-arrow">↓</div>
-    <div class="arch-layer t1">
-      <span class="arch-lbl">TIER 1</span>
-      <span class="arch-content">Reverse Proxy — <strong style="color:var(--cyan)">Nginx</strong> (ports 80/443) + TLS termination + UFW firewall</span>
-    </div>
-    <div class="arch-arrow">↓</div>
-    <div class="arch-layer t2">
-      <span class="arch-lbl">TIER 2</span>
-      <span class="arch-content">Gateway — <strong style="color:var(--cyan)">gateway.js</strong> (port 8080) — service proxying, SSE streams, auth façade</span>
-    </div>
-    <div class="arch-arrow">↓</div>
-    <div class="arch-layer t3">
-      <span class="arch-lbl">TIER 3A</span>
-      <span class="arch-content">Brain — <strong style="color:var(--cyan)">brain.js</strong> (port 8000) — AI twin, swarm, treasury, WebSocket real-time</span>
-    </div>
-    <div class="arch-layer t3">
-      <span class="arch-lbl">TIER 3B</span>
-      <span class="arch-content">Serverless — <strong style="color:var(--cyan)">api/index.js</strong> (Vercel) — catch-all function, all API routes in one bundle</span>
-    </div>
-    <div class="arch-layer t3">
-      <span class="arch-lbl">TIER 3C</span>
-      <span class="arch-content">Skill Engine — <strong style="color:var(--cyan)">SVG Engine</strong> (port 7070) — skill discovery, visualization, LLM orchestration</span>
-    </div>
-    <div class="arch-arrow">↓</div>
-    <div class="arch-layer t4">
-      <span class="arch-lbl">TIER 4</span>
-      <span class="arch-content">Persistence — <strong style="color:var(--cyan)">Supabase</strong> (PostgreSQL) + Redis + Linea L2 (on-chain state)</span>
-    </div>
-  </div>
+    <section id="pages">
+      <h2>Frontend Pages</h2>
+      <table class="tbl">
+        <thead><tr><th>URL</th><th>File</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><a href="/">/</a></td><td>index.html</td><td>Digital Twin — main app, live metrics, UBI, tabs</td></tr>
+          <tr><td><a href="/executive-dashboard.html">/executive-dashboard.html</a></td><td>—</td><td>Exec dashboard — swarm heatmap, pipeline, agents, mission, marketplace</td></tr>
+          <tr><td><a href="/svg-engine.html">/svg-engine.html</a></td><td>—</td><td>Interactive SVG skills graph — click inspect, dblclick execute, human-readable mode</td></tr>
+          <tr><td><a href="/agents.html">/agents.html</a></td><td>—</td><td>Agents &amp; Digital Twins — replication, leaderboard</td></tr>
+          <tr><td><a href="/50-applications.html">/50-applications.html</a></td><td>—</td><td>50 Application showcase grid</td></tr>
+          <tr><td><a href="/gateway/">/gateway/</a></td><td>—</td><td>Sovereign Gateway — QR scan entry, SIWE wallet, Bridge · Supac · Taurus · Wiki</td></tr>
+          <tr><td><a href="/join.html">/join.html</a></td><td>—</td><td>Join as Agent — QR + decentralized platform entry</td></tr>
+          <tr><td><a href="/settings.html">/settings.html</a></td><td>—</td><td>Shared user settings across all domains</td></tr>
+          <tr><td><a href="/docs.html">/docs.html</a></td><td>—</td><td>This documentation page</td></tr>
+          <tr><td>/aoe-dashboard.html</td><td>—</td><td>AoE-style ops dashboard — skills vis, bi-status, live map, human-readable mode</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-  <h3 id="services">Microservice Inventory</h3>
-  <table>
-    <thead><tr><th>Service</th><th>File</th><th>Port</th><th>Purpose</th></tr></thead>
-    <tbody>
-      <tr><td><code>brain.js</code></td><td>brain.js</td><td>8000</td><td>AI twin, agent swarm, treasury, WebSocket</td></tr>
-      <tr><td><code>gateway.js</code></td><td>gateway.js</td><td>8080</td><td>Unified entry, service proxy, SSE</td></tr>
-      <tr><td><code>api/index.js</code></td><td>api/index.js</td><td>Vercel</td><td>Serverless catch-all — 200+ routes</td></tr>
-      <tr><td><code>svg-engine</code></td><td>svg-engine/api/server.js</td><td>7070</td><td>SVG skill workflows, LLM teaching</td></tr>
-      <tr><td><code>auth-service</code></td><td>auth.js</td><td>5001</td><td>JWT, SIWE, OAuth</td></tr>
-      <tr><td><code>unified-server</code></td><td>server.js</td><td>3000</td><td>CRM, LeadGen, OSINT, Notion sync</td></tr>
-    </tbody>
-  </table>
-</section>
+    <!-- ── API REFERENCE ──────────────────────────────────────────────── -->
+    <section id="api-health">
+      <h2>API — System</h2>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/health</span><span class="desc">Health check — returns status, uptime, version</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/capabilities</span><span class="desc">Capability registry — all loaded features and their status</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/activity</span><span class="desc">Public activity feed — recent system events (no auth). Query: <span class="inline-code">?limit=30</span></span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/bi/status</span><span class="desc">Business intelligence snapshot — economy health, revenue flow, agent counts, uptime</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/logs</span><span class="desc">Recent application logs — public, no auth. Query: <span class="inline-code">?limit=50&level=info</span></span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/live/report</span><span class="desc">Live dashboard report — heatmap, pipeline, swarm, economy rollup</span></div>
+    </section>
 
-<!-- HOW IT WORKS -->
-<section class="section" id="how-it-works">
-  <h2>How It Works</h2>
+    <section id="api-twins">
+      <h2>API — Twins & Agents</h2>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/twins</span><span class="desc">List all digital twins with status and metrics</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/twins/leaderboard</span><span class="desc">Leaderboard sorted by revenue contribution</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/replication/status</span><span class="desc">Replication system status — active jobs, sync lag</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/replication/nodes</span><span class="desc">All replication nodes with health scores</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/live/report</span><span class="desc">Live agent swarm report with heatmap data</span></div>
+    </section>
 
-  <h3 id="data-flow">Request Data Flow</h3>
-  <div class="flow">
-    <div class="flow-step">Browser</div><div class="flow-arrow">→</div>
-    <div class="flow-step">Cloudflare CDN</div><div class="flow-arrow">→</div>
-    <div class="flow-step">Vercel Edge</div><div class="flow-arrow">→</div>
-    <div class="flow-step">api/index.js<br><span style="font-size:8px;color:var(--dim)">(catch-all fn)</span></div><div class="flow-arrow">→</div>
-    <div class="flow-step">Supabase DB</div>
-  </div>
-  <div class="flow" style="margin-top:4px">
-    <div class="flow-step">Real-time UI</div><div class="flow-arrow">→</div>
-    <div class="flow-step">brain.js :8000</div><div class="flow-arrow">→</div>
-    <div class="flow-step">WebSocket / SSE</div><div class="flow-arrow">→</div>
-    <div class="flow-step">Agent Swarm</div><div class="flow-arrow">→</div>
-    <div class="flow-step">Linea Chain</div>
-  </div>
+    <section id="api-svg">
+      <h2>API — SVG Skills Engine</h2>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/svg/skills</span><span class="desc">List all 8 skills with id, name, tags, version</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/svg/graph</span><span class="desc">SVG string of the full circular skill graph</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/svg/graph.json</span><span class="desc">Interactive graph data — nodes (with position, inputs/outputs, color) + edges (shared tags)</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/svg/telemetry</span><span class="desc">SVG telemetry animation — scrolling metric bars</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/svg/:id</span><span class="desc">Render a single skill as SVG. e.g. <span class="inline-code">/api/svg/bridge.economy</span></span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/svg/teach/:id</span><span class="desc">Full teaching SVG — skill diagram + AI-generated explanation overlay</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/execute</span><span class="desc">Execute a skill. Body: <span class="inline-code">{"skill":"bridge.economy"}</span>. Returns action, result, latency_ms.</span></div>
 
-  <h3 id="agent-layers">Agent Layers (L1 / L2 / L3)</h3>
-  <div class="card">
-    <div class="card-title">NETWORK TOPOLOGY</div>
-    <div class="srow"><span class="slbl" style="color:var(--cyan)">L1 — Orchestrators</span><span class="sval">Alpha, Beta, Epsilon — task assignment, consensus, routing</span></div>
-    <div class="srow"><span class="slbl" style="color:var(--purple)">L2 — Executors</span><span class="sval">Gamma, Delta, Eta — task execution, skill invocation, output</span></div>
-    <div class="srow"><span class="slbl" style="color:var(--gold)">L3 — Specialists</span><span class="sval">Zeta, Theta — domain expertise, chain ops, LLM inference</span></div>
-    <div class="srow"><span class="slbl">Consensus</span><span class="sval ok">L1 majority vote → task dispatch → L2/L3 execution</span></div>
-    <div class="srow"><span class="slbl">Circuit Breaker</span><span class="sval">Auto-halts trading if error rate > 15% — reset via <code>/econ/reset-breaker</code></span></div>
-  </div>
+      <h3>Execute Response Schema</h3>
+      <pre>{
+  "ok": true,
+  "skill": "bridge.economy",
+  "action": "economy_cycle_triggered",
+  "latency_ms": 14,
+  "result": {
+    "cycle": 3842,
+    "brdg_minted": 0.0312,
+    "bucket": "ops",
+    "agents_updated": 8
+  },
+  "ts": 1712345678901
+}</pre>
 
-  <h3>Treasury Pipeline</h3>
-  <div class="flow">
-    <div class="flow-step">PayFast ITN</div><div class="flow-arrow">→</div>
-    <div class="flow-step">/treasury/ingest</div><div class="flow-arrow">→</div>
-    <div class="flow-step">4-Bucket Split<br><span style="font-size:8px;color:var(--dim)">ops/growth/reserve/founder</span></div><div class="flow-arrow">→</div>
-    <div class="flow-step">BRDG Mint<br><span style="font-size:8px;color:var(--dim)">TreasuryVault.sol</span></div><div class="flow-arrow">→</div>
-    <div class="flow-step">Linea Mainnet</div>
-  </div>
-</section>
+      <h3>Available Skill IDs</h3>
+      <div class="skill-chips">
+        <div class="chip"><span class="dot" style="background:var(--cyan)"></span>bridge.economy</div>
+        <div class="chip"><span class="dot" style="background:var(--purple)"></span>bridge.swarm</div>
+        <div class="chip"><span class="dot" style="background:var(--amber)"></span>bridge.treasury</div>
+        <div class="chip"><span class="dot" style="background:var(--blue)"></span>bridge.decision</div>
+        <div class="chip"><span class="dot" style="background:var(--red)"></span>bridge.youtube</div>
+        <div class="chip"><span class="dot" style="background:var(--green)"></span>bridge.speech</div>
+        <div class="chip"><span class="dot" style="background:var(--pink)"></span>bridge.twins</div>
+        <div class="chip"><span class="dot" style="background:var(--muted)"></span>flow.basic</div>
+      </div>
+    </section>
 
-<!-- API REFERENCE -->
-<section class="section" id="api-core">
-  <h2>API Reference</h2>
+    <section id="api-economy">
+      <h2>API — Economy & Treasury</h2>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/treasury/balance</span><span class="desc">Current BRDG balance + bucket breakdown</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/treasury/ledger</span><span class="desc">Full transaction history. Query: <span class="inline-code">?limit=50&page=1</span></span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/payfast/itn</span><span class="desc">PayFast Instant Transaction Notification handler — validates signature, triggers BRDG mint</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/economy/buckets</span><span class="desc">Revenue bucket state — ops, growth, ubi, reserve, founder balances</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/economy/reconcile</span><span class="desc">Trigger manual reconciliation between treasury DB and on-chain state</span></div>
+    </section>
 
-  <div class="callout info"><strong>Base URL:</strong> <code>https://go.ai-os.co.za</code> — all routes served by the Vercel serverless function.</div>
+    <section id="api-crm">
+      <h2>API — CRM & Pipeline</h2>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/leads</span><span class="desc">All CRM leads with state, score, owner. Auth required (X-User-Id header).</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/leads</span><span class="desc">Create lead. Body: <span class="inline-code">{email, name, source}</span></span></div>
+      <div class="endpoint"><span class="badge badge-patch">PATCH</span><span class="path">/api/leads/:id/advance</span><span class="desc">Advance lead through 18-state HITL pipeline</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/hitl/queue</span><span class="desc">Pending human-in-the-loop approval tasks</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/hitl/:id/approve</span><span class="desc">Approve HITL gate — advances lead, triggers downstream action</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/hitl/:id/reject</span><span class="desc">Reject HITL gate — returns lead to previous state</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/founder-todo</span><span class="desc">Mission board objectives</span></div>
+      <div class="endpoint"><span class="badge badge-patch">PATCH</span><span class="path">/api/founder-todo/:id/complete</span><span class="desc">Mark mission objective complete</span></div>
+    </section>
 
-  <div class="ep-section">
-    <h4>CORE</h4>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/health</span><span class="ep-desc">System health + version</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/live-map</span><span class="ep-desc">Agent network topology + treasury snapshot</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/telemetry</span><span class="ep-desc">SVG engine telemetry — skills loaded, p50/p95 latency</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/orchestrator/status</span><span class="ep-desc">Orchestrator state + active agent count</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/events/stream</span><span class="ep-desc">SSE event stream (real-time activity)</span></div>
-  </div>
+    <section id="api-stream">
+      <h2>API — Streaming</h2>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/stream/neuro</span><span class="desc">SSE — real-time NeuroLink campaign stream. Event types: ping, message, campaign_start, campaign_end</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/stream/activity</span><span class="desc">SSE — public activity feed stream (no auth)</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/neuro/campaign</span><span class="desc">Launch NeuroLink campaign. Body: <span class="inline-code">{type, targets, message}</span></span></div>
+    </section>
 
-  <div class="ep-section" id="api-treasury">
-    <h4>TREASURY</h4>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/treasury/summary</span><span class="ep-desc">Total BRDG, bucket balances, tx count</span></div>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/treasury/ingest</span><span class="ep-desc">Ingest revenue event → split to buckets → mint BRDG</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/treasury/status</span><span class="ep-desc">Extended treasury status + chain parity</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/treasury/ledger</span><span class="ep-desc">Full transaction ledger</span></div>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/api/treasury/reconcile</span><span class="ep-desc">Run treasury ↔ chain reconciliation</span></div>
-  </div>
+    <section id="api-market">
+      <h2>API — Marketplace & Users</h2>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/marketplace/tasks</span><span class="desc">Available agent tasks in marketplace</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/user/settings</span><span class="desc">User settings. Header: <span class="inline-code">X-User-Id</span> (optional, falls back to anonymous)</span></div>
+      <div class="endpoint"><span class="badge badge-put">PUT</span><span class="path">/api/user/settings</span><span class="desc">Persist user settings across domains</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/projects</span><span class="desc">Project engine — user's active projects</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/projects/wizard</span><span class="desc">Seed new project from wizard. Body: <span class="inline-code">{type, name, config}</span></span></div>
+    </section>
 
-  <div class="ep-section" id="api-swarm">
-    <h4>AGENT SWARM</h4>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/swarm/health</span><span class="ep-desc">Health score, metrics, agent count</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/swarm/agents</span><span class="ep-desc">Agent registry with status</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/swarm/matrix</span><span class="ep-desc">Full swarm utilization matrix</span></div>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/api/agents/dispatch</span><span class="ep-desc">Dispatch task to agent queue</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/agents/queue</span><span class="ep-desc">View current agent task queue</span></div>
-  </div>
+    <!-- ── ECONOMY ─────────────────────────────────────────────────────── -->
+    <section id="brdg">
+      <h2>BRDG Token</h2>
+      <p>BRDG is the native utility token of Bridge AI OS, deployed on <strong style="color:var(--text)">Linea mainnet</strong>.</p>
+      <div class="card">
+        <div class="card-title">Contract Info</div>
+        <table class="tbl">
+          <thead><tr><th>Property</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Network</td><td>Linea Mainnet (chain ID 59144)</td></tr>
+            <tr><td>Standard</td><td>ERC-20 with TreasuryVault minting authority</td></tr>
+            <tr><td>Mint Authority</td><td>TreasuryVault contract (PayFast ITN triggers mint)</td></tr>
+            <tr><td>Max Supply</td><td>100,000,000 BRDG</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Mint Flow</h3>
+      <pre>1. User pays ZAR via PayFast checkout
+2. PayFast sends ITN (Instant Transaction Notification) to /api/payfast/itn
+3. API validates payment signature
+4. treasury.ingest(amount_zar) → splits to 5 buckets
+5. TreasuryVault.mintFor(userAddress, brdgAmount) on Linea
+6. DB ledger updated, reconciler cron verifies parity</pre>
+    </section>
 
-  <div class="ep-section" id="api-skills">
-    <h4>SKILLS ENGINE</h4>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/svg/skills</span><span class="ep-desc">Full skill registry (JSON)</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/svg/graph</span><span class="ep-desc">Circular skill dependency graph (SVG)</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/svg/telemetry</span><span class="ep-desc">Engine telemetry — p50/p95 latency, execution count</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/svg/teach/:id</span><span class="ep-desc">Get SVG visualization for a skill ID</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/teach/:id</span><span class="ep-desc">Alias — same as /api/svg/teach/:id</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/output/</span><span class="ep-desc">Pre-built SVG output directory listing</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/skills/definitions</span><span class="ep-desc">All registered skill definitions</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/skills/youtube-search?q=&amp;limit=</span><span class="ep-desc">AI-orchestrated YouTube skill discovery</span></div>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/skills/learn-from-youtube</span><span class="ep-desc">LLM generates skill definition from video ID</span></div>
-  </div>
+    <section id="buckets">
+      <h2>Revenue Buckets</h2>
+      <p>Every ZAR payment is split across 5 buckets at the time of ingestion:</p>
+      <table class="tbl">
+        <thead><tr><th>Bucket</th><th>Share</th><th>BRDG Multiplier</th><th>Purpose</th></tr></thead>
+        <tbody class="bucket-row">
+          <tr><td>ops</td><td>40%</td><td>1.0×</td><td>Operational costs — infrastructure, AI API calls, compute</td></tr>
+          <tr><td>growth</td><td>25%</td><td>1.1×</td><td>Marketing, partnerships, new agent acquisition</td></tr>
+          <tr><td>ubi</td><td>15%</td><td>1.2×</td><td>Universal Basic Income — distributed to registered agents</td></tr>
+          <tr><td>reserve</td><td>12%</td><td>1.0×</td><td>Protocol reserve — emergency fund, liquidity backstop</td></tr>
+          <tr><td>founder</td><td>8%</td><td>1.5×</td><td>Founder compensation — governance rights attached</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-  <div class="ep-section" id="api-economy">
-    <h4>ECONOMY</h4>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/econ/circuit-breaker</span><span class="ep-desc">Circuit breaker state (tripped/normal/threshold)</span></div>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/econ/reset-breaker</span><span class="ep-desc">Reset circuit breaker — requires orchestrator auth</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/ubi/status</span><span class="ep-desc">UBI pool balance, eligibility, claim amounts</span></div>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/ubi/claim</span><span class="ep-desc">Claim UBI payout to wallet address</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/economics</span><span class="ep-desc">Full economic loop stats</span></div>
-    <div class="ep-row"><span class="ep-method badge get">GET</span><span class="ep-path">/api/brdg/token</span><span class="ep-desc">BRDG token info — supply, holders, price</span></div>
-  </div>
+    <section id="ubi">
+      <h2>UBI System</h2>
+      <p>Universal Basic Income is distributed from the <strong style="color:var(--text)">ubi</strong> bucket to all registered agents on a per-epoch basis.</p>
+      <ul>
+        <li>Epoch: 24h (triggered by cron at midnight UTC)</li>
+        <li>Distribution: proportional to agent health score × activity weight</li>
+        <li>Minimum distribution: 0.001 BRDG / agent / epoch</li>
+        <li>Pool visible at <span class="inline-code">/api/bi/status</span> → <span class="inline-code">ubi_pool</span></li>
+        <li>Agents must have <span class="inline-code">status = active</span> and at least 1 execution in the epoch</li>
+      </ul>
+    </section>
 
-  <div class="ep-section" id="api-auth">
-    <h4>AUTH</h4>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/auth/register</span><span class="ep-desc">Register new user (email + password)</span></div>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/auth/login</span><span class="ep-desc">Login → JWT token</span></div>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/auth/verify</span><span class="ep-desc">Verify JWT token</span></div>
-    <div class="ep-row"><span class="ep-method badge post">POST</span><span class="ep-path">/referral/claim</span><span class="ep-desc">Claim referral reward</span></div>
-  </div>
-</section>
+    <!-- ── SKILLS ENGINE ───────────────────────────────────────────────── -->
+    <section id="skills-overview">
+      <h2>Skills Engine — Overview</h2>
+      <p>The SVG Skills Engine renders every agent capability as an interactive SVG diagram. Skills are executable units that can be inspected, visualized, and run from the dashboard or via API.</p>
+      <ul>
+        <li><strong style="color:var(--text)">Click</strong> a skill node → inspect detail panel (inputs, outputs, description)</li>
+        <li><strong style="color:var(--text)">Double-click</strong> → execute skill via <span class="inline-code">POST /api/execute</span></li>
+        <li><strong style="color:var(--text)">Human-readable mode</strong> → plain-English execution output alongside raw JSON</li>
+        <li><strong style="color:var(--text)">Exec badges</strong> → pulse animation on nodes when execution count increases</li>
+        <li><strong style="color:var(--text)">Pan/zoom</strong> → drag canvas, mouse wheel zoom</li>
+      </ul>
+      <p>The engine is accessible at <a href="/svg-engine.html">/svg-engine.html</a> and embedded in the AoE dashboard's VIS tab.</p>
+    </section>
 
-<!-- ECONOMY -->
-<section class="section" id="economy">
-  <h2>BRDG Economy</h2>
+    <section id="skills-list">
+      <h2>Skills — Full List</h2>
+      <table class="tbl">
+        <thead><tr><th>ID</th><th>Name</th><th>Description</th><th>Tags</th></tr></thead>
+        <tbody>
+          <tr><td>bridge.economy</td><td>Economy Cycle</td><td>Economic flow — bucket splits, BRDG minting, revenue ingestion</td><td>economy, brdg, treasury</td></tr>
+          <tr><td>bridge.swarm</td><td>Swarm Control</td><td>Agent swarm topology, health heatmap, task distribution</td><td>swarm, agents, health</td></tr>
+          <tr><td>bridge.treasury</td><td>Treasury</td><td>Treasury ledger snapshot — balances, tx history, parity check</td><td>treasury, brdg, economy</td></tr>
+          <tr><td>bridge.decision</td><td>Decision Engine</td><td>AI decision tree with consensus-weighted node voting</td><td>ai, decision, consensus</td></tr>
+          <tr><td>bridge.youtube</td><td>YouTube Skills</td><td>YouTube skill discovery — AI-curated video to skill conversion</td><td>youtube, ai, discovery</td></tr>
+          <tr><td>bridge.speech</td><td>Speech Synthesis</td><td>TTS pipeline — voice profile selection, synthesis queue</td><td>speech, tts, audio</td></tr>
+          <tr><td>bridge.twins</td><td>Digital Twins</td><td>Twin replication — clone agent, parallel inference, sync</td><td>twins, replication, agents</td></tr>
+          <tr><td>flow.basic</td><td>Basic Flow</td><td>Generic process flow — input → process → output template</td><td>flow, basic, template</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-  <h3 id="token">BRDG Token — Linea Mainnet</h3>
-  <div class="card">
-    <div class="card-title">CONTRACT ADDRESSES</div>
-    <div class="srow"><span class="slbl">Network</span><span class="sval">Linea Mainnet (Chain ID 59144)</span></div>
-    <div class="srow"><span class="slbl">BRDG Token (ERC-20)</span><span class="sval"><code id="brdg-addr">Loading…</code></span></div>
-    <div class="srow"><span class="slbl">TreasuryVault</span><span class="sval"><code id="vault-addr">Loading…</code></span></div>
-    <div class="srow"><span class="slbl">Explorer</span><span class="sval"><a href="https://lineascan.build" target="_blank" rel="noopener">lineascan.build ↗</a></span></div>
-  </div>
+    <section id="skills-api">
+      <h2>Skills — API Usage</h2>
+      <h3>List Skills</h3>
+      <pre>GET /api/svg/skills
+→ { ok: true, skills: [{id, name, tags, version, description}] }</pre>
 
-  <h3 id="treasury-buckets">Treasury Buckets — Config E</h3>
-  <p>Every inbound revenue event is split automatically into 4 buckets before BRDG is minted:</p>
-  <table>
-    <thead><tr><th>Bucket</th><th>Share</th><th>Purpose</th></tr></thead>
-    <tbody>
-      <tr><td><code>ops</code></td><td>45%</td><td>Operations — infrastructure, payroll, hosting</td></tr>
-      <tr><td><code>growth</code></td><td>15%</td><td>Marketing, affiliate payouts, lead gen</td></tr>
-      <tr><td><code>reserve</code></td><td>15%</td><td>Emergency fund, liquidity reserve</td></tr>
-      <tr><td><code>founder</code></td><td>25%</td><td>Founder distribution (TVM-gated)</td></tr>
-    </tbody>
-  </table>
+      <h3>Execute a Skill</h3>
+      <pre>POST /api/execute
+Content-Type: application/json
+{ "skill": "bridge.swarm" }
 
-  <h3 id="ubi">Universal Basic Income (UBI)</h3>
-  <p>1% of every treasury event flows to the UBI pool. Eligible wallets (verified citizens / agents) can claim a proportional share via <code>POST /ubi/claim</code>. Claims are logged on Linea via the TreasuryVault contract.</p>
-</section>
+→ {
+  "ok": true,
+  "skill": "bridge.swarm",
+  "action": "swarm_healthcheck_run",
+  "latency_ms": 11,
+  "result": { "agents": 8, "healthy": 7, "score": 0.94, "tasks_dispatched": 3 },
+  "ts": 1712345678901
+}</pre>
 
-<!-- SKILLS ENGINE -->
-<section class="section" id="skills">
-  <h2>SVG Skill Engine</h2>
-  <p>The Bridge SVG Skill Engine (<code>E:/BridgeAI/svg-engine/</code> + <code>api/svg-skills.js</code>) follows the Perception → Discovery → Adoption → Execution → Teaching → Expression lifecycle.</p>
+      <h3>Render Skill SVG</h3>
+      <pre>GET /api/svg/bridge.economy
+→ Content-Type: image/svg+xml
+   (standalone SVG diagram)</pre>
 
-  <div class="callout">
-    <strong>Skill contract:</strong> <code>{ id, name, description, tags[], version, run(input)→data, visualize(input)→SVGString }</code>
-  </div>
+      <h3>Interactive Graph Data</h3>
+      <pre>GET /api/svg/graph.json
+→ {
+  ok: true,
+  nodes: [{id, name, description, tags, inputs, outputs, color, position:{x,y}}],
+  edges: [{from, to, shared:[...tags]}],
+  canvas: {width:900, height:560}
+}</pre>
+    </section>
 
-  <h3>Built-in Skills</h3>
-  <table>
-    <thead><tr><th>Skill ID</th><th>Description</th><th>Tags</th></tr></thead>
-    <tbody>
-      <tr><td><code>bridge.economy</code></td><td>Economic flow visualizer — buckets, BRDG flow</td><td><span class="tag">economy</span><span class="tag">treasury</span></td></tr>
-      <tr><td><code>bridge.swarm</code></td><td>Agent swarm topology + health heatmap</td><td><span class="tag">swarm</span><span class="tag">agents</span></td></tr>
-      <tr><td><code>bridge.treasury</code></td><td>Treasury ledger snapshot + bucket bars</td><td><span class="tag">treasury</span><span class="tag">brdg</span></td></tr>
-      <tr><td><code>bridge.decision</code></td><td>Decision tree flow with consensus nodes</td><td><span class="tag">ai</span><span class="tag">decision</span></td></tr>
-      <tr><td><code>bridge.youtube</code></td><td>YouTube skill discovery pipeline</td><td><span class="tag">learn</span><span class="tag">video</span></td></tr>
-      <tr><td><code>bridge.speech</code></td><td>Speech/TTS synthesis pipeline</td><td><span class="tag">speech</span><span class="tag">tts</span></td></tr>
-      <tr><td><code>bridge.twins</code></td><td>Digital twin replication topology</td><td><span class="tag">twin</span><span class="tag">replication</span></td></tr>
-      <tr><td><code>flow.basic</code></td><td>Generic process flow diagram</td><td><span class="tag">flow</span><span class="tag">process</span></td></tr>
-    </tbody>
-  </table>
+    <!-- ── DEPLOYMENT ──────────────────────────────────────────────────── -->
+    <section id="env">
+      <h2>Environment Variables</h2>
+      <table class="tbl">
+        <thead><tr><th>Variable</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>SUPABASE_URL</td><td><span class="env-required">required</span></td><td>Supabase project URL</td></tr>
+          <tr><td>SUPABASE_SERVICE_KEY</td><td><span class="env-required">required</span></td><td>Supabase service role key (bypasses RLS)</td></tr>
+          <tr><td>TREASURY_PRIVATE_KEY</td><td><span class="env-required">required</span></td><td>Linea wallet private key for on-chain BRDG minting</td></tr>
+          <tr><td>PAYFAST_MERCHANT_ID</td><td><span class="env-required">required</span></td><td>PayFast merchant identifier</td></tr>
+          <tr><td>PAYFAST_MERCHANT_KEY</td><td><span class="env-required">required</span></td><td>PayFast merchant key for ITN signature validation</td></tr>
+          <tr><td>ANTHROPIC_API_KEY</td><td><span class="env-optional">optional</span></td><td>Claude API — LLM fallback tier 2</td></tr>
+          <tr><td>KILO_API_KEY</td><td><span class="env-optional">optional</span></td><td>Kilo Gateway — free LLM tier (preferred)</td></tr>
+          <tr><td>OPENROUTER_API_KEY</td><td><span class="env-optional">optional</span></td><td>OpenRouter — LLM fallback tier 3</td></tr>
+          <tr><td>OPENAI_API_KEY</td><td><span class="env-optional">optional</span></td><td>OpenAI — LLM fallback tier 4</td></tr>
+          <tr><td>YOUTUBE_API_KEY</td><td><span class="env-optional">optional</span></td><td>YouTube Data API v3 — skill discovery (falls back to LLM)</td></tr>
+          <tr><td>JWT_SECRET</td><td><span class="env-optional">optional</span></td><td>JWT signing secret for session tokens</td></tr>
+          <tr><td>OAUTH_GOOGLE_CLIENT_ID</td><td><span class="env-optional">optional</span></td><td>Google OAuth client ID for social login</td></tr>
+          <tr><td>OAUTH_GOOGLE_CLIENT_SECRET</td><td><span class="env-optional">optional</span></td><td>Google OAuth client secret</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-  <h3>LLM Integration — YouTube Skill Learning</h3>
-  <p>The skills engine uses a tiered LLM chain for AI-powered skill discovery:</p>
-  <div class="flow" style="flex-direction:column;align-items:flex-start">
-    <div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div class="flow-step" style="min-width:150px">1. Kilo Gateway (free)</div><div style="color:var(--dim);font-size:9px">kilo-auto/free — zero cost baseline</div></div>
-    <div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div class="flow-step" style="min-width:150px">2. Anthropic Claude</div><div style="color:var(--dim);font-size:9px">claude-sonnet-4-6 — ANTHROPIC_API_KEY required</div></div>
-    <div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div class="flow-step" style="min-width:150px">3. OpenRouter</div><div style="color:var(--dim);font-size:9px">OPENROUTER_API_KEY — multi-model fallback</div></div>
-    <div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div class="flow-step" style="min-width:150px">4. Stub fallback</div><div style="color:var(--dim);font-size:9px">Always returns structured data even without API keys</div></div>
-  </div>
-</section>
+    <section id="ports">
+      <h2>Local Ports</h2>
+      <table class="tbl">
+        <thead><tr><th>Port</th><th>Service</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>3020</td><td>Vite dev server</td><td>Main frontend in dev mode</td></tr>
+          <tr><td>3022</td><td>Console sync</td><td>Agent console bridge</td></tr>
+          <tr><td>3032</td><td>Next.js App</td><td><a href="http://localhost:3032/" target="_blank" rel="noopener">open ↗</a></td></tr>
+          <tr><td>8000</td><td>Backend API</td><td>Express/Node HTTP — all /api/* routes</td></tr>
+          <tr><td>4201</td><td>Boot Agent / System Map</td><td><a href="http://localhost:4201/system-map.html" target="_blank" rel="noopener">System Map ↗</a></td></tr>
+          <tr><td>4202</td><td>Taurus Showcase</td><td>Taurus agent UI</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-<!-- SWARM -->
-<section class="section" id="swarm">
-  <h2>Agent Swarm</h2>
-  <p>The autonomous agent network runs 8 named agents across 3 layers. The live topology is visible at <a href="/aoe-dashboard">aoe-dashboard</a> → LIVE MAP.</p>
-  <table>
-    <thead><tr><th>Agent</th><th>Layer</th><th>Role</th></tr></thead>
-    <tbody>
-      <tr><td><code>agent-alpha</code></td><td style="color:var(--cyan)">L1</td><td>Primary orchestrator — task assignment and routing</td></tr>
-      <tr><td><code>agent-beta</code></td><td style="color:var(--cyan)">L1</td><td>Secondary orchestrator — consensus partner</td></tr>
-      <tr><td><code>agent-epsilon</code></td><td style="color:var(--cyan)">L1</td><td>Tertiary orchestrator — failover</td></tr>
-      <tr><td><code>agent-gamma</code></td><td style="color:var(--purple)">L2</td><td>Executor — skill invocation, output assembly</td></tr>
-      <tr><td><code>agent-delta</code></td><td style="color:var(--purple)">L2</td><td>Executor — marketplace task processing</td></tr>
-      <tr><td><code>agent-eta</code></td><td style="color:var(--purple)">L2</td><td>Executor — idle (auto-activates under load)</td></tr>
-      <tr><td><code>agent-zeta</code></td><td style="color:var(--gold)">L3</td><td>Specialist — LLM inference, chain ops</td></tr>
-      <tr><td><code>agent-theta</code></td><td style="color:var(--gold)">L3</td><td>Specialist — DeFi, Linea tx signing</td></tr>
-    </tbody>
-  </table>
-</section>
+    <section id="deploy">
+      <h2>Deployment</h2>
+      <h3>Vercel (Production)</h3>
+      <p>Deployed at <a href="https://go.ai-os.co.za" target="_blank" rel="noopener">go.ai-os.co.za</a> via Vercel.</p>
+      <pre># Build command (vercel.json)
+"buildCommand": "node build-static.js"
 
-<!-- VERTICALS -->
-<section class="section" id="verticals">
-  <h2>Platform Verticals</h2>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
-    <div class="card"><div class="card-title">EHSA</div><strong style="color:var(--cyan)">Empeleni Health Services Africa</strong><br><p style="font-size:10px;margin:4px 0 0">AI-powered healthcare — patient management, diagnosis assist, medical records</p><a href="/ehsa" style="font-size:9px">ehsa.bridge-ai-os.com ↗</a></div>
-    <div class="card"><div class="card-title">BAN</div><strong style="color:var(--cyan)">Bridge Autonomous Network</strong><br><p style="font-size:10px;margin:4px 0 0">Task mesh — autonomous agent task market, skill dispatch, BAN Ultra SVG</p><a href="/ban" style="font-size:9px">/ban ↗</a></div>
-    <div class="card"><div class="card-title">UBI</div><strong style="color:var(--cyan)">Universal Basic Income</strong><br><p style="font-size:10px;margin:4px 0 0">Automated UBI distribution from treasury — 1% of revenue to citizen pool</p><a href="/ubi" style="font-size:9px">/ubi/status ↗</a></div>
-    <div class="card"><div class="card-title">AURORA</div><strong style="color:var(--cyan)">Energy Vertical</strong><br><p style="font-size:10px;margin:4px 0 0">Smart energy management, grid monitoring, carbon credits</p><a href="/aurora" style="font-size:9px">/aurora ↗</a></div>
-    <div class="card"><div class="card-title">SUPAC</div><strong style="color:var(--cyan)">Sovereign Protocol</strong><br><p style="font-size:10px;margin:4px 0 0">Decentralized identity, SIWE auth, wallet-native platform access</p><a href="/supac" style="font-size:9px">supaco.ai ↗</a></div>
-    <div class="card"><div class="card-title">AID</div><strong style="color:var(--cyan)">Humanitarian Aid</strong><br><p style="font-size:10px;margin:4px 0 0">Transparent aid distribution, verified on Linea chain</p><a href="/aid" style="font-size:9px">/aid ↗</a></div>
-  </div>
-</section>
+# Output directory
+"outputDirectory": "public"
 
-<!-- WHITE PAPERS -->
-<section class="section" id="whitepapers">
-  <h2>White Papers &amp; Documents</h2>
-  <div class="wp-grid">
-    <div class="wp-card"><h4>System Specification</h4><p>Complete 5-tier architecture, 150+ endpoints, 26 domains, database schema, pipeline flows</p><div style="margin-top:6px;font-size:9px;color:var(--dim)">BRIDGE_SYSTEM_SPEC.md</div></div>
-    <div class="wp-card"><h4>Final Form Blueprint</h4><p>Phases 15–23: proof of reserves, Merkle trees, trustless hardening, global scale design</p><div style="margin-top:6px;font-size:9px;color:var(--dim)">BRIDGE_FINAL_FORM.md</div></div>
-    <div class="wp-card"><h4>Real System Blueprint</h4><p>Migration from simulation to sovereign financial system — kill list, real data wiring</p><div style="margin-top:6px;font-size:9px;color:var(--dim)">BRIDGE_REAL_SYSTEM_BLUEPRINT.md</div></div>
-    <div class="wp-card"><h4>Cloud Architecture</h4><p>Supabase + Vercel + Cloudflare setup, lead generation system, multi-tenant deployment</p><div style="margin-top:6px;font-size:9px;color:var(--dim)">CLOUD_ARCHITECTURE.md</div></div>
-    <div class="wp-card"><h4>Deployment Checklist</h4><p>Complete VPS + Vercel deployment sequence, PM2 config, SSL, DNS, env vars</p><div style="margin-top:6px;font-size:9px;color:var(--dim)">DEPLOYMENT_CHECKLIST.md</div></div>
-    <div class="wp-card"><h4>Audit Report 2026-04</h4><p>Full system audit — 47/100 baseline score, 5 critical gaps, reconciliation proof</p><div style="margin-top:6px;font-size:9px;color:var(--dim)">AUDIT_REPORT.md</div></div>
-  </div>
-  <div id="living-map" class="callout" style="margin-top:16px">
-    <strong>Living System Bible:</strong> The <a href="/Xpublic/assets/documents/living-system-bible.html" target="_blank">living-system-bible.html</a> is the continuously updated canonical reference for Bridge AI OS — auto-generated from codebase state. Also see <a href="/Xpublic/assets/documents/bridge-living-map.html" target="_blank">bridge-living-map.html</a>.
-  </div>
-</section>
+# API function
+api/index.js → Vercel Serverless Function</pre>
 
-<!-- DEPLOYMENT -->
-<section class="section" id="deployment">
-  <h2>Deployment</h2>
+      <h3>Build Steps</h3>
+      <pre>node build-static.js
+  1. Copy root-level .html/.css/.js/.svg → public/
+  2. Copy Xpublic/*.html → public/ (skip docs.html, svg-engine.html)
+  3. Inject SEO meta tags into all HTML (inject-meta.js)
+  4. Generate public/ban-ultra.svg (animated bars)
+  5. Generate public/ban-live-console.svg (animated log lines)
+  6. Pre-render 8 skill SVGs → public/output/*.svg
+  7. Generate public/output/index.html (skill listing)</pre>
 
-  <h3>Vercel (Production)</h3>
-  <pre><code><span class="cm"># Install Vercel CLI</span>
-npm i -g vercel
+      <h3>Vercel Rewrites</h3>
+      <p>Key rewrites in <span class="inline-code">vercel.json</span>:</p>
+      <pre>/api/svg/:path* → /api (handled by api/index.js)
+/teach/:path*   → /api (svg/teach/* aliased)
+/docs           → /docs.html
+/gateway        → /gateway/
+/join           → /join.html</pre>
 
-<span class="cm"># Deploy</span>
-vercel --prod
+      <h3>Cron Jobs (12 active)</h3>
+      <ul>
+        <li>Economy reconciler — every 5 minutes</li>
+        <li>UBI distribution — daily at midnight UTC</li>
+        <li>NeuroLink campaign processor — every 2 minutes</li>
+        <li>HITL timeout checker — every 10 minutes</li>
+        <li>Swarm health score updater — every minute</li>
+        <li>Lead nurture sequence — every 15 minutes</li>
+        <li>Subscription enforcement — hourly</li>
+        <li>Treasury parity audit — every 30 minutes</li>
+      </ul>
+    </section>
 
-<span class="cm"># Build command (auto-runs):</span>
-node build-static.js   <span class="cm"># generates public/ + SVG assets</span></code></pre>
-
-  <h3>VPS (brain.js)</h3>
-  <pre><code><span class="cm"># SSH to VPS</span>
-ssh root@102.208.231.53
-
-<span class="cm"># Restart via PM2</span>
-pm2 restart brain
-pm2 restart bridge-gateway
-
-<span class="cm"># Health check</span>
-curl https://go.ai-os.co.za/health</code></pre>
-
-  <h3 id="env">Required Environment Variables</h3>
-  <table>
-    <thead><tr><th>Variable</th><th>Required</th><th>Purpose</th></tr></thead>
-    <tbody>
-      <tr><td><code>SUPABASE_URL</code></td><td style="color:var(--green)">Yes</td><td>Supabase project URL</td></tr>
-      <tr><td><code>SUPABASE_SERVICE_KEY</code></td><td style="color:var(--green)">Yes</td><td>Service role key (admin)</td></tr>
-      <tr><td><code>SUPABASE_ANON_KEY</code></td><td style="color:var(--green)">Yes</td><td>Public anon key</td></tr>
-      <tr><td><code>KILO_API_KEY</code></td><td style="color:var(--gold)">Recommended</td><td>Free LLM tier (Kilo Gateway)</td></tr>
-      <tr><td><code>ANTHROPIC_API_KEY</code></td><td style="color:var(--dim)">Optional</td><td>Claude Sonnet 4.6 direct access</td></tr>
-      <tr><td><code>YOUTUBE_API_KEY</code></td><td style="color:var(--dim)">Optional</td><td>Real YouTube search (falls back to AI)</td></tr>
-      <tr><td><code>PAYFAST_MERCHANT_ID</code></td><td style="color:var(--gold)">Recommended</td><td>PayFast payment gateway</td></tr>
-      <tr><td><code>AUTH_SECRET</code></td><td style="color:var(--green)">Yes</td><td>JWT signing key</td></tr>
-      <tr><td><code>TVM_SECRET</code></td><td style="color:var(--dim)">Optional</td><td>TVM matrix signing key</td></tr>
-    </tbody>
-  </table>
-</section>
-
-</main>
-</div><!-- /layout -->
+  </main>
+</div>
 
 <script>
-// Status pills
-(async () => {
-  try {
-    const r = await fetch('/health', { signal: AbortSignal.timeout(4000) });
-    const d = await r.json();
-    const p = document.getElementById('p-api');
-    p.textContent = 'API ' + (d.status || 'OK').toUpperCase();
-    p.className = 'tpill ok';
-  } catch (e) {
-    document.getElementById('p-api').textContent = 'API OFFLINE';
-  }
-  try {
-    const b = await fetch('/api/brdg/token', { signal: AbortSignal.timeout(4000) });
-    const bd = await b.json();
-    document.getElementById('p-chain').textContent = 'LINEA ✓';
-    document.getElementById('p-chain').className = 'tpill ok';
-    if (bd.contract_address) document.getElementById('brdg-addr').textContent = bd.contract_address;
-    if (bd.vault_address) document.getElementById('vault-addr').textContent = bd.vault_address;
-  } catch (e) {
-    document.getElementById('p-chain').textContent = 'LINEA';
-  }
-})();
+(function() {
+  var base = (window.__API_BASE || '').replace(/\/$/, '') || window.location.origin;
+  var sl = document.getElementById('swagger-link');
+  if (sl) sl.href = base + '/docs';
 
-// Sidebar active link on scroll
-const sections = document.querySelectorAll('.section');
-const links = document.querySelectorAll('.slink');
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      links.forEach(l => l.classList.remove('active'));
-      const match = document.querySelector('.slink[href="#' + e.target.id + '"]');
-      if (match) match.classList.add('active');
-    }
-  });
-}, { threshold: 0.2 });
-sections.forEach(s => obs.observe(s));
+  // Active sidebar link on scroll
+  var anchors = Array.from(document.querySelectorAll('section[id]'));
+  var links = Array.from(document.querySelectorAll('aside a[href^="#"]'));
+  function onScroll() {
+    var y = window.scrollY + 80;
+    var cur = anchors[0];
+    for (var a of anchors) { if (a.offsetTop <= y) cur = a; }
+    links.forEach(function(l) { l.classList.toggle('active', l.getAttribute('href') === '#' + (cur ? cur.id : '')); });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
 </script>
 </body>
 </html>

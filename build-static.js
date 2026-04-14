@@ -45,12 +45,15 @@ for (const file of rootFiles) {
 // Copy Xpublic/ HTML files to public/ ROOT so /topology.html etc. work on Vercel
 // (Non-HTML assets still go to public/Xpublic/ to avoid collisions)
 const xpubDir = path.join(ROOT, 'Xpublic');
+// Files that live in public/ as canonical versions — never overwrite from Xpublic/
+const XPUB_SKIP = new Set(['docs.html', 'svg-engine.html']);
 if (fs.existsSync(xpubDir)) {
   const xpubFiles = fs.readdirSync(xpubDir, { withFileTypes: true });
   for (const entry of xpubFiles) {
     const srcPath = path.join(xpubDir, entry.name);
     if (entry.isFile() && entry.name.endsWith('.html')) {
       // HTML pages go to public/ root for clean URLs
+      if (XPUB_SKIP.has(entry.name)) { console.log(`  skipping Xpublic/${entry.name} (canonical in public/)`); continue; }
       copyFile(srcPath, path.join(OUT, entry.name));
     } else if (entry.isFile()) {
       copyFile(srcPath, path.join(OUT, 'Xpublic', entry.name));
