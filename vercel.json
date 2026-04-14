@@ -8,7 +8,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 10,
-      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**"
+      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,api/svg-skills.js"
     }
   },
   "headers": [
@@ -89,6 +89,9 @@
     { "source": "/teach/:path*", "destination": "/api" },
     { "source": "/ban-ultra.svg", "destination": "/api" },
     { "source": "/ban-live-console.svg", "destination": "/api" },
+    { "source": "/output/", "destination": "/api" },
+    { "source": "/output", "destination": "/api" },
+    { "source": "/api/svg/:path*", "destination": "/api" },
     { "source": "/events/stream", "destination": "/api" },
     { "source": "/orchestrator/status", "destination": "/api" },
     { "source": "/billing", "destination": "/api" },
