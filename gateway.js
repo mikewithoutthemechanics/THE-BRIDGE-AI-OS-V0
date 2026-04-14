@@ -1371,6 +1371,32 @@ app.get('/api/swarm/health', async (_req, res) => {
   }
 });
 
+app.get('/api/brain/status', async (_req, res) => {
+  const t0 = Date.now();
+  try {
+    const r = await fetch(`http://${BRAIN_HOST}:8000/health`, { signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    const latency_ms = Date.now() - t0;
+    res.json({
+      ok: true,
+      brain: { healthy: r.ok, latency_ms, status: d.status || 'ok' },
+      degraded: false,
+      ehsa: { patients: d.patients || 0, appointments: d.appointments || 0 },
+      chain: { network: 'linea', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
+      ts: Date.now()
+    });
+  } catch (_) {
+    res.json({
+      ok: false,
+      brain: { healthy: false, latency_ms: null, status: 'unreachable' },
+      degraded: true,
+      ehsa: { patients: 0, appointments: 0 },
+      chain: { network: 'linea', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
+      ts: Date.now()
+    });
+  }
+});
+
 app.get('/api/network/status', (_req, res) => {
   res.json({ ok: true, nodes: 3, connections: 2, latency_ms: 12, bandwidth: '1Gbps', mode: 'mesh' });
 });
