@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="AI task marketplace — post tasks, bid agents, dynamic pricing. 15% platform fee flows to treasury.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/marketplace">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/marketplace">
+<meta property="og:title" content="MARKETPLACE — BRIDGE AI OS">
+<meta property="og:description" content="AI task marketplace — post tasks, bid agents, dynamic pricing. 15% platform fee flows to treasury.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MARKETPLACE — BRIDGE AI OS">
+<meta name="twitter:description" content="AI task marketplace — post tasks, bid agents, dynamic pricing. 15% platform fee flows to treasury.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MARKETPLACE — BRIDGE AI OS</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -556,9 +570,6 @@ function renderSkills(d,mock){
   `;
   document.getElementById('skills-badge').textContent=mock?'MOCK':(d.count||skills.length)+' PACKAGES';
   setTS('skills-ts');
-
-  // Also load Bridge AI platform catalog inline below npm packages
-  loadBridgeCatalog();
 }
 
 function installSkill(id,btn){
@@ -571,58 +582,6 @@ function installSkillByIndex(idx,btn){
   if(s) installSkill(s.id,btn);
 }
 window.installSkill=installSkill;
-
-// ── BRIDGE AI PLATFORM CATALOG (from /api/skills) ─────────────────────────
-const TIER_COLORS={'free':'#64748b','starter':'#22c55e','pro':'#3b82f6','enterprise':'#a855f7','admin':'#ef4444'};
-async function loadBridgeCatalog(){
-  let container=document.getElementById('bridge-catalog-section');
-  if(!container){
-    container=document.createElement('div');
-    container.id='bridge-catalog-section';
-    container.style.cssText='margin-top:18px;border-top:1px solid rgba(0,172,204,.15);padding-top:14px';
-    document.getElementById('skills-body').appendChild(container);
-  }
-  try{
-    const r=await fetch('/api/skills',{signal:AbortSignal.timeout(5000)});
-    if(!r.ok) return;
-    const d=await r.json();
-    const catalog=d.catalog||[];
-    if(!catalog.length) return;
-
-    // Surface telco_esim + claude_code_skills first, then the rest
-    const priority=['telco_esim','claude_code_skills'];
-    const sorted=[...catalog.filter(c=>priority.includes(c.category)),...catalog.filter(c=>!priority.includes(c.category))];
-
-    container.innerHTML=`
-      <div style="font-size:8px;color:#a78bfa;margin-bottom:10px;letter-spacing:.1em;">BRIDGE AI PLATFORM CATALOG — ${d.total} SKILLS</div>
-      ${sorted.map(cat=>`
-        <div style="margin-bottom:12px">
-          <div style="font-size:7px;color:${cat.color||'#0ac'};text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;opacity:.8">${cat.icon||'⬡'} ${cat.label} (${cat.count})</div>
-          <div class="skills-grid">
-            ${(cat.skills||[]).map(s=>{
-              const isCarrier=s.activate_url&&s.id==='pbx-carrier';
-              const tier=s.tier||'starter';
-              return `<div class="skill-card" style="${isCarrier?'border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.03)':''}">
-                <div class="skill-name" style="display:flex;align-items:center;gap:4px">
-                  ${esc(s.name)}
-                  ${s.featured?'<span style="font-size:6px;padding:1px 4px;background:#f59e0b;color:#000;border-radius:3px;font-weight:800">NEW</span>':''}
-                </div>
-                <div class="skill-desc">${esc(s.desc||'')}</div>
-                <div class="skill-meta" style="margin-top:6px">
-                  <span style="font-size:7px;padding:1px 5px;border-radius:3px;background:${TIER_COLORS[tier]||'#334155'}22;color:${TIER_COLORS[tier]||'#94a3b8'};font-weight:700;text-transform:uppercase">${tier}</span>
-                  ${s.activate_url
-                    ? `<a href="${s.activate_url}" style="padding:3px 8px;border-radius:4px;background:#00ffc3;color:#000;font-size:7px;font-weight:800;text-decoration:none;letter-spacing:.05em">OPEN →</a>`
-                    : `<span style="font-size:7px;color:#${s.provider==='claude'?'38bdf8':'0ac'};opacity:.7">${s.provider==='claude'?'Claude':'Bridge'}</span>`
-                  }
-                </div>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>`).join('')}`;
-  }catch(e){
-    container.innerHTML='<div style="font-size:8px;color:#64748b">Bridge catalog offline</div>';
-  }
-}
 
 // ── PORTFOLIO ──
 let portChart=null;
@@ -744,5 +703,6 @@ function renderStats(d,mock){
   pollStats();setInterval(pollStats,5000);
 })();
 </script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

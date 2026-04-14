@@ -120,16 +120,6 @@
     .loading{color:var(--dim);font-size:.85rem;text-align:center;padding:3rem}
     .empty{color:var(--dim);font-size:.82rem;text-align:center;padding:2rem;border:1px dashed var(--border);border-radius:.5rem}
   </style>
-  <script>
-  (function() {
-    function getCookie(n) { var m = document.cookie.match('(^|;)\\s*' + n + '\\s*=\\s*([^;]+)'); return m ? m.pop() : ''; }
-    var token = localStorage.getItem('bridge_token') || getCookie('access_token');
-    if (!token) { location.replace('/onboarding?redirect=' + encodeURIComponent(location.pathname)); return; }
-    fetch('/auth/me', { headers: { 'Authorization': 'Bearer ' + token }, credentials: 'include' })
-      .then(function(r) { if (!r.ok) throw new Error('unauth'); })
-      .catch(function() { localStorage.removeItem('bridge_token'); location.replace('/onboarding?redirect=/profile'); });
-  })();
-  </script>
 </head>
 <body>
 
@@ -509,13 +499,13 @@ function renderBilling() {
 
 async function init() {
   token = getToken();
-  if (!token) { window.location.href = '/onboarding?redirect=/profile'; return; }
+  if (!token) { window.location.href = '/join?next=/profile'; return; }
 
   // Load profile
   try {
     const res = await authFetch('/auth/me');
     const data = await res.json();
-    if (!data.ok || !data.user) { window.location.href = '/onboarding?redirect=/profile'; return; }
+    if (!data.ok || !data.user) { window.location.href = '/join?next=/profile'; return; }
     user = data.user;
 
     const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
@@ -589,5 +579,6 @@ function logout() {
 
 init();
 </script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

@@ -235,21 +235,41 @@
 
     <section id="pages">
       <h2>Frontend Pages</h2>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">All pages include the unified <span class="inline-code">bridge-nav.js</span> navigation bar — auto-injects top nav + mobile drawer, role-gated links, live health dot.</p>
       <table class="tbl">
-        <thead><tr><th>URL</th><th>File</th><th>Description</th></tr></thead>
+        <thead><tr><th>URL</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td><a href="/">/</a></td><td>index.html</td><td>Digital Twin — main app, live metrics, UBI, tabs</td></tr>
-          <tr><td><a href="/executive-dashboard.html">/executive-dashboard.html</a></td><td>—</td><td>Exec dashboard — swarm heatmap, pipeline, agents, mission, marketplace</td></tr>
-          <tr><td><a href="/svg-engine.html">/svg-engine.html</a></td><td>—</td><td>Interactive SVG skills graph — click inspect, dblclick execute, human-readable mode</td></tr>
-          <tr><td><a href="/agents.html">/agents.html</a></td><td>—</td><td>Agents &amp; Digital Twins — replication, leaderboard</td></tr>
-          <tr><td><a href="/50-applications.html">/50-applications.html</a></td><td>—</td><td>50 Application showcase grid</td></tr>
-          <tr><td><a href="/gateway/">/gateway/</a></td><td>—</td><td>Sovereign Gateway — QR scan entry, SIWE wallet, Bridge · Supac · Taurus · Wiki</td></tr>
-          <tr><td><a href="/join.html">/join.html</a></td><td>—</td><td>Join as Agent — QR + decentralized platform entry</td></tr>
-          <tr><td><a href="/settings.html">/settings.html</a></td><td>—</td><td>Shared user settings across all domains</td></tr>
-          <tr><td><a href="/docs.html">/docs.html</a></td><td>—</td><td>This documentation page</td></tr>
-          <tr><td>/aoe-dashboard.html</td><td>—</td><td>AoE-style ops dashboard — skills vis, bi-status, live map, human-readable mode</td></tr>
+          <tr><td><a href="/">/</a></td><td>Landing — hero, 71 agents, feature cards, OAuth sign-in</td></tr>
+          <tr><td><a href="/executive-dashboard.html">/executive-dashboard.html</a></td><td>Exec dashboard — API health, revenue engine, mission board, treasury, skills, UBI claim</td></tr>
+          <tr><td><a href="/svg-engine.html">/svg-engine.html</a></td><td>SVG Skills Engine — 9-node interactive graph, pan/zoom, click inspect, dblclick execute</td></tr>
+          <tr><td><a href="/aoe-dashboard.html">/aoe-dashboard.html</a></td><td>AoE ops dashboard — VIS tab, BI status, live agent network map, human-readable mode</td></tr>
+          <tr><td><a href="/agents.html">/agents.html</a></td><td>Agents &amp; Digital Twins — replication, leaderboard</td></tr>
+          <tr><td><a href="/50-applications.html">/50-applications.html</a></td><td>50 Applications showcase grid</td></tr>
+          <tr><td><a href="/crm.html">/crm.html</a></td><td>CRM — leads, pipeline, HITL approval queue</td></tr>
+          <tr><td><a href="/invoicing.html">/invoicing.html</a></td><td>Invoicing — create invoices, track payments, auto-reconcile</td></tr>
+          <tr><td><a href="/marketplace.html">/marketplace.html</a></td><td>Agent marketplace — open tasks, DEX pairs, wallet</td></tr>
+          <tr><td><a href="/topology.html">/topology.html</a></td><td>Live network topology — service graph, health</td></tr>
+          <tr><td><a href="/terminal.html">/terminal.html</a></td><td>OS terminal — system commands, agent REPL</td></tr>
+          <tr><td><a href="/gateway/">/gateway/</a></td><td>Sovereign Gateway — QR entry, SIWE wallet, Bridge · Supac · Taurus</td></tr>
+          <tr><td><a href="/join.html">/join.html</a></td><td>Join as Agent — QR + decentralized platform entry</td></tr>
+          <tr><td><a href="/settings.html">/settings.html</a></td><td>User settings — shared across all domains</td></tr>
+          <tr><td><a href="/docs.html">/docs.html</a></td><td>This documentation page</td></tr>
+          <tr><td><a href="/home.html">/home.html</a></td><td>Bridge AI OS home — overview, quick-start links</td></tr>
+          <tr><td><a href="/pricing.html">/pricing.html</a></td><td>Pricing — Free / Pro R299 / Enterprise R2,499</td></tr>
+          <tr><td><a href="/onboarding.html">/onboarding.html</a></td><td>Sign up / sign in — email + OAuth</td></tr>
+          <tr><td><a href="/ubi-home.html">/ubi-home.html</a></td><td>UBI home — pool status, claim history</td></tr>
+          <tr><td><a href="/sitemap.html">/sitemap.html</a></td><td>Full site map — all 50+ pages listed</td></tr>
         </tbody>
       </table>
+
+      <h3>Navigation</h3>
+      <p>All pages load <span class="inline-code">/bridge-nav.js</span> which self-injects a role-aware top bar and mobile drawer. No markup required — just the script tag.</p>
+      <pre>&lt;!-- Add to any page --&gt;
+&lt;script src="/bridge-nav.js"&gt;&lt;/script&gt;
+
+&lt;!-- Optional: set user role before the script --&gt;
+&lt;script&gt;window.__BRIDGE_USER = {role:'user', name:'Alice'};&lt;/script&gt;</pre>
+      <p>Role visibility: <span class="inline-code">null</span> = public · <span class="inline-code">user</span> = authenticated · <span class="inline-code">admin</span> · <span class="inline-code">superadmin</span>. The nav reads <span class="inline-code">localStorage.bridge_user</span> automatically.</p>
     </section>
 
     <!-- ── API REFERENCE ──────────────────────────────────────────────── -->

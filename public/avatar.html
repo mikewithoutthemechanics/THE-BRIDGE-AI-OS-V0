@@ -1213,5 +1213,6 @@ fetch('/api/avatar/modes', {signal:AbortSignal.timeout(3000)})
   .catch(() => ['wireframe','textured','anatomical','neural','holographic','quantum'])
   .then(() => { switchMode('wireframe'); });
 </script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

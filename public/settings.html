@@ -2,382 +2,207 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Settings — Bridge AI OS. Manage your profile, preferences, and developer options.">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://go.ai-os.co.za/settings">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://go.ai-os.co.za/settings">
-  <meta property="og:title" content="Settings — Bridge AI OS">
-  <meta property="og:description" content="Settings — Bridge AI OS. Manage your profile, preferences, and developer options.">
-  <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
-  <meta property="og:site_name" content="Bridge AI OS">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Settings — Bridge AI OS">
-  <meta name="twitter:description" content="Settings — Bridge AI OS. Manage your profile, preferences, and developer options.">
-  <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+<meta name="description" content="Settings — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/settings">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/settings">
+<meta property="og:title" content="Settings — Bridge AI OS">
+<meta property="og:description" content="Settings — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Settings — Bridge AI OS">
+<meta name="twitter:description" content="Settings — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <!-- Apply stored theme before first paint to avoid flash -->
-  <script>(function(){var t=localStorage.getItem('bridge_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);else if(t==='system'&&window.matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light');})()</script>
-  <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --bg:#020408;--surface:rgba(10,18,30,0.85);--surface2:rgba(15,25,40,0.7);
-      --border:rgba(99,255,218,0.1);--border2:rgba(99,255,218,0.06);
-      --accent:#63ffda;--accent2:#00e57b;
-      --text:rgba(200,220,235,0.9);--dim:rgba(150,175,195,0.55);
-      --red:#ff5a5a;--font:'Outfit',system-ui,sans-serif;
-      --card-title:#fff;
-    }
-    /* Light theme overrides */
-    [data-theme="light"]{
-      --bg:#f0f4f8;--surface:rgba(255,255,255,0.95);--surface2:rgba(235,242,250,0.8);
-      --border:rgba(0,150,120,0.15);--border2:rgba(0,150,120,0.08);
-      --accent:#00897b;--accent2:#00a86b;
-      --text:rgba(20,35,50,0.9);--dim:rgba(60,85,110,0.6);
-      --red:#d32f2f;--card-title:#0d1f2d;
-    }
-    body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;line-height:1.5;transition:background .25s,color .25s}
-    a{color:var(--accent);text-decoration:none}
-    a:hover{color:var(--text)}
-
-    .page{max-width:680px;margin:0 auto;padding:32px 20px 80px}
-    .page-header{margin-bottom:32px}
-    .page-header h1{font-size:1.6rem;font-weight:700;color:#fff;letter-spacing:-.01em}
-    .page-header p{color:var(--dim);font-size:.85rem;margin-top:4px}
-
-    /* Toast */
-    #toast{position:fixed;top:70px;right:20px;padding:10px 18px;border-radius:8px;font-size:.82rem;font-weight:600;z-index:9999;opacity:0;transform:translateY(-8px);transition:opacity .25s,transform .25s;pointer-events:none}
-    #toast.show{opacity:1;transform:translateY(0)}
-    #toast.ok{background:rgba(0,229,123,.15);border:1px solid rgba(0,229,123,.35);color:var(--accent2)}
-    #toast.err{background:rgba(255,60,60,.1);border:1px solid rgba(255,60,60,.3);color:var(--red)}
-
-    /* Cards */
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:20px;overflow:hidden}
-    .card-header{padding:16px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
-    .card-header h2{font-size:.95rem;font-weight:700;color:var(--card-title);letter-spacing:.03em;text-transform:uppercase}
-    .card-header .ch-icon{font-size:1.1rem;opacity:.7}
-    .card-body{padding:20px;display:flex;flex-direction:column;gap:18px}
-
-    /* Read-only badge row */
-    .info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border2)}
-    .info-label{font-size:.77rem;color:var(--dim);font-weight:500;text-transform:uppercase;letter-spacing:.06em}
-    .info-value{font-size:.88rem;color:var(--text);font-weight:600}
-    .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-    .badge-plan{background:rgba(99,255,218,.1);border:1px solid rgba(99,255,218,.25);color:var(--accent)}
-
-    /* Form fields */
-    .field{display:flex;flex-direction:column;gap:5px}
-    .field label{font-size:.78rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
-    .field input[type=text],.field input[type=email],.field select{
-      background:rgba(5,12,22,.6);border:1px solid rgba(99,255,218,.12);
-      border-radius:8px;padding:9px 13px;color:var(--text);font-size:.88rem;
-      font-family:var(--font);width:100%;transition:border-color .15s;outline:none;
-    }
-    .field input:focus,.field select:focus{border-color:rgba(99,255,218,.4)}
-    .field select option{background:#0a1220;color:var(--text)}
-    .field .hint{font-size:.73rem;color:var(--dim);margin-top:2px}
-
-    /* Toggle row */
-    .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);cursor:pointer}
-    .toggle-row:hover{border-color:rgba(99,255,218,.2)}
-    .toggle-info .toggle-title{font-size:.88rem;font-weight:600;color:var(--text)}
-    .toggle-info .toggle-sub{font-size:.75rem;color:var(--dim);margin-top:1px}
-    .toggle-switch{position:relative;width:38px;height:22px;flex-shrink:0}
-    .toggle-switch input{opacity:0;width:0;height:0;position:absolute}
-    .toggle-track{position:absolute;inset:0;background:rgba(99,255,218,.1);border:1px solid rgba(99,255,218,.2);border-radius:11px;transition:background .2s,border-color .2s}
-    .toggle-switch input:checked ~ .toggle-track{background:rgba(99,255,218,.25);border-color:rgba(99,255,218,.5)}
-    .toggle-knob{position:absolute;top:3px;left:3px;width:14px;height:14px;background:var(--dim);border-radius:50%;transition:transform .2s,background .2s}
-    .toggle-switch input:checked ~ .toggle-knob{transform:translateX(16px);background:var(--accent)}
-
-    /* Action buttons */
-    .actions{display:flex;gap:10px;padding-top:4px}
-    .btn-primary{padding:9px 24px;background:linear-gradient(135deg,#63ffda,#00e57b);color:#020408;border:none;border-radius:8px;font-size:.83rem;font-weight:700;cursor:pointer;font-family:var(--font);letter-spacing:.04em;transition:filter .15s,transform .15s}
-    .btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
-    .btn-secondary{padding:9px 20px;background:none;border:1px solid rgba(99,255,218,.2);color:var(--dim);border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer;font-family:var(--font);transition:border-color .15s,color .15s}
-    .btn-secondary:hover{border-color:rgba(99,255,218,.4);color:var(--text)}
-
-    /* Danger zone */
-    .danger-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,60,60,.15);background:rgba(255,60,60,.04)}
-    .danger-label .dt{font-size:.88rem;font-weight:600;color:var(--text)}
-    .danger-label .ds{font-size:.75rem;color:var(--dim);margin-top:2px}
-    .btn-danger{padding:7px 16px;background:none;border:1px solid rgba(255,90,90,.4);color:var(--red);border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:var(--font);transition:background .15s}
-    .btn-danger:hover{background:rgba(255,60,60,.1)}
-
-    @media(max-width:480px){.page{padding:20px 14px 80px}.actions{flex-direction:column}}
-  </style>
 </head>
-<body>
-<!-- Auth guard -->
-<script>(function(){var t=localStorage.getItem('bridge_token')||(document.cookie.match(/(?:^|; )access_token=([^;]*)/)||[])[1];if(!t){location.replace('/onboarding?redirect='+encodeURIComponent(location.pathname));return;}fetch('/auth/me',{headers:{Authorization:'Bearer '+t}}).then(function(r){if(!r.ok)throw new Error();}).catch(function(){localStorage.removeItem('bridge_token');location.replace('/onboarding');});})()</script>
-<script src="/bridge-nav.js"></script>
+<body class="bg-slate-50 font-sans antialiased">
 
-<div class="page">
-  <div class="page-header">
-    <h1>Settings</h1>
-    <p>Profile, preferences and developer options — synced across devices.</p>
-  </div>
+  <nav class="bg-slate-800 text-white p-4 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-lg">
+    <a href="/" class="text-xl font-bold hover:text-amber-300">Bridge AI OS</a>
+    <ul class="flex flex-wrap gap-4 mt-2 md:mt-0">
+      <li><a href="/" class="hover:text-amber-300">Digital Twin</a></li>
+      <li><a href="/executive-dashboard.html" class="hover:text-amber-300">Dashboard</a></li>
+      <li><a href="/50-applications.html" class="hover:text-amber-300">50 Applications</a></li>
+      <li><a href="/agents.html" class="hover:text-amber-300">Agents</a></li>
+      <li><a href="/landing.html" class="hover:text-amber-300">Landing</a></li>
+      <li><a href="/gateway/" class="hover:text-amber-300">Gateway</a></li>
+      <li><a href="/join.html" class="hover:text-amber-300">Join as Agent</a></li>
+      <li><a href="/docs.html" class="hover:text-amber-300">Docs</a></li>
+      <li><a href="/settings.html" class="text-amber-300 font-semibold">Settings</a></li>
+    </ul>
+  </nav>
 
-  <div id="toast"></div>
+  <main class="p-4 md:p-6 max-w-2xl mx-auto space-y-8">
+    <header>
+      <h1 class="text-3xl font-bold text-slate-800">Settings</h1>
+      <p class="text-slate-600 mt-1">Shared per user across all domains. Stored on the backend.</p>
+    </header>
 
-  <!-- ── Profile ─────────────────────────────────────────────── -->
-  <div class="card">
-    <div class="card-header"><span class="ch-icon">👤</span><h2>Profile</h2></div>
-    <div class="card-body">
-      <div class="info-row">
-        <span class="info-label">Email</span>
-        <span class="info-value" id="disp-email">—</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Plan</span>
-        <span class="info-value"><span class="badge badge-plan" id="disp-plan">free</span></span>
-      </div>
-      <div class="field">
-        <label for="name">Display name</label>
-        <input type="text" id="name" name="name" placeholder="Your name" maxlength="120">
-      </div>
-      <div class="field">
-        <label for="company">Company / Organisation</label>
-        <input type="text" id="company" name="company" placeholder="Your company" maxlength="120">
-      </div>
-    </div>
-  </div>
+    <div id="message" class="hidden p-3 rounded-lg text-sm"></div>
 
-  <!-- ── Preferences ─────────────────────────────────────────── -->
-  <div class="card">
-    <div class="card-header"><span class="ch-icon">⚙️</span><h2>Preferences</h2></div>
-    <div class="card-body">
-      <div class="field">
-        <label for="theme">Theme</label>
-        <select id="theme" name="theme">
-          <option value="dark">Dark</option>
-          <option value="light">Light</option>
-          <option value="system">System default</option>
-        </select>
-      </div>
-
-      <label class="toggle-row" for="notifications">
-        <div class="toggle-info">
-          <div class="toggle-title">Notifications</div>
-          <div class="toggle-sub">Browser push notifications for agent events</div>
+    <section class="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
+      <h2 class="text-lg font-semibold text-slate-800 p-4 border-b border-slate-200">Preferences</h2>
+      <form id="settings-form" class="p-4 space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Theme</label>
+          <select id="theme" name="theme" class="w-full max-w-xs border border-slate-300 rounded-lg px-3 py-2 text-slate-800">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="system">System</option>
+          </select>
         </div>
-        <div class="toggle-switch">
-          <input type="checkbox" id="notifications" name="notifications">
-          <div class="toggle-track"></div>
-          <div class="toggle-knob"></div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">API base (optional)</label>
+          <input type="text" id="apiBase" name="apiBase" placeholder="Leave empty for same origin" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-800">
+          <p class="text-xs text-slate-500 mt-1">Override for backend URL. Shared across all apps when saved.</p>
         </div>
-      </label>
-
-      <label class="toggle-row" for="liveRefresh">
-        <div class="toggle-info">
-          <div class="toggle-title">Live refresh</div>
-          <div class="toggle-sub">Auto-poll dashboard and agents view every 10s</div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="notifications" name="notifications" class="rounded border-slate-300">
+          <label for="notifications" class="text-sm text-slate-700">Enable notifications</label>
         </div>
-        <div class="toggle-switch">
-          <input type="checkbox" id="liveRefresh" name="liveRefresh" checked>
-          <div class="toggle-track"></div>
-          <div class="toggle-knob"></div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="liveRefresh" name="liveRefresh" class="rounded border-slate-300" checked>
+          <label for="liveRefresh" class="text-sm text-slate-700">Live refresh (dashboard / agents)</label>
         </div>
-      </label>
-    </div>
-  </div>
-
-  <!-- ── Developer ───────────────────────────────────────────── -->
-  <div class="card">
-    <div class="card-header"><span class="ch-icon">🔧</span><h2>Developer</h2></div>
-    <div class="card-body">
-      <div class="field">
-        <label for="apiBase">API base URL</label>
-        <input type="text" id="apiBase" name="apiBase" placeholder="Leave empty for same origin">
-        <span class="hint">Override the backend URL used by all Bridge apps. Empty = same origin.</span>
-      </div>
-      <div class="field">
-        <label for="userId">Cross-device user ID</label>
-        <input type="text" id="userId" name="userId" placeholder="default" maxlength="128">
-        <span class="hint">Sent as <code style="font-size:.72rem;color:var(--accent)">X-User-Id</code> header. Sync settings between devices using the same ID.</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Actions ─────────────────────────────────────────────── -->
-  <div class="actions">
-    <button class="btn-primary" id="save-btn">Save settings</button>
-    <button class="btn-secondary" id="reset-btn">Reset to defaults</button>
-  </div>
-
-  <!-- ── Account ─────────────────────────────────────────────── -->
-  <div class="card" style="margin-top:32px">
-    <div class="card-header"><span class="ch-icon">🔐</span><h2>Account</h2></div>
-    <div class="card-body">
-      <div class="danger-row">
-        <div class="danger-label">
-          <div class="dt">Sign out</div>
-          <div class="ds">Sign out from this device and clear local session</div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">User ID (for cross-device sync)</label>
+          <input type="text" id="userId" name="userId" placeholder="default" class="w-full max-w-xs border border-slate-300 rounded-lg px-3 py-2 text-slate-800">
+          <p class="text-xs text-slate-500 mt-1">Set to share settings across devices; send as X-User-Id header.</p>
         </div>
-        <button class="btn-danger" id="signout-btn">Sign out</button>
-      </div>
-    </div>
-  </div>
-</div>
+        <div class="flex gap-3 pt-2">
+          <button type="submit" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-medium">Save</button>
+          <button type="button" id="reset-btn" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100">Reset to defaults</button>
+        </div>
+      </form>
+    </section>
+  </main>
 
-<script>
-(function () {
-  'use strict';
+  <script>
+(function() {
+  const API_BASE = (typeof window !== 'undefined' && window.__API_BASE) ? String(window.__API_BASE).replace(/\/$/, '') : '';
 
-  function getToken() {
-    return localStorage.getItem('bridge_token')
-      || (document.cookie.match(/(?:^|; )access_token=([^;]*)/) || [])[1]
-      || null;
+  function api(path) {
+    return (API_BASE ? API_BASE + path : path);
   }
 
-  function authHeaders() {
+  var STORAGE_USER_ID_KEY = 'bridge_user_id';
+
+  function getUserId() {
+    var el = document.getElementById('userId');
+    if (el && el.value && el.value.trim()) return el.value.trim().slice(0, 128);
+    try { return localStorage.getItem(STORAGE_USER_ID_KEY); } catch (_) {}
+    return null;
+  }
+
+  function setStoredUserId(uid) {
+    try { if (uid) localStorage.setItem(STORAGE_USER_ID_KEY, uid); else localStorage.removeItem(STORAGE_USER_ID_KEY); } catch (_) {}
+  }
+
+  function headers() {
     var h = { 'Content-Type': 'application/json' };
-    var t = getToken();
-    if (t) h['Authorization'] = 'Bearer ' + t;
-    var uid = (document.getElementById('userId') || {}).value;
-    if (uid && uid.trim()) h['X-User-Id'] = uid.trim().slice(0, 128);
+    var uid = getUserId();
+    if (uid) h['X-User-Id'] = uid;
     return h;
   }
 
-  // ── Toast ──────────────────────────────────────────────────
-  function toast(msg, isErr) {
-    var el = document.getElementById('toast');
-    el.textContent = msg;
-    el.className = 'show ' + (isErr ? 'err' : 'ok');
-    clearTimeout(el._t);
-    el._t = setTimeout(function () { el.className = el.className.replace('show', '').trim(); }, 3500);
-  }
-
-  // ── Field helpers ──────────────────────────────────────────
-  function setField(id, val) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    if (el.type === 'checkbox') el.checked = !!val;
-    else el.value = (val == null) ? '' : val;
-  }
-
-  function getField(id) {
-    var el = document.getElementById(id);
-    if (!el) return undefined;
-    return el.type === 'checkbox' ? el.checked : el.value;
-  }
-
-  // ── Load ───────────────────────────────────────────────────
   async function load() {
     try {
-      // Get user identity from /auth/me (email, plan)
-      var meRes = await fetch('/auth/me', { headers: authHeaders() });
-      if (meRes.ok) {
-        var me = await meRes.json();
-        var u = me.user || {};
-        document.getElementById('disp-email').textContent = u.email || '—';
-        document.getElementById('disp-plan').textContent = (u.plan || 'free').toUpperCase();
+      var r = await fetch(api('/api/user/settings'), { headers: headers() });
+      var data = r.ok ? await r.json() : null;
+      if (data && data.settings) {
+        var s = data.settings;
+        setField('theme', s.theme);
+        setField('apiBase', s.apiBase);
+        setField('notifications', s.notifications);
+        setField('liveRefresh', s.liveRefresh !== false);
+        if (s.userId != null) setField('userId', s.userId);
+        else {
+          var stored = null;
+          try { stored = localStorage.getItem(STORAGE_USER_ID_KEY); } catch (_) {}
+          if (stored) setField('userId', stored);
+        }
       }
-    } catch (_) {}
-
-    try {
-      var r = await fetch('/api/user/settings', { headers: authHeaders() });
-      if (!r.ok) return;
-      var data = await r.json();
-      var s = data.settings || {};
-      setField('name',          s.name);
-      setField('company',       s.company);
-      setField('theme',         s.theme || 'dark');
-      setField('notifications', s.notifications);
-      setField('liveRefresh',   s.liveRefresh !== false);
-      setField('apiBase',       s.apiBase);
-      setField('userId',        s.userId || localStorage.getItem('bridge_user_id') || '');
-    } catch (_) {
-      toast('Could not load settings', true);
+    } catch (e) {
+      showMessage('Could not load settings', true);
     }
   }
 
-  // ── Save ───────────────────────────────────────────────────
-  document.getElementById('save-btn').addEventListener('click', async function () {
-    var payload = {
-      name:          getField('name') || '',
-      company:       getField('company') || '',
-      theme:         getField('theme') || 'dark',
+  function setField(name, value) {
+    var el = document.getElementById(name) || document.querySelector('[name="' + name + '"]');
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!value;
+    else el.value = value == null ? '' : value;
+  }
+
+  function getField(name) {
+    var el = document.getElementById(name) || document.querySelector('[name="' + name + '"]');
+    if (!el) return undefined;
+    if (el.type === 'checkbox') return el.checked;
+    return el.value;
+  }
+
+  function getSettings() {
+    return {
+      theme: getField('theme') || 'light',
+      apiBase: getField('apiBase') || '',
       notifications: !!getField('notifications'),
-      liveRefresh:   !!getField('liveRefresh'),
-      apiBase:       getField('apiBase') || '',
-      userId:        (getField('userId') || '').trim().slice(0, 128),
+      liveRefresh: getField('liveRefresh') !== false,
+      userId: getField('userId') || ''
     };
+  }
+
+  function showMessage(text, isError) {
+    var el = document.getElementById('message');
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'p-3 rounded-lg text-sm ' + (isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800');
+    el.classList.remove('hidden');
+    setTimeout(function() { el.classList.add('hidden'); }, 4000);
+  }
+
+  document.getElementById('settings-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var payload = getSettings();
     try {
-      var r = await fetch('/api/user/settings', {
+      var r = await fetch(api('/api/user/settings'), {
         method: 'PUT',
-        headers: authHeaders(),
-        body: JSON.stringify({ settings: payload }),
+        headers: headers(),
+        body: JSON.stringify({ settings: payload })
       });
-      var data = await r.json();
-      if (r.ok && data.ok !== false) {
-        // Apply and persist theme locally
-        applyTheme(payload.theme || 'dark');
-        // Persist userId locally as fallback
-        var uid = payload.userId;
-        if (uid) localStorage.setItem('bridge_user_id', uid);
-        else localStorage.removeItem('bridge_user_id');
-        // Update cached user name
-        try {
-          var stored = JSON.parse(localStorage.getItem('bridge_user') || '{}');
-          if (payload.name) stored.name = payload.name;
-          localStorage.setItem('bridge_user', JSON.stringify(stored));
-        } catch (_) {}
-        toast('Settings saved successfully');
+      if (r.ok) {
+        setStoredUserId(payload.userId || null);
+        showMessage('Settings saved. They are shared across all domains for this user.');
+        if (payload.apiBase && typeof window !== 'undefined') {
+          var base = payload.apiBase.replace(/\/$/, '');
+          window.__API_BASE = base;
+        }
       } else {
-        toast(data.error || 'Failed to save settings', true);
+        showMessage('Failed to save settings', true);
       }
     } catch (err) {
-      toast('Network error — could not save', true);
+      showMessage('Failed to save settings', true);
     }
   });
 
-  // ── Reset ──────────────────────────────────────────────────
-  document.getElementById('reset-btn').addEventListener('click', function () {
-    setField('theme',         'dark');
+  document.getElementById('reset-btn').addEventListener('click', function() {
+    setField('theme', 'light');
+    setField('apiBase', '');
     setField('notifications', false);
-    setField('liveRefresh',   true);
-    setField('apiBase',       '');
-    setField('userId',        '');
-    toast('Reset to defaults — click Save to persist');
+    setField('liveRefresh', true);
+    setField('userId', '');
+    showMessage('Form reset to defaults. Click Save to persist.');
   });
 
-  // ── Sign out ───────────────────────────────────────────────
-  document.getElementById('signout-btn').addEventListener('click', function () {
-    var token = getToken();
-    if (token) {
-      fetch('/auth/logout', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      }).catch(function () {});
-    }
-    localStorage.removeItem('bridge_token');
-    localStorage.removeItem('bridge_user_token');
-    localStorage.removeItem('bridge_user');
-    document.cookie = 'access_token=;path=/;max-age=0';
-    document.cookie = 'bridge_token=;path=/;max-age=0';
-    window.location.href = '/onboarding';
-  });
-
-  // ── Theme applier (live preview + localStorage) ────────────
-  function applyTheme(t) {
-    var resolved = t;
-    if (t === 'system') {
-      resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    }
-    document.documentElement.setAttribute('data-theme', resolved);
-    localStorage.setItem('bridge_theme', t === 'system' ? 'system' : resolved);
-  }
-
-  document.getElementById('theme').addEventListener('change', function () {
-    applyTheme(this.value);
-  });
-
-  // ── Init ───────────────────────────────────────────────────
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
   else load();
 })();
-</script>
+  </script>
 </body>
 </html>

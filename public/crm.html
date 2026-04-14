@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<meta name="description" content="Bridge AI OS CRM — contacts, pipeline, campaigns, and AI-driven nurture sequences for closing deals faster.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/crm">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/crm">
+<meta property="og:title" content="BridgeAI · Contact Management">
+<meta property="og:description" content="Bridge AI OS CRM — contacts, pipeline, campaigns, and AI-driven nurture sequences for closing deals faster.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BridgeAI · Contact Management">
+<meta name="twitter:description" content="Bridge AI OS CRM — contacts, pipeline, campaigns, and AI-driven nurture sequences for closing deals faster.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>BridgeAI · Contact Management</title>
 <style>
@@ -102,6 +116,24 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.6rem 
 </style>
 </head>
 <body>
+
+<nav>
+  <div class="nav-brand">BRIDGE AI</div>
+  <div class="nav-links">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/crm" class="active">CRM</a>
+    <a href="/leads">Leads</a>
+    <a href="/invoicing">Invoicing</a>
+    <a href="/agents">Agents</a>
+    <a href="/settings">Settings</a>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn btn-secondary" onclick="exportCsv()">⬇ Export</button>
+    <button class="nav-btn btn-secondary" id="btnImport">⬆ Import</button>
+    <input type="file" id="csvFile" accept=".csv" style="display:none"/>
+    <button class="nav-btn btn-primary" onclick="openModal()">+ Add Contact</button>
+  </div>
+</nav>
 
 <div class="toolbar">
   <input type="text" class="search-box" id="searchBox" placeholder="Search contacts, company, email…" oninput="render()"/>

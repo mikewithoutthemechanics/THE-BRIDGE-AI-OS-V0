@@ -201,24 +201,6 @@
       ],
       naFeatures: [],
     },
-    {
-      id: 'enterprise',
-      label: 'Enterprise',
-      price: 4999,
-      priceText: 'R4 999',
-      priceSuffix: ' / month',
-      iconText: 'E',
-      desc: 'Full platform access with dedicated support.',
-      features: [
-        'Everything in Admin',
-        'Dedicated account manager',
-        'Custom integrations',
-        'SLA guarantee',
-        'Priority API access',
-        'White-label options',
-      ],
-      naFeatures: [],
-    },
   ];
 
   var TIER_RANK = { free: 0, starter: 1, pro: 2, admin: 3, enterprise: 4 };
@@ -351,17 +333,9 @@
     return card;
   }
 
-  function showError(msg) {
-    var e = document.getElementById('banner-error');
-    e.textContent = msg;
-    e.classList.add('show');
-    e.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
   function initiatePurchase(planId, btn, planLabel) {
     btn.disabled = true;
     btn.textContent = 'Redirecting\u2026';
-    document.getElementById('banner-error').classList.remove('show');
 
     var headers = Object.assign({ 'Content-Type': 'application/json' }, authHeaders());
 
@@ -377,13 +351,13 @@
         } else {
           btn.disabled = false;
           btn.textContent = 'Upgrade to ' + planLabel;
-          showError((data.error && typeof data.error === 'string') ? data.error : 'Could not initiate payment. Please try again.');
+          alert((data.error && typeof data.error === 'string') ? data.error : 'Could not initiate payment. Please try again.');
         }
       })
       .catch(function () {
         btn.disabled = false;
         btn.textContent = 'Upgrade to ' + planLabel;
-        showError('Network error. Please try again.');
+        alert('Network error. Please try again.');
       });
   }
 
