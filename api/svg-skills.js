@@ -448,6 +448,80 @@ const SKILLS = {
       return panel(W,H,nodeEls,'BASIC WORKFLOW \xb7 TRIGGER \u2192 VALIDATE \u2192 EXECUTE \u2192 REPORT');
     },
   },
+
+  // ── BIZ MARKETING ─────────────────────────────────────────────────────────
+  'biz.marketing': {
+    id: 'biz.marketing', name: 'Biz Marketing Pipeline',
+    description: 'End-to-end marketing pipeline: LeadGen \u2192 Nurture \u2192 Close \u2192 Treasury, wired into A5E + SVG Graph.',
+    tags: ['leadgen','nurture','sales','pipeline','treasury','graph','visualize','execute'], version: '1.0.0',
+    run() {
+      return {
+        leads_captured:   Math.floor(Math.random()*120)+20,
+        leads_qualified:  Math.floor(Math.random()*60)+10,
+        deals_open:       Math.floor(Math.random()*20)+3,
+        deals_closed_won: Math.floor(Math.random()*8)+1,
+        mrr:              +(Math.random()*15000+3000).toFixed(2),
+        campaign_active:  Math.floor(Math.random()*4)+1,
+        nurture_sequences:Math.floor(Math.random()*30)+5,
+        revenue_booked:   +(Math.random()*8000+1000).toFixed(2),
+      };
+    },
+    visualize(input = {}) {
+      const d = this.run(input);
+      const W = 900, H = 320;
+      const ORANGE = '#FF7A3C';
+      const defs = glowDef('g-mkt', ORANGE);
+
+      // Pipeline stages — 4 nodes in a row
+      const stages = [
+        { id:'leadgen',  label:'LEADGEN',  sub:`${d.leads_captured} captured`, color:'#38bdf8', x:60  },
+        { id:'nurture',  label:'NURTURE',  sub:`${d.leads_qualified} qualified`,color:'#a78bfa', x:260 },
+        { id:'close',    label:'CLOSE',    sub:`${d.deals_open} open deals`,   color:'#4ade80', x:460 },
+        { id:'treasury', label:'TREASURY', sub:`R${d.mrr.toFixed(0)} MRR`,     color:'#facc15', x:660 },
+      ];
+
+      const NW=160, NH=70, NY=110;
+      const stageEls = stages.map((s,i) => {
+        const cx2 = s.x + NW/2;
+        return `${node(s.x, NY, NW, NH, s.label, s.sub, s.color, 10)}
+          ${pulse(cx2, NY+NH/2, 30, s.color, (2+i*0.3)+'s')}
+          ${i < stages.length-1 ? `${edge(s.x+NW, NY+NH/2, s.x+NW+20, NY+NH/2, s.color)}${arrow(s.x+NW+20, NY+NH/2, s.color)}` : ''}`;
+      }).join('');
+
+      // Signal dots flowing along the pipeline
+      const pipeY = NY + NH/2;
+      const flowPath = `M${60+NW} ${pipeY} L${260} ${pipeY} L${260+NW} ${pipeY} L${460} ${pipeY} L${460+NW} ${pipeY} L${660} ${pipeY}`;
+      const flow = signalDot(flowPath, '4s', ORANGE, 5);
+
+      // Header
+      const hdr = `<rect width="${W}" height="48" fill="rgba(255,122,60,0.08)" rx="0"/>
+        <text x="20" y="18" fill="${ORANGE}" font-family="${T.font}" font-size="10" opacity="0.7">&#x26A1; BIZ.MARKETING \xb7 A5E ENGINE \xb7 v1.0.0</text>
+        <text x="20" y="34" fill="#fff" font-family="${T.font}" font-size="13" font-weight="700">Marketing Pipeline \u2014 LeadGen \u2192 Nurture \u2192 Close \u2192 Treasury</text>`;
+
+      // KPI bar at bottom
+      const kpis = [
+        { label:'CAMPAIGNS', val: d.campaign_active },
+        { label:'SEQUENCES', val: d.nurture_sequences },
+        { label:'WON',       val: d.deals_closed_won },
+        { label:'REVENUE',   val: 'R'+d.revenue_booked.toFixed(0) },
+      ];
+      const kpiEls = kpis.map((k,i) => {
+        const kx = 60 + i*210;
+        return `<rect x="${kx}" y="220" width="170" height="56" rx="8" fill="${T.bg2}" stroke="rgba(255,122,60,0.25)" stroke-width="1"/>
+          <text x="${kx+85}" y="244" text-anchor="middle" fill="${ORANGE}" font-family="${T.font}" font-size="10" opacity="0.7">${k.label}</text>
+          <text x="${kx+85}" y="265" text-anchor="middle" fill="#fff" font-family="${T.font}" font-size="16" font-weight="700">${k.val}</text>`;
+      }).join('');
+
+      return `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
+  ${defs}
+  <rect width="${W}" height="${H}" fill="${T.bg}" rx="12"/>
+  ${hdr}
+  ${stageEls}
+  ${flow}
+  ${kpiEls}
+</svg>`;
+    },
+  },
 };
 
 // ── SKILL GRAPH SVG ──────────────────────────────────────────────────────────
