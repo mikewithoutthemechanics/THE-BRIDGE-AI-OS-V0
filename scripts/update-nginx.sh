@@ -20,12 +20,28 @@ cat > "$CONF" <<'NGINX_CONF'
 # Bridge AI OS — VPS nginx config
 # Managed by scripts/update-nginx.sh (do not hand-edit; certbot HTTPS blocks OK)
 
+# HTTP → HTTPS redirect for all domains
 server {
     listen 80 default_server;
-    server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za _;
+    server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za aid.ai-os.co.za _;
 
-    # Gateway router (gateway.js :8080) owns all friendly routes:
-    # /tokenomics, /gateway, /join, /twin, /marketplace, etc.
+    location /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        try_files $uri =404;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS — bridge-ai-os.com
+server {
+    listen 443 ssl http2;
+    server_name bridge-ai-os.com www.bridge-ai-os.com;
+    ssl_certificate /etc/letsencrypt/live/bridge-ai-os.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/bridge-ai-os.com/privkey.pem;
+
     location / {
         proxy_pass http://localhost:8080;
         proxy_http_version 1.1;
@@ -39,7 +55,6 @@ server {
         proxy_read_timeout 86400;
     }
 
-    # API calls go to the unified backend on :3000 (CRM, LeadGen, OSINT, Payments)
     location /api/ {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -50,14 +65,12 @@ server {
         proxy_read_timeout 120;
     }
 
-    # Monitor UI (pm2 monitor on :3001, if running)
     location /monitor/ {
         proxy_pass http://localhost:3001/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 
-    # SVG Skill Engine on :7070
     location /svg-engine/ {
         proxy_pass http://localhost:7070/;
         proxy_http_version 1.1;
@@ -69,8 +82,6 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 
-    # SSE — Cloudflare-safe (buffering off, chunking off, 25s keepalives from app)
-    # Served by gateway.js on :8080 (see gateway.js:199)
     location /events/stream {
         proxy_pass http://localhost:8080;
         proxy_http_version 1.1;
@@ -86,6 +97,21 @@ server {
         proxy_send_timeout 86400;
         keepalive_timeout 65;
         add_header X-Accel-Buffering no always;
+    }
+}
+
+# HTTPS — aid.ai-os.co.za (uses ehsa.ai-os.co.za cert)
+server {
+    listen 443 ssl http2;
+    server_name aid.ai-os.co.za;
+    ssl_certificate /etc/letsencrypt/live/ehsa.ai-os.co.za/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ehsa.ai-os.co.za/privkey.pem;
+
+    root /opt/ai-os/public;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
     }
 }
 NGINX_CONF
