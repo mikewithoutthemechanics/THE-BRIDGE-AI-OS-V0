@@ -19,6 +19,11 @@ fi
 cat > "$CONF" <<'NGINX_CONF'
 # Bridge AI OS — VPS nginx config
 # Managed by scripts/update-nginx.sh (do not hand-edit; certbot HTTPS blocks OK)
+#
+# Resilience design:
+#   - Static HTML from /var/www/bridgeai/public/ is served DIRECTLY by nginx.
+#     Pages like /apps, /tokenomics, /join work even if gateway.js is down.
+#   - Dynamic routes (API, SSE, auth, agents) fall through to gateway:8080.
 
 # HTTP → HTTPS redirect for all domains
 server {
@@ -35,53 +40,30 @@ server {
     }
 }
 
-# HTTPS — bridge-ai-os.com
+# HTTPS — bridge-ai-os.com + go.ai-os.co.za
 server {
     listen 443 ssl http2;
-    server_name bridge-ai-os.com www.bridge-ai-os.com;
+    server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za;
     ssl_certificate /etc/letsencrypt/live/bridge-ai-os.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/bridge-ai-os.com/privkey.pem;
 
-    location / {
-        proxy_pass http://localhost:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-        proxy_read_timeout 86400;
-    }
+    # Serve static files directly — gateway-bypass resilience
+    root /var/www/bridgeai/public;
+    index index.html;
 
-    location /api/ {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 120;
-    }
+    # Friendly-URL rewrites (mirror vercel.json rewrites)
+    rewrite ^/apps$            /50-applications.html last;
+    rewrite ^/dashboard$       /aoe-dashboard.html last;
+    rewrite ^/treasury-dash$   /treasury-dashboard.html last;
+    rewrite ^/status$          /system-status-dashboard.html last;
+    rewrite ^/ehsa$            /ehsa-home.html last;
+    rewrite ^/supac$           /supac-home.html last;
+    rewrite ^/ban$             /ban-home.html last;
+    rewrite ^/ubi$             /ubi-home.html last;
+    rewrite ^/aid$             /aid-home.html last;
+    rewrite ^/aurora$          /aurora-home.html last;
 
-    location /monitor/ {
-        proxy_pass http://localhost:3001/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    location /svg-engine/ {
-        proxy_pass http://localhost:7070/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_cache_bypass $http_upgrade;
-    }
-
+    # SSE — no buffering, gateway:8080
     location /events/stream {
         proxy_pass http://localhost:8080;
         proxy_http_version 1.1;
@@ -98,9 +80,94 @@ server {
         keepalive_timeout 65;
         add_header X-Accel-Buffering no always;
     }
+
+    # API — gateway:8080
+    location /api/ {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30;
+    }
+
+    # Auth — gateway:8080
+    location /auth/ {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30;
+    }
+
+    # WebSocket (terminal, brain)
+    location /terminal {
+        proxy_pass http://localhost:5002;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
+
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
+
+    # SVG Skill Engine
+    location /svg-engine/ {
+        proxy_pass http://localhost:7070/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Admin sidecar
+    location /admin/ {
+        proxy_pass http://localhost:4011/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Monitor UI
+    location /monitor/ {
+        proxy_pass http://localhost:3001/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Everything else: static file first, then gateway
+    location / {
+        try_files $uri $uri.html $uri/index.html @gateway;
+    }
+
+    location @gateway {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 86400;
+    }
 }
 
-# HTTPS — aid.ai-os.co.za (uses dedicated cert)
+# HTTPS — aid.ai-os.co.za (dedicated cert)
 server {
     listen 443 ssl http2;
     server_name aid.ai-os.co.za;
