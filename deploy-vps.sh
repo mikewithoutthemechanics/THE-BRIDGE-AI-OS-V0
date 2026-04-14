@@ -69,8 +69,8 @@ echo "Configuring Nginx..."
 ssh "$VPS_USER@$VPS_IP" bash <<NGINX_SETUP
   cat > /etc/nginx/sites-available/bridgeai <<'NGINX_CONF'
 server {
-    listen 80;
-    server_name bridge-ai-os.com www.bridge-ai-os.com;
+    listen 80 default_server;
+    server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za;
 
     location / {
         proxy_pass http://localhost:3000;
@@ -133,6 +133,7 @@ echo ""
 echo "=== SSL Setup ==="
 echo "Run this on the VPS to enable HTTPS:"
 echo "  certbot --nginx -d $DOMAIN -d www.$DOMAIN"
+echo "  certbot --nginx -d go.ai-os.co.za   # extend cert to the short vanity domain"
 echo ""
 
 # ── 7. UFW Firewall ──────────────────────────────────────────────────────────
