@@ -68,4 +68,10 @@ jobs:
             sleep 3
             curl -sf http://127.0.0.1:8080/health && echo " ✓ gateway healthy" || echo " WARN: gateway health check failed"
 
+            # Reconfigure nginx (idempotent — safe to re-run every deploy)
+            if [ -f scripts/update-nginx.sh ]; then
+              echo "=== Updating nginx config ==="
+              sudo bash scripts/update-nginx.sh 2>&1 | tail -10 || echo "  WARN: nginx update failed"
+            fi
+
             pm2 status

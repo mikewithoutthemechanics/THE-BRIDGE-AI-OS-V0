@@ -72,8 +72,11 @@ server {
     listen 80 default_server;
     server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za;
 
+    # Gateway router (gateway.js :8080) owns all friendly routes:
+    # /tokenomics, /gateway, /join, /twin, /marketplace, etc.
+    # server.js on :3000 is the unified backend for CRM/LeadGen/API only.
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:8080;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -83,6 +86,17 @@ server {
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_cache_bypass \$http_upgrade;
         proxy_read_timeout 86400;
+    }
+
+    # API calls go to the unified backend on :3000 (CRM, LeadGen, OSINT, Payments)
+    location /api/ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 120;
     }
 
     location /monitor/ {
@@ -103,8 +117,9 @@ server {
     }
 
     # SSE — Cloudflare-safe (buffering off, no chunking, 25s keepalives emitted by app)
+    # Served by gateway.js on :8080 (see gateway.js:199)
     location /events/stream {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:8080;
         proxy_http_version 1.1;
         proxy_set_header Connection "";
         proxy_set_header Host \$host;
