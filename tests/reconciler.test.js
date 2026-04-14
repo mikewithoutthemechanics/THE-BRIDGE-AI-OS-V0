@@ -7,9 +7,13 @@
  */
 
 jest.mock('../lib/db', () => ({
-  reconcileTreasury:        jest.fn(),
-  getDistributionSummary:   jest.fn(),
+  reconcileTreasury:             jest.fn(),
+  getDistributionSummary:        jest.fn(),
   updateTransactionDistribution: jest.fn(async () => {}),
+  getMissedDistributions:        jest.fn(async () => []),
+  getWalletForUser:              jest.fn(async () => null),
+  markDistributed:               jest.fn(async () => {}),
+  incrementAttempts:             jest.fn(async () => {}),
 }));
 
 jest.mock('../lib/brdg-distributor', () => ({
@@ -22,8 +26,15 @@ jest.mock('../lib/brdg-chain', () => ({
   getBRDGBalance:  jest.fn(),
 }));
 
+jest.mock('../lib/hitl-queue', () => ({
+  enqueue: jest.fn(async () => ({ ok: true, id: 'hitl-001' })),
+  list:    jest.fn(async () => []),
+  resolve: jest.fn(async () => {}),
+}));
+
 const db          = require('../lib/db');
 const distributor = require('../lib/brdg-distributor');
+const hitlQueue   = require('../lib/hitl-queue');
 const { checkDBParity, checkChainParity, reconcile, recoverMissed, BRDG_PER_ZAR } = require('../lib/reconciler');
 
 beforeEach(() => jest.clearAllMocks());
@@ -203,22 +214,144 @@ describe('reconcile()', () => {
 });
 
 // =============================================================================
-// recoverMissed() — dry-run scaffold
+// recoverMissed()
 // =============================================================================
 describe('recoverMissed()', () => {
-  it('returns a dry-run entry for each recoverable payment', async () => {
-    const recoverable = [
-      { idempotency_key: 'pay-fail', amount: 300, distribution_wallet: '0xBad', distribution_status: 'failed' },
-      { idempotency_key: 'pay-old',  amount: 200, distribution_wallet: null,    distribution_status: null },
-    ];
+  // Convenience builder — only override what matters per test
+  function missedPayment(overrides = {}) {
+    return {
+      paymentId:            'pay-001',
+      email:                'user@test.com',
+      brdgAmount:           500,
+      txHash:               null,
+      distribution_status:  'failed',
+      distribution_wallet:  '0xWallet123',
+      attempts:             0,
+      ...overrides,
+    };
+  }
 
-    const plan = await recoverMissed(recoverable);
+  it('dry-run: reports would_auto_retry without calling distributor', async () => {
+    db.getMissedDistributions.mockResolvedValue([
+      missedPayment({ paymentId: 'pay-safe', attempts: 0, txHash: null, brdgAmount: 300 }),
+    ]);
 
-    expect(plan).toHaveLength(2);
-    expect(plan[0].idempotency_key).toBe('pay-fail');
-    expect(plan[0].brdg_expected).toBe(300 * BRDG_PER_ZAR);
-    expect(plan[1].prior_status).toBe('untracked');
-    // Dry-run: no actual distribution called
+    const result = await recoverMissed({ dryRun: true });
+
+    expect(result.dryRun).toBe(true);
+    expect(result.autoRetry).toBe(1);
+    expect(result.escalated).toBe(0);
+    expect(result.details[0].action).toBe('would_auto_retry');
+    expect(result.details[0].paymentId).toBe('pay-safe');
     expect(distributor.distributeAmount).not.toHaveBeenCalled();
+    expect(hitlQueue.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('dry-run: escalates when attempts >= 3 (retry exhausted)', async () => {
+    db.getMissedDistributions.mockResolvedValue([
+      missedPayment({ paymentId: 'pay-exhausted', attempts: 3, txHash: null }),
+    ]);
+
+    const result = await recoverMissed({ dryRun: true });
+
+    expect(result.escalated).toBe(1);
+    expect(result.details[0].action).toBe('would_escalate');
+    expect(result.details[0].reason).toBe('RETRY_EXCEEDED');
+    expect(hitlQueue.enqueue).not.toHaveBeenCalled(); // dry-run, no side effects
+  });
+
+  it('dry-run: escalates when txHash exists (ambiguous partial-send)', async () => {
+    db.getMissedDistributions.mockResolvedValue([
+      missedPayment({ txHash: '0xPartial', attempts: 1 }),
+    ]);
+
+    const result = await recoverMissed({ dryRun: true });
+
+    expect(result.escalated).toBe(1);
+    expect(result.details[0].reason).toBe('CHAIN_UNVERIFIED');
+  });
+
+  it('dry-run: escalates when wallet cannot be resolved', async () => {
+    db.getMissedDistributions.mockResolvedValue([
+      missedPayment({ distribution_wallet: null }),
+    ]);
+    db.getWalletForUser.mockResolvedValue(null); // wallet lookup also fails
+
+    const result = await recoverMissed({ dryRun: true });
+
+    expect(result.escalated).toBe(1);
+    expect(db.getWalletForUser).toHaveBeenCalledWith('user@test.com');
+  });
+
+  it('live: auto-retries safe payment and records txHash', async () => {
+    db.getMissedDistributions.mockResolvedValue([
+      missedPayment({ paymentId: 'pay-retry', attempts: 1, txHash: null, brdgAmount: 200 }),
+    ]);
+    distributor.distributeAmount.mockResolvedValue({ ok: true, txHash: '0xNewTx' });
+
+    const result = await recoverMissed({ dryRun: false });
+
+    expect(result.autoRetry).toBe(1);
+    expect(distributor.distributeAmount).toHaveBeenCalledWith(
+      '0xWallet123',
+      200,
+      'recovery:pay-retry',
+    );
+    expect(db.markDistributed).toHaveBeenCalledWith('pay-retry', '0xNewTx');
+    expect(result.details[0].outcome).toBe('confirmed');
+    expect(result.details[0].txHash).toBe('0xNewTx');
+  });
+
+  it('live: records retry_failed and increments attempts when distributor throws', async () => {
+    db.getMissedDistributions.mockResolvedValue([
+      missedPayment({ paymentId: 'pay-retry-fail', attempts: 0 }),
+    ]);
+    distributor.distributeAmount.mockRejectedValue(new Error('gas limit exceeded'));
+
+    const result = await recoverMissed({ dryRun: false });
+
+    expect(result.details[0].outcome).toBe('retry_failed');
+    expect(db.incrementAttempts).toHaveBeenCalledWith('pay-retry-fail', 'gas limit exceeded');
+    expect(db.markDistributed).not.toHaveBeenCalled();
+  });
+
+  it('live: enqueues HITL item for escalated payments', async () => {
+    db.getMissedDistributions.mockResolvedValue([
+      missedPayment({ paymentId: 'pay-hitl', attempts: 3, txHash: null }),
+    ]);
+
+    const result = await recoverMissed({ dryRun: false });
+
+    expect(result.escalated).toBe(1);
+    expect(hitlQueue.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type:      'REVENUE_RECOVERY',
+        paymentId: 'pay-hitl',
+        reason:    'RETRY_EXCEEDED',
+      }),
+    );
+  });
+
+  it('resolves wallet from email when distribution_wallet is null', async () => {
+    db.getMissedDistributions.mockResolvedValue([
+      missedPayment({ distribution_wallet: null, attempts: 0, brdgAmount: 100 }),
+    ]);
+    db.getWalletForUser.mockResolvedValue('0xDerivedWallet');
+    distributor.distributeAmount.mockResolvedValue({ ok: true, txHash: '0xDerived' });
+
+    await recoverMissed({ dryRun: false });
+
+    expect(distributor.distributeAmount).toHaveBeenCalledWith('0xDerivedWallet', 100, expect.any(String));
+  });
+
+  it('returns total=0 when no missed distributions exist', async () => {
+    db.getMissedDistributions.mockResolvedValue([]);
+
+    const result = await recoverMissed({ dryRun: true });
+
+    expect(result.total).toBe(0);
+    expect(result.autoRetry).toBe(0);
+    expect(result.escalated).toBe(0);
+    expect(result.details).toHaveLength(0);
   });
 });

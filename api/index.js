@@ -2849,13 +2849,31 @@ module.exports = async (req, res) => {
       notify.alertError({ context: 'treasury-reconcile-chain', message: `Chain drift: ${report.chain.drift} BRDG. Recoverable: ${report.chain.recoverable?.length || 0} payments.` }).catch(() => {});
     }
 
-    // Optional: include dry-run recovery plan in response
-    const body = req.method === 'POST' ? await parseBody(req).catch(() => ({})) : {};
-    if (body.recover === true && report.chain.recoverable?.length > 0) {
-      report.recovery_plan = await reconciler.recoverMissed(report.chain.recoverable);
+    return json(res, report);
+  }
+
+  // ── /api/revenue/recover ──
+  // GET  ?dry_run=true   — preview: what would be retried vs escalated (no side effects)
+  // POST body.dry_run=false — execute: auto-retry safe payments, enqueue HITL for ambiguous ones
+  if (p === '/api/revenue/recover') {
+    const adminTk    = req.headers['x-admin-token'] || '';
+    const isAdminCall = process.env.ADMIN_TOKEN && adminTk === process.env.ADMIN_TOKEN;
+    if (!isAdminCall) {
+      const user = requireAuthOrFail(req, res); if (!user) return;
     }
 
-    return json(res, report);
+    let dryRun = true;
+    if (req.method === 'POST') {
+      const body = await parseBody(req).catch(() => ({}));
+      if (body.dry_run === false || body.dry_run === 'false') dryRun = false;
+    } else {
+      // GET: ?dry_run=false to execute (explicit opt-in required)
+      const qs = new URL(req.url, 'http://x').searchParams;
+      if (qs.get('dry_run') === 'false') dryRun = false;
+    }
+
+    const result = await reconciler.recoverMissed({ dryRun });
+    return json(res, result);
   }
 
   // ── /api/ai-spend ──
