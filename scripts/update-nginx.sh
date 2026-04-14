@@ -100,12 +100,12 @@ server {
     }
 }
 
-# HTTPS — aid.ai-os.co.za (uses ehsa.ai-os.co.za cert)
+# HTTPS — aid.ai-os.co.za (uses dedicated cert)
 server {
     listen 443 ssl http2;
     server_name aid.ai-os.co.za;
-    ssl_certificate /etc/letsencrypt/live/ehsa.ai-os.co.za/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/ehsa.ai-os.co.za/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/aid.ai-os.co.za/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aid.ai-os.co.za/privkey.pem;
 
     root /opt/ai-os/public;
     index index.html;
