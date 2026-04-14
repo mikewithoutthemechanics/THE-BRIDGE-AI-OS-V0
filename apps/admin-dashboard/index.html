@@ -1,0 +1,175 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bridge AI OS — Control Plane</title>
+<style>
+:root{--bg:#0b0f14;--panel:#05070a;--accent:#00ff9c;--dim:#00ff9c33;--err:#ff4d6d;--info:#00bfff;--text:#cfe7dd}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:ui-monospace,monospace;color:var(--text);overflow:hidden;display:flex;height:100vh}
+#canvas{flex:2;position:relative;min-width:0}
+#panel{flex:1;max-width:380px;min-width:300px;background:var(--panel);border-left:1px solid var(--dim);padding:14px;overflow:auto}
+svg{width:100%;height:100%;display:block}
+.node{fill:var(--accent);cursor:pointer;transition:r .2s}
+.node.down{fill:var(--err)}
+.node:hover{r:16}
+.link{stroke:var(--accent);stroke-width:1;opacity:.25}
+text{fill:var(--accent);font-size:11px;pointer-events:none}
+h3{color:var(--info);margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:1px}
+h3:first-child{margin-top:0}
+.metric{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--dim);font-size:13px}
+.metric .v{color:var(--accent)}
+#events{max-height:200px;overflow:auto;font-size:11px}
+#events div{padding:2px 0;border-bottom:1px solid var(--dim)}
+#events .err{color:var(--err)}
+#events .info{color:var(--info)}
+#pill{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--err);margin-right:6px;vertical-align:middle}
+#pill.live{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+button.act{background:transparent;border:1px solid var(--dim);color:var(--accent);font-family:inherit;padding:3px 8px;cursor:pointer;font-size:10px;margin-right:4px}
+button.act:hover{background:var(--dim)}
+.note{color:var(--dim);font-size:10px;margin-top:2px}
+</style></head><body>
+<div id="canvas"><svg id="svg"></svg></div>
+<div id="panel">
+<h3><span id="pill"></span>ADMIN-API</h3>
+<div class="metric"><span>Connection</span><span class="v" id="conn">offline</span></div>
+<div class="metric"><span>Services up</span><span class="v" id="up">—</span></div>
+<div class="metric"><span>Commit</span><span class="v" id="commit">—</span></div>
+<h3>AGGREGATE</h3>
+<div class="metric"><span>CPU load</span><span class="v" id="cpu">—</span></div>
+<div class="metric"><span>Memory</span><span class="v" id="mem">—</span></div>
+<div class="note">source: /admin/overview</div>
+<h3>EVENT STREAM</h3>
+<canvas id="ac" width="340" height="80"></canvas>
+<div class="note">events/sec → audio</div>
+<h3>SELECTED</h3>
+<div id="sel">click a node</div>
+<h3>LOG</h3>
+<div id="events"></div>
+</div>
+<script>
+const API=window.location.origin;
+let topology={nodes:[],edges:[]},nodes=[],rate=0,bucket=0;
+setInterval(()=>{rate=bucket;bucket=0},1000);
+function layout(){
+  const c=document.getElementById('canvas'),W=c.clientWidth,H=c.clientHeight;
+  const cx=W/2,cy=H/2,R=Math.min(W,H)*0.35;
+  const gw=topology.nodes.find(n=>n.id==='bridge-gateway');
+  const others=topology.nodes.filter(n=>n.id!=='bridge-gateway');
+  nodes=[];
+  if(gw)nodes.push({...gw,x:cx,y:cy});
+  others.forEach((n,i)=>{const a=(i/others.length)*Math.PI*2;nodes.push({...n,x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R})});
+}
+const svg=document.getElementById('svg');
+function ns(t){return document.createElementNS('http://www.w3.org/2000/svg',t)}
+function render(){
+  svg.innerHTML='';
+  topology.edges.forEach(e=>{
+    const A=nodes.find(n=>n.id===e.from),B=nodes.find(n=>n.id===e.to);
+    if(!A||!B)return;
+    const l=ns('line');l.setAttribute('x1',A.x);l.setAttribute('y1',A.y);
+    l.setAttribute('x2',B.x);l.setAttribute('y2',B.y);l.setAttribute('class','link');
+    svg.appendChild(l);
+  });
+  nodes.forEach(n=>{
+    const c=ns('circle');c.setAttribute('cx',n.x);c.setAttribute('cy',n.y);
+    c.setAttribute('r',n.id==='bridge-gateway'?16:12);
+    c.setAttribute('class','node'+(n.status==='online'?'':' down'));
+    c.onclick=()=>select(n);
+    svg.appendChild(c);
+    const t=ns('text');t.setAttribute('x',n.x+18);t.setAttribute('y',n.y+4);
+    t.textContent=n.id;svg.appendChild(t);
+  });
+}
+async function fetchOverview(){
+  try{
+    const r=await fetch(API+'/admin/overview');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    document.getElementById('pill').classList.add('live');
+    document.getElementById('conn').textContent='online';
+    document.getElementById('up').textContent=d.services_up+' / '+d.services_total;
+    document.getElementById('commit').textContent=(d.git_commit||'—').slice(0,7);
+    document.getElementById('cpu').textContent=d.cpu_avg+'%';
+    document.getElementById('mem').textContent=d.mem_avg+'%';
+    if(d.services){d.services.forEach(s=>{const n=nodes.find(x=>x.id===s.name);if(n)n.status=s.status})}
+  }catch(e){
+    document.getElementById('pill').classList.remove('live');
+    document.getElementById('conn').textContent='offline';
+    log('overview: '+e.message,'err');
+  }
+}
+async function fetchTopology(){
+  try{
+    const r=await fetch(API+'/admin/topology');
+    if(!r.ok)return;
+    const d=await r.json();
+    if(d.nodes&&d.edges){topology=d;layout();log('topology: '+d.nodes.length+' nodes','info')}
+  }catch{}
+}
+function select(n){
+  const el=document.getElementById('sel');
+  el.innerHTML='<b>'+n.id+'</b><br>status: '+n.status+'<br>'+
+    '<button class="act" data-a="restart">restart</button>'+
+    '<button class="act" data-a="reload">reload</button>';
+  el.querySelectorAll('button').forEach(b=>{b.onclick=()=>action(n.id,b.dataset.a)});
+  flow('bridge-gateway',n.id);
+}
+async function action(name,act){
+  if(!confirm(act+' '+name+'?'))return;
+  try{
+    const r=await fetch(API+'/admin/services/'+name+'/'+act,{method:'POST'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    log(act+' → '+name+' OK','info');
+  }catch(e){log(act+' '+name+' failed: '+e.message,'err')}
+}
+function flow(a,b){
+  const A=nodes.find(n=>n.id===a),B=nodes.find(n=>n.id===b);
+  if(!A||!B)return;
+  const p=ns('circle');p.setAttribute('r',4);p.setAttribute('fill','#00ff9c');svg.appendChild(p);
+  let t=0;const id=setInterval(()=>{t+=.04;p.setAttribute('cx',A.x+(B.x-A.x)*t);p.setAttribute('cy',A.y+(B.y-A.y)*t);if(t>=1){clearInterval(id);p.remove()}},16);
+}
+function connectSSE(){
+  try{
+    const es=new EventSource(API+'/events/stream');
+    es.onopen=()=>log('event stream connected','info');
+    es.onmessage=e=>{bucket++;try{const d=JSON.parse(e.data);if(d.type)log(d.type+' ← '+d.from)}catch{}};
+    es.onerror=()=>{es.close();setTimeout(connectSSE,5000)};
+  }catch(e){log('SSE: '+e.message,'err')}
+}
+let ac,an,osc;
+function initAudio(){
+  ac=new(window.AudioContext||window.webkitAudioContext)();
+  an=ac.createAnalyser();an.fftSize=128;
+  osc=ac.createOscillator();
+  const g=ac.createGain();g.gain.value=.02;
+  osc.connect(g);g.connect(an);an.connect(ac.destination);
+  osc.start();drawAudio();
+}
+function drawAudio(){
+  requestAnimationFrame(drawAudio);
+  if(!an)return;
+  if(osc)osc.frequency.value=80+rate*30;
+  const data=new Uint8Array(an.frequencyBinCount);
+  an.getByteFrequencyData(data);
+  const c=document.getElementById('ac'),x=c.getContext('2d');
+  x.clearRect(0,0,c.width,c.height);
+  x.fillStyle='#00ff9c';
+  for(let i=0;i<data.length;i++){const v=data[i]/255;x.fillRect(i*5,c.height-v*c.height,4,v*c.height)}
+  x.fillStyle='#00bfff';x.font='10px monospace';x.fillText(rate+' evt/s',4,12);
+}
+function log(txt,kind){
+  const el=document.createElement('div');if(kind)el.className=kind;
+  el.textContent=new Date().toTimeString().slice(0,8)+' '+txt;
+  const b=document.getElementById('events');b.prepend(el);
+  while(b.children.length>100)b.removeChild(b.lastChild);
+}
+function loop(){render();requestAnimationFrame(loop)}
+window.addEventListener('load',()=>{
+  layout();render();loop();
+  document.addEventListener('click',()=>{if(!ac){initAudio();log('audio engine started','info')}},{once:true});
+  fetchOverview();fetchTopology();
+  setInterval(fetchOverview,2000);
+  setInterval(fetchTopology,10000);
+  connectSSE();
+  log('control plane init','info');
+  log('click anywhere to enable audio','info');
+});
+window.addEventListener('resize',()=>{layout();render()});
+</script></body></html>
