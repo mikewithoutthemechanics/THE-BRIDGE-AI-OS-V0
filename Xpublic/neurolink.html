@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroLink — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-purple-400">🧠 NeuroLink</a>
+    <div class="flex gap-4">
+      <a href="/agents.html" class="text-slate-400 hover:text-purple-400">Agents</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-purple-400 mb-6">Neural Network Interface</h1>
+
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="neurons">0</div>
+        <div class="text-sm text-slate-400">Active Neurons</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400" id="connections">0</div>
+        <div class="text-sm text-slate-400">Connections</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-purple-400" id="synaptic">0%</div>
+        <div class="text-sm text-slate-400">Synaptic Activity</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-purple-400 mb-4">Brain Regions</h2>
+        <div class="space-y-3">
+          <div class="bg-slate-700 p-3 rounded">
+            <div class="flex justify-between"><span>Cortex (LLM)</span><span class="text-green-400">Active</span></div>
+          </div>
+          <div class="bg-slate-700 p-3 rounded">
+            <div class="flex justify-between"><span>Memory (RAG)</span><span class="text-green-400">Active</span></div>
+          </div>
+          <div class="bg-slate-700 p-3 rounded">
+            <div class="flex justify-between"><span>Actions (Tool)</span><span class="text-green-400">Active</span></div>
+          </div>
+          <div class="bg-slate-700 p-3 rounded">
+            <div class="flex justify-between"><span>Planning (Agent)</span><span class="text-yellow-400">Learning</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-purple-400 mb-4">Thought Stream</h2>
+        <div id="thoughts" class="space-y-2 font-mono text-sm">
+          <div class="text-slate-500">Waiting for thoughts...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-purple-400 mb-4">Query NeuroLink</h2>
+      <div class="flex gap-4">
+        <input type="text" id="query" class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white" placeholder="Ask NeuroLink...">
+        <button onclick="ask()" class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Ask</button>
+      </div>
+      <div id="response" class="mt-4 p-4 bg-slate-700 rounded hidden"></div>
+    </div>
+  </main>
+
+  <script>
+    async function loadNeuro() {
+      try {
+        const res = await fetch('/api/neuro');
+        const data = await res.json();
+        document.getElementById('neurons').textContent = data.neurons || 0;
+        document.getElementById('connections').textContent = data.connections || 0;
+        document.getElementById('synaptic').textContent = (data.synaptic || 0) + '%';
+      } catch(e) {}
+    }
+
+    async function ask() {
+      const query = document.getElementById('query').value;
+      if (!query) return;
+      
+      const resp = document.getElementById('response');
+      resp.classList.remove('hidden');
+      resp.textContent = 'Thinking...';
+      
+      try {
+        const res = await fetch('/api/brain/ask', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ question: query })
+        });
+        const data = await res.json();
+        resp.textContent = data.response || data.answer;
+      } catch(e) {
+        resp.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    loadNeuro();
+  </script>
+</body>
+</html>

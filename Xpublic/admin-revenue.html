@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Revenue — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center border-b border-slate-700">
+    <a href="/admin.html" class="text-xl font-bold text-orange-400">Admin Revenue</a>
+    <div class="flex gap-4">
+      <a href="/admin-command.html" class="text-slate-400 hover:text-orange-400">Commands</a>
+      <a href="/admin.html" class="text-slate-400 hover:text-orange-400">Panel</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-orange-400 mb-6">Revenue Analytics</h1>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+        <div class="text-2xl font-bold text-green-400" id="mrr">$0</div>
+        <div class="text-sm text-slate-400">MRR</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+        <div class="text-2xl font-bold text-cyan-400" id="arr">$0</div>
+        <div class="text-sm text-slate-400">ARR</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+        <div class="text-2xl font-bold text-purple-400" id="ltv">$0</div>
+        <div class="text-sm text-slate-400">Avg LTV</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+        <div class="text-2xl font-bold text-yellow-400" id="churn">0%</div>
+        <div class="text-sm text-slate-400">Churn Rate</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-slate-800 rounded-xl p-6 border border-slate-700">
+        <h2 class="text-lg font-bold text-orange-400 mb-4">Revenue by Plan</h2>
+        <div id="byPlan" class="space-y-3">
+          <div class="flex justify-between"><span class="text-slate-400">Pro</span><span class="text-green-400">$15,400</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Enterprise</span><span class="text-green-400">$8,200</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Free</span><span class="text-slate-400">$0</span></div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-xl p-6 border border-slate-700">
+        <h2 class="text-lg font-bold text-orange-400 mb-4">Revenue Streams</h2>
+        <div id="streams" class="space-y-3">
+          <div class="flex justify-between"><span class="text-slate-400">Subscriptions</span><span class="text-green-400">$23,600</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Marketplace</span><span class="text-green-400">$4,320</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">API Usage</span><span class="text-green-400">$2,180</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6 border border-slate-700">
+      <h2 class="text-lg font-bold text-orange-400 mb-4">Top Customers by Revenue</h2>
+      <table class="w-full">
+        <thead class="bg-slate-700">
+          <tr>
+            <th class="p-3 text-left">Customer</th>
+            <th class="p-3 text-left">Plan</th>
+            <th class="p-3 text-right">MRR</th>
+            <th class="p-3 text-right">LTV</th>
+          </tr>
+        </thead>
+        <tbody id="customers">
+          <tr><td colspan="4" class="p-4 text-center text-slate-500">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    async function loadRevenue() {
+      try {
+        const res = await fetch('/api/revenue');
+        const data = await res.json();
+        
+        document.getElementById('mrr').textContent = '$' + (data.mrr || 0).toLocaleString();
+        document.getElementById('arr').textContent = '$' + (data.arr || 0).toLocaleString();
+        document.getElementById('ltv').textContent = '$' + (data.ltv || 0).toLocaleString();
+        document.getElementById('churn').textContent = (data.churn || 0) + '%';
+
+        if (data.customers) {
+          document.getElementById('customers').innerHTML = data.customers.map(c => `
+            <tr class="border-t border-slate-700">
+              <td class="p-3 font-bold">${c.name}</td>
+              <td class="p-3 text-slate-400">${c.plan}</td>
+              <td class="p-3 text-right text-green-400">$${c.mrr}</td>
+              <td class="p-3 text-right text-white">$${c.ltv}</td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('customers').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-400">Error loading data</td></tr>';
+      }
+    }
+
+    loadRevenue();
+  </script>
+</body>
+</html>

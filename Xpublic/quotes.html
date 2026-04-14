@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quotes — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/crm.html" class="text-slate-400 hover:text-cyan-400">CRM</a>
+      <a href="/invoicing.html" class="text-slate-400 hover:text-cyan-400">Invoicing</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-cyan-400">Quotes & Proposals</h1>
+      <button onclick="createQuote()" class="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-cyan-500">
+        + New Quote
+      </button>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="total">0</div>
+        <div class="text-sm text-slate-400">Total Quotes</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400" id="accepted">0</div>
+        <div class="text-sm text-slate-400">Accepted</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400" id="pending">0</div>
+        <div class="text-sm text-slate-400">Pending</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-red-400" id="expired">0</div>
+        <div class="text-sm text-slate-400">Expired</div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-slate-700">
+          <tr>
+            <th class="p-4 text-left text-sm font-bold">Quote #</th>
+            <th class="p-4 text-left text-sm font-bold">Client</th>
+            <th class="p-4 text-left text-sm font-bold">Amount</th>
+            <th class="p-4 text-left text-sm font-bold">Status</th>
+            <th class="p-4 text-left text-sm font-bold">Valid Until</th>
+            <th class="p-4 text-left text-sm font-bold">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="quotes-table">
+          <tr>
+            <td colspan="6" class="p-8 text-center text-slate-500">Loading quotes...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    async function loadQuotes() {
+      try {
+        const res = await fetch('/api/quotes');
+        const data = await res.json();
+        
+        const quotes = data.quotes || data || [];
+        document.getElementById('total').textContent = quotes.length;
+        document.getElementById('accepted').textContent = quotes.filter(q => q.status === 'accepted').length;
+        document.getElementById('pending').textContent = quotes.filter(q => q.status === 'pending').length;
+        document.getElementById('expired').textContent = quotes.filter(q => q.status === 'expired').length;
+
+        if (quotes.length === 0) {
+          document.getElementById('quotes-table').innerHTML = `
+            <tr><td colspan="6" class="p-8 text-center text-slate-500">No quotes yet. Create your first quote!</td></tr>
+          `;
+        } else {
+          document.getElementById('quotes-table').innerHTML = quotes.map(q => `
+            <tr class="border-t border-slate-700 hover:bg-slate-750">
+              <td class="p-4 font-mono">${q.number || q.id}</td>
+              <td class="p-4">${q.client || q.customer || 'N/A'}</td>
+              <td class="p-4 text-green-400">$${(q.amount || 0).toLocaleString()}</td>
+              <td class="p-4">
+                <span class="px-2 py-1 rounded text-xs font-bold ${
+                  q.status === 'accepted' ? 'bg-green-900 text-green-400' :
+                  q.status === 'pending' ? 'bg-yellow-900 text-yellow-400' :
+                  'bg-red-900 text-red-400'
+                }">${q.status?.toUpperCase() || 'PENDING'}
+                </span>
+              </td>
+              <td class="p-4 text-slate-400">${q.validUntil || q.expiry || 'N/A'}</td>
+              <td class="p-4">
+                <button class="text-cyan-400 hover:text-cyan-300 mr-2">View</button>
+                <button class="text-slate-400 hover:text-white">Edit</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('quotes-table').innerHTML = `
+          <tr><td colspan="6" class="p-8 text-center text-red-400">Error loading quotes</td></tr>
+        `;
+      }
+    }
+
+    function createQuote() {
+      alert('Quote creation would open a form here');
+    }
+
+    loadQuotes();
+  </script>
+</body>
+</html>

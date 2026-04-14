@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Portal — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/home.html" class="text-slate-400 hover:text-cyan-400">Home</a>
+      <a href="/voice.html" class="text-cyan-400">Voice</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-2xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-center mb-2 text-cyan-400">Voice Portal</h1>
+    <p class="text-center text-slate-400 mb-8">Talk to your AI agents naturally</p>
+
+    <div class="bg-slate-800 rounded-xl p-6 mb-6">
+      <div id="status" class="text-center py-8">
+        <div class="text-6xl mb-4">🎤</div>
+        <p class="text-slate-400">Click to start speaking</p>
+        <button id="startBtn" onclick="startListening()" class="mt-4 bg-cyan-500 text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-cyan-400">
+          Start Voice
+        </button>
+      </div>
+
+      <div id="recording" class="hidden text-center py-8">
+        <div class="text-6xl mb-4 animate-pulse">🔴</div>
+        <p class="text-red-400 font-bold">Listening...</p>
+        <button onclick="stopListening()" class="mt-4 bg-slate-700 text-white px-8 py-3 rounded-full font-bold hover:bg-slate-600">
+          Stop
+        </button>
+      </div>
+
+      <div id="transcript" class="mt-6 p-4 bg-slate-900 rounded-lg min-h-[100px]">
+        <p class="text-slate-500 italic">Your voice transcript will appear here...</p>
+      </div>
+
+      <div id="response" class="mt-4 p-4 bg-slate-700 rounded-lg min-h-[80px]">
+        <p class="text-slate-400 italic">AI response will appear here...</p>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">Voice Agents</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="bg-slate-700 p-4 rounded-lg cursor-pointer hover:bg-slate-600" onclick="selectAgent('assistant')">
+          <div class="font-bold">AI Assistant</div>
+          <div class="text-sm text-slate-400">General purpose helper</div>
+        </div>
+        <div class="bg-slate-700 p-4 rounded-lg cursor-pointer hover:bg-slate-600" onclick="selectAgent('expert')">
+          <div class="font-bold">Expert Consultant</div>
+          <div class="text-sm text-slate-400">Technical & business advice</div>
+        </div>
+        <div class="bg-slate-700 p-4 rounded-lg cursor-pointer hover:bg-slate-600" onclick="selectAgent('navigator')">
+          <div class="font-bold">Navigator</div>
+          <div class="text-sm text-slate-400">Navigation & directions</div>
+        </div>
+        <div class="bg-slate-700 p-4 rounded-lg cursor-pointer hover:bg-slate-600" onclick="selectAgent('creative')">
+          <div class="font-bold">Creative Writer</div>
+          <div class="text-sm text-slate-400">Content & copy generation</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let selectedAgent = 'assistant';
+    let recognition = null;
+
+    function selectAgent(agent) {
+      selectedAgent = agent;
+      document.getElementById('status').innerHTML = `
+        <div class="text-6xl mb-4">🎤</div>
+        <p class="text-slate-400">Click to speak to ${agent}</p>
+        <button id="startBtn" onclick="startListening()" class="mt-4 bg-cyan-500 text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-cyan-400">
+          Start Voice
+        </button>
+      `;
+    }
+
+    function startListening() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Speech recognition not supported in this browser');
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = async (event) => {
+        const transcript = Array.from(event.results).map(r => r.transcript).join('');
+        document.getElementById('transcript').innerHTML = `<p class="text-white">${transcript}</p>`;
+        
+        if (event.results[event.results.length - 1].isFinal) {
+          await processVoice(transcript);
+        }
+      };
+
+      recognition.onerror = (e) => {
+        console.error('Speech error:', e);
+        stopListening();
+      };
+
+      recognition.start();
+      document.getElementById('status').classList.add('hidden');
+      document.getElementById('recording').classList.remove('hidden');
+    }
+
+    function stopListening() {
+      if (recognition) recognition.stop();
+      document.getElementById('status').classList.remove('hidden');
+      document.getElementById('recording').classList.add('hidden');
+    }
+
+    async function processVoice(text) {
+      const responseDiv = document.getElementById('response');
+      responseDiv.innerHTML = '<p class="text-cyan-400">Processing...</p>';
+      
+      try {
+        const res = await fetch('/api/llm/infer', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ 
+            prompt: text,
+            agent: selectedAgent,
+            voice: true
+          })
+        });
+        const data = await res.json();
+        
+        responseDiv.innerHTML = `<p class="text-white">${data.response || data.text || 'Response received'}</p>`;
+        
+        if (data.audio || data.speech) {
+          playAudio(data.audio || data.speech);
+        }
+      } catch(e) {
+        responseDiv.innerHTML = `<p class="text-red-400">Error: ${e.message}</p>`;
+      }
+    }
+
+    function playAudio(audioUrl) {
+      const audio = new Audio(audioUrl);
+      audio.play();
+    }
+  </script>
+</body>
+</html>

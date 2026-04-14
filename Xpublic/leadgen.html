@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeadGen — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/crm.html" class="text-slate-400 hover:text-cyan-400">CRM</a>
+      <a href="/marketing.html" class="text-slate-400 hover:text-cyan-400">Marketing</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-cyan-400">Lead Generation</h1>
+      <button onclick="createCampaign()" class="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-cyan-500">
+        + New Campaign
+      </button>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="total">0</div>
+        <div class="text-sm text-slate-400">Total Leads</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400" id="qualified">0</div>
+        <div class="text-sm text-slate-400">Qualified</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400" id="converted">0</div>
+        <div class="text-sm text-slate-400">Converted</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-purple-400" id="cost">$0</div>
+        <div class="text-sm text-slate-400">Cost per Lead</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6 mb-6">
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">📝 Form Leads</h2>
+        <div class="text-3xl font-bold text-white" id="formLeads">0</div>
+        <div class="text-sm text-slate-400">From website forms</div>
+      </div>
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">📞 Call Leads</h2>
+        <div class="text-3xl font-bold text-white" id="callLeads">0</div>
+        <div class="text-sm text-slate-400">From phone inquiries</div>
+      </div>
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">🌐 Referrals</h2>
+        <div class="text-3xl font-bold text-white" id="referrals">0</div>
+        <div class="text-sm text-slate-400">From referrals</div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-slate-700">
+          <tr>
+            <th class="p-4 text-left text-sm font-bold">Lead</th>
+            <th class="p-4 text-left text-sm font-bold">Source</th>
+            <th class="p-4 text-left text-sm font-bold">Status</th>
+            <th class="p-4 text-left text-sm font-bold">Value</th>
+            <th class="p-4 text-left text-sm font-bold">Created</th>
+            <th class="p-4 text-left text-sm font-bold">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="leads-table">
+          <tr><td colspan="6" class="p-8 text-center text-slate-500">Loading leads...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    async function loadLeads() {
+      try {
+        const res = await fetch('/api/leadgen');
+        const data = await res.json();
+        const leads = data.leads || data || [];
+        
+        document.getElementById('total').textContent = leads.length;
+        document.getElementById('qualified').textContent = leads.filter(l => l.status === 'qualified').length;
+        document.getElementById('converted').textContent = leads.filter(l => l.status === 'converted').length;
+        
+        const total = leads.reduce((sum, l) => sum + (l.cost || 0), 0);
+        const cost = leads.length > 0 ? Math.round(total / leads.length) : 0;
+        document.getElementById('cost').textContent = '$' + cost;
+
+        document.getElementById('formLeads').textContent = leads.filter(l => l.source === 'form').length;
+        document.getElementById('callLeads').textContent = leads.filter(l => l.source === 'call').length;
+        document.getElementById('referrals').textContent = leads.filter(l => l.source === 'referral').length;
+
+        if (leads.length === 0) {
+          document.getElementById('leads-table').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">No leads yet</td></tr>';
+        } else {
+          document.getElementById('leads-table').innerHTML = leads.map(l => `
+            <tr class="border-t border-slate-700 hover:bg-slate-750">
+              <td class="p-4">
+                <div class="font-bold">${l.name}</div>
+                <div class="text-sm text-slate-400">${l.email}</div>
+              </td>
+              <td class="p-4 text-slate-400">${l.source}</td>
+              <td class="p-4">
+                <span class="px-2 py-1 rounded text-xs font-bold ${
+                  l.status === 'qualified' ? 'bg-green-900 text-green-400' :
+                  l.status === 'converted' ? 'bg-purple-900 text-purple-400' :
+                  l.status === 'new' ? 'bg-cyan-900 text-cyan-400' :
+                  'bg-slate-600 text-slate-400'
+                }">${(l.status || 'new').toUpperCase()}
+                </span>
+              </td>
+              <td class="p-4 text-green-400">$${(l.value || 0).toLocaleString()}</td>
+              <td class="p-4 text-slate-400">${l.created || l.date}</td>
+              <td class="p-4">
+                <button class="text-cyan-400 hover:text-cyan-300">Convert</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('leads-table').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-400">Error loading leads</td></tr>';
+      }
+    }
+
+    function createCampaign() {
+      alert('Campaign creation would open here');
+    }
+
+    loadLeads();
+  </script>
+</body>
+</html>

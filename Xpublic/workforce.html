@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workforce — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/crm.html" class="text-slate-400 hover:text-cyan-400">CRM</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-cyan-400">Workforce Management</h1>
+      <button onclick="addEmployee()" class="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-cyan-500">
+        + Add Employee
+      </button>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="total">0</div>
+        <div class="text-sm text-slate-400">Total Employees</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400" id="active">0</div>
+        <div class="text-sm text-slate-400">Active</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400" id="contractors">0</div>
+        <div class="text-sm text-slate-400">Contractors</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-purple-400" id="payroll">$0</div>
+        <div class="text-sm text-slate-400">Monthly Payroll</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">Departments</h2>
+        <div id="departments" class="space-y-2">
+          <div class="text-slate-500">Loading...</div>
+        </div>
+      </div>
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">Upcoming Leave</h2>
+        <div id="leave" class="space-y-2">
+          <div class="text-slate-500">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-slate-700">
+          <tr>
+            <th class="p-4 text-left text-sm font-bold">Employee</th>
+            <th class="p-4 text-left text-sm font-bold">Role</th>
+            <th class="p-4 text-left text-sm font-bold">Department</th>
+            <th class="p-4 text-left text-sm font-bold">Type</th>
+            <th class="p-4 text-left text-sm font-bold">Status</th>
+            <th class="p-4 text-left text-sm font-bold">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="employees-table">
+          <tr><td colspan="6" class="p-8 text-center text-slate-500">Loading employees...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    async function loadWorkforce() {
+      try {
+        const res = await fetch('/api/hr');
+        const data = await res.json();
+        const employees = data.employees || data || [];
+        
+        document.getElementById('total').textContent = employees.length;
+        document.getElementById('active').textContent = employees.filter(e => e.status === 'active').length;
+        document.getElementById('contractors').textContent = employees.filter(e => e.type === 'contractor').length;
+        
+        const total = employees.reduce((sum, e) => sum + (e.salary || e.pay || 0), 0);
+        document.getElementById('payroll').textContent = '$' + total.toLocaleString();
+
+        if (employees.length === 0) {
+          document.getElementById('employees-table').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">No employees found</td></tr>';
+        } else {
+          document.getElementById('employees-table').innerHTML = employees.map(e => `
+            <tr class="border-t border-slate-700 hover:bg-slate-750">
+              <td class="p-4 font-bold">${e.name}</td>
+              <td class="p-4 text-slate-400">${e.role}</td>
+              <td class="p-4 text-slate-400">${e.department}</td>
+              <td class="p-4">
+                <span class="px-2 py-1 rounded text-xs font-bold ${e.type === 'contractor' ? 'bg-yellow-900 text-yellow-400' : 'bg-cyan-900 text-cyan-400'}">
+                  ${(e.type || 'full-time').toUpperCase()}
+                </span>
+              </td>
+              <td class="p-4">
+                <span class="px-2 py-1 rounded text-xs font-bold ${e.status === 'active' ? 'bg-green-900 text-green-400' : 'bg-slate-600 text-slate-400'}">
+                  ${(e.status || 'active').toUpperCase()}
+                </span>
+              </td>
+              <td class="p-4">
+                <button class="text-cyan-400 hover:text-cyan-300">View</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('employees-table').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-400">Error loading workforce</td></tr>';
+      }
+    }
+
+    function addEmployee() {
+      alert('Add employee form would open here');
+    }
+
+    loadWorkforce();
+  </script>
+</body>
+</html>

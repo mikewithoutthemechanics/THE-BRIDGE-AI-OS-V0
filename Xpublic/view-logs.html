@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Logs — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">View Logs</a>
+    <div class="flex gap-4">
+      <a href="/logs.html" class="text-cyan-400">Logs</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-cyan-400">Log Viewer</h1>
+      <div class="flex gap-4">
+        <select id="level" class="bg-slate-800 border border-slate-600 rounded px-4 py-2 text-white">
+          <option value="">All Levels</option>
+          <option value="error">Error</option>
+          <option value="warn">Warning</option>
+          <option value="info">Info</option>
+          <option value="debug">Debug</option>
+        </select>
+        <button onclick="refresh()" class="bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-500">Refresh</button>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl overflow-hidden mb-6">
+      <div class="p-3 bg-slate-700 flex justify-between text-sm">
+        <span class="text-slate-400" id="count">0 logs</span>
+        <span class="text-slate-400" id="time">Last updated: --</span>
+      </div>
+      <div class="font-mono text-sm overflow-auto max-h-[600px]" id="logs">
+        <div class="text-slate-500 p-4">Loading logs...</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadLogs() {
+      try {
+        const res = await fetch('/api/logs');
+        const data = await res.json();
+        const logs = data.logs || data || [];
+        
+        document.getElementById('count').textContent = logs.length + ' logs';
+        document.getElementById('time').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+
+        if (logs.length === 0) {
+          document.getElementById('logs').innerHTML = '<div class="text-slate-500 p-4">No logs available</div>';
+        } else {
+          document.getElementById('logs').innerHTML = logs.map(l => {
+            const level = (l.level || 'info').toLowerCase();
+            const color = level === 'error' ? 'text-red-400' : level === 'warn' ? 'text-yellow-400' : level === 'debug' ? 'text-slate-500' : 'text-cyan-400';
+            return `<div class="p-2 border-b border-slate-700 ${color}">[${l.timestamp || l.time}] [${level.toUpperCase()}] ${l.message || l.msg}</div>`;
+          }).join('');
+        }
+      } catch(e) {
+        document.getElementById('logs').innerHTML = '<div class="text-red-400 p-4">Error loading logs: ' + e.message + '</div>';
+      }
+    }
+
+    function refresh() {
+      loadLogs();
+    }
+
+    document.getElementById('level').addEventListener('change', loadLogs);
+
+    loadLogs();
+    setInterval(loadLogs, 30000);
+  </script>
+</body>
+</html>

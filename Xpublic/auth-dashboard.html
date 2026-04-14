@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth Dashboard — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center border-b border-slate-700">
+    <a href="/admin.html" class="text-xl font-bold text-orange-400">Auth Dashboard</a>
+    <div class="flex gap-4">
+      <a href="/admin-command.html" class="text-slate-400 hover:text-orange-400">Commands</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-orange-400 mb-6">Authentication Overview</h1>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+        <div class="text-2xl font-bold text-cyan-400" id="total">0</div>
+        <div class="text-sm text-slate-400">Total Users</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+        <div class="text-2xl font-bold text-green-400" id="active">0</div>
+        <div class="text-sm text-slate-400">Active Sessions</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+        <div class="text-2xl font-bold text-yellow-400" id="mfa">0</div>
+        <div class="text-sm text-slate-400">MFA Enabled</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+        <div class="text-2xl font-bold text-red-400" id="failed">0</div>
+        <div class="text-sm text-slate-400">Failed (24h)</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-slate-800 rounded-xl p-6 border border-slate-700">
+        <h2 class="text-lg font-bold text-orange-400 mb-4">Active Sessions</h2>
+        <div id="sessions" class="space-y-2">
+          <div class="text-slate-500">Loading...</div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-xl p-6 border border-slate-700">
+        <h2 class="text-lg font-bold text-orange-400 mb-4">Recent Logins</h2>
+        <div id="logins" class="space-y-2">
+          <div class="text-slate-500">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6 border border-slate-700">
+      <h2 class="text-lg font-bold text-orange-400 mb-4">Provider Distribution</h2>
+      <div id="providers" class="grid md:grid-cols-3 gap-4">
+        <div class="bg-slate-700 p-4 rounded">
+          <div class="font-bold">Email/Password</div>
+          <div class="text-2xl text-cyan-400">0</div>
+        </div>
+        <div class="bg-slate-700 p-4 rounded">
+          <div class="font-bold">Google OAuth</div>
+          <div class="text-2xl text-cyan-400">0</div>
+        </div>
+        <div class="bg-slate-700 p-4 rounded">
+          <div class="font-bold">GitHub OAuth</div>
+          <div class="text-2xl text-cyan-400">0</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadAuth() {
+      try {
+        const res = await fetch('/api/auth');
+        const data = await res.json();
+        
+        document.getElementById('total').textContent = data.total || 0;
+        document.getElementById('active').textContent = data.active || 0;
+        document.getElementById('mfa').textContent = data.mfa || 0;
+        document.getElementById('failed').textContent = data.failed || 0;
+
+        if (data.sessions) {
+          document.getElementById('sessions').innerHTML = data.sessions.slice(0, 5).map(s => `
+            <div class="flex justify-between items-center p-2 bg-slate-700 rounded">
+              <span>${s.email}</span>
+              <span class="text-green-400 text-sm">Active</span>
+            </div>
+          `).join('');
+        }
+
+        if (data.logins) {
+          document.getElementById('logins').innerHTML = data.logins.slice(0, 5).map(l => `
+            <div class="flex justify-between items-center p-2 bg-slate-700 rounded">
+              <span>${l.email}</span>
+              <span class="text-slate-400 text-sm">${l.time}</span>
+            </div>
+          `).join('');
+        }
+
+        if (data.providers) {
+          const p = data.providers;
+          document.getElementById('providers').innerHTML = `
+            <div class="bg-slate-700 p-4 rounded"><div class="font-bold">Email/Password</div><div class="text-2xl text-cyan-400">${p.email || 0}</div></div>
+            <div class="bg-slate-700 p-4 rounded"><div class="font-bold">Google OAuth</div><div class="text-2xl text-cyan-400">${p.google || 0}</div></div>
+            <div class="bg-slate-700 p-4 rounded"><div class="font-bold">GitHub OAuth</div><div class="text-2xl text-cyan-400">${p.github || 0}</div></div>
+          `;
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    loadAuth();
+  </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal v3 — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    #terminal{background:#0a0f14;min-height:500px;padding:1rem;font-family:'Fira Code',monospace;font-size:13px;color:#a8b8c8}
+    .cmd{color:#7dd3fc}
+    .result{color:#86efac}
+    .error{color:#f87171}
+    .info{color:#c4b5fd}
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-200">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/console.html" class="text-cyan-400">Console v3</a>
+      <a href="/terminal.html" class="text-slate-400 hover:text-cyan-400">Legacy</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-cyan-400 mb-4">Terminal v3.0</h1>
+    <p class="text-slate-400 mb-4">Enhanced terminal with AI autocomplete and command history</p>
+
+    <div class="bg-slate-800 rounded-xl overflow-hidden">
+      <div class="bg-slate-900 px-4 py-2 flex items-center gap-2 text-sm">
+        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+        <span class="ml-4 text-slate-400">v3.0 — AI Enhanced</span>
+      </div>
+      
+      <div id="terminal"></div>
+
+      <div class="bg-slate-900 p-4 flex flex-col gap-2">
+        <div class="flex gap-2">
+          <span class="text-green-400">❯</span>
+          <input type="text" id="input" class="flex-1 bg-transparent border-none outline-none text-white font-mono" placeholder="Type command..." autofocus>
+        </div>
+        <div class="flex gap-2 text-xs text-slate-500">
+          <span>Tab: autocomplete</span>
+          <span>↑↓: history</span>
+          <span>Ctrl+C: cancel</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 grid md:grid-cols-4 gap-4">
+      <button onclick="run('help')" class="bg-slate-800 p-3 rounded hover:bg-slate-700 text-left">
+        <div class="font-bold text-cyan-400">help</div>
+        <div class="text-xs text-slate-400">Show commands</div>
+      </button>
+      <button onclick="run('status')" class="bg-slate-800 p-3 rounded hover:bg-slate-700 text-left">
+        <div class="font-bold text-cyan-400">status</div>
+        <div class="text-xs text-slate-400">System status</div>
+      </button>
+      <button onclick="run('agents')" class="bg-slate-800 p-3 rounded hover:bg-slate-700 text-left">
+        <div class="font-bold text-cyan-400">agents</div>
+        <div class="text-xs text-slate-400">List agents</div>
+      </button>
+      <button onclick="run('clear')" class="bg-slate-800 p-3 rounded hover:bg-slate-700 text-left">
+        <div class="font-bold text-cyan-400">clear</div>
+        <div class="text-xs text-slate-400">Clear terminal</div>
+      </button>
+    </div>
+  </main>
+
+  <script>
+    const term = document.getElementById('terminal');
+    const input = document.getElementById('input');
+    let history = [];
+    let histIndex = -1;
+
+    term.innerHTML = '<div class="info">Terminal v3.0 — Type "help" for commands</div>';
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const cmd = input.value.trim();
+        if (cmd) {
+          history.push(cmd);
+          histIndex = history.length;
+          execute(cmd);
+        }
+        input.value = '';
+      } else if (e.key === 'ArrowUp') {
+        if (histIndex > 0) {
+          histIndex--;
+          input.value = history[histIndex];
+        }
+      } else if (e.key === 'ArrowDown') {
+        if (histIndex < history.length - 1) {
+          histIndex++;
+          input.value = history[histIndex];
+        } else {
+          input.value = '';
+        }
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        autocomplete();
+      }
+    });
+
+    async function execute(cmd) {
+      term.innerHTML += `<div class="cmd">❯ ${cmd}</div>`;
+      
+      try {
+        const endpoint = cmd.split(' ')[0];
+        let res, data;
+        
+        switch(endpoint) {
+          case 'help':
+            term.innerHTML += `<div class="result">Commands: help, status, agents, topology, treasury, wallet, defi, clear, exit</div>`;
+            break;
+          case 'status':
+            res = await fetch('/api/health');
+            data = await res.json();
+            term.innerHTML += `<div class="result">${JSON.stringify(data, null, 2)}</div>`;
+            break;
+          case 'agents':
+            res = await fetch('/api/agents');
+            data = await res.json();
+            term.innerHTML += `<div class="result">${JSON.stringify(data, null, 2)}</div>`;
+            break;
+          case 'clear':
+          case 'cls':
+            term.innerHTML = '';
+            break;
+          default:
+            term.innerHTML += `<div class="error">Unknown command: ${endpoint}</div>`;
+        }
+      } catch(e) {
+        term.innerHTML += `<div class="error">${e.message}</div>`;
+      }
+      
+      term.scrollTop = term.scrollHeight;
+    }
+
+    function run(cmd) {
+      input.value = cmd;
+      execute(cmd);
+      input.value = '';
+    }
+
+    function autocomplete() {
+      const cmd = input.value;
+      const cmds = ['help', 'status', 'agents', 'topology', 'treasury', 'wallet', 'defi', 'clear'];
+      const match = cmds.find(c => c.startsWith(cmd));
+      if (match) input.value = match;
+    }
+  </script>
+</body>
+</html>
