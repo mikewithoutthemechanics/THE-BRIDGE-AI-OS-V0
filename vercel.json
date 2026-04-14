@@ -1,25 +1,18 @@
 {
   "version": 2,
   "framework": null,
-  "buildCommand": null,
-  "outputDirectory": "public",
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 60
+  "builds": [
+    {
+      "src": "public/**",
+      "use": "static"
     }
-  },
-  "headers": [
-    { "source": "/api/(.*)", "headers": [
-      { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
-      { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With" }
-    ]}
   ],
-  "rewrites": [
-    { "source": "/terminal",      "destination": "/terminal.html" },
-    { "source": "/wallet",       "destination": "/wallet.html" },
-    { "source": "/avatar",       "destination": "/avatar.html" },
-    { "source": "/outputs",     "destination": "/outputs.html" },
-    { "source": "/projects",    "destination": "/projects.html" },
-    { "source": "/api/(.*)",     "destination": "/api/index.js" }
+  "routes": [
+    { "src": "/terminal",      "destination": "/terminal.html" },
+    { "src": "/wallet",       "destination": "/wallet.html" },
+    { "src": "/avatar",       "destination": "/avatar.html" },
+    { "src": "/outputs",      "destination": "/outputs.html" },
+    { "src": "/projects",     "destination": "/projects.html" },
+    { "src": "/(.*)",         "destination": "/$1" }
   ]
 }
