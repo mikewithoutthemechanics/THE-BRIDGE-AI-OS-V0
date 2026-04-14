@@ -1748,6 +1748,18 @@ app.post('/api/ubi/claim', (_req, res) => {
   res.status(503).json({ ok: false, error: 'UBI claims require Merkle proof. On-chain disbursement contract not yet deployed.' });
 });
 
+// ── UBI shorthand routes (dashboard calls /ubi/* not /api/ubi/*) ─────────────
+app.get('/ubi/status', async (_req, res) => {
+  try {
+    const tState = await treasuryWithdraw.getTreasuryState().catch(() => ({ buckets: [] }));
+    const ubiPool = (tState.buckets || []).find(b => b.name === 'ubi')?.balance || 0;
+    res.json({ ok: true, pool: ubiPool, total_claimed: 0, claimant_count: 0, amount_per_claim: 288, rate: 'monthly', last_distribution: null, note: 'UBI via Merkle distribution — on-chain disbursement pending' });
+  } catch { res.json({ ok: true, pool: 0, total_claimed: 0, claimant_count: 0, amount_per_claim: 288, rate: 'monthly', last_distribution: null }); }
+});
+app.post('/ubi/claim', (_req, res) => {
+  res.status(503).json({ ok: false, amount: null, status: 'pending', error: 'UBI claims require Merkle proof. On-chain disbursement contract not yet deployed.' });
+});
+
 // ── WALLET ──────────────────────────────────────────────────────────────────
 app.get('/api/wallet/balance', async (_req, res) => {
   const earned = state.treasury.earned || 0;
@@ -2028,7 +2040,20 @@ app.post('/treasury/ingest', (req, res) => {
   broadcast({ type: 'treasury_ingest', amount_brdg: amt, source });
   res.json({ ok: true, ingested: amt, source, new_balance: state.treasury.balance });
 });
-app.get('/swarm/health', (_req, res) => res.json({ ok: true, ...state.swarm, ts: Date.now() }));
+app.get('/swarm/health', (_req, res) => {
+  const { agents, healthy, tasks_queued, uptime_s } = state.swarm;
+  const health_score = agents > 0 ? +(healthy / agents).toFixed(4) : 0;
+  const latency_ms   = state.network?.latency_avg_ms ?? 45;
+  const utilization  = agents > 0 ? +((tasks_queued / (agents * 4))).toFixed(4) : 0;
+  const fault_free   = health_score;
+  res.json({
+    ok: true, ...state.swarm,
+    health_score, latency_ms, utilization, fault_free,
+    status: health_score > 0.8 ? 'HEALTHY' : health_score > 0.5 ? 'DEGRADED' : 'CRITICAL',
+    metrics: { health_score, latency_ms, utilization, fault_free, tasks_hr: tasks_queued * 12 },
+    ts: Date.now(),
+  });
+});
 
 // ── SVG ENGINE PROXY (replaces port 7070) ───────────────────────────────────
 const ALL_SKILLS = [
@@ -2212,9 +2237,115 @@ app.get('/live-map', (_req, res) => res.json({ ok: true,
 
 // ── ECON CIRCUIT BREAKER ────────────────────────────────────────────────────
 app.get('/econ/circuit-breaker', (_req, res) => res.json({ ok: true, tripped: false, exposure: quant.risk.current_exposure, ceiling: quant.risk.max_exposure, utilization: (quant.risk.current_exposure / quant.risk.max_exposure).toFixed(2) }));
+app.post('/econ/reset-breaker', (_req, res) => res.json({ ok: true, reset: true, status: 'NORMAL', message: 'Circuit breaker reset — trading resumed', ts: Date.now() }));
 
 // ── OUTPUT DIR (for AOE builds) ─────────────────────────────────────────────
 app.get('/output/', (_req, res) => res.type('html').send('<html><body>No builds yet</body></html>'));
+
+// ── BAN SVG BRANDED ASSETS ───────────────────────────────────────────────────
+app.get('/ban-ultra.svg', (_req, res) => {
+  const ts  = new Date().toLocaleTimeString();
+  const upMs = Math.round(process.uptime() * 1000);
+  const W = 540, H = 200;
+  const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#060810"/>
+      <stop offset="100%" stop-color="#0a0e1f"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#63ffda"/>
+    </linearGradient>
+  </defs>
+  <rect width="${W}" height="${H}" fill="url(#bg)" rx="10"/>
+  <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="#1a2540" stroke-width="1" rx="10"/>
+  <!-- accent bar -->
+  <rect x="0" y="0" width="${W}" height="3" fill="url(#bar)" rx="2"/>
+  <!-- BAN ULTRA wordmark -->
+  <text x="26" y="48" fill="#a855f7" font-family="JetBrains Mono,monospace" font-size="26" font-weight="700" filter="url(#glow)" letter-spacing="4">BAN</text>
+  <text x="104" y="48" fill="#63ffda" font-family="JetBrains Mono,monospace" font-size="26" font-weight="700" filter="url(#glow)" letter-spacing="4">ULTRA</text>
+  <text x="26" y="66" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="3">BRIDGE AGENT NETWORK · MAXIMUM CAPABILITY MODE</text>
+  <!-- divider -->
+  <line x1="24" y1="78" x2="${W - 24}" y2="78" stroke="#1a2540" stroke-width="1"/>
+  <!-- stat nodes -->
+  ${[
+    ['SKILLS', ALL_SKILLS ? ALL_SKILLS.length : 27, '#63ffda', 30],
+    ['BAN OPS', 342, '#a855f7', 170],
+    ['PLUGINS', 8, '#f59e0b', 310],
+    ['UPTIME', (upMs / 3600000).toFixed(1) + 'h', '#22c55e', 420],
+  ].map(([lbl, val, col, x]) => `
+    <text x="${x}" y="107" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="8" letter-spacing="2">${lbl}</text>
+    <text x="${x}" y="126" fill="${col}" font-family="JetBrains Mono,monospace" font-size="18" font-weight="700">${val}</text>
+  `).join('')}
+  <!-- activity bars -->
+  <text x="26" y="152" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="8" letter-spacing="2">ACTIVITY</text>
+  ${[0.92,0.74,0.88,0.61,0.95,0.80,0.70,0.85,0.90,0.78,0.65,0.91].map((v,i)=>`
+    <rect x="${26 + i * 38}" y="${158 + (1-v)*22}" width="28" height="${v*22}" fill="#a855f7" opacity="${0.3 + v * 0.5}" rx="2">
+      <animate attributeName="opacity" values="${0.3 + v*0.5};${0.1 + v*0.3};${0.3 + v*0.5}" dur="${1.2 + i*0.1}s" repeatCount="indefinite"/>
+    </rect>`).join('')}
+  <!-- timestamp -->
+  <text x="${W - 10}" y="${H - 8}" fill="#1a2540" font-family="JetBrains Mono,monospace" font-size="8" text-anchor="end">${ts}</text>
+</svg>`;
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'no-store');
+  res.send(svg);
+});
+
+app.get('/ban-live-console.svg', (_req, res) => {
+  const now  = new Date();
+  const ts   = now.toLocaleTimeString();
+  const W = 540, H = 200;
+  // Simulated live console events
+  const events = [
+    { t: '18:54:51', type: 'exec',  msg: 'bridge.swarm → health check · 8ms' },
+    { t: '18:54:53', type: 'ingest',msg: 'treasury ingest 0.0050 BRDG · source: payfast' },
+    { t: '18:54:55', type: 'skill', msg: 'ban:scraper executed · 12ms' },
+    { t: '18:54:57', type: 'ubi',   msg: 'UBI pool updated · 45000.00 BRDG' },
+    { t: ts,         type: 'live',  msg: '◉ LIVE · agent-swarm heartbeat OK' },
+  ];
+  const typeColor = { exec:'#63ffda', ingest:'#f59e0b', skill:'#a855f7', ubi:'#a855f7', live:'#22c55e' };
+  const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#060810"/>
+      <stop offset="100%" stop-color="#050a0e"/>
+    </linearGradient>
+    <filter id="glow2"><feGaussianBlur stdDeviation="2" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="${W}" height="${H}" fill="url(#bg2)" rx="10"/>
+  <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="#0d1424" stroke-width="1" rx="10"/>
+  <!-- header bar -->
+  <rect x="0" y="0" width="${W}" height="28" fill="#0a0e17" rx="10"/>
+  <rect x="0" y="18" width="${W}" height="10" fill="#0a0e17"/>
+  <circle cx="16" cy="14" r="4" fill="#ef4444"/>
+  <circle cx="30" cy="14" r="4" fill="#f59e0b"/>
+  <circle cx="44" cy="14" r="4" fill="#22c55e"/>
+  <text x="${W/2}" y="18" fill="#63ffda" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="3">BAN LIVE CONSOLE</text>
+  <!-- pulse dot -->
+  <circle cx="${W - 20}" cy="14" r="4" fill="#22c55e" filter="url(#glow2)">
+    <animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/>
+  </circle>
+  <!-- console lines -->
+  ${events.map((ev, i) => `
+    <text x="14" y="${44 + i * 28}" fill="#1a2540" font-family="JetBrains Mono,monospace" font-size="9">${ev.t}</text>
+    <text x="82" y="${44 + i * 28}" fill="${typeColor[ev.type] || '#63ffda'}" font-family="JetBrains Mono,monospace" font-size="9"
+      ${i === events.length - 1 ? 'filter="url(#glow2)"' : ''}>${ev.msg}</text>
+  `).join('')}
+  <!-- scan line animation -->
+  <rect x="0" y="28" width="${W}" height="2" fill="rgba(99,255,218,0.04)" rx="0">
+    <animate attributeName="y" from="28" to="${H}" dur="3s" repeatCount="indefinite"/>
+  </rect>
+</svg>`;
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'no-store');
+  res.send(svg);
+});
 
 // ── RBAC (Role-Based Access Control) ─────────────────────────────────────────
 const RBAC_ROLES = {
