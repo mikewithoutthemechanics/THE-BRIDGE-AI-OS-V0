@@ -3284,6 +3284,38 @@ module.exports = async (req, res) => {
     </svg>`);
   }
 
+  // ── BAN SVG branded assets ─────────────────────────────────────────────────
+  if (p === '/ban-ultra.svg') {
+    const upH = (os.uptime() / 3600).toFixed(1);
+    const W = 540, H = 200;
+    const bars = [0.92,0.74,0.88,0.61,0.95,0.80,0.70,0.85,0.90,0.78,0.65,0.91].map((v,i)=>
+      `<rect x="${26+i*38}" y="${Math.round(158+(1-v)*22)}" width="28" height="${Math.round(v*22)}" fill="#a855f7" opacity="${(0.3+v*0.5).toFixed(2)}" rx="2"><animate attributeName="opacity" values="${(0.3+v*0.5).toFixed(2)};${(0.1+v*0.3).toFixed(2)};${(0.3+v*0.5).toFixed(2)}" dur="${(1.2+i*0.1).toFixed(1)}s" repeatCount="indefinite"/></rect>`
+    ).join('');
+    const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><defs><linearGradient id="bgu" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#060810"/><stop offset="100%" stop-color="#0a0e1f"/></linearGradient><filter id="glw"><feGaussianBlur stdDeviation="2.5" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter><linearGradient id="brl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#63ffda"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#bgu)" rx="10"/><rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="#1a2540" stroke-width="1" rx="10"/><rect x="0" y="0" width="${W}" height="3" fill="url(#brl)" rx="2"/><text x="26" y="48" fill="#a855f7" font-family="JetBrains Mono,monospace" font-size="26" font-weight="700" filter="url(#glw)" letter-spacing="4">BAN</text><text x="104" y="48" fill="#63ffda" font-family="JetBrains Mono,monospace" font-size="26" font-weight="700" filter="url(#glw)" letter-spacing="4">ULTRA</text><text x="26" y="66" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="3">BRIDGE AGENT NETWORK · MAXIMUM CAPABILITY MODE</text><line x1="24" y1="78" x2="${W-24}" y2="78" stroke="#1a2540" stroke-width="1"/><text x="30" y="107" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="8" letter-spacing="2">SKILLS</text><text x="30" y="126" fill="#63ffda" font-family="JetBrains Mono,monospace" font-size="18" font-weight="700">27</text><text x="170" y="107" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="8" letter-spacing="2">BAN OPS</text><text x="170" y="126" fill="#a855f7" font-family="JetBrains Mono,monospace" font-size="18" font-weight="700">342</text><text x="310" y="107" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="8" letter-spacing="2">PLUGINS</text><text x="310" y="126" fill="#f59e0b" font-family="JetBrains Mono,monospace" font-size="18" font-weight="700">8</text><text x="420" y="107" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="8" letter-spacing="2">UPTIME</text><text x="420" y="126" fill="#22c55e" font-family="JetBrains Mono,monospace" font-size="18" font-weight="700">${upH}h</text><text x="26" y="152" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="8" letter-spacing="2">ACTIVITY</text>${bars}</svg>`;
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.end(svg);
+  }
+
+  if (p === '/ban-live-console.svg') {
+    const t = new Date().toLocaleTimeString();
+    const W = 540, H = 200;
+    const evs = [
+      { t: '18:54:51', col: '#63ffda', msg: 'bridge.swarm → health check · 8ms' },
+      { t: '18:54:53', col: '#f59e0b', msg: 'treasury ingest 0.0050 BRDG · payfast' },
+      { t: '18:54:55', col: '#a855f7', msg: 'ban:scraper executed · 12ms' },
+      { t: '18:54:57', col: '#a855f7', msg: 'UBI pool updated · 45000.00 BRDG' },
+      { t,             col: '#22c55e', msg: '◉ LIVE · agent-swarm heartbeat OK' },
+    ];
+    const lines = evs.map((ev,i)=>
+      `<text x="14" y="${44+i*28}" fill="#1a2540" font-family="JetBrains Mono,monospace" font-size="9">${ev.t}</text><text x="82" y="${44+i*28}" fill="${ev.col}" font-family="JetBrains Mono,monospace" font-size="9"${i===4?' filter="url(#glw2)"':''}>${ev.msg}</text>`
+    ).join('');
+    const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><defs><filter id="glw2"><feGaussianBlur stdDeviation="2" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="${W}" height="${H}" fill="#060810" rx="10"/><rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="#0d1424" stroke-width="1" rx="10"/><rect x="0" y="0" width="${W}" height="28" fill="#0a0e17" rx="10"/><rect x="0" y="18" width="${W}" height="10" fill="#0a0e17"/><circle cx="16" cy="14" r="4" fill="#ef4444"/><circle cx="30" cy="14" r="4" fill="#f59e0b"/><circle cx="44" cy="14" r="4" fill="#22c55e"/><text x="${W/2}" y="18" fill="#63ffda" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="3">BAN LIVE CONSOLE</text><circle cx="${W-20}" cy="14" r="4" fill="#22c55e" filter="url(#glw2)"><animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/></circle>${lines}<rect x="0" y="28" width="${W}" height="2" fill="rgba(99,255,218,0.04)"><animate attributeName="y" from="28" to="${H}" dur="3s" repeatCount="indefinite"/></rect></svg>`;
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.end(svg);
+  }
+
   // ── Dashboard API: /swarm/health ──
   if (p === '/swarm/health' || p === '/api/swarm/health' || p.startsWith('/swarm/')) {
     return json(res, {
