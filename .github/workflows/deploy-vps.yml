@@ -71,7 +71,7 @@ jobs:
             # Reconfigure nginx (idempotent — safe to re-run every deploy)
             if [ -f scripts/update-nginx.sh ]; then
               echo "=== Updating nginx config ==="
-              sudo bash scripts/update-nginx.sh 2>&1 | tail -10 || echo "  WARN: nginx update failed"
+              bash scripts/update-nginx.sh 2>&1 | tail -10 || echo "  WARN: nginx update failed"
             fi
 
             pm2 status
