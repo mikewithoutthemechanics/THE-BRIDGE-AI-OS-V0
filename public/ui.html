@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>BRIDGE AI OS — Autonomous Operating System</title>
   <meta name="description" content="71 agents. 150+ APIs. 11 domains. One autonomous brain. Bridge AI OS runs your business.">
+  <meta name="theme-color" content="#060810">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://go.ai-os.co.za">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Bridge AI OS">
+  <meta property="og:description" content="Autonomous AI Operating System">
+  <meta property="og:url" content="https://go.ai-os.co.za">
+  <meta property="og:site_name" content="Bridge AI OS">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Bridge AI OS">
+  <meta name="twitter:description" content="AI OS for automation, agents, and infrastructure">
+
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -76,6 +92,11 @@
       background:rgba(0,229,123,0.05);
     }
     .boot-mod.err{color:var(--red);border-color:rgba(255,0,51,0.2)}
+    .boot-mod.fail{color:var(--red);border-color:rgba(255,0,51,0.3)}
+
+    /* Accessibility: skip-to-content */
+    .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+    .skip-link:focus{position:fixed;top:12px;left:12px;width:auto;height:auto;padding:8px 16px;background:var(--cyan);color:#000;font-weight:700;border-radius:6px;z-index:99999;text-decoration:none}
 
     /* ── MAIN APP ─────────────────────────────────────────────── */
     #app{display:none;min-height:100vh;padding-top:44px;position:relative;z-index:2}
@@ -282,6 +303,7 @@
   </style>
 </head>
 <body>
+<a href="#main" class="skip-link">Skip to content</a>
 
 <!-- Boot Screen -->
 <div id="boot" role="status" aria-live="polite">
