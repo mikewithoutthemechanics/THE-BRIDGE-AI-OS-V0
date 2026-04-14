@@ -143,7 +143,7 @@
     <a href="#api-economy">Economy & Treasury</a>
     <a href="#api-crm">CRM & Pipeline</a>
     <a href="#api-stream">Streaming</a>
-    <a href="#api-market">Marketplace</a>
+    <a href="#api-market">Marketplace & Projects</a>
     <div class="section-label">Economy</div>
     <a href="#brdg">BRDG Token</a>
     <a href="#buckets">Revenue Buckets</a>
@@ -152,6 +152,8 @@
     <a href="#skills-overview">Overview</a>
     <a href="#skills-list">Skill List</a>
     <a href="#skills-api">Skill API</a>
+    <a href="#skills-a5e">A5E Contracts</a>
+    <a href="#skills-biz-marketing">biz.marketing</a>
     <div class="section-label">Deployment</div>
     <a href="#env">Environment Variables</a>
     <a href="#ports">Ports</a>
@@ -198,7 +200,7 @@
         <div class="tier-card">
           <div class="tier-num">TIER 4</div>
           <div class="tier-name" style="color:var(--blue)">Skills Engine</div>
-          <div class="tier-desc">8 executable SVG skills, interactive graph, YouTube AI skill discovery, telemetry</div>
+          <div class="tier-desc">9 executable SVG skills, A5E engine, interactive graph, YouTube AI skill discovery, telemetry</div>
         </div>
         <div class="tier-card">
           <div class="tier-num">TIER 5</div>
@@ -221,7 +223,8 @@
         <thead><tr><th>Service</th><th>Path</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>API</td><td><span class="inline-code">api/index.js</span></td><td>Main Node.js HTTP handler — all /api/* routes</td></tr>
-          <tr><td>SVG Engine</td><td><span class="inline-code">api/svg-skills.js</span></td><td>CommonJS renderer for 8 skills + interactive graph JSON</td></tr>
+          <tr><td>SVG Engine</td><td><span class="inline-code">api/svg-skills.js</span></td><td>CommonJS renderer for 9 skills + interactive graph JSON</td></tr>
+          <tr><td>Skill Contracts</td><td><span class="inline-code">shared/skills/*.json</span></td><td>A5E skill definition files — runtime contract, graph, events, workflows, security</td></tr>
           <tr><td>LLM Client</td><td><span class="inline-code">lib/llm-client.js</span></td><td>Provider fallback: Kilo → Anthropic → OpenRouter → OpenAI</td></tr>
           <tr><td>Treasury</td><td><span class="inline-code">lib/treasury-client.js</span></td><td>On-chain BRDG mint + parity reconciliation</td></tr>
           <tr><td>Supabase</td><td><span class="inline-code">lib/supabase.js</span></td><td>26-table schema — users, leads, twins, CRM, economy</td></tr>
@@ -304,16 +307,21 @@
         <div class="chip"><span class="dot" style="background:var(--green)"></span>bridge.speech</div>
         <div class="chip"><span class="dot" style="background:var(--pink)"></span>bridge.twins</div>
         <div class="chip"><span class="dot" style="background:var(--muted)"></span>flow.basic</div>
+        <div class="chip"><span class="dot" style="background:#FF7A3C"></span>biz.marketing</div>
       </div>
     </section>
 
     <section id="api-economy">
       <h2>API — Economy & Treasury</h2>
-      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/treasury/balance</span><span class="desc">Current BRDG balance + bucket breakdown</span></div>
-      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/treasury/ledger</span><span class="desc">Full transaction history. Query: <span class="inline-code">?limit=50&page=1</span></span></div>
-      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/payfast/itn</span><span class="desc">PayFast Instant Transaction Notification handler — validates signature, triggers BRDG mint</span></div>
-      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/economy/buckets</span><span class="desc">Revenue bucket state — ops, growth, ubi, reserve, founder balances</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/treasury/status</span><span class="desc">Full treasury snapshot — total_collected_brdg, bucket breakdown, total_tx, by_project, by_method, recent_ledger</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/treasury/ledger</span><span class="desc">Transaction history. Returns <span class="inline-code">entries[]</span> + legacy <span class="inline-code">ledger[]</span>. Query: <span class="inline-code">?limit=50</span></span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/treasury/rails</span><span class="desc">Payment rail status — PayFast, Crypto, Stripe, EFT, USSD</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/treasury/summary</span><span class="desc">Quick summary with BRDG totals, bucket map, analytics keys</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/payfast/itn</span><span class="desc">PayFast Instant Transaction Notification — validates signature, triggers BRDG mint</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/revenue/status</span><span class="desc">Revenue snapshot with BRDG bucket fields: balance, distributed, ubi, treasury, ops, founder</span></div>
       <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/economy/reconcile</span><span class="desc">Trigger manual reconciliation between treasury DB and on-chain state</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/ubi/status</span><span class="desc">UBI pool state — pool_balance, eligible_wallets, distributed_today</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/ubi/claim</span><span class="desc">Claim UBI. Body: <span class="inline-code">{"address":"0x..."}</span>. Returns amount (1% of pool, max 100 BRDG).</span></div>
     </section>
 
     <section id="api-crm">
@@ -336,12 +344,14 @@
     </section>
 
     <section id="api-market">
-      <h2>API — Marketplace & Users</h2>
-      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/marketplace/tasks</span><span class="desc">Available agent tasks in marketplace</span></div>
-      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/user/settings</span><span class="desc">User settings. Header: <span class="inline-code">X-User-Id</span> (optional, falls back to anonymous)</span></div>
+      <h2>API — Marketplace, Projects & Users</h2>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/marketplace/tasks</span><span class="desc">Open marketplace tasks — array with id, title, type, status, reward (BRDG)</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/projects</span><span class="desc">Connected project registry — 8 projects with port, baseUrl, capabilities, status</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/projects/wizard</span><span class="desc">Seed new project. Body: <span class="inline-code">{type, name, config}</span></span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/twin/env-keys</span><span class="desc">Environment key status — configured/missing/placeholder per key with critical flag</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/user/settings</span><span class="desc">User settings. Header: <span class="inline-code">X-User-Id</span> (optional)</span></div>
       <div class="endpoint"><span class="badge badge-put">PUT</span><span class="path">/api/user/settings</span><span class="desc">Persist user settings across domains</span></div>
-      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/projects</span><span class="desc">Project engine — user's active projects</span></div>
-      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/projects/wizard</span><span class="desc">Seed new project from wizard. Body: <span class="inline-code">{type, name, config}</span></span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/mission/board</span><span class="desc">Mission board state — backlog, in_progress, review, done counts</span></div>
     </section>
 
     <!-- ── ECONOMY ─────────────────────────────────────────────────────── -->
@@ -423,6 +433,7 @@
           <tr><td>bridge.speech</td><td>Speech Synthesis</td><td>TTS pipeline — voice profile selection, synthesis queue</td><td>speech, tts, audio</td></tr>
           <tr><td>bridge.twins</td><td>Digital Twins</td><td>Twin replication — clone agent, parallel inference, sync</td><td>twins, replication, agents</td></tr>
           <tr><td>flow.basic</td><td>Basic Flow</td><td>Generic process flow — input → process → output template</td><td>flow, basic, template</td></tr>
+          <tr style="border-left:2px solid #FF7A3C"><td>biz.marketing</td><td>Biz Marketing Pipeline</td><td>LeadGen → Nurture → Close → Treasury, A5E engine, SVG graph overlay</td><td>leadgen, nurture, sales, pipeline, treasury</td></tr>
         </tbody>
       </table>
     </section>
@@ -460,6 +471,138 @@ Content-Type: application/json
   edges: [{from, to, shared:[...tags]}],
   canvas: {width:900, height:560}
 }</pre>
+    </section>
+
+    <!-- ── A5E SKILL CONTRACTS ───────────────────────────────────────────── -->
+    <section id="skills-a5e">
+      <h2>Skills — A5E Contract Format</h2>
+      <p>Every skill beyond the core bridge.* set is defined by an <strong style="color:var(--text)">A5E skill contract</strong> — a JSON file in <span class="inline-code">shared/skills/</span> that fully describes the skill's runtime, graph bindings, events, data contracts, workflows, UI modes, and security roles.</p>
+
+      <div class="card">
+        <div class="card-title">Contract Top-Level Fields</div>
+        <table class="tbl">
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>skill_id</td><td>string</td><td>Unique identifier — e.g. <span class="inline-code">biz.marketing</span></td></tr>
+            <tr><td>version</td><td>semver</td><td>Contract version — follows semver, breaking changes bump major</td></tr>
+            <tr><td>owner</td><td>string</td><td>Owning cluster — e.g. <span class="inline-code">bridge.corporate</span></td></tr>
+            <tr><td>namespace</td><td>string</td><td>Skill namespace — <span class="inline-code">biz</span>, <span class="inline-code">bridge</span>, <span class="inline-code">flow</span></td></tr>
+            <tr><td>engine</td><td>object</td><td>Runtime engine config — type (A5E), mode, retries, timeout_ms</td></tr>
+            <tr><td>capabilities</td><td>object</td><td>Feature flags — visualize, execute, graph, svg_overlay, simulation</td></tr>
+            <tr><td>ports</td><td>object</td><td>Local dev ports — svg_engine (default 7070), graph_api (7071)</td></tr>
+            <tr><td>graph</td><td>object</td><td>Node definition + edges + overlay bindings for the skill graph</td></tr>
+            <tr><td>events</td><td>object</td><td>Inbound and outbound event contracts</td></tr>
+            <tr><td>data_contracts</td><td>object</td><td>Schema definitions for all data objects the skill reads/writes</td></tr>
+            <tr><td>workflows</td><td>object</td><td>Named workflow definitions — steps, triggers, outputs</td></tr>
+            <tr><td>ui</td><td>object</td><td>Mode configuration (VISUALIZE/EXECUTE/GRAPH) + panel definitions</td></tr>
+            <tr><td>security</td><td>object</td><td>Role-based access — can_execute, can_visualize, can_edit</td></tr>
+            <tr><td>healthcheck</td><td>object</td><td>HTTP health checks for engine endpoints</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Workflow Step Types</h3>
+      <table class="tbl">
+        <thead><tr><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="inline-code">compute</span></td><td>Pure computation — no side effects, idempotent, cacheable</td></tr>
+          <tr><td><span class="inline-code">action</span></td><td>Side-effecting step — writes to DB, sends events, calls external APIs</td></tr>
+          <tr><td><span class="inline-code">gate</span></td><td>HITL approval gate — pauses workflow until human approves</td></tr>
+          <tr><td><span class="inline-code">branch</span></td><td>Conditional branching — evaluates condition and routes to sub-workflow</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Workflow API</h3>
+      <pre>POST /api/skills/:skill_id/workflow/:workflow_id
+Content-Type: application/json
+{}
+
+→ {
+  "ok": true,
+  "workflow": "leadgen",
+  "label": "Lead Generation",
+  "steps_completed": 3,
+  "outputs_emitted": ["lead.captured", "marketing.campaign.launched"],
+  "results": { "select_audience": {...}, "launch_campaigns": {...}, "sync_leads": {...} },
+  "latency_ms": 145,
+  "ts": 1712345678901
+}</pre>
+    </section>
+
+    <section id="skills-biz-marketing">
+      <h2>Skill — biz.marketing</h2>
+      <div class="card" style="border-color:#FF7A3C44">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <span style="font-size:22px">📣</span>
+          <div>
+            <div style="font-family:var(--font);font-weight:700;color:#FF7A3C">BridgeOS · Biz Marketing</div>
+            <div style="font-size:12px;color:var(--muted)">v1.0.0 · A5E Engine · owner: bridge.corporate · ports: 7070/7071</div>
+          </div>
+        </div>
+        <p>End-to-end marketing pipeline: LeadGen → Nurture → Close → Treasury, fully wired into A5E and the SVG interactive graph.</p>
+      </div>
+
+      <h3>Pipeline Stages</h3>
+      <div style="display:flex;gap:0;margin:12px 0;overflow-x:auto">
+        <div style="flex:1;min-width:120px;background:var(--bg2);border:1px solid rgba(56,189,248,.3);border-right:none;padding:12px;border-radius:6px 0 0 6px">
+          <div style="font-family:var(--font);font-size:10px;color:#38bdf8;margin-bottom:4px">LEADGEN</div>
+          <div style="font-size:12px;color:var(--sub)">Select audience, launch campaigns, sync leads to CRM</div>
+        </div>
+        <div style="flex:1;min-width:120px;background:var(--bg2);border:1px solid rgba(167,139,250,.3);border-right:none;padding:12px">
+          <div style="font-family:var(--font);font-size:10px;color:#a78bfa;margin-bottom:4px">NURTURE</div>
+          <div style="font-size:12px;color:var(--sub)">Score leads, assign sequences, run automated nurture flows</div>
+        </div>
+        <div style="flex:1;min-width:120px;background:var(--bg2);border:1px solid rgba(74,222,128,.3);border-right:none;padding:12px">
+          <div style="font-family:var(--font);font-size:10px;color:#4ade80;margin-bottom:4px">CLOSE</div>
+          <div style="font-size:12px;color:var(--sub)">Create deal, HITL handoff to sales, track stage progression</div>
+        </div>
+        <div style="flex:1;min-width:120px;background:var(--bg2);border:1px solid rgba(250,204,21,.3);padding:12px;border-radius:0 6px 6px 0">
+          <div style="font-family:var(--font);font-size:10px;color:#facc15;margin-bottom:4px">TREASURY</div>
+          <div style="font-size:12px;color:var(--sub)">Book revenue on deal.closed.won, update MRR, emit treasury event</div>
+        </div>
+      </div>
+
+      <h3>API Endpoints</h3>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/skills/biz.marketing</span><span class="desc">Full A5E skill contract JSON</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/svg/biz.marketing</span><span class="desc">Rendered pipeline SVG — animated signal flow, per-stage KPIs</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/svg/teach/biz.marketing</span><span class="desc">Teaching overlay SVG with AI-generated explanation</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/skills/biz.marketing/telemetry</span><span class="desc">Live pipeline metrics — leads, deals, campaigns, MRR, revenue_booked</span></div>
+      <div class="endpoint"><span class="badge badge-get">GET</span><span class="path">/api/skills/biz.marketing/graph</span><span class="desc">Node + edge graph JSON with overlay bindings</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/skills/biz.marketing/workflow/leadgen</span><span class="desc">Trigger Lead Generation workflow (3 steps)</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/skills/biz.marketing/workflow/nurture</span><span class="desc">Trigger Lead Nurture workflow (3 steps)</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/skills/biz.marketing/workflow/close</span><span class="desc">Trigger Sales Handoff &amp; Close workflow (2 steps)</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/skills/biz.marketing/workflow/treasury</span><span class="desc">Trigger Revenue Capture workflow (2 steps)</span></div>
+      <div class="endpoint"><span class="badge badge-post">POST</span><span class="path">/api/execute</span><span class="desc">Quick execute. Body: <span class="inline-code">{"skill":"biz.marketing"}</span></span></div>
+
+      <h3>Events</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0">
+        <div class="card">
+          <div class="card-title">Inbound</div>
+          <ul style="padding-left:16px;font-family:var(--font);font-size:11px;color:var(--sub)">
+            <li>lead.captured</li><li>lead.qualified</li>
+            <li>campaign.created</li><li>campaign.performance.updated</li>
+            <li>deal.created</li><li>deal.closed.won</li><li>deal.closed.lost</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">Outbound</div>
+          <ul style="padding-left:16px;font-family:var(--font);font-size:11px;color:var(--sub)">
+            <li>marketing.campaign.launched</li><li>marketing.campaign.paused</li>
+            <li>lead.nurture.sequence.started</li><li>lead.nurture.sequence.completed</li>
+            <li>sales.handoff.requested</li><li>treasury.revenue.booked</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Roles</h3>
+      <table class="tbl">
+        <thead><tr><th>Role</th><th>Execute</th><th>Visualize</th><th>Edit</th></tr></thead>
+        <tbody>
+          <tr><td>marketing.operator</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td><td style="color:var(--red)">✗</td></tr>
+          <tr><td>marketing.architect</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+          <tr><td>viewer</td><td style="color:var(--red)">✗</td><td style="color:var(--green)">✓</td><td style="color:var(--red)">✗</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <!-- ── DEPLOYMENT ──────────────────────────────────────────────────── -->
@@ -516,11 +659,11 @@ api/index.js → Vercel Serverless Function</pre>
       <h3>Build Steps</h3>
       <pre>node build-static.js
   1. Copy root-level .html/.css/.js/.svg → public/
-  2. Copy Xpublic/*.html → public/ (skip docs.html, svg-engine.html)
+  2. Copy Xpublic/*.html → public/ (XPUB_SKIP: docs.html, svg-engine.html)
   3. Inject SEO meta tags into all HTML (inject-meta.js)
-  4. Generate public/ban-ultra.svg (animated bars)
+  4. Generate public/ban-ultra.svg (animated activity bars)
   5. Generate public/ban-live-console.svg (animated log lines)
-  6. Pre-render 8 skill SVGs → public/output/*.svg
+  6. Pre-render 9 skill SVGs → public/output/*.svg
   7. Generate public/output/index.html (skill listing)</pre>
 
       <h3>Vercel Rewrites</h3>
