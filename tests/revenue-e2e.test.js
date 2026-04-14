@@ -36,9 +36,11 @@ jest.mock('../lib/db', () => ({
   getLeads:            jest.fn(async () => []),
   getContacts:         jest.fn(async () => []),
   getUsers:            jest.fn(async () => []),
-  getWalletForUser:    jest.fn(async () => null),
-  query:               jest.fn(async () => ({ rows: [] })),
-  upsert:              jest.fn(async () => ({})),
+  getWalletForUser:              jest.fn(async () => null),
+  updateTransactionDistribution: jest.fn(async () => {}),
+  getDistributionSummary:        jest.fn(async () => ({ payments: [], summary: {} })),
+  query:                         jest.fn(async () => ({ rows: [] })),
+  upsert:                        jest.fn(async () => ({})),
 }));
 
 jest.mock('../lib/payfast', () => ({
