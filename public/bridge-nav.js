@@ -226,6 +226,32 @@
       var dot = document.getElementById('bn-dot');
       if (dot) dot.classList.add('offline');
     });
+
+    // -- Usage beacon for auto-orchestration --
+    // Sends lightweight page/service signal to /api/usage/event so
+    // Bridge AI can auto-sync profile activity into lead/orchestration flows.
+    try {
+      if (isLoggedIn && (_user.id || _user.email)) {
+        var uid = _user.id || _user.email;
+        var p = window.location.pathname || '/';
+        var feature = (p.replace(/\.html$/, '').replace(/\//g, '_').replace(/^_+/, '') || 'home') + '_view';
+        fetch('/api/usage/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: uid,
+            feature: feature,
+            meta: {
+              page: p,
+              platform: p.split('/').pop() || 'home',
+              service: 'bridge-nav-beacon',
+              email: _user.email || null,
+              company: _user.company || null
+            }
+          })
+        }).catch(function () {});
+      }
+    } catch (_) {}
   }
 
   if (document.readyState === 'loading') {
