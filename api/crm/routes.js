@@ -18,7 +18,7 @@ function mapContact(row) {
     company,
     company_name: company,
     status: row.status || 'lead',
-    stage: row.stage || row.status || 'new',
+    stage: row.stage || 'new',
     score: Number(row.score || 0) || 0,
     value,
     deal_value: value,
