@@ -4,19 +4,24 @@ const { supabase, isConfigured } = require('../../lib/supabase');
 /** Default tenant from business_suite seed — contacts.company_id is NOT NULL */
 const DEFAULT_COMPANY_ID = '00000000-0000-0000-0000-000000000001';
 
-function mapContact(row = {}) {
+function mapContact(row) {
+  if (!row || typeof row !== 'object') return null;
+  const company = row.company || row.company_name || row.organization || null;
+  const value = Number(row.value ?? row.deal_value ?? 0) || 0;
+  const id = row.id || row.lead_id || null;
   return {
-    id: row.id,
+    id,
+    lead_id: id,
     name: row.name || [row.first_name, row.last_name].filter(Boolean).join(' ') || null,
     email: row.email || null,
     phone: row.phone || null,
-    company: row.company || row.company_name || null,
-    company_name: row.company_name || row.company || null,
+    company,
+    company_name: company,
     status: row.status || 'lead',
-    stage: row.stage || 'new',
-    score: row.score || 0,
-    value: row.value ?? row.deal_value ?? 0,
-    deal_value: row.deal_value ?? row.value ?? 0,
+    stage: row.stage || row.status || 'new',
+    score: Number(row.score || 0) || 0,
+    value,
+    deal_value: value,
     source: row.source || null,
     industry: row.industry || null,
     tags: Array.isArray(row.tags) ? row.tags : [],

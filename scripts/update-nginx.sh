@@ -28,7 +28,7 @@ cat > "$CONF" <<'NGINX_CONF'
 # HTTP → HTTPS redirect for all domains
 server {
     listen 80 default_server;
-    server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za aid.ai-os.co.za _;
+    server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za ai-os.co.za aid.ai-os.co.za _;
 
     location /.well-known/acme-challenge/ {
         root /var/www/letsencrypt;
@@ -43,7 +43,7 @@ server {
 # HTTPS — bridge-ai-os.com + go.ai-os.co.za
 server {
     listen 443 ssl http2;
-    server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za;
+    server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za ai-os.co.za;
     ssl_certificate /etc/letsencrypt/live/bridge-ai-os.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/bridge-ai-os.com/privkey.pem;
 
@@ -187,8 +187,13 @@ ln -sf "$CONF" /etc/nginx/sites-enabled/bridgeai
 rm -f /etc/nginx/sites-enabled/default
 
 if nginx -t 2>&1; then
-  systemctl reload nginx
-  echo "nginx reloaded successfully"
+  if systemctl is-active --quiet nginx; then
+    systemctl reload nginx || nginx -s reload
+    echo "nginx reloaded successfully"
+  else
+    nginx -s reload || systemctl restart nginx || true
+    echo "nginx reload attempted without active systemd unit"
+  fi
 else
   echo "nginx -t failed — restoring backup"
   if [ -f "$BACKUP" ]; then
