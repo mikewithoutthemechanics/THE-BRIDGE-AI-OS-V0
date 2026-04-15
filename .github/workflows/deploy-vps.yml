@@ -74,4 +74,21 @@ jobs:
               bash scripts/update-nginx.sh 2>&1 | tail -10 || echo "  WARN: nginx update failed"
             fi
 
+            # Ensure TLS cert covers ai-os.co.za and bridge domains
+            if command -v certbot >/dev/null 2>&1; then
+              echo "=== Ensuring TLS certificate SANs ==="
+              certbot --nginx \
+                --non-interactive \
+                --agree-tos \
+                --keep-until-expiring \
+                --email admin@bridge-ai-os.com \
+                -d bridge-ai-os.com \
+                -d www.bridge-ai-os.com \
+                -d go.ai-os.co.za \
+                -d ai-os.co.za \
+                2>&1 | tail -20 || echo "  WARN: certbot SAN update failed"
+            else
+              echo "  WARN: certbot not installed on VPS"
+            fi
+
             pm2 status
