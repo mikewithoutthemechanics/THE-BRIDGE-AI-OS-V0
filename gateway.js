@@ -2557,11 +2557,10 @@ app.get('/api/leadgen/orchestration/status', async (_req, res) => {
     if (!isConfigured || !supabaseAdmin) return res.json({ ok: false, reason: 'supabase_unconfigured' });
     const { data: contacts } = await supabaseAdmin
       .from('contacts')
-      .select('id,source,status,score,meta,last_activity')
-      .eq('source', 'platform_usage')
-      .order('last_activity', { ascending: false })
-      .limit(200);
-    const list = contacts || [];
+      .select('id,source,status,score,meta,last_activity,updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(400);
+    const list = (contacts || []).filter((c) => c?.meta?.orchestration);
     const byPlatform = {};
     list.forEach((c) => {
       const p = c?.meta?.orchestration?.primary_platform || 'platform';
