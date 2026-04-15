@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface-variant: #353437;
+  --color-on-secondary-fixed: #1a1c1d;
+  --color-secondary-fixed-dim: #c6c6c8;
+  --color-on-background: #e4e2e4;
+  --color-inverse-primary: #005cba;
+  --color-surface-container-low: #1b1b1d;
+  --color-on-secondary-fixed-variant: #454749;
+  --color-on-surface-variant: #c1c6d5;
+  --color-on-tertiary-container: #e8e8ea;
+  --color-surface-container-lowest: #0e0e10;
+  --color-on-tertiary: #2f3032;
+  --color-primary: #aac7ff;
+  --color-on-primary-fixed: #001b3e;
+  --color-on-secondary: #2f3132;
+  --color-on-tertiary-fixed: #1a1c1d;
+  --color-tertiary-fixed: #e3e2e4;
+  --color-surface: #131315;
+  --color-secondary-fixed: #e2e2e4;
+  --color-inverse-on-surface: #303032;
+  --color-outline-variant: #414753;
+  --color-on-surface: #e4e2e4;
+  --color-tertiary: #c6c6c8;
+  --color-surface-tint: #aac7ff;
+  --color-on-error: #690005;
+  --color-surface-container-highest: #353437;
+  --color-secondary: #c6c6c8;
+  --color-on-secondary-container: #b4b5b7;
+  --color-surface-container: #1f1f21;
+  --color-surface-bright: #39393b;
+  --color-background: #131315;
+  --color-error: #ffb4ab;
+  --color-outline: #8b919e;
+  --color-on-primary-container: #dfe8ff;
+  --color-error-container: #93000a;
+  --color-tertiary-container: #67686a;
+  --color-primary-fixed: #d7e3ff;
+  --color-on-error-container: #ffdad6;
+  --color-surface-container-high: #2a2a2c;
+  --color-tertiary-fixed-dim: #c6c6c8;
+  --color-on-primary: #002f65;
+  --color-on-tertiary-fixed-variant: #464749;
+  --color-primary-fixed-dim: #aac7ff;
+  --color-primary-container: #0066cc;
+  --color-on-primary-fixed-variant: #00458e;
+  --color-surface-dim: #131315;
+  --color-inverse-surface: #e4e2e4;
+  --color-secondary-container: #454749;
+  --color-accent-crimson: #ff3131;
+
+  --radius-DEFAULT: 1rem;
+  --radius-lg: 2rem;
+  --radius-xl: 3rem;
+  --radius-full: 9999px;
+
+  --font-headline: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-body;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  .glass-nav {
+    background: rgba(19, 19, 21, 0.7);
+    backdrop-filter: blur(64px);
+  }
+
+  .glass-panel {
+    background: rgba(31, 31, 33, 0.6);
+    backdrop-filter: blur(40px);
+  }
+
+  .obsidian-card {
+    background: #1f1f21;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .obsidian-card:hover {
+    background: #2a2a2c;
+    transform: scale(1.02);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+
+  .m2-glow-button {
+    background: linear-gradient(135deg, #aac7ff 0%, #0066cc 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  .protocol-feed-gradient {
+    background: linear-gradient(to bottom, rgba(170, 199, 255, 0.05), transparent);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #414753;
+    border-radius: 10px;
+  }
+
+  .m2-glow:hover {
+    background: radial-gradient(circle at center, rgba(170, 199, 255, 0.05) 0%, transparent 70%);
+  }
+
+  .glow-crimson { filter: drop-shadow(0 0 15px rgba(255, 180, 171, 0.3)); }
+  .glow-primary { filter: drop-shadow(0 0 15px rgba(170, 199, 255, 0.2)); }
+  .recursive-node { background: radial-gradient(circle at center, #2a2a2c 0%, #1f1f21 100%); }
+
+  .obsidian-grid {
+    background-image: radial-gradient(rgba(170, 199, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .node-glow {
+    box-shadow: 0 0 20px rgba(0, 102, 204, 0.2);
+  }
+  .trace-line {
+    stroke-dasharray: 8;
+    animation: dash 30s linear infinite;
+  }
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -1000;
+    }
+  }
+
+  .liquid-accent { background: linear-gradient(135deg, #ff3131 0%, #93000a 100%); }
+  .mesh-grid { background-image: radial-gradient(rgba(255, 49, 49, 0.05) 1px, transparent 1px); background-size: 40px 40px; }
+
+  .momentum-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}

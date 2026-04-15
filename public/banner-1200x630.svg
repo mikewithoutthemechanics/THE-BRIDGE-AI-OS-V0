@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#050a0f"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00c8ff"/>
+      <stop offset="100%" stop-color="#00e57b"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Grid pattern -->
+  <g stroke="rgba(0,200,255,0.1)" stroke-width="1" fill="none">
+    <line x1="0" y1="60" x2="1200" y2="60"/>
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/>
+    <line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="0" y1="480" x2="1200" y2="480"/>
+    <line x1="0" y1="540" x2="1200" y2="540"/>
+    <line x1="0" y1="600" x2="1200" y2="600"/>
+    <line x1="120" y1="0" x2="120" y2="630"/>
+    <line x1="240" y1="0" x2="240" y2="630"/>
+    <line x1="360" y1="0" x2="360" y2="630"/>
+    <line x1="480" y1="0" x2="480" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="720" y1="0" x2="720" y2="630"/>
+    <line x1="840" y1="0" x2="840" y2="630"/>
+    <line x1="960" y1="0" x2="960" y2="630"/>
+    <line x1="1080" y1="0" x2="1080" y2="630"/>
+  </g>
+
+  <!-- Main BRDG hexagon -->
+  <polygon points="600,150 720,225 720,375 600,450 480,375 480,225"
+           fill="none" stroke="url(#accent)" stroke-width="4" filter="url(#glow)"/>
+
+  <!-- Inner BRDG hexagon -->
+  <polygon points="600,210 660,245 660,365 600,400 540,365 540,245"
+           fill="rgba(0,200,255,0.1)" stroke="url(#accent)" stroke-width="2"/>
+
+  <!-- BRDG Text -->
+  <text x="600" y="320" text-anchor="middle" font-family="system-ui, sans-serif"
+        font-size="72" font-weight="800" fill="url(#accent)" filter="url(#glow)">BRDG</text>
+
+  <!-- Token details -->
+  <text x="600" y="360" text-anchor="middle" font-family="monospace"
+        font-size="18" fill="#00e57b">100M Supply • 1% Burn • zkEVM Native</text>
+
+  <!-- Linea ecosystem badge -->
+  <g transform="translate(150, 500)">
+    <rect x="0" y="0" width="200" height="80" rx="8"
+          fill="rgba(0,200,255,0.1)" stroke="#00c8ff" stroke-width="2"/>
+    <text x="100" y="30" text-anchor="middle" font-family="system-ui, sans-serif"
+          font-size="16" font-weight="600" fill="#00c8ff">Linea Ecosystem</text>
+    <text x="100" y="55" text-anchor="middle" font-family="monospace"
+          font-size="12" fill="#00e57b">zkEVM Ready</text>
+  </g>
+
+  <!-- Contract verification badges -->
+  <g transform="translate(850, 480)">
+    <circle cx="25" cy="25" r="20" fill="rgba(0,229,123,0.2)" stroke="#00e57b" stroke-width="2"/>
+    <text x="25" y="32" text-anchor="middle" font-family="system-ui, sans-serif"
+          font-size="16" font-weight="600" fill="#00e57b">✓</text>
+    <text x="55" y="30" font-family="system-ui, sans-serif"
+          font-size="12" fill="#c8dce8">Verified</text>
+  </g>
+
+  <!-- Treasury status -->
+  <g transform="translate(850, 520)">
+    <circle cx="25" cy="25" r="20" fill="rgba(0,200,255,0.2)" stroke="#00c8ff" stroke-width="2"/>
+    <text x="25" y="32" text-anchor="middle" font-family="system-ui, sans-serif"
+          font-size="14" font-weight="600" fill="#00c8ff">$</text>
+    <text x="55" y="30" font-family="system-ui, sans-serif"
+          font-size="12" fill="#c8dce8">Treasury Live</text>
+  </g>
+
+  <!-- DEX Pool status -->
+  <g transform="translate(850, 560)">
+    <circle cx="25" cy="25" r="20" fill="rgba(255,209,102,0.2)" stroke="#ffd166" stroke-width="2"/>
+    <text x="25" y="32" text-anchor="middle" font-family="system-ui, sans-serif"
+          font-size="12" font-weight="600" fill="#ffd166">LP</text>
+    <text x="55" y="30" font-family="system-ui, sans-serif"
+          font-size="12" fill="#c8dce8">Pool Active</text>
+  </g>
+
+  <!-- Main title -->
+  <text x="600" y="80" text-anchor="middle" font-family="system-ui, sans-serif"
+        font-size="36" font-weight="700" fill="#f7fafc">Bridge AI OS Token</text>
+  <text x="600" y="110" text-anchor="middle" font-family="system-ui, sans-serif"
+        font-size="20" fill="#a0aec0">Ecosystem Submission to Linea Network</text>
+
+  <!-- Bottom tagline -->
+  <text x="600" y="590" text-anchor="middle" font-family="monospace"
+        font-size="16" fill="#4d6678">Fixed Supply • Real Utility • zkEVM Native • Deflationary Mechanics</text>
+</svg></content>
+<parameter name="filePath">public/banner-1200x630.svg

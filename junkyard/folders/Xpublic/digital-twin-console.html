@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Twin Console — Bridge AI OS</title>
+  <script>
+    // Single fallback: __CONSOLE_SYNC_URL, else same-origin if port 3022, else localhost:3022. Used for redirect, meta refresh, and link.
+    (function(){
+      var url = (typeof window !== 'undefined' && window.__CONSOLE_SYNC_URL)
+        ? window.__CONSOLE_SYNC_URL
+        : (location.port === '3022' ? location.origin + '/' : 'http://localhost:3022/');
+      window.__CONSOLE_SYNC_URL = url;
+      var meta = document.createElement('meta');
+      meta.httpEquiv = 'refresh';
+      meta.content = '0;url=' + url;
+      document.head.appendChild(meta);
+      location.replace(url);
+    })();
+  </script>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0a0c12; color: #8fc; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .box { background: rgba(0,0,0,0.85); padding: 2rem; border-radius: 8px; border: 1px solid #333; max-width: 420px; text-align: center; }
+    h1 { font-size: 1.1rem; color: #6af; margin-top: 0; }
+    a { display: inline-block; margin-top: 1rem; padding: 12px 24px; background: #2a6; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; }
+    a:hover { background: #3a7; }
+    .footer { font-size: 11px; color: #666; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Digital Twin Console</h1>
+    <p>Redirecting to Digital Twin…</p>
+    <a id="link" href="#">Open console</a>
+    <p class="footer" id="footer">Synced with console — Human API at /api/human</p>
+  </div>
+  <script>
+    (function(){
+      var url = (typeof window !== 'undefined' && window.__CONSOLE_SYNC_URL) ? window.__CONSOLE_SYNC_URL : (location.port === '3022' ? location.origin + '/' : 'http://localhost:3022/');
+      var link = document.getElementById('link');
+      var footer = document.getElementById('footer');
+      if (link) { link.href = url; link.textContent = 'Open at ' + url; }
+      if (footer) footer.innerHTML = 'Synced with ' + url + ' — Human API at /api/human';
+    })();
+  </script>
+</body>
+</html>
