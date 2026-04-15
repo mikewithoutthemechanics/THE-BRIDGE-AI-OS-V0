@@ -212,13 +212,20 @@ async function boot() {
 async function loadGraph() {
   try {
     const data = await fetch('/api/svg/graph.json').then(r => r.json());
-    graphData = data;
+    if (!data || data.ok === false) {
+      throw new Error((data && data.error) || 'graph unavailable');
+    }
+    graphData = {
+      nodes: Array.isArray(data.nodes) ? data.nodes : [],
+      edges: Array.isArray(data.edges) ? data.edges : [],
+      canvas: data.canvas || { width: 900, height: 560 },
+    };
     renderGraph();
-    const sk = data.nodes.length;
+    const sk = graphData.nodes.length;
     document.getElementById('p-sk').className = 'pill ok';
     document.getElementById('p-sk').innerHTML = '<div class="dot"></div>' + sk + ' SKILLS';
     document.getElementById('p-eng').className = 'pill ok';
-    document.getElementById('tbar-info').textContent = sk + ' skills · ' + data.edges.length + ' connections · click=inspect · dblclick=execute';
+    document.getElementById('tbar-info').textContent = sk + ' skills · ' + graphData.edges.length + ' connections · click=inspect · dblclick=execute';
   } catch (e) {
     document.getElementById('tbar-info').textContent = 'Engine offline: ' + e.message;
   }
@@ -474,7 +481,7 @@ function showTooltip(e, n) {
   const tt = document.getElementById('tooltip');
   tt.style.display = 'block';
   tt.textContent = n.id + (execCount[n.id] ? ' · ' + execCount[n.id] + ' execs' : '') +
-    (n.tags.length ? ' · ' + n.tags.slice(0,3).join(',') : '');
+    ((n.tags || []).length ? ' · ' + (n.tags || []).slice(0,3).join(',') : '');
   moveTt(e);
 }
 function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
