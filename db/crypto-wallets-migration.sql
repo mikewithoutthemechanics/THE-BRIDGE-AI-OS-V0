@@ -18,7 +18,7 @@ CREATE INDEX IF NOT EXISTS idx_acw_eth_address ON agent_crypto_wallets (eth_addr
 CREATE INDEX IF NOT EXISTS idx_acw_btc_address ON agent_crypto_wallets (btc_address);
 
 -- Auto-update updated_at on row change
-CREATE OR REPLACE FUNCTION set_updated_at()
+CREATE OR REPLACE FUNCTION acw_set_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -29,7 +29,7 @@ $$;
 DROP TRIGGER IF EXISTS trg_acw_updated_at ON agent_crypto_wallets;
 CREATE TRIGGER trg_acw_updated_at
   BEFORE UPDATE ON agent_crypto_wallets
-  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION acw_set_updated_at();
 
 -- RLS: service role has full access; authenticated role can only read
 ALTER TABLE agent_crypto_wallets ENABLE ROW LEVEL SECURITY;

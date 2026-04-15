@@ -96,20 +96,17 @@ cp .env.example .env
 
 **Node.js Example:**
 ```javascript
-import { Agent } from './src/agents/base-agent.js';
+// CommonJS — requires Node ≥ 18 and a configured .env
+require('dotenv').config();
+const registry = require('./lib/agent-registry');
 
-const agent = new Agent({
-  name: 'summarizer',
-  model: 'gpt-4',
-  maxTokens: 500
-});
+(async () => {
+  const agents = await registry.getAll();
+  console.log(`Loaded ${agents.length} agents`);
 
-const result = await agent.run({
-  input: 'Summarize this text: The quick brown fox jumps over the lazy dog.',
-  context: { style: 'bullets' }
-});
-
-console.log(result.output);
+  const prime = await registry.getById('prime-001');
+  console.log('Prime agent:', prime?.name);
+})();
 ```
 
 **Python Example:**
