@@ -1625,6 +1625,76 @@ app.get('/api/skills', [validate.skills], (req, res) => {
     ]});
   });
 
+// SVG engine compatibility endpoints (used by /svg-engine.html)
+function buildSvgGraphFromSkills(skills = []) {
+  const normalized = skills
+    .map((s, idx) => {
+      if (typeof s === 'string') {
+        return { id: s, name: s, tags: [], description: '' };
+      }
+      if (!s || typeof s !== 'object') return null;
+      const id = String(s.id || s.skill_id || s.slug || s.name || `skill-${idx + 1}`).trim();
+      if (!id) return null;
+      return {
+        id,
+        name: String(s.name || id),
+        tags: Array.isArray(s.tags) ? s.tags.filter(Boolean) : [],
+        description: typeof s.description === 'string' ? s.description : '',
+      };
+    })
+    .filter(Boolean);
+
+  const total = Math.max(normalized.length, 1);
+  const canvas = { width: 900, height: 560 };
+  const cx = 450;
+  const cy = 280;
+  const radius = 210;
+  const nodes = normalized.map((s, i) => {
+    const angle = (2 * Math.PI * i / total) - Math.PI / 2;
+    return {
+      ...s,
+      color: '#63ffda',
+      position: {
+        x: Math.round(cx + radius * Math.cos(angle)),
+        y: Math.round(cy + radius * Math.sin(angle)),
+      },
+    };
+  });
+
+  const edges = [];
+  for (let i = 0; i < nodes.length - 1; i += 1) {
+    edges.push({ from: nodes[i].id, to: nodes[i + 1].id });
+  }
+
+  return { nodes, edges, canvas };
+}
+
+app.get('/api/svg/graph.json', [validate.skills], (req, res) => {
+  const skills = [
+    { name: 'InferenceRouter', tags: ['ai','routing'] },
+    { name: 'TradingEngine', tags: ['defi','trading'] },
+    { name: 'SalesAgent', tags: ['crm','sales'] },
+    { name: 'SupportBot', tags: ['tickets','support'] },
+    { name: 'LegalReviewer', tags: ['compliance','legal'] },
+    { name: 'DataSyncer', tags: ['data','sync'] },
+    { name: 'MarketAnalyzer', tags: ['analytics','market'] },
+    { name: 'ContentGenerator', tags: ['marketing','content'] },
+  ];
+  const graph = buildSvgGraphFromSkills(skills);
+  return res.json({ ok: true, ...graph, ts: Date.now() });
+});
+
+app.get('/api/svg/telemetry', (req, res) => {
+  return res.json({
+    ok: true,
+    skills_loaded: 8,
+    latency_p50_ms: 0,
+    latency_p95_ms: 1,
+    total_executions: 9,
+    ts: Date.now(),
+  });
+});
+
 // Mission board (used by executive-dashboard.html)
 app.get('/api/mission/board', [validate.missionBoard], (req, res) => {
     res.json({ backlog: 12, in_progress: 5, review: 3, done: 47 });
