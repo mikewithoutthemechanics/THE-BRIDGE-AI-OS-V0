@@ -225,18 +225,24 @@ const STATUS_COLORS = { green: "#22c55e", yellow: "#facc15", orange: "#fb923c", 
 const TYPE_COLORS = { Server: "#38bdf8", Container: "#a855f7", API: "#22c55e", Database: "#f97316", Network: "#0ea5e9", Cache: "#facc15", Queue: "#e5e7eb", "AI/ML": "#ec4899" };
 
 /* id must match nodes[].id for poll updates */
-/* Real absolute URLs — only endpoints confirmed reachable from this machine */
-const HEALTH_ENDPOINTS = [
-  // ── LOCAL — confirmed live ──
-  { id: "gateway",   url: "http://localhost:8787/health" },        // SPINE API v1
-  { id: "business",  url: "http://localhost:8787/api/templates" },  // SPINE templates (4 templates)
-  { id: "treasury",  url: "http://localhost:7071/health" },         // SVG Engine v3 (1246 skills)
-  { id: "pm2",       url: "http://localhost:6063/" },               // Exec Trace Graph UI
-  { id: "nginx",     url: "http://localhost:9090/-/ready" },        // Prometheus (infra monitoring)
-  // ── VPS endpoints (bridge-ai-os.com) unreachable from localhost — omitted ──
-  // Nodes: core-brain, system, twin, swarm, quant, defi, crm, marketing, neurolink, vps
-  // will hold their initial yellow status and simulate metrics until VPS is reachable
-];
+const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const HEALTH_ENDPOINTS = isLocalHost
+  ? [
+      // Local operator mode: explicit service ports.
+      { id: "gateway",  url: "http://localhost:8787/health" },
+      { id: "business", url: "http://localhost:8787/api/templates" },
+      { id: "treasury", url: "http://localhost:7071/health" },
+      { id: "pm2",      url: "http://localhost:6063/" },
+      { id: "nginx",    url: "http://localhost:9090/-/ready" },
+    ]
+  : [
+      // VPS/public mode: same-origin probes to avoid mixed-content/CORS failures.
+      { id: "gateway",  url: "/health" },
+      { id: "business", url: "/api/templates" },
+      { id: "treasury", url: "/api/status" },
+      { id: "pm2",      url: "/api/swarm/health" },
+      { id: "nginx",    url: "/api/revenue/status" },
+    ];
 
 const nodes = [
   // ── LOCAL SERVICES — confirmed running ──
