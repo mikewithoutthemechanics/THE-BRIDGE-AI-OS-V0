@@ -3,51 +3,709 @@
 ## Overview
 This document maps all frontend HTML pages to their user flow groups, API routes, access control, dependencies, navigation, UI/UX details, and more.
 
+**Last Updated**: 2026-04-15
+**Status**: ✅ ALL PHASES COMPLETE — Navigation fixes, auth token consolidation, system page links (2026-04-15)
+
+## Recent Updates (2026-04-15)
+- **Phase 2**: Added 3 missing links to crm.html (Lead Gen, Pipeline, Legal AI)
+- **Phase 3**: Verified all 9 vertical pages link to /platforms.html ✅
+- **Phase 5**: Added 4 missing links to control.html (View Logs, Terminal, Admin, Command); Added System Status/Control links to infra.html; Added Control/System Status links to logs.html
+- **Auth Token**: Standardized bridge-widget.js to use `bridge_token` instead of `bridge_user_token`
+- **Deferred**: Auth token fallback cleanup — retain `bridge_user_token` fallback in bridge-auth.js for 24-48hr transition period, then remove
+
 ---
 
-## 1. Core Dashboard
-**Purpose**: Main entry points, authentication, and user onboarding
+## PAGE INVENTORY (Actual Files in /public)
 
-| Page | File | Roles | Auth | Navigation | Dependencies | UI Framework |
-|------|------|-------|------|------------|--------------|--------------|
-| Landing | `/` | All | Optional | → home, join, pricing | Tailwind CDN | Dark, cyan theme |
-| Home | `/home.html` | Member | Required | → platforms, wallet, settings | Tailwind | Dark, stats cards |
-| Welcome | `/welcome.html` | Member | Required | → dashboard, platforms, sitemap | None (inline CSS) | Dark, grid cards |
-| Welcome Tour | `/welcome-tour.html` | Member | Required | → onboarding | Tailwind | Dark, step cards |
-| Checkout | `/checkout.html` | All | Optional | → pricing, payment-success/cancel | Tailwind | Dark, form |
-| Join | `/join.html` | Public | - | → pricing, onboarding | Tailwind | Dark, form |
-| Onboarding | `/onboarding.html` | New | Required | → welcome, dashboard | Tailwind | Dark, wizard |
-| Portal (Voice) | `/portal.html` | Member | Required | ← voice.html | Tailwind | Dark, voice UI |
-| Voice AI | `/voice.html` | Member | Required | → portal, settings | Tailwind | Dark, audio |
-| Console v3 | `/console.html` | Member | Required | → terminal-v3, legacy terminal | Tailwind + custom CSS | Dark, terminal |
-| Pricing | `/pricing.html` | All | - | → checkout, join | None (topnav) | Dark, pricing tables |
-| Payment Success | `/payment-success.html` | All | Required | → treasury-dashboard | None (inline CSS) | Dark, success |
-| Payment Cancel | `/payment-cancel.html` | All | Required | → checkout | None (inline CSS) | Dark, cancel |
+### Core Entry Points
+| File | Status | Notes |
+|------|--------|-------|
+| `index.html` | ✅ Active | Landing page |
+| `home.html` | ✅ Active | Main dashboard after login |
+| `landing.html` | ✅ Active | Alternative landing |
+| `join.html` | ✅ Active | Registration |
+| `onboarding.html` | ✅ Active | User onboarding |
+| `welcome.html` | ✅ Active | Post-onboarding welcome |
+| `welcome-tour.html` | ✅ Active | Guided tour |
+| `checkout.html` | ✅ Active | Payment checkout |
+| `pricing.html` | ✅ Active | Pricing plans |
+| `payment-success.html` | ✅ Active | Payment success redirect |
+| `payment-cancel.html` | ✅ Active | Payment cancel redirect |
+| `sitemap.html` | ✅ Active | Full sitemap |
 
-**API Routes**: `/api/auth/status`, `/api/user/profile`, `/api/treasury/status`, `/api/checkout/session`, `/api/pricing/plans`, `/api/voice/transcribe`, `/api/terminal/exec`
+### Business Suite (CRM & Operations)
+| File | Status | Notes |
+|------|--------|-------|
+| `crm.html` | ✅ Active | CRM dashboard |
+| `invoicing.html` | ✅ Active | Invoice management |
+| `quotes.html` | ✅ Active | Quote management |
+| `customers.html` | ✅ Active | Customer management |
+| `vendors.html` | ✅ Active | Vendor management |
+| `marketing.html` | ✅ Active | Marketing campaigns |
+| `leadgen.html` | ✅ Active | Lead generation |
+| `leads.html` | ✅ Active | Leads view (duplicate?) |
+| `tickets.html` | ✅ Active | Support tickets |
+| `legal.html` | ✅ Active | Legal documents |
+| `legal-ai.html` | ✅ Active | AI legal assistant |
+| `workforce.html` | ✅ Active | Workforce management |
+| `affiliate.html` | ✅ Active | Affiliate program |
 
-**API Endpoints Detail**:
+### Economy & DeFi
+| File | Status | Notes |
+|------|--------|-------|
+| `economy.html` | ✅ Active | Economy overview |
+| `tokenomics.html` | ✅ Active | Tokenomics details |
+| `defi.html` | ✅ Active | DeFi pools |
+| `trading.html` | ✅ Active | Trading interface |
+| `wallet.html` | ✅ Active | Wallet management |
+| `banks.html` | ✅ Active | Bank integration |
+| `treasury-dashboard.html` | ✅ Active | Treasury management |
+| `governance.html` | ✅ Active | DAO governance |
+| `marketplace.html` | ✅ Active | Marketplace |
+
+### Verticals / Sub-brands
+| File | Status | Notes |
+|------|--------|-------|
+| `platforms.html` | ✅ Active | Platform hub |
+| `ehsa.html` | ✅ Active | Health platform |
+| `ehsa-home.html` | ✅ Active | Health home |
+| `ehsa-app.html` | ✅ Active | Health mobile app |
+| `ehsa-brain.html` | ✅ Active | Health AI brain |
+| `aurora.html` | ✅ Active | Aurora AI platform |
+| `aurora-home.html` | ✅ Active | Aurora home |
+| `hospital.html` | ✅ Active | Hospital in a Box |
+| `aid.html` | ✅ Active | AID platform |
+| `aid-home.html` | ✅ Active | AID home |
+| `ban.html` | ✅ Active | BAN network |
+| `ban-home.html` | ✅ Active | BAN home |
+| `ubi.html` | ✅ Active | UBI platform |
+| `ubi-home.html` | ✅ Active | UBI home |
+| `abaas.html` | ✅ Active | Agent-as-a-Service |
+| `abaas-home.html` | ✅ Active | ABaaS home |
+| `rootedearth.html` | ✅ Active | Agriculture platform |
+| `rootedearth-home.html` | ✅ Active | Agriculture home |
+| `supac.html` | ✅ Active | Agency platform |
+| `supac-home.html` | ✅ Active | Agency home |
+| `esim.html` | ✅ Active | eSIM platform |
+| `claude-partner.html` | ✅ Active | Claude partner |
+| `bridge-home.html` | ✅ Active | Bridge hub |
+
+### Agents & System
+| File | Status | Notes |
+|------|--------|-------|
+| `agents.html` | ✅ Active | Agent management |
+| `neurolink.html` | ✅ Active | Neural network link |
+| `topology.html` | ✅ Active | Network topology |
+| `topology-layers.html` | ✅ Active | Topology layers view |
+| `registry.html` | ✅ Active | System registry |
+| `control.html` | ✅ Active | Control panel |
+| `command-center.html` | ✅ Active | Command center |
+| `system-status-dashboard.html` | ✅ Active | System health |
+| `infra.html` | ✅ Active | Infrastructure |
+| `terminal.html` | ✅ Active | Legacy terminal |
+| `terminal-v3.html` | ✅ Active | Terminal v3 |
+| `console.html` | ✅ Active | Console v3 |
+| `logs.html` | ✅ Active | Log viewer |
+| `view-logs.html` | ✅ Active | Log streaming |
+| `avatar.html` | ✅ Active | 3D Avatar |
+| `twin.html` | ✅ Active | Digital twin |
+| `twin-wall.html` | ✅ Active | Twin social wall |
+| `digital-twin-console.html` | ✅ Active | Twin console |
+| `supadash.html` | ✅ Active | Supabase dashboard |
+| `supadash-topology.html` | ✅ Active | Supabase topology |
+| `supadash-registry.html` | ✅ Active | Supabase registry |
+| `supadash-marketplace.html` | ✅ Active | Supabase marketplace |
+| `supadash-avatar.html` | ✅ Active | Supabase avatar |
+
+### Admin & Intelligence
+| File | Status | Notes |
+|------|--------|-------|
+| `admin.html` | ✅ Active | Admin panel |
+| `admin-command.html` | ✅ Active | Admin commands |
+| `admin-revenue.html` | ✅ Active | Revenue management |
+| `admin-withdraw.html` | ✅ Active | Withdrawal management |
+| `admin-sitemap.html` | ✅ Active | Admin sitemap |
+| `admin-esim.html` | ✅ Active | eSIM admin |
+| `auth-dashboard.html` | ✅ Active | Auth dashboard |
+| `bridge-audit-dashboard.html` | ✅ Active | Audit dashboard |
+| `intelligence.html` | ✅ Active | Intelligence panel |
+| `executive-dashboard.html` | ✅ Active | Executive dashboard |
+| `aoe-dashboard.html` | ✅ Active | AOE operations |
+| `svg-engine.html` | ✅ Active | SVG engine |
+| `brand.html` | ✅ Active | Brand management |
+| `corporate.html` | ✅ Active | Corporate org chart |
+| `carrier-admin.html` | ✅ Active | Carrier admin |
+| `godmode-terminal.html` | ✅ Active | God mode terminal |
+
+### Settings & Utilities
+| File | Status | Notes |
+|------|--------|-------|
+| `settings.html` | ✅ Active | User settings |
+| `docs.html` | ✅ Active | API documentation |
+| `view.html` | ✅ Active | Data viewer |
+| `applications.html` | ✅ Active | Applications |
+| `50-applications.html` | ✅ Active | App showcase |
+| `profile.html` | ✅ Active | User profile |
+| `billing.html` | ✅ Active | Billing |
+| `projects.html` | ✅ Active | Projects |
+| `wizard.html` | ✅ Active | Setup wizard |
+| `dashboard.html` | ✅ Active | Dashboard (alt) |
+| `ui.html` | ✅ Active | UI (alt) |
+| `pipeline.html` | ✅ Active | Pipeline view |
+| `runtime.html` | ✅ Active | Runtime stats |
+| `iot.html` | ✅ Active | IoT dashboard |
+| `outputs.html` | ✅ Active | Outputs |
+| `tvm.html` | ✅ Active | TVM |
+| `activation.html` | ✅ Active | Activation |
+| `activate.html` | ✅ Active | Activate |
+| `linea-demo.html` | ✅ Active | Linea demo |
+| `demo.html` | ✅ Active | Demo |
+| `gateway.html` | ✅ Active | Gateway |
+| `gateway/index.html` | ✅ Active | Gateway sub |
+| `output/index.html` | ✅ Active | Output sub |
+| `esim-pbx.html` | ✅ Active | eSIM PBX |
+| `auth-callback.html` | ✅ Active | OAuth callback |
+
+### Error & Special
+| File | Status | Notes |
+|------|--------|-------|
+| `404.html` | ✅ Active | 404 error page |
+| `offline.html` | ✅ Active | Offline page |
+
+---
+
+## USER NAVIGATION MAP
+
+### Primary Hub Structure
 ```
-GET  /api/auth/status
-     → Returns: { logged_in: boolean, user?: { id, email, name, role, plan } }
-     → Errors: 401 (invalid token), 403 (expired)
-
-POST /api/user/profile
-     → Body: { name?, email?, avatar? }
-     → Returns: { success: true, user: {...} }
-
-GET  /api/treasury/status
-     → Returns: { balance: number, earned: number, staked: number, burned: number }
-     → Cache: 30 seconds
-
-GET  /api/voice/transcribe
-     → Body: { audio_data: base64 }
-     → Returns: { transcript: string, confidence: number }
+┌─────────────────────────────────────────────────────────────────┐
+│                         HOME.HTML                               │
+│                   (Main Dashboard Hub)                          │
+│  ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐  │
+│  │  CRM    │ Economy │ Agents  │Platforms│ Settings│ Docs   │  │
+│  └────┬────┴────┬────┴────┬────┴────┬────┴────┬────┴─────────┘  │
+└────────┼────────┼────────┼────────┼────────┼──────────────────┘
+         │        │        │        │        │
+         ▼        ▼        ▼        ▼        ▼
+┌─────────────┐ ┌───────┐ ┌──────┐ ┌───────┐ ┌─────────┐
+│ crm.html    │ │wallet │ │agents│ │platforms│ │settings│
+│ ├──contacts│ │├──defi│ │├──neuro│ │├──ehsa │ │profile │
+│ ├──invoices│ │├──trading│ │├──topology│ │├──aurora│ │billing │
+│ ├──quotes │ │├──economy│ │├──marketplace│ │├──ban │ │security│
+│ ├──leads  │ │├──governance│ │├──registry│ │├──ubi │ └──URITY---
+│ ├──marketing│ └──────┘ │└──terminal│ │├──hospital│ 
+│ ├──tickets │         │ └──avatar │ │├──aid │
+│ └──vendors │         └──────────┘ │├──abaas│
+└─────────────┘                    │├──rooted│
+                                  │├──supac │
+                                  │└──esim │
+                                  └────────┘
 ```
 
-**Local Storage**: `bridge_token`, `bridge_user`
+### USER FLOW DIAGRAMS
 
-**Breadcrumb**: Landing → Join → Onboarding → Welcome → Home → Portal/Voice/Console
+#### 1. Core Entry Flow (Public → Member)
+```
+index.html (Landing)
+    │
+    ├── join.html (Sign Up)
+    │       │
+    │       └── onboarding.html (Onboarding)
+    │               │
+    │               └── welcome.html (Welcome)
+    │                       │
+    │                       └── home.html (Dashboard Hub)
+    │
+    ├── pricing.html (Pricing)
+    │       │
+    │       └── checkout.html
+    │               │
+    │               ├── payment-success.html → home.html
+    │               └── payment-cancel.html → checkout.html
+    │
+    └── platforms.html (Explore Platforms)
+```
+
+#### 2. Business Suite Flow
+```
+home.html (Hub)
+    │
+    └── crm.html (CRM Dashboard)
+            │
+            ├── customers.html
+            ├── vendors.html
+            ├── invoicing.html
+            │       └── quotes.html
+            ├── leadgen.html
+            │       └── leads.html
+            ├── marketing.html
+            ├── tickets.html
+            ├── legal.html
+            │       └── legal-ai.html
+            └── workforce.html
+                    └── affiliate.html
+```
+
+#### 3. Economy & DeFi Flow
+```
+home.html (Hub)
+    │
+    ├── economy.html
+    │       │
+    │       └── tokenomics.html
+    │
+    ├── wallet.html
+    │       │
+    │       ├── defi.html
+    │       │       └── trading.html
+    │       ├── banks.html
+    │       └── marketplace.html
+    │
+    └── treasury-dashboard.html (if admin)
+            │
+            └── governance.html
+```
+
+#### 4. Agent & System Flow
+```
+home.html (Hub)
+    │
+    ├── agents.html
+    │       │
+    │       ├── neurolink.html
+    │       ├── marketplace.html
+    │       └── avatar.html
+    │               └── twin.html
+    │                       ├── twin-wall.html
+    │                       └── digital-twin-console.html
+    │
+    ├── topology.html
+    │       └── topology-layers.html
+    │
+    ├── control.html
+    │       ├── registry.html
+    │       └── command-center.html
+    │
+    ├── console.html
+    │       └── terminal-v3.html
+    │
+    ├── system-status-dashboard.html
+    │       └── infra.html
+    │
+    └── logs.html
+            └── view-logs.html
+```
+
+#### 5. Platforms/Verticals Flow
+```
+home.html (Hub)
+    │
+    └── platforms.html
+            │
+            ├── ehsa.html
+            │       ├── ehsa-home.html
+            │       ├── ehsa-app.html
+            │       └── ehsa-brain.html
+            │
+            ├── aurora.html
+            │       └── aurora-home.html
+            │
+            ├── hospital.html
+            │
+            ├── ban.html
+            │       └── ban-home.html
+            │
+            ├── ubi.html
+            │       └── ubi-home.html
+            │
+            ├── aid.html
+            │       └── aid-home.html
+            │
+            ├── abaas.html
+            │       └── abaas-home.html
+            │
+            ├── rootedearth.html
+            │       └── rootedearth-home.html
+            │
+            ├── supac.html
+            │       └── supac-home.html
+            │
+            ├── bridge-home.html
+            │
+            ├── esim.html
+            │       └── esim-pbx.html
+            │
+            └── claude-partner.html
+```
+
+---
+
+## ADMIN NAVIGATION MAP
+
+### Admin Hub Structure
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       ADMIN.HTML                                │
+│                   (Admin Control Hub)                          │
+│  ┌─────────┬──────────┬──────────┬──────────┬─────────────────┐  │
+│  │ Users   │ Commands │ Revenue │ Withdraw │ Intelligence    │  │
+│  └────┬────┴────┬─────┴────┬─────┴────┬─────┴────────┬────────┘  │
+└───────┼─────────┼──────────┼──────────┼──────────────┼───────────┘
+        │         │          │          │              │
+        ▼         ▼          ▼          ▼              ▼
+┌─────────────┐ ┌─────────┐┌──────────┐┌────────────┐┌────────────┐
+│ admin-users│ │admin-   ││admin-    ││admin-      ││intelligence│
+│ (via API)  │ │command  ││revenue   ││withdraw    ││.html       │
+└─────────────┘ └────┬────┘└────┬─────┘└─────┬──────┘└────────────┘
+                     │         │           │
+                     ▼         ▼           ▼
+              ┌────────────────────────────────┐
+              │   admin-command.html (Execute)    │
+              └────────────┬─────────────────────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        ▼                  ▼                  ▼
+┌───────────────┐  ┌──────────────┐  ┌───────────────┐
+│admin-revenue │  │admin-withdraw│  │bridge-audit   │
+│.html         │  │.html        │  │-dashboard     │
+└───────────────┘  └──────────────┘  └───────────────┘
+                                  
+                           ┌───────────────┐
+                           │auth-dashboard │
+                           │.html         │
+                           └───────────────┘
+```
+
+### ADMIN FLOW DIAGRAMS
+
+#### 1. Admin Main Flow
+```
+home.html (Member Dashboard)
+    │
+    └── admin.html (Admin Hub)
+            │
+            ├── admin-command.html (Command Execution)
+            │       │
+            │       ├── admin-revenue.html (Revenue Mgmt)
+            │       ├── admin-withdraw.html (Withdrawals)
+            │       ├── bridge-audit-dashboard.html (Audit)
+            │       ├── auth-dashboard.html (Auth Management)
+            │       └── admin-sitemap.html (Admin Sitemap)
+            │
+            ├── admin-esim.html (eSIM Admin)
+            │
+            ├── intelligence.html (Intelligence)
+            │
+            ├── executive-dashboard.html (Executive View)
+            │       │
+            │       └── aoe-dashboard.html (AOE Ops)
+            │               │
+            │               ├── svg-engine.html (Skills Engine)
+            │               ├── supadash.html (Supabase Dash)
+            │               │       ├── supadash-topology.html
+            │               │       ├── supadash-registry.html
+            │               │       ├── supadash-marketplace.html
+            │               │       └── supadash-avatar.html
+            │               │
+            │               ├── system-status-dashboard.html
+            │               └── infra.html
+            │
+            ├── control.html (Control Panel)
+            │       │
+            │       ├── registry.html
+            │       └── command-center.html
+            │
+            └── godmode-terminal.html (God Mode Terminal)
+```
+
+#### 2. System Control Flow
+```
+admin.html
+    │
+    └── control.html
+            │
+            ├── registry.html (Kernel/Network/Security)
+            ├── command-center.html (Commands)
+            ├── system-status-dashboard.html
+            │       └── infra.html
+            └── logs.html
+                    └── view-logs.html
+```
+
+---
+
+## MISSING NAVIGATION LINKS (Priority Fixes)
+
+### Critical - User Experience
+| From | Missing Link To | Add to |
+|------|-----------------|--------|
+| `home.html` | `ui.html` or `dashboard.html` | Main nav |
+| `home.html` | `profile.html` | Main nav |
+| `home.html` | `billing.html` | Main nav |
+| `home.html` | `projects.html` | Main nav |
+| `home.html` | `wizard.html` | Main nav |
+| `home.html` | `supadash.html` | Main nav (hidden admin) |
+| `home.html` | `pipeline.html` | Main nav |
+| `home.html` | `runtime.html` | Main nav |
+| `home.html` | `iot.html` | Main nav |
+| `home.html` | `tvm.html` | Main nav |
+| `crm.html` | `leads.html` | CRM sub-nav |
+| `crm.html` | `affiliate.html` | CRM sub-nav |
+| `platforms.html` | `hub.html` | Platform links |
+| All verticals | Return link to `platforms.html` | Footer |
+| `welcome.html` | `home.html` | Primary CTA |
+
+### Critical - Admin Experience
+| From | Missing Link To | Add to |
+|------|-----------------|--------|
+| `admin.html` | `admin-command.html` | Admin nav |
+| `admin.html` | `admin-revenue.html` | Admin nav |
+| `admin.html` | `admin-withdraw.html` | Admin nav |
+| `admin.html` | `admin-esim.html` | Admin nav |
+| `admin.html` | `intelligence.html` | Admin nav |
+| `admin.html` | `executive-dashboard.html` | Admin nav |
+| `admin.html` | `aoe-dashboard.html` | Admin nav |
+| `admin.html` | `auth-dashboard.html` | Admin nav |
+| `admin.html` | `bridge-audit-dashboard.html` | Admin nav |
+| `admin.html` | `godmode-terminal.html` | Admin nav |
+| `admin-command.html` | All sub-admin pages | Command page links |
+| `executive-dashboard.html` | `aoe-dashboard.html` | Dashboard link |
+| `aoe-dashboard.html` | `svg-engine.html` | Dashboard link |
+| `aoe-dashboard.html` | `supadash.html` | Dashboard link |
+| `aoe-dashboard.html` | `system-status-dashboard.html` | Dashboard link |
+
+### Recommended - Consistency
+| From | Missing Link To | Add to |
+|------|-----------------|--------|
+| `settings.html` | `docs.html` | Settings nav |
+| `settings.html` | `sitemap.html` | Settings nav |
+| `settings.html` | `profile.html` | Settings nav |
+| `docs.html` | `admin.html` | Docs nav (for admins) |
+| All pages | Breadcrumb navigation | Header |
+| All pages | Return to `home.html` link | Header nav |
+| Vertical pages | Parent vertical link | Header |
+| `sitemap.html` | Missing pages link | Sitemap |
+
+---
+
+## NAVIGATION IMPLEMENTATION GUIDE
+
+### Recommended: Shared Navigation JS (bridge-nav.js)
+Create `public/bridge-nav.js` with:
+```javascript
+// Centralized navigation configuration
+const NAV_CONFIG = {
+  // User navigation structure
+  user: {
+    hub: '/home.html',
+    sections: {
+      'Dashboard': { hub: '/home.html', items: [
+        { label: 'Dashboard', href: '/ui.html' },
+        { label: 'Profile', href: '/profile.html' },
+        { label: 'Projects', href: '/projects.html' },
+        { label: 'Billing', href: '/billing.html' },
+        { label: 'Settings', href: '/settings.html' }
+      ]},
+      'Business': { hub: '/crm.html', items: [
+        { label: 'CRM', href: '/crm.html' },
+        { label: 'Invoicing', href: '/invoicing.html' },
+        { label: 'Quotes', href: '/quotes.html' },
+        { label: 'Customers', href: '/customers.html' },
+        { label: 'Vendors', href: '/vendors.html' },
+        { label: 'Leads', href: '/leadgen.html' },
+        { label: 'Marketing', href: '/marketing.html' },
+        { label: 'Tickets', href: '/tickets.html' },
+        { label: 'Legal', href: '/legal.html' },
+        { label: 'Workforce', href: '/workforce.html' },
+        { label: 'Affiliate', href: '/affiliate.html' }
+      ]},
+      'Economy': { hub: '/economy.html', items: [
+        { label: 'Economy', href: '/economy.html' },
+        { label: 'Wallet', href: '/wallet.html' },
+        { label: 'DeFi', href: '/defi.html' },
+        { label: 'Trading', href: '/trading.html' },
+        { label: 'Governance', href: '/governance.html' },
+        { label: 'Marketplace', href: '/marketplace.html' },
+        { label: 'Treasury', href: '/treasury-dashboard.html', admin: true }
+      ]},
+      'Agents': { hub: '/agents.html', items: [
+        { label: 'Agents', href: '/agents.html' },
+        { label: 'NeuroLink', href: '/neurolink.html' },
+        { label: 'Topology', href: '/topology.html' },
+        { label: 'Marketplace', href: '/marketplace.html' },
+        { label: 'Terminal', href: '/console.html' }
+      ]},
+      'Platforms': { hub: '/platforms.html', items: [
+        { label: 'Platforms', href: '/platforms.html' },
+        { label: 'EHSA', href: '/ehsa.html' },
+        { label: 'Aurora', href: '/aurora.html' },
+        { label: 'Hospital', href: '/hospital.html' },
+        { label: 'BAN', href: '/ban.html' },
+        { label: 'UBI', href: '/ubi.html' },
+        { label: 'AID', href: '/aid.html' },
+        { label: 'ABaaS', href: '/abaas.html' },
+        { label: 'eSIM', href: '/esim.html' }
+      ]},
+      'System': { hub: '/control.html', admin: true, items: [
+        { label: 'Control', href: '/control.html' },
+        { label: 'Registry', href: '/registry.html' },
+        { label: 'Command Center', href: '/command-center.html' },
+        { label: 'System Status', href: '/system-status-dashboard.html' },
+        { label: 'Infrastructure', href: '/infra.html' },
+        { label: 'Logs', href: '/logs.html' }
+      ]}
+    }
+  },
+  
+  // Admin navigation structure
+  admin: {
+    hub: '/admin.html',
+    sections: {
+      'Admin': { hub: '/admin.html', items: [
+        { label: 'Admin Panel', href: '/admin.html' },
+        { label: 'Commands', href: '/admin-command.html' },
+        { label: 'Revenue', href: '/admin-revenue.html' },
+        { label: 'Withdrawals', href: '/admin-withdraw.html' },
+        { label: 'eSIM Admin', href: '/admin-esim.html' }
+      ]},
+      'Intelligence': { hub: '/intelligence.html', items: [
+        { label: 'Intelligence', href: '/intelligence.html' },
+        { label: 'Exec Dashboard', href: '/executive-dashboard.html' },
+        { label: 'AOE Dashboard', href: '/aoe-dashboard.html' },
+        { label: 'SVG Engine', href: '/svg-engine.html' },
+        { label: 'Supadash', href: '/supadash.html' }
+      ]},
+      'Audit': { hub: '/bridge-audit-dashboard.html', items: [
+        { label: 'Bridge Audit', href: '/bridge-audit-dashboard.html' },
+        { label: 'Auth Dashboard', href: '/auth-dashboard.html' },
+        { label: 'Admin Sitemap', href: '/admin-sitemap.html' }
+      ]},
+      'System': { hub: '/control.html', items: [
+        { label: 'Control', href: '/control.html' },
+        { label: 'God Mode', href: '/godmode-terminal.html' },
+        { label: 'System Status', href: '/system-status-dashboard.html' },
+        { label: 'Logs', href: '/logs.html' }
+      ]}
+    }
+  }
+};
+
+// Inject navigation into page
+function initNav(role = 'user') {
+  // Implementation to inject nav based on role
+}
+
+// Check auth and inject correct nav
+async function checkAuthAndNav() {
+  // Check localStorage for bridge_token
+  // Determine role from token
+  // Call initNav with appropriate role
+}
+```
+
+### Usage in Pages
+```html
+<!-- Add to all pages before </body> -->
+<script src="/bridge-nav.js"></script>
+<script>
+  // Initialize navigation
+  checkAuthAndNav();
+</script>
+```
+
+### Breadcrumb Implementation
+```javascript
+// breadcrumb.config.js
+const BREADCRUMBS = {
+  '/home.html': ['Home'],
+  '/crm.html': ['Home', 'CRM'],
+  '/invoicing.html': ['Home', 'CRM', 'Invoicing'],
+  '/admin.html': ['Home', 'Admin'],
+  '/admin-command.html': ['Home', 'Admin', 'Commands'],
+  // ... add all pages
+};
+
+function renderBreadcrumb() {
+  const path = window.location.pathname;
+  const crumbs = BREADCRUMBS[path] || ['Unknown'];
+  // Render breadcrumb HTML
+}
+```
+
+---
+
+## FILES TO UPDATE (Action Items)
+
+### Phase 1: Core Navigation (Critical)
+- [x] `public/bridge-nav.js` exists with centralized navigation (updated 2026-04-15)
+- [x] Add `bridge-nav.js` script include to all pages (already included in most pages)
+- [x] Update `home.html` with complete navigation (uses bridge-nav.js)
+- [x] Update `admin.html` with complete admin navigation (uses bridge-nav.js)
+
+### Phase 2: Business Suite Links
+- [x] Add missing links from `crm.html` to all sub-pages
+- [x] Ensure back-navigation from all business pages
+- [x] Add `leads.html` and `affiliate.html` links
+- [x] ✅ COMPLETE: Added Lead Gen, Pipeline, Legal AI links to crm.html (2026-04-15)
+
+### Phase 3: Vertical Platform Links
+- [x] Add return links to `platforms.html` on all vertical pages
+- [x] Ensure vertical sub-pages link back to parent vertical
+- [x] Add missing `esim-pbx.html` and `claude-partner.html` links
+- [x] ✅ COMPLETE: All 9 vertical pages (ehsa, aid, supac, ubi, rootedearth, hospital, ban, aurora, esim) confirmed linking to /platforms.html (2026-04-15)
+
+### Phase 4: Admin Navigation
+- [x] Create complete admin navigation sidebar (bridge-nav.js updated)
+- [x] Add all admin sub-pages to admin routes (bridge-nav.js updated)
+- [x] Add admin links to admin-command page (updated 2026-04-15)
+- [x] Add `godmode-terminal.html` to admin nav (bridge-nav.js updated)
+
+### Phase 5: System Pages
+- [x] Link all system pages properly from `control.html`
+- [x] Add system status links to infra page
+- [x] Ensure logs pages link back to system
+- [x] ✅ COMPLETE: Added View Logs, Terminal, Admin links to control.html; added System Status/Control links to infra.html; added Control/System Status links to logs.html (2026-04-15)
+
+### Phase 6: Breadcrumbs
+- [x] Add breadcrumb component to `bridge-nav.js` (added BREADCRUMBS config + renderBreadcrumb function)
+- [x] Add breadcrumbs to all pages (auto-injected via bridge-nav.js)
+- [x] Create breadcrumb configuration (BREADCRUMBS object covers all main routes)
+
+---
+
+## ACCESS CONTROL REFERENCE
+
+### Role Hierarchy
+```
+Superadmin ──────► Full system control, audit logs, auth management
+      │
+Admin ──────────► User management, analytics, revenue, deploy
+      │
+Member ─────────► Dashboard, business tools, economy, agents
+      │
+Guest ──────────► Verticals, affiliate (read-only)
+      │
+Public ─────────► Landing, pricing, docs, sitemap
+```
+
+### Navigation by Role
+
+| Section | Public | Guest | Member | Admin | Superadmin |
+|---------|--------|-------|--------|-------|------------|
+| Landing/Join | ✅ | - | - | - | - |
+| Dashboard | - | ✅ | ✅ | ✅ | ✅ |
+| Business Suite | - | - | ✅ | ✅ | ✅ |
+| Economy/DeFi | - | - | ✅ | ✅ | ✅ |
+| Agents/System | - | - | ✅ | ✅ | ✅ |
+| Verticals | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Admin Panel | - | - | - | ✅ | ✅ |
+| System Control | - | - | - | ✅ | ✅ |
+| God Mode | - | - | - | - | ✅ |
+
+---
+
+*Last Updated: 2026-04-15*
+*Status: NAVIGATION_AUDIT_IN_PROGRESS*
 
 ---
 
@@ -1735,7 +2393,7 @@ const mockWallet = {
 *Generated: 2026-04-14*
 *Project: Bridge AI OS*
 *Version: 1.0*
-*Last Updated: 2026-04-14 23:39 UTC*
+*Last Updated: 2026-04-15 20:54 UTC*
 
 ---
 
@@ -1744,3 +2402,5 @@ const mockWallet = {
 | Date | Version | Change |
 |------|---------|--------|
 | 2026-04-14 | 1.0 | Initial comprehensive documentation with all sections |
+| 2026-04-15 | 1.1 | Navigation fixes: bridge-nav.js updated with all missing routes (profile, billing, projects, ui, admin sub-pages), admin-command.html nav updated with all admin links |
+| 2026-04-15 | 1.2 | ALL PHASES COMPLETE: Phase 1-5 nav fixes done; Phase 6 breadcrumbs added to bridge-nav.js BREADCRUMBS config; crm.html, control.html updated with complete nav links |

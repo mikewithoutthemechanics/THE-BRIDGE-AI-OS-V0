@@ -12,7 +12,7 @@
   const LS_OPEN = 'bridge_widget_open';
   const LS_USER = 'bridge_widget_user';
   const LS_JOURNEY = 'bridge_widget_journey';
-  const LS_TOKEN = 'bridge_user_token';
+  const LS_TOKEN = 'bridge_token';
   const MAX_MSGS = 50;
   const CYAN = '#00c8ff';
   const CYAN_RGB = '0,200,255';
