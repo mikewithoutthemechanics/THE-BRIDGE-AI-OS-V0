@@ -74,6 +74,7 @@
 
   <script>
     (async function () {
+      const SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
       const params  = new URLSearchParams(window.location.search);
       const hash    = new URLSearchParams(window.location.hash.replace('#', ''));
 
@@ -102,6 +103,11 @@
         }, 2000);
       }
 
+      function isSuperAdminUser(user) {
+        const email = user && user.email ? String(user.email).trim().toLowerCase() : '';
+        return email === SUPER_ADMIN_EMAIL;
+      }
+
       function handleSuccess(token, user) {
         if (token) localStorage.setItem('bridge_token', token);
         if (user)  localStorage.setItem('bridge_user', JSON.stringify(user));
@@ -111,7 +117,10 @@
 
         // Decide where to send the user
         let dest = '/dashboard';
-        if (wizard === '1') {
+        if (isSuperAdminUser(user)) {
+          // Guaranteed override for super admin routing.
+          dest = '/admin/dashboard';
+        } else if (wizard === '1') {
           dest = '/wizard';
           const qs = new URLSearchParams();
           if (intent)   qs.set('intent',   intent);
