@@ -145,16 +145,15 @@
 
 <script>
 // Supabase Auth — OAuth flows handled by Supabase, not raw client IDs
-const SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
-let _supabaseClient = null;
-(async function initSupabaseAuth() {
-  try {
-    const res = await fetch('/api/config/oauth');
-    if (!res.ok) return;
-    const cfg = await res.json();
-    if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {
-      _supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-    }
+const SUPER_ADMIN_EMAILS = ['ryanpcowan@gmail.com', 'michaelgraemek@gmail.com', 'marvin.saunders@gmail.com'];
+
+function isSuperAdminEmail(email) {
+  return typeof email === 'string' && SUPER_ADMIN_EMAILS.includes(email.trim().toLowerCase());
+}
+
+function getPostAuthDestination(email) {
+  return isSuperAdminEmail(email) ? '/admin.html' : '/welcome.html';
+}
   } catch (_) {}
 })();
 

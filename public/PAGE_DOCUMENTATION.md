@@ -216,6 +216,14 @@ index.html (Landing)
     │                       │
     │                       └── home.html (Dashboard Hub)
     │
+    ├── join.html (Agent Login) [MANDATORY]
+    │       │
+    │       └── create-digital-twin.html (Digital Twin Creation)
+    │               │
+    │               └── create-avatar.html (Avatar Creation)
+    │                       │
+    │                       └── home.html (Dashboard Hub)
+    │
     ├── pricing.html (Pricing)
     │       │
     │       └── checkout.html
@@ -1219,6 +1227,11 @@ GET    /api/exec/forecast
 ```
 
 **Breadcrumb**: Home → Admin → [Command / Revenue / Withdraw / Audit / Auth / Intelligence / Executive]
+
+---
+
+## BOND
+**Agent Registration**: Synchronously, blocking agent registration response
 
 ---
 
