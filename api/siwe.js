@@ -22,9 +22,22 @@ try { supabaseLib = require('../lib/supabase'); } catch (_) {}
 let userLib = null;
 try { userLib = require('../lib/user-identity'); } catch (_) {}
 
+let ledger = null;
+try { ledger = require('../lib/agent-ledger'); } catch (_) {}
+
+let agentRegistry = null;
+try { agentRegistry = require('../lib/agent-registry'); } catch (_) {}
+
+let cryptoRegistry = null;
+try { cryptoRegistry = require('../lib/agent-crypto-registry'); } catch (_) {}
+
+let actionLogger = null;
+try { actionLogger = require('../lib/agent-action-logger'); } catch (_) {}
+
 const SIWE_SECRET = process.env.SIWE_SECRET || process.env.JWT_SECRET || process.env.BRIDGE_SIWE_JWT_SECRET || 'bridge-siwe-fallback';
 const NONCE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const LINEA_CHAIN_ID = 59144;
+const BRDG_WELCOME_GRANT = 0.5; // BRDG issued to every new agent on first auth
 
 // ── Nonce helpers ────────────────────────────────────────────────────────────
 function createNonceToken() {
@@ -254,6 +267,12 @@ async function verifySignature(req, res) {
   let userId = null;
   let userEmail = null;
   let plan = 'free';
+  let isNewAgent = false;
+
+  // Agent ID derived from wallet — stable, short, readable
+  const walletAgentId = `wallet-${address.slice(2, 10).toLowerCase()}`;
+  const walletEmail   = `${walletAgentId}@wallet.bridge.ai`;
+  const walletName    = `${address.slice(0, 6)}…${address.slice(-4)}`;
 
   if (supabase) {
     try {
@@ -264,56 +283,128 @@ async function verifySignature(req, res) {
         .single();
 
       if (existing) {
-        userId = existing.id;
+        userId    = existing.id;
         userEmail = existing.email;
-        plan = existing.plan || 'free';
+        plan      = existing.plan || 'free';
       } else {
-        // Create new wallet user
-        const walletEmail = `wallet-${address.slice(2, 10).toLowerCase()}@wallet.bridge.ai`;
+        isNewAgent = true;
         const { data: newUser, error } = await supabase
           .from('users')
           .insert({
-            email: walletEmail,
+            email:          walletEmail,
             wallet_address: address.toLowerCase(),
-            name: `${address.slice(0, 6)}…${address.slice(-4)}`,
-            plan: 'free',
-            funnel_stage: 'wallet_connected',
-            source: 'siwe',
-            lead_score: 50,
+            name:           walletName,
+            plan:           'free',
+            funnel_stage:   'wallet_connected',
+            source:         'siwe',
+            lead_score:     50,
           })
           .select('id, email, plan')
           .single();
 
         if (newUser) {
-          userId = newUser.id;
+          userId    = newUser.id;
           userEmail = newUser.email;
-          plan = newUser.plan || 'free';
-        } else if (error) {
-          // Fallback: use wallet address as ID
-          userId = address.toLowerCase();
-          userEmail = `wallet@${address.slice(2, 8).toLowerCase()}.bridge.ai`;
+          plan      = newUser.plan || 'free';
+        } else {
+          userId    = address.toLowerCase();
+          userEmail = walletEmail;
+          if (error) console.warn('[siwe] user insert error:', error.message);
         }
       }
     } catch (err) {
-      // Fallback if DB unavailable
-      userId = address.toLowerCase();
-      userEmail = `wallet@bridge.ai`;
+      userId    = address.toLowerCase();
+      userEmail = walletEmail;
+      isNewAgent = true;
     }
   } else {
-    userId = address.toLowerCase();
-    userEmail = `wallet@bridge.ai`;
+    userId     = address.toLowerCase();
+    userEmail  = walletEmail;
+    isNewAgent = true;
   }
 
-  // 5. Issue JWT via user-identity library
+  // 5. On first auth — register agent + issue 0.5 BRDG welcome grant
+  let brdgBalance = 0;
+  if (isNewAgent) {
+    // Register as an agent in the agent registry (non-blocking on failure)
+    if (agentRegistry) {
+      try {
+        const existing = await agentRegistry.getById(walletAgentId).catch(() => null);
+        if (!existing) {
+          await agentRegistry.register({
+            id:     walletAgentId,
+            name:   walletName,
+            role:   'wallet_agent',
+            layer:  'external',
+            type:   'wallet',
+            source: 'siwe',
+            skills: ['trade', 'earn', 'transact'],
+            status: 'active',
+            config: { wallet_address: address.toLowerCase(), email: userEmail },
+          });
+        }
+      } catch (e) {
+        console.warn('[siwe] agent registry error:', e.message);
+      }
+    }
+
+    // Provision on-chain address record
+    if (cryptoRegistry) {
+      cryptoRegistry.ensureWallet(walletAgentId, walletName).catch(e =>
+        console.warn('[siwe] crypto registry error:', e.message)
+      );
+    }
+
+    // Issue 0.5 BRDG welcome grant
+    if (ledger) {
+      try {
+        const result = await ledger.credit(
+          walletAgentId,
+          BRDG_WELCOME_GRANT,
+          'wallet_auth',
+          `Welcome grant — new agent ${walletName}`
+        );
+        brdgBalance = result?.new_balance ?? BRDG_WELCOME_GRANT;
+      } catch (e) {
+        console.warn('[siwe] ledger credit error:', e.message);
+        brdgBalance = BRDG_WELCOME_GRANT;
+      }
+    }
+  } else if (ledger) {
+    // Existing agent — return their current balance
+    try {
+      const row = await ledger.getBalance(walletAgentId);
+      brdgBalance = row?.balance ?? 0;
+    } catch (_) {}
+  }
+
+  // 6. Log the auth event (non-blocking)
+  if (actionLogger) {
+    const logAction  = isNewAgent ? 'auth_new' : 'auth_ok';
+    const logPayload = {
+      address:      address.toLowerCase(),
+      email:        userEmail,
+      plan,
+      is_new_agent: isNewAgent,
+      ...(isNewAgent ? { brdg_grant: BRDG_WELCOME_GRANT, brdg_balance: brdgBalance } : { brdg_balance: brdgBalance }),
+    };
+    actionLogger.log(walletAgentId, logAction, logPayload, {
+      actor: address.toLowerCase(),
+      ip:    req?.ip ?? req?.headers?.['x-forwarded-for'] ?? null,
+    }).catch(() => {});
+  }
+
+  // 7. Issue JWT via user-identity library
   let token = null;
   if (userLib && userLib.createToken) {
-    token = userLib.createToken({ id: userId, email: userEmail, wallet: address, plan, role: 'member' });
+    token = userLib.createToken({ id: userId, email: userEmail, wallet: address, plan, role: 'member', agent_id: walletAgentId });
   } else {
     // Manual JWT (HS256)
     const { createHmac } = require('crypto');
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
     const payload = Buffer.from(JSON.stringify({
       sub: userId, id: userId, email: userEmail, wallet: address, plan, role: 'member',
+      agent_id: walletAgentId,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 604800,
     })).toString('base64url');
@@ -321,7 +412,7 @@ async function verifySignature(req, res) {
     token = `${header}.${payload}.${sig}`;
   }
 
-  // 6. Set cookie
+  // 8. Set cookie
   res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; SameSite=Lax; Max-Age=604800`);
 
   res.json({
@@ -330,7 +421,15 @@ async function verifySignature(req, res) {
     address,
     userId,
     plan,
-    message: 'SIWE authentication successful',
+    agent_id:     walletAgentId,
+    email:        userEmail,
+    brdg_balance: brdgBalance,
+    brdg_grant:   isNewAgent ? BRDG_WELCOME_GRANT : 0,
+    is_new_agent: isNewAgent,
+    chain_id:     LINEA_CHAIN_ID,
+    message: isNewAgent
+      ? `Agent registered — ${BRDG_WELCOME_GRANT} BRDG issued. Welcome to Bridge AI OS.`
+      : 'SIWE authentication successful',
   });
 }
 
