@@ -2473,8 +2473,6 @@ app.all(/^\/api\/crm(?:\/|$)/, async (req, res, next) => {
 const dashboardApiRoutes = [
   // '/api/platform/' — handled directly via handlePlatform, not proxied
   '/api/platform/',
-  '/api/crm/',
-  '/api/outreach/',
   '/api/revenue/',
   '/api/treasury/',
   '/api/mission/',
@@ -2528,6 +2526,21 @@ const dashboardApiRoutes = [
 function isDashboardApi(path) {
   return dashboardApiRoutes.some(route => path.startsWith(route));
 }
+
+// ── Outreach stats fallback (do not depend on unified-server :3000 availability)
+app.get('/api/outreach/stats', async (req, res) => {
+  try {
+    const url = `http://${SYSTEM_HOST}:3000/api/outreach/stats`;
+    const r = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) });
+    const ct = (r.headers.get('content-type') || '').toLowerCase();
+    if (r.ok && ct.includes('application/json')) {
+      const data = await r.json();
+      return res.status(200).json(data);
+    }
+  } catch (_) {}
+
+  return res.json({ queued: 0, sent: 0, opened: 0, followups: 0, fallback: true });
+});
 
 /**
  * When brain (:8000) is down, answer POST /api/llm/infer on the gateway via lib/llm-client.
