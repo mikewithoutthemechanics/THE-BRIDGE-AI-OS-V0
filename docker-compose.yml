@@ -1,149 +1,29 @@
-# GOD MODE — DISTRIBUTED AI OS + REVENUE + AUTONOMOUS OPS
-# Full production mesh: core services + monetization + observability
-version: "3.9"
+version: '3.8'
 
 services:
-  # ── CORE SERVICES ────────────────────────────────────────────────────────────
-  gateway:
-    build: ./gateway
-    container_name: gateway
+  backend:
+    build: ./backend
     ports:
-      - "3000:3000"
+      - "8080:8000"
     environment:
-      - JWT_SECRET=${JWT_SECRET}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - bridge-network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8082:80"
     depends_on:
-      - registry
-      - bridge
-    restart: always
-
-  svg-engine:
-    build: ./svg-engine
-    container_name: svg-engine
-    ports:
-      - "7070:7070"
-    environment:
-      - REGISTRY_URL=http://registry:9000
-      - BRIDGE_API=http://bridge:8000
-    depends_on:
-      - registry
-      - bridge
-    restart: always
-
-  terminal:
-    build: ./terminal
-    container_name: terminal
-    ports:
-      - "5002:5002"
-    environment:
-      - WS_TARGET=ws://gateway:3000/terminal
-    depends_on:
-      - gateway
-    restart: always
-
-  registry:
-    build: ./registry
-    container_name: registry
-    ports:
-      - "9000:9000"
-    restart: always
-
-  bridge:
-    build: ./bridge
-    container_name: bridge
-    ports:
-      - "8000:8000"
-    restart: always
-
-  # ── REVENUE + BILLING ────────────────────────────────────────────────────────
-  revenue-engine:
-    build: ./revenue-engine
-    container_name: revenue-engine
-    ports:
-      - "6070:6070"
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
-      - BILLING_INTERVAL=${BILLING_INTERVAL:-60000}
-    depends_on:
-      - gateway
-    restart: always
-
-  billing-service:
-    build: ./billing
-    container_name: billing-service
-    ports:
-      - "6060:6060"
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
-      - JWT_SECRET=${JWT_SECRET}
-    restart: always
-
-  subscription-service:
-    build: ./subscriptions
-    container_name: subscription-service
-    ports:
-      - "6061:6061"
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
-    restart: always
-
-  # ── AUTONOMOUS OPS ───────────────────────────────────────────────────────────
-  ops-daemon:
-    build: ./ops-daemon
-    container_name: ops-daemon
-    ports:
-      - "6080:6080"
-    environment:
-      - REGISTRY_URL=http://registry:9000
-      - HEALTH_INTERVAL=${HEALTH_INTERVAL:-15000}
-    depends_on:
-      - registry
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-
-  # ── OBSERVABILITY ────────────────────────────────────────────────────────────
-  metrics:
-    image: prom/prometheus
-    container_name: metrics
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./ops/prometheus.yml:/etc/prometheus/prometheus.yml
-    restart: always
-
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
-    ports:
-      - "3005:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-bridgeai}
-    restart: always
-
-  # ── INFRASTRUCTURE ───────────────────────────────────────────────────────────
-  redis:
-    image: redis:7
-    container_name: redis
-    ports:
-      - "6379:6379"
-    restart: always
-
-  postgres:
-    image: postgres:15
-    container_name: postgres
-    environment:
-      POSTGRES_USER: godmode
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-godmode}
-      POSTGRES_DB: godmode
-    ports:
-      - "5432:5432"
-    restart: always
+      - backend
+    networks:
+      - bridge-network
 
 networks:
-  default:
-    name: godmode-network
+  bridge-network:
+    driver: bridge

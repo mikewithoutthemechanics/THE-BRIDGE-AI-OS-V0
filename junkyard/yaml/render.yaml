@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: god-mode-topology
+    runtime: node
+    buildCommand: npm install
+    startCommand: node system.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # PORT is injected automatically by Render (10000)

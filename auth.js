@@ -26,6 +26,14 @@ const { revokeToken, isTokenRevoked } = require('./middleware/auth');
 // ── Secrets ─────────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || process.env.BRIDGE_SIWE_JWT_SECRET || 'aoe-unified-super-secret-change-in-prod';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'aoe-refresh-secret-change-in-prod';
+const SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
+const SUPER_ADMIN_IDENTITY = Object.freeze({
+  email: SUPER_ADMIN_EMAIL,
+  role: 'superadmin',
+  plan: 'infinite',
+  permissions: ['*'],
+  tenant: 'root',
+});
 
 // ── App Setup ───────────────────────────────────────────────────────────────
 const app = express();
@@ -81,17 +89,50 @@ function sanitizeUser(user) {
   return safe;
 }
 
+function isSuperAdminEmail(email) {
+  return typeof email === 'string' && email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+}
+
+function withSuperAdminOverrides(user) {
+  if (!user) return user;
+  if (!isSuperAdminEmail(user.email)) return user;
+  return {
+    ...user,
+    role: SUPER_ADMIN_IDENTITY.role,
+    plan: SUPER_ADMIN_IDENTITY.plan,
+    permissions: SUPER_ADMIN_IDENTITY.permissions.slice(),
+    tenant: SUPER_ADMIN_IDENTITY.tenant,
+  };
+}
+
 function signAccessToken(user) {
+  const normalizedUser = withSuperAdminOverrides(user);
   return jwt.sign(
-    { sub: user.id, email: user.email, role: user.role || 'user', plan: user.plan || 'free' },
+    {
+      sub: normalizedUser.id,
+      email: normalizedUser.email,
+      role: normalizedUser.role || 'user',
+      plan: normalizedUser.plan || 'free',
+      permissions: normalizedUser.permissions || [],
+      tenant: normalizedUser.tenant || null,
+    },
     JWT_SECRET,
     { expiresIn: '7d' },
   );
 }
 
 function signRefreshToken(user) {
+  const normalizedUser = withSuperAdminOverrides(user);
   return jwt.sign(
-    { sub: user.id, email: user.email, type: 'refresh' },
+    {
+      sub: normalizedUser.id,
+      email: normalizedUser.email,
+      type: 'refresh',
+      role: normalizedUser.role || 'user',
+      plan: normalizedUser.plan || 'free',
+      permissions: normalizedUser.permissions || [],
+      tenant: normalizedUser.tenant || null,
+    },
     JWT_REFRESH_SECRET,
     { expiresIn: '30d' },
   );
@@ -140,7 +181,15 @@ async function authMiddleware(req, res, next) {
           );
         }
         if (dbUser) {
-          req.user = { sub: dbUser.id, email: dbUser.email, role: dbUser.role };
+          const normalizedUser = withSuperAdminOverrides(dbUser);
+          req.user = {
+            sub: normalizedUser.id,
+            email: normalizedUser.email,
+            role: normalizedUser.role,
+            plan: normalizedUser.plan,
+            permissions: normalizedUser.permissions || [],
+            tenant: normalizedUser.tenant || null,
+          };
           req.token = token;
           return next();
         }
@@ -199,7 +248,7 @@ app.post('/auth/register', registerLimiter, async (req, res) => {
       }
     } catch (_) { /* nurture is best-effort */ }
 
-    const freshUser = await userDb.getUserById(user.id);
+    const freshUser = withSuperAdminOverrides(await userDb.getUserById(user.id));
 
     res.status(201).json({
       ok: true,
@@ -232,14 +281,15 @@ app.post('/auth/login', loginLimiter, async (req, res) => {
       userDb.upgradePasswordHash(user.id, password).catch(() => {});
     }
 
-    const token = signAccessToken(user);
+    const normalizedUser = withSuperAdminOverrides(user);
+    const token = signAccessToken(normalizedUser);
     const refreshToken = signRefreshToken(user);
 
     res.json({
       ok: true,
       token,
       refresh_token: refreshToken,
-      user: sanitizeUser(user),
+      user: sanitizeUser(normalizedUser),
     });
   } catch (e) {
     console.error('[AUTH] login error:', e.message);
@@ -255,7 +305,7 @@ app.get('/auth/verify', async (req, res) => {
   const payload = await verifyAccess(token);
   if (!payload) return res.status(401).json({ ok: false, valid: false, error: 'Invalid or expired token' });
 
-  const user = await userDb.getUserById(payload.sub);
+  const user = withSuperAdminOverrides(await userDb.getUserById(payload.sub));
   if (!user) return res.status(401).json({ ok: false, valid: false, error: 'User not found' });
 
   res.json({ ok: true, valid: true, user: sanitizeUser(user) });
@@ -317,9 +367,10 @@ app.post('/auth/token-exchange', async (req, res) => {
     }
     if (!dbUser) return res.status(500).json({ ok: false, error: 'User lookup failed' });
 
-    const token = signAccessToken(dbUser);
+    const normalizedUser = withSuperAdminOverrides(dbUser);
+    const token = signAccessToken(normalizedUser);
     const refreshToken = signRefreshToken(dbUser);
-    res.json({ ok: true, token, refresh_token: refreshToken, user: sanitizeUser(dbUser) });
+    res.json({ ok: true, token, refresh_token: refreshToken, user: sanitizeUser(normalizedUser) });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
@@ -345,10 +396,11 @@ app.post('/auth/google', async (req, res) => {
     if (!email) return res.status(400).json({ ok: false, error: 'Token missing email' });
 
     const user = await userDb.createUser(email, name, 'google', sub);
-    const token = signAccessToken(user);
+    const normalizedUser = withSuperAdminOverrides(user);
+    const token = signAccessToken(normalizedUser);
     const refreshToken = signRefreshToken(user);
 
-    res.json({ ok: true, token, refresh_token: refreshToken, user: sanitizeUser(user) });
+    res.json({ ok: true, token, refresh_token: refreshToken, user: sanitizeUser(normalizedUser) });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
@@ -361,7 +413,7 @@ app.get('/auth/me', authMiddleware, async (req, res) => {
     await revokeToken(req.token); // warm authoritative store
     return res.status(401).json({ ok: false, error: 'Token revoked' });
   }
-  const user = await userDb.getUserById(req.user.sub);
+  const user = withSuperAdminOverrides(await userDb.getUserById(req.user.sub));
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
 
   let prompt = null;

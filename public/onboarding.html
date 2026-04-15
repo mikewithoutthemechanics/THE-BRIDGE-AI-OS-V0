@@ -145,6 +145,7 @@
 
 <script>
 // Supabase Auth — OAuth flows handled by Supabase, not raw client IDs
+const SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
 let _supabaseClient = null;
 (async function initSupabaseAuth() {
   try {
@@ -189,6 +190,14 @@ function showMsg(id, text, ok) {
   el.className = 'msg ' + (ok ? 'ok' : 'err');
 }
 
+function isSuperAdminEmail(email) {
+  return typeof email === 'string' && email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+}
+
+function getPostAuthDestination(email) {
+  return isSuperAdminEmail(email) ? '/admin/dashboard' : '/welcome.html';
+}
+
 // Register
 document.getElementById('register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -209,7 +218,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
       showMsg('reg-msg', 'Account created! Loading your dashboard...', true);
       localStorage.setItem('bridge_user', JSON.stringify({
         email: body.email,
-        role: data.role || 'member',
+        role: isSuperAdminEmail(body.email) ? 'superadmin' : (data.role || 'member'),
         name: data.name || body.email.split('@')[0],
         credits: data.credits || 100,
         plan: data.plan || 'free'
@@ -223,7 +232,8 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
           body: JSON.stringify({ code: ref }),
         });
       }
-      setTimeout(() => { location.href = '/welcome.html'; }, 1000);
+      const dest = getPostAuthDestination(body.email);
+      setTimeout(() => { location.href = dest; }, 1000);
     } else {
       showMsg('reg-msg', data.error || 'Registration failed', false);
     }
@@ -251,12 +261,13 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
       showMsg('login-msg', 'Signed in! Loading your dashboard...', true);
       localStorage.setItem('bridge_user', JSON.stringify({
         email: body.email,
-        role: data.role || 'member',
+        role: isSuperAdminEmail(body.email) ? 'superadmin' : (data.role || 'member'),
         name: data.name || body.email.split('@')[0],
         credits: data.credits || 100,
         plan: data.plan || 'free'
       }));
-      setTimeout(() => { location.href = '/welcome.html'; }, 1000);
+      const dest = getPostAuthDestination(body.email);
+      setTimeout(() => { location.href = dest; }, 1000);
     } else {
       showMsg('login-msg', data.error || 'Login failed', false);
     }

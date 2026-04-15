@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+</head>
+<body style="margin:0;background:black;">
+<div id="terminal"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+<script>
+const term = new Terminal();
+term.open(document.getElementById('terminal'));
+
+// TOKEN (MUST MATCH SERVER)
+const TOKEN = "secure-token-change-me";
+
+const ws = new WebSocket('ws://' + location.host, TOKEN);
+
+ws.onmessage = e => term.write(e.data);
+term.onData(data => ws.send(data));
+</script>
+</body>
+</html>

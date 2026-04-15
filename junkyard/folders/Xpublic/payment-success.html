@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful | Bridge AI-OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#060810;color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center}
+    .icon{font-size:64px;margin-bottom:24px}
+    h1{font-size:2rem;font-weight:800;color:#4ade80;margin-bottom:12px}
+    p{color:#94a3b8;font-size:0.95rem;margin-bottom:32px;max-width:400px}
+    .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .btn{padding:12px 24px;border-radius:10px;font-size:0.9rem;font-weight:700;text-decoration:none;transition:opacity 0.2s}
+    .btn-primary{background:#63ffda;color:#060810}
+    .btn-secondary{background:#111827;color:#63ffda;border:1px solid #1a2a3a}
+    .btn:hover{opacity:0.85}
+    .countdown{font-size:0.8rem;color:#4a5568;margin-top:24px}
+  </style>
+</head>
+<body>
+  <div>
+    <div class="icon">✅</div>
+    <h1>Payment Successful</h1>
+    <p>Your Bridge AI-OS subscription is now active. Your agents are being provisioned — this takes under 60 seconds.</p>
+    <div class="actions">
+      <a href="/ui" class="btn btn-primary">Open Dashboard</a>
+      <a href="/treasury-dashboard" class="btn btn-secondary">View Treasury</a>
+    </div>
+    <div class="countdown" id="countdown">Redirecting to dashboard in 8s…</div>
+  </div>
+  <script>
+    var n = 8;
+    var el = document.getElementById('countdown');
+    var t = setInterval(function() {
+      n--;
+      el.textContent = 'Redirecting to dashboard in ' + n + 's…';
+      if (n <= 0) { clearInterval(t); window.location.href = '/ui'; }
+    }, 1000);
+  </script>
+</body>
+</html>

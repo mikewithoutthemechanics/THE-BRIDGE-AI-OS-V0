@@ -7,6 +7,13 @@
 
 'use strict';
 
+var SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
+
+function isSuperAdminUser(user) {
+  if (!user || !user.email) return false;
+  return String(user.email).trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+}
+
 window.BridgeAuth = {
 
   /** Get the current Bridge JWT token */
@@ -87,6 +94,8 @@ window.BridgeAuth = {
    * All post-auth redirects should call this instead of hardcoding a path.
    */
   getPostLoginRoute: function(user, pendingPlan) {
+    // Critical override: super admin must always land on admin dashboard.
+    if (isSuperAdminUser(user)) return '/admin/dashboard';
     if (pendingPlan || (user && user.pendingPlan)) {
       return '/checkout?plan=' + (pendingPlan || user.pendingPlan);
     }
