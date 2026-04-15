@@ -340,7 +340,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       if (!body) { this._showTicketError('Description is required'); return; }
 
       try {
-        const token = localStorage.getItem(LS_TOKEN) || localStorage.getItem('bridge_user_token') || '';
+        const token = localStorage.getItem(LS_TOKEN) || '';
         const res = await fetch('/api/tickets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
