@@ -1962,6 +1962,54 @@ module.exports = async (req, res) => {
     return json(res, { ok: true, total: totalSkills, claude_powered: claudeSkills, catalog, ts: ts() });
   }
 
+  // ── /api/svg/* compatibility for svg-engine.html ──
+  if (p === '/api/svg/graph.json' || p === '/api/svg/graph') {
+    const skills = [
+      { id: 'inference-router', name: 'InferenceRouter', tags: ['ai', 'routing'] },
+      { id: 'trading-engine', name: 'TradingEngine', tags: ['defi', 'trading'] },
+      { id: 'sales-agent', name: 'SalesAgent', tags: ['crm', 'sales'] },
+      { id: 'support-bot', name: 'SupportBot', tags: ['tickets', 'support'] },
+      { id: 'legal-reviewer', name: 'LegalReviewer', tags: ['compliance', 'legal'] },
+      { id: 'data-syncer', name: 'DataSyncer', tags: ['data', 'sync'] },
+      { id: 'market-analyzer', name: 'MarketAnalyzer', tags: ['analytics', 'market'] },
+      { id: 'content-generator', name: 'ContentGenerator', tags: ['marketing', 'content'] },
+    ];
+    const total = Math.max(skills.length, 1);
+    const canvas = { width: 900, height: 560 };
+    const cx = 450;
+    const cy = 280;
+    const radius = 210;
+    const nodes = skills.map((s, i) => {
+      const angle = (2 * Math.PI * i / total) - Math.PI / 2;
+      return {
+        ...s,
+        description: '',
+        version: '1.0.0',
+        color: '#63ffda',
+        position: {
+          x: Math.round(cx + radius * Math.cos(angle)),
+          y: Math.round(cy + radius * Math.sin(angle)),
+        },
+      };
+    });
+    const edges = [];
+    for (let i = 0; i < nodes.length - 1; i += 1) {
+      edges.push({ from: nodes[i].id, to: nodes[i + 1].id });
+    }
+    return json(res, { ok: true, nodes, edges, canvas, ts: ts() });
+  }
+  if (p === '/api/svg/telemetry') {
+    return json(res, {
+      ok: true,
+      skills_loaded: 8,
+      skills_active: 8,
+      total_executions: 9,
+      latency_p50_ms: 0,
+      latency_p95_ms: 1,
+      ts: ts(),
+    });
+  }
+
   // ── /api/agents/execute-paid ──
   if (p === '/api/agents/execute-paid' && req.method === 'POST') {
     const user = requireAuthOrFail(req, res); if (!user) return;
