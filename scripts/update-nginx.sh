@@ -188,11 +188,11 @@ rm -f /etc/nginx/sites-enabled/default
 
 if nginx -t 2>&1; then
   if systemctl is-active --quiet nginx; then
-    systemctl reload nginx
+    systemctl reload nginx || nginx -s reload
     echo "nginx reloaded successfully"
   else
-    systemctl start nginx
-    echo "nginx started successfully"
+    nginx -s reload || systemctl restart nginx || true
+    echo "nginx reload attempted without active systemd unit"
   fi
 else
   echo "nginx -t failed — restoring backup"
