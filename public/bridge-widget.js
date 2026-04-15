@@ -12,7 +12,7 @@
   const LS_OPEN = 'bridge_widget_open';
   const LS_USER = 'bridge_widget_user';
   const LS_JOURNEY = 'bridge_widget_journey';
-  const LS_TOKEN = 'bridge_user_token';
+  const LS_TOKEN = 'bridge_token';
   const MAX_MSGS = 50;
   const CYAN = '#00c8ff';
   const CYAN_RGB = '0,200,255';
@@ -153,6 +153,12 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
 
     /* ── auth + identity ──────────────────────────────────────── */
     async _initAuth() {
+      // Backward-compat: migrate old key bridge_user_token → bridge_token
+      const legacyToken = localStorage.getItem('bridge_user_token');
+      if (legacyToken && !localStorage.getItem(LS_TOKEN)) {
+        localStorage.setItem(LS_TOKEN, legacyToken);
+        localStorage.removeItem('bridge_user_token');
+      }
       const token = localStorage.getItem(LS_TOKEN);
       if (!token) return;
       try {
@@ -334,7 +340,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       if (!body) { this._showTicketError('Description is required'); return; }
 
       try {
-        const token = localStorage.getItem(LS_TOKEN) || localStorage.getItem('bridge_token') || '';
+        const token = localStorage.getItem(LS_TOKEN) || '';
         const res = await fetch('/api/tickets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
