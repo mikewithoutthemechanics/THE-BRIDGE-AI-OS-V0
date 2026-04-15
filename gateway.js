@@ -2471,7 +2471,7 @@ app.all(/^\/api\/crm(?:\/|$)/, async (req, res, next) => {
 
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server ──
 const dashboardApiRoutes = [
-  '/api/platform/',
+  // '/api/platform/' — handled directly via handlePlatform, not proxied
   '/api/revenue/',
   '/api/treasury/',
   '/api/mission/',
@@ -2627,7 +2627,10 @@ app.put('/api/user/settings', express.json(), async (req, res) => {
 });
 
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server (port 3000) ──
-app.all('/api/*path', async (req, res) => {
+app.all('/api/*path', async (req, res, next) => {
+  // Platform routes are handled by handlePlatform — skip this catch-all
+  if (req.path.startsWith('/api/platform/') || req.path === '/api/platform') return next();
+
   // Require auth for any mutating request that reaches this catch-all
   const MUTATION_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
   if (MUTATION_METHODS.includes(req.method)) {
@@ -2793,22 +2796,12 @@ app.all('/api/orch/*path', async (req, res) => {
   }
 });
 
-// ── PLATFORM API — proxy /api/platform/* to unified-server (port 3000) ──────
-app.all('/api/platform/*path', async (req, res) => {
-  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
-  try {
-    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
-    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
-    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
-    if (req.headers['cookie']) opts.headers['Cookie'] = req.headers['cookie'];
-    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
-    const r = await fetch(url, opts);
-    const ct = r.headers.get('content-type') || 'application/json';
-    const text = await r.text();
-    res.status(r.status).set('Content-Type', ct).send(text);
-  } catch (e) {
-    res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
-  }
+// ── PLATFORM API — handled directly in gateway (no proxy needed) ─────────────
+const { handlePlatform } = require('./api/platform');
+app.all('/api/platform/*path', async (req, res, next) => {
+  const handled = await handlePlatform(req, res);
+  if (handled !== null) return;
+  next();
 });
 
 // ── AGENT PROXY — forward /agent/* to brain on 8000 ─────────────────────────
