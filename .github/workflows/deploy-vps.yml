@@ -77,6 +77,15 @@ jobs:
             # Ensure TLS cert covers ai-os.co.za and bridge domains
             if command -v certbot >/dev/null 2>&1; then
               echo "=== Ensuring TLS certificate SANs ==="
+              # Avoid overlapping certbot executions from concurrent runs/cron.
+              for i in $(seq 1 18); do
+                if pgrep -f "certbot" >/dev/null 2>&1; then
+                  echo "  certbot busy (attempt $i/18), waiting 10s..."
+                  sleep 10
+                else
+                  break
+                fi
+              done
               certbot --nginx \
                 --non-interactive \
                 --agree-tos \
