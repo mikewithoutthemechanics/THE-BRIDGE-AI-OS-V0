@@ -2,73 +2,782 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-<meta name="description" content="Join Bridge AI OS — create your account and start automating your business with 71 AI agents.">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://go.ai-os.co.za/join">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://go.ai-os.co.za/join">
-<meta property="og:title" content="Join as Agent — Bridge AI OS · Supac · Taurus · Wiki">
-<meta property="og:description" content="Join Bridge AI OS — create your account and start automating your business with 71 AI agents.">
-<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
-<meta property="og:site_name" content="Bridge AI OS">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Join as Agent — Bridge AI OS · Supac · Taurus · Wiki">
-<meta name="twitter:description" content="Join Bridge AI OS — create your account and start automating your business with 71 AI agents.">
-<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
-
+  <meta name="description" content="Join Bridge AI OS — create your account and start automating your business with 71 AI agents.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://go.ai-os.co.za/join">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://go.ai-os.co.za/join">
+  <meta property="og:title" content="Join as Agent — Bridge AI OS · Supac · Taurus · Wiki">
+  <meta property="og:description" content="Join Bridge AI OS — Scan QR · Connect Wallet · Join Linea as Agent">
+  <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+  <meta property="og:site_name" content="Bridge AI OS">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Join as Agent — Bridge AI OS · Supac · Taurus · Wiki</title>
+  <title>Join as Agent — Bridge AI OS · Linea zkEVM</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <style>
-    body { background: #0b0f1a; color: #fff; font-family: system-ui, sans-serif; margin: 0; padding: 24px; text-align: center; }
-    .container { max-width: 560px; margin: 0 auto; }
-    h1 { color: #00e5ff; font-size: 1.5rem; margin-bottom: 8px; }
-    .sub { color: #888; font-size: 0.95rem; margin-bottom: 24px; }
-    .card { border: 2px solid #00e5ff; border-radius: 16px; padding: 24px; margin: 20px 0; background: rgba(0,229,255,0.05); }
-    #qrCanvas { display: block; margin: 0 auto 16px; background: #fff; border-radius: 12px; }
-    .url { font-family: monospace; font-size: 0.8rem; word-break: break-all; color: #00ffd1; margin: 12px 0; }
-    .links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
-    a { color: #00e5ff; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .btn { display: inline-block; padding: 10px 20px; background: #00e5ff; color: #0b0f1a; border-radius: 8px; font-weight: bold; margin: 4px; }
-    .btn:hover { background: #00ffd1; }
-    .btn.sec { background: #7b61ff; color: #fff; }
-    .platforms { color: #aaa; font-size: 0.9rem; margin-top: 20px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050a0f; --surface: #0d1620; --surface2: #111d2b;
+      --border: #1a2d40; --accent: #00c8ff; --green: #00e57b;
+      --purple: #a78bfa; --text: #c8dce8; --dim: #4d6678;
+      --linea: #61dfff;
+    }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+    /* ── Animations ── */
+    @keyframes fadeDown  { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:none; } }
+    @keyframes fadeUp    { from { opacity:0; transform:translateY(24px); }  to { opacity:1; transform:none; } }
+    @keyframes gradShift { 0%,100% { background-position:0% 50%; } 50% { background-position:100% 50%; } }
+    @keyframes pulse     { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+    @keyframes spin      { to { transform:rotate(360deg); } }
+    @keyframes glowPulse { 0%,100% { box-shadow:0 0 0 0 rgba(0,200,255,.0); } 60% { box-shadow:0 0 28px 6px rgba(0,200,255,.2); } }
+    @keyframes borderAnim{ 0%,100% { border-color:var(--border); } 50% { border-color:rgba(0,200,255,.4); } }
+    @keyframes stepFade  { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:scale(1); } }
+    @keyframes beaconPing{ 0% { transform:scale(1); opacity:.8; } 100% { transform:scale(2.2); opacity:0; } }
+
+    /* ── Nav ── */
+    nav {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:1rem 2rem; border-bottom:1px solid var(--border);
+      background:rgba(5,10,15,.92); backdrop-filter:blur(10px);
+      position:sticky; top:0; z-index:100;
+      animation: fadeDown .45s ease both;
+    }
+    .nav-logo {
+      font-size:1.15rem; font-weight:800; letter-spacing:.2em;
+      background:linear-gradient(90deg,var(--accent),var(--purple),var(--green),var(--accent));
+      background-size:300% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text; animation:gradShift 4s ease infinite;
+    }
+    .nav-links { display:flex; gap:1.2rem; align-items:center; font-size:.8rem; }
+    .nav-links a { color:var(--dim); text-decoration:none; transition:color .2s; }
+    .nav-links a:hover { color:var(--text); }
+    .nav-user { font-size:.75rem; color:var(--accent); font-family:monospace; }
+
+    /* ── Hero ── */
+    .hero { position:relative; text-align:center; padding:5rem 1.5rem 3rem; overflow:hidden; }
+    #hero-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+    .hero-inner { position:relative; z-index:1; }
+    .hero-badge {
+      display:inline-flex; align-items:center; gap:.5rem;
+      padding:.35rem 1rem; background:rgba(0,200,255,.08);
+      border:1px solid rgba(0,200,255,.25); border-radius:20px;
+      font-size:.68rem; letter-spacing:.15em; color:var(--accent); margin-bottom:1.5rem;
+      animation:fadeDown .5s .1s ease both;
+    }
+    .beacon-dot {
+      width:8px; height:8px; border-radius:50%; background:var(--green);
+      position:relative; flex-shrink:0;
+    }
+    .beacon-dot::after {
+      content:''; position:absolute; inset:-2px; border-radius:50%;
+      background:var(--green); animation:beaconPing 1.4s ease-out infinite;
+    }
+    .hero h1 {
+      font-size:clamp(1.8rem,4.5vw,3rem); font-weight:800; line-height:1.2; margin-bottom:1rem;
+      animation:fadeUp .6s .2s ease both;
+    }
+    .hero h1 .grad {
+      background:linear-gradient(135deg,var(--accent),var(--purple),var(--green));
+      background-size:200% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text; animation:gradShift 3s ease infinite;
+    }
+    .hero p { font-size:.95rem; color:var(--dim); max-width:520px; margin:0 auto 2rem; line-height:1.7; animation:fadeUp .6s .35s ease both; }
+
+    /* ── Steps strip ── */
+    .steps {
+      display:flex; justify-content:center; gap:0; flex-wrap:wrap;
+      padding:1.5rem 2rem; background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+      animation:fadeUp .6s .45s ease both;
+    }
+    .step { display:flex; align-items:center; gap:.5rem; font-size:.78rem; color:var(--dim); padding:.4rem .8rem; }
+    .step-num { width:22px; height:22px; border-radius:50%; background:rgba(0,200,255,.12); border:1px solid rgba(0,200,255,.3); color:var(--accent); font-size:.65rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .step-arrow { color:var(--border); margin:0 .2rem; font-size:.8rem; }
+    .step.done .step-num { background:rgba(0,229,123,.12); border-color:rgba(0,229,123,.4); color:var(--green); }
+
+    /* ── QR Grid ── */
+    .qr-section { padding:3rem 1.5rem; max-width:1000px; margin:0 auto; }
+    .qr-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.5rem; }
+
+    .qr-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:14px;
+      padding:1.75rem; text-align:center;
+      transition:border-color .25s, transform .25s, box-shadow .25s;
+      animation:borderAnim 4s ease infinite;
+    }
+    .qr-card:nth-child(2) { animation-delay:.8s; }
+    .qr-card:nth-child(3) { animation-delay:1.6s; }
+    .qr-card:hover { border-color:var(--accent); transform:translateY(-3px); box-shadow:0 12px 36px rgba(0,200,255,.1); animation:none; }
+
+    .qr-badge {
+      display:inline-block; padding:.2rem .7rem; border-radius:2rem; font-size:.62rem;
+      font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:.8rem;
+    }
+    .qr-badge.gateway  { background:rgba(0,200,255,.1); color:var(--accent); border:1px solid rgba(0,200,255,.2); }
+    .qr-badge.beacon   { background:rgba(0,229,123,.1); color:var(--green);  border:1px solid rgba(0,229,123,.2); }
+    .qr-badge.linea    { background:rgba(97,223,255,.1); color:var(--linea); border:1px solid rgba(97,223,255,.2); }
+
+    .qr-title { font-size:.95rem; font-weight:700; margin-bottom:.4rem; }
+    .qr-desc  { font-size:.75rem; color:var(--dim); margin-bottom:1.2rem; line-height:1.5; }
+
+    .qr-canvas-wrap {
+      display:inline-block; padding:10px; background:#fff; border-radius:10px;
+      margin-bottom:1rem; box-shadow:0 0 0 1px rgba(0,200,255,.2);
+    }
+    .qr-canvas-wrap canvas { display:block; border-radius:6px; }
+
+    .qr-url { font-family:monospace; font-size:.68rem; color:var(--dim); word-break:break-all; margin-bottom:.8rem; }
+
+    .btn { display:inline-block; padding:.6rem 1.3rem; border-radius:7px; font-size:.8rem; font-weight:700; text-decoration:none; cursor:pointer; border:none; transition:filter .2s, transform .15s; }
+    .btn:hover { filter:brightness(1.12); transform:translateY(-1px); }
+    .btn-primary { background:var(--accent); color:#050a0f; animation:glowPulse 2.5s 2s ease infinite; }
+    .btn-green   { background:var(--green);  color:#050a0f; }
+    .btn-linea   { background:linear-gradient(135deg,var(--accent),var(--linea)); color:#050a0f; background-size:200%; animation:gradShift 3s ease infinite; }
+    .btn-outline { background:transparent; color:var(--text); border:1px solid var(--border); }
+    .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-sm { padding:.4rem .9rem; font-size:.74rem; }
+
+    /* ── Linea Agent Join Panel ── */
+    .linea-panel {
+      max-width:620px; margin:0 auto 3rem; padding:2rem 1.5rem;
+      background:var(--surface); border:1px solid rgba(97,223,255,.2); border-radius:14px;
+      animation:fadeUp .6s .6s ease both;
+    }
+    .linea-header { display:flex; align-items:center; gap:.75rem; margin-bottom:1.2rem; }
+    .linea-icon { font-size:1.8rem; }
+    .linea-header h2 { font-size:1rem; font-weight:700; }
+    .linea-header p  { font-size:.76rem; color:var(--dim); margin-top:.15rem; }
+
+    .join-steps { display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.5rem; }
+    .join-step {
+      display:flex; align-items:flex-start; gap:.8rem;
+      padding:.85rem 1rem; border-radius:.6rem;
+      background:var(--surface2); border:1px solid var(--border);
+      transition:border-color .2s;
+    }
+    .join-step.active   { border-color:var(--accent); }
+    .join-step.complete { border-color:rgba(0,229,123,.3); background:rgba(0,229,123,.04); }
+    .join-step-num { width:24px; height:24px; border-radius:50%; border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.68rem; font-weight:800; color:var(--dim); flex-shrink:0; margin-top:1px; }
+    .join-step.active   .join-step-num { border-color:var(--accent); color:var(--accent); }
+    .join-step.complete .join-step-num { border-color:var(--green); color:var(--green); background:rgba(0,229,123,.1); }
+    .join-step-body h4  { font-size:.82rem; font-weight:700; margin-bottom:.15rem; }
+    .join-step-body p   { font-size:.74rem; color:var(--dim); line-height:1.5; }
+
+    .wallet-row { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem; }
+
+    #walletStatus { font-size:.75rem; color:var(--dim); margin-top:.75rem; min-height:1.2rem; font-family:monospace; }
+    #walletStatus.ok  { color:var(--green); }
+    #walletStatus.err { color:#ff3c5a; }
+
+    .agent-card {
+      display:none; background:rgba(0,229,123,.05); border:1px solid rgba(0,229,123,.25);
+      border-radius:.6rem; padding:1rem 1.2rem; margin-top:1rem;
+      animation:stepFade .4s ease both;
+    }
+    .agent-card.visible { display:block; }
+    .agent-id { font-family:monospace; font-size:.75rem; color:var(--green); word-break:break-all; margin:.3rem 0; }
+    .agent-label { font-size:.65rem; color:var(--dim); letter-spacing:.1em; text-transform:uppercase; }
+
+    /* ── Platform strip ── */
+    .platform-strip {
+      text-align:center; padding:2rem; border-top:1px solid var(--border);
+      font-size:.8rem; color:var(--dim);
+    }
+    .platform-strip strong { color:var(--text); }
+    .platform-badges { display:flex; justify-content:center; gap:.75rem; flex-wrap:wrap; margin-top:.75rem; }
+    .platform-badge {
+      padding:.3rem .8rem; border-radius:2rem; font-size:.68rem; font-weight:700;
+      border:1px solid var(--border); color:var(--dim);
+      transition:border-color .2s, color .2s;
+    }
+    .platform-badge:hover { border-color:var(--accent); color:var(--accent); }
+    .platform-badge a { color:inherit; text-decoration:none; }
+
+    /* ── AI Avatar inline ── */
+    @keyframes imgReveal { from { opacity:0; transform:scale(.94); } to { opacity:1; transform:scale(1); } }
+    .avatar-section { max-width:620px; margin:0 auto 2rem; padding:0 1.5rem; animation:fadeUp .6s .55s ease both; }
+    .avatar-panel { background:var(--surface); border:1px solid rgba(167,139,250,.2); border-radius:14px; padding:1.75rem; }
+    .avatar-panel-header { display:flex; align-items:center; gap:.75rem; margin-bottom:1.2rem; }
+    .avatar-panel-header h2 { font-size:1rem; font-weight:700; }
+    .avatar-panel-header p  { font-size:.76rem; color:var(--dim); margin-top:.15rem; }
+    .ap-preview {
+      width:72px; height:72px; border-radius:50%; flex-shrink:0;
+      background:linear-gradient(135deg,var(--accent),var(--purple));
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.8rem; font-weight:800; color:#050a0f;
+      border:2px solid rgba(167,139,250,.3); overflow:hidden;
+    }
+    .ap-preview.generating { animation:pulse 1s ease infinite; }
+    .ap-preview img { width:100%; height:100%; object-fit:cover; border-radius:50%; animation:imgReveal .4s ease both; }
+    .ap-chips { display:flex; gap:.35rem; flex-wrap:wrap; margin-bottom:.7rem; }
+    .ap-chip { padding:.22rem .6rem; border-radius:2rem; font-size:.65rem; background:rgba(167,139,250,.08); border:1px solid rgba(167,139,250,.2); color:var(--purple); cursor:pointer; transition:background .15s; }
+    .ap-chip:hover { background:rgba(167,139,250,.18); }
+    .ap-prompt { width:100%; padding:.62rem .9rem; border-radius:.5rem; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-size:.83rem; font-family:inherit; outline:none; transition:border-color .2s; margin-bottom:.7rem; }
+    .ap-prompt:focus { border-color:var(--purple); }
+    .ap-styles { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.85rem; }
+    .ap-style { padding:.28rem .7rem; border-radius:2rem; font-size:.68rem; font-weight:600; border:1px solid var(--border); color:var(--dim); cursor:pointer; transition:all .18s; background:transparent; }
+    .ap-style:hover { border-color:var(--purple); color:var(--purple); }
+    .ap-style.active { background:rgba(167,139,250,.12); border-color:var(--purple); color:var(--purple); }
+    .btn-gen { padding:.62rem 1.3rem; border:none; border-radius:.5rem; font-size:.82rem; font-weight:700; cursor:pointer; color:#050a0f; background:linear-gradient(135deg,var(--purple),var(--accent)); background-size:200%; animation:gradShift 3s ease infinite; transition:filter .2s,transform .15s; }
+    .btn-gen:hover:not(:disabled) { filter:brightness(1.12); transform:translateY(-1px); }
+    .btn-gen:disabled { opacity:.5; cursor:not-allowed; animation:none; }
+    .ap-status { display:none; align-items:center; gap:.6rem; font-size:.75rem; color:var(--purple); margin-top:.6rem; }
+    .ap-status.active { display:flex; }
+    .ap-spinner { width:14px; height:14px; border:2px solid rgba(167,139,250,.2); border-top-color:var(--purple); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+    .ap-result { display:none; margin-top:1rem; animation:imgReveal .5s ease both; }
+    .ap-result.visible { display:block; }
+    .ap-img-wrap { width:150px; height:150px; border-radius:.6rem; overflow:hidden; border:1px solid rgba(167,139,250,.3); margin-bottom:.7rem; box-shadow:0 6px 24px rgba(167,139,250,.12); }
+    .ap-img-wrap img { width:100%; height:100%; object-fit:cover; }
+    .ap-result-btns { display:flex; gap:.5rem; flex-wrap:wrap; }
+    .ap-msg { font-size:.74rem; margin-top:.6rem; display:none; }
+
+    @media(max-width:600px) {
+      .hero { padding:3.5rem 1rem 2rem; }
+      .steps { gap:0; }
+      .step-arrow { display:none; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Join as Agent</h1>
-    <p class="sub">Decentralized platform — Bridge, Supac, Taurus &amp; Wiki. All share Digital Twins.</p>
 
-    <div class="card">
-      <p style="margin-top:0;">Scan to open gateway → connect wallet → join as agent</p>
-      <canvas id="qrCanvas" width="220" height="220"></canvas>
-      <p class="url" id="joinUrl"></p>
-      <div class="links">
-        <a href="/gateway/" class="btn">Open Gateway</a>
-        <a href="/agents.html" class="btn sec">Agents &amp; Twins</a>
-        <a href="/docs.html" class="btn sec">Wiki &amp; Docs</a>
-        <a href="/">Digital Twin</a>
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">BRIDGE AI</div>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/pricing">Pricing</a>
+    <a href="/docs">Docs</a>
+    <a href="/claude-partner">Claude Partner</a>
+    <a href="/voice">Voice AI</a>
+    <a href="/portal">Portal</a>
+    <span class="nav-user" id="navUser"></span>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="beacon-dot"></span>
+      GATEWAY LIVE · LINEA ZKEVM · AGENT REGISTRY
+    </div>
+    <h1>Join as <span class="grad">Agent</span></h1>
+    <p>Decentralized platform — Bridge, Supac, Taurus &amp; Wiki. All share Digital Twins.<br>Scan to open gateway → connect wallet → join as agent.</p>
+  </div>
+</section>
+
+<!-- Steps -->
+<div class="steps">
+  <div class="step" id="step1"><span class="step-num">1</span> Scan QR</div>
+  <span class="step-arrow">→</span>
+  <div class="step" id="step2"><span class="step-num">2</span> Open Gateway</div>
+  <span class="step-arrow">→</span>
+  <div class="step" id="step3"><span class="step-num">3</span> Connect Wallet</div>
+  <span class="step-arrow">→</span>
+  <div class="step" id="step4"><span class="step-num">4</span> Join Linea</div>
+  <span class="step-arrow">→</span>
+  <div class="step" id="step5"><span class="step-num">5</span> Agent Active</div>
+</div>
+
+<!-- QR Grid -->
+<section class="qr-section">
+  <div style="text-align:center;margin-bottom:2rem">
+    <div style="font-size:.68rem;letter-spacing:.18em;color:var(--accent);margin-bottom:.5rem">SCAN TO JOIN</div>
+    <h2 style="font-size:1.3rem;font-weight:700">Three ways to connect</h2>
+  </div>
+
+  <div class="qr-grid">
+    <!-- Gateway QR -->
+    <div class="qr-card">
+      <span class="qr-badge gateway">Gateway</span>
+      <div class="qr-title">Public Gateway</div>
+      <div class="qr-desc">Scan from anywhere — opens the canonical Bridge AI OS gateway URL.</div>
+      <div class="qr-canvas-wrap"><canvas id="qrGateway" width="180" height="180"></canvas></div>
+      <div class="qr-url" id="urlGateway">https://go.ai-os.co.za/join</div>
+      <a href="/gateway/" class="btn btn-primary btn-sm">Open Gateway</a>
+    </div>
+
+    <!-- Beacon QR (relative / LAN) -->
+    <div class="qr-card">
+      <span class="qr-badge beacon">
+        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;vertical-align:middle"></span>
+        Beacon
+      </span>
+      <div class="qr-title">Local Beacon</div>
+      <div class="qr-desc">Works on the same network. Scan from your phone while on local Wi-Fi or LAN.</div>
+      <div class="qr-canvas-wrap"><canvas id="qrBeacon" width="180" height="180"></canvas></div>
+      <div class="qr-url" id="urlBeacon">detecting…</div>
+      <button class="btn btn-green btn-sm" onclick="refreshBeacon()">↻ Refresh Beacon</button>
+    </div>
+
+    <!-- Linea QR -->
+    <div class="qr-card">
+      <span class="qr-badge linea">Linea</span>
+      <div class="qr-title">Linea Agent Join</div>
+      <div class="qr-desc">Scan to connect wallet directly to Linea zkEVM and register as a Bridge AI agent.</div>
+      <div class="qr-canvas-wrap"><canvas id="qrLinea" width="180" height="180"></canvas></div>
+      <div class="qr-url" id="urlLinea">https://go.ai-os.co.za/join?linea=1</div>
+      <a href="#linea-join" class="btn btn-linea btn-sm">Join on Linea</a>
+    </div>
+  </div>
+</section>
+
+<!-- AI Avatar Generator -->
+<div class="avatar-section">
+  <div class="avatar-panel">
+    <div class="avatar-panel-header">
+      <div class="ap-preview" id="apPreview">🤖</div>
+      <div>
+        <h2>🎨 Generate Your Agent Avatar</h2>
+        <p>AI-generated profile image · DALL·E 3 · Set as your Bridge AI identity</p>
       </div>
     </div>
 
-    <p class="platforms">Integrated: <strong>Bridge AI OS</strong> · <strong>Supac</strong> · <strong>Taurus</strong> · <strong>Wiki</strong> — one twin registry, shared state.</p>
+    <div class="ap-chips">
+      <span class="ap-chip" onclick="apChip(this)">AI agent in a neural network</span>
+      <span class="ap-chip" onclick="apChip(this)">African tech founder, digital city</span>
+      <span class="ap-chip" onclick="apChip(this)">blockchain identity, glowing circuits</span>
+      <span class="ap-chip" onclick="apChip(this)">digital twin avatar, Linea zkEVM</span>
+      <span class="ap-chip" onclick="apChip(this)">autonomous robot, futuristic</span>
+    </div>
+
+    <input class="ap-prompt" id="apPrompt" type="text" placeholder="Describe your agent avatar…" maxlength="400">
+
+    <div class="ap-styles">
+      <button class="ap-style active" data-style="cyberpunk"     onclick="apStyle(this)">Cyberpunk</button>
+      <button class="ap-style"        data-style="professional"  onclick="apStyle(this)">Professional</button>
+      <button class="ap-style"        data-style="artistic"      onclick="apStyle(this)">Artistic</button>
+      <button class="ap-style"        data-style="pixel"         onclick="apStyle(this)">Pixel Art</button>
+      <button class="ap-style"        data-style="anime"         onclick="apStyle(this)">Anime</button>
+      <button class="ap-style"        data-style="minimal"       onclick="apStyle(this)">Minimal</button>
+    </div>
+
+    <button class="btn-gen" id="apGenBtn" onclick="apGenerate()">✦ Generate Avatar</button>
+    <div class="ap-status" id="apStatus"><div class="ap-spinner"></div><span id="apStatusTxt">Generating…</span></div>
+
+    <div class="ap-result" id="apResult">
+      <div class="ap-img-wrap"><img id="apResultImg" src="" alt="Generated avatar"></div>
+      <div class="ap-result-btns">
+        <button class="btn btn-primary btn-sm" onclick="apSetAvatar()">✓ Set as My Avatar</button>
+        <button class="btn btn-outline btn-sm" onclick="apGenerate()">↻ Regenerate</button>
+        <a id="apDownload" href="#" download="agent-avatar.png" class="btn btn-outline btn-sm">↓ Download</a>
+      </div>
+      <div class="ap-msg" id="apMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Linea Agent Join Panel -->
+<div class="linea-panel" id="linea-join">
+  <div class="linea-header">
+    <span class="linea-icon">⬡</span>
+    <div>
+      <h2>Register as Agent on Linea zkEVM</h2>
+      <p>Gasless sign-in · BRDG token eligibility · Agent ID issued on-chain</p>
+    </div>
   </div>
 
-  <script>
-    (function() {
-      var base = (typeof location !== 'undefined' && location.origin) ? location.origin : '';
-      var path = (typeof location !== 'undefined' && location.pathname) ? location.pathname : '/join.html';
-      var joinUrl = base + (path.indexOf('/join') !== -1 ? path : '/join.html');
-      document.getElementById('joinUrl').textContent = joinUrl;
-      var canvas = document.getElementById('qrCanvas');
-      if (typeof QRCode !== 'undefined' && canvas) {
-        QRCode.toCanvas(canvas, joinUrl, { width: 220, margin: 2 }, function(err) { if (err) console.warn(err); });
+  <div class="join-steps">
+    <div class="join-step active" id="js1">
+      <div class="join-step-num">1</div>
+      <div class="join-step-body">
+        <h4>Connect Wallet</h4>
+        <p>MetaMask, WalletConnect, or any EIP-1193 wallet. Your address becomes your Agent ID.</p>
+      </div>
+    </div>
+    <div class="join-step" id="js2">
+      <div class="join-step-num">2</div>
+      <div class="join-step-body">
+        <h4>Switch to Linea Mainnet</h4>
+        <p>Chain ID 59144 (0xE708). We'll prompt the switch automatically.</p>
+      </div>
+    </div>
+    <div class="join-step" id="js3">
+      <div class="join-step-num">3</div>
+      <div class="join-step-body">
+        <h4>Sign Registration</h4>
+        <p>Gasless — sign a message to prove wallet ownership. No ETH needed.</p>
+      </div>
+    </div>
+    <div class="join-step" id="js4">
+      <div class="join-step-num">4</div>
+      <div class="join-step-body">
+        <h4>Agent Active</h4>
+        <p>Receive your Agent ID, BRDG allocation, and access to the shared Digital Twin registry.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="wallet-row">
+    <button class="btn btn-linea" id="connectBtn" onclick="connectWallet()">⬡ Connect Wallet</button>
+    <button class="btn btn-outline btn-sm" id="signBtn" onclick="signAndRegister()" style="display:none">✦ Sign &amp; Register Agent</button>
+  </div>
+  <div id="walletStatus"></div>
+
+  <div class="agent-card" id="agentCard">
+    <div class="agent-label">Agent Registered</div>
+    <div class="agent-id" id="agentId"></div>
+    <div class="agent-label" style="margin-top:.6rem">Network</div>
+    <div style="font-size:.78rem;color:var(--linea);margin-top:.2rem">Linea Mainnet (Chain 59144)</div>
+    <div style="margin-top:1rem;display:flex;gap:.6rem;flex-wrap:wrap">
+      <a href="/profile" class="btn btn-primary btn-sm">View Profile →</a>
+      <a href="/agents.html" class="btn btn-outline btn-sm">Agent Registry</a>
+      <a href="/twin" class="btn btn-outline btn-sm">Digital Twin</a>
+    </div>
+  </div>
+</div>
+
+<!-- Platform Strip -->
+<div class="platform-strip">
+  <p>Integrated: <strong>Bridge AI OS</strong> · <strong>Supac</strong> · <strong>Taurus</strong> · <strong>Wiki</strong> — one twin registry, shared state.</p>
+  <div class="platform-badges">
+    <span class="platform-badge"><a href="/gateway/">Gateway</a></span>
+    <span class="platform-badge"><a href="/agents.html">Agents &amp; Twins</a></span>
+    <span class="platform-badge"><a href="/docs.html">Wiki &amp; Docs</a></span>
+    <span class="platform-badge"><a href="/twin">Digital Twin</a></span>
+    <span class="platform-badge"><a href="/tokenomics">BRDG Token</a></span>
+    <span class="platform-badge"><a href="/treasury-dashboard">Treasury</a></span>
+  </div>
+</div>
+
+<script>
+/* ── Canvas particle field ── */
+(function () {
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, pts;
+  function resize() { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; }
+  function mkPts(n) {
+    return Array.from({ length: n }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3,
+      r: Math.random() * 1.4 + .4, a: Math.random()
+    }));
+  }
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const n = pts.length;
+    for (let i = 0; i < n; i++) {
+      const p = pts[i];
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,200,255,${(p.a * .5).toFixed(2)})`; ctx.fill();
+      for (let j = i + 1; j < n; j++) {
+        const q = pts[j];
+        const dx = p.x - q.x, dy = p.y - q.y, d = Math.sqrt(dx*dx+dy*dy);
+        if (d < 110) {
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = `rgba(0,200,255,${(.15*(1-d/110)).toFixed(3)})`; ctx.lineWidth = .35; ctx.stroke();
+        }
       }
-    })();
-  </script>
+    }
+    requestAnimationFrame(draw);
+  }
+  resize(); pts = mkPts(48); draw();
+  window.addEventListener('resize', () => { resize(); pts = mkPts(48); });
+})();
+
+/* ── QR generation ── */
+const GATEWAY_URL = 'https://go.ai-os.co.za/join';
+const LINEA_URL   = 'https://go.ai-os.co.za/join?linea=1';
+
+function mkQR(canvasId, text, color) {
+  const el = document.getElementById(canvasId);
+  if (!el || typeof QRCode === 'undefined') return;
+  QRCode.toCanvas(el, text, {
+    width: 180, margin: 1,
+    color: { dark: '#000000', light: '#ffffff' }
+  }, function(err) { if (err) console.warn(canvasId, err); });
+}
+
+function refreshBeacon() {
+  // Use current origin for LAN access — works on both domain and local IP
+  const beaconUrl = window.location.origin + '/join';
+  document.getElementById('urlBeacon').textContent = beaconUrl;
+  mkQR('qrBeacon', beaconUrl);
+}
+
+function initQRs() {
+  document.getElementById('urlGateway').textContent = GATEWAY_URL;
+  document.getElementById('urlLinea').textContent   = LINEA_URL;
+  mkQR('qrGateway', GATEWAY_URL);
+  mkQR('qrLinea',   LINEA_URL);
+  refreshBeacon();
+
+  // Try WebRTC to detect LAN IP for a true local beacon
+  try {
+    const pc = new RTCPeerConnection({ iceServers: [] });
+    pc.createDataChannel('');
+    pc.createOffer().then(o => pc.setLocalDescription(o));
+    pc.onicecandidate = e => {
+      if (!e.candidate) return;
+      const ip = e.candidate.candidate.match(/(\d{1,3}\.){3}\d{1,3}/)?.[0];
+      if (ip && !ip.startsWith('127.') && !ip.startsWith('0.')) {
+        const lan = 'http://' + ip + ':3000/join';
+        document.getElementById('urlBeacon').textContent = lan;
+        mkQR('qrBeacon', lan);
+        pc.close();
+      }
+    };
+    setTimeout(() => pc.close(), 4000);
+  } catch (_) { /* WebRTC not available, keep origin URL */ }
+}
+
+/* ── Step highlighting ── */
+function setStep(n) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('step' + i);
+    if (!el) continue;
+    el.classList.remove('done');
+    if (i < n) el.classList.add('done');
+  }
+}
+
+function setJoinStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('js' + i);
+    el.classList.remove('active', 'complete');
+    if (i < n) el.classList.add('complete');
+    if (i === n) el.classList.add('active');
+  }
+}
+
+/* ── Wallet status helper ── */
+function ws(msg, type) {
+  const el = document.getElementById('walletStatus');
+  el.textContent = msg;
+  el.className = type || '';
+}
+
+/* ── Linea chain constants ── */
+const LINEA_CHAIN_ID     = '0xE708'; // 59144
+const LINEA_CHAIN_PARAMS = {
+  chainId: LINEA_CHAIN_ID,
+  chainName: 'Linea Mainnet',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: ['https://rpc.linea.build'],
+  blockExplorerUrls: ['https://lineascan.build'],
+};
+
+let connectedAddress = null;
+
+async function connectWallet() {
+  const btn = document.getElementById('connectBtn');
+  if (!window.ethereum) {
+    ws('No wallet detected. Install MetaMask or a compatible wallet.', 'err');
+    return;
+  }
+  try {
+    btn.textContent = '⏳ Connecting…';
+    btn.disabled = true;
+    setStep(3);
+    ws('Requesting account access…');
+
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    connectedAddress = accounts[0];
+    ws('✓ Connected: ' + connectedAddress.slice(0,6) + '…' + connectedAddress.slice(-4), 'ok');
+    setJoinStep(2);
+    setStep(3);
+
+    // Switch to Linea
+    ws('Switching to Linea Mainnet…');
+    try {
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: LINEA_CHAIN_ID }] });
+    } catch (switchErr) {
+      if (switchErr.code === 4902) {
+        await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [LINEA_CHAIN_PARAMS] });
+      } else { throw switchErr; }
+    }
+
+    ws('✓ Linea Mainnet active — ready to sign.', 'ok');
+    setJoinStep(3);
+    setStep(4);
+    btn.style.display = 'none';
+    document.getElementById('signBtn').style.display = 'inline-block';
+
+  } catch (e) {
+    ws('⚠ ' + (e.message || 'Connection failed'), 'err');
+    btn.textContent = '⬡ Connect Wallet';
+    btn.disabled = false;
+  }
+}
+
+async function signAndRegister() {
+  if (!connectedAddress) { ws('Connect wallet first.', 'err'); return; }
+  const signBtn = document.getElementById('signBtn');
+  signBtn.disabled = true;
+  signBtn.textContent = '⏳ Signing…';
+  setJoinStep(3);
+  ws('Waiting for signature…');
+
+  const ts      = Date.now();
+  const message = [
+    '🌐 Bridge AI OS — Agent Registration',
+    '',
+    'Platform : Bridge AI OS · Supac · Taurus · Wiki',
+    'Network  : Linea Mainnet (Chain 59144)',
+    'Address  : ' + connectedAddress,
+    'Timestamp: ' + new Date(ts).toISOString(),
+    '',
+    'By signing, I join the Bridge AI agent registry and accept the platform terms.',
+  ].join('\n');
+
+  try {
+    const sig = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [message, connectedAddress],
+    });
+
+    ws('✓ Signed — registering agent…', 'ok');
+
+    // POST to backend
+    try {
+      await fetch('/api/platform/agent/register-wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: connectedAddress, signature: sig, timestamp: ts, chain: 'linea' }),
+      });
+    } catch (_) { /* non-fatal — agent card still shows */ }
+
+    // Show agent card
+    const agentId = 'AGT-' + connectedAddress.slice(2, 8).toUpperCase() + '-LINEA';
+    document.getElementById('agentId').textContent = connectedAddress + '\nAgent ID: ' + agentId;
+    document.getElementById('agentCard').classList.add('visible');
+    setJoinStep(4);
+    setStep(5);
+    ws('✓ Agent registered on Linea zkEVM', 'ok');
+    document.getElementById('step5').classList.add('done');
+
+    // Update QR to show agent-specific URL
+    const agentUrl = 'https://go.ai-os.co.za/join?agent=' + connectedAddress.slice(2, 10);
+    mkQR('qrLinea', agentUrl);
+    document.getElementById('urlLinea').textContent = agentUrl;
+
+  } catch (e) {
+    ws('⚠ ' + (e.message || 'Signing failed'), 'err');
+    signBtn.disabled = false;
+    signBtn.textContent = '✦ Sign & Register Agent';
+  }
+}
+
+/* ── Nav: show user email if logged in ── */
+(function () {
+  const tok = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('bridge_token='));
+  const token = tok ? tok.split('=')[1] : localStorage.getItem('bridge_token');
+  if (token) {
+    fetch('/auth/me', { headers: { Authorization: 'Bearer ' + token } })
+      .then(r => r.json()).then(d => {
+        if (d.ok && d.user) {
+          document.getElementById('navUser').textContent = d.user.email || '';
+        }
+      }).catch(() => {});
+  }
+
+  // Auto-trigger linea flow if ?linea=1
+  if (new URLSearchParams(window.location.search).get('linea') === '1') {
+    setTimeout(() => document.getElementById('linea-join').scrollIntoView({ behavior: 'smooth' }), 600);
+  }
+})();
+
+/* ── AI Avatar Generator ── */
+let apSelectedStyle = 'cyberpunk';
+let apGeneratedUrl  = null;
+
+function apChip(el)  { document.getElementById('apPrompt').value = el.textContent; }
+function apStyle(el) {
+  document.querySelectorAll('.ap-style').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  apSelectedStyle = el.dataset.style;
+}
+
+function apSetStatus(on, txt) {
+  const s = document.getElementById('apStatus');
+  s.classList.toggle('active', on);
+  if (txt) document.getElementById('apStatusTxt').textContent = txt;
+}
+
+async function apGenerate() {
+  const prompt = document.getElementById('apPrompt').value.trim();
+  if (prompt.length < 3) { document.getElementById('apPrompt').focus(); return; }
+  const btn = document.getElementById('apGenBtn');
+  btn.disabled = true;
+  document.getElementById('apResult').classList.remove('visible');
+  document.getElementById('apPreview').classList.add('generating');
+  apSetStatus(true, 'Generating your avatar…');
+
+  const msgs = ['Composing scene…','Rendering style…','Adding effects…','Finalising…'];
+  let mi = 0;
+  const tick = setInterval(() => apSetStatus(true, msgs[mi++ % msgs.length]), 2500);
+
+  try {
+    // Try authenticated first, fall back to guest generation
+    const tok = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('bridge_token='));
+    const token = tok ? tok.split('=')[1] : localStorage.getItem('bridge_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const resp = await fetch('/api/platform/avatar/generate', {
+      method: 'POST', headers,
+      body: JSON.stringify({ prompt, style: apSelectedStyle }),
+    });
+    const data = await resp.json();
+    clearInterval(tick);
+    if (!data.ok || !data.url) throw new Error(data.error || 'Generation failed');
+
+    apGeneratedUrl = data.url;
+    const img = document.getElementById('apResultImg');
+    img.src = apGeneratedUrl;
+    document.getElementById('apDownload').href = apGeneratedUrl;
+    document.getElementById('apResult').classList.add('visible');
+
+    // Update preview circle
+    document.getElementById('apPreview').innerHTML = `<img src="${apGeneratedUrl}" alt="avatar">`;
+    apSetStatus(false);
+  } catch (e) {
+    clearInterval(tick);
+    apSetStatus(true, '⚠ ' + e.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('apPreview').classList.remove('generating');
+  }
+}
+
+async function apSetAvatar() {
+  if (!apGeneratedUrl) return;
+  const msgEl = document.getElementById('apMsg');
+  msgEl.style.display = 'block'; msgEl.style.color = 'var(--dim)'; msgEl.textContent = 'Saving…';
+  try {
+    const tok = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('bridge_token='));
+    const token = tok ? tok.split('=')[1] : localStorage.getItem('bridge_token');
+    if (!token) throw new Error('Sign in to save your avatar');
+    const resp = await fetch('/api/platform/avatar/set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ avatarUrl: apGeneratedUrl }),
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error);
+    msgEl.style.color = 'var(--green)';
+    msgEl.textContent = '✓ Avatar saved — visible across all Bridge AI pages.';
+    setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+  } catch (e) {
+    msgEl.style.color = '#ff3c5a'; msgEl.textContent = '⚠ ' + e.message;
+  }
+}
+
+/* ── Init ── */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initQRs);
+} else {
+  initQRs();
+}
+setStep(1);
+</script>
 <script src="/bridge-nav.js"></script>
 <script src="/ehsa-brain-status.js" defer></script>
 </body>

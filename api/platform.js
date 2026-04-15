@@ -149,6 +149,22 @@ async function handlePlatform(req, res) {
     }
   }
 
+  // ── WALLET AGENT REGISTRATION ─────────────────────────────────────────────
+  if (url === '/api/platform/agent/register-wallet' && method === 'POST') {
+    const { address, signature, timestamp, chain } = req.body || {};
+    if (!address || !signature) return res.status(400).json({ ok: false, error: 'address and signature required' });
+    const agentId = 'AGT-' + address.slice(2, 8).toUpperCase() + '-LINEA';
+    try {
+      if (isConfigured) {
+        await supabase.from('agent_registrations').upsert({
+          address: address.toLowerCase(), signature, chain: chain || 'linea',
+          agent_id: agentId, registered_at: new Date(timestamp || Date.now()).toISOString(),
+        }, { onConflict: 'address' }).catch(() => {});
+      }
+    } catch (_) { /* non-fatal */ }
+    return res.json({ ok: true, agentId, address, chain: chain || 'linea' });
+  }
+
   // ── AVATAR SET (persist to user profile) ──────────────────────────────────
   if (url === '/api/platform/avatar/set' && method === 'POST') {
     const user = await requireUser(req);
