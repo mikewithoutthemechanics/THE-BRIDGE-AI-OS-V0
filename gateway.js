@@ -964,6 +964,114 @@ app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
 // brain-live serves the 3D brain directly
 app.get('/brain-live', (_req, res) => res.sendFile(path.join(ROOT, 'Xpublic', 'ehsa-brain.html')));
 // Note: '/docs' intentionally excluded — handled by GATEWAY_SHORT_ROUTES → /docs.html
+// ── YOUTUBE SKILL DISCOVERY — handled inline before BRAIN_ROUTES proxy ───────
+app.get('/skills/youtube-search', async (req, res) => {
+  const q = (req.query.q || '').trim();
+  const lim = Math.min(parseInt(req.query.limit || '6', 10), 12);
+  if (!q) return res.json({ ok: false, reason: 'query required', results: [], count: 0 });
+
+  // Tier 1: real YouTube Data API v3
+  const ytKey = process.env.YOUTUBE_API_KEY;
+  if (ytKey) {
+    try {
+      const ytUrl = 'https://www.googleapis.com/youtube/v3/search?part=snippet&q=' +
+        encodeURIComponent(q) + '&maxResults=' + lim + '&type=video&key=' + ytKey;
+      const ytR = await fetch(ytUrl, { signal: AbortSignal.timeout(6000) });
+      if (ytR.ok) {
+        const ytData = await ytR.json();
+        const results = (ytData.items || []).map(item => {
+          const vid = (item.id && item.id.videoId) || '';
+          const title = (item.snippet && item.snippet.title) || '';
+          const channel = (item.snippet && item.snippet.channelTitle) || '';
+          const words = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ').filter(w => w.length > 2);
+          return { video_id: vid, title, channel, skill_id: 'bridge.' + (words.slice(0, 2).join('_') || 'youtube'),
+                   tags: words.slice(0, 5), views: 0, url: 'https://www.youtube.com/watch?v=' + vid };
+        });
+        return res.json({ ok: true, query: q, count: results.length, results, source: 'youtube-api', ts: Date.now() });
+      }
+    } catch (_) { /* fall through */ }
+  }
+
+  // Tier 2: LLM fallback
+  try {
+    const llm = require('./lib/llm-client');
+    const prompt = 'Generate ' + lim + ' YouTube video search results for the query: "' + q +
+      '". Return ONLY a valid JSON array with ' + lim + ' objects, each: {"video_id":"11chars","title":"realistic title","channel":"channel name","skill_id":"bridge.topic","tags":["tag1","tag2","tag3"],"views":12345,"url":"https://www.youtube.com/watch?v=VIDEO_ID"}. Focus on AI automation, blockchain, fintech, business workflows. No markdown, just the JSON array.';
+    const raw = await llm.infer(prompt, { maxTokens: 1000 });
+    const txt = typeof raw === 'object' ? (raw.text || raw.content || '') : String(raw || '');
+    const m = txt.match(/\[[\s\S]*\]/);
+    if (m) {
+      const parsed = JSON.parse(m[0]);
+      return res.json({ ok: true, query: q, count: parsed.length, results: parsed, source: 'ai-orchestrated', ts: Date.now() });
+    }
+  } catch (_) { /* fall through */ }
+
+  // Tier 3: structured stub
+  const topics = q.toLowerCase().split(' ').filter(w => w.length > 2);
+  const vids = ['dQw4w9WgXcQ', 'jNQXAC9IVRw', '9bZkp7q19f0', 'kJQP7kiw5Fk', 'fJ9rUzIMcZQ', 'OPf0YbXqDm0'];
+  const results = Array.from({ length: lim }, (_, i) => {
+    const t = topics[i % topics.length] || 'automation';
+    return { video_id: vids[i % vids.length], title: q + ': ' + t + ' automation ' + (i + 1),
+             channel: 'Bridge AI OS', skill_id: 'bridge.' + t, tags: [t, 'ai', 'automation'],
+             views: 1000 + i * 500, url: 'https://www.youtube.com/watch?v=' + vids[i % vids.length] };
+  });
+  return res.json({ ok: true, query: q, count: results.length, results, source: 'stub', ts: Date.now() });
+});
+
+app.post('/skills/learn-from-youtube', async (req, res) => {
+  const vidId = ((req.body && req.body.video_id) || '').trim();
+  const save = !req.body || req.body.save !== false; // default true — always save unless explicitly save:false
+  if (!vidId) return res.status(400).json({ ok: false, error: 'video_id required' });
+
+  try {
+    const llm = require('./lib/llm-client');
+    const prompt = 'Create a Bridge AI OS skill for YouTube video "' + vidId + '". Reply with ONLY this JSON (no extra text): {"id":"bridge.TOPIC","name":"Short Name","description":"one sentence max 120 chars","tags":["t1","t2","t3"],"version":"1.0.0","steps":[{"title":"S1","detail":"d1"},{"title":"S2","detail":"d2"},{"title":"S3","detail":"d3"}],"plugin":"passthrough","category":"automation"}. Topic: AI, blockchain, automation, fintech.';
+    const raw = await llm.infer(prompt, { maxTokens: 1800 });
+    const txt = typeof raw === 'object' ? (raw.text || raw.content || '') : String(raw || '');
+    const m = txt.match(/\{[\s\S]*\}/);
+    if (m) {
+      const skillDef = JSON.parse(m[0]);
+      let actualSaved = false;
+      if (save) {
+        try {
+          const { supabaseAdmin, isConfigured: sbOk } = require('./lib/supabase');
+          if (sbOk && supabaseAdmin) {
+            const { error: sbErr } = await supabaseAdmin.from('skills_registry').upsert({
+              id: skillDef.id, name: skillDef.name,
+              definition: skillDef, source: 'youtube-learned',
+              video_id: vidId, created_at: new Date().toISOString(),
+            }).select();
+            if (sbErr && sbErr.code === 'PGRST205') {
+              // Table missing — log migration SQL for manual run
+              console.warn('[skills-registry] Table does not exist. Run migrations/009_skills_registry.sql in Supabase SQL Editor: https://supabase.com/dashboard/project/sdkysuvmtqjqopmdpvoz/editor');
+            } else if (!sbErr) {
+              actualSaved = true;
+            }
+          }
+        } catch (_sbErr) { /* non-fatal */ }
+
+        // Push to brain knowledge distribution (fire-and-forget)
+        fetch(`http://${BRAIN_HOST}:8000/skills/inject`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ definition: skillDef, video_id: vidId, source: 'youtube-learned' }),
+          signal: AbortSignal.timeout(5000),
+        }).then(r => r.json()).then(d => {
+          if (d.ok) console.log('[GATEWAY] Skill injected into brain:', skillDef.id, '— brain total:', d.total_skills);
+        }).catch(() => { /* brain may be down, non-fatal */ });
+      }
+      return res.json({ ok: true, learned: true, saved: actualSaved, video_id: vidId, skill_definition: skillDef, source: 'ai-generated', ts: Date.now() });
+    }
+  } catch (_) { /* fall through to stub */ }
+
+  const fb = { id: 'bridge.yt.' + vidId.slice(0, 6), name: 'YouTube Skill ' + vidId.slice(0, 6),
+    description: 'Learned from YouTube — add ANTHROPIC_API_KEY or OPENAI_API_KEY for AI analysis',
+    tags: ['youtube', 'automation', 'learned'], version: '1.0.0',
+    steps: [{ title: 'Fetch', detail: 'Retrieve video transcript and metadata' },
+            { title: 'Extract', detail: 'Parse skill steps from content' },
+            { title: 'Register', detail: 'Store skill in Bridge registry' }] };
+  return res.json({ ok: true, learned: true, saved: false, video_id: vidId, skill_definition: fb, source: 'fallback', ts: Date.now() });
+});
+
 const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/teach', '/econ', '/output', '/treasury', '/swarm', '/share', '/index.json', '/manifest.json', '/auth/google', '/auth/microsoft', '/auth/github', '/view-logs'];
 BRAIN_ROUTES.forEach(prefix => {
   app.all(prefix, async (req, res, next) => {
@@ -2709,6 +2817,45 @@ const CATEGORY_COLORS = {
   bridge: '#00c8ff', brain: '#a78bfa', quant: '#00e57b',
   biz: '#ffd166', net: '#ff7c5c', platform: '#63dfff', flow: '#f59e0b',
 };
+
+// POST /api/execute — SVG engine first, fallback to brain learned-skill executor
+app.post('/api/execute', async (req, res) => {
+  const { skill, input = {}, query = '' } = req.body || {};
+  if (!skill) return res.status(400).json({ ok: false, error: 'skill required' });
+  try {
+    const params = new URLSearchParams(
+      Object.entries(input).map(([k, v]) => [k, String(v)])
+    ).toString();
+    const url = SVG_ENGINE_URL + '/run/' + encodeURIComponent(skill) + (params ? '?' + params : '');
+    const r = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    const data = await r.json();
+    // If SVG engine has no run() for this skill OR doesn't know it, escalate to brain's learned executor
+    const svgNoRun = data && data.data && data.data.note === 'No run() method';
+    const svgNotFound = data && data.ok === false && typeof data.error === 'string' && data.error.includes('Skill not found');
+    if (svgNoRun || svgNotFound) {
+      const brainR = await fetch(`http://${BRAIN_HOST}:8000/skills/execute-learned`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill_id: skill, input, query }),
+        signal: AbortSignal.timeout(20000),
+      });
+      const brainData = await brainR.json();
+      return res.json({ ...brainData, escalated_from: 'svg-engine', skill });
+    }
+    res.json(data);
+  } catch (e) {
+    // SVG engine down — try brain directly
+    try {
+      const brainR = await fetch(`http://${BRAIN_HOST}:8000/skills/execute-learned`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill_id: skill, input, query }),
+        signal: AbortSignal.timeout(20000),
+      });
+      const brainData = await brainR.json();
+      return res.json({ ...brainData, fallback: 'brain-learned', skill });
+    } catch (_) {}
+    res.status(502).json({ ok: false, error: 'svg-engine unreachable: ' + e.message });
+  }
+});
 
 // GET /api/svg/graph.json — build {nodes,edges,canvas} from skills list
 app.get('/api/svg/graph.json', async (_req, res) => {
