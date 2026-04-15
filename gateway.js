@@ -2457,16 +2457,36 @@ async function crmParseBody(req) {
 app.all(/^\/api\/crm(?:\/|$)/, async (req, res, next) => {
   if (!handleCrmGateway) return next();
   const pathname = (req.originalUrl || req.url || '/').split('?')[0];
-  await handleCrmGateway({
-    req,
-    res,
-    path: pathname,
-    method: req.method,
-    parseBody: crmParseBody,
-    json: crmJson,
-  });
-  if (res.headersSent || res.writableEnded) return;
-  next();
+  try {
+    await handleCrmGateway({
+      req,
+      res,
+      path: pathname,
+      method: req.method,
+      parseBody: crmParseBody,
+      json: crmJson,
+    });
+    if (res.headersSent || res.writableEnded) return;
+    next();
+  } catch (err) {
+    console.warn('[GATEWAY][CRM] handler failed:', err.message);
+    if (pathname === '/api/crm/leads' && req.method === 'GET') {
+      return crmJson(res, []);
+    }
+    if (pathname === '/api/crm/stats' && req.method === 'GET') {
+      return crmJson(res, {
+        total_contacts: 0,
+        customers: 0,
+        leads: 0,
+        prospects: 0,
+        mrr: 0,
+        pipeline_value: 0,
+        avg_deal_value: 0,
+        fallback: true,
+      });
+    }
+    return crmJson(res, { error: 'crm_handler_failed', details: err.message }, 500);
+  }
 });
 
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server ──
