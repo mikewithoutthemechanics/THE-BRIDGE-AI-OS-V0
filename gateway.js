@@ -96,8 +96,16 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json({ strict: true, limit: '1mb' }));
 app.use(cookieParser());
+
+// Return deterministic 400s for malformed JSON bodies instead of surfacing parser stacks.
+app.use((err, req, res, next) => {
+  if (err && err.type === 'entity.parse.failed') {
+    return res.status(400).json({ ok: false, error: 'Invalid JSON payload' });
+  }
+  return next(err);
+});
 
 // ── JSON GUARD — prevent HTML responses on agent/api routes ─────────────────
 try {
@@ -631,7 +639,7 @@ async function proxyToUnified(req, res) {
 }
 // /auth/me — inline JWT verification (no auth.js:5001 dependency)
 // Falls back to Supabase lookup so OAuth users get full profile
-app.get('/auth/me', async (req, res) => {
+async function handleAuthMe(req, res) {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/, '') || req.cookies?.access_token;
   if (!token) return res.status(401).json({ ok: false, error: 'Not authenticated' });
 
@@ -660,7 +668,57 @@ app.get('/auth/me', async (req, res) => {
 
   // Fallback: return JWT payload fields
   return res.json({ ok: true, user: { id: payload.sub, email: payload.email, plan: payload.plan || 'free', role: payload.role || 'user' } });
+}
+app.get('/auth/me', handleAuthMe);
+
+// API aliases used by frontend pages (e.g. invoicing.html ensureAuth()).
+// Keep these explicit so /api/auth/* never falls through to generic /api proxy
+// paths that may return HTML from non-API upstreams.
+app.get('/api/auth/me', handleAuthMe);
+
+// Dev login endpoint used by local admin pages (e.g. /invoicing fallback auth).
+// Returns JSON token directly instead of proxying through upstream stacks that
+// may enforce bearer auth and break bootstrap flows.
+app.post('/api/auth/dev-login', async (req, res) => {
+  try {
+    const secret = String(req.body?.secret || '');
+    const address = String(req.body?.address || '').trim();
+    const role = String(req.body?.role || 'admin');
+    const expected = process.env.DEV_LOGIN_SECRET || 'dev-secret-bridge-2026';
+    if (!secret || secret !== expected) {
+      return res.status(401).json({ ok: false, error: 'Invalid dev secret' });
+    }
+    if (!address) {
+      return res.status(400).json({ ok: false, error: 'address required' });
+    }
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return res.status(500).json({ ok: false, error: 'Server misconfigured' });
+    }
+    const jwt = require('jsonwebtoken');
+    const now = Math.floor(Date.now() / 1000);
+    const token = jwt.sign(
+      {
+        sub: `dev:${address.toLowerCase()}`,
+        email: `${address.toLowerCase()}@dev.bridge.local`,
+        role: (role === 'superadmin' ? 'superadmin' : 'admin'),
+        plan: 'client',
+        iat: now,
+      },
+      jwtSecret,
+      { expiresIn: '8h' }
+    );
+    res.cookie('access_token', token, { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 8 * 60 * 60 * 1000 });
+    return res.json({
+      ok: true,
+      token,
+      user: { id: `dev:${address.toLowerCase()}`, email: `${address.toLowerCase()}@dev.bridge.local`, role: (role === 'superadmin' ? 'superadmin' : 'admin'), plan: 'client' },
+    });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
 });
+app.post('/api/auth/logout', (req, res) => proxyToAuth(req, res));
 
 app.post('/auth/logout',         (req, res) => proxyToAuth(req, res));
 app.post('/auth/exchange-code',  (req, res) => proxyToUnified(req, res));
@@ -2872,9 +2930,29 @@ app.all('/api/*path', async (req, res) => {
       if (req.headers['cookie']) opts.headers['Cookie'] = req.headers['cookie'];
       if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
       const r = await fetch(url, opts);
-      const ct = r.headers.get('content-type') || 'application/json';
+      let ct = r.headers.get('content-type') || 'application/json';
       const text = await r.text();
-      res.status(r.status).set('Content-Type', ct).send(text);
+      const looksHtml = /text\/html/i.test(ct) || /^\s*<!doctype html|^\s*<html/i.test(text);
+      if (!looksHtml) {
+        res.status(r.status).set('Content-Type', ct).send(text);
+        return;
+      }
+
+      // Some upstreams can return SPA HTML for missing API routes. Retry via brain API
+      // to keep /api/* responses machine-readable and avoid jsonGuard HTML failures.
+      const brainUrl = `http://${BRAIN_HOST}:8000${req.originalUrl}`;
+      const fallback = await fetch(brainUrl, opts);
+      ct = fallback.headers.get('content-type') || 'application/json';
+      const fallbackText = await fallback.text();
+      const fallbackLooksHtml = /text\/html/i.test(ct) || /^\s*<!doctype html|^\s*<html/i.test(fallbackText);
+      if (fallbackLooksHtml) {
+        return res.status(502).json({
+          error: 'api upstream returned html',
+          path: req.originalUrl,
+          details: 'Both dashboard and brain upstreams responded with HTML.',
+        });
+      }
+      res.status(fallback.status).set('Content-Type', ct).send(fallbackText);
     } catch (e) {
       res.status(502).json({ error: 'backend server unreachable', path: req.originalUrl, details: e.message });
     }
