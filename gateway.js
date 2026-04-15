@@ -149,7 +149,83 @@ app.get('/api/config/oauth', (_req, res) => {
   });
 });
 
-// ── HEALTH ───────────────────────────────────────────────────────────────────
+// ── SVG ENGINE GRAPH — returns graph JSON for SVG canvas renderer ───────────────────
+app.get('/api/graph', async (_req, res) => {
+  try {
+    // Load skill definitions from svg-skills module
+    let svgSkills;
+    try { svgSkills = require('./api/svg-skills'); } catch (e) { svgSkills = null; }
+    if (!svgSkills?.SKILL_LIST) {
+      return res.json({ ok: false, error: 'SVG skills unavailable', nodes: [], edges: [], canvas: { width: 900, height: 560 } });
+    }
+    const skills = svgSkills.SKILL_LIST;
+    
+    // Cluster positions by category
+    const categoryClusters = {
+      'development': { x: 120, y: 120 },
+      'business': { x: 320, y: 120 },
+      'infrastructure': { x: 520, y: 120 },
+      'data-analytics': { x: 720, y: 120 },
+      'security': { x: 120, y: 320 },
+      'communication': { x: 320, y: 320 },
+      'automation': { x: 520, y: 320 },
+      'integration': { x: 720, y: 320 },
+    };
+    const colors = {
+      'development': '#63ffda',
+      'business': '#f59e0b', 
+      'infrastructure': '#8b5cf6',
+      'data-analytics': '#10b981',
+      'security': '#ef4444',
+      'communication': '#3b82f6',
+      'automation': '#ec4899',
+      'integration': '#6366f1',
+    };
+    
+    // Build nodes from skills with category-cluster layout
+    const nodes = skills.map((s, i) => {
+      const cat = s.category?.toLowerCase() || 'integration';
+      const cluster = categoryClusters[cat] || { x: 720, y: 320 };
+      // Distribute within cluster (3x4 grid max)
+      const col = i % 4, row = Math.floor(i / 4) % 3;
+      return {
+        id: s.id || `skill_${i}`,
+        name: s.name || s.id || `Skill ${i}`,
+        color: colors[cat] || '#63ffda',
+        position: { x: cluster.x + col * 80, y: cluster.y + row * 60 },
+        description: s.description || '',
+        category: cat,
+      };
+    });
+    
+    // Build edges from dependencies
+    const edges = [];
+    skills.forEach((s, i) => {
+      (s.dependencies || []).forEach(depId => {
+        const fromIdx = skills.findIndex(ds => ds.id === depId);
+        if (fromIdx >= 0) edges.push({ from: `skill_${fromIdx}`, to: `skill_${i}` });
+      });
+    });
+    
+    res.json({ ok: true, nodes, edges, canvas: { width: 900, height: 560 }, count: skills.length });
+  } catch (e) {
+    res.json({ ok: false, error: e.message, nodes: [], edges: [], canvas: { width: 900, height: 560 } });
+  }
+});
+
+// ── SKILLS COUNT — simple count for badges ────────────────────────────────────────
+app.get('/api/skills/count', (_req, res) => {
+  try {
+    let svgSkills;
+    try { svgSkills = require('./api/svg-skills'); } catch (e) { svgSkills = null; }
+    const count = svgSkills?.SKILL_LIST?.length || 0;
+    res.json({ ok: true, count, skills_loaded: count, ts: Math.floor(Date.now() / 1000) });
+  } catch (e) {
+    res.json({ ok: false, count: 0, error: e.message });
+  }
+});
+
+// ── HEALTH ────────────────────────────────────────��──────────────────────────
 app.get('/health', async (req, res) => {
   // Try unified-server (3000) first, fall back to brain (8000)
   const services = [
@@ -2623,6 +2699,111 @@ app.put('/api/user/settings', express.json(), async (req, res) => {
     return res.json({ ok: true, settings: { name: updated.name || '', company: updated.company || '', ...s } });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── SVG ENGINE PROXY (/api/svg/*) → localhost:7070 ───────────────────────────
+const SVG_ENGINE_URL = 'http://localhost:7070';
+
+const CATEGORY_COLORS = {
+  bridge: '#00c8ff', brain: '#a78bfa', quant: '#00e57b',
+  biz: '#ffd166', net: '#ff7c5c', platform: '#63dfff', flow: '#f59e0b',
+};
+
+// GET /api/svg/graph.json — build {nodes,edges,canvas} from skills list
+app.get('/api/svg/graph.json', async (_req, res) => {
+  try {
+    const r = await fetch(SVG_ENGINE_URL + '/skills', { signal: AbortSignal.timeout(5000) });
+    const body = await r.json();
+    const skills = Array.isArray(body) ? body : (body.skills || []);
+
+    const groups = {};
+    skills.forEach(s => {
+      const cat = (s.id || '').split('.')[0] || 'other';
+      (groups[cat] = groups[cat] || []).push(s);
+    });
+
+    const groupKeys = Object.keys(groups);
+    const COLS = Math.ceil(Math.sqrt(groupKeys.length));
+    const CW = 900, CH = 560;
+    const GW = CW / COLS;
+    const GH = CH / Math.ceil(groupKeys.length / COLS);
+
+    const nodes = [], edges = [];
+
+    groupKeys.forEach((cat, gi) => {
+      const col = gi % COLS, row = Math.floor(gi / COLS);
+      const gx = col * GW + GW / 2, gy = row * GH + GH / 2;
+      const members = groups[cat];
+      const color = CATEGORY_COLORS[cat] || '#63ffda';
+      const radius = Math.min(GW, GH) * 0.35;
+      const angStep = (2 * Math.PI) / Math.max(members.length, 1);
+
+      members.forEach((s, i) => {
+        const angle = i * angStep - Math.PI / 2;
+        nodes.push({
+          id: s.id, name: s.name || s.id, color,
+          position: {
+            x: Math.round(members.length === 1 ? gx : gx + Math.cos(angle) * radius),
+            y: Math.round(members.length === 1 ? gy : gy + Math.sin(angle) * radius),
+          },
+          description: s.description || '',
+          tags: Array.isArray(s.tags) ? s.tags : [],
+          category: cat,
+        });
+      });
+
+      // Intra-category ring edges
+      for (let i = 0; i < members.length - 1; i++) {
+        edges.push({ from: members[i].id, to: members[i + 1].id });
+      }
+    });
+
+    // Cross-category edges via shared tags (one per tag to limit clutter)
+    const tagMap = {};
+    nodes.forEach(n => { (n.tags || []).forEach(t => { (tagMap[t] = tagMap[t] || []).push(n.id); }); });
+    Object.values(tagMap).forEach(ids => {
+      if (ids.length >= 2) edges.push({ from: ids[0], to: ids[1] });
+    });
+
+    res.json({ ok: true, nodes, edges, canvas: { width: CW, height: CH } });
+  } catch (e) {
+    res.status(502).json({ ok: false, nodes: [], edges: [], canvas: { width: 900, height: 560 }, error: e.message });
+  }
+});
+
+// GET /api/svg/telemetry — proxy + flatten telemetry shape for svg-engine.html
+app.get('/api/svg/telemetry', async (_req, res) => {
+  try {
+    const r = await fetch(SVG_ENGINE_URL + '/telemetry', { signal: AbortSignal.timeout(5000) });
+    const data = await r.json();
+    const t = data.telemetry || data;
+    res.json({
+      ok: true,
+      latency_p50_ms: t.p50_ms || t.latency_p50_ms || 0,
+      latency_p95_ms: t.p95_ms || t.latency_p95_ms || 0,
+      total_executions: t.total_executions || 0,
+      skills_loaded: t.skills_loaded || 0,
+    });
+  } catch (_e) {
+    res.json({ ok: false, latency_p50_ms: 0, latency_p95_ms: 0, total_executions: 0, skills_loaded: 0 });
+  }
+});
+
+// GET/POST /api/svg/* — generic passthrough for remaining SVG engine routes
+app.all('/api/svg/*path', async (req, res) => {
+  const suffix = req.path.replace(/^\/api\/svg/, '').replace(/\.json$/, '') || '/';
+  const url = SVG_ENGINE_URL + suffix;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
+    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const ct = r.headers.get('content-type') || 'application/json';
+    res.status(r.status).set('Content-Type', ct).send(await r.text());
+  } catch (e) {
+    res.status(502).json({ ok: false, error: 'svg-engine unreachable', details: e.message });
   }
 });
 
