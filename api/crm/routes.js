@@ -676,4 +676,4 @@ function generateAIDemoLeads() {
   ];
 }
 
-module.exports = { handleCRM };
+module.exports = { handleCRM, mapContact };

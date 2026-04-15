@@ -3280,6 +3280,18 @@ try {
   console.log('[BRAIN] Agent Registry ACTIVE — 52 agents');
 } catch (e) { console.warn('[BRAIN] Agent registry failed:', e.message); }
 
+// ── AGENT CRYPTO WALLET REGISTRY (ETH/BRDG/BTC per-agent wallets) ─────────────
+try {
+  const cryptoRoutes = require('./lib/agent-crypto-registry-routes');
+  cryptoRoutes.mount(app);
+  // Seed wallets for all existing agents on startup (non-blocking)
+  const cryptoReg = require('./lib/agent-crypto-registry');
+  cryptoReg.seedFromRegistry().catch(e =>
+    console.warn('[BRAIN] Crypto wallet seed error:', e.message)
+  );
+  console.log('[BRAIN] Agent Crypto Wallet Registry ACTIVE — /api/crypto-wallets/*');
+} catch (e) { console.warn('[BRAIN] Agent crypto wallet registry failed:', e.message); }
+
 // ── PAGE ECONOMICS — track value generated per page ─────────────────────────
 try {
   const pageEcon = require('./lib/page-economics');
