@@ -57,6 +57,11 @@
       </div>
 
       <div class="card">
+        <h2>Orchestration</h2>
+        <div id="orchestration-content"><em>Loading...</em></div>
+      </div>
+
+      <div class="card">
         <h2>Actions</h2>
         <div style="margin-bottom:0.8rem;">
           <label>Industry: <input id="inp-industry" value="technology" style="width:120px;"></label>
@@ -194,6 +199,15 @@
       }
     }
 
+    async function loadOrchestration() {
+      try {
+        const r = await fetch(API + '/api/leadgen/orchestration/status').then(function(r) { return r.json(); });
+        renderStats(r, 'orchestration-content');
+      } catch (e) {
+        document.getElementById('orchestration-content').textContent = 'Orchestration unavailable';
+      }
+    }
+
     async function loadCampaigns() {
       try {
         const r = await fetch(API + '/api/crm/campaigns').then(function(r) { return r.json(); });
@@ -275,8 +289,8 @@
       } catch(e) { log('Error: ' + e.message); }
     }
 
-    loadStats(); loadOutreach(); loadLeads(); loadCampaigns();
-    setInterval(function() { loadStats(); loadOutreach(); }, 30000);
+    loadStats(); loadOutreach(); loadLeads(); loadCampaigns(); loadOrchestration();
+    setInterval(function() { loadStats(); loadOutreach(); loadOrchestration(); }, 30000);
   </script>
 </body>
 </html>
