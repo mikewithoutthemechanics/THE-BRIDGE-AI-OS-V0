@@ -2908,6 +2908,168 @@ app.put('/api/user/settings', express.json(), async (req, res) => {
   }
 });
 
+// ── SVG ENGINE PROXY (/api/svg/*) → localhost:7070 ───────────────────────────
+const SVG_ENGINE_URL = 'http://localhost:7070';
+
+const CATEGORY_COLORS = {
+  bridge: '#00c8ff', brain: '#a78bfa', quant: '#00e57b',
+  biz: '#ffd166', net: '#ff7c5c', platform: '#63dfff', flow: '#f59e0b',
+};
+
+// POST /api/execute — SVG engine first, fallback to brain learned-skill executor
+app.post('/api/execute', async (req, res) => {
+  const { skill, input = {}, query = '' } = req.body || {};
+  if (!skill) return res.status(400).json({ ok: false, error: 'skill required' });
+  try {
+    const params = new URLSearchParams(
+      Object.entries(input).map(([k, v]) => [k, String(v)])
+    ).toString();
+    const url = SVG_ENGINE_URL + '/run/' + encodeURIComponent(skill) + (params ? '?' + params : '');
+    const r = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    const data = await r.json();
+    // If SVG engine has no run() for this skill OR doesn't know it, escalate to brain's learned executor
+    const svgNoRun = data && data.data && data.data.note === 'No run() method';
+    const svgNotFound = data && data.ok === false && typeof data.error === 'string' && data.error.includes('Skill not found');
+    if (svgNoRun || svgNotFound) {
+      const brainR = await fetch(`http://${BRAIN_HOST}:8000/skills/execute-learned`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill_id: skill, input, query }),
+        signal: AbortSignal.timeout(20000),
+      });
+      const brainData = await brainR.json();
+      return res.json({ ...brainData, escalated_from: 'svg-engine', skill });
+    }
+    res.json(data);
+  } catch (e) {
+    // SVG engine down — try brain directly
+    try {
+      const brainR = await fetch(`http://${BRAIN_HOST}:8000/skills/execute-learned`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill_id: skill, input, query }),
+        signal: AbortSignal.timeout(20000),
+      });
+      const brainData = await brainR.json();
+      return res.json({ ...brainData, fallback: 'brain-learned', skill });
+    } catch (_) {}
+    res.status(502).json({ ok: false, error: 'svg-engine unreachable: ' + e.message });
+  }
+});
+
+// GET /api/svg/graph.json — build {nodes,edges,canvas} from skills list
+app.get('/api/svg/graph.json', async (_req, res) => {
+  try {
+    const r = await fetch(SVG_ENGINE_URL + '/skills', { signal: AbortSignal.timeout(5000) });
+    const body = await r.json();
+    const rawSkills = Array.isArray(body) ? body : (body.skills || []);
+    const skills = rawSkills
+      .map((s, idx) => {
+        if (typeof s === 'string') {
+          return { id: s, name: s, description: '', tags: [] };
+        }
+        if (s && typeof s === 'object') {
+          const id = String(s.id || s.skill_id || s.slug || s.name || '').trim();
+          if (!id) return null;
+          return {
+            id,
+            name: String(s.name || id),
+            description: typeof s.description === 'string' ? s.description : '',
+            tags: Array.isArray(s.tags) ? s.tags.filter(Boolean) : [],
+          };
+        }
+        // Last-resort deterministic fallback
+        return { id: `skill-${idx + 1}`, name: `skill-${idx + 1}`, description: '', tags: [] };
+      })
+      .filter(Boolean);
+
+    const groups = {};
+    skills.forEach(s => {
+      const cat = (s.id || '').split('.')[0] || 'other';
+      (groups[cat] = groups[cat] || []).push(s);
+    });
+
+    const groupKeys = Object.keys(groups);
+    const COLS = Math.ceil(Math.sqrt(groupKeys.length));
+    const CW = 900, CH = 560;
+    const GW = CW / COLS;
+    const GH = CH / Math.ceil(groupKeys.length / COLS);
+
+    const nodes = [], edges = [];
+
+    groupKeys.forEach((cat, gi) => {
+      const col = gi % COLS, row = Math.floor(gi / COLS);
+      const gx = col * GW + GW / 2, gy = row * GH + GH / 2;
+      const members = groups[cat];
+      const color = CATEGORY_COLORS[cat] || '#63ffda';
+      const radius = Math.min(GW, GH) * 0.35;
+      const angStep = (2 * Math.PI) / Math.max(members.length, 1);
+
+      members.forEach((s, i) => {
+        const angle = i * angStep - Math.PI / 2;
+        nodes.push({
+          id: s.id, name: s.name || s.id, color,
+          position: {
+            x: Math.round(members.length === 1 ? gx : gx + Math.cos(angle) * radius),
+            y: Math.round(members.length === 1 ? gy : gy + Math.sin(angle) * radius),
+          },
+          description: s.description || '',
+          tags: Array.isArray(s.tags) ? s.tags : [],
+          category: cat,
+        });
+      });
+
+      // Intra-category ring edges
+      for (let i = 0; i < members.length - 1; i++) {
+        edges.push({ from: members[i].id, to: members[i + 1].id });
+      }
+    });
+
+    // Cross-category edges via shared tags (one per tag to limit clutter)
+    const tagMap = {};
+    nodes.forEach(n => { (n.tags || []).forEach(t => { (tagMap[t] = tagMap[t] || []).push(n.id); }); });
+    Object.values(tagMap).forEach(ids => {
+      if (ids.length >= 2) edges.push({ from: ids[0], to: ids[1] });
+    });
+
+    res.json({ ok: true, nodes, edges, canvas: { width: CW, height: CH } });
+  } catch (e) {
+    res.status(502).json({ ok: false, nodes: [], edges: [], canvas: { width: 900, height: 560 }, error: e.message });
+  }
+});
+
+// GET /api/svg/telemetry — proxy + flatten telemetry shape for svg-engine.html
+app.get('/api/svg/telemetry', async (_req, res) => {
+  try {
+    const r = await fetch(SVG_ENGINE_URL + '/telemetry', { signal: AbortSignal.timeout(5000) });
+    const data = await r.json();
+    const t = data.telemetry || data;
+    res.json({
+      ok: true,
+      latency_p50_ms: t.p50_ms || t.latency_p50_ms || 0,
+      latency_p95_ms: t.p95_ms || t.latency_p95_ms || 0,
+      total_executions: t.total_executions || 0,
+      skills_loaded: t.skills_loaded || 0,
+    });
+  } catch (_e) {
+    res.json({ ok: false, latency_p50_ms: 0, latency_p95_ms: 0, total_executions: 0, skills_loaded: 0 });
+  }
+});
+
+// GET/POST /api/svg/* — generic passthrough for remaining SVG engine routes
+app.all('/api/svg/*path', async (req, res) => {
+  const suffix = req.path.replace(/^\/api\/svg/, '').replace(/\.json$/, '') || '/';
+  const url = SVG_ENGINE_URL + suffix;
+  try {
+    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
+    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
+    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
+    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
+    const r = await fetch(url, opts);
+    const ct = r.headers.get('content-type') || 'application/json';
+    res.status(r.status).set('Content-Type', ct).send(await r.text());
+  } catch (e) {
+    res.status(502).json({ ok: false, error: 'svg-engine unreachable', details: e.message });
+  }
+});
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server (port 3000) ──
 app.all('/api/*path', async (req, res) => {
   // Require auth for any mutating request that reaches this catch-all
