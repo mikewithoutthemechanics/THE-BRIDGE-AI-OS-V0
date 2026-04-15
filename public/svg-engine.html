@@ -261,7 +261,11 @@ function renderGraph() {
   const py = y => offY + y * sc;
 
   const visNodes = _filter
-    ? graphData.nodes.filter(n => n.id.includes(_filter) || n.name.toLowerCase().includes(_filter))
+    ? graphData.nodes.filter(n => {
+      const id = String((n && n.id) || '').toLowerCase();
+      const name = String((n && n.name) || '').toLowerCase();
+      return id.includes(_filter) || name.includes(_filter);
+    })
     : graphData.nodes;
   const visIds = new Set(visNodes.map(n => n.id));
 
@@ -273,10 +277,14 @@ function renderGraph() {
     const a = graphData.nodes.find(n => n.id === e.from);
     const b = graphData.nodes.find(n => n.id === e.to);
     if (!a || !b) return;
+    const ax = Number(a.position && a.position.x) || 0;
+    const ay = Number(a.position && a.position.y) || 0;
+    const bx = Number(b.position && b.position.x) || 0;
+    const by = Number(b.position && b.position.y) || 0;
     const active = visIds.has(e.from) && visIds.has(e.to);
     const line = document.createElementNS(svg.namespaceURI, 'line');
-    line.setAttribute('x1', px(a.position.x)); line.setAttribute('y1', py(a.position.y));
-    line.setAttribute('x2', px(b.position.x)); line.setAttribute('y2', py(b.position.y));
+    line.setAttribute('x1', px(ax)); line.setAttribute('y1', py(ay));
+    line.setAttribute('x2', px(bx)); line.setAttribute('y2', py(by));
     line.setAttribute('stroke', active ? 'rgba(99,255,218,0.2)' : 'rgba(26,37,64,0.5)');
     line.setAttribute('stroke-width', '1');
     edgeG.appendChild(line);
@@ -289,7 +297,10 @@ function renderGraph() {
     const isSelected = selectedNode && selectedNode.id === n.id;
     const heat = Math.min((execCount[n.id] || 0) / 5, 1);
     const rad = 16 + Math.floor(heat * 10);
-    const x = px(n.position.x), y = py(n.position.y);
+    const posX = Number(n && n.position && n.position.x) || 0;
+    const posY = Number(n && n.position && n.position.y) || 0;
+    const nodeName = String((n && n.name) || (n && n.id) || 'unnamed');
+    const x = px(posX), y = py(posY);
 
     const g = document.createElementNS(svg.namespaceURI, 'g');
     g.style.cursor = 'pointer';
@@ -343,7 +354,7 @@ function renderGraph() {
     lbl.setAttribute('x', x); lbl.setAttribute('y', y - rad - 6);
     lbl.setAttribute('text-anchor', 'middle'); lbl.setAttribute('fill', n.color || '#63ffda');
     lbl.setAttribute('font-family', 'JetBrains Mono,monospace'); lbl.setAttribute('font-size', '9');
-    lbl.textContent = n.name.length > 18 ? n.name.slice(0, 16) + '…' : n.name;
+    lbl.textContent = nodeName.length > 18 ? nodeName.slice(0, 16) + '…' : nodeName;
     g.appendChild(lbl);
 
     // Events

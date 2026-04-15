@@ -2964,7 +2964,26 @@ app.get('/api/svg/graph.json', async (_req, res) => {
   try {
     const r = await fetch(SVG_ENGINE_URL + '/skills', { signal: AbortSignal.timeout(5000) });
     const body = await r.json();
-    const skills = Array.isArray(body) ? body : (body.skills || []);
+    const rawSkills = Array.isArray(body) ? body : (body.skills || []);
+    const skills = rawSkills
+      .map((s, idx) => {
+        if (typeof s === 'string') {
+          return { id: s, name: s, description: '', tags: [] };
+        }
+        if (s && typeof s === 'object') {
+          const id = String(s.id || s.skill_id || s.slug || s.name || '').trim();
+          if (!id) return null;
+          return {
+            id,
+            name: String(s.name || id),
+            description: typeof s.description === 'string' ? s.description : '',
+            tags: Array.isArray(s.tags) ? s.tags.filter(Boolean) : [],
+          };
+        }
+        // Last-resort deterministic fallback
+        return { id: `skill-${idx + 1}`, name: `skill-${idx + 1}`, description: '', tags: [] };
+      })
+      .filter(Boolean);
 
     const groups = {};
     skills.forEach(s => {
