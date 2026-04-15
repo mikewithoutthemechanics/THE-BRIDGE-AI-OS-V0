@@ -973,6 +973,7 @@ function requireAuth(req, res, next) {
     '/api/governance/',
     '/api/pricing',
     '/api/crm/',
+    '/api/outreach/',
     '/api/invoices',
     '/api/marketing/',
     '/api/compliance/',
