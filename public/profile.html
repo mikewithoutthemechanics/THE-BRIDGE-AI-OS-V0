@@ -119,6 +119,97 @@
 
     .loading{color:var(--dim);font-size:.85rem;text-align:center;padding:3rem}
     .empty{color:var(--dim);font-size:.82rem;text-align:center;padding:2rem;border:1px dashed var(--border);border-radius:.5rem}
+
+    /* ── AI Avatar Generator ── */
+    @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    @keyframes imgReveal{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+
+    .avatar-gen-wrap{max-width:680px}
+    .avatar-hero{display:flex;align-items:center;gap:2rem;margin-bottom:2rem;flex-wrap:wrap}
+    .avatar-display{
+      width:120px;height:120px;border-radius:50%;flex-shrink:0;
+      background:linear-gradient(135deg,var(--accent),var(--purple));
+      display:flex;align-items:center;justify-content:center;
+      font-size:2.8rem;font-weight:800;color:#050a0f;
+      position:relative;overflow:hidden;
+      border:2px solid rgba(0,200,255,.3);
+      box-shadow:0 0 32px rgba(0,200,255,.2);
+      transition:box-shadow .3s;
+    }
+    .avatar-display img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .avatar-display.generating{animation:pulse 1.2s ease infinite}
+    .avatar-info h3{font-size:1.1rem;font-weight:700;margin-bottom:.3rem}
+    .avatar-info p{font-size:.82rem;color:var(--dim);line-height:1.6;max-width:360px}
+
+    .gen-form{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1.5rem}
+    .gen-form label{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:.5rem}
+    .gen-prompt{
+      width:100%;padding:.8rem 1rem;border-radius:.5rem;
+      background:var(--surface2);border:1px solid var(--border);
+      color:var(--text);font-size:.88rem;font-family:inherit;
+      resize:vertical;min-height:72px;line-height:1.5;
+      transition:border-color .2s;outline:none;
+    }
+    .gen-prompt:focus{border-color:var(--accent)}
+    .style-grid{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem;margin-bottom:1.2rem}
+    .style-chip{
+      padding:.35rem .8rem;border-radius:2rem;font-size:.72rem;font-weight:600;
+      border:1px solid var(--border);color:var(--dim);cursor:pointer;
+      transition:all .18s;background:transparent;letter-spacing:.04em;
+    }
+    .style-chip:hover{border-color:var(--accent);color:var(--accent)}
+    .style-chip.active{background:rgba(0,200,255,.12);border-color:var(--accent);color:var(--accent)}
+    .gen-actions{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+    .btn-generate{
+      padding:.7rem 1.6rem;background:linear-gradient(135deg,var(--accent),var(--purple));
+      background-size:200% auto;color:#050a0f;border:none;border-radius:.5rem;
+      font-size:.85rem;font-weight:700;cursor:pointer;letter-spacing:.04em;
+      transition:filter .2s,transform .15s;animation:gradShift 3s ease infinite;
+    }
+    .btn-generate:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px)}
+    .btn-generate:disabled{opacity:.5;cursor:not-allowed;animation:none}
+    .gen-hint{font-size:.72rem;color:var(--dim)}
+
+    .gen-result{display:none;animation:fadeUp .5s ease both}
+    .gen-result.visible{display:block}
+    .result-img-wrap{
+      position:relative;width:200px;height:200px;border-radius:.7rem;overflow:hidden;
+      border:1px solid var(--border);margin-bottom:1rem;
+      box-shadow:0 8px 32px rgba(0,200,255,.15);
+    }
+    .result-img-wrap img{width:100%;height:100%;object-fit:cover;animation:imgReveal .5s ease both}
+    .result-actions{display:flex;gap:.6rem;flex-wrap:wrap}
+
+    .gen-status{
+      display:none;align-items:center;gap:.75rem;
+      font-size:.8rem;color:var(--accent);margin-top:.75rem;
+    }
+    .gen-status.active{display:flex}
+    .gen-spinner{
+      width:18px;height:18px;border:2px solid rgba(0,200,255,.2);
+      border-top-color:var(--accent);border-radius:50%;
+      animation:spin .7s linear infinite;flex-shrink:0;
+    }
+
+    .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:.6rem;margin-top:1rem}
+    .gallery-item{
+      aspect-ratio:1;border-radius:.5rem;overflow:hidden;cursor:pointer;
+      border:1px solid var(--border);transition:border-color .2s,transform .2s;
+    }
+    .gallery-item:hover{border-color:var(--accent);transform:scale(1.04)}
+    .gallery-item img{width:100%;height:100%;object-fit:cover;display:block}
+    .gallery-item.selected{border-color:var(--accent);box-shadow:0 0 12px rgba(0,200,255,.3)}
+
+    .prompt-chips{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem}
+    .prompt-chip{
+      padding:.25rem .65rem;border-radius:2rem;font-size:.68rem;
+      background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);
+      color:var(--purple);cursor:pointer;transition:all .15s;
+    }
+    .prompt-chip:hover{background:rgba(167,139,250,.18)}
   </style>
 </head>
 <body>
@@ -147,6 +238,7 @@
       <div class="nav-item" onclick="showSection('outputs')"><span class="icon">📤</span> Outputs</div>
       <div class="nav-item" onclick="showSection('integrations')"><span class="icon">🔗</span> Integrations</div>
       <div class="nav-item" onclick="showSection('analytics')"><span class="icon">📊</span> Analytics</div>
+      <div class="nav-item" onclick="showSection('avatar')"><span class="icon">🎨</span> AI Avatar</div>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">Account</div>
@@ -237,6 +329,80 @@
       <div class="section-header"><div class="section-title">Account Settings</div></div>
       <div style="color:var(--dim);font-size:.85rem;padding:1rem 0">Settings panel — manage email, password, API keys, and notification preferences.</div>
       <a href="/settings" class="btn btn-outline">Open Full Settings</a>
+    </div>
+
+    <!-- AI Avatar Generator -->
+    <div class="page-section" id="section-avatar">
+      <div class="section-header"><div class="section-title">AI Avatar Generator</div></div>
+      <div class="avatar-gen-wrap">
+
+        <!-- Current avatar display -->
+        <div class="avatar-hero">
+          <div class="avatar-display" id="avatarDisplay">
+            <span id="avatarInitial">?</span>
+          </div>
+          <div class="avatar-info">
+            <h3>Your Profile Image</h3>
+            <p>Generate a unique AI avatar from a text prompt. Powered by DALL·E 3. Your generated image is set as your profile picture across all Bridge AI pages.</p>
+          </div>
+        </div>
+
+        <!-- Prompt suggestions -->
+        <div class="gen-form">
+          <label>Quick prompts</label>
+          <div class="prompt-chips" id="promptChips">
+            <span class="prompt-chip" onclick="useChip(this)">futuristic AI entrepreneur</span>
+            <span class="prompt-chip" onclick="useChip(this)">blockchain developer in a digital world</span>
+            <span class="prompt-chip" onclick="useChip(this)">African tech innovator, city skyline</span>
+            <span class="prompt-chip" onclick="useChip(this)">AI robot with human features</span>
+            <span class="prompt-chip" onclick="useChip(this)">digital twin silhouette</span>
+            <span class="prompt-chip" onclick="useChip(this)">CEO with neural network background</span>
+          </div>
+
+          <label>Describe your avatar</label>
+          <textarea class="gen-prompt" id="genPrompt" placeholder="e.g. a confident tech founder with glowing circuit patterns, dark background…" rows="3"></textarea>
+
+          <label style="margin-top:1rem">Style</label>
+          <div class="style-grid" id="styleGrid">
+            <button class="style-chip active" data-style="cyberpunk" onclick="selectStyle(this)">Cyberpunk</button>
+            <button class="style-chip" data-style="professional" onclick="selectStyle(this)">Professional</button>
+            <button class="style-chip" data-style="artistic" onclick="selectStyle(this)">Artistic</button>
+            <button class="style-chip" data-style="pixel" onclick="selectStyle(this)">Pixel Art</button>
+            <button class="style-chip" data-style="anime" onclick="selectStyle(this)">Anime</button>
+            <button class="style-chip" data-style="minimal" onclick="selectStyle(this)">Minimal</button>
+          </div>
+
+          <div class="gen-actions">
+            <button class="btn-generate" id="genBtn" onclick="generateAvatar()">✦ Generate Avatar</button>
+            <span class="gen-hint">Uses OpenAI DALL·E 3 · ~10 seconds</span>
+          </div>
+          <div class="gen-status" id="genStatus">
+            <div class="gen-spinner"></div>
+            <span id="genStatusText">Generating your avatar…</span>
+          </div>
+        </div>
+
+        <!-- Result -->
+        <div class="gen-result" id="genResult">
+          <label style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:.75rem">Generated Image</label>
+          <div class="result-img-wrap">
+            <img id="resultImg" src="" alt="Generated avatar">
+          </div>
+          <div class="result-actions">
+            <button class="btn btn-primary btn-sm" onclick="setAvatar()">✓ Set as My Avatar</button>
+            <button class="btn btn-outline btn-sm" onclick="generateAvatar()">↻ Regenerate</button>
+            <a id="resultDownload" href="#" download="bridge-ai-avatar.png" class="btn btn-outline btn-sm">↓ Download</a>
+          </div>
+          <div id="setAvatarMsg" style="margin-top:.75rem;font-size:.78rem;display:none"></div>
+        </div>
+
+        <!-- Gallery -->
+        <div id="avatarGalleryWrap" style="margin-top:2rem;display:none">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.6rem">Previously Generated</div>
+          <div class="gallery-grid" id="avatarGallery"></div>
+        </div>
+
+      </div>
     </div>
   </div>
 </div>
@@ -576,6 +742,157 @@ function logout() {
   localStorage.removeItem('bridge_token');
   window.location.href = '/';
 }
+
+// ── AI Avatar Generator ──────────────────────────────────────────────────────
+let selectedStyle = 'cyberpunk';
+let generatedUrl = null;
+const AVATAR_GALLERY_KEY = 'bridge_avatar_gallery';
+
+function selectStyle(el) {
+  document.querySelectorAll('.style-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedStyle = el.dataset.style;
+}
+
+function useChip(el) {
+  document.getElementById('genPrompt').value = el.textContent;
+  document.getElementById('genPrompt').focus();
+}
+
+function setGenStatus(active, text) {
+  const s = document.getElementById('genStatus');
+  const t = document.getElementById('genStatusText');
+  s.classList.toggle('active', active);
+  if (text) t.textContent = text;
+}
+
+async function generateAvatar() {
+  const prompt = document.getElementById('genPrompt').value.trim();
+  if (prompt.length < 3) {
+    document.getElementById('genPrompt').focus();
+    return;
+  }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('genResult').classList.remove('visible');
+  document.getElementById('avatarDisplay').classList.add('generating');
+  setGenStatus(true, 'Generating your avatar…');
+
+  const statusMsgs = [
+    'Composing scene…', 'Rendering details…',
+    'Adding style effects…', 'Finalising image…'
+  ];
+  let si = 0;
+  const ticker = setInterval(() => {
+    setGenStatus(true, statusMsgs[si++ % statusMsgs.length]);
+  }, 2500);
+
+  try {
+    const resp = await authFetch('/api/platform/avatar/generate', {
+      method: 'POST',
+      body: JSON.stringify({ prompt, style: selectedStyle }),
+    });
+    const data = await resp.json();
+    clearInterval(ticker);
+
+    if (!data.ok || !data.url) throw new Error(data.error || 'Generation failed');
+
+    generatedUrl = data.url;
+    const img = document.getElementById('resultImg');
+    img.src = generatedUrl;
+    document.getElementById('resultDownload').href = generatedUrl;
+    document.getElementById('genResult').classList.add('visible');
+    setGenStatus(false);
+
+    // Add to local gallery
+    const gallery = JSON.parse(localStorage.getItem(AVATAR_GALLERY_KEY) || '[]');
+    gallery.unshift({ url: generatedUrl, prompt, style: selectedStyle, ts: Date.now() });
+    localStorage.setItem(AVATAR_GALLERY_KEY, JSON.stringify(gallery.slice(0, 12)));
+    renderGallery();
+
+  } catch (e) {
+    clearInterval(ticker);
+    setGenStatus(true, '⚠ ' + e.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('avatarDisplay').classList.remove('generating');
+  }
+}
+
+async function setAvatar() {
+  if (!generatedUrl) return;
+  const msgEl = document.getElementById('setAvatarMsg');
+  msgEl.style.display = 'block';
+  msgEl.style.color = 'var(--dim)';
+  msgEl.textContent = 'Saving…';
+
+  try {
+    const resp = await authFetch('/api/platform/avatar/set', {
+      method: 'POST',
+      body: JSON.stringify({ avatarUrl: generatedUrl }),
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error);
+
+    // Update avatar everywhere on this page
+    const disp = document.getElementById('avatarDisplay');
+    disp.innerHTML = `<img src="${generatedUrl}" alt="avatar">`;
+    document.getElementById('avatarCircle').style.backgroundImage = `url(${generatedUrl})`;
+    document.getElementById('avatarCircle').style.backgroundSize = 'cover';
+    document.getElementById('avatarCircle').textContent = '';
+
+    msgEl.style.color = 'var(--green)';
+    msgEl.textContent = '✓ Avatar updated! Visible across all Bridge AI pages.';
+    setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+  } catch (e) {
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = '⚠ ' + e.message;
+  }
+}
+
+function renderGallery() {
+  const gallery = JSON.parse(localStorage.getItem(AVATAR_GALLERY_KEY) || '[]');
+  const wrap = document.getElementById('avatarGalleryWrap');
+  const grid = document.getElementById('avatarGallery');
+  if (gallery.length === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  grid.innerHTML = '';
+  gallery.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'gallery-item';
+    div.title = item.prompt;
+    div.innerHTML = `<img src="${item.url}" alt="${item.prompt}" loading="lazy">`;
+    div.onclick = () => {
+      document.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('selected'));
+      div.classList.add('selected');
+      generatedUrl = item.url;
+      document.getElementById('resultImg').src = item.url;
+      document.getElementById('resultDownload').href = item.url;
+      document.getElementById('genResult').classList.add('visible');
+      document.getElementById('genPrompt').value = item.prompt;
+    };
+    grid.appendChild(div);
+  });
+}
+
+// ── Extend showSection to init avatar tab ─────────────────────────────────────
+const _origShow = showSection;
+// eslint-disable-next-line no-global-assign
+showSection = function(id) {
+  _origShow(id);
+  if (id === 'avatar') {
+    renderGallery();
+    const initEl = document.getElementById('avatarInitial');
+    if (initEl && user) initEl.textContent = (user.name || user.email || '?').charAt(0).toUpperCase();
+    // Restore saved avatar if any
+    const saved = user?.avatar_url;
+    if (saved) {
+      const disp = document.getElementById('avatarDisplay');
+      disp.innerHTML = `<img src="${saved}" alt="avatar">`;
+    }
+  }
+};
 
 init();
 </script>

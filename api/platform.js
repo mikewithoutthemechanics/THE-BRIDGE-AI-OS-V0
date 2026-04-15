@@ -99,9 +99,73 @@ function notFound(res, msg = 'Not found') {
 
 // ── Router ───────────────────────────────────────────────────────────────────
 
+// ── Avatar generation helper ──────────────────────────────────────────────────
+async function generateAvatarImage(prompt, style) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey || apiKey.startsWith('your_')) throw new Error('OpenAI API key not configured');
+
+  const stylePrefix = {
+    cyberpunk:    'cyberpunk neon-lit portrait, dark background, glowing circuits, ',
+    professional: 'professional corporate headshot portrait, clean background, ',
+    artistic:     'digital art portrait, vibrant colors, abstract background, ',
+    pixel:        '32-bit pixel art avatar portrait, retro game style, ',
+    anime:        'anime style portrait illustration, colorful, ',
+    minimal:      'minimalist flat design avatar, geometric shapes, clean, ',
+  }[style] || '';
+
+  const fullPrompt = stylePrefix + prompt + ', high quality, 512x512';
+
+  const resp = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'dall-e-3', prompt: fullPrompt, n: 1, size: '1024x1024', response_format: 'url' }),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err?.error?.message || 'Image generation failed');
+  }
+
+  const data = await resp.json();
+  return data.data?.[0]?.url || null;
+}
+
 async function handlePlatform(req, res) {
   const url = req.url.replace(/\?.*$/, '');
   const method = req.method;
+
+  // ── AVATAR GENERATE ────────────────────────────────────────────────────────
+  if (url === '/api/platform/avatar/generate' && method === 'POST') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+    const { prompt, style } = req.body || {};
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3)
+      return res.status(400).json({ ok: false, error: 'Prompt must be at least 3 characters' });
+    try {
+      const imageUrl = await generateAvatarImage(prompt.trim().slice(0, 400), style || 'cyberpunk');
+      return res.json({ ok: true, url: imageUrl, prompt, style });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── AVATAR SET (persist to user profile) ──────────────────────────────────
+  if (url === '/api/platform/avatar/set' && method === 'POST') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+    const { avatarUrl } = req.body || {};
+    if (!avatarUrl || typeof avatarUrl !== 'string') return res.status(400).json({ ok: false, error: 'avatarUrl required' });
+    try {
+      if (isConfigured) {
+        await supabase.from('users').update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() }).eq('id', user.id);
+      } else {
+        await userDb.updateUser(user.id, { avatar_url: avatarUrl });
+      }
+      return res.json({ ok: true, avatarUrl });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
 
   // ── TOOLS LIST ─────────────────────────────────────────────────────────────
   if (url === '/api/platform/tools' && method === 'GET') {
