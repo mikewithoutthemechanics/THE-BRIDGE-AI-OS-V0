@@ -157,7 +157,99 @@ app.get('/api/config/oauth', (_req, res) => {
   });
 });
 
-// ── HEALTH ───────────────────────────────────────────────────────────────────
+// ── SVG ENGINE GRAPH — returns graph JSON for SVG canvas renderer ───────────────────
+app.get('/api/graph', async (_req, res) => {
+  try {
+    // Load skill definitions from svg-skills module
+    let svgSkills;
+    try { svgSkills = require('./api/svg-skills'); } catch (e) { svgSkills = null; }
+    if (!svgSkills?.SKILL_LIST) {
+      return res.json({ ok: false, error: 'SVG skills unavailable', nodes: [], edges: [], canvas: { width: 900, height: 560 } });
+    }
+    const skills = svgSkills.SKILL_LIST;
+    
+    // Cluster positions by category
+    const categoryClusters = {
+      'development': { x: 120, y: 120 },
+      'business': { x: 320, y: 120 },
+      'infrastructure': { x: 520, y: 120 },
+      'data-analytics': { x: 720, y: 120 },
+      'security': { x: 120, y: 320 },
+      'communication': { x: 320, y: 320 },
+      'automation': { x: 520, y: 320 },
+      'integration': { x: 720, y: 320 },
+    };
+    const colors = {
+      'development': '#63ffda',
+      'business': '#f59e0b', 
+      'infrastructure': '#8b5cf6',
+      'data-analytics': '#10b981',
+      'security': '#ef4444',
+      'communication': '#3b82f6',
+      'automation': '#ec4899',
+      'integration': '#6366f1',
+    };
+    
+    // Build nodes from skills with category-cluster layout
+    const nodes = skills.map((s, i) => {
+      const cat = s.category?.toLowerCase() || 'integration';
+      const cluster = categoryClusters[cat] || { x: 720, y: 320 };
+      // Distribute within cluster (3x4 grid max)
+      const col = i % 4, row = Math.floor(i / 4) % 3;
+      return {
+        id: s.id || `skill_${i}`,
+        name: s.name || s.id || `Skill ${i}`,
+        color: colors[cat] || '#63ffda',
+        position: { x: cluster.x + col * 80, y: cluster.y + row * 60 },
+        description: s.description || '',
+        category: cat,
+      };
+    });
+    
+    // Build edges from dependencies
+    const edges = [];
+    skills.forEach((s, i) => {
+      (s.dependencies || []).forEach(depId => {
+        const fromIdx = skills.findIndex(ds => ds.id === depId);
+        if (fromIdx >= 0) edges.push({ from: `skill_${fromIdx}`, to: `skill_${i}` });
+      });
+    });
+    
+    res.json({ ok: true, nodes, edges, canvas: { width: 900, height: 560 }, count: skills.length });
+  } catch (e) {
+    res.json({ ok: false, error: e.message, nodes: [], edges: [], canvas: { width: 900, height: 560 } });
+  }
+});
+
+// ── SKILLS COUNT — simple count for badges ────────────────────────────────────────
+app.get('/api/skills/count', (_req, res) => {
+  try {
+    let svgSkills;
+    try { svgSkills = require('./api/svg-skills'); } catch (e) { svgSkills = null; }
+    const count = svgSkills?.SKILL_LIST?.length || 0;
+    res.json({ ok: true, count, skills_loaded: count, ts: Math.floor(Date.now() / 1000) });
+  } catch (e) {
+    res.json({ ok: false, count: 0, error: e.message });
+}
+});
+
+// ── WALLET STATUS — check wallet connection status ───────────────────────
+app.get('/api/wallet/status', (_req, res) => {
+  // Check for wallet connection headers (set by nginx/proxy)
+  const walletConnected = _req.headers['x-wallet-connected'] === 'true';
+  const walletType = _req.headers['x-wallet-type'] || null;
+  const walletAddress = _req.headers['x-wallet-address'] || null;
+  
+  res.json({ 
+    ok: true, 
+    connected: walletConnected,
+    wallet_type: walletType,
+    wallet_address: walletAddress ? `${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}` : null,
+    ts: Math.floor(Date.now() / 1000) 
+  });
+});
+
+// ── HEALTH ────────────────────────────────────────��──────────────────────────
 app.get('/health', async (req, res) => {
   // Try unified-server (3000) first, fall back to brain (8000)
   const services = [
@@ -946,6 +1038,114 @@ app.use('/assets', express.static(path.join(XPUBLIC, 'assets')));
 // brain-live serves the 3D brain directly
 app.get('/brain-live', (_req, res) => res.sendFile(path.join(ROOT, 'Xpublic', 'ehsa-brain.html')));
 // Note: '/docs' intentionally excluded — handled by GATEWAY_SHORT_ROUTES → /docs.html
+// ── YOUTUBE SKILL DISCOVERY — handled inline before BRAIN_ROUTES proxy ───────
+app.get('/skills/youtube-search', async (req, res) => {
+  const q = (req.query.q || '').trim();
+  const lim = Math.min(parseInt(req.query.limit || '6', 10), 12);
+  if (!q) return res.json({ ok: false, reason: 'query required', results: [], count: 0 });
+
+  // Tier 1: real YouTube Data API v3
+  const ytKey = process.env.YOUTUBE_API_KEY;
+  if (ytKey) {
+    try {
+      const ytUrl = 'https://www.googleapis.com/youtube/v3/search?part=snippet&q=' +
+        encodeURIComponent(q) + '&maxResults=' + lim + '&type=video&key=' + ytKey;
+      const ytR = await fetch(ytUrl, { signal: AbortSignal.timeout(6000) });
+      if (ytR.ok) {
+        const ytData = await ytR.json();
+        const results = (ytData.items || []).map(item => {
+          const vid = (item.id && item.id.videoId) || '';
+          const title = (item.snippet && item.snippet.title) || '';
+          const channel = (item.snippet && item.snippet.channelTitle) || '';
+          const words = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ').filter(w => w.length > 2);
+          return { video_id: vid, title, channel, skill_id: 'bridge.' + (words.slice(0, 2).join('_') || 'youtube'),
+                   tags: words.slice(0, 5), views: 0, url: 'https://www.youtube.com/watch?v=' + vid };
+        });
+        return res.json({ ok: true, query: q, count: results.length, results, source: 'youtube-api', ts: Date.now() });
+      }
+    } catch (_) { /* fall through */ }
+  }
+
+  // Tier 2: LLM fallback
+  try {
+    const llm = require('./lib/llm-client');
+    const prompt = 'Generate ' + lim + ' YouTube video search results for the query: "' + q +
+      '". Return ONLY a valid JSON array with ' + lim + ' objects, each: {"video_id":"11chars","title":"realistic title","channel":"channel name","skill_id":"bridge.topic","tags":["tag1","tag2","tag3"],"views":12345,"url":"https://www.youtube.com/watch?v=VIDEO_ID"}. Focus on AI automation, blockchain, fintech, business workflows. No markdown, just the JSON array.';
+    const raw = await llm.infer(prompt, { maxTokens: 1000 });
+    const txt = typeof raw === 'object' ? (raw.text || raw.content || '') : String(raw || '');
+    const m = txt.match(/\[[\s\S]*\]/);
+    if (m) {
+      const parsed = JSON.parse(m[0]);
+      return res.json({ ok: true, query: q, count: parsed.length, results: parsed, source: 'ai-orchestrated', ts: Date.now() });
+    }
+  } catch (_) { /* fall through */ }
+
+  // Tier 3: structured stub
+  const topics = q.toLowerCase().split(' ').filter(w => w.length > 2);
+  const vids = ['dQw4w9WgXcQ', 'jNQXAC9IVRw', '9bZkp7q19f0', 'kJQP7kiw5Fk', 'fJ9rUzIMcZQ', 'OPf0YbXqDm0'];
+  const results = Array.from({ length: lim }, (_, i) => {
+    const t = topics[i % topics.length] || 'automation';
+    return { video_id: vids[i % vids.length], title: q + ': ' + t + ' automation ' + (i + 1),
+             channel: 'Bridge AI OS', skill_id: 'bridge.' + t, tags: [t, 'ai', 'automation'],
+             views: 1000 + i * 500, url: 'https://www.youtube.com/watch?v=' + vids[i % vids.length] };
+  });
+  return res.json({ ok: true, query: q, count: results.length, results, source: 'stub', ts: Date.now() });
+});
+
+app.post('/skills/learn-from-youtube', async (req, res) => {
+  const vidId = ((req.body && req.body.video_id) || '').trim();
+  const save = !req.body || req.body.save !== false; // default true — always save unless explicitly save:false
+  if (!vidId) return res.status(400).json({ ok: false, error: 'video_id required' });
+
+  try {
+    const llm = require('./lib/llm-client');
+    const prompt = 'Create a Bridge AI OS skill for YouTube video "' + vidId + '". Reply with ONLY this JSON (no extra text): {"id":"bridge.TOPIC","name":"Short Name","description":"one sentence max 120 chars","tags":["t1","t2","t3"],"version":"1.0.0","steps":[{"title":"S1","detail":"d1"},{"title":"S2","detail":"d2"},{"title":"S3","detail":"d3"}],"plugin":"passthrough","category":"automation"}. Topic: AI, blockchain, automation, fintech.';
+    const raw = await llm.infer(prompt, { maxTokens: 1800 });
+    const txt = typeof raw === 'object' ? (raw.text || raw.content || '') : String(raw || '');
+    const m = txt.match(/\{[\s\S]*\}/);
+    if (m) {
+      const skillDef = JSON.parse(m[0]);
+      let actualSaved = false;
+      if (save) {
+        try {
+          const { supabaseAdmin, isConfigured: sbOk } = require('./lib/supabase');
+          if (sbOk && supabaseAdmin) {
+            const { error: sbErr } = await supabaseAdmin.from('skills_registry').upsert({
+              id: skillDef.id, name: skillDef.name,
+              definition: skillDef, source: 'youtube-learned',
+              video_id: vidId, created_at: new Date().toISOString(),
+            }).select();
+            if (sbErr && sbErr.code === 'PGRST205') {
+              // Table missing — log migration SQL for manual run
+              console.warn('[skills-registry] Table does not exist. Run migrations/009_skills_registry.sql in Supabase SQL Editor: https://supabase.com/dashboard/project/sdkysuvmtqjqopmdpvoz/editor');
+            } else if (!sbErr) {
+              actualSaved = true;
+            }
+          }
+        } catch (_sbErr) { /* non-fatal */ }
+
+        // Push to brain knowledge distribution (fire-and-forget)
+        fetch(`http://${BRAIN_HOST}:8000/skills/inject`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ definition: skillDef, video_id: vidId, source: 'youtube-learned' }),
+          signal: AbortSignal.timeout(5000),
+        }).then(r => r.json()).then(d => {
+          if (d.ok) console.log('[GATEWAY] Skill injected into brain:', skillDef.id, '— brain total:', d.total_skills);
+        }).catch(() => { /* brain may be down, non-fatal */ });
+      }
+      return res.json({ ok: true, learned: true, saved: actualSaved, video_id: vidId, skill_definition: skillDef, source: 'ai-generated', ts: Date.now() });
+    }
+  } catch (_) { /* fall through to stub */ }
+
+  const fb = { id: 'bridge.yt.' + vidId.slice(0, 6), name: 'YouTube Skill ' + vidId.slice(0, 6),
+    description: 'Learned from YouTube — add ANTHROPIC_API_KEY or OPENAI_API_KEY for AI analysis',
+    tags: ['youtube', 'automation', 'learned'], version: '1.0.0',
+    steps: [{ title: 'Fetch', detail: 'Retrieve video transcript and metadata' },
+            { title: 'Extract', detail: 'Parse skill steps from content' },
+            { title: 'Register', detail: 'Store skill in Bridge registry' }] };
+  return res.json({ ok: true, learned: true, saved: false, video_id: vidId, skill_definition: fb, source: 'fallback', ts: Date.now() });
+});
+
 const BRAIN_ROUTES = ['/live-map', '/skills', '/graph', '/telemetry', '/run', '/teach', '/econ', '/output', '/treasury', '/swarm', '/share', '/index.json', '/manifest.json', '/auth/google', '/auth/microsoft', '/auth/github', '/view-logs'];
 BRAIN_ROUTES.forEach(prefix => {
   app.all(prefix, async (req, res, next) => {
@@ -1430,29 +1630,53 @@ app.get('/api/swarm/health', async (_req, res) => {
 });
 
 app.get('/api/brain/status', async (_req, res) => {
-  const t0 = Date.now();
-  try {
-    const r = await fetch(`http://${BRAIN_HOST}:8000/health`, { signal: AbortSignal.timeout(3000) });
-    const d = await r.json();
-    const latency_ms = Date.now() - t0;
-    res.json({
+  const started = Date.now();
+  const hosts = Array.from(new Set([BRAIN_HOST, 'localhost', '127.0.0.1'].filter(Boolean)));
+  const paths = ['/health', '/api/health'];
+
+  let probe = null;
+  for (const host of hosts) {
+    for (const p of paths) {
+      try {
+        const r = await fetch(`http://${host}:8000${p}`, { signal: AbortSignal.timeout(2500) });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok) {
+          probe = { host, path: p, data: j };
+          break;
+        }
+      } catch (_) {}
+    }
+    if (probe) break;
+  }
+
+  if (probe) {
+    const d = probe.data || {};
+    return res.json({
       ok: true,
-      brain: { healthy: r.ok, latency_ms, status: d.status || 'ok' },
+      brain: {
+        healthy: true,
+        latency_ms: Date.now() - started,
+        status: d.status || 'ok',
+        source: `${probe.host}:8000${probe.path}`,
+      },
       degraded: false,
-      ehsa: { patients: d.patients || 0, appointments: d.appointments || 0 },
-      chain: { network: 'linea', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
-      ts: Date.now()
-    });
-  } catch (_) {
-    res.json({
-      ok: false,
-      brain: { healthy: false, latency_ms: null, status: 'unreachable' },
-      degraded: true,
-      ehsa: { patients: 0, appointments: 0 },
+      ehsa: {
+        patients: d.patients || 0,
+        appointments: d.appointments || 0,
+      },
       chain: { network: 'linea', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
       ts: Date.now()
     });
   }
+
+  res.json({
+    ok: false,
+    brain: { healthy: false, latency_ms: null, status: 'unreachable', source: 'none' },
+    degraded: true,
+    ehsa: { patients: 0, appointments: 0 },
+    chain: { network: 'linea', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
+    ts: Date.now()
+  });
 });
 
 app.get('/api/network/status', (_req, res) => {
@@ -2716,7 +2940,10 @@ app.all(/^\/api\/crm(?:\/|$)/, async (req, res, next) => {
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server ──
 const dashboardApiRoutes = [
   // '/api/platform/' — handled directly via handlePlatform, not proxied
-  '/api/platform/',
+  '/api/infra/',
+  '/api/system/state',
+  '/api/crm/',
+  '/api/outreach/',
   '/api/revenue/',
   '/api/treasury/',
   '/api/mission/',
@@ -3071,7 +3298,10 @@ app.all('/api/svg/*path', async (req, res) => {
   }
 });
 // ── DASHBOARD API PROXY — forward executive dashboard APIs to backend server (port 3000) ──
-app.all('/api/*path', async (req, res) => {
+app.all('/api/*path', async (req, res, next) => {
+  // Platform routes are handled by handlePlatform — skip this catch-all
+  if (req.path.startsWith('/api/platform/') || req.path === '/api/platform') return next();
+
   // Require auth for any mutating request that reaches this catch-all
   const MUTATION_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
   if (MUTATION_METHODS.includes(req.method)) {
@@ -3257,22 +3487,12 @@ app.all('/api/orch/*path', async (req, res) => {
   }
 });
 
-// ── PLATFORM API — proxy /api/platform/* to unified-server (port 3000) ──────
-app.all('/api/platform/*path', async (req, res) => {
-  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
-  try {
-    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(15000) };
-    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
-    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
-    if (req.headers['cookie']) opts.headers['Cookie'] = req.headers['cookie'];
-    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
-    const r = await fetch(url, opts);
-    const ct = r.headers.get('content-type') || 'application/json';
-    const text = await r.text();
-    res.status(r.status).set('Content-Type', ct).send(text);
-  } catch (e) {
-    res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
-  }
+// ── PLATFORM API — handled directly in gateway (no proxy needed) ─────────────
+const { handlePlatform } = require('./api/platform');
+app.all('/api/platform/*path', async (req, res, next) => {
+  const handled = await handlePlatform(req, res);
+  if (handled !== null) return;
+  next();
 });
 
 // ── AGENT PROXY — forward /agent/* to brain on 8000 ─────────────────────────

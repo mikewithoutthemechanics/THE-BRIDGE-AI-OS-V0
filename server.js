@@ -1986,9 +1986,115 @@ app.get('/api/pricing', (req, res) => {
   ]});
 });
 
-// Invoices (used by aoe-dashboard.html health check)
+// Invoices (used by invoicing.html + aoe-dashboard.html)
+const INVOICE_STORE = [
+  {
+    id: 'inv_demo_001',
+    invoice_number: 'INV-2026-0001',
+    client_name: 'Jane Smith',
+    client_email: 'client@company.com',
+    client_company: 'Acme Corp',
+    currency: 'ZAR',
+    status: 'sent',
+    total: 12500,
+    due_date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+    created_at: new Date().toISOString(),
+  },
+];
+
+function invoiceStatsPayload(invoices) {
+  const list = Array.isArray(invoices) ? invoices : [];
+  const byStatus = { draft: 0, sent: 0, paid: 0, overdue: 0, cancelled: 0 };
+  let totalBilled = 0;
+  let totalPaid = 0;
+  for (const inv of list) {
+    const status = String(inv.status || 'draft').toLowerCase();
+    if (byStatus[status] === undefined) byStatus[status] = 0;
+    byStatus[status] += 1;
+    const amount = Number(inv.total || inv.amount || 0) || 0;
+    totalBilled += amount;
+    if (status === 'paid') totalPaid += amount;
+  }
+  return {
+    total_invoices: list.length,
+    total_paid: totalPaid,
+    total_billed: totalBilled,
+    by_status: byStatus,
+    ts: Date.now(),
+  };
+}
+
+app.get('/api/invoices/stats', (_req, res) => {
+  res.json(invoiceStatsPayload(INVOICE_STORE));
+});
+
 app.get('/api/invoices', (req, res) => {
-  res.json({ invoices: [], total: 0 });
+  const status = String(req.query.status || '').trim().toLowerCase();
+  const invoices = status
+    ? INVOICE_STORE.filter((i) => String(i.status || '').toLowerCase() === status)
+    : INVOICE_STORE.slice();
+  res.json({ ok: true, invoices, count: invoices.length, ts: Date.now() });
+});
+
+app.post('/api/invoices', (req, res) => {
+  const body = req.body || {};
+  if (!body.client_email) return res.status(400).json({ ok: false, error: 'client_email required' });
+  const id = 'inv_' + Date.now();
+  const invoice = {
+    id,
+    invoice_number: 'INV-' + new Date().getFullYear() + '-' + String(INVOICE_STORE.length + 1).padStart(4, '0'),
+    client_name: body.client_name || '',
+    client_email: body.client_email,
+    client_company: body.client_company || '',
+    currency: body.currency || 'ZAR',
+    status: body.status || 'draft',
+    total: Number(body.total || 0) || 0,
+    due_date: new Date(Date.now() + (Number(body.due_days || 30) || 30) * 86400000).toISOString().slice(0, 10),
+    created_at: new Date().toISOString(),
+    items: Array.isArray(body.items) ? body.items : [],
+  };
+  INVOICE_STORE.unshift(invoice);
+  res.status(201).json({ ok: true, invoice, ts: Date.now() });
+});
+
+app.post('/api/invoices/:id/send', (req, res) => {
+  const id = req.params.id;
+  const invoice = INVOICE_STORE.find((i) => i.id === id);
+  if (!invoice) return res.status(404).json({ ok: false, error: 'invoice_not_found' });
+  invoice.status = 'sent';
+  invoice.sent_at = new Date().toISOString();
+  res.json({ ok: true, invoice_id: id, status: 'sent', sent_at: invoice.sent_at, ts: Date.now() });
+});
+
+app.post('/api/invoices/:id/mark-paid', (req, res) => {
+  const id = req.params.id;
+  const invoice = INVOICE_STORE.find((i) => i.id === id);
+  if (!invoice) return res.status(404).json({ ok: false, error: 'invoice_not_found' });
+  invoice.status = 'paid';
+  invoice.paid_at = new Date().toISOString();
+  res.json({ ok: true, invoice_id: id, status: 'paid', paid_at: invoice.paid_at, ts: Date.now() });
+});
+
+app.post('/api/invoices/flag-overdue', (_req, res) => {
+  let flagged = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  for (const inv of INVOICE_STORE) {
+    if ((inv.status === 'sent' || inv.status === 'pending') && inv.due_date && inv.due_date < today) {
+      inv.status = 'overdue';
+      flagged += 1;
+    }
+  }
+  res.json({ ok: true, flagged, ts: Date.now() });
+});
+
+app.get('/api/invoices/:id/pdf', (req, res) => {
+  const id = req.params.id;
+  const invoice = INVOICE_STORE.find((i) => i.id === id);
+  if (!invoice) return res.status(404).json({ ok: false, error: 'invoice_not_found' });
+  // Lightweight PDF-like response for dashboard download action.
+  const content = `Invoice ${invoice.invoice_number}\nClient: ${invoice.client_email}\nTotal: ${invoice.currency} ${invoice.total}`;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.send(Buffer.from(content));
 });
 
 // Marketing funnel (used by aoe-dashboard.html health check)

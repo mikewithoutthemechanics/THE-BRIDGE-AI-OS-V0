@@ -84,6 +84,138 @@ function getNonce(req, res) {
   res.json({ ok: true, nonce, token });
 }
 
+async function provisionManagedWallet(req, res) {
+  const { email, name } = req.body || {};
+  if (ethersLib && typeof ethersLib.Wallet?.createRandom !== 'function' && typeof ethersLib.ethers?.Wallet?.createRandom !== 'function') {
+    return res.status(503).json({ ok: false, error: 'Wallet provider unavailable on server' });
+  }
+  const walletFactory = ethersLib?.Wallet || ethersLib?.ethers?.Wallet;
+  const wallet = walletFactory.createRandom();
+  const address = wallet.address.toLowerCase();
+  const supabase = supabaseLib?.supabase;
+
+  const safeEmail = (typeof email === 'string' && email.includes('@'))
+    ? email.trim().toLowerCase()
+    : `managed-${address.slice(2, 10)}@wallet.bridge.ai`;
+  const safeName = (typeof name === 'string' && name.trim())
+    ? name.trim().slice(0, 80)
+    : `Managed ${address.slice(0, 6)}…${address.slice(-4)}`;
+
+  let userId = address;
+  let userEmail = safeEmail;
+  let plan = 'free';
+
+  if (supabase) {
+    try {
+      const { data: existingByEmail } = await supabase
+        .from('users')
+        .select('id,email,plan')
+        .eq('email', safeEmail)
+        .maybeSingle();
+
+      if (existingByEmail) {
+        userId = existingByEmail.id;
+        userEmail = existingByEmail.email || safeEmail;
+        plan = existingByEmail.plan || 'free';
+        await supabase
+          .from('users')
+          .update({
+            wallet_address: address,
+            funnel_stage: 'wallet_connected',
+            source: 'managed_wallet',
+            lead_score: 35,
+          })
+          .eq('id', userId);
+      } else {
+        const { data: created } = await supabase
+          .from('users')
+          .insert({
+            email: safeEmail,
+            wallet_address: address,
+            name: safeName,
+            plan: 'free',
+            funnel_stage: 'wallet_connected',
+            source: 'managed_wallet',
+            lead_score: 35,
+          })
+          .select('id,email,plan')
+          .single();
+        if (created) {
+          userId = created.id;
+          userEmail = created.email || safeEmail;
+          plan = created.plan || 'free';
+        }
+      }
+    } catch (_) {
+      // Keep fallback identity if DB is unavailable.
+    }
+  }
+
+  // Ensure token subject resolves to a real user record that extractUser can load.
+  try {
+    const existingById = userLib?.getUserById ? await userLib.getUserById(userId) : null;
+    if (!existingById) {
+      let ensured = userLib?.getUserByEmail ? await userLib.getUserByEmail(safeEmail) : null;
+      if (!ensured && userLib?.createUser) {
+        ensured = await userLib.createUser(safeEmail, safeName, 'managed_wallet', null, null);
+      }
+      if (ensured?.id) {
+        userId = ensured.id;
+        userEmail = ensured.email || safeEmail;
+        plan = ensured.plan || plan;
+      }
+    }
+    if (supabase && userId) {
+      await supabase
+        .from('users')
+        .update({
+          wallet_address: address,
+          funnel_stage: 'wallet_connected',
+          source: 'managed_wallet',
+          lead_score: 35,
+        })
+        .eq('id', userId);
+    }
+  } catch (_) {
+    // Keep best-effort identity.
+  }
+
+  try {
+    if (userLib?.linkWallet && userId) {
+      await userLib.linkWallet(userId, address, 'ethereum', 'bridge-managed');
+    }
+  } catch (_) {
+    // Non-fatal; users table still carries wallet_address.
+  }
+
+  let token = null;
+  if (userLib?.generateAuthToken) {
+    token = await userLib.generateAuthToken(userId);
+  } else {
+    const { createHmac } = require('crypto');
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+    const payload = Buffer.from(JSON.stringify({
+      sub: userId, id: userId, email: userEmail, wallet: address, plan, role: 'member',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 604800,
+    })).toString('base64url');
+    const sig = createHmac('sha256', SIWE_SECRET).update(`${header}.${payload}`).digest('base64url');
+    token = `${header}.${payload}.${sig}`;
+  }
+
+  res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; SameSite=Lax; Max-Age=604800`);
+
+  return res.json({
+    ok: true,
+    managed: true,
+    address,
+    userId,
+    plan,
+    token,
+    message: 'Managed wallet provisioned and securely linked to user profile',
+  });
+}
+
 // ── POST /api/siwe/verify ─────────────────────────────────────────────────────
 async function verifySignature(req, res) {
   const { address, signature, nonce_token, message } = req.body || {};
@@ -307,6 +439,7 @@ async function handleSiwe(req, res) {
 
   if (p === '/api/siwe/nonce'  && req.method === 'GET')  return getNonce(req, res);
   if (p === '/api/siwe/verify' && req.method === 'POST') return verifySignature(req, res);
+  if (p === '/api/siwe/provision-wallet' && req.method === 'POST') return provisionManagedWallet(req, res);
 
   return null;
 }

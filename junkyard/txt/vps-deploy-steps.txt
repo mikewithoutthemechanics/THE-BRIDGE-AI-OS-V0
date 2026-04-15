@@ -1,0 +1,28 @@
+#!/bin/bash
+# Deploy script - run on VPS after uploading files via FTP/file manager
+# Save as deploy.sh in /var/www/bridgeai/
+
+set -e
+cd /var/www/bridgeai
+
+echo "=== Bridge AI OS Deploy ==="
+
+# Install dependencies
+echo "[1/3] Installing dependencies..."
+npm install --omit=dev
+
+# Start services
+echo "[2/3] Starting services..."
+pm2 delete all 2>/dev/null || true
+pm2 start ecosystem.config.js --env production
+
+# Check health
+echo "[3/3] Checking health..."
+sleep 3
+curl -s http://localhost:8080/health || curl -s http://localhost:3000/health
+
+pm2 save
+pm2 list
+
+echo "=== DONE ==="
+echo "Access at: http://$(hostname -I | awk '{print $1}')"
