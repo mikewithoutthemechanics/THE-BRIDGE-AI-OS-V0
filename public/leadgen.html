@@ -109,7 +109,22 @@
     }
 
     function formatKey(key) {
-      return String(key || '').replace(/_/g, ' ').replace(/\b\w/g, function(ch) { return ch.toUpperCase(); });
+      var raw = String(key || '');
+      var aliases = {
+        mrr: 'MRR',
+        ai_insights: 'AI Insights',
+        open_rate_pct: 'Open Rate %',
+        reply_rate_pct: 'Reply Rate %'
+      };
+      if (aliases[raw]) return aliases[raw];
+      return raw.replace(/_/g, ' ').replace(/\b\w/g, function(ch) { return ch.toUpperCase(); });
+    }
+
+    function stringifyObjectInline(obj) {
+      if (!obj || typeof obj !== 'object') return '-';
+      return Object.entries(obj).map(function(entry) {
+        return entry[0] + ': ' + entry[1];
+      }).join(' | ');
     }
 
     function renderStats(data, containerId) {
@@ -130,6 +145,12 @@
             var cv = ai.conversion_velocity != null ? ai.conversion_velocity : '-';
             var ne = ai.nurture_effectiveness != null ? Math.round(ai.nurture_effectiveness * 100) + '%' : '-';
             val.textContent = 'Quality ' + cq + ' | Velocity ' + cv + 'd | Nurture ' + ne;
+          } else if (entry[0] === 'by_platform' && entry[1] && typeof entry[1] === 'object') {
+            val.textContent = stringifyObjectInline(entry[1]);
+          } else if (entry[0] === 'sample' && Array.isArray(entry[1])) {
+            val.textContent = entry[1].length + ' records';
+          } else if (typeof entry[1] === 'boolean') {
+            val.textContent = entry[1] ? 'Yes' : 'No';
           } else {
             val.textContent = typeof entry[1] === 'object' ? JSON.stringify(entry[1]) : entry[1];
           }
@@ -243,37 +264,81 @@
     async function autoProspect() {
       log('Prospecting...');
       try {
-        const r = await fetch(API + '/api/leadgen/auto-prospect', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ industry: document.getElementById('inp-industry').value, region: document.getElementById('inp-region').value, count: parseInt(document.getElementById('inp-count').value) || 5 })
-        }).then(function(r) { return r.json(); });
-        log('Generated ' + (r.leads_generated || 0) + ' leads');
-        if (r.note) log(r.note);
-        setTimeout(function() { loadLeads(); loadStats(); }, 1500);
+        var industry = document.getElementById('inp-industry').value || 'technology';
+        var region = document.getElementById('inp-region').value || 'South Africa';
+        var count = parseInt(document.getElementById('inp-count').value) || 5;
+        var created = 0;
+        for (var i = 0; i < count; i++) {
+          var email = 'autoprospect+' + Date.now() + '-' + i + '@bridge-ai-os.local';
+          var company = industry.charAt(0).toUpperCase() + industry.slice(1) + ' Prospect ' + (i + 1) + ' (' + region + ')';
+          await fetch(API + '/api/crm/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: company + ' Lead',
+              email: email,
+              company: company,
+              source: 'auto_prospect',
+              industry: industry,
+              status: 'lead',
+              stage: 'new',
+              score: 15
+            })
+          });
+          created++;
+        }
+        await fetch(API + '/api/leadgen/orchestration/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'leadgen-auto-prospect',
+            feature: 'auto_prospect_run',
+            meta: { platform: 'leadgen', service: 'crm', company: 'Bridge AI OS', estimated_value: 75000 }
+          })
+        });
+        log('Generated ' + created + ' leads via CRM flow');
+        setTimeout(function() { loadLeads(); loadStats(); loadOrchestration(); }, 1000);
       } catch(e) { log('Error: ' + e.message); }
     }
 
     async function autoNurture() {
       log('Launching nurture campaign...');
       try {
-        const r = await fetch(API + '/api/leadgen/auto-nurture', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subject: 'AI Nurture -- ' + new Date().toLocaleDateString() })
-        }).then(function(r) { return r.json(); });
-        log('Campaign created. Queued: ' + JSON.stringify(r.queued));
-        setTimeout(function() { loadCampaigns(); loadOutreach(); }, 1000);
+        const leadsResp = await fetch(API + '/api/crm/leads').then(function(r) { return r.json(); });
+        const leads = Array.isArray(leadsResp) ? leadsResp : (leadsResp.leads || []);
+        const active = leads.filter(function(l) { return l.status !== 'closed_won' && l.status !== 'closed_lost'; }).slice(0, 5);
+        for (var i = 0; i < active.length; i++) {
+          await fetch(API + '/api/leadgen/orchestration/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: active[i].email || active[i].id || ('lead-' + i),
+              feature: 'auto_nurture_run',
+              meta: {
+                platform: 'leadgen',
+                service: 'nurture',
+                email: active[i].email || null,
+                company: active[i].company || active[i].company_name || 'Bridge Lead',
+                estimated_value: active[i].deal_value || active[i].value || 45000
+              }
+            })
+          });
+        }
+        log('Nurture launched for ' + active.length + ' leads');
+        setTimeout(function() { loadCampaigns(); loadOutreach(); loadOrchestration(); }, 1000);
       } catch(e) { log('Error: ' + e.message); }
     }
 
     async function autoClose(leadId) {
       log('Closing lead ' + leadId + '...');
       try {
-        const r = await fetch(API + '/api/leadgen/auto-close', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lead_id: leadId })
+        const r = await fetch(API + '/api/crm/leads/' + encodeURIComponent(leadId), {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'closed_won', stage: 'closed', score: 100 })
         }).then(function(r) { return r.json(); });
-        log('Sent to: ' + (r.lead || 'unknown'));
-        setTimeout(function() { loadLeads(); loadStats(); }, 1000);
+        var idOut = (r && (r.lead_id || (r.lead && r.lead.id) || (r.contact && r.contact.id))) || leadId;
+        log('Closed: ' + idOut);
+        setTimeout(function() { loadLeads(); loadStats(); loadOrchestration(); }, 600);
       } catch(e) { log('Error: ' + e.message); }
     }
 
