@@ -222,7 +222,23 @@ app.get('/api/skills/count', (_req, res) => {
     res.json({ ok: true, count, skills_loaded: count, ts: Math.floor(Date.now() / 1000) });
   } catch (e) {
     res.json({ ok: false, count: 0, error: e.message });
-  }
+}
+});
+
+// ── WALLET STATUS — check wallet connection status ───────────────────────
+app.get('/api/wallet/status', (_req, res) => {
+  // Check for wallet connection headers (set by nginx/proxy)
+  const walletConnected = _req.headers['x-wallet-connected'] === 'true';
+  const walletType = _req.headers['x-wallet-type'] || null;
+  const walletAddress = _req.headers['x-wallet-address'] || null;
+  
+  res.json({ 
+    ok: true, 
+    connected: walletConnected,
+    wallet_type: walletType,
+    wallet_address: walletAddress ? `${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}` : null,
+    ts: Math.floor(Date.now() / 1000) 
+  });
 });
 
 // ── HEALTH ────────────────────────────────────────��──────────────────────────
