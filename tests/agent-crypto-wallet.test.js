@@ -38,6 +38,7 @@ describe('digitaltwin-keystore — address derivation', () => {
 
   test('getBtcAddress returns a Base58Check mainnet address starting with "1"', () => {
     const addr = keystore.getBtcAddress(AGENT_ID);
+    // Implementation generates P2PKH (legacy) addresses — SegWit formats (bc1/3…) are not used.
     expect(addr).toMatch(/^1[1-9A-HJ-NP-Za-km-z]{25,34}$/);
   });
 
