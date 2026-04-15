@@ -130,6 +130,83 @@ async function generateAvatarImage(prompt, style) {
   return data.data?.[0]?.url || null;
 }
 
+function escapeXml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function pickPalette(style) {
+  const palettes = {
+    cyberpunk: ['#00c8ff', '#7c3aed', '#0f172a', '#67e8f9'],
+    professional: ['#1f2937', '#0ea5e9', '#f8fafc', '#334155'],
+    artistic: ['#f97316', '#22d3ee', '#4f46e5', '#fde68a'],
+    pixel: ['#111827', '#10b981', '#60a5fa', '#f59e0b'],
+    anime: ['#fb7185', '#38bdf8', '#f5d0fe', '#1f2937'],
+    minimal: ['#0f172a', '#94a3b8', '#22d3ee', '#e2e8f0'],
+  };
+  return palettes[style] || palettes.cyberpunk;
+}
+
+function buildLayeredAvatarSvg(prompt, style) {
+  const safePrompt = (prompt || 'Bridge Avatar').trim().slice(0, 48);
+  const [c1, c2, c3, c4] = pickPalette(style);
+  const initials = safePrompt
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s.charAt(0).toUpperCase())
+    .join('') || 'BA';
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${escapeXml(c1)}"/>
+      <stop offset="100%" stop-color="${escapeXml(c2)}"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="${escapeXml(c4)}" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="${escapeXml(c3)}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="430" r="250" fill="url(#halo)"/>
+  <circle cx="512" cy="390" r="170" fill="${escapeXml(c4)}" fill-opacity="0.92"/>
+  <rect x="322" y="560" width="380" height="280" rx="170" fill="${escapeXml(c3)}" fill-opacity="0.9"/>
+  <text x="512" y="430" text-anchor="middle" dominant-baseline="middle"
+        font-family="Inter,Segoe UI,Arial,sans-serif" font-size="120" font-weight="800"
+        fill="${escapeXml(c3)}">${escapeXml(initials)}</text>
+  <text x="512" y="920" text-anchor="middle"
+        font-family="Inter,Segoe UI,Arial,sans-serif" font-size="34"
+        fill="${escapeXml(c4)}" fill-opacity="0.95">${escapeXml(safePrompt)}</text>
+</svg>`.trim();
+  const encoded = Buffer.from(svg, 'utf8').toString('base64');
+  return {
+    svg,
+    dataUrl: `data:image/svg+xml;base64,${encoded}`,
+  };
+}
+
+function buildBabylonAvatarPreset(prompt, style) {
+  const palette = pickPalette(style);
+  return {
+    renderer: 'babylon.js',
+    scene_type: 'avatar-procedural',
+    style: style || 'cyberpunk',
+    display_name: (prompt || 'Bridge Avatar').trim().slice(0, 48),
+    palette,
+    parts: {
+      head: { type: 'sphere', diameter: 1.15 },
+      torso: { type: 'capsule', height: 1.8, radius: 0.34 },
+      eyes: { type: 'sphere', diameter: 0.11 },
+    },
+    animations: ['idle', 'breathe', 'look-around'],
+  };
+}
+
 async function handlePlatform(req, res) {
   const url = req.url.replace(/\?.*$/, '');
   const method = req.method;
@@ -138,14 +215,33 @@ async function handlePlatform(req, res) {
   if (url === '/api/platform/avatar/generate' && method === 'POST') {
     const user = await requireUser(req);
     if (!user) return unauthorized(res);
-    const { prompt, style } = req.body || {};
+    const { prompt, style, includeBabylon } = req.body || {};
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3)
       return res.status(400).json({ ok: false, error: 'Prompt must be at least 3 characters' });
     try {
       const imageUrl = await generateAvatarImage(prompt.trim().slice(0, 400), style || 'cyberpunk');
-      return res.json({ ok: true, url: imageUrl, prompt, style });
+      return res.json({
+        ok: true,
+        url: imageUrl,
+        prompt,
+        style,
+        source: 'dall-e',
+        fallback_used: false,
+        babylon: includeBabylon ? buildBabylonAvatarPreset(prompt, style || 'cyberpunk') : null,
+      });
     } catch (e) {
-      return res.status(500).json({ ok: false, error: e.message });
+      const fallback = buildLayeredAvatarSvg(prompt.trim().slice(0, 400), style || 'cyberpunk');
+      return res.json({
+        ok: true,
+        url: fallback.dataUrl,
+        prompt,
+        style,
+        source: 'svg-fallback',
+        fallback_used: true,
+        warning: e.message,
+        svg: fallback.svg,
+        babylon: includeBabylon ? buildBabylonAvatarPreset(prompt, style || 'cyberpunk') : null,
+      });
     }
   }
 
