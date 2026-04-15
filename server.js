@@ -36,6 +36,7 @@ const mail   = require('./lib/mail');
 const da     = require('./lib/directadmin');
 const wp     = require('./lib/wordpress');
 const wpAuth = require('./lib/wp-auth');
+const { isSuperUser } = require('./middleware/auth');
 // CSRF: csurf is deprecated and removed — use SameSite cookies + Origin header checks
 // Auth middleware disabled at global level — individual admin routes use requireAdmin
 // const { requireAuth } = require('./middleware/auth');
@@ -999,6 +1000,7 @@ function requireAuth(req, res, next) {
     '/api/wordpress/',
     '/api/email/',
     '/api/tvm/',
+    '/api/auth/login',
   ];
   
   if (publicEndpoints.some(endpoint => req.path.startsWith(endpoint))) {
@@ -1506,8 +1508,142 @@ app.get('/api/auth/wp-plugin', [validate.authWpPlugin], (req, res) => {
   res.send(snippet);
 });
 
-// ── Topic Vector Matrix (TVM) ───────────
-const tvm = require('./lib/tvm');
+// ═══════════════════════════════════════════════════════════════
+// BRIDGE ECONOMIC LOOP — login → avatar → wallet → agent → pay
+// ═══════════════════════════════════════════════════════════════
+
+// In-memory store (TODO: replace with Supabase tables in production)
+// Schema mirrors the intended Supabase tables so migration is a
+// drop-in replacement of the CRUD helpers below.
+const _ecoUsers   = new Map(); // email → { id, email, avatarId, walletId }
+const _ecoAvatars = new Map(); // id    → { id, userId, name }
+const _ecoWallets = new Map(); // id    → { id, ownerId, ownerType, balance }
+const _ecoAgents  = new Map(); // id    → { id, parentAvatarId, walletId, name, tier }
+let   _ecoSeq     = 1;
+function _nextId(prefix) { return `${prefix}_${_ecoSeq++}`; }
+
+function _ensureUserEconomy(userId, email) {
+  if (!_ecoUsers.has(email)) {
+    const avatarId = _nextId('av');
+    const walletId = _nextId('wl');
+    _ecoAvatars.set(avatarId, { id: avatarId, userId, name: email.split('@')[0] });
+    _ecoWallets.set(walletId, { id: walletId, ownerId: avatarId, ownerType: 'avatar', balance: 0 });
+    _ecoUsers.set(email, { id: userId, email, avatarId, walletId });
+  }
+  return _ecoUsers.get(email);
+}
+
+// POST /api/auth/login — issue JWT, auto-create avatar + wallet
+// Public endpoint (listed in publicEndpoints above).
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ error: 'Valid email required' });
+    }
+    const normalEmail = email.toLowerCase().trim();
+    const userId = _nextId('u');
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return res.status(500).json({ error: 'Server misconfigured: JWT_SECRET missing' });
+
+    const ecoUser = _ensureUserEconomy(userId, normalEmail);
+
+    const payload = {
+      sub: ecoUser.id,
+      email: normalEmail,
+      role: isSuperUser(normalEmail) ? 'superadmin' : 'member',
+    };
+    const token = jwt.sign(payload, secret, { expiresIn: '7d' });
+
+    return res.json({
+      token,
+      email: normalEmail,
+      userId: ecoUser.id,
+      avatarId: ecoUser.avatarId,
+      walletId: ecoUser.walletId,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/me — return user, avatar, wallet, agents (requires auth)
+app.get('/api/me', async (req, res) => {
+  try {
+    const email = req.user?.email;
+    if (!email) return res.status(401).json({ error: 'Not authenticated' });
+
+    const ecoUser = _ecoUsers.get(email) || _ensureUserEconomy(req.user.sub || _nextId('u'), email);
+    const avatar  = _ecoAvatars.get(ecoUser.avatarId);
+    const wallet  = _ecoWallets.get(ecoUser.walletId);
+    const agents  = [..._ecoAgents.values()].filter(a => a.parentAvatarId === ecoUser.avatarId);
+
+    return res.json({ user: ecoUser, avatar, wallet, agents });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/agents/create — create agent under the calling user's avatar
+app.post('/api/agents/create', async (req, res) => {
+  try {
+    const email = req.user?.email;
+    if (!email) return res.status(401).json({ error: 'Not authenticated' });
+
+    const { name, tier } = req.body || {};
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({ error: 'Agent name required' });
+    }
+    const validTiers = ['standard', 'pro'];
+    const agentTier = validTiers.includes(tier) ? tier : 'standard';
+
+    const ecoUser = _ecoUsers.get(email) || _ensureUserEconomy(req.user.sub || _nextId('u'), email);
+    const agentId   = _nextId('ag');
+    const agentWalletId = _nextId('wl');
+
+    _ecoWallets.set(agentWalletId, { id: agentWalletId, ownerId: agentId, ownerType: 'agent', balance: 0 });
+    const agent = { id: agentId, parentAvatarId: ecoUser.avatarId, walletId: agentWalletId, name, tier: agentTier };
+    _ecoAgents.set(agentId, agent);
+
+    return res.status(201).json({ agent });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/pay — process payment and distribute revenue shares
+// Distribution: UBI 40% · Treasury 30% · Ops 20% · Founder 10%
+app.post('/api/pay', async (req, res) => {
+  try {
+    const email = req.user?.email;
+    if (!email) return res.status(401).json({ error: 'Not authenticated' });
+
+    const amount = Number(req.body?.amount);
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Positive amount required' });
+    }
+
+    const shares = {
+      ubi:      +(amount * 0.40).toFixed(2),
+      treasury: +(amount * 0.30).toFixed(2),
+      ops:      +(amount * 0.20).toFixed(2),
+      founder:  +(amount * 0.10).toFixed(2),
+    };
+
+    // Credit the paying user's wallet
+    const ecoUser = _ecoUsers.get(email);
+    if (ecoUser) {
+      const wallet = _ecoWallets.get(ecoUser.walletId);
+      if (wallet) wallet.balance = +(wallet.balance + shares.ubi).toFixed(2);
+    }
+
+    return res.json({ ok: true, amount, shares });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Topic Vector Matrix (TVM) ───────────const tvm = require('./lib/tvm');
 app.get('/api/tvm', [validate.tvm], (req, res) => res.json(tvm.getMatrix()));
 app.get('/api/tvm/summary', [validate.tvmSummary], (req, res) => res.json(tvm.getSummary()));
 app.get('/api/tvm/recommendations/all', [validate.tvmRecommendations], (req, res) => res.json(tvm.RECOMMENDATIONS));
@@ -2880,14 +3016,19 @@ app.get('/api/crm/pipeline', (req, res) => {
 
 // ================= SERVER =================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-  console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
+// Only bind to a port when run directly, not when required by tests
+if (require.main === module) {
+  app.listen(PORT, async () => {
+    console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
 
-  // Start Config Intelligence Engine after server is bound
-  try {
-    const configEngine = require('./engine/config-intelligence');
-    await configEngine.start({ enableReconciler: true });
-  } catch (err) {
-    console.warn('[SERVER] Config Intelligence Engine failed to start:', err.message);
-  }
-});
+    // Start Config Intelligence Engine after server is bound
+    try {
+      const configEngine = require('./engine/config-intelligence');
+      await configEngine.start({ enableReconciler: true });
+    } catch (err) {
+      console.warn('[SERVER] Config Intelligence Engine failed to start:', err.message);
+    }
+  });
+}
+
+module.exports = app;
