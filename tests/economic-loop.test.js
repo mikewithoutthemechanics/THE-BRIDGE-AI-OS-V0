@@ -222,7 +222,7 @@ describe('POST /api/pay', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ amount });
     const { ubi, treasury, ops, founder } = res.body.shares;
-    expect(+(ubi + treasury + ops + founder).toFixed(2)).toBe(amount);
+    expect(Number((ubi + treasury + ops + founder).toFixed(2))).toBe(amount);
   });
 
   test('400 on zero amount', async () => {

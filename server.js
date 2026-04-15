@@ -1542,10 +1542,12 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Valid email required' });
     }
     const normalEmail = email.toLowerCase().trim();
-    const userId = _nextId('u');
     const secret = process.env.JWT_SECRET;
-    if (!secret) return res.status(500).json({ error: 'Server misconfigured: JWT_SECRET missing' });
+    if (!secret) return res.status(500).json({ error: 'Authentication service unavailable' });
 
+    // Re-use existing user record; only create a new ID for genuinely new users
+    const existingUser = _ecoUsers.get(normalEmail);
+    const userId = existingUser ? existingUser.id : _nextId('u');
     const ecoUser = _ensureUserEconomy(userId, normalEmail);
 
     const payload = {
