@@ -103,18 +103,31 @@
       return d.textContent;
     }
 
+    function formatKey(key) {
+      return String(key || '').replace(/_/g, ' ').replace(/\b\w/g, function(ch) { return ch.toUpperCase(); });
+    }
+
     function renderStats(data, containerId) {
       const el = document.getElementById(containerId);
       el.textContent = '';
       if (data && typeof data === 'object') {
         Object.entries(data).forEach(function(entry) {
+          if (entry[0] === 'ts') return;
           const row = document.createElement('div');
           row.className = 'stat-row';
           const label = document.createElement('span');
-          label.textContent = entry[0];
+          label.textContent = formatKey(entry[0]);
           const val = document.createElement('span');
           val.className = 'stat-val';
-          val.textContent = typeof entry[1] === 'object' ? JSON.stringify(entry[1]) : entry[1];
+          if (entry[0] === 'ai_insights' && entry[1] && typeof entry[1] === 'object') {
+            var ai = entry[1];
+            var cq = ai.lead_quality_score != null ? ai.lead_quality_score : '-';
+            var cv = ai.conversion_velocity != null ? ai.conversion_velocity : '-';
+            var ne = ai.nurture_effectiveness != null ? Math.round(ai.nurture_effectiveness * 100) + '%' : '-';
+            val.textContent = 'Quality ' + cq + ' | Velocity ' + cv + 'd | Nurture ' + ne;
+          } else {
+            val.textContent = typeof entry[1] === 'object' ? JSON.stringify(entry[1]) : entry[1];
+          }
           row.appendChild(label);
           row.appendChild(val);
           el.appendChild(row);
@@ -196,7 +209,7 @@
         }
         camps.forEach(function(c) {
           var tr = document.createElement('tr');
-          [c.name || '-', c.template_type || '-', c.status || 'draft', c.created_at || '-'].forEach(function(f) {
+          [c.name || '-', c.template_type || c.type || '-', c.status || 'draft', c.created_at || c.started_at || '-'].forEach(function(f) {
             var td = document.createElement('td');
             td.textContent = f;
             tr.appendChild(td);

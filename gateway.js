@@ -2550,12 +2550,25 @@ function isDashboardApi(path) {
 // ── Outreach stats fallback (do not depend on unified-server :3000 availability)
 app.get('/api/outreach/stats', async (req, res) => {
   try {
-    const url = `http://${SYSTEM_HOST}:3000/api/outreach/stats`;
+    const url = `http://${SYSTEM_HOST}:3000/api/crm/campaigns`;
     const r = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) });
     const ct = (r.headers.get('content-type') || '').toLowerCase();
     if (r.ok && ct.includes('application/json')) {
       const data = await r.json();
-      return res.status(200).json(data);
+      const campaigns = Array.isArray(data) ? data : (data.campaigns || []);
+      const sent = campaigns.reduce((sum, c) => sum + (Number(c.sent) || 0), 0);
+      const opened = campaigns.reduce((sum, c) => sum + (Number(c.opened) || 0), 0);
+      const replies = campaigns.reduce((sum, c) => sum + (Number(c.replied) || 0), 0);
+      const active = campaigns.filter((c) => c.status === 'active').length;
+      return res.status(200).json({
+        queued: active,
+        sent,
+        opened,
+        followups: replies,
+        open_rate_pct: sent ? +((opened / sent) * 100).toFixed(2) : 0,
+        reply_rate_pct: sent ? +((replies / sent) * 100).toFixed(2) : 0,
+        source: 'crm-campaigns',
+      });
     }
   } catch (_) {}
 

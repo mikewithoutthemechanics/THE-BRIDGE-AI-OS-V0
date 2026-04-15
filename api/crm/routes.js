@@ -4,6 +4,33 @@ const { supabase, isConfigured } = require('../../lib/supabase');
 /** Default tenant from business_suite seed — contacts.company_id is NOT NULL */
 const DEFAULT_COMPANY_ID = '00000000-0000-0000-0000-000000000001';
 
+function mapContact(row) {
+  if (!row || typeof row !== 'object') return null;
+  const company = row.company || row.company_name || row.organization || null;
+  const value = Number(row.value ?? row.deal_value ?? 0) || 0;
+  return {
+    id: row.id || row.lead_id || null,
+    lead_id: row.id || row.lead_id || null,
+    name: row.name || null,
+    email: row.email || null,
+    phone: row.phone || null,
+    company,
+    company_name: company,
+    status: row.status || 'new',
+    stage: row.stage || row.status || 'new',
+    score: Number(row.score || 0) || 0,
+    value,
+    deal_value: value,
+    source: row.source || 'unknown',
+    industry: row.industry || null,
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    notes: row.notes || null,
+    meta: row.meta || {},
+    created_at: row.created_at || null,
+    updated_at: row.updated_at || null,
+  };
+}
+
 /**
  * Handle CRM API routes backed by Supabase.
  * @param {object} opts - { req, res, path, method, parseBody, json }
