@@ -114,7 +114,7 @@ try {
 } catch (e) { console.warn('[GATEWAY] Agent execution failed:', e.message); }
 
 // ── REQUEST LOGGING MIDDLEWARE ────────────────────────────────────────────────
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
   app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
@@ -1119,7 +1119,7 @@ app.get('/api/system/state', async (_req, res) => {
 var revenueEngine;
 try {
   revenueEngine = require('./lib/revenue-engine');
-  if (process.env.NODE_ENV !== 'test') {
+  if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
     revenueEngine.start(60000); // Run every 60 seconds
   }
 } catch (e) { console.warn('[REVENUE-ENGINE] Failed to start:', e.message); revenueEngine = null; }
@@ -1127,7 +1127,7 @@ try {
 // Start revenue compounding engine (5-minute cycles)
 try {
   var compounder = require('./lib/revenue-compounder');
-  if (process.env.NODE_ENV !== 'test') {
+  if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
     compounder.startCompounding();
   }
 } catch (e) { console.warn('[COMPOUNDER] Failed to start:', e.message); }
