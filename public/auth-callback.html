@@ -90,6 +90,7 @@
       const intent   = params.get('intent')   || '';
       const industry = params.get('industry') || '';
       const plan     = params.get('plan')     || '';
+      const nextPath = params.get('next')     || '';
 
       function showError(msg) {
         document.getElementById('spinner').style.display = 'none';
@@ -108,6 +109,15 @@
         return email === SUPER_ADMIN_EMAIL;
       }
 
+      function getSafeNextPath(raw) {
+        const p = String(raw || '');
+        if (!p) return '';
+        if (!p.startsWith('/')) return '';
+        if (p.startsWith('//')) return '';
+        if (p.startsWith('/auth-callback')) return '';
+        return p;
+      }
+
       function handleSuccess(token, user) {
         if (token) localStorage.setItem('bridge_token', token);
         if (user)  localStorage.setItem('bridge_user', JSON.stringify(user));
@@ -117,7 +127,10 @@
 
         // Decide where to send the user
         let dest = '/dashboard';
-        if (isSuperAdminUser(user)) {
+        const safeNext = getSafeNextPath(nextPath);
+        if (safeNext) {
+          dest = safeNext;
+        } else if (isSuperAdminUser(user)) {
           // Guaranteed override for super admin routing.
           dest = '/admin/dashboard';
         } else if (wizard === '1') {

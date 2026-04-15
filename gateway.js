@@ -1556,29 +1556,53 @@ app.get('/api/swarm/health', async (_req, res) => {
 });
 
 app.get('/api/brain/status', async (_req, res) => {
-  const t0 = Date.now();
-  try {
-    const r = await fetch(`http://${BRAIN_HOST}:8000/health`, { signal: AbortSignal.timeout(3000) });
-    const d = await r.json();
-    const latency_ms = Date.now() - t0;
-    res.json({
+  const started = Date.now();
+  const hosts = Array.from(new Set([BRAIN_HOST, 'localhost', '127.0.0.1'].filter(Boolean)));
+  const paths = ['/health', '/api/health'];
+
+  let probe = null;
+  for (const host of hosts) {
+    for (const p of paths) {
+      try {
+        const r = await fetch(`http://${host}:8000${p}`, { signal: AbortSignal.timeout(2500) });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok) {
+          probe = { host, path: p, data: j };
+          break;
+        }
+      } catch (_) {}
+    }
+    if (probe) break;
+  }
+
+  if (probe) {
+    const d = probe.data || {};
+    return res.json({
       ok: true,
-      brain: { healthy: r.ok, latency_ms, status: d.status || 'ok' },
+      brain: {
+        healthy: true,
+        latency_ms: Date.now() - started,
+        status: d.status || 'ok',
+        source: `${probe.host}:8000${probe.path}`,
+      },
       degraded: false,
-      ehsa: { patients: d.patients || 0, appointments: d.appointments || 0 },
-      chain: { network: 'linea', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
-      ts: Date.now()
-    });
-  } catch (_) {
-    res.json({
-      ok: false,
-      brain: { healthy: false, latency_ms: null, status: 'unreachable' },
-      degraded: true,
-      ehsa: { patients: 0, appointments: 0 },
+      ehsa: {
+        patients: d.patients || 0,
+        appointments: d.appointments || 0,
+      },
       chain: { network: 'linea', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
       ts: Date.now()
     });
   }
+
+  res.json({
+    ok: false,
+    brain: { healthy: false, latency_ms: null, status: 'unreachable', source: 'none' },
+    degraded: true,
+    ehsa: { patients: 0, appointments: 0 },
+    chain: { network: 'linea', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
+    ts: Date.now()
+  });
 });
 
 app.get('/api/network/status', (_req, res) => {

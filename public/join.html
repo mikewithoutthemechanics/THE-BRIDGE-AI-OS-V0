@@ -678,6 +678,29 @@ async function signAndRegister() {
 
 /* ── Nav: show user email if logged in ── */
 (function () {
+  function getSafeNextPath() {
+    const raw = new URLSearchParams(window.location.search).get('next') || '';
+    if (!raw) return '';
+    if (!raw.startsWith('/')) return '';
+    if (raw.startsWith('//')) return '';
+    if (raw.startsWith('/join')) return '';
+    return raw;
+  }
+
+  function redirectSignedInUser(user) {
+    const safeNext = getSafeNextPath();
+    if (safeNext) {
+      window.location.replace(safeNext);
+      return;
+    }
+    const email = (user && user.email ? String(user.email) : '').trim().toLowerCase();
+    if (email === 'ryanpcowan@gmail.com') {
+      window.location.replace('/admin/dashboard');
+      return;
+    }
+    window.location.replace('/profile');
+  }
+
   const tok = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('bridge_token='));
   const token = tok ? tok.split('=')[1] : localStorage.getItem('bridge_token');
   if (token) {
@@ -685,6 +708,7 @@ async function signAndRegister() {
       .then(r => r.json()).then(d => {
         if (d.ok && d.user) {
           document.getElementById('navUser').textContent = d.user.email || '';
+          redirectSignedInUser(d.user);
         }
       }).catch(() => {});
   }
