@@ -145,7 +145,11 @@
 
 <script>
 // Supabase Auth — OAuth flows handled by Supabase, not raw client IDs
-const SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
+const SUPERUSERS = [
+  'ryanpcowan@gmail.com',
+  'michaelgraemek@gmail.com',
+  'marvin.saunders@gmail.com',
+];
 let _supabaseClient = null;
 (async function initSupabaseAuth() {
   try {
@@ -191,11 +195,11 @@ function showMsg(id, text, ok) {
 }
 
 function isSuperAdminEmail(email) {
-  return typeof email === 'string' && email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+  return typeof email === 'string' && SUPERUSERS.includes(email.trim().toLowerCase());
 }
 
 function getPostAuthDestination(email) {
-  return isSuperAdminEmail(email) ? '/admin/dashboard' : '/welcome.html';
+  return isSuperAdminEmail(email) ? '/admin.html' : '/dashboard.html';
 }
 
 // Register
@@ -215,6 +219,8 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     const data = await res.json();
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
+      localStorage.setItem('user_email', body.email.toLowerCase());
+      localStorage.setItem('user_id', String(data.userId || data.id || data.user?.id || ''));
       showMsg('reg-msg', 'Account created! Loading your dashboard...', true);
       localStorage.setItem('bridge_user', JSON.stringify({
         email: body.email,
@@ -258,6 +264,8 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (res.ok && data.token) {
       localStorage.setItem('bridge_token', data.token);
+      localStorage.setItem('user_email', body.email.toLowerCase());
+      localStorage.setItem('user_id', String(data.userId || data.id || data.user?.id || ''));
       showMsg('login-msg', 'Signed in! Loading your dashboard...', true);
       localStorage.setItem('bridge_user', JSON.stringify({
         email: body.email,
@@ -306,6 +314,7 @@ async function githubAuth() {
 const urlRef = new URLSearchParams(location.search).get('ref');
 if (urlRef) document.getElementById('reg-referral').value = urlRef;
 </script>
+<script src="/onboarding.js"></script>
 <script src="/bridge-nav.js"></script>
 </body>
 </html>

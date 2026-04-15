@@ -1,5 +1,23 @@
 const jwt = require('jsonwebtoken');
 
+// ── Superuser list ────────────────────────────────────────────────────────────
+const SUPERUSERS = [
+  'ryanpcowan@gmail.com',
+  'michaelgraemek@gmail.com',
+  'marvin.saunders@gmail.com',
+];
+
+/**
+ * Returns true if the given email belongs to a superuser.
+ * Comparison is case-insensitive.
+ * @param {string} email
+ * @returns {boolean}
+ */
+function isSuperUser(email) {
+  if (typeof email !== 'string') return false;
+  return SUPERUSERS.includes(email.toLowerCase());
+}
+
 // Redis-backed token revocation with graceful fallback to TTL-based in-memory Map
 let redisClient = null;
 const revokedTokens = new Map(); // token → expiry timestamp (ms)
@@ -116,4 +134,4 @@ async function revokeToken(token, ttlSeconds = 7 * 24 * 3600) {
   }
 }
 
-module.exports = { requireAuth, revokeToken, isTokenRevoked, shutdownAuthMiddleware };
+module.exports = { requireAuth, revokeToken, isTokenRevoked, shutdownAuthMiddleware, isSuperUser, SUPERUSERS };
