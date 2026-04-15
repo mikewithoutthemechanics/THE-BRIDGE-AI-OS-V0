@@ -15,7 +15,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Join as Agent — Bridge AI OS · Linea zkEVM</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <!-- QR codes use qrserver.com image API — no JS lib needed -->
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -295,7 +295,7 @@
       <span class="qr-badge gateway">Gateway</span>
       <div class="qr-title">Public Gateway</div>
       <div class="qr-desc">Scan from anywhere — opens the canonical Bridge AI OS gateway URL.</div>
-      <div class="qr-canvas-wrap"><canvas id="qrGateway" width="180" height="180"></canvas></div>
+      <div class="qr-canvas-wrap"><img id="qrGateway" width="180" height="180" alt="Gateway QR" style="border-radius:6px;display:block"></div>
       <div class="qr-url" id="urlGateway">https://go.ai-os.co.za/join</div>
       <a href="/gateway/" class="btn btn-primary btn-sm">Open Gateway</a>
     </div>
@@ -308,7 +308,7 @@
       </span>
       <div class="qr-title">Local Beacon</div>
       <div class="qr-desc">Works on the same network. Scan from your phone while on local Wi-Fi or LAN.</div>
-      <div class="qr-canvas-wrap"><canvas id="qrBeacon" width="180" height="180"></canvas></div>
+      <div class="qr-canvas-wrap"><img id="qrBeacon" width="180" height="180" alt="Beacon QR" style="border-radius:6px;display:block"></div>
       <div class="qr-url" id="urlBeacon">detecting…</div>
       <button class="btn btn-green btn-sm" onclick="refreshBeacon()">↻ Refresh Beacon</button>
     </div>
@@ -318,7 +318,7 @@
       <span class="qr-badge linea">Linea</span>
       <div class="qr-title">Linea Agent Join</div>
       <div class="qr-desc">Scan to connect wallet directly to Linea zkEVM and register as a Bridge AI agent.</div>
-      <div class="qr-canvas-wrap"><canvas id="qrLinea" width="180" height="180"></canvas></div>
+      <div class="qr-canvas-wrap"><img id="qrLinea" width="180" height="180" alt="Linea QR" style="border-radius:6px;display:block"></div>
       <div class="qr-url" id="urlLinea">https://go.ai-os.co.za/join?linea=1</div>
       <a href="#linea-join" class="btn btn-linea btn-sm">Join on Linea</a>
     </div>
@@ -482,31 +482,31 @@
   window.addEventListener('resize', () => { resize(); pts = mkPts(48); });
 })();
 
-/* ── QR generation ── */
+/* ── QR generation — image-based, no JS lib ── */
 const GATEWAY_URL = 'https://go.ai-os.co.za/join';
 const LINEA_URL   = 'https://go.ai-os.co.za/join?linea=1';
 
-function mkQR(canvasId, text, color) {
-  const el = document.getElementById(canvasId);
-  if (!el || typeof QRCode === 'undefined') return;
-  QRCode.toCanvas(el, text, {
-    width: 180, margin: 1,
-    color: { dark: '#000000', light: '#ffffff' }
-  }, function(err) { if (err) console.warn(canvasId, err); });
+function qrSrc(url) {
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=' + encodeURIComponent(url);
+}
+
+function setQR(imgId, url) {
+  const el = document.getElementById(imgId);
+  if (!el) return;
+  el.src = qrSrc(url);
 }
 
 function refreshBeacon() {
-  // Use current origin for LAN access — works on both domain and local IP
   const beaconUrl = window.location.origin + '/join';
   document.getElementById('urlBeacon').textContent = beaconUrl;
-  mkQR('qrBeacon', beaconUrl);
+  setQR('qrBeacon', beaconUrl);
 }
 
 function initQRs() {
   document.getElementById('urlGateway').textContent = GATEWAY_URL;
   document.getElementById('urlLinea').textContent   = LINEA_URL;
-  mkQR('qrGateway', GATEWAY_URL);
-  mkQR('qrLinea',   LINEA_URL);
+  setQR('qrGateway', GATEWAY_URL);
+  setQR('qrLinea',   LINEA_URL);
   refreshBeacon();
 
   // Try WebRTC to detect LAN IP for a true local beacon
@@ -518,14 +518,14 @@ function initQRs() {
       if (!e.candidate) return;
       const ip = e.candidate.candidate.match(/(\d{1,3}\.){3}\d{1,3}/)?.[0];
       if (ip && !ip.startsWith('127.') && !ip.startsWith('0.')) {
-        const lan = 'http://' + ip + ':3000/join';
+        const lan = 'http://' + ip + ':8080/join';
         document.getElementById('urlBeacon').textContent = lan;
-        mkQR('qrBeacon', lan);
+        setQR('qrBeacon', lan);
         pc.close();
       }
     };
-    setTimeout(() => pc.close(), 4000);
-  } catch (_) { /* WebRTC not available, keep origin URL */ }
+    setTimeout(() => pc.close(), 5000);
+  } catch (_) { /* WebRTC not available */ }
 }
 
 /* ── Step highlighting ── */
@@ -569,22 +569,32 @@ let connectedAddress = null;
 async function connectWallet() {
   const btn = document.getElementById('connectBtn');
   if (!window.ethereum) {
-    ws('No wallet detected. Install MetaMask or a compatible wallet.', 'err');
+    ws('No wallet detected — <a href="https://metamask.io/download/" target="_blank" style="color:var(--accent)">install MetaMask</a> to join on Linea.', 'err');
+    document.getElementById('walletStatus').innerHTML = document.getElementById('walletStatus').textContent;
+    ws('No wallet detected — install MetaMask to continue.', 'err');
     return;
   }
-  try {
-    btn.textContent = '⏳ Connecting…';
-    btn.disabled = true;
-    setStep(3);
-    ws('Requesting account access…');
+  btn.textContent = '⏳ Connecting…';
+  btn.disabled = true;
+  setStep(3);
+  ws('Requesting account access…');
 
+  // Timeout guard — resets UI if MetaMask hangs for > 60s
+  const timer = setTimeout(() => {
+    btn.textContent = '⬡ Connect Wallet';
+    btn.disabled = false;
+    ws('⚠ Connection timed out — approve the MetaMask popup and try again.', 'err');
+  }, 60000);
+
+  try {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    clearTimeout(timer);
     connectedAddress = accounts[0];
-    ws('✓ Connected: ' + connectedAddress.slice(0,6) + '…' + connectedAddress.slice(-4), 'ok');
+    ws('✓ ' + connectedAddress.slice(0,6) + '…' + connectedAddress.slice(-4) + ' connected', 'ok');
     setJoinStep(2);
     setStep(3);
 
-    // Switch to Linea
+    // Switch / add Linea
     ws('Switching to Linea Mainnet…');
     try {
       await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: LINEA_CHAIN_ID }] });
@@ -601,6 +611,7 @@ async function connectWallet() {
     document.getElementById('signBtn').style.display = 'inline-block';
 
   } catch (e) {
+    clearTimeout(timer);
     ws('⚠ ' + (e.message || 'Connection failed'), 'err');
     btn.textContent = '⬡ Connect Wallet';
     btn.disabled = false;
@@ -655,7 +666,7 @@ async function signAndRegister() {
 
     // Update QR to show agent-specific URL
     const agentUrl = 'https://go.ai-os.co.za/join?agent=' + connectedAddress.slice(2, 10);
-    mkQR('qrLinea', agentUrl);
+    setQR('qrLinea', agentUrl);
     document.getElementById('urlLinea').textContent = agentUrl;
 
   } catch (e) {
@@ -704,10 +715,24 @@ function apSetStatus(on, txt) {
 async function apGenerate() {
   const prompt = document.getElementById('apPrompt').value.trim();
   if (prompt.length < 3) { document.getElementById('apPrompt').focus(); return; }
+
+  // Must be signed in to generate
+  const tok = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('bridge_token='));
+  const token = tok ? tok.split('=')[1] : localStorage.getItem('bridge_token');
+  if (!token) {
+    apSetStatus(true, '🔑 Sign in first — <a href="/auth" style="color:var(--purple)">create free account →</a>');
+    document.getElementById('apStatus').style.display = 'flex';
+    const s = document.getElementById('apStatusTxt');
+    s.innerHTML = '🔑 Sign in to generate your avatar &nbsp;<a href="/auth" style="color:var(--purple);font-weight:700">Create free account →</a>';
+    document.querySelector('.ap-spinner').style.display = 'none';
+    return;
+  }
+
   const btn = document.getElementById('apGenBtn');
   btn.disabled = true;
   document.getElementById('apResult').classList.remove('visible');
   document.getElementById('apPreview').classList.add('generating');
+  document.querySelector('.ap-spinner').style.display = '';
   apSetStatus(true, 'Generating your avatar…');
 
   const msgs = ['Composing scene…','Rendering style…','Adding effects…','Finalising…'];
@@ -715,14 +740,9 @@ async function apGenerate() {
   const tick = setInterval(() => apSetStatus(true, msgs[mi++ % msgs.length]), 2500);
 
   try {
-    // Try authenticated first, fall back to guest generation
-    const tok = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('bridge_token='));
-    const token = tok ? tok.split('=')[1] : localStorage.getItem('bridge_token');
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-
     const resp = await fetch('/api/platform/avatar/generate', {
-      method: 'POST', headers,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({ prompt, style: apSelectedStyle }),
     });
     const data = await resp.json();
@@ -734,8 +754,6 @@ async function apGenerate() {
     img.src = apGeneratedUrl;
     document.getElementById('apDownload').href = apGeneratedUrl;
     document.getElementById('apResult').classList.add('visible');
-
-    // Update preview circle
     document.getElementById('apPreview').innerHTML = `<img src="${apGeneratedUrl}" alt="avatar">`;
     apSetStatus(false);
   } catch (e) {
