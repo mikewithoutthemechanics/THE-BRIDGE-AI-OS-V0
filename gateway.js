@@ -540,7 +540,7 @@ app.get('/api/status', async (req, res) => {
 // ── ORCHESTRATOR PORT MAP ─────────────────────────────────────────────────────
 const ORCHESTRATORS = {
   L1: 'http://localhost:9001',
-  L2: 'http://192.168.110.203:9001',  // L2 real LAN IP
+  L2: process.env.L2_ORCHESTRATOR || 'http://localhost:9001',  // Default to localhost, override env for LAN
   L3: 'http://localhost:9003',
 };
 
@@ -560,6 +560,7 @@ for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
           'X-Forwarded-For': req.headers['x-forwarded-for'] || req.ip,
           'X-Real-IP': req.headers['x-real-ip'] || req.ip,
         },
+        signal: AbortSignal.timeout(3000),
       };
       if (req.headers['upgrade']) opts.headers['Upgrade'] = req.headers['upgrade'];
       if (req.headers['connection']) opts.headers['Connection'] = req.headers['connection'];
@@ -568,16 +569,19 @@ for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
       const text = await r.text();
       res.status(r.status).set('Content-Type', 'application/json').send(text);
     } catch (e) {
-      res.status(502).json({ error: `${layer} unreachable`, details: e.message });
+      if (e.name === 'TimeoutError' || e.code === 'ECONNREFUSED') {
+        res.status(503).json({ error: `${layer} unavailable`, details: 'Orchestrator not reachable' });
+      } else {
+        res.status(502).json({ error: `${layer} unreachable`, details: e.message });
+      }
     }
   });
 }
 
 // ── API: AGENTS ───────────────────────────────────────────────────────────────
-// Polls L1 (localhost:9000) and L2 (192.168.110.203:9001), merges results.
-// Falls back gracefully if either is unreachable. 2-second timeout per call.
+// Polls L1 and L2 orchestrators for agent data. Falls back gracefully.
 const L1_AGENTS_URL = 'http://localhost:9000/api/agents';
-const L2_AGENTS_URL = 'http://192.168.110.203:9001/api/agents';
+const L2_AGENTS_URL = process.env.L2_AGENTS_URL || 'http://localhost:9001/api/agents';
 
 // Uses http.request (not global fetch/undici) so sockets are destroyed
 // immediately on failure — prevents TCPWRAP handles leaking in test runs.
@@ -890,13 +894,35 @@ const NAV_HTML = `
 <a href="/system-status-dashboard.html">STATUS</a>
 <a href="/terminal.html">TERM</a>
 <a href="/control.html">CONTROL</a>
+<a href="/command-center.html">CMD</a>
 <span class="sep">|</span><span class="cat">ECONOMY</span>
 <a href="/marketplace.html">MARKET</a>
 <a href="/ban">BAN</a>
+<a href="/tvm.html">TVM</a>
+<a href="/ubi.html">UBI</a>
+<a href="/tokenomics.html">TOKEN</a>
+<a href="/economy.html">ECONOMY</a>
+<span class="sep">|</span><span class="cat">DEFI</span>
+<a href="/defi.html">DEFI</a>
+<a href="/trading.html">TRADE</a>
 <span class="sep">|</span><span class="cat">AI</span>
 <a href="/avatar.html">AVATAR</a>
 <a href="/abaas.html">ABAAS</a>
 <a href="/aoe-dashboard.html">AOE</a>
+<a href="/neurolink.html">NEURO</a>
+<a href="/digital-twin-console.html">TWIN</a>
+<span class="sep">|</span><span class="cat">BIZ</span>
+<a href="/crm.html">CRM</a>
+<a href="/leads.html">LEADS</a>
+<a href="/invoicing.html">INVOICE</a>
+<span class="sep">|</span><span class="cat">VERTICAL</span>
+<a href="/hospital.html">HEALTH</a>
+<a href="/aurora.html">ENERGY</a>
+<a href="/ehsa.html">EHSA</a>
+<a href="/rootedearth.html">AGRI</a>
+<span class="sep">|</span><span class="cat">GROWTH</span>
+<a href="/affiliate.html">AFFILIATE</a>
+<a href="/governance.html">GOV</a>
 <span class="sep">|</span>
 <a href="/corporate.html">BIZ</a>
 <a href="/brand.html">BRAND</a>

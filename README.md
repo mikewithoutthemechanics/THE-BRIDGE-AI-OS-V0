@@ -281,6 +281,103 @@ We welcome contributions! Please follow these steps:
 - Use TypeScript for new Node.js code
 - Follow PEP 8 for Python code
 
+## 🔍 SQL Bridge Interface
+
+Execute SQL queries against Supabase through an interactive SVG-powered interface.
+
+### Features
+- **Visual SQL Editor** with syntax highlighting and auto-completion
+- **Query Templates** for common Bridge AI OS database operations
+- **Real-time Results** displayed in formatted tables
+- **Connection Status** monitoring with live Supabase connectivity
+- **Keyboard Shortcuts** (Ctrl+Enter to execute, Ctrl+/ for help)
+
+### Available Interfaces
+- **Interactive Web UI**: `sql-bridge-interface.html`
+- **Architecture Diagram**: `sql-bridge-architecture.svg`
+- **Apps & APIs Dashboard**: `apps-dashboard.html`
+- **Agent Profiles**: `agent-profiles.html`
+
+### Example Queries
+```sql
+-- List all agent wallets
+SELECT * FROM agent_crypto_wallets LIMIT 5;
+
+-- Count total agents
+SELECT COUNT(*) as total FROM agent_crypto_wallets;
+
+-- Find twin agents
+SELECT agent_name FROM agent_crypto_wallets
+WHERE agent_name LIKE '%twin%';
+
+-- Daily wallet creation stats
+SELECT created_at::date, COUNT(*) as daily_count
+FROM agent_crypto_wallets
+GROUP BY created_at::date
+ORDER BY created_at::date DESC;
+```
+
+## 🤝 Agent-to-Agent (A2A) Communication
+
+Secure, real-time communication system enabling AI agents to interact seamlessly within Bridge AI OS.
+
+### Features
+- **Message Queuing**: Reliable delivery with fallback to in-memory storage
+- **Channel Broadcasting**: Publish-subscribe pattern for agent coordination
+- **Redis Integration**: High-performance pub/sub for production deployments
+- **Health Monitoring**: Automatic agent status tracking and failover
+- **Supabase Persistence**: Message history and agent registry storage
+
+### API Endpoints
+```http
+GET  /api/a2a/agents     # List all registered agents
+POST /api/a2a/message    # Send direct message to agent
+POST /api/a2a/broadcast  # Broadcast to channel subscribers
+POST /api/a2a/subscribe  # Subscribe agent to channel
+GET  /api/a2a/stats      # System statistics
+POST /api/a2a/register   # Register new agent
+```
+
+### Example Usage
+```javascript
+// Send message between agents
+const response = await fetch('/api/a2a/message', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    fromAgentId: 'prime-001',
+    toAgentId: 'twin-empe-001',
+    message: { type: 'task', data: 'Analyze market data' },
+    options: { priority: 'high', ttl: 3600000 }
+  })
+});
+
+// Broadcast to trading channel
+await fetch('/api/a2a/broadcast', {
+  method: 'POST',
+  body: JSON.stringify({
+    channel: 'trading:signals',
+    message: { signal: 'BUY', symbol: 'BTC', confidence: 0.85 }
+  })
+});
+```
+
+## 📊 System Dashboards
+
+### Apps & APIs Monitor (`apps-dashboard.html`)
+- **50 Service Monitoring**: Real-time status tracking for all Bridge AI OS services
+- **Online/Offline Status**: Color-coded indicators with response time metrics
+- **Category Filtering**: Core services, external APIs, internal databases
+- **Uptime Statistics**: Performance metrics and reliability tracking
+- **Interactive Controls**: Check status, view logs, restart services
+
+### Agent Profiles (`agent-profiles.html`)
+- **24 Agent Cards**: Comprehensive agent profiles with SVG visualizations
+- **Twin System Integration**: Real-time emotion, memory, and interaction metrics
+- **Capability Breakdown**: Skills inventory and utilization statistics
+- **Interactive SVGs**: Dynamic agent network visualizations
+- **Modal Details**: Expanded agent information and twin connection status
+
 ## 🌍 Domain Network
 
 - **bridge-ai-os.com** — Primary Platform
