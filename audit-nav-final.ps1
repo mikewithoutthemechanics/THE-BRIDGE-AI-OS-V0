@@ -1,0 +1,1 @@
+Get-ChildItem 'C:\aoe-unified-final\public\*.html' | Where-Object { $_.Name -notmatch 'anatomical|auth-callback|offline|404|linea-demo' } | ForEach-Object { $f = $_; $c = Get-Content $f.FullName -Raw; if ($c -notmatch 'bridge-nav\.js') { $f.Name } }

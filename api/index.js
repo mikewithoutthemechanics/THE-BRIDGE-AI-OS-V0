@@ -193,6 +193,13 @@ const AVATAR_MODES = {
   },
 };
 
+// ── Orchestration System ─────────────────────────────────────────────────────
+const queueManager  = require('../lib/queue');
+const taskManager   = require('../lib/task-manager');
+const goalManager   = require('../lib/goal-manager');
+const architectAgent = require('../lib/architect-agent');
+const workerOrchestration = require('../lib/worker-orchestration');
+
 // ── Persistent DB layer ──────────────────────────────────────────────────────
 const db            = require('../lib/db');
 const pf            = require('../lib/payfast');
@@ -809,6 +816,162 @@ module.exports = async (req, res) => {
       agents: agentNames.map(n => ({ id: `agent_${n}`, name: n, status: 'active', layer: 'L1' })),
       env: 'serverless', ts: ts(),
     });
+  }
+
+  // ── API: Orchestration ──
+
+  // POST /api/orchestration/goals — Create a new goal
+  if (p === '/api/orchestration/goals' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    const body = await parseBody(req);
+
+    if (!body.description) {
+      return json(res, { error: 'description required' }, 400);
+    }
+
+    try {
+      const goal = await goalManager.createGoal(user.sub, body.description, {
+        priority: body.priority,
+        tags: body.tags,
+        metadata: body.metadata,
+      });
+
+      return json(res, { goal, message: 'Goal created successfully' });
+    } catch (e) {
+      console.error('[ORCHESTRATION] Goal creation failed:', e.message);
+      return json(res, { error: 'Goal creation failed: ' + e.message }, 500);
+    }
+  }
+
+  // GET /api/orchestration/goals — List user goals
+  if (p === '/api/orchestration/goals' && req.method === 'GET') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    const url = require('url').parse(req.url, true);
+    const status = url.query.status;
+    const limit = parseInt(url.query.limit) || 50;
+
+    try {
+      const goals = await goalManager.getGoalsByUser(user.sub, status, limit);
+      return json(res, { goals, count: goals.length });
+    } catch (e) {
+      console.error('[ORCHESTRATION] Goals fetch failed:', e.message);
+      return json(res, { error: 'Goals fetch failed: ' + e.message }, 500);
+    }
+  }
+
+  // GET /api/orchestration/goals/:id — Get goal details
+  if (p.match(/^\/api\/orchestration\/goals\/[^/]+$/) && req.method === 'GET') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    const goalId = p.split('/').pop();
+
+    try {
+      const goal = await goalManager.getGoal(goalId);
+      if (!goal) {
+        return json(res, { error: 'Goal not found' }, 404);
+      }
+
+      if (goal.userId !== user.sub) {
+        return json(res, { error: 'Access denied' }, 403);
+      }
+
+      const tasks = await goalManager.getTasksForGoal(goalId);
+      const goalStatus = taskManager.getGoalStatus(goalId);
+
+      return json(res, { goal: { ...goal, tasks }, status: goalStatus });
+    } catch (e) {
+      console.error('[ORCHESTRATION] Goal fetch failed:', e.message);
+      return json(res, { error: 'Goal fetch failed: ' + e.message }, 500);
+    }
+  }
+
+  // POST /api/orchestration/goals/:id/decompose — Decompose goal into tasks
+  if (p.match(/^\/api\/orchestration\/goals\/[^/]+\/decompose$/) && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    const goalId = p.split('/')[4]; // goals/:id/decompose
+
+    try {
+      const goal = await goalManager.getGoal(goalId);
+      if (!goal) {
+        return json(res, { error: 'Goal not found' }, 404);
+      }
+
+      if (goal.userId !== user.sub) {
+        return json(res, { error: 'Access denied' }, 403);
+      }
+
+      // Decompose goal using architect agent
+      const tasks = await taskManager.decomposeGoal(goalId, architectAgent);
+
+      // Store tasks in database
+      for (const taskData of tasks) {
+        await goalManager.createTask(goalId, taskData);
+      }
+
+      // Queue initial tasks
+      await taskManager.queueTasks(goalId);
+
+      return json(res, { tasks, message: 'Goal decomposed and tasks queued' });
+    } catch (e) {
+      console.error('[ORCHESTRATION] Goal decomposition failed:', e.message);
+      return json(res, { error: 'Goal decomposition failed: ' + e.message }, 500);
+    }
+  }
+
+  // POST /api/orchestration/goals/:id/execute — Execute goal (queue all pending tasks)
+  if (p.match(/^\/api\/orchestration\/goals\/[^/]+\/execute$/) && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+    const goalId = p.split('/')[4]; // goals/:id/execute
+
+    try {
+      const goal = await goalManager.getGoal(goalId);
+      if (!goal) {
+        return json(res, { error: 'Goal not found' }, 404);
+      }
+
+      if (goal.userId !== user.sub) {
+        return json(res, { error: 'Access denied' }, 403);
+      }
+
+      const queuedTasks = await taskManager.queueTasks(goalId);
+      return json(res, { queued: queuedTasks.length, message: 'Tasks queued for execution' });
+    } catch (e) {
+      console.error('[ORCHESTRATION] Goal execution failed:', e.message);
+      return json(res, { error: 'Goal execution failed: ' + e.message }, 500);
+    }
+  }
+
+  // GET /api/orchestration/queue/stats — Queue statistics
+  if (p === '/api/orchestration/queue/stats') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+
+    try {
+      const queueStats = await queueManager.getAllStats();
+      const taskStats = taskManager.getStats();
+      const goalStats = await goalManager.getStats();
+
+      return json(res, {
+        queues: queueStats,
+        tasks: taskStats,
+        goals: goalStats,
+        timestamp: new Date().toISOString()
+      });
+    } catch (e) {
+      console.error('[ORCHESTRATION] Stats fetch failed:', e.message);
+      return json(res, { error: 'Stats fetch failed: ' + e.message }, 500);
+    }
+  }
+
+  // POST /api/orchestration/queue/clean — Clean old queue jobs
+  if (p === '/api/orchestration/queue/clean' && req.method === 'POST') {
+    const user = requireAuthOrFail(req, res); if (!user) return;
+
+    try {
+      await queueManager.cleanQueues();
+      return json(res, { message: 'Queue cleanup completed' });
+    } catch (e) {
+      console.error('[ORCHESTRATION] Queue cleanup failed:', e.message);
+      return json(res, { error: 'Queue cleanup failed: ' + e.message }, 500);
+    }
   }
 
   // POST /api/agents/:id/command — landing "Try it" + clients (no VPS brain)

@@ -15,6 +15,19 @@ const path   = require('path');
 const os     = require('os');
 const { execSync } = require('child_process');
 
+// ── Orchestration System ──
+let queueManager, taskManager, goalManager, workerOrchestration, observability;
+try {
+  queueManager = require('./lib/queue');
+  taskManager = require('./lib/task-manager');
+  goalManager = require('./lib/goal-manager');
+  workerOrchestration = require('./lib/worker-orchestration');
+  observability = require('./lib/observability');
+} catch (e) {
+  console.warn('[SYSTEM] Orchestration modules not available:', e.message);
+  queueManager = taskManager = goalManager = workerOrchestration = observability = null;
+}
+
 // ─── Environment ─────────────────────────────────────────────────────────────
 const PORT     = parseInt(process.env.PORT, 10) || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -596,6 +609,67 @@ function handler(req, res) {
   if (url === '/api/ai/status')       return json({ risk: FailureModel.evaluate(Brain.history), agents: AgentSwarm.agents, history: Brain.history.slice(-10) });
   if (url === '/api/agents')          return json(orchestrator.status());
   if (url === '/api/swarms')          return json(orchestrator.swarms);
+
+  // ── Orchestration System Endpoints ──
+  if (url === '/api/orchestration/goals' && req.method === 'GET') {
+    // List user goals
+    return goalManager.getGoalsByUser(user.sub).then(goals => {
+      json({ goals, count: goals.length });
+    }).catch(err => json({ error: err.message }, 500));
+  }
+
+  if (url === '/api/orchestration/goals' && req.method === 'POST') {
+    // Create new goal
+    return parseBody(req).then(body => {
+      if (!body.description) return json({ error: 'description required' }, 400);
+      return goalManager.createGoal(user.sub, body.description, {
+        priority: body.priority,
+        tags: body.tags,
+        metadata: body.metadata,
+      }).then(goal => json({ goal, message: 'Goal created successfully' }));
+    }).catch(err => json({ error: err.message }, 500));
+  }
+
+  if (url.match(/^\/api\/orchestration\/goals\/[^/]+$/)) {
+    const goalId = url.split('/')[4];
+    return goalManager.getGoal(goalId).then(goal => {
+      if (!goal) return json({ error: 'Goal not found' }, 404);
+      if (goal.userId !== user.sub) return json({ error: 'Access denied' }, 403);
+      return goalManager.getTasksForGoal(goalId).then(tasks => {
+        const goalStatus = taskManager.getGoalStatus(goalId);
+        json({ goal: { ...goal, tasks }, status: goalStatus });
+      });
+    }).catch(err => json({ error: err.message }, 500));
+  }
+
+  if (url === '/api/orchestration/queue/stats') {
+    return Promise.all([
+      queueManager.getAllStats(),
+      Promise.resolve(taskManager.getStats()),
+      goalManager.getStats()
+    ]).then(([queueStats, taskStats, goalStats]) => {
+      json({
+        queues: queueStats,
+        tasks: taskStats,
+        goals: goalStats,
+        timestamp: new Date().toISOString()
+      });
+    }).catch(err => json({ error: err.message }, 500));
+  }
+
+  if (url === '/api/orchestration/health') {
+    if (observability) {
+      return json(observability.systemMonitor.healthCheck());
+    }
+    return json({ status: 'observability not available' }, 503);
+  }
+
+  if (url === '/api/orchestration/metrics') {
+    if (observability) {
+      return json(observability.systemMonitor.getMetrics());
+    }
+    return json({ error: 'observability not available' }, 503);
+  }
   if (url === '/api/economics')       return json(aggregateEconomics());
   if (url === '/api/marketplace/stats') return json(aggregateEconomics());
   if (url === '/api/treasury/summary') {
@@ -723,7 +797,22 @@ function onListening() {
   console.log('  REFRESH  →  5s\n');
   log('OK','SERVER',`Listening on ${PROTOCOL}://localhost:${PORT}`);
   // Boot orchestrator after server is ready
-  setTimeout(() => orchestrator.boot(), 500);
+  setTimeout(() => {
+    orchestrator.boot();
+
+    // Initialize worker orchestration system
+    if (workerOrchestration) {
+      workerOrchestration.startWorkerOrchestration().catch(err => {
+        log('ERROR', 'WORKERS', `Failed to start worker orchestration: ${err.message}`);
+      });
+    }
+
+    // Start system monitoring
+    if (observability) {
+      observability.systemMonitor.start();
+      log('OK', 'MONITOR', 'System monitoring started');
+    }
+  }, 500);
 }
 
 server.on('error', err => {
