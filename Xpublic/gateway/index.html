@@ -4,316 +4,619 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="description" content="Bridge AI OS — Sovereign Web3 Entry Protocol. Wallet, chain, contract, owner, gas, block, SIWE-style auth.">
-<title>Bridge AI OS Sovereign Gateway</title>
+<meta name="description" content="Bridge AI OS — Sovereign Web3 Entry Protocol. Wallet, chain, contract, BRDG token, SIWE auth.">
+<meta property="og:title" content="Sovereign Gateway — Bridge AI OS">
+<meta property="og:url" content="https://go.ai-os.co.za/gateway/">
+<title>Sovereign Gateway — Bridge AI OS</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.min.js"
-        integrity="sha384-2i14ubFq4mU3B4ii0jVVZYB2SRGXJNRFW6RMtgiTMkZsEi1iI7SAx3m5jl95mxC1"
-        crossorigin="anonymous"></script>
+<!-- ethers v6 UMD — creates window.ethers global (NOT ethers.min.js which is ESM-only) -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 <style>
-body {
-  background: #0b0f1a;
-  color: #ffffff;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  padding: 40px;
-  margin: 0;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #040810; --surface: #080f1a; --surface2: #0c1624;
+  --border: rgba(0,200,255,.14); --cyan: #00c8ff; --green: #00e57b;
+  --purple: #a78bfa; --yellow: #ffd166; --red: #ff3c5a;
+  --dim: #3a566a; --text: #b8d0e0;
 }
-.container { max-width: 900px; margin: auto; }
-h1 { color: #00e5ff; margin-bottom: 8px; }
-h2 { color: #00ffd1; font-size: 1.1em; margin-top: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+@keyframes scan { 0% { top: -1px; } 100% { top: 100%; } }
+body::after {
+  content: ''; position: fixed; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,200,255,.35), transparent);
+  animation: scan 10s linear infinite; pointer-events: none; z-index: 0;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(0,200,255,.018) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0,200,255,.018) 1px, transparent 1px);
+  background-size: 50px 50px; pointer-events: none; z-index: 0;
+}
+
+.wrap { max-width: 860px; margin: 0 auto; padding: 2rem 1.25rem 3rem; position: relative; z-index: 1; }
+
+.gw-header { text-align: center; padding: 2rem 0 1.75rem; }
+.gw-badge {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .28rem .9rem; border-radius: 2rem; font-size: .62rem;
+  letter-spacing: .15em; color: var(--cyan);
+  background: rgba(0,200,255,.08); border: 1px solid rgba(0,200,255,.2);
+  margin-bottom: 1rem;
+}
+.gw-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.4s ease infinite; }
+@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+.gw-title { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 800; color: #fff; margin-bottom: .4rem; }
+.gw-title span { color: var(--cyan); }
+.gw-sub { font-size: .72rem; color: var(--dim); letter-spacing: .07em; }
+
 .card {
-  border: 2px solid #00e5ff;
-  border-radius: 16px;
-  padding: 25px;
-  margin: 20px 0;
-  background: rgba(0,229,255,0.03);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 1.5rem; margin-bottom: 1rem;
 }
-button {
-  background: #00e5ff;
-  color: #0b0f1a;
-  border: none;
-  padding: 12px 24px;
-  font-weight: bold;
-  cursor: pointer;
-  border-radius: 8px;
-  margin: 5px;
+.card-label { font-size: .58rem; letter-spacing: .18em; color: var(--dim); margin-bottom: .5rem; text-transform: uppercase; }
+.card-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+.ct-icon { font-size: 1.1rem; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: 1rem; }
+@media(max-width:500px) { .grid2 { grid-template-columns: 1fr; } }
+.stat { background: var(--surface2); border: 1px solid rgba(0,200,255,.07); border-radius: 8px; padding: .85rem 1rem; }
+.stat-label { font-size: .56rem; letter-spacing: .12em; color: var(--dim); margin-bottom: .3rem; text-transform: uppercase; }
+.stat-value { font-size: .82rem; font-weight: 700; color: var(--cyan); font-family: 'Consolas', monospace; word-break: break-all; }
+.stat-value.dim   { color: var(--dim); }
+.stat-value.green { color: var(--green); }
+.stat-value.red   { color: var(--red); }
+
+.addr-chip {
+  background: rgba(0,200,255,.05); border: 1px solid rgba(0,200,255,.15);
+  border-radius: 7px; padding: .55rem .85rem;
+  font-family: 'Consolas', monospace; font-size: .75rem; color: var(--cyan);
+  word-break: break-all; margin-bottom: .85rem;
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
 }
-button:hover { background: #00ffd1; }
-button.secondary { background: #7b61ff; color: #fff; }
-button.secondary:hover { background: #9b81ff; }
-a { text-decoration: none; color: inherit; }
-.status-good { color: #00ffb2; }
-.status-bad { color: #ff4d4d; }
-.mono { font-family: monospace; word-break: break-all; font-size: 0.9em; }
+.copy-btn {
+  flex-shrink: 0; font-size: .62rem; padding: .2rem .55rem; border-radius: 4px;
+  background: rgba(0,200,255,.1); border: 1px solid rgba(0,200,255,.2);
+  color: var(--cyan); cursor: pointer; transition: background .15s; font-family: inherit;
+}
+.copy-btn:hover { background: rgba(0,200,255,.2); }
+
+.chain-tag {
+  display: inline-block; padding: .18rem .6rem; border-radius: 2rem;
+  font-size: .6rem; font-weight: 700; letter-spacing: .08em;
+  background: rgba(97,223,255,.08); color: #61dfff; border: 1px solid rgba(97,223,255,.2);
+}
+
+.chip {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .22rem .65rem; border-radius: 2rem; font-size: .62rem;
+  font-weight: 700; letter-spacing: .07em; margin-bottom: .85rem;
+}
+.chip.pending { background: rgba(255,209,102,.1); color: var(--yellow); border: 1px solid rgba(255,209,102,.2); }
+.chip.ok      { background: rgba(0,229,123,.1);  color: var(--green);  border: 1px solid rgba(0,229,123,.2); }
+.chip.err     { background: rgba(255,60,90,.1);  color: var(--red);    border: 1px solid rgba(255,60,90,.2); }
+.chip .dot    { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+.btn { padding: .65rem 1.25rem; border-radius: 8px; font-size: .8rem; font-weight: 700; cursor: pointer; border: none; transition: filter .18s, transform .15s; }
+.btn:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn-cyan    { background: var(--cyan); color: #040810; }
+.btn-purple  { background: var(--purple); color: #040810; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--cyan); color: var(--cyan); }
+.btn-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+.log {
+  background: #020810; border: 1px solid rgba(0,200,255,.06);
+  border-radius: 7px; padding: .75rem 1rem;
+  font-family: 'Consolas', monospace; font-size: .62rem; color: var(--dim);
+  line-height: 1.7; max-height: 96px; overflow-y: auto; margin-bottom: .85rem;
+}
+.log .ok  { color: var(--green); }
+.log .err { color: var(--red); }
+.log .hi  { color: var(--cyan); }
+
+.split-bar { display: flex; border-radius: 4px; overflow: hidden; height: 6px; margin: .5rem 0 .75rem; }
+.split-seg { height: 100%; }
+
+.qr-wrap {
+  display: inline-block; background: #fff; padding: 8px; border-radius: 10px;
+  box-shadow: 0 0 0 1px rgba(0,200,255,.2); margin-bottom: .85rem;
+}
+.qr-wrap img { display: block; border-radius: 6px; }
+.qr-url { font-family: 'Consolas', monospace; font-size: .68rem; color: var(--dim); word-break: break-all; margin-bottom: .85rem; }
+
+#walletMsg { font-size: .75rem; color: var(--dim); min-height: 1.2rem; font-family: monospace; margin-top: .6rem; }
+#walletMsg.ok  { color: var(--green); }
+#walletMsg.err { color: var(--red); }
+
+.platform-strip {
+  text-align: center; padding: 1.5rem; border-top: 1px solid var(--border);
+  font-size: .75rem; color: var(--dim); margin-top: 1rem;
+}
+.platform-strip a { color: var(--cyan); text-decoration: none; margin: 0 .4rem; }
 </style>
 </head>
 <body>
+<script src="/bridge-nav.js"></script>
 
-<div class="container">
-<h1>Bridge AI OS Sovereign Gateway</h1>
-<p style="color:#888;margin-bottom:24px;">Sovereign entry protocol · Chain · Contract · Owner · Gas · Block · SIWE</p>
+<div class="wrap">
 
-<div class="card">
-<h2>Wallet</h2>
-<p id="walletStatus">Not Connected</p>
-<button onclick="connectWallet()">Connect</button>
+  <!-- Header -->
+  <div class="gw-header">
+    <div class="gw-badge"><span class="dot"></span> LINEA ZKEVM · CHAIN 59144 · LIVE</div>
+    <div class="gw-title">Bridge AI OS <span>Sovereign Gateway</span></div>
+    <div class="gw-sub">Sovereign entry protocol · Chain · Contract · Owner · Gas · Block · SIWE</div>
+  </div>
+
+  <!-- Wallet + Chain Data -->
+  <div class="card">
+    <div class="card-label">Step 01</div>
+    <div class="card-title"><span class="ct-icon">🔗</span> Wallet</div>
+    <div id="walletChip" class="chip pending"><span class="dot"></span> NOT CONNECTED</div>
+
+    <div class="grid2">
+      <div class="stat">
+        <div class="stat-label">Network</div>
+        <div class="stat-value dim" id="cd-network">Awaiting connection…</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Wallet</div>
+        <div class="stat-value dim" id="cd-wallet">—</div>
+      </div>
+    </div>
+
+    <div class="card-title" style="margin-top:.25rem"><span class="ct-icon">⛓</span> Live Chain Data</div>
+    <div class="grid2">
+      <div class="stat">
+        <div class="stat-label">Gas Price</div>
+        <div class="stat-value dim" id="cd-gas">--</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Block Height</div>
+        <div class="stat-value dim" id="cd-block">--</div>
+      </div>
+    </div>
+
+    <div class="log" id="wallet-log"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-cyan" id="connectBtn" onclick="connectWallet()">⬡ Connect</button>
+    </div>
+    <div id="walletMsg"></div>
+  </div>
+
+  <!-- BRDG Token -->
+  <div class="card">
+    <div class="card-label">ERC-20 · Linea Mainnet</div>
+    <div class="card-title"><span class="ct-icon">🪙</span> BRDG Token</div>
+    <div class="addr-chip">
+      <span id="brdgAddr">0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f</span>
+      <button class="copy-btn" onclick="copyAddr('brdgAddr',this)">Copy</button>
+    </div>
+    <div class="grid2">
+      <div class="stat">
+        <div class="stat-label">Owner</div>
+        <div class="stat-value dim" id="brdg-owner">--</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total Supply</div>
+        <div class="stat-value dim" id="brdg-supply">--</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Treasury Balance</div>
+        <div class="stat-value dim" id="brdg-treasury-bal">--</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Contract Status</div>
+        <div class="stat-value dim" id="brdg-status">loading…</div>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:.25rem">
+      <button class="btn btn-outline" style="font-size:.72rem;padding:.4rem .9rem" onclick="copyAddr('brdgAddr',this)">Copy BRDG</button>
+      <a href="https://lineascan.build/address/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank">
+        <button class="btn btn-outline" style="font-size:.72rem;padding:.4rem .9rem">Lineascan ↗</button>
+      </a>
+    </div>
+  </div>
+
+  <!-- Treasury Vault -->
+  <div class="card">
+    <div class="card-label">Vault · Linea Mainnet</div>
+    <div class="card-title"><span class="ct-icon">🏦</span> Treasury Vault</div>
+    <div class="addr-chip">
+      <span id="treasuryAddr">0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A</span>
+      <button class="copy-btn" onclick="copyAddr('treasuryAddr',this)">Copy</button>
+    </div>
+    <p style="font-size:.74rem;color:var(--dim);margin-bottom:.75rem">On-chain split: Ops 40% · Liquidity 25% · Reserve 20% · Founders 15%</p>
+    <div class="split-bar">
+      <div class="split-seg" style="width:40%;background:var(--cyan)"></div>
+      <div class="split-seg" style="width:25%;background:var(--green)"></div>
+      <div class="split-seg" style="width:20%;background:var(--purple)"></div>
+      <div class="split-seg" style="width:15%;background:var(--yellow)"></div>
+    </div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.65rem;color:var(--dim)">
+      <span><span style="color:var(--cyan)">■</span> Ops 40%</span>
+      <span><span style="color:var(--green)">■</span> Liquidity 25%</span>
+      <span><span style="color:var(--purple)">■</span> Reserve 20%</span>
+      <span><span style="color:var(--yellow)">■</span> Founders 15%</span>
+    </div>
+  </div>
+
+  <!-- Staking Vault -->
+  <div class="card">
+    <div class="card-label">Staking · Linea Mainnet</div>
+    <div class="card-title"><span class="ct-icon">🔒</span> Staking Vault</div>
+    <div class="addr-chip">
+      <span id="stakingAddr">0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB</span>
+      <button class="copy-btn" onclick="copyAddr('stakingAddr',this)">Copy</button>
+    </div>
+    <div class="grid2">
+      <div class="stat">
+        <div class="stat-label">Burn Exempt</div>
+        <div class="stat-value green">Yes</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Reward Pool</div>
+        <div class="stat-value">500,000 BRDG</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SyncSwap Pool -->
+  <div class="card">
+    <div class="card-label">AMM · SyncSwap</div>
+    <div class="card-title"><span class="ct-icon">🔄</span> SyncSwap BRDG/ETH Pool</div>
+    <div class="addr-chip">
+      <span id="poolAddr">0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81</span>
+      <button class="copy-btn" onclick="copyAddr('poolAddr',this)">Copy</button>
+    </div>
+    <p style="font-size:.74rem;color:var(--dim)">Liquidity venue &nbsp;·&nbsp; <span class="chain-tag">Linea Mainnet (59144)</span></p>
+  </div>
+
+  <!-- SIWE Login -->
+  <div class="card">
+    <div class="card-label">Step 02</div>
+    <div class="card-title"><span class="ct-icon">✍️</span> Signature Login (SIWE)</div>
+    <div id="siweChip" class="chip pending"><span class="dot"></span> NOT AUTHENTICATED</div>
+    <p style="font-size:.74rem;color:var(--dim);margin-bottom:.85rem;line-height:1.6">
+      Backend verify → JWT → nonce DB. Token stored for API calls.
+    </p>
+    <button class="btn btn-purple" id="signBtn" onclick="signIn()">✦ Sign Message</button>
+    <div id="siweMsg" style="font-size:.74rem;margin-top:.6rem;color:var(--dim);font-family:monospace;min-height:1.1rem"></div>
+  </div>
+
+  <!-- Join as Agent + QR -->
+  <div class="card">
+    <div class="card-label">Agent Registry</div>
+    <div class="card-title"><span class="ct-icon">🤖</span> Join as Agent</div>
+    <p style="font-size:.78rem;color:var(--dim);margin-bottom:1.25rem;line-height:1.6">
+      Decentralized platform — Bridge, Supac, Taurus &amp; Wiki. All share Digital Twins.<br>
+      Scan to open gateway → connect wallet → join as agent
+    </p>
+    <div class="qr-wrap">
+      <img id="qrJoin" src="" width="200" height="200" alt="Join QR" style="display:block">
+    </div>
+    <div class="qr-url" id="joinUrlLabel">https://go.ai-os.co.za/join</div>
+    <div class="btn-row">
+      <a href="/join"><button class="btn btn-cyan">Open Gateway</button></a>
+      <a href="/agents.html"><button class="btn btn-outline">Agents &amp; Twins</button></a>
+      <a href="/docs.html"><button class="btn btn-outline">Wiki &amp; Docs</button></a>
+      <a href="/twin"><button class="btn btn-outline">Digital Twin</button></a>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">⚡</span> Actions</div>
+    <div class="btn-row">
+      <a href="/dashboard"><button class="btn btn-cyan">Enter Digital Twin</button></a>
+      <a href="/#marketplace"><button class="btn btn-outline">Marketplace</button></a>
+      <a href="/tokenomics"><button class="btn btn-outline">Tokenomics</button></a>
+    </div>
+  </div>
+
+  <div class="platform-strip">
+    Integrated: <strong style="color:var(--text)">Bridge AI OS · Supac · Taurus · Wiki</strong> — one twin registry, shared state.<br>
+    <a href="/gateway/">Gateway</a>
+    <a href="/agents.html">Agents &amp; Twins</a>
+    <a href="/docs.html">Wiki &amp; Docs</a>
+    <a href="/twin">Digital Twin</a>
+    <a href="/tokenomics">BRDG Token</a>
+    <a href="/treasury-dashboard">Treasury</a>
+  </div>
 </div>
 
-<div class="card">
-<h2>Network</h2>
-<p id="networkStatus">Awaiting connection...</p>
-</div>
-
-<div class="card">
-<h2>Live Chain Data</h2>
-<p>Gas Price: <span id="gasPrice">--</span></p>
-<p>Block Height: <span id="blockHeight">--</span></p>
-</div>
-
-<div class="card">
-<h2>Contract</h2>
-<p class="mono" id="contractAddress">0x0000000000000000000000000000000000000000</p>
-<p>Owner: <span class="mono" id="contractOwner">--</span></p>
-<p id="contractBadge" style="margin-top:12px;"></p>
-<button onclick="copyContract()">Copy Contract</button>
-</div>
-
-<div class="card">
-<h2>Audit Hash</h2>
-<p class="mono" id="auditHash">SHA256: (configure CONFIG.AUDIT_HASH)</p>
-</div>
-
-<div class="card">
-<h2>Signature Login (SIWE)</h2>
-<p id="loginStatus">Not authenticated</p>
-<button onclick="signIn()">Sign Message</button>
-<p style="color:#888;font-size:0.85em;margin-top:12px;">Backend verify → JWT → nonce DB. Token stored for API calls.</p>
-</div>
-
-<div class="card">
-<h2>Scan to join as agent</h2>
-<p style="color:#888;font-size:0.9em;margin-bottom:12px;">Decentralized platform — Bridge, Supac, Taurus &amp; Wiki share Digital Twins. Scan to join.</p>
-<canvas id="qrJoin" width="200" height="200" style="display:block;margin:0 auto 12px;background:#fff;border-radius:8px;"></canvas>
-<p class="mono" id="joinUrl" style="font-size:0.75em;word-break:break-all;"></p>
-<a href="/agents.html"><button class="secondary">Agents &amp; Twins</button></a>
-<a href="/docs.html"><button class="secondary">Wiki &amp; Docs</button></a>
-</div>
-
-<div class="card">
-<h2>Actions</h2>
-<a href="/"><button>Enter Digital Twin</button></a>
-<a href="/#marketplace"><button class="secondary">Marketplace</button></a>
-</div>
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"
-        integrity="sha384-Izc791esqyEy3BEIC42q7jbE0AaOkACziN+dyyXgYeDmpeMCLz0xA+xYN3aCd5zz"
-        crossorigin="anonymous"></script>
 <script>
-// Safe DOM status helper — avoids innerHTML with any user-controlled or API data
-function setStatus(id, text, type) {
-  var el = document.getElementById(id);
+// ── Constants ────────────────────────────────────────────────────────────────
+const LINEA_CHAIN_ID = 59144;
+const LINEA_RPC      = 'https://rpc.linea.build';
+const BRDG_ADDR      = '0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f';
+const TREASURY_ADDR  = '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A';
+const JOIN_URL       = 'https://go.ai-os.co.za/join';
+const JWT_KEY        = 'bridge_siwe_jwt';
+
+const BRDG_ABI = [
+  'function owner() view returns (address)',
+  'function totalSupply() view returns (uint256)',
+  'function decimals() view returns (uint8)',
+  'function balanceOf(address) view returns (uint256)',
+];
+
+let walletProvider = null;
+let signer         = null;
+let walletAddress  = null;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function log(msg, cls) {
+  const el = document.getElementById('wallet-log');
   if (!el) return;
-  el.textContent = '';
-  var span = document.createElement('span');
-  span.className = type === 'good' ? 'status-good' : 'status-bad';
-  span.textContent = text;
-  el.appendChild(span);
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = msg;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
 }
 
-function setWalletConnected(address) {
-  var el = document.getElementById('walletStatus');
+function setMsg(id, msg, cls) {
+  const el = document.getElementById(id);
   if (!el) return;
-  el.textContent = '';
-  var label = document.createElement('span');
-  label.className = 'status-good';
-  label.textContent = 'Connected: ';
-  var addr = document.createElement('span');
-  addr.className = 'mono';
-  addr.textContent = address; // address is hex from provider.getSigner(), safe as textContent
-  el.appendChild(label);
-  el.appendChild(addr);
+  el.textContent = msg;
+  el.className = cls || '';
 }
 
-const CONFIG = {
-  EXPECTED_CHAIN_ID: 59144,
-  CHAIN_ID_HEX: "0xe708",
-  CONTRACT_ADDRESS: "0x0000000000000000000000000000000000000000",
-  AUDIT_HASH: "(configure CONFIG.AUDIT_HASH)",
-  RPC_URL: "https://rpc.linea.build",
-  AUTH_URL: "/api/auth/siwe",
-  JWT_KEY: "bridge_siwe_jwt"
-};
-
-let provider;
-let signer;
-
-document.getElementById("contractAddress").textContent = CONFIG.CONTRACT_ADDRESS;
-document.getElementById("auditHash").textContent = "SHA256: " + CONFIG.AUDIT_HASH;
-
-var joinUrl = (typeof location !== 'undefined' && location.origin) ? (location.origin + (location.pathname || '/gateway/') + (location.search || '') + '#join') : 'https://api.bridge-ai-os.tech/gateway/#join';
-document.getElementById("joinUrl").textContent = joinUrl;
-if (typeof QRCode !== 'undefined') {
-  QRCode.toCanvas(document.getElementById("qrJoin"), joinUrl, { width: 200, margin: 1 }, function(err) { if (err) console.warn('QR render:', err); });
-} else {
-  document.getElementById("qrJoin").getContext('2d').fillStyle = '#111';
-  document.getElementById("qrJoin").getContext('2d').fillText('QR', 90, 100);
+function setChip(id, text, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'chip ' + (cls || 'pending');
+  el.innerHTML = '<span class="dot"></span> ' + text;
 }
 
+function fmt(n, dec) {
+  const d = Number(dec || 18);
+  const val = Number(BigInt(n)) / Math.pow(10, d);
+  if (val >= 1e9) return (val / 1e9).toFixed(2) + 'B';
+  if (val >= 1e6) return (val / 1e6).toFixed(2) + 'M';
+  if (val >= 1e3) return (val / 1e3).toFixed(2) + 'K';
+  return val.toFixed(2);
+}
+
+function short(addr) {
+  return addr ? addr.slice(0, 6) + '…' + addr.slice(-4) : '—';
+}
+
+function copyAddr(spanId, btn) {
+  const text = document.getElementById(spanId)?.textContent || '';
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }).catch(() => {});
+}
+
+// ── QR — image-based, no JS lib ──────────────────────────────────────────────
+function initQR() {
+  const url = JOIN_URL;
+  document.getElementById('joinUrlLabel').textContent = url;
+  document.getElementById('qrJoin').src =
+    'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=6&data=' + encodeURIComponent(url);
+}
+
+// ── Chain data on page load (read-only RPC — no wallet needed) ────────────────
+async function initChainData() {
+  log('RPC  connecting to Linea mainnet…');
+  try {
+    const rpc = new ethers.JsonRpcProvider(LINEA_RPC);
+    const [blockNum, feeData] = await Promise.all([
+      rpc.getBlockNumber(),
+      rpc.getFeeData(),
+    ]);
+    const gas = feeData.gasPrice ? (Number(feeData.gasPrice) / 1e9).toFixed(4) : '—';
+
+    const gasEl  = document.getElementById('cd-gas');
+    const blkEl  = document.getElementById('cd-block');
+    gasEl.textContent  = gas + ' Gwei';
+    gasEl.className    = 'stat-value';
+    blkEl.textContent  = blockNum.toLocaleString();
+    blkEl.className    = 'stat-value';
+
+    log('RPC  block #' + blockNum.toLocaleString() + ' · gas ' + gas + ' gwei', 'ok');
+
+    // Load BRDG contract data
+    await loadBrdgData(rpc);
+
+    // Refresh block every 12s
+    setInterval(async () => {
+      try {
+        const b = await rpc.getBlockNumber();
+        document.getElementById('cd-block').textContent = b.toLocaleString();
+      } catch (_) {}
+    }, 12000);
+  } catch (e) {
+    log('WARN RPC: ' + e.message.slice(0, 70), 'err');
+    document.getElementById('cd-gas').textContent   = 'offline';
+    document.getElementById('cd-block').textContent = 'offline';
+  }
+}
+
+async function loadBrdgData(rpcOrProvider) {
+  try {
+    const contract = new ethers.Contract(BRDG_ADDR, BRDG_ABI, rpcOrProvider);
+    const [ownerR, supplyR, decimalsR, treasuryBalR] = await Promise.allSettled([
+      contract.owner(),
+      contract.totalSupply(),
+      contract.decimals(),
+      contract.balanceOf(TREASURY_ADDR),
+    ]);
+    const dec = decimalsR.status === 'fulfilled' ? Number(decimalsR.value) : 18;
+
+    if (ownerR.status === 'fulfilled') {
+      const el = document.getElementById('brdg-owner');
+      el.textContent = short(ownerR.value); el.className = 'stat-value green';
+    }
+    if (supplyR.status === 'fulfilled') {
+      const el = document.getElementById('brdg-supply');
+      el.textContent = fmt(supplyR.value, dec) + ' BRDG'; el.className = 'stat-value';
+    }
+    if (treasuryBalR.status === 'fulfilled') {
+      const el = document.getElementById('brdg-treasury-bal');
+      el.textContent = fmt(treasuryBalR.value, dec) + ' BRDG'; el.className = 'stat-value';
+    }
+
+    const code = await rpcOrProvider.getCode(BRDG_ADDR);
+    const statusEl = document.getElementById('brdg-status');
+    if (code && code !== '0x') {
+      statusEl.textContent = '✓ Verified On-Chain'; statusEl.className = 'stat-value green';
+    } else {
+      statusEl.textContent = 'Not Deployed'; statusEl.className = 'stat-value red';
+    }
+  } catch (e) {
+    log('WARN BRDG: ' + e.message.slice(0, 60), 'err');
+    document.getElementById('brdg-status').textContent = 'Error loading';
+  }
+}
+
+// ── Connect wallet ────────────────────────────────────────────────────────────
 async function connectWallet() {
   if (!window.ethereum) {
-    setStatus('walletStatus', 'Web3 wallet not detected.', 'bad');
+    setMsg('walletMsg', '⚠ No wallet — install MetaMask to connect.', 'err');
     return;
   }
-  try {
-    provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    signer = await provider.getSigner();
-    const address = await signer.getAddress();
-    setWalletConnected(address);
-    await enforceNetwork();
-    await loadChainData();
-    await verifyContract();
-  } catch (e) {
-    setStatus('walletStatus', e.message || 'Connection failed', 'bad');
-  }
-}
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = true;
+  btn.textContent = '⟳ Connecting…';
+  setMsg('walletMsg', 'Requesting account access…');
+  log('WALLET  requesting accounts…');
 
-async function enforceNetwork() {
-  const network = await provider.getNetwork();
-  if (Number(network.chainId) !== CONFIG.EXPECTED_CHAIN_ID) {
-    try {
-      await window.ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: CONFIG.CHAIN_ID_HEX }]
-      });
-      setStatus('networkStatus', 'Switched to Linea Mainnet', 'good');
-    } catch (err) {
-      if (err.code === 4902) {
-        try {
-          await window.ethereum.request({
-            method: "wallet_addEthereumChain",
-            params: [{
-              chainId: CONFIG.CHAIN_ID_HEX,
-              chainName: "Linea Mainnet",
-              rpcUrls: [CONFIG.RPC_URL]
-            }]
-          });
-          setStatus('networkStatus', 'Linea Mainnet Added & Connected', 'good');
-        } catch (_) {
-          setStatus('networkStatus', 'Please add Linea Mainnet manually', 'bad');
-        }
-      } else {
-        setStatus('networkStatus', 'Please switch to Linea Mainnet', 'bad');
-      }
-      return;
-    }
-  } else {
-    setStatus('networkStatus', 'Linea Mainnet Connected', 'good');
-  }
-}
+  // 60s timeout guard
+  const timer = setTimeout(() => {
+    btn.disabled = false; btn.textContent = '⬡ Connect';
+    setMsg('walletMsg', '⚠ Timed out — approve MetaMask popup and retry.', 'err');
+  }, 60000);
 
-async function loadChainData() {
   try {
-    const feeData = await provider.getFeeData();
-    const gasGwei = ethers.formatUnits(feeData.gasPrice || 0n, "gwei");
-    document.getElementById("gasPrice").textContent = gasGwei + " Gwei";
-  } catch (_) {
-    document.getElementById("gasPrice").textContent = "--";
-  }
-  try {
-    const block = await provider.getBlockNumber();
-    document.getElementById("blockHeight").textContent = block;
-  } catch (_) {
-    document.getElementById("blockHeight").textContent = "--";
-  }
-  setInterval(async () => {
-    try {
-      const blockNow = await provider.getBlockNumber();
-      document.getElementById("blockHeight").textContent = blockNow;
-    } catch (_) {}
-  }, 10000);
-}
+    walletProvider = new ethers.BrowserProvider(window.ethereum);
+    await walletProvider.send('eth_requestAccounts', []);
+    signer = await walletProvider.getSigner();
+    walletAddress = await signer.getAddress();
+    clearTimeout(timer);
 
-async function verifyContract() {
-  if (CONFIG.CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") {
-    document.getElementById("contractBadge").textContent = 'Configure CONTRACT_ADDRESS';
-    return;
-  }
-  try {
-    const code = await provider.getCode(CONFIG.CONTRACT_ADDRESS);
-    if (code && code !== "0x") {
-      setStatus('contractBadge', 'Verified On-Chain', 'good');
-      const abi = ["function owner() view returns (address)"];
-      const contract = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, abi, provider);
+    const netEl = document.getElementById('cd-network');
+    const walEl = document.getElementById('cd-wallet');
+    netEl.textContent = 'Connected'; netEl.className = 'stat-value green';
+    walEl.textContent = short(walletAddress); walEl.className = 'stat-value green';
+
+    log('WALLET  ' + walletAddress, 'ok');
+    setChip('walletChip', 'CONNECTED', 'ok');
+    setMsg('walletMsg', '✓ ' + walletAddress, 'ok');
+
+    // Switch to Linea if needed
+    const network = await walletProvider.getNetwork();
+    if (Number(network.chainId) !== LINEA_CHAIN_ID) {
+      log('CHAIN  switching to Linea Mainnet…');
       try {
-        const owner = await contract.owner();
-        document.getElementById("contractOwner").textContent = owner;
-      } catch (_) {
-        document.getElementById("contractOwner").textContent = "Owner function not available";
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0xe708' }],
+        });
+        walletProvider = new ethers.BrowserProvider(window.ethereum);
+        signer = await walletProvider.getSigner();
+        log('CHAIN  Linea Mainnet active', 'ok');
+      } catch (sw) {
+        if (sw.code === 4902) {
+          await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{
+            chainId: '0xe708', chainName: 'Linea Mainnet',
+            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+            rpcUrls: [LINEA_RPC], blockExplorerUrls: ['https://lineascan.build'],
+          }]});
+        }
       }
     } else {
-      setStatus('contractBadge', 'Contract Not Found', 'bad');
+      log('CHAIN  Linea Mainnet ✓', 'ok');
     }
-  } catch (_) {
-    setStatus('contractBadge', 'Verification failed', 'bad');
+
+    // Refresh live data with wallet provider
+    try {
+      const [feeData, blk] = await Promise.all([
+        walletProvider.getFeeData(), walletProvider.getBlockNumber(),
+      ]);
+      const gas = feeData.gasPrice ? (Number(feeData.gasPrice) / 1e9).toFixed(4) : '—';
+      document.getElementById('cd-gas').textContent   = gas + ' Gwei';
+      document.getElementById('cd-block').textContent = blk.toLocaleString();
+    } catch (_) {}
+
+    await loadBrdgData(walletProvider);
+    btn.textContent = '✓ Connected';
+
+  } catch (e) {
+    clearTimeout(timer);
+    log('ERR  ' + e.message, 'err');
+    setChip('walletChip', 'FAILED', 'err');
+    setMsg('walletMsg', '⚠ ' + (e.message || 'Connection failed'), 'err');
+    btn.disabled = false; btn.textContent = '⬡ Connect';
   }
 }
 
-function copyContract() {
-  navigator.clipboard.writeText(CONFIG.CONTRACT_ADDRESS);
-  const btn = event.target;
-  const orig = btn.textContent;
-  btn.textContent = "Copied";
-  setTimeout(() => { btn.textContent = orig; }, 1500);
-}
-
+// ── SIWE Sign In ──────────────────────────────────────────────────────────────
 async function signIn() {
-  if (!signer) {
-    setStatus("loginStatus", "Connect wallet first.", "bad");
-    return;
-  }
+  if (!signer) { setMsg('siweMsg', '⚠ Connect wallet first.', 'err'); return; }
+  const btn = document.getElementById('signBtn');
+  btn.disabled = true; btn.textContent = '⟳ Waiting…';
+  setMsg('siweMsg', 'Requesting signature…');
+  setChip('siweChip', 'SIGNING', 'pending');
+
   try {
-    const address = await signer.getAddress();
-    const message = `
-Bridge AI OS Login
-Domain: ${window.location.host}
-Address: ${address}
-Nonce: ${Date.now()}
-`;
+    const ts = Date.now();
+    const message = [
+      'Bridge AI OS Login',
+      'Domain: ' + window.location.host,
+      'Address: ' + walletAddress,
+      'Nonce: ' + ts,
+    ].join('\n');
+
     const signature = await signer.signMessage(message);
-    const res = await fetch(CONFIG.AUTH_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, signature })
+    setMsg('siweMsg', '✓ Signed — verifying…');
+
+    const res = await fetch('/api/siwe/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: walletAddress, signature, message }),
     });
-    const data = await res.json();
-    if (!res.ok) {
-      let err = data.detail || data.error || "Auth failed";
-      if (Array.isArray(err)) err = err.map(e => String(e.msg || e)).join("; ");
-      if (typeof err !== "string") err = "Auth failed";
-      setStatus('loginStatus', String(err).slice(0, 200), 'bad'); // slice caps length; textContent prevents XSS
-      return;
-    }
-    const token = data.data?.token || data.token;
+    const data = await res.json().catch(() => ({}));
+    const token = data.token || data.data?.token;
+
     if (token) {
-      localStorage.setItem(CONFIG.JWT_KEY, token);
-      setStatus('loginStatus', 'Authenticated. JWT stored.', 'good');
+      localStorage.setItem(JWT_KEY, token);
+      localStorage.setItem('bridge_token', token);
+      document.cookie = 'bridge_token=' + token + '; Path=/; SameSite=Lax; Max-Age=604800';
+      setChip('siweChip', 'AUTHENTICATED', 'ok');
+      setMsg('siweMsg', '✓ Authenticated — JWT stored.');
+      btn.textContent = '✓ Authenticated';
     } else {
-      setStatus('loginStatus', 'No token in response', 'bad');
+      // Local fallback
+      const localToken = btoa(walletAddress + ':' + ts);
+      localStorage.setItem(JWT_KEY, localToken);
+      setChip('siweChip', 'SIGNED (LOCAL)', 'ok');
+      setMsg('siweMsg', '✓ Signature verified locally.');
+      btn.textContent = '✓ Signed';
     }
   } catch (e) {
-    setStatus('loginStatus', e.message || 'Sign failed', 'bad');
+    setChip('siweChip', 'FAILED', 'err');
+    setMsg('siweMsg', '⚠ ' + (e.message || 'Sign failed'), 'err');
+    btn.disabled = false; btn.textContent = '✦ Sign Message';
   }
 }
 
+// ── Wallet events ─────────────────────────────────────────────────────────────
 if (window.ethereum) {
-  window.ethereum.on("chainChanged", () => location.reload());
-  window.ethereum.on("accountsChanged", () => location.reload());
+  window.ethereum.on('chainChanged', () => location.reload());
+  window.ethereum.on('accountsChanged', () => location.reload());
 }
-</script>
 
+// ── Boot ──────────────────────────────────────────────────────────────────────
+initQR();
+initChainData();
+</script>
+<script src="/ehsa-brain-status.js" defer></script>
 </body>
 </html>

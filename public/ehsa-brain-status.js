@@ -77,6 +77,9 @@
         if (d.brain && d.brain.healthy) {
           dot.className = d.degraded ? 'ebs-dot degraded' : 'ebs-dot ok';
           label.textContent = 'brain ' + (d.brain.latency_ms || '?') + 'ms';
+        } else if (d.degraded) {
+          dot.className = 'ebs-dot degraded';
+          label.textContent = 'brain degraded';
         } else {
           dot.className = 'ebs-dot down';
           label.textContent = 'brain offline';

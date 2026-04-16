@@ -1,0 +1,330 @@
+{
+  "dashboard_flows": [
+    {
+      "DASHBOARD": "/c/aoe-unified-final/Xpublic/onboarding.html",
+      "CALLS_ENDPOINT": "http://localhost:5000/api/auth/register",
+      "METHOD": "fetch POST",
+      "ENDPOINT_RETURNS": "{ status: 'registered', user: {email}, ts: timestamp }",
+      "FROM_DATABASE": "none (stub endpoint)",
+      "REFRESH_INTERVAL": "on-load (form submission)"
+    },
+    {
+      "DASHBOARD": "/c/aoe-unified-final/Xpublic/system-status-dashboard.html",
+      "CALLS_ENDPOINT": "http://localhost:5000/health",
+      "METHOD": "link navigation",
+      "ENDPOINT_RETURNS": "{ status: 'OK' }",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "on-load"
+    },
+    {
+      "DASHBOARD": "/c/aoe-unified-final/Xpublic/system-status-dashboard.html",
+      "CALLS_ENDPOINT": "http://localhost:5000/api/status",
+      "METHOD": "link navigation",
+      "ENDPOINT_RETURNS": "{ system: 'BRIDGE AI OS', port: 5000, routes: [...] }",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "on-load"
+    },
+    {
+      "DASHBOARD": "/c/aoe-unified-final/Xpublic/topology.html",
+      "CALLS_ENDPOINT": "http://localhost:3000/api/full",
+      "METHOD": "fetch GET",
+      "ENDPOINT_RETURNS": "{ sys, ports, processes, docker, network, engines, economic, recommendations }",
+      "FROM_DATABASE": "none (system state snapshot)",
+      "REFRESH_INTERVAL": "polling 10s cache"
+    },
+    {
+      "DASHBOARD": "/c/aoe-unified-final/Xpublic/topology.html",
+      "CALLS_ENDPOINT": "http://localhost:3000/api/audit",
+      "METHOD": "fetch GET",
+      "ENDPOINT_RETURNS": "log entries from audit file (last 100)",
+      "FROM_DATABASE": "none (file-based logs)",
+      "REFRESH_INTERVAL": "on-demand"
+    },
+    {
+      "DASHBOARD": "/c/aoe-unified-final/Xpublic/topology.html",
+      "CALLS_ENDPOINT": "http://localhost:3000/api/economics",
+      "METHOD": "fetch GET",
+      "ENDPOINT_RETURNS": "aggregated economics data (revenue, costs, balance)",
+      "FROM_DATABASE": "none (computed from in-memory state)",
+      "REFRESH_INTERVAL": "on-load"
+    },
+    {
+      "DASHBOARD": "/c/aoe-unified-final/Xpublic/topology.html",
+      "CALLS_ENDPOINT": "ws://localhost:3000/terminal",
+      "METHOD": "WebSocket",
+      "ENDPOINT_RETURNS": "terminal output (live shell commands)",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "event-driven"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/dashboard.html",
+      "CALLS_ENDPOINT": "http://localhost:8080/api/health",
+      "METHOD": "fetch GET",
+      "ENDPOINT_RETURNS": "{ status: 'OK', core: {...}, gateway: 'up', ts: timestamp }",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "polling 4000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/registry/nodes.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "node registry list",
+      "FROM_DATABASE": "none (local JSON file)",
+      "REFRESH_INTERVAL": "polling 4000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/network_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/registry/mesh.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "mesh network topology",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "polling 4000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/network_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/registry/telemetry.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "network telemetry metrics",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "polling 4000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/observability/live_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/observability/live_infra.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "infrastructure monitoring data",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "polling 5000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/api_scan/api_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/api_scan/api_results.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "API discovery scan results",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "on-load"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/federation_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/registry/mesh.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "federated mesh state",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "polling 3000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/kernel_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/registry/kernel_state.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "kernel node runtime state",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "polling 2000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/jobs_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/registry/job_queue.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "job queue entries",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "polling 3000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/jobs_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/registry/job_results.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "job execution results",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "polling 3000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/market_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/registry/wallets.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "wallet balances",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "event-driven"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/registry/market_dashboard.html",
+      "CALLS_ENDPOINT": "file:///C:/BridgeAI/registry/ledger.json",
+      "METHOD": "fetch (file protocol)",
+      "ENDPOINT_RETURNS": "financial ledger entries",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "event-driven"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/public/index.html",
+      "CALLS_ENDPOINT": "/api/token",
+      "METHOD": "fetch POST",
+      "ENDPOINT_RETURNS": "{ token: uuid_token }",
+      "FROM_DATABASE": "none (in-memory token map)",
+      "REFRESH_INTERVAL": "on-load"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/public/index.html",
+      "CALLS_ENDPOINT": "/api/join",
+      "METHOD": "fetch POST",
+      "ENDPOINT_RETURNS": "{ sessionId: uuid, ...tokenData }",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "on-demand"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/public/index.html",
+      "CALLS_ENDPOINT": "ws://localhost:8080/ws",
+      "METHOD": "WebSocket",
+      "ENDPOINT_RETURNS": "chat messages { msg: string }",
+      "FROM_DATABASE": "none (in-memory session map)",
+      "REFRESH_INTERVAL": "event-driven"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/immersive.html",
+      "CALLS_ENDPOINT": "http://localhost:3000/health",
+      "METHOD": "fetch GET",
+      "ENDPOINT_RETURNS": "system health status",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "polling 2000ms"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/immersive.html",
+      "CALLS_ENDPOINT": "ws://localhost:3000/events",
+      "METHOD": "WebSocket",
+      "ENDPOINT_RETURNS": "event stream (lead_delivered, ai_inference, etc)",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "event-driven (synthetic 5s heartbeat)"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/immersive.html",
+      "CALLS_ENDPOINT": "http://localhost:4201/api/dci/ws",
+      "METHOD": "WebSocket",
+      "ENDPOINT_RETURNS": "DCI (Digital Commerce Interface) events",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "event-driven",
+      "BROKEN": true,
+      "NOTES": "No server found on port 4201"
+    },
+    {
+      "DASHBOARD": "/c/BridgeAI/immersive.html",
+      "CALLS_ENDPOINT": "http://localhost:4201/api/dash-face/twin-state",
+      "METHOD": "fetch GET",
+      "ENDPOINT_RETURNS": "digital twin state",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "on-demand",
+      "BROKEN": true,
+      "NOTES": "No server found on port 4201"
+    },
+    {
+      "DASHBOARD": "/c/bridgeos/unified/ui.html",
+      "CALLS_ENDPOINT": "http://localhost:8080/api/health",
+      "METHOD": "fetch GET",
+      "ENDPOINT_RETURNS": "gateway health status",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "on-load"
+    },
+    {
+      "DASHBOARD": "/c/aoe-unified-final/Xcontainerx/public/index.html",
+      "CALLS_ENDPOINT": "ws://localhost:3000/terminal",
+      "METHOD": "WebSocket",
+      "ENDPOINT_RETURNS": "shell terminal I/O",
+      "FROM_DATABASE": "none",
+      "REFRESH_INTERVAL": "event-driven"
+    }
+  ],
+  "server_to_server_flows": [
+    {
+      "FROM_SERVER": "gateway.js (port 8080)",
+      "TO_SERVER": "system.js (port 3000)",
+      "ENDPOINT": "http://localhost:3000/health",
+      "PURPOSE": "health check — verify core system is running"
+    },
+    {
+      "FROM_SERVER": "gateway.js (port 8080)",
+      "TO_SERVER": "ainode/server.js (port 3001)",
+      "ENDPOINT": "http://localhost:3001/ask",
+      "PURPOSE": "forward LLM inference requests to Bridge Stable Core"
+    },
+    {
+      "FROM_SERVER": "ainode/server.js (port 3001)",
+      "TO_SERVER": "Ollama LLM (port 11434)",
+      "ENDPOINT": "http://host.docker.internal:11434/api/generate",
+      "PURPOSE": "generate LLM responses using llama3 model"
+    },
+    {
+      "FROM_SERVER": "ainode/server.js (port 3001)",
+      "TO_SERVER": "Ollama LLM (port 11434)",
+      "ENDPOINT": "http://host.docker.internal:11434/api/tags",
+      "PURPOSE": "check LLM service availability"
+    },
+    {
+      "FROM_SERVER": "ainode/server.js (port 3001)",
+      "TO_SERVER": "bridgedb PostgreSQL (Docker bridge-postgres:5432)",
+      "ENDPOINT": "TCP connection",
+      "PURPOSE": "audit logging, tenant management, revenue tracking, usage records"
+    },
+    {
+      "FROM_SERVER": "laptop1-streaming-orchestrator.js (port 9000)",
+      "TO_SERVER": "laptop2-streaming-orchestrator.js (port 9001)",
+      "ENDPOINT": "http://localhost:9001/api/status",
+      "PURPOSE": "verify L2 verification orchestrator is running"
+    },
+    {
+      "FROM_SERVER": "laptop2-streaming-orchestrator.js (port 9001)",
+      "TO_SERVER": "laptop1-streaming-orchestrator.js (port 9000)",
+      "ENDPOINT": "http://localhost:9000/api/status",
+      "PURPOSE": "check L1 master orchestrator state"
+    },
+    {
+      "FROM_SERVER": "laptop3-minimax-orchestrator.js (port 9002)",
+      "TO_SERVER": "laptop1-streaming-orchestrator.js (port 9000)",
+      "ENDPOINT": "http://localhost:9000/api/status",
+      "PURPOSE": "connect to L1 for master orchestration"
+    },
+    {
+      "FROM_SERVER": "laptop3-minimax-orchestrator.js (port 9002)",
+      "TO_SERVER": "laptop2-streaming-orchestrator.js (port 9001)",
+      "ENDPOINT": "http://localhost:9001/api/status",
+      "PURPOSE": "sync with L2 verification orchestrator"
+    },
+    {
+      "FROM_SERVER": "Xpayments/server.js (port 4000)",
+      "TO_SERVER": "bridgedb PostgreSQL (Docker bridge-postgres:5432)",
+      "ENDPOINT": "TCP connection",
+      "PURPOSE": "process payment webhooks, create users, activate credits"
+    }
+  ],
+  "orphaned_endpoints": [
+    "POST /api/webhooks/payfast (Xpayments:4000) — webhook only, no frontend caller",
+    "GET /revenue/plans (ainode:3001) — no dashboard accesses it",
+    "GET /revenue/stats (ainode:3001) — no dashboard accesses it",
+    "POST /revenue/subscribe (ainode:3001) — no dashboard accesses it",
+    "POST /revenue/credits/purchase (ainode:3001) — no dashboard accesses it",
+    "GET /api/agents (laptop1:9000) — agent list not called by any dashboard",
+    "GET /api/conflicts (laptop2:9001) — conflict detection not wired to UI",
+    "GET /api/optimization/* (laptop3:9002) — optimization endpoints not called by dashboards"
+  ],
+  "orphaned_dashboards": [
+    "/c/BridgeAI/immersive.html — calls localhost:4201/api/dci/ws (no server on port 4201)",
+    "/c/BridgeAI/immersive.html — calls localhost:4201/api/dash-face/twin-state (no server on port 4201)",
+    "/c/BridgeAI/api_graph/api_graph.html — reads file:///C:/BridgeAI/api_graph/api_map.json (file not found)",
+    "/c/BridgeAI/dash_view.html — reads file:///C:/BridgeAI/tasks.json and metrics.json (files not found)",
+    "/c/BridgeAI/registry/node_map_3d.html — reads nodes.json (no server writes it)"
+  ],
+  "summary": {
+    "total_flows": 28,
+    "broken_flows": 5,
+    "orphaned_server_endpoints": 8,
+    "database_connected_servers": {
+      "ainode:3001": "bridgedb PostgreSQL — audit logs, tenants, subscriptions, usage, billing",
+      "Xpayments:4000": "bridgedb PostgreSQL — payment webhooks, user activation"
+    },
+    "architecture_pattern": "Hybrid file-based + HTTP API — Dashboards primarily read local JSON files via polling; real-time events via WebSocket; no dashboard directly queries a database",
+    "data_flow_summary": "UI (file:// polls) → JSON registry files + (fetch/WS) → HTTP APIs → PostgreSQL (bridgedb) or in-memory state",
+    "notes": [
+      "Most BridgeAI registry dashboards use file:// protocol — will break in any hosted deployment",
+      "Port 3000 conflict: topology.html and Xcontainerx BOTH connect to ws://localhost:3000/terminal",
+      "Orchestrators L1/L2/L3 form a control plane with no dashboard interface — invisible to operators",
+      "Revenue/billing endpoints on ainode exist but are completely unexposed to any UI",
+      "File-based state (mesh.json, nodes.json) polled every 2-5s but no server writes them — source unclear",
+      "immersive.html references port 4201 (DCI/dash-face) which has no server implementation"
+    ]
+  }
+}

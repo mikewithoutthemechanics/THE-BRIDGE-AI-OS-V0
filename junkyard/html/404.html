@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>404 — Page Not Found | Bridge AI OS</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#060810;--cyan:#63ffda;--green:#00FF88;--red:#FF0033;--muted:#94a3b8;--border:#1a2a3a}
+    body{background:var(--bg);color:#fff;font-family:'Outfit',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px}
+    .wrap{max-width:480px}
+    .code{font-size:96px;font-weight:800;color:var(--red);font-family:'JetBrains Mono',monospace;line-height:1;letter-spacing:-4px;text-shadow:0 0 40px rgba(255,0,51,0.3)}
+    .label{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:3px;text-transform:uppercase;margin:16px 0 8px}
+    h1{font-size:22px;font-weight:700;margin-bottom:12px}
+    .path{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--cyan);background:rgba(99,255,218,0.08);border:1px solid rgba(99,255,218,0.2);border-radius:6px;padding:6px 14px;display:inline-block;margin-bottom:28px;word-break:break-all}
+    .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .btn{padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:all 0.2s;display:inline-block}
+    .btn-primary{background:var(--cyan);color:#000}
+    .btn-primary:hover{background:#fff}
+    .btn-ghost{border:1px solid var(--border);color:var(--muted)}
+    .btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+    .hint{margin-top:32px;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="code">404</div>
+    <div class="label">Module Not Found</div>
+    <h1>This page doesn't exist in the OS</h1>
+    <div class="path" id="path-display"></div>
+    <div class="actions">
+      <a href="/ui.html" class="btn btn-primary">&#8592; Back to Dashboard</a>
+      <a href="/sitemap" class="btn btn-ghost">View Sitemap</a>
+    </div>
+    <p class="hint">Bridge AI OS v2.5 &mdash; If you think this is an error, check <a href="/sitemap" style="color:var(--cyan)">the sitemap</a>.</p>
+  </div>
+  <script>
+    var p = window.location.pathname;
+    document.getElementById('path-display').textContent = p;
+  </script>
+</body>
+</html>

@@ -142,6 +142,19 @@
   ::-webkit-scrollbar{width:4px;height:4px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+  /* BRAIN ORCHESTRATOR */
+  .brain-pane-row{display:flex;height:460px;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:4px}
+  #brain-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+  #brain-canvas{display:block;width:100%;height:100%;cursor:crosshair}
+  #brain-exec-log{width:230px;flex-shrink:0;overflow-y:auto;padding:10px 12px;background:var(--bg2);border-left:1px solid var(--border)}
+  .blog{font-size:9px;padding:5px 0;border-bottom:1px solid var(--border);color:var(--text);line-height:1.4}
+  .blog .bid{color:var(--cyan);font-weight:700}.blog .bsrc{color:var(--purple);font-size:8px}
+  .blog .bok{color:var(--green)}.blog .berr{color:var(--red)}
+  #brain-legend{position:absolute;bottom:8px;left:10px;display:flex;gap:10px;font-size:9px;color:var(--dim);pointer-events:none}
+  .bleg{display:flex;align-items:center;gap:4px}
+  .bleg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  #brain-hint{position:absolute;top:8px;right:10px;font-size:9px;color:var(--dim);pointer-events:none}
 </style>
 </head>
 <body>
@@ -173,6 +186,7 @@
   </div>
   <div class="nav-section">
     <div class="nav-header">SKILLS</div>
+    <a class="nav-item" href="#" onclick="sw('brain')"><span class="nav-ico">🧠</span>Brain Orchestrator<span class="nav-badge live" id="nb-brain">●</span></a>
     <a class="nav-item" href="#" onclick="sw('skills')"><span class="nav-ico">⚡</span>Skill Registry<span class="nav-badge" id="nb-sk">0</span></a>
     <a class="nav-item" href="#" onclick="sw('vis')"><span class="nav-ico">◎</span>SVG Visualizer</a>
     <a class="nav-item" href="#" onclick="sw('yt')"><span class="nav-ico">▶</span>YouTube Discover</a>
@@ -205,6 +219,7 @@
   <div id="tabs">
     <div class="tab active" id="t-overview" onclick="sw('overview')">LIVE MAP</div>
     <div class="tab" id="t-treasury"         onclick="sw('treasury')">TREASURY</div>
+    <div class="tab" id="t-brain"            onclick="sw('brain')">🧠 BRAIN</div>
     <div class="tab" id="t-skills"           onclick="sw('skills')">SKILLS</div>
     <div class="tab" id="t-vis"              onclick="sw('vis')">SVG VIS</div>
     <div class="tab" id="t-yt"               onclick="sw('yt')">YOUTUBE</div>
@@ -294,6 +309,35 @@
             <button class="btn p" onclick="ytLearn()">LEARN</button>
           </div>
           <div id="yt-lr" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <!-- ══ BRAIN ORCHESTRATOR ══ -->
+      <div id="pane-brain" style="display:none">
+        <div class="grid3" style="margin-bottom:8px">
+          <div class="card"><div class="card-title">TOTAL SKILLS</div><div class="card-val" id="br-tot">—</div><div class="card-sub">SVG + brain-learned</div></div>
+          <div class="card"><div class="card-title">LEARNED</div><div class="card-val" id="br-lrn">—</div><div class="card-sub">YouTube-ingested</div></div>
+          <div class="card"><div class="card-title">DISPATCHES</div><div class="card-val" id="br-dis">0</div><div class="card-sub">this session</div></div>
+        </div>
+        <div class="row">
+          <input class="inp" id="br-query" placeholder="intent query — e.g. blockchain automation, defi yield…">
+          <button class="btn p" onclick="brDispatch()">DISPATCH</button>
+          <button class="btn" onclick="loadBrain()">REFRESH GRAPH</button>
+        </div>
+        <div class="brain-pane-row">
+          <div id="brain-wrap">
+            <canvas id="brain-canvas"></canvas>
+            <div id="brain-legend">
+              <div class="bleg"><div class="bleg-dot" style="background:#63ffda"></div>SVG native</div>
+              <div class="bleg"><div class="bleg-dot" style="background:#a855f7"></div>Brain-learned</div>
+              <div class="bleg"><div class="bleg-dot" style="background:#ff4da6;box-shadow:0 0 4px #ff4da6"></div>BRAIN CORE</div>
+            </div>
+            <div id="brain-hint">Click node to execute · Drag to pan</div>
+          </div>
+          <div id="brain-exec-log">
+            <div style="font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:6px">EXECUTION LOG</div>
+            <div id="br-log"><div style="color:var(--dim);font-size:9px">No executions yet. Click a skill node or use DISPATCH.</div></div>
+          </div>
         </div>
       </div>
 
@@ -405,7 +449,29 @@ function pill(id,s,lbl){
 }
 
 // FETCH
-async function api(path,o){const r=await fetch(API+path,o);if(!r.ok)throw new Error(r.status);return r.json();}
+async function api(path,o){
+  async function _doFetch(url){
+    const r=await fetch(url,o);
+    let body=null;
+    try{body=await r.json();}catch(_){}
+    if(!r.ok){
+      const err=new Error(String(r.status));
+      err.status=r.status;
+      err.body=body;
+      throw err;
+    }
+    return body||{};
+  }
+  try{
+    return await _doFetch(API+path);
+  }catch(e){
+    // Vercel-style deployments expose routes under /api/* only.
+    if((e.status===404||String(e.message)==='404') && !path.startsWith('/api/')){
+      return _doFetch('/api'+path);
+    }
+    throw e;
+  }
+}
 async function svgTxt(path){const r=await fetch(SVG+path);if(!r.ok)throw new Error(r.status);return r.text();}
 
 // HTML escape helper — prevents API/user data from injecting markup
@@ -424,6 +490,7 @@ function sw(id){
   _tab=id;
   if(id==='treasury')loadTr();
   if(id==='skills')loadSk();
+  if(id==='brain'){loadBrain();}
   if(id==='output')loadOut();
   if(id==='swarm')loadSwarm();
   if(id==='econ')loadEcon();
@@ -523,12 +590,17 @@ async function loadSk(){
   try{
     const r=await fetch(SVG+'/skills').then(r=>r.json()).catch(()=>[]);
     (Array.isArray(r)?r:r.skills||[]).forEach(s=>_allSk.push({...s,_o:'svg-engine'}));
-    document.getElementById('nb-sk').textContent=_allSk.length;
   }catch{}
   try{
     const d=await api('/skills/definitions');
     (d.definitions||[]).forEach(s=>{if(!_allSk.find(x=>x.id===s.id))_allSk.push({...s,_o:'backend'});});
   }catch{}
+  // Also show brain-learned skills
+  try{
+    const lb=await api('/skills/learned');
+    (lb.skills||[]).forEach(s=>{if(!_allSk.find(x=>x.id===s.id))_allSk.push({...s,_o:'brain-learned'});});
+  }catch{}
+  document.getElementById('nb-sk').textContent=_allSk.length;
   renderSk(_allSk);
 }
 function filterSk(){
@@ -563,24 +635,51 @@ async function doVis(){
   const c=document.getElementById('svg-c');c.innerHTML='<div style="color:var(--dim)">Loading…</div>';
   try{c.innerHTML=await svgTxt('/teach/'+encodeURIComponent(id));}
   catch{
-    const _e=document.createElement('div');_e.style.color='var(--red)';
-    _e.textContent='Skill not in SVG engine: '+id;
+    // SVG teach not found — show brain skill card instead
+    try{
+      const lb=await api('/skills/learned');
+      const sk=(lb.skills||[]).find(s=>s.id===id);
+      if(sk){
+        c.innerHTML='';
+        const wrap=document.createElement('div');wrap.style.cssText='padding:12px;width:100%';
+        const hdr=document.createElement('div');hdr.style.cssText='color:var(--purple);font-size:11px;font-weight:700;margin-bottom:8px';
+        hdr.textContent='🧠 BRAIN-LEARNED SKILL · '+sk.id;
+        const info=document.createElement('div');
+        info.innerHTML=SR('Name',sk.name||'—')+SR('Source',sk.source||'brain-learned')+SR('Steps',sk.steps||0)+SR('Tags',(sk.tags||[]).join(', '));
+        const hint=document.createElement('div');hint.style.cssText='color:var(--dim);font-size:9px;margin-top:8px';
+        hint.textContent='This skill lives in the Brain runtime. Click EXECUTE to run it via the Brain Orchestrator.';
+        wrap.appendChild(hdr);wrap.appendChild(info);wrap.appendChild(hint);
+        c.appendChild(wrap);return;
+      }
+    }catch{}
+    const _e=document.createElement('div');_e.style.cssText='color:var(--dim);padding:12px';
+    _e.textContent='Skill "'+id+'" not found in SVG engine or Brain. Try EXECUTE to dispatch via Brain.';
     c.textContent='';c.appendChild(_e);
   }
 }
 async function doExec(){
   const id=document.getElementById('vis-id').value.trim();if(!id)return toast('Enter skill id','err');
   _visSk=id;_visMode='run';
+  const _out=document.getElementById('exec-out');
+  _out.innerHTML='<div style="color:var(--dim);font-size:10px">Executing via Brain Orchestrator…</div>';
   try{
-    const d=await fetch(SVG+'/run/'+encodeURIComponent(id)).then(r=>r.json());
+    // Always route through /api/execute — it tries SVG first, escalates to brain for learned skills
+    const d=await fetch('/api/execute',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({skill:id,query:id})}).then(r=>r.json());
     const _card=document.createElement('div');_card.className='card';
-    const _ct=document.createElement('div');_ct.className='card-title';_ct.textContent='EXECUTION · '+id;
-    const _pre=document.createElement('pre');_pre.style.cssText='font-size:10px;color:var(--cyan);overflow:auto;max-height:150px;margin-top:6px';
+    const src=d.escalated_from?'BRAIN ESCALATED':'SVG ENGINE';
+    const _ct=document.createElement('div');_ct.className='card-title';
+    _ct.textContent='EXECUTION · '+id+' · via '+src;
+    _ct.style.color=d.escalated_from?'var(--purple)':'var(--cyan)';
+    const _pre=document.createElement('pre');_pre.style.cssText='font-size:10px;color:var(--cyan);overflow:auto;max-height:200px;margin-top:6px';
     _pre.textContent=JSON.stringify(d,null,2);
     _card.appendChild(_ct);_card.appendChild(_pre);
-    const _out=document.getElementById('exec-out');_out.textContent='';_out.appendChild(_card);
-    toast('Executed: '+id,'ok');
-  }catch(e){toast('Execute failed: '+e.message,'err');}
+    _out.textContent='';_out.appendChild(_card);
+    toast((d.escalated_from?'🧠 Brain executed: ':'SVG executed: ')+id,'ok');
+  }catch(e){
+    _out.innerHTML='';
+    toast('Execute failed: '+e.message,'err');
+  }
 }
 async function doGraph(){
   _visMode='graph';const c=document.getElementById('svg-c');
@@ -604,7 +703,7 @@ async function ytSrch(){
     const res=await api(`/skills/youtube-search?q=${encodeURIComponent(q)}&limit=${lim}`);
     if(!res.ok){
       const _eDiv=document.createElement('div');_eDiv.style.color='var(--red)';
-      _eDiv.textContent=(res.reason||'Error')+' — set YOUTUBE_API_KEY in .env';
+      _eDiv.textContent=(res.reason||res.error||'Search failed');
       el.textContent='';el.appendChild(_eDiv);return;
     }
     // Build results with DOM methods — r.video_id / r.url are untrusted API data
@@ -633,14 +732,18 @@ async function ytSrch(){
     toast('Found '+(res.count||0)+' videos','ok');
   }catch(e){
     const _eDiv=document.createElement('div');_eDiv.style.color='var(--red)';
-    _eDiv.textContent='API error: '+e.message+' — is YOUTUBE_API_KEY set?';
+    const reason=(e&&e.body&&(e.body.error||e.body.reason))?(' — '+(e.body.error||e.body.reason)):'';
+    _eDiv.textContent='API error: '+e.message+reason;
     el.textContent='';el.appendChild(_eDiv);
   }
 }
 async function ytLearn(){
-  const vid=document.getElementById('yt-vid').value.trim();
+  const raw=document.getElementById('yt-vid').value.trim();
+  const m=raw.match(/(?:v=|\/shorts\/|youtu\.be\/)?([A-Za-z0-9_-]{11})/);
+  const vid=(m&&m[1])?m[1]:raw;
   const save=document.getElementById('yt-save').checked;
   if(!vid)return toast('Enter video_id','err');
+  if(!/^[A-Za-z0-9_-]{11}$/.test(vid))return toast('Invalid YouTube video ID (11 chars)','err');
   const el=document.getElementById('yt-lr');el.innerHTML='<div style="color:var(--dim)">Learning…</div>';
   try{
     const res=await api('/skills/learn-from-youtube',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({video_id:vid,save})});
@@ -652,7 +755,10 @@ async function ytLearn(){
       ${(s.steps||[]).length?`<div style="margin-top:8px"><div class="card-title">STEPS</div>${s.steps.map((st,i)=>SR(`${i+1}. ${st.title}`,st.detail||'')).join('')}</div>`:''}
     </div>`;
     toast('Skill learned'+(res.saved?' + saved':'')+': '+(s.id||vid),'ok');
-  }catch(e){el.innerHTML=`<div style="color:var(--red)">Failed: ${e.message}</div>`;}
+  }catch(e){
+    const reason=(e&&e.body&&(e.body.error||e.body.reason))?(' — '+(e.body.error||e.body.reason)):'';
+    el.innerHTML=`<div style="color:var(--red)">Failed: ${e.message}${reason}</div>`;
+  }
 }
 
 // ── BUILD OUTPUT ──

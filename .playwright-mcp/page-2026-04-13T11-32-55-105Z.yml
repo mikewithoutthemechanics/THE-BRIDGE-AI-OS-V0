@@ -1,0 +1,98 @@
+- generic [active] [ref=e1]:
+  - navigation "Main navigation" [ref=e2]:
+    - link "BRIDGE AI" [ref=e3] [cursor=pointer]:
+      - /url: /home
+      - text: BRIDGE
+      - generic [ref=e4]: AI
+    - menubar [ref=e5]:
+      - link "Home" [ref=e6] [cursor=pointer]:
+        - /url: /home
+      - link "Pricing" [ref=e7] [cursor=pointer]:
+        - /url: /pricing
+      - link "Docs" [ref=e8] [cursor=pointer]:
+        - /url: /docs
+      - link "Claude Partner" [ref=e9] [cursor=pointer]:
+        - /url: /claude-partner
+      - link "Voice AI" [ref=e10] [cursor=pointer]:
+        - /url: /voice
+      - link "Portal" [ref=e11] [cursor=pointer]:
+        - /url: /portal
+    - link "Ryan" [ref=e13] [cursor=pointer]:
+      - /url: /portal
+      - text: Ryan
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - heading "Settings" [level=1] [ref=e17]
+      - paragraph [ref=e18]: Profile, preferences and developer options — synced across devices.
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]: 👤
+        - heading "Profile" [level=2] [ref=e22]
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]: Email
+          - generic [ref=e26]: —
+        - generic [ref=e27]:
+          - generic [ref=e28]: Plan
+          - generic [ref=e30]: free
+        - generic [ref=e31]:
+          - generic [ref=e32]: Display name
+          - textbox "Display name" [ref=e33]:
+            - /placeholder: Your name
+        - generic [ref=e34]:
+          - generic [ref=e35]: Company / Organisation
+          - textbox "Company / Organisation" [ref=e36]:
+            - /placeholder: Your company
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e39]: ⚙️
+        - heading "Preferences" [level=2] [ref=e40]
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]: Theme
+          - combobox "Theme" [ref=e44]:
+            - option "Dark" [selected]
+            - option "Light"
+            - option "System default"
+        - generic [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]:
+            - generic [ref=e47]: Notifications
+            - generic [ref=e48]: Browser push notifications for agent events
+          - generic [ref=e49]:
+            - checkbox "Notifications Browser push notifications for agent events"
+        - generic [ref=e52] [cursor=pointer]:
+          - generic [ref=e53]:
+            - generic [ref=e54]: Live refresh
+            - generic [ref=e55]: Auto-poll dashboard and agents view every 10s
+          - generic [ref=e56]:
+            - checkbox "Live refresh Auto-poll dashboard and agents view every 10s" [checked]
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e61]: 🔧
+        - heading "Developer" [level=2] [ref=e62]
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - generic [ref=e65]: API base URL
+          - textbox "API base URL" [ref=e66]:
+            - /placeholder: Leave empty for same origin
+          - generic [ref=e67]: Override the backend URL used by all Bridge apps. Empty = same origin.
+        - generic [ref=e68]:
+          - generic [ref=e69]: Cross-device user ID
+          - textbox "Cross-device user ID" [ref=e70]:
+            - /placeholder: default
+          - generic [ref=e71]:
+            - text: Sent as
+            - code [ref=e72]: X-User-Id
+            - text: header. Sync settings between devices using the same ID.
+    - generic [ref=e73]:
+      - button "Save settings" [ref=e74] [cursor=pointer]
+      - button "Reset to defaults" [ref=e75] [cursor=pointer]
+    - generic [ref=e76]:
+      - generic [ref=e77]:
+        - generic [ref=e78]: 🔐
+        - heading "Account" [level=2] [ref=e79]
+      - generic [ref=e81]:
+        - generic [ref=e82]:
+          - generic [ref=e83]: Sign out
+          - generic [ref=e84]: Sign out from this device and clear local session
+        - button "Sign out" [ref=e85] [cursor=pointer]

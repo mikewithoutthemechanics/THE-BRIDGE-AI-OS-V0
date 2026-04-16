@@ -99,9 +99,185 @@ function notFound(res, msg = 'Not found') {
 
 // ── Router ───────────────────────────────────────────────────────────────────
 
+// ── Avatar generation helper ──────────────────────────────────────────────────
+async function generateAvatarImage(prompt, style) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey || apiKey.startsWith('your_')) throw new Error('OpenAI API key not configured');
+
+  const stylePrefix = {
+    cyberpunk:    'cyberpunk neon-lit portrait, dark background, glowing circuits, ',
+    professional: 'professional corporate headshot portrait, clean background, ',
+    artistic:     'digital art portrait, vibrant colors, abstract background, ',
+    pixel:        '32-bit pixel art avatar portrait, retro game style, ',
+    anime:        'anime style portrait illustration, colorful, ',
+    minimal:      'minimalist flat design avatar, geometric shapes, clean, ',
+  }[style] || '';
+
+  const fullPrompt = stylePrefix + prompt + ', high quality, 512x512';
+
+  const resp = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'dall-e-3', prompt: fullPrompt, n: 1, size: '1024x1024', response_format: 'url' }),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err?.error?.message || 'Image generation failed');
+  }
+
+  const data = await resp.json();
+  return data.data?.[0]?.url || null;
+}
+
+function escapeXml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function pickPalette(style) {
+  const palettes = {
+    cyberpunk: ['#00c8ff', '#7c3aed', '#0f172a', '#67e8f9'],
+    professional: ['#1f2937', '#0ea5e9', '#f8fafc', '#334155'],
+    artistic: ['#f97316', '#22d3ee', '#4f46e5', '#fde68a'],
+    pixel: ['#111827', '#10b981', '#60a5fa', '#f59e0b'],
+    anime: ['#fb7185', '#38bdf8', '#f5d0fe', '#1f2937'],
+    minimal: ['#0f172a', '#94a3b8', '#22d3ee', '#e2e8f0'],
+  };
+  return palettes[style] || palettes.cyberpunk;
+}
+
+function buildLayeredAvatarSvg(prompt, style) {
+  const safePrompt = (prompt || 'Bridge Avatar').trim().slice(0, 48);
+  const [c1, c2, c3, c4] = pickPalette(style);
+  const initials = safePrompt
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s.charAt(0).toUpperCase())
+    .join('') || 'BA';
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${escapeXml(c1)}"/>
+      <stop offset="100%" stop-color="${escapeXml(c2)}"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="${escapeXml(c4)}" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="${escapeXml(c3)}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="430" r="250" fill="url(#halo)"/>
+  <circle cx="512" cy="390" r="170" fill="${escapeXml(c4)}" fill-opacity="0.92"/>
+  <rect x="322" y="560" width="380" height="280" rx="170" fill="${escapeXml(c3)}" fill-opacity="0.9"/>
+  <text x="512" y="430" text-anchor="middle" dominant-baseline="middle"
+        font-family="Inter,Segoe UI,Arial,sans-serif" font-size="120" font-weight="800"
+        fill="${escapeXml(c3)}">${escapeXml(initials)}</text>
+  <text x="512" y="920" text-anchor="middle"
+        font-family="Inter,Segoe UI,Arial,sans-serif" font-size="34"
+        fill="${escapeXml(c4)}" fill-opacity="0.95">${escapeXml(safePrompt)}</text>
+</svg>`.trim();
+  const encoded = Buffer.from(svg, 'utf8').toString('base64');
+  return {
+    svg,
+    dataUrl: `data:image/svg+xml;base64,${encoded}`,
+  };
+}
+
+function buildBabylonAvatarPreset(prompt, style) {
+  const palette = pickPalette(style);
+  return {
+    renderer: 'babylon.js',
+    scene_type: 'avatar-procedural',
+    style: style || 'cyberpunk',
+    display_name: (prompt || 'Bridge Avatar').trim().slice(0, 48),
+    palette,
+    parts: {
+      head: { type: 'sphere', diameter: 1.15 },
+      torso: { type: 'capsule', height: 1.8, radius: 0.34 },
+      eyes: { type: 'sphere', diameter: 0.11 },
+    },
+    animations: ['idle', 'breathe', 'look-around'],
+  };
+}
+
 async function handlePlatform(req, res) {
   const url = req.url.replace(/\?.*$/, '');
   const method = req.method;
+
+  // ── AVATAR GENERATE ────────────────────────────────────────────────────────
+  if (url === '/api/platform/avatar/generate' && method === 'POST') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+    const { prompt, style, includeBabylon } = req.body || {};
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3)
+      return res.status(400).json({ ok: false, error: 'Prompt must be at least 3 characters' });
+    try {
+      const imageUrl = await generateAvatarImage(prompt.trim().slice(0, 400), style || 'cyberpunk');
+      return res.json({
+        ok: true,
+        url: imageUrl,
+        prompt,
+        style,
+        source: 'dall-e',
+        fallback_used: false,
+        babylon: includeBabylon ? buildBabylonAvatarPreset(prompt, style || 'cyberpunk') : null,
+      });
+    } catch (e) {
+      const fallback = buildLayeredAvatarSvg(prompt.trim().slice(0, 400), style || 'cyberpunk');
+      return res.json({
+        ok: true,
+        url: fallback.dataUrl,
+        prompt,
+        style,
+        source: 'svg-fallback',
+        fallback_used: true,
+        warning: e.message,
+        svg: fallback.svg,
+        babylon: includeBabylon ? buildBabylonAvatarPreset(prompt, style || 'cyberpunk') : null,
+      });
+    }
+  }
+
+  // ── WALLET AGENT REGISTRATION ─────────────────────────────────────────────
+  if (url === '/api/platform/agent/register-wallet' && method === 'POST') {
+    const { address, signature, timestamp, chain } = req.body || {};
+    if (!address || !signature) return res.status(400).json({ ok: false, error: 'address and signature required' });
+    const agentId = 'AGT-' + address.slice(2, 8).toUpperCase() + '-LINEA';
+    try {
+      if (isConfigured) {
+        await supabase.from('agent_registrations').upsert({
+          address: address.toLowerCase(), signature, chain: chain || 'linea',
+          agent_id: agentId, registered_at: new Date(timestamp || Date.now()).toISOString(),
+        }, { onConflict: 'address' }).catch(() => {});
+      }
+    } catch (_) { /* non-fatal */ }
+    return res.json({ ok: true, agentId, address, chain: chain || 'linea' });
+  }
+
+  // ── AVATAR SET (persist to user profile) ──────────────────────────────────
+  if (url === '/api/platform/avatar/set' && method === 'POST') {
+    const user = await requireUser(req);
+    if (!user) return unauthorized(res);
+    const { avatarUrl } = req.body || {};
+    if (!avatarUrl || typeof avatarUrl !== 'string') return res.status(400).json({ ok: false, error: 'avatarUrl required' });
+    try {
+      if (isConfigured) {
+        await supabase.from('users').update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() }).eq('id', user.id);
+      } else {
+        await userDb.updateUser(user.id, { avatar_url: avatarUrl });
+      }
+      return res.json({ ok: true, avatarUrl });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
 
   // ── TOOLS LIST ─────────────────────────────────────────────────────────────
   if (url === '/api/platform/tools' && method === 'GET') {

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeFi Dashboard - Bridge AI OS</title>
+<style>
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--a);text-decoration:none}a:hover{text-decoration:underline}
+.topnav{background:var(--bg2);border-bottom:1px solid #1a2a3a;padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;overflow-x:auto;flex-shrink:0}
+.topnav .logo{font-weight:700;font-size:1.1rem;color:var(--a);white-space:nowrap}
+.topnav a{color:var(--t);font-size:.85rem;white-space:nowrap;padding:.35rem .6rem;border-radius:6px;transition:all .2s}
+.topnav a:hover,.topnav a.active{color:var(--w);background:#1a2a3a;text-decoration:none}
+main{flex:1;padding:1.5rem;max-width:1400px;width:100%;margin:0 auto}
+h1{font-size:1.8rem;margin-bottom:.25rem}
+.subtitle{color:var(--t);margin-bottom:1.5rem}
+.grid{display:grid;gap:1rem}.grid-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}.grid-3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}.grid-4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.25rem}
+.card h2{font-size:1.1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:600}
+.badge-green{background:#00e57b22;color:var(--g)}.badge-blue{background:#00c8ff22;color:var(--a)}.badge-red{background:#ff446622;color:var(--r)}.badge-yellow{background:#ffaa0022;color:var(--y)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;color:var(--t);font-weight:500;padding:.5rem;border-bottom:1px solid #1a2a3a}
+td{padding:.5rem;border-bottom:1px solid #0d1520}
+.btn{display:inline-block;padding:.6rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:all .2s;text-align:center}
+.btn-primary{background:var(--a);color:#000}.btn-primary:hover{opacity:.85;text-decoration:none}
+.btn-green{background:var(--g);color:#000}.btn-green:hover{opacity:.85;text-decoration:none}
+.btn-outline{border:1px solid var(--a);color:var(--a);background:transparent}.btn-outline:hover{background:var(--a);color:#000;text-decoration:none}
+.auth-only{display:none}.upgrade-cta{display:block}
+.cta-box{background:linear-gradient(135deg,#00c8ff11,#00e57b11);border:1px solid #00c8ff33;border-radius:var(--radius);padding:1.5rem;text-align:center;margin:1rem 0}
+.cta-box h3{margin-bottom:.5rem}.cta-box p{color:var(--t);margin-bottom:1rem;font-size:.9rem}
+.rail{display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;background:var(--bg3);border-radius:8px;margin-bottom:.5rem}
+.rail-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;flex-shrink:0}
+.rail-name{font-weight:600;font-size:.9rem}.rail-desc{color:var(--t);font-size:.75rem}
+.loading{color:var(--t);font-size:.85rem;padding:1rem 0}
+@media(max-width:600px){main{padding:1rem}.topnav{padding:.5rem .75rem}h1{font-size:1.4rem}.grid-2,.grid-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a href="/" class="logo">Bridge AI</a>
+  <a href="/">Dashboard</a>
+  <a href="/trading.html">Trading</a>
+  <a href="/defi.html" class="active">DeFi</a>
+  <a href="/wallet.html">Wallet</a>
+  <a href="/governance.html">Governance</a>
+  <a href="/intelligence.html">Intelligence</a>
+  <a href="/pricing.html">Pricing</a>
+  <a href="/corporate.html">Corporate</a>
+  <a href="/onboarding.html">Onboarding</a>
+</nav>
+<main>
+  <h1>DeFi Dashboard</h1>
+  <p class="subtitle">Protocols, liquidity pools, yield, and universal basic income</p>
+
+  <div class="grid grid-4" style="margin-bottom:1rem">
+    <div class="card" id="stat-tvl"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-pools"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-yield"><div class="loading">Loading...</div></div>
+    <div class="card" id="stat-ubi"><div class="loading">Loading...</div></div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h2>DeFi Protocols <span class="badge badge-green">PUBLIC</span></h2>
+      <div id="protocols-list"><div class="loading">Loading protocols...</div></div>
+    </div>
+    <div class="card">
+      <h2>Liquidity Pools <span class="badge badge-green">PUBLIC</span></h2>
+      <table>
+        <thead><tr><th>Pool</th><th>TVL</th><th>APY</th><th>Status</th></tr></thead>
+        <tbody id="pools-body"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <h2>UBI Distribution</h2>
+    <div id="ubi-section"><div class="loading">Loading UBI status...</div></div>
+  </div>
+
+  <div class="auth-only">
+    <div class="grid grid-2" style="margin-top:1rem">
+      <div class="card">
+        <h2>Wallet Balance</h2>
+        <div id="wallet-balance"><div class="loading">Loading...</div></div>
+      </div>
+      <div class="card">
+        <h2>Yield Farming</h2>
+        <div id="yield-info"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <h2>Payment Rails</h2>
+    <div class="grid grid-3" id="rails-grid">
+      <div class="rail"><div class="rail-icon" style="background:#00c8ff22;color:var(--a)">PF</div><div><div class="rail-name">PayFast</div><div class="rail-desc">South African payments</div></div><span class="badge badge-green">Active</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#00e57b22;color:var(--g)">PS</div><div><div class="rail-name">Paystack</div><div class="rail-desc">African markets</div></div><span class="badge badge-green">Active</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#6366f122;color:#818cf8">ST</div><div><div class="rail-name">Stripe</div><div class="rail-desc">Global card payments</div></div><span class="badge badge-green">Active</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#ffaa0022;color:var(--y)">&#8383;</div><div><div class="rail-name">Crypto</div><div class="rail-desc">BTC, ETH, USDT, SOL</div></div><span class="badge badge-green">Active</span></div>
+      <div class="rail"><div class="rail-icon" style="background:#ff446622;color:var(--r)">IB</div><div><div class="rail-name">IBAN</div><div class="rail-desc">EU bank transfers</div></div><span class="badge badge-blue">Available</span></div>
+    </div>
+  </div>
+
+  <div class="upgrade-cta">
+    <div class="cta-box">
+      <h3>Connect Your Wallet</h3>
+      <p>Access your balances, yield farming positions, and DeFi portfolio tracking.</p>
+      <a href="/onboarding.html?plan=pro" class="btn btn-green" style="margin-right:.5rem">Connect Wallet</a>
+      <a href="/onboarding.html?plan=enterprise" class="btn btn-outline">Enterprise Access</a>
+      <br><br><a href="/pricing.html" style="font-size:.85rem">Compare plans &rarr;</a>
+    </div>
+  </div>
+</main>
+<script>
+const token=localStorage.getItem('bridge_token'),isAuth=!!token;
+document.querySelectorAll('.auth-only').forEach(el=>el.style.display=isAuth?'':'none');
+document.querySelectorAll('.upgrade-cta').forEach(el=>el.style.display=isAuth?'none':'');
+const headers=token?{Authorization:'Bearer '+token}:{};
+async function f(url){try{const r=await fetch(url,{headers});if(!r.ok)throw 0;return await r.json()}catch{return null}}
+
+(async()=>{
+  const[defi,pools,wallet,ubi]=await Promise.all([
+    f('/api/defi/status'),f('/api/dex/pools'),isAuth?f('/api/wallet/balance'):null,f('/api/ubi/status')
+  ]);
+
+  const d=defi||{};
+  document.getElementById('stat-tvl').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Total TVL</div><div style="font-size:1.5rem;font-weight:700">$${parseInt(d.tvl||d.totalValueLocked||0).toLocaleString()}</div>`;
+
+  const pl=pools?.pools||pools?.data||[];
+  document.getElementById('stat-pools').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Active Pools</div><div style="font-size:1.5rem;font-weight:700">${pl.length||'--'}</div>`;
+  document.getElementById('stat-yield').innerHTML=`<div style="font-size:.75rem;color:var(--t)">Avg APY</div><div style="font-size:1.5rem;font-weight:700;color:var(--g)">${d.avgApy||d.averageYield||'--'}%</div>`;
+
+  const u=ubi||{};
+  document.getElementById('stat-ubi').innerHTML=`<div style="font-size:.75rem;color:var(--t)">UBI Recipients</div><div style="font-size:1.5rem;font-weight:700">${u.recipients||u.totalRecipients||'--'}</div>`;
+
+  // Protocols
+  const protocols=d.protocols||d.data||[];
+  if(protocols.length){
+    document.getElementById('protocols-list').innerHTML=protocols.map(p=>`<div style="padding:.5rem;border-bottom:1px solid #1a2a3a;display:flex;justify-content:space-between;align-items:center"><div><strong>${p.name||'Protocol'}</strong><div style="color:var(--t);font-size:.8rem">${p.type||p.category||''}</div></div><div style="text-align:right"><div style="font-weight:600">$${parseInt(p.tvl||0).toLocaleString()}</div><div style="color:var(--g);font-size:.8rem">${p.apy||'--'}% APY</div></div></div>`).join('');
+  }else{document.getElementById('protocols-list').innerHTML='<div style="color:var(--t)">Protocol data loading...</div>';}
+
+  // Pools
+  if(pl.length){
+    document.getElementById('pools-body').innerHTML=pl.slice(0,10).map(p=>`<tr><td><strong>${p.name||p.pair||'--'}</strong></td><td>$${parseInt(p.tvl||p.liquidity||0).toLocaleString()}</td><td style="color:var(--g)">${p.apy||p.apr||'--'}%</td><td><span class="badge badge-green">${p.status||'Active'}</span></td></tr>`).join('');
+  }else{document.getElementById('pools-body').innerHTML='<tr><td colspan="4" style="color:var(--t)">No pools available</td></tr>';}
+
+  // UBI
+  document.getElementById('ubi-section').innerHTML=`<div class="grid grid-4"><div><div style="color:var(--t);font-size:.8rem">Distribution Pool</div><div style="font-size:1.2rem;font-weight:600">$${parseInt(u.pool||u.distributionPool||0).toLocaleString()}</div></div><div><div style="color:var(--t);font-size:.8rem">Monthly Amount</div><div style="font-size:1.2rem;font-weight:600;color:var(--g)">$${u.monthlyAmount||u.amount||'--'}</div></div><div><div style="color:var(--t);font-size:.8rem">Next Distribution</div><div style="font-size:1.2rem;font-weight:600">${u.nextDistribution||u.next||'--'}</div></div><div><div style="color:var(--t);font-size:.8rem">Status</div><div style="font-size:1.2rem;font-weight:600"><span class="badge badge-green">${u.status||'Active'}</span></div></div></div>`;
+
+  // Auth-gated
+  if(isAuth&&wallet){
+    const w=wallet.balance||wallet;
+    document.getElementById('wallet-balance').innerHTML=`<div style="font-size:2rem;font-weight:700;margin-bottom:.5rem">$${parseFloat(w.total||w.usd||0).toLocaleString()}</div><div style="color:var(--t);font-size:.85rem">${w.tokens||w.assets||'--'} tokens across ${w.chains||w.networks||'--'} chains</div>`;
+    document.getElementById('yield-info').innerHTML=`<div style="font-size:2rem;font-weight:700;color:var(--g);margin-bottom:.5rem">$${parseFloat(w.yield||w.earnings||0).toLocaleString()}</div><div style="color:var(--t);font-size:.85rem">Total yield earned</div>`;
+  }
+})();
+</script>
+</body>
+</html>

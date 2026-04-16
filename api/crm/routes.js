@@ -8,20 +8,21 @@ function mapContact(row) {
   if (!row || typeof row !== 'object') return null;
   const company = row.company || row.company_name || row.organization || null;
   const value = Number(row.value ?? row.deal_value ?? 0) || 0;
+  const id = row.id || row.lead_id || null;
   return {
-    id: row.id || row.lead_id || null,
-    lead_id: row.id || row.lead_id || null,
-    name: row.name || null,
+    id,
+    lead_id: id,
+    name: row.name || [row.first_name, row.last_name].filter(Boolean).join(' ') || null,
     email: row.email || null,
     phone: row.phone || null,
     company,
     company_name: company,
-    status: row.status || 'new',
-    stage: row.stage || row.status || 'new',
+    status: row.status || 'lead',
+    stage: row.stage || 'new',
     score: Number(row.score || 0) || 0,
     value,
     deal_value: value,
-    source: row.source || 'unknown',
+    source: row.source || null,
     industry: row.industry || null,
     tags: Array.isArray(row.tags) ? row.tags : [],
     notes: row.notes || null,

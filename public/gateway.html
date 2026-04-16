@@ -421,14 +421,24 @@
 
         <div class="log" id="init-log"></div>
 
+        <div class="chain-grid" style="margin-top:-4px;margin-bottom:16px">
+          <div class="chain-stat" style="grid-column:1 / -1">
+            <div class="chain-stat-label">WALLET STATUS</div>
+            <div class="chain-stat-value" id="wallet-status">Not connected</div>
+          </div>
+        </div>
+
         <div class="no-wallet-msg" id="no-wallet-msg">
           ⚠️ No Web3 wallet detected.<br>
           Install <a href="https://metamask.io" target="_blank">MetaMask</a> or another browser wallet to continue.<br><br>
-          Alternatively, <a href="/onboarding">sign in with email →</a>
+          Alternatively, create a managed Bridge wallet linked to your user profile below.
         </div>
 
         <button class="btn-primary" id="btnConnect" disabled onclick="connectWallet()">
           🔗 Connect Wallet
+        </button>
+        <button class="btn-secondary" id="btnManagedWallet" style="display:none" onclick="createManagedWallet()">
+          🛡️ Create Secure Bridge Wallet
         </button>
         <div class="alt-entry">or <a href="/onboarding">sign in with email</a></div>
       </div>
@@ -586,6 +596,13 @@ function goStage(n) {
   }
 }
 
+function setWalletStatus(text, isError) {
+  const el = document.getElementById('wallet-status');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = isError ? 'var(--red)' : 'var(--cyan)';
+}
+
 // ── INIT: Load chain data from public RPC ─────────────────────────────────────
 async function init() {
   log('init-log', 'SYS  ethers.js v' + ethers.version + ' loaded', 'ok');
@@ -633,17 +650,21 @@ async function init() {
   // Check wallet availability
   if (window.ethereum) {
     log('init-log', 'WALLET  injected provider detected', 'ok');
+    setWalletStatus('Ready to connect (MetaMask detected)', false);
     document.getElementById('init-status').innerHTML =
       '<div class="dot"></div> READY TO CONNECT';
     document.getElementById('init-status').className = 'status-chip ok';
     document.getElementById('btnConnect').disabled = false;
+    document.getElementById('btnManagedWallet').style.display = 'none';
   } else {
     log('init-log', 'WALLET  no injected provider found', 'err');
+    setWalletStatus('Not connected', true);
     document.getElementById('no-wallet-msg').classList.add('visible');
     document.getElementById('init-status').innerHTML =
       '<div class="dot"></div> NO WALLET';
     document.getElementById('init-status').className = 'status-chip err';
     document.getElementById('btnConnect').disabled = true;
+    document.getElementById('btnManagedWallet').style.display = '';
   }
 }
 
@@ -704,12 +725,54 @@ async function connectWallet() {
     } catch (_) {}
 
     document.getElementById('walletAddr').textContent = address;
+    setWalletStatus('Connected: ' + address.slice(0, 6) + '…' + address.slice(-4), false);
     goStage(1);
 
   } catch (err) {
     btn.disabled = false;
     btn.textContent = '🔗 Connect Wallet';
     log('init-log', 'ERR  ' + err.message, 'err');
+    setWalletStatus('Connection failed', true);
+  }
+}
+
+async function createManagedWallet() {
+  const btn = document.getElementById('btnManagedWallet');
+  btn.disabled = true;
+  btn.textContent = '⟳ Creating secure wallet...';
+  setWalletStatus('Provisioning managed wallet...', false);
+  try {
+    const res = await fetch('/api/siwe/provision-wallet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok || !data.address || !data.token) {
+      throw new Error(data.error || 'Failed to provision managed wallet');
+    }
+    address = data.address;
+    authToken = data.token;
+    localStorage.setItem('bridge_token', authToken);
+    document.cookie = `bridge_token=${authToken}; Path=/; SameSite=Lax; Max-Age=604800`;
+    localStorage.setItem('bridge_user', JSON.stringify({
+      email: data.userId,
+      wallet: address,
+      plan: data.plan || 'free',
+      managed_wallet: true,
+    }));
+    document.getElementById('walletAddr').textContent = address;
+    setWalletStatus('Connected (managed): ' + address.slice(0, 6) + '…' + address.slice(-4), false);
+    goStage(3);
+    setProgress('twin-progress', 45);
+    log('twin-log', 'WALLET  secure managed wallet provisioned and linked', 'ok');
+    await sleep(250);
+    await activateTwin();
+  } catch (err) {
+    log('init-log', 'ERR  ' + err.message, 'err');
+    setWalletStatus('Managed wallet provisioning failed', true);
+    btn.disabled = false;
+    btn.textContent = '🛡️ Create Secure Bridge Wallet';
   }
 }
 
@@ -891,5 +954,6 @@ async function activateTwin() {
   }, 1000);
 }
 </script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BridgeAI · Contact Management</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--surface:#0f172a;--surface2:#1e293b;
+  --border:#1e293b;--border2:#334155;
+  --accent:#38bdf8;--accent2:#0284c7;--green:#34d399;
+  --yellow:#fbbf24;--red:#f87171;
+  --l1:#34d399;--l2:#38bdf8;--l3:#94a3b8;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --font:Inter,system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow:hidden}
+nav{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);position:relative;z-index:50}
+.nav-brand{font-size:1rem;font-weight:700;color:#fff;letter-spacing:.5px}
+.nav-links{display:flex;gap:.25rem}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:.82rem;padding:.35rem .75rem;border-radius:4px;transition:all .15s}
+.nav-links a:hover,.nav-links a.active{color:#fff;background:var(--surface2)}
+.nav-actions{display:flex;gap:.5rem;align-items:center}
+.nav-btn{padding:.35rem .9rem;border-radius:5px;border:none;cursor:pointer;font-family:var(--font);font-size:.8rem;font-weight:600}
+.btn-primary{background:var(--accent2);color:#fff}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:.25rem .65rem;font-size:.75rem}
+.toolbar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.search-box{flex:1;min-width:200px;max-width:320px;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.4rem .75rem;color:#f1f5f9;font-size:.82rem;font-family:var(--font);outline:none}
+.search-box:focus{border-color:var(--accent)}
+.tier-tabs{display:flex;gap:.25rem}
+.tier-tab{padding:.3rem .8rem;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:var(--font);font-size:.78rem;cursor:pointer;transition:all .15s}
+.tier-tab.t-all{background:var(--surface2);border-color:var(--accent);color:#fff}
+.tier-tab.t-L1{background:rgba(52,211,153,.15);border-color:var(--l1);color:var(--l1)}
+.tier-tab.t-L2{background:rgba(56,189,248,.15);border-color:var(--l2);color:var(--l2)}
+.tier-tab.t-L3{background:rgba(148,163,184,.15);border-color:var(--l3);color:var(--l3)}
+.filter-sel{background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.35rem .6rem;color:#f1f5f9;font-size:.78rem;font-family:var(--font)}
+.layout{display:grid;grid-template-columns:1fr 380px;height:calc(100vh - 114px)}
+.contact-grid{overflow-y:auto;padding:1rem 1.5rem}
+.detail-panel{border-left:1px solid var(--border);overflow-y:auto;background:var(--surface)}
+.tier-section{margin-bottom:1.5rem}
+.tier-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+.tier-pill{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:12px;letter-spacing:.06em}
+.pill-L1{background:rgba(52,211,153,.15);color:var(--l1);border:1px solid rgba(52,211,153,.3)}
+.pill-L2{background:rgba(56,189,248,.15);color:var(--l2);border:1px solid rgba(56,189,248,.3)}
+.pill-L3{background:rgba(148,163,184,.15);color:var(--l3);border:1px solid rgba(148,163,184,.3)}
+.tier-desc{font-size:.72rem;color:var(--text3)}
+.tier-count{margin-left:auto;font-size:.72rem;color:var(--text3)}
+.contacts-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.6rem}
+.contact-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem;cursor:pointer;transition:all .15s;position:relative}
+.contact-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.contact-card.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.cc-tier{position:absolute;top:.6rem;right:.6rem}
+.cc-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;margin-bottom:.5rem}
+.cc-name{font-size:.84rem;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc-email{font-size:.71rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc-company{font-size:.7rem;color:var(--text3);margin-top:2px}
+.cc-meta{display:flex;gap:.35rem;margin-top:.55rem;flex-wrap:wrap}
+.cc-tag{font-size:.62rem;padding:2px 6px;border-radius:3px;background:var(--border);color:var(--text2)}
+.score-high{background:#064e3b;color:var(--green);font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:3px}
+.score-mid{background:#451a03;color:var(--yellow);font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:3px}
+.score-low{background:var(--surface);color:var(--text3);font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:3px}
+.stage-badge{font-size:.62rem;padding:2px 6px;border-radius:3px;background:#0c4a6e;color:#7dd3fc}
+.cc-actions{display:flex;gap:.3rem;margin-top:.6rem}
+.cc-btn{padding:.2rem .55rem;border-radius:4px;border:none;cursor:pointer;font-size:.67rem;font-family:var(--font);background:var(--surface);color:var(--text2)}
+.cc-btn:hover{background:var(--border2);color:var(--accent)}
+.dp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:.85rem;gap:.5rem}
+.dp-header{padding:1.25rem;border-bottom:1px solid var(--border)}
+.dp-avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;margin-bottom:.65rem}
+.dp-name{font-size:.95rem;font-weight:600;color:#f1f5f9}
+.dp-email{font-size:.77rem;color:var(--text2);margin-top:2px}
+.dp-company{font-size:.73rem;color:var(--text3);margin-top:2px}
+.dp-badges{display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap}
+.dp-body{padding:1rem 1.25rem}
+.dp-section{margin-bottom:1rem}
+.dp-section-label{font-size:.67rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem}
+.dp-field{display:flex;justify-content:space-between;padding:.28rem 0;border-bottom:1px solid var(--border);font-size:.79rem}
+.dp-field .k{color:var(--text3)}
+.dp-field .v{color:var(--text);font-weight:500}
+.dp-sel{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.4rem .65rem;color:#f1f5f9;font-size:.81rem;font-family:var(--font);margin-bottom:.45rem}
+.dp-textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.4rem .65rem;color:#f1f5f9;font-size:.79rem;font-family:var(--font);resize:none;margin-bottom:.45rem}
+.activity-item{font-size:.72rem;color:var(--text2);padding:.28rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:.5rem}
+.activity-item .nt{color:var(--text);flex:1}
+.activity-item .ts{color:var(--text3);flex-shrink:0;font-size:.65rem}
+.dp-actions{display:flex;gap:.5rem;flex-wrap:wrap;padding:.85rem 1.25rem;border-top:1px solid var(--border)}
+.dp-btn{padding:.4rem .9rem;border-radius:5px;border:none;cursor:pointer;font-family:var(--font);font-size:.78rem;font-weight:600;text-decoration:none;display:inline-block}
+.dp-btn-primary{background:var(--accent2);color:#fff}
+.dp-btn-secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;justify-content:center;align-items:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:1.5rem;width:100%;max-width:460px}
+.modal h2{font-size:.95rem;font-weight:600;margin-bottom:1rem}
+.field{margin-bottom:.65rem}
+.field label{display:block;font-size:.7rem;color:var(--text3);margin-bottom:.25rem}
+.field input,.field select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.45rem .7rem;color:#f1f5f9;font-size:.82rem;font-family:var(--font);outline:none}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.modal-actions{display:flex;gap:.65rem;margin-top:1rem;justify-content:flex-end}
+#toast{position:fixed;bottom:1.25rem;right:1.25rem;background:var(--surface);border:1px solid var(--accent);color:var(--accent);font-size:.82rem;padding:.6rem 1.1rem;border-radius:6px;display:none;z-index:999}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">BRIDGE AI</div>
+  <div class="nav-links">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/crm" class="active">CRM</a>
+    <a href="/leads">Leads</a>
+    <a href="/invoicing">Invoicing</a>
+    <a href="/agents">Agents</a>
+    <a href="/settings">Settings</a>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn btn-secondary" onclick="exportCsv()">⬇ Export</button>
+    <button class="nav-btn btn-secondary" id="btnImport">⬆ Import</button>
+    <input type="file" id="csvFile" accept=".csv" style="display:none"/>
+    <button class="nav-btn btn-primary" onclick="openModal()">+ Add Contact</button>
+  </div>
+</nav>
+
+<div class="toolbar">
+  <input type="text" class="search-box" id="searchBox" placeholder="Search contacts, company, email…" oninput="render()"/>
+  <div class="tier-tabs">
+    <button class="tier-tab t-all" data-t="all"  onclick="setTier('all')">All</button>
+    <button class="tier-tab"       data-t="L1"   onclick="setTier('L1')">L1 Clients</button>
+    <button class="tier-tab"       data-t="L2"   onclick="setTier('L2')">L2 Prospects</button>
+    <button class="tier-tab"       data-t="L3"   onclick="setTier('L3')">L3 Contacts</button>
+  </div>
+  <select class="filter-sel" id="stageFilter" onchange="render()">
+    <option value="">All Stages</option>
+    <option value="new">New</option>
+    <option value="qualified">Qualified</option>
+    <option value="proposal">Proposal</option>
+    <option value="negotiation">Negotiation</option>
+    <option value="won">Won</option>
+    <option value="lost">Lost</option>
+  </select>
+  <button class="nav-btn btn-secondary btn-sm" onclick="loadAll()">↺ Refresh</button>
+</div>
+
+<div class="layout">
+  <div class="contact-grid" id="grid"></div>
+  <div class="detail-panel" id="detail">
+    <div class="dp-empty"><div style="font-size:1.5rem">👤</div><div>Select a contact</div></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h2>Add Contact</h2>
+    <div class="row2">
+      <div class="field"><label>First Name *</label><input id="m-fn" placeholder="Jane"/></div>
+      <div class="field"><label>Last Name</label><input id="m-ln" placeholder="Smith"/></div>
+    </div>
+    <div class="field"><label>Email *</label><input type="email" id="m-em" placeholder="jane@company.com"/></div>
+    <div class="row2">
+      <div class="field"><label>Company</label><input id="m-co" placeholder="Acme Corp"/></div>
+      <div class="field"><label>Phone</label><input id="m-ph" placeholder="+27 82 000 0000"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Tier</label>
+        <select id="m-ti">
+          <option value="L3">L3 — New Contact</option>
+          <option value="L2">L2 — Prospect</option>
+          <option value="L1">L1 — Client</option>
+        </select>
+      </div>
+      <div class="field"><label>Stage</label>
+        <select id="m-st">
+          <option value="new">New</option><option value="qualified">Qualified</option>
+          <option value="proposal">Proposal</option><option value="negotiation">Negotiation</option>
+          <option value="won">Won</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Industry</label><input id="m-ind" placeholder="Technology"/></div>
+      <div class="field"><label>Deal Value (ZAR)</label><input type="number" id="m-val" placeholder="0"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="nav-btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="nav-btn btn-primary" onclick="saveContact()">Add Contact</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const DEV_SECRET='dev-secret-bridge-2026';
+const DEV_ADDR='0xDEV000000000000000000000000000000000001';
+let _token=localStorage.getItem('bridge_token')||'';
+let _contacts=[];
+let _sel=null;
+let _tier='all';
+
+const TIERS={
+  L1:{desc:'Active clients · priority follow-up',pillCls:'pill-L1',tabCls:'t-L1'},
+  L2:{desc:'Qualified prospects · warm pipeline',pillCls:'pill-L2',tabCls:'t-L2'},
+  L3:{desc:'New contacts · cold outreach',pillCls:'pill-L3',tabCls:'t-L3'},
+};
+
+async function ensureAuth(){
+  if(_token){const r=await fetch('/api/auth/me',{credentials:'include',headers:{Authorization:'Bearer '+_token}});if(r.ok)return;}
+  const r2=await fetch('/api/auth/me',{credentials:'include'});if(r2.ok)return;
+  try{const r3=await fetch('/api/auth/dev-login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:DEV_ADDR,secret:DEV_SECRET,role:'admin'})});
+  if(r3.ok){const d=await r3.json();if(d.token){_token=d.token;localStorage.setItem('bridge_token',d.token);}return;}}catch{}
+  window.location.href='/join?next=/crm';
+}
+
+let _csrf='';
+async function fetchCsrf(){try{const r=await fetch('/api/crm/stats',{credentials:'include',headers:_token?{Authorization:'Bearer '+_token}:{}});const t=r.headers.get('X-CSRF-Token');if(t)_csrf=t;}catch{}}
+
+async function api(path,opts={}){
+  const method=(opts.method||'GET').toUpperCase();
+  const h={'Content-Type':'application/json',...(opts.headers||{})};
+  if(_token)h['Authorization']='Bearer '+_token;
+  if(['POST','PUT','DELETE','PATCH'].includes(method)&&_csrf)h['X-CSRF-Token']=_csrf;
+  const r=await fetch('/api'+path,{credentials:'include',...opts,headers:h});
+  const nc=r.headers.get('X-CSRF-Token');if(nc)_csrf=nc;
+  if(r.status===401){_token='';localStorage.removeItem('bridge_token');await ensureAuth();await fetchCsrf();
+    if(_token)h['Authorization']='Bearer '+_token;if(_csrf)h['X-CSRF-Token']=_csrf;
+    const r2=await fetch('/api'+path,{credentials:'include',...opts,headers:h});
+    if(!r2.ok)throw new Error(await r2.text());return r2.json();}
+  if(!r.ok)throw new Error(await r.text());return r.json();
+}
+
+function toast(msg,col){const t=document.getElementById('toast');t.textContent=msg;t.style.color=col||'var(--accent)';t.style.borderColor=col||'var(--accent)';t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
+
+function tierOf(c){if(c.tier)return c.tier;const s=c.score||0,st=c.stage||'';if(st==='won'||s>=70)return 'L1';if(s>=35)return 'L2';return 'L3';}
+function nameOf(c){return [c.first_name,c.last_name].filter(Boolean).join(' ')||c.email?.split('@')[0]||'—';}
+function avatarBg(n){const cols=['#0284c7','#7c3aed','#be185d','#0d9488','#d97706','#16a34a'];let h=0;for(const c of(n||'?'))h=(h*31+c.charCodeAt(0))&0xffffffff;return cols[Math.abs(h)%cols.length];}
+function initials(n){const p=(n||'?').split(' ').filter(Boolean);return(p.length>=2?p[0][0]+p[1][0]:n[0]||'?').toUpperCase();}
+
+async function loadAll(){
+  try{const r=await api('/crm/leads?limit=500');
+  _contacts=(r.leads||[]).map(c=>({...c,_tier:tierOf(c),_name:nameOf(c)}));render();}
+  catch(e){toast('Load failed: '+e.message,'var(--red)');}
+}
+
+function setTier(t){
+  _tier=t;
+  document.querySelectorAll('.tier-tab').forEach(el=>{el.className='tier-tab';if(el.dataset.t===t)el.classList.add(t==='all'?'t-all':('t-'+t));});
+  render();
+}
+
+function filtered(){
+  const q=document.getElementById('searchBox').value.toLowerCase();
+  const st=document.getElementById('stageFilter').value;
+  return _contacts.filter(c=>{
+    if(_tier!=='all'&&c._tier!==_tier)return false;
+    if(st&&c.stage!==st)return false;
+    if(q){const h=[c._name,c.email,c.company,c.industry].join(' ').toLowerCase();if(!h.includes(q))return false;}
+    return true;
+  });
+}
+
+function render(){
+  const el=document.getElementById('grid');el.textContent='';
+  const data=filtered();
+  const tiers=_tier==='all'?['L1','L2','L3']:[_tier];
+  tiers.forEach(tier=>{
+    const group=data.filter(c=>c._tier===tier);
+    const meta=TIERS[tier];
+    const sec=document.createElement('div');sec.className='tier-section';
+    const hdr=document.createElement('div');hdr.className='tier-header';
+    const pill=document.createElement('span');pill.className='tier-pill '+meta.pillCls;pill.textContent=tier;hdr.appendChild(pill);
+    const desc=document.createElement('span');desc.className='tier-desc';desc.textContent=meta.desc;hdr.appendChild(desc);
+    const cnt=document.createElement('span');cnt.className='tier-count';cnt.textContent=group.length+' contacts';hdr.appendChild(cnt);
+    sec.appendChild(hdr);
+    if(!group.length){const e=document.createElement('div');e.style.cssText='font-size:.77rem;color:var(--text3);padding:.4rem 0';e.textContent='No '+tier+' contacts';sec.appendChild(e);}
+    else{const row=document.createElement('div');row.className='contacts-row';group.forEach(c=>row.appendChild(mkCard(c)));sec.appendChild(row);}
+    el.appendChild(sec);
+  });
+}
+
+function mkCard(c){
+  const card=document.createElement('div');card.className='contact-card'+(c.id===_sel?' selected':'');
+  card.addEventListener('click',()=>select(c.id));
+  const meta=TIERS[c._tier];
+  const tb=document.createElement('span');tb.className='cc-tier tier-pill '+meta.pillCls;tb.textContent=c._tier;card.appendChild(tb);
+  const av=document.createElement('div');av.className='cc-avatar';av.style.background=avatarBg(c._name);av.textContent=initials(c._name);card.appendChild(av);
+  const nm=document.createElement('div');nm.className='cc-name';nm.textContent=c._name;card.appendChild(nm);
+  const em=document.createElement('div');em.className='cc-email';em.textContent=c.email||'—';card.appendChild(em);
+  if(c.company){const co=document.createElement('div');co.className='cc-company';co.textContent=c.company;card.appendChild(co);}
+  const cmeta=document.createElement('div');cmeta.className='cc-meta';
+  if(c.score!=null){const sc=document.createElement('span');sc.className=c.score>=70?'score-high':c.score>=35?'score-mid':'score-low';sc.textContent='⚡'+c.score;cmeta.appendChild(sc);}
+  if(c.stage){const st=document.createElement('span');st.className='stage-badge';st.textContent=c.stage;cmeta.appendChild(st);}
+  if(c.industry){const ind=document.createElement('span');ind.className='cc-tag';ind.textContent=c.industry;cmeta.appendChild(ind);}
+  card.appendChild(cmeta);
+  const acts=document.createElement('div');acts.className='cc-actions';
+  const ib=document.createElement('button');ib.className='cc-btn';ib.textContent='💳 Invoice';ib.onclick=e=>{e.stopPropagation();goInvoice(c);};acts.appendChild(ib);
+  const nb=document.createElement('button');nb.className='cc-btn';nb.textContent='📝 Note';nb.onclick=e=>{e.stopPropagation();select(c.id,true);};acts.appendChild(nb);
+  card.appendChild(acts);
+  return card;
+}
+
+function select(id,focusNote=false){
+  _sel=id;
+  render();
+  const c=_contacts.find(x=>x.id===id);if(!c)return;
+  const meta=TIERS[c._tier];
+  const panel=document.getElementById('detail');panel.textContent='';
+
+  const hdr=document.createElement('div');hdr.className='dp-header';
+  const av=document.createElement('div');av.className='dp-avatar';av.style.background=avatarBg(c._name);av.textContent=initials(c._name);hdr.appendChild(av);
+  const nm=document.createElement('div');nm.className='dp-name';nm.textContent=c._name;hdr.appendChild(nm);
+  const em=document.createElement('div');em.className='dp-email';em.textContent=c.email||'—';hdr.appendChild(em);
+  if(c.company){const co=document.createElement('div');co.className='dp-company';co.textContent=c.company;hdr.appendChild(co);}
+  const badges=document.createElement('div');badges.className='dp-badges';
+  const tp=document.createElement('span');tp.className='tier-pill '+meta.pillCls;tp.textContent=c._tier+' · '+meta.desc;badges.appendChild(tp);
+  if(c.stage){const sp=document.createElement('span');sp.className='stage-badge';sp.textContent=c.stage;badges.appendChild(sp);}
+  hdr.appendChild(badges);panel.appendChild(hdr);
+
+  const body=document.createElement('div');body.className='dp-body';
+  const infoSec=document.createElement('div');infoSec.className='dp-section';
+  const il=document.createElement('div');il.className='dp-section-label';il.textContent='Contact Info';infoSec.appendChild(il);
+  [['Phone',c.phone||'—'],['Industry',c.industry||'—'],['Source',c.source||'—'],
+   ['Score',c.score!=null?c.score:'—'],['Deal Value',c.deal_value?'R '+parseFloat(c.deal_value).toFixed(0):'—'],
+   ['Created',c.created_at?c.created_at.slice(0,10):'—']
+  ].forEach(([k,v])=>{
+    const row=document.createElement('div');row.className='dp-field';
+    const ke=document.createElement('span');ke.className='k';ke.textContent=k;row.appendChild(ke);
+    const ve=document.createElement('span');ve.className='v';ve.textContent=v;row.appendChild(ve);
+    infoSec.appendChild(row);
+  });body.appendChild(infoSec);
+
+  const updSec=document.createElement('div');updSec.className='dp-section';
+  const ul=document.createElement('div');ul.className='dp-section-label';ul.textContent='Update Tier & Stage';updSec.appendChild(ul);
+  const tierSel=document.createElement('select');tierSel.className='dp-sel';
+  ['L1','L2','L3'].forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t+' — '+(t==='L1'?'Client':t==='L2'?'Prospect':'Contact');if(t===c._tier)o.selected=true;tierSel.appendChild(o);});
+  updSec.appendChild(tierSel);
+  const stageSel=document.createElement('select');stageSel.className='dp-sel';
+  ['new','qualified','proposal','negotiation','won','lost'].forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s.charAt(0).toUpperCase()+s.slice(1);if(s===c.stage)o.selected=true;stageSel.appendChild(o);});
+  updSec.appendChild(stageSel);
+  const updBtn=document.createElement('button');updBtn.className='nav-btn btn-primary btn-sm';updBtn.textContent='Save';updBtn.style.marginTop='.2rem';
+  updBtn.onclick=()=>updateStage(c.id,stageSel.value,tierSel.value);updSec.appendChild(updBtn);body.appendChild(updSec);
+
+  const noteSec=document.createElement('div');noteSec.className='dp-section';
+  const nl=document.createElement('div');nl.className='dp-section-label';nl.textContent='Activity & Notes';noteSec.appendChild(nl);
+  const noteIn=document.createElement('textarea');noteIn.className='dp-textarea';noteIn.rows=2;noteIn.placeholder='Add a note…';noteSec.appendChild(noteIn);
+  const noteBtn=document.createElement('button');noteBtn.className='nav-btn btn-secondary btn-sm';noteBtn.textContent='+ Add Note';noteBtn.onclick=()=>addNote(c.id,noteIn.value,noteIn);noteSec.appendChild(noteBtn);
+  const activity=c.activity||c.notes_log||[];
+  activity.slice().reverse().forEach(n=>{
+    const item=document.createElement('div');item.className='activity-item';
+    const nt=document.createElement('span');nt.className='nt';nt.textContent=typeof n==='string'?n:(n.text||n.note||JSON.stringify(n));item.appendChild(nt);
+    const ts=document.createElement('span');ts.className='ts';ts.textContent=n.ts?new Date(n.ts).toLocaleString('en-ZA',{dateStyle:'short',timeStyle:'short'}):'';item.appendChild(ts);
+    noteSec.appendChild(item);
+  });
+  body.appendChild(noteSec);panel.appendChild(body);
+
+  const acts=document.createElement('div');acts.className='dp-actions';
+  const ib=document.createElement('button');ib.className='dp-btn dp-btn-primary';ib.textContent='💳 Create Invoice';ib.onclick=()=>goInvoice(c);acts.appendChild(ib);
+  const mb=document.createElement('a');mb.className='dp-btn dp-btn-secondary';mb.textContent='✉ Email';mb.href='mailto:'+(c.email||'');acts.appendChild(mb);
+  panel.appendChild(acts);
+  if(focusNote)setTimeout(()=>noteIn.focus(),50);
+}
+
+function goInvoice(c){
+  window.location.href='/invoicing?'+new URLSearchParams({email:c.email||'',company:c.company||'',name:c._name||'',lead_id:c.id||''});
+}
+
+async function updateStage(id,stage,tier){
+  try{await api('/crm/leads/'+encodeURIComponent(id)+'/stage',{method:'PUT',body:JSON.stringify({stage,note:'Tier set to '+tier})});
+  const c=_contacts.find(x=>x.id===id);if(c){c.stage=stage;c._tier=tier;}
+  toast('Updated to '+tier+' / '+stage,'var(--green)');render();select(id);}
+  catch(e){toast('Error: '+e.message,'var(--red)');}
+}
+
+async function addNote(id,text,input){
+  if(!text.trim()){toast('Note is empty','var(--yellow)');return;}
+  try{await api('/crm/leads/'+encodeURIComponent(id)+'/notes',{method:'POST',body:JSON.stringify({text:text.trim()})});
+  input.value='';const c=_contacts.find(x=>x.id===id);
+  if(c){if(!c.activity)c.activity=[];c.activity.push({text:text.trim(),ts:new Date().toISOString()});}
+  toast('Note added','var(--green)');select(id);}
+  catch(e){toast('Error: '+e.message,'var(--red)');}
+}
+
+function openModal(){document.getElementById('addModal').classList.add('open');}
+function closeModal(){document.getElementById('addModal').classList.remove('open');}
+document.getElementById('addModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+async function saveContact(){
+  const email=document.getElementById('m-em').value.trim();
+  const fname=document.getElementById('m-fn').value.trim();
+  if(!email||!fname){toast('First name and email required','var(--red)');return;}
+  try{await api('/crm/leads',{method:'POST',body:JSON.stringify({
+    email,first_name:fname,last_name:document.getElementById('m-ln').value.trim(),
+    company:document.getElementById('m-co').value.trim(),phone:document.getElementById('m-ph').value.trim(),
+    industry:document.getElementById('m-ind').value.trim(),stage:document.getElementById('m-st').value,
+    deal_value:parseFloat(document.getElementById('m-val').value)||0,source:'manual',
+  })});closeModal();toast('Contact added','var(--green)');await loadAll();}
+  catch(e){toast('Error: '+e.message,'var(--red)');}
+}
+
+function exportCsv(){
+  const rows=[['Name','Email','Company','Tier','Stage','Score','Industry','Phone']];
+  filtered().forEach(c=>rows.push([c._name,c.email||'',c.company||'',c._tier,c.stage||'',c.score??'',c.industry||'',c.phone||'']));
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='bridge-contacts-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  toast('Exported '+filtered().length+' contacts','var(--green)');
+}
+document.getElementById('btnImport').addEventListener('click',()=>document.getElementById('csvFile').click());
+document.getElementById('csvFile').addEventListener('change',async e=>{
+  const file=e.target.files[0];if(!file)return;
+  const text=await file.text();const lines=text.split('\n').filter(Boolean);
+  const hdr=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
+  let n=0;
+  for(const line of lines.slice(1)){
+    const vals=line.split(',').map(v=>v.replace(/^"|"$/g,'').trim());
+    const row=Object.fromEntries(hdr.map((h,i)=>[h,vals[i]||'']));
+    if(!row.email)continue;
+    try{await api('/crm/leads',{method:'POST',body:JSON.stringify({email:row.email,first_name:row['first name']||row.name?.split(' ')[0]||'',last_name:row['last name']||'',company:row.company||'',phone:row.phone||'',industry:row.industry||'',source:'csv-import'})});n++;}catch{}
+  }
+  toast('Imported '+n+' contacts','var(--green)');await loadAll();e.target.value='';
+});
+
+(async()=>{await ensureAuth();await fetchCsrf();await loadAll();setInterval(loadAll,60000);})();
+</script>
+<script src="/bridge-nav.js" defer></script>
+</body>
+</html>
