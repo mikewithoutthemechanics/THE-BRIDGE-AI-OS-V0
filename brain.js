@@ -31,6 +31,17 @@ let ethTreasury, brdgChain, llm;
 try { ethTreasury = require('./lib/eth-treasury'); } catch (e) { console.warn('[brain] eth-treasury unavailable:', e.message); ethTreasury = null; }
 try { brdgChain = require('./lib/brdg-chain'); } catch (e) { console.warn('[brain] brdg-chain unavailable:', e.message); brdgChain = null; }
 try { llm = require('./lib/llm-client'); } catch (e) { console.warn('[brain] llm-client unavailable:', e.message); llm = null; }
+
+// ── A2A COMMUNICATION SYSTEM ──────────────────────────────────────────────
+let a2aSystem;
+try {
+  const { getA2AInstance } = require('./lib/agent-a2a-communication');
+  a2aSystem = getA2AInstance();
+  console.log('[brain] A2A communication system initialized');
+} catch (e) {
+  console.warn('[brain] A2A communication system unavailable:', e.message);
+  a2aSystem = null;
+}
 const os = require('os');
 const axios = require('axios');
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
@@ -450,6 +461,89 @@ app.post('/api/twins/teach', (req, res) => res.json({ ok: true, taught: true }))
 
 // ── EMOTION ─────────────────────────────────────────────────────────────────
 app.get('/api/emotion/status', (_req, res) => res.json({ ok: true, ...state.twin.emotion }));
+
+// ── A2A COMMUNICATION ENDPOINTS ────────────────────────────────────────────
+if (a2aSystem) {
+  // Get all registered agents
+  app.get('/api/a2a/agents', (_req, res) => {
+    try {
+      const agents = a2aSystem.getAllAgents();
+      res.json({ ok: true, agents, count: agents.length });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  // Send message to agent
+  app.post('/api/a2a/message', async (req, res) => {
+    try {
+      const { fromAgentId, toAgentId, message, options } = req.body;
+      if (!fromAgentId || !toAgentId || !message) {
+        return res.status(400).json({ ok: false, error: 'Missing required fields: fromAgentId, toAgentId, message' });
+      }
+
+      const messageId = await a2aSystem.sendMessage(fromAgentId, toAgentId, message, options);
+      res.json({ ok: true, messageId });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  // Broadcast message to channel
+  app.post('/api/a2a/broadcast', async (req, res) => {
+    try {
+      const { channel, message, options } = req.body;
+      if (!channel || !message) {
+        return res.status(400).json({ ok: false, error: 'Missing required fields: channel, message' });
+      }
+
+      const messageId = await a2aSystem.broadcast(channel, message, options);
+      res.json({ ok: true, messageId });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  // Subscribe to channel
+  app.post('/api/a2a/subscribe', async (req, res) => {
+    try {
+      const { agentId, channelName } = req.body;
+      if (!agentId || !channelName) {
+        return res.status(400).json({ ok: false, error: 'Missing required fields: agentId, channelName' });
+      }
+
+      await a2aSystem.subscribeToChannel(agentId, channelName);
+      res.json({ ok: true, message: `Agent ${agentId} subscribed to ${channelName}` });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  // Get A2A system stats
+  app.get('/api/a2a/stats', (_req, res) => {
+    try {
+      const stats = a2aSystem.getAgentStats();
+      res.json({ ok: true, stats });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+
+  // Register new agent
+  app.post('/api/a2a/register', async (req, res) => {
+    try {
+      const { agentId, agentData } = req.body;
+      if (!agentId) {
+        return res.status(400).json({ ok: false, error: 'Missing required field: agentId' });
+      }
+
+      const agent = await a2aSystem.registerAgent(agentId, agentData || {});
+      res.json({ ok: true, agent });
+    } catch (error) {
+      res.status(500).json({ ok: false, error: error.message });
+    }
+  });
+}
 app.post('/api/emotion/update', (req, res) => {
   const allowed = ['valence', 'arousal', 'dominance', 'mood'];
   const patch = {};
