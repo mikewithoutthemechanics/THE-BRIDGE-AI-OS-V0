@@ -1,826 +1,401 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="description" content="Join Bridge AI OS — create your account and start automating your business with 71 AI agents.">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://go.ai-os.co.za/join">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://go.ai-os.co.za/join">
-  <meta property="og:title" content="Join as Agent — Bridge AI OS · Supac · Taurus · Wiki">
-  <meta property="og:description" content="Join Bridge AI OS — Scan QR · Connect Wallet · Join Linea as Agent">
-  <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
-  <meta property="og:site_name" content="Bridge AI OS">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Join as Agent — Bridge AI OS · Linea zkEVM</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <!-- QR codes use qrserver.com image API — no JS lib needed -->
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #050a0f; --surface: #0d1620; --surface2: #111d2b;
-      --border: #1a2d40; --accent: #00c8ff; --green: #00e57b;
-      --purple: #a78bfa; --text: #c8dce8; --dim: #4d6678;
-      --linea: #61dfff;
-    }
-    body { background: var(--bg); color: var(--text); font-family: system-ui, 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; }
+<meta charset="UTF-8">
+<meta name="description" content="Join Bridge AI OS — connect your wallet, register as an agent, and receive your BRDG allocation on Linea.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/join">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/join">
+<meta property="og:title" content="Join as Agent — Bridge AI OS">
+<meta property="og:description" content="Connect your wallet, register as an AI agent, and earn BRDG on Linea Mainnet.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Join as Agent — Bridge AI OS</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#050a0f;--bg2:#0a1018;--bg3:#111a24;--a:#00c8ff;--g:#00e57b;--r:#ff4466;--y:#ffaa00;--t:#8899aa;--w:#e8eef4;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--w);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem}
+.wrap{width:100%;max-width:480px}
+h1{font-size:1.6rem;color:var(--a);margin-bottom:.25rem;text-align:center}
+.tagline{color:var(--t);font-size:.9rem;text-align:center;margin-bottom:2rem}
 
-    /* ── Animations ── */
-    @keyframes fadeDown  { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:none; } }
-    @keyframes fadeUp    { from { opacity:0; transform:translateY(24px); }  to { opacity:1; transform:none; } }
-    @keyframes gradShift { 0%,100% { background-position:0% 50%; } 50% { background-position:100% 50%; } }
-    @keyframes pulse     { 0%,100% { opacity:1; } 50% { opacity:.4; } }
-    @keyframes spin      { to { transform:rotate(360deg); } }
-    @keyframes glowPulse { 0%,100% { box-shadow:0 0 0 0 rgba(0,200,255,.0); } 60% { box-shadow:0 0 28px 6px rgba(0,200,255,.2); } }
-    @keyframes borderAnim{ 0%,100% { border-color:var(--border); } 50% { border-color:rgba(0,200,255,.4); } }
-    @keyframes stepFade  { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:scale(1); } }
-    @keyframes beaconPing{ 0% { transform:scale(1); opacity:.8; } 100% { transform:scale(2.2); opacity:0; } }
+/* Step indicator */
+.steps{display:flex;align-items:center;justify-content:center;gap:.25rem;margin-bottom:2rem}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;border:2px solid #1a2a3a;color:var(--t);transition:all .3s}
+.step-dot.active{border-color:var(--a);color:var(--a);background:#00c8ff18}
+.step-dot.done{border-color:var(--g);background:var(--g);color:#000}
+.step-line{width:32px;height:2px;background:#1a2a3a;transition:background .3s}
+.step-line.done{background:var(--g)}
 
-    /* ── Nav ── */
-    nav {
-      display:flex; align-items:center; justify-content:space-between;
-      padding:1rem 2rem; border-bottom:1px solid var(--border);
-      background:rgba(5,10,15,.92); backdrop-filter:blur(10px);
-      position:sticky; top:0; z-index:100;
-      animation: fadeDown .45s ease both;
-    }
-    .nav-logo {
-      font-size:1.15rem; font-weight:800; letter-spacing:.2em;
-      background:linear-gradient(90deg,var(--accent),var(--purple),var(--green),var(--accent));
-      background-size:300% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-      background-clip:text; animation:gradShift 4s ease infinite;
-    }
-    .nav-links { display:flex; gap:1.2rem; align-items:center; font-size:.8rem; }
-    .nav-links a { color:var(--dim); text-decoration:none; transition:color .2s; }
-    .nav-links a:hover { color:var(--text); }
-    .nav-user { font-size:.75rem; color:var(--accent); font-family:monospace; }
+/* Card */
+.card{background:var(--bg2);border:1px solid #1a2a3a;border-radius:var(--radius);padding:1.75rem;text-align:center}
+.card-icon{font-size:2.5rem;margin-bottom:1rem}
+.card h2{font-size:1.15rem;margin-bottom:.5rem}
+.card p{color:var(--t);font-size:.88rem;margin-bottom:1.25rem;line-height:1.5}
 
-    /* ── Hero ── */
-    .hero { position:relative; text-align:center; padding:5rem 1.5rem 3rem; overflow:hidden; }
-    #hero-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
-    .hero-inner { position:relative; z-index:1; }
-    .hero-badge {
-      display:inline-flex; align-items:center; gap:.5rem;
-      padding:.35rem 1rem; background:rgba(0,200,255,.08);
-      border:1px solid rgba(0,200,255,.25); border-radius:20px;
-      font-size:.68rem; letter-spacing:.15em; color:var(--accent); margin-bottom:1.5rem;
-      animation:fadeDown .5s .1s ease both;
-    }
-    .beacon-dot {
-      width:8px; height:8px; border-radius:50%; background:var(--green);
-      position:relative; flex-shrink:0;
-    }
-    .beacon-dot::after {
-      content:''; position:absolute; inset:-2px; border-radius:50%;
-      background:var(--green); animation:beaconPing 1.4s ease-out infinite;
-    }
-    .hero h1 {
-      font-size:clamp(1.8rem,4.5vw,3rem); font-weight:800; line-height:1.2; margin-bottom:1rem;
-      animation:fadeUp .6s .2s ease both;
-    }
-    .hero h1 .grad {
-      background:linear-gradient(135deg,var(--accent),var(--purple),var(--green));
-      background-size:200% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-      background-clip:text; animation:gradShift 3s ease infinite;
-    }
-    .hero p { font-size:.95rem; color:var(--dim); max-width:520px; margin:0 auto 2rem; line-height:1.7; animation:fadeUp .6s .35s ease both; }
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.8rem 1.25rem;border-radius:8px;font-weight:700;font-size:.92rem;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary{background:var(--a);color:#000}.btn-primary:hover{background:#00deff}
+.btn-green{background:var(--g);color:#000}.btn-green:hover{background:#00ff8a}
+.btn-outline{background:transparent;border:2px solid var(--a);color:var(--a)}.btn-outline:hover{background:#00c8ff18}
+.btn:disabled,.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:.55rem 1rem;font-size:.8rem;width:auto}
 
-    /* ── Steps strip ── */
-    .steps {
-      display:flex; justify-content:center; gap:0; flex-wrap:wrap;
-      padding:1.5rem 2rem; background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border);
-      animation:fadeUp .6s .45s ease both;
-    }
-    .step { display:flex; align-items:center; gap:.5rem; font-size:.78rem; color:var(--dim); padding:.4rem .8rem; }
-    .step-num { width:22px; height:22px; border-radius:50%; background:rgba(0,200,255,.12); border:1px solid rgba(0,200,255,.3); color:var(--accent); font-size:.65rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .step-arrow { color:var(--border); margin:0 .2rem; font-size:.8rem; }
-    .step.done .step-num { background:rgba(0,229,123,.12); border-color:rgba(0,229,123,.4); color:var(--green); }
+/* Status & info */
+.address-pill{background:var(--bg3);border:1px solid #1a2a3a;border-radius:20px;padding:.35rem .9rem;font-family:monospace;font-size:.78rem;color:var(--a);display:inline-block;margin:.5rem 0;word-break:break-all}
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid #0d1520;font-size:.85rem}
+.info-row:last-child{border-bottom:none}
+.info-label{color:var(--t)}
+.info-val{font-weight:600;color:var(--w)}
+.info-val.green{color:var(--g)}
+.badge{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:700}
+.badge-green{background:#00e57b22;color:var(--g)}
+.badge-blue{background:#00c8ff22;color:var(--a)}
 
-    /* ── QR Grid ── */
-    .qr-section { padding:3rem 1.5rem; max-width:1000px; margin:0 auto; }
-    .qr-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.5rem; }
+/* Error / status messages */
+.msg{padding:.6rem .9rem;border-radius:8px;font-size:.82rem;margin-top:.75rem;text-align:left;display:none}
+.msg.err{background:#ff446618;border:1px solid #ff446644;color:#ff8899;display:block}
+.msg.warn{background:#ffaa0018;border:1px solid #ffaa0044;color:#ffcc66;display:block}
+.msg.ok{background:#00e57b18;border:1px solid #00e57b44;color:#00e57b;display:block}
 
-    .qr-card {
-      background:var(--surface); border:1px solid var(--border); border-radius:14px;
-      padding:1.75rem; text-align:center;
-      transition:border-color .25s, transform .25s, box-shadow .25s;
-      animation:borderAnim 4s ease infinite;
-    }
-    .qr-card:nth-child(2) { animation-delay:.8s; }
-    .qr-card:nth-child(3) { animation-delay:1.6s; }
-    .qr-card:hover { border-color:var(--accent); transform:translateY(-3px); box-shadow:0 12px 36px rgba(0,200,255,.1); animation:none; }
+/* Agent active card */
+.agent-card{background:linear-gradient(135deg,#00c8ff0d,#00e57b0d);border:1px solid #00e57b44;border-radius:var(--radius);padding:1.5rem}
+.brdg-amount{font-size:2.5rem;font-weight:800;color:var(--g);margin:.5rem 0}
+.brdg-unit{font-size:1rem;font-weight:400;color:var(--t)}
 
-    .qr-badge {
-      display:inline-block; padding:.2rem .7rem; border-radius:2rem; font-size:.62rem;
-      font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:.8rem;
-    }
-    .qr-badge.gateway  { background:rgba(0,200,255,.1); color:var(--accent); border:1px solid rgba(0,200,255,.2); }
-    .qr-badge.beacon   { background:rgba(0,229,123,.1); color:var(--green);  border:1px solid rgba(0,229,123,.2); }
-    .qr-badge.linea    { background:rgba(97,223,255,.1); color:var(--linea); border:1px solid rgba(97,223,255,.2); }
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
 
-    .qr-title { font-size:.95rem; font-weight:700; margin-bottom:.4rem; }
-    .qr-desc  { font-size:.75rem; color:var(--dim); margin-bottom:1.2rem; line-height:1.5; }
+/* No wallet */
+.no-wallet{background:#ffaa0010;border:1px solid #ffaa0044;border-radius:8px;padding:.9rem;font-size:.82rem;color:#ffcc66;margin-top:1rem}
+.no-wallet a{color:#ffaa00}
 
-    .qr-canvas-wrap {
-      display:inline-block; padding:10px; background:#fff; border-radius:10px;
-      margin-bottom:1rem; box-shadow:0 0 0 1px rgba(0,200,255,.2);
-    }
-    .qr-canvas-wrap canvas { display:block; border-radius:6px; }
-
-    .qr-url { font-family:monospace; font-size:.68rem; color:var(--dim); word-break:break-all; margin-bottom:.8rem; }
-
-    .btn { display:inline-block; padding:.6rem 1.3rem; border-radius:7px; font-size:.8rem; font-weight:700; text-decoration:none; cursor:pointer; border:none; transition:filter .2s, transform .15s; }
-    .btn:hover { filter:brightness(1.12); transform:translateY(-1px); }
-    .btn-primary { background:var(--accent); color:#050a0f; animation:glowPulse 2.5s 2s ease infinite; }
-    .btn-green   { background:var(--green);  color:#050a0f; }
-    .btn-linea   { background:linear-gradient(135deg,var(--accent),var(--linea)); color:#050a0f; background-size:200%; animation:gradShift 3s ease infinite; }
-    .btn-outline { background:transparent; color:var(--text); border:1px solid var(--border); }
-    .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
-    .btn-sm { padding:.4rem .9rem; font-size:.74rem; }
-
-    /* ── Linea Agent Join Panel ── */
-    .linea-panel {
-      max-width:620px; margin:0 auto 3rem; padding:2rem 1.5rem;
-      background:var(--surface); border:1px solid rgba(97,223,255,.2); border-radius:14px;
-      animation:fadeUp .6s .6s ease both;
-    }
-    .linea-header { display:flex; align-items:center; gap:.75rem; margin-bottom:1.2rem; }
-    .linea-icon { font-size:1.8rem; }
-    .linea-header h2 { font-size:1rem; font-weight:700; }
-    .linea-header p  { font-size:.76rem; color:var(--dim); margin-top:.15rem; }
-
-    .join-steps { display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.5rem; }
-    .join-step {
-      display:flex; align-items:flex-start; gap:.8rem;
-      padding:.85rem 1rem; border-radius:.6rem;
-      background:var(--surface2); border:1px solid var(--border);
-      transition:border-color .2s;
-    }
-    .join-step.active   { border-color:var(--accent); }
-    .join-step.complete { border-color:rgba(0,229,123,.3); background:rgba(0,229,123,.04); }
-    .join-step-num { width:24px; height:24px; border-radius:50%; border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.68rem; font-weight:800; color:var(--dim); flex-shrink:0; margin-top:1px; }
-    .join-step.active   .join-step-num { border-color:var(--accent); color:var(--accent); }
-    .join-step.complete .join-step-num { border-color:var(--green); color:var(--green); background:rgba(0,229,123,.1); }
-    .join-step-body h4  { font-size:.82rem; font-weight:700; margin-bottom:.15rem; }
-    .join-step-body p   { font-size:.74rem; color:var(--dim); line-height:1.5; }
-
-    .wallet-row { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem; }
-
-    #walletStatus { font-size:.75rem; color:var(--dim); margin-top:.75rem; min-height:1.2rem; font-family:monospace; }
-    #walletStatus.ok  { color:var(--green); }
-    #walletStatus.err { color:#ff3c5a; }
-
-    .agent-card {
-      display:none; background:rgba(0,229,123,.05); border:1px solid rgba(0,229,123,.25);
-      border-radius:.6rem; padding:1rem 1.2rem; margin-top:1rem;
-      animation:stepFade .4s ease both;
-    }
-    .agent-card.visible { display:block; }
-    .agent-id { font-family:monospace; font-size:.75rem; color:var(--green); word-break:break-all; margin:.3rem 0; }
-    .agent-label { font-size:.65rem; color:var(--dim); letter-spacing:.1em; text-transform:uppercase; }
-
-    /* ── Platform strip ── */
-    .platform-strip {
-      text-align:center; padding:2rem; border-top:1px solid var(--border);
-      font-size:.8rem; color:var(--dim);
-    }
-    .platform-strip strong { color:var(--text); }
-    .platform-badges { display:flex; justify-content:center; gap:.75rem; flex-wrap:wrap; margin-top:.75rem; }
-    .platform-badge {
-      padding:.3rem .8rem; border-radius:2rem; font-size:.68rem; font-weight:700;
-      border:1px solid var(--border); color:var(--dim);
-      transition:border-color .2s, color .2s;
-    }
-    .platform-badge:hover { border-color:var(--accent); color:var(--accent); }
-    .platform-badge a { color:inherit; text-decoration:none; }
-
-    /* ── AI Avatar inline ── */
-    @keyframes imgReveal { from { opacity:0; transform:scale(.94); } to { opacity:1; transform:scale(1); } }
-    .avatar-section { max-width:620px; margin:0 auto 2rem; padding:0 1.5rem; animation:fadeUp .6s .55s ease both; }
-    .avatar-panel { background:var(--surface); border:1px solid rgba(167,139,250,.2); border-radius:14px; padding:1.75rem; }
-    .avatar-panel-header { display:flex; align-items:center; gap:.75rem; margin-bottom:1.2rem; }
-    .avatar-panel-header h2 { font-size:1rem; font-weight:700; }
-    .avatar-panel-header p  { font-size:.76rem; color:var(--dim); margin-top:.15rem; }
-    .ap-preview {
-      width:72px; height:72px; border-radius:50%; flex-shrink:0;
-      background:linear-gradient(135deg,var(--accent),var(--purple));
-      display:flex; align-items:center; justify-content:center;
-      font-size:1.8rem; font-weight:800; color:#050a0f;
-      border:2px solid rgba(167,139,250,.3); overflow:hidden;
-    }
-    .ap-preview.generating { animation:pulse 1s ease infinite; }
-    .ap-preview img { width:100%; height:100%; object-fit:cover; border-radius:50%; animation:imgReveal .4s ease both; }
-    .ap-chips { display:flex; gap:.35rem; flex-wrap:wrap; margin-bottom:.7rem; }
-    .ap-chip { padding:.22rem .6rem; border-radius:2rem; font-size:.65rem; background:rgba(167,139,250,.08); border:1px solid rgba(167,139,250,.2); color:var(--purple); cursor:pointer; transition:background .15s; }
-    .ap-chip:hover { background:rgba(167,139,250,.18); }
-    .ap-prompt { width:100%; padding:.62rem .9rem; border-radius:.5rem; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-size:.83rem; font-family:inherit; outline:none; transition:border-color .2s; margin-bottom:.7rem; }
-    .ap-prompt:focus { border-color:var(--purple); }
-    .ap-styles { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.85rem; }
-    .ap-style { padding:.28rem .7rem; border-radius:2rem; font-size:.68rem; font-weight:600; border:1px solid var(--border); color:var(--dim); cursor:pointer; transition:all .18s; background:transparent; }
-    .ap-style:hover { border-color:var(--purple); color:var(--purple); }
-    .ap-style.active { background:rgba(167,139,250,.12); border-color:var(--purple); color:var(--purple); }
-    .btn-gen { padding:.62rem 1.3rem; border:none; border-radius:.5rem; font-size:.82rem; font-weight:700; cursor:pointer; color:#050a0f; background:linear-gradient(135deg,var(--purple),var(--accent)); background-size:200%; animation:gradShift 3s ease infinite; transition:filter .2s,transform .15s; }
-    .btn-gen:hover:not(:disabled) { filter:brightness(1.12); transform:translateY(-1px); }
-    .btn-gen:disabled { opacity:.5; cursor:not-allowed; animation:none; }
-    .ap-status { display:none; align-items:center; gap:.6rem; font-size:.75rem; color:var(--purple); margin-top:.6rem; }
-    .ap-status.active { display:flex; }
-    .ap-spinner { width:14px; height:14px; border:2px solid rgba(167,139,250,.2); border-top-color:var(--purple); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
-    .ap-result { display:none; margin-top:1rem; animation:imgReveal .5s ease both; }
-    .ap-result.visible { display:block; }
-    .ap-img-wrap { width:150px; height:150px; border-radius:.6rem; overflow:hidden; border:1px solid rgba(167,139,250,.3); margin-bottom:.7rem; box-shadow:0 6px 24px rgba(167,139,250,.12); }
-    .ap-img-wrap img { width:100%; height:100%; object-fit:cover; }
-    .ap-result-btns { display:flex; gap:.5rem; flex-wrap:wrap; }
-    .ap-msg { font-size:.74rem; margin-top:.6rem; display:none; }
-
-    @media(max-width:600px) {
-      .hero { padding:3.5rem 1rem 2rem; }
-      .steps { gap:0; }
-      .step-arrow { display:none; }
-    }
-  </style>
+@media(max-width:480px){.wrap{max-width:100%}h1{font-size:1.3rem}}
+</style>
 </head>
 <body>
+<div class="wrap">
+  <h1>Join as Agent</h1>
+  <p class="tagline">Your wallet address becomes your Agent ID on Linea Mainnet</p>
 
-<!-- Nav -->
-<nav>
-  <div class="nav-logo">BRIDGE AI</div>
-  <div class="nav-links">
-    <a href="/">Home</a>
-    <a href="/pricing">Pricing</a>
-    <a href="/docs">Docs</a>
-    <a href="/claude-partner">Claude Partner</a>
-    <a href="/voice">Voice AI</a>
-    <a href="/portal">Portal</a>
-    <span class="nav-user" id="navUser"></span>
-  </div>
-</nav>
-
-<!-- Hero -->
-<section class="hero">
-  <canvas id="hero-canvas"></canvas>
-  <div class="hero-inner">
-    <div class="hero-badge">
-      <span class="beacon-dot"></span>
-      GATEWAY LIVE · LINEA ZKEVM · AGENT REGISTRY
-    </div>
-    <h1>Join as <span class="grad">Agent</span></h1>
-    <p>Decentralized platform — Bridge, Supac, Taurus &amp; Wiki. All share Digital Twins.<br>Scan to open gateway → connect wallet → join as agent.</p>
-  </div>
-</section>
-
-<!-- Steps -->
-<div class="steps">
-  <div class="step" id="step1"><span class="step-num">1</span> Scan QR</div>
-  <span class="step-arrow">→</span>
-  <div class="step" id="step2"><span class="step-num">2</span> Open Gateway</div>
-  <span class="step-arrow">→</span>
-  <div class="step" id="step3"><span class="step-num">3</span> Connect Wallet</div>
-  <span class="step-arrow">→</span>
-  <div class="step" id="step4"><span class="step-num">4</span> Join Linea</div>
-  <span class="step-arrow">→</span>
-  <div class="step" id="step5"><span class="step-num">5</span> Agent Active</div>
-</div>
-
-<!-- QR Grid -->
-<section class="qr-section">
-  <div style="text-align:center;margin-bottom:2rem">
-    <div style="font-size:.68rem;letter-spacing:.18em;color:var(--accent);margin-bottom:.5rem">SCAN TO JOIN</div>
-    <h2 style="font-size:1.3rem;font-weight:700">Three ways to connect</h2>
+  <!-- Step indicators -->
+  <div class="steps">
+    <div class="step-dot active" id="dot1" title="Connect Wallet">1</div>
+    <div class="step-line" id="line1"></div>
+    <div class="step-dot" id="dot2" title="Switch Network">2</div>
+    <div class="step-line" id="line2"></div>
+    <div class="step-dot" id="dot3" title="Sign Registration">3</div>
+    <div class="step-line" id="line3"></div>
+    <div class="step-dot" id="dot4" title="Agent Active">4</div>
   </div>
 
-  <div class="qr-grid">
-    <!-- Gateway QR -->
-    <div class="qr-card">
-      <span class="qr-badge gateway">Gateway</span>
-      <div class="qr-title">Public Gateway</div>
-      <div class="qr-desc">Scan from anywhere — opens the canonical Bridge AI OS gateway URL.</div>
-      <div class="qr-canvas-wrap"><img id="qrGateway" width="180" height="180" alt="Gateway QR" style="border-radius:6px;display:block"></div>
-      <div class="qr-url" id="urlGateway">https://go.ai-os.co.za/join</div>
-      <a href="/gateway/" class="btn btn-primary btn-sm">Open Gateway</a>
+  <!-- STEP 1: Connect Wallet -->
+  <div id="step1" class="card">
+    <div class="card-icon">🦊</div>
+    <h2>Connect Wallet</h2>
+    <p>MetaMask, WalletConnect, or any EIP-1193 wallet.<br>Your address becomes your Agent ID.</p>
+    <button class="btn btn-primary" id="btn-connect" onclick="connectWallet()">
+      Connect Wallet
+    </button>
+    <div class="no-wallet" id="no-wallet-msg" style="display:none">
+      No wallet detected. Install <a href="https://metamask.io" target="_blank" rel="noopener">MetaMask</a> or use a WalletConnect-compatible browser.
     </div>
-
-    <!-- Beacon QR (relative / LAN) -->
-    <div class="qr-card">
-      <span class="qr-badge beacon">
-        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;vertical-align:middle"></span>
-        Beacon
-      </span>
-      <div class="qr-title">Local Beacon</div>
-      <div class="qr-desc">Works on the same network. Scan from your phone while on local Wi-Fi or LAN.</div>
-      <div class="qr-canvas-wrap"><img id="qrBeacon" width="180" height="180" alt="Beacon QR" style="border-radius:6px;display:block"></div>
-      <div class="qr-url" id="urlBeacon">detecting…</div>
-      <button class="btn btn-green btn-sm" onclick="refreshBeacon()">↻ Refresh Beacon</button>
-    </div>
-
-    <!-- Linea QR -->
-    <div class="qr-card">
-      <span class="qr-badge linea">Linea</span>
-      <div class="qr-title">Linea Agent Join</div>
-      <div class="qr-desc">Scan to connect wallet directly to Linea zkEVM and register as a Bridge AI agent.</div>
-      <div class="qr-canvas-wrap"><img id="qrLinea" width="180" height="180" alt="Linea QR" style="border-radius:6px;display:block"></div>
-      <div class="qr-url" id="urlLinea">https://go.ai-os.co.za/join?linea=1</div>
-      <a href="#linea-join" class="btn btn-linea btn-sm">Join on Linea</a>
-    </div>
+    <div id="msg1" class="msg"></div>
   </div>
-</section>
 
-<!-- AI Avatar Generator -->
-<div class="avatar-section">
-  <div class="avatar-panel">
-    <div class="avatar-panel-header">
-      <div class="ap-preview" id="apPreview">🤖</div>
-      <div>
-        <h2>🎨 Generate Your Agent Avatar</h2>
-        <p>AI-generated profile image · DALL·E 3 · Set as your Bridge AI identity</p>
+  <!-- STEP 2: Switch Network -->
+  <div id="step2" class="card" style="display:none">
+    <div class="card-icon">🔗</div>
+    <h2>Switch to Linea Mainnet</h2>
+    <p>Chain ID 59144 (0xE708).<br>We'll prompt the switch automatically.</p>
+    <div class="address-pill" id="addr-display"></div>
+    <button class="btn btn-primary" id="btn-switch" onclick="switchToLinea()">
+      Switch Network
+    </button>
+    <div id="msg2" class="msg"></div>
+  </div>
+
+  <!-- STEP 3: Sign Registration -->
+  <div id="step3" class="card" style="display:none">
+    <div class="card-icon">✍️</div>
+    <h2>Sign Registration</h2>
+    <p>Gasless — sign a message to prove wallet ownership.<br>No ETH needed.</p>
+    <div class="address-pill" id="addr-display3"></div>
+    <button class="btn btn-green" id="btn-sign" onclick="signRegistration()">
+      Sign &amp; Register
+    </button>
+    <div id="msg3" class="msg"></div>
+  </div>
+
+  <!-- STEP 4: Agent Active -->
+  <div id="step4" style="display:none">
+    <div class="agent-card">
+      <div style="font-size:1.5rem;margin-bottom:.5rem">✅ Agent Active</div>
+      <div class="brdg-amount" id="brdg-display">0.5 <span class="brdg-unit">BRDG</span></div>
+      <div style="color:var(--t);font-size:.82rem;margin-bottom:1.25rem">Welcome grant issued on Linea Mainnet</div>
+
+      <div style="background:var(--bg2);border-radius:8px;padding:1rem;text-align:left;margin-bottom:1.25rem">
+        <div class="info-row">
+          <span class="info-label">Agent ID</span>
+          <span class="info-val" id="agent-id-display" style="font-family:monospace;font-size:.8rem"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Email</span>
+          <span class="info-val" id="agent-email-display" style="font-family:monospace;font-size:.78rem"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Network</span>
+          <span class="info-val green">Linea Mainnet <span class="badge badge-green">59144</span></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status</span>
+          <span class="info-val"><span class="badge badge-green">Active</span></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Registry</span>
+          <span class="info-val"><span class="badge badge-blue">Digital Twin</span></span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <a href="/" class="btn btn-primary btn-sm" style="flex:1">Dashboard</a>
+        <a href="/agents.html" class="btn btn-outline btn-sm" style="flex:1">Agents &amp; Twins</a>
+        <a href="/wallet.html" class="btn btn-outline btn-sm" style="flex:1">Wallet</a>
       </div>
     </div>
-
-    <div class="ap-chips">
-      <span class="ap-chip" onclick="apChip(this)">AI agent in a neural network</span>
-      <span class="ap-chip" onclick="apChip(this)">African tech founder, digital city</span>
-      <span class="ap-chip" onclick="apChip(this)">blockchain identity, glowing circuits</span>
-      <span class="ap-chip" onclick="apChip(this)">digital twin avatar, Linea zkEVM</span>
-      <span class="ap-chip" onclick="apChip(this)">autonomous robot, futuristic</span>
-    </div>
-
-    <input class="ap-prompt" id="apPrompt" type="text" placeholder="Describe your agent avatar…" maxlength="400">
-
-    <div class="ap-styles">
-      <button class="ap-style active" data-style="cyberpunk"     onclick="apStyle(this)">Cyberpunk</button>
-      <button class="ap-style"        data-style="professional"  onclick="apStyle(this)">Professional</button>
-      <button class="ap-style"        data-style="artistic"      onclick="apStyle(this)">Artistic</button>
-      <button class="ap-style"        data-style="pixel"         onclick="apStyle(this)">Pixel Art</button>
-      <button class="ap-style"        data-style="anime"         onclick="apStyle(this)">Anime</button>
-      <button class="ap-style"        data-style="minimal"       onclick="apStyle(this)">Minimal</button>
-    </div>
-
-    <button class="btn-gen" id="apGenBtn" onclick="apGenerate()">✦ Generate Avatar</button>
-    <div class="ap-status" id="apStatus"><div class="ap-spinner"></div><span id="apStatusTxt">Generating…</span></div>
-
-    <div class="ap-result" id="apResult">
-      <div class="ap-img-wrap"><img id="apResultImg" src="" alt="Generated avatar"></div>
-      <div class="ap-result-btns">
-        <button class="btn btn-primary btn-sm" onclick="apSetAvatar()">✓ Set as My Avatar</button>
-        <button class="btn btn-outline btn-sm" onclick="apGenerate()">↻ Regenerate</button>
-        <a id="apDownload" href="#" download="agent-avatar.png" class="btn btn-outline btn-sm">↓ Download</a>
-      </div>
-      <div class="ap-msg" id="apMsg"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Linea Agent Join Panel -->
-<div class="linea-panel" id="linea-join">
-  <div class="linea-header">
-    <span class="linea-icon">⬡</span>
-    <div>
-      <h2>Register as Agent on Linea zkEVM</h2>
-      <p>Gasless sign-in · BRDG token eligibility · Agent ID issued on-chain</p>
-    </div>
-  </div>
-
-  <div class="join-steps">
-    <div class="join-step active" id="js1">
-      <div class="join-step-num">1</div>
-      <div class="join-step-body">
-        <h4>Connect Wallet</h4>
-        <p>MetaMask, WalletConnect, or any EIP-1193 wallet. Your address becomes your Agent ID.</p>
-      </div>
-    </div>
-    <div class="join-step" id="js2">
-      <div class="join-step-num">2</div>
-      <div class="join-step-body">
-        <h4>Switch to Linea Mainnet</h4>
-        <p>Chain ID 59144 (0xE708). We'll prompt the switch automatically.</p>
-      </div>
-    </div>
-    <div class="join-step" id="js3">
-      <div class="join-step-num">3</div>
-      <div class="join-step-body">
-        <h4>Sign Registration</h4>
-        <p>Gasless — sign a message to prove wallet ownership. No ETH needed.</p>
-      </div>
-    </div>
-    <div class="join-step" id="js4">
-      <div class="join-step-num">4</div>
-      <div class="join-step-body">
-        <h4>Agent Active</h4>
-        <p>Receive your Agent ID, BRDG allocation, and access to the shared Digital Twin registry.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="wallet-row">
-    <button class="btn btn-linea" id="connectBtn" onclick="connectWallet()">⬡ Connect Wallet</button>
-    <button class="btn btn-outline btn-sm" id="signBtn" onclick="signAndRegister()" style="display:none">✦ Sign &amp; Register Agent</button>
-  </div>
-  <div id="walletStatus"></div>
-
-  <div class="agent-card" id="agentCard">
-    <div class="agent-label">Agent Registered</div>
-    <div class="agent-id" id="agentId"></div>
-    <div class="agent-label" style="margin-top:.6rem">Network</div>
-    <div style="font-size:.78rem;color:var(--linea);margin-top:.2rem">Linea Mainnet (Chain 59144)</div>
-    <div style="margin-top:1rem;display:flex;gap:.6rem;flex-wrap:wrap">
-      <a href="/profile" class="btn btn-primary btn-sm">View Profile →</a>
-      <a href="/agents.html" class="btn btn-outline btn-sm">Agent Registry</a>
-      <a href="/twin" class="btn btn-outline btn-sm">Digital Twin</a>
-    </div>
-  </div>
-</div>
-
-<!-- Platform Strip -->
-<div class="platform-strip">
-  <p>Integrated: <strong>Bridge AI OS</strong> · <strong>Supac</strong> · <strong>Taurus</strong> · <strong>Wiki</strong> — one twin registry, shared state.</p>
-  <div class="platform-badges">
-    <span class="platform-badge"><a href="/gateway/">Gateway</a></span>
-    <span class="platform-badge"><a href="/agents.html">Agents &amp; Twins</a></span>
-    <span class="platform-badge"><a href="/docs.html">Wiki &amp; Docs</a></span>
-    <span class="platform-badge"><a href="/twin">Digital Twin</a></span>
-    <span class="platform-badge"><a href="/tokenomics">BRDG Token</a></span>
-    <span class="platform-badge"><a href="/treasury-dashboard">Treasury</a></span>
   </div>
 </div>
 
 <script>
-/* ── Canvas particle field ── */
-(function () {
-  const canvas = document.getElementById('hero-canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H, pts;
-  function resize() { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; }
-  function mkPts(n) {
-    return Array.from({ length: n }, () => ({
-      x: Math.random() * W, y: Math.random() * H,
-      vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3,
-      r: Math.random() * 1.4 + .4, a: Math.random()
-    }));
-  }
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    const n = pts.length;
-    for (let i = 0; i < n; i++) {
-      const p = pts[i];
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0,200,255,${(p.a * .5).toFixed(2)})`; ctx.fill();
-      for (let j = i + 1; j < n; j++) {
-        const q = pts[j];
-        const dx = p.x - q.x, dy = p.y - q.y, d = Math.sqrt(dx*dx+dy*dy);
-        if (d < 110) {
-          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
-          ctx.strokeStyle = `rgba(0,200,255,${(.15*(1-d/110)).toFixed(3)})`; ctx.lineWidth = .35; ctx.stroke();
-        }
-      }
-    }
-    requestAnimationFrame(draw);
-  }
-  resize(); pts = mkPts(48); draw();
-  window.addEventListener('resize', () => { resize(); pts = mkPts(48); });
-})();
-
-/* ── QR generation — image-based, no JS lib ── */
-const GATEWAY_URL = 'https://go.ai-os.co.za/join';
-const LINEA_URL   = 'https://go.ai-os.co.za/join?linea=1';
-
-function qrSrc(url) {
-  return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=' + encodeURIComponent(url);
-}
-
-function setQR(imgId, url) {
-  const el = document.getElementById(imgId);
-  if (!el) return;
-  el.src = qrSrc(url);
-}
-
-function refreshBeacon() {
-  const beaconUrl = window.location.origin + '/join';
-  document.getElementById('urlBeacon').textContent = beaconUrl;
-  setQR('qrBeacon', beaconUrl);
-}
-
-function initQRs() {
-  document.getElementById('urlGateway').textContent = GATEWAY_URL;
-  document.getElementById('urlLinea').textContent   = LINEA_URL;
-  setQR('qrGateway', GATEWAY_URL);
-  setQR('qrLinea',   LINEA_URL);
-  refreshBeacon();
-
-  // Try WebRTC to detect LAN IP for a true local beacon
-  try {
-    const pc = new RTCPeerConnection({ iceServers: [] });
-    pc.createDataChannel('');
-    pc.createOffer().then(o => pc.setLocalDescription(o));
-    pc.onicecandidate = e => {
-      if (!e.candidate) return;
-      const ip = e.candidate.candidate.match(/(\d{1,3}\.){3}\d{1,3}/)?.[0];
-      if (ip && !ip.startsWith('127.') && !ip.startsWith('0.')) {
-        const lan = 'http://' + ip + ':8080/join';
-        document.getElementById('urlBeacon').textContent = lan;
-        setQR('qrBeacon', lan);
-        pc.close();
-      }
-    };
-    setTimeout(() => pc.close(), 5000);
-  } catch (_) { /* WebRTC not available */ }
-}
-
-/* ── Step highlighting ── */
-function setStep(n) {
-  for (let i = 1; i <= 5; i++) {
-    const el = document.getElementById('step' + i);
-    if (!el) continue;
-    el.classList.remove('done');
-    if (i < n) el.classList.add('done');
-  }
-}
-
-function setJoinStep(n) {
-  for (let i = 1; i <= 4; i++) {
-    const el = document.getElementById('js' + i);
-    el.classList.remove('active', 'complete');
-    if (i < n) el.classList.add('complete');
-    if (i === n) el.classList.add('active');
-  }
-}
-
-/* ── Wallet status helper ── */
-function ws(msg, type) {
-  const el = document.getElementById('walletStatus');
-  el.textContent = msg;
-  el.className = type || '';
-}
-
-/* ── Linea chain constants ── */
-const LINEA_CHAIN_ID     = '0xE708'; // 59144
-const LINEA_CHAIN_PARAMS = {
-  chainId: LINEA_CHAIN_ID,
+// ── Config ────────────────────────────────────────────────────────────────
+const LINEA_CHAIN_ID     = 59144;
+const LINEA_CHAIN_ID_HEX = '0xE708';
+const LINEA_PARAMS = {
+  chainId: LINEA_CHAIN_ID_HEX,
   chainName: 'Linea Mainnet',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
   rpcUrls: ['https://rpc.linea.build'],
   blockExplorerUrls: ['https://lineascan.build'],
 };
 
-let connectedAddress = null;
+// ── State ─────────────────────────────────────────────────────────────────
+let currentAddress  = null;
+let nonceToken      = null;
+let nonce           = null;
 
-async function connectWallet() {
-  const btn = document.getElementById('connectBtn');
-  if (!window.ethereum) {
-    ws('No wallet detected — <a href="https://metamask.io/download/" target="_blank" style="color:var(--accent)">install MetaMask</a> to join on Linea.', 'err');
-    document.getElementById('walletStatus').innerHTML = document.getElementById('walletStatus').textContent;
-    ws('No wallet detected — install MetaMask to continue.', 'err');
-    return;
-  }
-  btn.textContent = '⏳ Connecting…';
-  btn.disabled = true;
-  setStep(3);
-  ws('Requesting account access…');
-
-  // Timeout guard — resets UI if MetaMask hangs for > 60s
-  const timer = setTimeout(() => {
-    btn.textContent = '⬡ Connect Wallet';
-    btn.disabled = false;
-    ws('⚠ Connection timed out — approve the MetaMask popup and try again.', 'err');
-  }, 60000);
-
-  try {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    clearTimeout(timer);
-    connectedAddress = accounts[0];
-    ws('✓ ' + connectedAddress.slice(0,6) + '…' + connectedAddress.slice(-4) + ' connected', 'ok');
-    setJoinStep(2);
-    setStep(3);
-
-    // Switch / add Linea
-    ws('Switching to Linea Mainnet…');
-    try {
-      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: LINEA_CHAIN_ID }] });
-    } catch (switchErr) {
-      if (switchErr.code === 4902) {
-        await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [LINEA_CHAIN_PARAMS] });
-      } else { throw switchErr; }
-    }
-
-    ws('✓ Linea Mainnet active — ready to sign.', 'ok');
-    setJoinStep(3);
-    setStep(4);
-    btn.style.display = 'none';
-    document.getElementById('signBtn').style.display = 'inline-block';
-
-  } catch (e) {
-    clearTimeout(timer);
-    ws('⚠ ' + (e.message || 'Connection failed'), 'err');
-    btn.textContent = '⬡ Connect Wallet';
-    btn.disabled = false;
+// ── UI helpers ─────────────────────────────────────────────────────────────
+function showStep(n) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step' + i);
+    if (el) el.style.display = i === n ? '' : 'none';
+  });
+  // step 4 is the agent card div
+  if (n === 4) {
+    document.getElementById('step4').style.display = '';
+    [1,2,3].forEach(i => {
+      const el = document.getElementById('step' + i);
+      if (el) el.style.display = 'none';
+    });
   }
 }
 
-async function signAndRegister() {
-  if (!connectedAddress) { ws('Connect wallet first.', 'err'); return; }
-  const signBtn = document.getElementById('signBtn');
-  signBtn.disabled = true;
-  signBtn.textContent = '⏳ Signing…';
-  setJoinStep(3);
-  ws('Waiting for signature…');
+function setDot(n, state) {
+  const dot = document.getElementById('dot' + n);
+  if (!dot) return;
+  dot.classList.remove('active', 'done');
+  if (state === 'active') dot.classList.add('active');
+  if (state === 'done')   dot.classList.add('done');
+  if (n < 4) {
+    const line = document.getElementById('line' + n);
+    if (line) { line.classList.toggle('done', state === 'done'); }
+  }
+}
 
-  const ts      = Date.now();
-  const message = [
-    '🌐 Bridge AI OS — Agent Registration',
+function setMsg(step, text, type) {
+  const el = document.getElementById('msg' + step);
+  if (!el) return;
+  el.className = 'msg ' + (type || '');
+  el.textContent = text;
+  if (!type) el.style.display = 'none';
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) {
+    btn._orig = btn.innerHTML;
+    btn.innerHTML = '<span class="spin"></span> Working…';
+  } else {
+    btn.innerHTML = btn._orig || btn.innerHTML;
+  }
+}
+
+// ── Step 1: Connect Wallet ─────────────────────────────────────────────────
+async function connectWallet() {
+  if (!window.ethereum) {
+    document.getElementById('no-wallet-msg').style.display = '';
+    return;
+  }
+  setLoading('btn-connect', true);
+  setMsg(1, '', '');
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    currentAddress = accounts[0];
+    setDot(1, 'done');
+    setDot(2, 'active');
+    document.getElementById('addr-display').textContent = currentAddress;
+    showStep(2);
+    // Auto-advance if already on Linea
+    const chainHex = await window.ethereum.request({ method: 'eth_chainId' });
+    if (parseInt(chainHex, 16) === LINEA_CHAIN_ID) {
+      setDot(2, 'done');
+      setDot(3, 'active');
+      await fetchNonce();
+      document.getElementById('addr-display3').textContent = currentAddress;
+      showStep(3);
+    }
+  } catch (err) {
+    setMsg(1, err.message || 'Connection rejected', 'err');
+  } finally {
+    setLoading('btn-connect', false);
+  }
+}
+
+// ── Step 2: Switch Network ─────────────────────────────────────────────────
+async function switchToLinea() {
+  setLoading('btn-switch', true);
+  setMsg(2, '', '');
+  try {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: LINEA_CHAIN_ID_HEX }],
+      });
+    } catch (switchErr) {
+      // Chain not added yet — add it
+      if (switchErr.code === 4902) {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [LINEA_PARAMS],
+        });
+      } else {
+        throw switchErr;
+      }
+    }
+    setDot(2, 'done');
+    setDot(3, 'active');
+    await fetchNonce();
+    document.getElementById('addr-display3').textContent = currentAddress;
+    showStep(3);
+  } catch (err) {
+    setMsg(2, err.message || 'Network switch failed', 'err');
+  } finally {
+    setLoading('btn-switch', false);
+  }
+}
+
+// ── Fetch nonce from backend ───────────────────────────────────────────────
+async function fetchNonce() {
+  const res = await fetch('/api/siwe/nonce');
+  const data = await res.json();
+  if (!data.ok) throw new Error('Could not fetch nonce');
+  nonce      = data.nonce;
+  nonceToken = data.token;
+}
+
+// ── Step 3: Sign Registration ──────────────────────────────────────────────
+async function signRegistration() {
+  if (!currentAddress || !nonce || !nonceToken) {
+    setMsg(3, 'Missing wallet or nonce — please restart', 'err');
+    return;
+  }
+  setLoading('btn-sign', true);
+  setMsg(3, '', '');
+
+  const domain    = location.host || 'go.ai-os.co.za';
+  const issuedAt  = new Date().toISOString();
+  const message   = [
+    `${domain} wants you to sign in with your Ethereum account:`,
+    currentAddress,
     '',
-    'Platform : Bridge AI OS · Supac · Taurus · Wiki',
-    'Network  : Linea Mainnet (Chain 59144)',
-    'Address  : ' + connectedAddress,
-    'Timestamp: ' + new Date(ts).toISOString(),
+    'Sign in to Bridge AI OS — Autonomous Agent Network',
     '',
-    'By signing, I join the Bridge AI agent registry and accept the platform terms.',
+    `URI: https://${domain}`,
+    `Version: 1`,
+    `Chain ID: ${LINEA_CHAIN_ID}`,
+    `Nonce: ${nonce}`,
+    `Issued At: ${issuedAt}`,
   ].join('\n');
 
   try {
-    const sig = await window.ethereum.request({
+    const signature = await window.ethereum.request({
       method: 'personal_sign',
-      params: [message, connectedAddress],
+      params: [message, currentAddress],
     });
 
-    ws('✓ Signed — registering agent…', 'ok');
+    const res = await fetch('/api/siwe/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: currentAddress, signature, nonce_token: nonceToken, message }),
+    });
 
-    // POST to backend
-    try {
-      await fetch('/api/platform/agent/register-wallet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: connectedAddress, signature: sig, timestamp: ts, chain: 'linea' }),
-      });
-    } catch (_) { /* non-fatal — agent card still shows */ }
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Verification failed');
 
-    // Show agent card
-    const agentId = 'AGT-' + connectedAddress.slice(2, 8).toUpperCase() + '-LINEA';
-    document.getElementById('agentId').textContent = connectedAddress + '\nAgent ID: ' + agentId;
-    document.getElementById('agentCard').classList.add('visible');
-    setJoinStep(4);
-    setStep(5);
-    ws('✓ Agent registered on Linea zkEVM', 'ok');
-    document.getElementById('step5').classList.add('done');
+    // Persist token
+    localStorage.setItem('bridge_token', data.token);
+    if (data.agent_id)    localStorage.setItem('bridge_agent_id', data.agent_id);
+    if (data.email)       localStorage.setItem('bridge_agent_email', data.email);
 
-    // Update QR to show agent-specific URL
-    const agentUrl = 'https://go.ai-os.co.za/join?agent=' + connectedAddress.slice(2, 10);
-    setQR('qrLinea', agentUrl);
-    document.getElementById('urlLinea').textContent = agentUrl;
+    // Update step 4 UI
+    const brdg = parseFloat(data.brdg_balance ?? data.brdg_grant ?? 0.5).toFixed(4);
+    document.getElementById('brdg-display').innerHTML =
+      brdg + ' <span class="brdg-unit">BRDG</span>';
+    document.getElementById('agent-id-display').textContent    = data.agent_id || '–';
+    document.getElementById('agent-email-display').textContent = data.email    || '–';
 
-  } catch (e) {
-    ws('⚠ ' + (e.message || 'Signing failed'), 'err');
-    signBtn.disabled = false;
-    signBtn.textContent = '✦ Sign & Register Agent';
+    setDot(3, 'done');
+    setDot(4, 'done');
+    showStep(4);
+  } catch (err) {
+    setMsg(3, err.message || 'Signing failed', 'err');
+  } finally {
+    setLoading('btn-sign', false);
   }
 }
 
-/* ── Nav: show user email if logged in ── */
-(function () {
-  function getSafeNextPath() {
-    const raw = new URLSearchParams(window.location.search).get('next') || '';
-    if (!raw) return '';
-    if (!raw.startsWith('/')) return '';
-    if (raw.startsWith('//')) return '';
-    if (raw.startsWith('/join')) return '';
-    return raw;
-  }
-
-  function redirectSignedInUser(user) {
-    const safeNext = getSafeNextPath();
-    if (safeNext) {
-      window.location.replace(safeNext);
-      return;
-    }
-    const email = (user && user.email ? String(user.email) : '').trim().toLowerCase();
-    if (email === 'ryanpcowan@gmail.com') {
-      window.location.replace('/admin/dashboard');
-      return;
-    }
-    window.location.replace('/profile');
-  }
-
-  const tok = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('bridge_token='));
-  const token = tok ? tok.split('=')[1] : localStorage.getItem('bridge_token');
-  if (token) {
-    fetch('/auth/me', { headers: { Authorization: 'Bearer ' + token } })
-      .then(r => r.json()).then(d => {
-        if (d.ok && d.user) {
-          document.getElementById('navUser').textContent = d.user.email || '';
-          redirectSignedInUser(d.user);
-        }
-      }).catch(() => {});
-  }
-
-  // Auto-trigger linea flow if ?linea=1
-  if (new URLSearchParams(window.location.search).get('linea') === '1') {
-    setTimeout(() => document.getElementById('linea-join').scrollIntoView({ behavior: 'smooth' }), 600);
-  }
-})();
-
-/* ── AI Avatar Generator ── */
-let apSelectedStyle = 'cyberpunk';
-let apGeneratedUrl  = null;
-
-function apChip(el)  { document.getElementById('apPrompt').value = el.textContent; }
-function apStyle(el) {
-  document.querySelectorAll('.ap-style').forEach(s => s.classList.remove('active'));
-  el.classList.add('active');
-  apSelectedStyle = el.dataset.style;
-}
-
-function apSetStatus(on, txt) {
-  const s = document.getElementById('apStatus');
-  s.classList.toggle('active', on);
-  if (txt) document.getElementById('apStatusTxt').textContent = txt;
-}
-
-async function apGenerate() {
-  const prompt = document.getElementById('apPrompt').value.trim();
-  if (prompt.length < 3) { document.getElementById('apPrompt').focus(); return; }
-
-  // Must be signed in to generate
-  const tok = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('bridge_token='));
-  const token = tok ? tok.split('=')[1] : localStorage.getItem('bridge_token');
-  if (!token) {
-    apSetStatus(true, '🔑 Sign in first — <a href="/auth" style="color:var(--purple)">create free account →</a>');
-    document.getElementById('apStatus').style.display = 'flex';
-    const s = document.getElementById('apStatusTxt');
-    s.innerHTML = '🔑 Sign in to generate your avatar &nbsp;<a href="/auth" style="color:var(--purple);font-weight:700">Create free account →</a>';
-    document.querySelector('.ap-spinner').style.display = 'none';
+// ── Boot: check if already connected ──────────────────────────────────────
+(async () => {
+  if (!window.ethereum) {
+    document.getElementById('no-wallet-msg').style.display = '';
     return;
   }
 
-  const btn = document.getElementById('apGenBtn');
-  btn.disabled = true;
-  document.getElementById('apResult').classList.remove('visible');
-  document.getElementById('apPreview').classList.add('generating');
-  document.querySelector('.ap-spinner').style.display = '';
-  apSetStatus(true, 'Generating your avatar…');
-
-  const msgs = ['Composing scene…','Rendering style…','Adding effects…','Finalising…'];
-  let mi = 0;
-  const tick = setInterval(() => apSetStatus(true, msgs[mi++ % msgs.length]), 2500);
-
-  try {
-    const resp = await fetch('/api/platform/avatar/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ prompt, style: apSelectedStyle }),
-    });
-    const data = await resp.json();
-    clearInterval(tick);
-    if (!data.ok || !data.url) throw new Error(data.error || 'Generation failed');
-
-    apGeneratedUrl = data.url;
-    const img = document.getElementById('apResultImg');
-    img.src = apGeneratedUrl;
-    document.getElementById('apDownload').href = apGeneratedUrl;
-    document.getElementById('apResult').classList.add('visible');
-    document.getElementById('apPreview').innerHTML = `<img src="${apGeneratedUrl}" alt="avatar">`;
-    apSetStatus(false);
-  } catch (e) {
-    clearInterval(tick);
-    apSetStatus(true, '⚠ ' + e.message);
-  } finally {
-    btn.disabled = false;
-    document.getElementById('apPreview').classList.remove('generating');
+  // If already logged in, skip to step 4
+  const existingToken = localStorage.getItem('bridge_token');
+  const existingAgent = localStorage.getItem('bridge_agent_id');
+  if (existingToken && existingAgent) {
+    document.getElementById('agent-id-display').textContent    = existingAgent;
+    document.getElementById('agent-email-display').textContent = localStorage.getItem('bridge_agent_email') || '–';
+    document.getElementById('brdg-display').innerHTML = '– <span class="brdg-unit">BRDG</span>';
+    setDot(1,'done'); setDot(2,'done'); setDot(3,'done'); setDot(4,'done');
+    showStep(4);
+    return;
   }
-}
 
-async function apSetAvatar() {
-  if (!apGeneratedUrl) return;
-  const msgEl = document.getElementById('apMsg');
-  msgEl.style.display = 'block'; msgEl.style.color = 'var(--dim)'; msgEl.textContent = 'Saving…';
-  try {
-    const tok = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('bridge_token='));
-    const token = tok ? tok.split('=')[1] : localStorage.getItem('bridge_token');
-    if (!token) throw new Error('Sign in to save your avatar');
-    const resp = await fetch('/api/platform/avatar/set', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ avatarUrl: apGeneratedUrl }),
-    });
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error);
-    msgEl.style.color = 'var(--green)';
-    msgEl.textContent = '✓ Avatar saved — visible across all Bridge AI pages.';
-    setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
-  } catch (e) {
-    msgEl.style.color = '#ff3c5a'; msgEl.textContent = '⚠ ' + e.message;
-  }
-}
-
-/* ── Init ── */
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initQRs);
-} else {
-  initQRs();
-}
-setStep(1);
+  // Listen for account/chain changes
+  window.ethereum.on('accountsChanged', accs => {
+    if (!accs.length) location.reload();
+  });
+  window.ethereum.on('chainChanged', () => location.reload());
+})();
 </script>
 <script src="/bridge-nav.js"></script>
-<script src="/ehsa-brain-status.js" defer></script>
 </body>
 </html>

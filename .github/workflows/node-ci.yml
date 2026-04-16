@@ -1,0 +1,35 @@
+name: Node CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      NODE_ENV: test
+      JWT_SECRET: test-jwt-secret-min-32-chars-long!!
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run economic-loop tests
+        run: npx jest tests/economic-loop.test.js --runInBand --forceExit
+
+      - name: Run super-admin regression
+        run: npx jest tests/super-admin-routing.test.js --runInBand --forceExit

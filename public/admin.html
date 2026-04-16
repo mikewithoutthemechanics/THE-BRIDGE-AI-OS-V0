@@ -340,15 +340,7 @@
         </div>
     </div>
 
-    <script>
-      // Auth guard: redirect to onboarding if no token present
-      (function() {
-        var token = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_siwe_jwt');
-        if (!token) {
-          window.location.replace('/onboarding.html');
-        }
-      })();
-    </script>
+    <script src="/admin-auth.js"></script>
     <script src="/src/admin-auth.js"></script>
     <script type="module" src="/src/admin.js"></script>
 <script src="/bridge-nav.js"></script>
