@@ -3,8 +3,11 @@
 ## Overview
 This document maps all frontend HTML pages to their user flow groups, API routes, access control, dependencies, navigation, UI/UX details, and more.
 
-**Last Updated**: 2026-04-15
+**Last Updated**: 2026-04-16
 **Status**: ✅ ALL PHASES COMPLETE — Navigation fixes, auth token consolidation, system page links (2026-04-15)
+
+## Recent Updates (2026-04-16)
+- **Inventory Update**: Added missing pages discovered in /public (hitl.html, voice.html, portal.html, agent-economy, anatomical_face series, living-system docs)
 
 ## Recent Updates (2026-04-15)
 - **Phase 2**: Added 3 missing links to crm.html (Lead Gen, Pipeline, Legal AI)
@@ -62,6 +65,7 @@ This document maps all frontend HTML pages to their user flow groups, API routes
 | `treasury-dashboard.html` | ✅ Active | Treasury management |
 | `governance.html` | ✅ Active | DAO governance |
 | `marketplace.html` | ✅ Active | Marketplace |
+| `agent-economy/dashboard.html` | ✅ Active | Agent economy dashboard |
 
 ### Verticals / Sub-brands
 | File | Status | Notes |
@@ -116,6 +120,8 @@ This document maps all frontend HTML pages to their user flow groups, API routes
 | `supadash-registry.html` | ✅ Active | Supabase registry |
 | `supadash-marketplace.html` | ✅ Active | Supabase marketplace |
 | `supadash-avatar.html` | ✅ Active | Supabase avatar |
+| `hitl.html` | ✅ Active | Human-in-the-loop workflow |
+| `voice.html` | ✅ Active | Voice interface |
 
 ### Admin & Intelligence
 | File | Status | Notes |
@@ -171,6 +177,19 @@ This document maps all frontend HTML pages to their user flow groups, API routes
 |------|--------|-------|
 | `404.html` | ✅ Active | 404 error page |
 | `offline.html` | ✅ Active | Offline page |
+| `portal.html` | ✅ Active | Bridge portal |
+
+### Research & Science
+| File | Status | Notes |
+|------|--------|-------|
+| `anatomical_face.html` | ✅ Active | Anatomical face (FACS) |
+| `anatomical_face_facs.html` | ✅ Active | FACS encoding |
+| `anatomical_face_vector_muscle.html` | ✅ Active | Vector muscle system |
+| `anatomical_face_tension_balanced.html` | ✅ Active | Tension-balanced system |
+| `anatomical_face_embodied.html` | ✅ Active | Embodied cognition |
+| `anatomical_face_constrained_system.html` | ✅ Active | Constrained system |
+| `assets/documents/living-system-bible.html` | ✅ Active | Living System Bible |
+| `assets/documents/bridge-living-map.html` | ✅ Active | Bridge Living Map |
 
 ---
 
