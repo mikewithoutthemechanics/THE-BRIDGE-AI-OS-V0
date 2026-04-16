@@ -27,7 +27,7 @@
   .logo{font-size:1.8rem;font-weight:800;color:var(--accent);letter-spacing:.25em;margin-bottom:.3rem}
   .logo span{color:var(--green)}
   .tagline{font-size:.72rem;color:var(--dim);letter-spacing:.1em}
-  .card-body{padding:1.5rem 2rem 2rem}
+  .card-body{padding:1.5rem 2rem 2rem;position:relative}
   .tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid var(--border)}
   .tab{flex:1;padding:.6rem;text-align:center;font-size:.72rem;letter-spacing:.1em;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
   .tab:hover{color:var(--text)}
@@ -59,6 +59,7 @@
   .footer a{color:var(--accent);text-decoration:none}
   .pw-strength{height:3px;border-radius:2px;margin-top:.3rem;background:var(--border);overflow:hidden}
   .pw-strength-bar{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -135,7 +136,12 @@
       </form>
       <div class="msg" id="login-msg"></div>
     </div>
-  </div>
+
+    <!-- OAUTH LOADING OVERLAY -->
+    <div id="oauth-loading" style="display:none;position:absolute;inset:0;background:rgba(5,10,15,.85);flex-direction:column;align-items:center;justify-content:center;gap:1rem;z-index:10;border-radius:12px">
+      <div style="width:36px;height:36px;border:3px solid rgba(0,200,255,.2);border-top-color:#00c8ff;border-radius:50%;animation:spin .8s linear infinite"></div>
+      <span style="color:var(--text);font-size:.8rem;letter-spacing:.05em">Connecting to your account...</span>
+    </div>
   <div class="footer">
     By joining you agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a><br>
     <a href="/">Back to Dashboard</a>
@@ -147,15 +153,22 @@
 // Supabase Auth — OAuth flows handled by Supabase, not raw client IDs
 const SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
 let _supabaseClient = null;
+let _oauthLoading = false;
+
 (async function initSupabaseAuth() {
   try {
     const res = await fetch('/api/config/oauth');
-    if (!res.ok) return;
+    if (!res.ok) throw new Error('Config endpoint unavailable');
     const cfg = await res.json();
     if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {
       _supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
     }
-  } catch (_) {}
+  } catch {
+    document.querySelectorAll('.btn-google, .btn-github').forEach(btn => {
+      btn.disabled = true;
+      btn.title = 'Authentication unavailable — check your connection';
+    });
+  }
 })();
 
 // Tab switching
@@ -276,30 +289,77 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   }
 });
 
-// Google OAuth via Supabase Auth
-async function googleAuth() {
+// Collect wizard/plan state from URL for passthrough to auth-callback
+function getWizardParams() {
+  const p = new URLSearchParams(location.search);
+  const wizard   = p.get('wizard')   || '';
+  const intent   = p.get('intent')   || '';
+  const industry = p.get('industry') || '';
+  const plan     = p.get('plan')     || '';
+  const next     = p.get('next')     || '';
+  return { wizard, intent, industry, plan, next };
+}
+
+function buildOAuthRedirectUrl(provider) {
+  const base = location.origin + '/auth-callback';
+  const wp = getWizardParams();
+  const params = new URLSearchParams();
+  if (wp.wizard)   params.set('wizard',   wp.wizard);
+  if (wp.intent)   params.set('intent',   wp.intent);
+  if (wp.industry) params.set('industry', wp.industry);
+  if (wp.plan)     params.set('plan',     wp.plan);
+  if (wp.next)     params.set('next',     wp.next);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+function setOAuthLoading(loading, activeMsgId) {
+  const overlay = document.getElementById('oauth-loading');
+  const msgEl  = document.getElementById(activeMsgId);
+  _oauthLoading = loading;
+  if (loading) {
+    overlay.style.display = 'flex';
+    if (msgEl) { msgEl.className = 'msg'; msgEl.style.display = 'none'; }
+  } else {
+    overlay.style.display = 'none';
+  }
+}
+
+function showOAuthMsg(msgId, text, ok) {
+  const el = document.getElementById(msgId);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+async function startOAuth(provider, msgId) {
+  if (_oauthLoading) return;
   if (!_supabaseClient) {
-    showMsg('reg-msg', 'OAuth loading… try again in a moment.', false);
+    showOAuthMsg(msgId, 'Authentication unavailable — please try again shortly.', false);
     return;
   }
+  setOAuthLoading(true, msgId);
+  const redirectTo = buildOAuthRedirectUrl(provider);
   const { error } = await _supabaseClient.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: location.origin + '/auth-callback' },
+    provider,
+    options: { redirectTo },
   });
-  if (error) showMsg('reg-msg', error.message, false);
+  setOAuthLoading(false, msgId);
+  if (error) showOAuthMsg(msgId, error.message, false);
+}
+
+// Google OAuth via Supabase Auth
+async function googleAuth() {
+  const activeTab = document.querySelector('.tab.active');
+  const msgId = activeTab && activeTab.dataset.panel === 'login' ? 'login-msg' : 'reg-msg';
+  await startOAuth('google', msgId);
 }
 
 // GitHub OAuth via Supabase Auth
 async function githubAuth() {
-  if (!_supabaseClient) {
-    showMsg('reg-msg', 'OAuth loading… try again in a moment.', false);
-    return;
-  }
-  const { error } = await _supabaseClient.auth.signInWithOAuth({
-    provider: 'github',
-    options: { redirectTo: location.origin + '/auth-callback' },
-  });
-  if (error) showMsg('reg-msg', error.message, false);
+  const activeTab = document.querySelector('.tab.active');
+  const msgId = activeTab && activeTab.dataset.panel === 'login' ? 'login-msg' : 'reg-msg';
+  await startOAuth('github', msgId);
 }
 
 // Auto-fill referral from URL

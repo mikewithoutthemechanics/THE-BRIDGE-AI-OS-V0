@@ -156,6 +156,8 @@
 
       // ── PKCE flow: exchange code for session ─────────────────────────────
       if (code) {
+        document.getElementById('message').textContent = 'Verifying your account…';
+        document.getElementById('sub').textContent = 'Almost done.';
         try {
           const resp = await fetch('/auth/exchange-code', {
             method: 'POST',
@@ -166,6 +168,8 @@
           if (!resp.ok || !data.ok) {
             return showError(data.error || 'Sign-in failed. Please try again.');
           }
+          document.getElementById('message').textContent = 'Welcome!';
+          document.getElementById('sub').textContent = 'Redirecting you now…';
           return handleSuccess(data.token, data.user);
         } catch (err) {
           return showError('Network error during sign-in. Please try again.');
