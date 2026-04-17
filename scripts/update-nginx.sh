@@ -193,6 +193,17 @@ server {
         try_files $uri =404;
     }
 
+    # SPA-exclusive routes — must hit the React SPA, not the legacy static
+    # .html pages that still exist in public/ (join.html, docs.html, etc).
+    # These are the routes defined in frontend/src/App.tsx. Without this
+    # block, $uri.html below would find e.g. public/join.html and serve
+    # the legacy SIWE flow instead of the SPA's Clerk-based AuthHub.
+    # /admin is handled separately by the explicit `location = /admin` rules.
+    location ~ ^/(docs|join|app|engine|workflows|loop|orchestration|human|multiagent|master)(/|$) {
+        root /var/www/bridgeai/frontend/dist;
+        try_files /index.html =404;
+    }
+
     # Chain: dist/ → public/ → SPA index.html
     # Legacy HTML/JS (bridge-nav.js, admin-sitemap.html, etc.) live in
     # public/; SPA assets live in dist/. Try both before SPA fallback.
