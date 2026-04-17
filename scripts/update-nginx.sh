@@ -188,8 +188,17 @@ server {
 }
 NGINX_CONF
 
+# Remove stale certbot-managed backup configs that override the live config
+rm -f /etc/nginx/sites-enabled/bridgeai.bak* 2>/dev/null || true
+echo "Cleared stale backup configs from sites-enabled"
+
 ln -sf "$CONF" /etc/nginx/sites-enabled/bridgeai
 rm -f /etc/nginx/sites-enabled/default
+
+echo "=== Active nginx configs in sites-enabled ==="
+ls -la /etc/nginx/sites-enabled/
+echo "=== nginx root directive in active config ==="
+grep -r "root " /etc/nginx/sites-enabled/ || true
 
 if nginx -t 2>&1; then
   if systemctl is-active --quiet nginx; then
@@ -206,4 +215,12 @@ else
     nginx -t && systemctl reload nginx || true
   fi
   exit 1
+fi
+
+# Verify frontend build exists
+DIST_INDEX=/var/www/bridgeai/frontend/dist/index.html
+if [ -f "$DIST_INDEX" ]; then
+  echo "=== frontend/dist/index.html present ($(wc -c < "$DIST_INDEX") bytes) ==="
+else
+  echo "WARN: $DIST_INDEX missing — frontend build may not have run"
 fi
