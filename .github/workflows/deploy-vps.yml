@@ -78,6 +78,8 @@ jobs:
             fi
             npm --prefix frontend install --no-audit --no-fund
             npm --prefix frontend run build
+            ls -la frontend/dist || exit 1
+            test -f frontend/dist/index.html || exit 1
 
             # Install production deps
             npm install --omit=dev --no-audit 2>&1 | tail -5
@@ -107,7 +109,7 @@ jobs:
             # Reconfigure nginx (idempotent — safe to re-run every deploy)
             if [ -f scripts/update-nginx.sh ]; then
               echo "=== Updating nginx config ==="
-              bash scripts/update-nginx.sh 2>&1 || echo "  WARN: nginx update failed"
+              bash scripts/update-nginx.sh
             fi
 
             # Ensure TLS cert covers ai-os.co.za and bridge domains
