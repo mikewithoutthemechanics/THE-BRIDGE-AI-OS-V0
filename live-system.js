@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-require('dotenv').config();
+const loadEnv = require('./env-manager');
+(async () => { const ENV = await loadEnv();
 
 const fs = require("fs");
 const http = require("http");
@@ -99,3 +100,5 @@ wss.on("connection", ws => {
 server.listen(7777, () => {
   console.log("REALTIME SYSTEM ? http://localhost:7777");
 });
+
+})();
