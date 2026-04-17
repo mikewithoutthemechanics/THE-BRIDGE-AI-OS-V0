@@ -3003,6 +3003,8 @@ const dashboardApiRoutes = [
   '/api/live/',
   '/api/twins',
   '/api/twins/',
+  '/api/twin/',      // continuity — singular; proxy to unified-server (3000) where continuity-routes.js lives
+  '/api/bank/',      // continuity — idempotent expense ledger
   '/api/sdg/',
   '/api/reputation/',
   '/api/replication/',
@@ -3400,23 +3402,8 @@ app.all('/api/*path', async (req, res, next) => {
   }
 });
 
-// ── TWIN API — proxy /api/twin/* to unified-server (port 3000) ──────────────
-app.all('/api/twin/*path', async (req, res) => {
-  const url = `http://${SYSTEM_HOST}:3000${req.originalUrl}`;
-  try {
-    const opts = { method: req.method, headers: {}, signal: AbortSignal.timeout(30000) };
-    if (req.headers['content-type']) opts.headers['Content-Type'] = req.headers['content-type'];
-    if (req.headers['authorization']) opts.headers['Authorization'] = req.headers['authorization'];
-    if (req.headers['cookie']) opts.headers['Cookie'] = req.headers['cookie'];
-    if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
-    const r = await fetch(url, opts);
-    const ct = r.headers.get('content-type') || 'application/json';
-    const text = await r.text();
-    res.status(r.status).set('Content-Type', ct).send(text);
-  } catch (e) {
-    res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
-  }
-});
+// /api/twin/* and /api/bank/* routing lives in dashboardApiRoutes (above) — the
+// /api/*path catch-all proxies them to unified-server:3000.
 
 // ── SIWE API — proxy /api/siwe/* to unified-server (port 3000) ──────────────
 app.all('/api/siwe/*path', async (req, res) => {
