@@ -101,6 +101,7 @@ server {
                application/xml+rss application/ld+json application/manifest+json
                image/svg+xml font/ttf font/otf application/wasm;
 
+    rewrite ^/$                /home.html last;
     rewrite ^/apps$            /50-applications.html last;
     rewrite ^/dashboard$       /aoe-dashboard.html last;
     rewrite ^/treasury-dash$   /treasury-dashboard.html last;
