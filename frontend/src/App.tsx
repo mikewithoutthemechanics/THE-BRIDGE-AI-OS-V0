@@ -3,8 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect, useState, type ReactNode, type FormEvent } from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
+import { AppProvider, useApp, useAuth, useWallet } from './contexts/AppContext';
+import { useAuthProvider } from './contexts/AuthProvider';
+import { useWalletProvider } from './contexts/WalletProvider';
+import { useRouter, RouteConfig } from './contexts/RouterProvider';
+
+// Import all page components
 import Marketplace from './pages/Marketplace';
 import AdminControl from './pages/AdminControl';
 import AIEngine from './pages/AIEngine';
@@ -16,7 +23,32 @@ import OrchestrationHub from './pages/OrchestrationHub';
 import HumanAPI from './pages/HumanAPI';
 import MultiagentOrchestration from './pages/MultiagentOrchestration';
 
-function PageWrapper({ children }: { children: React.ReactNode }) {
+// Route configuration - defines all routes and their access requirements
+const routes: RouteConfig[] = [
+  // Public routes
+  { path: '/', component: Marketplace, title: 'Bridge AI OS' },
+  { path: '/landing', component: Marketplace, title: 'Bridge AI OS' },
+  { path: '/docs', component: Documentation, title: 'Documentation' },
+
+  // Auth routes (redirect authenticated users)
+  { path: '/join', component: AuthHub, title: 'Join Bridge AI' },
+  { path: '/auth-callback', component: AuthCallback, title: 'Completing Authentication' },
+
+  // Protected routes (require authentication)
+  { path: '/app', component: AppDashboard, requiresAuth: true, title: 'Dashboard' },
+  { path: '/engine', component: AIEngine, requiresAuth: true, title: 'AI Engine' },
+  { path: '/workflows', component: Workflows, requiresAuth: true, title: 'Workflows' },
+  { path: '/loop', component: TaskLoop, requiresAuth: true, title: 'Task Loop' },
+  { path: '/orchestration', component: OrchestrationHub, requiresAuth: true, title: 'Orchestration Hub' },
+  { path: '/human', component: HumanAPI, requiresAuth: true, title: 'Human API' },
+  { path: '/multiagent', component: MultiagentOrchestration, requiresAuth: true, title: 'Multiagent Orchestration' },
+
+  // Admin routes (require admin role)
+  { path: '/admin', component: AdminControl, requiresAuth: true, requiresAdmin: true, title: 'Admin Control' },
+  { path: '/master', component: MasterAdmin, requiresAuth: true, requiresAdmin: true, title: 'Master Admin' },
+];
+
+function PageWrapper({ children }: { children: ReactNode }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
@@ -29,30 +61,329 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AnimatedRoutes() {
-  const location = useLocation();
+// Loading screen component
+function LoadingScreen({ message = 'Loading...' }: { message?: string }) {
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageWrapper><Marketplace /></PageWrapper>} />
-        <Route path="/admin" element={<PageWrapper><AdminControl /></PageWrapper>} />
-        <Route path="/engine" element={<PageWrapper><AIEngine /></PageWrapper>} />
-        <Route path="/workflows" element={<PageWrapper><Workflows /></PageWrapper>} />
-        <Route path="/loop" element={<PageWrapper><TaskLoop /></PageWrapper>} />
-        <Route path="/docs" element={<PageWrapper><Documentation /></PageWrapper>} />
-        <Route path="/master" element={<PageWrapper><MasterAdmin /></PageWrapper>} />
-        <Route path="/orchestration" element={<PageWrapper><OrchestrationHub /></PageWrapper>} />
-        <Route path="/human" element={<PageWrapper><HumanAPI /></PageWrapper>} />
-        <Route path="/multiagent" element={<PageWrapper><MultiagentOrchestration /></PageWrapper>} />
-      </Routes>
-    </AnimatePresence>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+        <p className="text-cyan-400 text-lg">{message}</p>
+      </div>
+    </div>
   );
+}
+
+// Auth Hub component (login/register)
+function AuthHub() {
+  const { loginWithPassword, startOAuth } = useAuthProvider();
+  const { connect } = useWalletProvider();
+  const { navigate } = useRouter(routes);
+  const { state } = useApp();
+
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      await loginWithPassword(email, password, mode);
+      navigate('/app');
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleOAuth = async (provider: 'google' | 'github') => {
+    try {
+      await startOAuth(provider);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleWallet = async () => {
+    try {
+      await connect();
+      navigate('/app');
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-8 border border-slate-700/50">
+          <h1 className="text-2xl font-bold text-center text-white mb-8">
+            {mode === 'login' ? 'Welcome Back' : 'Join Bridge AI'}
+          </h1>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                required
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                required
+              />
+            </div>
+
+            {error && (
+              <div className="text-red-400 text-sm text-center">{error}</div>
+            )}
+
+            <button
+              type="submit"
+              disabled={state.isLoading}
+              className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold hover:from-cyan-600 hover:to-blue-600 transition-all disabled:opacity-50"
+            >
+              {state.isLoading ? 'Signing In...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+              className="text-cyan-400 hover:text-cyan-300 text-sm"
+            >
+              {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+            </button>
+          </div>
+
+          <div className="mt-8 space-y-3">
+            <button
+              onClick={() => handleOAuth('google')}
+              disabled={state.isLoading}
+              className="w-full py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+            >
+              <span>Continue with Google</span>
+            </button>
+            <button
+              onClick={handleWallet}
+              disabled={state.isLoading}
+              className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50"
+            >
+              {state.isLoading ? 'Connecting...' : 'Connect Wallet'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Auth callback handler
+function AuthCallback() {
+  const { finishOAuthCallback } = useAuthProvider();
+  const { navigate } = useRouter(routes);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+
+    if (code) {
+      finishOAuthCallback(code)
+        .then(() => {
+          navigate('/app');
+        })
+        .catch((error) => {
+          console.error('OAuth callback failed:', error);
+          navigate('/join');
+        });
+    } else {
+      navigate('/join');
+    }
+  }, []);
+
+  return <LoadingScreen message="Completing authentication..." />;
+}
+
+// App Dashboard (protected)
+function AppDashboard() {
+  const { user, token } = useAuth();
+  const { wallet } = useWallet();
+  const { state: { tier } } = useApp();
+  const { logout } = useAuthProvider();
+  const { navigate } = useRouter(routes);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Global Navigation Header */}
+      <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-bold text-cyan-400">Bridge AI OS</h1>
+            <span className="text-sm text-slate-400">v4.2</span>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {user && (
+              <div className="text-sm text-slate-300">
+                <div className="font-semibold">{user.email}</div>
+                <div className="text-xs text-slate-400">Tier: {tier} • Role: {user.role}</div>
+                {wallet && (
+                  <div className="text-xs text-purple-400">
+                    Wallet: {wallet.slice(0, 6)}...{wallet.slice(-4)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={logout}
+              className="px-4 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Quick Actions */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-6 border border-slate-700/50">
+            <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/engine')}
+                className="w-full py-2 bg-cyan-600/20 text-cyan-400 rounded-lg hover:bg-cyan-600/30 transition-colors"
+              >
+                AI Engine
+              </button>
+              <button
+                onClick={() => navigate('/workflows')}
+                className="w-full py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors"
+              >
+                Workflows
+              </button>
+              <button
+                onClick={() => navigate('/loop')}
+                className="w-full py-2 bg-green-600/20 text-green-400 rounded-lg hover:bg-green-600/30 transition-colors"
+              >
+                Task Loop
+              </button>
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-6 border border-slate-700/50">
+            <h3 className="text-lg font-semibold text-white mb-4">System Status</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Authentication:</span>
+                <span className="text-green-400">✓ Active</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Wallet:</span>
+                <span className={wallet ? "text-green-400" : "text-yellow-400"}>
+                  {wallet ? '✓ Connected' : '○ Not Connected'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Tier:</span>
+                <span className="text-cyan-400">{tier}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-6 border border-slate-700/50">
+            <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
+            <div className="text-sm text-slate-400">
+              <p>No recent activity</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// Main App Shell component
+function AppShell() {
+  const { state } = useApp();
+  const { validateSession } = useAuthProvider();
+  const { currentRoute, navigate, isAllowed, redirectTo } = useRouter(routes);
+
+  // Initialize authentication on app start
+  useEffect(() => {
+    if (state.isInitialized && state.token && !state.user) {
+      validateSession();
+    }
+  }, [state.isInitialized, state.token, state.user]);
+
+  // Handle route guards
+  useEffect(() => {
+    if (!isAllowed && redirectTo) {
+      navigate(redirectTo);
+    }
+  }, [isAllowed, redirectTo, navigate]);
+
+  // Show loading screen until initialized
+  if (!state.isInitialized || state.isLoading) {
+    return <LoadingScreen message="Initializing Bridge AI OS..." />;
+  }
+
+  // Show access denied for guarded routes
+  if (!isAllowed) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-400 mb-4">Access Denied</h1>
+          <p className="text-slate-400 mb-8">You don't have permission to access this page.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render current route
+  if (currentRoute) {
+    const RouteComponent = currentRoute.component;
+    return (
+      <AnimatePresence mode="wait">
+        <PageWrapper>
+          <motion.div key={currentRoute.path}>
+            <RouteComponent />
+          </motion.div>
+        </PageWrapper>
+      </AnimatePresence>
+    );
+  }
+
+  // Fallback
+  return <LoadingScreen message="Loading page..." />;
 }
 
 export default function App() {
   return (
-    <Router>
-      <AnimatedRoutes />
-    </Router>
+    <BrowserRouter>
+      <AppProvider>
+        <AppShell />
+      </AppProvider>
+    </BrowserRouter>
   );
 }
