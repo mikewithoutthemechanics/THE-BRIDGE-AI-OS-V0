@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="BRIDGE AI OS — Master Admin Hub. Central access to all admin panels, intelligence dashboards, audit tools, and system controls.">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'">
+    <title>BRIDGE AI OS — Master Admin</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+    <!-- ADMIN_GATE_BEHAVIOR: option (a) — silent redirect to /onboarding.html -->
+    <!-- Must run BEFORE any render. admin-auth.js also enforces SUPERUSERS list. -->
+    <script src="/admin-auth.js"></script>
+
+    <!-- Route registry — single source of truth -->
+    <script src="/nav-routes.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #060810;
+            --bg-secondary: #0a0e17;
+            --bg-tertiary: #111827;
+            --bg-glass: rgba(10, 14, 23, 0.85);
+            --border-color: rgba(99, 255, 218, 0.12);
+            --border-glow: rgba(99, 255, 218, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #63ffda;
+            --accent-blue: #38bdf8;
+            --accent-purple: #a78bfa;
+            --accent-orange: #fb923c;
+            --accent-red: #f87171;
+            --accent-green: #4ade80;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            font-family: 'Outfit', -apple-system, sans-serif;
+            color: var(--text-primary);
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(99, 255, 218, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .shell {
+            position: relative;
+            z-index: 1;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 24px 80px;
+        }
+        header.page-head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .page-head h1 {
+            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            background: linear-gradient(135deg, #63ffda 0%, #38bdf8 55%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .page-head .sub {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 6px;
+            max-width: 620px;
+        }
+        .ident {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-glass);
+        }
+        .ident b { color: var(--accent-cyan); }
+
+        /* Group cluster */
+        .group {
+            margin-top: 36px;
+        }
+        .group-head {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .group-head h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--accent-cyan);
+        }
+        .group-head .desc {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .group-head .count {
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .tiles {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 14px;
+        }
+        .tile {
+            position: relative;
+            display: block;
+            padding: 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-glass);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.15s, transform 0.15s, background 0.15s;
+            min-height: 96px;
+        }
+        .tile:hover {
+            border-color: var(--border-glow);
+            background: rgba(99, 255, 218, 0.04);
+            transform: translateY(-1px);
+        }
+        .tile .label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .tile .desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .tile .href {
+            margin-top: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-blue);
+        }
+        .tile .tag {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(248, 113, 113, 0.12);
+            color: var(--accent-red);
+            border: 1px solid rgba(248, 113, 113, 0.25);
+            letter-spacing: 0.04em;
+        }
+
+        .empty {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            border: 1px dashed var(--border-color);
+            border-radius: 10px;
+        }
+
+        footer.page-foot {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        footer.page-foot a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        footer.page-foot a:hover { color: var(--accent-cyan); }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <header class="page-head">
+            <div>
+                <h1>Master Admin Hub</h1>
+                <div class="sub">Central access to every admin panel, intelligence dashboard, audit surface, and system control. Gated to admins + superadmins.</div>
+            </div>
+            <div class="ident" id="ident">host: <b id="host">—</b> · user: <b id="user">—</b> · role: <b id="role">—</b></div>
+        </header>
+
+        <main id="groups">
+            <div class="empty">Loading admin groups…</div>
+        </main>
+
+        <footer class="page-foot">
+            <div>Single-source registry: <a href="/nav-routes.js">/nav-routes.js</a> · version <span id="ver">—</span></div>
+            <div><a href="/home">← Home</a> · <a href="/sitemap">Sitemap</a> · <a href="/docs">Docs</a></div>
+        </footer>
+    </div>
+
+    <script src="/bridge-nav.js" defer></script>
+    <script>
+    (function () {
+        'use strict';
+
+        // Identify current user for display (admin-auth.js already enforced gate)
+        var email = (localStorage.getItem('user_email') || '').toLowerCase();
+        var user = {};
+        try { user = JSON.parse(localStorage.getItem('bridge_user') || '{}'); } catch (_) {}
+        var role = user.role || 'admin';
+
+        document.getElementById('host').textContent = location.host || '—';
+        document.getElementById('user').textContent = email || user.email || 'unknown';
+        document.getElementById('role').textContent = role;
+
+        var reg = window.BridgeNavRoutes;
+        if (!reg || !reg.ADMIN_GROUPS) {
+            document.getElementById('groups').innerHTML =
+                '<div class="empty">Admin registry not loaded. Check that <code>/nav-routes.js</code> is reachable.</div>';
+            return;
+        }
+        document.getElementById('ver').textContent = reg.version || 'unknown';
+
+        var ROLE_ORDER = reg.ROLE_ORDER;
+        function canSee(item) { return reg.canSee({ role: item.role || null }, role); }
+
+        var html = '';
+        reg.ADMIN_GROUPS.forEach(function (group) {
+            if (!reg.canSee({ role: group.role || null }, role)) return;
+            var visibleItems = (group.items || []).filter(canSee);
+            if (!visibleItems.length) return;
+
+            html += '<section class="group" id="group-' + group.id + '">';
+            html +=   '<div class="group-head">';
+            html +=     '<h2>' + escapeHtml(group.title) + '</h2>';
+            if (group.desc) html += '<div class="desc">' + escapeHtml(group.desc) + '</div>';
+            html +=     '<div class="count">' + visibleItems.length + ' panel' + (visibleItems.length === 1 ? '' : 's') + '</div>';
+            html +=   '</div>';
+            html +=   '<div class="tiles">';
+            visibleItems.forEach(function (item) {
+                var tag = (item.role === 'superadmin') ? '<span class="tag">SUPER</span>' : '';
+                html += '<a class="tile" href="' + escapeAttr(item.href) + '">' +
+                    tag +
+                    '<div class="label">' + escapeHtml(item.label) + '</div>' +
+                    (item.desc ? '<div class="desc">' + escapeHtml(item.desc) + '</div>' : '') +
+                    '<div class="href">' + escapeHtml(item.href) + '</div>' +
+                '</a>';
+            });
+            html +=   '</div>';
+            html += '</section>';
+        });
+
+        document.getElementById('groups').innerHTML = html ||
+            '<div class="empty">No admin groups visible for your role (<b>' + escapeHtml(role) + '</b>).</div>';
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function escapeAttr(s) { return escapeHtml(s); }
+    })();
+    </script>
+</body>
+</html>

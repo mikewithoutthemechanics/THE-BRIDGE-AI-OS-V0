@@ -25,7 +25,7 @@ const crypto = require("crypto");
 
 // Single canonical domain configuration
 const BASE_URL = process.env.BASE_URL || 'https://bridge-ai-os.com';
-const ALLOWED_ORIGINS = [BASE_URL, 'https://wall.bridge-ai-os.com', 'http://localhost:3000', 'http://localhost:8080'];
+const ALLOWED_ORIGINS = [BASE_URL, 'https://wall.bridge-ai-os.com', 'https://admin.bridge-ai-os.com', 'http://localhost:3000', 'http://localhost:8080'];
 const path = require("path");
 const fs = require("fs");
 const { Pool } = require('pg');
@@ -79,6 +79,16 @@ app.use((req, res, next) => {
   ].join('; '));
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
+
+// Admin subdomain — root path lands on the Master Admin Hub.
+// MUST run before express.static because public/index.html would otherwise win.
+// Non-root paths on admin.* fall through to normal routing (shortRoutes etc.).
+app.use((req, res, next) => {
+  if (req.path !== '/') return next();
+  const host = (req.headers.host || '').toLowerCase();
+  if (host.startsWith('admin.')) return res.redirect('/admin-hub');
   next();
 });
 
@@ -526,6 +536,7 @@ app.get('/api/registry/treasury', requireAdmin, [validate.registryTreasury], asy
 app.get("/", (req, res) => {
   const host = (req.headers.host || '').toLowerCase();
   const routes = {
+    'admin.': '/admin-hub',
     'rootedearth': '/rootedearth', 'ehsa': '/ehsa', 'supac': '/supac',
     'ban.': '/ban', 'aid.': '/aid', 'ubi.': '/ubi', 'aurora': '/aurora',
     'hospitalinabox': '/hospital', 'abaas.': '/abaas',
@@ -951,6 +962,7 @@ function requireAuth(req, res, next) {
     '/api/version', // if exists
     '/api/platform/', // platform layer handles its own auth via requireUser()
     '/api/twin/',     // twin layer handles its own auth via resolveUser()
+    '/api/bank/',     // continuity ledger — gated by requireAdmin in continuity-routes.js
     '/api/siwe/',               // SIWE is public — no token needed to get nonce or verify
     '/api/config-engine/health', // engine health is public
     '/api/uloe/health',          // ULOE health is public
@@ -2368,7 +2380,17 @@ const shortRoutes = {
   '/wallet': '/wallet.html', '/docs': '/docs.html', '/pricing': '/pricing.html',
   '/settings': '/settings.html', '/affiliate': '/affiliate.html',
   '/brand': '/brand.html', '/corporate': '/corporate.html', '/join': '/join.html',
-  '/admin': '/admin.html', '/agents': '/agents.html', '/avatar': '/avatar.html',
+  '/admin': '/admin.html', '/admin-hub': '/admin-hub.html',
+  '/admin-esim': '/admin-esim.html', '/admin-users': '/admin.html',
+  '/executive-dashboard': '/executive-dashboard.html',
+  '/aoe-dashboard': '/aoe-dashboard.html', '/svg-engine': '/svg-engine.html',
+  '/carrier-admin': '/carrier-admin.html', '/godmode-terminal': '/godmode-terminal.html',
+  '/bridge-audit-dashboard': '/bridge-audit-dashboard.html',
+  '/supadash': '/supadash.html',
+  '/twin-orchestration': '/twin-orchestration.html',
+  '/bank-ledger':        '/bank-ledger.html',
+  '/affiliate-flow':     '/affiliate-flow.html',
+  '/agents': '/agents.html', '/avatar': '/avatar.html',
   '/control': '/control.html', '/dashboard': '/dashboard.html', '/activate': '/activate.html',
   '/ehsa-app': '/ehsa-app.html', '/ehsa-brain': '/ehsa-brain.html',
   '/executive': '/executive-dashboard.html', '/home': '/home.html',
@@ -2525,6 +2547,12 @@ registerEconomyRoutes(app);
 
 const { registerPrimeRoutes } = require('./lib/prime-routes');
 registerPrimeRoutes(app);
+
+// Continuity: twin orchestration + Bank-settled expense ledger (idempotent).
+// Feeds /twin-orchestration, /bank-ledger, /affiliate-flow admin panels.
+const { registerContinuityRoutes } = require('./lib/continuity-routes');
+registerContinuityRoutes(app, { requireAdmin });
+console.log('[CONTINUITY] Twin supervisor + Bank ledger routes mounted');
 
 // Auto-task loop — starts generating/claiming/completing tasks autonomously
 const autoLoop = require('./lib/auto-task-loop');

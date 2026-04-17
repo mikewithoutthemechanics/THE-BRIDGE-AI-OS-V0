@@ -13,156 +13,23 @@
   'use strict';
 
   // ── Route Registry ────────────────────────────────────────────────────────
-  // Complete registry with ALL pages from the flow diagrams
-  // role: null = public | 'user' = authenticated | 'admin' | 'superadmin'
-  var ROUTES = [
-    // Public Entry Flow
-    { label: 'Home',           href: '/',                    role: null },
-    { label: 'Landing',        href: '/landing.html',        role: null },
-    { label: 'Join',           href: '/join',                role: null },
-    { label: 'Pricing',        href: '/pricing',             role: null },
-    { label: 'Platforms',      href: '/platforms',           role: null },
-    { label: 'Onboarding',     href: '/onboarding',          role: 'user' },
-    { label: 'Welcome',        href: '/welcome',             role: 'user' },
-    { label: 'Welcome Tour',   href: '/welcome-tour',        role: 'user' },
-    { label: 'Checkout',       href: '/checkout',            role: 'user' },
-    { label: 'Payment Success', href: '/payment-success',     role: 'user' },
-    { label: 'Payment Cancel', href: '/payment-cancel',      role: 'user' },
-    { label: 'Sitemap',        href: '/sitemap',             role: null },
-
-    // Main Hub (Home Dashboard)
-    { label: 'Dashboard',      href: '/home',                role: 'user' },
-    { label: 'CRM',            href: '/crm',                 role: 'user' },
-    { label: 'Economy',        href: '/economy',             role: 'user' },
-    { label: 'Agents',         href: '/agents',              role: 'user' },
-    { label: 'Platforms',      href: '/platforms',           role: 'user' },
-    { label: 'Control',        href: '/control',             role: 'user' },
-    { label: 'Console',        href: '/console',             role: 'user' },
-    { label: 'Settings',       href: '/settings',            role: 'user' },
-
-    // Business Suite (CRM)
-    { label: 'Customers',      href: '/customers',           role: 'user' },
-    { label: 'Vendors',        href: '/vendors',             role: 'user' },
-    { label: 'Invoicing',      href: '/invoicing',           role: 'user' },
-    { label: 'Quotes',         href: '/quotes',              role: 'user' },
-    { label: 'Lead Gen',       href: '/leadgen',             role: 'user' },
-    { label: 'Leads',          href: '/leads',               role: 'user' },
-    { label: 'Marketing',      href: '/marketing',           role: 'user' },
-    { label: 'Tickets',        href: '/tickets',             role: 'user' },
-    { label: 'Legal',          href: '/legal',               role: 'user' },
-    { label: 'Legal AI',       href: '/legal-ai.html',       role: 'user' },
-    { label: 'Workforce',      href: '/workforce',           role: 'user' },
-    { label: 'Affiliate',      href: '/affiliate',           role: 'user' },
-
-    // Economy & DeFi
-    { label: 'Tokenomics',     href: '/tokenomics',          role: 'user' },
-    { label: 'Wallet',         href: '/wallet',              role: 'user' },
-    { label: 'DeFi',           href: '/defi',                role: 'user' },
-    { label: 'Trading',        href: '/trading',             role: 'user' },
-    { label: 'Banks',          href: '/banks',               role: 'user' },
-    { label: 'Treasury Dashboard', href: '/treasury-dashboard', role: 'user' },
-    { label: 'Governance',     href: '/governance',          role: 'user' },
-    { label: 'Marketplace',    href: '/marketplace',         role: 'user' },
-
-    // Agents & System
-    { label: 'NeuroLink',      href: '/neurolink',           role: 'user' },
-    { label: 'Avatar',         href: '/avatar',              role: 'user' },
-    { label: 'Digital Twin',   href: '/twin',                role: 'user' },
-    { label: 'Twin Wall',      href: '/twin-wall',           role: 'user' },
-    { label: 'Digital Twin Console', href: '/digital-twin-console', role: 'user' },
-    { label: 'Topology',       href: '/topology',            role: 'user' },
-    { label: 'Topology Layers', href: '/topology-layers',    role: 'user' },
-    { label: 'Registry',       href: '/registry',            role: 'user' },
-    { label: 'Command Center', href: '/command-center',      role: 'user' },
-    { label: 'System Status',  href: '/system-status-dashboard', role: 'user' },
-    { label: 'Infrastructure', href: '/infra',               role: 'user' },
-    { label: 'Terminal',       href: '/terminal',            role: 'user' },
-    { label: 'Terminal V3',    href: '/terminal-v3',         role: 'user' },
-    { label: 'Logs',           href: '/logs',                role: 'user' },
-    { label: 'View Logs',      href: '/view-logs',           role: 'user' },
-    { label: 'Supadash',       href: '/supadash',            role: 'user' },
-    { label: 'Supadash Topology', href: '/supadash-topology.html', role: 'user' },
-    { label: 'Supadash Registry', href: '/supadash-registry.html', role: 'user' },
-    { label: 'Supadash Marketplace', href: '/supadash-marketplace.html', role: 'user' },
-    { label: 'Supadash Avatar', href: '/supadash-avatar.html', role: 'user' },
-    { label: 'HITL',           href: '/hitl',                role: 'user' },
-    { label: 'Voice',          href: '/voice',               role: 'user' },
-
-    // Verticals / Sub-brands
-    { label: 'Bridge Hub',     href: '/bridge-home',         role: 'user' },
-    { label: 'EHSA',           href: '/ehsa',                role: 'user' },
-    { label: 'EHSA Home',      href: '/ehsa-home',           role: 'user' },
-    { label: 'EHSA App',       href: '/ehsa-app',            role: 'user' },
-    { label: 'EHSA Brain',     href: '/ehsa-brain',          role: 'user' },
-    { label: 'Aurora',         href: '/aurora',              role: 'user' },
-    { label: 'Aurora Home',    href: '/aurora-home',         role: 'user' },
-    { label: 'Hospital',       href: '/hospital',            role: 'user' },
-    { label: 'AID',            href: '/aid',                 role: 'user' },
-    { label: 'AID Home',       href: '/aid-home.html',       role: 'user' },
-    { label: 'BAN',            href: '/ban',                 role: 'user' },
-    { label: 'BAN Home',       href: '/ban-home.html',       role: 'user' },
-    { label: 'UBI',            href: '/ubi',                 role: 'user' },
-    { label: 'UBI Home',       href: '/ubi-home',            role: 'user' },
-    { label: 'ABaaS',          href: '/abaas',               role: 'user' },
-    { label: 'ABaaS Home',     href: '/abaas-home',          role: 'user' },
-    { label: 'RootedEarth',    href: '/rootedearth',         role: 'user' },
-    { label: 'RootedEarth Home', href: '/rootedearth-home',   role: 'user' },
-    { label: 'SUPAC',          href: '/supac',               role: 'user' },
-    { label: 'SUPAC Home',     href: '/supac-home',          role: 'user' },
-    { label: 'eSIM',           href: '/esim',                role: 'user' },
-    { label: 'eSIM PBX',       href: '/esim-pbx.html',       role: 'user' },
-    { label: 'Claude Partner', href: '/claude-partner.html', role: 'user' },
-
-    // Settings & Utilities
-    { label: 'Profile',        href: '/profile',             role: 'user' },
-    { label: 'Billing',        href: '/billing',             role: 'user' },
-    { label: 'Projects',       href: '/projects',            role: 'user' },
-    { label: 'Docs',           href: '/docs',                role: 'user' },
-    { label: 'View',           href: '/view',                role: 'user' },
-    { label: 'Applications',   href: '/applications',        role: 'user' },
-    { label: '50 Applications', href: '/50-applications',    role: 'user' },
-    { label: 'Wizard',         href: '/wizard',              role: 'user' },
-    { label: 'Dashboard Alt',  href: '/dashboard',           role: 'user' },
-    { label: 'UI Dashboard',   href: '/ui',                  role: 'user' },
-    { label: 'Pipeline',       href: '/pipeline',            role: 'user' },
-    { label: 'Runtime',        href: '/runtime',             role: 'user' },
-    { label: 'IoT',            href: '/iot',                 role: 'user' },
-    { label: 'Outputs',        href: '/outputs',             role: 'user' },
-    { label: 'TVM',            href: '/tvm',                 role: 'user' },
-    { label: 'Activation',     href: '/activation.html',     role: 'user' },
-    { label: 'Activate',       href: '/activate',            role: 'user' },
-    { label: 'Linea Demo',      href: '/linea-demo',          role: 'user' },
-    { label: 'Demo',           href: '/demo',                role: 'user' },
-    { label: 'Gateway',        href: '/gateway',             role: 'user' },
-    { label: 'Auth Callback',  href: '/auth-callback.html',  role: null },
-
-    // Admin Flow
-    { label: 'Admin',          href: '/admin',               role: 'admin' },
-    { label: 'Admin Command',  href: '/admin-command',       role: 'admin' },
-    { label: 'Admin Revenue',  href: '/admin-revenue',       role: 'admin' },
-    { label: 'Admin Withdraw', href: '/admin-withdraw',      role: 'admin' },
-    { label: 'Admin eSIM',     href: '/admin-esim',          role: 'admin' },
-    { label: 'Intelligence',   href: '/intelligence',        role: 'admin' },
-    { label: 'Exec Dashboard', href: '/executive-dashboard', role: 'admin' },
-    { label: 'AOE Dashboard',  href: '/aoe-dashboard',       role: 'admin' },
-    { label: 'SVG Engine',     href: '/svg-engine',          role: 'admin' },
-    { label: 'Bridge Audit',   href: '/bridge-audit-dashboard', role: 'admin' },
-    { label: 'Auth Dashboard', href: '/auth-dashboard',      role: 'admin' },
-    { label: 'Admin Sitemap',  href: '/admin-sitemap',       role: 'admin' },
-    { label: 'God Mode',       href: '/godmode-terminal',    role: 'superadmin' },
-    { label: 'Brand',          href: '/brand',               role: 'admin' },
-    { label: 'Corporate',      href: '/corporate',           role: 'admin' },
-    { label: 'Carrier Admin',  href: '/carrier-admin',       role: 'admin' },
-
-    // Error & Special
-    { label: '404',            href: '/404.html',            role: null },
-    { label: 'Offline',        href: '/offline.html',        role: null },
-    { label: 'Portal',         href: '/portal',              role: 'user' },
-
-    // Research & Science (Admin access)
-    { label: 'Anatomical Face', href: '/anatomical_face.html', role: 'admin' },
-    { label: 'Living System Bible', href: '/assets/documents/living-system-bible.html', role: 'admin' },
-    { label: 'Bridge Living Map', href: '/assets/documents/bridge-living-map.html', role: 'admin' },
+  // Primary source: window.BridgeNavRoutes from /nav-routes.js. If a page
+  // included bridge-nav.js without nav-routes.js, best-effort inject it once
+  // (async — we still render with the minimal fallback immediately below).
+  if (typeof window !== 'undefined' && !window.BridgeNavRoutes && !document.getElementById('bridge-nav-routes-script')) {
+    var navScript = document.createElement('script');
+    navScript.id = 'bridge-nav-routes-script';
+    navScript.src = '/nav-routes.js';
+    navScript.async = false;
+    document.head.appendChild(navScript);
+  }
+  var REGISTRY = (typeof window !== 'undefined' && window.BridgeNavRoutes) || null;
+  var ROUTES = REGISTRY ? REGISTRY.ROUTES : [
+    { label: 'Home',     href: '/',        role: null },
+    { label: 'Join',     href: '/join',    role: null },
+    { label: 'Pricing',  href: '/pricing', role: null },
+    { label: 'Dashboard', href: '/home',   role: 'user' },
+    { label: 'Admin',    href: '/admin-hub', role: 'admin' },
   ];
 
   // Top-bar shows only the first N public/user routes (keeps bar clean).
@@ -170,12 +37,12 @@
   var TOP_BAR_MAX = 6;
 
   // ── Role hierarchy ────────────────────────────────────────────────────────
-  var ROLE_ORDER = [null, 'user', 'admin', 'superadmin'];
-  function canSee(route, userRole) {
-    if (route.role === null) return true;
+  var ROLE_ORDER = (REGISTRY && REGISTRY.ROLE_ORDER) || [null, 'user', 'admin', 'superadmin'];
+  var canSee = (REGISTRY && REGISTRY.canSee) || function (route, userRole) {
+    if (!route || route.role === null || route.role === undefined) return true;
     if (!userRole) return false;
     return ROLE_ORDER.indexOf(userRole) >= ROLE_ORDER.indexOf(route.role);
-  }
+  };
 
   // ── Auth state ────────────────────────────────────────────────────────────
   var _token = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_user_token');
@@ -253,7 +120,9 @@
   ].join('\n');
 
   // ── Complete Breadcrumb Config ──────────────────────────────────────────────
-  var BREADCRUMBS = {
+  // Sourced from nav-routes.js when available; inline fallback preserved for
+  // HTML pages that predate the nav-routes.js include.
+  var BREADCRUMBS = (REGISTRY && REGISTRY.BREADCRUMBS) || {
     // Public Entry Flow
     '/': ['Home'],
     '/landing.html': ['Landing'],

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="BRIDGE AI OS — Twin Orchestration. Spawn and supervise concurrent digital twins for continuity.">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'">
+    <title>BRIDGE AI OS — Twin Orchestration</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <script src="/admin-auth.js"></script>
+    <script src="/nav-routes.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #060810;
+            --bg-glass: rgba(10, 14, 23, 0.85);
+            --border-color: rgba(99, 255, 218, 0.12);
+            --border-glow: rgba(99, 255, 218, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #63ffda;
+            --accent-blue: #38bdf8;
+            --accent-purple: #a78bfa;
+            --accent-green: #4ade80;
+            --accent-red: #f87171;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100vh; background: var(--bg-primary); font-family: 'Outfit', -apple-system, sans-serif; color: var(--text-primary); }
+        body::before { content: ''; position: fixed; inset: 0;
+            background: radial-gradient(ellipse at 20% 80%, rgba(99, 255, 218, 0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
+            pointer-events: none; z-index: 0; }
+        .shell { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 32px 24px 80px; }
+        header.page-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .page-head h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: 0.02em;
+            background: linear-gradient(135deg, #63ffda 0%, #38bdf8 55%, #a78bfa 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .sub { color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px; max-width: 680px; }
+        .ident { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-glass); }
+        .ident b { color: var(--accent-cyan); }
+        section.card { margin-top: 28px; padding: 22px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-glass); }
+        section.card h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-cyan); margin-bottom: 10px; }
+        section.card p { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 14px; line-height: 1.5; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+        button, .btn {
+            font-family: inherit; font-size: 0.85rem; font-weight: 600;
+            padding: 8px 14px; border-radius: 6px; cursor: pointer;
+            border: 1px solid var(--border-glow); background: rgba(99, 255, 218, 0.06); color: var(--accent-cyan);
+            transition: background 0.15s, transform 0.15s;
+        }
+        button:hover, .btn:hover { background: rgba(99, 255, 218, 0.14); transform: translateY(-1px); }
+        .btn-danger { border-color: rgba(248, 113, 113, 0.35); background: rgba(248, 113, 113, 0.06); color: var(--accent-red); }
+        .grid-twins { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+        .twin-card { padding: 14px; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(6, 8, 16, 0.6); }
+        .twin-card .twin-id { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent-blue); word-break: break-all; }
+        .twin-card .twin-meta { margin-top: 6px; font-size: 0.78rem; color: var(--text-muted); }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .dot.live { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+        .dot.spawning { background: var(--accent-blue); }
+        .dot.stopped { background: var(--text-muted); }
+        pre.log { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; padding: 12px; border-radius: 6px; background: rgba(0, 0, 0, 0.4); color: var(--text-secondary); max-height: 260px; overflow: auto; border: 1px solid var(--border-color); }
+        footer.page-foot { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.75rem; color: var(--text-muted); }
+        footer a { color: var(--accent-blue); text-decoration: none; }
+        footer a:hover { color: var(--accent-cyan); }
+        .empty { padding: 28px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border-color); border-radius: 8px; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <header class="page-head">
+            <div>
+                <h1>Twin Orchestration</h1>
+                <div class="sub">Each digital twin spawns concurrent sibling twins for continuity. All operational expenses incurred by twin activity are settled by the Bank via idempotent ledger events.</div>
+            </div>
+            <div class="ident" id="ident">user: <b id="user">—</b> · role: <b id="role">—</b></div>
+        </header>
+
+        <section class="card">
+            <h2>Supervisor</h2>
+            <p>Live supervisor state. Spawning a twin immediately creates N sibling twins (default <b>N=2</b>) on distinct instances. Heartbeats every 5s; if primary fails, a sibling is promoted.</p>
+            <div class="actions">
+                <button id="btn-spawn">Spawn new twin (+siblings)</button>
+                <button id="btn-refresh">Refresh</button>
+                <button class="btn-danger" id="btn-stop-all">Stop all</button>
+            </div>
+            <div id="twins" class="grid-twins"><div class="empty">Loading supervisor state…</div></div>
+        </section>
+
+        <section class="card">
+            <h2>Recent expense events</h2>
+            <p>Every twin action that costs money emits an <code>expense.incurred</code> event with an idempotency key. Bank Ledger settles each event exactly once — duplicates from sibling twins are de-duped.</p>
+            <pre class="log" id="events">Loading events…</pre>
+        </section>
+
+        <footer class="page-foot">
+            <div>API: <a href="/api/twin/supervisor">/api/twin/supervisor</a> · <a href="/api/bank/ledger">/api/bank/ledger</a></div>
+            <div><a href="/admin-hub">← Admin Hub</a> · <a href="/bank-ledger">Bank Ledger</a> · <a href="/affiliate-flow">Affiliate Flow</a></div>
+        </footer>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var email = (localStorage.getItem('user_email') || '').toLowerCase();
+        var user = {}; try { user = JSON.parse(localStorage.getItem('bridge_user') || '{}'); } catch(_){}
+        document.getElementById('user').textContent = email || user.email || 'unknown';
+        document.getElementById('role').textContent = user.role || 'admin';
+
+        var headers = { 'x-admin-token': (user.admin_token || localStorage.getItem('admin_token') || '') };
+
+        function statusClass(s) { return s === 'live' ? 'live' : s === 'spawning' ? 'spawning' : 'stopped'; }
+
+        function renderTwins(twins) {
+            var el = document.getElementById('twins');
+            if (!twins.length) { el.innerHTML = '<div class="empty">No twins supervised. Click "Spawn" to create a primary + siblings.</div>'; return; }
+            el.innerHTML = twins.map(function (t) {
+                var sibs = (t.siblings || []).length;
+                return '<div class="twin-card">' +
+                    '<div class="twin-id"><span class="dot ' + statusClass(t.status) + '"></span>' + escapeHtml(t.id) + '</div>' +
+                    '<div class="twin-meta">role: <b>' + escapeHtml(t.role || 'primary') + '</b> · lineage: ' + escapeHtml(t.lineage || '—') + '</div>' +
+                    '<div class="twin-meta">siblings: <b>' + sibs + '</b> · heartbeat: ' + escapeHtml(t.heartbeat || 'n/a') + '</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        function renderEvents(events) {
+            var el = document.getElementById('events');
+            if (!events.length) { el.textContent = '(no events yet)'; return; }
+            el.textContent = events.map(function (e) {
+                return '[' + e.ts + '] ' + e.type + ' · twin=' + e.twin_id + ' · idem=' + e.idempotency_key + ' · amt=' + (e.amount || 0);
+            }).join('\n');
+        }
+
+        function refresh() {
+            fetch('/api/twin/supervisor', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) {
+                renderTwins((d && d.twins) || []);
+            }).catch(function () { renderTwins([]); });
+            fetch('/api/bank/ledger?limit=20', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) {
+                renderEvents((d && d.events) || []);
+            }).catch(function () { document.getElementById('events').textContent = '(ledger unreachable)'; });
+        }
+
+        document.getElementById('btn-refresh').addEventListener('click', refresh);
+        document.getElementById('btn-spawn').addEventListener('click', function () {
+            fetch('/api/twin/spawn', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, headers), body: JSON.stringify({ siblings: 2 }) })
+                .then(refresh);
+        });
+        document.getElementById('btn-stop-all').addEventListener('click', function () {
+            if (!confirm('Stop ALL twins including siblings?')) return;
+            fetch('/api/twin/stop-all', { method: 'POST', headers: headers }).then(refresh);
+        });
+
+        function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        refresh();
+        setInterval(refresh, 5000);
+    })();
+    </script>
+    <script src="/bridge-nav.js" defer></script>
+</body>
+</html>

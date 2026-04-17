@@ -4,10 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "gen:admin-groups": "node scripts/gen-admin-groups.mjs",
+    "predev": "node scripts/gen-admin-groups.mjs",
+    "prebuild": "node scripts/gen-admin-groups.mjs",
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist src/generated",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
