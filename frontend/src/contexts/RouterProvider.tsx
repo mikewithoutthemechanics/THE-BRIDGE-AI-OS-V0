@@ -49,12 +49,13 @@ export function useRouter(routes: RouteConfig[]) {
 
   const { checkAccess } = useRouteGuard();
 
-  // Find current route
+  // Find current route — match on exact path or path + '/' boundary so that
+  // /admin-command doesn't accidentally match the /admin route.
   const currentRoute = routes.find(route => {
     if (route.path === '/') {
       return currentPath === '/' || currentPath === '/landing';
     }
-    return currentPath.startsWith(route.path);
+    return currentPath === route.path || currentPath.startsWith(route.path + '/');
   }) || routes.find(route => route.path === '/'); // Fallback to home
 
   // Check access for current route

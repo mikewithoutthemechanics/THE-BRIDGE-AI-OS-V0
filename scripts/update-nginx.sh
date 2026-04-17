@@ -196,14 +196,15 @@ server {
     # Chain: dist/ → public/ → SPA index.html
     # Legacy HTML/JS (bridge-nav.js, admin-sitemap.html, etc.) live in
     # public/; SPA assets live in dist/. Try both before SPA fallback.
+    # $uri.html handles clean URLs like /home → /home.html in public/.
     location / {
         root /var/www/bridgeai/frontend/dist;
-        try_files $uri $uri/ @public;
+        try_files $uri $uri.html $uri/ @public;
     }
 
     location @public {
         root /var/www/bridgeai/public;
-        try_files $uri $uri/ @spa;
+        try_files $uri $uri.html $uri/ @spa;
     }
 
     location @spa {
