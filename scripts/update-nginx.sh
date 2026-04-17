@@ -103,6 +103,13 @@ server {
 
     rewrite ^/$                /home.html last;
     rewrite ^/apps$            /50-applications.html last;
+
+    # /onboarding skips the legacy Supabase form and goes straight to
+    # Google's OAuth consent screen. Brain's callback carries ?next=/apps
+    # through the state param, so post-auth lands on /50-applications.html.
+    location = /onboarding {
+        return 302 /auth/google?next=/apps;
+    }
     rewrite ^/dashboard$       /aoe-dashboard.html last;
     rewrite ^/treasury-dash$   /treasury-dashboard.html last;
     rewrite ^/status$          /system-status-dashboard.html last;

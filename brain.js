@@ -2665,11 +2665,19 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 app.get('/auth/google', (req, res) => {
   if (!GOOGLE_CLIENT_ID) return res.json({ ok: false, error: 'GOOGLE_CLIENT_ID not configured', setup: 'Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars' });
   const redirect = encodeURIComponent(`${req.protocol}://${req.get('host')}/auth/google/callback`);
-  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirect}&response_type=code&scope=email%20profile&access_type=offline`);
+  const nextRaw = String(req.query.next || '/apps');
+  const next = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/apps';
+  const state = encodeURIComponent(Buffer.from(JSON.stringify({ next })).toString('base64'));
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirect}&response_type=code&scope=email%20profile&access_type=offline&state=${state}`);
 });
 app.get('/auth/google/callback', async (req, res) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
   if (!code) return res.status(400).json({ ok: false, error: 'No auth code' });
+  let next = '/apps';
+  try {
+    const parsed = JSON.parse(Buffer.from(decodeURIComponent(String(state || '')), 'base64').toString('utf8'));
+    if (parsed.next && typeof parsed.next === 'string' && parsed.next.startsWith('/') && !parsed.next.startsWith('//')) next = parsed.next;
+  } catch { /* fall through to default */ }
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -2681,8 +2689,9 @@ app.get('/auth/google/callback', async (req, res) => {
     const user = await userRes.json();
     const token = kfIssue('auth', 'default');
     audit('google_login', user.email, `Google OAuth: ${user.name}`);
-    // Use URL fragment (#) instead of query string (?) to prevent token leakage in server logs/referrer headers
-    res.redirect(`/#token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email)}&name=${encodeURIComponent(user.name || '')}`);
+    // Hand off to /auth-callback which reads the token from the URL fragment,
+    // persists it to localStorage as 'bridge_token', and redirects to ?next=.
+    res.redirect(`/auth-callback?next=${encodeURIComponent(next)}#token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email)}&name=${encodeURIComponent(user.name || '')}`);
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 app.get('/api/auth/google/status', (_req, res) => res.json({ ok: true, configured: !!GOOGLE_CLIENT_ID, client_id_set: !!GOOGLE_CLIENT_ID, client_secret_set: !!GOOGLE_CLIENT_SECRET }));
