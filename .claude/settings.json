@@ -26,5 +26,14 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(gh secret:*)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/librarian-boot.sh" }
+        ]
+      }
+    ]
   }
 }
