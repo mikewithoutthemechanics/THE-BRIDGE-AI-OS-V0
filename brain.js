@@ -49,6 +49,10 @@ const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 const PORT = parseInt(process.env.BRAIN_PORT, 10) || 8080;
 const app = express();
+// Honour X-Forwarded-Proto/Host from nginx so req.protocol returns 'https'
+// and req.get('host') returns the public domain — required for OAuth
+// redirect_uri to match the Google Cloud Console whitelist.
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // ── CORS + JSON + COOKIES ──────────────────────────────────────────────────

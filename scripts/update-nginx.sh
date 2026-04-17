@@ -88,6 +88,19 @@ server {
     root /var/www/bridgeai/frontend/dist;
     index index.html;
 
+    # Compression — gzip covers all text assets; brotli is skipped because
+    # the distro nginx (1.18) doesn't ship ngx_brotli. Gzip alone gives
+    # ~70% reduction on JS/CSS/HTML which is the bulk of our payload.
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript
+               application/javascript application/json application/xml
+               application/xml+rss application/ld+json application/manifest+json
+               image/svg+xml font/ttf font/otf application/wasm;
+
     rewrite ^/apps$            /50-applications.html last;
     rewrite ^/dashboard$       /aoe-dashboard.html last;
     rewrite ^/treasury-dash$   /treasury-dashboard.html last;
@@ -123,6 +136,22 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 30;
+    }
+
+    # OAuth routes — go directly to brain (8000), NOT the gateway.
+    # Gateway's BRAIN_ROUTES proxy uses Node fetch() which auto-follows
+    # redirects, so brain's 302 → Google gets swallowed. Also the internal
+    # Host gets passed along, breaking Google's redirect_uri validation.
+    # Direct nginx proxy preserves Host and passes through 302.
+    location ~ ^/auth/(google|github|microsoft)(/|$) {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30;
+        proxy_redirect off;
     }
 
     location /auth/ {
