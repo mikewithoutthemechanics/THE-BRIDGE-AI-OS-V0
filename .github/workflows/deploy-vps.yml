@@ -10,7 +10,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     env:
       VPS_ENV_BLOB: ${{ secrets.VPS_ENV_BLOB }}
       GH_PAT: ${{ secrets.GH_PAT }}
@@ -63,6 +63,22 @@ jobs:
             echo "=== Deployed HEAD ==="
             git log --oneline -1
 
+            # Node version guard — @tailwindcss/oxide requires Node ≥ 20
+            echo "=== Building frontend ==="
+            NODE_V="$(node -v 2>/dev/null || true)"
+            if [ -z "$NODE_V" ]; then
+              echo "ERROR: node is not installed on VPS"
+              exit 1
+            fi
+            NODE_MAJOR="$(echo "$NODE_V" | sed -E 's/^v([0-9]+).*/\1/')"
+            if [ -z "$NODE_MAJOR" ] || [ "$NODE_MAJOR" -lt 20 ]; then
+              echo "ERROR: VPS Node $NODE_V < 20 required for frontend build (@tailwindcss/oxide)."
+              echo "Fix on VPS: nvm install 20 && nvm alias default 20 — then re-deploy."
+              exit 1
+            fi
+            npm --prefix frontend install --no-audit --no-fund
+            npm --prefix frontend run build
+
             # Install production deps
             npm install --omit=dev --no-audit 2>&1 | tail -5
 
@@ -91,7 +107,7 @@ jobs:
             # Reconfigure nginx (idempotent — safe to re-run every deploy)
             if [ -f scripts/update-nginx.sh ]; then
               echo "=== Updating nginx config ==="
-              bash scripts/update-nginx.sh 2>&1 | tail -10 || echo "  WARN: nginx update failed"
+              bash scripts/update-nginx.sh 2>&1 || echo "  WARN: nginx update failed"
             fi
 
             # Ensure TLS cert covers ai-os.co.za and bridge domains

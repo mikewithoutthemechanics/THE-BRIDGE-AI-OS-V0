@@ -47,8 +47,8 @@ server {
     ssl_certificate /etc/letsencrypt/live/bridge-ai-os.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/bridge-ai-os.com/privkey.pem;
 
-    # Serve static files directly — gateway-bypass resilience
-    root /var/www/bridgeai/public;
+    # Serve React SPA from Vite build output
+    root /var/www/bridgeai/frontend/dist;
     index index.html;
 
     # Friendly-URL rewrites (mirror vercel.json rewrites)
@@ -148,9 +148,14 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
     }
 
-    # Everything else: static file first, then gateway
     location / {
-        try_files $uri $uri.html $uri/index.html @gateway;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Legacy public/ static files (marketing pages, docs)
+    location /public/ {
+        alias /var/www/bridgeai/public/;
+        try_files $uri =404;
     }
 
     location @gateway {
