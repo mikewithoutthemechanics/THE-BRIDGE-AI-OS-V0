@@ -168,8 +168,21 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 
-    location /admin/ {
+    # Exact match: /admin and /admin/ show the admin-api HTML dashboard
+    # (served at port 4011 root '/'). Prefix /admin/* below still proxies
+    # JSON endpoints like /admin/overview (with path preserved).
+    location = /admin  { return 301 /admin/; }
+    location = /admin/ {
         proxy_pass http://127.0.0.1:4011/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /admin/ {
+        # No trailing slash on proxy_pass — admin-api expects the full
+        # /admin/* path (routes are registered as /admin/overview etc.)
+        proxy_pass http://127.0.0.1:4011;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -180,8 +193,22 @@ server {
         try_files $uri =404;
     }
 
+    # Chain: dist/ → public/ → SPA index.html
+    # Legacy HTML/JS (bridge-nav.js, admin-sitemap.html, etc.) live in
+    # public/; SPA assets live in dist/. Try both before SPA fallback.
     location / {
-        try_files $uri $uri/ /index.html;
+        root /var/www/bridgeai/frontend/dist;
+        try_files $uri $uri/ @public;
+    }
+
+    location @public {
+        root /var/www/bridgeai/public;
+        try_files $uri $uri/ @spa;
+    }
+
+    location @spa {
+        root /var/www/bridgeai/frontend/dist;
+        try_files /index.html =404;
     }
 }
 

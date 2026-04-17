@@ -230,7 +230,7 @@ const HEALTH_ENDPOINTS = isLocalHost
   ? [
       // Local operator mode: explicit service ports.
       { id: "gateway",  url: "http://localhost:8787/health" },
-      { id: "business", url: "http://localhost:8787/api/templates" },
+      { id: "business", url: "http://localhost:8787/api/brain/status" },
       { id: "treasury", url: "http://localhost:7071/health" },
       { id: "pm2",      url: "http://localhost:6063/" },
       { id: "nginx",    url: "http://localhost:9090/-/ready" },
@@ -238,7 +238,7 @@ const HEALTH_ENDPOINTS = isLocalHost
   : [
       // VPS/public mode: same-origin probes to avoid mixed-content/CORS failures.
       { id: "gateway",  url: "/health" },
-      { id: "business", url: "/api/templates" },
+      { id: "business", url: "/api/brain/status" },
       { id: "treasury", url: "/api/status" },
       { id: "pm2",      url: "/api/swarm/health" },
       { id: "nginx",    url: "/api/revenue/status" },

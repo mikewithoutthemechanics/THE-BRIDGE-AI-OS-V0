@@ -965,7 +965,7 @@ function requireAuth(req, res, next) {
     '/api/skills',
     '/api/marketplace/tasks',
     '/api/twin/env-keys',
-    '/api/ubi/claim',
+    '/api/ubi/',
     '/api/sensors/',
     '/api/economy/',
     '/api/analytics/',
