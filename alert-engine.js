@@ -2,8 +2,8 @@
 
 require('dotenv').config();
 
-// ? Use built-in fetch (Node 18+)
-const fetch = global.fetch;
+// ? BULLETPROOF FETCH (works in all Node/Windows setups)
+const { fetch } = require("undici");
 
 const { createClient } = require("@supabase/supabase-js");
 
