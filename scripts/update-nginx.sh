@@ -107,7 +107,9 @@ server {
     # /onboarding skips the legacy Supabase form and goes straight to
     # Google's OAuth consent screen. Brain's callback carries ?next=/apps
     # through the state param, so post-auth lands on /50-applications.html.
-    location = /onboarding {
+    # Match both /onboarding and /onboarding.html so cached links can't
+    # reach the broken Supabase buttons in public/onboarding.html.
+    location ~ ^/onboarding(\.html)?$ {
         return 302 /auth/google?next=/apps;
     }
     rewrite ^/dashboard$       /aoe-dashboard.html last;
