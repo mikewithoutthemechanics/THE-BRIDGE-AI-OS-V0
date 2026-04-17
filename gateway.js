@@ -1,29 +1,39 @@
+require("dotenv").config();
+
 const express = require("express");
+const autoKill = require("./auto-kill");
+
 const app = express();
 
 app.use(express.json());
 
-// simple block endpoint
+// ✅ APPLY AUTO-KILL HERE
+app.use(autoKill);
+
+// block endpoint (called by alert-engine)
 app.post("/block", (req, res) => {
   console.log("BLOCK TRIGGERED");
   res.send("ok");
 });
 
-// basic route
+// test route
 app.get("/", (req, res) => {
   res.send("ok");
 });
 
-app.listen(3000, () => {
-  console.log("GATEWAY RUNNING ON 3000");
+// view bans
+app.get("/bans", async (req, res) => {
+  const { createClient } = require("@supabase/supabase-js");
+
+  const s = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+  );
+
+  const { data } = await s.from("bans").select("*");
+  res.json(data);
 });
 
-app.get("/bans", async (req,res)=>{
-  const { createClient } = require("@supabase/supabase-js");
-  require("dotenv").config();
-
-  const s = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-  const { data } = await s.from("bans").select("*");
-
-  res.json(data);
+app.listen(3000, () => {
+  console.log("GATEWAY RUNNING ON 3000");
 });
