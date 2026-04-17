@@ -149,11 +149,11 @@ server {
     }
 
     # OAuth routes — go directly to brain (8000), NOT the gateway.
-    # Gateway's BRAIN_ROUTES proxy uses Node fetch() which auto-follows
-    # redirects, so brain's 302 → Google gets swallowed. Also the internal
-    # Host gets passed along, breaking Google's redirect_uri validation.
-    # Direct nginx proxy preserves Host and passes through 302.
-    location ~ ^/auth/(google|github|microsoft)(/|$) {
+    # brain.js redirects /auth/google to Supabase (which handles the Google
+    # round-trip with its own pre-whitelisted callback URL). Gateway's
+    # BRAIN_ROUTES fetch() proxy auto-follows redirects, which would swallow
+    # the 302 — so we bypass gateway entirely for OAuth.
+    location ~ ^/auth/(google|github|microsoft|exchange-code)(/|$) {
         proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

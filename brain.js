@@ -2662,36 +2662,44 @@ app.get('/api/mfa/status', async (req, res) => {
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 
+// Google OAuth runs through Supabase so the Google Cloud Console only needs
+// supabase.co whitelisted (which it already is). We just redirect the browser
+// to Supabase's authorize endpoint; Supabase handles the Google round-trip
+// and returns to /auth-callback with a session.
 app.get('/auth/google', (req, res) => {
-  if (!GOOGLE_CLIENT_ID) return res.json({ ok: false, error: 'GOOGLE_CLIENT_ID not configured', setup: 'Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars' });
-  const redirect = encodeURIComponent(`${req.protocol}://${req.get('host')}/auth/google/callback`);
+  const SUPABASE_URL = process.env.SUPABASE_URL || '';
+  if (!SUPABASE_URL) return res.json({ ok: false, error: 'SUPABASE_URL not configured' });
   const nextRaw = String(req.query.next || '/apps');
   const next = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/apps';
-  const state = encodeURIComponent(Buffer.from(JSON.stringify({ next })).toString('base64'));
-  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirect}&response_type=code&scope=email%20profile&access_type=offline&state=${state}`);
+  const base = `${req.protocol}://${req.get('host')}`;
+  const redirectTo = `${base}/auth-callback?next=${encodeURIComponent(next)}`;
+  res.redirect(`${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`);
 });
-app.get('/auth/google/callback', async (req, res) => {
-  const { code, state } = req.query;
-  if (!code) return res.status(400).json({ ok: false, error: 'No auth code' });
-  let next = '/apps';
+
+// Kept for defensive handling of direct callbacks if anyone still lands here.
+// The live flow lands on /auth-callback (Supabase's redirect_to).
+app.get('/auth/google/callback', (req, res) => {
+  res.redirect(`/auth-callback${req.url.includes('?') ? '?' + req.url.split('?').slice(1).join('?') : ''}`);
+});
+
+// Exchange Supabase PKCE code for a session token. Called by /auth-callback.html
+// when Supabase redirects back with ?code=... (new PKCE flow is the default).
+app.post('/auth/exchange-code', express.json(), async (req, res) => {
+  const SUPABASE_URL = process.env.SUPABASE_URL || '';
+  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return res.status(503).json({ ok: false, error: 'Supabase not configured' });
+  const { code } = req.body || {};
+  if (!code) return res.status(400).json({ ok: false, error: 'Missing code' });
   try {
-    const parsed = JSON.parse(Buffer.from(decodeURIComponent(String(state || '')), 'base64').toString('utf8'));
-    if (parsed.next && typeof parsed.next === 'string' && parsed.next.startsWith('/') && !parsed.next.startsWith('//')) next = parsed.next;
-  } catch { /* fall through to default */ }
-  try {
-    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET, redirect_uri: `${req.protocol}://${req.get('host')}/auth/google/callback`, grant_type: 'authorization_code' }),
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=pkce`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ auth_code: code }),
     });
-    const tokens = await tokenRes.json();
-    if (tokens.error) return res.status(400).json({ ok: false, error: tokens.error_description });
-    const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', { headers: { Authorization: `Bearer ${tokens.access_token}` } });
-    const user = await userRes.json();
-    const token = kfIssue('auth', 'default');
-    audit('google_login', user.email, `Google OAuth: ${user.name}`);
-    // Hand off to /auth-callback which reads the token from the URL fragment,
-    // persists it to localStorage as 'bridge_token', and redirects to ?next=.
-    res.redirect(`/auth-callback?next=${encodeURIComponent(next)}#token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email)}&name=${encodeURIComponent(user.name || '')}`);
+    const data = await r.json();
+    if (!r.ok || !data.access_token) return res.status(401).json({ ok: false, error: data.error_description || data.msg || 'Exchange failed' });
+    audit('supabase_login', data.user?.email || 'unknown', `Supabase OAuth session issued`);
+    res.json({ ok: true, token: data.access_token, user: { email: data.user?.email, name: data.user?.user_metadata?.full_name || data.user?.user_metadata?.name || '', id: data.user?.id } });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 app.get('/api/auth/google/status', (_req, res) => res.json({ ok: true, configured: !!GOOGLE_CLIENT_ID, client_id_set: !!GOOGLE_CLIENT_ID, client_secret_set: !!GOOGLE_CLIENT_SECRET }));
