@@ -1,4 +1,19 @@
+require("dotenv").config();
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
+
 const buckets = {};
+const banned = new Set();
+
+// load bans on boot
+(async () => {
+  const { data } = await supabase.from("bans").select("ip");
+  if (data) data.forEach(r => banned.add(r.ip));
+})();
 
 setInterval(() => {
   const now = Date.now();
@@ -7,8 +22,13 @@ setInterval(() => {
   }
 }, 5000);
 
-module.exports = function autoKill(req, res, next) {
+module.exports = async function autoKill(req, res, next) {
   const ip = req.ip || req.connection.remoteAddress;
+
+  if (banned.has(ip)) {
+    return res.status(403).send("banned");
+  }
+
   const now = Date.now();
 
   if (!buckets[ip]) {
@@ -18,6 +38,16 @@ module.exports = function autoKill(req, res, next) {
   }
 
   if (buckets[ip].count > 20) {
+    banned.add(ip);
+
+    await supabase.from("bans").insert({
+      ip,
+      reason: "rate-limit",
+      ts: new Date().toISOString()
+    });
+
+    console.log("BANNED:", ip);
+
     return res.status(429).send("blocked");
   }
 
