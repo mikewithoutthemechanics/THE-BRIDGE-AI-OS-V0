@@ -133,9 +133,10 @@ jobs:
                 --email admin@bridge-ai-os.com \
                 -d bridge-ai-os.com \
                 -d www.bridge-ai-os.com \
+                -d admin.bridge-ai-os.com \
                 -d go.ai-os.co.za \
                 -d ai-os.co.za \
-                2>&1 | tail -20 || echo "  WARN: certbot SAN update failed"
+                2>&1 | tail -20 || echo "  WARN: certbot SAN update (admin.* may need DNS first)"
             else
               echo "  WARN: certbot not installed on VPS"
             fi

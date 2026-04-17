@@ -50,7 +50,7 @@ cat > "$NGINX_AVAILABLE" <<'NGINX_CONF'
 
 server {
     listen 80 default_server;
-    server_name bridge-ai-os.com www.bridge-ai-os.com go.ai-os.co.za ai-os.co.za aid.ai-os.co.za _;
+    server_name bridge-ai-os.com www.bridge-ai-os.com admin.bridge-ai-os.com go.ai-os.co.za ai-os.co.za aid.ai-os.co.za _;
 
     location /.well-known/acme-challenge/ {
         root /var/www/letsencrypt;
@@ -258,6 +258,61 @@ server {
     }
 
     location @spa {
+        root /var/www/bridgeai/frontend/dist;
+        try_files /index.html =404;
+    }
+}
+
+# Admin subdomain — isolated entry for admin + continuity panels.
+# Shares the main bridge-ai-os.com cert via SAN (certbot --expand covers it).
+# `/` redirects straight to /admin-hub so the subdomain has a purpose; every
+# other path reuses the same static/proxy rules as the main site, so e.g.
+# admin.bridge-ai-os.com/api/bank/ledger hits the same backend.
+server {
+    listen 443 ssl http2;
+    server_name admin.bridge-ai-os.com;
+    ssl_certificate /etc/letsencrypt/live/bridge-ai-os.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/bridge-ai-os.com/privkey.pem;
+
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/javascript application/javascript application/json image/svg+xml;
+
+    # Subdomain root = admin hub. One rewrite, no ambiguity.
+    rewrite ^/$ /admin-hub last;
+
+    # API proxy identical to main domain so admin panels can call /api/*.
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30;
+    }
+
+    location /auth/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Static chain matches main site: dist -> public -> SPA fallback.
+    location / {
+        root /var/www/bridgeai/frontend/dist;
+        try_files $uri $uri.html $uri/ @admin_public;
+    }
+    location @admin_public {
+        root /var/www/bridgeai/public;
+        try_files $uri $uri.html $uri/ @admin_spa;
+    }
+    location @admin_spa {
         root /var/www/bridgeai/frontend/dist;
         try_files /index.html =404;
     }
