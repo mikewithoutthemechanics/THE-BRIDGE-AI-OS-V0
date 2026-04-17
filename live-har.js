@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 
 const fs = require("fs");
 const path = require("path");
@@ -11,7 +11,7 @@ if (!fs.existsSync(HAR_DIR)) {
 
 console.log("\n=== LIVE HAR ORCHESTRATOR ===\n");
 console.log("Watching:", HAR_DIR);
-console.log("Drop .har files → auto-analyze\n");
+console.log("Drop .har files ? auto-analyze\n");
 
 const analyze = (filePath) => {
   try {
@@ -38,7 +38,7 @@ const analyze = (filePath) => {
     console.log("Auth Calls:", auth);
 
     if (entries.some(e => e.request.url.includes("next="))) {
-      console.log("⚠️ Open redirect risk detected");
+      console.log("?? Open redirect risk detected");
     }
 
     console.log("---------------\n");
