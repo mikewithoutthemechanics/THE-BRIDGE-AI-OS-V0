@@ -65,8 +65,8 @@ module.exports = {
     enabled: true,
   },
   paths: {
-    sources: './contracts',
-    artifacts: './artifacts',
+    sources: '.',
+    artifacts: '../artifacts',
     cache: './cache',
   },
 };

@@ -297,18 +297,18 @@
         fetch('/api/brdg/token').then(function(r){return r.json()}).catch(function(){return {}})
       ]);
 
-      // Hero
-      var totalBrdg = parseFloat(treasury.total_brdg || treasury.balance || economy.treasury_balance || 0);
+      // Hero — treasury.balance is on-chain BRDG held by the treasury wallet
+      var totalBrdg = parseFloat(treasury.balance || 0);
       var usdVal = parseFloat(treasury.usd || 0);
       countUp(document.getElementById('heroBalance'), totalBrdg, '', ' BRDG', 1500);
       document.getElementById('heroUsd').textContent = usdVal ? ('$' + usdVal.toLocaleString('en-US', {maximumFractionDigits:2}) + ' USD equivalent') : '-- USD equivalent';
 
-      // Buckets
+      // Buckets — from on-chain vault via /api/treasury/status
       var buckets = treasury.buckets || {};
-      var opsAmt = parseFloat(buckets.operations || totalBrdg * 0.45);
-      var growthAmt = parseFloat(buckets.growth || totalBrdg * 0.15);
-      var reserveAmt = parseFloat(buckets.reserve || totalBrdg * 0.15);
-      var founderAmt = parseFloat(buckets.founder || totalBrdg * 0.25);
+      var opsAmt = parseFloat(buckets.operations || 0);
+      var growthAmt = parseFloat(buckets.growth || 0);
+      var reserveAmt = parseFloat(buckets.reserve || 0);
+      var founderAmt = parseFloat(buckets.founder || 0);
 
       document.getElementById('bucketOps').textContent = fmtBRDG(opsAmt);
       document.getElementById('bucketGrowth').textContent = fmtBRDG(growthAmt);
@@ -321,20 +321,28 @@
       document.getElementById('barReserve').style.width = ((reserveAmt / maxBucket) * 100) + '%';
       document.getElementById('barFounder').style.width = ((founderAmt / maxBucket) * 100) + '%';
 
-      // Token metrics
-      var circulating = parseFloat(token.circulating || economy.circulating_supply || 0);
-      var burned = parseFloat(token.burned || economy.burned || 0);
+      // Token metrics — read actual API property names from brdg-chain.getTokenStats()
+      var tok = token.token || {};
+      var circulating = parseFloat(tok.circulatingSupply || 0);
+      var burned = parseFloat(tok.totalBurned || 0);
+      var totalSupply = parseFloat(tok.totalSupply || 0);
       var totalTx = parseInt(economy.total_transactions || 0);
-      var totalSupply = parseFloat(token.total_supply || 0);
-      var treasuryHeld = totalSupply - circulating - burned;
-      if (treasuryHeld < 0) treasuryHeld = totalBrdg;
+      // Treasury-held = on-chain balance of the treasury wallet (authoritative)
+      var treasuryHeld = parseFloat((token.treasury && token.treasury.brdgBalance) || totalBrdg || 0);
 
       document.getElementById('metricCirculating').textContent = fmt(circulating);
       document.getElementById('metricBurned').textContent = fmt(burned);
       document.getElementById('metricTx').textContent = fmt(totalTx);
 
-      // Donut
-      updateDonut(circulating || 70, burned || 5, treasuryHeld > 0 ? treasuryHeld : 25);
+      // Donut — zero-state shows "--" rather than misleading placeholders
+      if (circulating + burned + treasuryHeld > 0) {
+        updateDonut(circulating, burned, treasuryHeld);
+      } else {
+        document.getElementById('donutTotal').textContent = '--';
+        document.getElementById('lgCirc').textContent = '--';
+        document.getElementById('lgBurned').textContent = '--';
+        document.getElementById('lgTreasury').textContent = '--';
+      }
 
     } catch(e) {
       console.error('Treasury refresh error:', e);

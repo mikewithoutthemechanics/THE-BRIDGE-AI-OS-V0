@@ -816,6 +816,95 @@ app.post('/api/auth/dev-login', async (req, res) => {
 });
 app.post('/api/auth/logout', (req, res) => proxyToAuth(req, res));
 
+// ─── SIWE-Lite wallet auth ──────────────────────────────────────────────────
+// 1. GET  /api/auth/wallet/nonce?address=0x…  → { nonce, message }
+// 2. POST /api/auth/wallet/verify { address, signature, nonce } → session JWT
+//
+// Nonces live in-memory for 5min, single-use. Message format is deterministic
+// so replay across sessions is impossible (nonce is bound to issuedAt + address).
+const _walletNonces = new Map(); // addressLower → { nonce, expires }
+const NONCE_TTL_MS = 5 * 60 * 1000;
+
+function cleanupNonces() {
+  const now = Date.now();
+  for (const [k, v] of _walletNonces.entries()) if (v.expires < now) _walletNonces.delete(k);
+}
+setInterval(cleanupNonces, 60_000).unref?.();
+
+function buildSiweMessage({ address, nonce, issuedAt }) {
+  const domain = process.env.SIWE_DOMAIN || 'bridge-ai-os.com';
+  return [
+    `${domain} wants you to sign in with your Ethereum account:`,
+    address,
+    '',
+    'Sign this message to authenticate with Bridge AI OS.',
+    '',
+    `URI: https://${domain}`,
+    'Version: 1',
+    'Chain ID: 59144',
+    `Nonce: ${nonce}`,
+    `Issued At: ${issuedAt}`,
+  ].join('\n');
+}
+
+app.get('/api/auth/wallet/nonce', (req, res) => {
+  try {
+    const address = String(req.query.address || '').toLowerCase();
+    if (!/^0x[0-9a-f]{40}$/.test(address)) {
+      return res.status(400).json({ ok: false, error: 'invalid address' });
+    }
+    const nonce = require('crypto').randomBytes(16).toString('hex');
+    const issuedAt = new Date().toISOString();
+    _walletNonces.set(address, { nonce, expires: Date.now() + NONCE_TTL_MS, issuedAt });
+    res.json({ ok: true, nonce, issuedAt, message: buildSiweMessage({ address, nonce, issuedAt }) });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/auth/wallet/verify', async (req, res) => {
+  try {
+    const address = String(req.body?.address || '').toLowerCase();
+    const signature = String(req.body?.signature || '');
+    if (!/^0x[0-9a-f]{40}$/.test(address) || !signature.startsWith('0x')) {
+      return res.status(400).json({ ok: false, error: 'bad input' });
+    }
+    const entry = _walletNonces.get(address);
+    if (!entry || entry.expires < Date.now()) {
+      return res.status(401).json({ ok: false, error: 'nonce expired — request a new one' });
+    }
+    _walletNonces.delete(address); // single-use
+
+    const message = buildSiweMessage({ address, nonce: entry.nonce, issuedAt: entry.issuedAt });
+    const { verifyMessage } = require('ethers');
+    const recovered = verifyMessage(message, signature).toLowerCase();
+    if (recovered !== address) {
+      return res.status(401).json({ ok: false, error: 'signature mismatch' });
+    }
+
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret || jwtSecret.length < 32) {
+      return res.status(500).json({ ok: false, error: 'server misconfigured' });
+    }
+    const jwt = require('jsonwebtoken');
+    const role = (process.env.WALLET_ADMINS || '')
+      .toLowerCase().split(',').map(s => s.trim()).includes(address) ? 'admin' : 'user';
+    const token = jwt.sign(
+      { sub: `wallet:${address}`, address, role, plan: 'client', iat: Math.floor(Date.now() / 1000) },
+      jwtSecret,
+      { expiresIn: '24h' }
+    );
+    res.cookie('access_token', token, {
+      httpOnly: true, sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    res.json({ ok: true, token, user: { id: `wallet:${address}`, address, role, plan: 'client' } });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 app.post('/auth/logout',         (req, res) => proxyToAuth(req, res));
 app.post('/auth/exchange-code',  (req, res) => proxyToUnified(req, res));
 
@@ -1733,9 +1822,30 @@ app.get('/api/cli/status', (_req, res) => {
 
 app.get('/api/treasury/status', async (_req, res) => {
   try {
-    // Return dashboard-compatible format with mock data for now
-    res.json({ balance: 157500, distributed: 157500, ubi: 25000, treasury: 100000, ops: 125, founder: 25000 });
-  } catch (e) { res.json({ balance: 0, distributed: 0, ubi: 0, treasury: 0, ops: 0, founder: 0 }); }
+    const brdgChain = require('./lib/brdg-chain');
+    const [stats, vault] = await Promise.all([
+      brdgChain.getTokenStats(),
+      brdgChain.getVaultBuckets().catch(() => null),
+    ]);
+    const balance = parseFloat(stats.treasury.brdgBalance) || 0;
+    const haveVault = vault && vault.brdg && !vault.error;
+    const operations = haveVault ? parseFloat(vault.brdg.ops)       : balance * 0.45;
+    const growth     = haveVault ? parseFloat(vault.brdg.liquidity) : balance * 0.15;
+    const reserve    = haveVault ? parseFloat(vault.brdg.reserve)   : balance * 0.15;
+    const founder    = haveVault ? parseFloat(vault.brdg.founder)   : balance * 0.25;
+    const distributed = operations + growth + reserve + founder;
+    res.json({
+      ok: true,
+      balance, distributed,
+      buckets: { operations, growth, reserve, founder },
+      contract: brdgChain.BRDG_ADDRESS,
+      vault: brdgChain.VAULT_ADDRESS,
+      source: haveVault ? 'vault-onchain' : 'policy-split',
+      ts: Date.now(),
+    });
+  } catch (e) {
+    res.status(503).json({ ok: false, error: 'chain read failed', detail: e.message });
+  }
 });
 
 app.get('/api/treasury/ledger', async (req, res) => {
@@ -1865,6 +1975,33 @@ app.get('/api/brdg/token', async (_req, res) => {
     });
   } catch (e) {
     res.status(503).json({ ok: false, error: e.message });
+  }
+});
+
+// Modular vault config — consumed by /vault.html on load
+app.get('/api/modular-vault/config', (_req, res) => {
+  try {
+    const fs = require('fs'), path = require('path');
+    const net = process.env.MODULAR_NETWORK || 'linea';
+    const file = path.join(__dirname, `.env.deployed-modular-${net}.json`);
+    if (!fs.existsSync(file)) {
+      return res.status(404).json({ ok: false, error: 'modular stack not yet deployed', network: net });
+    }
+    const d = JSON.parse(fs.readFileSync(file, 'utf8'));
+    res.json({
+      ok: true,
+      network: d.network, chainId: d.chainId,
+      vault:   d.contracts.Vault,
+      router:  d.contracts.BridgeRouter,
+      adapter: d.contracts.PaymentAdapter,
+      keeper:  d.contracts.Keeper,
+      asset:   d.asset,
+      stable:  d.stable,
+      strategies: d.contracts.Strategies,
+      buckets: d.buckets,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 

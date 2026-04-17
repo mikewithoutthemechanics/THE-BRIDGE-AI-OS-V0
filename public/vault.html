@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bridge AI OS — Modular Vault</title>
+<meta name="description" content="Deposit into the Bridge Treasury Vault. Shares-based accounting across L1 / L2 / L3 buckets on Linea.">
+<link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0a0e1a">
+<style>
+  :root {
+    --bg:#0a0e1a; --panel:#0f1628; --line:rgba(255,255,255,.08); --ink:#e6edf7;
+    --muted:#94a3b8; --cyan:#00e5ff; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+    --l1:#22c55e; --l2:#f59e0b; --l3:#ef4444;
+  }
+  * { box-sizing: border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.55 ui-sans-serif,system-ui,-apple-system,sans-serif; }
+  a { color:var(--cyan); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .wrap { max-width:1100px; margin:0 auto; padding:24px 20px 80px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:20px; border-bottom:1px solid var(--line); }
+  header h1 { margin:0; font-size:22px; font-weight:700; letter-spacing:-.01em; }
+  .muted { color:var(--muted); }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border:1px solid var(--line); background:#13192b; color:var(--ink); border-radius:8px; cursor:pointer; font:inherit; }
+  .btn:hover { border-color:var(--cyan); }
+  .btn.primary { background:linear-gradient(135deg,#0099cc,#00e5ff); color:#001219; border-color:transparent; font-weight:600; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .grid { display:grid; gap:16px; margin-top:20px; }
+  .grid.cols-2 { grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+  .grid.cols-3 { grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; }
+  .card h2 { margin:0 0 12px; font-size:15px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:6px 0; }
+  .row .k { color:var(--muted); }
+  .row .v { font-variant-numeric:tabular-nums; }
+  input[type=text], input[type=number] { width:100%; background:#0a0f1d; border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:10px 12px; font:inherit; }
+  input:focus { outline:none; border-color:var(--cyan); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; letter-spacing:.03em; }
+  .tag.l1 { background:rgba(34,197,94,.15); color:var(--l1); }
+  .tag.l2 { background:rgba(245,158,11,.15); color:var(--l2); }
+  .tag.l3 { background:rgba(239,68,68,.15); color:var(--l3); }
+  .addr { font-family:ui-monospace,SFMono-Regular,monospace; font-size:12px; color:var(--muted); word-break:break-all; }
+  .bar { height:6px; background:#1a2236; border-radius:3px; overflow:hidden; margin:4px 0 12px; }
+  .bar i { display:block; height:100%; border-radius:3px; }
+  .bar i.l1 { background:var(--l1); }
+  .bar i.l2 { background:var(--l2); }
+  .bar i.l3 { background:var(--l3); }
+  #toast { position:fixed; bottom:20px; right:20px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 16px; max-width:380px; transform:translateY(120%); transition:transform .3s; z-index:50; }
+  #toast.show { transform:translateY(0); }
+  #toast.ok   { border-color:var(--ok); }
+  #toast.err  { border-color:var(--err); }
+  .split { display:flex; gap:8px; }
+  .split input { flex:1; }
+  .tabs { display:flex; gap:4px; margin-bottom:14px; }
+  .tabs .btn { flex:1; justify-content:center; }
+  .tabs .btn.on { background:#13192b; border-color:var(--cyan); color:var(--cyan); }
+  .hidden { display:none !important; }
+  .offline { background:var(--warn); color:#000; padding:8px 14px; text-align:center; font-weight:600; font-size:12px; }
+</style>
+</head>
+<body>
+<div id="offline-banner" class="offline hidden">Offline — read-only mode. Tx writes disabled.</div>
+
+<div id="nav-slot"></div>
+
+<main class="wrap">
+  <header>
+    <div>
+      <h1>Modular Vault</h1>
+      <div class="muted">Shares-based accounting → L1 / L2 / L3 buckets → auto-compound via Keeper</div>
+    </div>
+    <div id="wallet-ui">
+      <button class="btn primary" id="connect">Connect Wallet</button>
+    </div>
+  </header>
+
+  <div class="grid cols-3">
+    <div class="card">
+      <h2>Vault</h2>
+      <div class="row"><span class="k">Address</span><span class="v addr" id="v-addr">—</span></div>
+      <div class="row"><span class="k">Network</span><span class="v" id="v-net">—</span></div>
+      <div class="row"><span class="k">Asset</span><span class="v" id="v-asset">—</span></div>
+      <div class="row"><span class="k">Lineascan</span><span class="v"><a id="v-scan" href="#" target="_blank" rel="noopener">view</a></span></div>
+    </div>
+    <div class="card">
+      <h2>Totals</h2>
+      <div class="row"><span class="k">Total assets</span><span class="v" id="v-assets">—</span></div>
+      <div class="row"><span class="k">Total shares</span><span class="v" id="v-shares">—</span></div>
+      <div class="row"><span class="k">Price / share</span><span class="v" id="v-pps">—</span></div>
+      <div class="row"><span class="k">Paused</span><span class="v" id="v-paused">—</span></div>
+    </div>
+    <div class="card">
+      <h2>You</h2>
+      <div class="row"><span class="k">Shares</span><span class="v" id="u-shares">—</span></div>
+      <div class="row"><span class="k">Value</span><span class="v" id="u-value">—</span></div>
+      <div class="row"><span class="k">Asset balance</span><span class="v" id="u-asset">—</span></div>
+      <div class="row"><span class="k">Allowance</span><span class="v" id="u-allow">—</span></div>
+    </div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="tabs">
+        <button class="btn on" data-tab="deposit">Deposit</button>
+        <button class="btn" data-tab="withdraw">Withdraw</button>
+      </div>
+
+      <div id="tab-deposit">
+        <div class="muted" style="margin-bottom:8px;font-size:12px">
+          1) Approve asset → vault  •  2) <code>deposit(amount)</code>
+        </div>
+        <label class="muted" for="dep-amt">Amount (asset units)</label>
+        <div class="split">
+          <input type="text" id="dep-amt" placeholder="100.0" autocomplete="off" inputmode="decimal">
+          <button class="btn" id="dep-max">MAX</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn" id="dep-approve">Approve</button>
+          <button class="btn primary" id="dep-deposit">Deposit</button>
+        </div>
+        <div class="muted" style="margin-top:10px;font-size:12px">
+          ⚠ Never transfer directly — always call <code>deposit()</code>.
+        </div>
+      </div>
+
+      <div id="tab-withdraw" class="hidden">
+        <label class="muted" for="wd-amt">Shares to burn</label>
+        <div class="split">
+          <input type="text" id="wd-amt" placeholder="50.0" autocomplete="off" inputmode="decimal">
+          <button class="btn" id="wd-max">MAX</button>
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn primary" id="wd-withdraw">Withdraw</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Buckets</h2>
+      <div id="bucket-list">
+        <div class="muted">Load a wallet to see bucket allocation.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Recent Events</h2>
+    <div id="events" class="muted">No events yet.</div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js" defer></script>
+<script type="module">
+import { BrowserProvider, Contract, formatUnits, parseUnits } from 'https://cdn.jsdelivr.net/npm/ethers@6.13.4/+esm';
+
+const CONFIG = {
+  LINEA_CHAIN_ID: 59144,
+  LINEA_RPC:      'https://rpc.linea.build',
+  LINEASCAN:      'https://lineascan.build',
+  // Modular vault — overrides existing fixed-split 0x6daA... TreasuryVault
+  VAULT:   window.__MODULAR_VAULT__   || null,
+  ASSET:   window.__MODULAR_ASSET__   || '0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f',
+  KEEPER:  window.__MODULAR_KEEPER__  || null,
+};
+
+const ERC20_ABI = [
+  'function balanceOf(address) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+  'function symbol() view returns (string)',
+  'function allowance(address,address) view returns (uint256)',
+  'function approve(address,uint256) returns (bool)',
+];
+const VAULT_ABI = [
+  'function token() view returns (address)',
+  'function totalAssets() view returns (uint256)',
+  'function totalShares() view returns (uint256)',
+  'function shares(address) view returns (uint256)',
+  'function pricePerShare() view returns (uint256)',
+  'function paused() view returns (bool)',
+  'function bucketCount() view returns (uint256)',
+  'function bucketOf(uint256) view returns (tuple(address strategy,uint256 allocation,uint256 deposited,uint256 yieldAccrued,uint256 cap))',
+  'function deposit(uint256) external',
+  'function withdraw(uint256) external',
+  'event Deposited(address indexed user,uint256 amount,uint256 sharesMinted)',
+  'event Withdrawn(address indexed user,uint256 amount,uint256 sharesBurned)',
+  'event Harvested(uint256 indexed bucketId,uint256 profit)',
+];
+
+const state = {
+  provider: null, signer: null, user: null,
+  decimals: 18, symbol: 'BRDG',
+};
+
+const $ = id => document.getElementById(id);
+const short = a => a ? a.slice(0,6) + '…' + a.slice(-4) : '—';
+
+function toast(msg, kind = 'ok') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'show ' + kind;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+async function ensureLinea() {
+  if (!window.ethereum) throw new Error('No wallet detected');
+  const chain = await window.ethereum.request({ method: 'eth_chainId' });
+  if (parseInt(chain, 16) === CONFIG.LINEA_CHAIN_ID) return;
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x' + CONFIG.LINEA_CHAIN_ID.toString(16) }],
+    });
+  } catch (e) {
+    if (e.code === 4902) {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: '0x' + CONFIG.LINEA_CHAIN_ID.toString(16),
+          chainName: 'Linea',
+          rpcUrls: [CONFIG.LINEA_RPC],
+          nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+          blockExplorerUrls: [CONFIG.LINEASCAN],
+        }],
+      });
+    } else throw e;
+  }
+}
+
+async function siweSignIn(address, signer) {
+  const nonceRes = await fetch('/api/auth/wallet/nonce?address=' + address, { credentials: 'include' });
+  if (!nonceRes.ok) throw new Error('nonce request failed (' + nonceRes.status + ')');
+  const { message } = await nonceRes.json();
+  if (!message) throw new Error('nonce response missing message');
+  const signature = await signer.signMessage(message);
+  const verifyRes = await fetch('/api/auth/wallet/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ address, signature }),
+  });
+  if (!verifyRes.ok) {
+    const err = await verifyRes.json().catch(() => ({}));
+    throw new Error(err.error || 'verify failed (' + verifyRes.status + ')');
+  }
+  return verifyRes.json();
+}
+
+async function connect() {
+  if (!window.ethereum) { toast('No wallet detected — install MetaMask', 'err'); return; }
+  try {
+    await ensureLinea();
+    state.provider = new BrowserProvider(window.ethereum);
+    const accounts = await state.provider.send('eth_requestAccounts', []);
+    state.user = accounts[0];
+    state.signer = await state.provider.getSigner();
+
+    try {
+      const session = await siweSignIn(state.user, state.signer);
+      state.session = session;
+      toast('Signed in as ' + (session.role || 'user'), 'ok');
+    } catch (authErr) {
+      toast('Sign-in failed: ' + authErr.message, 'err');
+      return;
+    }
+
+    $('connect').textContent = short(state.user);
+    $('connect').classList.remove('primary');
+    await loadConfig();
+    await refresh();
+    watchEvents();
+  } catch (e) {
+    toast('Connect failed: ' + e.message, 'err');
+  }
+}
+
+async function loadConfig() {
+  // Pull live vault from gateway if available
+  if (!CONFIG.VAULT) {
+    try {
+      const r = await fetch('/api/modular-vault/config');
+      if (r.ok) {
+        const cfg = await r.json();
+        CONFIG.VAULT  = cfg.vault  || CONFIG.VAULT;
+        CONFIG.ASSET  = cfg.asset  || CONFIG.ASSET;
+        CONFIG.KEEPER = cfg.keeper || CONFIG.KEEPER;
+      }
+    } catch {}
+  }
+  $('v-addr').textContent = CONFIG.VAULT ? short(CONFIG.VAULT) : 'not deployed';
+  $('v-net').textContent  = 'Linea (59144)';
+  $('v-asset').textContent = short(CONFIG.ASSET);
+  if (CONFIG.VAULT) {
+    $('v-scan').href = CONFIG.LINEASCAN + '/address/' + CONFIG.VAULT;
+  }
+}
+
+async function refresh() {
+  if (!state.signer || !CONFIG.VAULT) return;
+  const vault = new Contract(CONFIG.VAULT, VAULT_ABI, state.signer);
+  const asset = new Contract(CONFIG.ASSET, ERC20_ABI, state.signer);
+
+  const [dec, sym] = await Promise.all([asset.decimals(), asset.symbol()]);
+  state.decimals = Number(dec);
+  state.symbol = sym;
+
+  const [assets, totalShares, pps, paused, shares, balance, allowance, bc] = await Promise.all([
+    vault.totalAssets(), vault.totalShares(), vault.pricePerShare(), vault.paused(),
+    vault.shares(state.user), asset.balanceOf(state.user),
+    asset.allowance(state.user, CONFIG.VAULT), vault.bucketCount(),
+  ]);
+
+  const f = v => formatUnits(v, state.decimals);
+  $('v-assets').textContent = f(assets) + ' ' + sym;
+  $('v-shares').textContent = f(totalShares);
+  $('v-pps').textContent    = f(pps);
+  $('v-paused').textContent = paused ? 'yes ⚠' : 'no';
+
+  const value = totalShares > 0n ? (shares * assets) / totalShares : 0n;
+  $('u-shares').textContent = f(shares);
+  $('u-value').textContent  = f(value) + ' ' + sym;
+  $('u-asset').textContent  = f(balance) + ' ' + sym;
+  $('u-allow').textContent  = f(allowance);
+
+  // Buckets
+  const list = $('bucket-list');
+  list.innerHTML = '';
+  const count = Number(bc);
+  for (let i = 0; i < count; i++) {
+    const b = await vault.bucketOf(i);
+    const tier = ['l1','l2','l3'][i] || 'l1';
+    const tierLabel = ['L1 stable','L2 balanced','L3 aggressive'][i] || ('L' + (i+1));
+    const allocPct = Number(b.allocation) / 100;
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:10px 0;border-top:1px solid var(--line)';
+    if (i === 0) row.style.borderTop = 'none';
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><span class="tag ${tier}">${tierLabel}</span> <span class="addr">${short(b.strategy)}</span></div>
+        <div class="v">${allocPct}%</div>
+      </div>
+      <div class="bar"><i class="${tier}" style="width:${allocPct}%"></i></div>
+      <div class="row"><span class="k">Deposited</span><span class="v">${f(b.deposited)} ${sym}</span></div>
+      <div class="row"><span class="k">Yield accrued</span><span class="v">${f(b.yieldAccrued)} ${sym}</span></div>
+    `;
+    list.appendChild(row);
+  }
+}
+
+function watchEvents() {
+  if (!CONFIG.VAULT) return;
+  const vault = new Contract(CONFIG.VAULT, VAULT_ABI, state.provider);
+  const log = $('events');
+  log.innerHTML = '';
+  const push = (line) => {
+    const d = document.createElement('div');
+    d.style.cssText = 'padding:6px 0;border-top:1px solid var(--line);font-family:ui-monospace,monospace;font-size:12px';
+    d.textContent = new Date().toLocaleTimeString() + ' — ' + line;
+    log.prepend(d);
+  };
+  vault.on('Deposited', (u, a, s) =>
+    push(`Deposited ${formatUnits(a, state.decimals)} by ${short(u)} → ${formatUnits(s, state.decimals)} shares`));
+  vault.on('Withdrawn', (u, a, s) =>
+    push(`Withdrawn ${formatUnits(a, state.decimals)} by ${short(u)}`));
+  vault.on('Harvested', (id, p) =>
+    push(`Bucket ${id} harvested +${formatUnits(p, state.decimals)}`));
+}
+
+async function approve() {
+  const amt = $('dep-amt').value;
+  if (!amt || !state.signer) return;
+  try {
+    const asset = new Contract(CONFIG.ASSET, ERC20_ABI, state.signer);
+    const tx = await asset.approve(CONFIG.VAULT, parseUnits(amt, state.decimals));
+    toast('Approve tx sent: ' + short(tx.hash));
+    await tx.wait();
+    toast('Approved', 'ok');
+    refresh();
+  } catch (e) { toast('Approve failed: ' + (e.shortMessage || e.message), 'err'); }
+}
+async function deposit() {
+  const amt = $('dep-amt').value;
+  if (!amt || !state.signer) return;
+  try {
+    const vault = new Contract(CONFIG.VAULT, VAULT_ABI, state.signer);
+    const tx = await vault.deposit(parseUnits(amt, state.decimals));
+    toast('Deposit tx sent: ' + short(tx.hash));
+    await tx.wait();
+    toast('Deposit confirmed', 'ok');
+    refresh();
+  } catch (e) { toast('Deposit failed: ' + (e.shortMessage || e.message), 'err'); }
+}
+async function withdraw() {
+  const amt = $('wd-amt').value;
+  if (!amt || !state.signer) return;
+  try {
+    const vault = new Contract(CONFIG.VAULT, VAULT_ABI, state.signer);
+    const tx = await vault.withdraw(parseUnits(amt, state.decimals));
+    toast('Withdraw tx sent: ' + short(tx.hash));
+    await tx.wait();
+    toast('Withdraw confirmed', 'ok');
+    refresh();
+  } catch (e) { toast('Withdraw failed: ' + (e.shortMessage || e.message), 'err'); }
+}
+async function depMax() {
+  if (!state.signer) return;
+  const asset = new Contract(CONFIG.ASSET, ERC20_ABI, state.signer);
+  const bal = await asset.balanceOf(state.user);
+  $('dep-amt').value = formatUnits(bal, state.decimals);
+}
+async function wdMax() {
+  if (!state.signer || !CONFIG.VAULT) return;
+  const vault = new Contract(CONFIG.VAULT, VAULT_ABI, state.signer);
+  const s = await vault.shares(state.user);
+  $('wd-amt').value = formatUnits(s, state.decimals);
+}
+
+// Tab handling
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x === b));
+  $('tab-deposit').classList.toggle('hidden', b.dataset.tab !== 'deposit');
+  $('tab-withdraw').classList.toggle('hidden', b.dataset.tab !== 'withdraw');
+}));
+
+$('connect').onclick       = connect;
+$('dep-approve').onclick   = approve;
+$('dep-deposit').onclick   = deposit;
+$('wd-withdraw').onclick   = withdraw;
+$('dep-max').onclick       = depMax;
+$('wd-max').onclick        = wdMax;
+
+// Offline banner
+function updateOnline() {
+  $('offline-banner').classList.toggle('hidden', navigator.onLine);
+}
+window.addEventListener('online',  updateOnline);
+window.addEventListener('offline', updateOnline);
+updateOnline();
+
+// Prime agents: register service worker + post vault config
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    if (reg.active) {
+      reg.active.postMessage({
+        type: 'prime-agent',
+        role: 'vault-ui',
+        config: {
+          vault: CONFIG.VAULT, asset: CONFIG.ASSET, chainId: CONFIG.LINEA_CHAIN_ID,
+        },
+      });
+    }
+  }).catch(() => {});
+}
+
+// Auto-connect if previously authorized
+if (window.ethereum && window.ethereum.selectedAddress) connect();
+else loadConfig();
+</script>
+</body>
+</html>
