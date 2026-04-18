@@ -302,7 +302,7 @@ function select(n){
   el.innerHTML =
     '<b>'+esc(n.id)+'</b>'+
     '<div class="kv">status: <b>'+esc(n.status||'unknown')+'</b></div>'+
-    '<div class="kv">cpu: <b>'+esc((n.cpu==null?'—':n.cpu+'%'))+'</b> · mem: <b>'+esc((n.mem==null?'—':n.mem+'%'))+'</b></div>'+
+    '<div class="kv">cpu: <b>'+esc((n.cpu==null?'—':n.cpu+'%'))+'</b> · mem: <b>'+esc((n.mem_mb==null?'—':(n.mem_mb>=1024?(n.mem_mb/1024).toFixed(1)+' GB':n.mem_mb+' MB')))+'</b></div>'+
     '<button class="act" data-a="restart">restart</button>'+
     '<button class="act" data-a="reload">reload</button>';
   el.querySelectorAll('button').forEach(b => b.onclick = () => action(n.id, b.dataset.a));
@@ -370,7 +370,7 @@ async function fetchOverview(){
           const prevStatus = n.status;
           n.status = s.status;
           n.cpu = s.cpu;
-          n.mem = s.mem;
+          n.mem_mb = s.mem_mb;
           n.restarts = s.restarts;
           if (prevStatus && prevStatus !== s.status){
             log(s.name+' → '+s.status, s.status==='online' ? 'info' : 'err');
@@ -381,7 +381,7 @@ async function fetchOverview(){
       // update positioned copies too so render() picks up new tone
       nodes.forEach(n => {
         const src = topology.nodes.find(x => x.id === n.id);
-        if (src){ n.status = src.status; n.cpu = src.cpu; n.mem = src.mem; n.restarts = src.restarts; }
+        if (src){ n.status = src.status; n.cpu = src.cpu; n.mem_mb = src.mem_mb; n.restarts = src.restarts; }
       });
     }
   } catch(e){
