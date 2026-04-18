@@ -61,7 +61,11 @@ http.createServer((req, res) => {
   const u = req.url.split('?')[0];
   if (u === '/' || u === '/index.html' || u === '/orchestra') return serveHtml(res);
   if (u.startsWith('/admin') || u.startsWith('/api')) return proxy(req, res);
-  if (u === '/healthz'){ res.writeHead(200,{'content-type':'text/plain'}); return res.end('ok'); }
+  if (u === '/healthz'){
+    const ok = process.uptime() > 1 && PORT > 0 && !!UPSTREAM_HOST && fs.existsSync(HTML);
+    res.writeHead(ok ? 200 : 500, {'content-type':'text/plain','cache-control':'no-store'});
+    return res.end(ok ? 'ok' : 'fail');
+  }
   if (u === '/favicon.ico'){ res.writeHead(204); return res.end(); }
   res.writeHead(404,{'content-type':'text/plain'}); res.end('not found: '+u);
 }).listen(PORT, '127.0.0.1', () => {
