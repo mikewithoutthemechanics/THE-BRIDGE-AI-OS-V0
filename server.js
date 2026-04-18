@@ -25,7 +25,7 @@ const crypto = require("crypto");
 
 // Single canonical domain configuration
 const BASE_URL = process.env.BASE_URL || 'https://bridge-ai-os.com';
-const ALLOWED_ORIGINS = [BASE_URL, 'https://wall.bridge-ai-os.com', 'https://admin.bridge-ai-os.com', 'http://localhost:3000', 'http://localhost:8080'];
+const ALLOWED_ORIGINS = [BASE_URL, 'https://wall.bridge-ai-os.com', 'http://localhost:3000', 'http://localhost:8080'];
 const path = require("path");
 const fs = require("fs");
 const { Pool } = require('pg');
@@ -36,7 +36,6 @@ const mail   = require('./lib/mail');
 const da     = require('./lib/directadmin');
 const wp     = require('./lib/wordpress');
 const wpAuth = require('./lib/wp-auth');
-const { isSuperUser } = require('./middleware/auth');
 // CSRF: csurf is deprecated and removed — use SameSite cookies + Origin header checks
 // Auth middleware disabled at global level — individual admin routes use requireAdmin
 // const { requireAuth } = require('./middleware/auth');
@@ -79,16 +78,6 @@ app.use((req, res, next) => {
   ].join('; '));
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  next();
-});
-
-// Admin subdomain — root path lands on the Master Admin Hub.
-// MUST run before express.static because public/index.html would otherwise win.
-// Non-root paths on admin.* fall through to normal routing (shortRoutes etc.).
-app.use((req, res, next) => {
-  if (req.path !== '/') return next();
-  const host = (req.headers.host || '').toLowerCase();
-  if (host.startsWith('admin.')) return res.redirect('/admin-hub');
   next();
 });
 
@@ -536,7 +525,6 @@ app.get('/api/registry/treasury', requireAdmin, [validate.registryTreasury], asy
 app.get("/", (req, res) => {
   const host = (req.headers.host || '').toLowerCase();
   const routes = {
-    'admin.': '/admin-hub',
     'rootedearth': '/rootedearth', 'ehsa': '/ehsa', 'supac': '/supac',
     'ban.': '/ban', 'aid.': '/aid', 'ubi.': '/ubi', 'aurora': '/aurora',
     'hospitalinabox': '/hospital', 'abaas.': '/abaas',
@@ -962,7 +950,6 @@ function requireAuth(req, res, next) {
     '/api/version', // if exists
     '/api/platform/', // platform layer handles its own auth via requireUser()
     '/api/twin/',     // twin layer handles its own auth via resolveUser()
-    '/api/bank/',     // continuity ledger — gated by requireAdmin in continuity-routes.js
     '/api/siwe/',               // SIWE is public — no token needed to get nonce or verify
     '/api/config-engine/health', // engine health is public
     '/api/uloe/health',          // ULOE health is public
@@ -977,7 +964,7 @@ function requireAuth(req, res, next) {
     '/api/skills',
     '/api/marketplace/tasks',
     '/api/twin/env-keys',
-    '/api/ubi/',
+    '/api/ubi/claim',
     '/api/sensors/',
     '/api/economy/',
     '/api/analytics/',
@@ -1012,7 +999,6 @@ function requireAuth(req, res, next) {
     '/api/wordpress/',
     '/api/email/',
     '/api/tvm/',
-    '/api/auth/login',
   ];
   
   if (publicEndpoints.some(endpoint => req.path.startsWith(endpoint))) {
@@ -1520,144 +1506,8 @@ app.get('/api/auth/wp-plugin', [validate.authWpPlugin], (req, res) => {
   res.send(snippet);
 });
 
-// ═══════════════════════════════════════════════════════════════
-// BRIDGE ECONOMIC LOOP — login → avatar → wallet → agent → pay
-// ═══════════════════════════════════════════════════════════════
-
-// In-memory store (TODO: replace with Supabase tables in production)
-// Schema mirrors the intended Supabase tables so migration is a
-// drop-in replacement of the CRUD helpers below.
-const _ecoUsers   = new Map(); // email → { id, email, avatarId, walletId }
-const _ecoAvatars = new Map(); // id    → { id, userId, name }
-const _ecoWallets = new Map(); // id    → { id, ownerId, ownerType, balance }
-const _ecoAgents  = new Map(); // id    → { id, parentAvatarId, walletId, name, tier }
-let   _ecoSeq     = 1;
-function _nextId(prefix) { return `${prefix}_${_ecoSeq++}`; }
-
-function _ensureUserEconomy(userId, email) {
-  if (!_ecoUsers.has(email)) {
-    const avatarId = _nextId('av');
-    const walletId = _nextId('wl');
-    _ecoAvatars.set(avatarId, { id: avatarId, userId, name: email.split('@')[0] });
-    _ecoWallets.set(walletId, { id: walletId, ownerId: avatarId, ownerType: 'avatar', balance: 0 });
-    _ecoUsers.set(email, { id: userId, email, avatarId, walletId });
-  }
-  return _ecoUsers.get(email);
-}
-
-// POST /api/auth/login — issue JWT, auto-create avatar + wallet
-// Public endpoint (listed in publicEndpoints above).
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email } = req.body || {};
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return res.status(400).json({ error: 'Valid email required' });
-    }
-    const normalEmail = email.toLowerCase().trim();
-    const secret = process.env.JWT_SECRET;
-    if (!secret) return res.status(500).json({ error: 'Authentication service unavailable' });
-
-    // Re-use existing user record; only create a new ID for genuinely new users
-    const existingUser = _ecoUsers.get(normalEmail);
-    const userId = existingUser ? existingUser.id : _nextId('u');
-    const ecoUser = _ensureUserEconomy(userId, normalEmail);
-
-    const payload = {
-      sub: ecoUser.id,
-      email: normalEmail,
-      role: isSuperUser(normalEmail) ? 'superadmin' : 'member',
-    };
-    const token = jwt.sign(payload, secret, { expiresIn: '7d' });
-
-    return res.json({
-      token,
-      email: normalEmail,
-      userId: ecoUser.id,
-      avatarId: ecoUser.avatarId,
-      walletId: ecoUser.walletId,
-    });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// GET /api/me — return user, avatar, wallet, agents (requires auth)
-app.get('/api/me', async (req, res) => {
-  try {
-    const email = req.user?.email;
-    if (!email) return res.status(401).json({ error: 'Not authenticated' });
-
-    const ecoUser = _ecoUsers.get(email) || _ensureUserEconomy(req.user.sub || _nextId('u'), email);
-    const avatar  = _ecoAvatars.get(ecoUser.avatarId);
-    const wallet  = _ecoWallets.get(ecoUser.walletId);
-    const agents  = [..._ecoAgents.values()].filter(a => a.parentAvatarId === ecoUser.avatarId);
-
-    return res.json({ user: ecoUser, avatar, wallet, agents });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /api/agents/create — create agent under the calling user's avatar
-app.post('/api/agents/create', async (req, res) => {
-  try {
-    const email = req.user?.email;
-    if (!email) return res.status(401).json({ error: 'Not authenticated' });
-
-    const { name, tier } = req.body || {};
-    if (!name || typeof name !== 'string') {
-      return res.status(400).json({ error: 'Agent name required' });
-    }
-    const validTiers = ['standard', 'pro'];
-    const agentTier = validTiers.includes(tier) ? tier : 'standard';
-
-    const ecoUser = _ecoUsers.get(email) || _ensureUserEconomy(req.user.sub || _nextId('u'), email);
-    const agentId   = _nextId('ag');
-    const agentWalletId = _nextId('wl');
-
-    _ecoWallets.set(agentWalletId, { id: agentWalletId, ownerId: agentId, ownerType: 'agent', balance: 0 });
-    const agent = { id: agentId, parentAvatarId: ecoUser.avatarId, walletId: agentWalletId, name, tier: agentTier };
-    _ecoAgents.set(agentId, agent);
-
-    return res.status(201).json({ agent });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /api/pay — process payment and distribute revenue shares
-// Distribution: UBI 40% · Treasury 30% · Ops 20% · Founder 10%
-app.post('/api/pay', async (req, res) => {
-  try {
-    const email = req.user?.email;
-    if (!email) return res.status(401).json({ error: 'Not authenticated' });
-
-    const amount = Number(req.body?.amount);
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: 'Positive amount required' });
-    }
-
-    const shares = {
-      ubi:      +(amount * 0.40).toFixed(2),
-      treasury: +(amount * 0.30).toFixed(2),
-      ops:      +(amount * 0.20).toFixed(2),
-      founder:  +(amount * 0.10).toFixed(2),
-    };
-
-    // Credit the paying user's wallet
-    const ecoUser = _ecoUsers.get(email);
-    if (ecoUser) {
-      const wallet = _ecoWallets.get(ecoUser.walletId);
-      if (wallet) wallet.balance = +(wallet.balance + shares.ubi).toFixed(2);
-    }
-
-    return res.json({ ok: true, amount, shares });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// ── Topic Vector Matrix (TVM) ───────────const tvm = require('./lib/tvm');
+// ── Topic Vector Matrix (TVM) ───────────
+const tvm = require('./lib/tvm');
 app.get('/api/tvm', [validate.tvm], (req, res) => res.json(tvm.getMatrix()));
 app.get('/api/tvm/summary', [validate.tvmSummary], (req, res) => res.json(tvm.getSummary()));
 app.get('/api/tvm/recommendations/all', [validate.tvmRecommendations], (req, res) => res.json(tvm.RECOMMENDATIONS));
@@ -1692,10 +1542,32 @@ app.get('/api/treasury/status',
       const total = buckets.rows.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
       const bucketMap = {};
       buckets.rows.forEach(b => { bucketMap[b.name] = parseFloat(b.balance || 0); });
-      res.json({ balance: total, distributed: total, ubi: bucketMap.ubi || 25000, treasury: bucketMap.treasury || 100000, ops: bucketMap.operations || bucketMap.ops || 125, founder: bucketMap.founder || 25000 });
-    } catch(e) {
-      // Return seeded mock data for dashboard when DB unavailable
-      res.json({ balance: 157500, distributed: 157500, ubi: 25000, treasury: 100000, ops: 125, founder: 25000 });
+      res.json({ ok: true, balance: total, distributed: total, ubi: bucketMap.ubi || 0, treasury: bucketMap.treasury || 0, ops: bucketMap.operations || bucketMap.ops || 0, founder: bucketMap.founder || 0, source: 'economy-db' });
+    } catch(dbErr) {
+      try {
+        const brdgChain = require('./lib/brdg-chain');
+        const [stats, vault] = await Promise.all([
+          brdgChain.getTokenStats(),
+          brdgChain.getVaultBuckets().catch(() => null),
+        ]);
+        const balance = parseFloat(stats.treasury.brdgBalance) || 0;
+        const vaultTotal = vault && vault.brdg && !vault.error
+          ? ['ops', 'liquidity', 'reserve', 'founder'].reduce((s, k) => s + (parseFloat(vault.brdg[k]) || 0), 0)
+          : 0;
+        const useVault = vaultTotal > 0;
+        res.json({
+          ok: true,
+          balance,
+          distributed: useVault ? vaultTotal : balance,
+          ubi:      useVault ? parseFloat(vault.brdg.liquidity) : balance * 0.15,
+          treasury: useVault ? parseFloat(vault.brdg.reserve)   : balance * 0.15,
+          ops:      useVault ? parseFloat(vault.brdg.ops)       : balance * 0.45,
+          founder:  useVault ? parseFloat(vault.brdg.founder)   : balance * 0.25,
+          source: useVault ? 'vault-onchain' : 'policy-split',
+        });
+      } catch (chainErr) {
+        res.status(503).json({ ok: false, error: 'treasury unavailable', db: dbErr.message, chain: chainErr.message });
+      }
     }
   });
 
@@ -2380,17 +2252,7 @@ const shortRoutes = {
   '/wallet': '/wallet.html', '/docs': '/docs.html', '/pricing': '/pricing.html',
   '/settings': '/settings.html', '/affiliate': '/affiliate.html',
   '/brand': '/brand.html', '/corporate': '/corporate.html', '/join': '/join.html',
-  '/admin': '/admin.html', '/admin-hub': '/admin-hub.html',
-  '/admin-esim': '/admin-esim.html', '/admin-users': '/admin.html',
-  '/executive-dashboard': '/executive-dashboard.html',
-  '/aoe-dashboard': '/aoe-dashboard.html', '/svg-engine': '/svg-engine.html',
-  '/carrier-admin': '/carrier-admin.html', '/godmode-terminal': '/godmode-terminal.html',
-  '/bridge-audit-dashboard': '/bridge-audit-dashboard.html',
-  '/supadash': '/supadash.html',
-  '/twin-orchestration': '/twin-orchestration.html',
-  '/bank-ledger':        '/bank-ledger.html',
-  '/affiliate-flow':     '/affiliate-flow.html',
-  '/agents': '/agents.html', '/avatar': '/avatar.html',
+  '/admin': '/admin.html', '/agents': '/agents.html', '/avatar': '/avatar.html',
   '/control': '/control.html', '/dashboard': '/dashboard.html', '/activate': '/activate.html',
   '/ehsa-app': '/ehsa-app.html', '/ehsa-brain': '/ehsa-brain.html',
   '/executive': '/executive-dashboard.html', '/home': '/home.html',
@@ -2547,12 +2409,6 @@ registerEconomyRoutes(app);
 
 const { registerPrimeRoutes } = require('./lib/prime-routes');
 registerPrimeRoutes(app);
-
-// Continuity: twin orchestration + Bank-settled expense ledger (idempotent).
-// Feeds /twin-orchestration, /bank-ledger, /affiliate-flow admin panels.
-const { registerContinuityRoutes } = require('./lib/continuity-routes');
-registerContinuityRoutes(app, { requireAdmin });
-console.log('[CONTINUITY] Twin supervisor + Bank ledger routes mounted');
 
 // Auto-task loop — starts generating/claiming/completing tasks autonomously
 const autoLoop = require('./lib/auto-task-loop');
@@ -3044,21 +2900,86 @@ app.get('/api/crm/pipeline', (req, res) => {
   });
 });
 
-// ================= SERVER =================
-const PORT = process.env.PORT || 3000;
-// Only bind to a port when run directly, not when required by tests
-if (require.main === module) {
-  app.listen(PORT, async () => {
-    console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
+// ================= ADMIN SUPERUSER ENDPOINTS =================
 
-    // Start Config Intelligence Engine after server is bound
-    try {
-      const configEngine = require('./engine/config-intelligence');
-      await configEngine.start({ enableReconciler: true });
-    } catch (err) {
-      console.warn('[SERVER] Config Intelligence Engine failed to start:', err.message);
-    }
-  });
+// Superuser configuration
+const SUPERUSERS = [
+  'ryanpcowan@gmail.com',
+  'michaelgraemek@gmail.com',
+  'marvin.saunders@gmail.com'
+];
+
+function isSuperUser(email) {
+  if (typeof email !== 'string') return false;
+  return SUPERUSERS.includes(email.toLowerCase());
 }
 
-module.exports = app;
+// Admin access verification
+app.get('/api/admin/check-access', (req, res) => {
+  const userEmail = req.query.user_email;
+  if (!userEmail) {
+    return res.status(400).json({ error: 'user_email parameter required' });
+  }
+
+  const isSuper = isSuperUser(userEmail);
+  res.json({
+    email: userEmail,
+    is_superuser: isSuper,
+    access_level: isSuper ? 'superadmin' : 'member',
+    admin_pages: isSuper ? [
+      '/admin.html',
+      '/admin-command.html',
+      '/admin-revenue.html',
+      '/admin-withdraw.html',
+      '/dashboard.html',
+      '/intelligence.html',
+      '/executive-dashboard.html',
+      '/aoe-dashboard.html',
+      '/bridge-audit-dashboard.html',
+      '/auth-dashboard.html',
+      '/godmode-terminal.html'
+    ] : []
+  });
+});
+
+// List all superusers
+app.get('/api/admin/superusers', (req, res) => {
+  res.json({
+    ok: true,
+    superusers: SUPERUSERS,
+    count: SUPERUSERS.length
+  });
+});
+
+// Send superuser notification
+app.post('/api/admin/notify-superuser', (req, res) => {
+  const { email, subject, message } = req.body;
+
+  if (!email || !isSuperUser(email)) {
+    return res.status(403).json({ error: 'Invalid superuser email' });
+  }
+
+  // In production, integrate with Brevo/SendGrid here
+  console.log(`[ADMIN NOTIFY] ${email} - ${subject}`);
+  res.json({
+    status: 'notification_queued',
+    email,
+    subject,
+    message,
+    note: 'Email sending not implemented in demo mode. Configure BREVO_SMTP_KEY for production.'
+  });
+});
+
+// ================= SERVER =================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, async () => {
+  console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
+
+  // Start Config Intelligence Engine after server is bound
+  try {
+    const configEngine = require('./engine/config-intelligence');
+    await configEngine.start({ enableReconciler: true });
+  } catch (err) {
+    console.warn('[SERVER] Config Intelligence Engine failed to start:', err.message);
+  }
+});

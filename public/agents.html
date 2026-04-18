@@ -125,6 +125,39 @@
 
     var tasksRun = 0;
 
+    // ---- Auth helpers (2026-04-18: fix for Missing auth token) ----
+    // Reads the existing session token that bridge-nav.js / login.html already
+    // persist. Never mints credentials; if nothing is available, we surface a
+    // sign-in prompt on the failing card.
+    function _readToken() {
+      try {
+        return localStorage.getItem('bridge_token')
+            || localStorage.getItem('bridge_user_token')
+            || '';
+      } catch (_) { return ''; }
+    }
+    var _token = _readToken();
+
+    function authHeaders(extra) {
+      var h = Object.assign({}, extra || {});
+      _token = _readToken(); // pick up any token freshly set by another tab/page
+      if (_token) h['Authorization'] = 'Bearer ' + _token;
+      return h;
+    }
+
+    async function authFetch(path, opts) {
+      opts = opts || {};
+      var headers = authHeaders(opts.headers);
+      if (opts.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+      return fetch(path, Object.assign({ credentials: 'include' }, opts, { headers: headers }));
+    }
+
+    function signInHint() {
+      var next = encodeURIComponent(location.pathname + location.search);
+      return 'Sign in required \u2014 <a href="/login?next=' + next + '" style="color:#63ffda;text-decoration:underline">open /login</a>';
+    }
+    // ---- /Auth helpers ----
+
     function timeAgo(iso) {
       if (!iso) return 'never';
       var s = Math.floor((Date.now() - new Date(iso)) / 1000);
@@ -232,7 +265,7 @@
     async function loadOutputs() {
       try {
         // Single source of truth — reads system_state, never triggers execution
-        var res   = await fetch('/api/system/state');
+        var res   = await authFetch('/api/system/state');
         var state = await res.json();
 
         var agents  = state.agents  || {};
@@ -285,9 +318,8 @@
 
       var t0 = Date.now();
       try {
-        var r = await fetch('/api/agents/run', {
+        var r = await authFetch('/api/agents/run', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ agentName: name, input: inp.value }),
         });
         var data    = await r.json();
@@ -302,7 +334,12 @@
           tasksRun++;
           document.getElementById('tasksRun').textContent = tasksRun;
         } else {
-          out.textContent = 'Error: ' + (data.error || 'Unknown');
+          var errMsg = data && data.error ? data.error : 'Unknown';
+          if (/missing auth token|not authenticated|unauthorized/i.test(errMsg)) {
+            out.innerHTML = signInHint();
+          } else {
+            out.textContent = 'Error: ' + errMsg;
+          }
           card.className  = 'agent-card error';
           dot.className   = 'agent-dot error';
         }
