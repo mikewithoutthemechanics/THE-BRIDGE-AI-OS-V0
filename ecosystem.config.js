@@ -92,7 +92,7 @@ module.exports = {
     // ── GOD MODE Monitor (port 3001) — topology dashboard ────────────────────
     {
       ...BASE,
-      name:        'god-mode-system',
+      name:        'god-mode-topology',
       script:      'system.js',
       out_file:    './logs/system-out.log',
       error_file:  './logs/system-error.log',
@@ -105,12 +105,13 @@ module.exports = {
     // ── BAN Task Engine (port 8001) — Python/FastAPI ──────────────────────────
     // NOTE: script path is environment-specific. On VPS use: /usr/bin/python3
     // Override by setting BAN_PYTHON env var before starting PM2.
+    // cwd matches VPS_DIR in deploy-vps.sh (rsync target). Override with BAN_CWD.
     {
       ...BASE,
       name:        'ban-engine',
       script:      process.env.BAN_PYTHON || '/usr/bin/python3',
       args:        '-m uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 1',
-      cwd:         process.env.BAN_CWD || '/var/www/bridgeai/BAN',
+      cwd:         process.env.BAN_CWD || '/var/www/bridgeai',
       interpreter: 'none',
       max_memory_restart: '256M',
       out_file:    './logs/ban-out.log',

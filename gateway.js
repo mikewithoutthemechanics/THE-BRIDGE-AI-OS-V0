@@ -34,6 +34,7 @@ app.get("/bans", async (req, res) => {
   res.json(data);
 });
 
-app.listen(3000, () => {
-  console.log("GATEWAY RUNNING ON 3000");
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`GATEWAY RUNNING ON ${PORT}`);
 });
