@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
 <title>ORCHESTRA — Neural Exchange</title>
 <style>
   :root{
@@ -187,7 +188,13 @@
   @media (prefers-reduced-motion: reduce){
     .topo .orbit,.topo .edge,.topo .pulse,.topo .hubPulse,.topo .hubPulse2,
     .topo .sweep,.topo .hubCorona,.topo .hubHalo,.topo .packet{animation:none}
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
   }
+  /* Anchor-stub sections: invisible but scroll-addressable so rail nav has a target */
+  .anchor-stub{display:block;height:1px;width:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);position:relative}
+  /* Focus ring for keyboard-reachable SVG nodes (pair with tabindex="0" in script) */
+  .topo .nodeG:focus{outline:none}
+  .topo .nodeG:focus .ring{stroke:var(--accent);stroke-width:2}
   /* Tablet / narrow laptop */
   @media (max-width: 1100px){
     .topo svg{max-height:52vh}
@@ -270,9 +277,9 @@
   <nav class="rail">
     <button class="r active" data-href="."><span class="icon">hub</span><span class="label">Hub</span></button>
     <button class="r" data-href="#topo"><span class="icon">lan</span><span class="label">Nodes</span></button>
-    <button class="r" data-href="#exchanges"><span class="icon">sync_alt</span><span class="label">Exchanges</span></button>
-    <button class="r" data-href="#latency"><span class="icon">speed</span><span class="label">Latency</span></button>
-    <button class="r" data-href="#gov"><span class="icon">account_balance</span><span class="label">Governance</span></button>
+    <button class="r" data-href="#flows"><span class="icon">sync_alt</span><span class="label">Exchanges</span></button>
+    <button class="r" data-href="#metrics"><span class="icon">speed</span><span class="label">Latency</span></button>
+    <button class="r" data-href="#control"><span class="icon">account_balance</span><span class="label">Governance</span></button>
     <div class="spacer"></div>
     <button class="r" id="btnDeploy"><span class="icon">rocket_launch</span><span class="label">Deploy Node</span></button>
     <button class="r" id="btnSettings"><span class="icon">settings</span><span class="label">Settings</span></button>
@@ -401,6 +408,11 @@
         <g id="topoNodes"></g>
       </svg>
     </section>
+
+    <!-- Anchor targets for rail navigation. Kept lightweight; content is sourced from #grid + #feed. -->
+    <section id="flows"   class="anchor-stub" aria-label="protocol exchanges" data-rail-target="1"></section>
+    <section id="metrics" class="anchor-stub" aria-label="latency metrics"    data-rail-target="1"></section>
+    <section id="control" class="anchor-stub" aria-label="governance control" data-rail-target="1"></section>
 
     <div class="toolbar">
       <div class="tabs" id="tabs">
@@ -896,15 +908,53 @@ document.getElementById('btnDeploy').addEventListener('click', ()=>{
 document.getElementById('btnSettings').addEventListener('click', ()=>{
   pushEvent('Settings opened', 'operator console → preferences');
 });
+// Rail nav with anchor validation. Hard-stops on missing target so broken links
+// surface in the feed instead of silently no-op-ing.
 document.querySelectorAll('.rail .r[data-href]').forEach(r=>{
   r.addEventListener('click', ()=>{
+    const href = r.dataset.href;
+    if (href && href.startsWith('#')){
+      // CSS.escape guards against IDs with special characters
+      const sel = '#' + CSS.escape(href.slice(1));
+      const target = document.querySelector(sel);
+      if (!target){
+        pushEvent('Navigation error', `missing anchor target ${href}`);
+        return; // do NOT mark active — leave focus on currently active button
+      }
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+    } else if (href === '.'){
+      document.querySelector('.main')?.scrollTo({top:0,behavior:'smooth'});
+    }
     document.querySelectorAll('.rail .r').forEach(x=>x.classList.remove('active'));
     r.classList.add('active');
-    const href = r.dataset.href;
-    if (href && href.startsWith('#')) document.querySelector(href)?.scrollIntoView({behavior:'smooth',block:'start'});
-    else if (href === '.') document.querySelector('.main')?.scrollTo({top:0,behavior:'smooth'});
   });
 });
+
+// Keyboard-nav for SVG nodes: Enter or Space triggers the existing click handler.
+// Applied in a mutation observer because nodes are injected dynamically by renderTopo().
+(function wireNodeKeyboard(){
+  const container = document.getElementById('topoNodes');
+  if (!container) return;
+  const enhance = g => {
+    if (g.dataset.a11yWired) return;
+    g.dataset.a11yWired = '1';
+    g.setAttribute('tabindex','0');
+    g.setAttribute('role','button');
+    const name = g.dataset.name || 'node';
+    g.setAttribute('aria-label', `agent node ${name}`);
+    g.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        g.dispatchEvent(new MouseEvent('click', {bubbles:true}));
+      }
+    });
+  };
+  new MutationObserver(() => {
+    container.querySelectorAll('.nodeG').forEach(enhance);
+  }).observe(container, {childList:true, subtree:false});
+  // Enhance any nodes already present on first paint
+  container.querySelectorAll('.nodeG').forEach(enhance);
+})();
 
 // seed feed with real boot lines (live diff events take over on first successful tick)
 state.events = [
