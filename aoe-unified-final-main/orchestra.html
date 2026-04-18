@@ -151,22 +151,67 @@
   .topo .edge{fill:none;stroke-width:1;opacity:.45}
   .topo .edge.on{stroke:var(--accent)} .topo .edge.wa{stroke:var(--warn)} .topo .edge.of{stroke:var(--err)}
   .topo .edge.hot{opacity:.9;filter:drop-shadow(0 0 4px currentColor)}
+  /* Background tactical grid — subtle, non-distracting */
+  .topo .bg{opacity:.85}
+  /* Orbit rings spin slowly; compass ticks inherit the spin so the bearing marks drift past */
   @keyframes topoSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   .topo .orbit{transform-box:fill-box;transform-origin:50% 50%;animation:topoSpin 240s linear infinite}
+  /* Radar sweep wedge: faster counter-spin, origin pinned to hub */
+  @keyframes sweepSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .topo .sweep{transform-box:fill-box;transform-origin:400px 225px;animation:sweepSpin 8s linear infinite}
+  /* Edge flow particles: short dashes travel along the path toward each node */
   @keyframes topoDash{to{stroke-dashoffset:-40}}
   .topo .edge{stroke-dasharray:2 6;animation:topoDash 6s linear infinite}
   .topo .edge.hot{animation-duration:2s}
+  /* Node pulse rings expanding outward */
   @keyframes topoPulse{0%{r:8;opacity:.9}100%{r:26;opacity:0}}
   .topo .pulse{animation:topoPulse 1.8s ease-out infinite}
   .topo .pulse.wa{animation-duration:1.2s} .topo .pulse.of{animation-duration:.9s}
+  /* Two-phase hub heartbeat: inner pulse + offset outer pulse */
   .topo .hubPulse{animation:topoPulse 2.4s ease-out infinite}
-  @media (prefers-reduced-motion: reduce){
-    .topo .orbit,.topo .edge,.topo .pulse,.topo .hubPulse{animation:none}
+  .topo .hubPulse2{animation:topoPulse 2.4s ease-out infinite;animation-delay:1.2s}
+  /* Corona breathe: halo softly inhales/exhales */
+  @keyframes coronaBreathe{
+    0%,100%{opacity:.45;transform:scale(.92)}
+    50%    {opacity:.95;transform:scale(1.05)}
   }
+  .topo .hubCorona{transform-box:fill-box;transform-origin:400px 225px;animation:coronaBreathe 4.5s ease-in-out infinite}
+  /* Halo ring slow rotation so it feels alive without spinning the orbit */
+  @keyframes haloSpin{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+  .topo .hubHalo{transform-box:fill-box;transform-origin:400px 225px;animation:haloSpin 30s linear infinite,coronaBreathe 6s ease-in-out infinite}
+  /* Data packets flowing from hub to nodes along edges */
+  .topo .packet{fill:#b9ffe0;filter:drop-shadow(0 0 4px #00ff9c)}
+  .topo .packet.wa{fill:#ffd699;filter:drop-shadow(0 0 4px #ffb347)}
+  .topo .packet.of{fill:#ffadbb;filter:drop-shadow(0 0 4px #ff4d6d)}
+  /* Accessibility: kill all animation for users that ask */
+  @media (prefers-reduced-motion: reduce){
+    .topo .orbit,.topo .edge,.topo .pulse,.topo .hubPulse,.topo .hubPulse2,
+    .topo .sweep,.topo .hubCorona,.topo .hubHalo,.topo .packet{animation:none}
+  }
+  /* Tablet / narrow laptop */
+  @media (max-width: 1100px){
+    .topo svg{max-height:52vh}
+  }
+  /* Mobile portrait */
   @media (max-width: 768px){
-    .topo svg{aspect-ratio: 4/3;max-height:70vh}
-    .topo .legend{font-size:9px;gap:10px}
-    .topo .sel{font-size:10px;max-width:60%}
+    .topo svg{aspect-ratio: 4/3;max-height:72vh}
+    .topo .legend{font-size:9px;gap:10px;top:8px;left:10px}
+    .topo .sel{font-size:10px;max-width:60%;top:8px;right:10px;padding:4px 8px}
+    .topo .hubLabel{font-size:11px;letter-spacing:2px}
+    .topo .hubSub{font-size:9px;letter-spacing:1.5px}
+    /* Thin out the background grid so it reads cleanly on small screens */
+    .topo .bg{opacity:.55}
+  }
+  /* Mobile landscape — prioritize height of SVG */
+  @media (max-width: 900px) and (orientation: landscape){
+    .topo svg{aspect-ratio:16/9;max-height:88vh}
+  }
+  /* Very small phones */
+  @media (max-width: 480px){
+    .topo svg{aspect-ratio:1/1;max-height:82vh}
+    .topo .legend span:not(:first-child){display:none}
+    .topo .hubLabel{font-size:10px}
+    .topo .hubSub{display:none}
   }
 
   /* ── scrollbar ──────────────────────────────────── */
@@ -224,7 +269,7 @@
   <!-- ── left rail ───────────────────────────────── -->
   <nav class="rail">
     <button class="r active" data-href="."><span class="icon">hub</span><span class="label">Hub</span></button>
-    <button class="r" data-href="#nodes"><span class="icon">lan</span><span class="label">Nodes</span></button>
+    <button class="r" data-href="#topo"><span class="icon">lan</span><span class="label">Nodes</span></button>
     <button class="r" data-href="#exchanges"><span class="icon">sync_alt</span><span class="label">Exchanges</span></button>
     <button class="r" data-href="#latency"><span class="icon">speed</span><span class="label">Latency</span></button>
     <button class="r" data-href="#gov"><span class="icon">account_balance</span><span class="label">Governance</span></button>
@@ -247,34 +292,112 @@
         <span><span class="s of"></span><b>offline</b></span>
       </div>
       <div class="sel" id="topoSel">click a node</div>
-      <svg id="topoSvg" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet" role="img">
+      <svg id="topoSvg" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet" role="img" aria-describedby="topoDesc">
+        <desc id="topoDesc">Animated fleet topology. Central Neural Exchange hub connected by energy edges to concentric rings of agent nodes; particles flow along active edges.</desc>
         <defs>
+          <!-- Hub radial gradient: deeper, multi-stop for richer core glow -->
           <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#00ff9c" stop-opacity=".85"/>
+            <stop offset="0%"  stop-color="#b9ffe0" stop-opacity=".95"/>
+            <stop offset="25%" stop-color="#00ff9c" stop-opacity=".85"/>
             <stop offset="60%" stop-color="#00bfff" stop-opacity=".25"/>
             <stop offset="100%" stop-color="#00bfff" stop-opacity="0"/>
           </radialGradient>
+          <radialGradient id="hubCorona" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"  stop-color="#00ff9c" stop-opacity=".0"/>
+            <stop offset="70%" stop-color="#00bfff" stop-opacity=".10"/>
+            <stop offset="100%" stop-color="#00bfff" stop-opacity="0"/>
+          </radialGradient>
+          <!-- Edge gradients per tone -->
           <linearGradient id="edgeOn" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#00bfff" stop-opacity=".15"/>
-            <stop offset="100%" stop-color="#00ff9c" stop-opacity=".9"/>
+            <stop offset="0%"   stop-color="#00bfff" stop-opacity=".15"/>
+            <stop offset="50%"  stop-color="#00ff9c" stop-opacity=".55"/>
+            <stop offset="100%" stop-color="#00ff9c" stop-opacity=".95"/>
           </linearGradient>
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="b"/>
-            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <linearGradient id="edgeWa" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#ffb34700" />
+            <stop offset="100%" stop-color="#ffb347" stop-opacity=".9"/>
+          </linearGradient>
+          <linearGradient id="edgeOf" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#ff4d6d00" />
+            <stop offset="100%" stop-color="#ff4d6d" stop-opacity=".9"/>
+          </linearGradient>
+          <!-- Sweep beam: narrow fading wedge used by the radar -->
+          <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#00ff9c" stop-opacity="0"/>
+            <stop offset="85%"  stop-color="#00ff9c" stop-opacity=".06"/>
+            <stop offset="100%" stop-color="#00ff9c" stop-opacity=".32"/>
+          </linearGradient>
+          <!-- Multi-level bloom: small inner glow + wider halo -->
+          <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="2" result="b1"/>
+            <feGaussianBlur stdDeviation="6" in="SourceGraphic" result="b2"/>
+            <feMerge><feMergeNode in="b2"/><feMergeNode in="b1"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
+          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="1.4" result="sg"/>
+            <feMerge><feMergeNode in="sg"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Tactical grid pattern -->
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0e1a26" stroke-width=".6"/>
+          </pattern>
+          <pattern id="gridMajor" width="200" height="200" patternUnits="userSpaceOnUse">
+            <path d="M 200 0 L 0 0 0 200" fill="none" stroke="#142232" stroke-width=".8"/>
+          </pattern>
+          <!-- Scanline fade mask (horizontal vignette) -->
+          <radialGradient id="vignette" cx="50%" cy="50%" r="65%">
+            <stop offset="60%" stop-color="#000" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#000" stop-opacity=".55"/>
+          </radialGradient>
         </defs>
+
+        <!-- Tactical background: soft grid + major grid + vignette -->
+        <g class="bg" pointer-events="none">
+          <rect x="0" y="0" width="800" height="450" fill="url(#grid)" opacity=".55"/>
+          <rect x="0" y="0" width="800" height="450" fill="url(#gridMajor)" opacity=".9"/>
+          <rect x="0" y="0" width="800" height="450" fill="url(#vignette)"/>
+        </g>
+
+        <!-- Concentric orbits + compass ticks + radar sweep.
+             Orbit group spins slowly; tick marks ride with it. Sweep is a separate layer that spins faster. -->
         <g class="orbit" pointer-events="none">
           <circle cx="400" cy="225" r="90"  fill="none" stroke="#1a2430" stroke-dasharray="2 6"/>
           <circle cx="400" cy="225" r="150" fill="none" stroke="#1a2430" stroke-dasharray="2 6"/>
           <circle cx="400" cy="225" r="200" fill="none" stroke="#1a2430" stroke-dasharray="2 6"/>
+          <circle cx="400" cy="225" r="240" fill="none" stroke="#0e1a26" stroke-dasharray="1 9"/>
+          <!-- Compass ticks at 8 bearings on the outer ring -->
+          <g class="ticks" stroke="#23384b" stroke-width="1">
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(45 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(90 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(135 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(180 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(225 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(270 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(315 400 225)"/>
+          </g>
         </g>
+
+        <!-- Radar sweep: wedge that rotates around the hub independently of the orbit -->
+        <g class="sweep" pointer-events="none">
+          <path d="M400 225 L640 225 A240 240 0 0 1 578.6 394.3 Z" fill="url(#sweep)"/>
+        </g>
+
         <g id="topoEdges"></g>
+
+        <!-- Hub: corona halo → outer ring → core gradient → inner pulse → label -->
         <g id="topoHub">
+          <circle class="hubCorona" cx="400" cy="225" r="110" fill="url(#hubCorona)" pointer-events="none"/>
+          <circle class="hubHalo"   cx="400" cy="225" r="56"  fill="none" stroke="#00bfff" stroke-opacity=".18" stroke-width="1"/>
           <circle cx="400" cy="225" r="34" fill="url(#hubGrad)" filter="url(#glow)"/>
-          <circle class="hubPulse" cx="400" cy="225" r="8" fill="none" stroke="#00ff9c" stroke-width="1.5"/>
+          <circle class="hubPulse"  cx="400" cy="225" r="8"  fill="none" stroke="#00ff9c" stroke-width="1.5"/>
+          <circle class="hubPulse2" cx="400" cy="225" r="8"  fill="none" stroke="#00bfff" stroke-width="1"/>
           <text class="hubLabel" x="400" y="222">ORCHESTRA</text>
           <text class="hubSub"   x="400" y="238">NEURAL EXCHANGE</text>
         </g>
+
+        <!-- Dynamic content -->
+        <g id="topoPackets" pointer-events="none"></g>
         <g id="topoNodes"></g>
       </svg>
     </section>
@@ -324,7 +447,7 @@
 /* ──────────────────────────────────────────────────────────
    ORCHESTRA — data wiring
    - Reads /admin/overview (real PM2 stats)  and /api/status (per-service port/latency)
-   - Falls back to the mockup demo set when CORS / offline
+   - Shows offline banner when upstream unreachable (no synthetic data)
    - Derives "Protocol Feed" events from real state diffs
    ────────────────────────────────────────────────────────── */
 const API = {
@@ -353,7 +476,8 @@ function categorize(name){
   return 'compute';
 }
 
-// Short human description so each card feels like the mockup without being fiction.
+// Short human description shown on each service card. Keyed by PM2 name; falls back
+// to a generic line for services not in the map. Descriptions are static copy, not metrics.
 function describe(s){
   const map = {
     'super-brain':        'Top-level reasoning kernel. Recursive planner + tool router for the stack.',
@@ -481,9 +605,39 @@ function nodeTone(s){
   if ((s.restarts||0) > 5 || (s.cpu||0) > 70) return 'wa';
   return 'on';
 }
+// Packet factory: creates a small circle that animates along an edge using <animateMotion>.
+// Keyed by service name + phase so re-renders can reuse the same element (no flicker/restart).
+// A packet is only emitted for ONLINE and WARN edges; offline edges stay dark with no flow.
+function ensurePacket(packetsG, name, tone, fromX, fromY, toX, toY){
+  const key = `pkt-${name}`;
+  let pkt = packetsG.querySelector(`[data-name="${CSS.escape(name)}"]`);
+  if (!pkt){
+    pkt = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    pkt.setAttribute('r','2.6');
+    pkt.dataset.name = name;
+    const am = document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+    am.setAttribute('dur','2.6s');
+    am.setAttribute('repeatCount','indefinite');
+    am.setAttribute('rotate','auto');
+    // Deterministic phase per service so packets don't all strobe in lockstep
+    const hash = [...name].reduce((a,c)=>a + c.charCodeAt(0), 0);
+    am.setAttribute('begin', `-${(hash % 26) * 0.1}s`);
+    pkt.appendChild(am);
+    packetsG.appendChild(pkt);
+  }
+  pkt.setAttribute('class', `packet ${tone}`);
+  const am = pkt.querySelector('animateMotion');
+  // Travel slightly past endpoint so the packet appears to "arrive" at the node
+  am.setAttribute('path', `M ${fromX} ${fromY} L ${toX} ${toY}`);
+  // Throttle the flow on warn edges so operators can read the difference
+  am.setAttribute('dur', tone==='wa' ? '3.4s' : '2.6s');
+  pkt.style.display = '';
+  return pkt;
+}
 function renderTopology(){
   const nodesG = document.getElementById('topoNodes');
   const edgesG = document.getElementById('topoEdges');
+  const pktG   = document.getElementById('topoPackets');
   if (!nodesG || !edgesG) return;
   const services = state.services.slice();
   // Bucket by category → ring (logic=inner, compute=mid, synth=outer). Keeps visual grouping legible.
@@ -497,6 +651,7 @@ function renderTopology(){
   // Re-use existing node groups keyed by service name to avoid flicker
   const existing = new Map(Array.from(nodesG.querySelectorAll('.nodeG')).map(g => [g.dataset.name, g]));
   const existingE = new Map(Array.from(edgesG.querySelectorAll('.edge')).map(p => [p.dataset.name, p]));
+  const existingP = pktG ? new Map(Array.from(pktG.querySelectorAll('[data-name]')).map(p => [p.dataset.name, p])) : new Map();
   const wanted = new Set();
   byRing.forEach((list, ringIdx) => {
     list.forEach((s, i) => {
@@ -516,12 +671,20 @@ function renderTopology(){
       edge.setAttribute('d', `M ${TOPO.cx} ${TOPO.cy} L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`);
       edge.setAttribute('stroke', tone==='on' ? 'url(#edgeOn)' : (tone==='wa' ? '#ffb347' : '#ff4d6d'));
 
+      // Emit a flow packet along live edges; drop packet for offline nodes.
+      if (pktG && tone !== 'of'){
+        ensurePacket(pktG, s.name, tone, TOPO.cx, TOPO.cy, p.x, p.y);
+        existingP.delete(s.name);
+      }
+
       // Node group
       let g = existing.get(s.name);
       if (!g){
         g = document.createElementNS('http://www.w3.org/2000/svg','g');
         g.setAttribute('class','nodeG');
         g.dataset.name = s.name;
+        const hit = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        hit.setAttribute('r','22'); hit.setAttribute('fill','transparent'); hit.setAttribute('pointer-events','all');
         const ringEl = document.createElementNS('http://www.w3.org/2000/svg','circle');
         ringEl.setAttribute('class','ring'); ringEl.setAttribute('r','14');
         const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
@@ -530,7 +693,7 @@ function renderTopology(){
         pulse.setAttribute('class','pulse'); pulse.setAttribute('fill','none'); pulse.setAttribute('stroke-width','1.2');
         const label = document.createElementNS('http://www.w3.org/2000/svg','text');
         label.setAttribute('dy','28');
-        g.appendChild(ringEl); g.appendChild(dot); g.appendChild(pulse); g.appendChild(label);
+        g.appendChild(hit); g.appendChild(ringEl); g.appendChild(dot); g.appendChild(pulse); g.appendChild(label);
         g.addEventListener('click', () => selectNode(s.name));
         nodesG.appendChild(g);
       }
@@ -545,9 +708,10 @@ function renderTopology(){
       if (label.textContent !== short) label.textContent = short;
     });
   });
-  // Drop any nodes/edges no longer in the fleet
+  // Drop any nodes/edges/packets no longer in the fleet (or now offline)
   for (const [name, g] of existing) if (!wanted.has(name)) g.remove();
   for (const [name, p] of existingE) if (!wanted.has(name)) p.remove();
+  for (const [, p] of existingP) p.remove();
 }
 function selectNode(name){
   state._selected = (state._selected===name) ? null : name;
@@ -645,7 +809,7 @@ function renderStats(){
   }
 }
 
-// ── event synthesis (real diffs, not fakery) ──────
+// ── event derivation (emits only on real state diffs) ──────
 // Guard against the "heartbeat ← undefined" class of bug: coerce every field
 // so the feed never renders the literal string "undefined".
 function pushEvent(head, body, tone){
@@ -680,23 +844,6 @@ function diffAndEmit(next){
   }
 }
 
-// ── demo fallback (matches your mockup copy) ──────
-function demoData(){
-  return {
-    overview: { services_up: 3, services_total: 3, git_commit: 'demo0000', cpu_avg: 21, mem_avg: 18, latency_p95_ms: 42 },
-    services: [
-      { name:'AXON-7',        status:'online',  cpu:8.4,  mem_mb:146, restarts:0, pid:65631 },
-      { name:'SYNTH-LOGIC-v4',status:'online',  cpu:2.1,  mem_mb:87,  restarts:2, pid:17874 },
-      { name:'VECTOR-STREAM', status:'online',  cpu:1.2,  mem_mb:47,  restarts:0, pid:1343 },
-    ],
-    status: [
-      { id:'axon',   port:8000, status:'up',  latency_ms:14 },
-      { id:'synth',  port:5001, status:'up',  latency_ms:42 },
-      { id:'vector', port:5002, status:'up',  latency_ms:110 },
-    ],
-  };
-}
-
 // ── tick ──────────────────────────────────────────
 async function tick(){
   const overview = await j(API.overview, API.absOverview);
@@ -708,15 +855,15 @@ async function tick(){
     banner.style.display = 'flex';
     banner.className = 'banner warn';
     if (!state.services.length){
-      const d = demoData();
-      state.overview = d.overview; state.services = d.services; state.status = d.status;
       banner.innerHTML = `<span class="icon">cloud_off</span>
-        Live backend unreachable — showing demo fleet. When this file is served from
-        <a href="https://bridge-ai-os.com" target="_blank" rel="noopener noreferrer">bridge-ai-os.com</a> it will auto-bind to <code>/admin/overview</code>.`;
+        Live backend unreachable — <code>/admin/overview</code> returned no data.
+        Ensure this page is served from
+        <a href="https://bridge-ai-os.com" target="_blank" rel="noopener noreferrer">bridge-ai-os.com</a>
+        or proxied via <code>node orchestra-proxy.js</code>. No synthetic data will be shown.`;
     } else {
-      // Transient failure after healthy start — keep last-known state visible but surface the stall.
+      // Transient failure after healthy start — keep last-known real state visible, surface stall.
       banner.innerHTML = `<span class="icon">cloud_off</span>
-        Last poll failed — showing stale data from previous tick.`;
+        Last poll failed — showing last-known real data from previous tick.`;
     }
   } else {
     state.overview = overview;
@@ -759,7 +906,7 @@ document.querySelectorAll('.rail .r[data-href]').forEach(r=>{
   });
 });
 
-// seed feed with the mockup's starting lines (then live events take over)
+// seed feed with real boot lines (live diff events take over on first successful tick)
 state.events = [
   { t:nowClock(), head:'Orchestra booted',     body:'Protocol v4.2 · operator terminal ready' },
   { t:nowClock(), head:'Binding /admin/overview', body:'Discovering fleet…' },
