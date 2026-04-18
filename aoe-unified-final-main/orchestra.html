@@ -154,6 +154,8 @@
     h1.title{font-size:18px;letter-spacing:2px}
     .toolbar{gap:8px}
     .tabs{overflow-x:auto;max-width:100%}
+    .search{min-width:0;width:100%}
+    .search input{min-width:0}
     .grid{grid-template-columns:1fr;gap:12px}
     .bottom{grid-column:auto;flex-wrap:wrap;gap:14px;padding:10px 14px;height:auto}
     .stat .v{font-size:14px}
@@ -251,9 +253,19 @@
 const API = {
   overview: '/admin/overview',
   status:   '/api/status',
+  // Cross-origin fallback only fires when same-origin returns non-OK. Requires go.ai-os.co.za
+  // to set Access-Control-Allow-Origin for bridge-ai-os.com, otherwise the fetch is a no-op.
   absOverview: 'https://go.ai-os.co.za/admin/overview',
   absStatus:   'https://go.ai-os.co.za/api/status',
 };
+
+// Escape untrusted strings before they enter innerHTML or HTML attributes. Service names,
+// statuses and feed text come from the PM2 admin API and must not be interpolated raw.
+function esc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 // Categorize a PM2 service name into one of the 4 buckets visible on screen.
 function categorize(name){
@@ -340,25 +352,25 @@ function buildCard(s){
   el.dataset.name = s.name;
   el.innerHTML = `
     <div class="statusRow">
-      <span class="status ${m.stClass}" data-f="status"><span class="d"></span><span data-f="stText">${m.stText}</span></span>
-      <span class="cat">${m.cat.toUpperCase()}</span>
+      <span class="status ${esc(m.stClass)}" data-f="status"><span class="d"></span><span data-f="stText">${esc(m.stText)}</span></span>
+      <span class="cat">${esc(m.cat.toUpperCase())}</span>
     </div>
     <div style="display:flex;align-items:baseline;gap:10px">
-      <span class="icon" style="color:var(--accent);font-size:22px">${m.icon}</span>
-      <div class="name">${s.name.toUpperCase()} <span style="color:var(--dim);font-size:11px;letter-spacing:2px" data-f="tier">· ${m.tier}</span></div>
+      <span class="icon" style="color:var(--accent);font-size:22px">${esc(m.icon)}</span>
+      <div class="name">${esc(s.name.toUpperCase())} <span style="color:var(--dim);font-size:11px;letter-spacing:2px" data-f="tier">· ${esc(m.tier)}</span></div>
     </div>
-    <div class="desc">${describe(s)}</div>
+    <div class="desc">${esc(describe(s))}</div>
     <div class="metrics">
       <div class="metric"><span class="k">Latency</span><span class="v" data-f="lat">${m.latMs==null?'—':m.latMs+'ms'}</span></div>
       <div class="metric"><span class="k">Reliability</span><span class="v" data-f="rel">${m.rel}%</span></div>
-      <div class="metric"><span class="k">Token Cost</span><span class="v" data-f="tok">${m.tokenCost}Φ</span></div>
-      <div class="metric"><span class="k">Throughput</span><span class="v" data-f="tf">${m.tflops} TF</span></div>
+      <div class="metric" title="~ estimated: mem_mb × 0.00001 + 0.0001"><span class="k">Token Cost</span><span class="v" data-f="tok">~${m.tokenCost}Φ</span></div>
+      <div class="metric" title="~ estimated: cpu% × 14"><span class="k">Throughput</span><span class="v" data-f="tf">~${m.tflops} TF</span></div>
       <div class="metric"><span class="k">CPU</span><span class="v dim" data-f="cpu">${fmtPct(s.cpu||0)}</span></div>
       <div class="metric"><span class="k">Memory</span><span class="v dim" data-f="mem">${fmtMem(s.mem_mb||0)}</span></div>
     </div>
     <div class="cta">
-      <a class="link" href="#" data-handshake="${s.name}">INITIATE HANDSHAKE <span class="icon">arrow_forward</span></a>
-      <span class="restarts">restarts <b data-f="restarts">${s.restarts}</b> · pid <span data-f="pid">${s.pid||'—'}</span></span>
+      <a class="link" href="#" data-handshake="${esc(s.name)}">INITIATE HANDSHAKE <span class="icon">arrow_forward</span></a>
+      <span class="restarts">restarts <b data-f="restarts">${s.restarts|0}</b> · pid <span data-f="pid">${esc(s.pid||'—')}</span></span>
     </div>`;
   return el;
 }
@@ -419,9 +431,9 @@ function render(){
 function renderFeed(){
   const el = document.getElementById('events');
   el.innerHTML = state.events.slice(0, 30).map(ev => `
-    <div class="ev ${ev.tone||''}">
-      <div class="t">${ev.t}</div>
-      <div class="b"><span class="k">${ev.head}</span><div class="d">${ev.body}</div></div>
+    <div class="ev ${esc(ev.tone||'')}">
+      <div class="t">${esc(ev.t)}</div>
+      <div class="b"><span class="k">${esc(ev.head)}</span><div class="d">${esc(ev.body)}</div></div>
     </div>`).join('') || `<div style="color:var(--dim);padding:20px">Waiting for fleet activity…</div>`;
 }
 
@@ -505,15 +517,19 @@ async function tick(){
   const banner = document.getElementById('banner');
 
   if (!overview){
+    state.offline = true;
+    banner.style.display = 'flex';
+    banner.className = 'banner warn';
     if (!state.services.length){
       const d = demoData();
       state.overview = d.overview; state.services = d.services; state.status = d.status;
-      state.offline = true;
-      banner.style.display = 'flex';
-      banner.className = 'banner warn';
       banner.innerHTML = `<span class="icon">cloud_off</span>
         Live backend unreachable — showing demo fleet. When this file is served from
-        <a href="https://go.ai-os.co.za" target="_blank" rel="noopener noreferrer">go.ai-os.co.za</a> it will auto-bind to <code>/admin/overview</code>.`;
+        <a href="https://bridge-ai-os.com" target="_blank" rel="noopener noreferrer">bridge-ai-os.com</a> it will auto-bind to <code>/admin/overview</code>.`;
+    } else {
+      // Transient failure after healthy start — keep last-known state visible but surface the stall.
+      banner.innerHTML = `<span class="icon">cloud_off</span>
+        Last poll failed — showing stale data from previous tick.`;
     }
   } else {
     state.overview = overview;
@@ -550,6 +566,9 @@ document.querySelectorAll('.rail .r[data-href]').forEach(r=>{
   r.addEventListener('click', ()=>{
     document.querySelectorAll('.rail .r').forEach(x=>x.classList.remove('active'));
     r.classList.add('active');
+    const href = r.dataset.href;
+    if (href && href.startsWith('#')) document.querySelector(href)?.scrollIntoView({behavior:'smooth',block:'start'});
+    else if (href === '.') document.querySelector('.main')?.scrollTo({top:0,behavior:'smooth'});
   });
 });
 
