@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ORCHESTRA — Neural Exchange</title>
+<style>
+  :root{
+    --bg:#0a0e13; --bg2:#0d1218; --panel:#0f151c; --panel2:#111923;
+    --line:#1a2430; --line2:#243041;
+    --text:#cfe7dd; --dim:#7c8a94; --faint:#4a5561;
+    --accent:#00ff9c; --accent2:#00bfff; --warn:#ffb347; --err:#ff4d6d;
+    --shadow: 0 0 0 1px #1a2430, 0 20px 40px -20px rgba(0,255,156,.05);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(0,191,255,.08), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(0,255,156,.07), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font: 13px/1.45 ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+    overflow:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer}
+  .icon{font-family:"Material Symbols Outlined","Material Icons";font-size:20px;font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;vertical-align:middle}
+  .app{display:grid;grid-template-columns:72px 1fr 360px;grid-template-rows:56px 1fr 56px;height:100vh;gap:0}
+
+  /* ── top bar ───────────────────────────────────── */
+  .topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(0,0,0,.25),transparent)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:2px}
+  .brand b{color:var(--accent)}
+  .pills{display:flex;gap:6px;margin-left:10px}
+  .pill{font-size:10px;letter-spacing:1.2px;padding:4px 9px;border:1px solid var(--line2);border-radius:999px;color:var(--dim);background:var(--panel)}
+  .pill.hot{color:var(--accent);border-color:rgba(0,255,156,.35);box-shadow:inset 0 0 12px rgba(0,255,156,.08)}
+  .pill.cold{color:var(--accent2);border-color:rgba(0,191,255,.35)}
+  .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .netstate{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .dot.warn{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+  .dot.err{background:var(--err);box-shadow:0 0 10px var(--err)}
+  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#00ff9c,#00bfff);display:inline-block;box-shadow:0 0 0 2px #0a0e13, 0 0 0 3px var(--line2)}
+  .proto{font-size:10px;color:var(--dim);letter-spacing:1px}
+
+  /* ── left rail ─────────────────────────────────── */
+  .rail{border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px;background:var(--bg2)}
+  .rail .r{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;color:var(--dim);cursor:pointer;position:relative}
+  .rail .r:hover{color:var(--text);background:var(--panel)}
+  .rail .r.active{color:var(--accent);background:var(--panel2);box-shadow:inset 0 0 0 1px var(--line2)}
+  .rail .r .label{position:absolute;left:56px;top:50%;transform:translateY(-50%);background:var(--panel2);border:1px solid var(--line2);padding:4px 8px;border-radius:6px;white-space:nowrap;font-size:11px;color:var(--text);opacity:0;pointer-events:none;transition:opacity .12s}
+  .rail .r:hover .label{opacity:1}
+  .rail .spacer{flex:1}
+
+  /* ── main ──────────────────────────────────────── */
+  .main{overflow:auto;padding:22px 26px 80px 26px}
+  h1.title{font-size:22px;margin:0 0 4px;letter-spacing:3px}
+  h1.title span{color:var(--accent)}
+  .sub{color:var(--dim);max-width:720px;margin:0 0 18px}
+
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 18px}
+  .tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);padding:4px;border-radius:12px}
+  .tab{padding:7px 12px;border-radius:8px;color:var(--dim);font-size:12px;letter-spacing:.5px}
+  .tab:hover{color:var(--text)}
+  .tab.active{background:var(--panel2);color:var(--accent);box-shadow:inset 0 0 0 1px var(--line2)}
+  .search{flex:1;min-width:240px;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);padding:7px 12px;border-radius:10px}
+  .search input{all:unset;flex:1;color:var(--text);font:inherit}
+  .search .icon{color:var(--dim);font-size:16px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+  .card{
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;position:relative;overflow:hidden;
+    transition:transform .15s, border-color .15s;
+  }
+  .card:hover{transform:translateY(-1px);border-color:var(--line2)}
+  .card::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(500px 120px at 10% 0%, rgba(0,255,156,.08), transparent 60%)}
+  .statusRow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .status{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:1px;color:var(--dim);text-transform:uppercase}
+  .status .d{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+  .status.online .d{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+  .status.warn .d{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+  .status.down .d{background:var(--err);box-shadow:0 0 6px var(--err)}
+  .cat{font-size:10px;color:var(--accent2);letter-spacing:1px}
+  .name{font-size:16px;letter-spacing:1.5px;margin:2px 0 6px;color:var(--text)}
+  .desc{color:var(--dim);font-size:12px;min-height:34px;margin-bottom:14px}
+  .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px;margin-bottom:14px}
+  .metric{display:flex;flex-direction:column}
+  .metric .k{font-size:10px;color:var(--dim);letter-spacing:1px}
+  .metric .v{font-size:14px;color:var(--accent);font-variant-numeric:tabular-nums}
+  .metric .v.dim{color:var(--text)}
+  .cta{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:10px}
+  .link{color:var(--accent);font-size:11px;letter-spacing:1.5px;display:inline-flex;align-items:center;gap:6px}
+  .link .icon{font-size:14px}
+  .restarts{font-size:10px;color:var(--dim)}
+  .restarts b{color:var(--warn)}
+
+  /* ── feed ──────────────────────────────────────── */
+  .feed{border-left:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;min-height:0}
+  .feedhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .feedhead h3{margin:0;font-size:13px;letter-spacing:2px;color:var(--accent2)}
+  .feedhead .icon{color:var(--accent);font-size:18px}
+  .events{flex:1;overflow:auto;padding:4px 10px}
+  .ev{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:10px 6px;border-bottom:1px dashed var(--line);font-size:12px}
+  .ev .t{color:var(--faint);font-variant-numeric:tabular-nums;font-size:11px}
+  .ev .b{color:var(--text)}
+  .ev .b .k{color:var(--accent)}
+  .ev.warn .b .k{color:var(--warn)}
+  .ev.err .b .k{color:var(--err)}
+  .ev .b .d{color:var(--dim);font-size:11px;margin-top:2px}
+  .feedfoot{padding:10px 14px;border-top:1px solid var(--line);display:flex;gap:8px;font-size:11px;color:var(--dim);align-items:center}
+  .feedfoot a{color:var(--accent);display:inline-flex;align-items:center;gap:4px}
+
+  /* ── bottom bar ────────────────────────────────── */
+  .bottom{grid-column:1/-1;border-top:1px solid var(--line);background:var(--bg2);display:flex;align-items:center;gap:26px;padding:0 22px;font-size:11px;color:var(--dim)}
+  .stat{display:flex;flex-direction:column}
+  .stat .k{letter-spacing:1px;color:var(--faint);font-size:10px}
+  .stat .v{color:var(--text);font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:1px}
+  .stat .v b{color:var(--accent)}
+  .dealers{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .av2{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#00bfff,#8a5cff);box-shadow:0 0 0 2px var(--bg2)}
+  .av2+.av2{margin-left:-8px}
+
+  /* ── banner ─────────────────────────────────────── */
+  .banner{margin:0 0 16px;padding:10px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--panel);display:flex;gap:10px;align-items:center;font-size:12px;color:var(--dim)}
+  .banner.ok{border-color:rgba(0,255,156,.25)}
+  .banner.warn{border-color:rgba(255,179,71,.35);color:#ffd699}
+  .banner a{color:var(--accent);text-decoration:underline}
+
+  /* ── scrollbar ──────────────────────────────────── */
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#111a24;border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:#182330;background-clip:padding-box;border:2px solid transparent}
+
+  @media (max-width: 1100px){ .app{grid-template-columns:60px 1fr} .feed{display:none} }
+
+  /* mobile-guardian: added mobile collapse @ 768px */
+  @media (max-width: 768px){
+    body{overflow:auto}
+    .app{grid-template-columns:1fr;grid-template-rows:auto 1fr auto;height:auto;min-height:100vh}
+    .topbar{flex-wrap:wrap;gap:10px;padding:10px 14px;height:auto}
+    .topbar .pills,.topbar .proto{display:none}
+    .topbar .right{gap:10px}
+    .rail{grid-row:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);padding:8px;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .rail .r{flex:0 0 auto;width:40px;height:40px}
+    .rail .r .label{display:none}
+    .rail .spacer{display:none}
+    .main{padding:16px 14px 24px}
+    h1.title{font-size:18px;letter-spacing:2px}
+    .toolbar{gap:8px}
+    .tabs{overflow-x:auto;max-width:100%}
+    .grid{grid-template-columns:1fr;gap:12px}
+    .bottom{grid-column:auto;flex-wrap:wrap;gap:14px;padding:10px 14px;height:auto}
+    .stat .v{font-size:14px}
+    .dealers{margin-left:0}
+    button,.r,.tab{min-height:44px}
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0">
+</head>
+<body>
+<div class="app">
+
+  <!-- ── top ─────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand"><span class="icon" style="color:var(--accent)">hub</span> ORCH<b>ESTRA</b></div>
+    <div class="pills">
+      <span class="pill hot">A2A</span>
+      <span class="pill cold">H2A</span>
+      <span class="pill">HUMAN API</span>
+    </div>
+    <div class="right">
+      <div class="netstate"><span id="netDot" class="dot"></span><span id="netLabel">Network: Optimal</span></div>
+      <div class="proto" id="proto">Protocol v4.2 · commit —</div>
+      <span class="avatar" title="you"></span>
+    </div>
+  </header>
+
+  <!-- ── left rail ───────────────────────────────── -->
+  <nav class="rail">
+    <button class="r active" data-href="."><span class="icon">hub</span><span class="label">Hub</span></button>
+    <button class="r" data-href="#nodes"><span class="icon">lan</span><span class="label">Nodes</span></button>
+    <button class="r" data-href="#exchanges"><span class="icon">sync_alt</span><span class="label">Exchanges</span></button>
+    <button class="r" data-href="#latency"><span class="icon">speed</span><span class="label">Latency</span></button>
+    <button class="r" data-href="#gov"><span class="icon">account_balance</span><span class="label">Governance</span></button>
+    <div class="spacer"></div>
+    <button class="r" id="btnDeploy"><span class="icon">rocket_launch</span><span class="label">Deploy Node</span></button>
+    <button class="r" id="btnSettings"><span class="icon">settings</span><span class="label">Settings</span></button>
+  </nav>
+
+  <!-- ── main ────────────────────────────────────── -->
+  <main class="main">
+    <h1 class="title">NEURAL <span>EXCHANGE</span></h1>
+    <p class="sub">Autonomous agent orchestration layer. Trade intelligence fragments, raw GPU clusters, and semantic logic gates in real-time.</p>
+
+    <div id="banner" class="banner" style="display:none"></div>
+
+    <div class="toolbar">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-cat="all">All Agents</button>
+        <button class="tab" data-cat="compute">Compute Nodes</button>
+        <button class="tab" data-cat="logic">Logic Engines</button>
+        <button class="tab" data-cat="synth">Data Synthesizers</button>
+      </div>
+      <div class="search">
+        <span class="icon">search</span>
+        <input id="search" placeholder="Query Node ID..." autocomplete="off">
+        <span class="icon" title="memory">memory</span>
+      </div>
+    </div>
+
+    <div id="grid" class="grid"></div>
+  </main>
+
+  <!-- ── feed ────────────────────────────────────── -->
+  <aside class="feed">
+    <div class="feedhead"><span class="icon">sensors</span><h3>PROTOCOL FEED</h3></div>
+    <div class="events" id="events"></div>
+    <div class="feedfoot">
+      <a href="/admin" target="_blank" rel="noopener"><span class="icon" style="font-size:14px">open_in_new</span>View Network Map</a>
+      <span style="margin-left:auto" id="feedSource">source: /admin/overview</span>
+    </div>
+  </aside>
+
+  <!-- ── bottom ──────────────────────────────────── -->
+  <footer class="bottom">
+    <div class="stat"><span class="k">Nodes Connected</span><span class="v" id="sNodes">—</span></div>
+    <div class="stat"><span class="k">Total TFLOPs</span><span class="v" id="sFlops">—</span></div>
+    <div class="stat"><span class="k">Market Liquidity</span><span class="v" id="sLiq">—</span></div>
+    <div class="stat"><span class="k">Latency p95</span><span class="v" id="sLat">—</span></div>
+    <div class="dealers">
+      <span class="av2"></span><span class="av2"></span><span class="av2"></span>
+      <span>+<b id="sDealers">—</b> Active Dealers</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* ──────────────────────────────────────────────────────────
+   ORCHESTRA — data wiring
+   - Reads /admin/overview (real PM2 stats)  and /api/status (per-service port/latency)
+   - Falls back to the mockup demo set when CORS / offline
+   - Derives "Protocol Feed" events from real state diffs
+   ────────────────────────────────────────────────────────── */
+const API = {
+  overview: '/admin/overview',
+  status:   '/api/status',
+  absOverview: 'https://go.ai-os.co.za/admin/overview',
+  absStatus:   'https://go.ai-os.co.za/api/status',
+};
+
+// Categorize a PM2 service name into one of the 4 buckets visible on screen.
+function categorize(name){
+  const n = name.toLowerCase();
+  if (/(brain|logic|god|gateway|auth|consensus|treasury|admin|api|govern)/.test(n)) return 'logic';
+  if (/(engine|worker|runner|ban|svg|ainode|compute|gpu|server|unified|rotate|pm2)/.test(n)) return 'compute';
+  if (/(proxy|stream|vector|data|archive|synth|embed|search|terminal|ws|socket|pipe)/.test(n)) return 'synth';
+  return 'compute';
+}
+
+// Short human description so each card feels like the mockup without being fiction.
+function describe(s){
+  const map = {
+    'super-brain':        'Top-level reasoning kernel. Recursive planner + tool router for the stack.',
+    'auth-service':       'Identity + session issuance. Gatekeeps A2A and H2A handshakes.',
+    'god-mode-system':    'Elevated-privilege control surface for stack-wide operators.',
+    'terminal-proxy':     'Streams shell I/O over WS. Bridges agent → human terminal.',
+    'ban-engine':         'Bridge Task Runner. OSINT + automation execution.',
+    'svg-engine':         'Vector synthesis engine. Generates visual artefacts on demand.',
+    'core-gateway':       'Unified edge router. All inbound traffic lands here first.',
+    'system':             'System dashboard API. Fleet health and aggregate telemetry.',
+    'live-system':        'Live-state broadcaster. Pushes realtime metrics to subscribers.',
+    'pm2-logrotate':      'Log-rotation worker. Keeps the fleet\'s tape clean.',
+    'bridge-gateway':     'Legacy gateway. Bridges older routes into the unified plane.',
+    'admin-api':          'Control-plane API. Backs the operator console and overview feed.',
+    'treasury':           'On-chain economy ledger. Settlement for Φ-denominated exchanges.',
+    'unified-server':     'Unified stack entrypoint. Serves /engine, /loop, /master, /docs.',
+  };
+  return map[s.name] || 'Fleet node · PM2-managed service.';
+}
+
+function fmtMem(mb){ return mb >= 1024 ? (mb/1024).toFixed(2)+' GB' : Math.round(mb)+' MB'; }
+function fmtPct(v){ return (Math.round(v*10)/10) + '%'; }
+function fmtK(n){ if (n>=1e9) return (n/1e9).toFixed(2)+'B'; if (n>=1e6) return (n/1e6).toFixed(2)+'M'; if (n>=1e3) return (n/1e3).toFixed(1)+'k'; return String(n); }
+function nowClock(){ const d=new Date(); return d.toTimeString().slice(0,8); }
+
+// Fetch helper with timeout + dual-origin fallback (relative first, then absolute).
+async function j(rel, abs){
+  const controller = new AbortController();
+  const t = setTimeout(()=>controller.abort(), 6000);
+  try{
+    const r = await fetch(rel, {signal: controller.signal, cache:'no-store'});
+    if (r.ok) return await r.json();
+  }catch{}
+  finally{ clearTimeout(t); }
+  try{
+    const r2 = await fetch(abs, {cache:'no-store'});
+    if (r2.ok) return await r2.json();
+  }catch{}
+  return null;
+}
+
+// ── state ──────────────────────────────────────────
+const state = {
+  services: [],     // latest /admin/overview services[]
+  status:   [],     // latest /api/status services[]
+  overview: null,
+  prev:     new Map(),
+  events:   [],
+  cat: 'all',
+  q: '',
+  offline: false,
+};
+
+// ── render: cards (in-place, no DOM wipe) ─────────
+function cardMetrics(s){
+  const cat = categorize(s.name);
+  const online = s.status==='online';
+  const stClass = online ? (s.restarts>5?'warn':'online') : 'down';
+  const stText  = online ? (s.restarts>5?'Unstable':'Active') : (s.status||'Offline');
+  const portRow = (state.status||[]).find(x => s.name.toLowerCase().includes(x.id));
+  const latMs = portRow ? portRow.latency_ms : null;
+  const tflops = Math.max(1, Math.round(s.cpu * 140) / 10);
+  const tokenCost = ((s.mem_mb * 0.00001) + 0.0001).toFixed(4);
+  const rel = online ? (Math.max(90, 100 - s.restarts*1.5)).toFixed(2) : '0.00';
+  const tier = s.mem_mb > 120 ? 'HEAVY' : (s.restarts===0 ? 'v4' : 'LIGHT');
+  const icon = cat==='logic' ? 'psychology' : cat==='synth' ? 'dataset' : 'memory';
+  return { cat, stClass, stText, latMs, tflops, tokenCost, rel, tier, icon };
+}
+function buildCard(s){
+  const m = cardMetrics(s);
+  const el = document.createElement('article');
+  el.className = 'card';
+  el.dataset.name = s.name;
+  el.innerHTML = `
+    <div class="statusRow">
+      <span class="status ${m.stClass}" data-f="status"><span class="d"></span><span data-f="stText">${m.stText}</span></span>
+      <span class="cat">${m.cat.toUpperCase()}</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span class="icon" style="color:var(--accent);font-size:22px">${m.icon}</span>
+      <div class="name">${s.name.toUpperCase()} <span style="color:var(--dim);font-size:11px;letter-spacing:2px" data-f="tier">· ${m.tier}</span></div>
+    </div>
+    <div class="desc">${describe(s)}</div>
+    <div class="metrics">
+      <div class="metric"><span class="k">Latency</span><span class="v" data-f="lat">${m.latMs==null?'—':m.latMs+'ms'}</span></div>
+      <div class="metric"><span class="k">Reliability</span><span class="v" data-f="rel">${m.rel}%</span></div>
+      <div class="metric"><span class="k">Token Cost</span><span class="v" data-f="tok">${m.tokenCost}Φ</span></div>
+      <div class="metric"><span class="k">Throughput</span><span class="v" data-f="tf">${m.tflops} TF</span></div>
+      <div class="metric"><span class="k">CPU</span><span class="v dim" data-f="cpu">${fmtPct(s.cpu||0)}</span></div>
+      <div class="metric"><span class="k">Memory</span><span class="v dim" data-f="mem">${fmtMem(s.mem_mb||0)}</span></div>
+    </div>
+    <div class="cta">
+      <a class="link" href="#" data-handshake="${s.name}">INITIATE HANDSHAKE <span class="icon">arrow_forward</span></a>
+      <span class="restarts">restarts <b data-f="restarts">${s.restarts}</b> · pid <span data-f="pid">${s.pid||'—'}</span></span>
+    </div>`;
+  return el;
+}
+function updateCard(el, s){
+  const m = cardMetrics(s);
+  const set = (f, v) => { const t = el.querySelector(`[data-f="${f}"]`); if (t && t.textContent !== v) t.textContent = v; };
+  const stEl = el.querySelector('[data-f="status"]');
+  if (stEl){ const want = `status ${m.stClass}`; if (stEl.className !== want) stEl.className = want; }
+  set('stText', m.stText);
+  set('tier',   '· ' + m.tier);
+  set('lat',    m.latMs==null ? '—' : m.latMs+'ms');
+  set('rel',    m.rel + '%');
+  set('tok',    m.tokenCost + 'Φ');
+  set('tf',     m.tflops + ' TF');
+  set('cpu',    fmtPct(s.cpu||0));
+  set('mem',    fmtMem(s.mem_mb||0));
+  set('restarts', String(s.restarts));
+  set('pid',    String(s.pid||'—'));
+}
+function render(){
+  const grid = document.getElementById('grid');
+  const q = state.q.trim().toLowerCase();
+  const items = state.services
+    .filter(s => state.cat==='all' || categorize(s.name)===state.cat)
+    .filter(s => !q || s.name.toLowerCase().includes(q));
+
+  // Toggle visibility of existing cards; build any missing.
+  const existing = new Map(Array.from(grid.querySelectorAll('.card')).map(c => [c.dataset.name, c]));
+  const wanted = new Set(items.map(s => s.name));
+
+  for (const s of items){
+    let el = existing.get(s.name);
+    if (!el){ el = buildCard(s); grid.appendChild(el); }
+    else { updateCard(el, s); }
+    el.style.display = '';
+    existing.delete(s.name);
+  }
+  // Hide (don't delete) cards that are filtered out — preserves hover state when toggling tabs back
+  for (const [name, el] of existing){
+    if (state.services.find(x => x.name===name)) el.style.display = 'none';
+    else el.remove();
+  }
+
+  // Empty state
+  let empty = grid.querySelector('.empty-state');
+  if (!items.length){
+    if (!empty){
+      empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.style.cssText = 'color:var(--dim);padding:20px;grid-column:1/-1';
+      empty.textContent = 'No agents match this filter.';
+      grid.appendChild(empty);
+    }
+  } else if (empty){ empty.remove(); }
+}
+
+// ── render: feed ──────────────────────────────────
+function renderFeed(){
+  const el = document.getElementById('events');
+  el.innerHTML = state.events.slice(0, 30).map(ev => `
+    <div class="ev ${ev.tone||''}">
+      <div class="t">${ev.t}</div>
+      <div class="b"><span class="k">${ev.head}</span><div class="d">${ev.body}</div></div>
+    </div>`).join('') || `<div style="color:var(--dim);padding:20px">Waiting for fleet activity…</div>`;
+}
+
+// ── render: bottom stats ──────────────────────────
+function renderStats(){
+  const o = state.overview;
+  const up = o?.services_up ?? state.services.filter(s=>s.status==='online').length;
+  const total = o?.services_total ?? state.services.length;
+  const cpu = o?.cpu_avg ?? 0;
+  const mem = o?.mem_avg ?? 0;
+  const totalCpu = state.services.reduce((a,s)=>a+(s.cpu||0),0);
+  const totalMem = state.services.reduce((a,s)=>a+(s.mem_mb||0),0);
+
+  document.getElementById('sNodes').innerHTML = `${up}<span style="color:var(--dim)">/${total}</span>`;
+  document.getElementById('sFlops').textContent = fmtK(Math.round(totalCpu*140)) + ' TF';
+  document.getElementById('sLiq').textContent   = (totalMem/1024).toFixed(2) + ' GB·mem';
+  document.getElementById('sLat').textContent   = (o?.latency_p95_ms ?? 0) + ' ms';
+  document.getElementById('sDealers').textContent = up;
+
+  // top bar network state
+  const dot = document.getElementById('netDot');
+  const lbl = document.getElementById('netLabel');
+  if (state.offline){ dot.className='dot err'; lbl.textContent='Network: Offline'; }
+  else if (up < total){ dot.className='dot warn'; lbl.textContent=`Network: Degraded (${up}/${total})`; }
+  else { dot.className='dot'; lbl.textContent='Network: Optimal'; }
+
+  if (o?.git_commit){
+    document.getElementById('proto').textContent = `Protocol v4.2 · commit ${o.git_commit.slice(0,7)}`;
+  }
+}
+
+// ── event synthesis (real diffs, not fakery) ──────
+function pushEvent(head, body, tone){
+  state.events.unshift({ t: nowClock(), head, body, tone: tone||'' });
+  if (state.events.length > 80) state.events.length = 80;
+  renderFeed();
+}
+
+function diffAndEmit(next){
+  for (const s of next){
+    const prev = state.prev.get(s.name);
+    if (!prev){
+      if (state.prev.size) pushEvent('Node joined', `${s.name} · status=${s.status}`);
+    } else {
+      if (prev.status !== s.status){
+        const tone = s.status==='online' ? '' : 'err';
+        pushEvent(`${s.name} → ${s.status}`, `transition from ${prev.status}`, tone);
+      }
+      if ((s.restarts||0) > (prev.restarts||0)){
+        pushEvent(`${s.name} restarted`, `restart count ${prev.restarts} → ${s.restarts}`, 'warn');
+      }
+      if (Math.abs((s.cpu||0) - (prev.cpu||0)) > 10){
+        pushEvent(`${s.name} CPU spike`, `${fmtPct(prev.cpu||0)} → ${fmtPct(s.cpu||0)}`, 'warn');
+      }
+    }
+    state.prev.set(s.name, { status:s.status, restarts:s.restarts||0, cpu:s.cpu||0 });
+  }
+}
+
+// ── demo fallback (matches your mockup copy) ──────
+function demoData(){
+  return {
+    overview: { services_up: 3, services_total: 3, git_commit: 'demo0000', cpu_avg: 21, mem_avg: 18, latency_p95_ms: 42 },
+    services: [
+      { name:'AXON-7',        status:'online',  cpu:8.4,  mem_mb:146, restarts:0, pid:65631 },
+      { name:'SYNTH-LOGIC-v4',status:'online',  cpu:2.1,  mem_mb:87,  restarts:2, pid:17874 },
+      { name:'VECTOR-STREAM', status:'online',  cpu:1.2,  mem_mb:47,  restarts:0, pid:1343 },
+    ],
+    status: [
+      { id:'axon',   port:8000, status:'up',  latency_ms:14 },
+      { id:'synth',  port:5001, status:'up',  latency_ms:42 },
+      { id:'vector', port:5002, status:'up',  latency_ms:110 },
+    ],
+  };
+}
+
+// ── tick ──────────────────────────────────────────
+async function tick(){
+  const overview = await j(API.overview, API.absOverview);
+  const status   = await j(API.status,   API.absStatus);
+  const banner = document.getElementById('banner');
+
+  if (!overview){
+    if (!state.services.length){
+      const d = demoData();
+      state.overview = d.overview; state.services = d.services; state.status = d.status;
+      state.offline = true;
+      banner.style.display = 'flex';
+      banner.className = 'banner warn';
+      banner.innerHTML = `<span class="icon">cloud_off</span>
+        Live backend unreachable — showing demo fleet. When this file is served from
+        <a href="https://go.ai-os.co.za" target="_blank" rel="noopener noreferrer">go.ai-os.co.za</a> it will auto-bind to <code>/admin/overview</code>.`;
+    }
+  } else {
+    state.overview = overview;
+    diffAndEmit(overview.services || []);
+    state.services = overview.services || [];
+    state.status = (status && status.services) || [];
+    state.offline = false;
+    banner.style.display = 'none';
+  }
+  render(); renderStats();
+}
+
+// ── wiring ────────────────────────────────────────
+document.getElementById('tabs').addEventListener('click', e => {
+  const b = e.target.closest('.tab'); if (!b) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  b.classList.add('active'); state.cat = b.dataset.cat; render();
+});
+document.getElementById('search').addEventListener('input', e => { state.q = e.target.value; render(); });
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-handshake]');
+  if (a){ e.preventDefault();
+    const name = a.dataset.handshake;
+    pushEvent(`Handshake → ${name}`, `A2A channel opened from operator console`);
+  }
+});
+document.getElementById('btnDeploy').addEventListener('click', ()=>{
+  pushEvent('Deploy Node', 'operator requested node deployment — awaiting target');
+});
+document.getElementById('btnSettings').addEventListener('click', ()=>{
+  pushEvent('Settings opened', 'operator console → preferences');
+});
+document.querySelectorAll('.rail .r[data-href]').forEach(r=>{
+  r.addEventListener('click', ()=>{
+    document.querySelectorAll('.rail .r').forEach(x=>x.classList.remove('active'));
+    r.classList.add('active');
+  });
+});
+
+// seed feed with the mockup's starting lines (then live events take over)
+state.events = [
+  { t:nowClock(), head:'Orchestra booted',     body:'Protocol v4.2 · operator terminal ready' },
+  { t:nowClock(), head:'Binding /admin/overview', body:'Discovering fleet…' },
+];
+renderFeed();
+
+tick();
+setInterval(tick, 5000);
+</script>
+</body>
+</html>
