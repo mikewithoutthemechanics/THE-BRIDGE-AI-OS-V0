@@ -3775,7 +3775,7 @@ module.exports = async (req, res) => {
   // ── GET /api/projects — connected project registry ──
   if (p === '/api/projects') {
     const _projects = [
-      { id: 'bridge',    label: 'Bridge AI OS',   type: 'platform', status: 'online',  port: 8000,  baseUrl: 'https://go.ai-os.co.za',  capabilities: ['crm','treasury','agents','skills'] },
+      { id: 'bridge',    label: 'Bridge AI OS',   type: 'platform', status: 'online',  port: 8000,  baseUrl: process.env.BASE_URL || process.env.PUBLIC_URL || 'https://go.ai-os.co.za',  capabilities: ['crm','treasury','agents','skills'] },
       { id: 'ehsa',      label: 'EHSA Health',    type: 'vertical', status: 'online',  port: 4202,  baseUrl: '/ehsa',                   capabilities: ['health','appointments','ai-triage'] },
       { id: 'supac',     label: 'SUPAC',          type: 'vertical', status: 'online',  port: 4203,  baseUrl: '/supac',                  capabilities: ['automation','agents','enterprise'] },
       { id: 'ban',       label: 'BAN Engine',     type: 'engine',   status: 'online',  port: 4201,  baseUrl: '/ban',                    capabilities: ['orchestration','swarm','fault-tolerance'] },
@@ -4778,7 +4778,7 @@ module.exports = async (req, res) => {
     // Issue our own JWT so existing middleware keeps working
     const token = makeToken({ sub: user?.id || data.user.id, email: oauthEmail });
 
-    res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; SameSite=Lax; Max-Age=604800`);
+    res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; SameSite=Lax; Secure; Max-Age=604800`);
     return json(res, {
       ok: true,
       token,

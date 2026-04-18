@@ -26,9 +26,8 @@ const { revokeToken, isTokenRevoked } = require('./middleware/auth');
 // ── Secrets ─────────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || process.env.BRIDGE_SIWE_JWT_SECRET || 'aoe-unified-super-secret-change-in-prod';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'aoe-refresh-secret-change-in-prod';
-const SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
+const { EMAILS: SUPER_ADMIN_EMAILS, isSuperUserEmail } = require('./shared/superusers');
 const SUPER_ADMIN_IDENTITY = Object.freeze({
-  email: SUPER_ADMIN_EMAIL,
   role: 'superadmin',
   plan: 'infinite',
   permissions: ['*'],
@@ -90,7 +89,7 @@ function sanitizeUser(user) {
 }
 
 function isSuperAdminEmail(email) {
-  return typeof email === 'string' && email.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+  return isSuperUserEmail(email);
 }
 
 function withSuperAdminOverrides(user) {

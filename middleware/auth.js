@@ -1,21 +1,17 @@
 const jwt = require('jsonwebtoken');
-
-// ── Superuser list ────────────────────────────────────────────────────────────
-const SUPERUSERS = [
-  'ryanpcowan@gmail.com',
-  'michaelgraemek@gmail.com',
-  'marvin.saunders@gmail.com',
-];
+const { EMAILS: SUPERUSERS, isSuperUserEmail } = require('../shared/superusers');
+// Supabase-backed revocation store — shared with auth.js (Vercel cold-start safe)
+const revokedStore = (() => { try { return require('../lib/revoked-tokens'); } catch(_) { return null; } })();
 
 /**
  * Returns true if the given email belongs to a superuser.
- * Comparison is case-insensitive.
+ * Comparison is case-insensitive. Reads from shared/superusers.json via the
+ * shared loader, which has a hardcoded fallback.
  * @param {string} email
  * @returns {boolean}
  */
 function isSuperUser(email) {
-  if (typeof email !== 'string') return false;
-  return SUPERUSERS.includes(email.toLowerCase());
+  return isSuperUserEmail(email);
 }
 
 // Redis-backed token revocation with graceful fallback to TTL-based in-memory Map
@@ -80,18 +76,29 @@ const requireAuth = (requiredAuthority = null) => {
         return res.status(401).json({ error: 'Missing auth token' });
       }
 
-      // Check token revocation (Redis or in-memory)
+      // Check token revocation — three-layer fast-to-slow: Redis → in-memory → Supabase.
+      // The Supabase lookup covers Vercel cold-starts where in-memory state is lost.
+      let alreadyRevoked = false;
       if (redisClient) {
         try {
           const revoked = await redisClient.get(`revoked:${token}`);
-          if (revoked) return res.status(401).json({ error: 'Token revoked' });
+          if (revoked) alreadyRevoked = true;
         } catch (_) {
-          // Redis read failed — fall through to in-memory check
-          if (isTokenRevoked(token)) return res.status(401).json({ error: 'Token revoked' });
+          if (isTokenRevoked(token)) alreadyRevoked = true;
         }
-      } else {
-        if (isTokenRevoked(token)) return res.status(401).json({ error: 'Token revoked' });
+      } else if (isTokenRevoked(token)) {
+        alreadyRevoked = true;
       }
+      if (!alreadyRevoked && revokedStore) {
+        try {
+          if (await revokedStore.isRevoked(token)) {
+            alreadyRevoked = true;
+            // Warm the in-memory store so subsequent checks are instant
+            revokedTokens.set(token, Date.now() + 7 * 24 * 3600 * 1000);
+          }
+        } catch (_) {}
+      }
+      if (alreadyRevoked) return res.status(401).json({ error: 'Token revoked' });
 
       const secret = process.env.JWT_SECRET;
       if (!secret) return res.status(500).json({ error: 'Server misconfigured: JWT_SECRET not set' });
@@ -127,10 +134,16 @@ const requireAuth = (requiredAuthority = null) => {
 };
 
 // Utility: revoke a token (TTL defaults to 7 days = JWT expiry)
+// Writes to all three layers so revocation survives cold starts + any
+// single-layer outage.
 async function revokeToken(token, ttlSeconds = 7 * 24 * 3600) {
   revokedTokens.set(token, Date.now() + ttlSeconds * 1000);
   if (redisClient) {
     try { await redisClient.set(`revoked:${token}`, '1', { EX: ttlSeconds }); } catch (_) {}
+  }
+  if (revokedStore) {
+    const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
+    try { await revokedStore.revoke(token, expiresAt); } catch (_) {}
   }
 }
 

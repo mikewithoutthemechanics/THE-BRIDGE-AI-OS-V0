@@ -1,32 +1,21 @@
 {
-  "_comment": "Canonical superuser register. As of 2026-04-17 NEITHER backend reads this file yet — auth.js and backend/main.py keep their hardcoded lists. This file exists to surface the current Node/Python split explicitly and provide a single source of truth when consolidation happens. See docs/book/14-gaps-and-conflicts.md (C6/R11/R12) for the context. Do not edit this list without updating both auth.js:L29 and backend/main.py:L16-L20 simultaneously.",
-  "_status": "documentation-only",
-  "_canonical_wiring": false,
+  "_comment": "Canonical superuser register. Both Node backends (auth.js, middleware/auth.js, server.js) and the Python backend (backend/main.py) read this file at boot. Each backend keeps a hardcoded fallback list for resilience if the file fails to parse. Do not edit without verifying all three backends still start cleanly.",
+  "_canonical_wiring": true,
   "superusers": [
     {
       "email": "ryanpcowan@gmail.com",
       "honored_by": ["node", "python"],
-      "role": "superadmin",
-      "notes": "Hardcoded as SUPER_ADMIN_EMAIL in auth.js:L29; present in backend/main.py SUPERUSERS[]"
+      "role": "superadmin"
     },
     {
       "email": "michaelgraemek@gmail.com",
-      "honored_by": ["python"],
-      "role": "superadmin",
-      "notes": "Present in backend/main.py SUPERUSERS[] only; Node/Vercel API rejects as non-superadmin"
+      "honored_by": ["node", "python"],
+      "role": "superadmin"
     },
     {
       "email": "marvin.saunders@gmail.com",
-      "honored_by": ["python"],
-      "role": "superadmin",
-      "notes": "Present in backend/main.py SUPERUSERS[] only; Node/Vercel API rejects as non-superadmin"
+      "honored_by": ["node", "python"],
+      "role": "superadmin"
     }
-  ],
-  "consolidation_plan": {
-    "step_1": "Decide the canonical list (single or three).",
-    "step_2": "Update auth.js to read from this file with hardcoded fallback on parse error.",
-    "step_3": "Update backend/main.py to read from this file with hardcoded fallback on parse error.",
-    "step_4": "Remove _status and set _canonical_wiring to true.",
-    "step_5": "Keep the hardcoded fallbacks in both backends — do not remove."
-  }
+  ]
 }

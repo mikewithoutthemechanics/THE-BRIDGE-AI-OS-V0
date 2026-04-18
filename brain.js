@@ -3854,7 +3854,13 @@ function serveWithNav(filePath, res) {
       html = html.replace('</head>', PHERE_INJECT + '</head>');
     }
     res.type('html').send(html);
-  } catch (e) { res.status(404).send('Page not found'); }
+  } catch (e) {
+    try {
+      return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+    } catch (_) {
+      return res.status(404).type('html').send('<!doctype html><title>404</title><h1>404 &mdash; Page not found</h1>');
+    }
+  }
 }
 
 // Serve Xpublic pages with nav injection
@@ -3863,7 +3869,8 @@ try {
   const xFiles = fs.readdirSync(XPUBLIC).filter(f => f.endsWith('.html'));
   xFiles.forEach(f => { app.get('/' + f, (_req, res) => serveWithNav(path.join(XPUBLIC, f), res)); });
 } catch (_) {}
-app.get('/brain-live', (_req, res) => { try { res.sendFile(path.join(XPUBLIC, 'ehsa-brain.html')); } catch(_) { res.status(404).end(); } });
+// /brain-live handler is registered at L2221 (redirect to /ehsa-brain.html).
+// Prior duplicate handler here was dead code — Express honours first registration.
 
 // ── SHORT-PATH ALIASES ─────────────────────────────────────────────────────
 const SHORT_ROUTES = {

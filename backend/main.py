@@ -12,18 +12,13 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Superuser configuration
-SUPERUSERS = [
-    'ryanpcowan@gmail.com',
-    'michaelgraemek@gmail.com',
-    'marvin.saunders@gmail.com'
-]
-
-def is_superuser(email: str) -> bool:
-    """Check if email belongs to a superuser"""
-    if not isinstance(email, str):
-        return False
-    return email.strip().lower() in [su.lower() for su in SUPERUSERS]
+# Superuser configuration — shared loader reads shared/superusers.json with
+# a hardcoded fallback. Keeps Node and Python backends aligned on a single list.
+import sys
+_repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
+from shared.superusers import EMAILS as SUPERUSERS, is_superuser  # noqa: E402,F401
 
 app = FastAPI(
     title="Bridge Task Runner with OSINT",

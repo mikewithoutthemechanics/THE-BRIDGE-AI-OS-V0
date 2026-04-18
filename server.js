@@ -37,6 +37,7 @@ const da     = require('./lib/directadmin');
 const wp     = require('./lib/wordpress');
 const wpAuth = require('./lib/wp-auth');
 const { isSuperUser } = require('./middleware/auth');
+const { requireClient: requireUserJwt, pageGuard } = require('./middleware/access-control');
 // CSRF: csurf is deprecated and removed — use SameSite cookies + Origin header checks
 // Auth middleware disabled at global level — individual admin routes use requireAdmin
 // const { requireAuth } = require('./middleware/auth');
@@ -65,7 +66,32 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 
-// Security headers — allow inline scripts/styles + CDN sources used by frontend pages
+// CSRF defence: for any state-changing request the Origin (or Referer) must
+// match an allowed origin. Webhook endpoints that authenticate via signed
+// bodies (PayFast, WhatsApp) are exempt — their signature check is stronger
+// than an Origin string. GET/HEAD/OPTIONS are never gated.
+const ORIGIN_EXEMPT_PATHS = new Set(['/payfast/notify', '/whatsapp']);
+app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
+  if (ORIGIN_EXEMPT_PATHS.has(req.path)) return next();
+  const rawOrigin = req.headers.origin || req.headers.referer || '';
+  if (!rawOrigin) {
+    // Allow server-to-server callers that omit Origin entirely (curl, CI) but
+    // only if they present an admin/JWT token — without one we refuse.
+    if (req.headers['x-admin-token'] || req.headers.authorization) return next();
+    return res.status(403).json({ ok: false, error: 'Origin required for state-changing requests' });
+  }
+  let originHost;
+  try { originHost = new URL(rawOrigin).origin; } catch (_) { originHost = null; }
+  if (!originHost || !ALLOWED_ORIGINS.includes(originHost)) {
+    return res.status(403).json({ ok: false, error: 'Origin not allowed' });
+  }
+  next();
+});
+
+// Security headers — allow inline scripts/styles + CDN sources used by frontend pages.
+// Inline-script externalisation is tracked as a Wave 5 follow-up; until then
+// 'unsafe-inline' stays on script-src but every other directive is tightened.
 app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
@@ -75,10 +101,19 @@ app.use((req, res, next) => {
     "img-src 'self' data: blob: https:",
     `connect-src 'self' https://openrouter.ai https://api.openai.com https://www.payfast.co.za ${BASE_URL} http://localhost:*`,
     "object-src 'none'",
-    "frame-src 'self'"
+    "frame-src 'self'",
+    "frame-ancestors 'self'",
+    "base-uri 'self'",
+    "form-action 'self'"
   ].join('; '));
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(self), usb=(), magnetometer=(), gyroscope=()');
+  // HSTS — only meaningful over TLS; safe to set regardless (browsers ignore over HTTP)
+  if (process.env.NODE_ENV !== 'test') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   next();
 });
 
@@ -92,6 +127,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Gate .html page requests by PAGE_TIERS (PUBLIC/CLIENT/ADMIN/SUPERADMIN)
+// before the static middleware can serve the bytes. Visitors hitting an admin
+// page without a valid JWT receive 403 instead of the raw HTML source.
+app.use(pageGuard());
+
 // Serve static files — ONLY from public/ to prevent exposing source, .env, DBs
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -100,6 +140,32 @@ const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
 const maxReq = Number(process.env.RATE_LIMIT_MAX || 1000);
 app.use(rateLimit({ windowMs, max: maxReq, standardHeaders: true, legacyHeaders: false }));
 app.use("/payfast/notify", rateLimit({ windowMs, max: Math.min(maxReq, 30), standardHeaders: true, legacyHeaders: false }));
+
+// Tight limits on public-but-sensitive mutating endpoints
+const strictLimiter = (max) => rateLimit({ windowMs, max, standardHeaders: true, legacyHeaders: false });
+app.use("/lead",                     strictLimiter(5));
+app.use("/create-payment",           strictLimiter(10));
+app.use("/api/checkout/confirm",     strictLimiter(10));
+app.use("/whatsapp",                 strictLimiter(30));
+app.use("/api/agents/execute-paid",  strictLimiter(10));
+app.use("/api/ubi/claim",            strictLimiter(20));
+
+// WhatsApp inbound webhook signature verification
+// Meta Cloud API sends X-Hub-Signature-256: sha256=<hex> keyed by WHATSAPP_APP_SECRET.
+// If no secret is configured we refuse the request (fail-closed) rather than
+// silently accept anonymous bodies.
+function verifyWhatsAppSignature(req) {
+  const secret = process.env.WHATSAPP_APP_SECRET;
+  if (!secret) return false;
+  const sigHeader = String(req.headers['x-hub-signature-256'] || '');
+  const m = sigHeader.match(/^sha256=([a-f0-9]+)$/i);
+  if (!m) return false;
+  const received = Buffer.from(m[1], 'hex');
+  const raw = typeof req.rawBody === 'string' ? req.rawBody : JSON.stringify(req.body || {});
+  const expected = crypto.createHmac('sha256', secret).update(raw).digest();
+  if (received.length !== expected.length) return false;
+  return crypto.timingSafeEqual(received, expected);
+}
 
 // HTML escape helper to prevent XSS in server-rendered pages
 function esc(str) {
@@ -242,6 +308,26 @@ app.post("/api/checkout/confirm",
   }),
   async (req, res) => {
     const { ref, amount, client, email, method } = req.body;
+    const parsedAmount = parseFloat(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({ ok: false, error: 'invalid amount' });
+    }
+    // Verify the ref was issued by /create-payment (or /api/agents/execute-paid)
+    // and that the amount matches the originally recorded intent. Without this
+    // check a caller could credit the treasury with any amount for any ref.
+    let pending;
+    try {
+      const row = await supabase.from('payments').select('amount,status').eq('reference', ref).single();
+      pending = row.data;
+    } catch (_) { pending = null; }
+    if (!pending) return res.status(404).json({ ok: false, error: 'unknown ref' });
+    if (pending.status === 'batch_pool' || pending.status === 'paid') {
+      return res.status(409).json({ ok: false, error: 'already processed', ref });
+    }
+    const expected = parseFloat(pending.amount || '0');
+    if (!Number.isFinite(expected) || Math.abs(expected - parsedAmount) > 0.01) {
+      return res.status(400).json({ ok: false, error: 'amount mismatch', ref });
+    }
     try {
       // Update payment status in Supabase
       await supabase.from('payments').update({ status: 'batch_pool' }).eq('reference', ref);
@@ -427,6 +513,9 @@ app.get("/payment/cancel", (req, res) => {
 
 // ================= WHATSAPP BOT (WEBHOOK READY) =================
 app.post("/whatsapp", async (req, res) => {
+  if (!verifyWhatsAppSignature(req)) {
+    return res.status(401).json({ error: 'invalid signature' });
+  }
   const message = req.body.message;
   const from = req.body.from;
 
@@ -1940,14 +2029,14 @@ app.post('/api/admin/keys', requireAdmin, (req, res) => {
   res.json({ ok: true, saved: Object.keys(keys).length });
 });
 
-// UBI claim (used by executive-dashboard.html)
-app.post('/api/ubi/claim', async (req, res) => {
+// UBI claim (used by executive-dashboard.html) — requires authenticated client
+app.post('/api/ubi/claim', requireUserJwt, async (req, res) => {
   const { address } = req.body;
   if (!address) return res.status(400).json({ error: 'Address required' });
   try {
     const amount = 100;
     await economyDb.query("UPDATE treasury_buckets SET balance = balance - $1 WHERE name = 'ubi' AND balance >= $1", [amount]);
-    res.json({ ok: true, amount, address });
+    res.json({ ok: true, amount, address, user: req.user && req.user.email });
   } catch(e) { res.json({ ok: true, amount: 0, detail: 'Already claimed today or pool empty' }); }
 });
 
@@ -2174,11 +2263,11 @@ function invoiceStatsPayload(invoices) {
   };
 }
 
-app.get('/api/invoices/stats', (_req, res) => {
+app.get('/api/invoices/stats', requireAdmin, (_req, res) => {
   res.json(invoiceStatsPayload(INVOICE_STORE));
 });
 
-app.get('/api/invoices', (req, res) => {
+app.get('/api/invoices', requireAdmin, (req, res) => {
   const status = String(req.query.status || '').trim().toLowerCase();
   const invoices = status
     ? INVOICE_STORE.filter((i) => String(i.status || '').toLowerCase() === status)
@@ -2186,7 +2275,7 @@ app.get('/api/invoices', (req, res) => {
   res.json({ ok: true, invoices, count: invoices.length, ts: Date.now() });
 });
 
-app.post('/api/invoices', (req, res) => {
+app.post('/api/invoices', requireAdmin, (req, res) => {
   const body = req.body || {};
   if (!body.client_email) return res.status(400).json({ ok: false, error: 'client_email required' });
   const id = 'inv_' + Date.now();
@@ -2207,7 +2296,7 @@ app.post('/api/invoices', (req, res) => {
   res.status(201).json({ ok: true, invoice, ts: Date.now() });
 });
 
-app.post('/api/invoices/:id/send', (req, res) => {
+app.post('/api/invoices/:id/send', requireAdmin, (req, res) => {
   const id = req.params.id;
   const invoice = INVOICE_STORE.find((i) => i.id === id);
   if (!invoice) return res.status(404).json({ ok: false, error: 'invoice_not_found' });
@@ -2216,7 +2305,7 @@ app.post('/api/invoices/:id/send', (req, res) => {
   res.json({ ok: true, invoice_id: id, status: 'sent', sent_at: invoice.sent_at, ts: Date.now() });
 });
 
-app.post('/api/invoices/:id/mark-paid', (req, res) => {
+app.post('/api/invoices/:id/mark-paid', requireAdmin, (req, res) => {
   const id = req.params.id;
   const invoice = INVOICE_STORE.find((i) => i.id === id);
   if (!invoice) return res.status(404).json({ ok: false, error: 'invoice_not_found' });
@@ -2225,7 +2314,7 @@ app.post('/api/invoices/:id/mark-paid', (req, res) => {
   res.json({ ok: true, invoice_id: id, status: 'paid', paid_at: invoice.paid_at, ts: Date.now() });
 });
 
-app.post('/api/invoices/flag-overdue', (_req, res) => {
+app.post('/api/invoices/flag-overdue', requireAdmin, (_req, res) => {
   let flagged = 0;
   const today = new Date().toISOString().slice(0, 10);
   for (const inv of INVOICE_STORE) {
@@ -2237,7 +2326,7 @@ app.post('/api/invoices/flag-overdue', (_req, res) => {
   res.json({ ok: true, flagged, ts: Date.now() });
 });
 
-app.get('/api/invoices/:id/pdf', (req, res) => {
+app.get('/api/invoices/:id/pdf', requireAdmin, (req, res) => {
   const id = req.params.id;
   const invoice = INVOICE_STORE.find((i) => i.id === id);
   if (!invoice) return res.status(404).json({ ok: false, error: 'invoice_not_found' });

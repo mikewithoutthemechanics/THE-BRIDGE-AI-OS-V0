@@ -14,7 +14,10 @@
 <div id="alerts"></div>
 
 <script>
-const ws = new WebSocket("ws://localhost:7777");
+// Build a WebSocket URL from the current origin so the same HTML works from
+// prod (wss://go.ai-os.co.za/ws), staging, and local dev without edits.
+const _wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+const ws = new WebSocket(_wsProto + "//" + window.location.host + "/ws");
 
 ws.onmessage = (e) => {
   const d = JSON.parse(e.data);

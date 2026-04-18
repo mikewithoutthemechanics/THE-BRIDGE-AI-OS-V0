@@ -352,6 +352,66 @@ $ curl -sS https://go.ai-os.co.za/brain-live | head -c 200
 - **Ops items (separate from BoK):** revenue-engine Supabase egress failure (`TypeError: fetch failed`), AI budget ledger at cap (`R500.25 / R500`).
 - Everything else (C1–C9): applied, documented, or closed.
 
+## Full Audit — 2026-04-18 (evening) — Wave 1–3 applied on `claude/full-audit-review-ATWib`
+
+Three-way parallel audit (auth+backend, UI/UX+public, navigation+routing) produced a prioritized finding list; 15 fixes landed this session. Citations below use the post-fix line numbers.
+
+### C11 — PageGuard was disabled globally (closed, Wave 1.1)
+
+`middleware/access-control.js:L211-L212` had a staging-mode early `return next();` that skipped all tier checks. Any `/admin.html`, `/executive-dashboard.html`, `/treasury-dashboard.html` request served the raw HTML body without auth. **Fix:** early return deleted and `app.use(pageGuard())` wired into `server.js:L97-L100` before `express.static`.
+
+### C12 — Gemini API key inlined into the Vite bundle (closed, Wave 1.2)
+
+`frontend/vite.config.ts:L10-L12` used `define: { 'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY) }` which baked the key into the shipped JS. Nothing in `frontend/src` actually imports `@google/genai`. **Fix:** `define` block removed; dependency kept in `package.json` for a future backend-proxied route.
+
+### C13 — Eight mutating endpoints unauthenticated (closed, Wave 1.3)
+
+`server.js` endpoints `/lead`, `/create-payment`, `/api/checkout/confirm`, `/whatsapp`, `/api/agents/execute-paid`, `/api/ubi/claim`, `/api/invoices/*` were reachable with no auth and either no rate limit or validation-only. **Fixes applied:**
+
+1. Tight per-route rate limiters added in `server.js:L108-L116`.
+2. `/api/checkout/confirm` (`server.js:L245-L260`) now requires the `ref` to exist in `payments` with a matching `amount` and a non-final status — rejects 404/409/400 instead of blindly crediting the treasury.
+3. `/whatsapp` (`server.js:L452-L455`) gated by `verifyWhatsAppSignature()` using `WHATSAPP_APP_SECRET` (sha256 HMAC over the raw body, timing-safe compare).
+4. `/api/ubi/claim` (`server.js:L1954`) requires a Bridge JWT via the imported `requireUserJwt` (alias for `access-control.requireClient`).
+5. `/api/invoices` (GET/POST), `/api/invoices/:id/send`, `/api/invoices/:id/mark-paid`, `/api/invoices/flag-overdue`, `/api/invoices/:id/pdf`, `/api/invoices/stats` — all gated by the server.js local `requireAdmin` (token-based, consistent with every other `/api/admin/*` route).
+6. `/payfast/notify` left untouched — already has IP allowlist + signed body + merchant binding + PayFast server re-validation.
+
+### C14 — Superadmin list split between Node and Python (closed, Wave 1.4)
+
+`auth.js:L29` enforced one email (`ryanpcowan@`), `middleware/auth.js:L4-L8` and `backend/main.py:L16-L20` both had three. **Fix:** `shared/superusers.json` flipped to `_canonical_wiring: true` with three emails; two shared loaders created (`shared/superusers.js`, `shared/superusers.py`) with hardcoded fallbacks; `auth.js`, `middleware/auth.js`, `backend/main.py` now all import from the shared loader. `node -c` + `python3 -c "from shared.superusers import EMAILS"` both pass.
+
+### C15 — X-Admin-Token / X-Bridge-Secret header bypass retired (closed, Wave 2.6)
+
+`middleware/access-control.js:requireAdmin` and `requireSuperAdmin` accepted these headers alone as admin proof. **Fix:** both header shortcuts removed; JWT with `role=admin|superadmin` is the only path. The legacy `server.js:L942 requireAdmin` (used by `/api/admin/*`, `/api/registry/*`, `/api/secrets/*`) is still header-based — logged as **G13** for staged migration because S2S callers rely on it.
+
+### Other Wave 2/3 fixes (no new C-items)
+
+- **Soft-404 body hardened** — `brain.js:serveWithNav` now falls back to `public/404.html` before the text stub.
+- **Duplicate `/brain-live` dead handler** removed — `brain.js:L3866` collapsed to a comment; `L2221` redirect to `/ehsa-brain.html` is the only handler.
+- **Security headers expanded** — `server.js:L83-L96` adds `frame-ancestors 'self'`, `base-uri 'self'`, `form-action 'self'`, `Referrer-Policy`, `Permissions-Policy`, and `Strict-Transport-Security` (skipped in `NODE_ENV=test`).
+- **Hardcoded `ws://localhost:7777`** replaced with origin-relative URL in `dashboard.html:L17-L20`.
+- **Three-layer token revocation** — `middleware/auth.js:requireAuth` now checks Redis → in-memory → Supabase (`lib/revoked-tokens`); `revokeToken()` writes to all three so revocation survives Vercel cold starts.
+- **Cookies `Secure`** — added on `bridge_token` in `api/siwe.js:L206,L416`, `api/index.js:L4781`, `public/wizard.html:L521`. `HttpOnly` deferred because ~20 frontend files still read `bridge_token` from `localStorage`/`document.cookie` (tracked as **G14** for frontend migration).
+- **CSRF Origin check** — `server.js:L85-L100` rejects POST/PUT/PATCH/DELETE without an allowed Origin or an admin/JWT header. Webhooks (`/payfast/notify`, `/whatsapp`) exempt; their signature check is stronger.
+- **URL constant plumbed** — `inject-meta.js:L19` and `api/index.js:L3778` honour `BASE_URL`/`PUBLIC_URL` with `https://go.ai-os.co.za` as fallback. `scripts/sendEmails.js` email-body URLs left as literals (customer-facing templates).
+- **Revenue-engine alerting** — `revenue-engine/index.js:L56-L82,L121-L139` distinguishes `not_configured` from `supabase_unreachable`, posts to `REVENUE_ALERT_WEBHOOK` with a 15-min per-kind cooldown so a prolonged outage does not spam.
+- **`/sitemap` noindex** — `public/sitemap.html:L6` flipped to `noindex, nofollow`; `sitemap.html` added to `inject-meta.js:L25` so future regenerations respect it.
+
+### G13 — Legacy `server.js:L942 requireAdmin` is header-only (new, not closed)
+
+The primary admin guard on ~44 routes still checks `X-Admin-Token` via `crypto.timingSafeEqual()` with no JWT fallback. Staged migration: (step 1) add JWT-or-header acceptance, (step 2) update all S2S callers to use JWT, (step 3) remove header path. Not done in this session because the S2S caller inventory is non-trivial.
+
+### G14 — Frontend reads `bridge_token` from `localStorage`/`document.cookie` (new, not closed)
+
+`HttpOnly` cookies can't be set while `public/*.html` (admin-*, intelligence, defi, welcome, affiliate, command-center, projects, app.js, bridge-auth.js, bridge-widget.js) read the token to attach as `Authorization: Bearer`. Plan: migrate those files to rely on cookie auth and remove all `localStorage.getItem('bridge_token')` call sites before flipping `HttpOnly`.
+
+### G15 — Cloudflare tunnel credentials tracked in git (new, not closed)
+
+`git ls-files cloudflared/` returns `05a48265-7470-4f48-8161-31f218c7a99b.json` + `cert.pem` + `config.yml`, even though `.gitignore:L24` lists `cloudflared/`. `.gitignore` only prevents *future* tracking — the secrets are already in history. **Action needed (ops):** rotate the tunnel secret, `git rm --cached cloudflared/*.json cloudflared/*.pem`, commit, then decide whether to rewrite history (`git filter-repo`) or accept the breach as recorded in history. Flagged here but not executed without explicit authorisation.
+
+### G16 — Python backend (`backend/main.py`) has no JWT check at all (new, not closed)
+
+The revocation store wired into the Node stack doesn't matter on the Python side because `backend/main.py` endpoints never verify a JWT or call `is_superuser()` from a request. Consolidation plan: (a) add a `verify_token()` helper reading the same `revoked_tokens` Supabase table, (b) gate the admin-adjacent endpoints with it, (c) only then is revocation end-to-end symmetric.
+
 ## Sources
 
 - DNS resolution (nslookup 2026-04-17)

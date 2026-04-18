@@ -52,9 +52,33 @@ const PRICING = {
   agent_spawn:    0.05,     // $0.05 per new agent activation
 };
 
+// ── Alert throttling — don't spam on every cycle when Supabase is down ───────
+const ALERT_COOLDOWN_MS = 15 * 60 * 1000; // 15 min between alerts of same kind
+const _lastAlert = new Map();
+function alertOnce(kind, message) {
+  const now = Date.now();
+  const prev = _lastAlert.get(kind) || 0;
+  if (now - prev < ALERT_COOLDOWN_MS) return;
+  _lastAlert.set(kind, now);
+  const webhook = process.env.REVENUE_ALERT_WEBHOOK;
+  console.error(`[REVENUE][ALERT:${kind}] ${message}`);
+  if (!webhook) return;
+  try {
+    // Fire-and-forget; failure to send an alert must not break the cycle.
+    fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, service: 'revenue-engine', message, ts: new Date().toISOString() }),
+    }).catch(() => {});
+  } catch (_) {}
+}
+
 // ── Revenue cycle ───────────────────────────────────────────────────────────
+let _consecutiveFetchFailures = 0;
 async function processRevenueCycle() {
   if (!isConfigured || !supabase) {
+    // Distinguish "not configured" (expected in dev) from "fetch failed" (bad).
+    alertOnce('not_configured', 'Supabase not configured — revenue cycle skipped');
     return;
   }
 
@@ -111,11 +135,18 @@ async function processRevenueCycle() {
 
     stats.cycles++;
     stats.last_cycle_at = new Date().toISOString();
+    _consecutiveFetchFailures = 0;
   } catch (err) {
-    if (stats.errors === 0) {
-      console.warn('[REVENUE] Cycle error:', err.message);
-    }
     stats.errors++;
+    const msg = err && err.message ? err.message : String(err);
+    // "fetch failed" is the Supabase outbound-network symptom; alert louder.
+    if (/fetch failed/i.test(msg) || /ENOTFOUND|ECONNREFUSED|ETIMEDOUT/.test(msg)) {
+      _consecutiveFetchFailures++;
+      alertOnce('supabase_unreachable',
+        `Supabase outbound failed (${_consecutiveFetchFailures}x): ${msg}`);
+    } else if (stats.errors === 1 || stats.errors % 50 === 0) {
+      alertOnce('cycle_error', `Revenue cycle error: ${msg}`);
+    }
   }
 }
 

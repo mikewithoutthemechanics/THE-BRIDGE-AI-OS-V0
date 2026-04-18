@@ -148,25 +148,16 @@ async function requireClient(req, res, next) {
 async function requireAdmin(req, res, next) {
   const user = await extractUser(req);
 
-  // Check admin token header
-  const adminToken = req.headers['x-admin-token'];
-  if (adminToken && process.env.ADMIN_TOKEN && safeCompare(adminToken, process.env.ADMIN_TOKEN)) {
-    req.user = user || { role: 'admin' };
-    return next();
-  }
-
-  // Check bridge internal secret header
-  const bridgeSecret = req.headers['x-bridge-secret'];
-  if (bridgeSecret && process.env.BRIDGE_INTERNAL_SECRET && safeCompare(bridgeSecret, process.env.BRIDGE_INTERNAL_SECRET)) {
-    req.user = user || { role: 'admin' };
-    return next();
-  }
-
-  // Check user role
+  // Primary path: authenticated user with admin/superadmin role.
   if (user && (user.role === 'admin' || user.role === 'superadmin')) {
     req.user = user;
     return next();
   }
+
+  // Header-only bypass (X-Admin-Token / X-Bridge-Secret) was retired — server-
+  // to-server callers must now present a JWT for an admin identity. The legacy
+  // header still exists on server.js:L942 requireAdmin (used by /api/admin/*,
+  // /api/registry/*, /api/secrets/*) pending a staged migration.
 
   if (wantsHtml(req)) {
     return res.status(403).send('<!DOCTYPE html><html><body style="background:#050a0f;color:#ff3c5a;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><h1>403 — Admin Access Required</h1></body></html>');
@@ -179,10 +170,10 @@ async function requireAdmin(req, res, next) {
 async function requireSuperAdmin(req, res, next) {
   const user = await extractUser(req);
 
-  // Must pass admin check first (user role or headers)
-  const isAdmin = (user && (user.role === 'admin' || user.role === 'superadmin'))
-    || (req.headers['x-admin-token'] && process.env.ADMIN_TOKEN && safeCompare(req.headers['x-admin-token'], process.env.ADMIN_TOKEN))
-    || (req.headers['x-bridge-secret'] && process.env.BRIDGE_INTERNAL_SECRET && safeCompare(req.headers['x-bridge-secret'], process.env.BRIDGE_INTERNAL_SECRET));
+  // Admin identity now comes from the JWT only — header bypasses retired.
+  // SuperAdmin additionally requires the CFO token (preserved) as a second
+  // out-of-band factor before treasury-affecting endpoints are reachable.
+  const isAdmin = !!(user && (user.role === 'admin' || user.role === 'superadmin'));
 
   if (!isAdmin) {
     if (wantsHtml(req)) {
@@ -208,9 +199,6 @@ async function requireSuperAdmin(req, res, next) {
 
 function pageGuard() {
   return async function pageGuardMiddleware(req, res, next) {
-    // STAGING MODE: all pages accessible — remove this block to re-enable RBAC
-    return next();
-
     // Only guard GET requests for .html pages or exact path matches
     if (req.method !== 'GET') return next();
 

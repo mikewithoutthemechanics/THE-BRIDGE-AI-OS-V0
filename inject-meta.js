@@ -16,7 +16,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const BASE_URL   = 'https://go.ai-os.co.za';
+const BASE_URL   = process.env.BASE_URL || process.env.PUBLIC_URL || 'https://go.ai-os.co.za';
 const OG_IMAGE   = `${BASE_URL}/og-image.png`;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
@@ -26,6 +26,8 @@ const NO_INDEX = new Set([
   'admin-withdraw.html', 'view-logs.html', 'auth-callback.html', 'auth-dashboard.html',
   'admin-esim.html', 'activate.html', 'activation.html', 'offline.html',
   'payment-success.html', 'payment-cancel.html', '404.html',
+  // Route maps leak the full surface — keep them out of search engines.
+  'sitemap.html',
 ]);
 
 // Per-page descriptions for high-priority pages

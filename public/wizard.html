@@ -518,7 +518,7 @@ async function createAccount() {
     });
     const data = await res.json();
     if (data.ok && data.token) {
-      document.cookie = 'bridge_token=' + data.token + ';path=/;max-age=2592000;SameSite=Lax';
+      document.cookie = 'bridge_token=' + data.token + ';path=/;max-age=2592000;SameSite=Lax;Secure';
 
       // Seed profile + default project via wizard completion API
       try {

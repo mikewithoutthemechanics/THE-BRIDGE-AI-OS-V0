@@ -203,7 +203,7 @@ async function provisionManagedWallet(req, res) {
     token = `${header}.${payload}.${sig}`;
   }
 
-  res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; SameSite=Lax; Max-Age=604800`);
+  res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; SameSite=Lax; Secure; Max-Age=604800`);
 
   return res.json({
     ok: true,
@@ -413,7 +413,7 @@ async function verifySignature(req, res) {
   }
 
   // 8. Set cookie
-  res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; SameSite=Lax; Max-Age=604800`);
+  res.setHeader('Set-Cookie', `bridge_token=${token}; Path=/; SameSite=Lax; Secure; Max-Age=604800`);
 
   res.json({
     ok: true,
