@@ -37,7 +37,7 @@ const da     = require('./lib/directadmin');
 const wp     = require('./lib/wordpress');
 const wpAuth = require('./lib/wp-auth');
 const { isSuperUser } = require('./middleware/auth');
-const { requireClient: requireUserJwt, pageGuard } = require('./middleware/access-control');
+const { requireClient: requireUserJwt, requireAdmin, pageGuard } = require('./middleware/access-control');
 // CSRF: csurf is deprecated and removed — use SameSite cookies + Origin header checks
 // Auth middleware disabled at global level — individual admin routes use requireAdmin
 // const { requireAuth } = require('./middleware/auth');
@@ -74,11 +74,11 @@ const ORIGIN_EXEMPT_PATHS = new Set(['/payfast/notify', '/whatsapp']);
 app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
   if (ORIGIN_EXEMPT_PATHS.has(req.path)) return next();
+  // API routes use Authorization: Bearer tokens (not cookies), so they are
+  // inherently CSRF-safe — the auth middleware enforces token presence/validity.
+  if (req.path.startsWith('/api/')) return next();
   const rawOrigin = req.headers.origin || req.headers.referer || '';
   if (!rawOrigin) {
-    // Allow server-to-server callers that omit Origin entirely (curl, CI) but
-    // only if they present an admin/JWT token — without one we refuse.
-    if (req.headers['x-admin-token'] || req.headers.authorization) return next();
     return res.status(403).json({ ok: false, error: 'Origin required for state-changing requests' });
   }
   let originHost;
@@ -1027,8 +1027,9 @@ secrets.seedFromEnv([
   'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'OPENROUTER_API_KEY'
 ]).catch(() => {});
 
-// Internal-only secrets API — requires ADMIN_TOKEN header
-function requireAdmin(req, res, next) {
+// Internal-only secrets API — requires ADMIN_TOKEN header (timing-safe).
+// Named distinctly from the JWT-based requireAdmin (imported above) to prevent confusion.
+function requireInternalAdminToken(req, res, next) {
   const token = req.headers['x-admin-token'];
   const expected = secrets.getSecret('ADMIN_TOKEN') || process.env.ADMIN_TOKEN;
   if (!expected) return res.status(503).json({ error: 'ADMIN_TOKEN not configured' });
@@ -1142,18 +1143,18 @@ function requireRole(roles) {
 // Apply authentication to all /api/* routes
 app.all('/api/{*path}', requireAuth);
 
-app.get('/api/secrets', requireAdmin, [validate.secretsList], async (req, res) => {
+app.get('/api/secrets', requireInternalAdminToken, [validate.secretsList], async (req, res) => {
     res.json(await secrets.listSecrets());
   });
 
-app.post('/api/secrets', requireAdmin, [validate.createSecret], async (req, res) => {
+app.post('/api/secrets', requireInternalAdminToken, [validate.createSecret], async (req, res) => {
     const { key_name, key_value, service } = req.body;
     if (!key_name || !key_value) return res.status(400).json({ error: 'key_name and key_value required' });
     await secrets.setSecret(key_name, key_value, service || 'API', 'api');
     res.json({ ok: true, key_name });
   });
 
-app.delete('/api/secrets/:key', requireAdmin, [validate.secretsDelete], async (req, res) => {
+app.delete('/api/secrets/:key', requireInternalAdminToken, [validate.secretsDelete], async (req, res) => {
   await secrets.deleteSecret(req.params.key);
   res.json({ ok: true });
 });

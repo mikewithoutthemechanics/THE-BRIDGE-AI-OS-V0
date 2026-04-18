@@ -8,6 +8,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const userDb = require('../lib/user-identity');
 
 // Timing-safe comparison to prevent timing attacks on secret tokens
@@ -78,7 +79,7 @@ async function extractUser(req) {
 
   if (!token) return null;
 
-  // Try Bridge JWT first (backward compat)
+  // Try Bridge JWT first (backward compat — verifies and looks up DB user)
   const bridgeUser = await userDb.verifyAuthToken(token);
   if (bridgeUser) {
     // Upgrade any stale 'visitor' plan — email+password users were previously created with visitor
@@ -118,6 +119,26 @@ async function extractUser(req) {
     }
   } catch (_) {}
 
+  // Fallback: verify the JWT signature directly with JWT_SECRET.
+  // This handles tokens issued by server.js (via jsonwebtoken) when the
+  // DB user record is not yet in the user-identity store (e.g. test mode,
+  // newly created users, or Supabase offline). The role embedded in the
+  // token payload is trusted because it was signed with the server secret.
+  try {
+    const secret = process.env.JWT_SECRET;
+    if (secret) {
+      const decoded = jwt.verify(token, secret);
+      if (decoded && decoded.sub) {
+        return {
+          id: decoded.sub,
+          email: decoded.email || null,
+          role: decoded.role || 'member',
+          plan: decoded.plan || 'client',
+        };
+      }
+    }
+  } catch (_) {}
+
   return null;
 }
 
@@ -154,11 +175,16 @@ async function requireAdmin(req, res, next) {
     return next();
   }
 
-  // Header-only bypass (X-Admin-Token / X-Bridge-Secret) was retired — server-
-  // to-server callers must now present a JWT for an admin identity. The legacy
-  // header still exists on server.js:L942 requireAdmin (used by /api/admin/*,
-  // /api/registry/*, /api/secrets/*) pending a staged migration.
+  // No authenticated user at all — return 401 (Unauthorized).
+  if (!user) {
+    if (wantsHtml(req)) {
+      const redirect = encodeURIComponent(req.originalUrl || req.path);
+      return res.redirect('/onboarding.html?redirect=' + redirect);
+    }
+    return res.status(401).json({ ok: false, error: 'Authentication required' });
+  }
 
+  // Authenticated but not admin — return 403 (Forbidden).
   if (wantsHtml(req)) {
     return res.status(403).send('<!DOCTYPE html><html><body style="background:#050a0f;color:#ff3c5a;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><h1>403 — Admin Access Required</h1></body></html>');
   }

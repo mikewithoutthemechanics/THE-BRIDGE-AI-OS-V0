@@ -256,3 +256,65 @@ describe('POST /api/pay', () => {
     expect(res.status).toBe(401);
   });
 });
+
+// ── Admin auth — JWT role-based access control ────────────────────────────────
+// Tests that admin-protected endpoints enforce JWT role requirements.
+// Uses POST /api/economy/transfer which requires admin/superadmin role.
+
+describe('Admin auth (JWT role-based)', () => {
+  let adminToken;  // superadmin role (ryanpcowan@gmail.com is in the superusers list)
+  let memberToken; // regular member role
+
+  beforeAll(async () => {
+    const adminRes = await login('ryanpcowan@gmail.com');
+    adminToken = adminRes.body.token;
+    const memberRes = await login(uniqEmail());
+    memberToken = memberRes.body.token;
+  });
+
+  test('admin can access admin-protected endpoint', async () => {
+    const res = await request(app)
+      .post('/api/economy/transfer')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ from: 'agent1', to: 'agent2', amount: 10 });
+    // Auth passes — may return 200 or 400 (business logic) but NOT 401/403
+    expect(res.status).not.toBe(401);
+    expect(res.status).not.toBe(403);
+  });
+
+  test('authenticated non-admin receives 403', async () => {
+    const res = await request(app)
+      .post('/api/economy/transfer')
+      .set('Authorization', `Bearer ${memberToken}`)
+      .send({ from: 'agent1', to: 'agent2', amount: 10 });
+    expect(res.status).toBe(403);
+  });
+
+  test('missing token receives 401', async () => {
+    const res = await request(app)
+      .post('/api/economy/transfer')
+      .send({ from: 'agent1', to: 'agent2', amount: 10 });
+    expect(res.status).toBe(401);
+  });
+
+  test('invalid token receives 401', async () => {
+    const res = await request(app)
+      .post('/api/economy/transfer')
+      .set('Authorization', 'Bearer invalid.jwt.token')
+      .send({ from: 'agent1', to: 'agent2', amount: 10 });
+    expect(res.status).toBe(401);
+  });
+
+  test('expired token receives 401', async () => {
+    const expiredToken = jwt.sign(
+      { sub: 'u_expired', email: 'expired@test.com', role: 'admin' },
+      JWT_SECRET,
+      { expiresIn: -1 }
+    );
+    const res = await request(app)
+      .post('/api/economy/transfer')
+      .set('Authorization', `Bearer ${expiredToken}`)
+      .send({ from: 'agent1', to: 'agent2', amount: 10 });
+    expect(res.status).toBe(401);
+  });
+});
