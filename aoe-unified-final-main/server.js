@@ -11,6 +11,10 @@ const PORT   = Number(process.argv[2] || process.env.PORT || 7777);
 const UPSTREAM_HOST = 'go.ai-os.co.za';
 const ROOT   = __dirname;
 const HTML   = path.join(ROOT, 'orchestra.html');
+const ALLOWED_ORIGINS = new Set([
+  `http://127.0.0.1:${PORT}`,
+  `http://localhost:${PORT}`,
+]);
 
 function proxy(req, res){
   const opts = {
@@ -26,9 +30,13 @@ function proxy(req, res){
     timeout: 8000,
   };
   const up = https.request(opts, r => {
+    const origin = req.headers.origin;
+    const corsHeaders = ALLOWED_ORIGINS.has(origin)
+      ? { 'access-control-allow-origin': origin, 'vary': 'Origin' }
+      : {};
     res.writeHead(r.statusCode || 502, {
       ...r.headers,
-      'access-control-allow-origin': '*',
+      ...corsHeaders,
       'cache-control': 'no-store',
     });
     r.pipe(res);

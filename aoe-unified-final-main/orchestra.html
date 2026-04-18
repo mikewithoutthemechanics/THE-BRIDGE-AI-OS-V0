@@ -131,6 +131,44 @@
   .banner.warn{border-color:rgba(255,179,71,.35);color:#ffd699}
   .banner a{color:var(--accent);text-decoration:underline}
 
+  /* ── topology canvas ────────────────────────────── */
+  .topo{position:relative;margin:0 0 18px;border:1px solid var(--line);border-radius:var(--radius);
+        background:radial-gradient(600px 320px at 50% 50%, rgba(0,191,255,.06), transparent 65%), var(--panel);
+        overflow:hidden}
+  .topo svg{display:block;width:100%;height:auto;aspect-ratio: 16/9;max-height:58vh;touch-action:manipulation}
+  .topo .legend{position:absolute;top:10px;left:14px;display:flex;gap:14px;font-size:10px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;pointer-events:none}
+  .topo .legend b{color:var(--text);font-weight:500}
+  .topo .legend .s{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;box-shadow:0 0 6px currentColor}
+  .topo .legend .on{color:var(--accent)} .topo .legend .wa{color:var(--warn)} .topo .legend .of{color:var(--err)}
+  .topo .sel{position:absolute;top:10px;right:14px;font-size:11px;color:var(--dim);background:var(--panel2);border:1px solid var(--line2);padding:5px 10px;border-radius:8px;max-width:55%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topo .sel b{color:var(--accent);letter-spacing:1px}
+  .topo .hubLabel{font:600 12px/1 ui-monospace,monospace;letter-spacing:3px;fill:var(--text);text-anchor:middle;pointer-events:none}
+  .topo .hubSub{font:10px/1 ui-monospace,monospace;letter-spacing:2px;fill:var(--dim);text-anchor:middle;pointer-events:none}
+  .topo .nodeG{cursor:pointer}
+  .topo .nodeG text{font:11px/1 ui-monospace,monospace;fill:var(--text);pointer-events:none;text-anchor:middle;letter-spacing:.5px}
+  .topo .nodeG .ring{fill:none;stroke:var(--line2);stroke-width:1}
+  .topo .nodeG.active .ring,.topo .nodeG:hover .ring{stroke:var(--accent)}
+  .topo .edge{fill:none;stroke-width:1;opacity:.45}
+  .topo .edge.on{stroke:var(--accent)} .topo .edge.wa{stroke:var(--warn)} .topo .edge.of{stroke:var(--err)}
+  .topo .edge.hot{opacity:.9;filter:drop-shadow(0 0 4px currentColor)}
+  @keyframes topoSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .topo .orbit{transform-box:fill-box;transform-origin:50% 50%;animation:topoSpin 240s linear infinite}
+  @keyframes topoDash{to{stroke-dashoffset:-40}}
+  .topo .edge{stroke-dasharray:2 6;animation:topoDash 6s linear infinite}
+  .topo .edge.hot{animation-duration:2s}
+  @keyframes topoPulse{0%{r:8;opacity:.9}100%{r:26;opacity:0}}
+  .topo .pulse{animation:topoPulse 1.8s ease-out infinite}
+  .topo .pulse.wa{animation-duration:1.2s} .topo .pulse.of{animation-duration:.9s}
+  .topo .hubPulse{animation:topoPulse 2.4s ease-out infinite}
+  @media (prefers-reduced-motion: reduce){
+    .topo .orbit,.topo .edge,.topo .pulse,.topo .hubPulse{animation:none}
+  }
+  @media (max-width: 768px){
+    .topo svg{aspect-ratio: 4/3;max-height:70vh}
+    .topo .legend{font-size:9px;gap:10px}
+    .topo .sel{font-size:10px;max-width:60%}
+  }
+
   /* ── scrollbar ──────────────────────────────────── */
   ::-webkit-scrollbar{width:10px;height:10px}
   ::-webkit-scrollbar-track{background:transparent}
@@ -201,6 +239,45 @@
     <p class="sub">Autonomous agent orchestration layer. Trade intelligence fragments, raw GPU clusters, and semantic logic gates in real-time.</p>
 
     <div id="banner" class="banner" style="display:none"></div>
+
+    <section class="topo" id="topo" aria-label="fleet topology">
+      <div class="legend">
+        <span><span class="s on"></span><b>online</b></span>
+        <span><span class="s wa"></span><b>warn</b></span>
+        <span><span class="s of"></span><b>offline</b></span>
+      </div>
+      <div class="sel" id="topoSel">click a node</div>
+      <svg id="topoSvg" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet" role="img">
+        <defs>
+          <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#00ff9c" stop-opacity=".85"/>
+            <stop offset="60%" stop-color="#00bfff" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="#00bfff" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="edgeOn" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#00bfff" stop-opacity=".15"/>
+            <stop offset="100%" stop-color="#00ff9c" stop-opacity=".9"/>
+          </linearGradient>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g class="orbit" pointer-events="none">
+          <circle cx="400" cy="225" r="90"  fill="none" stroke="#1a2430" stroke-dasharray="2 6"/>
+          <circle cx="400" cy="225" r="150" fill="none" stroke="#1a2430" stroke-dasharray="2 6"/>
+          <circle cx="400" cy="225" r="200" fill="none" stroke="#1a2430" stroke-dasharray="2 6"/>
+        </g>
+        <g id="topoEdges"></g>
+        <g id="topoHub">
+          <circle cx="400" cy="225" r="34" fill="url(#hubGrad)" filter="url(#glow)"/>
+          <circle class="hubPulse" cx="400" cy="225" r="8" fill="none" stroke="#00ff9c" stroke-width="1.5"/>
+          <text class="hubLabel" x="400" y="222">ORCHESTRA</text>
+          <text class="hubSub"   x="400" y="238">NEURAL EXCHANGE</text>
+        </g>
+        <g id="topoNodes"></g>
+      </svg>
+    </section>
 
     <div class="toolbar">
       <div class="tabs" id="tabs">
@@ -390,6 +467,109 @@ function updateCard(el, s){
   set('restarts', String(s.restarts));
   set('pid',    String(s.pid||'—'));
 }
+// ── render: animated SVG topology ─────────────────
+// Lay nodes out on concentric rings around a central hub. Ring assignment is deterministic
+// (category-driven) so the same service lands in the same spot across ticks — no flicker.
+const TOPO = { cx:400, cy:225, rings:[140, 190, 240] };
+function topoPos(i, total, ring){
+  // Distribute this ring's members evenly; add a small phase offset per ring so rings don't align.
+  const angle = (i/total) * Math.PI*2 + (ring*0.37);
+  return { x: TOPO.cx + Math.cos(angle)*TOPO.rings[ring], y: TOPO.cy + Math.sin(angle)*TOPO.rings[ring] };
+}
+function nodeTone(s){
+  if (s.status !== 'online') return 'of';
+  if ((s.restarts||0) > 5 || (s.cpu||0) > 70) return 'wa';
+  return 'on';
+}
+function renderTopology(){
+  const nodesG = document.getElementById('topoNodes');
+  const edgesG = document.getElementById('topoEdges');
+  if (!nodesG || !edgesG) return;
+  const services = state.services.slice();
+  // Bucket by category → ring (logic=inner, compute=mid, synth=outer). Keeps visual grouping legible.
+  const byRing = [[],[],[]];
+  for (const s of services){
+    const cat = categorize(s.name);
+    const ring = cat==='logic' ? 0 : cat==='compute' ? 1 : 2;
+    byRing[ring].push(s);
+  }
+  const active = state._selected;
+  // Re-use existing node groups keyed by service name to avoid flicker
+  const existing = new Map(Array.from(nodesG.querySelectorAll('.nodeG')).map(g => [g.dataset.name, g]));
+  const existingE = new Map(Array.from(edgesG.querySelectorAll('.edge')).map(p => [p.dataset.name, p]));
+  const wanted = new Set();
+  byRing.forEach((list, ringIdx) => {
+    list.forEach((s, i) => {
+      const p = topoPos(i, Math.max(list.length, 1), ringIdx);
+      const tone = nodeTone(s);
+      wanted.add(s.name);
+      // Edge
+      let edge = existingE.get(s.name);
+      if (!edge){
+        edge = document.createElementNS('http://www.w3.org/2000/svg','path');
+        edge.setAttribute('class', `edge ${tone}`);
+        edge.dataset.name = s.name;
+        edgesG.appendChild(edge);
+      } else {
+        edge.setAttribute('class', `edge ${tone}${edge.classList.contains('hot')?' hot':''}`);
+      }
+      edge.setAttribute('d', `M ${TOPO.cx} ${TOPO.cy} L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`);
+      edge.setAttribute('stroke', tone==='on' ? 'url(#edgeOn)' : (tone==='wa' ? '#ffb347' : '#ff4d6d'));
+
+      // Node group
+      let g = existing.get(s.name);
+      if (!g){
+        g = document.createElementNS('http://www.w3.org/2000/svg','g');
+        g.setAttribute('class','nodeG');
+        g.dataset.name = s.name;
+        const ringEl = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        ringEl.setAttribute('class','ring'); ringEl.setAttribute('r','14');
+        const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        dot.setAttribute('class','dot'); dot.setAttribute('r','6');
+        const pulse = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        pulse.setAttribute('class','pulse'); pulse.setAttribute('fill','none'); pulse.setAttribute('stroke-width','1.2');
+        const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('dy','28');
+        g.appendChild(ringEl); g.appendChild(dot); g.appendChild(pulse); g.appendChild(label);
+        g.addEventListener('click', () => selectNode(s.name));
+        nodesG.appendChild(g);
+      }
+      g.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+      g.classList.toggle('active', s.name===active);
+      const color = tone==='on' ? '#00ff9c' : tone==='wa' ? '#ffb347' : '#ff4d6d';
+      g.querySelector('.dot').setAttribute('fill', color);
+      g.querySelector('.pulse').setAttribute('stroke', color);
+      g.querySelector('.pulse').setAttribute('class', `pulse ${tone}`);
+      const short = s.name.length > 14 ? s.name.slice(0,12)+'…' : s.name;
+      const label = g.querySelector('text');
+      if (label.textContent !== short) label.textContent = short;
+    });
+  });
+  // Drop any nodes/edges no longer in the fleet
+  for (const [name, g] of existing) if (!wanted.has(name)) g.remove();
+  for (const [name, p] of existingE) if (!wanted.has(name)) p.remove();
+}
+function selectNode(name){
+  state._selected = (state._selected===name) ? null : name;
+  const sel = document.getElementById('topoSel');
+  if (state._selected){
+    const s = state.services.find(x => x.name===name);
+    sel.innerHTML = `<b>${esc(name)}</b> · ${esc(s?.status||'?')} · cpu ${fmtPct(s?.cpu||0)} · ${fmtMem(s?.mem_mb||0)}`;
+    // Scroll card into view for deeper inspection
+    document.querySelector(`.card[data-name="${CSS.escape(name)}"]`)?.scrollIntoView({behavior:'smooth',block:'center'});
+  } else {
+    sel.textContent = 'click a node';
+  }
+  renderTopology();
+}
+// Briefly highlight one edge (e.g. on restart/CPU spike) so operators see activity pulse through the graph.
+function flashEdge(name){
+  const p = document.querySelector(`#topoEdges .edge[data-name="${CSS.escape(name)}"]`);
+  if (!p) return;
+  p.classList.add('hot');
+  setTimeout(()=>p.classList.remove('hot'), 1800);
+}
+
 function render(){
   const grid = document.getElementById('grid');
   const q = state.q.trim().toLowerCase();
@@ -466,8 +646,12 @@ function renderStats(){
 }
 
 // ── event synthesis (real diffs, not fakery) ──────
+// Guard against the "heartbeat ← undefined" class of bug: coerce every field
+// so the feed never renders the literal string "undefined".
 function pushEvent(head, body, tone){
-  state.events.unshift({ t: nowClock(), head, body, tone: tone||'' });
+  const H = (head==null||head==='') ? 'event' : String(head);
+  const B = (body==null) ? '' : String(body);
+  state.events.unshift({ t: nowClock(), head:H, body:B, tone: tone||'' });
   if (state.events.length > 80) state.events.length = 80;
   renderFeed();
 }
@@ -481,12 +665,15 @@ function diffAndEmit(next){
       if (prev.status !== s.status){
         const tone = s.status==='online' ? '' : 'err';
         pushEvent(`${s.name} → ${s.status}`, `transition from ${prev.status}`, tone);
+        flashEdge(s.name);
       }
       if ((s.restarts||0) > (prev.restarts||0)){
         pushEvent(`${s.name} restarted`, `restart count ${prev.restarts} → ${s.restarts}`, 'warn');
+        flashEdge(s.name);
       }
       if (Math.abs((s.cpu||0) - (prev.cpu||0)) > 10){
         pushEvent(`${s.name} CPU spike`, `${fmtPct(prev.cpu||0)} → ${fmtPct(s.cpu||0)}`, 'warn');
+        flashEdge(s.name);
       }
     }
     state.prev.set(s.name, { status:s.status, restarts:s.restarts||0, cpu:s.cpu||0 });
@@ -539,7 +726,7 @@ async function tick(){
     state.offline = false;
     banner.style.display = 'none';
   }
-  render(); renderStats();
+  render(); renderStats(); renderTopology();
 }
 
 // ── wiring ────────────────────────────────────────
