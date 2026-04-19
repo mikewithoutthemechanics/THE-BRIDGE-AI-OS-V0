@@ -1,0 +1,20 @@
+{
+  "id": "rollback-deploy",
+  "name": "Rollback last deploy",
+  "description": "Roll back to the previous git commit that was deployed, via a remote `git reset --hard` + pm2 reload. Only the last 5 deploys are retained as rollback targets.",
+  "category": "operations",
+  "required_tier": "enterprise",
+  "required_capability": null,
+  "confirmation_required": true,
+  "params": [
+    { "name": "commit_sha", "type": "string", "required": true, "label": "Target commit SHA (7 or 40 char)" }
+  ],
+  "steps": [
+    { "type": "confirm",   "message": "Roll back to {commit_sha}? This runs `git reset --hard {commit_sha}` on the VPS then pm2 reload." },
+    { "type": "http_post", "path": "/admin/deploy/rollback", "body": { "commit_sha": "{commit_sha}" } },
+    { "type": "wait_for",  "path": "/healthz", "match": "status=ok", "timeout_s": 120 }
+  ],
+  "estimated_duration_s": 45,
+  "audit": true,
+  "audit_action": "deploy_rollback"
+}

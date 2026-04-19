@@ -1,0 +1,18 @@
+{
+  "id": "view-logs",
+  "name": "Tail service logs",
+  "description": "Read the last N lines of a service's PM2 out/err log.",
+  "category": "observability",
+  "required_tier": "pro",
+  "required_capability": null,
+  "confirmation_required": false,
+  "params": [
+    { "name": "service", "type": "string", "required": true, "values_from": "/admin/services" },
+    { "name": "lines", "type": "integer", "default": 200, "min": 1, "max": 2000 }
+  ],
+  "steps": [
+    { "type": "http_get", "path": "/admin/services/{service}/logs?lines={lines}" }
+  ],
+  "estimated_duration_s": 1,
+  "audit": false
+}

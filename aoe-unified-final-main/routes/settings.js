@@ -30,9 +30,18 @@ const path = require('path');
 
 const store    = require('../lib/settings-store');
 const resolver = require('../lib/settings-resolver');
+const workflows = require('../lib/workflow-engine');
 
 const ROOT = path.resolve(__dirname, '..');
 const HTML_PATH = path.join(ROOT, 'settings-admin.html');
+const JS_DIR    = path.join(ROOT, 'public', 'js');
+
+const JS_MIME = {
+  '.js':   'application/javascript; charset=utf-8',
+  '.mjs':  'application/javascript; charset=utf-8',
+  '.json': 'application/json',
+  '.css':  'text/css; charset=utf-8',
+};
 
 const HARDENING = {
   'x-content-type-options': 'nosniff',
@@ -99,6 +108,26 @@ function serveHtml(res){
   });
 }
 
+// Serve JS assets from public/js under the /settings/js/* namespace so
+// nginx only has to proxy the /settings/ prefix — no separate /public location.
+function serveJsAsset(u, res){
+  const rel = decodeURIComponent(u.replace(/^\/settings\/js\//, ''));
+  const abs = path.normalize(path.join(JS_DIR, rel));
+  if (!abs.startsWith(JS_DIR)){
+    res.writeHead(403, { ...HARDENING, 'content-type': 'text/plain' });
+    return res.end('forbidden');
+  }
+  fs.readFile(abs, (err, buf) => {
+    if (err){
+      res.writeHead(404, { ...HARDENING, 'content-type': 'text/plain' });
+      return res.end('not found: ' + u);
+    }
+    const ct = JS_MIME[path.extname(abs).toLowerCase()] || 'application/octet-stream';
+    res.writeHead(200, { ...HARDENING, 'content-type': ct, 'cache-control': 'public, max-age=300' });
+    res.end(buf);
+  });
+}
+
 function createRouter({ adminToken } = {}){
   const TOKEN = adminToken || process.env.ORCHESTRA_ADMIN_TOKEN || '';
 
@@ -113,6 +142,10 @@ function createRouter({ adminToken } = {}){
     }
     if (req.method === 'GET' && u === '/settings/admin'){
       serveHtml(res);
+      return true;
+    }
+    if (req.method === 'GET' && u.startsWith('/settings/js/')){
+      serveJsAsset(u, res);
       return true;
     }
     if (req.method === 'GET' && u === '/settings/defaults'){
@@ -241,6 +274,82 @@ function createRouter({ adminToken } = {}){
       store.appendAudit(s, { actor: g.email, action: 'super_admin_revoke', target, prev, next: s.users[target] });
       store.save(s);
       json(res, 200, { ok: true, user: s.users[target] });
+      return true;
+    }
+
+    // ---- workflows (tier-scoped) ----
+    // Actor is identified via X-Actor-Email (same as super-admin routes), but the
+    // engine gates each workflow on the actor's resolved tier/capabilities — a
+    // pro user can list+plan pro/free workflows; only super admins see super workflows.
+    if (req.method === 'GET' && u === '/settings/workflows'){
+      const b = requireBearer(req, TOKEN);
+      if (!b.ok) return json(res, b.status, { error: b.error }), true;
+      const actor = String(req.headers['x-actor-email'] || '').toLowerCase().trim();
+      if (!actor) return json(res, 400, { error: 'missing_actor_email' }), true;
+      try {
+        const resolved = resolver.resolve(store.load(), actor);
+        const list = workflows.listAvailable(resolved).map(w => ({
+          id: w.id,
+          name: w.name,
+          description: w.description,
+          category: w.category,
+          required_tier: w.required_tier,
+          required_capability: w.required_capability || null,
+          confirmation_required: !!w.confirmation_required,
+          danger: w.danger || null,
+          estimated_duration_s: w.estimated_duration_s || null,
+          params: w.params || [],
+        }));
+        json(res, 200, { actor, tier: resolved.tier, count: list.length, workflows: list });
+      } catch(e){ json(res, 500, { error: 'workflows_list_failed', detail: e.message }); }
+      return true;
+    }
+    if (req.method === 'GET' && u.startsWith('/settings/workflows/')){
+      const b = requireBearer(req, TOKEN);
+      if (!b.ok) return json(res, b.status, { error: b.error }), true;
+      const actor = String(req.headers['x-actor-email'] || '').toLowerCase().trim();
+      if (!actor) return json(res, 400, { error: 'missing_actor_email' }), true;
+      const id = u.slice('/settings/workflows/'.length);
+      if (!id || id.includes('/')) return json(res, 400, { error: 'invalid_workflow_id' }), true;
+      try {
+        const resolved = resolver.resolve(store.load(), actor);
+        const gate = workflows.canExecute(resolved, id);
+        if (!gate.ok) return json(res, 403, gate), true;
+        json(res, 200, gate.workflow);
+      } catch(e){ json(res, 500, { error: 'workflow_get_failed', detail: e.message }); }
+      return true;
+    }
+    if (req.method === 'POST' && /^\/settings\/workflows\/[^/]+\/plan$/.test(u)){
+      const g = requireSuperAdmin(req, TOKEN); // planning is a write-adjacent act — super-admin gate
+      // Note: we gate plan() behind super-admin to prevent lower tiers from probing
+      // params + discovering internal HTTP shapes. Workflow listing + GET are open
+      // to all tiers (filtered by canExecute).
+      if (!g.ok){
+        // Fall back: if not super, still allow plan for the actor's OWN tier workflows
+        const b = requireBearer(req, TOKEN);
+        if (!b.ok) return json(res, b.status, { error: b.error }), true;
+        const actor = String(req.headers['x-actor-email'] || '').toLowerCase().trim();
+        if (!actor) return json(res, 400, { error: 'missing_actor_email' }), true;
+        let body;
+        try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
+        const id = u.split('/')[3];
+        const resolved = resolver.resolve(store.load(), actor);
+        const p = workflows.plan(resolved, id, body.params || {});
+        return json(res, p.ok ? 200 : 400, p), true;
+      }
+      let body;
+      try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
+      const id = u.split('/')[3];
+      const resolved = resolver.resolve(g.store, g.email);
+      const p = workflows.plan(resolved, id, body.params || {});
+      if (p.ok && body.audit !== false){
+        store.appendAudit(g.store, {
+          actor: g.email, action: 'workflow_plan', target: id,
+          next: { params: p.params, danger: p.danger, tier: p.tier_required }
+        });
+        store.save(g.store);
+      }
+      json(res, p.ok ? 200 : 400, p);
       return true;
     }
 

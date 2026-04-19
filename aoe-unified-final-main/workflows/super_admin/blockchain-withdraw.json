@@ -1,0 +1,23 @@
+{
+  "id": "blockchain-withdraw",
+  "name": "Treasury withdraw (Linea)",
+  "description": "Withdraw BRDG from the Linea treasury via core-gateway. HMAC-signed with JWT_SECRET-derived admin secret. Requires 2FA code.",
+  "category": "treasury",
+  "required_tier": "super_admin",
+  "required_capability": "system.blockchain_withdraw",
+  "confirmation_required": true,
+  "danger": "CRITICAL",
+  "params": [
+    { "name": "to_address",  "type": "string",  "required": true,  "label": "Destination Linea address", "pattern": "^0x[a-fA-F0-9]{40}$" },
+    { "name": "amount_brdg", "type": "number",  "required": true,  "label": "Amount of BRDG", "min": 0.000001 },
+    { "name": "totp_code",   "type": "string",  "required": true,  "label": "Current 6-digit 2FA code", "pattern": "^[0-9]{6}$" },
+    { "name": "reason",      "type": "string",  "required": true,  "label": "Reason for withdrawal (audit)", "min_length": 20 }
+  ],
+  "steps": [
+    { "type": "confirm",   "message": "⚠ TREASURY WITHDRAW\n\nTo: {to_address}\nAmount: {amount_brdg} BRDG\nReason: {reason}\n\nThis is IRREVERSIBLE. Confirm?" },
+    { "type": "http_post", "path": "/admin/blockchain/withdraw", "headers": { "X-TOTP": "{totp_code}" }, "body": { "to": "{to_address}", "amount": "{amount_brdg}", "reason": "{reason}" } }
+  ],
+  "estimated_duration_s": 15,
+  "audit": true,
+  "audit_action": "blockchain_withdraw"
+}

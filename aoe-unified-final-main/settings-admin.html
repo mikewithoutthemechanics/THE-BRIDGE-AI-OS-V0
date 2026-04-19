@@ -86,6 +86,37 @@ details{border:1px solid var(--line); border-radius:4px; padding:6px 10px; margi
 details summary{cursor:pointer; font-size:11px; color:var(--info); letter-spacing:1px; text-transform:uppercase; outline:none}
 details[open] summary{color:var(--accent)}
 pre.json{font-size:10px; color:var(--muted); white-space:pre-wrap; word-break:break-all; margin:6px 0 0; max-height:200px; overflow:auto}
+.wf-row{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+  padding:8px 6px; border-bottom:1px dashed var(--dim);
+}
+.wf-row:last-child{border-bottom:0}
+.wf-meta{flex:1; min-width:0}
+.wf-meta .wf-name{font-size:12px; color:var(--text)}
+.wf-meta .wf-desc{font-size:10px; color:var(--muted); margin-top:2px}
+.wf-meta .wf-tags{margin-top:4px}
+.wf-danger-LOW{color:var(--info)}
+.wf-danger-HIGH{color:var(--warn)}
+.wf-danger-CRITICAL{color:var(--err)}
+.wf-tier-free{background:rgba(109,136,147,.15); color:var(--muted)}
+.wf-tier-pro{background:rgba(0,191,255,.15); color:var(--info)}
+.wf-tier-enterprise{background:rgba(255,179,71,.15); color:var(--warn)}
+.wf-tier-super_admin{background:rgba(255,77,109,.15); color:var(--err)}
+.modal-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.modal{
+  background:var(--panel); border:1px solid var(--accent); border-radius:8px;
+  padding:18px; min-width:360px; max-width:620px; width:100%;
+  max-height:90vh; overflow:auto;
+}
+.modal h3{font-size:12px; color:var(--accent); margin:0 0 10px; letter-spacing:1.5px; text-transform:uppercase}
+.modal .wf-param{margin:6px 0}
+.modal .wf-param label{display:block; font-size:10px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:2px}
+.modal .wf-param input, .modal .wf-param select{width:100%; margin:0}
+.modal .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:14px; border-top:1px solid var(--line); padding-top:10px}
+.modal .wf-confirm{color:var(--warn); font-size:11px; padding:8px; background:rgba(255,179,71,.08); border-radius:4px; margin:8px 0; white-space:pre-wrap}
 </style></head><body>
 
 <header>
@@ -139,6 +170,12 @@ pre.json{font-size:10px; color:var(--muted); white-space:pre-wrap; word-break:br
     </div>
   </section>
 
+  <!-- Panel F — Workflows -->
+  <section class="panel" style="grid-column:1/-1">
+    <h2>F. Workflows <span class="tag" id="wfCount">— available for your tier</span></h2>
+    <div id="wfBody">loading…</div>
+  </section>
+
   <!-- Panel E — Audit Log -->
   <section class="panel" style="grid-column:1/-1">
     <h2>E. Audit Log <span class="tag" id="auditCount">0</span></h2>
@@ -146,7 +183,9 @@ pre.json{font-size:10px; color:var(--muted); white-space:pre-wrap; word-break:br
   </section>
 </div>
 
-<script src="/public/js/settings-client.js"></script>
+<div id="modalRoot"></div>
+
+<script src="/settings/js/settings-client.js"></script>
 <script>
 const API = window.location.origin;
 const TOKEN_KEY = 'ORCHESTRA_ADMIN_TOKEN';
@@ -328,12 +367,158 @@ async function loadAudit(){
   } catch(e){ logLine('audit: '+e.message, 'err'); }
 }
 
+// --- Panel F: Workflows
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
+
+let WORKFLOWS = [];
+
+async function loadWorkflows(){
+  try{
+    const d = await fetchJSON('/settings/workflows');
+    WORKFLOWS = d.workflows || [];
+    document.getElementById('wfCount').textContent = d.count + ' available · tier=' + d.tier;
+    renderWorkflows();
+  } catch(e){
+    document.getElementById('wfBody').innerHTML = '<div class="metric"><span>error</span><span class="v err">'+esc(e.message)+'</span></div>';
+  }
+}
+
+function renderWorkflows(){
+  const body = document.getElementById('wfBody');
+  if (!WORKFLOWS.length){ body.innerHTML = '<div class="metric"><span>no workflows</span></div>'; return; }
+  // Group by category
+  const byCat = {};
+  for (const w of WORKFLOWS){ (byCat[w.category] = byCat[w.category] || []).push(w); }
+  body.innerHTML = '';
+  Object.keys(byCat).sort().forEach(cat => {
+    const h = document.createElement('div');
+    h.style.cssText = 'font-size:10px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin:10px 0 4px; border-bottom:1px solid var(--line2); padding-bottom:3px';
+    h.textContent = '— ' + cat + ' —';
+    body.appendChild(h);
+    byCat[cat].forEach(w => body.appendChild(renderWorkflowRow(w)));
+  });
+}
+
+function renderWorkflowRow(w){
+  const row = document.createElement('div');
+  row.className = 'wf-row';
+  const dangerCls = w.danger ? 'wf-danger-' + w.danger : '';
+  row.innerHTML =
+    '<div class="wf-meta">'+
+      '<div class="wf-name">'+esc(w.name)+(w.danger?' <span class="'+dangerCls+'" style="font-size:10px;letter-spacing:1px">⚠ '+esc(w.danger)+'</span>':'')+'</div>'+
+      '<div class="wf-desc">'+esc(w.description || '')+'</div>'+
+      '<div class="wf-tags">'+
+        '<span class="chip wf-tier-'+esc(w.required_tier)+'">'+esc(w.required_tier)+'</span>'+
+        (w.required_capability ? '<span class="chip">cap: '+esc(w.required_capability)+'</span>' : '')+
+        (w.estimated_duration_s ? '<span class="chip">~'+w.estimated_duration_s+'s</span>' : '')+
+      '</div>'+
+    '</div>';
+  const btn = document.createElement('button');
+  btn.className = 'act';
+  btn.textContent = 'run';
+  btn.onclick = () => openWorkflowDialog(w);
+  row.appendChild(btn);
+  return row;
+}
+
+function openWorkflowDialog(w){
+  const root = document.getElementById('modalRoot');
+  const params = w.params || [];
+  const fields = params.map(p => {
+    const id = 'wfp_' + p.name;
+    let input;
+    if (Array.isArray(p.values) && p.values.length){
+      input = '<select id="'+id+'">' + p.values.map(v => '<option value="'+esc(v)+'">'+esc(v)+'</option>').join('') + '</select>';
+    } else {
+      const type = (p.type === 'integer' || p.type === 'number') ? 'number' : (p.type === 'email' ? 'email' : 'text');
+      const attrs =
+        (p.default !== undefined ? ' value="'+esc(p.default)+'"' : '') +
+        (p.pattern ? ' pattern="'+esc(p.pattern)+'"' : '') +
+        (p.min !== undefined ? ' min="'+esc(p.min)+'"' : '') +
+        (p.min_length ? ' minlength="'+esc(p.min_length)+'"' : '') +
+        (p.required ? ' required' : '');
+      input = '<input id="'+id+'" type="'+type+'"'+attrs+' placeholder="'+esc(p.label || p.name)+'">';
+    }
+    return '<div class="wf-param"><label for="'+id+'">'+esc(p.label || p.name)+(p.required?' *':'')+'</label>'+input+'</div>';
+  }).join('');
+
+  root.innerHTML =
+    '<div class="modal-backdrop" id="wfModalBd">'+
+      '<div class="modal">'+
+        '<h3>'+esc(w.name)+'</h3>'+
+        '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">'+esc(w.description||'')+'</div>'+
+        '<form id="wfForm">'+fields+'</form>'+
+        '<div id="wfPlanOut"></div>'+
+        '<div class="modal-actions">'+
+          '<button class="act" id="wfCancel">cancel</button>'+
+          '<button class="act" id="wfPlan">plan</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+
+  document.getElementById('wfCancel').onclick = closeWorkflowDialog;
+  document.getElementById('wfPlan').onclick = async () => {
+    const body = { params: {} };
+    params.forEach(p => {
+      const v = document.getElementById('wfp_' + p.name).value;
+      if (v !== '') body.params[p.name] = v;
+    });
+    try{
+      const plan = await fetchJSON('/settings/workflows/' + encodeURIComponent(w.id) + '/plan', {
+        method: 'POST', body: JSON.stringify(body)
+      });
+      renderPlanPreview(w, plan);
+    } catch(e){
+      document.getElementById('wfPlanOut').innerHTML = '<div class="wf-confirm" style="color:var(--err);background:rgba(255,77,109,.08)">plan failed: '+esc(e.message)+'</div>';
+    }
+  };
+}
+
+function renderPlanPreview(w, plan){
+  const out = document.getElementById('wfPlanOut');
+  const confirmStep = (plan.steps || []).find(s => s.type === 'confirm');
+  const httpSteps   = (plan.steps || []).filter(s => s.type !== 'confirm');
+  out.innerHTML =
+    (confirmStep ? '<div class="wf-confirm">'+esc(confirmStep.message)+'</div>' : '') +
+    '<details open><summary>execution plan ('+httpSteps.length+' step'+(httpSteps.length===1?'':'s')+')</summary>'+
+      '<pre class="json">'+esc(JSON.stringify(httpSteps, null, 2))+'</pre>'+
+    '</details>';
+  // Replace plan button with execute button
+  const planBtn = document.getElementById('wfPlan');
+  planBtn.textContent = 'execute';
+  planBtn.onclick = async () => {
+    if (!confirm('Execute workflow "'+w.name+'"? This will fire '+httpSteps.length+' HTTP step(s).')) return;
+    logLine('workflow exec: '+w.id, w.danger === 'CRITICAL' ? 'err' : (w.danger === 'HIGH' ? 'warn' : 'info'));
+    for (const step of httpSteps){
+      try {
+        const opts = {
+          method: step.type === 'http_post' ? 'POST' : 'GET',
+          headers: step.headers || {},
+        };
+        if (step.body) opts.body = JSON.stringify(step.body);
+        const r = await fetchJSON(step.path, opts);
+        logLine('  '+step.path+' → ok', 'info');
+      } catch(e){
+        logLine('  '+step.path+' → '+e.message, 'err');
+        if (!confirm('Step failed: '+e.message+'\n\nContinue with remaining steps?')) break;
+      }
+    }
+    closeWorkflowDialog();
+    loadAudit();
+  };
+}
+
+function closeWorkflowDialog(){
+  document.getElementById('modalRoot').innerHTML = '';
+}
+
 // --- bootstrap
 window.addEventListener('load', async () => {
   logLine('settings-admin init', 'info');
   await loadOverview();
   await loadSettings();
   await loadAudit();
+  await loadWorkflows();
   setInterval(loadOverview, 5000);
   setInterval(loadAudit, 15000);
 });

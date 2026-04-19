@@ -1,0 +1,20 @@
+{
+  "id": "break-glass-shutdown",
+  "name": "BREAK GLASS — Emergency shutdown",
+  "description": "Immediately stop all non-critical PM2 services. For incident response only. Does NOT stop nginx, the settings API itself, or the audit log.",
+  "category": "incident",
+  "required_tier": "super_admin",
+  "required_capability": "system.break_glass",
+  "confirmation_required": true,
+  "danger": "HIGH",
+  "params": [
+    { "name": "reason", "type": "string", "required": true, "min_length": 20, "label": "Reason for break-glass (min 20 chars; goes to audit)" }
+  ],
+  "steps": [
+    { "type": "confirm",   "message": "⚠ BREAK GLASS. Reason: \"{reason}\"\n\nThis will stop all non-essential services immediately. Continue?" },
+    { "type": "http_post", "path": "/admin/emergency/shutdown", "body": { "reason": "{reason}" } }
+  ],
+  "estimated_duration_s": 5,
+  "audit": true,
+  "audit_action": "break_glass_shutdown"
+}

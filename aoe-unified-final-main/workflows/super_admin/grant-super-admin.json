@@ -1,0 +1,19 @@
+{
+  "id": "grant-super-admin",
+  "name": "Grant super-admin",
+  "description": "Promote a user to super_admin tier. Unlocks all capabilities, bypasses all limits, and is recorded in the append-only audit log.",
+  "category": "identity",
+  "required_tier": "super_admin",
+  "required_capability": "settings.grant_super_admin",
+  "confirmation_required": true,
+  "params": [
+    { "name": "email", "type": "email", "required": true, "label": "User email to promote" }
+  ],
+  "steps": [
+    { "type": "confirm",   "message": "Grant SUPER ADMIN to {email}? This gives unlimited access to settings, limits, and blockchain withdrawal capabilities." },
+    { "type": "http_post", "path": "/settings/super-admin/grant", "body": { "email": "{email}" } }
+  ],
+  "estimated_duration_s": 1,
+  "audit": true,
+  "audit_action": "super_admin_grant"
+}
