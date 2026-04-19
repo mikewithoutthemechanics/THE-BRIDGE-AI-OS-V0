@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>EHSA Causal AI Economy - Twin Wall Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    font-family: monospace;
+    background: #0b0f14;
+    color: #00ffcc;
+    margin: 0;
+    padding: 20px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .card {
+    background: #111820;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,255,200,0.1);
+    border: 1px solid #1a2430;
+  }
+  h1 { color: #00ffcc; margin-bottom: 20px; }
+  h2 { margin: 0 0 10px 0; color: #00bfff; }
+  canvas { background: #0b0f14; border-radius: 8px; }
+  .causal-flow {
+    background: rgba(0,255,200,0.05);
+    border: 1px solid rgba(0,255,200,0.2);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 20px 0;
+    font-size: 12px;
+  }
+  .flow-step {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px 0;
+  }
+  .flow-arrow {
+    margin: 0 8px;
+    color: #00ffcc;
+    font-weight: bold;
+  }
+  .controls {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  button {
+    background: #111820;
+    color: #00ffcc;
+    border: 1px solid #00ffcc;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: monospace;
+  }
+  button:hover {
+    background: rgba(0,255,200,0.1);
+  }
+</style>
+</head>
+<body>
+
+<h1>EHSA Causal AI Economy - Twin Wall Dashboard</h1>
+
+<div class="causal-flow">
+  <div class="flow-step">
+    <span>Intelligence Cycle</span>
+    <span class="flow-arrow">→</span>
+    <span>EHSA (Leads)</span>
+    <span class="flow-arrow">→</span>
+    <span>Supaclaw (Opportunities)</span>
+    <span class="flow-arrow">→</span>
+    <span>Economy (Executions)</span>
+    <span class="flow-arrow">→</span>
+    <span>Treasury (State)</span>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card"><h2>Cycle</h2><div id="cycle">-</div></div>
+  <div class="card"><h2>Treasury</h2><div id="treasury">R0</div></div>
+  <div class="card"><h2>Executions</h2><div id="executions">0</div></div>
+
+  <div class="card"><h2>EHSA (Leads)</h2><div id="ehsa">0</div></div>
+  <div class="card"><h2>SUPACLAW (Opportunities)</h2><div id="supaclaw">0</div></div>
+  <div class="card"><h2>Conversion Rate</h2><div id="conversion">0%</div></div>
+</div>
+
+<div class="card" style="margin-top:20px;">
+  <h2>Real-Time Economic Flow Graph</h2>
+  <canvas id="chart" width="800" height="300"></canvas>
+</div>
+
+<div class="controls">
+  <button onclick="triggerIntelligenceCycle()">🚀 Trigger Intelligence Cycle</button>
+  <button onclick="injectEntropy()">🌪️ Inject Entropy</button>
+  <button onclick="resetSystem()">🔄 Reset System</button>
+  <button onclick="runForecast()">📊 Economic Forecast</button>
+  <button onclick="toggleAutoMode()">▶️ Auto Mode</button>
+</div>
+
+<div class="card" style="margin-top:20px;">
+  <h2>System Health</h2>
+  <div id="health-status">Initializing...</div>
+  <div id="event-count">Events: 0</div>
+</div>
+
+<script src="ehsa-event-bus.js"></script>
+<script src="economy-cycle.js"></script>
+<script>
+/* =========================
+   SYSTEM INITIALIZATION
+========================= */
+const eventBus = new EHSAEventBus();
+const economyCycle = new EconomyCycle(eventBus);
+
+/* =========================
+   STATE & HISTORY
+========================= */
+let history = [];
+const MAX_POINTS = 50;
+let eventCount = 0;
+let autoMode = false;
+let autoInterval;
+
+/* =========================
+   CHART SETUP
+========================= */
+const ctx = document.getElementById('chart').getContext('2d');
+
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: 'Treasury (R)',
+        data: [],
+        borderColor: '#00ffcc',
+        backgroundColor: 'rgba(0,255,200,0.1)',
+        tension: 0.2,
+        fill: true
+      },
+      {
+        label: 'Executions',
+        data: [],
+        borderColor: '#ffcc00',
+        backgroundColor: 'rgba(255,200,0,0.1)',
+        tension: 0.2,
+        yAxisID: 'y1'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    animation: { duration: 300 },
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: {
+        display: false,
+        title: { display: true, text: 'Cycle', color: '#00ffcc' }
+      },
+      y: {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        title: { display: true, text: 'Treasury (R)', color: '#00ffcc' },
+        ticks: { color: '#00ffcc' }
+      },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        title: { display: true, text: 'Executions', color: '#ffcc00' },
+        ticks: { color: '#ffcc00' },
+        grid: { drawOnChartArea: false }
+      }
+    },
+    plugins: {
+      legend: { labels: { color: '#00ffcc' } },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+          }
+        }
+      }
+    }
+  }
+});
+
+/* =========================
+   EVENT HANDLERS
+========================= */
+eventBus.on('intelligence_cycle_complete', (event) => {
+  updateEventCount();
+});
+
+eventBus.on('leads_generated', (event) => {
+  updateUI();
+  updateEventCount();
+});
+
+eventBus.on('opportunities_created', (event) => {
+  updateUI();
+  updateEventCount();
+});
+
+eventBus.on('executions_completed', (event) => {
+  updateUI();
+  updateEventCount();
+});
+
+eventBus.on('revenue_realized', (event) => {
+  updateEventCount();
+});
+
+eventBus.on('treasury_updated', (event) => {
+  updateUI();
+  updateGraph();
+  updateEventCount();
+});
+
+eventBus.on('entropy_injection', () => {
+  document.getElementById('health-status').textContent = '✅ Entropy Injected';
+  setTimeout(() => updateHealthStatus(), 2000);
+});
+
+/* =========================
+   UI UPDATE FUNCTIONS
+========================= */
+function updateUI() {
+  const state = eventBus.getState();
+
+  document.getElementById('cycle').textContent = state.cycle;
+  document.getElementById('treasury').textContent = 'R' + state.treasury.toLocaleString();
+  document.getElementById('executions').textContent = state.executions;
+  document.getElementById('ehsa').textContent = state.leads;
+  document.getElementById('supaclaw').textContent = state.opportunities;
+
+  const conversion = state.opportunities
+    ? (state.executions / state.opportunities * 100).toFixed(1) + '%'
+    : '0%';
+  document.getElementById('conversion').textContent = conversion;
+
+  updateHealthStatus();
+}
+
+function updateGraph() {
+  const state = eventBus.getState();
+
+  history.push({
+    cycle: state.cycle,
+    treasury: state.treasury,
+    executions: state.executions
+  });
+
+  if (history.length > MAX_POINTS) history.shift();
+
+  chart.data.labels = history.map(p => p.cycle);
+  chart.data.datasets[0].data = history.map(p => p.treasury);
+  chart.data.datasets[1].data = history.map(p => p.executions);
+  chart.update();
+}
+
+function updateEventCount() {
+  eventCount++;
+  document.getElementById('event-count').textContent = `Events Processed: ${eventCount}`;
+}
+
+function updateHealthStatus() {
+  const state = eventBus.getState();
+
+  if (state.leads === 0 && state.opportunities === 0 && state.executions === 0 && state.cycle > 0) {
+    document.getElementById('health-status').textContent = '⚠️ Zero State Detected';
+  } else if (state.treasury > 100000) {
+    document.getElementById('health-status').textContent = '🚀 High Growth';
+  } else if (state.treasury > 10000) {
+    document.getElementById('health-status').textContent = '📈 Growing';
+  } else {
+    document.getElementById('health-status').textContent = '✅ Healthy';
+  }
+}
+
+/* =========================
+   CONTROL FUNCTIONS
+========================= */
+function triggerIntelligenceCycle() {
+  const intelligenceScore = 0.5 + Math.random() * 0.5;
+  eventBus.emitIntelligenceCycle(intelligenceScore, 'manual_trigger');
+  document.getElementById('health-status').textContent = '🚀 Intelligence Cycle Triggered';
+}
+
+function injectEntropy() {
+  eventBus.ingest({
+    type: 'entropy_injection',
+    reason: 'manual_injection',
+    seq: eventBus.lastSeq + 1,
+    timestamp: Date.now()
+  });
+}
+
+function resetSystem() {
+  eventBus.reset();
+  economyCycle.adjustEconomicPolicy({
+    avgTaskValue: 15000,
+    marketDemand: 1.0,
+    successRate: 0.65
+  });
+  history = [];
+  eventCount = 0;
+  updateUI();
+  updateGraph();
+  document.getElementById('health-status').textContent = '🔄 System Reset';
+}
+
+function runForecast() {
+  const state = eventBus.getState();
+  const forecast = economyCycle.forecastRevenue(state.opportunities);
+
+  alert(`Economic Forecast for ${state.opportunities} opportunities:
+Expected Revenue: R${forecast.expected_revenue.toLocaleString()}
+Confidence Range: R${forecast.confidence_interval.low.toLocaleString()} - R${forecast.confidence_interval.high.toLocaleString()}
+Market Demand: ${(forecast.market_conditions.demand_multiplier * 100).toFixed(0)}%
+Success Rate: ${(forecast.market_conditions.success_rate * 100).toFixed(1)}%`);
+}
+
+function toggleAutoMode() {
+  autoMode = !autoMode;
+  const button = document.querySelector('button[onclick="toggleAutoMode()"]');
+
+  if (autoMode) {
+    button.textContent = '⏸️ Pause Auto';
+    button.style.borderColor = '#ff6b6b';
+    autoInterval = setInterval(() => {
+      if (autoMode) triggerIntelligenceCycle();
+    }, 3000);
+  } else {
+    button.textContent = '▶️ Auto Mode';
+    button.style.borderColor = '#00ffcc';
+    clearInterval(autoInterval);
+  }
+}
+
+/* =========================
+   SYSTEM HEALTH MONITOR
+========================= */
+setInterval(() => {
+  eventBus.checkSystemHealth();
+  updateHealthStatus();
+}, 5000);
+
+/* =========================
+   INITIALIZATION
+========================= */
+updateUI();
+document.getElementById('health-status').textContent = '✅ System Initialized - Causal AI Economy Active';
+
+// Optional WebSocket integration (uncomment when server available)
+/*
+const ws = new WebSocket('wss://your-ehsa-server');
+
+ws.onmessage = (e) => {
+  const msg = JSON.parse(e.data);
+
+  if (msg.type === "sync") {
+    // Handle server sync
+  } else {
+    eventBus.ingest(msg);
+  }
+};
+*/
+</script>
+
+</body>
+</html>
