@@ -107,6 +107,25 @@ function requireCsrf(req){
   return { ok: false, status: 403, error: 'csrf_token_required' };
 }
 
+// Capability gate — session + (capability OR super_admin fallback).
+// The super_admin fallback preserves behaviour during the transition: every
+// existing super_admin still passes every gate, AND any user granted the
+// specific capability via tier or override also passes. Remove the fallback
+// once all call sites are capability-tagged and the capability map is
+// stable in config/settings.default.json.
+function requireCapability(req, capability, bearerExpected){
+  const g = requireSession(req, bearerExpected);
+  if (!g.ok) return g;
+  const runtime = store.load();
+  const defaults = resolver.loadDefaults();
+  const allowed = resolver.canPerform(defaults, runtime, g.email, capability)
+               || store.isSuperAdmin(runtime, g.email);
+  if (!allowed){
+    return { ok: false, status: 403, error: 'capability_required', capability, actor: g.email };
+  }
+  return { ok: true, email: g.email, store: runtime, capability };
+}
+
 function qs(url){
   const i = url.indexOf('?');
   if (i < 0) return {};
@@ -273,24 +292,24 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
       return true;
     }
 
-    // ---- super-admin only ----
+    // ---- capability-gated (dual-gate: super_admin fallback until all caps stable) ----
     if (req.method === 'GET' && u === '/settings/runtime'){
-      const g = requireSuperAdmin(req, TOKEN);
-      if (!g.ok) return json(res, g.status, { error: g.error, actor: g.actor }), true;
+      const g = requireCapability(req, 'settings.read.any', TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error, capability: g.capability, actor: g.actor }), true;
       json(res, 200, g.store);
       return true;
     }
     if (req.method === 'GET' && u === '/settings/audit'){
-      const g = requireSuperAdmin(req, TOKEN);
-      if (!g.ok) return json(res, g.status, { error: g.error }), true;
+      const g = requireCapability(req, 'settings.audit.read', TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error, capability: g.capability }), true;
       const { limit } = qs(req.url);
       const n = Math.min(Math.max(parseInt(limit || '100', 10), 1), 1000);
       json(res, 200, { entries: g.store.audit.slice(-n), total: g.store.audit.length });
       return true;
     }
     if (req.method === 'POST' && u === '/settings/override'){
-      const g = requireSuperAdmin(req, TOKEN);
-      if (!g.ok) return json(res, g.status, { error: g.error }), true;
+      const g = requireCapability(req, 'settings.write.user_override', TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error, capability: g.capability }), true;
       let body;
       try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
       const target = String(body.email || '').toLowerCase().trim();
@@ -310,8 +329,8 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
       return true;
     }
     if (req.method === 'POST' && u === '/settings/tier'){
-      const g = requireSuperAdmin(req, TOKEN);
-      if (!g.ok) return json(res, g.status, { error: g.error }), true;
+      const g = requireCapability(req, 'settings.write.tier', TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error, capability: g.capability }), true;
       let body;
       try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
       const target = String(body.email || '').toLowerCase().trim();
@@ -334,8 +353,8 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
       return true;
     }
     if (req.method === 'POST' && u === '/settings/super-admin/grant'){
-      const g = requireSuperAdmin(req, TOKEN);
-      if (!g.ok) return json(res, g.status, { error: g.error }), true;
+      const g = requireCapability(req, 'settings.grant_super_admin', TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error, capability: g.capability }), true;
       let body;
       try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
       const target = String(body.email || '').toLowerCase().trim();
@@ -354,8 +373,8 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
       return true;
     }
     if (req.method === 'POST' && u === '/settings/super-admin/revoke'){
-      const g = requireSuperAdmin(req, TOKEN);
-      if (!g.ok) return json(res, g.status, { error: g.error }), true;
+      const g = requireCapability(req, 'settings.revoke_super_admin', TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error, capability: g.capability }), true;
       let body;
       try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
       const target = String(body.email || '').toLowerCase().trim();

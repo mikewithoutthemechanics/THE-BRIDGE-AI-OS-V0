@@ -91,10 +91,33 @@ function resolve(runtime, email){
   return resolveWith(loadDefaults(), runtime || { users: {}, audit: [] }, email);
 }
 
+// Pure capability resolution — returns the effective capability set for an
+// email against a given defaults+runtime pair. Union of:
+//   1. defaults.tiers[user.tier].capabilities     (tier-declared)
+//   2. runtime.users[email].overrides.capabilities (per-user grants)
+// Authority is resolved fresh on every call — revocation is instant, no
+// session refresh required.
+function capabilitiesFor(defaults, runtime, emailRaw){
+  const email = String(emailRaw || '').toLowerCase().trim();
+  if (!email) return new Set();
+  const user = (runtime.users && runtime.users[email]) || null;
+  const tier = (user && user.tier) || 'free';
+  const tierCaps = (defaults.tiers && defaults.tiers[tier] && defaults.tiers[tier].capabilities) || [];
+  const overrideCaps = (user && user.overrides && user.overrides.capabilities) || [];
+  return new Set([...tierCaps, ...overrideCaps]);
+}
+
+function canPerform(defaults, runtime, email, capability){
+  if (!capability) return false;
+  return capabilitiesFor(defaults, runtime, email).has(capability);
+}
+
 module.exports = {
   DEFAULTS_PATH,
   loadDefaults,
   deepMerge,
   resolveWith,
   resolve,
+  capabilitiesFor,
+  canPerform,
 };
