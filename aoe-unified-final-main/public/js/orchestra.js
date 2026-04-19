@@ -57,12 +57,35 @@ function fmtPct(v){ return (Math.round(v*10)/10) + '%'; }
 function fmtK(n){ if (n>=1e9) return (n/1e9).toFixed(2)+'B'; if (n>=1e6) return (n/1e6).toFixed(2)+'M'; if (n>=1e3) return (n/1e3).toFixed(1)+'k'; return String(n); }
 function nowClock(){ const d=new Date(); return d.toTimeString().slice(0,8); }
 
+// Auth bridge — mirrors public/js/admin-dashboard.js:apiFetch.
+// Relies on the bridge_admin_session cookie issued by POST /settings/session
+// (HttpOnly, SameSite=Strict, signed HMAC-SHA256 — see lib/session.js).
+// credentials:'include' ensures the cookie rides on same-origin fetches;
+// a 401 means either no session or an expired one, so we redirect to the
+// login page with a return target. A module-level guard prevents redirect
+// loops when tick() fires on an interval during the navigation.
+let _authBounced = false;
+function bounceToLogin(reason){
+  if (_authBounced) return;
+  _authBounced = true;
+  const from = encodeURIComponent(location.pathname + location.search);
+  location.href = `/settings/admin?auth=${encodeURIComponent(reason||'expired')}&from=${from}`;
+}
+
 // Fetch helper with timeout + dual-origin fallback (relative first, then absolute).
+// The relative leg carries the admin session cookie; the cross-origin fallback
+// deliberately does not (SameSite=Strict drops cookies cross-site) and serves
+// only as a connectivity probe when the local proxy is unreachable.
 async function j(rel, abs){
   const controller = new AbortController();
   const t = setTimeout(()=>controller.abort(), 6000);
   try{
-    const r = await fetch(rel, {signal: controller.signal, cache:'no-store'});
+    const r = await fetch(rel, {
+      signal: controller.signal,
+      cache: 'no-store',
+      credentials: 'include',
+    });
+    if (r.status === 401){ bounceToLogin('expired'); return null; }
     if (r.ok) return await r.json();
   }catch{}
   finally{ clearTimeout(t); }
@@ -411,7 +434,8 @@ async function tick(){
     if (!state.services.length){
       banner.innerHTML = `<span class="icon">cloud_off</span>
         Live backend unreachable — <code>/admin/overview</code> returned no data.
-        Ensure this page is served from
+        If this is an auth issue, <a href="/settings/admin?from=${encodeURIComponent(location.pathname)}">sign in to the admin console</a>.
+        Otherwise ensure this page is served from
         <a href="https://bridge-ai-os.com" target="_blank" rel="noopener noreferrer">bridge-ai-os.com</a>
         or proxied via <code>node orchestra-proxy.js</code>. No synthetic data will be shown.`;
     } else {
@@ -421,11 +445,35 @@ async function tick(){
     }
   } else {
     state.overview = overview;
-    diffAndEmit(overview.services || []);
-    state.services = overview.services || [];
-    state.status = (status && status.services) || [];
+    const services = Array.isArray(overview.services) ? overview.services : [];
+    diffAndEmit(services);
+    state.services = services;
+    state.status = (status && Array.isArray(status.services)) ? status.services : [];
     state.offline = false;
-    banner.style.display = 'none';
+    if (overview.pm2_error){
+      // Admin API reached PM2, and PM2 errored. Surface the stderr so operator sees root cause.
+      banner.style.display = 'flex';
+      banner.className = 'banner err';
+      banner.innerHTML = `<span class="icon">error</span>
+        Admin API cannot reach PM2 daemon — <code>${esc(overview.pm2_error.code)}</code>:
+        <code>${esc(overview.pm2_error.message)}</code>.
+        Likely cause: PM2_HOME mismatch or daemon not running under admin-api's user.`;
+      if (state.prev.size === 0){
+        pushEvent('PM2 unreachable', overview.pm2_error.message, 'err');
+      }
+    } else if (!services.length){
+      // Upstream responded, PM2 was reachable, but fleet is genuinely empty.
+      banner.style.display = 'flex';
+      banner.className = 'banner warn';
+      banner.innerHTML = `<span class="icon">hourglass_empty</span>
+        Backend reachable but fleet is empty — <code>/admin/overview</code> returned no services.
+        PM2 is reachable but has zero managed processes. Run <code>pm2 resurrect</code> or start the ecosystem.`;
+      if (state.prev.size === 0){
+        pushEvent('Empty topology', 'upstream /admin/overview returned zero services', 'warn');
+      }
+    } else {
+      banner.style.display = 'none';
+    }
   }
   render(); renderStats(); renderTopology();
 }
