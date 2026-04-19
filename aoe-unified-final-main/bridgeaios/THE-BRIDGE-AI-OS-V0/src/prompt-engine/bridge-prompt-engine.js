@@ -114,16 +114,22 @@ Output: Multi-scenario forecasts with probability distributions`;
       const result = await this.executePrompt(intelligencePrompt);
 
       // Emit enhanced intelligence back to economy loop
-      this.eventBus.emit('intelligence_enhanced', {
+      this.eventBus.bus.push({
+        type: 'intelligence_enhanced',
         input: event,
         output: result,
-        prompt: intelligencePrompt
+        prompt: intelligencePrompt,
+        seq: event.seq ? event.seq + 0.01 : Date.now(),
+        timestamp: Date.now()
       });
     } catch (error) {
       console.error('🧠 Intelligence enhancement failed:', error);
-      this.eventBus.emit('intelligence_enhancement_failed', {
+      this.eventBus.bus.push({
+        type: 'intelligence_enhancement_failed',
         event,
-        error: error.message
+        error: error.message,
+        seq: event.seq ? event.seq + 0.01 : Date.now(),
+        timestamp: Date.now()
       });
     }
   }
@@ -135,16 +141,22 @@ Output: Multi-scenario forecasts with probability distributions`;
       const result = await this.executePrompt(optimizationPrompt);
 
       // Emit optimized opportunities back to economy loop
-      this.eventBus.emit('opportunities_optimized', {
+      this.eventBus.bus.push({
+        type: 'opportunities_optimized',
         input: event,
         output: result,
-        prompt: optimizationPrompt
+        prompt: optimizationPrompt,
+        seq: event.seq ? event.seq + 0.01 : Date.now(),
+        timestamp: Date.now()
       });
     } catch (error) {
       console.error('🎯 Opportunity optimization failed:', error);
-      this.eventBus.emit('opportunity_optimization_failed', {
+      this.eventBus.bus.push({
+        type: 'opportunity_optimization_failed',
         event,
-        error: error.message
+        error: error.message,
+        seq: event.seq ? event.seq + 0.01 : Date.now(),
+        timestamp: Date.now()
       });
     }
   }
@@ -160,16 +172,22 @@ Output: Multi-scenario forecasts with probability distributions`;
       const result = await this.executePrompt(forecastPrompt);
 
       // Emit revenue forecast back to economy loop
-      this.eventBus.emit('revenue_forecasted', {
+      this.eventBus.bus.push({
+        type: 'revenue_forecasted',
         input: event,
         output: result,
-        prompt: forecastPrompt
+        prompt: forecastPrompt,
+        seq: event.seq ? event.seq + 0.01 : Date.now(),
+        timestamp: Date.now()
       });
     } catch (error) {
       console.error('📊 Revenue forecasting failed:', error);
-      this.eventBus.emit('revenue_forecast_failed', {
+      this.eventBus.bus.push({
+        type: 'revenue_forecast_failed',
         event,
-        error: error.message
+        error: error.message,
+        seq: event.seq ? event.seq + 0.01 : Date.now(),
+        timestamp: Date.now()
       });
     }
   }
