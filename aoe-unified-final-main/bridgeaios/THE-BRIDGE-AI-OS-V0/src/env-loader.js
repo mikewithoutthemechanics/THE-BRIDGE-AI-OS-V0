@@ -3,30 +3,41 @@ function loadEnv() {
   const fs = require('fs');
   const path = require('path');
 
-  try {
-    const envPath = path.join(process.cwd(), '.env');
-    if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
-      const lines = envContent.split('\n');
+  // Try multiple possible .env file locations
+  const possiblePaths = [
+    path.join(process.cwd(), '.env'),                    // Current directory
+    path.join(process.cwd(), '../.env'),                 // Parent directory
+    path.join(process.cwd(), '../../.env'),              // Grandparent directory
+    path.join(process.cwd(), '../../../.env'),           // Great-grandparent directory
+    '/var/www/bridgeai/.env',                            // Absolute VPS path
+  ];
 
-      lines.forEach(line => {
-        line = line.trim();
-        if (line && !line.startsWith('#') && line.includes('=')) {
-          const [key, ...valueParts] = line.split('=');
-          const value = valueParts.join('=').trim();
-          if (key && value) {
-            process.env[key.trim()] = value;
+  for (const envPath of possiblePaths) {
+    try {
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf8');
+        const lines = envContent.split('\n');
+
+        lines.forEach(line => {
+          line = line.trim();
+          if (line && !line.startsWith('#') && line.includes('=')) {
+            const [key, ...valueParts] = line.split('=');
+            const value = valueParts.join('=').trim();
+            if (key && value && !process.env[key.trim()]) { // Don't override existing env vars
+              process.env[key.trim()] = value;
+            }
           }
-        }
-      });
+        });
 
-      console.log('✅ Environment variables loaded from .env file');
-    } else {
-      console.log('⚠️  No .env file found');
+        console.log(`✅ Environment variables loaded from: ${envPath}`);
+        return; // Found and loaded, exit function
+      }
+    } catch (error) {
+      // Continue to next path
     }
-  } catch (error) {
-    console.error('❌ Error loading .env file:', error.message);
   }
+
+  console.log('⚠️  No .env file found in any expected location');
 }
 
 module.exports = { loadEnv };
