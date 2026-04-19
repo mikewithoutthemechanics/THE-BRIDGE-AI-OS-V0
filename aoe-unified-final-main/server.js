@@ -16,10 +16,15 @@ const PORT   = Number(process.argv[2] || process.env.PORT || 7777);
 const UPSTREAM_HOST = 'go.ai-os.co.za';
 const ROOT   = __dirname;
 const HTML   = path.join(ROOT, 'orchestra.html');
+const PUBLIC_DIR = path.join(ROOT, 'public');
 const BOOT_TS = Date.now();
 const ADMIN_TOKEN = process.env.ORCHESTRA_ADMIN_TOKEN || '';
 const RATE_LIMIT  = Number(process.env.ORCHESTRA_RATE_LIMIT ?? 60);
 const ALLOW_IFRAME = process.env.ORCHESTRA_ALLOW_IFRAME === '1';
+
+// Settings system — stdlib http handler for /settings/* (see routes/settings.js).
+// Created once at boot and re-used across requests.
+const settingsRouter = require('./routes/settings').createRouter({ adminToken: ADMIN_TOKEN });
 
 const ALLOWED_ORIGINS = new Set([
   `http://127.0.0.1:${PORT}`,
@@ -134,6 +139,50 @@ function serveHtml(res){
   });
 }
 
+// --- Static file server scoped to /public/*. Enforces path containment so
+//     a crafted "..%2f" request can't escape the public directory.
+const MIME = {
+  '.js':'application/javascript; charset=utf-8',
+  '.css':'text/css; charset=utf-8',
+  '.json':'application/json',
+  '.svg':'image/svg+xml',
+  '.png':'image/png',
+  '.jpg':'image/jpeg',
+  '.jpeg':'image/jpeg',
+  '.ico':'image/x-icon',
+  '.html':'text/html; charset=utf-8',
+};
+function servePublic(u, res){
+  const rel = decodeURIComponent(u.replace(/^\/public\//, ''));
+  const abs = path.normalize(path.join(PUBLIC_DIR, rel));
+  if (!abs.startsWith(PUBLIC_DIR)){
+    res.writeHead(403, {...HARDENING_HEADERS,'content-type':'text/plain'});
+    return res.end('forbidden');
+  }
+  fs.readFile(abs, (err, buf) => {
+    if (err){
+      res.writeHead(404, {...HARDENING_HEADERS,'content-type':'text/plain'});
+      return res.end('not found: '+u);
+    }
+    const ct = MIME[path.extname(abs).toLowerCase()] || 'application/octet-stream';
+    res.writeHead(200, {...HARDENING_HEADERS,'content-type':ct,'cache-control':'public, max-age=300'});
+    res.end(buf);
+  });
+}
+
+// --- Admin dashboard HTML (settings-admin.html is served by the settings router)
+function serveAdminDashboard(res){
+  const p = path.join(ROOT, 'admin-dashboard.html');
+  fs.readFile(p, (err, buf) => {
+    if (err){
+      res.writeHead(500, HARDENING_HEADERS);
+      return res.end('admin-dashboard.html not found');
+    }
+    res.writeHead(200, {...HARDENING_HEADERS,'content-type':'text/html; charset=utf-8','cache-control':'no-store'});
+    res.end(buf);
+  });
+}
+
 function healthz(res){
   const ok = process.uptime() > 1 && PORT > 0 && !!UPSTREAM_HOST && fs.existsSync(HTML);
   const body = JSON.stringify({
@@ -159,6 +208,21 @@ http.createServer((req, res) => {
   const u = req.url.split('?')[0];
   if (u === '/' || u === '/index.html' || u === '/orchestra') return serveHtml(res);
   if (u === '/healthz') return healthz(res);
+  if (u === '/admin-dashboard' || u === '/admin-dashboard.html') return serveAdminDashboard(res);
+
+  // Settings system — handles /settings/*, including GET /settings/admin (HTML dashboard).
+  // Mounted BEFORE the /admin proxy so it doesn't get forwarded upstream.
+  if (u.startsWith('/settings')){
+    Promise.resolve(settingsRouter.handle(req, res)).catch(err => {
+      if (!res.headersSent){
+        res.writeHead(500, {...HARDENING_HEADERS,'content-type':'application/json'});
+        res.end(JSON.stringify({error:'settings_handler_failed', detail:String(err.message||err)}));
+      }
+    });
+    return;
+  }
+  if (u.startsWith('/public/')) return servePublic(u, res);
+
   if (u.startsWith('/admin') || u.startsWith('/api')) return proxy(req, res);
   if (u === '/favicon.ico'){ res.writeHead(204, HARDENING_HEADERS); return res.end(); }
   res.writeHead(404, {...HARDENING_HEADERS,'content-type':'text/plain'});
@@ -166,4 +230,5 @@ http.createServer((req, res) => {
 }).listen(PORT, '127.0.0.1', () => {
   console.log(`[orchestra] http://127.0.0.1:${PORT}/  →  proxying /admin /api to https://${UPSTREAM_HOST}`);
   console.log(`[orchestra] admin_gated=${!!ADMIN_TOKEN} rate_limit=${RATE_LIMIT}/60s iframe=${ALLOW_IFRAME?'allow':'deny'}`);
+  console.log(`[settings]  mounted at /settings/* (admin UI: /settings/admin)`);
 });
