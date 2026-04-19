@@ -3,12 +3,13 @@
 
 const EHSAEventBus = require('../ehsa-event-bus');
 const EconomyCycle = require('../economy-cycle');
+const AIExecutor = require('../ai-executor');
 
 class BridgePromptEngine {
   constructor(eventBus, economyCycle, executor) {
     this.eventBus = eventBus || new EHSAEventBus();
     this.economyCycle = economyCycle || new EconomyCycle(this.eventBus);
-    this.executor = executor;
+    this.executor = executor || new AIExecutor();
 
     // Bind to economic events for intelligent prompting
     this.eventBus.on('intelligence_cycle_complete', this.enhanceIntelligence.bind(this));
