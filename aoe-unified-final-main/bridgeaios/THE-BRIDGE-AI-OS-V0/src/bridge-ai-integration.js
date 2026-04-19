@@ -6,9 +6,13 @@ const EHSAEventBus = require('./ehsa-event-bus');
 const EconomyCycle = require('./economy-cycle');
 const AIExecutor = require('./ai-executor');
 const AIMonitor = require('./ai-monitor');
+const { loadEnv } = require('./env-loader');
 
 class BridgeAIIntegration {
   constructor() {
+    // Load environment variables first
+    loadEnv();
+
     this.eventBus = new EHSAEventBus();
     this.economyCycle = new EconomyCycle(this.eventBus);
     this.aiExecutor = new AIExecutor();
