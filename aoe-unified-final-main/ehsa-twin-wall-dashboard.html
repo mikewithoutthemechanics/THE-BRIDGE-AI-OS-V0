@@ -131,7 +131,8 @@
   <button onclick="resetSystem()">🔄 Reset System</button>
   <button onclick="runForecast()">📊 Economic Forecast</button>
   <button onclick="showAnalytics()">📈 View Analytics</button>
-  <button onclick="resetRL()">🧠 Reset RL Agent</button>
+  <button onclick="resetEvolution()">🧬 Reset Evolution</button>
+  <button onclick="forceEvolution()">🧬 Force Evolution</button>
   <button onclick="toggleAutoMode()">▶️ Auto Mode</button>
 </div>
 
@@ -340,32 +341,81 @@ const agentChart = new Chart(agentCtx, {
 });
 
 /* =========================
-   AUTONOMOUS INTELLIGENCE LAYER
+   EVOLUTIONARY + NEURAL + CROSS-TWIN SELECTION SYSTEM
 ========================= */
 
-/* === REINFORCEMENT LEARNING AGENT === */
-let conversionRate = 0.6; // initial
-let lastReward = 0;
-
-function rlUpdate(state) {
-  const reward = state.treasury - lastReward;
-
-  // simple policy gradient (hill climb)
-  if (reward > 0) {
-    conversionRate += 0.02;
-  } else {
-    conversionRate -= 0.02;
-  }
-
-  // clamp
-  conversionRate = Math.max(0.1, Math.min(0.95, conversionRate));
-
-  lastReward = state.treasury;
+/* === TWIN AGENTS (GENOMES) === */
+function createAgent() {
+  return {
+    // neural weights (simple 1-layer policy)
+    w1: Math.random() * 2 - 1,
+    w2: Math.random() * 2 - 1,
+    bias: Math.random() * 2 - 1,
+    fitness: 0
+  };
 }
 
-/* Hook into execution generation */
-function applyRL(opportunities) {
-  return Math.floor(opportunities * conversionRate);
+const twins = {
+  alpha: createAgent(),
+  beta: createAgent(),
+  gamma: createAgent()
+};
+
+/* === NEURAL POLICY (REPLACES LINEAR RL) === */
+function neuralPolicy(agent, state) {
+  const x1 = state.opportunities;
+  const x2 = state.leads;
+
+  // simple neuron
+  let out = agent.w1 * x1 + agent.w2 * x2 + agent.bias;
+
+  // sigmoid
+  const conversion = 1 / (1 + Math.exp(-out));
+
+  return Math.max(0.05, Math.min(0.95, conversion));
+}
+
+/* === EVOLUTIONARY MUTATION === */
+function mutate(agent) {
+  return {
+    w1: agent.w1 + (Math.random() - 0.5) * 0.2,
+    w2: agent.w2 + (Math.random() - 0.5) * 0.2,
+    bias: agent.bias + (Math.random() - 0.5) * 0.2,
+    fitness: 0
+  };
+}
+
+/* === FITNESS EVALUATION === */
+function updateFitness(agent, state) {
+  agent.fitness += state.treasury;
+}
+
+/* === CROSS-TWIN SELECTION (SURVIVAL OF THE FITTEST) === */
+function evolve() {
+  const agents = Object.values(twins);
+
+  // sort by fitness
+  agents.sort((a,b) => b.fitness - a.fitness);
+
+  const best = agents[0];
+
+  // replace others with mutations of best
+  twins.alpha = best;
+  twins.beta = mutate(best);
+  twins.gamma = mutate(best);
+
+  // reset fitness
+  Object.values(twins).forEach(a => a.fitness = 0);
+
+  console.log("🧬 Evolution step complete → best agent propagated");
+  showAlert(`Evolution Complete: Best agent fitness = ${best.fitness.toFixed(0)}`, "success");
+}
+
+/* === ASSIGN STATE TO TWINS === */
+function getTwinAgent(state) {
+  if (state.cycle % 3 === 0) return twins.alpha;
+  if (state.cycle % 3 === 1) return twins.beta;
+  return twins.gamma;
 }
 
 /* === ANOMALY AUTO-RESPONSE (SELF-HEALING) === */
@@ -698,8 +748,9 @@ function updateHealthStatus() {
     statusColor = '#44ff44';
   }
 
-  // Add RL status
-  status += ` | RL: ${(conversionRate*100).toFixed(1)}%`;
+  // Add neural evolution status
+  const agent = getTwinAgent(state);
+  status += ` | Neural: ${(neuralPolicy(agent, state)*100).toFixed(1)}%`;
 
   // Add anomaly indicator if we have enough history
   if (history.length >= 10) {
@@ -793,10 +844,18 @@ function showAnalytics() {
   alert(analytics);
 }
 
-function resetRL() {
-  conversionRate = 0.6; // reset to initial
-  lastReward = 0;
-  showAlert("RL Agent Reset: Conversion rate restored to 60%", "success");
+function resetEvolution() {
+  // reset all agents to random initial state
+  twins.alpha = createAgent();
+  twins.beta = createAgent();
+  twins.gamma = createAgent();
+  lastEvolution = eventBus.state.cycle;
+  showAlert("Evolution Reset: All neural agents reinitialized", "success");
+}
+
+function forceEvolution() {
+  evolve();
+  showAlert("Manual Evolution: Best agent propagated to twins", "success");
 }
 
 function toggleAutoMode() {
@@ -843,20 +902,36 @@ setInterval(() => {
 }, 5000);
 
 /* =========================
-   MASTER AUGMENTED LOOP (AUTONOMOUS INTELLIGENCE)
+   MASTER EVOLUTIONARY LOOP (NEURAL + AUTONOMOUS)
 ========================= */
+
+let lastEvolution = 0;
 
 const baseRender = render;
 
 render = function(state) {
 
-  /* === REINFORCEMENT LEARNING UPDATE === */
-  rlUpdate(state);
+  const agent = getTwinAgent(state);
+
+  /* === NEURAL POLICY COMPUTATION === */
+  const conversion = neuralPolicy(agent, state);
+
+  // apply to system (override event-driven value)
+  state.executions = Math.floor(state.opportunities * conversion);
+
+  /* === UPDATE FITNESS === */
+  updateFitness(agent, state);
 
   /* === SELF-HEALING RESPONSE === */
   selfHeal(state);
 
-  /* === ASSIGN TO TWIN STRATEGY === */
+  /* === EVOLUTION STEP EVERY N CYCLES === */
+  if (state.cycle - lastEvolution > 50) {
+    evolve();
+    lastEvolution = state.cycle;
+  }
+
+  /* === ASSIGN TO TWIN STRATEGY (LEGACY) === */
   assignTwin(state);
 
   /* === UPDATE TWIN COMPARISON CHART === */
@@ -868,28 +943,35 @@ render = function(state) {
 
   twinChart.update();
 
-  /* === DISPLAY RL STATE === */
-  document.getElementById('rl-display')?.remove();
+  /* === DISPLAY EVOLUTIONARY STATE === */
+  document.getElementById('evo-display')?.remove();
 
-  const rlBox = document.createElement('div');
-  rlBox.id = "rl-display";
-  rlBox.className = 'card';
-  rlBox.style.marginTop = '10px';
-  rlBox.innerHTML = `
-    <h3>🤖 Autonomous Intelligence</h3>
-    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+  const evoBox = document.createElement('div');
+  evoBox.id = "evo-display";
+  evoBox.className = 'card';
+  evoBox.style.marginTop = '10px';
+  evoBox.innerHTML = `
+    <h3>🧬 Evolutionary Neural Intelligence</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
       <div>
-        <div style="color: #00ffaa; font-size: 12px;">RL Conversion Rate</div>
-        <div style="font-size: 16px; font-weight: bold;">${(conversionRate*100).toFixed(1)}%</div>
+        <div style="color: #00ffaa; font-size: 11px;">Neural Conversion</div>
+        <div style="font-size: 14px; font-weight: bold;">${(conversion*100).toFixed(1)}%</div>
       </div>
       <div>
-        <div style="color: #ffaa00; font-size: 12px;">Self-Healing Active</div>
-        <div style="font-size: 16px; font-weight: bold;">✅ Online</div>
+        <div style="color: #ffaa00; font-size: 11px;">Agent Fitness</div>
+        <div style="font-size: 14px; font-weight: bold;">${agent.fitness.toFixed(0)}</div>
       </div>
+      <div>
+        <div style="color: #ff00aa; font-size: 11px;">Evolution Cycle</div>
+        <div style="font-size: 14px; font-weight: bold;">${Math.floor(state.cycle / 50)}</div>
+      </div>
+    </div>
+    <div style="margin-top: 8px; font-size: 10px; color: #666;">
+      w1:${agent.w1.toFixed(2)} w2:${agent.w2.toFixed(2)} bias:${agent.bias.toFixed(2)}
     </div>
   `;
 
-  document.body.appendChild(rlBox);
+  document.body.appendChild(evoBox);
 
   /* === CONTINUE NORMAL RENDER === */
   baseRender(state);
@@ -899,7 +981,7 @@ render = function(state) {
    INITIALIZATION
 ========================= */
 updateUI();
-document.getElementById('health-status').textContent = '✅ Autonomous AI Economy Initialized - Self-Optimizing & Self-Healing';
+document.getElementById('health-status').textContent = '✅ Evolutionary Neural AI Economy Initialized - Self-Learning & Self-Evolving';
 
 // Optional WebSocket integration (uncomment when server available)
 /*
