@@ -1,39 +1,77 @@
 #!/usr/bin/env node
-// services/config-advisor.js — isolated AI-propose service.
+// services/config-advisor.js — isolated AI-propose service, multi-provider.
 //
-// Runs as a SEPARATE PM2 process. Listens ONLY on 127.0.0.1 (loopback) so
-// nginx does not proxy it to the public internet. Authorised by a shared
-// secret header (ADVISOR_SHARED_SECRET) set at boot — the only caller is
-// server.js which sets the same secret.
+// Runs as a SEPARATE PM2 process. Listens ONLY on 127.0.0.1 (loopback).
+// Supported providers:
+//   anthropic      — Claude API (recommended default)
+//   openai         — OpenAI API
+//   openai-compat  — any OpenAI-compatible endpoint: OpenCode router,
+//                    LiteLLM gateway, Ollama local, LM Studio, etc.
+//   heuristic      — deterministic, no AI, zero egress (always-available fallback)
 //
-// Environment whitelist (enforced by PM2 ecosystem config, not here):
-//   ANTHROPIC_API_KEY     — optional, enables real AI
-//   ADVISOR_SHARED_SECRET — required, proxied-in auth
-//   ADVISOR_PORT          — default 4721, loopback only
-//   ANTHROPIC_MODEL       — default 'claude-haiku-4-5-20251001'
+// Provider selection rules (honours ADVISOR_PROVIDER env var):
+//   'auto' (default) — picks first available in preference order: anthropic,
+//                       openai, openai-compat, else heuristic
+//   explicit value   — honoured; falls back to heuristic if that provider's
+//                       key/base-url is missing
 //
-// Contract:
-//   POST /propose { baseline, context, tier }  ->  { ok, proposed, reason }
+// Contract (UNCHANGED — providers are interchangeable behind this shape):
+//   POST /propose { baseline, context, tier }  ->  { ok, mode, proposed, reason }
 //   GET  /healthz                              ->  { ok, mode, model }
 //
-// The service NEVER:
-//   - reads settings.runtime.json (no disk access to mutable state)
-//   - writes anything (pure compute)
-//   - returns keys outside the schema allowlist (validator rejects pre-return)
-//   - sees or forwards .env secrets (scoped env; the only secret it sees
-//     is ANTHROPIC_API_KEY which it uses exclusively for the Anthropic call)
+// Security invariants (identical across providers):
+//   - loopback bind + remote-addr check
+//   - shared-secret header auth
+//   - rate limit (30 req/min per addr)
+//   - AI output parsed as strict JSON, validated against schema whitelist
+//   - providers only see the payload we build; they CANNOT see other env vars
+//   - provider keys are scoped: compromise of one key ≠ compromise of others
 
 const http  = require('http');
 const https = require('https');
 const path  = require('path');
+const url   = require('url');
 
 const schema = require(path.resolve(__dirname, '..', 'lib', 'config-schema'));
 
 const PORT   = parseInt(process.env.ADVISOR_PORT || '4721', 10);
 const SECRET = process.env.ADVISOR_SHARED_SECRET || '';
-const MODEL  = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
-const API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const MODE   = API_KEY ? 'anthropic' : 'heuristic';
+
+// Provider configuration
+const ANTHROPIC_KEY    = process.env.ANTHROPIC_API_KEY    || '';
+const ANTHROPIC_MODEL  = process.env.ANTHROPIC_MODEL      || 'claude-haiku-4-5-20251001';
+const OPENAI_KEY       = process.env.OPENAI_API_KEY       || '';
+const OPENAI_MODEL     = process.env.OPENAI_MODEL         || 'gpt-4o-mini';
+const OPENAI_COMPAT_KEY   = process.env.OPENAI_COMPAT_API_KEY  || '';
+const OPENAI_COMPAT_BASE  = process.env.OPENAI_COMPAT_BASE_URL || '';
+const OPENAI_COMPAT_MODEL = process.env.OPENAI_COMPAT_MODEL    || 'gpt-4o-mini';
+
+const REQUESTED = (process.env.ADVISOR_PROVIDER || 'auto').toLowerCase();
+
+function pickProvider(){
+  const available = {
+    anthropic:       !!ANTHROPIC_KEY,
+    openai:          !!OPENAI_KEY,
+    'openai-compat': !!(OPENAI_COMPAT_KEY && OPENAI_COMPAT_BASE),
+    heuristic:       true,
+  };
+  if (REQUESTED !== 'auto'){
+    if (available[REQUESTED]) return REQUESTED;
+    console.warn(`[advisor] requested provider '${REQUESTED}' not configured; falling back to heuristic`);
+    return 'heuristic';
+  }
+  // Auto-pick: preference order
+  for (const p of ['anthropic', 'openai', 'openai-compat', 'heuristic']){
+    if (available[p]) return p;
+  }
+  return 'heuristic';
+}
+
+const MODE = pickProvider();
+const MODEL = MODE === 'anthropic'     ? ANTHROPIC_MODEL
+            : MODE === 'openai'        ? OPENAI_MODEL
+            : MODE === 'openai-compat' ? OPENAI_COMPAT_MODEL
+            : null;
 
 if (!SECRET){
   console.error('[advisor] ADVISOR_SHARED_SECRET not set — refusing to start');
@@ -67,10 +105,11 @@ function readBody(req){
   });
 }
 
-// --- AI: Anthropic Messages API call ----------------------------------------
-// Fixed system prompt; user-supplied context goes in a fenced JSON block
-// so prompt injection via context strings cannot escape the code fence.
-function callAnthropic({ baseline, context, tier }){
+// --- Shared prompt construction -----------------------------------------------
+// Identical for all providers so behaviour is interchangeable. User-supplied
+// context is fenced inside ```json blocks so prompt injection can't escape.
+function buildPrompt({ baseline, context, tier }){
+  const s = schema.loadSchema();
   const system =
 `You are Config Advisor. Given a baseline configuration and a requested context change, return a JSON proposal that changes ONLY the minimum number of keys needed.
 
@@ -79,14 +118,13 @@ HARD RULES:
 - Shape: {"proposed": {"features"?: {}, "limits"?: {}, "ui"?: {}}, "reason": "one sentence"}
 - Allowed buckets: features, limits, ui. NOTHING else.
 - Allowed keys:
-    features: ${schema.loadSchema().features.keys.join(', ')}
-    limits:   ${schema.loadSchema().limits.keys.join(', ')}
-    ui:       ${schema.loadSchema().ui.keys.join(', ')}
+    features: ${s.features.keys.join(', ')}
+    limits:   ${s.limits.keys.join(', ')}
+    ui:       ${s.ui.keys.join(', ')}
 - features.* are booleans; limits.* are non-negative integers (only super_admin tier may use -1 for unlimited); ui.* are hex colors (#rrggbb).
 - If no change is needed for a bucket, omit it.
 - Never return keys not in the lists above. Never return secrets, tokens, endpoints, or api_base.
 - Tier "${tier}" is the commit tier — do not propose limits above what that tier would realistically receive.`;
-
   const user =
 `Baseline:
 \`\`\`json
@@ -99,50 +137,119 @@ ${JSON.stringify(context, null, 2)}
 \`\`\`
 
 Return the JSON proposal now.`;
+  return { system, user };
+}
 
+function parseProposalText(text){
+  const stripped = String(text || '').trim().replace(/^```(?:json)?\s*/, '').replace(/\s*```\s*$/, '').trim();
+  return JSON.parse(stripped);
+}
+
+// Generic HTTPS/HTTP POST JSON helper; handles both http: and https: targets
+// (openai-compat gateways are often local http://).
+function httpPostJson({ urlStr, headers, body, timeoutMs = 15000 }){
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      model: MODEL,
-      max_tokens: 1024,
-      system,
-      messages: [{ role: 'user', content: user }],
-    });
-    const req = https.request({
-      host: 'api.anthropic.com',
-      path: '/v1/messages',
+    const u = new url.URL(urlStr);
+    const lib = u.protocol === 'https:' ? https : http;
+    const payload = JSON.stringify(body);
+    const req = lib.request({
+      host: u.hostname,
+      port: u.port || (u.protocol === 'https:' ? 443 : 80),
+      path: u.pathname + (u.search || ''),
       method: 'POST',
-      headers: {
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
+      headers: Object.assign({
         'content-type': 'application/json',
-        'content-length': Buffer.byteLength(body),
-      },
-      timeout: 15000,
+        'content-length': Buffer.byteLength(payload),
+      }, headers || {}),
+      timeout: timeoutMs,
     }, r => {
       let buf = '';
       r.on('data', c => buf += c);
       r.on('end', () => {
         if (r.statusCode < 200 || r.statusCode >= 300){
-          return reject(new Error(`anthropic_${r.statusCode}: ${buf.slice(0,200)}`));
+          return reject(new Error(`${u.hostname}_${r.statusCode}: ${buf.slice(0,200)}`));
         }
-        try {
-          const resp = JSON.parse(buf);
-          const text = (resp.content || []).map(c => c.text || '').join('').trim();
-          // Strip accidental fences, just in case.
-          const stripped = text.replace(/^```(?:json)?\s*/, '').replace(/\s*```\s*$/, '').trim();
-          const parsed = JSON.parse(stripped);
-          resolve(parsed);
-        } catch(e){
-          reject(new Error('anthropic_parse_failed: ' + e.message));
-        }
+        try { resolve(JSON.parse(buf)); }
+        catch(e){ reject(new Error(`${u.hostname}_parse_failed: ${e.message}`)); }
       });
     });
     req.on('error', reject);
-    req.on('timeout', () => { req.destroy(new Error('anthropic_timeout')); });
-    req.write(body);
+    req.on('timeout', () => req.destroy(new Error(`${u.hostname}_timeout`)));
+    req.write(payload);
     req.end();
   });
 }
+
+// --- Provider: Anthropic Messages API ---------------------------------------
+async function callAnthropic({ baseline, context, tier }){
+  const { system, user } = buildPrompt({ baseline, context, tier });
+  const resp = await httpPostJson({
+    urlStr: 'https://api.anthropic.com/v1/messages',
+    headers: {
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: {
+      model: ANTHROPIC_MODEL,
+      max_tokens: 1024,
+      system,
+      messages: [{ role: 'user', content: user }],
+    },
+  });
+  const text = (resp.content || []).map(c => c.text || '').join('');
+  return parseProposalText(text);
+}
+
+// --- Provider: OpenAI Chat Completions --------------------------------------
+async function callOpenAI({ baseline, context, tier }){
+  const { system, user } = buildPrompt({ baseline, context, tier });
+  const resp = await httpPostJson({
+    urlStr: 'https://api.openai.com/v1/chat/completions',
+    headers: { 'authorization': 'Bearer ' + OPENAI_KEY },
+    body: {
+      model: OPENAI_MODEL,
+      max_tokens: 1024,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user',   content: user },
+      ],
+    },
+  });
+  const text = (resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content) || '';
+  return parseProposalText(text);
+}
+
+// --- Provider: OpenAI-compatible gateway (OpenCode / LiteLLM / Ollama) -----
+async function callOpenAICompat({ baseline, context, tier }){
+  const { system, user } = buildPrompt({ baseline, context, tier });
+  // Normalise base URL — append /chat/completions if caller gave just the /v1 root
+  let endpoint = OPENAI_COMPAT_BASE.replace(/\/+$/, '');
+  if (!/\/chat\/completions$/.test(endpoint)) endpoint += '/chat/completions';
+  const resp = await httpPostJson({
+    urlStr: endpoint,
+    headers: { 'authorization': 'Bearer ' + OPENAI_COMPAT_KEY },
+    body: {
+      model: OPENAI_COMPAT_MODEL,
+      max_tokens: 1024,
+      // Some gateways (Ollama) ignore response_format but don't error on it
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user',   content: user },
+      ],
+    },
+  });
+  const text = (resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content) || '';
+  return parseProposalText(text);
+}
+
+// Provider dispatch — preserves the single callsite in the request handler
+const PROVIDERS = {
+  anthropic:       callAnthropic,
+  openai:          callOpenAI,
+  'openai-compat': callOpenAICompat,
+};
 
 // --- Heuristic fallback ------------------------------------------------------
 // Deterministic, no AI, safe to run offline. Reacts to a handful of context
@@ -210,7 +317,16 @@ const srv = http.createServer(async (req, res) => {
     return json(res, 403, { error: 'loopback_only' });
   }
   if (req.method === 'GET' && req.url === '/healthz'){
-    return json(res, 200, { ok: true, mode: MODE, model: MODE === 'anthropic' ? MODEL : null });
+    return json(res, 200, {
+      ok: true,
+      mode: MODE,
+      model: MODEL,
+      providers_available: {
+        anthropic:       !!ANTHROPIC_KEY,
+        openai:          !!OPENAI_KEY,
+        'openai-compat': !!(OPENAI_COMPAT_KEY && OPENAI_COMPAT_BASE),
+      },
+    });
   }
   const tok = req.headers['x-advisor-token'] || '';
   if (tok !== SECRET){
@@ -229,8 +345,9 @@ const srv = http.createServer(async (req, res) => {
     const ctx = context && typeof context === 'object' ? context : {};
     const t = tier || 'free';
     try {
-      const result = MODE === 'anthropic'
-        ? await callAnthropic({ baseline, context: ctx, tier: t })
+      const providerFn = PROVIDERS[MODE];
+      const result = providerFn
+        ? await providerFn({ baseline, context: ctx, tier: t })
         : heuristicPropose({ baseline, context: ctx, tier: t });
       // Validator is the final gate: no response leaves the advisor unvalidated.
       const val = schema.validate(result.proposed || {}, { tier: t });
@@ -246,7 +363,13 @@ const srv = http.createServer(async (req, res) => {
 });
 
 srv.listen(PORT, '127.0.0.1', () => {
-  console.log(`[advisor] listening 127.0.0.1:${PORT} mode=${MODE}${MODE==='anthropic' ? ` model=${MODEL}`:''}`);
+  const suffix = MODEL ? ` model=${MODEL}` : '';
+  const avail = [
+    ANTHROPIC_KEY && 'anthropic',
+    OPENAI_KEY && 'openai',
+    OPENAI_COMPAT_KEY && OPENAI_COMPAT_BASE && 'openai-compat',
+  ].filter(Boolean).join(',') || 'none';
+  console.log(`[advisor] listening 127.0.0.1:${PORT} mode=${MODE}${suffix} providers=[${avail}] requested=${REQUESTED}`);
 });
 
 process.on('SIGTERM', () => srv.close(() => process.exit(0)));
