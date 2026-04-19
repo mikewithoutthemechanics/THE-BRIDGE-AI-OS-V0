@@ -35,6 +35,7 @@ const resolver = require('../lib/settings-resolver');
 const workflows = require('../lib/workflow-engine');
 const configSchema = require('../lib/config-schema');
 const configDiff   = require('../lib/config-diff');
+const session      = require('../lib/session');
 
 const ROOT = path.resolve(__dirname, '..');
 const HTML_PATH = path.join(ROOT, 'settings-admin.html');
@@ -71,23 +72,39 @@ function readBody(req){
   });
 }
 
-function requireBearer(req, expected){
-  if (!expected) return { ok: true };  // token gating disabled (matches server.js pattern)
-  const hdr = req.headers.authorization || '';
-  if (hdr !== `Bearer ${expected}`) return { ok: false, status: 401, error: 'admin_auth_required' };
-  return { ok: true };
+// --- Cookie-based session auth (replaces bearer + X-Actor-Email combo) ---
+// The signed session cookie encodes {email, exp}. Server verifies HMAC,
+// checks expiry, then confirms the email still resolves to a super_admin
+// in the runtime store.
+//
+// `bearerExpected` is kept in the signature for backward compatibility of
+// the function call sites, but is ignored — auth is now exclusively
+// cookie-based. The value is used ONLY as part of the HMAC secret
+// derivation in lib/session.js (so rotating ADMIN_TOKEN invalidates all
+// outstanding sessions).
+function requireSession(req, bearerExpected){
+  const s = session.verifySession(req, bearerExpected);
+  if (!s) return { ok: false, status: 401, error: 'session_required' };
+  return { ok: true, email: s.email, exp: s.exp };
 }
 
 function requireSuperAdmin(req, bearerExpected){
-  const b = requireBearer(req, bearerExpected);
-  if (!b.ok) return b;
-  const email = String(req.headers['x-actor-email'] || '').toLowerCase().trim();
-  if (!email) return { ok: false, status: 400, error: 'missing_actor_email' };
-  const s = store.load();
-  if (!store.isSuperAdmin(s, email)){
-    return { ok: false, status: 403, error: 'not_super_admin', actor: email };
+  const g = requireSession(req, bearerExpected);
+  if (!g.ok) return g;
+  const runtime = store.load();
+  if (!store.isSuperAdmin(runtime, g.email)){
+    return { ok: false, status: 403, error: 'not_super_admin', actor: g.email };
   }
-  return { ok: true, email, store: s };
+  return { ok: true, email: g.email, store: runtime };
+}
+
+// CSRF guard for state-changing methods. Double-submit cookie pattern:
+// the `bridge_csrf` cookie must equal the `X-CSRF-Token` request header.
+// Cross-origin attackers can't read the cookie (SameSite=Strict blocks
+// the session from even being sent) so they can't mirror it into the header.
+function requireCsrf(req){
+  if (session.verifyCsrf(req)) return { ok: true };
+  return { ok: false, status: 403, error: 'csrf_token_required' };
 }
 
 function qs(url){
@@ -171,7 +188,60 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
     const u = req.url.split('?')[0];
     if (!u.startsWith('/settings')) return false;
 
-    // ---- public-ish (bearer only) ----
+    // ---- central CSRF gate for state-changing methods ----
+    // Applied before any route-specific logic. Exempts login (POST
+    // /settings/session) since the client has no CSRF cookie yet at that
+    // point. Every other mutating call must mirror the bridge_csrf cookie
+    // into an X-CSRF-Token header.
+    const isMutating = req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS';
+    const exemptFromCsrf = (req.method === 'POST' && u === '/settings/session');
+    if (isMutating && !exemptFromCsrf){
+      const c = requireCsrf(req);
+      if (!c.ok){ json(res, c.status, { error: c.error }); return true; }
+    }
+
+    // ---- session auth endpoints (exist BEFORE the cookie does) ----
+    // POST /settings/session        -> login (validate ADMIN_TOKEN + super_admin email, issue cookies)
+    // POST /settings/session/logout -> clear cookies
+    // GET  /settings/session        -> current session info (or 401)
+    if (req.method === 'POST' && u === '/settings/session'){
+      let body;
+      try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
+      const email = String(body.email || '').toLowerCase().trim();
+      const adminToken = String(body.admin_token || '');
+      if (!email) return json(res, 400, { error: 'missing_email' }), true;
+      if (!TOKEN){
+        // Server opted out of token gating entirely — still require the email be a super_admin
+      } else if (adminToken !== TOKEN){
+        return json(res, 401, { error: 'invalid_admin_token' }), true;
+      }
+      const s = store.load();
+      if (!store.isSuperAdmin(s, email)){
+        return json(res, 403, { error: 'not_super_admin', actor: email }), true;
+      }
+      const secure = process.env.ORCHESTRA_COOKIE_SECURE === '1';
+      const issued = session.issueSession({ email, adminToken: TOKEN, secure });
+      store.appendAudit(s, { actor: email, action: 'session_issued', target: email });
+      store.save(s);
+      res.writeHead(200, { ...HARDENING, 'content-type': 'application/json', 'set-cookie': issued.cookies });
+      res.end(JSON.stringify({ ok: true, email, exp: issued.exp, csrf: issued.csrf }));
+      return true;
+    }
+    if (req.method === 'POST' && u === '/settings/session/logout'){
+      res.writeHead(200, { ...HARDENING, 'content-type': 'application/json', 'set-cookie': session.clearSession() });
+      res.end(JSON.stringify({ ok: true }));
+      return true;
+    }
+    if (req.method === 'GET' && u === '/settings/session'){
+      const s = session.verifySession(req, TOKEN);
+      if (!s) return json(res, 401, { error: 'no_session' }), true;
+      const runtime = store.load();
+      const superAdmin = store.isSuperAdmin(runtime, s.email);
+      json(res, 200, { ok: true, email: s.email, exp: s.exp, super_admin: superAdmin });
+      return true;
+    }
+
+    // ---- session-required routes ----
     if (req.method === 'GET' && u === '/settings/healthz'){
       json(res, 200, { ok: true, store_path: store.STORE_PATH, defaults_path: resolver.DEFAULTS_PATH });
       return true;
@@ -185,14 +255,14 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
       return true;
     }
     if (req.method === 'GET' && u === '/settings/defaults'){
-      const b = requireBearer(req, TOKEN);
+      const b = requireSession(req, TOKEN);
       if (!b.ok) return json(res, b.status, { error: b.error }), true;
       try { json(res, 200, resolver.loadDefaults()); }
       catch(e){ json(res, 500, { error: 'defaults_load_failed', detail: e.message }); }
       return true;
     }
     if (req.method === 'GET' && u === '/settings/resolve'){
-      const b = requireBearer(req, TOKEN);
+      const b = requireSession(req, TOKEN);
       if (!b.ok) return json(res, b.status, { error: b.error }), true;
       const { email } = qs(req.url);
       if (!email) return json(res, 400, { error: 'missing_email' }), true;
@@ -318,7 +388,7 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
     // engine gates each workflow on the actor's resolved tier/capabilities — a
     // pro user can list+plan pro/free workflows; only super admins see super workflows.
     if (req.method === 'GET' && u === '/settings/workflows'){
-      const b = requireBearer(req, TOKEN);
+      const b = requireSession(req, TOKEN);
       if (!b.ok) return json(res, b.status, { error: b.error }), true;
       const actor = String(req.headers['x-actor-email'] || '').toLowerCase().trim();
       if (!actor) return json(res, 400, { error: 'missing_actor_email' }), true;
@@ -341,7 +411,7 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
       return true;
     }
     if (req.method === 'GET' && u.startsWith('/settings/workflows/')){
-      const b = requireBearer(req, TOKEN);
+      const b = requireSession(req, TOKEN);
       if (!b.ok) return json(res, b.status, { error: b.error }), true;
       const actor = String(req.headers['x-actor-email'] || '').toLowerCase().trim();
       if (!actor) return json(res, 400, { error: 'missing_actor_email' }), true;
@@ -361,15 +431,17 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
       // params + discovering internal HTTP shapes. Workflow listing + GET are open
       // to all tiers (filtered by canExecute).
       if (!g.ok){
-        // Fall back: if not super, still allow plan for the actor's OWN tier workflows
-        const b = requireBearer(req, TOKEN);
+        // Fall back: non-super sessions can still plan workflows scoped to
+        // their own resolved tier. Actor identity comes from the signed
+        // session cookie — no header spoofing possible.
+        const b = requireSession(req, TOKEN);
         if (!b.ok) return json(res, b.status, { error: b.error }), true;
-        const actor = String(req.headers['x-actor-email'] || '').toLowerCase().trim();
-        if (!actor) return json(res, 400, { error: 'missing_actor_email' }), true;
+        const c = requireCsrf(req);
+        if (!c.ok) return json(res, c.status, { error: c.error }), true;
         let body;
         try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
         const id = u.split('/')[3];
-        const resolved = resolver.resolve(store.load(), actor);
+        const resolved = resolver.resolve(store.load(), b.email);
         const p = workflows.plan(resolved, id, body.params || {});
         return json(res, p.ok ? 200 : 400, p), true;
       }
@@ -392,7 +464,7 @@ function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
     // ---- config advisor (Panel G) ----
     // GET /settings/config/schema — public allowed-key list (informational)
     if (req.method === 'GET' && u === '/settings/config/schema'){
-      const b = requireBearer(req, TOKEN);
+      const b = requireSession(req, TOKEN);
       if (!b.ok) return json(res, b.status, { error: b.error }), true;
       const s = configSchema.loadSchema();
       json(res, 200, {

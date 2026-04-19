@@ -3,14 +3,18 @@
 // Zero dependencies (stdlib only). Usage:  node server.js [port]
 //
 // Env knobs (all optional):
-//   ORCHESTRA_ADMIN_TOKEN  — if set, /admin/* requires "Authorization: Bearer <token>"
-//   ORCHESTRA_RATE_LIMIT   — requests / 60s per IP for /admin + /api (default 60, 0 disables)
-//   ORCHESTRA_ALLOW_IFRAME — "1" to drop X-Frame-Options (default: DENY)
+//   ORCHESTRA_ADMIN_TOKEN   — if set, /admin/* requires "Authorization: Bearer <token>"
+//   ORCHESTRA_RATE_LIMIT    — requests / 60s per IP for /admin + /api (default 60, 0 disables)
+//   ORCHESTRA_ALLOW_IFRAME  — "1" to drop X-Frame-Options (default: DENY)
+//   ORCHESTRA_COOKIE_SECURE — "1" to force "; Secure" on forwarded cookies (default: 0).
+//                             Browsers drop Secure cookies on non-HTTPS, so leave this off
+//                             when running behind plain-HTTP localhost. Set to 1 in prod.
 
 const http  = require('http');
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
+const session = require('./lib/session');
 
 const PORT   = Number(process.argv[2] || process.env.PORT || 7777);
 const UPSTREAM_HOST = 'go.ai-os.co.za';
@@ -21,6 +25,7 @@ const BOOT_TS = Date.now();
 const ADMIN_TOKEN = process.env.ORCHESTRA_ADMIN_TOKEN || '';
 const RATE_LIMIT  = Number(process.env.ORCHESTRA_RATE_LIMIT ?? 60);
 const ALLOW_IFRAME = process.env.ORCHESTRA_ALLOW_IFRAME === '1';
+const COOKIE_SECURE = process.env.ORCHESTRA_COOKIE_SECURE === '1';
 const ADVISOR_SECRET = process.env.ADVISOR_SHARED_SECRET || '';
 const ADVISOR_PORT   = parseInt(process.env.ADVISOR_PORT || '4721', 10);
 
@@ -71,27 +76,37 @@ function clientIp(req){
   return req.socket.remoteAddress || 'unknown';
 }
 
-// --- Cookie rewriter: strip Domain, force SameSite=None; Secure so upstream
-//     cookies survive the proxy hop without leaking beyond this origin. ---
+// --- Cookie rewriter: strip Domain, normalize SameSite, conditionally force Secure.
+//     SameSite=None requires Secure per spec, so in dev-HTTP mode we downgrade to
+//     SameSite=Lax. This keeps cookies reaching the browser on plain-HTTP localhost
+//     (Secure cookies are silently dropped by browsers over http://). ---
 function rewriteCookies(setCookie){
   if (!setCookie) return setCookie;
   const list = Array.isArray(setCookie) ? setCookie : [setCookie];
+  const sameSite = COOKIE_SECURE ? 'None' : 'Lax';
   return list.map(c => {
     let out = c.replace(/;\s*Domain=[^;]+/gi, '');
-    if (!/;\s*SameSite=/i.test(out)) out += '; SameSite=None';
-    else out = out.replace(/;\s*SameSite=[^;]+/gi, '; SameSite=None');
-    if (!/;\s*Secure/i.test(out)) out += '; Secure';
+    if (!/;\s*SameSite=/i.test(out)) out += `; SameSite=${sameSite}`;
+    else out = out.replace(/;\s*SameSite=[^;]+/gi, `; SameSite=${sameSite}`);
+    if (COOKIE_SECURE && !/;\s*Secure/i.test(out)) out += '; Secure';
     return out;
   });
 }
 
 function proxy(req, res){
-  // Auth gate — only if operator has opted in via env
+  // Auth gate — cookie-based session only (zero-trust: no bearer fallback).
+  // /admin/* is gated when ORCHESTRA_ADMIN_TOKEN is set. A valid signed
+  // session cookie (issued by POST /settings/session) grants access.
   if (ADMIN_TOKEN && req.url.startsWith('/admin')){
-    const hdr = req.headers.authorization || '';
-    if (hdr !== `Bearer ${ADMIN_TOKEN}`){
-      res.writeHead(401, {...HARDENING_HEADERS,'content-type':'application/json','www-authenticate':'Bearer'});
-      return res.end(JSON.stringify({ok:false, error:'admin_auth_required'}));
+    const s = session.verifySession(req, ADMIN_TOKEN);
+    if (!s){
+      res.writeHead(401, {...HARDENING_HEADERS,'content-type':'application/json'});
+      return res.end(JSON.stringify({ok:false, error:'session_required', login:'/settings/admin?auth=expired'}));
+    }
+    // state-changing /admin calls also require the double-submit CSRF token
+    if (req.method !== 'GET' && req.method !== 'HEAD' && !session.verifyCsrf(req)){
+      res.writeHead(403, {...HARDENING_HEADERS,'content-type':'application/json'});
+      return res.end(JSON.stringify({ok:false, error:'csrf_token_required'}));
     }
   }
   if (rateLimited(clientIp(req))){
