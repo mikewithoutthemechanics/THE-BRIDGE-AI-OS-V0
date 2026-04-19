@@ -52,31 +52,40 @@ class AIExecutor {
   async run(prompt, options = {}) {
     this.callCount++;
 
-    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
-      try {
-        const { name, config } = this.getAvailableProvider();
-        console.log(`🤖 AI Executor: Attempting with ${name} (attempt ${attempt + 1}/${this.maxRetries + 1})`);
+    // Try each provider in order until one succeeds
+    for (const providerName of this.providerOrder) {
+      const provider = this.providers[providerName];
+      if (!provider || !provider.apiKey || provider.apiKey.trim() === '') {
+        continue; // Skip providers without keys
+      }
 
-        const result = await this.callProvider(name, config, prompt, options);
+      for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+        try {
+          console.log(`🤖 AI Executor: Attempting with ${providerName} (attempt ${attempt + 1}/${this.maxRetries + 1})`);
 
-        this.successCount++;
-        console.log(`✅ AI Executor: Success with ${name}`);
-        return result;
+          const result = await this.callProvider(providerName, provider, prompt, options);
 
-      } catch (error) {
-        console.error(`❌ AI Executor: ${error.message}`);
+          this.successCount++;
+          console.log(`✅ AI Executor: Success with ${providerName}`);
+          return result;
 
-        // If this was the last attempt or no more providers, fail
-        if (attempt === this.maxRetries) {
-          this.failureCount++;
-          throw new Error(`All AI providers failed. Last error: ${error.message}`);
+        } catch (error) {
+          console.error(`❌ AI Executor: ${providerName} failed: ${error.message}`);
+
+          // If this was the last attempt for this provider, move to next provider
+          if (attempt === this.maxRetries) {
+            break;
+          }
+
+          // Wait a bit before retrying the same provider
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-
-        // Try next provider by temporarily disabling the current one
-        const failedProvider = this.providerOrder.shift();
-        this.providerOrder.push(failedProvider);
       }
     }
+
+    // All providers failed
+    this.failureCount++;
+    throw new Error('All AI providers failed after exhausting all retries');
   }
 
   // Call specific AI provider
