@@ -117,12 +117,45 @@ pre.json{font-size:10px; color:var(--muted); white-space:pre-wrap; word-break:br
 .modal .wf-param input, .modal .wf-param select{width:100%; margin:0}
 .modal .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:14px; border-top:1px solid var(--line); padding-top:10px}
 .modal .wf-confirm{color:var(--warn); font-size:11px; padding:8px; background:rgba(255,179,71,.08); border-radius:4px; margin:8px 0; white-space:pre-wrap}
+/* AI summary banner + Panel G */
+#aiSummaryBar{
+  border:1px solid var(--info); border-radius:8px; padding:12px 14px; margin-bottom:16px;
+  background:linear-gradient(180deg, rgba(0,191,255,.06), rgba(0,191,255,.02));
+  font-size:11px; display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center;
+}
+#aiSummaryBar .label{color:var(--info); letter-spacing:2px; text-transform:uppercase; font-size:10px}
+#aiSummaryBar .body{color:var(--text); line-height:1.5}
+#aiSummaryBar .body .meta{color:var(--muted); font-size:10px}
+#aiSummaryBar .status{font-size:10px; color:var(--muted)}
+#aiSummaryBar.err{border-color:var(--err)}
+#aiSummaryBar.err .label{color:var(--err)}
+#aiSummaryBar.offline{border-color:var(--line2); opacity:.65}
+.ctx-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; margin:8px 0}
+.ctx-grid label{display:block; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px}
+.ctx-grid select, .ctx-grid input{width:100%; margin:0}
+.diff-list{border:1px solid var(--line); border-radius:4px; padding:8px; background:var(--panel2); margin-top:8px; font-size:11px; max-height:320px; overflow:auto}
+.diff-row{padding:3px 4px; border-bottom:1px dashed var(--dim); font-family:ui-monospace,monospace; font-size:11px}
+.diff-row:last-child{border-bottom:0}
+.diff-add{color:var(--accent)} .diff-add::before{content:"+ "}
+.diff-mod{color:var(--warn)} .diff-mod::before{content:"~ "}
+.diff-rem{color:var(--err)} .diff-rem::before{content:"- "}
+.diff-empty{color:var(--muted); font-style:italic; padding:4px}
 </style></head><body>
 
 <header>
   <h1>◇ Bridge AI OS — Settings Admin</h1>
   <div class="actor">actor: <b id="actorEmail">—</b> · tier: <b id="actorTier">—</b></div>
 </header>
+
+<!-- AI Summary banner — top of dashboard -->
+<div id="aiSummaryBar" class="offline">
+  <div class="label">AI<br>SUMMARY</div>
+  <div class="body">
+    <div id="aiSummaryText">loading system summary…</div>
+    <div class="meta" id="aiSummaryMeta"></div>
+  </div>
+  <div class="status" id="aiSummaryStatus">—</div>
+</div>
 
 <!-- Panel A — System Metrics -->
 <div class="grid">
@@ -174,6 +207,31 @@ pre.json{font-size:10px; color:var(--muted); white-space:pre-wrap; word-break:br
   <section class="panel" style="grid-column:1/-1">
     <h2>F. Workflows <span class="tag" id="wfCount">— available for your tier</span></h2>
     <div id="wfBody">loading…</div>
+  </section>
+
+  <!-- Panel G — Config Advisor (AI propose, admin commit) -->
+  <section class="panel" style="grid-column:1/-1">
+    <h2>G. Config Advisor <span class="tag" id="gaStatus">advisor: unknown</span></h2>
+    <div class="form-row">
+      <label for="gaTarget">TARGET EMAIL</label>
+      <input id="gaTarget" type="email" placeholder="user@example.com" style="min-width:240px">
+      <label for="gaCtxOs">OS</label>
+      <select id="gaCtxOs"><option value="">—</option><option>linux</option><option>windows</option><option>macos</option></select>
+      <label for="gaCtxEnv">ENV</label>
+      <select id="gaCtxEnv"><option value="">—</option><option>dev</option><option>staging</option><option>prod</option></select>
+      <label for="gaCtxTier">REQ TIER</label>
+      <select id="gaCtxTier"><option value="">—</option><option>free</option><option>pro</option><option>enterprise</option><option>super_admin</option></select>
+      <label for="gaCtxToggle">TOGGLE</label>
+      <select id="gaCtxToggle"><option value="">—</option></select>
+      <button class="act" id="gaProposeBtn">propose</button>
+    </div>
+    <div id="gaOut" style="margin-top:8px"></div>
+  </section>
+
+  <!-- Panel H — Consolidated Reporting (all controls + telemetry) -->
+  <section class="panel" style="grid-column:1/-1">
+    <h2>H. Reporting <span class="tag" id="rpStatus">—</span></h2>
+    <div id="rpBody" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px">loading…</div>
   </section>
 
   <!-- Panel E — Audit Log -->
@@ -512,6 +570,167 @@ function closeWorkflowDialog(){
   document.getElementById('modalRoot').innerHTML = '';
 }
 
+// --- AI Summary banner ---
+async function loadAiSummary(){
+  const bar = document.getElementById('aiSummaryBar');
+  const textEl = document.getElementById('aiSummaryText');
+  const metaEl = document.getElementById('aiSummaryMeta');
+  const statEl = document.getElementById('aiSummaryStatus');
+  try{
+    const d = await fetchJSON('/settings/summary');
+    const s = d.ai_summary;
+    bar.className = s ? '' : 'offline';
+    if (s){
+      textEl.textContent = s.reason || '(no narrative)';
+      metaEl.textContent = 'mode=' + s.mode + ' · ' + d.total_users + ' users · ' + d.audit.total + ' audit entries';
+      statEl.textContent = 'online';
+      statEl.style.color = 'var(--accent)';
+    } else {
+      textEl.textContent = 'advisor offline (' + (d.ai_error || 'not configured') + ')';
+      metaEl.textContent = d.total_users + ' users · ' + d.audit.total + ' audit entries · summary unavailable';
+      statEl.textContent = 'offline';
+      statEl.style.color = 'var(--muted)';
+    }
+    // Also render Panel H (reporting) from this same call
+    renderReporting(d);
+  } catch(e){
+    bar.className = 'err';
+    textEl.textContent = 'summary load failed: ' + e.message;
+    metaEl.textContent = '';
+    statEl.textContent = 'error';
+    statEl.style.color = 'var(--err)';
+  }
+}
+
+// --- Panel H: Reporting ---
+function renderReporting(d){
+  const body = document.getElementById('rpBody');
+  document.getElementById('rpStatus').textContent = 'generated ' + new Date(d.generated_at).toLocaleTimeString();
+  body.innerHTML = '';
+  const card = (title, value, hint) => {
+    const el = document.createElement('div');
+    el.style.cssText = 'border:1px solid var(--line); border-radius:6px; padding:10px; background:var(--panel2)';
+    el.innerHTML =
+      '<div style="font-size:10px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase">'+esc(title)+'</div>'+
+      '<div style="font-size:18px; color:var(--accent); margin:4px 0; font-variant-numeric:tabular-nums">'+esc(value)+'</div>'+
+      (hint ? '<div style="font-size:10px; color:var(--muted)">'+esc(hint)+'</div>' : '');
+    return el;
+  };
+  body.appendChild(card('Total users', d.total_users, 'across all tiers'));
+  Object.keys(d.tier_counts).forEach(t => {
+    body.appendChild(card(t+' tier', d.tier_counts[t], (100 * d.tier_counts[t] / Math.max(1, d.total_users)).toFixed(0) + '%'));
+  });
+  body.appendChild(card('Audit entries', d.audit.total, 'total logged'));
+  // Top 3 audit actions
+  const top = Object.entries(d.audit.action_counts || {}).sort((a,b) => b[1]-a[1]).slice(0,3);
+  top.forEach(([k,v]) => body.appendChild(card(k, v, 'action count')));
+}
+
+// --- Panel G: Config Advisor ---
+let CURRENT_PROPOSAL = null;
+
+async function initAdvisorPanel(){
+  // Populate toggle dropdown with schema feature keys
+  try{
+    const schema = await fetchJSON('/settings/config/schema');
+    const sel = document.getElementById('gaCtxToggle');
+    schema.features.forEach(k => {
+      const o = document.createElement('option'); o.value = k; o.textContent = k;
+      sel.appendChild(o);
+    });
+  } catch(e){ logLine('schema load: '+e.message, 'err'); }
+
+  // Advisor health status chip
+  try{
+    const h = await fetchJSON('/settings/advisor/healthz');
+    document.getElementById('gaStatus').textContent = 'advisor: ' + (h.mode || 'unknown') + (h.model ? ' ('+h.model+')' : '');
+  } catch(e){
+    document.getElementById('gaStatus').textContent = 'advisor: offline';
+  }
+
+  // Default target to actor
+  document.getElementById('gaTarget').value = getActor();
+
+  document.getElementById('gaProposeBtn').addEventListener('click', proposeConfig);
+}
+
+async function proposeConfig(){
+  const target = document.getElementById('gaTarget').value.trim().toLowerCase();
+  const context = {};
+  const os    = document.getElementById('gaCtxOs').value;
+  const env   = document.getElementById('gaCtxEnv').value;
+  const tier  = document.getElementById('gaCtxTier').value;
+  const togg  = document.getElementById('gaCtxToggle').value;
+  if (os)   context.os = os;
+  if (env)  context.env = env;
+  if (tier) context.requested_tier = tier;
+  if (togg) context.toggle_feature = togg;
+  if (!target){ logLine('target email required', 'warn'); return; }
+  if (!Object.keys(context).length){ logLine('select at least one context dimension', 'warn'); return; }
+
+  const out = document.getElementById('gaOut');
+  out.innerHTML = '<div class="metric"><span>advisor</span><span class="v">proposing…</span></div>';
+  try{
+    const d = await fetchJSON('/settings/config/propose', {
+      method:'POST', body: JSON.stringify({ target_email: target, context })
+    });
+    CURRENT_PROPOSAL = d;
+    renderProposalPreview(d);
+    logLine('proposal '+d.proposal_id+' ('+d.mode+')', 'info');
+  } catch(e){
+    out.innerHTML = '<div class="metric"><span>advisor error</span><span class="v err">'+esc(e.message)+'</span></div>';
+    logLine('propose failed: '+e.message, 'err');
+  }
+}
+
+function renderProposalPreview(d){
+  const out = document.getElementById('gaOut');
+  const rows = [];
+  d.diff.added.forEach(x => rows.push('<div class="diff-row diff-add">'+esc(x.path)+' = '+esc(JSON.stringify(x.to))+'</div>'));
+  d.diff.modified.forEach(x => rows.push('<div class="diff-row diff-mod">'+esc(x.path)+' : '+esc(JSON.stringify(x.from))+' → '+esc(JSON.stringify(x.to))+'</div>'));
+  d.diff.removed.forEach(x => rows.push('<div class="diff-row diff-rem">'+esc(x.path)+' (was '+esc(JSON.stringify(x.from))+')</div>'));
+  const empty = !rows.length;
+
+  out.innerHTML =
+    '<div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--muted); margin-bottom:4px">'+
+      '<span>target: <b style="color:var(--text)">'+esc(d.target)+'</b> · tier: <b style="color:var(--text)">'+esc(d.tier)+'</b></span>'+
+      '<span>proposal: '+esc(d.proposal_id)+' · mode: '+esc(d.mode || 'unknown')+'</span>'+
+    '</div>'+
+    '<div style="font-size:11px; color:var(--info); margin-bottom:6px">reason: '+esc(d.reason || '—')+'</div>'+
+    '<div class="diff-list">'+(empty ? '<div class="diff-empty">no changes in proposal</div>' : rows.join(''))+'</div>'+
+    '<div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end">'+
+      '<button class="act" id="gaReject">reject</button>'+
+      '<button class="act" id="gaCommit"'+(empty?' disabled':'')+'>commit</button>'+
+    '</div>';
+  document.getElementById('gaReject').onclick = () => { CURRENT_PROPOSAL = null; out.innerHTML = ''; logLine('proposal rejected', 'warn'); };
+  document.getElementById('gaCommit').onclick = commitProposal;
+}
+
+async function commitProposal(){
+  if (!CURRENT_PROPOSAL){ logLine('no proposal to commit', 'warn'); return; }
+  const d = CURRENT_PROPOSAL;
+  if (!confirm('Commit proposal '+d.proposal_id+' to '+d.target+'?\n\n'+
+               d.diff.added.length+' additions, '+d.diff.modified.length+' modifications, '+d.diff.removed.length+' removals.')) return;
+  try{
+    const r = await fetchJSON('/settings/config/commit', {
+      method:'POST', body: JSON.stringify({
+        target_email: d.target,
+        proposed: d.proposed,
+        reason: d.reason,
+        proposal_id: d.proposal_id,
+      })
+    });
+    logLine('proposal '+d.proposal_id+' committed → '+d.target, 'info');
+    CURRENT_PROPOSAL = null;
+    document.getElementById('gaOut').innerHTML = '<div class="metric"><span>committed</span><span class="v">'+esc(d.target)+'</span></div>';
+    await loadSettings();
+    await loadAudit();
+    await loadAiSummary();
+  } catch(e){
+    logLine('commit failed: '+e.message, 'err');
+  }
+}
+
 // --- bootstrap
 window.addEventListener('load', async () => {
   logLine('settings-admin init', 'info');
@@ -519,7 +738,10 @@ window.addEventListener('load', async () => {
   await loadSettings();
   await loadAudit();
   await loadWorkflows();
+  await initAdvisorPanel();
+  await loadAiSummary();
   setInterval(loadOverview, 5000);
   setInterval(loadAudit, 15000);
+  setInterval(loadAiSummary, 60000);
 });
 </script></body></html>

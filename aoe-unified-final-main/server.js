@@ -21,10 +21,16 @@ const BOOT_TS = Date.now();
 const ADMIN_TOKEN = process.env.ORCHESTRA_ADMIN_TOKEN || '';
 const RATE_LIMIT  = Number(process.env.ORCHESTRA_RATE_LIMIT ?? 60);
 const ALLOW_IFRAME = process.env.ORCHESTRA_ALLOW_IFRAME === '1';
+const ADVISOR_SECRET = process.env.ADVISOR_SHARED_SECRET || '';
+const ADVISOR_PORT   = parseInt(process.env.ADVISOR_PORT || '4721', 10);
 
 // Settings system — stdlib http handler for /settings/* (see routes/settings.js).
 // Created once at boot and re-used across requests.
-const settingsRouter = require('./routes/settings').createRouter({ adminToken: ADMIN_TOKEN });
+const settingsRouter = require('./routes/settings').createRouter({
+  adminToken:    ADMIN_TOKEN,
+  advisorSecret: ADVISOR_SECRET,
+  advisorPort:   ADVISOR_PORT,
+});
 
 const ALLOWED_ORIGINS = new Set([
   `http://127.0.0.1:${PORT}`,

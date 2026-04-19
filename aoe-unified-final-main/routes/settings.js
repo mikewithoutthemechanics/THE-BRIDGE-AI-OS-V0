@@ -28,9 +28,13 @@
 const fs   = require('fs');
 const path = require('path');
 
+const http = require('http');
+
 const store    = require('../lib/settings-store');
 const resolver = require('../lib/settings-resolver');
 const workflows = require('../lib/workflow-engine');
+const configSchema = require('../lib/config-schema');
+const configDiff   = require('../lib/config-diff');
 
 const ROOT = path.resolve(__dirname, '..');
 const HTML_PATH = path.join(ROOT, 'settings-admin.html');
@@ -128,8 +132,40 @@ function serveJsAsset(u, res){
   });
 }
 
-function createRouter({ adminToken } = {}){
+// Proxy to the isolated config-advisor service running on loopback.
+// We talk to it ONLY via localhost HTTP; the shared secret is set at boot.
+function callAdvisor({ endpoint, method, body, secret, port }){
+  return new Promise((resolve, reject) => {
+    const payload = body ? JSON.stringify(body) : null;
+    const req = http.request({
+      host: '127.0.0.1',
+      port: port || parseInt(process.env.ADVISOR_PORT || '4721', 10),
+      path: endpoint,
+      method,
+      headers: Object.assign(
+        { 'content-type': 'application/json', 'x-advisor-token': secret },
+        payload ? { 'content-length': Buffer.byteLength(payload) } : {},
+      ),
+      timeout: 20000,
+    }, r => {
+      let buf = '';
+      r.on('data', c => buf += c);
+      r.on('end', () => {
+        try { resolve({ status: r.statusCode, body: JSON.parse(buf || '{}') }); }
+        catch(e){ resolve({ status: r.statusCode, body: { error: 'advisor_parse_failed', raw: buf.slice(0,200) } }); }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => req.destroy(new Error('advisor_timeout')));
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
+
+function createRouter({ adminToken, advisorSecret, advisorPort } = {}){
   const TOKEN = adminToken || process.env.ORCHESTRA_ADMIN_TOKEN || '';
+  const ADV_SECRET = advisorSecret || process.env.ADVISOR_SHARED_SECRET || '';
+  const ADV_PORT   = advisorPort   || parseInt(process.env.ADVISOR_PORT || '4721', 10);
 
   async function handle(req, res){
     const u = req.url.split('?')[0];
@@ -350,6 +386,193 @@ function createRouter({ adminToken } = {}){
         store.save(g.store);
       }
       json(res, p.ok ? 200 : 400, p);
+      return true;
+    }
+
+    // ---- config advisor (Panel G) ----
+    // GET /settings/config/schema — public allowed-key list (informational)
+    if (req.method === 'GET' && u === '/settings/config/schema'){
+      const b = requireBearer(req, TOKEN);
+      if (!b.ok) return json(res, b.status, { error: b.error }), true;
+      const s = configSchema.loadSchema();
+      json(res, 200, {
+        buckets: s.buckets,
+        features: s.features.keys,
+        limits:   s.limits.keys,
+        ui:       s.ui.keys,
+        workflow: s.workflow.keys,
+        forbidden_top_level: s.forbidden_top_level,
+      });
+      return true;
+    }
+
+    // GET /settings/advisor/healthz — reports advisor status (super-admin only)
+    if (req.method === 'GET' && u === '/settings/advisor/healthz'){
+      const g = requireSuperAdmin(req, TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error }), true;
+      try {
+        const r = await callAdvisor({ endpoint: '/healthz', method: 'GET', secret: ADV_SECRET, port: ADV_PORT });
+        json(res, r.status, r.body);
+      } catch(e){
+        json(res, 502, { error: 'advisor_unreachable', detail: e.message });
+      }
+      return true;
+    }
+
+    // POST /settings/config/propose — super-admin only (Phase 1: admin dashboard)
+    //   body: { target_email?, context: {...} }  (defaults to actor's own email)
+    if (req.method === 'POST' && u === '/settings/config/propose'){
+      const g = requireSuperAdmin(req, TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error }), true;
+      if (!ADV_SECRET) return json(res, 503, { error: 'advisor_not_configured' }), true;
+      let body;
+      try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
+      const target = String(body.target_email || g.email).toLowerCase().trim();
+      const context = body.context && typeof body.context === 'object' ? body.context : {};
+      const resolved = resolver.resolve(g.store, target);
+      const baseline = {
+        features: resolved.effective.features || {},
+        limits:   resolved.effective.limits   || {},
+        ui:       resolved.effective.ui       || {},
+      };
+      try {
+        const r = await callAdvisor({
+          endpoint: '/propose', method: 'POST', secret: ADV_SECRET, port: ADV_PORT,
+          body: { baseline, context, tier: resolved.tier },
+        });
+        if (r.status !== 200) return json(res, r.status, r.body), true;
+        const d = configDiff.diff(baseline, r.body.proposed);
+        json(res, 200, {
+          target, tier: resolved.tier, baseline,
+          proposed: r.body.proposed,
+          diff: d,
+          reason: r.body.reason,
+          mode: r.body.mode,
+          proposal_id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8),
+        });
+      } catch(e){
+        json(res, 502, { error: 'advisor_call_failed', detail: e.message });
+      }
+      return true;
+    }
+
+    // POST /settings/config/commit — super-admin only
+    //   body: { target_email, proposed: {...}, reason, proposal_id? }
+    // Runs the proposed deltas through configSchema.validate once more, then
+    // deep-merges into the user's override bucket. Audit-logged with full diff.
+    if (req.method === 'POST' && u === '/settings/config/commit'){
+      const g = requireSuperAdmin(req, TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error }), true;
+      let body;
+      try { body = await readBody(req); } catch(e){ return json(res, 400, { error: e.message }), true; }
+      const target = String(body.target_email || '').toLowerCase().trim();
+      if (!target) return json(res, 400, { error: 'missing_target_email' }), true;
+      const proposed = body.proposed && typeof body.proposed === 'object' ? body.proposed : null;
+      if (!proposed) return json(res, 400, { error: 'missing_proposed' }), true;
+
+      const s = g.store;
+      const resolvedTier = resolver.resolve(s, target).tier;
+      const val = configSchema.validate(proposed, { tier: resolvedTier });
+      if (!val.ok) return json(res, 400, { error: 'proposal_failed_validation', errors: val.errors }), true;
+
+      const prev = s.users[target] ? structuredClone(s.users[target]) : null;
+      const existingOverrides = (prev && prev.overrides) || {};
+      // Deep-merge per bucket: {features, limits, ui, workflow}
+      const newOverrides = Object.assign({}, existingOverrides);
+      for (const bucket of Object.keys(proposed)){
+        newOverrides[bucket] = Object.assign({}, existingOverrides[bucket] || {}, proposed[bucket] || {});
+      }
+      s.users[target] = {
+        tier: (prev && prev.tier) || 'free',
+        overrides: newOverrides,
+        granted_at: (prev && prev.granted_at) || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        updated_by: g.email,
+      };
+
+      // Compute diff for audit
+      const baselineBuckets = {
+        features: (prev && prev.overrides && prev.overrides.features) || {},
+        limits:   (prev && prev.overrides && prev.overrides.limits)   || {},
+        ui:       (prev && prev.overrides && prev.overrides.ui)       || {},
+      };
+      const d = configDiff.diff(baselineBuckets, proposed);
+
+      store.appendAudit(s, {
+        actor: g.email, action: 'config_commit', target,
+        prev: baselineBuckets, next: proposed,
+        diff_counts: { added: d.added.length, modified: d.modified.length, removed: d.removed.length },
+        reason: body.reason || null,
+        proposal_id: body.proposal_id || null,
+      });
+      store.save(s);
+      json(res, 200, { ok: true, user: s.users[target], diff: d });
+      return true;
+    }
+
+    // GET /settings/summary — consolidated controls + reporting + AI summary
+    // Super-admin only. Returns everything Panel A–G need in a single call,
+    // plus an AI-generated narrative summary (if advisor configured).
+    if (req.method === 'GET' && u === '/settings/summary'){
+      const g = requireSuperAdmin(req, TOKEN);
+      if (!g.ok) return json(res, g.status, { error: g.error }), true;
+      const s = g.store;
+      const defaults = resolver.loadDefaults();
+      const users = s.users || {};
+      const tierCounts = {};
+      Object.keys(defaults.tiers).forEach(t => tierCounts[t] = 0);
+      Object.values(users).forEach(u => { tierCounts[u.tier] = (tierCounts[u.tier] || 0) + 1; });
+      const totalUsers = Object.values(tierCounts).reduce((a,b) => a+b, 0);
+      const recentAudit = s.audit.slice(-20).reverse();
+      const actionCounts = {};
+      s.audit.forEach(e => { actionCounts[e.action] = (actionCounts[e.action] || 0) + 1; });
+      const resolvedSelf = resolver.resolve(s, g.email);
+
+      // AI narrative summary (best-effort; advisor may be offline)
+      let aiSummary = null;
+      let aiError = null;
+      if (ADV_SECRET){
+        try {
+          const r = await callAdvisor({
+            endpoint: '/propose', method: 'POST', secret: ADV_SECRET, port: ADV_PORT,
+            body: {
+              baseline: { features: resolvedSelf.effective.features, limits: resolvedSelf.effective.limits, ui: resolvedSelf.effective.ui },
+              context: {
+                mode: 'summary_request',
+                total_users: totalUsers,
+                tier_counts: tierCounts,
+                audit_recent_actions: recentAudit.map(e => e.action),
+                audit_total: s.audit.length,
+              },
+              tier: resolvedSelf.tier,
+            },
+          });
+          if (r.status === 200){
+            aiSummary = {
+              reason: r.body.reason,
+              proposed_deltas: r.body.proposed,
+              mode: r.body.mode,
+            };
+          } else {
+            aiError = r.body.error || `advisor_status_${r.status}`;
+          }
+        } catch(e){ aiError = e.message; }
+      }
+
+      json(res, 200, {
+        generated_at: new Date().toISOString(),
+        actor: g.email,
+        actor_tier: resolvedSelf.tier,
+        total_users: totalUsers,
+        tier_counts: tierCounts,
+        audit: {
+          total: s.audit.length,
+          recent: recentAudit,
+          action_counts: actionCounts,
+        },
+        ai_summary: aiSummary,
+        ai_error: aiError,
+      });
       return true;
     }
 
