@@ -64,6 +64,32 @@
   button:hover {
     background: rgba(0,255,200,0.1);
   }
+  .alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    font-family: monospace;
+    animation: slideIn 0.3s ease-out;
+    backdrop-filter: blur(10px);
+  }
+  .alert-warning {
+    background: rgba(255, 68, 68, 0.9);
+    color: white;
+    border-left: 4px solid #ff4444;
+  }
+  .alert-success {
+    background: rgba(68, 255, 68, 0.9);
+    color: white;
+    border-left: 4px solid #44ff44;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
 </style>
 </head>
 <body>
@@ -104,6 +130,7 @@
   <button onclick="injectEntropy()">🌪️ Inject Entropy</button>
   <button onclick="resetSystem()">🔄 Reset System</button>
   <button onclick="runForecast()">📊 Economic Forecast</button>
+  <button onclick="showAnalytics()">📈 View Analytics</button>
   <button onclick="toggleAutoMode()">▶️ Auto Mode</button>
 </div>
 
@@ -126,10 +153,45 @@ const economyCycle = new EconomyCycle(eventBus);
    STATE & HISTORY
 ========================= */
 let history = [];
-const MAX_POINTS = 50;
+const MAX_POINTS = 80;
 let eventCount = 0;
 let autoMode = false;
 let autoInterval;
+
+/* =========================
+   ALERT SYSTEM
+========================= */
+function showAlert(msg, type = 'warning') {
+  const el = document.createElement('div');
+  el.className = `alert alert-${type}`;
+  el.innerHTML = `⚠️ ${msg}`;
+  el.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'warning' ? '#ff4444' : '#44ff44'};
+    color: white;
+    padding: 12px 16px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    font-family: monospace;
+    animation: slideIn 0.3s ease-out;
+  `;
+
+  // Add CSS animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
 
 /* =========================
    CHART SETUP
@@ -198,6 +260,176 @@ const chart = new Chart(ctx, {
 });
 
 /* =========================
+   MULTI-AGENT ANALYTICS CHART
+========================= */
+const agentCard = document.createElement('div');
+agentCard.className = 'card';
+agentCard.style.marginTop = '20px';
+agentCard.innerHTML = '<h2>Agent Performance Analytics</h2><canvas id="agentChart" width="800" height="250"></canvas>';
+
+document.querySelector('.grid').parentNode.insertBefore(agentCard, document.querySelector('.controls'));
+
+const agentCtx = document.getElementById('agentChart').getContext('2d');
+
+const agentChart = new Chart(agentCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: 'EHSA (Leads)',
+        data: [],
+        borderColor: '#00ffaa',
+        backgroundColor: 'rgba(0,255,170,0.1)',
+        tension: 0.3,
+        pointRadius: 2,
+        pointHoverRadius: 4
+      },
+      {
+        label: 'SUPACLAW (Opportunities)',
+        data: [],
+        borderColor: '#ff00aa',
+        backgroundColor: 'rgba(255,0,170,0.1)',
+        tension: 0.3,
+        pointRadius: 2,
+        pointHoverRadius: 4
+      },
+      {
+        label: 'ECONOMY (Executions)',
+        data: [],
+        borderColor: '#ffaa00',
+        backgroundColor: 'rgba(255,170,0,0.1)',
+        tension: 0.3,
+        pointRadius: 2,
+        pointHoverRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    animation: { duration: 200 },
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: {
+        display: false,
+        title: { display: true, text: 'Cycle', color: '#00ffcc' }
+      },
+      y: {
+        ticks: { color: '#00ffcc' },
+        grid: { color: 'rgba(0,255,200,0.1)' }
+      }
+    },
+    plugins: {
+      legend: {
+        labels: { color: '#00ffcc' },
+        position: 'top'
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        titleColor: '#00ffcc',
+        bodyColor: '#00ffcc',
+        callbacks: {
+          label: function(context) {
+            return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+          }
+        }
+      }
+    }
+  }
+});
+
+/* =========================
+   ANOMALY DETECTION
+========================= */
+function detectAnomaly(series, threshold = 10) {
+  if (series.length < threshold) return { detected: false, type: null };
+
+  const recent = series.slice(-threshold);
+  const avg = recent.reduce((a,b)=>a+b,0)/threshold;
+  const std = Math.sqrt(recent.reduce((a,b)=>a+(b-avg)**2,0)/threshold);
+  const last = series[series.length - 1];
+
+  // Spike detection (2.5 standard deviations above mean)
+  if (last > avg + 2.5 * std && std > 0) {
+    return { detected: true, type: 'spike', severity: (last - avg) / std };
+  }
+
+  // Drop detection (2.5 standard deviations below mean)
+  if (last < avg - 2.5 * std && std > 0) {
+    return { detected: true, type: 'drop', severity: (avg - last) / std };
+  }
+
+  return { detected: false, type: null };
+}
+
+/* =========================
+   PREDICTIVE MODEL (LINEAR REGRESSION)
+========================= */
+function predictNext(series) {
+  if (series.length < 5) return series[series.length-1] || 0;
+
+  const n = series.length;
+  let xSum = 0, ySum = 0, xy = 0, xx = 0;
+
+  for (let i = 0; i < n; i++){
+    xSum += i;
+    ySum += series[i];
+    xy += i * series[i];
+    xx += i * i;
+  }
+
+  const slope = (n * xy - xSum * ySum) / (n * xx - xSum * xSum || 1);
+  const intercept = (ySum - slope * xSum) / n;
+
+  const prediction = slope * n + intercept;
+  return Math.max(0, Math.floor(prediction));
+}
+
+/* =========================
+   PREDICTION DISPLAY
+========================= */
+function updatePredictions() {
+  if (history.length < 10) return;
+
+  const leads = history.map(p => p.leads);
+  const opp = history.map(p => p.opp);
+  const exec = history.map(p => p.exec);
+
+  const nextExec = predictNext(exec);
+  const nextRevenue = nextExec * economyCycle.taskMetrics.avgTaskValue * economyCycle.taskMetrics.successRate;
+  const nextLeads = predictNext(leads);
+
+  // Remove existing prediction
+  const existing = document.getElementById('prediction-card');
+  if (existing) existing.remove();
+
+  // Add new prediction card
+  const predCard = document.createElement('div');
+  predCard.id = 'prediction-card';
+  predCard.className = 'card';
+  predCard.style.marginTop = '20px';
+  predCard.innerHTML = `
+    <h2>🔮 Predictive Analytics</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+      <div>
+        <div style="color: #00ffaa; font-size: 14px;">Next Cycle Leads</div>
+        <div style="font-size: 20px; font-weight: bold;">${nextLeads.toLocaleString()}</div>
+      </div>
+      <div>
+        <div style="color: #ffaa00; font-size: 14px;">Next Cycle Executions</div>
+        <div style="font-size: 20px; font-weight: bold;">${nextExec}</div>
+      </div>
+      <div>
+        <div style="color: #00ffcc; font-size: 14px;">Projected Revenue</div>
+        <div style="font-size: 20px; font-weight: bold;">R${Math.floor(nextRevenue).toLocaleString()}</div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(predCard);
+}
+
+/* =========================
    EVENT HANDLERS
 ========================= */
 eventBus.on('intelligence_cycle_complete', (event) => {
@@ -259,16 +491,55 @@ function updateGraph() {
 
   history.push({
     cycle: state.cycle,
-    treasury: state.treasury,
-    executions: state.executions
+    leads: state.leads,
+    opp: state.opportunities,
+    exec: state.executions,
+    treasury: state.treasury
   });
 
   if (history.length > MAX_POINTS) history.shift();
 
+  // Update main economic chart
   chart.data.labels = history.map(p => p.cycle);
   chart.data.datasets[0].data = history.map(p => p.treasury);
   chart.data.datasets[1].data = history.map(p => p.executions);
   chart.update();
+
+  // Update agent analytics chart
+  agentChart.data.labels = history.map(p => p.cycle);
+  agentChart.data.datasets[0].data = history.map(p => p.leads);
+  agentChart.data.datasets[1].data = history.map(p => p.opp);
+  agentChart.data.datasets[2].data = history.map(p => p.exec);
+  agentChart.update();
+
+  // Run anomaly detection
+  if (history.length >= 10) {
+    const leadsSeries = history.map(p => p.leads);
+    const oppSeries = history.map(p => p.opp);
+    const execSeries = history.map(p => p.exec);
+
+    const leadsAnomaly = detectAnomaly(leadsSeries);
+    const oppAnomaly = detectAnomaly(oppSeries);
+    const execAnomaly = detectAnomaly(execSeries);
+
+    if (leadsAnomaly.detected) {
+      const type = leadsAnomaly.type === 'spike' ? '📈 Lead Spike' : '📉 Lead Drop';
+      showAlert(`${type} detected (severity: ${leadsAnomaly.severity.toFixed(1)}σ)`, 'warning');
+    }
+
+    if (oppAnomaly.detected) {
+      const type = oppAnomaly.type === 'spike' ? '📈 Opportunity Spike' : '📉 Opportunity Drop';
+      showAlert(`${type} detected (severity: ${oppAnomaly.severity.toFixed(1)}σ)`, 'warning');
+    }
+
+    if (execAnomaly.detected) {
+      const type = execAnomaly.type === 'spike' ? '📈 Execution Spike' : '📉 Execution Drop';
+      showAlert(`${type} detected (severity: ${execAnomaly.severity.toFixed(1)}σ)`, 'warning');
+    }
+  }
+
+  // Update predictions
+  updatePredictions();
 }
 
 function updateEventCount() {
@@ -278,16 +549,34 @@ function updateEventCount() {
 
 function updateHealthStatus() {
   const state = eventBus.getState();
+  let status = '✅ Healthy';
+  let statusColor = '#00ffcc';
 
+  // Check for zero state
   if (state.leads === 0 && state.opportunities === 0 && state.executions === 0 && state.cycle > 0) {
-    document.getElementById('health-status').textContent = '⚠️ Zero State Detected';
+    status = '⚠️ Zero State Detected';
+    statusColor = '#ff6b6b';
   } else if (state.treasury > 100000) {
-    document.getElementById('health-status').textContent = '🚀 High Growth';
+    status = '🚀 High Growth Mode';
+    statusColor = '#00ffaa';
   } else if (state.treasury > 10000) {
-    document.getElementById('health-status').textContent = '📈 Growing';
-  } else {
-    document.getElementById('health-status').textContent = '✅ Healthy';
+    status = '📈 Active Growth';
+    statusColor = '#44ff44';
   }
+
+  // Add anomaly indicator if we have enough history
+  if (history.length >= 10) {
+    const execSeries = history.map(p => p.exec);
+    const anomaly = detectAnomaly(execSeries, 10);
+
+    if (anomaly.detected) {
+      status += ` | ${anomaly.type === 'spike' ? '📈' : '📉'} Anomaly`;
+    }
+  }
+
+  const statusEl = document.getElementById('health-status');
+  statusEl.textContent = status;
+  statusEl.style.color = statusColor;
 }
 
 /* =========================
@@ -333,6 +622,40 @@ Market Demand: ${(forecast.market_conditions.demand_multiplier * 100).toFixed(0)
 Success Rate: ${(forecast.market_conditions.success_rate * 100).toFixed(1)}%`);
 }
 
+function showAnalytics() {
+  const state = eventBus.getState();
+  const metrics = economyCycle.getEconomicMetrics();
+
+  const analytics = `
+📊 **Advanced Analytics Report**
+
+🔄 **System State:**
+• Cycle: ${state.cycle}
+• Treasury: R${state.treasury.toLocaleString()}
+• Total Leads: ${state.leads}
+• Total Opportunities: ${state.opportunities}
+• Total Executions: ${state.executions}
+
+💰 **Economic Metrics:**
+• Avg Task Value: R${metrics.avg_task_value}
+• Market Demand: ${(metrics.market_demand * 100).toFixed(0)}%
+• Success Rate: ${(metrics.success_rate * 100).toFixed(1)}%
+• Forecast Accuracy: ${(metrics.forecast_accuracy * 100).toFixed(1)}%
+
+📈 **Recent Performance:**
+• Events Processed: ${eventCount}
+• Last Sequence: ${eventBus.lastSeq}
+• History Points: ${history.length}/${MAX_POINTS}
+
+🤖 **Agent Status:**
+• EHSA Leads: ${state.leads} (avg: ${history.length > 0 ? (history.reduce((a,b)=>a+b.leads,0)/history.length).toFixed(1) : 0})
+• SUPACLAW Opportunities: ${state.opportunities} (avg: ${history.length > 0 ? (history.reduce((a,b)=>a+b.opp,0)/history.length).toFixed(1) : 0})
+• ECONOMY Executions: ${state.executions} (avg: ${history.length > 0 ? (history.reduce((a,b)=>a+b.exec,0)/history.length).toFixed(1) : 0})
+`;
+
+  alert(analytics);
+}
+
 function toggleAutoMode() {
   autoMode = !autoMode;
   const button = document.querySelector('button[onclick="toggleAutoMode()"]');
@@ -356,6 +679,24 @@ function toggleAutoMode() {
 setInterval(() => {
   eventBus.checkSystemHealth();
   updateHealthStatus();
+
+  // Periodic anomaly check
+  if (history.length >= 10 && Math.random() < 0.3) { // 30% chance every 5 seconds
+    const state = eventBus.getState();
+    const leadsAnomaly = detectAnomaly(history.map(p => p.leads));
+    const oppAnomaly = detectAnomaly(history.map(p => p.opp));
+    const execAnomaly = detectAnomaly(history.map(p => p.exec));
+
+    if (leadsAnomaly.detected && leadsAnomaly.severity > 2) {
+      showAlert(`EHSA Lead ${leadsAnomaly.type} (${leadsAnomaly.severity.toFixed(1)}σ)`, 'warning');
+    }
+    if (oppAnomaly.detected && oppAnomaly.severity > 2) {
+      showAlert(`SUPACLAW Opportunity ${oppAnomaly.type} (${oppAnomaly.severity > 3 ? 'CRITICAL' : oppAnomaly.severity.toFixed(1) + 'σ'})`, 'warning');
+    }
+    if (execAnomaly.detected && execAnomaly.severity > 2) {
+      showAlert(`ECONOMY Execution ${execAnomaly.type} (${execAnomaly.severity.toFixed(1)}σ)`, execAnomaly.severity > 3 ? 'warning' : 'warning');
+    }
+  }
 }, 5000);
 
 /* =========================
