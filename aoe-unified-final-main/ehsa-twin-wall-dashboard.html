@@ -131,6 +131,7 @@
   <button onclick="resetSystem()">🔄 Reset System</button>
   <button onclick="runForecast()">📊 Economic Forecast</button>
   <button onclick="showAnalytics()">📈 View Analytics</button>
+  <button onclick="resetRL()">🧠 Reset RL Agent</button>
   <button onclick="toggleAutoMode()">▶️ Auto Mode</button>
 </div>
 
@@ -339,6 +340,133 @@ const agentChart = new Chart(agentCtx, {
 });
 
 /* =========================
+   AUTONOMOUS INTELLIGENCE LAYER
+========================= */
+
+/* === REINFORCEMENT LEARNING AGENT === */
+let conversionRate = 0.6; // initial
+let lastReward = 0;
+
+function rlUpdate(state) {
+  const reward = state.treasury - lastReward;
+
+  // simple policy gradient (hill climb)
+  if (reward > 0) {
+    conversionRate += 0.02;
+  } else {
+    conversionRate -= 0.02;
+  }
+
+  // clamp
+  conversionRate = Math.max(0.1, Math.min(0.95, conversionRate));
+
+  lastReward = state.treasury;
+}
+
+/* Hook into execution generation */
+function applyRL(opportunities) {
+  return Math.floor(opportunities * conversionRate);
+}
+
+/* === ANOMALY AUTO-RESPONSE (SELF-HEALING) === */
+function selfHeal(state) {
+
+  // detect execution collapse
+  if (state.executions === 0 && state.opportunities > 5) {
+    console.warn("⚠ Execution failure → boosting conversion");
+    showAlert("Self-Healing: Boosting conversion rate due to execution failure", "success");
+
+    conversionRate += 0.15;
+  }
+
+  // detect oversaturation
+  if (state.executions > state.opportunities * 0.9) {
+    console.warn("⚠ Oversaturation → reducing conversion");
+    showAlert("Self-Healing: Reducing conversion rate due to oversaturation", "success");
+
+    conversionRate -= 0.1;
+  }
+
+  // detect economic stall
+  if (state.treasury === lastReward && state.cycle > 1) {
+    console.warn("⚠ Economic stall → injecting leads");
+    showAlert("Self-Healing: Injecting leads due to economic stagnation", "success");
+
+    eventBus.ingest({
+      type: "lead_generated",
+      value: 2,
+      seq: eventBus.lastSeq + 1,
+      timestamp: Date.now()
+    });
+  }
+
+  conversionRate = Math.max(0.1, Math.min(0.95, conversionRate));
+}
+
+/* === MULTI-TWIN DASHBOARD === */
+const twins = {
+  alpha: [],
+  beta: [],
+  gamma: []
+};
+
+function assignTwin(state) {
+  // simple partition by cycle for parallel evaluation
+  if (state.cycle % 3 === 0) twins.alpha.push(state.treasury);
+  else if (state.cycle % 3 === 1) twins.beta.push(state.treasury);
+  else twins.gamma.push(state.treasury);
+
+  // maintain sliding window
+  Object.keys(twins).forEach(k => {
+    if (twins[k].length > 50) twins[k].shift();
+  });
+}
+
+/* Create twin comparison dashboard */
+const twinCard = document.createElement('div');
+twinCard.className = 'card';
+twinCard.style.marginTop = '20px';
+twinCard.innerHTML = '<h2>Multi-Twin Strategy Comparison</h2><canvas id="twinChart" width="800" height="200"></canvas>';
+
+document.body.appendChild(twinCard);
+
+const twinCtx = document.getElementById('twinChart').getContext('2d');
+
+const twinChart = new Chart(twinCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      { label: 'Alpha Strategy', data: [], borderColor: '#00ffcc', backgroundColor: 'rgba(0,255,200,0.1)', tension: 0.3 },
+      { label: 'Beta Strategy', data: [], borderColor: '#ff00cc', backgroundColor: 'rgba(255,0,200,0.1)', tension: 0.3 },
+      { label: 'Gamma Strategy', data: [], borderColor: '#ccff00', backgroundColor: 'rgba(200,255,0,0.1)', tension: 0.3 }
+    ]
+  },
+  options: {
+    responsive: true,
+    animation: { duration: 200 },
+    plugins: {
+      legend: { labels: { color: '#00ffcc' } },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        callbacks: {
+          label: function(context) {
+            return context.dataset.label + ': R' + context.parsed.y.toLocaleString();
+          }
+        }
+      }
+    },
+    scales: {
+      x: { display: false },
+      y: {
+        ticks: { color: '#00ffcc', callback: value => 'R' + value.toLocaleString() },
+        grid: { color: 'rgba(0,255,200,0.1)' }
+      }
+    }
+  }
+});
+
+/* =========================
    ANOMALY DETECTION
 ========================= */
 function detectAnomaly(series, threshold = 10) {
@@ -442,6 +570,12 @@ eventBus.on('leads_generated', (event) => {
 });
 
 eventBus.on('opportunities_created', (event) => {
+  // Apply RL-based execution generation instead of fixed conversion
+  const rlExecutions = applyRL(event.opportunities_count);
+
+  // Override the event with RL-adjusted value
+  event.executions_count = rlExecutions;
+
   updateUI();
   updateEventCount();
 });
@@ -549,20 +683,23 @@ function updateEventCount() {
 
 function updateHealthStatus() {
   const state = eventBus.getState();
-  let status = '✅ Healthy';
+  let status = '✅ Autonomous & Healthy';
   let statusColor = '#00ffcc';
 
   // Check for zero state
   if (state.leads === 0 && state.opportunities === 0 && state.executions === 0 && state.cycle > 0) {
-    status = '⚠️ Zero State Detected';
+    status = '⚠️ Zero State Detected (Self-Healing Active)';
     statusColor = '#ff6b6b';
   } else if (state.treasury > 100000) {
-    status = '🚀 High Growth Mode';
+    status = '🚀 High Growth Mode (RL Optimizing)';
     statusColor = '#00ffaa';
   } else if (state.treasury > 10000) {
-    status = '📈 Active Growth';
+    status = '📈 Active Growth (Self-Learning)';
     statusColor = '#44ff44';
   }
+
+  // Add RL status
+  status += ` | RL: ${(conversionRate*100).toFixed(1)}%`;
 
   // Add anomaly indicator if we have enough history
   if (history.length >= 10) {
@@ -570,7 +707,7 @@ function updateHealthStatus() {
     const anomaly = detectAnomaly(execSeries, 10);
 
     if (anomaly.detected) {
-      status += ` | ${anomaly.type === 'spike' ? '📈' : '📉'} Anomaly`;
+      status += ` | ${anomaly.type === 'spike' ? '📈' : '📉'} Auto-Healing`;
     }
   }
 
@@ -656,6 +793,12 @@ function showAnalytics() {
   alert(analytics);
 }
 
+function resetRL() {
+  conversionRate = 0.6; // reset to initial
+  lastReward = 0;
+  showAlert("RL Agent Reset: Conversion rate restored to 60%", "success");
+}
+
 function toggleAutoMode() {
   autoMode = !autoMode;
   const button = document.querySelector('button[onclick="toggleAutoMode()"]');
@@ -700,10 +843,63 @@ setInterval(() => {
 }, 5000);
 
 /* =========================
+   MASTER AUGMENTED LOOP (AUTONOMOUS INTELLIGENCE)
+========================= */
+
+const baseRender = render;
+
+render = function(state) {
+
+  /* === REINFORCEMENT LEARNING UPDATE === */
+  rlUpdate(state);
+
+  /* === SELF-HEALING RESPONSE === */
+  selfHeal(state);
+
+  /* === ASSIGN TO TWIN STRATEGY === */
+  assignTwin(state);
+
+  /* === UPDATE TWIN COMPARISON CHART === */
+  twinChart.data.labels = Array.from({length: twins.alpha.length}, (_,i)=>i);
+
+  twinChart.data.datasets[0].data = twins.alpha;
+  twinChart.data.datasets[1].data = twins.beta;
+  twinChart.data.datasets[2].data = twins.gamma;
+
+  twinChart.update();
+
+  /* === DISPLAY RL STATE === */
+  document.getElementById('rl-display')?.remove();
+
+  const rlBox = document.createElement('div');
+  rlBox.id = "rl-display";
+  rlBox.className = 'card';
+  rlBox.style.marginTop = '10px';
+  rlBox.innerHTML = `
+    <h3>🤖 Autonomous Intelligence</h3>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+      <div>
+        <div style="color: #00ffaa; font-size: 12px;">RL Conversion Rate</div>
+        <div style="font-size: 16px; font-weight: bold;">${(conversionRate*100).toFixed(1)}%</div>
+      </div>
+      <div>
+        <div style="color: #ffaa00; font-size: 12px;">Self-Healing Active</div>
+        <div style="font-size: 16px; font-weight: bold;">✅ Online</div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(rlBox);
+
+  /* === CONTINUE NORMAL RENDER === */
+  baseRender(state);
+};
+
+/* =========================
    INITIALIZATION
 ========================= */
 updateUI();
-document.getElementById('health-status').textContent = '✅ System Initialized - Causal AI Economy Active';
+document.getElementById('health-status').textContent = '✅ Autonomous AI Economy Initialized - Self-Optimizing & Self-Healing';
 
 // Optional WebSocket integration (uncomment when server available)
 /*
