@@ -180,6 +180,27 @@ button.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--f
   #bottomnav{display:flex}
   #ui{padding-bottom:calc(76px + var(--sab))}
 }
+
+/* ── prompt cortex (God Mode) ──────────────────────── */
+#cortex{display:flex;flex-direction:column;gap:6px}
+#cortex .card{
+  border:1px solid var(--line);border-left:2px solid var(--fg);
+  border-radius:4px;padding:6px 8px;
+  background:rgba(0,255,213,.04);
+  animation:cortex-in .25s ease;
+}
+#cortex .card .hd{
+  display:flex;justify-content:space-between;align-items:baseline;gap:6px;
+  font-size:.58rem;color:var(--dim);letter-spacing:.08em;
+}
+#cortex .card .hd .kind{color:var(--fg);font-weight:700}
+#cortex .card .body{
+  font-size:.62rem;color:var(--fg);opacity:.85;line-height:1.35;margin-top:3px;
+  white-space:pre-wrap;word-break:break-word;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+#cortex .empty{font-size:.6rem;color:var(--dim);font-style:italic;padding:4px 0}
+@keyframes cortex-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
 </head>
@@ -229,6 +250,9 @@ button.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--f
     <div class="agent"><span><span class="dot"></span>Creative Support</span><span style="font-size:.6rem;color:var(--dim)">idle</span></div>
     <div class="agent"><span><span class="dot"></span>Supply Chain</span><span style="font-size:.6rem;color:var(--dim)">idle</span></div>
   </div>
+
+  <div class="section">PROMPT CORTEX <span style="font-size:.5rem;color:var(--dim);letter-spacing:.04em">(god-mode)</span></div>
+  <div id="cortex"><div class="empty">waiting for first signal…</div></div>
 
   <div class="section">FUNNEL</div>
   <div id="funnel"></div>
@@ -446,6 +470,7 @@ async function poll(){
     document.getElementById('pipeline').textContent = (d.pipeline?.total ?? 0).toLocaleString();
     document.getElementById('osint').textContent    = (d.osint?.findings ?? 0).toLocaleString();
     document.getElementById('rev').textContent      = zar(d.pipeline?.won_value ?? 0);
+    cortexTick(d);
   } catch(_) { errCount++; }
 
   // Treasury: prefer /api/treasury/status (bucketed policy-split total), fall back to /api/core/treasury
@@ -516,6 +541,83 @@ async function poll(){
 }
 function escapeHTML(s){
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ═════════ Prompt Cortex — God Mode prompt engine (browser-vendored) ═════════
+   Pure prompt-template methods extracted from src/prompt-engine/bridge-prompt-engine.js.
+   No eventBus / economyCycle dependencies — pure string formatters. */
+const PromptEngine = {
+  universalExpert(domain, question){
+    return `Act as an Omniscient Expert System in ${domain}.\n`
+      + `Process: (1) identify the field; (2) adopt top-3 expert personas; (3) synthesise perspectives; (4) include counterarguments + limitations; (5) end with actionable recommendations.\n`
+      + `Question: ${question}`;
+  },
+  opportunityOptimization(opportunities){
+    return `Act as an Opportunity Optimization Specialist.\n`
+      + `Current Opportunities: ${JSON.stringify(opportunities)}\n`
+      + `Rank by strategic value and feasibility; evaluate conversion potential, ROI, resource needs; produce execution roadmap with success metrics.`;
+  },
+  revenueForecasting(hist){
+    return `Act as a Revenue Forecasting Expert (linear regression + trend extrapolation + seasonal adjustment + confidence intervals).\n`
+      + `Historical: ${JSON.stringify(hist)}\n`
+      + `Output: multi-scenario forecasts with probability distributions.`;
+  }
+};
+
+// Ring buffer of the last 3 derived prompts (newest first).
+const cortexLog = [];
+// Previous poll snapshot used to detect signal deltas.
+const cortexPrev = { cycle: null, leadsTotal: null, wonValue: null };
+
+function cortexRender(){
+  const host = document.getElementById('cortex');
+  if (!host) return;
+  if (cortexLog.length === 0){
+    host.innerHTML = '<div class="empty">waiting for first signal…</div>';
+    return;
+  }
+  host.innerHTML = cortexLog.map(e => (
+    `<div class="card">`
+    + `<div class="hd"><span class="kind">${escapeHTML(e.kind)}</span><span>${escapeHTML(e.ts)}</span></div>`
+    + `<div class="body">${escapeHTML(e.body)}</div>`
+    + `</div>`
+  )).join('');
+}
+
+function cortexPush(kind, body){
+  cortexLog.unshift({ kind, body, ts: new Date().toLocaleTimeString([], {hour12:false}) });
+  if (cortexLog.length > 3) cortexLog.pop();
+  cortexRender();
+}
+
+function cortexTick(d){
+  // Intelligence cycle advanced → universal-expert analysis.
+  if (d.cycle != null && d.cycle !== cortexPrev.cycle && cortexPrev.cycle !== null){
+    const score = d.intelligence_score ?? d.score ?? '(unknown)';
+    cortexPush('intelligence_cycle_complete',
+      PromptEngine.universalExpert('Economic Intelligence',
+        `Analyze intelligence score ${score} and optimise lead generation strategy for cycle ${d.cycle}.`));
+  }
+  cortexPrev.cycle = d.cycle ?? cortexPrev.cycle;
+
+  // Leads grew → opportunities_created.
+  const leadsTotal = d.leads?.total ?? 0;
+  if (cortexPrev.leadsTotal !== null && leadsTotal > cortexPrev.leadsTotal){
+    const delta = leadsTotal - cortexPrev.leadsTotal;
+    cortexPush('opportunities_created',
+      PromptEngine.opportunityOptimization({ new: delta, total: leadsTotal }));
+  }
+  cortexPrev.leadsTotal = leadsTotal;
+
+  // Pipeline won-value grew → executions_completed.
+  const wonValue = d.pipeline?.won_value ?? 0;
+  if (cortexPrev.wonValue !== null && wonValue > cortexPrev.wonValue){
+    cortexPush('executions_completed',
+      PromptEngine.revenueForecasting({
+        wonValue, deltaValue: wonValue - cortexPrev.wonValue, cycle: d.cycle
+      }));
+  }
+  cortexPrev.wonValue = wonValue;
 }
 
 // One-shot reachability probe — fills tiles that don't have a richer live binding.
