@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE BRIDGE AI OS - Community & Updates</title>
+    <meta name="description" content="Join the THE BRIDGE AI OS community. Stay updated with the latest developments, share insights, and connect with fellow AI economics enthusiasts.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html" class="nav-brand">
+                    <h1>🌉 THE BRIDGE AI OS</h1>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="explore.html" class="nav-link">Explore</a>
+                <a href="learn.html" class="nav-link">Learn</a>
+                <a href="community.html" class="nav-link active">Community</a>
+                <a href="connect.html" class="nav-link">Connect</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Community Header -->
+    <section class="community-header">
+        <div class="container">
+            <h1>Community Bridge</h1>
+            <p class="community-subtitle">Connect with fellow explorers of causal AI economics. Share insights, get updates, and build together.</p>
+        </div>
+    </section>
+
+    <!-- Community Stats -->
+    <section class="community-stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="community-members">2,847</div>
+                    <div class="stat-label">Active Members</div>
+                    <div class="stat-trend">↗️ +12% this month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="discussions-count">1,203</div>
+                    <div class="stat-label">Discussions</div>
+                    <div class="stat-trend">💬 Active today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="projects-shared">156</div>
+                    <div class="stat-label">Projects Shared</div>
+                    <div class="stat-trend">🚀 Growing ecosystem</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="events-hosted">23</div>
+                    <div class="stat-label">Events This Year</div>
+                    <div class="stat-trend">📅 Next: AI Economics Summit</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Feed -->
+    <section class="community-feed">
+        <div class="container">
+            <h2>Latest from the Community</h2>
+
+            <div class="feed-filters">
+                <button class="feed-filter active" data-filter="all">All Posts</button>
+                <button class="feed-filter" data-filter="updates">Updates</button>
+                <button class="feed-filter" data-filter="projects">Projects</button>
+                <button class="feed-filter" data-filter="discussions">Discussions</button>
+                <button class="feed-filter" data-filter="events">Events</button>
+            </div>
+
+            <div id="community-posts" class="posts-feed">
+                <!-- Posts will be loaded dynamically -->
+                <div class="loading-posts">
+                    <div class="loading-spinner"></div>
+                    <p>Loading community activity...</p>
+                </div>
+            </div>
+
+            <div class="feed-actions">
+                <button id="create-post-btn" class="btn btn-primary">Share Your Work</button>
+                <button id="join-discussion-btn" class="btn btn-secondary">Join Discussion</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Showcase -->
+    <section class="showcase-section">
+        <div class="container">
+            <h2>Featured Community Projects</h2>
+            <div class="showcase-grid">
+                <div class="project-card">
+                    <div class="project-image">
+                        <div class="project-icon">🤖</div>
+                    </div>
+                    <div class="project-content">
+                        <h3>Economic Prediction Engine</h3>
+                        <p>A machine learning system that predicts market trends using causal inference models.</p>
+                        <div class="project-meta">
+                            <span class="project-author">by Alex Chen</span>
+                            <span class="project-stars">⭐ 127</span>
+                        </div>
+                        <a href="#" class="project-link">View Project →</a>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-image">
+                        <div class="project-icon">💰</div>
+                    </div>
+                    <div class="project-content">
+                        <h3>Causal Trading Bot</h3>
+                        <p>An automated trading system that uses causal AI to identify profitable opportunities.</p>
+                        <div class="project-meta">
+                            <span class="project-author">by Sarah Rodriguez</span>
+                            <span class="project-stars">⭐ 89</span>
+                        </div>
+                        <a href="#" class="project-link">View Project →</a>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-image">
+                        <div class="project-icon">📊</div>
+                    </div>
+                    <div class="project-content">
+                        <h3>Economic Dashboard</h3>
+                        <p>Real-time visualization of economic indicators using THE BRIDGE AI OS data.</p>
+                        <div class="project-meta">
+                            <span class="project-author">by Michael Liu</span>
+                            <span class="project-stars">⭐ 203</span>
+                        </div>
+                        <a href="#" class="project-link">View Project →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upcoming Events -->
+    <section class="events-section">
+        <div class="container">
+            <h2>Upcoming Events</h2>
+            <div class="events-grid">
+                <div class="event-card featured">
+                    <div class="event-badge">Featured</div>
+                    <div class="event-date">
+                        <div class="event-month">MAY</div>
+                        <div class="event-day">15</div>
+                    </div>
+                    <div class="event-content">
+                        <h3>AI Economics Summit 2026</h3>
+                        <p>The premier conference on causal AI economics, featuring keynote speakers from leading AI research institutions.</p>
+                        <div class="event-details">
+                            <span>📍 San Francisco, CA</span>
+                            <span>🎤 12 Speakers</span>
+                            <span>👥 500+ Attendees</span>
+                        </div>
+                        <a href="#" class="event-btn">Register Now</a>
+                    </div>
+                </div>
+
+                <div class="event-card">
+                    <div class="event-date">
+                        <div class="event-month">APR</div>
+                        <div class="event-day">28</div>
+                    </div>
+                    <div class="event-content">
+                        <h3>Causal Inference Workshop</h3>
+                        <p>Hands-on workshop covering advanced causal inference techniques for economic modeling.</p>
+                        <div class="event-details">
+                            <span>📍 Online</span>
+                            <span>⏱️ 3 hours</span>
+                            <span>🎯 Intermediate</span>
+                        </div>
+                        <a href="#" class="event-btn">Join Workshop</a>
+                    </div>
+                </div>
+
+                <div class="event-card">
+                    <div class="event-date">
+                        <div class="event-month">MAY</div>
+                        <div class="event-day">8</div>
+                    </div>
+                    <div class="event-content">
+                        <h3>Community Hackathon</h3>
+                        <p>Build innovative AI economic applications using THE BRIDGE AI OS. Prizes for best projects!</p>
+                        <div class="event-details">
+                            <span>📍 Virtual</span>
+                            <span>🏆 $10K Prizes</span>
+                            <span>👥 Open to All</span>
+                        </div>
+                        <a href="#" class="event-btn">Sign Up</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Guidelines -->
+    <section class="guidelines-section">
+        <div class="container">
+            <h2>Community Guidelines</h2>
+            <div class="guidelines-content">
+                <div class="guideline-principle">
+                    <div class="principle-icon">🤝</div>
+                    <h3>Respect & Collaboration</h3>
+                    <p>Treat fellow community members with respect. We're all here to learn and build together in the fascinating world of causal AI economics.</p>
+                </div>
+
+                <div class="guideline-principle">
+                    <div class="principle-icon">💡</div>
+                    <h3>Share Knowledge</h3>
+                    <p>Share your insights, projects, and discoveries. The community grows stronger when we help each other understand complex concepts.</p>
+                </div>
+
+                <div class="guideline-principle">
+                    <div class="principle-icon">🔬</div>
+                    <h3>Experiment & Innovate</h3>
+                    <p>Don't be afraid to try new approaches. Innovation in AI economics requires experimentation and learning from both successes and failures.</p>
+                </div>
+
+                <div class="guideline-principle">
+                    <div class="principle-icon">🌉</div>
+                    <h3>Bridge Building</h3>
+                    <p>Help others cross the bridge from traditional AI to causal AI economics. Share your journey and insights to help newcomers.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter & Social -->
+    <section class="social-section">
+        <div class="container">
+            <div class="social-content">
+                <h2>Stay Connected</h2>
+                <p>Join our community channels to stay updated with the latest developments and connect with fellow AI economics enthusiasts.</p>
+
+                <div class="social-links">
+                    <a href="#" class="social-link discord">
+                        <span class="social-icon">💬</span>
+                        <span class="social-text">Discord Community</span>
+                        <span class="social-count">2,847 members</span>
+                    </a>
+
+                    <a href="#" class="social-link github">
+                        <span class="social-icon">📦</span>
+                        <span class="social-text">GitHub</span>
+                        <span class="social-count">156 projects</span>
+                    </a>
+
+                    <a href="#" class="social-link twitter">
+                        <span class="social-icon">🐦</span>
+                        <span class="social-text">Twitter</span>
+                        <span class="social-count">@bridge_ai_os</span>
+                    </a>
+
+                    <a href="#" class="social-link linkedin">
+                        <span class="social-icon">💼</span>
+                        <span class="social-text">LinkedIn</span>
+                        <span class="social-count">Company Page</span>
+                    </a>
+                </div>
+
+                <div class="newsletter-signup">
+                    <h3>Weekly AI Economics Digest</h3>
+                    <p>Get curated insights, research updates, and community highlights delivered to your inbox.</p>
+                    <div class="newsletter-form">
+                        <input type="email" id="community-email" placeholder="Enter your email" class="newsletter-input">
+                        <button id="community-newsletter-btn" class="btn btn-primary">Subscribe</button>
+                    </div>
+                    <div id="newsletter-status" class="newsletter-status"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Sync Status -->
+    <div id="sync-status" class="sync-status">
+        <span id="sync-indicator">🔄</span>
+        <span id="sync-text">Community Connected</span>
+    </div>
+
+    <script src="community.js"></script>
+    <script src="live-sync.js"></script>
+</body>
+</html>

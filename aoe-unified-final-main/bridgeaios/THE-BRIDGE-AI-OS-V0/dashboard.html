@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE BRIDGE AI OS - Dashboard</title>
+    <meta name="description" content="Real-time dashboard monitoring THE BRIDGE AI OS economic intelligence and system performance.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html" class="nav-brand">
+                    <h1>🌉 THE BRIDGE AI OS</h1>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="dashboard.html" class="nav-link active">Dashboard</a>
+                <a href="docs.html" class="nav-link">Docs</a>
+                <a href="blog.html" class="nav-link">Blog</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Header -->
+    <section class="dashboard-header">
+        <div class="container">
+            <h1>System Dashboard</h1>
+            <p class="dashboard-subtitle">Real-time monitoring of THE BRIDGE AI OS economic intelligence</p>
+            <div class="dashboard-status">
+                <span id="system-status" class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </span>
+                <span id="last-update" class="last-update">Last updated: --</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Metrics Grid -->
+    <section class="metrics-section">
+        <div class="container">
+            <div class="metrics-grid">
+                <!-- Intelligence Metrics -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <h3>🧠 Intelligence Engine</h3>
+                        <div id="intelligence-status" class="metric-status">Loading...</div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-item">
+                            <span class="metric-label">Cycles Completed</span>
+                            <span id="intelligence-cycles" class="metric-value">0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Success Rate</span>
+                            <span id="intelligence-success" class="metric-value">0%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Avg Response Time</span>
+                            <span id="intelligence-response" class="metric-value">0ms</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Economic Metrics -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <h3>💰 Economic Intelligence</h3>
+                        <div id="economic-status" class="metric-status">Loading...</div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-item">
+                            <span class="metric-label">Opportunities Found</span>
+                            <span id="opportunities-found" class="metric-value">0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Revenue Forecast</span>
+                            <span id="revenue-forecast" class="metric-value">$0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Conversion Rate</span>
+                            <span id="conversion-rate" class="metric-value">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Metrics -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <h3>⚙️ System Performance</h3>
+                        <div id="system-perf-status" class="metric-status">Loading...</div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-item">
+                            <span class="metric-label">CPU Usage</span>
+                            <span id="cpu-usage" class="metric-value">0%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Memory Usage</span>
+                            <span id="memory-usage" class="metric-value">0%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Active Connections</span>
+                            <span id="active-connections" class="metric-value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MCP Status -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <h3>🔗 MCP Integration</h3>
+                        <div id="mcp-status" class="metric-status">Loading...</div>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-item">
+                            <span class="metric-label">WordPress API</span>
+                            <span id="wordpress-status" class="metric-value">Disconnected</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Response Time</span>
+                            <span id="mcp-response" class="metric-value">0ms</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Requests/Min</span>
+                            <span id="mcp-requests" class="metric-value">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Real-time Charts -->
+    <section class="charts-section">
+        <div class="container">
+            <h2>Real-time Analytics</h2>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Intelligence Cycles (Last Hour)</h3>
+                    <div class="chart-container">
+                        <canvas id="intelligence-chart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Economic Opportunities (Last Hour)</h3>
+                    <div class="chart-container">
+                        <canvas id="opportunities-chart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>System Performance (Last Hour)</h3>
+                    <div class="chart-container">
+                        <canvas id="performance-chart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>MCP Activity (Last Hour)</h3>
+                    <div class="chart-container">
+                        <canvas id="mcp-chart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Activity Feed -->
+    <section class="activity-section">
+        <div class="container">
+            <h2>Live Activity Feed</h2>
+            <div class="activity-feed">
+                <div id="activity-list" class="activity-list">
+                    <div class="activity-item loading">
+                        <div class="activity-icon">🔄</div>
+                        <div class="activity-content">
+                            <div class="activity-message">Connecting to live feed...</div>
+                            <div class="activity-time">Now</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Sync Status -->
+    <div id="sync-status" class="sync-status">
+        <span id="sync-indicator">🔄</span>
+        <span id="sync-text">Syncing...</span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="live-sync.js"></script>
+</body>
+</html>

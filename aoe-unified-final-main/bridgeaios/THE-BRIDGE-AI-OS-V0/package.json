@@ -1,0 +1,46 @@
+{
+  "name": "the-bridge-ai-os",
+  "version": "1.0.0",
+  "description": "THE BRIDGE AI OS - Causal AI Economy System",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test-bridge-prompt-engine.js",
+    "serve": "npx serve . -p 3000",
+    "build": "echo 'Static site - no build needed'",
+    "pm2:start": "pm2 start ecosystem.config.js --env production",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecosystem.config.js",
+    "pm2:delete": "pm2 delete ecosystem.config.js",
+    "pm2:logs": "pm2 logs the-bridge-ai-os",
+    "pm2:monit": "pm2 monit",
+    "health-check": "bash health-check.sh",
+    "monitor": "bash monitor.sh",
+    "deploy:vps": "bash deploy-vps.sh",
+    "quick-setup": "bash quick-setup.sh",
+    "backup": "bash backup.sh",
+    "update": "bash update.sh"
+  },
+  "keywords": [
+    "ai",
+    "economy",
+    "causal-ai",
+    "bridge-ai-os",
+    "economic-intelligence"
+  ],
+  "author": "THE BRIDGE AI OS",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE BRIDGE AI OS - Contact & Support</title>
+    <meta name="description" content="Get in touch with THE BRIDGE AI OS team. Support, partnerships, and integration assistance.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html" class="nav-brand">
+                    <h1>🌉 THE BRIDGE AI OS</h1>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="docs.html" class="nav-link">Docs</a>
+                <a href="blog.html" class="nav-link">Blog</a>
+                <a href="contact.html" class="nav-link active">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contact Header -->
+    <section class="contact-header">
+        <div class="container">
+            <h1>Contact & Support</h1>
+            <p class="contact-subtitle">Get in touch with our team for support, partnerships, or integration assistance</p>
+        </div>
+    </section>
+
+    <!-- Contact Options -->
+    <section class="contact-options">
+        <div class="container">
+            <div class="contact-grid">
+                <div class="contact-card">
+                    <div class="contact-icon">💬</div>
+                    <h3>Live Chat Support</h3>
+                    <p>Get instant help from our AI assistants and human experts</p>
+                    <button class="btn btn-primary" onclick="startLiveChat()">Start Chat</button>
+                </div>
+
+                <div class="contact-card">
+                    <div class="contact-icon">📧</div>
+                    <h3>Email Support</h3>
+                    <p>Send us detailed inquiries and we'll respond within 24 hours</p>
+                    <a href="mailto:support@thebridgeaios.com" class="btn btn-secondary">Email Us</a>
+                </div>
+
+                <div class="contact-card">
+                    <div class="contact-icon">🤝</div>
+                    <h3>Partnerships</h3>
+                    <p>Explore collaboration opportunities and integration partnerships</p>
+                    <a href="mailto:partnerships@thebridgeaios.com" class="btn btn-secondary">Contact Partnerships</a>
+                </div>
+
+                <div class="contact-card">
+                    <div class="contact-icon">📚</div>
+                    <h3>Documentation</h3>
+                    <p>Find answers in our comprehensive documentation and guides</p>
+                    <a href="docs.html" class="btn btn-secondary">View Docs</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Form -->
+    <section class="contact-form-section">
+        <div class="container">
+            <div class="contact-form-container">
+                <div class="contact-form-info">
+                    <h2>Send us a Message</h2>
+                    <p>Have questions about THE BRIDGE AI OS? Need help with integration? We're here to help!</p>
+
+                    <div class="contact-details">
+                        <div class="contact-detail">
+                            <span class="detail-icon">📧</span>
+                            <div>
+                                <strong>Email</strong><br>
+                                support@thebridgeaios.com
+                            </div>
+                        </div>
+                        <div class="contact-detail">
+                            <span class="detail-icon">🔗</span>
+                            <div>
+                                <strong>Documentation</strong><br>
+                                <a href="docs.html">docs.thebridgeaios.com</a>
+                            </div>
+                        </div>
+                        <div class="contact-detail">
+                            <span class="detail-icon">🐛</span>
+                            <div>
+                                <strong>GitHub Issues</strong><br>
+                                <a href="https://github.com/thebridgeaios/issues">Report bugs & request features</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="response-time">
+                        <h4>Response Times</h4>
+                        <ul>
+                            <li><strong>Live Chat:</strong> Instant response</li>
+                            <li><strong>Email:</strong> Within 24 hours</li>
+                            <li><strong>Urgent Issues:</strong> Priority handling</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="contact-form">
+                    <form id="contact-form">
+                        <div class="form-group">
+                            <label for="name">Name *</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="subject">Subject *</label>
+                            <select id="subject" name="subject" required>
+                                <option value="">Select a topic</option>
+                                <option value="support">Technical Support</option>
+                                <option value="integration">Integration Help</option>
+                                <option value="partnership">Partnership Inquiry</option>
+                                <option value="billing">Billing Question</option>
+                                <option value="feedback">Feedback</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="priority">Priority</label>
+                            <select id="priority" name="priority">
+                                <option value="normal">Normal</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="message">Message *</label>
+                            <textarea id="message" name="message" rows="6" required placeholder="Describe your question or issue in detail..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newsletter" name="newsletter">
+                                Subscribe to our newsletter for updates
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-large">Send Message</button>
+                    </form>
+
+                    <div id="form-message" class="form-message"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h4>How do I get started with THE BRIDGE AI OS?</h4>
+                    <p>Visit our documentation page and follow the quick start guide. You'll be up and running in under 5 minutes.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>What's included in the free tier?</h4>
+                    <p>The free tier includes basic AI intelligence cycles, up to 100 API calls per day, and community support.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>Can I integrate with my existing systems?</h4>
+                    <p>Yes! THE BRIDGE AI OS supports REST APIs, MCP integration, and custom webhooks for seamless integration.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>How secure is my data?</h4>
+                    <p>We use enterprise-grade encryption, regular security audits, and comply with GDPR and other privacy regulations.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>Do you offer custom development?</h4>
+                    <p>Yes, we provide custom integration services and can develop bespoke solutions for enterprise clients.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>What's your uptime guarantee?</h4>
+                    <p>We guarantee 99.9% uptime with automatic failover, monitoring, and 24/7 incident response.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Chat Widget -->
+    <div id="live-chat-widget" class="live-chat-widget">
+        <div class="chat-toggle" onclick="toggleLiveChat()">
+            <span id="chat-icon">💬</span>
+        </div>
+        <div id="chat-window" class="chat-window">
+            <div class="chat-header">
+                <h4>Live Support</h4>
+                <span class="chat-close" onclick="toggleLiveChat()">×</span>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <div class="chat-message bot">
+                    <div class="message-content">Hello! How can I help you with THE BRIDGE AI OS today?</div>
+                    <div class="message-time">Now</div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chat-input-field" placeholder="Type your message..." onkeypress="handleChatKeyPress(event)">
+                <button onclick="sendChatMessage()" class="chat-send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Sync Status -->
+    <div id="sync-status" class="sync-status">
+        <span id="sync-indicator">🔄</span>
+        <span id="sync-text">Contact Synced</span>
+    </div>
+
+    <script src="contact.js"></script>
+    <script src="live-sync.js"></script>
+</body>
+</html>

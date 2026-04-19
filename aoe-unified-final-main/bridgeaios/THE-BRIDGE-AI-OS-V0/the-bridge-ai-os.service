@@ -1,0 +1,35 @@
+[Unit]
+Description=THE BRIDGE AI OS Homepage Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/the-bridge-ai-os
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=MCP_WPCOM_URL=https://public-api.wordpress.com/wpcom/v2/mcp/v1
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/the-bridge-ai-os
+ProtectHome=yes
+
+# Resource limits
+MemoryLimit=1G
+CPUQuota=80%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bridge-ai-os
+
+[Install]
+WantedBy=multi-user.target

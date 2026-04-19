@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE BRIDGE AI OS - Documentation</title>
+    <meta name="description" content="Complete documentation for THE BRIDGE AI OS - API reference, integration guides, and developer resources.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html" class="nav-brand">
+                    <h1>🌉 THE BRIDGE AI OS</h1>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="docs.html" class="nav-link active">Docs</a>
+                <a href="blog.html" class="nav-link">Blog</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Docs Header -->
+    <section class="docs-header">
+        <div class="container">
+            <h1>Documentation</h1>
+            <p class="docs-subtitle">Complete guide to THE BRIDGE AI OS - from setup to advanced integrations</p>
+        </div>
+    </section>
+
+    <!-- Docs Navigation -->
+    <section class="docs-nav">
+        <div class="container">
+            <div class="docs-sidebar">
+                <div class="docs-menu">
+                    <a href="#getting-started" class="docs-menu-item active">Getting Started</a>
+                    <a href="#api-reference" class="docs-menu-item">API Reference</a>
+                    <a href="#economic-engine" class="docs-menu-item">Economic Engine</a>
+                    <a href="#mcp-integration" class="docs-menu-item">MCP Integration</a>
+                    <a href="#deployment" class="docs-menu-item">Deployment</a>
+                    <a href="#troubleshooting" class="docs-menu-item">Troubleshooting</a>
+                </div>
+            </div>
+            <div class="docs-content">
+                <!-- Getting Started -->
+                <div id="getting-started" class="docs-section">
+                    <h2>🚀 Getting Started</h2>
+                    <div class="docs-content-grid">
+                        <div class="docs-article">
+                            <h3>Quick Start</h3>
+                            <p>Install and configure THE BRIDGE AI OS in under 5 minutes.</p>
+                            <pre><code>npm install
+npm start
+# Open http://localhost:3000</code></pre>
+                        </div>
+                        <div class="docs-article">
+                            <h3>System Requirements</h3>
+                            <ul>
+                                <li>Node.js 16+</li>
+                                <li>2GB RAM minimum</li>
+                                <li>Linux/macOS/Windows</li>
+                                <li>Internet connection for MCP</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Reference -->
+                <div id="api-reference" class="docs-section">
+                    <h2>📚 API Reference</h2>
+                    <div class="api-endpoints">
+                        <div class="endpoint-card">
+                            <div class="endpoint-method">GET</div>
+                            <div class="endpoint-path">/api/health</div>
+                            <p>Check system health status</p>
+                            <div class="endpoint-response">
+                                <strong>Response:</strong>
+                                <pre><code>{
+  "status": "healthy",
+  "system": "THE BRIDGE AI OS",
+  "version": "1.0.0",
+  "timestamp": "2026-04-19T17:28:27+02:00"
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="endpoint-card">
+                            <div class="endpoint-method">GET</div>
+                            <div class="endpoint-path">/api/system-status</div>
+                            <p>Get real-time system status</p>
+                            <div class="endpoint-response">
+                                <strong>Response:</strong>
+                                <pre><code>{
+  "intelligence_engine": "ACTIVE",
+  "economic_cycles": "RUNNING",
+  "event_bus": "OPERATIONAL",
+  "revenue_forecasting": "OPTIMIZED"
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="endpoint-card">
+                            <div class="endpoint-method">GET</div>
+                            <div class="endpoint-path">/api/economic-data</div>
+                            <p>Retrieve live economic metrics</p>
+                            <div class="endpoint-response">
+                                <strong>Response:</strong>
+                                <pre><code>{
+  "intelligence_cycles": 1250,
+  "opportunities_created": 89,
+  "executions_completed": 67,
+  "revenue_forecasted": 2450000,
+  "last_updated": "2026-04-19T17:28:27+02:00"
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="endpoint-card">
+                            <div class="endpoint-method">POST</div>
+                            <div class="endpoint-path">/api/run-task</div>
+                            <p>Execute an AI task</p>
+                            <div class="endpoint-request">
+                                <strong>Request:</strong>
+                                <pre><code>{
+  "task": "analyze_market",
+  "parameters": {
+    "market": "tech",
+    "timeframe": "1M"
+  }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Economic Engine -->
+                <div id="economic-engine" class="docs-section">
+                    <h2>💰 Economic Engine</h2>
+                    <div class="docs-content-grid">
+                        <div class="docs-article">
+                            <h3>Intelligence Cycle</h3>
+                            <p>The economic engine operates through four interconnected cycles:</p>
+                            <ol>
+                                <li><strong>Intelligence Generation</strong> - Advanced prompt engineering</li>
+                                <li><strong>Opportunity Creation</strong> - Market analysis and identification</li>
+                                <li><strong>Execution Cycles</strong> - Deterministic task completion</li>
+                                <li><strong>Economic Value</strong> - Revenue generation and measurement</li>
+                            </ol>
+                        </div>
+                        <div class="docs-article">
+                            <h3>Prompt Engineering</h3>
+                            <p>Advanced prompting techniques include:</p>
+                            <ul>
+                                <li><strong>God Mode Prompts</strong> - Universal expert system</li>
+                                <li><strong>Tree of Thoughts</strong> - Multi-path reasoning</li>
+                                <li><strong>Economic Analysis</strong> - Market intelligence</li>
+                                <li><strong>Revenue Forecasting</strong> - Predictive analytics</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MCP Integration -->
+                <div id="mcp-integration" class="docs-section">
+                    <h2>🔗 MCP Integration</h2>
+                    <div class="docs-content-grid">
+                        <div class="docs-article">
+                            <h3>WordPress Integration</h3>
+                            <p>Connect to WordPress.com API for content management:</p>
+                            <pre><code>{
+  "mcpServers": {
+    "wpcom-mcp": {
+      "url": "https://public-api.wordpress.com/wpcom/v2/mcp/v1"
+    }
+  }
+}</code></pre>
+                        </div>
+                        <div class="docs-article">
+                            <h3>MCP Status Monitoring</h3>
+                            <p>Monitor MCP connection health:</p>
+                            <ul>
+                                <li>Real-time connection status</li>
+                                <li>Response time tracking</li>
+                                <li>Automatic reconnection</li>
+                                <li>Error handling and recovery</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deployment -->
+                <div id="deployment" class="docs-section">
+                    <h2>🚀 Deployment</h2>
+                    <div class="docs-content-grid">
+                        <div class="docs-article">
+                            <h3>Automated VPS Deployment</h3>
+                            <pre><code>export DOMAIN=yourdomain.com
+export EMAIL=admin@yourdomain.com
+npm run deploy:vps</code></pre>
+                        </div>
+                        <div class="docs-article">
+                            <h3>Production Features</h3>
+                            <ul>
+                                <li>Systemd auto-startup</li>
+                                <li>PM2 process management</li>
+                                <li>Nginx reverse proxy</li>
+                                <li>SSL certificate auto-renewal</li>
+                                <li>Automated health checks</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div id="troubleshooting" class="docs-section">
+                    <h2>🔧 Troubleshooting</h2>
+                    <div class="docs-content-grid">
+                        <div class="docs-article">
+                            <h3>Common Issues</h3>
+                            <ul>
+                                <li><strong>Application not starting:</strong> Check PM2 logs</li>
+                                <li><strong>MCP connection failed:</strong> Verify API endpoints</li>
+                                <li><strong>High memory usage:</strong> Restart services</li>
+                                <li><strong>SSL issues:</strong> Check certificate expiry</li>
+                            </ul>
+                        </div>
+                        <div class="docs-article">
+                            <h3>Debug Commands</h3>
+                            <pre><code># Check application status
+npm run pm2:status
+
+# View logs
+npm run pm2:logs
+
+# Run health check
+npm run health-check
+
+# Restart services
+npm run pm2:restart</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Sync Status -->
+    <div id="sync-status" class="sync-status">
+        <span id="sync-indicator">🔄</span>
+        <span id="sync-text">Docs Synced</span>
+    </div>
+
+    <script src="docs.js"></script>
+    <script src="live-sync.js"></script>
+</body>
+</html>

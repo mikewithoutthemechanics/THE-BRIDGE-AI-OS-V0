@@ -1,0 +1,11 @@
+[Unit]
+Description=THE BRIDGE AI OS Health Check Timer
+Requires=the-bridge-ai-os.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

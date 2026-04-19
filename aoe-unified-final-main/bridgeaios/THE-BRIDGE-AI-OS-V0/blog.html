@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE BRIDGE AI OS - Blog</title>
+    <meta name="description" content="Latest updates, insights, and news from THE BRIDGE AI OS - exploring the future of AI economics and causal intelligence.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html" class="nav-brand">
+                    <h1>🌉 THE BRIDGE AI OS</h1>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="docs.html" class="nav-link">Docs</a>
+                <a href="blog.html" class="nav-link active">Blog</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Blog Header -->
+    <section class="blog-header">
+        <div class="container">
+            <h1>Blog & Insights</h1>
+            <p class="blog-subtitle">Latest updates, research, and insights from the world of causal AI economics</p>
+            <div class="blog-stats">
+                <div class="stat">
+                    <span class="stat-number" id="posts-count">0</span>
+                    <span class="stat-label">Posts</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="views-count">0</span>
+                    <span class="stat-label">Views</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="subscribers-count">0</span>
+                    <span class="stat-label">Subscribers</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Posts Grid -->
+    <section class="blog-posts">
+        <div class="container">
+            <div class="blog-filters">
+                <button class="filter-btn active" data-category="all">All Posts</button>
+                <button class="filter-btn" data-category="research">Research</button>
+                <button class="filter-btn" data-category="updates">Updates</button>
+                <button class="filter-btn" data-category="tutorials">Tutorials</button>
+                <button class="filter-btn" data-category="insights">Insights</button>
+            </div>
+
+            <div id="posts-grid" class="posts-grid">
+                <!-- Posts will be loaded dynamically -->
+                <div class="loading-posts">
+                    <div class="loading-spinner"></div>
+                    <p>Loading latest posts...</p>
+                </div>
+            </div>
+
+            <div class="load-more">
+                <button id="load-more-btn" class="btn btn-secondary">Load More Posts</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Post -->
+    <section class="featured-post">
+        <div class="container">
+            <div class="featured-content">
+                <div class="featured-text">
+                    <span class="featured-tag">Featured</span>
+                    <h2 id="featured-title">The Future of Causal AI Economics</h2>
+                    <p id="featured-excerpt">Exploring how artificial intelligence is transforming economic systems through causal relationships and intelligent automation.</p>
+                    <div class="featured-meta">
+                        <span id="featured-author">THE BRIDGE AI OS Team</span>
+                        <span id="featured-date">April 19, 2026</span>
+                        <span id="featured-read-time">5 min read</span>
+                    </div>
+                    <a href="#" class="btn btn-primary">Read Full Article</a>
+                </div>
+                <div class="featured-image">
+                    <div class="ai-brain-large">
+                        <div class="brain-waves-large">
+                            <div class="wave-large wave-1"></div>
+                            <div class="wave-large wave-2"></div>
+                            <div class="wave-large wave-3"></div>
+                        </div>
+                        <div class="brain-core-large">🧠</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Signup -->
+    <section class="newsletter">
+        <div class="container">
+            <div class="newsletter-content">
+                <h2>Stay Updated</h2>
+                <p>Get the latest insights on AI economics, causal intelligence, and system optimization delivered to your inbox.</p>
+                <div class="newsletter-form">
+                    <input type="email" id="newsletter-email" placeholder="Enter your email" class="newsletter-input">
+                    <button id="newsletter-submit" class="btn btn-primary">Subscribe</button>
+                </div>
+                <div id="newsletter-message" class="newsletter-message"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Sync Status -->
+    <div id="sync-status" class="sync-status">
+        <span id="sync-indicator">🔄</span>
+        <span id="sync-text">Blog Synced</span>
+    </div>
+
+    <script src="blog.js"></script>
+    <script src="live-sync.js"></script>
+</body>
+</html>
