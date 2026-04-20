@@ -4355,12 +4355,13 @@ module.exports = async (req, res) => {
     // Attempt on-chain transfer
     let txHash = null;
     try {
-      const brdgChain = require('../lib/brdg-chain');
       if (rail === 'eth') {
-        const result = await brdgChain.sendETH(to, amount);
+        const ethTreasury = require('../lib/eth-treasury');
+        const result = await ethTreasury.withdraw(to, String(amount));
         txHash = result.tx_hash || result.txHash;
       } else {
-        const result = await brdgChain.transferBRDG(to, amount);
+        const brdgChain = require('../lib/brdg-chain');
+        const result = await brdgChain.transferBRDG(to, String(amount));
         txHash = result.tx_hash || result.txHash;
       }
     } catch (e) {

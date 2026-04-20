@@ -1639,6 +1639,29 @@ app.post('/api/treasury/withdraw/eth', async (req, res) => {
   }
 });
 
+// Protected: withdraw BRDG — requires KeyForge token with scope "treasury:withdraw"
+app.post('/api/treasury/withdraw/brdg', async (req, res) => {
+  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  const auth = kfValidate(token, 'treasury:withdraw');
+  if (!auth.valid) return res.status(403).json({ ok: false, error: 'KeyForge auth failed', reason: auth.reason });
+
+  const { to, amount } = req.body || {};
+  if (!to || !amount) return res.status(400).json({ ok: false, error: 'to and amount required' });
+
+  if (!brdgChain) {
+    return res.status(503).json({ ok: false, error: 'brdgChain module not loaded' });
+  }
+
+  try {
+    const result = await brdgChain.transferBRDG(to, String(amount));
+    broadcast({ type: 'treasury_withdraw', rail: 'brdg', ...result });
+    kfAuditLog.push({ action: 'brdg_withdraw', to, amount, tx: result.tx_hash || result.txHash, ts: Date.now() / 1000 });
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
 // Issue a KeyForge token for treasury withdrawal (admin only)
 app.post('/api/treasury/withdraw/authorize', (req, res) => {
   const adminKey = req.headers['x-bridge-secret'];
