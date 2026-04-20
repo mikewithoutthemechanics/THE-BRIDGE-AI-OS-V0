@@ -256,31 +256,8 @@ http.createServer((req, res) => {
   }
   if (u.startsWith('/public/')) return servePublic(u, res);
 
-  // Affiliate API — handles /api/affiliate/*
-  if (u === '/api/affiliate/me'){
-    // Mock affiliate data - in production this would come from database
-    const affiliateData = {
-      availableBalance: 2847.50,
-      pendingAmount: 1234.00,
-      totalWithdrawn: 18450.00,
-      commissionRate: 25,
-      totalClicks: 12847,
-      totalSignups: 1456,
-      conversionRate: 11.34,
-      referrals: [
-        {name: "Sarah Mitchell", email: "sarah.m@email.com", source: "Social Media", joined: "Mar 15, 2026", status: "active", earnings: 345.00},
-        {name: "James Wilson", email: "j.wilson@email.com", source: "Email Campaign", joined: "Mar 12, 2026", status: "active", earnings: 892.50},
-        {name: "Emma Davis", email: "emma.d@email.com", source: "Blog Post", joined: "Mar 08, 2026", status: "pending", earnings: 0},
-        {name: "Michael Brown", email: "m.brown@email.com", source: "Direct", joined: "Feb 28, 2026", status: "active", earnings: 1234.00},
-        {name: "Lisa Anderson", email: "lisa.a@email.com", source: "YouTube", joined: "Feb 15, 2026", status: "inactive", earnings: 567.00}
-      ]
-    };
-    res.writeHead(200, {...HARDENING_HEADERS, 'content-type': 'application/json', 'cache-control': 'no-store'});
-    res.end(JSON.stringify(affiliateData));
-    return;
-  }
-
-  if (u.startsWith('/admin') || u.startsWith('/api')) return proxy(req, res);
+  // /api/affiliate/* and /ref/* — proxied to backend (real DB-backed handlers)
+  if (u.startsWith('/api')) return proxy(req, res);
   if (u === '/favicon.ico'){ res.writeHead(204, HARDENING_HEADERS); return res.end(); }
   res.writeHead(404, {...HARDENING_HEADERS,'content-type':'text/plain'});
   res.end('not found: '+u);
