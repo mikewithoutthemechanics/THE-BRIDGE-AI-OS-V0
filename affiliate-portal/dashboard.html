@@ -217,18 +217,17 @@ async function loadAffiliateData() {
 function renderDashboard() {
   if (!data) return;
 
-  // Update stats cards
   document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = '$' + data.availableBalance.toLocaleString();
   document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = '$' + data.pendingAmount.toLocaleString();
   document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = '$' + data.totalWithdrawn.toLocaleString();
   document.querySelector('.stat-card:nth-child(4) .stat-value').textContent = data.commissionRate + '%';
 
-  // Update analytics
   document.querySelector('.analytics-card:nth-child(1) .analytics-value').textContent = data.totalClicks.toLocaleString();
   document.querySelector('.analytics-card:nth-child(2) .analytics-value').textContent = data.totalSignups.toLocaleString();
   document.querySelector('.analytics-card:nth-child(3) .analytics-value').textContent = data.conversionRate + '%';
 
-  // Update referrals table
+  if (data.referralLink) document.getElementById('referralLink').value = data.referralLink;
+
   const tbody = document.querySelector('.referrals-table tbody');
   tbody.innerHTML = data.referrals.map(ref => `
     <tr>
@@ -241,19 +240,53 @@ function renderDashboard() {
     </tr>
   `).join('');
 
-  // Update withdrawal section
   document.querySelector('.withdraw-amount').textContent = '$' + data.availableBalance.toLocaleString() + ' Available';
 }
 
-async function copyReferralLink(){const link=document.getElementById("referralLink");try{await navigator.clipboard.writeText(link.value);const btn=document.querySelector(".copy-btn");btn.textContent="Copied!";btn.classList.add("copied");showNotification("Referral link copied to clipboard!","success");setTimeout(()=>{btn.textContent="Copy Link";btn.classList.remove("copied")},2000)}catch(err){showNotification("Failed to copy link. Please copy manually.","warning")}}
-function requestWithdrawal(){if(!data || data.availableBalance<50){showNotification("Minimum withdrawal amount is $50.00","warning");return}showNotification("Withdrawal request submitted successfully!","success")}
-function showNotification(message,type){const container=document.getElementById("notificationContainer");const notification=document.createElement("div");notification.className="notification "+type;notification.innerHTML="<span>"+(type==="success"?"✓":type==="warning"?"⚠":"ℹ")+"</span><span>"+message+"</span>";container.appendChild(notification);setTimeout(()=>{notification.style.opacity="0";setTimeout(()=>notification.remove(),300)},4000)}
-// Load data on page load
-document.addEventListener('DOMContentLoaded', loadAffiliateData);
+async function copyReferralLink(){
+  const link=document.getElementById("referralLink");
+  try{
+    await navigator.clipboard.writeText(link.value);
+    const btn=document.querySelector(".copy-btn");
+    btn.textContent="Copied!";btn.classList.add("copied");
+    showNotification("Referral link copied to clipboard!","success");
+    setTimeout(()=>{btn.textContent="Copy Link";btn.classList.remove("copied")},2000);
+  }catch(err){showNotification("Failed to copy link. Please copy manually.","warning")}
+}
 
-// Demo notifications
-setTimeout(()=>showNotification("New signup! +$45.00 commission earned","info"),3000);
-setTimeout(()=>showNotification("Payment processed: $500.00 deposited","success"),8000);
+async function requestWithdrawal(){
+  if(!data||data.availableBalance<50){showNotification("Minimum withdrawal amount is $50.00","warning");return;}
+  const btn=document.querySelector(".withdraw-btn");
+  btn.disabled=true;btn.textContent="Processing...";
+  try{
+    const resp=await fetch('/api/affiliate/withdraw',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body:JSON.stringify({amount:data.availableBalance,payout_method:'bank_transfer'})
+    });
+    const result=await resp.json();
+    if(resp.ok&&result.ok){
+      showNotification("Withdrawal request submitted! Reference: #"+result.withdrawal_id,"success");
+      data.availableBalance=0;
+      document.querySelector('.withdraw-amount').textContent='$0 Available';
+    }else{
+      showNotification(result.error==='insufficient_balance'?"Insufficient balance for withdrawal.":"Withdrawal failed. Please try again.","warning");
+    }
+  }catch(e){showNotification("Network error. Please try again.","warning");}
+  finally{btn.disabled=false;btn.textContent="Request Withdrawal";}
+}
+
+function showNotification(message,type){
+  const container=document.getElementById("notificationContainer");
+  const notification=document.createElement("div");
+  notification.className="notification "+type;
+  notification.innerHTML="<span>"+(type==="success"?"✓":type==="warning"?"⚠":"ℹ")+"</span><span>"+message+"</span>";
+  container.appendChild(notification);
+  setTimeout(()=>{notification.style.opacity="0";setTimeout(()=>notification.remove(),300)},4000);
+}
+
+document.addEventListener('DOMContentLoaded', loadAffiliateData);
 </script>
 </body>
 </html>
