@@ -1,0 +1,340 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bridge AI OS — Settings Admin</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#05070a; --panel2:#0a0e14;
+  --line:#0f1822; --line2:#1a2734;
+  --accent:#00ff9c; --dim:#00ff9c33; --faint:#00ff9c18;
+  --warn:#ffb347; --err:#ff4d6d; --info:#00bfff;
+  --text:#cfe7dd; --muted:#6d8893;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(900px 500px at 25% 110%, rgba(0,255,156,.05), transparent 60%),
+    radial-gradient(800px 400px at 85% -10%, rgba(0,191,255,.05), transparent 60%),
+    var(--bg);
+  font-family:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  color:var(--text); min-height:100vh;
+  padding:20px;
+}
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:20px;
+}
+header h1{font-size:14px; letter-spacing:2px; color:var(--info); margin:0; text-transform:uppercase}
+header .actor{font-size:11px; color:var(--muted)}
+header .actor b{color:var(--accent)}
+.grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+  gap:16px;
+}
+.panel{
+  background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  padding:14px; min-height:200px;
+}
+.panel h2{
+  font-size:11px; text-transform:uppercase; letter-spacing:1.5px;
+  color:var(--info); margin:0 0 10px; display:flex; justify-content:space-between; align-items:center;
+}
+.panel h2 .tag{color:var(--muted); font-size:10px; letter-spacing:1px}
+.metric{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--dim); font-size:12px}
+.metric:last-child{border-bottom:0}
+.metric .v{color:var(--accent); font-variant-numeric:tabular-nums}
+.metric .v.warn{color:var(--warn)} .metric .v.err{color:var(--err)}
+.chip{
+  display:inline-block; padding:2px 8px; border-radius:4px;
+  background:var(--faint); color:var(--accent);
+  font-size:10px; letter-spacing:1px; margin-right:4px; margin-bottom:4px;
+}
+.chip.warn{background:rgba(255,179,71,.15); color:var(--warn)}
+.chip.err {background:rgba(255,77,109,.15); color:var(--err)}
+table{width:100%; border-collapse:collapse; font-size:11px}
+th{text-align:left; color:var(--muted); font-weight:400; padding:6px 4px; border-bottom:1px solid var(--line2); text-transform:uppercase; letter-spacing:1px; font-size:10px}
+td{padding:6px 4px; border-bottom:1px dashed var(--dim); vertical-align:top}
+td.num{text-align:right; color:var(--accent); font-variant-numeric:tabular-nums}
+.toggle{
+  display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+  padding:3px 8px; border:1px solid var(--line2); border-radius:4px;
+  font-size:10px; color:var(--text); user-select:none;
+}
+.toggle.on{border-color:var(--accent); color:var(--accent); background:var(--faint)}
+.toggle.off{opacity:.6}
+input,select,button.act{
+  background:transparent; border:1px solid var(--line2); color:var(--text);
+  font-family:inherit; font-size:11px; padding:6px 10px; border-radius:4px;
+  margin:2px 4px 2px 0;
+}
+input:focus,select:focus{outline:0; border-color:var(--accent)}
+button.act{color:var(--accent); cursor:pointer}
+button.act:hover{background:var(--faint); border-color:var(--accent)}
+button.act:disabled{opacity:.4; cursor:not-allowed}
+#log{
+  font-size:10px; max-height:220px; overflow:auto;
+  border:1px solid var(--line); background:var(--panel2); padding:6px 8px; border-radius:4px;
+}
+#log div{padding:2px 0; border-bottom:1px solid var(--faint)}
+#log .t{color:var(--muted); margin-right:6px}
+#log .err{color:var(--err)} #log .info{color:var(--info)} #log .warn{color:var(--warn)}
+.bar{height:6px; background:var(--panel2); border-radius:3px; overflow:hidden; margin-top:2px}
+.bar>span{display:block; height:100%; background:var(--accent)}
+.form-row{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0}
+.form-row label{font-size:10px; color:var(--muted); letter-spacing:1px; text-transform:uppercase}
+details{border:1px solid var(--line); border-radius:4px; padding:6px 10px; margin:4px 0; background:var(--panel2)}
+details summary{cursor:pointer; font-size:11px; color:var(--info); letter-spacing:1px; text-transform:uppercase; outline:none}
+details[open] summary{color:var(--accent)}
+pre.json{font-size:10px; color:var(--muted); white-space:pre-wrap; word-break:break-all; margin:6px 0 0; max-height:200px; overflow:auto}
+</style></head><body>
+
+<header>
+  <h1>◇ Bridge AI OS — Settings Admin</h1>
+  <div class="actor">actor: <b id="actorEmail">—</b> · tier: <b id="actorTier">—</b></div>
+</header>
+
+<!-- Panel A — System Metrics -->
+<div class="grid">
+  <section class="panel" data-feature="orchestra_dashboard">
+    <h2>A. System Metrics <span class="tag">/admin/overview</span></h2>
+    <div class="metric"><span>Connection</span><span class="v" id="m_conn">offline</span></div>
+    <div class="metric"><span>Services up</span><span class="v" id="m_up">—</span></div>
+    <div class="metric"><span>CPU avg</span><span class="v" id="m_cpu">—</span></div>
+    <div class="metric"><span>Memory avg</span><span class="v" id="m_mem">—</span></div>
+    <div class="metric"><span>Commit</span><span class="v" id="m_commit">—</span></div>
+    <div class="metric"><span>Settings store</span><span class="v" id="m_store">—</span></div>
+  </section>
+
+  <!-- Panel B — Tier Distribution -->
+  <section class="panel">
+    <h2>B. Tier Distribution <span class="tag" id="b_total">0 users</span></h2>
+    <table id="tierTable">
+      <thead><tr><th>Tier</th><th class="num">Users</th><th class="num">%</th><th></th></tr></thead>
+      <tbody id="tierBody"></tbody>
+    </table>
+  </section>
+
+  <!-- Panel C — Feature Flags -->
+  <section class="panel">
+    <h2>C. Feature Flags <span class="tag">global + your overrides</span></h2>
+    <div id="flagsBody">loading…</div>
+    <details>
+      <summary>raw resolved</summary>
+      <pre class="json" id="resolvedJson">—</pre>
+    </details>
+  </section>
+
+  <!-- Panel D — Limits Control -->
+  <section class="panel">
+    <h2>D. Limits Control <span class="tag">per-tier</span></h2>
+    <div class="form-row">
+      <label for="limTierSel">TIER</label>
+      <select id="limTierSel"></select>
+    </div>
+    <div id="limitsBody">—</div>
+    <div class="form-row">
+      <label for="limTarget">TARGET EMAIL</label>
+      <input id="limTarget" type="email" placeholder="user@example.com" style="min-width:220px">
+      <button class="act" id="applyTierBtn">apply tier to email</button>
+    </div>
+  </section>
+
+  <!-- Panel E — Audit Log -->
+  <section class="panel" style="grid-column:1/-1">
+    <h2>E. Audit Log <span class="tag" id="auditCount">0</span></h2>
+    <div id="log"></div>
+  </section>
+</div>
+
+<script src="/public/js/settings-client.js"></script>
+<script>
+const API = window.location.origin;
+const TOKEN_KEY = 'ORCHESTRA_ADMIN_TOKEN';
+const ACTOR_KEY = 'SETTINGS_ACTOR_EMAIL';
+
+function getToken(){
+  let t = localStorage.getItem(TOKEN_KEY);
+  if (!t){
+    t = prompt('Enter ORCHESTRA_ADMIN_TOKEN (bearer). Stored in localStorage.');
+    if (t) localStorage.setItem(TOKEN_KEY, t);
+  }
+  return t || '';
+}
+function getActor(){
+  let a = localStorage.getItem(ACTOR_KEY);
+  if (!a){
+    a = prompt('Enter your super-admin email (X-Actor-Email).', 'ryanpcowan@gmail.com');
+    if (a) localStorage.setItem(ACTOR_KEY, a.toLowerCase().trim());
+  }
+  return a || '';
+}
+function authHeaders(){
+  return { 'Authorization': 'Bearer ' + getToken(), 'X-Actor-Email': getActor(), 'Content-Type': 'application/json' };
+}
+function pad(n){ return n<10?'0'+n:n }
+function clock(){ const d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()) }
+function logLine(msg, kind){
+  const el = document.getElementById('log');
+  const row = document.createElement('div');
+  if (kind) row.className = kind;
+  row.innerHTML = '<span class="t">'+clock()+'</span>'+String(msg).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  el.prepend(row);
+  while (el.children.length > 200) el.removeChild(el.lastChild);
+}
+
+async function fetchJSON(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({}, authHeaders(), opts.headers || {});
+  opts.cache = 'no-store';
+  const r = await fetch(API + path, opts);
+  if (!r.ok){
+    const t = await r.text().catch(() => '');
+    throw new Error('HTTP '+r.status+': '+(t||r.statusText));
+  }
+  return r.json();
+}
+
+// --- Panel A: System Metrics
+async function loadOverview(){
+  try{
+    const d = await fetch(API+'/admin/overview', { cache:'no-store', headers: { 'Authorization':'Bearer '+getToken() }}).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP '+r.status)));
+    document.getElementById('m_conn').textContent = 'online';
+    document.getElementById('m_up').textContent   = (d.services_up ?? '—') + ' / ' + (d.services_total ?? '—');
+    document.getElementById('m_cpu').textContent  = (d.cpu_avg ?? '—') + '%';
+    document.getElementById('m_mem').textContent  = (d.mem_avg ?? '—') + '%';
+    document.getElementById('m_commit').textContent = (d.git_commit || '—').slice(0,7);
+  } catch(e){
+    document.getElementById('m_conn').textContent = 'offline';
+    logLine('overview: '+e.message, 'err');
+  }
+  try{
+    const h = await fetchJSON('/settings/healthz');
+    document.getElementById('m_store').textContent = h.ok ? 'ok' : 'fail';
+  } catch(e){ document.getElementById('m_store').textContent = 'err'; }
+}
+
+// --- Panel B: Tier Distribution + Panel C: Feature Flags + Panel D populator
+let DEFAULTS = null;
+let RUNTIME  = null;
+
+async function loadSettings(){
+  try{
+    DEFAULTS = await fetchJSON('/settings/defaults');
+    RUNTIME  = await fetchJSON('/settings/runtime');
+    renderTiers();
+    renderResolvedFor(getActor());
+    renderLimitsSelector();
+  } catch(e){
+    logLine('settings load: '+e.message, 'err');
+  }
+}
+
+function renderTiers(){
+  const users = RUNTIME.users || {};
+  const counts = {};
+  Object.keys(DEFAULTS.tiers).forEach(t => counts[t] = 0);
+  Object.values(users).forEach(u => { counts[u.tier] = (counts[u.tier] || 0) + 1; });
+  const total = Object.values(counts).reduce((a,b) => a+b, 0);
+  document.getElementById('b_total').textContent = total + ' users';
+  const body = document.getElementById('tierBody');
+  body.innerHTML = '';
+  Object.keys(counts).forEach(tier => {
+    const n = counts[tier];
+    const pct = total ? Math.round(100*n/total) : 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><span class="chip '+(tier==='super_admin'?'err':tier==='free'?'warn':'')+'">'+tier+'</span></td>'+
+      '<td class="num">'+n+'</td>'+
+      '<td class="num">'+pct+'%<div class="bar"><span style="width:'+pct+'%"></span></div></td>'+
+      '<td><code style="font-size:10px; color:var(--muted)">'+(DEFAULTS.tiers[tier].description || '').slice(0,50)+'</code></td>';
+    body.appendChild(tr);
+  });
+}
+
+async function renderResolvedFor(email){
+  if (!email){ document.getElementById('flagsBody').textContent = '(no actor email)'; return; }
+  const resolved = await fetchJSON('/settings/resolve?email='+encodeURIComponent(email));
+  document.getElementById('actorEmail').textContent = resolved.email;
+  document.getElementById('actorTier').textContent  = resolved.tier;
+  document.getElementById('resolvedJson').textContent = JSON.stringify(resolved, null, 2);
+  const body = document.getElementById('flagsBody');
+  body.innerHTML = '';
+  const features = resolved.effective.features || {};
+  Object.keys(features).sort().forEach(k => {
+    const on = features[k] !== false;
+    const span = document.createElement('span');
+    span.className = 'chip ' + (on ? '' : 'err');
+    span.textContent = (on ? '✓ ' : '✗ ') + k;
+    body.appendChild(span);
+  });
+  // Apply to DOM for visual hide/show
+  if (window.SettingsClient) SettingsClient.applyToDOM(resolved.effective, resolved.tier);
+}
+
+function renderLimitsSelector(){
+  const sel = document.getElementById('limTierSel');
+  sel.innerHTML = '';
+  Object.keys(DEFAULTS.tiers).forEach(t => {
+    const o = document.createElement('option'); o.value = t; o.textContent = t;
+    sel.appendChild(o);
+  });
+  sel.value = 'pro';
+  sel.onchange = renderLimitsForSelectedTier;
+  renderLimitsForSelectedTier();
+}
+
+function renderLimitsForSelectedTier(){
+  const t = document.getElementById('limTierSel').value;
+  const tierCfg = DEFAULTS.tiers[t] || {};
+  const tierLimits = tierCfg.limits || {};
+  const globalLimits = DEFAULTS.global.limits || {};
+  const merged = Object.assign({}, globalLimits, tierLimits);
+  const body = document.getElementById('limitsBody');
+  body.innerHTML = '';
+  Object.keys(merged).sort().forEach(k => {
+    const v = merged[k];
+    const row = document.createElement('div');
+    row.className = 'metric';
+    row.innerHTML = '<span>'+k+'</span><span class="v">'+(v===-1?'∞':v)+'</span>';
+    body.appendChild(row);
+  });
+}
+
+// --- Tier apply action
+document.getElementById('applyTierBtn').addEventListener('click', async () => {
+  const email = document.getElementById('limTarget').value.trim().toLowerCase();
+  const tier  = document.getElementById('limTierSel').value;
+  if (!email){ logLine('target email required', 'warn'); return; }
+  if (!confirm('Apply tier "'+tier+'" to '+email+'?')) return;
+  try{
+    const r = await fetchJSON('/settings/tier', { method:'POST', body: JSON.stringify({ email, tier })});
+    logLine('tier → '+email+' = '+tier, 'info');
+    await loadSettings();
+    await loadAudit();
+  } catch(e){ logLine('tier apply failed: '+e.message, 'err'); }
+});
+
+// --- Panel E: Audit Log
+async function loadAudit(){
+  try{
+    const d = await fetchJSON('/settings/audit?limit=50');
+    document.getElementById('auditCount').textContent = d.total + ' entries';
+    const log = document.getElementById('log');
+    log.innerHTML = '';
+    d.entries.slice().reverse().forEach(e => {
+      const msg = e.actor + ' · ' + e.action + (e.target ? ' → '+e.target : '');
+      logLine(msg, e.action.includes('revoke') ? 'warn' : 'info');
+    });
+  } catch(e){ logLine('audit: '+e.message, 'err'); }
+}
+
+// --- bootstrap
+window.addEventListener('load', async () => {
+  logLine('settings-admin init', 'info');
+  await loadOverview();
+  await loadSettings();
+  await loadAudit();
+  setInterval(loadOverview, 5000);
+  setInterval(loadAudit, 15000);
+});
+</script></body></html>

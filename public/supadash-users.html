@@ -1,0 +1,175 @@
+<section style="font-family:system-ui,sans-serif;color:#fff;">
+  <style>
+    .sa-users-wrap{max-width:1200px;margin:0 auto;}
+    .sa-users-wrap h1{margin:0 0 0.5rem;color:#00c8ff;}
+    .sa-users-wrap .sub{color:#8aa;margin-bottom:1.5rem;}
+    .sa-users-controls{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+    .sa-users-controls input,.sa-users-controls select{padding:0.5rem 0.75rem;background:#1a2d40;color:#fff;border:1px solid #2a4d60;border-radius:6px;}
+    .sa-users-controls button{padding:0.5rem 1rem;background:#00c8ff;color:#0a1520;border:0;border-radius:6px;cursor:pointer;font-weight:600;}
+    .sa-users-table{width:100%;border-collapse:collapse;background:#1a2d40;border-radius:8px;overflow:hidden;}
+    .sa-users-table th,.sa-users-table td{padding:0.6rem 0.75rem;text-align:left;border-bottom:1px solid #2a4d60;font-size:0.85rem;}
+    .sa-users-table th{background:#0e1c28;color:#00c8ff;font-weight:600;}
+    .sa-users-table tr:hover{background:#243850;}
+    .sa-role-chip,.sa-plan-chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;}
+    .sa-role-chip.superadmin{background:#ffd166;color:#0a1520;}
+    .sa-role-chip.admin{background:#00e57b;color:#0a1520;}
+    .sa-role-chip.member{background:#4d6678;color:#fff;}
+    .sa-plan-chip.infinite{background:#8a5cf6;color:#fff;}
+    .sa-plan-chip.pro{background:#00c8ff;color:#0a1520;}
+    .sa-plan-chip.free{background:#4d6678;color:#fff;}
+    .sa-action{padding:2px 8px;margin-right:4px;background:transparent;border:1px solid #00c8ff;color:#00c8ff;border-radius:4px;cursor:pointer;font-size:0.75rem;}
+    .sa-action.danger{border-color:#f66;color:#f66;}
+    .sa-action:hover{background:rgba(0,200,255,0.1);}
+    .sa-msg{padding:0.75rem;margin-bottom:1rem;border-radius:6px;font-size:0.85rem;}
+    .sa-msg.ok{background:rgba(0,229,123,0.15);color:#00e57b;}
+    .sa-msg.err{background:rgba(255,100,100,0.15);color:#f66;}
+  </style>
+
+  <div class="sa-users-wrap">
+    <h1>👥 User Control</h1>
+    <div class="sub">Manage every Bridge AI OS user. Change role, plan, suspend, or promote to admin.</div>
+    <div id="sa-users-msg"></div>
+
+    <div class="sa-users-controls">
+      <input id="sa-users-search" placeholder="search by email or name" />
+      <select id="sa-users-filter-role">
+        <option value="">All roles</option>
+        <option value="superadmin">superadmin</option>
+        <option value="admin">admin</option>
+        <option value="member">member</option>
+      </select>
+      <select id="sa-users-filter-plan">
+        <option value="">All plans</option>
+        <option value="infinite">infinite</option>
+        <option value="pro">pro</option>
+        <option value="free">free</option>
+      </select>
+      <button id="sa-users-refresh">Refresh</button>
+    </div>
+
+    <table class="sa-users-table">
+      <thead>
+        <tr>
+          <th>Email</th><th>Name</th><th>Role</th><th>Plan</th><th>Provider</th>
+          <th>Last seen</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="sa-users-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:#8aa;">Loading…</td></tr>
+      </tbody>
+    </table>
+    <div id="sa-users-count" style="margin-top:0.5rem;color:#8aa;font-size:0.8rem;"></div>
+  </div>
+</section>
+
+<script>
+(function(){
+  function getToken(){
+    var m = document.cookie.match(/(?:^|;\s*)bridge_token=([^;]+)/);
+    if(m) return decodeURIComponent(m[1]);
+    try { return localStorage.getItem('bridge_token') || ''; } catch(_) { return ''; }
+  }
+  function authHeaders(extra){
+    var h = Object.assign({}, extra || {});
+    var t = getToken();
+    if(t) h['Authorization'] = 'Bearer ' + t;
+    return h;
+  }
+  function msg(text, kind){
+    var el = document.getElementById('sa-users-msg');
+    if(!el) return;
+    el.className = 'sa-msg ' + (kind || 'ok');
+    el.textContent = text;
+    setTimeout(function(){ el.textContent=''; el.className=''; }, 4000);
+  }
+  var allUsers = [];
+
+  async function load(){
+    try {
+      var r = await fetch('/api/admin/users', { headers: authHeaders(), credentials: 'include' });
+      if(!r.ok){
+        document.getElementById('sa-users-tbody').innerHTML =
+          '<tr><td colspan="7" style="color:#f66;padding:1rem;">Access denied — superadmin required. Sign in as ryanpcowan@gmail.com.</td></tr>';
+        return;
+      }
+      var data = await r.json();
+      allUsers = data.users || [];
+      render();
+    } catch(e){
+      msg('Load failed: ' + e.message, 'err');
+    }
+  }
+
+  function render(){
+    var q = (document.getElementById('sa-users-search').value || '').toLowerCase();
+    var roleF = document.getElementById('sa-users-filter-role').value;
+    var planF = document.getElementById('sa-users-filter-plan').value;
+    var list = allUsers.filter(function(u){
+      if(roleF && u.role !== roleF) return false;
+      if(planF && u.plan !== planF) return false;
+      if(q){
+        var hay = ((u.email||'') + ' ' + (u.name||'')).toLowerCase();
+        if(hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+    var tbody = document.getElementById('sa-users-tbody');
+    if(list.length === 0){
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#8aa;">No users match.</td></tr>';
+    } else {
+      tbody.innerHTML = list.map(function(u){
+        var role = u.role || 'member';
+        var plan = u.plan || 'free';
+        var last = u.last_seen ? new Date(u.last_seen).toISOString().slice(0,16).replace('T',' ') : '—';
+        return '<tr data-id="' + u.id + '">' +
+          '<td>' + escape(u.email) + '</td>' +
+          '<td>' + escape(u.name || '—') + '</td>' +
+          '<td><span class="sa-role-chip ' + role + '">' + role + '</span></td>' +
+          '<td><span class="sa-plan-chip ' + plan + '">' + plan + '</span></td>' +
+          '<td style="color:#8aa;">' + escape(u.provider || '—') + '</td>' +
+          '<td style="color:#8aa;">' + last + '</td>' +
+          '<td>' +
+            '<button class="sa-action" data-act="promote">Promote</button>' +
+            '<button class="sa-action" data-act="upgrade">Pro</button>' +
+            '<button class="sa-action danger" data-act="suspend">' + (u.suspended ? 'Unsuspend' : 'Suspend') + '</button>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+    }
+    document.getElementById('sa-users-count').textContent = list.length + ' / ' + allUsers.length + ' users';
+  }
+
+  function escape(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+  async function patch(id, body){
+    try {
+      var r = await fetch('/api/admin/users/' + encodeURIComponent(id), {
+        method:'POST',
+        headers: authHeaders({'Content-Type':'application/json'}),
+        credentials:'include',
+        body: JSON.stringify(body),
+      });
+      var data = await r.json();
+      if(r.ok){ msg('Updated: ' + JSON.stringify(data.changes)); load(); }
+      else { msg('Update failed: ' + (data.error||'unknown'), 'err'); }
+    } catch(e){ msg('Update error: ' + e.message, 'err'); }
+  }
+
+  document.getElementById('sa-users-tbody').addEventListener('click', function(e){
+    var btn = e.target.closest('.sa-action'); if(!btn) return;
+    var row = btn.closest('tr'); if(!row) return;
+    var id = row.getAttribute('data-id');
+    var act = btn.getAttribute('data-act');
+    var u = allUsers.find(function(x){ return x.id === id; }); if(!u) return;
+    if(act === 'promote') patch(id, { role: u.role === 'admin' ? 'superadmin' : 'admin' });
+    if(act === 'upgrade') patch(id, { plan: u.plan === 'pro' ? 'infinite' : 'pro' });
+    if(act === 'suspend') patch(id, { suspended: !u.suspended });
+  });
+
+  document.getElementById('sa-users-search').addEventListener('input', render);
+  document.getElementById('sa-users-filter-role').addEventListener('change', render);
+  document.getElementById('sa-users-filter-plan').addEventListener('change', render);
+  document.getElementById('sa-users-refresh').addEventListener('click', load);
+  load();
+})();
+</script>

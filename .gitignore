@@ -53,3 +53,53 @@ artifacts/
 contracts/cache/
 cache/
 typechain-types/
+
+# ============================================================
+# Added 2026-04-21 for VPS/GitHub sync: keep runtime noise out
+# ============================================================
+
+# Python cache
+__pycache__/
+*.pyc
+
+# SQLite runtime WAL/SHM
+*.db-shm
+*.db-wal
+
+# Hand-made file backups/scratch
+*.bak
+*.bak*
+*.backup
+*.pre-*
+*.preauthgate-*
+*.broken.*
+*.stub*
+
+# Runtime state JSONs
+adaptive-recovery-state.json
+brain-orchestration-state.json
+orchestrator-state.json
+predictive-state.json
+
+# Local IDE/tool dirs
+.bridge-state/
+.snapshots/
+.kilo/
+.playwright-mcp/
+.claude/state/
+.vscode/
+
+# Logs
+logs/
+*.log
+
+# Env (preserve .env.example)
+.env
+.env.bak.*
+.env.compiled
+
+# Debug artifacts
+shot-*.png
+gateway-execute.tar.gz
+artifacts/
+*.env

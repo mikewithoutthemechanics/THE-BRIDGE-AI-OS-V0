@@ -1,0 +1,115 @@
+<section style="font-family:system-ui,sans-serif;color:#fff;">
+  <style>
+    .sa-rep{max-width:1200px;margin:0 auto;}
+    .sa-rep h1{margin:0 0 0.5rem;color:#00c8ff;}
+    .sa-rep .sub{color:#8aa;margin-bottom:1.5rem;}
+    .sa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:1.5rem;}
+    .sa-card{background:#1a2d40;border:1px solid #2a4d60;border-radius:8px;padding:1rem;}
+    .sa-card h3{margin:0 0 0.5rem;color:#00c8ff;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;}
+    .sa-metric{font-size:1.8rem;font-weight:700;color:#fff;}
+    .sa-label{color:#8aa;font-size:0.8rem;}
+    .sa-table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+    .sa-table th,.sa-table td{padding:0.4rem 0.6rem;text-align:left;border-bottom:1px solid #2a4d60;}
+    .sa-table th{color:#00c8ff;}
+    .sa-kv{display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid #2a4d60;font-size:0.85rem;}
+    .sa-kv:last-child{border-bottom:0;}
+    .sa-kv span:first-child{color:#8aa;}
+    .sa-kv span:last-child{color:#fff;font-family:monospace;}
+    .sa-ok{color:#00e57b;}
+    .sa-warn{color:#ffd166;}
+    .sa-err{color:#f66;}
+    .sa-rep button{padding:0.5rem 1rem;background:#00c8ff;color:#0a1520;border:0;border-radius:6px;cursor:pointer;font-weight:600;margin-bottom:1rem;}
+  </style>
+
+  <div class="sa-rep">
+    <h1>📈 Full System Report</h1>
+    <div class="sub">Live metrics from unified-server. Memory, uptime, services, users, and config surface.</div>
+    <button id="sa-rep-refresh">Refresh</button>
+
+    <div id="sa-rep-content">
+      <div style="text-align:center;padding:2rem;color:#8aa;">Loading report…</div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  function getToken(){
+    var m = document.cookie.match(/(?:^|;\s*)bridge_token=([^;]+)/);
+    if(m) return decodeURIComponent(m[1]);
+    try { return localStorage.getItem('bridge_token') || ''; } catch(_) { return ''; }
+  }
+  function authHeaders(){
+    var t = getToken();
+    return t ? { Authorization: 'Bearer ' + t } : {};
+  }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function fmtUptime(sec){
+    if(!sec) return '—';
+    var d = Math.floor(sec/86400); sec -= d*86400;
+    var h = Math.floor(sec/3600); sec -= h*3600;
+    var m = Math.floor(sec/60);
+    return (d?d+'d ':'') + (h?h+'h ':'') + m + 'm';
+  }
+
+  async function load(){
+    var host = document.getElementById('sa-rep-content');
+    host.innerHTML = '<div style="text-align:center;padding:2rem;color:#8aa;">Loading…</div>';
+    try {
+      var r = await fetch('/api/admin/system-report', { headers: authHeaders(), credentials: 'include' });
+      if(!r.ok){
+        host.innerHTML = '<div style="color:#f66;padding:1rem;">Access denied — superadmin required.</div>';
+        return;
+      }
+      var data = await r.json();
+      render(data);
+    } catch(e){
+      host.innerHTML = '<div style="color:#f66;padding:1rem;">Fetch failed: ' + esc(e.message) + '</div>';
+    }
+  }
+
+  function render(d){
+    var host = document.getElementById('sa-rep-content');
+    var mem = d.process && d.process.memory_mb || {};
+    var users = d.users || {};
+    var roles = users.by_role || {};
+    var plans = users.by_plan || {};
+
+    host.innerHTML = ''
+      + '<div class="sa-grid">'
+      +   '<div class="sa-card"><h3>Uptime</h3><div class="sa-metric">' + fmtUptime(d.process && d.process.uptime_sec) + '</div><div class="sa-label">pid ' + (d.process && d.process.pid || '?') + ' · ' + (d.process && d.process.node || '?') + '</div></div>'
+      +   '<div class="sa-card"><h3>Heap</h3><div class="sa-metric">' + (mem.heap_used||0) + ' / ' + (mem.heap_total||0) + ' MB</div><div class="sa-label">RSS ' + (mem.rss||0) + ' MB</div></div>'
+      +   '<div class="sa-card"><h3>Users</h3><div class="sa-metric">' + (users.total != null ? users.total : '—') + '</div><div class="sa-label">' + Object.keys(roles).map(function(k){return k+': '+roles[k];}).join(' · ') + '</div></div>'
+      +   '<div class="sa-card"><h3>Routes</h3><div class="sa-metric">' + (d.routes && d.routes.total_mounted || 0) + '</div><div class="sa-label">endpoints mounted</div></div>'
+      + '</div>'
+
+      + '<div class="sa-grid">'
+      +   '<div class="sa-card"><h3>Environment</h3>'
+      +     Object.keys(d.env||{}).map(function(k){
+              var v = d.env[k];
+              var cls = (typeof v === 'boolean') ? (v ? 'sa-ok' : 'sa-err') : '';
+              return '<div class="sa-kv"><span>' + esc(k) + '</span><span class="' + cls + '">' + esc(String(v)) + '</span></div>';
+            }).join('')
+      +   '</div>'
+      +   '<div class="sa-card"><h3>Plans distribution</h3>'
+      +     (Object.keys(plans).length
+              ? Object.keys(plans).map(function(k){ return '<div class="sa-kv"><span>' + esc(k) + '</span><span>' + plans[k] + '</span></div>'; }).join('')
+              : '<div class="sa-label">no data</div>')
+      +   '</div>'
+      +   '<div class="sa-card"><h3>Superusers</h3>'
+      +     (d.superusers || []).map(function(e){ return '<div class="sa-kv"><span>' + esc(e) + '</span><span class="sa-ok">baseline</span></div>'; }).join('')
+      +   '</div>'
+      + '</div>'
+
+      + '<div class="sa-card"><h3>PM2 Services (topology)</h3>'
+      + '<table class="sa-table"><thead><tr><th>Name</th><th>Port</th><th>Role</th></tr></thead><tbody>'
+      + (d.services||[]).map(function(s){
+          return '<tr><td>' + esc(s.name) + '</td><td>' + esc(s.port) + '</td><td style="color:#8aa;">' + esc(s.role) + '</td></tr>';
+        }).join('')
+      + '</tbody></table></div>';
+  }
+
+  document.getElementById('sa-rep-refresh').addEventListener('click', load);
+  load();
+})();
+</script>

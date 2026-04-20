@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treasury Dashboard | Bridge AI</title>
+  <meta name="description" content="Treasury Dashboard — Bridge AI OS">
+  <meta property="og:title" content="Treasury Dashboard | Bridge AI">
+  <meta property="og:description" content="Treasury Dashboard — Bridge AI OS">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://abaas.bridge-ai-os.com/treasury-dashboard.html">
+  <meta name="twitter:card" content="summary">
+  <link rel="canonical" href="https://abaas.bridge-ai-os.com/treasury-dashboard.html">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{--bg:#0a0e17;--card:#131a2b;--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444;--border:#1e293b}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg);color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
+    .dashboard{max-width:1200px;margin:0 auto;padding:24px}
+    @media(max-width:640px){.dashboard{padding:14px}}
+
+    /* Hero */
+    .hero{text-align:center;padding:48px 24px;margin-bottom:32px;background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(34,197,94,.04));border:1px solid rgba(56,189,248,.15);border-radius:16px;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(56,189,248,.03) 0%,transparent 70%);animation:heroGlow 8s ease-in-out infinite alternate}
+    @keyframes heroGlow{from{transform:scale(1)}to{transform:scale(1.1)}}
+    .hero-label{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+    .live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+    .hero-value{font-size:3.5rem;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums;position:relative;z-index:1}
+    @media(max-width:640px){.hero-value{font-size:2.2rem}}
+    .hero-usd{font-size:1rem;color:var(--dim);margin-top:4px;position:relative;z-index:1}
+
+    /* Bucket cards */
+    .section-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:16px;margin-top:32px}
+    .bucket-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+    @media(max-width:640px){.bucket-grid{grid-template-columns:1fr}}
+    .bucket-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+    .bucket-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .bucket-name{font-size:.85rem;font-weight:600}
+    .bucket-pct{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(255,255,255,.05)}
+    .bucket-amount{font-size:1.4rem;font-weight:700;margin-bottom:12px}
+    .progress-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+    .progress-fill{height:100%;border-radius:3px;transition:width 1s ease-out}
+
+    /* Token metrics */
+    .metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+    @media(max-width:768px){.metrics-row{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:480px){.metrics-row{grid-template-columns:1fr}}
+    .metric-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+    .metric-label{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .metric-value{font-size:1.3rem;font-weight:700;color:#f1f5f9}
+    .metric-sub{font-size:.7rem;color:var(--dim);margin-top:4px}
+    .metric-sub a{color:var(--cyan);text-decoration:none}
+    .metric-sub a:hover{text-decoration:underline}
+
+    /* Donut chart */
+    .donut-section{display:flex;align-items:center;gap:32px;margin-bottom:32px;flex-wrap:wrap}
+    .donut{width:180px;height:180px;border-radius:50%;position:relative;flex-shrink:0}
+    .donut-hole{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column}
+    .donut-hole-label{font-size:.6rem;color:var(--dim);text-transform:uppercase}
+    .donut-hole-value{font-size:1rem;font-weight:700;color:#f1f5f9}
+    .legend{display:flex;flex-direction:column;gap:10px}
+    .legend-item{display:flex;align-items:center;gap:10px;font-size:.82rem}
+    .legend-swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+    /* Transaction table */
+    .table-container{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
+    .table-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+    .table-filters{display:flex;gap:8px;flex-wrap:wrap}
+    .table-filters select{background:var(--bg);border:1px solid var(--border);color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:.75rem}
+    .table-scroll{max-height:400px;overflow-y:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{text-align:left;padding:10px 16px;font-size:.8rem;border-bottom:1px solid rgba(255,255,255,.04)}
+    th{color:var(--dim);font-weight:600;position:sticky;top:0;background:var(--card)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:700;text-transform:uppercase}
+    .badge-credit{background:rgba(34,197,94,.12);color:var(--green)}
+    .badge-debit{background:rgba(239,68,68,.12);color:var(--red)}
+    .badge-transfer{background:rgba(167,139,250,.12);color:var(--purple)}
+    .amount-credit{color:var(--green)}
+    .amount-debit{color:var(--red)}
+    .empty-state{text-align:center;padding:32px;color:var(--dim);font-size:.85rem}
+    .load-more-btn{display:block;width:100%;padding:12px;background:transparent;border:none;border-top:1px solid var(--border);color:var(--cyan);font-size:.8rem;font-weight:600;cursor:pointer}
+    .load-more-btn:hover{background:rgba(56,189,248,.05)}
+
+    /* Subscribe */
+    .subscribe-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+    .subscribe-form{display:flex;gap:8px}
+    .subscribe-form input{flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#fff;font-size:.85rem}
+    .subscribe-form input:focus{outline:none;border-color:var(--cyan)}
+    .subscribe-form button{padding:10px 20px;background:var(--cyan);color:#0a0e17;border:none;border-radius:8px;font-weight:600;cursor:pointer;white-space:nowrap}
+    .subscribe-form button:hover{opacity:.9}
+    .sub-msg{font-size:.75rem;margin-top:6px;color:var(--green);min-height:1.2em}
+    @media(max-width:640px){.subscribe-form{flex-direction:column}}
+  </style>
+</head>
+<body>
+<script>(function(){var t=localStorage.getItem('bridge_token')||(document.cookie.match(/(?:^|; )access_token=([^;]*)/)||[])[1];if(!t){location.replace('/onboarding?redirect='+encodeURIComponent(location.pathname));return;}fetch('/auth/me',{headers:{Authorization:'Bearer '+t}}).then(function(r){if(!r.ok)throw new Error();}).catch(function(){localStorage.removeItem('bridge_token');location.replace('/onboarding');});})()</script>
+
+<div class="dashboard">
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-label"><span class="live-dot"></span> Treasury Balance (Live)</div>
+    <div class="hero-value" id="heroBalance">--</div>
+    <div class="hero-usd" id="heroUsd">-- USD equivalent</div>
+  </div>
+
+  <!-- Bucket Cards -->
+  <div class="section-title">Allocation Buckets</div>
+  <div class="bucket-grid">
+    <div class="bucket-card">
+      <div class="bucket-header"><span class="bucket-name">Operations</span><span class="bucket-pct">45%</span></div>
+      <div class="bucket-amount" id="bucketOps" style="color:var(--cyan)">--</div>
+      <div class="progress-bar"><div class="progress-fill" id="barOps" style="background:var(--cyan);width:0%"></div></div>
+    </div>
+    <div class="bucket-card">
+      <div class="bucket-header"><span class="bucket-name">Growth</span><span class="bucket-pct">15%</span></div>
+      <div class="bucket-amount" id="bucketGrowth" style="color:var(--green)">--</div>
+      <div class="progress-bar"><div class="progress-fill" id="barGrowth" style="background:var(--green);width:0%"></div></div>
+    </div>
+    <div class="bucket-card">
+      <div class="bucket-header"><span class="bucket-name">Reserve</span><span class="bucket-pct">15%</span></div>
+      <div class="bucket-amount" id="bucketReserve" style="color:var(--purple)">--</div>
+      <div class="progress-bar"><div class="progress-fill" id="barReserve" style="background:var(--purple);width:0%"></div></div>
+    </div>
+    <div class="bucket-card">
+      <div class="bucket-header"><span class="bucket-name">Founder</span><span class="bucket-pct">25%</span></div>
+      <div class="bucket-amount" id="bucketFounder" style="color:var(--orange)">--</div>
+      <div class="progress-bar"><div class="progress-fill" id="barFounder" style="background:var(--orange);width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Token Metrics -->
+  <div class="section-title">Token Metrics</div>
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-label">Circulating Supply</div>
+      <div class="metric-value" id="metricCirculating">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Burned</div>
+      <div class="metric-value" id="metricBurned" style="color:var(--red)">--</div>
+      <div class="metric-sub" id="burnRate">1% burn per tx</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Transactions</div>
+      <div class="metric-value" id="metricTx">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Contract</div>
+      <div class="metric-value" style="font-size:.75rem;word-break:break-all"><a href="https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank" id="metricContract" style="color:var(--cyan);text-decoration:none">0x6Ee9...975f</a></div>
+      <div class="metric-sub"><a href="https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank">View on LineaScan</a></div>
+    </div>
+  </div>
+
+  <!-- Donut Chart -->
+  <div class="section-title">Supply Distribution</div>
+  <div class="donut-section">
+    <div class="donut" id="donutChart">
+      <div class="donut-hole">
+        <div class="donut-hole-label">Total Supply</div>
+        <div class="donut-hole-value" id="donutTotal">--</div>
+      </div>
+    </div>
+    <div class="legend" id="donutLegend">
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--cyan)"></div><span>Circulating: <strong id="lgCirc">--</strong></span></div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--red)"></div><span>Burned: <strong id="lgBurned">--</strong></span></div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--purple)"></div><span>Treasury Held: <strong id="lgTreasury">--</strong></span></div>
+    </div>
+  </div>
+
+  <!-- Transaction History -->
+  <div class="section-title">Transaction History</div>
+  <div class="table-container">
+    <div class="table-header">
+      <span style="font-weight:600;font-size:.9rem">Ledger</span>
+      <div class="table-filters">
+        <select id="filterBucket"><option value="">All Buckets</option><option value="operations">Operations</option><option value="growth">Growth</option><option value="reserve">Reserve</option><option value="founder">Founder</option></select>
+        <select id="filterType"><option value="">All Types</option><option value="credit">Credit</option><option value="debit">Debit</option><option value="transfer">Transfer</option></select>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Bucket</th><th>Description</th></tr></thead>
+        <tbody id="ledgerBody"><tr><td colspan="5" class="empty-state">Loading transactions...</td></tr></tbody>
+      </table>
+    </div>
+    <button class="load-more-btn" id="loadMoreBtn" style="display:none" onclick="loadMoreLedger()">Load More</button>
+  </div>
+
+  <!-- Subscribe -->
+  <div class="subscribe-card">
+    <div style="font-size:.9rem;font-weight:600;margin-bottom:8px">Subscribe for Updates</div>
+    <div class="subscribe-form">
+      <input type="email" id="emailInput" placeholder="you@example.com">
+      <button onclick="subscribe()">Subscribe</button>
+    </div>
+    <div class="sub-msg" id="subMsg"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  let allLedgerEntries = [];
+  let ledgerOffset = 0;
+  const LEDGER_PAGE = 20;
+
+  function fmt(n) {
+    if (n == null || isNaN(n)) return '--';
+    return Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+
+  function fmtBRDG(n) {
+    if (n == null || isNaN(n)) return '--';
+    return Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' BRDG';
+  }
+
+  // Count-up animation
+  function countUp(el, target, prefix, suffix, duration) {
+    prefix = prefix || '';
+    suffix = suffix || '';
+    duration = duration || 1200;
+    const start = parseFloat(el.dataset.current || '0');
+    const diff = target - start;
+    if (diff === 0) { el.textContent = prefix + fmt(target) + suffix; return; }
+    const startTime = performance.now();
+    function step(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const current = start + diff * eased;
+      el.textContent = prefix + Number(current).toLocaleString('en-US', { maximumFractionDigits: 2 }) + suffix;
+      if (t < 1) requestAnimationFrame(step);
+    }
+    el.dataset.current = target;
+    requestAnimationFrame(step);
+  }
+
+  function updateDonut(circulating, burned, treasury) {
+    const total = circulating + burned + treasury;
+    if (total === 0) return;
+    const pCirc = (circulating / total) * 100;
+    const pBurn = (burned / total) * 100;
+    const pTreas = (treasury / total) * 100;
+    const donut = document.getElementById('donutChart');
+    donut.style.background = 'conic-gradient(var(--cyan) 0% ' + pCirc + '%, var(--red) ' + pCirc + '% ' + (pCirc + pBurn) + '%, var(--purple) ' + (pCirc + pBurn) + '% 100%)';
+    document.getElementById('donutTotal').textContent = fmt(total);
+    document.getElementById('lgCirc').textContent = pCirc.toFixed(1) + '%';
+    document.getElementById('lgBurned').textContent = pBurn.toFixed(1) + '%';
+    document.getElementById('lgTreasury').textContent = pTreas.toFixed(1) + '%';
+  }
+
+  function renderLedger() {
+    const tbody = document.getElementById('ledgerBody');
+    const bucket = document.getElementById('filterBucket').value;
+    const type = document.getElementById('filterType').value;
+
+    let filtered = allLedgerEntries.filter(function(e) {
+      if (bucket && e.bucket && e.bucket.toLowerCase() !== bucket) return false;
+      if (type && e.type && e.type.toLowerCase() !== type) return false;
+      return true;
+    });
+
+    tbody.innerHTML = '';
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No transactions found</td></tr>';
+      document.getElementById('loadMoreBtn').style.display = 'none';
+      return;
+    }
+
+    const page = filtered.slice(0, ledgerOffset + LEDGER_PAGE);
+    page.forEach(function(e) {
+      var tr = document.createElement('tr');
+      var dateStr = e.created_at ? new Date(e.created_at).toLocaleDateString() : '--';
+      var typeClass = (e.type === 'credit') ? 'badge-credit' : (e.type === 'debit') ? 'badge-debit' : 'badge-transfer';
+      var amtClass = (e.type === 'credit' || parseFloat(e.amount) > 0) ? 'amount-credit' : 'amount-debit';
+      tr.innerHTML = '<td>' + dateStr + '</td><td><span class="badge ' + typeClass + '">' + (e.type || '--') + '</span></td><td class="' + amtClass + '">' + (parseFloat(e.amount) > 0 ? '+' : '') + Number(e.amount || 0).toLocaleString('en-US', {maximumFractionDigits:2}) + '</td><td>' + (e.bucket || '--') + '</td><td style="color:var(--dim)">' + (e.description || '--') + '</td>';
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('loadMoreBtn').style.display = (page.length < filtered.length) ? 'block' : 'none';
+  }
+
+  window.loadMoreLedger = function() {
+    ledgerOffset += LEDGER_PAGE;
+    renderLedger();
+  };
+
+  document.getElementById('filterBucket').addEventListener('change', function() { ledgerOffset = 0; renderLedger(); });
+  document.getElementById('filterType').addEventListener('change', function() { ledgerOffset = 0; renderLedger(); });
+
+  async function refreshAll() {
+    try {
+      const [treasury, economy, token] = await Promise.all([
+        fetch('/api/treasury/status').then(function(r){return r.json()}).catch(function(){return {}}),
+        fetch('/api/economy/dashboard').then(function(r){return r.json()}).catch(function(){return {}}),
+        fetch('/api/brdg/token').then(function(r){return r.json()}).catch(function(){return {}})
+      ]);
+
+      // Hero
+      var totalBrdg = parseFloat(treasury.total_brdg || treasury.balance || economy.treasury_balance || 0);
+      var usdVal = parseFloat(treasury.usd || 0);
+      countUp(document.getElementById('heroBalance'), totalBrdg, '', ' BRDG', 1500);
+      document.getElementById('heroUsd').textContent = usdVal ? ('$' + usdVal.toLocaleString('en-US', {maximumFractionDigits:2}) + ' USD equivalent') : '-- USD equivalent';
+
+      // Buckets
+      var buckets = treasury.buckets || {};
+      var opsAmt = parseFloat(buckets.operations || totalBrdg * 0.45);
+      var growthAmt = parseFloat(buckets.growth || totalBrdg * 0.15);
+      var reserveAmt = parseFloat(buckets.reserve || totalBrdg * 0.15);
+      var founderAmt = parseFloat(buckets.founder || totalBrdg * 0.25);
+
+      document.getElementById('bucketOps').textContent = fmtBRDG(opsAmt);
+      document.getElementById('bucketGrowth').textContent = fmtBRDG(growthAmt);
+      document.getElementById('bucketReserve').textContent = fmtBRDG(reserveAmt);
+      document.getElementById('bucketFounder').textContent = fmtBRDG(founderAmt);
+
+      var maxBucket = Math.max(opsAmt, growthAmt, reserveAmt, founderAmt) || 1;
+      document.getElementById('barOps').style.width = ((opsAmt / maxBucket) * 100) + '%';
+      document.getElementById('barGrowth').style.width = ((growthAmt / maxBucket) * 100) + '%';
+      document.getElementById('barReserve').style.width = ((reserveAmt / maxBucket) * 100) + '%';
+      document.getElementById('barFounder').style.width = ((founderAmt / maxBucket) * 100) + '%';
+
+      // Token metrics — read from /api/brdg/token shape: {token:{...}, treasury:{brdgBalance}}
+      var tok = token.token || token;
+      var totalSupply = parseFloat(tok.totalSupply || tok.total_supply || 0);
+      var burned = parseFloat(tok.totalBurned || tok.burned || economy.burned || 0);
+      var treasuryHeld = parseFloat((token.treasury && token.treasury.brdgBalance) || totalBrdg || 0);
+      // Derive real circulating (outside treasury + unburned) instead of trusting "all minted = circulating"
+      var circulating = totalSupply - treasuryHeld - burned;
+      if (circulating < 0) circulating = 0;
+      var totalTx = parseInt(economy.total_transactions || 0);
+
+      document.getElementById('metricCirculating').textContent = totalSupply ? fmt(circulating) : '--';
+      document.getElementById('metricBurned').textContent = totalSupply ? fmt(burned) : '--';
+      document.getElementById('metricTx').textContent = fmt(totalTx);
+
+      // Donut — show real breakdown, no fake placeholders
+      if (totalSupply > 0) {
+        updateDonut(circulating, burned, treasuryHeld);
+      }
+
+    } catch(e) {
+      console.error('Treasury refresh error:', e);
+    }
+  }
+
+  async function loadLedger() {
+    try {
+      var res = await fetch('/api/treasury/ledger');
+      var data = await res.json();
+      allLedgerEntries = data.entries || [];
+      ledgerOffset = 0;
+      renderLedger();
+    } catch(e) {
+      document.getElementById('ledgerBody').innerHTML = '<tr><td colspan="5" class="empty-state">Unable to load transactions</td></tr>';
+    }
+  }
+
+  // SSE for real-time updates
+  try {
+    var es = new EventSource('/events/stream');
+    es.onmessage = function(e) {
+      try {
+        var d = JSON.parse(e.data);
+        if (d.type === 'treasury_update' || d.type === 'economy') {
+          refreshAll();
+          loadLedger();
+        }
+      } catch(_) {}
+    };
+    es.onerror = function() {
+      es.close();
+      setInterval(function() { refreshAll(); loadLedger(); }, 30000);
+    };
+  } catch(_) {
+    setInterval(function() { refreshAll(); loadLedger(); }, 30000);
+  }
+
+  // Init
+  refreshAll();
+  loadLedger();
+
+  // Subscribe
+  window.subscribe = async function() {
+    var email = document.getElementById('emailInput').value;
+    var msg = document.getElementById('subMsg');
+    if (!email || email.indexOf('@') === -1) { msg.textContent = 'Enter a valid email.'; msg.style.color = 'var(--red)'; return; }
+    try {
+      var res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: 'treasury-dashboard' }) });
+      var data = await res.json();
+      msg.style.color = 'var(--green)';
+      msg.textContent = data.ok ? 'Subscribed!' : (data.error || 'Error');
+      if (data.ok) document.getElementById('emailInput').value = '';
+    } catch(e) { msg.textContent = 'Network error'; msg.style.color = 'var(--red)'; }
+  };
+})();
+</script>
+<script src="/bridge-nav.js" defer></script>
+  <script src="/ehsa-brain-status.js" defer></script>
+</body>
+</html>
