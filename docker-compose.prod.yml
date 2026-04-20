@@ -1,0 +1,328 @@
+# Docker Compose — Bridge AI OS Full Stack
+# Usage: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # ── PostgreSQL (Economy DB) ──────────────────────────────────────────────────
+  postgres:
+    image: postgres:17-alpine
+    container_name: bridge_postgres
+    environment:
+      POSTGRES_DB: bridge
+      POSTGRES_USER: bridge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-in-prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bridge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis (Session/Token Cache) ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: bridge_redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-change-me}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+
+  # ── Gateway (port 8080) — Reverse proxy + request router ─────────────────────
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bridge_gateway
+    command: node gateway.js
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: production
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      JWT_SECRET: ${JWT_SECRET}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-me}@redis:6379
+    volumes:
+      - gateway_logs:/app/logs
+      - shared_volume:/app/shared
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', r => process.exit(r.statusCode < 400 ? 0 : 1))"]
+      interval: 30s
+
+  # ── Unified Server (port 3000) — Main API (CRM, Payments, Economy) ───────────
+  unified-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bridge_unified
+    command: node server.js
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET}
+      BRIDGE_INTERNAL_SECRET: ${BRIDGE_INTERNAL_SECRET}
+      ECONOMY_DB_URL: postgresql://bridge:${POSTGRES_PASSWORD:-change-me-in-prod}@postgres:5432/bridge
+      DATABASE_URL: postgresql://bridge:${POSTGRES_PASSWORD:-change-me-in-prod}@postgres:5432/bridge
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      PAYFAST_MERCHANT_ID: ${PAYFAST_MERCHANT_ID}
+      PAYFAST_MERCHANT_KEY: ${PAYFAST_MERCHANT_KEY}
+      PAYFAST_PASSPHRASE: ${PAYFAST_PASSPHRASE}
+      PAYFAST_NOTIFY_URL: ${PAYFAST_NOTIFY_URL}
+      PAYFAST_RETURN_URL: ${PAYFAST_RETURN_URL}
+      PAYFAST_CANCEL_URL: ${PAYFAST_CANCEL_URL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      BREVO_SMTP_USER: ${BREVO_SMTP_USER}
+      BREVO_SMTP_KEY: ${BREVO_SMTP_KEY}
+      WP_BRIDGE_AI_OS_URL: ${WP_BRIDGE_AI_OS_URL}
+      WP_BRIDGE_AI_OS_USER: ${WP_BRIDGE_AI_OS_USER}
+      WP_BRIDGE_AI_OS_APP_PASS: ${WP_BRIDGE_AI_OS_APP_PASS}
+    volumes:
+      - unified_logs:/app/logs
+      - shared_volume:/app/shared
+      - ./public:/app/public:ro
+      - ./users.db:/app/users.db  # SQLite fallback (if Supabase unavailable)
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode < 400 ? 0 : 1))"]
+      interval: 30s
+
+  # ── Super Brain (port 8000) — AI Agent Orchestrator ──────────────────────────
+  super-brain:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bridge_brain
+    command: node brain.js
+    ports:
+      - "8000:8000"
+    environment:
+      NODE_ENV: production
+      BRAIN_PORT: 8000
+      JWT_SECRET: ${JWT_SECRET}
+      KEYFORGE_MASTER: ${KEYFORGE_MASTER}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+    volumes:
+      - brain_logs:/app/logs
+      - shared_volume:/app/shared
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8000/api/health', r => process.exit(r.statusCode < 400 ? 0 : 1))"]
+      interval: 30s
+
+  # ── Auth Service (port 5001) ─────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bridge_auth
+    command: node auth.js
+    ports:
+      - "5001:5001"
+    environment:
+      NODE_ENV: production
+      AUTH_PORT: 5001
+      JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+    volumes:
+      - auth_logs:/app/logs
+      - shared_volume:/app/shared
+      - ./users.db:/app/users.db  # SQLite user DB (if not using Supabase)
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5001/', r => process.exit(r.statusCode < 400 ? 0 : 1))"]
+      interval: 30s
+
+  # ── Terminal Proxy (port 5002) — WebOps Terminal ────────────────────────────
+  terminal-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bridge_terminal
+    command: node terminal-proxy.js
+    ports:
+      - "5002:5002"
+    environment:
+      NODE_ENV: production
+      TERMINAL_PROXY_PORT: 5002
+      JWT_SECRET: ${JWT_SECRET}
+      BRIDGE_INTERNAL_SECRET: ${BRIDGE_INTERNAL_SECRET}
+    volumes:
+      - terminal_logs:/app/logs
+      - shared_volume:/app/shared
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5002/', r => process.exit(r.statusCode < 400 ? 0 : 1))"]
+      interval: 30s
+
+  # ── GOD MODE System (port 3001) — Topology & Monitoring ─────────────────────
+  god-mode-system:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bridge_system
+    command: node system.js
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgresql://bridge:${POSTGRES_PASSWORD:-change-me-in-prod}@postgres:5432/bridge
+    volumes:
+      - system_logs:/app/logs
+      - shared_volume:/app/shared
+      - ./public:/app/public:ro
+    networks:
+      bridge_net:
+        aliases:
+          - system
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', r => process.exit(r.statusCode < 400 ? 0 : 1))"]
+      interval: 30s
+
+  # ── SVG Engine (port 7070) — Skill Execution + Graph Viz ─────────────────────
+  svg-engine:
+    build:
+      context: ./svg-engine
+      dockerfile: ../svg-engine/Dockerfile
+    container_name: bridge_svg
+    ports:
+      - "7070:7070"
+    environment:
+      NODE_ENV: production
+      SVG_ENGINE_PORT: 7070
+      BRIDGE_API_BASE: http://super-brain:8000
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+    volumes:
+      - svg_logs:/app/logs
+      - shared_volume:/app/shared
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    depends_on:
+      - super-brain
+      - postgres
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:7070/health', r => process.exit(r.statusCode < 400 ? 0 : 1))"]
+      interval: 30s
+
+  # ── BAN Engine (port 8001) — Python/FastAPI Business Automation ──────────────
+  ban-engine:
+    build:
+      context: ./BAN
+      dockerfile: ../Dockerfile.ban
+    container_name: bridge_ban
+    ports:
+      - "8001:8001"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://bridge:${POSTGRES_PASSWORD:-change-me-in-prod}@postgres:5432/bridge
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+    volumes:
+      - ban_logs:/app/logs
+      - shared_volume:/app/shared
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - super-brain
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+
+  # ── Nginx Reverse Proxy (host port 80/443) ───────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: bridge_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-bridge.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/letsencrypt:ro  # SSL certificates
+      - ./public:/var/www/bridgeai/public:ro
+    networks:
+      - bridge_net
+    restart: unless-stopped
+    depends_on:
+      - unified-server
+      - gateway
+      - super-brain
+      - god-mode-system
+      - svg-engine
+
+volumes:
+  postgres_data:
+  redis_data:
+  gateway_logs:
+  unified_logs:
+  brain_logs:
+  auth_logs:
+  terminal_logs:
+  system_logs:
+  svg_logs:
+  ban_logs:
+  shared_volume:
+
+networks:
+  bridge_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
