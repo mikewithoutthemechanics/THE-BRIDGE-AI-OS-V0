@@ -5,6 +5,7 @@
 // =============================================================================
 
 const crypto = require('crypto');
+const dataService = require('./data-service.js');
 
 // ── SYSTEM DEFINITION ───────────────────────────────────────────────────────
 const SYSTEM = {
@@ -103,10 +104,14 @@ async function masterLoop(state, broadcast) {
   runtime.cycle++;
 
   // L1: SCAN ENVIRONMENT — real metrics, no simulated values
+  const portfolio = await dataService.getMarketplacePortfolio();
+  const health_pct = portfolio ? portfolio.health_pct / 100 : 0.95;
+  const avg_latency = runtime.loop_latency_ms.length ? (runtime.loop_latency_ms.reduce((a, b) => a + b) / runtime.loop_latency_ms.length) : 15;
+
   const scan = {
     ts: Date.now(),
-    system_health: 0.95, // TODO: compute from actual service health checks
-    latency_avg: 15,     // TODO: compute from actual request latency
+    system_health: health_pct,
+    latency_avg: avg_latency,
     agents_active: 33,
     treasury: state.treasury.balance,
     market_sentiment: 0.5, // Neutral until real market data feed connected
