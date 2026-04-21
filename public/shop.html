@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shop — Bridge AI OS</title>
+<meta name="description" content="Affiliate marketplace on Bridge AI OS — products, services, subscriptions, and referral links from every affiliate kiosk.">
+<link rel="canonical" href="https://bridge-ai-os.com/shop.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Shop — Bridge AI OS">
+<meta property="og:description" content="Browse the full Bridge AI OS affiliate marketplace.">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--p:#a78bfa;--o:#fb923c;--t:#c8dce8;--d:#4d6678}
+body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,sans-serif;line-height:1.5}
+.nav{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#0a1520;border-bottom:1px solid var(--b);font-size:10px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.nav a{color:var(--d);text-decoration:none;padding:3px 6px;border:1px solid var(--b);border-radius:3px}
+.nav a:hover{color:var(--a);border-color:var(--a)}
+.hero{padding:2.5rem 1.5rem;text-align:center;background:linear-gradient(180deg,#0a1520,var(--bg));border-bottom:1px solid var(--b)}
+.hero h1{color:var(--g);font-size:1.8rem;letter-spacing:.2em;margin-bottom:.4rem}
+.hero p{color:var(--d);font-size:.85rem;max-width:600px;margin:0 auto}
+
+.toolbar{max-width:1200px;margin:0 auto;padding:1.5rem 1.5rem 0;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.toolbar input, .toolbar select{background:var(--s);border:1px solid var(--b);color:var(--t);padding:.5rem .7rem;border-radius:4px;font-size:.8rem;font-family:inherit}
+.toolbar input{flex:1;min-width:200px}
+.toolbar .chip{padding:.35rem .7rem;border:1px solid var(--b);border-radius:99px;color:var(--d);cursor:pointer;font-size:.7rem;letter-spacing:.05em;background:transparent;user-select:none}
+.toolbar .chip.active{color:var(--a);border-color:var(--a);background:rgba(0,200,255,.08)}
+.toolbar .chip:hover{border-color:var(--a)}
+
+.section{max-width:1200px;margin:0 auto;padding:1.5rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem}
+.item{background:var(--s);border:1px solid var(--b);border-radius:8px;overflow:hidden;transition:border-color .2s;display:flex;flex-direction:column;position:relative}
+.item:hover{border-color:var(--g)}
+.item img{width:100%;aspect-ratio:16/10;object-fit:cover;background:#0a1520}
+.item .body{padding:.9rem;flex:1;display:flex;flex-direction:column}
+.item .type{font-size:.55rem;color:var(--d);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.2rem;display:flex;justify-content:space-between}
+.item .featured{color:var(--y)}
+.item h3{color:var(--t);font-size:.88rem;margin-bottom:.3rem;line-height:1.3}
+.item .kiosk{color:var(--d);font-size:.68rem;margin-bottom:.6rem}
+.item .kiosk a{color:var(--a);text-decoration:none}
+.item .kiosk a:hover{text-decoration:underline}
+.item .summary{color:var(--d);font-size:.72rem;flex:1;margin-bottom:.6rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item .price{color:var(--g);font-weight:700;font-size:.95rem;margin-bottom:.6rem}
+.item .cta{display:block;padding:.5rem;background:var(--a);color:var(--bg);text-align:center;text-decoration:none;border-radius:4px;font-size:.72rem;font-weight:700;letter-spacing:.08em}
+.item .cta:hover{filter:brightness(1.15)}
+
+.empty{text-align:center;padding:4rem 1.5rem;color:var(--d)}
+.footer{text-align:center;padding:2rem;border-top:1px solid var(--b);font-size:.6rem;color:var(--d)}
+.footer a{color:var(--a);text-decoration:none}
+.count{color:var(--d);font-size:.7rem;margin-left:auto}
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="/">HOME</a><a href="/shop.html" style="color:var(--g);border-color:var(--g)">SHOP</a>
+  <a href="/affiliate.html">AFFILIATE</a><a href="/marketplace.html">TASKS</a><a href="/pricing.html">PRICING</a>
+</div>
+
+<div class="hero">
+  <h1>SHOP</h1>
+  <p>Products, services, subscriptions, and partner links from every kiosk on Bridge AI OS. Every purchase credits the affiliate's BRDG wallet.</p>
+</div>
+
+<div class="toolbar">
+  <input id="q" placeholder="Search listings…" autocomplete="off">
+  <select id="type">
+    <option value="">All types</option>
+    <option value="product">Products</option>
+    <option value="service">Services</option>
+    <option value="subscription">Subscriptions</option>
+    <option value="digital">Digital</option>
+    <option value="referral_link">Partner links</option>
+  </select>
+  <button class="chip" data-featured="true" id="featured-chip">FEATURED</button>
+  <span class="count" id="count"></span>
+</div>
+
+<div class="section">
+  <div id="chips" style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:1rem"></div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">No listings match the current filter.</div>
+</div>
+
+<div class="footer">
+  Bridge AI OS Shop | 40+ kiosks | 6 payment rails | <a href="/affiliate.html">Become an affiliate →</a>
+</div>
+
+<script>
+function esc(s){const d=document.createElement('div');d.textContent=String(s==null?'':s);return d.innerHTML}
+function priceLabel(l){
+  if (l.price_zar != null) return `R${l.price_zar}`;
+  if (l.price_usd != null) return `$${l.price_usd}`;
+  if (l.price_brdg != null) return `${l.price_brdg} BRDG`;
+  return '—';
+}
+
+const state = { category: null, type: '', q: '', featured: false };
+let chipsRendered = false;
+
+async function loadCategories() {
+  if (chipsRendered) return;
+  const r = await fetch('/api/shop/categories').catch(() => null);
+  if (!r || !r.ok) return;
+  const d = await r.json();
+  const wrap = document.getElementById('chips');
+  wrap.textContent = '';
+  const all = document.createElement('button');
+  all.className = 'chip active';
+  all.textContent = 'ALL';
+  all.onclick = () => { state.category = null; render(); };
+  wrap.appendChild(all);
+  (d.categories || []).forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = `${c.name.toUpperCase()} (${c.count})`;
+    b.onclick = () => { state.category = c.name; render(); };
+    wrap.appendChild(b);
+  });
+  chipsRendered = true;
+}
+
+async function render() {
+  // Update chip active state
+  document.querySelectorAll('#chips .chip').forEach((el, i) => {
+    if (i === 0) el.classList.toggle('active', state.category == null);
+    else el.classList.toggle('active', el.textContent.toLowerCase().startsWith((state.category || '').toLowerCase() + ' '));
+  });
+  document.getElementById('featured-chip').classList.toggle('active', state.featured);
+
+  const qs = new URLSearchParams();
+  if (state.category) qs.set('category', state.category);
+  if (state.type) qs.set('type', state.type);
+  if (state.q) qs.set('q', state.q);
+  if (state.featured) qs.set('featured', 'true');
+
+  const r = await fetch('/api/shop/listings?' + qs.toString()).catch(() => null);
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  grid.textContent = '';
+  if (!r || !r.ok) { empty.textContent = 'Shop offline.'; empty.style.display = ''; return; }
+  const d = await r.json();
+  document.getElementById('count').textContent = `${d.count || 0} listing${d.count === 1 ? '' : 's'}`;
+  if (!d.listings || !d.listings.length) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  d.listings.forEach(l => {
+    const a = document.createElement('a');
+    a.className = 'item';
+    a.href = l.type === 'referral_link' && l.external_url
+      ? l.external_url
+      : `/k/${encodeURIComponent(l.kiosk_slug)}`;
+    if (l.type === 'referral_link') { a.target = '_blank'; a.rel = 'noopener sponsored'; }
+    a.style.textDecoration = 'none';
+    a.style.color = 'inherit';
+
+    if (l.image_url) {
+      const im = document.createElement('img');
+      im.src = l.image_url; im.alt = l.title; im.loading = 'lazy';
+      a.appendChild(im);
+    }
+    const body = document.createElement('div');
+    body.className = 'body';
+    body.innerHTML = `
+      <div class="type">
+        <span>${esc(l.type)}</span>
+        ${l.featured ? '<span class="featured">★ FEATURED</span>' : ''}
+      </div>
+      <h3>${esc(l.title)}</h3>
+      <div class="kiosk">via <strong>${esc(l.kiosk_title || '')}</strong></div>
+      <div class="summary">${esc(l.summary || '')}</div>
+      <div class="price">${esc(priceLabel(l))}</div>
+      <span class="cta">${l.type === 'referral_link' ? 'VISIT PARTNER →' : 'VIEW KIOSK →'}</span>
+    `;
+    a.appendChild(body);
+    grid.appendChild(a);
+  });
+}
+
+document.getElementById('q').addEventListener('input', (e) => {
+  state.q = e.target.value.trim();
+  clearTimeout(window._shopTimer);
+  window._shopTimer = setTimeout(render, 200);
+});
+document.getElementById('type').addEventListener('change', (e) => {
+  state.type = e.target.value;
+  render();
+});
+document.getElementById('featured-chip').addEventListener('click', () => {
+  state.featured = !state.featured;
+  render();
+});
+
+loadCategories().then(render);
+</script>
+</body>
+</html>

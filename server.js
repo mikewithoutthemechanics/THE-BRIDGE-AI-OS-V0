@@ -2525,6 +2525,17 @@ Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));
 });
 
+// ── Affiliate kiosk / shop / portal routes ───────────────────────────────
+// /k/:slug   — public kiosk storefront (kiosk.html reads slug from pathname)
+// /shop      — marketplace index across all published kiosks
+// /affiliate/dashboard — authenticated affiliate portal SPA
+app.get('/k/:slug', (_req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'kiosk.html')));
+app.get('/shop', (_req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'shop.html')));
+app.get('/affiliate/dashboard', (_req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'affiliate-portal', 'dashboard.html')));
+
 // TVM routes registered earlier, before brain catch-all
 app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIONS));
 

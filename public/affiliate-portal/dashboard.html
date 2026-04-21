@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affiliate Portal Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#6366f1;--primary-dark:#4f46e5;--secondary:#10b981;--warning:#f59e0b;--danger:#ef4444;--dark:#1e293b;--light:#f8fafc;--gray:#64748b;--border:#e2e8f0}
+body{font-family:'Inter',sans-serif;background:var(--light);color:var(--dark);min-height:100vh}
+.dashboard{display:flex;min-height:100vh}
+.sidebar{width:260px;background:linear-gradient(180deg,#1e293b 0%,#0f172a 100%);padding:24px 16px;color:#fff;position:fixed;height:100vh}
+.logo{font-size:22px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),#818cf8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.nav-menu{margin-top:32px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:10px;color:94a3b8;text-decoration:none;transition:all 0.2s;margin-bottom:4px;font-size:15px;font-weight:500}
+.nav-item:hover,.nav-item.active{background:rgba(99,102,241,0.15);color:#fff}
+.nav-item.active{color:#818cf8}
+.nav-icon{width:20px;height:20px}
+.main-content{margin-left:260px;flex:1;padding:24px 32px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px}
+.page-title{font-size:28px;font-weight:700}
+.user-profile{display:flex;align-items:center;gap:12px}
+.avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--primary),#818cf8);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:16px}
+.user-info{text-align:right}
+.user-name{font-weight:600;font-size:14px}
+.user-tier{font-size:12px;color:var(--gray)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:32px}
+.stat-card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:transform 0.2s,box-shadow 0.2s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+.stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px}
+.stat-icon.balance{background:linear-gradient(135deg,#10b981,#34d399)}
+.stat-icon.pending{background:linear-gradient(135deg,#f59e0b,#fbbf24)}
+.stat-icon.withdrawn{background:linear-gradient(135deg,#6366f1,#818cf8)}
+.stat-icon.commission{background:linear-gradient(135deg,#ec4899,#f472b6)}
+.stat-value{font-size:32px;font-weight:700;margin-bottom:4px}
+.stat-label{color:var(--gray);font-size:14px}
+.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:24px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.card-title{font-size:18px;font-weight:600}
+.referral-link-box{display:flex;gap:12px;align-items:center}
+.referral-input{flex:1;padding:14px 16px;border:2px solid var(--border);border-radius:10px;font-size:14px;background:#f8fafc;color:var(--gray)}
+.copy-btn{padding:14px 24px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;transition:background 0.2s}
+.copy-btn:hover{background:var(--primary-dark)}
+.copy-btn.copied{background:var(--secondary)}
+.analytics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.analytics-card{background:#f8fafc;border-radius:12px;padding:20px;text-align:center}
+.analytics-value{font-size:28px;font-weight:700;color:var(--dark)}
+.analytics-label{color:var(--gray);font-size:13px;margin-top:4px}
+.referrals-table{width:100%;border-collapse:collapse}
+.referrals-table th,.referrals-table td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.referrals-table th{font-weight:600;color:var(--gray);font-size:13px;text-transform:uppercase}
+.referrals-table tr:hover{background:#f8fafc}
+.status-badge{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.status-active{background:#d1fae5;color:#065f46}
+.status-pending{background:#fef3c7;color:#92400e}
+.status-inactive{background:#f3f4f6;color:#6b7280}
+.withdraw-section{display:flex;justify-content:space-between;align-items:center;padding:20px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:12px}
+.withdraw-info{font-size:14px}
+.withdraw-amount{font-size:24px;font-weight:700;color:var(--dark)}
+.withdraw-btn{padding:14px 32px;background:var(--secondary);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.withdraw-btn:hover{background:#059669}
+.withdraw-btn:disabled{background:var(--gray);cursor:not-allowed}
+.threshold-note{font-size:12px;color:var(--gray);margin-top:8px}
+.notifications{position:fixed;top:24px;right:24px;z-index:1000}
+.notification{background:#fff;padding:16px 20px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);margin-bottom:12px;display:flex;align-items:center;gap:12px;animation:slideIn 0.3s ease;max-width:360px}
+.notification.success{border-left:4px solid var(--secondary)}
+.notification.warning{border-left:4px solid var(--warning)}
+.notification.info{border-left:4px solid var(--primary)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.footer{margin-top:48px;padding:24px 0;border-top:1px solid var(--border);text-align:center;color:var(--gray);font-size:14px}
+@media(max-width:1200px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.sidebar{display:none}.main-content{margin-left:0;padding:16px}.stats-grid{grid-template-columns:1fr}.analytics-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="dashboard">
+<aside class="sidebar">
+<div class="logo"><div class="logo-icon">◈</div>BridgeAffiliates</div>
+<p style="color:#94a3b8;font-size:13px;margin-left:52px">Referral Monetization</p>
+<nav class="nav-menu">
+<a href="#" class="nav-item active"><span class="nav-icon">⌂</span>Home</a>
+<a href="#" class="nav-item"><span class="nav-icon">⬡</span>Affiliates</a>
+<a href="#" class="nav-item"><span class="nav-icon">⚡</span>Get Online NOW</a>
+<a href="#" class="nav-item"><span class="nav-icon">◧</span>Portal</a>
+<a href="#" class="nav-item"><span class="nav-icon">⚙</span>Settings</a>
+</nav>
+</aside>
+<main class="main-content">
+<header class="header">
+<h1 class="page-title">Affiliate Dashboard</h1>
+<div class="user-profile">
+<div class="user-info">
+<div class="user-name">Alexander Thompson</div>
+<div class="user-tier">Gold Affiliate • 25% Rate</div>
+</div>
+<div class="avatar">AT</div>
+</div>
+</header>
+<section class="stats-grid">
+<div class="stat-card">
+<div class="stat-icon balance">$</div>
+<div class="stat-value">$2,847.50</div>
+<div class="stat-label">Available Balance</div>
+</div>
+<div class="stat-card">
+<div class="stat-icon pending">⏳</div>
+<div class="stat-value">$1,234.00</div>
+<div class="stat-label">Pending Maturation</div>
+</div>
+<div class="stat-card">
+<div class="stat-icon withdrawn">↗</div>
+<div class="stat-value">$18,450.00</div>
+<div class="stat-label">Total Withdrawn</div>
+</div>
+<div class="stat-card">
+<div class="stat-icon commission">%</div>
+<div class="stat-value">25%</div>
+<div class="stat-label">Commission Rate</div>
+</div>
+</section>
+<section class="card">
+<div class="card-header">
+<h2 class="card-title">Your Referral Link</h2>
+</div>
+<div class="referral-link-box">
+<input type="text" class="referral-input" value="https://bridgeaffiliates.com/ref/AT847291?source=email" readonly id="referralLink">
+<button class="copy-btn" onclick="copyReferralLink()">Copy Link</button>
+</div>
+</section>
+<section class="card">
+<div class="card-header">
+<h2 class="card-title">Click Tracking Analytics</h2>
+</div>
+<div class="analytics-grid">
+<div class="analytics-card">
+<div class="analytics-value">12,847</div>
+<div class="analytics-label">Total Clicks</div>
+</div>
+<div class="analytics-card">
+<div class="analytics-value">1,456</div>
+<div class="analytics-label">Total Signups</div>
+</div>
+<div class="analytics-card">
+<div class="analytics-value">11.34%</div>
+<div class="analytics-label">Conversion Rate</div>
+</div>
+</div>
+</section>
+<section class="card">
+<div class="card-header">
+<h2 class="card-title">Referrals Management</h2>
+</div>
+<table class="referrals-table">
+<thead><tr><th>User</th><th>Email</th><th>Source</th><th>Joined</th><th>Status</th><th>Earnings</th></tr></thead>
+<tbody>
+<tr><td><strong>Sarah Mitchell</strong></td><td>sarah.m@email.com</td><td>Social Media</td><td>Mar 15, 2026</td><td><span class="status-badge status-active">Active</span></td><td>$345.00</td></tr>
+<tr><td><strong>James Wilson</strong></td><td>j.wilson@email.com</td><td>Email Campaign</td><td>Mar 12, 2026</td><td><span class="status-badge status-active">Active</span></td><td>$892.50</td></tr>
+<tr><td><strong>Emma Davis</strong></td><td>emma.d@email.com</td><td>Blog Post</td><td>Mar 08, 2026</td><td><span class="status-badge status-pending">Pending</span></td><td>$0.00</td></tr>
+<tr><td><strong>Michael Brown</strong></td><td>m.brown@email.com</td><td>Direct</td><td>Feb 28, 2026</td><td><span class="status-badge status-active">Active</span></td><td>$1,234.00</td></tr>
+<tr><td><strong>Lisa Anderson</strong></td><td>lisa.a@email.com</td><td>YouTube</td><td>Feb 15, 2026</td><td><span class="status-badge status-inactive">Inactive</span></td><td>$567.00</td></tr>
+</tbody>
+</table>
+</section>
+<section class="card">
+<div class="card-header">
+<h2 class="card-title">Withdraw Earnings</h2>
+</div>
+<div class="withdraw-section">
+<div class="withdraw-info">
+<div class="withdraw-amount">$2,847.50 Available</div>
+<div class="threshold-note">Minimum withdrawal: $50.00 | Next payout: Apr 1, 2026</div>
+</div>
+<button class="withdraw-btn" onclick="requestWithdrawal()">Request Withdrawal</button>
+</div>
+</section>
+<footer class="footer">
+<p>© 2026 BridgeAffiliates. All rights reserved. | Powered by Bridge Technology</p>
+</footer>
+</main>
+</div>
+<div class="notifications" id="notificationContainer"></div>
+<script>
+let data = null;
+
+async function loadAffiliateData() {
+  try {
+    const response = await fetch('/api/affiliate/me');
+    if (!response.ok) throw new Error('Failed to load data');
+    data = await response.json();
+    renderDashboard();
+  } catch (err) {
+    console.error('Failed to load affiliate data:', err);
+    showNotification("Failed to load dashboard data. Please refresh.", "warning");
+    // Fallback to mock data for development
+    data = {
+      availableBalance: 2847.50,
+      pendingAmount: 1234.00,
+      totalWithdrawn: 18450.00,
+      commissionRate: 25,
+      totalClicks: 12847,
+      totalSignups: 1456,
+      conversionRate: 11.34,
+      referrals: [
+        {name: "Sarah Mitchell", email: "sarah.m@email.com", source: "Social Media", joined: "Mar 15, 2026", status: "active", earnings: 345.00},
+        {name: "James Wilson", email: "j.wilson@email.com", source: "Email Campaign", joined: "Mar 12, 2026", status: "active", earnings: 892.50},
+        {name: "Emma Davis", email: "emma.d@email.com", source: "Blog Post", joined: "Mar 08, 2026", status: "pending", earnings: 0},
+        {name: "Michael Brown", email: "m.brown@email.com", source: "Direct", joined: "Feb 28, 2026", status: "active", earnings: 1234.00},
+        {name: "Lisa Anderson", email: "lisa.a@email.com", source: "YouTube", joined: "Feb 15, 2026", status: "inactive", earnings: 567.00}
+      ]
+    };
+    renderDashboard();
+  }
+}
+
+function renderDashboard() {
+  if (!data) return;
+
+  document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = '$' + data.availableBalance.toLocaleString();
+  document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = '$' + data.pendingAmount.toLocaleString();
+  document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = '$' + data.totalWithdrawn.toLocaleString();
+  document.querySelector('.stat-card:nth-child(4) .stat-value').textContent = data.commissionRate + '%';
+
+  document.querySelector('.analytics-card:nth-child(1) .analytics-value').textContent = data.totalClicks.toLocaleString();
+  document.querySelector('.analytics-card:nth-child(2) .analytics-value').textContent = data.totalSignups.toLocaleString();
+  document.querySelector('.analytics-card:nth-child(3) .analytics-value').textContent = data.conversionRate + '%';
+
+  if (data.referralLink) document.getElementById('referralLink').value = data.referralLink;
+
+  const tbody = document.querySelector('.referrals-table tbody');
+  tbody.innerHTML = data.referrals.map(ref => `
+    <tr>
+      <td><strong>${ref.name}</strong></td>
+      <td>${ref.email}</td>
+      <td>${ref.source}</td>
+      <td>${ref.joined}</td>
+      <td><span class="status-badge status-${ref.status}">${ref.status.charAt(0).toUpperCase() + ref.status.slice(1)}</span></td>
+      <td>$${ref.earnings.toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  document.querySelector('.withdraw-amount').textContent = '$' + data.availableBalance.toLocaleString() + ' Available';
+}
+
+async function copyReferralLink(){
+  const link=document.getElementById("referralLink");
+  try{
+    await navigator.clipboard.writeText(link.value);
+    const btn=document.querySelector(".copy-btn");
+    btn.textContent="Copied!";btn.classList.add("copied");
+    showNotification("Referral link copied to clipboard!","success");
+    setTimeout(()=>{btn.textContent="Copy Link";btn.classList.remove("copied")},2000);
+  }catch(err){showNotification("Failed to copy link. Please copy manually.","warning")}
+}
+
+async function requestWithdrawal(){
+  if(!data||data.availableBalance<50){showNotification("Minimum withdrawal amount is $50.00","warning");return;}
+  const btn=document.querySelector(".withdraw-btn");
+  btn.disabled=true;btn.textContent="Processing...";
+  try{
+    const resp=await fetch('/api/affiliate/withdraw',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body:JSON.stringify({amount:data.availableBalance,payout_method:'bank_transfer'})
+    });
+    const result=await resp.json();
+    if(resp.ok&&result.ok){
+      showNotification("Withdrawal request submitted! Reference: #"+result.withdrawal_id,"success");
+      data.availableBalance=0;
+      document.querySelector('.withdraw-amount').textContent='$0 Available';
+    }else{
+      showNotification(result.error==='insufficient_balance'?"Insufficient balance for withdrawal.":"Withdrawal failed. Please try again.","warning");
+    }
+  }catch(e){showNotification("Network error. Please try again.","warning");}
+  finally{btn.disabled=false;btn.textContent="Request Withdrawal";}
+}
+
+function showNotification(message,type){
+  const container=document.getElementById("notificationContainer");
+  const notification=document.createElement("div");
+  notification.className="notification "+type;
+  notification.innerHTML="<span>"+(type==="success"?"✓":type==="warning"?"⚠":"ℹ")+"</span><span>"+message+"</span>";
+  container.appendChild(notification);
+  setTimeout(()=>{notification.style.opacity="0";setTimeout(()=>notification.remove(),300)},4000);
+}
+
+document.addEventListener('DOMContentLoaded', loadAffiliateData);
+</script>
+</body>
+</html>
