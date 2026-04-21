@@ -113,6 +113,7 @@
     { label: 'eSIM',            href: '/esim',                 role: 'user' },
     { label: 'eSIM PBX',        href: '/esim-pbx.html',        role: 'user' },
     { label: 'Claude Partner',  href: '/claude-partner.html',  role: 'user' },
+    { label: 'Devin Partner',   href: '/devin-partner.html',   role: 'user' },
 
     // Settings & Utilities
     { label: 'Profile',         href: '/profile',              role: 'user' },
@@ -263,6 +264,7 @@
     '/esim': ['Home', 'Platforms', 'eSIM'],
     '/esim-pbx.html': ['Home', 'Platforms', 'eSIM', 'PBX'],
     '/claude-partner.html': ['Home', 'Platforms', 'Claude Partner'],
+    '/devin-partner.html': ['Home', 'Platforms', 'Devin Partner'],
 
     '/profile': ['Home', 'Profile'],
     '/billing': ['Home', 'Billing'],

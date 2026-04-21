@@ -463,7 +463,7 @@ module.exports = async (req, res) => {
   const p = url.pathname;
 
   // ── Static HTML pages served via Express fallback ──
-  const HTML_PAGES = { '/claude-partner': 'claude-partner.html' };
+  const HTML_PAGES = { '/claude-partner': 'claude-partner.html', '/devin-partner': 'devin-partner.html' };
   if (HTML_PAGES[p]) {
     try {
       const html = fs.readFileSync(path.join(ROOT, 'public', HTML_PAGES[p]), 'utf8');

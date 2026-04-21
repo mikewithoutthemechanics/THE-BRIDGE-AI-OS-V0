@@ -36,7 +36,7 @@ const SECTION_PATTERNS = [
   { section: 'Economy & DeFi',      re: /^\/(economy|defi|trading|wallet|banks|treasury|payment|governance|marketplace|bank-ledger|affiliate-flow|tvm|tokenomics|vault)/i },
   { section: 'Admin & Intelligence', re: /^\/(admin|auth-dashboard|intelligence|executive|aoe-dashboard|bridge-audit|admin-sitemap|carrier-admin|admin-esim|admin-hub|admin-withdraw|godmode)/i },
   { section: 'Agents & System',     re: /^\/(agents|neurolink|registry|topology|control|command-center|system-status|infra|terminal|logs|view-logs|supadash|gateway|runtime|svg-engine|hitl|pipeline)/i },
-  { section: 'Demo / Experimental', re: /^\/(anatomical|face|activation|activate|interactive-demo|navigation-implementation|navigation-validation|demo|wizard|claude-partner|agent-profiles|apps-dashboard|dashboard|agent-economy|sql-bridge|twin-create|ai-agents|linea)/i },
+  { section: 'Demo / Experimental', re: /^\/(anatomical|face|activation|activate|interactive-demo|navigation-implementation|navigation-validation|demo|wizard|claude-partner|devin-partner|agent-profiles|apps-dashboard|dashboard|agent-economy|sql-bridge|twin-create|ai-agents|linea)/i },
   { section: 'Settings & Docs',     re: /^\/(docs|sitemap|view|50-applications|applications|404|offline|api-developers|automation-hub|contact-sales|auth-callback|free-start|free-access|outputs)/i }
 ];
 
