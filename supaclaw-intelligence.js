@@ -5,6 +5,7 @@
 // =============================================================================
 
 const crypto = require('crypto');
+const userDb = require('./lib/user-identity');
 
 // ── PRICING TIERS ───────────────────────────────────────────────────────────
 const TIERS = {
@@ -280,7 +281,7 @@ module.exports = function registerIntelligence(app, state, broadcast) {
   });
 
   // Loading screen config (Intelligence-driven)
-  app.post('/api/intelligence/loading-screen', (req, res) => {
+  app.post('/api/intelligence/loading-screen', async (req, res) => {
     const { route, userId, tenantId } = req.body || {};
     const layers = { '/': 'L0', '/onboarding.html': 'L0', '/marketplace.html': 'L1', '/ban': 'L1', '/avatar.html': 'L1', '/topology.html': 'L2', '/registry.html': 'L2', '/terminal.html': 'L3', '/control.html': 'L3' };
     const layer = layers[route] || 'L0';
@@ -288,7 +289,24 @@ module.exports = function registerIntelligence(app, state, broadcast) {
     const theme = themes[layer] || themes.L0;
     const agentMap = { L0: ['horizon', 'foundry'], L1: ['forge', 'oracle'], L2: ['atlas', 'weaver', 'strata'], L3: ['oracle', 'vector', 'glyph'] };
     const agents = (agentMap[layer] || []).map(id => ({ id, active: true }));
-    const tier = 'pro'; // TODO: resolve from userId
+
+    // Dynamically resolve tier from userId (validated against known TIER ids)
+    const VALID_TIERS = Object.values(TIERS).map(t => t.id);
+    let tier = 'free';
+    try {
+      if (userId) {
+        const user = await userDb.getUserById(userId);
+        if (user && typeof user.plan === 'string') {
+          const normalized = user.plan.trim().toLowerCase();
+          if (VALID_TIERS.includes(normalized)) {
+            tier = normalized;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[IL] Tier resolution failed:', e.message);
+    }
+
     res.json({ ok: true, layer, theme, context: { section: route, route, userTier: tier }, agents, visual: { type: 'svg', assetId: theme.id }, copy: { title: `Entering ${layer}...`, meta: `Layer ${layer}` }, monetization: { tier, upsellMessage: tier === 'free' ? 'Upgrade to Pro for full animations' : null } });
   });
 
