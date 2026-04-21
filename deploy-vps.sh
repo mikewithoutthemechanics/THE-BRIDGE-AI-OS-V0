@@ -58,6 +58,7 @@ ssh "$VPS_USER@$VPS_IP" bash <<REMOTE_DEPLOY
 
   echo "Starting/restarting PM2 processes..."
   pm2 start ecosystem.config.js --env production || pm2 reload ecosystem.config.js --env production
+  pm2 start ecosystem.admin-api.config.js || pm2 reload ecosystem.admin-api.config.js
   pm2 save
 
   echo "PM2 Status:"
