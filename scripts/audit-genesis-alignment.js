@@ -173,6 +173,40 @@ async function main() {
 
   if (protocolSafe) check(checks, 'TreasuryVault.owner == PROTOCOL_SAFE', vOwner.toLowerCase(), protocolSafe.toLowerCase());
 
+  // TreasuryVaultV2 must have its buckets populated (not 0) — if buckets are all 0
+  // then either the tokens landed via mint() instead of depositBrdg/classify (legacy v1 bug),
+  // or the classify() call never ran. Either way it's a hard fail post-migration.
+  const bucketsTotal = buckets[0] + buckets[1] + buckets[2] + buckets[3];
+  const genesisTreasuryTarget = ethers.parseUnits(cfg.genesisTargets.initialTreasuryMintBRDG, 18);
+  checks.push({
+    label: 'TreasuryVault.brdgBuckets total == balanceOf(TreasuryVault) (classify() ran)',
+    actual: `${fmt(bucketsTotal)} BRDG tracked of ${fmt(vaultBal)} held`,
+    expected: 'buckets total == balance',
+    ok: bucketsTotal === vaultBal && vaultBal > 0n,
+    severity: 'hard',
+  });
+  checks.push({
+    label: 'TreasuryVault.balance >= genesis initialTreasuryMintBRDG (10M)',
+    actual: fmt(vaultBal) + ' BRDG',
+    expected: `>= ${cfg.genesisTargets.initialTreasuryMintBRDG} BRDG`,
+    ok: vaultBal >= genesisTreasuryTarget,
+    severity: 'hard',
+  });
+
+  // ── 4b. Legacy TreasuryVault v1 sanity (stuck 10M reserve) ───────────
+  const legacyV1 = cfg.deployed.TreasuryVault_legacy && cfg.deployed.TreasuryVault_legacy.address;
+  if (legacyV1) {
+    const legacyBal = await brdg.balanceOf(legacyV1);
+    snapshot.contracts.TreasuryVault_legacy_v1 = { address: legacyV1, brdgBalance: fmt(legacyBal) };
+    checks.push({
+      label: 'Legacy TreasuryVault v1 stuck balance matches documented reserve',
+      actual: fmt(legacyBal) + ' BRDG',
+      expected: '10000000 BRDG (permanently stuck)',
+      ok: legacyBal === ethers.parseUnits('10000000', 18),
+      severity: 'soft',
+    });
+  }
+
   // ── 5. StakingVault state ────────────────────────────────────────────
   const staking = new ethers.Contract(deployed.StakingVault, STAKING_VAULT_ABI, provider);
   const [sOwner, sBrdg, stakingBal] = await Promise.all([
