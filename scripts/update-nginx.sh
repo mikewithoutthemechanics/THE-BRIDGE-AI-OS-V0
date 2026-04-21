@@ -122,13 +122,16 @@ server {
     rewrite ^/aid$             /aid-home.html last;
     rewrite ^/aurora$          /aurora-home.html last;
 
-    # Gateway-rendered HTML pages (sendFile from Xpublic/ or public/).
-    # Without this proxy block nginx serves frontend/dist/index.html (the Vite
-    # SPA shell) for these extensionless paths via try_files fallback — the
-    # gateway's route handlers at gateway.js:L986-L1039 are never invoked.
-    # See docs/book/14-gaps-and-conflicts.md R20 for the audit trail.
+    # Brain-rendered HTML pages (sendFile from Xpublic/ or public/).
+    # These route handlers live in brain.js (super-brain on :8000), not in
+    # gateway.js (:8080) — the gateway is a thin proxy without file-serving
+    # routes. Without this block nginx serves frontend/dist/index.html (the
+    # Vite SPA shell) for these extensionless paths via try_files fallback.
+    # /brain-live in particular is registered at brain.js:L2244 and redirects
+    # to /ehsa-brain.html. Proxying to :8080 returns 404 because gateway.js
+    # has no matching handler. See docs/book/14-gaps-and-conflicts.md R20.
     location ~ ^/(brain-live|ehsa-brain|ehsa-app|topology|registry|orchestrator/status)(\.html)?$ {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
