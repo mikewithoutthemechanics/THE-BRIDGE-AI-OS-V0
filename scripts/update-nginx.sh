@@ -249,12 +249,16 @@ server {
     }
 
     # SPA-exclusive routes — must hit the React SPA, not the legacy static
-    # .html pages that still exist in public/ (join.html, docs.html, etc).
+    # .html pages that still exist in public/ (docs.html, app.html, etc).
     # These are the routes defined in frontend/src/App.tsx. Without this
-    # block, $uri.html below would find e.g. public/join.html and serve
-    # the legacy SIWE flow instead of the SPA's Clerk-based AuthHub.
+    # block, $uri.html below would find e.g. public/docs.html and serve
+    # the legacy page instead of the SPA.
     # /admin is handled separately by the explicit `location = /admin` rules.
-    location ~ ^/(docs|join|app|engine|workflows|loop|orchestration|human|multiagent|master)(/|$) {
+    # NOTE: /join is intentionally NOT in this list — it must serve the
+    # legacy public/join.html MetaMask/SIWE wallet-connect agent onboarding
+    # flow (wallet connect → chain switch → SIWE signature → agent registration
+    # → BRDG allocation), which is the canonical agent join procedure.
+    location ~ ^/(docs|app|engine|workflows|loop|orchestration|human|multiagent|master)(/|$) {
         root /var/www/bridgeai/frontend/dist;
         try_files /index.html =404;
     }
