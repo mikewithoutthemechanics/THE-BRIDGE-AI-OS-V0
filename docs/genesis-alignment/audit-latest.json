@@ -1,0 +1,271 @@
+{
+  "summary": {
+    "totalChecks": 27,
+    "passed": 18,
+    "hardFails": 3,
+    "softFails": 6,
+    "verdict": "FAIL"
+  },
+  "snapshot": {
+    "network": {
+      "name": "linea",
+      "chainId": 59144,
+      "rpc": "https://rpc.linea.build",
+      "explorer": "https://lineascan.build",
+      "provenance": "AUTO"
+    },
+    "generatedAt": "2026-04-21T20:29:20.863Z",
+    "balances": {
+      "deployerEOA": {
+        "address": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+        "brdg": "9494999.0",
+        "brdgRaw": "9494999000000000000000000"
+      },
+      "dexPool": {
+        "address": "0x1873b75Fc9e85ef693B4Bcaa2a1e5C5Cef4c1F81",
+        "brdg": "0.0"
+      }
+    },
+    "contracts": {
+      "BRDG": {
+        "address": "0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f",
+        "codeSize": 2962,
+        "name": "Bridge AI",
+        "symbol": "BRDG",
+        "decimals": 18,
+        "totalSupply": "10000000.0",
+        "totalSupplyRaw": "10000000000000000000000000",
+        "maxSupply": "100000000.0",
+        "maxSupplyRaw": "100000000000000000000000000",
+        "burnBps": 100,
+        "totalBurned": "0.0",
+        "owner": "0xAC301f984556c11ecf3818CaA6020d11c8616F64"
+      },
+      "TreasuryVault": {
+        "address": "0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A",
+        "codeSize": 3790,
+        "owner": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+        "brdg": "0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f",
+        "splitBps": {
+          "ops": 4000,
+          "liquidity": 2500,
+          "reserve": 2000,
+          "founder": 1500
+        },
+        "buckets": {
+          "ops": "0.0",
+          "liquidity": "0.0",
+          "reserve": "0.0",
+          "founder": "0.0"
+        },
+        "brdgBalance": "0.0",
+        "burnExempt": false
+      },
+      "StakingVault": {
+        "address": "0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB",
+        "codeSize": 3761,
+        "owner": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+        "brdg": "0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f",
+        "brdgBalance": "500000.0",
+        "brdgBalanceRaw": "500000000000000000000000",
+        "burnExempt": true
+      },
+      "DEXPool": {
+        "address": "0x1873b75Fc9e85ef693B4Bcaa2a1e5C5Cef4c1F81",
+        "codeSize": 16769
+      }
+    },
+    "blockNumber": 30323684
+  },
+  "checks": [
+    {
+      "label": "network.chainId matches config",
+      "actual": 59144,
+      "expected": 59144,
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "BRDG has bytecode",
+      "actual": "2962 bytes",
+      "expected": "> 0 bytes",
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "TreasuryVault has bytecode",
+      "actual": "3790 bytes",
+      "expected": "> 0 bytes",
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "StakingVault has bytecode",
+      "actual": "3761 bytes",
+      "expected": "> 0 bytes",
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "DEXPool has bytecode",
+      "actual": "16769 bytes",
+      "expected": "> 0 bytes",
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "BRDG.symbol",
+      "actual": "BRDG",
+      "expected": "BRDG",
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "BRDG.decimals",
+      "actual": 18,
+      "expected": 18,
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "BRDG.MAX_SUPPLY == genesis maxSupplyBRDG",
+      "actual": "100000000000000000000000000",
+      "expected": "100000000000000000000000000",
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "BRDG.BURN_BPS == genesis taskFeeBurnBps",
+      "actual": 100,
+      "expected": 100,
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "BRDG.owner is not yet PROTOCOL_SAFE (safe unset in config)",
+      "actual": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+      "expected": "a Gnosis Safe address",
+      "ok": false,
+      "severity": "soft"
+    },
+    {
+      "label": "TreasuryVault.brdg == BRDG",
+      "actual": "0x6ee9fb40b97139eeec406c096393e0b53c89975f",
+      "expected": "0x6ee9fb40b97139eeec406c096393e0b53c89975f",
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "TreasuryVault.OPS_BPS",
+      "actual": 4000,
+      "expected": 4000,
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "TreasuryVault.LIQ_BPS",
+      "actual": 2500,
+      "expected": 2500,
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "TreasuryVault.RESERVE_BPS",
+      "actual": 2000,
+      "expected": 2000,
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "TreasuryVault.FOUNDER_BPS",
+      "actual": 1500,
+      "expected": 1500,
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "BRDG.burnExempt(TreasuryVault) == true",
+      "actual": false,
+      "expected": true,
+      "ok": false,
+      "severity": "hard"
+    },
+    {
+      "label": "StakingVault.brdg == BRDG",
+      "actual": "0x6ee9fb40b97139eeec406c096393e0b53c89975f",
+      "expected": "0x6ee9fb40b97139eeec406c096393e0b53c89975f",
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "BRDG.burnExempt(StakingVault) == true",
+      "actual": true,
+      "expected": true,
+      "ok": true,
+      "severity": "hard"
+    },
+    {
+      "label": "StakingVault.balance >= genesis initialStakingPoolBRDG (5M)",
+      "actual": "500000.0 BRDG",
+      "expected": ">= 5000000 BRDG",
+      "ok": false,
+      "severity": "hard"
+    },
+    {
+      "label": "FounderVesting deployed",
+      "actual": "null",
+      "expected": "deployed address",
+      "ok": false,
+      "severity": "soft"
+    },
+    {
+      "label": "CommunityDistributor deployed",
+      "actual": "null",
+      "expected": "deployed address",
+      "ok": false,
+      "severity": "soft"
+    },
+    {
+      "label": "TreasuryOpsTimelock deployed",
+      "actual": "null",
+      "expected": "deployed address",
+      "ok": false,
+      "severity": "soft"
+    },
+    {
+      "label": "ReserveLock deployed",
+      "actual": "null",
+      "expected": "deployed address",
+      "ok": false,
+      "severity": "soft"
+    },
+    {
+      "label": "Deployer EOA drained (balance == 0 after migration)",
+      "actual": "9494999.0 BRDG",
+      "expected": "0 BRDG",
+      "ok": false,
+      "severity": "soft"
+    },
+    {
+      "label": "SyncSwap pool has >= genesis initialLiquidity.brdg (10000)",
+      "actual": "0.0 BRDG",
+      "expected": ">= 10000 BRDG",
+      "ok": false,
+      "severity": "hard"
+    },
+    {
+      "label": "Legacy/superseded 0x5f0541302bd4fC672018b07a35FA5f294A322947 holds 0 BRDG",
+      "actual": "0.0 BRDG",
+      "expected": "0 BRDG",
+      "ok": true,
+      "severity": "soft"
+    },
+    {
+      "label": "Legacy/superseded 0xDb8d8ca8A65d36eFbD5C84C145B58Ee62C872d88 holds 0 BRDG",
+      "actual": "0.0 BRDG",
+      "expected": "0 BRDG",
+      "ok": true,
+      "severity": "soft"
+    }
+  ]
+}

@@ -34,7 +34,12 @@
     "cli:status": "node cli.js status",
     "cli:skills": "node cli.js skills",
     "cli:econ": "node cli.js econ",
-    "cli:cloud": "node cli.js cloud"
+    "cli:cloud": "node cli.js cloud",
+    "genesis:audit": "node scripts/audit-genesis-alignment.js",
+    "genesis:bundle:ownership": "node scripts/gen-safe-ownership-bundle.js",
+    "genesis:bundle:staking": "node scripts/gen-safe-staking-topup-bundle.js",
+    "genesis:bundle:liquidity": "node scripts/gen-safe-liquidity-bundle.js",
+    "genesis:deploy:vesting": "hardhat run scripts/deploy-vesting.js --network linea"
   },
   "keywords": [
     "topology",

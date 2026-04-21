@@ -1,0 +1,127 @@
+{
+  "$schema": "./genesis-alignment.schema.json",
+  "description": "Single source of truth for the BRDG genesis-alignment migration. Every value is marked with a provenance tag: AUTO (readable on-chain or from deployment.json), REQUIRED_HUMAN (must be filled in by a human before the phase can execute), VERIFIED (confirmed on-chain by audit-genesis-alignment.js). Do NOT guess values. Scripts refuse to run if REQUIRED_HUMAN fields are still placeholders.",
+  "version": 1,
+  "network": {
+    "name": "linea",
+    "chainId": 59144,
+    "rpc": "https://rpc.linea.build",
+    "explorer": "https://lineascan.build",
+    "provenance": "AUTO"
+  },
+  "deployed": {
+    "description": "Existing deployed addresses, sourced from data/deployment.json. audit-genesis-alignment.js verifies each against on-chain bytecode.",
+    "provenance": "AUTO",
+    "BRDG": "0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f",
+    "TreasuryVault": "0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A",
+    "StakingVault": "0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB",
+    "DEXPool": "0x1873b75Fc9e85ef693B4Bcaa2a1e5C5Cef4c1F81",
+    "deployerEOA": "0xAC301f984556c11ecf3818CaA6020d11c8616F64"
+  },
+  "genesisTargets": {
+    "description": "The numbers the genesis plan committed to. Hard-coded from BRIDGE_REAL_SYSTEM_BLUEPRINT.md §1A, §1B, §3. These are the targets audit-genesis-alignment.js enforces.",
+    "provenance": "AUTO",
+    "maxSupplyBRDG": "100000000",
+    "initialTreasuryMintBRDG": "10000000",
+    "initialStakingPoolBRDG": "5000000",
+    "taskFeeBurnBps": 100,
+    "taskFeeTreasuryBps": 1400,
+    "taskFeeAgentBps": 8500,
+    "treasurySplitBps": {
+      "ops": 4000,
+      "liquidity": 2500,
+      "reserve": 2000,
+      "founder": 1500
+    },
+    "initialLiquidity": {
+      "description": "Genesis blueprint §3 target. data/deployment.json records only half was seeded (5000 BRDG + 0.0004 ETH), and live chain shows the pool is now empty.",
+      "brdg": "10000",
+      "eth": "1.0",
+      "targetPriceBRDGperETH": "0.0001"
+    },
+    "marketingAllocations": {
+      "description": "NOTE: the 35/20/15/15/10/5 schedule on public/tokenomics.html is NOT part of the original genesis blueprint — it was introduced later. Preserved here only so the audit can flag the drift between the genesis plan and the public page.",
+      "provenance": "AUTO",
+      "buckets": [
+        { "name": "Ecosystem Incentives",       "pct": 35, "tokens": "35000000", "tgePct": 0,  "cliffMonths": 0,  "vestingMonths": 48 },
+        { "name": "Liquidity & Market Making", "pct": 20, "tokens": "20000000", "tgePct": 50, "cliffMonths": 0,  "vestingMonths": 12 },
+        { "name": "Treasury Operations",       "pct": 15, "tokens": "15000000", "tgePct": 0,  "cliffMonths": 3,  "vestingMonths": 36 },
+        { "name": "Community & Growth",        "pct": 15, "tokens": "15000000", "tgePct": 5,  "cliffMonths": 1,  "vestingMonths": 36 },
+        { "name": "Founders & Team",           "pct": 10, "tokens": "10000000", "tgePct": 0,  "cliffMonths": 12, "vestingMonths": 36 },
+        { "name": "Strategic Reserve",         "pct": 5,  "tokens": "5000000",  "tgePct": 0,  "cliffMonths": 12, "vestingMonths": 0 }
+      ]
+    }
+  },
+  "safes": {
+    "description": "Gnosis Safe addresses on Linea. Created OFF-CHAIN by the user at https://app.safe.global/ (Network: Linea). One Safe per custody boundary. Every field is REQUIRED_HUMAN until the Safe is deployed; audit-genesis-alignment.js will block any Phase > A from executing until all four are filled.",
+    "provenance": "REQUIRED_HUMAN",
+    "PROTOCOL_SAFE": {
+      "description": "Owns BRDG, TreasuryVault, StakingVault, and all vesting contracts. Governs setBurnExempt(), mint(), and withdrawals. Recommended: 2-of-3 or 3-of-5.",
+      "address": null,
+      "signerCount": null,
+      "threshold": null
+    },
+    "FOUNDER_SAFE": {
+      "description": "Beneficiary of the FounderVesting contract. Per genesis plan, should be a hardware-wallet-backed Safe.",
+      "address": null,
+      "signerCount": null,
+      "threshold": null
+    },
+    "LP_SAFE": {
+      "description": "Holds the SyncSwap LP tokens after liquidity seeding. Also beneficiary of the 10M vested liquidity reserve (the half of the 20M Liquidity bucket not seeded at TGE).",
+      "address": null,
+      "signerCount": null,
+      "threshold": null
+    },
+    "COMMUNITY_SAFE": {
+      "description": "Operates the CommunityDistributor (airdrops, grants, affiliate rewards). NOT the beneficiary — the distributor releases according to schedule; this Safe only signs distribution transactions.",
+      "address": null,
+      "signerCount": null,
+      "threshold": null
+    }
+  },
+  "vestingContracts": {
+    "description": "Will be populated by scripts/deploy-vesting.js after successful mainnet deploy. Each address must then be verified on Lineascan and burn-exempted on BRDG.",
+    "provenance": "AUTO",
+    "FounderVesting": null,
+    "CommunityDistributor": null,
+    "TreasuryOpsTimelock": null,
+    "ReserveLock": null
+  },
+  "phases": {
+    "A_codeFixes": {
+      "status": "COMPLETE",
+      "description": "JWT_SECRET / BRIDGE_SIWE_JWT_SECRET / BRIDGE_INTERNAL_SECRET derivation removed from lib/eth-treasury.js, lib/brdg-distributor.js, hardhat.config.js, contracts/hardhat.config.js. Treasury key must now be an explicit TREASURY_PRIVATE_KEY.",
+      "evidence": ["lib/eth-treasury.js", "lib/brdg-distributor.js", "hardhat.config.js", "contracts/hardhat.config.js"]
+    },
+    "B_deployVesting": {
+      "status": "PENDING",
+      "description": "Compile + deploy FounderVesting, CommunityDistributor, TreasuryOpsTimelock, ReserveLock. Requires FOUNDER_SAFE, COMMUNITY_SAFE, PROTOCOL_SAFE, LP_SAFE to exist.",
+      "blockers": ["safes.PROTOCOL_SAFE.address", "safes.FOUNDER_SAFE.address", "safes.COMMUNITY_SAFE.address", "safes.LP_SAFE.address"],
+      "script": "scripts/deploy-vesting.js"
+    },
+    "C1_ownershipMigration": {
+      "status": "PENDING",
+      "description": "Transfer BRDG, TreasuryVault, StakingVault ownership to PROTOCOL_SAFE. Simultaneously setBurnExempt=true for TreasuryVault and all vesting contracts. Output: a single safe-transaction-builder JSON bundle.",
+      "blockers": ["safes.PROTOCOL_SAFE.address", "vestingContracts.FounderVesting", "vestingContracts.CommunityDistributor", "vestingContracts.TreasuryOpsTimelock", "vestingContracts.ReserveLock"],
+      "script": "scripts/gen-safe-ownership-bundle.js"
+    },
+    "C2_topUpStaking": {
+      "status": "PENDING",
+      "description": "Top up StakingVault from 500k → 5M BRDG per genesis §1A. Uses BRDG.mint(StakingVault, 4_500_000e18). Must be a PROTOCOL_SAFE transaction after ownership migration.",
+      "blockers": ["safes.PROTOCOL_SAFE.address"],
+      "script": "scripts/gen-safe-staking-topup-bundle.js"
+    },
+    "C3_seedLiquidity": {
+      "status": "PENDING",
+      "description": "Re-seed SyncSwap BRDG/ETH pool to the genesis §3 target (10,000 BRDG + 1 ETH) via the SyncSwap router. LP tokens go to LP_SAFE.",
+      "blockers": ["safes.PROTOCOL_SAFE.address", "safes.LP_SAFE.address"],
+      "script": "scripts/gen-safe-liquidity-bundle.js"
+    },
+    "D_validate": {
+      "status": "ONGOING",
+      "description": "After every phase completes on-chain, re-run scripts/audit-genesis-alignment.js. PR merge requires the audit JSON in docs/genesis-alignment/audit-latest.json to match expected state.",
+      "script": "scripts/audit-genesis-alignment.js"
+    }
+  }
+}
