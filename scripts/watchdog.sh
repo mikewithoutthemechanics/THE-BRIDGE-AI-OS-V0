@@ -33,7 +33,7 @@ print(p['pm2_env']['status'] if p else 'missing')
 done
 
 # Smoke test public health endpoint
-HTTP_STATUS=$(curl -so /dev/null -w "%{http_code}" --max-time 5 http://localhost:8080/health 2>/dev/null || echo "0")
+HTTP_STATUS=$(curl -so /dev/null -w "%{http_code}" --max-time 5 http://localhost:8080/ 2>/dev/null || echo "0")
 if [ "$HTTP_STATUS" != "200" ]; then
   echo "[$TIMESTAMP] Gateway health check failed ($HTTP_STATUS) — restarting gateway"
   pm2 restart bridge-gateway

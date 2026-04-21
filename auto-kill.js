@@ -3,7 +3,7 @@ const { createClient } = require("@supabase/supabase-js");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+  process.env.SUPABASE_SERVICE_KEY
 );
 
 const buckets = {};
@@ -24,6 +24,8 @@ setInterval(() => {
 
 module.exports = async function autoKill(req, res, next) {
   const ip = req.ip || req.connection.remoteAddress;
+  // Internal/loopback IPs exempt from rate-limit (watchdog, PM2, nginx proxy)
+  if (ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1" || !ip) return next();
 
   if (banned.has(ip)) {
     return res.status(403).send("banned");

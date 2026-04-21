@@ -27,7 +27,7 @@ app.get("/bans", async (req, res) => {
 
   const s = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_KEY
+    process.env.SUPABASE_SERVICE_KEY
   );
 
   const { data } = await s.from("bans").select("*");

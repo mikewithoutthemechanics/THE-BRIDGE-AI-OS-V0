@@ -4,7 +4,7 @@ require('dotenv').config();
 const { fetch } = require("undici");
 const { createClient } = require("@supabase/supabase-js");
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
   console.error("Missing Supabase env");
   process.exit(1);
 }
@@ -14,7 +14,7 @@ const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+  process.env.SUPABASE_SERVICE_KEY
 );
 
 const send = async (msg) => {
