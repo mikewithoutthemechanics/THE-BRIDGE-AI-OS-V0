@@ -603,6 +603,33 @@ function setWalletStatus(text, isError) {
   el.style.color = isError ? 'var(--red)' : 'var(--cyan)';
 }
 
+// Parse a fetch() response body, tolerating non-JSON (e.g. plain-text error
+// bodies from middleware like auto-kill). Never throws. Always returns
+// { ok, status, data, raw, error }. `data` is the parsed JSON if it parses,
+// otherwise `{ ok: false, error: <raw text>, detail: <raw text> }`.
+async function safeFetchJson(input, init) {
+  let res, raw = '';
+  try {
+    res = await fetch(input, init);
+  } catch (networkErr) {
+    return { ok: false, status: 0, data: null, raw: '', error: networkErr.message || 'network error' };
+  }
+  try {
+    raw = await res.text();
+  } catch (_) { raw = ''; }
+  let data = null;
+  if (raw) {
+    try { data = JSON.parse(raw); } catch (_) { data = null; }
+  }
+  if (data == null) {
+    // Non-JSON body (plain text, HTML error page, etc.) — always treat as error.
+    const msg = (raw || '').trim().slice(0, 200) || (res.ok ? 'empty response' : ('HTTP ' + res.status));
+    data = { ok: false, error: msg, detail: msg };
+  }
+  const ok = res.ok && (data.ok !== false);
+  return { ok, status: res.status, data, raw, error: ok ? null : (data.error || data.detail || ('HTTP ' + res.status)) };
+}
+
 // ── INIT: Load chain data from public RPC ─────────────────────────────────────
 async function init() {
   log('init-log', 'SYS  ethers.js v' + ethers.version + ' loaded', 'ok');
@@ -638,13 +665,14 @@ async function init() {
   }
 
   // Fetch nonce for SIWE
-  try {
-    const r = await fetch('/api/siwe/nonce');
-    const d = await r.json();
-    nonceToken = d.token;
-    log('init-log', 'NONCE  generated · valid 5 min', 'ok');
-  } catch (_) {
-    log('init-log', 'WARN  nonce server unavailable — will retry on connect', '');
+  {
+    const { ok, data, error } = await safeFetchJson('/api/siwe/nonce');
+    if (ok && data && data.token) {
+      nonceToken = data.token;
+      log('init-log', 'NONCE  generated · valid 5 min', 'ok');
+    } else {
+      log('init-log', 'WARN  nonce unavailable — will retry on connect (' + (error || 'unknown') + ')', '');
+    }
   }
 
   // Check wallet availability
@@ -742,14 +770,13 @@ async function createManagedWallet() {
   btn.textContent = '⟳ Creating secure wallet...';
   setWalletStatus('Provisioning managed wallet...', false);
   try {
-    const res = await fetch('/api/siwe/provision-wallet', {
+    const { ok, data } = await safeFetchJson('/api/siwe/provision-wallet', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
     });
-    const data = await res.json();
-    if (!res.ok || !data.ok || !data.address || !data.token) {
-      throw new Error(data.error || 'Failed to provision managed wallet');
+    if (!ok || !data || !data.ok || !data.address || !data.token) {
+      throw new Error((data && (data.error || data.detail)) || error || 'Failed to provision managed wallet');
     }
     address = data.address;
     authToken = data.token;
@@ -789,9 +816,9 @@ async function signIn() {
 
   // Ensure fresh nonce
   try {
-    const r = await fetch('/api/siwe/nonce');
-    const d = await r.json();
-    nonceToken = d.token;
+    const { ok, data, error } = await safeFetchJson('/api/siwe/nonce');
+    if (!ok || !data || !data.token) throw new Error(error || data.error || 'nonce unavailable');
+    nonceToken = data.token;
     log('sign-log', 'NONCE  received · valid 5 min', 'ok');
   } catch (_) {
     log('sign-log', 'WARN  could not fetch nonce — using cached', '');
@@ -854,18 +881,21 @@ async function signIn() {
 
   // Verify with backend
   try {
-    const res = await fetch('/api/siwe/verify', {
+    const { ok, status, data, error } = await safeFetchJson('/api/siwe/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ address, signature, nonce_token: nonceToken, message }),
     });
-    const data = await res.json();
 
-    if (!res.ok || !data.ok) {
-      log('sign-log', 'ERR  ' + (data.error || 'verification failed'), 'err');
+    if (!ok || !data || !data.ok) {
+      const msg = (data && (data.error || data.detail)) || error || ('Verification failed (HTTP ' + status + ')');
+      log('sign-log', 'ERR  ' + msg, 'err');
       goStage(1);
-      document.getElementById('siwe-err').textContent = data.error || 'Verification failed. Please try again.';
-      document.getElementById('siwe-err').classList.add('visible');
+      const errEl = document.getElementById('siwe-err');
+      if (status === 403 && /ban/i.test(msg))       errEl.textContent = 'Your IP is temporarily blocked. Try again in a few minutes or contact support.';
+      else if (status === 429)                      errEl.textContent = 'Too many requests — please slow down and try again in ~10 seconds.';
+      else                                          errEl.textContent = msg;
+      errEl.classList.add('visible');
       btn.disabled = false;
       btn.textContent = '✍️ Sign to Authenticate';
       return;
@@ -903,16 +933,15 @@ async function activateTwin() {
   log('twin-log', 'TWIN  requesting activation...');
 
   try {
-    const r = await fetch('/api/twin/activate', {
+    const { data } = await safeFetchJson('/api/twin/activate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + authToken,
       },
     });
-    const data = await r.json();
 
-    if (data.ok) {
+    if (data && data.ok) {
       setProgress('twin-progress', 50);
       log('twin-log', `TWIN  agent_id=${data.agent_id}`, 'hi');
       log('twin-log', `TWIN  capabilities: ${(data.capabilities||[]).join(', ')}`, 'ok');
@@ -926,7 +955,7 @@ async function activateTwin() {
       localStorage.setItem('bridge_agent_id', data.agent_id);
       document.getElementById('finalAgentId').textContent = data.agent_id;
     } else {
-      log('twin-log', 'WARN  ' + (data.error || 'activation error') + ' — continuing', 'err');
+      log('twin-log', 'WARN  ' + ((data && data.error) || 'activation error') + ' — continuing', 'err');
     }
 
   } catch (err) {

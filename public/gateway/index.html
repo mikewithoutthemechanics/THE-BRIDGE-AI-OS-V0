@@ -346,9 +346,17 @@ async function signIn() {
   try {
     const address = await signer.getAddress();
     const nonceResp = await fetch('/api/siwe/nonce');
-    const nonceData = await nonceResp.json();
+    const nonceRaw = await nonceResp.text();
+    let nonceData;
+    try { nonceData = JSON.parse(nonceRaw); }
+    catch (_) { nonceData = { ok: false, error: (nonceRaw || '').trim().slice(0, 200) || ('HTTP ' + nonceResp.status) }; }
     if (!nonceResp.ok || !nonceData.ok || !nonceData.token) {
-      throw new Error((nonceData && (nonceData.error || nonceData.message)) || 'Failed to fetch nonce');
+    if (!nonceResp.ok) {
+      let msg = nonceData.error || nonceData.message || ('HTTP ' + nonceResp.status);
+      if (nonceResp.status === 403 && /ban/i.test(msg)) msg = 'Your IP is temporarily blocked. Try again in a few minutes.';
+      else if (nonceResp.status === 429) msg = 'Too many requests — please slow down.';
+      throw new Error(msg);
+    }
     }
     const nonceToken = nonceData.token;
     let nonceValue = nonceData.nonce || '';
@@ -375,13 +383,20 @@ Issued At: ${issuedAt}
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ address, message, signature, nonce_token: nonceToken })
     });
-    const data = await res.json();
+    const rawBody = await res.text();
+    let data;
+    try { data = JSON.parse(rawBody); }
+    catch (_) { data = { ok: false, error: (rawBody || '').trim().slice(0, 200) || ('HTTP ' + res.status) }; }
     if (!res.ok) {
       let err = data.detail || data.error || "Auth failed";
       if (Array.isArray(err)) err = err.map(e => e.msg || e).join("; ");
       if (typeof err !== "string") err = JSON.stringify(err);
-      document.getElementById("loginStatus").innerHTML =
-        "<span class='status-bad'>" + err + "</span>";
+      const errEl = document.getElementById("loginStatus");
+      const span = document.createElement("span");
+      span.className = "status-bad";
+      span.textContent = err;
+      errEl.textContent = "";
+      errEl.appendChild(span);
       return;
     }
     const token = data.data?.token || data.token;
@@ -394,8 +409,12 @@ Issued At: ${issuedAt}
         "<span class='status-bad'>No token in response</span>";
     }
   } catch (e) {
-    document.getElementById("loginStatus").innerHTML =
-      "<span class='status-bad'>" + (e.message || "Sign failed") + "</span>";
+    const errEl = document.getElementById("loginStatus");
+    const span = document.createElement("span");
+    span.className = "status-bad";
+    span.textContent = e.message || "Sign failed";
+    errEl.textContent = "";
+    errEl.appendChild(span);
   }
 }
 
