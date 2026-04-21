@@ -8,10 +8,18 @@ const app = express();
 app.use(express.json({ limit: '64kb' }));
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
-// Require ADMIN_API_TOKEN (or BRIDGE_INTERNAL_SECRET as fallback) on all /admin/*
-// routes. Compared with timing-safe equal to avoid token-leak via timing.
+// Require a shared admin token on all /admin/* routes. Resolved from the
+// first env var that's set, in priority order:
+//   ADMIN_API_TOKEN         — service-specific, preferred
+//   BRIDGE_INTERNAL_SECRET  — cross-service internal bus secret
+//   ORCHESTRA_ADMIN_TOKEN   — matches the token name used by the Orchestra
+//                             control-plane, so a single env var can gate
+//                             both the browser dashboard and internal callers
+// Compared with timing-safe equal to avoid token-leak via timing.
 // Health check stays public so load balancers can probe it.
-const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN || process.env.BRIDGE_INTERNAL_SECRET;
+const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN
+  || process.env.BRIDGE_INTERNAL_SECRET
+  || process.env.ORCHESTRA_ADMIN_TOKEN;
 if (!ADMIN_TOKEN || ADMIN_TOKEN.length < 16) {
   console.error('[admin-api] FATAL: ADMIN_API_TOKEN (or BRIDGE_INTERNAL_SECRET) must be set and ≥16 chars');
   process.exit(1);

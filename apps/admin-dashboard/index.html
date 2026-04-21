@@ -45,6 +45,51 @@ button.act:hover{background:var(--dim)}
 </div>
 <script>
 const API=window.location.origin;
+// ── Auth bridge ──────────────────────────────────────────────────────────────
+// services/admin-api gates /admin/* on Authorization: Bearer <ADMIN_API_TOKEN>
+// (see services/admin-api/index.js:requireAdmin). The browser reads the token
+// from localStorage and prompts once if missing. On 401 we clear the token and
+// stop polling — the operator reloads to re-enter. The token is stored only
+// on this browser; no cookie, no server round-trip to obtain it.
+//
+// Trade-off: Bearer-in-JS defeats HttpOnly, so an XSS payload here could
+// exfiltrate the token. Mitigation: this SPA renders no user-supplied
+// content (see redact() in admin-api/index.js — even error messages are
+// sanitized to an opaque requestId). If the dashboard ever starts rendering
+// server-side logs or user input, re-platform auth onto HttpOnly cookies.
+const TOKEN_KEY='bridge_admin_token';
+function getAdminToken(){
+  let t=localStorage.getItem(TOKEN_KEY);
+  if(!t){
+    t=prompt('ADMIN_API_TOKEN (≥16 chars). Stored only in this browser.');
+    if(t&&t.trim().length>=16){localStorage.setItem(TOKEN_KEY,t.trim());return t.trim()}
+    return null;
+  }
+  return t;
+}
+function clearAdminToken(){localStorage.removeItem(TOKEN_KEY)}
+let _authFailed=false;
+function haltPolling(){
+  if(window._overviewTimer)clearInterval(window._overviewTimer);
+  if(window._topoTimer)clearInterval(window._topoTimer);
+}
+async function apiFetch(path,opts){
+  opts=opts||{};
+  const token=getAdminToken();
+  if(!token){_authFailed=true;haltPolling();throw new Error('no_token')}
+  opts.headers=Object.assign({'Authorization':'Bearer '+token},opts.headers||{});
+  const r=await fetch(API+path,opts);
+  if(r.status===401){
+    clearAdminToken();
+    if(!_authFailed){
+      _authFailed=true;
+      haltPolling();
+      log('auth failed — token cleared. Reload to re-enter.','err');
+    }
+    throw new Error('unauthorized');
+  }
+  return r;
+}
 let topology={nodes:[],edges:[]},nodes=[],rate=0,bucket=0;
 setInterval(()=>{rate=bucket;bucket=0},1000);
 function layout(){
@@ -78,8 +123,9 @@ function render(){
   });
 }
 async function fetchOverview(){
+  if(_authFailed)return;
   try{
-    const r=await fetch(API+'/admin/overview');
+    const r=await apiFetch('/admin/overview');
     if(!r.ok)throw new Error('HTTP '+r.status);
     const d=await r.json();
     document.getElementById('pill').classList.add('live');
@@ -90,14 +136,16 @@ async function fetchOverview(){
     document.getElementById('mem').textContent=d.mem_avg+'%';
     if(d.services){d.services.forEach(s=>{const n=nodes.find(x=>x.id===s.name);if(n)n.status=s.status})}
   }catch(e){
+    if(e.message==='unauthorized'||e.message==='no_token')return;
     document.getElementById('pill').classList.remove('live');
     document.getElementById('conn').textContent='offline';
     log('overview: '+e.message,'err');
   }
 }
 async function fetchTopology(){
+  if(_authFailed)return;
   try{
-    const r=await fetch(API+'/admin/topology');
+    const r=await apiFetch('/admin/topology');
     if(!r.ok)return;
     const d=await r.json();
     if(d.nodes&&d.edges){topology=d;layout();log('topology: '+d.nodes.length+' nodes','info')}
@@ -114,10 +162,13 @@ function select(n){
 async function action(name,act){
   if(!confirm(act+' '+name+'?'))return;
   try{
-    const r=await fetch(API+'/admin/services/'+name+'/'+act,{method:'POST'});
+    const r=await apiFetch('/admin/services/'+name+'/'+act,{method:'POST'});
     if(!r.ok)throw new Error('HTTP '+r.status);
     log(act+' → '+name+' OK','info');
-  }catch(e){log(act+' '+name+' failed: '+e.message,'err')}
+  }catch(e){
+    if(e.message==='unauthorized'||e.message==='no_token')return;
+    log(act+' '+name+' failed: '+e.message,'err');
+  }
 }
 function flow(a,b){
   const A=nodes.find(n=>n.id===a),B=nodes.find(n=>n.id===b);
@@ -165,8 +216,10 @@ window.addEventListener('load',()=>{
   layout();render();loop();
   document.addEventListener('click',()=>{if(!ac){initAudio();log('audio engine started','info')}},{once:true});
   fetchOverview();fetchTopology();
-  setInterval(fetchOverview,2000);
-  setInterval(fetchTopology,10000);
+  // Timers exposed on window so apiFetch's 401 handler can halt them,
+  // preventing the 2s tick from spamming 401s during token-clear.
+  window._overviewTimer=setInterval(fetchOverview,2000);
+  window._topoTimer=setInterval(fetchTopology,10000);
   connectSSE();
   log('control plane init','info');
   log('click anywhere to enable audio','info');
