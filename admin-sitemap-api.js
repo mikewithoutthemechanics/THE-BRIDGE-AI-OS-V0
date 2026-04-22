@@ -92,7 +92,7 @@ async function handler(_req, res) {
 
 let _isSuperUserEmail = null;
 try {
-  _isSuperUserEmail = require('../shared/superusers').isSuperUserEmail;
+  _isSuperUserEmail = require('./shared/superusers').isSuperUserEmail;
 } catch (_) {}
 
 function requireAdmin(req, res, next) {
