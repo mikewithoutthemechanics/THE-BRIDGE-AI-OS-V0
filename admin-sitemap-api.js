@@ -90,22 +90,22 @@ async function handler(_req, res) {
   }
 }
 
-// AUTH DISABLED on this branch — pass through. Restore the role check
-// before shipping to production.
-function requireAdmin(_req, _res, next) {
-  return next();
+function requireAdmin(req, res, next) {
+  const user = req && req.user;
+  const role = String((user && (user.role || user.authority)) || '').toLowerCase();
+  if (role === 'admin' || role === 'superadmin') return next();
+  return res.status(403).json({ ok: false, error: 'admin role required' });
 }
 
 function mount(app, gatewayAuth) {
   if (!app || typeof app.get !== 'function') {
     throw new Error('admin-sitemap-api.mount: first arg must be an Express app');
   }
-  const auth = (typeof gatewayAuth === 'function')
-    ? gatewayAuth()
-    : function passthrough(_req, _res, next) { next(); };
-
-  app.get('/api/admin/sitemap', auth, requireAdmin, handler);
-  console.log('[admin-sitemap-api] GET /api/admin/sitemap mounted');
+  if (typeof gatewayAuth !== 'function') {
+    throw new Error('admin-sitemap-api.mount: second arg must be the gatewayAuth factory');
+  }
+  app.get('/api/admin/sitemap', gatewayAuth(), requireAdmin, handler);
+  console.log('[admin-sitemap-api] GET /api/admin/sitemap mounted (auth + admin role required)');
 }
 
 module.exports = { mount, handler, categorize, humanize, SECTION_PATTERNS };
