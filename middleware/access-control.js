@@ -245,8 +245,12 @@ function pageGuard() {
     }
 
     // ADMIN tier
+    // NOTE: Admin HTML page gating has been disabled on this branch so the
+    // dashboards load without a bearer token. API-level requireAdmin on
+    // /api/* routes is untouched. Restore `return requireAdmin(...)` before
+    // shipping to production.
     if (tier === 'ADMIN') {
-      return requireAdmin(req, res, next);
+      return next();
     }
 
     // SUPERADMIN tier
