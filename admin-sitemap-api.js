@@ -97,9 +97,12 @@ try {
 
 function requireAdmin(req, res, next) {
   const user = req && req.user;
-  const role = String((user && (user.role || user.authority)) || '').toLowerCase();
+  if (!user) return res.status(403).json({ ok: false, error: 'admin role required' });
+  const role = String(user.role || user.authority || '').toLowerCase();
+  const plan = String(user.plan || '').toLowerCase();
   if (role === 'admin' || role === 'superadmin') return next();
-  if (_isSuperUserEmail && user && user.email && _isSuperUserEmail(user.email)) return next();
+  if (plan === 'admin' || plan === 'enterprise' || plan === 'founder') return next();
+  if (_isSuperUserEmail && user.email && _isSuperUserEmail(user.email)) return next();
   return res.status(403).json({ ok: false, error: 'admin role required' });
 }
 
