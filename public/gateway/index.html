@@ -332,6 +332,29 @@ function copyContract() {
   setTimeout(() => { btn.textContent = orig; }, 1500);
 }
 
+// Friendly copy for edge-enforced error statuses (auto-kill.js returns
+// JSON 403 "banned" / 429 "rate_limited"; CDNs and upstream proxies may
+// surface 5xx without a JSON body). Returns null when the status is fine
+// or should be handled by the caller's normal error path.
+function friendlyErrorForStatus(status) {
+  if (status === 403) {
+    return "Access blocked from your IP. If this looks wrong, contact support@bridge-ai-os.com.";
+  }
+  if (status === 429) {
+    return "Too many requests — rate limit hit. Wait a minute and try again.";
+  }
+  if (status >= 500) {
+    return "Server error. Please retry in a moment.";
+  }
+  return null;
+}
+
+// Safely parse a Response as JSON, falling back to { } on non-JSON payloads
+// (e.g. the plain-text bodies auto-kill and some proxies return).
+async function safeJson(resp) {
+  try { return await resp.clone().json(); } catch (_) { return {}; }
+}
+
 async function signIn() {
   if (typeof ethers === "undefined") {
     document.getElementById("loginStatus").innerHTML =
@@ -346,17 +369,15 @@ async function signIn() {
   try {
     const address = await signer.getAddress();
     const nonceResp = await fetch('/api/siwe/nonce');
-    const nonceRaw = await nonceResp.text();
-    let nonceData;
-    try { nonceData = JSON.parse(nonceRaw); }
-    catch (_) { nonceData = { ok: false, error: (nonceRaw || '').trim().slice(0, 200) || ('HTTP ' + nonceResp.status) }; }
-    if (!nonceResp.ok || !nonceData.ok || !nonceData.token) {
-    if (!nonceResp.ok) {
-      let msg = nonceData.error || nonceData.message || ('HTTP ' + nonceResp.status);
-      if (nonceResp.status === 403 && /ban/i.test(msg)) msg = 'Your IP is temporarily blocked. Try again in a few minutes.';
-      else if (nonceResp.status === 429) msg = 'Too many requests — please slow down.';
-      throw new Error(msg);
+    const friendlyNonceErr = friendlyErrorForStatus(nonceResp.status);
+    if (friendlyNonceErr) {
+      document.getElementById("loginStatus").innerHTML =
+        "<span class='status-bad'>" + friendlyNonceErr + "</span>";
+      return;
     }
+    const nonceData = await safeJson(nonceResp);
+    if (!nonceResp.ok || !nonceData.ok || !nonceData.token) {
+      throw new Error((nonceData && (nonceData.error || nonceData.message)) || 'Failed to fetch nonce');
     }
     const nonceToken = nonceData.token;
     let nonceValue = nonceData.nonce || '';
@@ -383,10 +404,13 @@ Issued At: ${issuedAt}
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ address, message, signature, nonce_token: nonceToken })
     });
-    const rawBody = await res.text();
-    let data;
-    try { data = JSON.parse(rawBody); }
-    catch (_) { data = { ok: false, error: (rawBody || '').trim().slice(0, 200) || ('HTTP ' + res.status) }; }
+    const friendlyAuthErr = friendlyErrorForStatus(res.status);
+    if (friendlyAuthErr) {
+      document.getElementById("loginStatus").innerHTML =
+        "<span class='status-bad'>" + friendlyAuthErr + "</span>";
+      return;
+    }
+    const data = await safeJson(res);
     if (!res.ok) {
       let err = data.detail || data.error || "Auth failed";
       if (Array.isArray(err)) err = err.map(e => e.msg || e).join("; ");

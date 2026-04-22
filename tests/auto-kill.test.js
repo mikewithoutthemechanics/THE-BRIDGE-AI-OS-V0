@@ -69,4 +69,8 @@ describe('auto-kill middleware', () => {
     expect(nexted).toBe(true);
     expect(r.headersSent).toBe(false);
   });
+
+  test('loadBansFromDb is exported as a named function on the module', () => {
+    expect(typeof autoKill.loadBansFromDb).toBe('function');
+  });
 });

@@ -133,4 +133,8 @@ module.exports = async function autoKill(req, res, next) {
 };
 
 // Exposed for tests / ops tooling.
+module.exports.loadBansFromDb = loadBansFromDb;
 module.exports.__internals = { buckets, banned, loadBansFromDb };
+// Test hooks — intentionally prefixed underscore. Do not rely on in production.
+module.exports._banned = banned;
+module.exports._buckets = buckets;
