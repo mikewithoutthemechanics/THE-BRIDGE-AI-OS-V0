@@ -90,10 +90,16 @@ async function handler(_req, res) {
   }
 }
 
+let _isSuperUserEmail = null;
+try {
+  _isSuperUserEmail = require('../shared/superusers').isSuperUserEmail;
+} catch (_) {}
+
 function requireAdmin(req, res, next) {
   const user = req && req.user;
   const role = String((user && (user.role || user.authority)) || '').toLowerCase();
   if (role === 'admin' || role === 'superadmin') return next();
+  if (_isSuperUserEmail && user && user.email && _isSuperUserEmail(user.email)) return next();
   return res.status(403).json({ ok: false, error: 'admin role required' });
 }
 
