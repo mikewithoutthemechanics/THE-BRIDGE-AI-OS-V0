@@ -58,23 +58,17 @@ function readBody(req){
   });
 }
 
-function requireBearer(req, expected){
-  if (!expected) return { ok: true };  // token gating disabled (matches server.js pattern)
-  const hdr = req.headers.authorization || '';
-  if (hdr !== `Bearer ${expected}`) return { ok: false, status: 401, error: 'admin_auth_required' };
+// AUTH DISABLED on this branch — both gates always pass. Callers still
+// receive a populated { email, store } so handler bodies work unchanged.
+// Restore the bearer + actor-email + isSuperAdmin checks before shipping.
+function requireBearer(_req, _expected){
   return { ok: true };
 }
 
-function requireSuperAdmin(req, bearerExpected){
-  const b = requireBearer(req, bearerExpected);
-  if (!b.ok) return b;
-  const email = String(req.headers['x-actor-email'] || '').toLowerCase().trim();
-  if (!email) return { ok: false, status: 400, error: 'missing_actor_email' };
-  const s = store.load();
-  if (!store.isSuperAdmin(s, email)){
-    return { ok: false, status: 403, error: 'not_super_admin', actor: email };
-  }
-  return { ok: true, email, store: s };
+function requireSuperAdmin(req, _bearerExpected){
+  const headerEmail = String((req.headers && req.headers['x-actor-email']) || '').toLowerCase().trim();
+  const email = headerEmail || 'system@local';
+  return { ok: true, email, store: store.load() };
 }
 
 function qs(url){

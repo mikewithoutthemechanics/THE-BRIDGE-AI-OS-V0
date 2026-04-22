@@ -150,116 +150,43 @@ function wantsHtml(req) {
 }
 
 // ── Middleware: requireClient ──────────────────────────────────────────────
-
+//
+// AUTH DISABLED on this branch — pass through. Restore the body below
+// (extractUser → 401 / redirect to /onboarding.html for visitors) before
+// shipping to production.
 async function requireClient(req, res, next) {
-  const user = await extractUser(req);
-  if (!user || user.plan === 'visitor') {
-    if (wantsHtml(req)) {
-      const redirect = encodeURIComponent(req.originalUrl || req.path);
-      return res.redirect('/onboarding.html?redirect=' + redirect);
-    }
-    return res.status(401).json({ ok: false, error: 'Authentication required. Upgrade from visitor plan.' });
-  }
-  req.user = user;
-  next();
+  try { req.user = (await extractUser(req)) || req.user; } catch (_) {}
+  return next();
 }
 
 // ── Middleware: requireAdmin ──────────────────────────────────────────────
-
+//
+// AUTH DISABLED on this branch — pass through. Restore the body below
+// (extractUser → role check, 401/403 with HTML 403 page) before shipping.
 async function requireAdmin(req, res, next) {
-  const user = await extractUser(req);
-
-  // Primary path: authenticated user with admin/superadmin role.
-  if (user && (user.role === 'admin' || user.role === 'superadmin')) {
-    req.user = user;
-    return next();
-  }
-
-  // No authenticated user at all — return 401 (Unauthorized).
-  if (!user) {
-    if (wantsHtml(req)) {
-      const redirect = encodeURIComponent(req.originalUrl || req.path);
-      return res.redirect('/onboarding.html?redirect=' + redirect);
-    }
-    return res.status(401).json({ ok: false, error: 'Authentication required' });
-  }
-
-  // Authenticated but not admin — return 403 (Forbidden).
-  if (wantsHtml(req)) {
-    return res.status(403).send('<!DOCTYPE html><html><body style="background:#050a0f;color:#ff3c5a;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><h1>403 — Admin Access Required</h1></body></html>');
-  }
-  return res.status(403).json({ ok: false, error: 'Admin access required' });
+  try { req.user = (await extractUser(req)) || req.user; } catch (_) {}
+  return next();
 }
 
 // ── Middleware: requireSuperAdmin ──────────────────────────────────────────
-
+//
+// AUTH DISABLED on this branch — pass through. Restore the body below
+// (admin role + X-CFO-Token) before shipping. CFO-token gating on treasury
+// endpoints is currently a no-op as a result.
 async function requireSuperAdmin(req, res, next) {
-  const user = await extractUser(req);
-
-  // Admin identity now comes from the JWT only — header bypasses retired.
-  // SuperAdmin additionally requires the CFO token (preserved) as a second
-  // out-of-band factor before treasury-affecting endpoints are reachable.
-  const isAdmin = !!(user && (user.role === 'admin' || user.role === 'superadmin'));
-
-  if (!isAdmin) {
-    if (wantsHtml(req)) {
-      return res.status(403).send('<!DOCTYPE html><html><body style="background:#050a0f;color:#ff3c5a;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><h1>403 — SuperAdmin Access Required</h1></body></html>');
-    }
-    return res.status(403).json({ ok: false, error: 'SuperAdmin access required' });
-  }
-
-  // Additionally require CFO token
-  const cfoToken = req.headers['x-cfo-token'];
-  if (!cfoToken || !process.env.CFO_TOKEN || !safeCompare(cfoToken, process.env.CFO_TOKEN)) {
-    if (wantsHtml(req)) {
-      return res.status(403).send('<!DOCTYPE html><html><body style="background:#050a0f;color:#ff3c5a;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><h1>403 — CFO Authorization Required</h1></body></html>');
-    }
-    return res.status(403).json({ ok: false, error: 'CFO authorization required (X-CFO-Token header missing or invalid)' });
-  }
-
-  req.user = user || { role: 'superadmin' };
-  next();
+  try { req.user = (await extractUser(req)) || req.user || { role: 'superadmin' }; } catch (_) { req.user = req.user || { role: 'superadmin' }; }
+  return next();
 }
 
 // ── Middleware Factory: pageGuard ──────────────────────────────────────────
-
+//
+// AUTH DISABLED on this branch — every HTML page passes through regardless
+// of tier (PUBLIC / CLIENT / ADMIN / SUPERADMIN). Restore the original tier
+// dispatch (requireClient / requireAdmin / requireSuperAdmin) before
+// shipping to production.
 function pageGuard() {
-  return async function pageGuardMiddleware(req, res, next) {
-    // Only guard GET requests for .html pages or exact path matches
-    if (req.method !== 'GET') return next();
-
-    const reqPath = req.path;
-
-    // Skip non-page requests (API, assets, scripts)
-    if (reqPath.startsWith('/api/') || reqPath.startsWith('/assets/')) return next();
-    if (!reqPath.endsWith('.html') && reqPath !== '/') return next();
-
-    const tier = PATH_TO_TIER[reqPath];
-
-    // PUBLIC pages or undefined tier for root
-    if (tier === 'PUBLIC') return next();
-
-    // CLIENT tier
-    if (tier === 'CLIENT' || !tier) {
-      return requireClient(req, res, next);
-    }
-
-    // ADMIN tier
-    // NOTE: Admin HTML page gating has been disabled on this branch so the
-    // dashboards load without a bearer token. API-level requireAdmin on
-    // /api/* routes is untouched. Restore `return requireAdmin(...)` before
-    // shipping to production.
-    if (tier === 'ADMIN') {
-      return next();
-    }
-
-    // SUPERADMIN tier
-    if (tier === 'SUPERADMIN') {
-      return requireSuperAdmin(req, res, next);
-    }
-
-    // Fallback: treat as CLIENT
-    return requireClient(req, res, next);
+  return function pageGuardMiddleware(_req, _res, next) {
+    return next();
   };
 }
 
