@@ -405,20 +405,23 @@ app.post('/auth/google', async (req, res) => {
   }
 });
 
-// GET /auth/me
-app.get('/auth/me', authMiddleware, async (req, res) => {
-  // Check persistent revocation (survives restarts, shared with Vercel)
-  if (revokedStore && await revokedStore.isRevoked(req.token)) {
-    await revokeToken(req.token); // warm authoritative store
-    return res.status(401).json({ ok: false, error: 'Token revoked' });
-  }
-  const user = withSuperAdminOverrides(await userDb.getUserById(req.user.sub));
-  if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
-
-  let prompt = null;
-  try { prompt = nurture.getPersonalizedPrompt(user); } catch (_) {}
-
-  res.json({ ok: true, user: sanitizeUser(user), nurture_prompt: prompt });
+// GET /auth/me — AUTH DISABLED on this branch. Returns a synthetic
+// superadmin so client-side gating passes without a token. Restore the
+// authMiddleware + revocation + DB lookup before shipping to prod.
+app.get('/auth/me', async (_req, res) => {
+  res.json({
+    ok: true,
+    user: {
+      id: 'system',
+      email: 'ryanpcowan@gmail.com',
+      name: 'System (auth disabled)',
+      plan: 'enterprise',
+      role: 'superadmin',
+      tier: 'super_admin',
+      funnel_stage: 'customer',
+    },
+    nurture_prompt: null,
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

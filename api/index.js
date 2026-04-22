@@ -1134,29 +1134,22 @@ module.exports = async (req, res) => {
   }
 
   // ── Auth: Session check (/auth/me or /api/auth/me) ──
+  // AUTH DISABLED on this branch — synthetic superadmin returned regardless
+  // of token. Restore JWT verify + revocation + Supabase lookup before
+  // shipping to prod.
   if ((p === '/auth/me' || p === '/api/auth/me') && req.method === 'GET') {
-    const authHeader = req.headers['authorization'] || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    if (!token) return json(res, { ok: false, error: 'Not authenticated' }, 401);
-    // Fast in-memory check first, then persistent Supabase check (survives cold starts)
-    if (_revokedTokens.has(token)) return json(res, { ok: false, error: 'Token revoked' }, 401);
-    if (revokedStore && await revokedStore.isRevoked(token)) {
-      _revokedTokens.add(token); // warm local cache
-      return json(res, { ok: false, error: 'Token revoked' }, 401);
-    }
-    const payload = verifyToken(token);
-    if (!payload) return json(res, { ok: false, error: 'Invalid or expired token' }, 401);
-
-    // Look up full user from DB
-    if (supabase) {
-      const { data: user } = await supabase.from('users').select('*').eq('email', payload.email?.toLowerCase().trim()).single();
-      if (user) {
-        const { password_hash, totp_secret, totp_backup_codes, ...safe } = user;
-        return json(res, { ok: true, user: safe });
-      }
-    }
-    // Fallback: return JWT payload
-    return json(res, { ok: true, user: { id: payload.sub, email: payload.email } });
+    return json(res, {
+      ok: true,
+      user: {
+        id: 'system',
+        email: 'ryanpcowan@gmail.com',
+        name: 'System (auth disabled)',
+        plan: 'enterprise',
+        role: 'superadmin',
+        tier: 'super_admin',
+        funnel_stage: 'customer',
+      },
+    });
   }
 
   // ── L1 / L2 / L3 orchestrator proxy stubs ──
