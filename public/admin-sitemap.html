@@ -176,52 +176,73 @@ const PAGES = {
 const container = document.getElementById('sections');
 const searchInput = document.getElementById('search');
 let allLinks = [];
-const totalPages = Object.values(PAGES).reduce((s, p) => s + p.length, 0);
-document.getElementById('total').textContent = totalPages;
-document.getElementById('visible').textContent = totalPages;
-document.querySelector('.sub').textContent = `All ${totalPages} pages — admin-only navigation hub`;
 
-Object.entries(PAGES).forEach(([sectionName, pages]) => {
-  const section = document.createElement('div');
-  section.className = 'section';
+function render(sections) {
+  container.innerHTML = '';
+  allLinks = [];
+  const totalPages = Object.values(sections).reduce((s, p) => s + p.length, 0);
+  document.getElementById('total').textContent = totalPages;
+  document.getElementById('visible').textContent = totalPages;
+  document.querySelector('.sub').textContent = `All ${totalPages} pages — admin-only navigation hub`;
 
-  const title = document.createElement('div');
-  title.className = 'section-title';
-  const titleText = document.createElement('span');
-  titleText.textContent = sectionName;
-  const count = document.createElement('span');
-  count.className = 'count';
-  count.textContent = pages.length;
-  title.appendChild(titleText);
-  title.appendChild(count);
-  section.appendChild(title);
+  Object.entries(sections).forEach(([sectionName, pages]) => {
+    if (!pages || !pages.length) return;
+    const section = document.createElement('div');
+    section.className = 'section';
 
-  const grid = document.createElement('div');
-  grid.className = 'grid';
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    const titleText = document.createElement('span');
+    titleText.textContent = sectionName;
+    const count = document.createElement('span');
+    count.className = 'count';
+    count.textContent = pages.length;
+    title.appendChild(titleText);
+    title.appendChild(count);
+    section.appendChild(title);
 
-  pages.forEach(page => {
-    const a = document.createElement('a');
-    a.className = 'page-link';
-    a.href = page.href;
-    a.dataset.name = page.name.toLowerCase();
-    a.dataset.href = page.href.toLowerCase();
+    const grid = document.createElement('div');
+    grid.className = 'grid';
 
-    const dot = document.createElement('span');
-    dot.className = 'dot dot-' + page.cat;
+    pages.forEach(page => {
+      const a = document.createElement('a');
+      a.className = 'page-link';
+      a.href = page.href;
+      a.dataset.name = (page.name || '').toLowerCase();
+      a.dataset.href = (page.href || '').toLowerCase();
 
-    const name = document.createElement('span');
-    name.className = 'name';
-    name.textContent = page.name;
+      const dot = document.createElement('span');
+      dot.className = 'dot dot-' + (page.cat || 'other');
 
-    a.appendChild(dot);
-    a.appendChild(name);
-    grid.appendChild(a);
-    allLinks.push(a);
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = page.name;
+
+      a.appendChild(dot);
+      a.appendChild(name);
+      grid.appendChild(a);
+      allLinks.push(a);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
   });
+}
 
-  section.appendChild(grid);
-  container.appendChild(section);
-});
+// Prefer the live /api/admin/sitemap (reads public/*.html on the server).
+// Fall back to the hardcoded PAGES object if the endpoint is unavailable.
+fetch('/api/admin/sitemap', { credentials: 'same-origin', cache: 'no-store' })
+  .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+  .then(data => {
+    if (!data || !data.sections || !Object.keys(data.sections).length) {
+      throw new Error('empty sitemap payload');
+    }
+    render(data.sections);
+  })
+  .catch(err => {
+    console.warn('[admin-sitemap] live fetch failed, using fallback list:', err.message);
+    render(PAGES);
+  });
 
 searchInput.addEventListener('input', () => {
   const q = searchInput.value.toLowerCase().trim();

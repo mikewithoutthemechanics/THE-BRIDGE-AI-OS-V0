@@ -3696,6 +3696,15 @@ app.get('/', (req, res) => {
   serveWithNav(path.join(ROOT, 'ui.html'), res);
 });
 
+// ── LIVE SITEMAP API ─────────────────────────────────────────────────────────
+// Serves /api/admin/sitemap by live-reading public/*.html so /admin-sitemap
+// stays in sync with the filesystem instead of the hardcoded HTML list.
+try {
+  require('./admin-sitemap-api').mount(app, gatewayAuth);
+} catch (e) {
+  console.warn('[GATEWAY] admin-sitemap-api mount skipped:', e.message);
+}
+
 // ── START (skipped when required by tests) ───────────────────────────────────
 // Default 0.0.0.0 so curl http://127.0.0.1:PORT works on typical Linux VPS (IPv6-only :: often rejects IPv4 loopback).
 // Override: PORT=8080 GATEWAY_LISTEN_HOST=:: node gateway.js
