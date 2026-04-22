@@ -1,110 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NeuroLink — Bridge AI OS</title>
-  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroLink BCI — Bridge AI OS</title>
+<style>
+:root{--bg:#050a0f;--bg2:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--red:#ff3c5a;--gold:#ffd166;--dim:#4d6678;--text:#e0e8f0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;font-size:14px;line-height:1.6;padding-bottom:64px}
+#login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+#login-overlay .brand{font-size:20px;font-weight:800;letter-spacing:-.5px}
+#login-overlay .brand span{color:var(--cyan)}
+#login-overlay .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:32px 36px;width:100%;max-width:380px}
+#login-overlay h2{font-size:15px;font-weight:700;margin-bottom:4px}
+#login-overlay .sub{font-size:12px;color:var(--dim);margin-bottom:24px}
+#login-overlay label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:5px}
+#login-overlay input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text);outline:none;margin-bottom:14px;transition:border .15s}
+#login-overlay input:focus{border-color:var(--cyan)}
+#login-overlay .err{font-size:12px;color:var(--red);min-height:18px;margin-bottom:10px}
+#login-overlay button{width:100%;padding:11px;background:var(--cyan);color:#050a0f;font-weight:700;font-size:13px;border:none;border-radius:6px;cursor:pointer;transition:opacity .15s}
+#login-overlay button:hover{opacity:.85}
+#login-overlay button:disabled{opacity:.45;cursor:not-allowed}
+#login-overlay .skip{font-size:11px;color:var(--dim);text-decoration:underline;cursor:pointer;margin-top:4px;text-align:center}
+#login-overlay .skip:hover{color:var(--cyan)}
+#app{display:none}
+.header{display:flex;align-items:center;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);gap:16px;position:sticky;top:0;z-index:10}
+.header .brand{font-size:16px;font-weight:700}.header .brand span{color:var(--cyan)}
+.header nav{display:flex;gap:2px;margin-left:16px;flex-wrap:wrap}
+.header nav a{color:var(--dim);text-decoration:none;font-size:12px;padding:4px 10px;border-radius:4px}
+.header nav a:hover,.header nav a.active{color:var(--cyan);background:rgba(0,200,255,.1)}
+.header .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot.off{background:var(--red);box-shadow:0 0 8px var(--red)}
+.dot.sim{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.status-text{font-size:12px;color:var(--dim)}
+.btn-logout{background:none;border:1px solid var(--border);color:var(--dim);font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+.page{max-width:960px;margin:0 auto;padding:24px}
+.section{margin-bottom:32px}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title .line{flex:1;height:1px;background:var(--border)}
+.section-desc{font-size:13px;color:var(--dim);margin-bottom:16px;max-width:600px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative}
+.card h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.card .desc{font-size:12px;color:var(--dim);margin-bottom:12px}
+.badge{position:absolute;top:12px;right:12px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px}
+.badge.active{background:rgba(0,200,255,.15);color:var(--cyan)}
+.badge.installed{background:rgba(0,229,123,.1);color:var(--green)}
+.badge.not-installed{background:rgba(255,60,90,.1);color:var(--red)}
+.data-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(26,45,64,.3)}
+.data-row:last-child{border-bottom:none}
+.data-label{font-size:12px;color:var(--dim)}
+.data-value{font-size:13px;font-weight:600;font-family:'Courier New',monospace}
+.data-value.green{color:var(--green)}.data-value.red{color:var(--red)}.data-value.gold{color:var(--gold)}.data-value.cyan{color:var(--cyan)}
+.meter{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px}
+.meter-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.btn{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;border:none;transition:all .15s}
+.btn-enable{background:var(--green);color:#050a0f}.btn-enable:hover{opacity:.85}
+.btn-disable{background:var(--red);color:#fff}.btn-disable:hover{opacity:.85}
+.btn-install{background:rgba(0,200,255,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.3)}
+.setup-steps{font-size:12px;color:var(--dim);margin:8px 0;padding:8px 12px;background:var(--bg);border-radius:6px;font-family:'Courier New',monospace;white-space:pre-wrap;word-break:break-word}
+.toast{position:fixed;bottom:24px;right:20px;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeIn .2s}
+.toast.ok{background:rgba(0,229,123,.15);border:1px solid rgba(0,229,123,.3);color:var(--green)}
+.toast.err{background:rgba(255,60,90,.15);border:1px solid rgba(255,60,90,.3);color:var(--red)}
+#api-banner{display:none;background:rgba(255,60,90,.08);border-bottom:1px solid rgba(255,60,90,.2);padding:8px 24px;font-size:12px;color:var(--red)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
 </head>
-<body class="bg-slate-900 text-slate-200 min-h-screen">
-  <nav class="bg-slate-800 p-4 flex justify-between items-center">
-    <a href="/" class="text-xl font-bold text-purple-400">🧠 NeuroLink</a>
-    <div class="flex gap-4">
-      <a href="/agents.html" class="text-slate-400 hover:text-purple-400">Agents</a>
-      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+<body>
+<div id="login-overlay">
+  <div class="brand">Bridge<span>AI</span> OS</div>
+  <div class="card">
+    <h2>Sign in to NeuroLink BCI</h2>
+    <p class="sub">Use your Bridge AI OS account or continue with simulated data</p>
+    <label for="f-email">Email</label>
+    <input type="email" id="f-email" placeholder="you@example.com" autocomplete="username">
+    <label for="f-pass">Password</label>
+    <input type="password" id="f-pass" placeholder="••••••••" autocomplete="current-password">
+    <div class="err" id="login-err"></div>
+    <button id="login-btn" onclick="AUTH.login()">Sign In</button>
+    <div class="skip" onclick="AUTH.useSimulated()">Continue with simulated data</div>
+  </div>
+</div>
+<div id="app">
+  <div id="api-banner">⚠ API unreachable — showing simulated data.</div>
+  <div class="header">
+    <div class="brand">Neuro<span>Link</span> BCI</div>
+    <nav>
+      <a href="/home.html">Dashboard</a>
+      <a href="/registry">Agents</a>
+      <a href="/treasury-dash">Treasury</a>
+      <a href="/neurolink.html" class="active">NeuroLink</a>
+    </nav>
+    <div class="right">
+      <span class="status-text" id="status-text">Connecting…</span>
+      <span class="dot off" id="status-dot"></span>
+      <button class="btn-logout" onclick="AUTH.logout()">Logout</button>
     </div>
-  </nav>
-
-  <main class="max-w-6xl mx-auto p-6">
-    <h1 class="text-2xl font-bold text-purple-400 mb-6">Neural Network Interface</h1>
-
-    <div class="grid md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-slate-800 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-cyan-400" id="neurons">0</div>
-        <div class="text-sm text-slate-400">Active Neurons</div>
+  </div>
+  <div class="page">
+    <div class="section">
+      <div class="section-title">Live Cognitive State <span class="line"></span></div>
+      <div class="section-desc">Real-time brain state from the connected device. Updates every 2 seconds.</div>
+      <div class="grid-3">
+        <div class="card"><h3>Focus</h3><div class="data-value cyan" id="v-focus" style="font-size:24px">--</div><div class="meter"><div class="meter-fill" id="m-focus" style="width:0;background:var(--cyan)"></div></div></div>
+        <div class="card"><h3>Stress</h3><div class="data-value gold" id="v-stress" style="font-size:24px">--</div><div class="meter"><div class="meter-fill" id="m-stress" style="width:0;background:var(--gold)"></div></div></div>
+        <div class="card"><h3>Fatigue</h3><div class="data-value red" id="v-fatigue" style="font-size:24px">--</div><div class="meter"><div class="meter-fill" id="m-fatigue" style="width:0;background:var(--red)"></div></div></div>
       </div>
-      <div class="bg-slate-800 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-green-400" id="connections">0</div>
-        <div class="text-sm text-slate-400">Connections</div>
-      </div>
-      <div class="bg-slate-800 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-purple-400" id="synaptic">0%</div>
-        <div class="text-sm text-slate-400">Synaptic Activity</div>
-      </div>
-    </div>
-
-    <div class="grid md:grid-cols-2 gap-6 mb-6">
-      <div class="bg-slate-800 rounded-xl p-6">
-        <h2 class="text-lg font-bold text-purple-400 mb-4">Brain Regions</h2>
-        <div class="space-y-3">
-          <div class="bg-slate-700 p-3 rounded">
-            <div class="flex justify-between"><span>Cortex (LLM)</span><span class="text-green-400">Active</span></div>
-          </div>
-          <div class="bg-slate-700 p-3 rounded">
-            <div class="flex justify-between"><span>Memory (RAG)</span><span class="text-green-400">Active</span></div>
-          </div>
-          <div class="bg-slate-700 p-3 rounded">
-            <div class="flex justify-between"><span>Actions (Tool)</span><span class="text-green-400">Active</span></div>
-          </div>
-          <div class="bg-slate-700 p-3 rounded">
-            <div class="flex justify-between"><span>Planning (Agent)</span><span class="text-yellow-400">Learning</span></div>
-          </div>
+      <div class="grid-2" style="margin-top:14px">
+        <div class="card"><h3>Emotion (Digital Twin Feed)</h3><div id="emotion-rows"></div></div>
+        <div class="card"><h3>System Response</h3>
+          <div class="data-row"><span class="data-label">Mood</span><span class="data-value" id="v-mood">--</span></div>
+          <div class="data-row"><span class="data-label">Intent</span><span class="data-value" id="v-intent">--</span></div>
+          <div class="data-row"><span class="data-label">Signal Quality</span><span class="data-value" id="v-quality">--</span></div>
+          <div class="data-row"><span class="data-label">Latency</span><span class="data-value" id="v-latency">--</span></div>
+          <div class="data-row"><span class="data-label">Source</span><span class="data-value" id="v-source">--</span></div>
+          <div id="actions-list" style="margin-top:8px"></div>
         </div>
       </div>
-
-      <div class="bg-slate-800 rounded-xl p-6">
-        <h2 class="text-lg font-bold text-purple-400 mb-4">Thought Stream</h2>
-        <div id="thoughts" class="space-y-2 font-mono text-sm">
-          <div class="text-slate-500">Waiting for thoughts...</div>
-        </div>
-      </div>
     </div>
-
-    <div class="bg-slate-800 rounded-xl p-6">
-      <h2 class="text-lg font-bold text-purple-400 mb-4">Query NeuroLink</h2>
-      <div class="flex gap-4">
-        <input type="text" id="query" class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white" placeholder="Ask NeuroLink...">
-        <button onclick="ask()" class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-500">Ask</button>
-      </div>
-      <div id="response" class="mt-4 p-4 bg-slate-700 rounded hidden"></div>
+    <div class="section">
+      <div class="section-title">Device Management <span class="line"></span></div>
+      <div class="section-desc">Install, configure, and switch between BCI devices.</div>
+      <div class="grid-2" id="device-list"><div class="card"><div class="desc">Loading devices…</div></div></div>
     </div>
-  </main>
-
-  <script>
-    async function loadNeuro() {
-      try {
-        const res = await fetch('/api/neuro');
-        const data = await res.json();
-        document.getElementById('neurons').textContent = data.neurons || 0;
-        document.getElementById('connections').textContent = data.connections || 0;
-        document.getElementById('synaptic').textContent = (data.synaptic || 0) + '%';
-      } catch(e) {}
-    }
-
-    async function ask() {
-      const query = document.getElementById('query').value;
-      if (!query) return;
-      
-      const resp = document.getElementById('response');
-      resp.classList.remove('hidden');
-      resp.textContent = 'Thinking...';
-      
-      try {
-        const res = await fetch('/api/brain/ask', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ question: query })
-        });
-        const data = await res.json();
-        resp.textContent = data.response || data.answer;
-      } catch(e) {
-        resp.textContent = 'Error: ' + e.message;
-      }
-    }
-
-    loadNeuro();
-  </script>
+    <div class="section">
+      <div class="section-title">EEG Frequency Bands <span class="line"></span></div>
+      <div class="section-desc">Raw band power from the current signal window.</div>
+      <div class="grid-3" id="band-cards"><div class="card"><div class="desc">Waiting for data…</div></div></div>
+    </div>
+  </div>
+</div>
+<script>
+var AUTH=(function(){
+  var TK='bridge_token',SK='bridge_simulated';
+  function gt(){return localStorage.getItem(TK)||'';}
+  function st(t){localStorage.setItem(TK,t);}
+  function ct(){localStorage.removeItem(TK);localStorage.removeItem(SK);}
+  function isSim(){return localStorage.getItem(SK)==='1';}
+  function showLogin(){document.getElementById('login-overlay').style.display='flex';document.getElementById('app').style.display='none';}
+  function showApp(){document.getElementById('login-overlay').style.display='none';document.getElementById('app').style.display='block';APP.start();}
+  function setErr(m){document.getElementById('login-err').textContent=m;}
+  function setBusy(b){var btn=document.getElementById('login-btn');btn.disabled=b;btn.textContent=b?'Signing in…':'Sign In';}
+  function login(){
+    var em=document.getElementById('f-email').value.trim(),pw=document.getElementById('f-pass').value;
+    setErr('');if(!em||!pw){setErr('Email and password required.');return;}setBusy(true);
+    fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,password:pw})})
+    .then(function(r){if(!r.ok)throw new Error(r.status===401?'Invalid credentials.':'Server error ('+r.status+').');return r.json();})
+    .then(function(d){var t=d.token||d.access_token||d.accessToken;if(!t)throw new Error('No token returned.');st(t);showApp();})
+    .catch(function(e){setErr(e.message||'Login failed.');setBusy(false);});
+  }
+  function logout(){ct();showLogin();}
+  function useSimulated(){localStorage.setItem(SK,'1');showApp();}
+  function init(){
+    if(isSim()){showApp();return;}
+    var t=gt();if(!t){showLogin();return;}
+    fetch('/auth/me',{headers:{Authorization:'Bearer '+t}})
+    .then(function(r){if(!r.ok)throw new Error();showApp();})
+    .catch(function(){ct();showLogin();});
+  }
+  return{init:init,login:login,logout:logout,useSimulated:useSimulated,getToken:gt,isSimulated:isSim};
+})();
+document.getElementById('f-email').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('f-pass').focus();});
+document.getElementById('f-pass').addEventListener('keydown',function(e){if(e.key==='Enter')AUTH.login();});
+var APP=(function(){
+  var timer=null,errCount=0;
+  function hdr(){var h={'Content-Type':'application/json'};var t=AUTH.getToken();if(t)h['Authorization']='Bearer '+t;return h;}
+  function toast(m,tp){var el=document.createElement('div');el.className='toast '+(tp||'ok');el.textContent=m;document.body.appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},3500);}
+  function pct(v){return(+(v)*100).toFixed(1)+'%';}
+  function simState(){var t=Date.now()/1000;return{ok:true,connected:true,source:'simulated',device:{name:'Simulated BCI',type:'simulated'},signalQuality:85,latency:{total:12},mood:'Neutral',intent:'Monitoring',state:{focus:Math.max(0,Math.min(1,0.65+0.15*Math.sin(t/7))),stress:Math.max(0,Math.min(1,0.30+0.10*Math.sin(t/5))),fatigue:Math.max(0,Math.min(1,0.20+0.08*Math.sin(t/9)))},emotion:{valence:0.62,arousal:0.48,dominance:0.55},features:{delta:2.14,theta:1.38,alpha:3.21,beta:1.87,gamma:0.93},adaptiveActions:[]};}
+  function simDevices(){return{ok:true,current:'simulated',running:true,devices:[{id:'simulated',name:'Simulated BCI',description:'Software-generated brain state.',setup:'npm run neurolink:sim',installed:true,requiresHardware:false},{id:'openbci',name:'OpenBCI Cyton',description:'8-channel EEG via USB dongle.',setup:'npm install @openbci/cyton',installed:false,requiresHardware:true,npmPackage:'@openbci/cyton'},{id:'muse',name:'Muse 2 / Muse S',description:'Consumer EEG headband via Bluetooth.',setup:'npm install muse-js',installed:false,requiresHardware:true,npmPackage:'muse-js'},{id:'neurosity',name:'Neurosity Crown',description:'Developer-grade 8-ch EEG.',setup:'npm install @neurosity/sdk',installed:false,requiresHardware:true,npmPackage:'@neurosity/sdk'}]};}
+  function renderState(d){
+    document.getElementById('api-banner').style.display='none';errCount=0;
+    if(!d.ok&&!d.connected){document.getElementById('status-text').textContent='Offline';document.getElementById('status-dot').className='dot off';return;}
+    var s=d.state||{},src=d.source||'unknown';
+    document.getElementById('status-text').textContent=(d.device?d.device.name:'Unknown')+' — '+src;
+    document.getElementById('status-dot').className='dot '+(src==='live'?'on':src==='simulated'?'sim':'off');
+    document.getElementById('v-focus').textContent=pct(s.focus||0);document.getElementById('m-focus').style.width=((s.focus||0)*100)+'%';
+    document.getElementById('v-stress').textContent=pct(s.stress||0);document.getElementById('m-stress').style.width=((s.stress||0)*100)+'%';
+    document.getElementById('v-fatigue').textContent=pct(s.fatigue||0);document.getElementById('m-fatigue').style.width=((s.fatigue||0)*100)+'%';
+    document.getElementById('v-mood').textContent=d.mood||'--';document.getElementById('v-intent').textContent=d.intent||'--';
+    document.getElementById('v-quality').textContent=(d.signalQuality||0)+'/100';
+    document.getElementById('v-latency').textContent=(d.latency?d.latency.total:0)+'ms';
+    document.getElementById('v-source').textContent=src.toUpperCase();
+    document.getElementById('v-source').className='data-value '+(src==='live'?'green':'gold');
+    var emo=d.emotion||{},emoEl=document.getElementById('emotion-rows');emoEl.innerHTML='';
+    [['Valence (positive-negative)',emo.valence,'cyan'],['Arousal (energy)',emo.arousal,'gold'],['Dominance (control)',emo.dominance,'green']].forEach(function(r){var row=document.createElement('div');row.className='data-row';var lbl=document.createElement('span');lbl.className='data-label';lbl.textContent=r[0];var val=document.createElement('span');val.className='data-value '+r[2];val.textContent=(+(r[1]||0)).toFixed(3);row.appendChild(lbl);row.appendChild(val);emoEl.appendChild(row);});
+    var actEl=document.getElementById('actions-list');actEl.innerHTML='';var actions=d.adaptiveActions||[];
+    if(actions.length===0){var none=document.createElement('div');none.style.cssText='font-size:11px;color:var(--dim);padding:4px 0';none.textContent='No adaptive actions needed';actEl.appendChild(none);}
+    else{actions.forEach(function(a){var row=document.createElement('div');row.style.cssText='font-size:11px;padding:4px 8px;margin-top:4px;border-radius:4px;background:rgba(255,209,102,.06);color:var(--gold)';row.textContent=a.action+': '+a.reason;actEl.appendChild(row);});}
+    var f=d.features||{},bandEl=document.getElementById('band-cards');bandEl.innerHTML='';
+    [['Delta',f.delta,'0.5-4 Hz','Deep sleep, unconscious'],['Theta',f.theta,'4-8 Hz','Drowsiness, meditation'],['Alpha',f.alpha,'8-12 Hz','Relaxed awareness'],['Beta',f.beta,'12-30 Hz','Active focus, thinking'],['Gamma',f.gamma,'30-50 Hz','Higher cognition, insight']].forEach(function(b){var card=document.createElement('div');card.className='card';var h=document.createElement('h3');h.textContent=b[0]+' ('+b[2]+')';card.appendChild(h);var val=document.createElement('div');val.className='data-value cyan';val.style.fontSize='18px';val.textContent=(+(b[1]||0)).toFixed(4)+' uV2/Hz';card.appendChild(val);var desc=document.createElement('div');desc.className='desc';desc.textContent=b[3];card.appendChild(desc);bandEl.appendChild(card);});
+  }
+  function renderDevices(d){
+    var el=document.getElementById('device-list');el.innerHTML='';
+    (d.devices||[]).forEach(function(dev){
+      var card=document.createElement('div');card.className='card';
+      var badge=document.createElement('span');badge.className='badge';
+      if(d.current===dev.id&&d.running){badge.className+=' active';badge.textContent='Active';}
+      else if(dev.installed){badge.className+=' installed';badge.textContent='Installed';}
+      else{badge.className+=' not-installed';badge.textContent='Not Installed';}
+      card.appendChild(badge);
+      var h=document.createElement('h3');h.textContent=dev.name;card.appendChild(h);
+      var desc=document.createElement('div');desc.className='desc';desc.textContent=dev.description;card.appendChild(desc);
+      var setup=document.createElement('div');setup.className='setup-steps';setup.textContent=dev.setup;card.appendChild(setup);
+      var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px;margin-top:12px;flex-wrap:wrap';
+      if(d.current===dev.id&&d.running){var dis=document.createElement('button');dis.className='btn btn-disable';dis.textContent='Disable';dis.onclick=function(){switchDev('off');};btnRow.appendChild(dis);}
+      else if(dev.installed||!dev.requiresHardware){var en=document.createElement('button');en.className='btn btn-enable';en.textContent='Enable';en.onclick=(function(id){return function(){switchDev(id);};})(dev.id);btnRow.appendChild(en);}
+      else{var inst=document.createElement('button');inst.className='btn btn-install';inst.textContent='Install '+dev.npmPackage;inst.onclick=(function(pkg){return function(){toast('Run: npm install '+pkg,'ok');};})(dev.npmPackage);btnRow.appendChild(inst);}
+      card.appendChild(btnRow);el.appendChild(card);
+    });
+  }
+  function loadState(){
+    if(AUTH.isSimulated()){renderState(simState());return;}
+    fetch('/api/neurolink/status',{headers:hdr()})
+    .then(function(r){if(r.status===401){AUTH.logout();throw new Error('unauth');}return r.json();})
+    .then(renderState)
+    .catch(function(e){if(e.message==='unauth')return;errCount++;if(errCount>=2){document.getElementById('api-banner').style.display='block';renderState(simState());}document.getElementById('status-text').textContent='API error';document.getElementById('status-dot').className='dot off';});
+  }
+  function loadDevices(){
+    if(AUTH.isSimulated()){renderDevices(simDevices());return;}
+    fetch('/api/neurolink/devices',{headers:hdr()})
+    .then(function(r){if(r.status===401){AUTH.logout();throw new Error('unauth');}return r.json();})
+    .then(renderDevices)
+    .catch(function(e){if(e.message==='unauth')return;renderDevices(simDevices());});
+  }
+  function switchDev(deviceId){
+    if(AUTH.isSimulated()){toast('Simulated: switched to '+deviceId,'ok');return;}
+    fetch('/api/neurolink/switch',{method:'POST',headers:hdr(),body:JSON.stringify({device:deviceId})})
+    .then(function(r){if(r.status===401){AUTH.logout();throw new Error('unauth');}return r.json();})
+    .then(function(d){if(d.ok){toast('Switched to '+(d.device||deviceId),'ok');setTimeout(function(){loadDevices();loadState();},1000);}else{toast('Switch failed: '+(d.error||'unknown'),'err');}})
+    .catch(function(e){if(e.message!=='unauth')toast('Error: '+e.message,'err');});
+  }
+  function start(){if(timer)clearInterval(timer);loadState();loadDevices();timer=setInterval(loadState,2000);}
+  return{start:start};
+})();
+AUTH.init();
+</script>
 </body>
 </html>
