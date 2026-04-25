@@ -1,0 +1,318 @@
+{
+  "meta": {
+    "generated_at": "2026-04-19T23:15Z",
+    "source_snapshot": "vps-settings-snapshot-2026-04-19.json",
+    "hardening_delta_applied": "2026-04-19",
+    "destination": "https://go.ai-os.co.za/settings",
+    "schema_version": 2,
+    "last_updated": "2026-04-19T23:55Z"
+  },
+  "ai_summary": {
+    "as_of": "2026-04-19T23:55Z",
+    "headline": "P0+P1 hardening applied, PM2 consolidated to canonical /root/.pm2 daemon, secrets redacted locally, deploy path made cross-platform.",
+    "timeline": [
+      {"ts": "2026-04-18", "event": "SSH host-key rotated on bridge-ai-os.com; new fingerprint SHA256:8IiNg6YhPPpCp57vDxf6dkzcrS2CnQwziiHA2yg8MOU attested via operator IP 196.6.107.184."},
+      {"ts": "2026-04-19", "event": "nginx P0 batch: 5 security headers (HSTS preload, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy) added to all 3 HTTPS server blocks."},
+      {"ts": "2026-04-19", "event": "nginx P1 batch: api_limit zone (120r/m, burst 20, nodelay) applied to /api/ on main + admin."},
+      {"ts": "2026-04-19", "event": "TLS P1 batch: TLSv1.0/1.1 dropped, ECDHE-only cipher suite pinned, OCSP stapling directives added (LE OCSP warnings benign)."},
+      {"ts": "2026-04-19", "event": "PM2 consolidation: 3 competing daemons (/root/.pm2, /home/deploy/.pm2, /etc/.pm2) reduced to single canonical /root/.pm2 with 11 apps + pm2-logrotate; 81KB dump.pm2 persisted."},
+      {"ts": "2026-04-19", "event": "Watchdog fixed: exports PM2_HOME=/root/.pm2 so restarts hit canonical daemon; retired non-existent bridge-auth-node systemd entry."},
+      {"ts": "2026-04-19", "event": "journald bounded: SystemMaxUse=500M, SystemKeepFree=1G, SystemMaxFileSize=50M, MaxRetentionSec=30day."},
+      {"ts": "2026-04-19", "event": "Local secrets redacted: GitHub PAT in settings.json:633 replaced with ${GITHUB_TOKEN} env var; Supabase token line removed from aoe-unified-final/.claude/settings.local.json. Revocation at source still required by operator."},
+      {"ts": "2026-04-19", "event": "Deploy script deploy_vps.sh rewritten cross-platform: rsync preferred, git-archive+tar-pipe fallback for Windows git-bash, untracked-file overlay, remote PM2_HOME export."},
+      {"ts": "2026-04-19", "event": "scripts/update-nginx.sh guarded with exit 3 + warning block — writes stale /var/www/bridgeai/public layout; live is /var/www/bridgeai/frontend/dist on sites-enabled/bridgeai-ssl."},
+      {"ts": "2026-04-19", "event": "Cert cruft purged: go.ai-os.co.za-0001 and -0002 deleted via certbot; nginx -t passes; 6 active cert-names remain."},
+      {"ts": "2026-04-19", "event": "core-gateway /health endpoint added (wallet/RPC-free) + registered in watchdog SERVICES at :3002; 2.0s uptime post-restart, returning 200."}
+    ],
+    "verified_live": [
+      "curl -sI https://bridge-ai-os.com/ returns all 5 security headers",
+      "TLS 1.0 and 1.1 negotiations rejected (--tls-max enforcement)",
+      "TLS 1.3 confirmed cipher TLS_AES_256_GCM_SHA384",
+      "Rate limit test: 5/5 /api requests under burst returned 200",
+      "pm2 list on canonical daemon shows 11 apps online, pm2-logrotate active",
+      "bridge-watchdog.sh exports PM2_HOME=/root/.pm2 and PATH",
+      "core-gateway /health=200 with {ok:true,service,uptime} — no wallet/RPC touch",
+      "Watchdog 6-entry SERVICES confirmed loaded by running loop (pid 468235); fresh log empty after cycle = all healthy",
+      "Cert fleet trimmed to 6 names (no -0001/-0002 cruft); nginx -t passes"
+    ],
+    "outstanding": [
+      "Operator action: revoke leaked GitHub PAT at github.com/settings/tokens and export GITHUB_TOKEN env var",
+      "Operator action: revoke leaked Supabase sbp_... token in Supabase project API settings",
+      "P2 investigations queued (cert cruft, unknown ports 3002/4012/5001/8001, auth-service socket, core-gateway)",
+      "Orchestra deploy: deploy_vps.sh ready, not yet executed (requires CONFIRM=yes VPS_HOST/USER/PATH)"
+    ]
+  },
+  "access_control": {
+    "super_admins": [
+      {
+        "email": "ryanpcowan@gmail.com",
+        "display_name": "Ryan Cowan",
+        "role": "super_admin",
+        "scope": ["sys", "bridge"],
+        "permissions": {
+          "sys": {
+            "vps_ssh": true,
+            "nginx_config": true,
+            "pm2_control": true,
+            "tls_certificates": true,
+            "systemd_units": true,
+            "watchdog_config": true,
+            "journald_config": true,
+            "firewall": true,
+            "backups_read": true,
+            "backups_write": true,
+            "secrets_read": true,
+            "secrets_rotate": true,
+            "user_management": true,
+            "billing": true,
+            "audit_log_read": true,
+            "audit_log_export": true
+          },
+          "bridge": {
+            "super_brain": true,
+            "auth_service": true,
+            "god_mode_system": true,
+            "terminal_proxy": true,
+            "ban_engine": true,
+            "svg_engine": true,
+            "core_gateway": true,
+            "admin_api": true,
+            "treasury": true,
+            "unified_server": true,
+            "bridge_gateway": true,
+            "fifty_applications": true,
+            "ehsa": true,
+            "supac": true,
+            "ubi": true,
+            "aid": true,
+            "aurora": true,
+            "agents_create": true,
+            "agents_delete": true,
+            "agents_impersonate": true,
+            "tokenomics": true,
+            "treasury_transfer": true,
+            "referral_system": true,
+            "dashboards_all": true,
+            "docs_edit": true
+          },
+          "dangerous_actions_require_2fa": true,
+          "override_break_glass": true
+        },
+        "provisioned_at": "2026-04-19T23:55Z",
+        "provisioned_by": "operator_directive",
+        "notes": "Full sys + BRIDGE super-admin. Break-glass override enabled. 2FA required on destructive actions (pm2 delete, certbot delete, systemctl disable, backup purge, user delete, treasury transfer)."
+      }
+    ],
+    "default_role_policy": {
+      "new_user": "member",
+      "role_ladder": ["member", "operator", "admin", "super_admin"],
+      "escalation_requires": "existing super_admin + audit log entry"
+    }
+  },
+  "infrastructure": {
+    "primary_host": {
+      "fqdn": "bridge-ai-os.com",
+      "hostname": "Nz69TCdf8v",
+      "ipv4": "102.208.228.44",
+      "provider": "Webway (VPS4)",
+      "os": "Ubuntu 22.04.5 LTS",
+      "cores": 16,
+      "memory_total_gib": 16,
+      "disk_total_gib": 193.65,
+      "disk_used_pct": 11.2
+    },
+    "domains": {
+      "primary": ["bridge-ai-os.com", "www.bridge-ai-os.com"],
+      "admin": ["admin.bridge-ai-os.com"],
+      "aliases": ["go.ai-os.co.za", "ai-os.co.za"],
+      "subdomains": ["aid.ai-os.co.za", "ehsa.ai-os.co.za", "god.ai-os.co.za", "live.bridge-ai-os.com"]
+    }
+  },
+  "security": {
+    "tls": {
+      "protocols": ["TLSv1.2", "TLSv1.3"],
+      "protocols_deprecated": ["TLSv1", "TLSv1.1"],
+      "prefer_server_ciphers": true,
+      "ciphers": "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256",
+      "hsts": {
+        "max_age": 63072000,
+        "include_subdomains": true,
+        "preload": true
+      },
+      "ocsp_stapling": "directives present; LE certs lack OCSP URL (warnings ignored)"
+    },
+    "headers": {
+      "strict_transport_security": "max-age=63072000; includeSubDomains; preload",
+      "x_frame_options": "SAMEORIGIN",
+      "x_content_type_options": "nosniff",
+      "referrer_policy": "strict-origin-when-cross-origin",
+      "permissions_policy": "geolocation=(), microphone=(), camera=(), payment=()"
+    },
+    "rate_limit": {
+      "api_zone": "api_limit",
+      "memory": "10m",
+      "rate": "120r/m",
+      "burst": 20,
+      "nodelay": true,
+      "applied_to": ["/api/ (main)", "/api/ (admin)"]
+    },
+    "ssh": {
+      "host_key_rotated_2026_04_18": true,
+      "current_fingerprint": "SHA256:8IiNg6YhPPpCp57vDxf6dkzcrS2CnQwziiHA2yg8MOU",
+      "operator_whitelist_ips": ["196.6.107.184"],
+      "notification_policy": "on host-key change: notify if source IP matches whitelist, alert+halt otherwise"
+    }
+  },
+  "process_manager": {
+    "pm2_home": "/root/.pm2",
+    "systemd_unit": "pm2-root.service",
+    "persistence_dump": "/root/.pm2/dump.pm2",
+    "dump_size_bytes": 81640,
+    "apps": [
+      {"id": 1, "name": "super-brain",     "mode": "cluster", "path": "/var/www/bridgeai/brain.js",                          "port": 8000},
+      {"id": 2, "name": "auth-service",    "mode": "cluster", "path": "/var/www/bridgeai/auth.js",                           "port": null},
+      {"id": 3, "name": "god-mode-system", "mode": "fork",    "path": "/root/god-mode-system.js",                            "port": 4012},
+      {"id": 4, "name": "terminal-proxy",  "mode": "cluster", "path": "/var/www/bridgeai/terminal-proxy.js",                 "port": 5002},
+      {"id": 5, "name": "ban-engine",      "mode": "fork",    "path": "/usr/bin/python3",                                    "port": 8001},
+      {"id": 6, "name": "svg-engine",      "mode": "cluster", "path": "/var/www/bridgeai/svg-engine/api/server.js",          "port": 7070},
+      {"id": 7, "name": "core-gateway",    "mode": "fork",    "path": "/root/core-gateway.js",                               "port": 3002, "health_endpoint": "/health", "notes": "Linea blockchain admin — BRDG ERC20 + SyncSwap router; X-Admin-Secret=HMAC(JWT_SECRET,'bridge-admin-withdraw-v1'); /health added 2026-04-19 (wallet/RPC-free probe)"},
+      {"id": 9, "name": "admin-api",       "mode": "fork",    "path": "/var/www/bridgeai/services/admin-api/index.js",       "port": 4011},
+      {"id": 10,"name": "treasury",        "mode": "fork",    "path": "/var/www/bridgeai/lib/treasury.js",                   "port": null},
+      {"id": 11,"name": "unified-server",  "mode": "fork",    "path": "/var/www/bridgeai/server.js",                         "port": 3000},
+      {"id": 12,"name": "bridge-gateway",  "mode": "fork",    "path": "/var/www/bridgeai/gateway.js",                        "port": 8080, "max_memory_restart": "600M"}
+    ],
+    "modules": [
+      {"id": 13, "name": "pm2-logrotate", "max_size": "10M", "retain": 7, "compress": true, "rotate_interval": "0 0 * * *"}
+    ]
+  },
+  "watchdog": {
+    "script": "/usr/local/bin/bridge-watchdog.sh",
+    "log": "/var/log/bridge-watchdog.log",
+    "interval_seconds": 30,
+    "pm2_home_exported": "/root/.pm2",
+    "services_monitored": [
+      {"port": 7070, "name": "svg-engine",      "restart_via": "pm2"},
+      {"port": 8080, "name": "gateway",         "restart_via": "pm2"},
+      {"port": 5002, "name": "terminal-proxy",  "restart_via": "pm2"},
+      {"port": 3000, "name": "bridge-os",       "restart_via": "pm2"},
+      {"port": 8000, "name": "super-brain",     "restart_via": "pm2"},
+      {"port": 3002, "name": "core-gateway",    "restart_via": "pm2", "added_2026_04_19": true, "notes": "treasury bridge — Linea/BRDG/SyncSwap"}
+    ],
+    "services_retired": [
+      {"was": "3030:bridge-auth:bridge-auth-node", "reason": "systemd unit never installed; auth-service pm2 app is replacement"}
+    ]
+  },
+  "logging": {
+    "journald": {
+      "system_max_use": "500M",
+      "system_keep_free": "1G",
+      "system_max_file_size": "50M",
+      "max_retention_sec": "30day"
+    },
+    "pm2_logs_dir": "/var/log/pm2/",
+    "watchdog_log": "/var/log/bridge-watchdog.log"
+  },
+  "nginx": {
+    "version": "1.18.0 (Ubuntu)",
+    "config_path": "/etc/nginx/sites-enabled/bridgeai-ssl",
+    "http2": true,
+    "gzip": {"enabled": true, "comp_level": 6, "min_length": 1024, "types": "text/*, application/javascript, application/json, image/svg+xml, font/ttf, font/otf, application/wasm"},
+    "brotli": false,
+    "server_tokens": "default (leaks version)",
+    "upstream_routes": {
+      "/api/": "127.0.0.1:8080 (bridge-gateway)",
+      "/auth/google|github|microsoft|exchange-code": "127.0.0.1:8000 (super-brain)",
+      "/auth/*": "127.0.0.1:8080 (bridge-gateway)",
+      "/health": "127.0.0.1:8080/health",
+      "/terminal": "127.0.0.1:5002",
+      "/ws": "127.0.0.1:8000",
+      "/svg-engine/": "127.0.0.1:7070",
+      "/admin/": "127.0.0.1:4011",
+      "/events/stream": "127.0.0.1:8080 (SSE, no buffering)"
+    }
+  },
+  "tls_certificates": {
+    "provider": "Let's Encrypt",
+    "active": ["bridge-ai-os.com", "live.bridge-ai-os.com", "ai-os.co.za", "aid.ai-os.co.za", "ehsa.ai-os.co.za", "go.ai-os.co.za", "god.ai-os.co.za"],
+    "cruft_candidates": ["go.ai-os.co.za-0001", "go.ai-os.co.za-0002"]
+  },
+  "backups": {
+    "location": "/root/bridge-backups/20260418-225835/",
+    "contents": ["bridgeai-ssl", "nginx.conf", "bridge-watchdog.sh", "journald.conf", "pm2-root.service.bak"]
+  },
+  "p2_findings_2026_04_19": {
+    "cert_cruft": {
+      "status": "safe_to_delete",
+      "details": "go.ai-os.co.za-0001 and -0002 appear only in /etc/letsencrypt/renewal/*.conf (certbot's own bookkeeping). No references found in /etc/nginx. certbot delete --cert-name cleans renewal+live+archive atomically.",
+      "delete_commands": [
+        "certbot delete --cert-name go.ai-os.co.za-0001",
+        "certbot delete --cert-name go.ai-os.co.za-0002"
+      ],
+      "post_delete_verify": "systemctl status certbot.timer; certbot certificates | grep -c 'go.ai-os.co.za'"
+    },
+    "unknown_listeners": {
+      "3002": {"pid": 1352, "command": "node /root/core-gateway.js", "user": "root", "status": "RESOLVED — core-gateway (pm2 app #7); was mis-reported as port:null in earlier snapshot", "action": "payload apps[7].port updated to 3002; add to watchdog"},
+      "4012": {"pid": 228458, "command": "node /root/god-mode-system.js", "user": "root", "status": "RESOLVED — god-mode-system (pm2 app #3); was mis-reported as port:null", "action": "payload apps[3].port updated to 4012; watchdog inclusion optional"},
+      "5001": {"pid": 1193, "command": "PM2 v6", "user": "root", "status": "KEEP — PM2 God daemon internal bus", "action": "no change"},
+      "8001": {"pid": 1343, "command": "python3", "user": "root", "status": "CONFIRMED ban-engine (pm2 app #5)", "action": "no change"}
+    },
+    "auth_service": {
+      "pid": 228491,
+      "listen_mode": "unix_socket_only",
+      "tcp_connections": ["localhost:redis ESTABLISHED"],
+      "verdict": "correct design — cluster IPC sidecar, not externally exposed. Routed through super-brain:8000 (oauth) and bridge-gateway:8080 (other /auth/*).",
+      "action": "no change — update docs to reflect unix-socket IPC pattern"
+    },
+    "core_gateway": {
+      "path": "/root/core-gateway.js",
+      "purpose": "Linea chain blockchain admin endpoint — BRDG ERC20 token ops + SyncSwap router (USDT pair)",
+      "auth_mechanism": "X-Admin-Secret header = HMAC-SHA256(JWT_SECRET, 'bridge-admin-withdraw-v1')",
+      "dependencies": ["/root/.env.core (LINEA_RPC_URL, BRDG_ADDRESS, JWT_SECRET)", "/root/derive-key"],
+      "listen_port": "not yet discovered — app is express-based but port not matched in probe; requires lsof -p 228491-equivalent on core-gateway pid",
+      "status": "online 26h uptime fork_mode — NOT legacy, active treasury bridge",
+      "action": "not shadow — promote from 'unusual' to 'active blockchain-admin sidecar'. Port needs discovery for watchdog inclusion."
+    }
+  },
+  "pending_followups": [
+    {
+      "priority": "P0",
+      "item": "Revoke leaked GitHub PAT at source",
+      "action": "https://github.com/settings/tokens → revoke github_pat_11AMD5... → export GITHUB_TOKEN env var",
+      "local_status": "settings.json:633 already redacted to ${GITHUB_TOKEN}",
+      "owner": "operator"
+    },
+    {
+      "priority": "P0",
+      "item": "Revoke leaked Supabase token at source",
+      "action": "Supabase project → Settings → API → revoke sbp_7105c5... (prefix-only; full value redacted per leak-discipline)",
+      "local_status": "line removed from aoe-unified-final/.claude/settings.local.json:62",
+      "owner": "operator"
+    },
+    {
+      "priority": "P2",
+      "item": "Identify :3002 and :4012 node processes",
+      "command": "readlink -f /proc/1352/exe; tr '\\0' ' ' < /proc/1352/cmdline; pwdx 1352; readlink -f /proc/228458/exe; tr '\\0' ' ' < /proc/228458/cmdline; pwdx 228458",
+      "goal": "classify as legitimate / stale / shadow"
+    },
+    {
+      "priority": "P2",
+      "item": "Discover core-gateway listen port",
+      "command": "CG_PID=$(PM2_HOME=/root/.pm2 pm2 jlist | python3 -c \"import sys,json;[print(a['pid']) for a in json.load(sys.stdin) if a['name']=='core-gateway']\"); lsof -p $CG_PID 2>/dev/null | grep LISTEN",
+      "then": "add to watchdog SERVICES list so pm2 restart triggers on port drop"
+    },
+    {
+      "priority": "P2",
+      "item": "Clean cert cruft — CLEARED for delete (no live references)",
+      "gate_status": "PASSED — only certbot-internal references exist",
+      "commands": [
+        "certbot delete --cert-name go.ai-os.co.za-0001",
+        "certbot delete --cert-name go.ai-os.co.za-0002"
+      ]
+    }
+  ],
+  "completed_followups": [
+    {"item": "scripts/update-nginx.sh retire-or-sync", "resolved_at": "2026-04-19", "action": "guarded with exit 3 + drift warning block"},
+    {"item": "auth-service actual port confirmation", "resolved_at": "2026-04-19", "action": "unix socket IPC — no external TCP"},
+    {"item": "core-gateway legitimacy check", "resolved_at": "2026-04-19", "action": "confirmed active blockchain-admin sidecar (Linea/BRDG/SyncSwap), not legacy"}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "view-health",
+  "name": "View system health",
+  "description": "Fetch /healthz and /admin/overview; display service counts, CPU, memory.",
+  "category": "observability",
+  "required_tier": "free",
+  "required_capability": null,
+  "confirmation_required": false,
+  "params": [],
+  "steps": [
+    { "type": "http_get", "path": "/healthz" },
+    { "type": "http_get", "path": "/admin/overview" }
+  ],
+  "estimated_duration_s": 1,
+  "audit": false
+}

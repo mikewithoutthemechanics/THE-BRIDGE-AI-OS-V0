@@ -1,0 +1,17 @@
+{
+  "id": "view-topology",
+  "name": "View cluster topology",
+  "description": "Render the PM2 process topology and inter-service edges.",
+  "category": "observability",
+  "required_tier": "free",
+  "required_capability": null,
+  "confirmation_required": false,
+  "params": [],
+  "steps": [
+    { "type": "http_get",  "path": "/admin/topology", "alias": "topology" },
+    { "type": "http_get",  "path": "/admin/overview", "alias": "overview" },
+    { "type": "render",    "target": "svg-topology", "source": "topology" }
+  ],
+  "estimated_duration_s": 1,
+  "audit": false
+}

@@ -1,0 +1,19 @@
+{
+  "id": "backup-db",
+  "name": "Trigger database backup",
+  "description": "Fire an ad-hoc backup of the primary database to the configured off-site bucket.",
+  "category": "data",
+  "required_tier": "enterprise",
+  "required_capability": null,
+  "confirmation_required": false,
+  "params": [
+    { "name": "tag", "type": "string", "required": false, "label": "Backup tag (e.g. pre-migration)" }
+  ],
+  "steps": [
+    { "type": "http_post", "path": "/admin/db/backup", "body": { "tag": "{tag}" } },
+    { "type": "poll",      "path": "/admin/db/backup/status", "until": "state=complete", "timeout_s": 900 }
+  ],
+  "estimated_duration_s": 300,
+  "audit": true,
+  "audit_action": "db_backup"
+}

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>EHSA — Causal AI Economy Brain</title>
+    <style>
+        :root {
+            --bg: #0a0e13; --panel: #0f151c; --accent: #00ff9c; --text: #cfe7dd;
+            --line: #1a2430; --radius: 14px;
+        }
+        body { background: var(--bg); color: var(--text); font: 13px monospace; margin: 0; padding: 20px; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .metric-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+        .metric { display: flex; justify-content: space-between; margin: 8px 0; }
+        .value { color: var(--accent); font-weight: bold; }
+        .causal-flow { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 20px auto; max-width: 800px; }
+        .flow-step { display: flex; align-items: center; margin: 10px 0; }
+        .flow-arrow { margin: 0 10px; color: var(--accent); }
+        .entropy-indicator { background: rgba(255, 107, 107, 0.1); border: 1px solid #ff6b6b; border-radius: 6px; padding: 8px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>EHSA — Causal AI Economy Brain</h1>
+
+    <div class="causal-flow">
+        <h3>Causal Value Chain</h3>
+        <div class="flow-step">
+            <span>Intelligence Cycle</span>
+            <span class="flow-arrow">→</span>
+            <span>EHSA Leads</span>
+            <span class="flow-arrow">→</span>
+            <span>Supaclaw Opportunities</span>
+            <span class="flow-arrow">→</span>
+            <span>Economy Executions</span>
+            <span class="flow-arrow">→</span>
+            <span>Treasury State</span>
+        </div>
+        <div class="entropy-indicator">
+            <strong>Entropy Injection:</strong> Active seeding prevents zero-state loops
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="metric-card">
+            <h3>Economic State</h3>
+            <div class="metric">
+                <span>Cycle:</span>
+                <span class="value" id="cycle">0</span>
+            </div>
+            <div class="metric">
+                <span>Treasury:</span>
+                <span class="value" id="treasury">R0</span>
+            </div>
+            <div class="metric">
+                <span>Revenue (Dynamic):</span>
+                <span class="value" id="revenue">R0</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <h3>Causal Pipeline</h3>
+            <div class="metric">
+                <span>Intelligence Score:</span>
+                <span class="value" id="intelligence">0.00</span>
+            </div>
+            <div class="metric">
+                <span>EHSA Leads:</span>
+                <span class="value" id="leads">0</span>
+            </div>
+            <div class="metric">
+                <span>Supaclaw Opportunities:</span>
+                <span class="value" id="opportunities">0</span>
+            </div>
+            <div class="metric">
+                <span>Economy Executions:</span>
+                <span class="value" id="executions">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="metric-card" style="margin-top: 20px;">
+        <h3>Event Bus Status</h3>
+        <div class="metric">
+            <span>Events Processed:</span>
+            <span class="value" id="events-processed">0</span>
+        </div>
+        <div class="metric">
+            <span>Last Sequence:</span>
+            <span class="value" id="last-seq">0</span>
+        </div>
+        <div class="metric">
+            <span>System Health:</span>
+            <span class="value" id="health">Initializing</span>
+        </div>
+    </div>
+
+    <div class="metric-card" style="margin-top: 20px;">
+        <h3>Controls</h3>
+        <button onclick="triggerIntelligenceCycle()">Trigger Intelligence Cycle</button>
+        <button onclick="injectEntropy()">Inject Entropy</button>
+        <button onclick="resetSystem()">Reset System</button>
+        <button onclick="runEconomicForecast()">Run Forecast</button>
+    </div>
+
+    <script src="ehsa-event-bus.js"></script>
+    <script src="economy-cycle.js"></script>
+    <script>
+        // Initialize the causal AI economy system
+        const eventBus = new EHSAEventBus();
+        const economyCycle = new EconomyCycle(eventBus);
+
+        let eventCount = 0;
+
+        // Event handlers for UI updates
+        eventBus.on('intelligence_cycle_complete', (event) => {
+            document.getElementById('intelligence').textContent = event.intelligence_score.toFixed(2);
+            updateEventCount();
+        });
+
+        eventBus.on('leads_generated', (event) => {
+            document.getElementById('leads').textContent = eventBus.state.leads;
+            updateEventCount();
+        });
+
+        eventBus.on('opportunities_created', (event) => {
+            document.getElementById('opportunities').textContent = eventBus.state.opportunities;
+            updateEventCount();
+        });
+
+        eventBus.on('executions_completed', (event) => {
+            document.getElementById('executions').textContent = eventBus.state.executions;
+            updateEventCount();
+        });
+
+        eventBus.on('revenue_realized', (event) => {
+            document.getElementById('revenue').textContent = 'R' + event.revenue_amount.toLocaleString();
+            updateEventCount();
+        });
+
+        eventBus.on('treasury_updated', (event) => {
+            document.getElementById('treasury').textContent = 'R' + eventBus.state.treasury.toLocaleString();
+            document.getElementById('cycle').textContent = eventBus.state.cycle;
+            updateEventCount();
+        });
+
+        eventBus.on('entropy_injection', () => {
+            document.getElementById('health').textContent = 'Entropy Injected';
+            setTimeout(() => document.getElementById('health').textContent = 'Healthy', 2000);
+        });
+
+        function updateEventCount() {
+            eventCount++;
+            document.getElementById('events-processed').textContent = eventCount;
+            document.getElementById('last-seq').textContent = eventBus.lastSeq;
+        }
+
+        // Control functions
+        function triggerIntelligenceCycle() {
+            const intelligenceScore = 0.5 + Math.random() * 0.5; // 0.5-1.0 range
+            eventBus.emitIntelligenceCycle(intelligenceScore, 'manual_trigger');
+            document.getElementById('health').textContent = 'Intelligence Cycle Triggered';
+        }
+
+        function injectEntropy() {
+            eventBus.ingest({
+                type: 'entropy_injection',
+                reason: 'manual_injection',
+                seq: eventBus.lastSeq + 1,
+                timestamp: Date.now()
+            });
+        }
+
+        function resetSystem() {
+            eventBus.reset();
+            economyCycle.adjustEconomicPolicy({
+                avgTaskValue: 15000,
+                marketDemand: 1.0,
+                successRate: 0.65
+            });
+            eventCount = 0;
+            updateUI();
+            document.getElementById('health').textContent = 'System Reset';
+        }
+
+        function runEconomicForecast() {
+            const forecast = economyCycle.forecastRevenue(eventBus.state.opportunities);
+            console.log('Economic Forecast:', forecast);
+            alert(`Expected Revenue: R${forecast.expected_revenue.toLocaleString()}\nRange: R${forecast.confidence_interval.low.toLocaleString()} - R${forecast.confidence_interval.high.toLocaleString()}`);
+        }
+
+        function updateUI() {
+            document.getElementById('cycle').textContent = eventBus.state.cycle;
+            document.getElementById('treasury').textContent = 'R' + eventBus.state.treasury.toLocaleString();
+            document.getElementById('leads').textContent = eventBus.state.leads;
+            document.getElementById('opportunities').textContent = eventBus.state.opportunities;
+            document.getElementById('executions').textContent = eventBus.state.executions;
+            document.getElementById('events-processed').textContent = eventCount;
+            document.getElementById('last-seq').textContent = eventBus.lastSeq;
+            document.getElementById('intelligence').textContent = '0.00';
+            document.getElementById('revenue').textContent = 'R0';
+        }
+
+        // Auto health check
+        setInterval(() => {
+            eventBus.checkSystemHealth();
+            if (eventBus.state.leads === 0 && eventBus.state.opportunities === 0) {
+                document.getElementById('health').textContent = 'Zero State Detected';
+            } else {
+                document.getElementById('health').textContent = 'Healthy';
+            }
+        }, 5000);
+
+        // Initialize UI
+        updateUI();
+        document.getElementById('health').textContent = 'System Initialized';
+    </script>
+</body>
+</html>

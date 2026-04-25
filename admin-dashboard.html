@@ -1,0 +1,144 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<title>Bridge AI OS — Control Plane</title>
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#0a0d12; --panel:#05070a; --panel2:#0a0e14;
+  --line:#0f1822; --line2:#1a2734;
+  --accent:#00ff9c; --dim:#00ff9c33; --faint:#00ff9c18;
+  --warn:#ffb347; --err:#ff4d6d; --info:#00bfff; --text:#cfe7dd; --muted:#6d8893;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(900px 500px at 25% 110%, rgba(0,255,156,.05), transparent 60%),
+    radial-gradient(800px 400px at 85% -10%, rgba(0,191,255,.05), transparent 60%),
+    var(--bg);
+  font-family:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  color:var(--text); overflow:hidden;
+  display:flex; height:100vh; min-height:100vh;
+}
+#canvas{
+  flex:2; position:relative; min-width:0; min-height:0;
+  background:radial-gradient(600px 400px at 50% 50%, rgba(0,191,255,.04), transparent 65%);
+}
+#panel{
+  flex:1; max-width:400px; min-width:300px;
+  background:var(--panel); border-left:1px solid var(--line);
+  padding:14px; overflow:auto;
+  -webkit-overflow-scrolling:touch;
+}
+svg#svg{width:100%; height:100%; display:block; touch-action:manipulation}
+h3{color:var(--info); margin:14px 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:1.5px; display:flex; align-items:center; gap:8px}
+h3:first-child{margin-top:0}
+.metric{display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed var(--dim); font-size:12px}
+.metric .v{color:var(--accent); font-variant-numeric:tabular-nums}
+.metric .v.warn{color:var(--warn)} .metric .v.err{color:var(--err)}
+#events{max-height:200px; overflow:auto; font-size:11px; border:1px solid var(--line); padding:6px 8px; border-radius:6px; background:var(--panel2)}
+#events div{padding:2px 0; border-bottom:1px solid var(--faint)}
+#events div:last-child{border-bottom:0}
+#events .err{color:var(--err)} #events .info{color:var(--info)} #events .warn{color:var(--warn)}
+#events .t{color:var(--muted); margin-right:6px; font-variant-numeric:tabular-nums}
+#pill{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--err); vertical-align:middle; box-shadow:0 0 6px currentColor}
+#pill.live{background:var(--accent); color:var(--accent)}
+#pill.stale{background:var(--warn); color:var(--warn)}
+button.act{
+  background:transparent; border:1px solid var(--line2); color:var(--accent);
+  font-family:inherit; font-size:11px; letter-spacing:.5px;
+  padding:8px 12px; cursor:pointer; margin-right:6px; margin-top:6px;
+  border-radius:6px; min-height:36px;
+}
+button.act:hover,button.act:focus{background:var(--faint); border-color:var(--accent); outline:0}
+button.act:active{transform:translateY(1px)}
+#sel b{color:var(--accent); font-size:13px; letter-spacing:.5px}
+#sel .kv{color:var(--muted); font-size:11px; margin:4px 0}
+#sel .kv b{color:var(--text); font-weight:500}
+.note{color:var(--muted); font-size:10px; margin-top:3px; letter-spacing:.5px}
+canvas#ac{width:100%; height:72px; background:var(--panel2); border:1px solid var(--line); border-radius:6px; display:block}
+
+/* ── SVG element styles ─────────────────────────── */
+.ring{fill:none; stroke:var(--line2); stroke-width:1; stroke-dasharray:2 6; opacity:.55}
+.hub-glow{filter:url(#glowFilter)}
+.node-g{cursor:pointer}
+.node-g text{fill:var(--text); font:11px/1 ui-monospace,monospace; pointer-events:none; text-anchor:middle; letter-spacing:.3px}
+.node-g .node-ring{fill:none; stroke:var(--line2); stroke-width:1; transition:stroke .2s}
+.node-g:hover .node-ring,.node-g.sel .node-ring{stroke:var(--accent)}
+.node-g .node-dot{transition:fill .3s, r .2s}
+.node-g:hover .node-dot{r:8}
+.edge{fill:none; stroke-width:1.2; opacity:.35; stroke-dasharray:3 7}
+.edge.on{stroke:url(#edgeOnGrad)} .edge.warn{stroke:var(--warn)} .edge.down{stroke:var(--err)}
+.edge.hot{opacity:.95; filter:drop-shadow(0 0 4px currentColor); stroke-width:1.6}
+@keyframes orbitSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.orbits{transform-box:fill-box; transform-origin:50% 50%; animation:orbitSpin 240s linear infinite}
+@keyframes dashDrift{to{stroke-dashoffset:-40}}
+.edge{animation:dashDrift 6s linear infinite}
+.edge.hot{animation-duration:1.8s}
+@keyframes nodePulse{0%{r:8;opacity:.9}100%{r:22;opacity:0}}
+.pulse{animation:nodePulse 1.8s ease-out infinite; fill:none; stroke-width:1.2}
+.pulse.warn{animation-duration:1.2s} .pulse.down{animation-duration:.9s}
+@keyframes hubBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.hub-core{transform-box:fill-box; transform-origin:50% 50%; animation:hubBreathe 3.5s ease-in-out infinite}
+.hub-label{fill:var(--text); font:600 12px/1 ui-monospace,monospace; letter-spacing:2.5px; text-anchor:middle; pointer-events:none}
+.hub-sub{fill:var(--muted); font:9px/1 ui-monospace,monospace; letter-spacing:2px; text-anchor:middle; pointer-events:none}
+
+@media (prefers-reduced-motion: reduce){
+  .orbits,.edge,.pulse,.hub-core{animation:none}
+}
+
+/* ── mobile ─────────────────────────────────────── */
+@media (max-width: 860px){
+  body{flex-direction:column; overflow:auto; height:auto}
+  #canvas{flex:0 0 auto; width:100%; aspect-ratio:4/3; max-height:60vh}
+  #panel{flex:0 0 auto; max-width:100%; min-width:0; width:100%; border-left:0; border-top:1px solid var(--line)}
+  button.act{min-height:44px; padding:10px 14px}
+  canvas#ac{height:60px}
+}
+@media (max-width: 420px){
+  #canvas{aspect-ratio:1/1}
+  .node-g text{font-size:9px}
+}
+</style></head><body>
+<div id="canvas">
+  <svg id="svg" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"  stop-color="#00ff9c" stop-opacity=".85"/>
+        <stop offset="55%" stop-color="#00bfff" stop-opacity=".28"/>
+        <stop offset="100%" stop-color="#00bfff" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="edgeOnGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%"   stop-color="#00bfff" stop-opacity=".2"/>
+        <stop offset="100%" stop-color="#00ff9c" stop-opacity=".95"/>
+      </linearGradient>
+      <filter id="glowFilter" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="4" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <g id="g-orbits" class="orbits"></g>
+    <g id="g-edges"></g>
+    <g id="g-hub"></g>
+    <g id="g-nodes"></g>
+    <g id="g-flows"></g>
+  </svg>
+</div>
+<div id="panel">
+<h3><span id="pill"></span>ADMIN-API</h3>
+<div class="metric"><span>Connection</span><span class="v" id="conn">offline</span></div>
+<div class="metric"><span>Services up</span><span class="v" id="up">—</span></div>
+<div class="metric"><span>Commit</span><span class="v" id="commit">—</span></div>
+<h3>AGGREGATE</h3>
+<div class="metric"><span>CPU load</span><span class="v" id="cpu">—</span></div>
+<div class="metric"><span>Memory</span><span class="v" id="mem">—</span></div>
+<div class="note">source: /admin/overview</div>
+<h3>EVENT STREAM</h3>
+<canvas id="ac" width="340" height="72"></canvas>
+<div class="note">events/sec → audio</div>
+<h3>SELECTED</h3>
+<div id="sel">click a node</div>
+<h3>LOG</h3>
+<div id="events"></div>
+</div>
+<script src="/public/js/admin-dashboard.js" defer></script></body></html>

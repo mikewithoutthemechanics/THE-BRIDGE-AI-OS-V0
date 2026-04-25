@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bridge AI OS — System Sitemap</title>
+<meta name="description" content="Complete interactive sitemap for Bridge AI OS — all pages, APIs, services, and infrastructure.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23050a0f'/><text x='4' y='24' font-size='22' fill='%2300c8ff'>B</text></svg>">
+<style>
+  :root {
+    --bg: #050a0f;
+    --surface: #0d1620;
+    --surface2: #111d2e;
+    --border: #1a2d45;
+    --accent: #00c8ff;
+    --green: #00e57b;
+    --purple: #a78bfa;
+    --orange: #fb923c;
+    --yellow: #ffd166;
+    --red: #ff4757;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --sidebar-w: 240px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  code, .mono {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+    font-size: 12px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* HEADER */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(5,10,15,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 56px;
+  }
+  .site-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
+  .site-logo .logo-mark {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 900;
+    color: #000;
+  }
+  .site-logo span.dim { color: var(--muted); font-weight: 400; margin-left: 4px; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+  .status-dot.degraded { background: var(--orange); }
+  .status-dot.error { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+  /* LAYOUT */
+  .app-layout { display: flex; min-height: calc(100vh - 56px); }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .search-wrap { padding: 0 12px 12px; }
+  .search-input {
+    width: 100%;
+    padding: 7px 10px 7px 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+    position: relative;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 9px center;
+  }
+  .search-input:focus { border-color: var(--accent); }
+
+  .nav-section { padding: 0 8px; }
+  .nav-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 8px 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13px;
+    transition: all 0.15s;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(0,200,255,0.08); color: var(--accent); }
+  .nav-item .nav-icon { font-size: 14px; min-width: 18px; text-align: center; }
+  .nav-count {
+    margin-left: auto;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* MAIN CONTENT */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    max-width: calc(100vw - var(--sidebar-w));
+  }
+
+  /* SECTION */
+  .content-section {
+    display: none;
+    animation: fadeIn 0.2s ease;
+  }
+  .content-section.active { display: block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+
+  .section-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .section-desc { color: var(--muted); font-size: 13px; }
+
+  /* GROUP LABEL */
+  .group-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 20px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .group-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* PAGE CARDS GRID */
+  .pages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .page-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.15s;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .page-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 60%, rgba(0,200,255,0.04));
+    pointer-events: none;
+  }
+  .page-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0,200,255,0.08);
+    text-decoration: none;
+  }
+  .page-card:hover .card-url { color: var(--accent); }
+  .card-top { display: flex; align-items: center; gap: 8px; }
+  .card-icon { font-size: 18px; }
+  .card-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .card-url { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; transition: color 0.15s; }
+  .card-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+  /* API TABLE */
+  .api-table-wrap { overflow-x: auto; margin-bottom: 16px; }
+  .api-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .api-table th {
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--surface2);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .api-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid rgba(26,45,69,0.5);
+    vertical-align: middle;
+  }
+  .api-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .api-table tr.hidden { display: none; }
+  .method-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-family: monospace;
+    min-width: 44px;
+    text-align: center;
+  }
+  .method-GET { background: rgba(0,229,123,0.15); color: var(--green); border: 1px solid rgba(0,229,123,0.3); }
+  .method-POST { background: rgba(0,200,255,0.15); color: var(--accent); border: 1px solid rgba(0,200,255,0.3); }
+  .method-PUT { background: rgba(255,209,102,0.15); color: var(--yellow); border: 1px solid rgba(255,209,102,0.3); }
+  .method-DELETE { background: rgba(255,71,87,0.15); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+  .api-path {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 2px 0;
+    transition: opacity 0.15s;
+  }
+  .api-path:hover { opacity: 0.75; }
+  .auth-icon { font-size: 13px; }
+  .api-desc { color: var(--muted); }
+
+  /* SERVICE CARDS */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .service-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .service-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .service-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .service-port {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .service-status-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .service-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+  }
+  .service-status-badge.online { background: rgba(0,229,123,0.1); border-color: rgba(0,229,123,0.25); color: var(--green); }
+  .service-status-badge.unknown { background: var(--surface2); border-color: var(--border); color: var(--muted); }
+  .service-desc { font-size: 12px; color: var(--muted); }
+
+  /* SUBDOMAIN GRID */
+  .subdomain-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .subdomain-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: border-color 0.15s;
+  }
+  .subdomain-card:hover { border-color: var(--accent); }
+  .subdomain-info { display: flex; flex-direction: column; gap: 3px; }
+  .subdomain-domain { font-size: 13px; font-weight: 600; color: var(--accent); font-family: monospace; }
+  .subdomain-purpose { font-size: 11px; color: var(--muted); }
+  .sd-status { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .sd-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .sd-dot.live { background: var(--green); box-shadow: 0 0 5px var(--green); animation: pulse 2s infinite; }
+
+  /* WS SECTION */
+  .ws-list { display: flex; flex-direction: column; gap: 10px; }
+  .ws-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .ws-type {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    min-width: 38px;
+    text-align: center;
+  }
+  .ws-type.ws { background: rgba(167,139,250,0.15); color: var(--purple); border: 1px solid rgba(167,139,250,0.3); }
+  .ws-type.sse { background: rgba(251,146,60,0.15); color: var(--orange); border: 1px solid rgba(251,146,60,0.3); }
+  .ws-path { font-family: monospace; font-size: 13px; color: var(--accent); flex: 1; }
+  .ws-desc { font-size: 12px; color: var(--muted); }
+
+  /* ECONOMY SECTION */
+  .split-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .split-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .split-bars { display: flex; flex-direction: column; gap: 10px; }
+  .split-bar-row { display: flex; align-items: center; gap: 12px; }
+  .split-bar-label { width: 140px; font-size: 12px; color: var(--muted); }
+  .split-bar-track {
+    flex: 1;
+    height: 20px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .split-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #000;
+    transition: width 0.6s ease;
+  }
+  .split-pct { width: 36px; font-size: 12px; font-weight: 600; text-align: right; }
+
+  .tiers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .tier-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .tier-card.pro { border-color: var(--accent); }
+  .tier-card.enterprise { border-color: var(--purple); }
+  .tier-name {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+  .tier-name.free { color: var(--muted); }
+  .tier-name.pro { color: var(--accent); }
+  .tier-name.enterprise { color: var(--purple); }
+  .tier-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid rgba(26,45,69,0.5); }
+  .tier-row:last-child { border: none; }
+  .tier-row .val { color: var(--green); font-weight: 600; }
+
+  .rails-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .rail-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .rail-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: none; }
+
+  /* MOBILE: top tab bar */
+  .mobile-tabs {
+    display: none;
+    overflow-x: auto;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 8px;
+    gap: 0;
+    position: sticky;
+    top: 56px;
+    z-index: 90;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mobile-tabs::-webkit-scrollbar { display: none; }
+  .mobile-tab {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .mobile-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .mobile-tabs { display: flex; }
+    .main-content { padding: 16px; max-width: 100vw; }
+    .pages-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .services-grid { grid-template-columns: 1fr; }
+    .tiers-grid { grid-template-columns: 1fr; }
+    .app-layout { flex-direction: column; }
+  }
+
+  /* HIGHLIGHT for search */
+  mark.hl { background: rgba(255,209,102,0.25); color: var(--yellow); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="site-logo">
+    <div class="logo-mark">B</div>
+    BRIDGE AI OS
+    <span class="dim">/ sitemap</span>
+  </div>
+  <div class="header-right">
+    <div class="status-badge" id="statusBadge">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Connecting…</span>
+    </div>
+    <div class="status-badge" id="brainBadge" style="display:none">
+      <span style="font-size:11px">&#129504;</span>
+      <span id="brainText">Brain</span>
+    </div>
+  </div>
+</header>
+
+<!-- MOBILE TABS -->
+<div class="mobile-tabs" id="mobileTabs">
+  <button class="mobile-tab active" onclick="showSection('pages',this)">Pages</button>
+  <button class="mobile-tab" onclick="showSection('api',this)">API</button>
+  <button class="mobile-tab" onclick="showSection('services',this)">Services</button>
+  <button class="mobile-tab" onclick="showSection('subdomains',this)">Domains</button>
+  <button class="mobile-tab" onclick="showSection('websockets',this)">WS/SSE</button>
+  <button class="mobile-tab" onclick="showSection('economy',this)">Economy</button>
+</div>
+
+<!-- APP LAYOUT -->
+<div class="app-layout">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="search-wrap">
+      <input type="text" class="search-input" id="searchInput" placeholder="Search pages, APIs…" oninput="handleSearch(this.value)">
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Navigation</div>
+      <button class="nav-item active" onclick="showSection('pages',this)" id="nav-pages">
+        <span class="nav-icon">&#9783;</span> Platform Pages <span class="nav-count">42</span>
+      </button>
+      <button class="nav-item" onclick="showSection('api',this)" id="nav-api">
+        <span class="nav-icon">&#9654;</span> API Reference <span class="nav-count">40+</span>
+      </button>
+      <button class="nav-item" onclick="showSection('services',this)" id="nav-services">
+        <span class="nav-icon">&#9881;</span> Services <span class="nav-count">9</span>
+      </button>
+      <button class="nav-item" onclick="showSection('subdomains',this)" id="nav-subdomains">
+        <span class="nav-icon">&#127760;</span> Subdomains <span class="nav-count">12</span>
+      </button>
+      <button class="nav-item" onclick="showSection('websockets',this)" id="nav-websockets">
+        <span class="nav-icon">&#8645;</span> WS &amp; Streams <span class="nav-count">4</span>
+      </button>
+      <button class="nav-item" onclick="showSection('economy',this)" id="nav-economy">
+        <span class="nav-icon">&#128178;</span> Revenue &amp; Economy
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- SECTION: PAGES -->
+    <section class="content-section active" id="section-pages">
+      <div class="section-header">
+        <div class="section-title">Platform Pages</div>
+        <div class="section-desc">All frontend routes served by the Bridge AI OS gateway at go.ai-os.co.za</div>
+      </div>
+
+      <div class="group-label">Core</div>
+      <div class="pages-grid" id="pagesGrid-core">
+        <a class="page-card" href="/">
+          <div class="card-top"><span class="card-icon">&#127968;</span><span class="card-name">Home</span></div>
+          <div class="card-url">/</div>
+          <div class="card-desc">Landing page — platform overview and sign-in prompt</div>
+        </a>
+        <a class="page-card" href="/dashboard">
+          <div class="card-top"><span class="card-icon">&#128202;</span><span class="card-name">Dashboard</span></div>
+          <div class="card-url">/dashboard</div>
+          <div class="card-desc">Main user dashboard with AIC, mission, treasury, and wallet widgets</div>
+        </a>
+        <a class="page-card" href="/profile">
+          <div class="card-top"><span class="card-icon">&#128100;</span><span class="card-name">Profile</span></div>
+          <div class="card-url">/profile</div>
+          <div class="card-desc">User profile management, plan info, and account settings</div>
+        </a>
+        <a class="page-card" href="/crm">
+          <div class="card-top"><span class="card-icon">&#128101;</span><span class="card-name">CRM</span></div>
+          <div class="card-url">/crm</div>
+          <div class="card-desc">Customer relationship management with lead pipeline and AI scoring</div>
+        </a>
+        <a class="page-card" href="/login">
+          <div class="card-top"><span class="card-icon">&#128273;</span><span class="card-name">Login</span></div>
+          <div class="card-url">/login</div>
+          <div class="card-desc">Email/password and OAuth (Google/GitHub) sign-in via Supabase PKCE</div>
+        </a>
+        <a class="page-card" href="/docs">
+          <div class="card-top"><span class="card-icon">&#128196;</span><span class="card-name">Docs</span></div>
+          <div class="card-url">/docs</div>
+          <div class="card-desc">Developer documentation hub — API reference, architecture, guides</div>
+        </a>
+        <a class="page-card" href="/sitemap">
+          <div class="card-top"><span class="card-icon">&#128204;</span><span class="card-name">Sitemap</span></div>
+          <div class="card-url">/sitemap</div>
+          <div class="card-desc">This page — interactive system map of all routes, APIs, and services</div>
+        </a>
+      </div>
+
+      <div class="group-label">Intelligence</div>
+      <div class="pages-grid" id="pagesGrid-intelligence">
+        <a class="page-card" href="/twin">
+          <div class="card-top"><span class="card-icon">&#129504;</span><span class="card-name">Digital Twin</span></div>
+          <div class="card-url">/twin</div>
+          <div class="card-desc">AI-powered digital twin interface — real-time decision simulation</div>
+        </a>
+        <a class="page-card" href="/avatar">
+          <div class="card-top"><span class="card-icon">&#129399;</span><span class="card-name">Avatar</span></div>
+          <div class="card-url">/avatar</div>
+          <div class="card-desc">AI avatar builder and persona configuration</div>
+        </a>
+        <a class="page-card" href="/agents">
+          <div class="card-top"><span class="card-icon">&#129302;</span><span class="card-name">Agents</span></div>
+          <div class="card-url">/agents</div>
+          <div class="card-desc">Autonomous agent swarm management and orchestration console</div>
+        </a>
+        <a class="page-card" href="/ehsa-brain">
+          <div class="card-top"><span class="card-icon">&#129504;</span><span class="card-name">EHSA Brain</span></div>
+          <div class="card-url">/ehsa-brain</div>
+          <div class="card-desc">Causal AI brain for healthcare systems — diagnostic and policy inference</div>
+        </a>
+        <a class="page-card" href="/executive-dashboard">
+          <div class="card-top"><span class="card-icon">&#127381;</span><span class="card-name">Executive Dashboard</span></div>
+          <div class="card-url">/executive-dashboard</div>
+          <div class="card-desc">C-suite overview with strategic KPIs, revenue, and AI intelligence briefings</div>
+        </a>
+        <a class="page-card" href="/intelligence">
+          <div class="card-top"><span class="card-icon">&#128269;</span><span class="card-name">Intelligence</span></div>
+          <div class="card-url">/intelligence</div>
+          <div class="card-desc">Market and competitive intelligence feeds powered by AIC Phase 3</div>
+        </a>
+      </div>
+
+      <div class="group-label">Economy</div>
+      <div class="pages-grid" id="pagesGrid-economy">
+        <a class="page-card" href="/marketplace">
+          <div class="card-top"><span class="card-icon">&#128722;</span><span class="card-name">Marketplace</span></div>
+          <div class="card-url">/marketplace</div>
+          <div class="card-desc">AI task marketplace — buy and sell automated services with BRDG tokens</div>
+        </a>
+        <a class="page-card" href="/wallet">
+          <div class="card-top"><span class="card-icon">&#128176;</span><span class="card-name">Wallet</span></div>
+          <div class="card-url">/wallet</div>
+          <div class="card-desc">ZAR + BRDG dual-currency wallet with transaction history</div>
+        </a>
+        <a class="page-card" href="/defi">
+          <div class="card-top"><span class="card-icon">&#128279;</span><span class="card-name">DeFi</span></div>
+          <div class="card-url">/defi</div>
+          <div class="card-desc">Decentralized finance tools on Linea zkEVM — staking, yield, liquidity</div>
+        </a>
+        <a class="page-card" href="/trading">
+          <div class="card-top"><span class="card-icon">&#128200;</span><span class="card-name">Trading</span></div>
+          <div class="card-url">/trading</div>
+          <div class="card-desc">Autonomous AI trading engine with strategy builder and backtesting</div>
+        </a>
+        <a class="page-card" href="/tokenomics">
+          <div class="card-top"><span class="card-icon">&#128142;</span><span class="card-name">Tokenomics</span></div>
+          <div class="card-url">/tokenomics</div>
+          <div class="card-desc">BRDG token supply, distribution model, and vesting schedules</div>
+        </a>
+        <a class="page-card" href="/treasury-dashboard">
+          <div class="card-top"><span class="card-icon">&#127984;</span><span class="card-name">Treasury Dashboard</span></div>
+          <div class="card-url">/treasury-dashboard</div>
+          <div class="card-desc">AEOS 4-way revenue split monitor, ops bank, and burn tracking</div>
+        </a>
+        <a class="page-card" href="/economy">
+          <div class="card-top"><span class="card-icon">&#128185;</span><span class="card-name">Economy</span></div>
+          <div class="card-url">/economy</div>
+          <div class="card-desc">Full economic overview — balances, flows, and reinvestment state</div>
+        </a>
+      </div>
+
+      <div class="group-label">Automation</div>
+      <div class="pages-grid" id="pagesGrid-automation">
+        <a class="page-card" href="/automation">
+          <div class="card-top"><span class="card-icon">&#9881;</span><span class="card-name">Automation</span></div>
+          <div class="card-url">/automation</div>
+          <div class="card-desc">Workflow automation builder — triggers, actions, and AI-powered pipelines</div>
+        </a>
+        <a class="page-card" href="/bossbots">
+          <div class="card-top"><span class="card-icon">&#129302;</span><span class="card-name">BossBots</span></div>
+          <div class="card-url">/bossbots</div>
+          <div class="card-desc">Deploy and manage boss-level autonomous bots with role hierarchies</div>
+        </a>
+        <a class="page-card" href="/leads">
+          <div class="card-top"><span class="card-icon">&#128229;</span><span class="card-name">Leads</span></div>
+          <div class="card-url">/leads</div>
+          <div class="card-desc">Lead generation and management with AI scoring and auto-nurture</div>
+        </a>
+        <a class="page-card" href="/marketing">
+          <div class="card-top"><span class="card-icon">&#128226;</span><span class="card-name">Marketing</span></div>
+          <div class="card-url">/marketing</div>
+          <div class="card-desc">AI-driven campaign builder, audience targeting, and performance analytics</div>
+        </a>
+      </div>
+
+      <div class="group-label">Infrastructure</div>
+      <div class="pages-grid" id="pagesGrid-infra">
+        <a class="page-card" href="/topology">
+          <div class="card-top"><span class="card-icon">&#128301;</span><span class="card-name">Topology</span></div>
+          <div class="card-url">/topology</div>
+          <div class="card-desc">Live service topology map — network graph of all microservices</div>
+        </a>
+        <a class="page-card" href="/terminal">
+          <div class="card-top"><span class="card-icon">&#62;</span><span class="card-name">Terminal</span></div>
+          <div class="card-url">/terminal</div>
+          <div class="card-desc">In-browser PTY terminal proxied via terminal-proxy :5002 websocket</div>
+        </a>
+        <a class="page-card" href="/system-dashboard">
+          <div class="card-top"><span class="card-icon">&#128249;</span><span class="card-name">System Dashboard</span></div>
+          <div class="card-url">/system-dashboard</div>
+          <div class="card-desc">Real-time system metrics — CPU, memory, uptime, error rates</div>
+        </a>
+        <a class="page-card" href="/logs">
+          <div class="card-top"><span class="card-icon">&#128220;</span><span class="card-name">Logs</span></div>
+          <div class="card-url">/logs</div>
+          <div class="card-desc">Streaming PM2 log viewer for all services</div>
+        </a>
+        <a class="page-card" href="/infra">
+          <div class="card-top"><span class="card-icon">&#128225;</span><span class="card-name">Infrastructure</span></div>
+          <div class="card-url">/infra</div>
+          <div class="card-desc">VPS infrastructure management — nginx, services, deployments</div>
+        </a>
+        <a class="page-card" href="/admin">
+          <div class="card-top"><span class="card-icon">&#128272;</span><span class="card-name">Admin</span></div>
+          <div class="card-url">/admin</div>
+          <div class="card-desc">Superadmin control panel — user management, system settings, overrides</div>
+        </a>
+      </div>
+
+      <div class="group-label">Vertical Products</div>
+      <div class="pages-grid" id="pagesGrid-verticals">
+        <a class="page-card" href="/ban">
+          <div class="card-top"><span class="card-icon">&#127981;</span><span class="card-name">BAN Engine</span></div>
+          <div class="card-url">/ban</div>
+          <div class="card-desc">Business Automation Node — enterprise vertical intelligence hub</div>
+        </a>
+        <a class="page-card" href="/hospital">
+          <div class="card-top"><span class="card-icon">&#127973;</span><span class="card-name">Hospital in a Box</span></div>
+          <div class="card-url">/hospital</div>
+          <div class="card-desc">Complete hospital management system with AI diagnostics</div>
+        </a>
+        <a class="page-card" href="/ehsa-app">
+          <div class="card-top"><span class="card-icon">&#129657;</span><span class="card-name">EHSA App</span></div>
+          <div class="card-url">/ehsa-app</div>
+          <div class="card-desc">Environmental Health Systems Analytics web application</div>
+        </a>
+        <a class="page-card" href="/aurora">
+          <div class="card-top"><span class="card-icon">&#127774;</span><span class="card-name">Aurora</span></div>
+          <div class="card-url">/aurora</div>
+          <div class="card-desc">Aurora energy intelligence platform — renewable grid management</div>
+        </a>
+        <a class="page-card" href="/ubi">
+          <div class="card-top"><span class="card-icon">&#129309;</span><span class="card-name">UBI Platform</span></div>
+          <div class="card-url">/ubi</div>
+          <div class="card-desc">Universal Basic Income distribution and verification platform</div>
+        </a>
+        <a class="page-card" href="/aid">
+          <div class="card-top"><span class="card-icon">&#10084;</span><span class="card-name">AID Portal</span></div>
+          <div class="card-url">/aid</div>
+          <div class="card-desc">AI-powered aid and humanitarian assistance coordination portal</div>
+        </a>
+        <a class="page-card" href="/abaas">
+          <div class="card-top"><span class="card-icon">&#127979;</span><span class="card-name">ABaaS</span></div>
+          <div class="card-url">/abaas</div>
+          <div class="card-desc">AI Business as a Service — complete business-in-a-box deployment</div>
+        </a>
+        <a class="page-card" href="/rootedearth">
+          <div class="card-top"><span class="card-icon">&#127807;</span><span class="card-name">Rooted Earth</span></div>
+          <div class="card-url">/rootedearth</div>
+          <div class="card-desc">Regenerative agriculture intelligence and supply chain platform</div>
+        </a>
+      </div>
+
+      <div class="group-label">Auth &amp; Onboarding</div>
+      <div class="pages-grid" id="pagesGrid-auth">
+        <a class="page-card" href="/onboarding">
+          <div class="card-top"><span class="card-icon">&#128075;</span><span class="card-name">Onboarding</span></div>
+          <div class="card-url">/onboarding</div>
+          <div class="card-desc">New user onboarding flow — entity setup, mission generation, plan selection</div>
+        </a>
+        <a class="page-card" href="/wizard">
+          <div class="card-top"><span class="card-icon">&#129497;</span><span class="card-name">Setup Wizard</span></div>
+          <div class="card-url">/wizard</div>
+          <div class="card-desc">Step-by-step platform configuration wizard for first-time users</div>
+        </a>
+        <a class="page-card" href="/checkout">
+          <div class="card-top"><span class="card-icon">&#128179;</span><span class="card-name">Checkout</span></div>
+          <div class="card-url">/checkout</div>
+          <div class="card-desc">Plan upgrade checkout — PayFast, Stripe, Paystack, Crypto payment rails</div>
+        </a>
+        <a class="page-card" href="/auth-callback">
+          <div class="card-top"><span class="card-icon">&#128260;</span><span class="card-name">Auth Callback</span></div>
+          <div class="card-url">/auth-callback</div>
+          <div class="card-desc">OAuth PKCE callback handler — exchanges Supabase code for Bridge JWT</div>
+        </a>
+        <a class="page-card" href="/welcome">
+          <div class="card-top"><span class="card-icon">&#127881;</span><span class="card-name">Welcome</span></div>
+          <div class="card-url">/welcome</div>
+          <div class="card-desc">Post-signup welcome page with platform tour and quick actions</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- SECTION: API -->
+    <section class="content-section" id="section-api">
+      <div class="section-header">
+        <div class="section-title">API Reference</div>
+        <div class="section-desc">All endpoints handled by the Bridge Gateway at :8080. Click a path to copy it.</div>
+      </div>
+
+      <div class="group-label">Auth APIs</div>
+      <div class="api-table-wrap">
+        <table class="api-table" id="apiTable-auth">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">GET /auth/me</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Returns current user profile from JWT</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/auth/token-exchange</span></td><td class="auth-icon">&#128275;</td><td class="api-desc">Exchanges Supabase access_token for Bridge JWT</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/auth/root-token</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Issues root token using ZERO_TRUST_SECRET header</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/auth/register</span></td><td class="auth-icon">&#128275;</td><td class="api-desc">Email/password registration — creates Supabase user + Bridge record</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/auth/login</span></td><td class="auth-icon">&#128275;</td><td class="api-desc">Email/password login — returns signed JWT</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="group-label">AEOS Core</div>
+      <div class="api-table-wrap">
+        <table class="api-table" id="apiTable-aeos">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/economy/me</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Returns current user wallet balance in ZAR and BRDG</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/treasury/auto-split</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Applies AEOS 4-way revenue split to an incoming amount</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/treasury/splits</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Returns treasury split history and balances</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/system/overview</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Full system state — services, economy, missions, AIC summary</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="group-label">Mission Statement Engine</div>
+      <div class="api-table-wrap">
+        <table class="api-table" id="apiTable-mse">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/mission/generate</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Generates AI mission statement + rules + T&amp;C for an entity</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/mission</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Lists all missions for the authenticated entity</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/mission/:id</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Returns a specific mission by ID</td></tr>
+            <tr><td><span class="method-badge method-PUT">PUT</span></td><td><span class="api-path" onclick="copyPath(this)">/api/mission/:id</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Updates mission status (active/expired) or edits rules</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="group-label">AIC — Autonomous Intelligence Core</div>
+      <div class="api-table-wrap">
+        <table class="api-table" id="apiTable-aic">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/classify</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 1: Classifies an input signal into entity type + intent</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/score</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 2: Opportunity score = (EDV × CP × SVM) / TTC</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/simulate</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 2: Monte Carlo simulation of opportunity outcomes</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/process</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 1: Main agent process — routes to appropriate swarm agent</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/process-v2</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 2: Enhanced process with scoring + reinvestment routing</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/close</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 3: Closes a deal via autonomous closer agent loop</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/state</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 2: Returns current AIC pipeline state and metrics</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/queue</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 2: Returns job queue depth per agent type</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/autonomy</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 3: Returns Autonomy Index (0–100) self-sufficiency score</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/intelligence</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 3: Intelligence report — anomalies, opportunities, recommendations</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/system</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 3: System manifest — full AIC configuration and capabilities</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/aic/detect</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Phase 3: Anomaly detection on time-series input data</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="group-label">Leads &amp; CRM</div>
+      <div class="api-table-wrap">
+        <table class="api-table" id="apiTable-leads">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/leads</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Returns paginated leads list with AIC score</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/leads</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Creates a new lead record</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/leads/:id/convert</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Converts a lead to a deal and triggers closer agent</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/leads/ai-generate</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Uses AI to generate qualified leads based on ICP criteria</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="group-label">Apps, Brands &amp; Platform</div>
+      <div class="api-table-wrap">
+        <table class="api-table" id="apiTable-platform">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/apps</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Lists registered apps for the authenticated user</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/apps</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Registers a new app with API key generation</td></tr>
+            <tr><td><span class="method-badge method-DELETE">DELETE</span></td><td><span class="api-path" onclick="copyPath(this)">/api/apps</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Deletes an app and revokes its API key</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/brands</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Lists brand profiles linked to user account</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/brands</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Creates a new brand profile with domain and assets</td></tr>
+            <tr><td><span class="method-badge method-DELETE">DELETE</span></td><td><span class="api-path" onclick="copyPath(this)">/api/brands</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Removes a brand profile</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/affiliates/me</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Returns affiliate stats, referral code, and earnings</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/automations</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Lists configured automation workflows</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/banking/summary</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Banking integration summary — connected accounts and balances</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/api/usage/event</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Records a platform usage event for billing and analytics</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="group-label">Brain &amp; AI Services</div>
+      <div class="api-table-wrap">
+        <table class="api-table" id="apiTable-brain">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/brain/status</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Returns super-brain :8000 health, version, and swarm agent count</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/skills</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Lists available AI skills registered with the execution server</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/marketplace/tasks</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Returns available tasks in the AI marketplace</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/api/bossbots</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Lists deployed BossBot instances and their status</td></tr>
+            <tr><td><span class="method-badge method-POST">POST</span></td><td><span class="api-path" onclick="copyPath(this)">/ask</span></td><td class="auth-icon">&#128274;</td><td class="api-desc">Freeform AI query endpoint — routes to brain RAG + swarm</td></tr>
+            <tr><td><span class="method-badge method-GET">GET</span></td><td><span class="api-path" onclick="copyPath(this)">/health</span></td><td class="auth-icon">&#128275;</td><td class="api-desc">Gateway health check — returns {"status":"OK"} with uptime</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION: SERVICES -->
+    <section class="content-section" id="section-services">
+      <div class="section-header">
+        <div class="section-title">Services</div>
+        <div class="section-desc">PM2-managed microservices running at /var/www/bridgeai/ on the VPS</div>
+      </div>
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">bridge-gateway</span>
+            <span class="service-port">:8080</span>
+          </div>
+          <div class="service-status-row">
+            <span class="service-status-badge online"><span class="sd-dot live"></span> Online</span>
+          </div>
+          <div class="service-desc">Primary HTTP gateway — nginx proxy target. Routes all inbound traffic to internal services, serves static files, handles JWT auth middleware, mission check, rate limiting.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">unified-server</span>
+            <span class="service-port">:3000</span>
+          </div>
+          <div class="service-status-row">
+            <span class="service-status-badge online"><span class="sd-dot live"></span> Online</span>
+          </div>
+          <div class="service-desc">Unified API server — handles /api/economy, /api/apps, /api/brands, /api/leads, /api/automations, and full passthrough list. Node.js + Express.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">super-brain</span>
+            <span class="service-port">:8000</span>
+          </div>
+          <div class="service-status-row">
+            <span class="service-status-badge online"><span class="sd-dot live"></span> Online</span>
+          </div>
+          <div class="service-desc">Python FastAPI AI brain — handles agent swarm, RAG, trading engine, AIC Phase 1–3, anomaly detection, autonomy index, intelligence reporting. WebSocket live events at /ws/&lt;channel&gt;.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">auth-service</span>
+            <span class="service-port">:5001</span>
+          </div>
+          <div class="service-status-row">
+            <span class="service-status-badge online"><span class="sd-dot live"></span> Online</span>
+          </div>
+          <div class="service-desc">Authentication microservice — JWT signing/verification, Supabase OAuth integration, PKCE token exchange, user registration and login, superadmin detection.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">ban-engine</span>
+            <span class="service-port">:8001</span>
+          </div>
+          <div class="service-status-row">
+            <span class="service-status-badge online"><span class="sd-dot live"></span> Online</span>
+          </div>
+          <div class="service-desc">Business Automation Node engine — vertical product intelligence for BAN, hospital, EHSA, Aurora, UBI, AID verticals. Python FastAPI.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">god-mode-system</span>
+            <span class="service-port">:3000</span>
+          </div>
+          <div class="service-status-row">
+            <span class="service-status-badge unknown"><span class="sd-dot"></span> Standby</span>
+          </div>
+          <div class="service-desc">Superadmin control layer — full system override capabilities, user impersonation, emergency controls. Restricted to superadmin role only.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">svg-engine</span>
+            <span class="service-port">dynamic</span>
+          </div>
+          <div class="service-status-row">
+            <span class="service-status-badge online"><span class="sd-dot live"></span> Online</span>
+          </div>
+          <div class="service-desc">SVG generation and teaching engine at E:\BridgeAI\svg-engine — programmatic diagram generation, skill visualizations, teaching content rendering.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">terminal-proxy</span>
+            <span class="service-port">:5002</span>
+          </div>
+          <div class="service-status-row">
+            <span class="service-status-badge online"><span class="sd-dot live"></span> Online</span>
+          </div>
+          <div class="service-desc">WebSocket PTY proxy — forwards browser terminal sessions via ws://:5002/terminal to the VPS shell. node-pty powered.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">admin-api</span>
+            <span class="service-port">varies</span>
+          </div>
+          <div class="service-status-row">
+            <span class="service-status-badge unknown"><span class="sd-dot"></span> Standby</span>
+          </div>
+          <div class="service-desc">Admin REST API — exposes system management endpoints, user management, service control, settings overrides for the admin dashboard.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: SUBDOMAINS -->
+    <section class="content-section" id="section-subdomains">
+      <div class="section-header">
+        <div class="section-title">Subdomains</div>
+        <div class="section-desc">All domains and subdomains in the Bridge AI OS network</div>
+      </div>
+      <div class="subdomain-grid">
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">go.ai-os.co.za</span>
+            <span class="subdomain-purpose">Main platform gateway — all users start here</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">bridge-ai-os.com</span>
+            <span class="subdomain-purpose">Primary marketing domain — redirects to platform</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">ai-os.co.za</span>
+            <span class="subdomain-purpose">Apex domain — South Africa primary TLD</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">ban.ai-os.co.za</span>
+            <span class="subdomain-purpose">Business Automation Node vertical product</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">ehsa.ai-os.co.za</span>
+            <span class="subdomain-purpose">Environmental Health Systems Analytics platform</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">aurora.ai-os.co.za</span>
+            <span class="subdomain-purpose">Aurora energy intelligence — renewable grid management</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">ubi.ai-os.co.za</span>
+            <span class="subdomain-purpose">Universal Basic Income distribution platform</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">aid.ai-os.co.za</span>
+            <span class="subdomain-purpose">AI-powered humanitarian aid coordination portal</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">hospitalinabox.ai-os.co.za</span>
+            <span class="subdomain-purpose">Hospital management + AI diagnostic system</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">rootedearth.ai-os.co.za</span>
+            <span class="subdomain-purpose">Regenerative agriculture intelligence platform</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">supac.ai-os.co.za</span>
+            <span class="subdomain-purpose">Supa-Claw edge workers and serverless functions</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+        <div class="subdomain-card">
+          <div class="subdomain-info">
+            <span class="subdomain-domain">abaas.ai-os.co.za</span>
+            <span class="subdomain-purpose">AI Business as a Service — complete business deployment</span>
+          </div>
+          <div class="sd-status"><span class="sd-dot live"></span> Live</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: WEBSOCKETS -->
+    <section class="content-section" id="section-websockets">
+      <div class="section-header">
+        <div class="section-title">WebSockets &amp; Streams</div>
+        <div class="section-desc">Real-time communication channels for live data, terminal, and event streaming</div>
+      </div>
+      <div class="ws-list">
+        <div class="ws-item">
+          <span class="ws-type ws">WS</span>
+          <span class="ws-path">ws://[host]:8000/ws/&lt;channel&gt;</span>
+          <span class="ws-desc">Brain live events — subscribe to agent decisions, AIC state changes, autonomy updates, and swarm activity by channel name</span>
+        </div>
+        <div class="ws-item">
+          <span class="ws-type ws">WS</span>
+          <span class="ws-path">ws://[host]:5002/terminal</span>
+          <span class="ws-desc">PTY terminal proxy — bidirectional shell session streamed to browser terminal at /terminal via node-pty</span>
+        </div>
+        <div class="ws-item">
+          <span class="ws-type sse">SSE</span>
+          <span class="ws-path">/events/stream</span>
+          <span class="ws-desc">Gateway SSE endpoint — server-sent events for real-time dashboard updates, system alerts, and service status changes</span>
+        </div>
+        <div class="ws-item">
+          <span class="ws-type sse">SSE</span>
+          <span class="ws-path">/api/events</span>
+          <span class="ws-desc">API-level event stream — platform-specific events including lead captures, mission completions, treasury splits, and AIC signals</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: ECONOMY -->
+    <section class="content-section" id="section-economy">
+      <div class="section-header">
+        <div class="section-title">Revenue &amp; Economy</div>
+        <div class="section-desc">AEOS — Autonomous Economic Operating System — governs all revenue flows on the platform</div>
+      </div>
+
+      <div class="split-diagram">
+        <div class="split-title">AEOS 4-Way Revenue Split</div>
+        <div class="split-bars">
+          <div class="split-bar-row">
+            <span class="split-bar-label">User (creator)</span>
+            <div class="split-bar-track">
+              <div class="split-bar-fill" style="width:80%;background:linear-gradient(90deg,#00e57b,#00c8ff)">80%</div>
+            </div>
+            <span class="split-pct" style="color:var(--green)">80%</span>
+          </div>
+          <div class="split-bar-row">
+            <span class="split-bar-label">Ops bank</span>
+            <div class="split-bar-track">
+              <div class="split-bar-fill" style="width:10%;background:var(--accent)">10%</div>
+            </div>
+            <span class="split-pct" style="color:var(--accent)">10%</span>
+          </div>
+          <div class="split-bar-row">
+            <span class="split-bar-label">Platform fee (Ryan)</span>
+            <div class="split-bar-track">
+              <div class="split-bar-fill" style="width:5%;background:var(--purple)">5%</div>
+            </div>
+            <span class="split-pct" style="color:var(--purple)">5%</span>
+          </div>
+          <div class="split-bar-row">
+            <span class="split-bar-label">Token burn (BRDG)</span>
+            <div class="split-bar-track">
+              <div class="split-bar-fill" style="width:5%;background:var(--orange)">5%</div>
+            </div>
+            <span class="split-pct" style="color:var(--orange)">5%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="group-label">Plan Tiers</div>
+      <div class="tiers-grid">
+        <div class="tier-card">
+          <div class="tier-name free">FREE</div>
+          <div class="tier-row"><span>User cut</span><span class="val">80%</span></div>
+          <div class="tier-row"><span>Platform fee</span><span class="val">5%</span></div>
+          <div class="tier-row"><span>Ops bank</span><span class="val">10%</span></div>
+          <div class="tier-row"><span>Burn</span><span class="val">5%</span></div>
+          <div class="tier-row"><span>Priority routing</span><span style="color:var(--red)">&#10005;</span></div>
+          <div class="tier-row"><span>AIC Phase</span><span class="val">1</span></div>
+        </div>
+        <div class="tier-card pro">
+          <div class="tier-name pro">PRO</div>
+          <div class="tier-row"><span>User cut</span><span class="val">80%</span></div>
+          <div class="tier-row"><span>Platform fee</span><span class="val">5%</span></div>
+          <div class="tier-row"><span>Ops bank</span><span class="val">10%</span></div>
+          <div class="tier-row"><span>Burn</span><span class="val">5%</span></div>
+          <div class="tier-row"><span>Priority routing</span><span style="color:var(--green)">&#10003;</span></div>
+          <div class="tier-row"><span>AIC Phase</span><span class="val">1+2</span></div>
+        </div>
+        <div class="tier-card enterprise">
+          <div class="tier-name enterprise">ENTERPRISE</div>
+          <div class="tier-row"><span>User cut</span><span class="val">80%</span></div>
+          <div class="tier-row"><span>Platform fee</span><span class="val">5%</span></div>
+          <div class="tier-row"><span>Ops bank</span><span class="val">10%</span></div>
+          <div class="tier-row"><span>Burn</span><span class="val">5%</span></div>
+          <div class="tier-row"><span>Priority routing</span><span style="color:var(--green)">&#10003;</span></div>
+          <div class="tier-row"><span>AIC Phase</span><span class="val">1+2+3</span></div>
+        </div>
+      </div>
+
+      <div class="group-label">Payment Rails</div>
+      <div class="rails-grid">
+        <div class="rail-card">
+          <span class="rail-icon">&#127472;&#127462;</span>
+          PayFast
+          <div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:3px">ZAR · South Africa</div>
+        </div>
+        <div class="rail-card">
+          <span class="rail-icon">&#127475;&#127468;</span>
+          Paystack
+          <div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:3px">NGN/ZAR · Africa</div>
+        </div>
+        <div class="rail-card">
+          <span class="rail-icon">&#128178;</span>
+          Stripe
+          <div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:3px">USD/EUR · Global</div>
+        </div>
+        <div class="rail-card">
+          <span class="rail-icon">&#128279;</span>
+          Crypto
+          <div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:3px">BRDG · Linea zkEVM</div>
+        </div>
+        <div class="rail-card">
+          <span class="rail-icon">&#128181;</span>
+          PayPal
+          <div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:3px">USD · Global</div>
+        </div>
+      </div>
+
+      <div class="group-label" style="margin-top:24px">Dual Currency</div>
+      <div class="services-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">ZAR (Fiat)</span>
+            <span class="service-port" style="color:var(--green)">Rand</span>
+          </div>
+          <div class="service-desc">South African Rand for fiat payment rails — PayFast, Paystack, bank transfers. Stored in Supabase wallet table. Used for all local transactions.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-name">BRDG (Token)</span>
+            <span class="service-port" style="color:var(--purple)">On-chain</span>
+          </div>
+          <div class="service-desc">Bridge Token on Linea zkEVM — ERC-20 utility token. 5% of every transaction is burned. Used for marketplace, staking, and governance voting.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── SECTION NAVIGATION ──────────────────────────────────────────
+function showSection(name, el) {
+  document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .mobile-tab').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  // also sync sidebar/mobile tab
+  const sidebarBtn = document.getElementById('nav-' + name);
+  if (sidebarBtn) sidebarBtn.classList.add('active');
+}
+
+// ─── HEALTH CHECK ─────────────────────────────────────────────────
+async function checkHealth() {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  try {
+    const r = await fetch('/health', { signal: AbortSignal.timeout(4000) });
+    const j = await r.json().catch(() => ({}));
+    dot.className = 'status-dot live';
+    txt.textContent = 'LIVE' + (j.uptime ? ' · ' + Math.floor(j.uptime/3600) + 'h' : '');
+  } catch {
+    dot.className = 'status-dot error';
+    txt.textContent = 'DEGRADED';
+  }
+}
+
+async function checkBrain() {
+  const badge = document.getElementById('brainBadge');
+  const txt = document.getElementById('brainText');
+  try {
+    const r = await fetch('/api/brain/status', { signal: AbortSignal.timeout(4000) });
+    const j = await r.json().catch(() => ({}));
+    badge.style.display = 'flex';
+    txt.textContent = 'Brain ' + (j.status === 'ok' || j.status === 'OK' ? '&#129504; Online' : '&#129504; ' + (j.status || 'standby'));
+    badge.innerHTML = '<span style="font-size:11px">&#129504;</span><span>' + (j.status === 'ok' || j.status === 'OK' ? 'Brain Online' : 'Brain ' + (j.status || 'standby')) + '</span>';
+  } catch {
+    badge.style.display = 'flex';
+    badge.innerHTML = '<span style="font-size:11px">&#129504;</span><span>Brain offline</span>';
+  }
+}
+
+// ─── COPY PATH ─────────────────────────────────────────────────────
+function copyPath(el) {
+  const text = el.textContent.replace(/^(GET|POST|PUT|DELETE)\s+/, '');
+  navigator.clipboard.writeText(text).then(() => showToast('Copied: ' + text)).catch(() => showToast('Copy failed'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── SEARCH ────────────────────────────────────────────────────────
+function handleSearch(q) {
+  const query = q.toLowerCase().trim();
+  // Filter page cards
+  document.querySelectorAll('.page-card').forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = (!query || text.includes(query)) ? '' : 'none';
+  });
+  // Filter API rows
+  document.querySelectorAll('.api-table tbody tr').forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = (!query || text.includes(query)) ? '' : 'none';
+  });
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────
+checkHealth();
+checkBrain();
+setInterval(checkHealth, 30000);
+</script>
+</body>
+</html>

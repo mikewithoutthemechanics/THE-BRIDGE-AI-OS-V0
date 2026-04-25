@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bridge AI OS — Developer Documentation</title>
+<meta name="description" content="Complete developer documentation for Bridge AI OS — authentication, APIs, AEOS economy, AIC, deployment, and SDK.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23050a0f'/><text x='4' y='24' font-size='22' fill='%2300c8ff'>B</text></svg>">
+<style>
+:root {
+  --bg: #050a0f;
+  --surface: #0d1620;
+  --surface2: #111d2e;
+  --surface3: #0a1422;
+  --border: #1a2d45;
+  --accent: #00c8ff;
+  --green: #00e57b;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --yellow: #ffd166;
+  --red: #ff4757;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --muted2: #94a3b8;
+  --sidebar-w: 256px;
+  --toc-w: 200px;
+  --code-bg: #060f1a;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 26px; font-weight: 800; line-height: 1.3; margin-bottom: 12px; }
+h2 { font-size: 20px; font-weight: 700; line-height: 1.3; margin-bottom: 10px; margin-top: 36px; padding-top: 36px; border-top: 1px solid var(--border); color: var(--text); }
+h2:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; margin-top: 24px; color: var(--text); }
+h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; margin-top: 18px; color: var(--muted2); }
+p { color: var(--muted2); margin-bottom: 12px; }
+ul, ol { padding-left: 20px; color: var(--muted2); margin-bottom: 12px; }
+li { margin-bottom: 4px; }
+strong { color: var(--text); }
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+  font-size: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--accent);
+}
+
+/* HEADER */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(5,10,15,0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 54px;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.logo-mark {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: #000;
+  flex-shrink: 0;
+}
+.header-title { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; color: var(--text); }
+.header-title span { color: var(--muted); font-weight: 400; }
+.version-badge {
+  padding: 3px 10px;
+  background: rgba(167,139,250,0.12);
+  border: 1px solid rgba(167,139,250,0.3);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--purple);
+}
+.header-right { display: flex; align-items: center; gap: 10px; }
+.header-link {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+.header-link:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+.hamburger {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 16px;
+}
+
+/* THREE-COLUMN LAYOUT */
+.app-layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr var(--toc-w);
+  min-height: calc(100vh - 54px);
+  position: relative;
+}
+
+/* LEFT SIDEBAR */
+.left-sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 54px;
+  height: calc(100vh - 54px);
+  overflow-y: auto;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+}
+.left-sidebar::-webkit-scrollbar { width: 3px; }
+.left-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.sidebar-search-wrap { padding: 0 10px 10px; }
+.sidebar-search {
+  width: 100%;
+  padding: 7px 10px 7px 30px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 8px center;
+}
+.sidebar-search:focus { border-color: var(--accent); }
+
+.nav-group { margin-bottom: 4px; }
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  user-select: none;
+  transition: color 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.nav-group-header:hover { color: var(--text); }
+.nav-group-header .chevron {
+  font-size: 9px;
+  transition: transform 0.2s;
+}
+.nav-group-header.open .chevron { transform: rotate(90deg); }
+.nav-group-items { overflow: hidden; }
+.nav-group-items.collapsed { display: none; }
+
+.nav-link-item {
+  display: block;
+  padding: 5px 14px 5px 24px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all 0.12s;
+  text-decoration: none;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.nav-link-item:hover { color: var(--text); background: rgba(255,255,255,0.03); text-decoration: none; }
+.nav-link-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(0,200,255,0.05); }
+
+/* CENTER CONTENT */
+.center-content {
+  padding: 32px 40px;
+  overflow-y: auto;
+  max-width: 860px;
+}
+
+/* RIGHT TOC */
+.right-toc {
+  background: var(--surface3);
+  border-left: 1px solid var(--border);
+  position: sticky;
+  top: 54px;
+  height: calc(100vh - 54px);
+  overflow-y: auto;
+  padding: 16px 14px;
+}
+.right-toc::-webkit-scrollbar { width: 3px; }
+.right-toc::-webkit-scrollbar-thumb { background: var(--border); }
+.toc-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.toc-item {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 3px 0 3px 8px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.12s;
+  text-decoration: none;
+  line-height: 1.4;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.toc-item:hover { color: var(--text); text-decoration: none; }
+.toc-item.active { color: var(--accent); border-left-color: var(--accent); }
+.toc-item.sub { padding-left: 18px; font-size: 11px; }
+
+/* DOC SECTION */
+.doc-section { display: none; }
+.doc-section.active { display: block; }
+
+/* CODE BLOCKS */
+.code-block-wrap {
+  position: relative;
+  margin: 14px 0;
+}
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #a8c7fa;
+}
+.code-block::-webkit-scrollbar { height: 4px; }
+.code-block::-webkit-scrollbar-track { background: transparent; }
+.code-block::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.code-lang {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  font-family: monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 3px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-btn:hover { background: var(--surface); color: var(--text); border-color: var(--accent); }
+.copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+/* Syntax highlight colors — pure CSS via spans */
+.kw { color: #c792ea; }      /* keywords: const, let, function, async, await, return, if, else */
+.fn { color: #82aaff; }      /* function names */
+.str { color: #c3e88d; }     /* strings */
+.num { color: #f78c6c; }     /* numbers */
+.cmt { color: #546e7a; font-style: italic; } /* comments */
+.prop { color: #80cbc4; }    /* object properties */
+.op { color: #89ddff; }      /* operators, punctuation */
+.typ { color: #ffcb6b; }     /* types, class names */
+.uri { color: var(--accent); } /* URLs, paths */
+
+/* API TABLE */
+.api-table-wrap { overflow-x: auto; margin: 14px 0; }
+.api-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.api-table th {
+  text-align: left; padding: 7px 10px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.api-table td { padding: 8px 10px; border-bottom: 1px solid rgba(26,45,69,0.4); vertical-align: top; }
+.api-table tr:hover td { background: rgba(255,255,255,0.015); }
+.method-badge {
+  display: inline-block; padding: 2px 6px; border-radius: 3px;
+  font-size: 10px; font-weight: 700; font-family: monospace;
+  min-width: 42px; text-align: center;
+}
+.m-GET { background: rgba(0,229,123,0.12); color: var(--green); border: 1px solid rgba(0,229,123,0.25); }
+.m-POST { background: rgba(0,200,255,0.12); color: var(--accent); border: 1px solid rgba(0,200,255,0.25); }
+.m-PUT { background: rgba(255,209,102,0.12); color: var(--yellow); border: 1px solid rgba(255,209,102,0.25); }
+.m-DELETE { background: rgba(255,71,87,0.12); color: var(--red); border: 1px solid rgba(255,71,87,0.25); }
+.api-path-cell { font-family: monospace; font-size: 11px; color: var(--accent); }
+.auth-req { color: var(--yellow); font-size: 11px; }
+.no-auth { color: var(--muted); font-size: 11px; }
+
+/* CALLOUT BOXES */
+.callout {
+  display: flex; gap: 12px; padding: 14px 16px;
+  border-radius: 8px; margin: 14px 0;
+  border: 1px solid;
+}
+.callout.info { background: rgba(0,200,255,0.06); border-color: rgba(0,200,255,0.2); }
+.callout.warn { background: rgba(255,209,102,0.06); border-color: rgba(255,209,102,0.2); }
+.callout.tip { background: rgba(0,229,123,0.06); border-color: rgba(0,229,123,0.2); }
+.callout-icon { font-size: 16px; flex-shrink: 0; line-height: 1.5; }
+.callout-body { font-size: 13px; color: var(--muted2); }
+.callout-body strong { color: var(--text); }
+
+/* SERVICE MAP diagram */
+.arch-diagram {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  font-family: monospace;
+  font-size: 12px;
+}
+.arch-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.arch-box {
+  padding: 8px 14px; border-radius: 6px;
+  border: 1px solid; text-align: center;
+  min-width: 130px; font-size: 12px; font-weight: 600;
+}
+.arch-box.nginx { border-color: var(--orange); color: var(--orange); background: rgba(251,146,60,0.08); }
+.arch-box.gateway { border-color: var(--accent); color: var(--accent); background: rgba(0,200,255,0.08); }
+.arch-box.brain { border-color: var(--purple); color: var(--purple); background: rgba(167,139,250,0.08); }
+.arch-box.unified { border-color: var(--green); color: var(--green); background: rgba(0,229,123,0.08); }
+.arch-box.auth { border-color: var(--yellow); color: var(--yellow); background: rgba(255,209,102,0.08); }
+.arch-box.supa { border-color: #3ecf8e; color: #3ecf8e; background: rgba(62,207,142,0.08); }
+.arch-box.redis { border-color: var(--red); color: var(--red); background: rgba(255,71,87,0.08); }
+.arch-arrow { color: var(--muted); font-size: 14px; }
+.arch-arrow-down { color: var(--muted); font-size: 18px; line-height: 1; margin: 2px 0; }
+.arch-split { display: flex; gap: 12px; align-items: flex-start; margin-top: 4px; }
+.arch-column { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.arch-label { font-size: 10px; color: var(--muted); text-align: center; max-width: 120px; }
+
+/* BACK TO TOP */
+.back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 500;
+  width: 38px; height: 38px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  transition: all 0.2s;
+  opacity: 0; pointer-events: none;
+}
+.back-to-top.visible { opacity: 1; pointer-events: all; }
+.back-to-top:hover { color: var(--accent); border-color: var(--accent); }
+
+/* SEARCH HIGHLIGHT */
+mark.hl { background: rgba(255,209,102,0.25); color: var(--yellow); border-radius: 2px; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 70px; right: 24px;
+  background: var(--surface2); border: 1px solid var(--accent);
+  color: var(--text); padding: 9px 14px; border-radius: 7px;
+  font-size: 12px; z-index: 9999;
+  opacity: 0; transform: translateY(6px); transition: all 0.2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: none; }
+
+/* CHANGELOG */
+.changelog-entry {
+  border-left: 2px solid var(--border);
+  padding-left: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 4px;
+}
+.changelog-date {
+  font-size: 12px; font-weight: 600; color: var(--accent);
+  font-family: monospace; margin-bottom: 6px;
+}
+.changelog-entry ul { margin-bottom: 0; }
+
+/* MOBILE SIDEBAR OVERLAY */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 150;
+}
+.sidebar-overlay.open { display: block; }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .right-toc { display: none; }
+  .app-layout { grid-template-columns: var(--sidebar-w) 1fr; }
+}
+@media (max-width: 720px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .left-sidebar {
+    position: fixed;
+    top: 54px;
+    left: -100%;
+    z-index: 160;
+    width: 280px;
+    height: calc(100vh - 54px);
+    transition: left 0.25s ease;
+  }
+  .left-sidebar.open { left: 0; }
+  .hamburger { display: flex; align-items: center; }
+  .center-content { padding: 20px 16px; }
+  .version-badge { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-left">
+    <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle menu">&#9776;</button>
+    <div class="logo-mark">B</div>
+    <span class="header-title">BRIDGE AI OS <span>/ docs</span></span>
+    <span class="version-badge">v2.5.0 &mdash; April 2026</span>
+  </div>
+  <div class="header-right">
+    <a href="/dashboard" class="header-link">Dashboard</a>
+    <a href="/sitemap" class="header-link">Sitemap</a>
+    <a href="https://go.ai-os.co.za" class="header-link">&#8594; Platform</a>
+  </div>
+</header>
+
+<!-- MOBILE SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- APP LAYOUT -->
+<div class="app-layout">
+
+  <!-- LEFT SIDEBAR -->
+  <nav class="left-sidebar" id="leftSidebar">
+    <div class="sidebar-search-wrap">
+      <input type="text" class="sidebar-search" id="docSearch" placeholder="Search docs…" oninput="docsSearch(this.value)">
+    </div>
+
+    <div class="nav-group">
+      <button class="nav-group-header open" onclick="toggleGroup(this)">
+        <span>Getting Started</span><span class="chevron">&#9654;</span>
+      </button>
+      <div class="nav-group-items">
+        <button class="nav-link-item active" onclick="showDoc('overview',this)">Overview</button>
+        <button class="nav-link-item" onclick="showDoc('architecture',this)">Architecture</button>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <button class="nav-group-header open" onclick="toggleGroup(this)">
+        <span>Core Concepts</span><span class="chevron">&#9654;</span>
+      </button>
+      <div class="nav-group-items">
+        <button class="nav-link-item" onclick="showDoc('authentication',this)">Authentication</button>
+        <button class="nav-link-item" onclick="showDoc('aeos',this)">AEOS Economy</button>
+        <button class="nav-link-item" onclick="showDoc('mse',this)">Mission Engine</button>
+        <button class="nav-link-item" onclick="showDoc('aic',this)">AIC — Autonomous Intelligence</button>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <button class="nav-group-header open" onclick="toggleGroup(this)">
+        <span>Developer</span><span class="chevron">&#9654;</span>
+      </button>
+      <div class="nav-group-items">
+        <button class="nav-link-item" onclick="showDoc('api',this)">API Reference</button>
+        <button class="nav-link-item" onclick="showDoc('sdk',this)">Agent SDK</button>
+        <button class="nav-link-item" onclick="showDoc('frontend',this)">Frontend Integration</button>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <button class="nav-group-header open" onclick="toggleGroup(this)">
+        <span>Operations</span><span class="chevron">&#9654;</span>
+      </button>
+      <div class="nav-group-items">
+        <button class="nav-link-item" onclick="showDoc('deployment',this)">Deployment &amp; Ops</button>
+        <button class="nav-link-item" onclick="showDoc('changelog',this)">Changelog</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CENTER CONTENT -->
+  <main class="center-content" id="centerContent">
+
+    <!-- ══════════════════════════════════════════ OVERVIEW -->
+    <div class="doc-section active" id="doc-overview">
+      <h1 id="overview">Overview</h1>
+      <p>Bridge AI OS is an AI-powered business automation operating system built on <strong>Linea zkEVM</strong>. It enables organizations to deploy autonomous agents, manage leads and revenue, run mission-governed workflows, and participate in a dual-currency economy — all from a single platform.</p>
+
+      <h3 id="overview-capabilities">Key Capabilities</h3>
+      <ul>
+        <li><strong>Autonomous agents</strong> — swarm of 10 specialized AI agents (quote, finance, growth, intelligence, nurture, closer, campaign, creative, support, supply)</li>
+        <li><strong>Lead generation &amp; CRM</strong> — AI-scored leads, nurture automation, deal closure via AIC closer loop</li>
+        <li><strong>Revenue splitting</strong> — AEOS 4-way automatic split: 80% user / 5% platform / 10% ops / 5% burn</li>
+        <li><strong>Mission governance</strong> — every entity gets an AI-generated mission statement with legal rules and T&amp;C</li>
+        <li><strong>Dual currency</strong> — ZAR fiat rails + BRDG token on Linea zkEVM</li>
+        <li><strong>Vertical products</strong> — BAN, Hospital in a Box, EHSA, Aurora, UBI, AID, ABaaS, Rooted Earth</li>
+      </ul>
+
+      <h3 id="overview-stack">Tech Stack</h3>
+      <ul>
+        <li><strong>Gateway</strong>: Node.js + Express on port 8080 — single entry point for all traffic</li>
+        <li><strong>Brain</strong>: Python FastAPI on port 8000 — AI inference, agent swarm, AIC phases 1–3</li>
+        <li><strong>Auth</strong>: Node.js on port 5001 — JWT, Supabase PKCE, token exchange</li>
+        <li><strong>Database</strong>: Supabase (PostgreSQL) — users, wallets, leads, missions, decisions, treasury</li>
+        <li><strong>Cache</strong>: Redis — session state, rate limiting, agent queue</li>
+        <li><strong>Process manager</strong>: PM2 — all services at /var/www/bridgeai/</li>
+        <li><strong>Web server</strong>: nginx — reverse proxy, SSL termination, static file serving</li>
+        <li><strong>Blockchain</strong>: Linea zkEVM — BRDG token, on-chain treasury burns</li>
+      </ul>
+
+      <h3 id="overview-quicklinks">Quick Links</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <a href="/dashboard" style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">&#128202; Dashboard</a>
+        <a href="/sitemap" style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">&#128204; Sitemap</a>
+        <a href="/health" style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">&#10003; Health Check</a>
+        <a href="https://github.com" style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">&#128279; GitHub</a>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ ARCHITECTURE -->
+    <div class="doc-section" id="doc-architecture">
+      <h1 id="arch">Architecture</h1>
+      <p>All external traffic enters on port 443 (HTTPS) handled by <strong>nginx</strong>, which terminates SSL and proxies every request to the <strong>bridge-gateway</strong> on port 8080. The gateway is the single orchestration point — it authenticates requests, enforces mission check, applies rate limiting, and routes to downstream services.</p>
+
+      <div class="arch-diagram">
+        <div class="arch-row">
+          <div class="arch-box nginx">nginx :443 / :80</div>
+        </div>
+        <div class="arch-arrow-down">&#8595;</div>
+        <div class="arch-row">
+          <div class="arch-box gateway">bridge-gateway :8080</div>
+        </div>
+        <div class="arch-arrow-down">&#8595;</div>
+        <div class="arch-split">
+          <div class="arch-column">
+            <div class="arch-box brain">super-brain :8000</div>
+            <div class="arch-label">AI inference, agent swarm, AIC 1–3, RAG, trading</div>
+          </div>
+          <div class="arch-column">
+            <div class="arch-box unified">unified-server :3000</div>
+            <div class="arch-label">Economy, apps, brands, leads, automations, platform APIs</div>
+          </div>
+          <div class="arch-column">
+            <div class="arch-box auth">auth-service :5001</div>
+            <div class="arch-label">JWT, Supabase PKCE, token exchange, superadmin</div>
+          </div>
+        </div>
+        <div class="arch-arrow-down">&#8595;</div>
+        <div class="arch-split">
+          <div class="arch-column">
+            <div class="arch-box supa">Supabase</div>
+            <div class="arch-label">PostgreSQL — users, wallets, leads, missions, treasury</div>
+          </div>
+          <div class="arch-column">
+            <div class="arch-box redis">Redis</div>
+            <div class="arch-label">Session cache, rate limits, agent job queue</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 id="arch-gateway">Gateway: Single Entry Point</h3>
+      <p>The bridge-gateway is a Node.js Express server at <code>:8080</code>. nginx proxies all requests to <code>127.0.0.1:8080</code> (IPv4 — never <code>localhost</code> as it resolves to <code>::1</code> on this VPS). The gateway handles:</p>
+      <ul>
+        <li>JWT verification middleware on all <code>/api/*</code> routes</li>
+        <li>Mission check middleware (<code>withMissionCheck()</code>) blocking access if entity has no active mission</li>
+        <li>Rate limiting via Redis token bucket</li>
+        <li>Static file serving from <code>/var/www/bridgeai/public/</code> for the Vite frontend shell</li>
+        <li>Proxying to brain, unified, and auth services</li>
+      </ul>
+
+      <div class="callout info">
+        <span class="callout-icon">&#8505;</span>
+        <div class="callout-body"><strong>nginx proxy_pass:</strong> Always use <code>127.0.0.1</code> not <code>localhost</code> in nginx proxy_pass directives. Node binds to IPv4 only; localhost resolves to ::1 (IPv6) on this Ubuntu VPS and causes silent connection refused (error 111).</div>
+      </div>
+
+      <h3 id="arch-brain">Brain: :8000</h3>
+      <p>The super-brain is a Python FastAPI service. It handles all AI operations: the 10-agent swarm, AIC Phases 1–3, RAG (retrieval-augmented generation), autonomous trading, anomaly detection, and intelligence reporting. It exposes a WebSocket at <code>/ws/&lt;channel&gt;</code> for live event streaming.</p>
+
+      <h3 id="arch-supabase">Supabase Database</h3>
+      <p>Supabase (hosted PostgreSQL + Auth) stores all persistent state. Key tables: <code>users</code>, <code>wallets</code>, <code>leads</code>, <code>missions</code>, <code>decisions</code>, <code>treasury_splits</code>, <code>apps</code>, <code>brands</code>. The auth service uses the Supabase admin client with <code>SUPABASE_SERVICE_KEY</code> for server-side operations.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════ AUTHENTICATION -->
+    <div class="doc-section" id="doc-authentication">
+      <h1 id="auth">Authentication</h1>
+      <p>Bridge AI OS supports two authentication flows: direct email/password (issues Bridge JWT immediately) and OAuth via Supabase PKCE (Google, GitHub).</p>
+
+      <h3 id="auth-flows">Auth Flows</h3>
+
+      <h4>Flow 1: Email/Password</h4>
+      <ol>
+        <li>POST <code>/auth/login</code> with <code>{ email, password }</code></li>
+        <li>Auth service validates credentials against Supabase</li>
+        <li>Returns signed Bridge JWT — store in <code>localStorage.bridge_token</code></li>
+      </ol>
+
+      <h4>Flow 2: OAuth PKCE (Google / GitHub)</h4>
+      <ol>
+        <li>Login page calls <code>supabase.auth.signInWithOAuth({ provider })</code></li>
+        <li>Browser redirects to Supabase OAuth → provider → back to <code>/auth-callback</code></li>
+        <li>auth-callback.html parses the URL hash/fragment, extracts the Supabase session</li>
+        <li>POSTs <code>access_token</code> to <code>/auth/token-exchange</code></li>
+        <li>Receives Bridge JWT — stored in localStorage and as a 7-day cookie</li>
+      </ol>
+
+      <div class="callout info">
+        <span class="callout-icon">&#8505;</span>
+        <div class="callout-body"><strong>supabase.js isConfigured check:</strong> All Supabase calls must be guarded by <code>if (!supabase.isConfigured)</code> check before invocation to avoid silent failures when env vars are not loaded.</div>
+      </div>
+
+      <h3 id="auth-jwt">JWT Payload</h3>
+      <div class="code-block-wrap">
+        <span class="code-lang">json</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block">{
+  <span class="prop">"sub"</span><span class="op">:</span> <span class="str">"uuid-from-supabase"</span>,
+  <span class="prop">"id"</span><span class="op">:</span> <span class="str">"bridge-internal-user-id"</span>,
+  <span class="prop">"email"</span><span class="op">:</span> <span class="str">"user@example.com"</span>,
+  <span class="prop">"role"</span><span class="op">:</span> <span class="str">"user"</span>,          <span class="cmt">// "user" | "admin" | "superadmin"</span>
+  <span class="prop">"plan"</span><span class="op">:</span> <span class="str">"pro"</span>,           <span class="cmt">// "free" | "pro" | "enterprise"</span>
+  <span class="prop">"tier"</span><span class="op">:</span> <span class="str">"pro"</span>,           <span class="cmt">// mirrors plan</span>
+  <span class="prop">"wallet_id"</span><span class="op">:</span> <span class="str">"wallet-uuid"</span>,
+  <span class="prop">"iat"</span><span class="op">:</span> <span class="num">1745000000</span>,
+  <span class="prop">"exp"</span><span class="op">:</span> <span class="num">1745604800</span>     <span class="cmt">// 7-day expiry</span>
+}</pre>
+      </div>
+
+      <div class="callout warn">
+        <span class="callout-icon">&#9888;</span>
+        <div class="callout-body"><strong>Superadmin:</strong> The email <code>ryanpcowan@gmail.com</code> always receives <code>role: superadmin</code> and <code>tier: enterprise</code> regardless of plan. The Node auth.js enforces 1 superadmin email; Python backend/main.py SUPERUSERS[] allows 3. This inconsistency is a known issue (C6/R11).</div>
+      </div>
+
+      <h3 id="auth-api">Calling APIs</h3>
+      <div class="code-block-wrap">
+        <span class="code-lang">javascript</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="kw">const</span> <span class="fn">callAPI</span> <span class="op">=</span> <span class="kw">async</span> <span class="op">(</span>path<span class="op">,</span> options <span class="op">=</span> <span class="op">{})</span> <span class="op">=></span> <span class="op">{</span>
+  <span class="kw">const</span> token <span class="op">=</span> localStorage.<span class="fn">getItem</span><span class="op">(</span><span class="str">'bridge_token'</span><span class="op">);</span>
+  <span class="kw">const</span> response <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span><span class="op">(</span>path<span class="op">,</span> <span class="op">{</span>
+    <span class="op">...</span>options<span class="op">,</span>
+    <span class="prop">headers</span><span class="op">:</span> <span class="op">{</span>
+      <span class="str">'Content-Type'</span><span class="op">:</span> <span class="str">'application/json'</span><span class="op">,</span>
+      <span class="str">'Authorization'</span><span class="op">:</span> <span class="str">`Bearer <span class="op">${</span>token<span class="op">}</span>`</span><span class="op">,</span>
+      <span class="op">...</span><span class="op">(</span>options.headers <span class="op">||</span> <span class="op">{})</span>
+    <span class="op">}</span>
+  <span class="op">});</span>
+  <span class="kw">if</span> <span class="op">(!</span>response.ok<span class="op">)</span> <span class="kw">throw new</span> <span class="typ">Error</span><span class="op">(</span><span class="str">`HTTP <span class="op">${</span>response.status<span class="op">}</span>`</span><span class="op">);</span>
+  <span class="kw">return</span> response.<span class="fn">json</span><span class="op">();</span>
+<span class="op">};</span>
+
+<span class="cmt">// Example: fetch current user</span>
+<span class="kw">const</span> me <span class="op">=</span> <span class="kw">await</span> <span class="fn">callAPI</span><span class="op">(</span><span class="str">'/auth/me'</span><span class="op">);</span></pre>
+      </div>
+
+      <h3 id="auth-zerotrust">Zero-Trust Root Token</h3>
+      <p>For system-to-system communication without a user session, use the root token endpoint:</p>
+      <div class="code-block-wrap">
+        <span class="code-lang">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="fn">curl</span> <span class="op">-X</span> POST https://go.ai-os.co.za/api/auth/root-token \
+  <span class="op">-H</span> <span class="str">"X-Zero-Trust-Secret: <span class="op">$</span>ZERO_TRUST_SECRET"</span> \
+  <span class="op">-H</span> <span class="str">"Content-Type: application/json"</span></pre>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ AEOS ECONOMY -->
+    <div class="doc-section" id="doc-aeos">
+      <h1 id="aeos">AEOS Economy</h1>
+      <p>AEOS — Autonomous Economic Operating System — governs all revenue flows. Every transaction processed through the platform automatically applies a <strong>4-way split</strong> enforced at the treasury layer.</p>
+
+      <h3 id="aeos-split">Revenue Split</h3>
+      <ul>
+        <li><strong>80% — User (creator)</strong>: Goes directly to the entity that generated the revenue</li>
+        <li><strong>10% — Ops bank</strong>: Platform operational reserve — infrastructure, scaling, emergencies</li>
+        <li><strong>5% — Platform fee (Ryan)</strong>: Founding team allocation</li>
+        <li><strong>5% — Token burn (BRDG)</strong>: Deflationary mechanism on Linea zkEVM</li>
+      </ul>
+
+      <div class="callout tip">
+        <span class="callout-icon">&#9733;</span>
+        <div class="callout-body"><strong>All tiers share the same split ratio.</strong> Pro and Enterprise plans receive priority routing and access to more AIC phases — not a different split percentage.</div>
+      </div>
+
+      <h3 id="aeos-autosplit">Auto-Split Endpoint</h3>
+      <div class="code-block-wrap">
+        <span class="code-lang">http</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="fn">POST</span> <span class="uri">/api/treasury/auto-split</span>
+<span class="prop">Authorization</span><span class="op">:</span> <span class="str">Bearer &lt;token&gt;</span>
+<span class="prop">Content-Type</span><span class="op">:</span> <span class="str">application/json</span>
+
+<span class="op">{</span>
+  <span class="prop">"amount_zar"</span><span class="op">:</span> <span class="num">1000</span><span class="op">,</span>
+  <span class="prop">"source"</span><span class="op">:</span> <span class="str">"marketplace_sale"</span>
+<span class="op">}</span></pre>
+      </div>
+      <p>Response:</p>
+      <div class="code-block-wrap">
+        <span class="code-lang">json</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="op">{</span>
+  <span class="prop">"success"</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span>
+  <span class="prop">"split"</span><span class="op">:</span> <span class="op">{</span>
+    <span class="prop">"user"</span><span class="op">:</span> <span class="num">800</span><span class="op">,</span>
+    <span class="prop">"ops"</span><span class="op">:</span> <span class="num">100</span><span class="op">,</span>
+    <span class="prop">"platform"</span><span class="op">:</span> <span class="num">50</span><span class="op">,</span>
+    <span class="prop">"burn"</span><span class="op">:</span> <span class="num">50</span>
+  <span class="op">},</span>
+  <span class="prop">"currency"</span><span class="op">:</span> <span class="str">"ZAR"</span><span class="op">,</span>
+  <span class="prop">"transaction_id"</span><span class="op">:</span> <span class="str">"txn_abc123"</span>
+<span class="op">}</span></pre>
+      </div>
+
+      <h3 id="aeos-wallet">Wallet Balance</h3>
+      <div class="code-block-wrap">
+        <span class="code-lang">http</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="fn">GET</span> <span class="uri">/api/economy/me</span>
+<span class="prop">Authorization</span><span class="op">:</span> <span class="str">Bearer &lt;token&gt;</span></pre>
+      </div>
+      <p>Response includes <code>balance_zar</code>, <code>balance_brdg</code>, <code>wallet_id</code>, and <code>total_earned</code>.</p>
+
+      <h3 id="aeos-currency">Dual Currency</h3>
+      <p><strong>ZAR (Fiat)</strong>: South African Rand processed via PayFast, Paystack, or bank transfer. Stored in Supabase <code>wallets</code> table.</p>
+      <p><strong>BRDG (Token)</strong>: ERC-20 token on Linea zkEVM. 5% of every transaction is burned on-chain. Used for marketplace transactions, staking, and governance. Bridge between fiat and on-chain via the treasury service.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════ MISSION ENGINE -->
+    <div class="doc-section" id="doc-mse">
+      <h1 id="mse">Mission Statement Engine</h1>
+      <p>The MSE is a governance layer that generates AI-powered mission statements for every entity on the platform. No entity can access protected APIs without an active mission.</p>
+
+      <h3 id="mse-what">What is a Mission?</h3>
+      <p>A <strong>mission</strong> is an AI-generated governance document tied to an entity (user, company, agent, or product). It contains:</p>
+      <ul>
+        <li><strong>mission text</strong>: A natural-language statement of purpose</li>
+        <li><strong>rules[]</strong>: Behavioral constraints the entity must operate within</li>
+        <li><strong>terms[]</strong>: Legal terms and conditions specific to the entity type</li>
+        <li><strong>status</strong>: <code>active</code> or <code>expired</code></li>
+        <li><strong>expiry</strong>: 1 year from generation — must be renewed</li>
+      </ul>
+
+      <h3 id="mse-middleware">withMissionCheck() Middleware</h3>
+      <p>Applied to all protected API routes. Blocks access and returns HTTP 403 if:</p>
+      <ul>
+        <li>The entity has no mission record in Supabase</li>
+        <li>The mission status is <code>expired</code></li>
+        <li>The <code>entity_id</code> is null or undefined (null guard added 2026-04-25)</li>
+      </ul>
+
+      <h3 id="mse-generate">Generate Mission</h3>
+      <div class="code-block-wrap">
+        <span class="code-lang">http</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="fn">POST</span> <span class="uri">/api/mission/generate</span>
+<span class="prop">Authorization</span><span class="op">:</span> <span class="str">Bearer &lt;token&gt;</span>
+<span class="prop">Content-Type</span><span class="op">:</span> <span class="str">application/json</span>
+
+<span class="op">{</span>
+  <span class="prop">"entity_type"</span><span class="op">:</span> <span class="str">"company"</span><span class="op">,</span>   <span class="cmt">// "user" | "company" | "agent" | "product"</span>
+  <span class="prop">"entity_id"</span><span class="op">:</span> <span class="str">"uuid-here"</span><span class="op">,</span>
+  <span class="prop">"context"</span><span class="op">:</span> <span class="op">{</span>
+    <span class="prop">"name"</span><span class="op">:</span> <span class="str">"Acme Corp"</span><span class="op">,</span>
+    <span class="prop">"industry"</span><span class="op">:</span> <span class="str">"fintech"</span><span class="op">,</span>
+    <span class="prop">"goals"</span><span class="op">:</span> <span class="str">"Automate B2B sales pipeline"</span>
+  <span class="op">}</span>
+<span class="op">}</span></pre>
+      </div>
+
+      <p>Response:</p>
+      <div class="code-block-wrap">
+        <span class="code-lang">json</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="op">{</span>
+  <span class="prop">"mission_id"</span><span class="op">:</span> <span class="str">"msn_xyz789"</span><span class="op">,</span>
+  <span class="prop">"entity_type"</span><span class="op">:</span> <span class="str">"company"</span><span class="op">,</span>
+  <span class="prop">"mission"</span><span class="op">:</span> <span class="str">"To autonomously generate and close B2B sales opportunities using AI-driven intelligence, operating with integrity and measurable impact."</span><span class="op">,</span>
+  <span class="prop">"rules"</span><span class="op">: [</span>
+    <span class="str">"Operate transparently with all stakeholders"</span><span class="op">,</span>
+    <span class="str">"Never engage in deceptive sales practices"</span><span class="op">,</span>
+    <span class="str">"Respect data privacy at all times"</span>
+  <span class="op">],</span>
+  <span class="prop">"terms"</span><span class="op">: [</span>
+    <span class="str">"Subject to Bridge AI OS platform terms of service"</span><span class="op">,</span>
+    <span class="str">"Revenue split applies as per AEOS protocol"</span>
+  <span class="op">],</span>
+  <span class="prop">"status"</span><span class="op">:</span> <span class="str">"active"</span><span class="op">,</span>
+  <span class="prop">"expires_at"</span><span class="op">:</span> <span class="str">"2027-04-25T00:00:00Z"</span>
+<span class="op">}</span></pre>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ AIC -->
+    <div class="doc-section" id="doc-aic">
+      <h1 id="aic">AIC — Autonomous Intelligence Core</h1>
+      <p>AIC is the decision-making backbone of Bridge AI OS. It progresses through three phases of autonomy, each unlocking more powerful capabilities.</p>
+
+      <h3 id="aic-phase1">Phase 1: Foundation</h3>
+      <ul>
+        <li><strong>Classification</strong>: Classifies input signals into entity types and intent categories</li>
+        <li><strong>Routing</strong>: Routes classified signals to appropriate swarm agents</li>
+        <li><strong>Agents</strong>: Dispatches and monitors swarm agent execution</li>
+        <li><strong>Decisions</strong>: Records all agent decisions in Supabase for audit trail</li>
+        <li><strong>Feedback</strong>: Collects outcome feedback to train scoring models</li>
+      </ul>
+
+      <h3 id="aic-phase2">Phase 2: Intelligence</h3>
+      <ul>
+        <li><strong>Opportunity scoring</strong>: Formula — <code>(EDV × CP × SVM) / TTC</code> where EDV = Expected Deal Value, CP = Conversion Probability, SVM = Strategic Value Multiplier, TTC = Time to Close</li>
+        <li><strong>Simulation</strong>: Monte Carlo simulation of opportunity outcomes (1000 runs)</li>
+        <li><strong>Queue management</strong>: Priority queue routing based on score thresholds</li>
+        <li><strong>State tracking</strong>: Full pipeline state with per-agent metrics</li>
+        <li><strong>Reinvestment</strong>: Auto-routes high-scoring opportunities to closer agent</li>
+        <li><strong>Process v2</strong>: Enhanced orchestration with scoring integration</li>
+      </ul>
+
+      <h3 id="aic-phase3">Phase 3: Autonomy</h3>
+      <ul>
+        <li><strong>Deal closure loop</strong>: Autonomous closer agent runs end-to-end deal closure without human intervention</li>
+        <li><strong>Autonomy Index</strong>: 0–100 score measuring system self-sufficiency — 100 means fully autonomous</li>
+        <li><strong>Anomaly detection</strong>: Real-time time-series anomaly detection on revenue and activity streams</li>
+        <li><strong>Intelligence reporting</strong>: Automated briefings on anomalies, opportunities, and strategic recommendations</li>
+        <li><strong>System manifest</strong>: Full AIC configuration and capability declaration</li>
+      </ul>
+
+      <h3 id="aic-endpoints">AIC Endpoints Reference</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Phase</th><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/aic/classify</td><td>Classify input signal into entity type + intent</td></tr>
+            <tr><td>1</td><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/aic/process</td><td>Main agent process — routes to swarm</td></tr>
+            <tr><td>2</td><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/aic/score</td><td>Opportunity score: (EDV × CP × SVM) / TTC</td></tr>
+            <tr><td>2</td><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/aic/simulate</td><td>Monte Carlo simulation of outcomes</td></tr>
+            <tr><td>2</td><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/aic/process-v2</td><td>Enhanced process with scoring + reinvestment</td></tr>
+            <tr><td>2</td><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/aic/state</td><td>Current AIC pipeline state and metrics</td></tr>
+            <tr><td>2</td><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/aic/queue</td><td>Job queue depth per agent type</td></tr>
+            <tr><td>3</td><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/aic/close</td><td>Autonomous deal closure loop</td></tr>
+            <tr><td>3</td><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/aic/autonomy</td><td>Autonomy Index (0–100)</td></tr>
+            <tr><td>3</td><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/aic/intelligence</td><td>Intelligence report — anomalies and recommendations</td></tr>
+            <tr><td>3</td><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/aic/system</td><td>System manifest — full AIC configuration</td></tr>
+            <tr><td>3</td><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/aic/detect</td><td>Anomaly detection on time-series data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ API REFERENCE -->
+    <div class="doc-section" id="doc-api">
+      <h1 id="apiref">API Reference</h1>
+      <p>All endpoints are served through the bridge-gateway at <code>https://go.ai-os.co.za</code>. Requests to <code>/api/*</code> require a valid Bridge JWT unless marked as public.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">&#8505;</span>
+        <div class="callout-body">Include <code>Authorization: Bearer &lt;token&gt;</code> header on all authenticated requests. The <code>Content-Type: application/json</code> header is required for POST/PUT bodies.</div>
+      </div>
+
+      <h3 id="api-auth">Authentication</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/auth/me</td><td class="auth-req">Required</td><td>Returns current user profile decoded from JWT</td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/auth/token-exchange</td><td class="no-auth">Public</td><td>Exchanges Supabase access_token for Bridge JWT. Body: <code>{ access_token }</code></td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/auth/root-token</td><td class="auth-req">Secret</td><td>Issues root JWT. Requires <code>X-Zero-Trust-Secret</code> header</td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/auth/register</td><td class="no-auth">Public</td><td>Email/password registration. Body: <code>{ email, password, name }</code></td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/auth/login</td><td class="no-auth">Public</td><td>Email/password login. Body: <code>{ email, password }</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="api-economy">Economy &amp; Treasury</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/economy/me</td><td class="auth-req">Required</td><td>Wallet balance: ZAR + BRDG, total earned</td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/treasury/auto-split</td><td class="auth-req">Required</td><td>Apply 4-way AEOS split. Body: <code>{ amount_zar, source }</code></td></tr>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/treasury/splits</td><td class="auth-req">Required</td><td>Split transaction history and current balances</td></tr>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/system/overview</td><td class="auth-req">Required</td><td>Full system state summary</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="api-missions">Missions</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/mission/generate</td><td class="auth-req">Required</td><td>Generate mission statement for entity</td></tr>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/mission</td><td class="auth-req">Required</td><td>List all missions for current entity</td></tr>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/mission/:id</td><td class="auth-req">Required</td><td>Get mission by ID</td></tr>
+            <tr><td><span class="method-badge m-PUT">PUT</span></td><td class="api-path-cell">/api/mission/:id</td><td class="auth-req">Required</td><td>Update mission status or rules</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="api-leads">Leads &amp; CRM</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/leads</td><td class="auth-req">Required</td><td>Paginated leads with AIC score</td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/leads</td><td class="auth-req">Required</td><td>Create lead. Body: <code>{ name, email, company, source }</code></td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/leads/:id/convert</td><td class="auth-req">Required</td><td>Convert lead to deal, triggers closer agent</td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/leads/ai-generate</td><td class="auth-req">Required</td><td>AI-generate leads from ICP. Body: <code>{ industry, title, count }</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="api-platform">Platform Utilities</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/health</td><td class="no-auth">Public</td><td>Gateway health check. Returns <code>{ status: "OK", uptime }</code></td></tr>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/brain/status</td><td class="auth-req">Required</td><td>Brain service health, version, agent count</td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/ask</td><td class="auth-req">Required</td><td>Freeform AI query. Body: <code>{ query, context? }</code></td></tr>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/apps</td><td class="auth-req">Required</td><td>List registered apps</td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/apps</td><td class="auth-req">Required</td><td>Register app, generates API key</td></tr>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/brands</td><td class="auth-req">Required</td><td>List brand profiles</td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/brands</td><td class="auth-req">Required</td><td>Create brand profile</td></tr>
+            <tr><td><span class="method-badge m-GET">GET</span></td><td class="api-path-cell">/api/affiliates/me</td><td class="auth-req">Required</td><td>Affiliate stats and referral earnings</td></tr>
+            <tr><td><span class="method-badge m-POST">POST</span></td><td class="api-path-cell">/api/usage/event</td><td class="auth-req">Required</td><td>Record usage event for billing</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ AGENT SDK -->
+    <div class="doc-section" id="doc-sdk">
+      <h1 id="sdk">Agent SDK</h1>
+      <p>The Agent SDK allows you to register custom agents with the AIC execution server and route tasks through the swarm pipeline.</p>
+
+      <h3 id="sdk-types">Agent Types</h3>
+      <p>The platform includes 10 built-in specialist agent types:</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:12px 0">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>quote</strong><div style="color:var(--muted)">Pricing and proposal generation</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>finance</strong><div style="color:var(--muted)">Financial analysis and treasury</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>growth</strong><div style="color:var(--muted)">Growth hacking and acquisition</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>intelligence</strong><div style="color:var(--muted)">Market research and competitive analysis</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>nurture</strong><div style="color:var(--muted)">Lead nurturing and follow-up</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>closer</strong><div style="color:var(--muted)">Deal closure and negotiation</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>campaign</strong><div style="color:var(--muted)">Marketing campaign orchestration</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>creative</strong><div style="color:var(--muted)">Content and creative generation</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>support</strong><div style="color:var(--muted)">Customer support and resolution</div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px"><strong>supply</strong><div style="color:var(--muted)">Supply chain and logistics</div></div>
+      </div>
+
+      <h3 id="sdk-process">Processing a Task</h3>
+      <div class="code-block-wrap">
+        <span class="code-lang">javascript</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="cmt">// POST /api/aic/process</span>
+<span class="kw">const</span> response <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span><span class="op">(</span><span class="str">'/api/aic/process'</span><span class="op">,</span> <span class="op">{</span>
+  <span class="prop">method</span><span class="op">:</span> <span class="str">'POST'</span><span class="op">,</span>
+  <span class="prop">headers</span><span class="op">:</span> <span class="op">{</span>
+    <span class="str">'Authorization'</span><span class="op">:</span> <span class="str">`Bearer <span class="op">${</span>token<span class="op">}</span>`</span><span class="op">,</span>
+    <span class="str">'Content-Type'</span><span class="op">:</span> <span class="str">'application/json'</span>
+  <span class="op">},</span>
+  <span class="prop">body</span><span class="op">:</span> <span class="typ">JSON</span>.<span class="fn">stringify</span><span class="op">({</span>
+    <span class="prop">agent_type</span><span class="op">:</span> <span class="str">'growth'</span><span class="op">,</span>
+    <span class="prop">payload</span><span class="op">:</span> <span class="op">{</span>
+      <span class="prop">task</span><span class="op">:</span> <span class="str">'generate_lead_list'</span><span class="op">,</span>
+      <span class="prop">industry</span><span class="op">:</span> <span class="str">'fintech'</span><span class="op">,</span>
+      <span class="prop">count</span><span class="op">:</span> <span class="num">20</span>
+    <span class="op">},</span>
+    <span class="prop">priority</span><span class="op">:</span> <span class="str">'high'</span>   <span class="cmt">// "low" | "medium" | "high"</span>
+  <span class="op">})</span>
+<span class="op">});</span>
+<span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> response.<span class="fn">json</span><span class="op">();</span>
+<span class="cmt">// result.job_id — use to poll agent status</span>
+<span class="cmt">// result.decision_id — Supabase decisions table row</span></pre>
+      </div>
+
+      <h3 id="sdk-scoring">Agent Scoring</h3>
+      <div class="code-block-wrap">
+        <span class="code-lang">javascript</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="cmt">// Score an opportunity before routing</span>
+<span class="kw">const</span> score <span class="op">=</span> <span class="kw">await</span> <span class="fn">fetch</span><span class="op">(</span><span class="str">'/api/aic/score'</span><span class="op">,</span> <span class="op">{</span>
+  <span class="prop">method</span><span class="op">:</span> <span class="str">'POST'</span><span class="op">,</span>
+  <span class="prop">headers</span><span class="op">:</span> <span class="op">{</span> <span class="str">'Authorization'</span><span class="op">:</span> <span class="str">`Bearer <span class="op">${</span>token<span class="op">}</span>`</span><span class="op">,</span> <span class="str">'Content-Type'</span><span class="op">:</span> <span class="str">'application/json'</span> <span class="op">},</span>
+  <span class="prop">body</span><span class="op">:</span> <span class="typ">JSON</span>.<span class="fn">stringify</span><span class="op">({</span>
+    <span class="prop">edv</span><span class="op">:</span> <span class="num">50000</span><span class="op">,</span>    <span class="cmt">// Expected Deal Value (ZAR)</span>
+    <span class="prop">cp</span><span class="op">:</span> <span class="num">0.65</span><span class="op">,</span>     <span class="cmt">// Conversion Probability 0-1</span>
+    <span class="prop">svm</span><span class="op">:</span> <span class="num">1.2</span><span class="op">,</span>    <span class="cmt">// Strategic Value Multiplier</span>
+    <span class="prop">ttc</span><span class="op">:</span> <span class="num">14</span>       <span class="cmt">// Time to Close (days)</span>
+  <span class="op">})</span>
+<span class="op">}).</span><span class="fn">then</span><span class="op">(</span>r <span class="op">=></span> r.<span class="fn">json</span><span class="op">());</span>
+<span class="cmt">// score.aic_score — numeric priority score</span></pre>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ FRONTEND -->
+    <div class="doc-section" id="doc-frontend">
+      <h1 id="frontend">Frontend Integration</h1>
+      <p>The Bridge AI OS frontend is a collection of self-contained HTML files served from <code>/var/www/bridgeai/public/</code> (the nginx vhost default root). There is no build step — files are deployed directly.</p>
+
+      <h3 id="frontend-auth-callback">auth-callback.html — PKCE Flow</h3>
+      <p>After Supabase OAuth, the browser lands on <code>/auth-callback</code>. The page:</p>
+      <ol>
+        <li>Detects <code>#access_token=</code> in the URL fragment from Supabase</li>
+        <li>Calls <code>supabase.auth.getSession()</code> to confirm the session</li>
+        <li>POSTs the <code>access_token</code> to <code>/auth/token-exchange</code></li>
+        <li>Receives Bridge JWT and stores it</li>
+        <li>Redirects based on user state (see routing logic below)</li>
+      </ol>
+
+      <h3 id="frontend-storage">localStorage Keys</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Key</th><th>Value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="api-path-cell">bridge_token</td><td>JWT string</td><td>Primary auth token — include in all API calls</td></tr>
+            <tr><td class="api-path-cell">bridge_user</td><td>JSON string</td><td>Decoded user object <code>{ id, email, role, plan, tier, wallet_id }</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="frontend-cookie">Auth Cookie</h3>
+      <p>Alongside localStorage, the Bridge JWT is set as an HTTP cookie:</p>
+      <div class="code-block-wrap">
+        <span class="code-lang">http</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="prop">Set-Cookie</span><span class="op">:</span> bridge_token<span class="op">=</span>&lt;jwt&gt;<span class="op">;</span> Max-Age<span class="op">=</span><span class="num">604800</span><span class="op">;</span> Path<span class="op">=</span>/<span class="op">;</span> SameSite<span class="op">=</span>Lax<span class="op">;</span> Secure<span class="op">;</span> HttpOnly</pre>
+      </div>
+
+      <h3 id="frontend-routing">Post-Login Routing</h3>
+      <p>After successful auth, the client redirects based on user state in this priority order:</p>
+      <ol>
+        <li><code>role === 'superadmin'</code> → <code>/dashboard</code></li>
+        <li><code>user.wizard === 1</code> (setup not complete) → <code>/wizard</code></li>
+        <li><code>user.plan === null</code> (no plan selected) → <code>/checkout</code></li>
+        <li>Otherwise → <code>/profile</code></li>
+      </ol>
+      <div class="code-block-wrap">
+        <span class="code-lang">javascript</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="kw">function</span> <span class="fn">routeAfterLogin</span><span class="op">(</span>user<span class="op">) {</span>
+  <span class="kw">if</span> <span class="op">(</span>user.role <span class="op">===</span> <span class="str">'superadmin'</span><span class="op">)</span> <span class="kw">return</span> <span class="fn">redirect</span><span class="op">(</span><span class="str">'/dashboard'</span><span class="op">);</span>
+  <span class="kw">if</span> <span class="op">(</span>user.wizard <span class="op">===</span> <span class="num">1</span><span class="op">)</span>         <span class="kw">return</span> <span class="fn">redirect</span><span class="op">(</span><span class="str">'/wizard'</span><span class="op">);</span>
+  <span class="kw">if</span> <span class="op">(!</span>user.plan<span class="op">)</span>               <span class="kw">return</span> <span class="fn">redirect</span><span class="op">(</span><span class="str">'/checkout'</span><span class="op">);</span>
+  <span class="fn">redirect</span><span class="op">(</span><span class="str">'/profile'</span><span class="op">);</span>
+<span class="op">}</span></pre>
+      </div>
+
+      <div class="callout warn">
+        <span class="callout-icon">&#9888;</span>
+        <div class="callout-body"><strong>nginx vhost root is frontend/dist:</strong> New gateway-rendered pages need explicit <code>proxy_pass</code> blocks in the nginx config. Without them, nginx serves the Vite shell HTML instead of the API response.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ DEPLOYMENT -->
+    <div class="doc-section" id="doc-deployment">
+      <h1 id="deployment">Deployment &amp; Ops</h1>
+      <p>All services run under PM2 at <code>/var/www/bridgeai/</code> on the VPS at <code>root@102.208.228.44</code>.</p>
+
+      <h3 id="deployment-pm2">PM2 Commands</h3>
+      <div class="code-block-wrap">
+        <span class="code-lang">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="cmt"># List all services</span>
+pm2 list
+
+<span class="cmt"># Restart specific service</span>
+pm2 restart bridge-gateway
+pm2 restart unified-server
+pm2 restart super-brain
+pm2 restart auth-service
+
+<span class="cmt"># View logs</span>
+pm2 logs bridge-gateway --lines <span class="num">100</span>
+pm2 logs super-brain --lines <span class="num">50</span>
+
+<span class="cmt"># Save process list (persist across reboots)</span>
+pm2 save
+
+<span class="cmt"># Restart all services</span>
+pm2 restart all
+
+<span class="cmt"># Monitor live dashboard</span>
+pm2 monit</pre>
+      </div>
+
+      <h3 id="deployment-nginx">nginx Configuration</h3>
+      <p>nginx is split into two vhost files managed by <code>scripts/update-nginx.sh</code>:</p>
+      <ul>
+        <li><strong>bridgeai</strong> — HTTP :80 (redirects to HTTPS)</li>
+        <li><strong>bridgeai-ssl</strong> — HTTPS :443 with SSL termination</li>
+      </ul>
+      <div class="code-block-wrap">
+        <span class="code-lang">nginx</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="cmt"># Key proxy block — always use 127.0.0.1, never localhost</span>
+location <span class="uri">/</span> <span class="op">{</span>
+  proxy_pass         http<span class="op">://</span><span class="num">127.0.0.1</span><span class="op">:</span><span class="num">8080</span><span class="op">;</span>
+  proxy_http_version <span class="num">1.1</span><span class="op">;</span>
+  proxy_set_header   Upgrade <span class="op">$</span>http_upgrade<span class="op">;</span>
+  proxy_set_header   Connection <span class="str">'upgrade'</span><span class="op">;</span>
+  proxy_set_header   Host <span class="op">$</span>host<span class="op">;</span>
+  proxy_cache_bypass <span class="op">$</span>http_upgrade<span class="op">;</span>
+<span class="op">}</span></pre>
+      </div>
+
+      <h3 id="deployment-env">Environment Variables</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Variable</th><th>Service</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="api-path-cell">SUPABASE_URL</td><td>All</td><td>Supabase project URL</td></tr>
+            <tr><td class="api-path-cell">SUPABASE_SERVICE_KEY</td><td>Auth, Gateway</td><td>Service role key — full DB access, never expose client-side</td></tr>
+            <tr><td class="api-path-cell">SUPABASE_ANON_KEY</td><td>Frontend</td><td>Anon key for client-side Supabase calls</td></tr>
+            <tr><td class="api-path-cell">JWT_SECRET</td><td>Auth, Gateway</td><td>HMAC secret for Bridge JWT signing/verification</td></tr>
+            <tr><td class="api-path-cell">ZERO_TRUST_SECRET</td><td>Gateway</td><td>System-to-system root token secret</td></tr>
+            <tr><td class="api-path-cell">GOOGLE_CLIENT_ID</td><td>Auth</td><td>Google OAuth client ID for PKCE flow</td></tr>
+            <tr><td class="api-path-cell">GOOGLE_CLIENT_SECRET</td><td>Auth</td><td>Google OAuth client secret</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">&#8505;</span>
+        <div class="callout-body"><strong>VPS_ENV_BLOB:</strong> Environment is carried as a base64-encoded blob of newline-separated KEY=VALUE pairs. Decoded and injected at startup by the PM2 ecosystem config.</div>
+      </div>
+
+      <h3 id="deployment-health">Health Check</h3>
+      <div class="code-block-wrap">
+        <span class="code-lang">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre class="code-block"><span class="cmt"># Gateway health</span>
+curl https://go.ai-os.co.za/health
+<span class="cmt"># Expected: {"status":"OK","uptime":12345}</span>
+
+<span class="cmt"># Brain health (requires auth)</span>
+curl -H <span class="str">"Authorization: Bearer <span class="op">$</span>TOKEN"</span> \
+  https://go.ai-os.co.za/api/brain/status</pre>
+      </div>
+
+      <h3 id="deployment-logs">Log Files</h3>
+      <ul>
+        <li><code>/var/www/bridgeai/logs/gateway-out.log</code></li>
+        <li><code>/var/www/bridgeai/logs/gateway-err.log</code></li>
+        <li><code>/var/www/bridgeai/logs/unified-out.log</code></li>
+        <li><code>/var/www/bridgeai/logs/unified-err.log</code></li>
+        <li><code>/var/www/bridgeai/logs/auth-out.log</code></li>
+        <li><code>/var/www/bridgeai/logs/auth-err.log</code></li>
+        <li><code>/var/www/bridgeai/logs/brain-out.log</code></li>
+      </ul>
+    </div>
+
+    <!-- ══════════════════════════════════════════ CHANGELOG -->
+    <div class="doc-section" id="doc-changelog">
+      <h1 id="changelog">Changelog</h1>
+      <p>All notable changes to Bridge AI OS, most recent first.</p>
+
+      <div class="changelog-entry">
+        <div class="changelog-date">2026-04-25</div>
+        <ul>
+          <li>AIC Phase 2 and Phase 3 fully deployed — 12 AIC endpoints live</li>
+          <li>Dashboard updated: Mission, AIC, and Treasury sections integrated as live widgets</li>
+          <li>twin.html updated with CRM + Profile navigation links</li>
+          <li>Full Supabase <code>.catch()</code> error handling added across all client-side calls</li>
+          <li>unified-api passthrough list expanded to include all Phase 2+3 AIC routes</li>
+          <li>entity_id null guard added to <code>withMissionCheck()</code> middleware (previously threw on null)</li>
+          <li>sitemap.html and docs.html production HTML files deployed to /var/www/bridgeai/public/</li>
+        </ul>
+      </div>
+
+      <div class="changelog-entry">
+        <div class="changelog-date">2026-04-24</div>
+        <ul>
+          <li>PKCE auth flow complete rewrite — auth-callback.html rebuilt from scratch</li>
+          <li>supabase.js <code>isConfigured</code> guard added to prevent silent failures</li>
+          <li>nginx exchange-code routing fix — POST /auth/token-exchange now correctly proxied</li>
+          <li><code>/admin/dashboard</code> redirect chain fixed — superadmins land on correct dashboard</li>
+          <li>Google OAuth client ID and secret added to env blob</li>
+        </ul>
+      </div>
+
+      <div class="changelog-entry">
+        <div class="changelog-date">2026-04-23</div>
+        <ul>
+          <li>AEOS MSE (Mission Statement Engine) deployed — all entities require active mission</li>
+          <li>4-way revenue split (80/5/10/5) enforced at treasury layer</li>
+          <li><code>withMissionCheck()</code> middleware applied to all <code>/api/*</code> routes</li>
+          <li>Treasury auto-split endpoint live at POST /api/treasury/auto-split</li>
+          <li>Supabase <code>missions</code> and <code>treasury_splits</code> tables created and seeded</li>
+        </ul>
+      </div>
+
+      <div class="changelog-entry">
+        <div class="changelog-date">2026-04-17</div>
+        <ul>
+          <li>VPS consolidation — all services migrated from /opt/bridge-ai-os to /var/www/bridgeai/</li>
+          <li>PM2 ecosystem restructured — 9 services all managed from single ecosystem.config.js</li>
+          <li>/opt/bridge-ai-os quarantined as /opt/bridge-ai-os.QUARANTINED-20260417-160126 (1.2GB, safe to delete)</li>
+          <li>nginx proxy_pass corrected to 127.0.0.1 — fixed IPv6 connection refused errors</li>
+          <li>scripts/update-nginx.sh created to manage bridgeai and bridgeai-ssl vhosts</li>
+        </ul>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT TOC -->
+  <aside class="right-toc" id="rightToc">
+    <div class="toc-title">On This Page</div>
+    <div id="tocLinks"></div>
+  </aside>
+
+</div>
+
+<!-- BACK TO TOP -->
+<button class="back-to-top" id="backToTop" onclick="scrollToTop()" title="Back to top">&#8679;</button>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── TOC DATA ─────────────────────────────────────────────────────
+const tocData = {
+  overview: [
+    { id: 'overview', label: 'Overview' },
+    { id: 'overview-capabilities', label: 'Key Capabilities', sub: true },
+    { id: 'overview-stack', label: 'Tech Stack', sub: true },
+    { id: 'overview-quicklinks', label: 'Quick Links', sub: true },
+  ],
+  architecture: [
+    { id: 'arch', label: 'Architecture' },
+    { id: 'arch-gateway', label: 'Gateway', sub: true },
+    { id: 'arch-brain', label: 'Brain :8000', sub: true },
+    { id: 'arch-supabase', label: 'Supabase', sub: true },
+  ],
+  authentication: [
+    { id: 'auth', label: 'Authentication' },
+    { id: 'auth-flows', label: 'Auth Flows', sub: true },
+    { id: 'auth-jwt', label: 'JWT Payload', sub: true },
+    { id: 'auth-api', label: 'Calling APIs', sub: true },
+    { id: 'auth-zerotrust', label: 'Zero-Trust Token', sub: true },
+  ],
+  aeos: [
+    { id: 'aeos', label: 'AEOS Economy' },
+    { id: 'aeos-split', label: 'Revenue Split', sub: true },
+    { id: 'aeos-autosplit', label: 'Auto-Split API', sub: true },
+    { id: 'aeos-wallet', label: 'Wallet Balance', sub: true },
+    { id: 'aeos-currency', label: 'Dual Currency', sub: true },
+  ],
+  mse: [
+    { id: 'mse', label: 'Mission Engine' },
+    { id: 'mse-what', label: 'What is a Mission?', sub: true },
+    { id: 'mse-middleware', label: 'withMissionCheck()', sub: true },
+    { id: 'mse-generate', label: 'Generate Mission', sub: true },
+  ],
+  aic: [
+    { id: 'aic', label: 'AIC' },
+    { id: 'aic-phase1', label: 'Phase 1: Foundation', sub: true },
+    { id: 'aic-phase2', label: 'Phase 2: Intelligence', sub: true },
+    { id: 'aic-phase3', label: 'Phase 3: Autonomy', sub: true },
+    { id: 'aic-endpoints', label: 'Endpoints', sub: true },
+  ],
+  api: [
+    { id: 'apiref', label: 'API Reference' },
+    { id: 'api-auth', label: 'Authentication', sub: true },
+    { id: 'api-economy', label: 'Economy', sub: true },
+    { id: 'api-missions', label: 'Missions', sub: true },
+    { id: 'api-leads', label: 'Leads & CRM', sub: true },
+    { id: 'api-platform', label: 'Platform Utilities', sub: true },
+  ],
+  sdk: [
+    { id: 'sdk', label: 'Agent SDK' },
+    { id: 'sdk-types', label: 'Agent Types', sub: true },
+    { id: 'sdk-process', label: 'Processing a Task', sub: true },
+    { id: 'sdk-scoring', label: 'Agent Scoring', sub: true },
+  ],
+  frontend: [
+    { id: 'frontend', label: 'Frontend Integration' },
+    { id: 'frontend-auth-callback', label: 'auth-callback.html', sub: true },
+    { id: 'frontend-storage', label: 'localStorage Keys', sub: true },
+    { id: 'frontend-cookie', label: 'Auth Cookie', sub: true },
+    { id: 'frontend-routing', label: 'Post-Login Routing', sub: true },
+  ],
+  deployment: [
+    { id: 'deployment', label: 'Deployment & Ops' },
+    { id: 'deployment-pm2', label: 'PM2 Commands', sub: true },
+    { id: 'deployment-nginx', label: 'nginx Config', sub: true },
+    { id: 'deployment-env', label: 'Env Variables', sub: true },
+    { id: 'deployment-health', label: 'Health Check', sub: true },
+    { id: 'deployment-logs', label: 'Log Files', sub: true },
+  ],
+  changelog: [
+    { id: 'changelog', label: 'Changelog' },
+  ],
+};
+
+// ─── SHOW DOC SECTION ─────────────────────────────────────────────
+let currentDoc = 'overview';
+function showDoc(name, el) {
+  document.querySelectorAll('.doc-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-link-item').forEach(n => n.classList.remove('active'));
+  const section = document.getElementById('doc-' + name);
+  if (section) section.classList.add('active');
+  if (el) el.classList.add('active');
+  currentDoc = name;
+  renderTOC(name);
+  document.getElementById('centerContent').scrollTop = 0;
+  if (window.innerWidth <= 720) closeSidebar();
+}
+
+// ─── RENDER TOC ────────────────────────────────────────────────────
+function renderTOC(name) {
+  const container = document.getElementById('tocLinks');
+  const items = tocData[name] || [];
+  container.innerHTML = items.map(item =>
+    `<button class="toc-item${item.sub ? ' sub' : ''}" onclick="scrollToId('${item.id}')">${item.label}</button>`
+  ).join('');
+}
+
+function scrollToId(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// ─── TOGGLE NAV GROUP ──────────────────────────────────────────────
+function toggleGroup(btn) {
+  const items = btn.nextElementSibling;
+  const isOpen = !items.classList.contains('collapsed');
+  if (isOpen) {
+    items.classList.add('collapsed');
+    btn.classList.remove('open');
+  } else {
+    items.classList.remove('collapsed');
+    btn.classList.add('open');
+  }
+}
+
+// ─── SIDEBAR TOGGLE (mobile) ───────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('leftSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const isOpen = sidebar.classList.contains('open');
+  if (isOpen) {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+  } else {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('leftSidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+// ─── COPY CODE BLOCK ───────────────────────────────────────────────
+function copyCode(btn) {
+  const pre = btn.parentElement.querySelector('pre');
+  const text = pre ? pre.textContent : '';
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => showToast('Copy failed'));
+}
+
+// ─── DOCS SEARCH ──────────────────────────────────────────────────
+function docsSearch(q) {
+  const query = q.toLowerCase().trim();
+  if (!query) {
+    document.querySelectorAll('.nav-link-item').forEach(i => i.style.display = '');
+    return;
+  }
+  document.querySelectorAll('.nav-link-item').forEach(item => {
+    item.style.display = item.textContent.toLowerCase().includes(query) ? '' : 'none';
+  });
+}
+
+// ─── BACK TO TOP ──────────────────────────────────────────────────
+const btt = document.getElementById('backToTop');
+document.getElementById('centerContent').addEventListener('scroll', function() {
+  btt.classList.toggle('visible', this.scrollTop > 300);
+});
+function scrollToTop() {
+  document.getElementById('centerContent').scrollTop = 0;
+}
+
+// ─── SCROLL OBSERVER for TOC active highlight ─────────────────────
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      document.querySelectorAll('.toc-item').forEach(item => {
+        item.classList.toggle('active', item.getAttribute('onclick').includes(id));
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+function observeHeadings() {
+  const active = document.querySelector('.doc-section.active');
+  if (!active) return;
+  active.querySelectorAll('h1[id], h2[id], h3[id], h4[id]').forEach(el => observer.observe(el));
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────
+renderTOC('overview');
+setTimeout(observeHeadings, 100);
+</script>
+</body>
+</html>
