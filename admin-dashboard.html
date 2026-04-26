@@ -1,7 +1,12 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
-<title>Bridge AI OS — Control Plane</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+  <title>Bridge AI OS — Control Plane</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <style>
 :root{
   --bg:#0b0f14; --bg2:#0a0d12; --panel:#05070a; --panel2:#0a0e14;
@@ -70,22 +75,39 @@ canvas#ac{width:100%; height:72px; background:var(--panel2); border:1px solid va
 .edge{fill:none; stroke-width:1.2; opacity:.35; stroke-dasharray:3 7}
 .edge.on{stroke:url(#edgeOnGrad)} .edge.warn{stroke:var(--warn)} .edge.down{stroke:var(--err)}
 .edge.hot{opacity:.95; filter:drop-shadow(0 0 4px currentColor); stroke-width:1.6}
-@keyframes orbitSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-.orbits{transform-box:fill-box; transform-origin:50% 50%; animation:orbitSpin 240s linear infinite}
-@keyframes dashDrift{to{stroke-dashoffset:-40}}
-.edge{animation:dashDrift 6s linear infinite}
-.edge.hot{animation-duration:1.8s}
-@keyframes nodePulse{0%{r:8;opacity:.9}100%{r:22;opacity:0}}
-.pulse{animation:nodePulse 1.8s ease-out infinite; fill:none; stroke-width:1.2}
-.pulse.warn{animation-duration:1.2s} .pulse.down{animation-duration:.9s}
-@keyframes hubBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
-.hub-core{transform-box:fill-box; transform-origin:50% 50%; animation:hubBreathe 3.5s ease-in-out infinite}
-.hub-label{fill:var(--text); font:600 12px/1 ui-monospace,monospace; letter-spacing:2.5px; text-anchor:middle; pointer-events:none}
-.hub-sub{fill:var(--muted); font:9px/1 ui-monospace,monospace; letter-spacing:2px; text-anchor:middle; pointer-events:none}
+  /* ── ANIMATIONS ─────────────────────────────────────── */
+  @keyframes orbitSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes dashDrift {
+    to { stroke-dashoffset: -40; }
+  }
+  @keyframes nodePulse {
+    0%   { r: 8;  opacity: 0.9; }
+    100% { r: 22; opacity: 0;   }
+  }
+  @keyframes hubBreathe {
+    0%, 100% { transform: scale(1);   }
+    50%      { transform: scale(1.04); }
+  }
+  .orbits       { transform-box: fill-box; transform-origin: 50% 50%; animation: orbitSpin 240s linear infinite; }
+  .edge         { stroke-dasharray: 2 6; animation: dashDrift 6s linear infinite; }
+  .edge.hot     { animation-duration: 1.8s; opacity: 0.95; filter: drop-shadow(0 0 4px currentColor); stroke-width: 1.6; }
+  .pulse        { animation: nodePulse 1.8s ease-out infinite; fill: none; stroke-width: 1.2; }
+  .pulse.warn   { animation-duration: 1.2s; }
+  .pulse.down   { animation-duration: 0.9s; }
+  .hub-core     { transform-box: fill-box; transform-origin: 50% 50%; animation: hubBreathe 3.5s ease-in-out infinite; }
 
-@media (prefers-reduced-motion: reduce){
-  .orbits,.edge,.pulse,.hub-core{animation:none}
-}
+  /* Accessibility: respect user motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .orbits, .edge, .pulse, .hub-core,
+    .hub-core, .hub-label, .hub-sub,
+    *::before, *::after {
+      animation: none !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
 
 /* ── mobile ─────────────────────────────────────── */
 @media (max-width: 860px){
@@ -100,8 +122,9 @@ canvas#ac{width:100%; height:72px; background:var(--panel2); border:1px solid va
   .node-g text{font-size:9px}
 }
 </style></head><body>
-<div id="canvas">
-  <svg id="svg" preserveAspectRatio="xMidYMid meet">
+<div id="canvas" aria-label="Network topology visualization">
+   <svg id="svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Bridge AI OS network topology" data-stabilized="true">
+    <desc>Interactive network topology showing hub node connected to service nodes with animated edges and orbits</desc>
     <defs>
       <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
         <stop offset="0%"  stop-color="#00ff9c" stop-opacity=".85"/>
@@ -141,4 +164,4 @@ canvas#ac{width:100%; height:72px; background:var(--panel2); border:1px solid va
 <h3>LOG</h3>
 <div id="events"></div>
 </div>
-<script src="/public/js/admin-dashboard.js" defer></script></body></html>
+   <script src="/public/js/admin-dashboard-stabilized.js" defer></script></body></html>

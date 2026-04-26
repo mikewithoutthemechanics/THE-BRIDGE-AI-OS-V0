@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # === FRONTEND - Stabilized Admin Dashboard ===
+  frontend:
+    build: ./frontend
+    ports:
+      - "8082:8082"
+    networks:
+      - bridge-net
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # === BACKEND - FastAPI + WS (Deterministic Heartbeat) ===
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    networks:
+      - bridge-net
+    environment:
+      - ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/admin/overview"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # === CONTROL SERVICE (Edge Node) ===
+  # In production: deployed as separate origin https://control.supaco.ai
+  # Here: isolated container with dedicated domain routing
+  control:
+    image: nginx:alpine
+    networks:
+      bridge-net:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - ./services/control/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./services/control/html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/api/health"]
+      interval: 15s
+
+  # === BUSINESS SERVICE (Edge Node) ===
+  # In production: deployed as separate origin https://business.supaco.ai
+  business:
+    image: nginx:alpine
+    networks:
+      bridge-net:
+        ipv4_address: 172.20.0.11
+    volumes:
+      - ./services/business/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./services/business/html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/api/health"]
+      interval: 15s
+
+  # === TREASURY SERVICE (Edge Node) ===
+  # In production: deployed as separate origin https://treasury.supaco.ai
+  # CRITICAL: This is isolated. NO redirect to business.
+  treasury:
+    image: nginx:alpine
+    networks:
+      bridge-net:
+        ipv4_address: 172.20.0.12
+    volumes:
+      - ./services/treasury/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./services/treasury/html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/api/health"]
+      interval: 15s
+
+networks:
+  bridge-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
