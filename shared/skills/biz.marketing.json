@@ -1,0 +1,148 @@
+{
+  "skill_id": "biz.marketing",
+  "version": "1.0.0",
+  "label": "BridgeOS · Biz Marketing",
+  "description": "End-to-end marketing pipeline: LeadGen → Nurture → Close → Treasury, fully wired into A5E + SVG Graph (7070).",
+  "owner": "bridge.corporate",
+  "namespace": "biz",
+  "category": "marketing",
+  "tags": [
+    "leadgen",
+    "nurture",
+    "sales",
+    "pipeline",
+    "treasury",
+    "graph",
+    "visualize",
+    "execute"
+  ],
+
+  "runtime_contract": "bridge://contracts/skill-v1",
+  "execution_handler": "exec-engine://marketing",
+  "graph_binding": "a5e://skills/marketing",
+  "engine": {
+    "type": "A5E",
+    "mode": "active",
+    "retries": 3,
+    "timeout_ms": 15000
+  },
+
+  "capabilities": {
+    "visualize": true,
+    "execute": true,
+    "graph": true,
+    "svg_overlay": true,
+    "simulation": true
+  },
+
+  "ports": {
+    "svg_engine": 7070,
+    "graph_api": 7071
+  },
+
+  "graph": {
+    "node": {
+      "id": "biz.marketing",
+      "type": "skill",
+      "label": "Biz Marketing",
+      "cluster": "bridge.corporate",
+      "style": {
+        "shape": "rounded-rect",
+        "color": "#FF7A3C",
+        "border_color": "#222222",
+        "icon": "megaphone"
+      }
+    },
+    "edges": [
+      { "from": "biz.marketing", "to": "biz.leadgen",      "label": "Generate Leads",  "type": "flow" },
+      { "from": "biz.leadgen",   "to": "biz.nurture",      "label": "Qualify & Nurture","type": "flow" },
+      { "from": "biz.nurture",   "to": "biz.close",        "label": "Sales Handover",   "type": "flow" },
+      { "from": "biz.close",     "to": "biz.treasury",     "label": "Revenue Capture",  "type": "flow" },
+      { "from": "biz.marketing", "to": "bridge.corporate", "label": "Reporting",        "type": "telemetry" }
+    ],
+    "overlays": {
+      "lead_heatmap":    { "type": "intensity",   "source": "telemetry://leads",    "metric": "lead_score" },
+      "revenue_stream":  { "type": "flow-width",  "source": "telemetry://treasury", "metric": "mrr" }
+    }
+  },
+
+  "events": {
+    "inbound":  ["lead.captured","lead.qualified","campaign.created","campaign.performance.updated","deal.created","deal.closed.won","deal.closed.lost"],
+    "outbound": ["marketing.campaign.launched","marketing.campaign.paused","lead.nurture.sequence.started","lead.nurture.sequence.completed","sales.handoff.requested","treasury.revenue.booked"]
+  },
+
+  "data_contracts": {
+    "lead":     { "id":"string","email":"string","source":"string","channel":"string","status":"new|qualified|nurturing|sales|closed","score":"number","tags":"string[]","owner":"string" },
+    "campaign": { "id":"string","name":"string","objective":"leadgen|retention|upsell","budget":"number","status":"draft|active|paused|completed","channels":"string[]" },
+    "deal":     { "id":"string","lead_id":"string","stage":"open|proposal|negotiation|closed_won|closed_lost","value":"number","currency":"string" }
+  },
+
+  "workflows": {
+    "leadgen": {
+      "id": "biz.marketing.leadgen", "label": "Lead Generation",
+      "triggers": ["campaign.created","manual.start.leadgen"],
+      "steps": [
+        { "id": "select_audience",  "type": "compute", "handler": "exec-engine://marketing/select-audience" },
+        { "id": "launch_campaigns", "type": "action",  "handler": "exec-engine://marketing/launch-campaigns" },
+        { "id": "sync_leads",       "type": "action",  "handler": "exec-engine://marketing/sync-leads-crm" }
+      ],
+      "outputs": ["lead.captured","marketing.campaign.launched"]
+    },
+    "nurture": {
+      "id": "biz.marketing.nurture", "label": "Lead Nurture",
+      "triggers": ["lead.captured","lead.qualified"],
+      "steps": [
+        { "id": "score_lead",       "type": "compute", "handler": "exec-engine://marketing/score-lead" },
+        { "id": "assign_sequence",  "type": "compute", "handler": "exec-engine://marketing/assign-nurture-sequence" },
+        { "id": "run_sequence",     "type": "action",  "handler": "exec-engine://marketing/run-nurture-sequence" }
+      ],
+      "outputs": ["lead.nurture.sequence.started","lead.nurture.sequence.completed","lead.qualified"]
+    },
+    "close": {
+      "id": "biz.marketing.close", "label": "Sales Handoff & Close",
+      "triggers": ["lead.qualified","lead.nurture.sequence.completed"],
+      "steps": [
+        { "id": "create_deal",    "type": "action", "handler": "exec-engine://marketing/create-deal" },
+        { "id": "handoff_to_sales","type": "action","handler": "exec-engine://marketing/handoff-sales" }
+      ],
+      "outputs": ["sales.handoff.requested","deal.created"]
+    },
+    "treasury": {
+      "id": "biz.marketing.treasury", "label": "Revenue Capture",
+      "triggers": ["deal.closed.won"],
+      "steps": [
+        { "id": "book_revenue", "type": "action", "handler": "exec-engine://marketing/book-revenue" },
+        { "id": "update_mrr",   "type": "action", "handler": "exec-engine://marketing/update-mrr" }
+      ],
+      "outputs": ["treasury.revenue.booked"]
+    }
+  },
+
+  "ui": {
+    "modes": {
+      "VISUALIZE": { "enabled": true,  "default_overlay": "lead_heatmap" },
+      "EXECUTE":   { "enabled": true,  "default_workflow": "biz.marketing.leadgen" },
+      "GRAPH":     { "enabled": true,  "source": "a5e://graph" }
+    },
+    "panels": [
+      { "id": "pipeline_overview", "label": "Pipeline Overview", "type": "graph",  "source": "a5e://skills/marketing" },
+      { "id": "campaigns",         "label": "Campaigns",         "type": "table",  "source": "telemetry://campaigns" },
+      { "id": "revenue",           "label": "Revenue Stream",    "type": "chart",  "source": "telemetry://treasury" }
+    ]
+  },
+
+  "security": {
+    "roles": {
+      "marketing.operator":  { "can_execute": true,  "can_visualize": true,  "can_edit": false },
+      "marketing.architect": { "can_execute": true,  "can_visualize": true,  "can_edit": true },
+      "viewer":              { "can_execute": false, "can_visualize": true,  "can_edit": false }
+    }
+  },
+
+  "healthcheck": {
+    "checks": [
+      { "id": "exec_engine", "type": "http", "target": "http://localhost:7071/health", "expect": { "ok": true } },
+      { "id": "svg_engine",  "type": "http", "target": "http://localhost:7070/health", "expect": { "ok": true } }
+    ]
+  }
+}

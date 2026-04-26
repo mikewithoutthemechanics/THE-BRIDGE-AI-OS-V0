@@ -65,6 +65,10 @@ ssh "$REMOTE" bash -s <<REMOTE_SH
   cd "$VPS_PATH"
   [ -f package.json ] && npm i --production --no-audit --no-fund || true
   pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
+<<<<<<< HEAD
+=======
+  pm2 reload ecosystem.admin-api.config.js --update-env || pm2 start ecosystem.admin-api.config.js
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
   pm2 save
   sleep 2
   CODE=\$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7777/healthz)

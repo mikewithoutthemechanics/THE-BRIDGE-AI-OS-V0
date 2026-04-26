@@ -1,0 +1,33 @@
+LAPTOP 2 AI SETUP PROMPT
+========================
+
+You are running on Laptop 2. Your job is to set up and launch the L2 orchestrator.
+
+CRITICAL TIMING: Wait for Laptop 1 to complete bootstrap BEFORE you start.
+
+STEPS:
+
+1. Change to repo directory:
+   cd /c/aoe-unified-final
+
+2. Run the unattended setup (this waits for L1, then self-configures):
+   bash setup-laptop2-unattended.sh
+
+3. This script will:
+   - Wait up to 30 minutes for L1 bootstrap to complete
+   - Clone the repo if needed
+   - Create/checkout branch: feature/supadash-consolidation
+   - Create directories: shared, LOGS, STANDUPS, AGENTS
+   - Launch 7 specialist agents on port 9001
+   - Start auto-sync daemon (git pull/push every 5 minutes)
+   - Start health check daemon (every 60 seconds)
+   - Output success message when ready
+
+4. Monitor status:
+   curl http://localhost:9001/api/status | jq
+
+You should see: 7 agents ready
+
+5. Do NOT do anything else. The script handles everything.
+
+THAT'S IT. Run the setup script and wait.

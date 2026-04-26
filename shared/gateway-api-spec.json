@@ -1,0 +1,38 @@
+{
+  "contract_id": "gateway-api-spec",
+  "published_by": "Agent-2A",
+  "published_at": "$TIMESTAMP",
+  "status": "skeleton",
+  "title": "Unified Gateway API Specification",
+  "description": "Single port 8080 routing to all 120+ endpoints from 8+ Bridge systems",
+  "endpoints": [
+    {
+      "path": "/api/topology",
+      "method": "GET",
+      "description": "Network topology visualization",
+      "returns": "topology-object"
+    },
+    {
+      "path": "/api/avatar/*",
+      "method": "GET",
+      "description": "Avatar rendering endpoints",
+      "returns": "babylon-scene-data"
+    },
+    {
+      "path": "/api/registry/*",
+      "method": "GET",
+      "description": "Registry data (kernel, network, security, etc.)",
+      "returns": "registry-object"
+    },
+    {
+      "path": "/api/marketplace/*",
+      "method": "GET",
+      "description": "Marketplace (tasks, DEX, wallet, skills, portfolio, stats)",
+      "returns": "marketplace-object"
+    }
+  ],
+  "gate_condition": "All endpoints working, p95 < 100ms, zero 5xx errors in 24h soak",
+  "depends_on": [],
+  "used_by": ["Agent-3A", "Agent-4A", "Agent-5A", "Agent-6A"],
+  "update_frequency": "hourly during Days 2-4, then stable"
+}

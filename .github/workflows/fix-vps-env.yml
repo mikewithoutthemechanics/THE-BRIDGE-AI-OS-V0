@@ -1,0 +1,19 @@
+# DEPRECATED: This one-time fix workflow is no longer needed.
+# Environment variable management is now handled by deploy-vps.yml
+# which ensures required vars exist on every deploy.
+#
+# This workflow has been disabled (no triggers).
+
+name: "[DEPRECATED] Fix VPS Supabase env vars"
+
+on:
+  # No triggers — workflow is disabled
+  push:
+    branches: [never-trigger-this-workflow]
+
+jobs:
+  deprecated:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notice
+        run: echo "This workflow is deprecated. Use deploy-vps.yml instead."

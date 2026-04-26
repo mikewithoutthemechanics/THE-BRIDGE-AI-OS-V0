@@ -1,0 +1,131 @@
+{
+  "name": "god-mode-topology",
+  "version": "1.0.0",
+  "description": "GOD MODE VPS Architecture Mapping & Topology Visualization System",
+  "main": "system.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "jest --testPathPattern=tests/",
+    "ci": "npm test",
+    "start": "node system.js",
+    "dev": "nodemon system.js",
+    "start:80": "cross-env PORT=80  NODE_ENV=production node system.js",
+    "start:443": "cross-env PORT=443 NODE_ENV=production node system.js",
+    "start:prod": "cross-env NODE_ENV=production node system.js",
+    "certs": "node scripts/gen-certs.js",
+    "preflight": "node scripts/preflight.js",
+    "health": "node scripts/health-check.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:prod": "pm2 start ecosystem.config.js --env production",
+    "pm2:stop": "pm2 stop god-mode-topology",
+    "pm2:restart": "pm2 restart god-mode-topology",
+    "pm2:logs": "pm2 logs god-mode-topology",
+    "deploy": "node scripts/deploy.js",
+    "deploy:heroku": "node scripts/deploy.js heroku",
+    "deploy:railway": "node scripts/deploy.js railway",
+    "deploy:render": "node scripts/deploy.js render",
+    "deploy:fly": "node scripts/deploy.js fly",
+    "deploy:public": "powershell -ExecutionPolicy Bypass -File scripts/deploy-public.ps1",
+    "gateway": "node gateway.js",
+    "gateway:dev": "nodemon gateway.js",
+    "cli": "node cli.js",
+    "cli:status": "node cli.js status",
+    "cli:skills": "node cli.js skills",
+    "cli:econ": "node cli.js econ",
+    "cli:cloud": "node cli.js cloud",
+    "genesis:audit": "node scripts/audit-genesis-alignment.js",
+    "genesis:bundle:ownership": "node scripts/gen-safe-ownership-bundle.js",
+    "genesis:bundle:staking": "node scripts/gen-safe-staking-topup-bundle.js",
+    "genesis:bundle:liquidity": "node scripts/gen-safe-liquidity-bundle.js",
+    "genesis:deploy:vesting": "hardhat run scripts/deploy-vesting.js --network linea"
+  },
+  "keywords": [
+    "topology",
+    "vps",
+    "architecture",
+    "p5js",
+    "monitoring"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@bull-board/express": "^7.0.0",
+    "@supabase/supabase-js": "^2.103.3",
+    "axios": "^1.6.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.8.0",
+    "bullmq": "^5.74.1",
+    "chokidar": "^5.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "ethers": "^6.16.0",
+    "express": "^5.2.1",
+    "express-rate-limit": "^7.1.5",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.3",
+    "node-pty": "^1.1.0",
+    "node-telegram-bot-api": "^0.66.0",
+    "nodemailer": "^8.0.5",
+    "pg": "^8.20.0",
+    "redis": "^5.11.0",
+    "undici": "^8.1.0",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.2",
+    "@nomicfoundation/hardhat-ethers": "^3.1.3",
+    "@nomicfoundation/hardhat-ignition": "^0.15.16",
+    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.17",
+    "@nomicfoundation/hardhat-network-helpers": "^1.1.2",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.1.3",
+    "@nomicfoundation/ignition-core": "^0.15.15",
+    "@openzeppelin/contracts": "^5.6.1",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "@types/chai": "^4.3.20",
+    "@types/mocha": "^10.0.10",
+    "chai": "^4.5.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^10.2.0",
+    "hardhat": "^2.28.6",
+    "hardhat-gas-reporter": "^1.0.10",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.14",
+    "solidity-coverage": "^0.8.17",
+    "supertest": "^7.2.2",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.2",
+    "typescript": "^6.0.3"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "\\.kilo",
+      "/dist/"
+    ],
+    "setupFilesAfterEnv": [
+      "./jest.setup.js"
+    ]
+  },
+  "nodemonConfig": {
+    "watch": [
+      "system.js",
+      "public/"
+    ],
+    "ext": "js,html,css",
+    "ignore": [
+      "node_modules/",
+      "certs/"
+    ],
+    "delay": 500
+  }
+}

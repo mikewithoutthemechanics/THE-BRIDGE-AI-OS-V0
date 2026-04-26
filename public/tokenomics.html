@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+<link rel="canonical" href="https://go.ai-os.co.za/tokenomics">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BRDG Tokenomics — Bridge AI OS</title>
+  <meta name="description" content="Institutional-grade tokenomics for BRDG — the utility and governance token of Bridge AI OS, deployed on Linea zkEVM L2." />
+  <meta property="og:title" content="BRDG Token — Bridge AI OS Tokenomics" />
+  <meta property="og:description" content="Fixed 100M supply. 1% deflationary burn. zkEVM-native on Linea. Engineered for long-term USD value accrual." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-0: #080c14;
+      --bg-1: #0d1321;
+      --bg-2: #111827;
+      --bg-3: #1a2035;
+      --border: rgba(255,255,255,0.07);
+      --border-bright: rgba(99,179,237,0.25);
+      --accent-blue: #63b3ed;
+      --accent-cyan: #4fd1c5;
+      --accent-purple: #9f7aea;
+      --accent-gold: #ecc94b;
+      --accent-green: #68d391;
+      --accent-red: #fc8181;
+      --text-primary: #f7fafc;
+      --text-secondary: #a0aec0;
+      --text-muted: #4a5568;
+      --linea-green: #61dfff;
+      --linea-dark: #0a1628;
+      --gradient-blue: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-cyan: linear-gradient(135deg, #4fd1c5 0%, #63b3ed 100%);
+      --gradient-gold: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+      --radius: 12px;
+      --radius-lg: 20px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-0);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ───────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── GRID LINES BACKGROUND ───────────────────────────── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(99,179,237,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,179,237,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ─────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 64px;
+      background: rgba(8,12,20,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .nav-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--gradient-cyan);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: #0d1321;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-logo-text {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text-primary);
+      letter-spacing: 0.3px;
+    }
+
+    .nav-logo-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: color 0.2s;
+      letter-spacing: 0.3px;
+    }
+
+    .nav-links a:hover { color: var(--accent-blue); }
+
+    .nav-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(97,223,255,0.08);
+      border: 1px solid rgba(97,223,255,0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--linea-green);
+    }
+
+    .nav-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--linea-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ── LAYOUT ──────────────────────────────────────────── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    section { padding: 80px 0; }
+
+    /* ── HERO ────────────────────────────────────────────── */
+    .hero {
+      padding-top: 140px;
+      padding-bottom: 100px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse at center, rgba(99,179,237,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: rgba(99,179,237,0.08);
+      border: 1px solid var(--border-bright);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-blue);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, #f7fafc 30%, #63b3ed 70%, #4fd1c5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 24px;
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 620px;
+      margin: 0 auto 48px;
+      line-height: 1.7;
+      font-weight: 400;
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 48px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--bg-1);
+      max-width: 700px;
+      margin: 0 auto 48px;
+    }
+
+    .hero-stat {
+      flex: 1;
+      padding: 24px 20px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+
+    .hero-stat:last-child { border-right: none; }
+
+    .hero-stat-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 500;
+    }
+
+    .hero-stat-accent { color: var(--accent-cyan); }
+    .hero-stat-accent-gold { color: var(--accent-gold); }
+    .hero-stat-accent-green { color: var(--accent-green); }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      padding: 12px 28px;
+      background: var(--gradient-cyan);
+      border: none;
+      border-radius: 8px;
+      color: #0d1321;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .btn-secondary {
+      padding: 12px 28px;
+      background: transparent;
+      border: 1px solid var(--border-bright);
+      border-radius: 8px;
+      color: var(--accent-blue);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(99,179,237,0.05);
+      border-color: var(--accent-blue);
+    }
+
+    /* ── SECTION HEADERS ─────────────────────────────────── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(26px, 3.5vw, 38px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .section-desc {
+      font-size: 15px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      line-height: 1.7;
+    }
+
+    /* ── CARDS ───────────────────────────────────────────── */
+    .card {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover { border-color: rgba(99,179,237,0.15); }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -1px;
+      margin-bottom: 4px;
+    }
+
+    .card-sub {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ── DIVIDER ─────────────────────────────────────────── */
+    .divider {
+      border: none;
+      height: 1px;
+      background: var(--border);
+      margin: 0;
+    }
+
+    /* ── GRID LAYOUTS ────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    @media (max-width: 900px) {
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      nav .nav-links { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      .grid-4, .grid-3 { grid-template-columns: 1fr; }
+      .hero-stats { flex-direction: column; }
+      .hero-stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .hero-stat:last-child { border-bottom: none; }
+    }
+
+    /* ── VALUE THESIS ────────────────────────────────────── */
+    .thesis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--bg-1);
+    }
+
+    .thesis-item {
+      padding: 32px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .thesis-item:hover { background: var(--bg-2); }
+
+    .thesis-item:nth-child(2n) { border-right: none; }
+    .thesis-item:nth-last-child(-n+2) { border-bottom: none; }
+
+    .thesis-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .thesis-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .thesis-body {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ── DISTRIBUTION ────────────────────────────────────── */
+    .dist-chart-wrap {
+      position: relative;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+
+    .dist-center-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .dist-center-value {
+      font-size: 22px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+      letter-spacing: -1px;
+    }
+
+    .dist-center-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .dist-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .dist-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: border-color 0.2s;
+    }
+
+    .dist-legend-item:hover { border-color: var(--border-bright); }
+
+    .dist-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dist-legend-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .dist-legend-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .dist-legend-tokens {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ── EMISSION ────────────────────────────────────────── */
+    .emission-chart-container {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+
+    /* ── VESTING TABLE ───────────────────────────────────── */
+    .vesting-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .vesting-table th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .vesting-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+      vertical-align: top;
+    }
+
+    .vesting-table tr:last-child td { border-bottom: none; }
+    .vesting-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .vesting-table td:first-child {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .vesting-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── UTILITY ARCHITECTURE ───────────────────────────── */
+    .utility-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .utility-grid { grid-template-columns: 1fr 1fr; }
+      .thesis-grid { grid-template-columns: 1fr; }
+      .thesis-item:nth-child(2n) { border-right: none; }
+      .thesis-item { border-right: none; }
+    }
+
+    .utility-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .utility-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    .utility-card:hover {
+      border-color: rgba(99,179,237,0.2);
+      transform: translateY(-2px);
+    }
+
+    .utility-card-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .utility-card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .utility-card-body {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .utility-card-demand {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* ── BURN MECHANICS ─────────────────────────────────── */
+    .burn-visual {
+      background: linear-gradient(135deg, rgba(252,129,129,0.05) 0%, rgba(159,122,234,0.05) 100%);
+      border: 1px solid rgba(252,129,129,0.15);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .burn-visual::before {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(ellipse, rgba(252,129,129,0.08) 0%, transparent 70%);
+    }
+
+    .burn-stat-row {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      margin: 32px 0;
+      flex-wrap: wrap;
+    }
+
+    .burn-stat {
+      text-align: center;
+    }
+
+    .burn-stat-value {
+      font-size: 32px;
+      font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-red);
+      letter-spacing: -1px;
+    }
+
+    .burn-stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ── FLYWHEEL ────────────────────────────────────────── */
+    .flywheel-container {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ── TOKEN FLOW ──────────────────────────────────────── */
+    .flow-diagram {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      overflow-x: auto;
+    }
+
+    /* ── LINEA SECTION ───────────────────────────────────── */
+    .linea-section {
+      background: linear-gradient(135deg, rgba(10,22,40,0.8) 0%, rgba(13,19,33,0.8) 100%);
+      border: 1px solid rgba(97,223,255,0.15);
+      border-radius: var(--radius-lg);
+      padding: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .linea-section::before {
+      content: '';
+      position: absolute;
+      top: -80px;
+      right: -80px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(ellipse, rgba(97,223,255,0.06) 0%, transparent 70%);
+    }
+
+    .linea-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(97,223,255,0.08);
+      border: 1px solid rgba(97,223,255,0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--linea-green);
+      margin-bottom: 20px;
+    }
+
+    .linea-features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    @media (max-width: 600px) {
+      .linea-features { grid-template-columns: 1fr; }
+      .utility-grid { grid-template-columns: 1fr; }
+    }
+
+    .linea-feature {
+      display: flex;
+      gap: 12px;
+      padding: 16px;
+      background: rgba(97,223,255,0.03);
+      border: 1px solid rgba(97,223,255,0.08);
+      border-radius: 10px;
+    }
+
+    .linea-feature-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .linea-feature-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .linea-feature-body {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ── LISTING CRITERIA ────────────────────────────────── */
+    .criteria-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .criteria-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-1);
+      transition: background 0.2s;
+    }
+
+    .criteria-item:last-child { border-bottom: none; }
+    .criteria-item:hover { background: var(--bg-2); }
+
+    .criteria-check {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .criteria-check.pass {
+      background: rgba(104,211,145,0.15);
+      color: var(--accent-green);
+    }
+
+    .criteria-content { flex: 1; }
+
+    .criteria-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .criteria-body {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .criteria-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(104,211,145,0.1);
+      color: var(--accent-green);
+      flex-shrink: 0;
+      align-self: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── CONTRACT CARD ───────────────────────────────────── */
+    .contract-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .contract-card-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .contract-card-addr {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--accent-cyan);
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 48px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .footer-brand-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .footer-brand-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 260px;
+    }
+
+    .footer-col-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text-primary); }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-disclaimer {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      margin-top: 20px;
+    }
+
+    /* ── SCROLL REVEAL ───────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── PROGRESS BAR ────────────────────────────────────── */
+    .progress-bar-track {
+      height: 6px;
+      background: var(--bg-3);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── TOOLTIP STYLE CODE BLOCKS ───────────────────────── */
+    .mono-block {
+      background: var(--bg-0);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent-cyan);
+      overflow-x: auto;
+      line-height: 1.7;
+    }
+
+    .mono-comment { color: var(--text-muted); }
+    .mono-key { color: var(--accent-purple); }
+    .mono-val { color: var(--accent-gold); }
+    .mono-str { color: var(--accent-green); }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ────────────────────────────────────────────────── -->
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="nav-logo-icon">B</div>
+    <div>
+      <div class="nav-logo-text">Bridge AI OS</div>
+      <div class="nav-logo-sub">Autonomous Intelligence Infrastructure</div>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#distribution">Distribution</a></li>
+    <li><a href="#utility">Utility</a></li>
+    <li><a href="#linea">Linea</a></li>
+    <li><a href="#listing">Listing</a></li>
+  </ul>
+  <div class="nav-badge">
+    <div class="nav-badge-dot"></div>
+    Live on Linea
+  </div>
+</nav>
+
+<main>
+
+  <!-- ── HERO ─────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-tag">
+      <span>◆</span>
+      BRDG Token — Tokenomics
+    </div>
+    <h1>Engineered for<br/>Long-Term Value</h1>
+    <p class="hero-sub">
+      BRDG is the utility and governance token of Bridge AI OS — an autonomous AI agent
+      economy deployed natively on Linea zkEVM. Fixed supply. Deflationary mechanics.
+      Real on-chain revenue.
+    </p>
+
+    <div class="hero-stats" style="margin-top: 0; margin-bottom: 24px;">
+      <div class="hero-stat">
+        <div class="hero-stat-value hero-stat-accent">100M</div>
+        <div class="hero-stat-label">Hard Cap</div>
+      </div>
+      <div class="hero-stat">
+        <div id="stat-burned" class="hero-stat-value hero-stat-accent-gold">—</div>
+        <div class="hero-stat-label">BRDG Burned</div>
+      </div>
+      <div class="hero-stat">
+        <div id="stat-circulating" class="hero-stat-value hero-stat-accent-green">—</div>
+        <div class="hero-stat-label">Circulating</div>
+      </div>
+      <div class="hero-stat">
+        <div id="stat-treasury" class="hero-stat-value" style="color: var(--accent-purple);">—</div>
+        <div class="hero-stat-label">Treasury BRDG</div>
+      </div>
+    </div>
+
+    <!-- Live chain status bar -->
+    <div id="live-chain-bar" style="display:flex;align-items:center;gap:16px;padding:10px 20px;background:rgba(99,179,237,0.06);border:1px solid var(--border-bright);border-radius:8px;margin-bottom:32px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-secondary);">
+      <span style="color:var(--accent-cyan);font-weight:700;">⬡ LIVE</span>
+      <span>Contract: <a id="live-contract" href="#" target="_blank" style="color:var(--accent-blue);text-decoration:none;">loading...</a></span>
+      <span style="margin-left:auto;opacity:0.5;" id="live-ts"></span>
+    </div>
+
+    <div class="hero-actions">
+      <a href="https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A" target="_blank" class="btn-primary">
+        ◈ View Treasury on Lineascan
+      </a>
+      <a href="#overview" class="btn-secondary">
+        Read Tokenomics ↓
+      </a>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 01 · TOKEN OVERVIEW ────────────────────────────── -->
+  <section id="overview">
+    <div class="reveal">
+      <div class="section-label">01 — Token Overview</div>
+      <h2 class="section-title">Bridge AI — BRDG</h2>
+      <p class="section-desc">
+        A fixed-supply utility token powering an autonomous agent economy. Every token
+        has a defined role, every emission is time-locked, every transaction creates
+        deflationary pressure.
+      </p>
+    </div>
+
+    <div style="margin-top: 40px;">
+      <div class="grid-2 reveal" style="transition-delay: 0.1s;">
+        <div class="card">
+          <div class="card-label">Token Identity</div>
+          <div class="mono-block" style="margin-top: 12px;">
+<span class="mono-comment">// BRDG Token — Deployed Contract</span>
+<span class="mono-key">name</span>:     <span class="mono-str">"Bridge AI"</span>
+<span class="mono-key">ticker</span>:   <span class="mono-str">"BRDG"</span>
+<span class="mono-key">standard</span>: <span class="mono-val">ERC-20</span>
+<span class="mono-key">chain</span>:    <span class="mono-val">Linea Mainnet</span> <span class="mono-comment">(59144)</span>
+<span class="mono-key">decimals</span>: <span class="mono-val">18</span>
+<span class="mono-key">max_supply</span>: <span class="mono-val">100,000,000</span> BRDG
+<span class="mono-key">burn_bps</span>: <span class="mono-val">100</span> <span class="mono-comment">// 1% on transfer</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">Deployed Contracts</div>
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+            <div class="contract-card">
+              <div style="flex: 1;">
+                <div class="contract-card-label">BRDG Token (ERC-20)</div>
+                <div class="contract-card-addr">0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f</div>
+              </div>
+              <a href="https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank" rel="noopener" class="criteria-check pass" style="text-decoration:none;">✓</a>
+            </div>
+            <div class="contract-card">
+              <div style="flex: 1;">
+                <div class="contract-card-label">Treasury Vault</div>
+                <div class="contract-card-addr">0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A</div>
+              </div>
+              <a href="https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A" target="_blank" rel="noopener" class="criteria-check pass" style="text-decoration:none;">✓</a>
+            </div>
+            <div class="contract-card">
+              <div style="flex: 1;">
+                <div class="contract-card-label">Staking Vault</div>
+                <div class="contract-card-addr">0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB</div>
+              </div>
+              <a href="https://lineascan.build/address/0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB" target="_blank" rel="noopener" class="criteria-check pass" style="text-decoration:none;">✓</a>
+            </div>
+            <div class="contract-card">
+              <div style="flex: 1;">
+                <div class="contract-card-label">SyncSwap BRDG/ETH Pool</div>
+                <div class="contract-card-addr">0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81</div>
+              </div>
+              <a href="https://lineascan.build/address/0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81" target="_blank" rel="noopener" class="criteria-check pass" style="text-decoration:none;">✓</a>
+            </div>
+            <div class="contract-card">
+              <div style="flex: 1;">
+                <div class="contract-card-label">Token Standard</div>
+                <div class="contract-card-addr">OpenZeppelin ERC-20 v5 + Custom Burn</div>
+              </div>
+              <div class="criteria-check pass">✓</div>
+            </div>
+            <div class="contract-card">
+              <div style="flex: 1;">
+                <div class="contract-card-label">RPC Endpoint</div>
+                <div class="contract-card-addr">https://rpc.linea.build</div>
+              </div>
+              <div class="criteria-check pass">✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Value Thesis -->
+    <div style="margin-top: 48px;" class="reveal" style="transition-delay: 0.2s;">
+      <div class="section-label">Value Thesis</div>
+      <h3 style="font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary);">Why BRDG Accrues USD Value</h3>
+      <p class="section-desc" style="margin-bottom: 24px;">
+        BRDG is not a speculative asset. It is a functional unit of account within an
+        autonomous AI task economy — demand is structurally tied to system activity.
+      </p>
+
+      <div class="thesis-grid">
+        <div class="thesis-item">
+          <div class="thesis-icon" style="background: rgba(99,179,237,0.12);">⚡</div>
+          <div class="thesis-title">Transaction-Linked Demand</div>
+          <div class="thesis-body">Every AI task executed on Bridge AI OS denominates fees in BRDG. As task volume scales — targeting 50 TPS, max 200 TPS — demand for BRDG grows proportionally. Revenue drives token demand; token demand drives price.</div>
+        </div>
+        <div class="thesis-item">
+          <div class="thesis-icon" style="background: rgba(252,129,129,0.12);">🔥</div>
+          <div class="thesis-title">Structural Deflationary Pressure</div>
+          <div class="thesis-body">A 1% burn on every peer-to-peer transfer permanently reduces circulating supply. At target throughput, sustained burn creates compounding scarcity — a self-reinforcing price floor with no external intervention required.</div>
+        </div>
+        <div class="thesis-item">
+          <div class="thesis-icon" style="background: rgba(104,211,145,0.12);">🔒</div>
+          <div class="thesis-title">Staking Velocity Reduction</div>
+          <div class="thesis-body">Staking vaults lock BRDG in exchange for protocol rewards and governance rights. As staking adoption increases, circulating supply contracts further — amplifying price impact of equivalent demand.</div>
+        </div>
+        <div class="thesis-item">
+          <div class="thesis-icon" style="background: rgba(159,122,234,0.12);">🏛️</div>
+          <div class="thesis-title">On-Chain Treasury Backing</div>
+          <div class="thesis-body">Protocol revenue is split on-chain by the <a href="https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A" target="_blank" rel="noopener" style="color:var(--accent-cyan);text-decoration:none;">TreasuryVault contract</a>: 40% operations, 25% liquidity, 20% reserve, 15% founders — enforced in Solidity, not governance. The 25% liquidity allocation continuously deepens DEX pools, tightening spreads and reducing volatility — a structured price support mechanism.</div>
+        </div>
+        <div class="thesis-item">
+          <div class="thesis-icon" style="background: rgba(236,201,75,0.12);">📊</div>
+          <div class="thesis-title">Hard Supply Cap — No Inflation</div>
+          <div class="thesis-body">100M BRDG is the absolute maximum. No mechanism exists to exceed this. Unlike protocols with open-ended inflation schedules, BRDG's supply trajectory is strictly asymptotic — it can only decrease via burn over time.</div>
+        </div>
+        <div class="thesis-item">
+          <div class="thesis-icon" style="background: rgba(79,209,197,0.12);">⛓️</div>
+          <div class="thesis-title">L2-Native Composability</div>
+          <div class="thesis-body">Deployed on Linea zkEVM — a high-throughput, EVM-equivalent L2. Sub-cent transaction costs enable micro-fee burn mechanics at scale, while zkEVM security guarantees give institutional participants the settlement assurance required for significant positioning.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 02 · SUPPLY MODEL ──────────────────────────────── -->
+  <section id="supply">
+    <div class="reveal">
+      <div class="section-label">02 — Supply Model</div>
+      <h2 class="section-title">Fixed Supply. Controlled Emission.</h2>
+      <p class="section-desc">
+        A hard-capped, hybrid-release model: 10% circulates at genesis,
+        90% releases on governance-controlled schedules with cliff protections.
+      </p>
+    </div>
+
+    <div class="grid-4" style="margin-top: 36px;">
+      <div class="card reveal" style="transition-delay: 0.05s;">
+        <div class="card-label">Hard Cap</div>
+        <div class="card-value" style="color: var(--accent-cyan);">100M</div>
+        <div class="card-sub">Absolute maximum. No governance vote can exceed this limit — enforced at contract level.</div>
+        <div class="progress-bar-track" style="margin-top: 16px;">
+          <div class="progress-bar-fill" data-width="100" style="width: 0%; background: var(--accent-cyan);"></div>
+        </div>
+      </div>
+      <div class="card reveal" style="transition-delay: 0.1s;">
+        <div class="card-label">Genesis Supply</div>
+        <div class="card-value" style="color: var(--accent-green);">10M</div>
+        <div class="card-sub">10% initial mint to treasury. Sufficient for liquidity seeding and operations without market dilution.</div>
+        <div class="progress-bar-track" style="margin-top: 16px;">
+          <div class="progress-bar-fill" data-width="10" style="width: 0%; background: var(--accent-green);"></div>
+        </div>
+      </div>
+      <div class="card reveal" style="transition-delay: 0.15s;">
+        <div class="card-label">Remaining Issuance</div>
+        <div class="card-value" style="color: var(--accent-gold);">90M</div>
+        <div class="card-sub">Released over 48 months via governance. Cliff-protected. No single tranche exceeds 15% of supply.</div>
+        <div class="progress-bar-track" style="margin-top: 16px;">
+          <div class="progress-bar-fill" data-width="90" style="width: 0%; background: var(--accent-gold);"></div>
+        </div>
+      </div>
+      <div class="card reveal" style="transition-delay: 0.2s;">
+        <div class="card-label">Effective Circulating</div>
+        <div class="card-value" style="color: var(--accent-purple);">≤ 60M</div>
+        <div class="card-sub">At full emission, staking locks and burn reduce effective circulating supply to an estimated 55–65M.</div>
+        <div class="progress-bar-track" style="margin-top: 16px;">
+          <div class="progress-bar-fill" data-width="60" style="width: 0%; background: var(--accent-purple);"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 03 · DISTRIBUTION ──────────────────────────────── -->
+  <section id="distribution">
+    <div class="reveal">
+      <div class="section-label">03 — Token Distribution</div>
+      <h2 class="section-title">Allocation Architecture</h2>
+      <p class="section-desc">
+        Distribution designed for long-term ecosystem health — weighted toward
+        ecosystem incentives and liquidity, not insider enrichment.
+      </p>
+    </div>
+
+    <div class="grid-2" style="margin-top: 40px; align-items: center;">
+      <div class="dist-chart-wrap reveal" style="transition-delay: 0.1s;">
+        <canvas id="distChart" width="340" height="340"></canvas>
+        <div class="dist-center-label">
+          <div class="dist-center-value">100M</div>
+          <div class="dist-center-sub">Total Supply</div>
+        </div>
+      </div>
+
+      <div class="dist-legend reveal" style="transition-delay: 0.2s;">
+        <div class="dist-legend-item">
+          <div class="dist-dot" style="background: #63b3ed;"></div>
+          <div class="dist-legend-name">Ecosystem Incentives</div>
+          <div>
+            <div class="dist-legend-pct">35%</div>
+            <div class="dist-legend-tokens">35,000,000 BRDG</div>
+          </div>
+        </div>
+        <div class="dist-legend-item">
+          <div class="dist-dot" style="background: #4fd1c5;"></div>
+          <div class="dist-legend-name">Liquidity &amp; Market Making</div>
+          <div>
+            <div class="dist-legend-pct">20%</div>
+            <div class="dist-legend-tokens">20,000,000 BRDG</div>
+          </div>
+        </div>
+        <div class="dist-legend-item">
+          <div class="dist-dot" style="background: #9f7aea;"></div>
+          <div class="dist-legend-name">Treasury Operations</div>
+          <div>
+            <div class="dist-legend-pct">15%</div>
+            <div class="dist-legend-tokens">15,000,000 BRDG</div>
+          </div>
+        </div>
+        <div class="dist-legend-item">
+          <div class="dist-dot" style="background: #ecc94b;"></div>
+          <div class="dist-legend-name">Community &amp; Growth</div>
+          <div>
+            <div class="dist-legend-pct">15%</div>
+            <div class="dist-legend-tokens">15,000,000 BRDG</div>
+          </div>
+        </div>
+        <div class="dist-legend-item">
+          <div class="dist-dot" style="background: #f6ad55;"></div>
+          <div class="dist-legend-name">Founders &amp; Team</div>
+          <div>
+            <div class="dist-legend-pct">10%</div>
+            <div class="dist-legend-tokens">10,000,000 BRDG</div>
+          </div>
+        </div>
+        <div class="dist-legend-item">
+          <div class="dist-dot" style="background: #68d391;"></div>
+          <div class="dist-legend-name">Strategic Reserve</div>
+          <div>
+            <div class="dist-legend-pct">5%</div>
+            <div class="dist-legend-tokens">5,000,000 BRDG</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vesting Table -->
+    <div style="margin-top: 48px;" class="reveal">
+      <div class="section-label" style="margin-bottom: 16px;">Vesting Schedule</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-1);">
+        <table class="vesting-table">
+          <thead>
+            <tr>
+              <th>Allocation</th>
+              <th>Tokens</th>
+              <th>TGE Unlock</th>
+              <th>Cliff</th>
+              <th>Vesting</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Ecosystem Incentives</td>
+              <td><span style="font-family: 'JetBrains Mono'; color: var(--accent-cyan);">35M</span></td>
+              <td>0%</td>
+              <td>0 months</td>
+              <td>48 months linear</td>
+              <td>Distributed via staking + task rewards</td>
+            </tr>
+            <tr>
+              <td>Liquidity &amp; Market Making</td>
+              <td><span style="font-family: 'JetBrains Mono'; color: var(--accent-cyan);">20M</span></td>
+              <td>50%</td>
+              <td>0 months</td>
+              <td>12 months linear</td>
+              <td>10M seeded at genesis; 10M released over 12M</td>
+            </tr>
+            <tr>
+              <td>Treasury Operations</td>
+              <td><span style="font-family: 'JetBrains Mono'; color: var(--accent-cyan);">15M</span></td>
+              <td>0%</td>
+              <td>3 months</td>
+              <td>36 months linear</td>
+              <td>Governed by multisig; 40/25/20/15 bucket split enforced on-chain</td>
+            </tr>
+            <tr>
+              <td>Community &amp; Growth</td>
+              <td><span style="font-family: 'JetBrains Mono'; color: var(--accent-cyan);">15M</span></td>
+              <td>5%</td>
+              <td>1 month</td>
+              <td>36 months linear</td>
+              <td>Grants, airdrops, builder programs, partner incentives</td>
+            </tr>
+            <tr>
+              <td>Founders &amp; Team</td>
+              <td><span style="font-family: 'JetBrains Mono'; color: var(--accent-cyan);">10M</span></td>
+              <td>0%</td>
+              <td>12 months</td>
+              <td>36 months linear</td>
+              <td>Cliff-protected. Team cannot sell during first year.</td>
+            </tr>
+            <tr>
+              <td>Strategic Reserve</td>
+              <td><span style="font-family: 'JetBrains Mono'; color: var(--accent-cyan);">5M</span></td>
+              <td>0%</td>
+              <td>12 months</td>
+              <td>Governance-unlocked</td>
+              <td>Emergency reserve; listing bonds; exchange collateral</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 04 · EMISSION CURVE ────────────────────────────── -->
+  <section id="emission">
+    <div class="reveal">
+      <div class="section-label">04 — Emission Curve</div>
+      <h2 class="section-title">Controlled Release Schedule</h2>
+      <p class="section-desc">
+        Cumulative supply growth is front-weighted with liquidity, then decelerates
+        as ecosystem and team vesting reaches maturity. Burn pressure increases in
+        proportion to adoption.
+      </p>
+    </div>
+
+    <div class="emission-chart-container reveal" style="margin-top: 36px; transition-delay: 0.1s;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="font-size: 15px; font-weight: 700; color: var(--text-primary);">Cumulative Supply Over 48 Months</div>
+          <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Max supply: 100M BRDG — Effective circulating adjusted for burn</div>
+        </div>
+        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary);">
+            <div style="width: 12px; height: 3px; background: var(--accent-cyan); border-radius: 2px;"></div>
+            Max Supply
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary);">
+            <div style="width: 12px; height: 3px; background: var(--accent-red); border-radius: 2px;"></div>
+            Circulating (burn-adjusted)
+          </div>
+        </div>
+      </div>
+      <canvas id="emissionChart" height="280"></canvas>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 05 · UTILITY ARCHITECTURE ─────────────────────── -->
+  <section id="utility">
+    <div class="reveal">
+      <div class="section-label">05 — Utility Architecture</div>
+      <h2 class="section-title">Six Demand Drivers</h2>
+      <p class="section-desc">
+        Each utility vector creates independent, compounding demand for BRDG.
+        Value accrual is not dependent on any single mechanism.
+      </p>
+    </div>
+
+    <div class="utility-grid" style="margin-top: 36px;">
+      <div class="utility-card reveal" style="transition-delay: 0.05s;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gradient-cyan);"></div>
+        <div class="utility-card-icon">⚡</div>
+        <div class="utility-card-title">AI Task Execution Fees</div>
+        <div class="utility-card-body">All AI agent tasks on Bridge AI OS are denominated and settled in BRDG. The system targets 50 TPS at $0.88 average profit per task, creating real-time, sustained token demand tied directly to platform usage.</div>
+        <div class="utility-card-demand" style="color: var(--accent-cyan);">
+          <span>●</span> PRIMARY DEMAND DRIVER
+        </div>
+      </div>
+
+      <div class="utility-card reveal" style="transition-delay: 0.1s;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(135deg, #9f7aea, #f6ad55);"></div>
+        <div class="utility-card-icon">🗳️</div>
+        <div class="utility-card-title">Protocol Governance</div>
+        <div class="utility-card-body">BRDG holders vote on treasury allocation splits, emission schedules, fee parameters, and protocol upgrades. Governance weight is calculated on staked BRDG, incentivising long-term lockup over spot trading.</div>
+        <div class="utility-card-demand" style="color: var(--accent-purple);">
+          <span>●</span> LOCK-UP INCENTIVE
+        </div>
+      </div>
+
+      <div class="utility-card reveal" style="transition-delay: 0.15s;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(135deg, #68d391, #4fd1c5);"></div>
+        <div class="utility-card-icon">🔒</div>
+        <div class="utility-card-title">Staking &amp; Yield</div>
+        <div class="utility-card-body">BRDG stakers receive a proportional share of protocol fees routed through the TreasuryVault liquidity bucket. A portion of the estimated 12% APY target is sourced from real revenue, not inflationary emissions — making yields sustainable.</div>
+        <div class="utility-card-demand" style="color: var(--accent-green);">
+          <span>●</span> SUPPLY REDUCTION
+        </div>
+      </div>
+
+      <div class="utility-card reveal" style="transition-delay: 0.2s;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(135deg, #ecc94b, #f6ad55);"></div>
+        <div class="utility-card-icon">💎</div>
+        <div class="utility-card-title">Access &amp; Tier Gating</div>
+        <div class="utility-card-body">Premium access tiers on Bridge AI OS require BRDG holdings as a minimum balance. Higher tiers unlock faster processing, dedicated AI pipelines, and advanced analytics — creating a direct utility floor under the token price.</div>
+        <div class="utility-card-demand" style="color: var(--accent-gold);">
+          <span>●</span> FLOOR MECHANISM
+        </div>
+      </div>
+
+      <div class="utility-card reveal" style="transition-delay: 0.25s;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(135deg, #fc8181, #f6ad55);"></div>
+        <div class="utility-card-icon">🌐</div>
+        <div class="utility-card-title">Liquidity Provision Rewards</div>
+        <div class="utility-card-body">BRDG/ETH and BRDG/USDC liquidity providers receive boosted rewards from the protocol treasury. The 25% on-chain liquidity allocation creates a self-perpetuating depth mechanism — protocol revenue deepens pools which in turn reduce price impact.</div>
+        <div class="utility-card-demand" style="color: var(--accent-red);">
+          <span>●</span> LIQUIDITY DEPTH
+        </div>
+      </div>
+
+      <div class="utility-card reveal" style="transition-delay: 0.3s;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(135deg, #61dfff, #63b3ed);"></div>
+        <div class="utility-card-icon">🤝</div>
+        <div class="utility-card-title">Agent Collateral &amp; Bonding</div>
+        <div class="utility-card-body">AI agents operating within the Bridge AI OS network must bond BRDG as collateral — aligning incentives and ensuring honest task execution. Slashing conditions permanently remove bonded BRDG from supply, creating an ongoing deflationary vector.</div>
+        <div class="utility-card-demand" style="color: var(--linea-green);">
+          <span>●</span> MANDATORY DEMAND
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 06 · BURN & MINT MECHANICS ─────────────────────── -->
+  <section id="burn">
+    <div class="reveal">
+      <div class="section-label">06 — Burn &amp; Mint Mechanics</div>
+      <h2 class="section-title">Deflationary by Design</h2>
+      <p class="section-desc">
+        The protocol is structurally deflationary. Every point of adoption accelerates burn,
+        and no mechanism exists to exceed the 100M hard cap.
+      </p>
+    </div>
+
+    <div class="burn-visual reveal" style="margin-top: 36px; transition-delay: 0.1s;">
+      <div style="font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--accent-red); margin-bottom: 8px;">BURN RATE</div>
+      <div style="font-size: 42px; font-weight: 900; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; letter-spacing: -2px;">
+        1% <span style="font-size: 22px; color: var(--text-muted); font-weight: 400;">per transfer</span>
+      </div>
+      <div style="font-size: 14px; color: var(--text-secondary); margin-top: 8px; max-width: 500px; margin-left: auto; margin-right: auto;">
+        Hard-coded at contract level (100 basis points). Cannot be reduced or disabled by any governance vote. Exempt addresses: treasury, DEX liquidity pools, and staking vaults to prevent internal-loop friction.
+      </div>
+
+      <div class="burn-stat-row">
+        <div class="burn-stat">
+          <div class="burn-stat-value">~5M</div>
+          <div class="burn-stat-label">Est. Burn at 50 TPS / Year</div>
+        </div>
+        <div class="burn-stat">
+          <div class="burn-stat-value">Forever</div>
+          <div class="burn-stat-label">Burns accumulate to <code>totalBurned</code></div>
+        </div>
+        <div class="burn-stat">
+          <div class="burn-stat-value">0%</div>
+          <div class="burn-stat-label">Burn on Mint / Staking</div>
+        </div>
+      </div>
+
+      <div style="font-size: 12px; color: var(--text-muted); font-style: italic;">
+        Burn-exempt addresses set by governance only. Exemptions limited to protocol-controlled contracts.
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top: 24px;">
+      <div class="card reveal" style="transition-delay: 0.15s; border-color: rgba(252,129,129,0.15);">
+        <div class="card-label" style="color: var(--accent-red);">Deflationary Path</div>
+        <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-top: 8px;">
+          At sustained 50 TPS and average transaction size, the effective circulating supply decreases by an estimated 4–6M BRDG per year. After 4 years, circulating supply could be 20–25% below initial emission — without any buyback program.
+        </div>
+      </div>
+      <div class="card reveal" style="transition-delay: 0.2s; border-color: rgba(104,211,145,0.15);">
+        <div class="card-label" style="color: var(--accent-green);">Mint Controls</div>
+        <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-top: 8px;">
+          The <code style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--accent-cyan);">mint()</code> function requires <code style="font-family: 'JetBrains Mono'; font-size: 12px; color: var(--accent-cyan);">onlyOwner</code> — transitioning to governance multisig. Every mint call validates against MAX_SUPPLY at contract level. No override path exists.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 07 · VALUE ACCRUAL FLYWHEEL ────────────────────── -->
+  <section id="flywheel">
+    <div class="reveal">
+      <div class="section-label">07 — Value Accrual Flywheel</div>
+      <h2 class="section-title">Self-Reinforcing Growth Loop</h2>
+      <p class="section-desc">
+        Each component of the ecosystem reinforces the others — adoption drives fees,
+        fees drive burns, burns drive scarcity, scarcity drives adoption.
+      </p>
+    </div>
+
+    <div class="flywheel-container reveal" style="margin-top: 36px; transition-delay: 0.1s;">
+      <svg viewBox="0 0 700 480" width="100%" xmlns="http://www.w3.org/2000/svg" style="max-width: 700px;">
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#4fd1c5" />
+          </marker>
+          <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#fc8181" />
+          </marker>
+          <marker id="arrow-gold" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#ecc94b" />
+          </marker>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Central node -->
+        <circle cx="350" cy="240" r="58" fill="rgba(99,179,237,0.08)" stroke="rgba(99,179,237,0.4)" stroke-width="1.5"/>
+        <text x="350" y="234" text-anchor="middle" fill="#63b3ed" font-family="Inter" font-weight="800" font-size="14">BRDG</text>
+        <text x="350" y="252" text-anchor="middle" fill="#a0aec0" font-family="Inter" font-size="10">VALUE ENGINE</text>
+
+        <!-- Node: AI Tasks -->
+        <rect x="40" y="60" width="140" height="52" rx="10" fill="rgba(13,19,33,1)" stroke="rgba(79,209,197,0.4)" stroke-width="1.5"/>
+        <text x="110" y="82" text-anchor="middle" fill="#4fd1c5" font-family="Inter" font-weight="700" font-size="12">AI Task Volume</text>
+        <text x="110" y="99" text-anchor="middle" fill="#718096" font-family="Inter" font-size="10">50 TPS target</text>
+
+        <!-- Node: Fees -->
+        <rect x="520" y="60" width="140" height="52" rx="10" fill="rgba(13,19,33,1)" stroke="rgba(236,201,75,0.4)" stroke-width="1.5"/>
+        <text x="590" y="82" text-anchor="middle" fill="#ecc94b" font-family="Inter" font-weight="700" font-size="12">Protocol Fees</text>
+        <text x="590" y="99" text-anchor="middle" fill="#718096" font-family="Inter" font-size="10">BRDG denominated</text>
+
+        <!-- Node: Burn -->
+        <rect x="520" y="380" width="140" height="52" rx="10" fill="rgba(13,19,33,1)" stroke="rgba(252,129,129,0.4)" stroke-width="1.5"/>
+        <text x="590" y="402" text-anchor="middle" fill="#fc8181" font-family="Inter" font-weight="700" font-size="12">1% Burn</text>
+        <text x="590" y="419" text-anchor="middle" fill="#718096" font-family="Inter" font-size="10">Permanent supply reduction</text>
+
+        <!-- Node: Scarcity -->
+        <rect x="40" y="380" width="140" height="52" rx="10" fill="rgba(13,19,33,1)" stroke="rgba(159,122,234,0.4)" stroke-width="1.5"/>
+        <text x="110" y="402" text-anchor="middle" fill="#9f7aea" font-family="Inter" font-weight="700" font-size="12">Supply Scarcity</text>
+        <text x="110" y="419" text-anchor="middle" fill="#718096" font-family="Inter" font-size="10">Circulating ↓ Price ↑</text>
+
+        <!-- Node: Staking -->
+        <rect x="280" y="26" width="140" height="52" rx="10" fill="rgba(13,19,33,1)" stroke="rgba(104,211,145,0.4)" stroke-width="1.5"/>
+        <text x="350" y="48" text-anchor="middle" fill="#68d391" font-family="Inter" font-weight="700" font-size="12">Staking Demand</text>
+        <text x="350" y="65" text-anchor="middle" fill="#718096" font-family="Inter" font-size="10">Lock-up velocity sink</text>
+
+        <!-- Node: Liquidity -->
+        <rect x="280" y="414" width="140" height="52" rx="10" fill="rgba(13,19,33,1)" stroke="rgba(97,223,255,0.4)" stroke-width="1.5"/>
+        <text x="350" y="436" text-anchor="middle" fill="#61dfff" font-family="Inter" font-weight="700" font-size="12">DEX Liquidity</text>
+        <text x="350" y="453" text-anchor="middle" fill="#718096" font-family="Inter" font-size="10">25% treasury allocation</text>
+
+        <!-- Arrows: Task → Fees -->
+        <path d="M 180 86 Q 350 40 520 86" fill="none" stroke="rgba(79,209,197,0.6)" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="5,3"/>
+        <text x="350" y="50" text-anchor="middle" fill="#4fd1c5" font-family="Inter" font-size="10" opacity="0.8">generates</text>
+
+        <!-- Arrows: Fees → Center -->
+        <path d="M 520 98 L 402 192" fill="none" stroke="rgba(236,201,75,0.6)" stroke-width="1.5" marker-end="url(#arrow-gold)"/>
+
+        <!-- Arrows: Center → Burn -->
+        <path d="M 402 290 L 520 382" fill="none" stroke="rgba(252,129,129,0.6)" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+        <!-- Arrows: Burn → Scarcity -->
+        <path d="M 520 406 Q 350 450 180 406" fill="none" stroke="rgba(252,129,129,0.5)" stroke-width="1.5" marker-end="url(#arrow-red)" stroke-dasharray="5,3"/>
+        <text x="350" y="468" text-anchor="middle" fill="#fc8181" font-family="Inter" font-size="10" opacity="0.8">reduces circulating</text>
+
+        <!-- Arrows: Scarcity → Task Volume -->
+        <path d="M 110 380 L 110 112" fill="none" stroke="rgba(159,122,234,0.6)" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="84" y="248" text-anchor="middle" fill="#9f7aea" font-family="Inter" font-size="10" opacity="0.8" transform="rotate(-90, 84, 248)">price pressure</text>
+
+        <!-- Arrows: Center → Staking -->
+        <path d="M 350 182 L 350 78" fill="none" stroke="rgba(104,211,145,0.6)" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Arrows: Center → Liquidity -->
+        <path d="M 350 298 L 350 414" fill="none" stroke="rgba(97,223,255,0.6)" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Circular arrow indicator -->
+        <path d="M 420 200 A 80 80 0 1 1 420 280" fill="none" stroke="rgba(99,179,237,0.2)" stroke-width="1" stroke-dasharray="4,4"/>
+        <polygon points="420,275 428,285 412,285" fill="rgba(99,179,237,0.3)"/>
+      </svg>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 08 · LIQUIDITY STRATEGY ───────────────────────── -->
+  <section id="liquidity">
+    <div class="reveal">
+      <div class="section-label">08 — Liquidity Strategy</div>
+      <h2 class="section-title">Deep, Sustainable Market Architecture</h2>
+      <p class="section-desc">
+        Liquidity is treated as protocol infrastructure — not an afterthought.
+        On-chain treasury mechanics enforce a 25% perpetual reinvestment into pool depth.
+      </p>
+    </div>
+
+    <div class="grid-3" style="margin-top: 36px;">
+      <div class="card reveal" style="transition-delay: 0.05s;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+          <div style="width: 36px; height: 36px; background: rgba(97,223,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">⛓️</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Linea DEX — Primary</div>
+        </div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          BRDG/ETH pool seeded at genesis with treasury allocation. Linea's native DEX ecosystem (Lynex, Nile) provides zkEVM-optimised routing with near-zero gas costs — enabling high-frequency micro-transactions that drive burn volume.
+        </div>
+        <div style="margin-top: 16px; padding: 10px 14px; background: var(--bg-0); border-radius: 8px; font-family: 'JetBrains Mono'; font-size: 11px; color: var(--linea-green);">
+          BRDG / ETH · BRDG / USDC
+        </div>
+      </div>
+
+      <div class="card reveal" style="transition-delay: 0.1s;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+          <div style="width: 36px; height: 36px; background: rgba(99,179,237,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">🌉</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Cross-Chain Expansion</div>
+        </div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          Phase 2 liquidity targets Ethereum mainnet (Uniswap V3) and secondary L2s via official bridge contracts. Cross-chain BRDG demand creates arbitrage incentives that further deepen Linea pool liquidity through natural market mechanics.
+        </div>
+        <div style="margin-top: 16px; padding: 10px 14px; background: var(--bg-0); border-radius: 8px; font-family: 'JetBrains Mono'; font-size: 11px; color: var(--accent-cyan);">
+          Ethereum → Arbitrum → Base
+        </div>
+      </div>
+
+      <div class="card reveal" style="transition-delay: 0.15s;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+          <div style="width: 36px; height: 36px; background: rgba(104,211,145,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">🏦</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Perpetual Reinvestment</div>
+        </div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          The TreasuryVault contract enforces 25% of all incoming revenue into the <code style="font-family: 'JetBrains Mono'; font-size: 11px; color: var(--accent-cyan);">liquidityBalance</code> bucket — on-chain, auditable, non-discretionary. Pool depth scales automatically with protocol success.
+        </div>
+        <div style="margin-top: 16px; padding: 10px 14px; background: var(--bg-0); border-radius: 8px; font-family: 'JetBrains Mono'; font-size: 11px; color: var(--accent-green);">
+          25% protocol revenue → pools
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 09 · LINEA ECOSYSTEM ALIGNMENT ────────────────── -->
+  <section id="linea">
+    <div class="reveal">
+      <div class="section-label">09 — Linea Ecosystem Alignment</div>
+      <h2 class="section-title">zkEVM-Native. Not Ported.</h2>
+    </div>
+
+    <div class="linea-section reveal" style="margin-top: 36px; transition-delay: 0.1s;">
+      <div class="linea-badge">
+        ◈ Deployed on Linea Chain 59144
+      </div>
+      <h3 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; letter-spacing: -0.5px;">
+        Built for Linea's Infrastructure Vision
+      </h3>
+      <p style="font-size: 15px; color: var(--text-secondary); max-width: 660px; line-height: 1.7;">
+        BRDG was not deployed on Linea as an afterthought. The economics were designed
+        from genesis around Linea's sub-cent transaction costs, zkEVM settlement security,
+        and ecosystem liquidity. Every mechanism — burn on transfer, staking,
+        treasury reinvestment — operates more efficiently at L2 than it ever could on L1.
+      </p>
+
+      <div class="linea-features">
+        <div class="linea-feature">
+          <div class="linea-feature-icon">⚡</div>
+          <div>
+            <div class="linea-feature-title">Sub-Cent Transaction Costs</div>
+            <div class="linea-feature-body">Linea's L2 fees enable micro-burn at scale. A 1% burn on a $0.12 task fee is economically viable only at L2 — at L1 gas costs, it would be unworkable. Linea is the reason this model exists.</div>
+          </div>
+        </div>
+        <div class="linea-feature">
+          <div class="linea-feature-icon">🔐</div>
+          <div>
+            <div class="linea-feature-title">zkEVM Settlement Security</div>
+            <div class="linea-feature-body">Linea's zkEVM provides Ethereum-equivalent security guarantees without Ethereum's throughput constraints. Institutional participants can deploy significant capital with confidence in settlement finality.</div>
+          </div>
+        </div>
+        <div class="linea-feature">
+          <div class="linea-feature-icon">🧩</div>
+          <div>
+            <div class="linea-feature-title">Full EVM Composability</div>
+            <div class="linea-feature-body">BRDG integrates natively with all Linea-deployed DeFi protocols — lending markets, DEXes, yield optimisers. No wrappers, no bridges within L2. Standard ERC-20 interface with no compatibility compromises.</div>
+          </div>
+        </div>
+        <div class="linea-feature">
+          <div class="linea-feature-icon">🌐</div>
+          <div>
+            <div class="linea-feature-title">Ecosystem Contributor</div>
+            <div class="linea-feature-body">Bridge AI OS drives native on-chain activity on Linea — task fees, staking transactions, liquidity provision, governance votes. BRDG is not a passive token; it generates measurable TVL and transaction volume contributions to the ecosystem.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 10 · GOVERNANCE ────────────────────────────────── -->
+  <section id="governance">
+    <div class="reveal">
+      <div class="section-label">10 — Governance Model</div>
+      <h2 class="section-title">Progressive Decentralisation</h2>
+      <p class="section-desc">
+        Governance transitions from founder-controlled to community-controlled over 24 months,
+        with each phase gated by adoption milestones — not arbitrary timelines.
+      </p>
+    </div>
+
+    <div class="grid-3" style="margin-top: 36px;">
+      <div class="card reveal" style="transition-delay: 0.05s; border-color: rgba(236,201,75,0.2);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--accent-gold);">Phase 1 · Months 0–6</div>
+          <span style="font-size: 11px; padding: 2px 8px; background: rgba(236,201,75,0.1); border-radius: 4px; color: var(--accent-gold); font-weight: 600;">CURRENT</span>
+        </div>
+        <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Founder Multisig</div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          3-of-5 multisig controls minting and treasury allocation. Rapid protocol iteration without governance overhead. Parameters are public and auditable on-chain.
+        </div>
+      </div>
+
+      <div class="card reveal" style="transition-delay: 0.1s;">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;">Phase 2 · Months 6–18</div>
+        <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Hybrid Governance</div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          Staked BRDG holders gain voting rights on treasury allocation splits and emission schedules. Founders retain veto on critical security parameters. Quorum requires 5% of staked supply.
+        </div>
+      </div>
+
+      <div class="card reveal" style="transition-delay: 0.15s;">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;">Phase 3 · Month 18+</div>
+        <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Full DAO</div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          On-chain governance via OpenZeppelin Governor. All protocol parameters subject to token-holder vote with time-locked execution. Founders retain no special administrative access.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 11 · LISTING READINESS ─────────────────────────── -->
+  <section id="listing">
+    <div class="reveal">
+      <div class="section-label">11 — Exchange Listing Readiness</div>
+      <h2 class="section-title">Built to Listing Standards</h2>
+      <p class="section-desc">
+        Each of the primary criteria evaluated by Linea ecosystem programs and centralised
+        exchange listing committees is addressed — by design, not retroactively.
+      </p>
+    </div>
+
+    <div class="criteria-list reveal" style="margin-top: 36px; transition-delay: 0.1s;">
+      <div class="criteria-item">
+        <div class="criteria-check pass">✓</div>
+        <div class="criteria-content">
+          <div class="criteria-title">Transparent Supply Schedule</div>
+          <div class="criteria-body">100M hard cap enforced at contract level. All 6 allocation buckets have defined vesting schedules, cliff periods, and on-chain enforcement. No hidden founder allocation or discretionary minting path exists.</div>
+        </div>
+        <div class="criteria-tag">VERIFIED</div>
+      </div>
+      <div class="criteria-item">
+        <div class="criteria-check pass">✓</div>
+        <div class="criteria-content">
+          <div class="criteria-title">Sustainable Economic Model</div>
+          <div class="criteria-body">Revenue model is not dependent on inflationary token emissions. Protocol fees denominated in BRDG create organic, activity-driven demand. The deflationary burn mechanism ensures long-term supply reduction without artificial interventions.</div>
+        </div>
+        <div class="criteria-tag">VERIFIED</div>
+      </div>
+      <div class="criteria-item">
+        <div class="criteria-check pass">✓</div>
+        <div class="criteria-content">
+          <div class="criteria-title">Liquidity Depth at Launch</div>
+          <div class="criteria-body">20M BRDG (20% of supply) is allocated to liquidity and market making, with 50% unlocked at genesis. The TreasuryVault's 25% perpetual allocation ensures pool depth grows with the protocol — not requiring external market makers.</div>
+        </div>
+        <div class="criteria-tag">VERIFIED</div>
+      </div>
+      <div class="criteria-item">
+        <div class="criteria-check pass">✓</div>
+        <div class="criteria-content">
+          <div class="criteria-title">Insider Lock-Up Protections</div>
+          <div class="criteria-body">Founder and team allocation (10M BRDG) carries a 12-month cliff and 36-month linear vest. Zero team tokens are liquid at launch. This is enforced via smart contract vesting — not a gentleman's agreement.</div>
+        </div>
+        <div class="criteria-tag">VERIFIED</div>
+      </div>
+      <div class="criteria-item">
+        <div class="criteria-check pass">✓</div>
+        <div class="criteria-content">
+          <div class="criteria-title">Auditable On-Chain Treasury</div>
+          <div class="criteria-body">The TreasuryVault contract enforces allocation splits (40/25/20/15) on every deposit. All bucket balances, withdrawal events, and split ratios are publicly verifiable on Lineascan. No off-chain treasury management.</div>
+        </div>
+        <div class="criteria-tag">VERIFIED</div>
+      </div>
+      <div class="criteria-item">
+        <div class="criteria-check pass">✓</div>
+        <div class="criteria-content">
+          <div class="criteria-title">Real Utility — Not Speculative</div>
+          <div class="criteria-body">BRDG is required to access AI agent services, pay task fees, stake for yield, provide liquidity, participate in governance, and bond as an AI agent operator. Demand exists independent of token price appreciation narratives.</div>
+        </div>
+        <div class="criteria-tag">VERIFIED</div>
+      </div>
+      <div class="criteria-item">
+        <div class="criteria-check pass">✓</div>
+        <div class="criteria-content">
+          <div class="criteria-title">zkEVM Native — No Bridge Risk at L2</div>
+          <div class="criteria-body">Deployed natively on Linea. All primary liquidity, governance, and utility functions operate at L2 without bridge dependency. Cross-chain expansion in Phase 2 is additive — not required for core functionality.</div>
+        </div>
+        <div class="criteria-tag">VERIFIED</div>
+      </div>
+      <div class="criteria-item">
+        <div class="criteria-check pass">✓</div>
+        <div class="criteria-content">
+          <div class="criteria-title">OpenZeppelin Security Standards</div>
+          <div class="criteria-body">BRDG.sol and TreasuryVault.sol are built on OpenZeppelin Contracts v5 — the most widely audited smart contract library in production. Standard ERC-20 interface with minimal custom logic reduces attack surface.</div>
+        </div>
+        <div class="criteria-tag">VERIFIED</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 12 · RISK DISCLOSURES ──────────────────────────── -->
+  <section>
+    <div class="reveal">
+      <div class="section-label">12 — Risk Framework</div>
+      <h2 class="section-title">Identified Risks &amp; Mitigations</h2>
+    </div>
+
+    <div class="grid-2" style="margin-top: 36px;">
+      <div class="card reveal" style="transition-delay: 0.05s;">
+        <div class="card-label" style="color: var(--accent-red);">Smart Contract Risk</div>
+        <div style="height: 1px; background: var(--border); margin: 12px 0;"></div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;">
+          <strong style="color: var(--text-primary);">Risk:</strong> Vulnerability in BRDG.sol or TreasuryVault.sol could result in fund loss.<br/><br/>
+          <strong style="color: var(--text-primary);">Mitigation:</strong> OpenZeppelin v5 base. Formal security audit prior to full liquidity deployment. Multisig control with time-locked execution for critical parameter changes.
+        </div>
+      </div>
+      <div class="card reveal" style="transition-delay: 0.1s;">
+        <div class="card-label" style="color: var(--accent-gold);">Adoption Risk</div>
+        <div style="height: 1px; background: var(--border); margin: 12px 0;"></div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;">
+          <strong style="color: var(--text-primary);">Risk:</strong> Lower-than-projected task volume reduces fee-driven demand and burn rate.<br/><br/>
+          <strong style="color: var(--text-primary);">Mitigation:</strong> 35M ecosystem incentive allocation funds growth programs. 15M community allocation supports developer grants. Treasury reserve provides runway for sustained development.
+        </div>
+      </div>
+      <div class="card reveal" style="transition-delay: 0.15s;">
+        <div class="card-label" style="color: var(--accent-purple);">Regulatory Risk</div>
+        <div style="height: 1px; background: var(--border); margin: 12px 0;"></div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;">
+          <strong style="color: var(--text-primary);">Risk:</strong> Evolving regulatory classification of utility tokens in operating jurisdictions.<br/><br/>
+          <strong style="color: var(--text-primary);">Mitigation:</strong> BRDG is designed as a pure utility token — no profit-sharing, no dividend rights, no securities characteristics. Legal counsel review prior to public sale.
+        </div>
+      </div>
+      <div class="card reveal" style="transition-delay: 0.2s;">
+        <div class="card-label" style="color: var(--accent-cyan);">Liquidity Risk</div>
+        <div style="height: 1px; background: var(--border); margin: 12px 0;"></div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;">
+          <strong style="color: var(--text-primary);">Risk:</strong> Early-stage DEX liquidity may result in elevated price impact for large orders.<br/><br/>
+          <strong style="color: var(--text-primary);">Mitigation:</strong> 10M BRDG seeded at genesis. 25% perpetual treasury reinvestment. LP reward programs incentivise external liquidity provision. Strategic reserve available for emergency liquidity support.
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── FOOTER ──────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <div style="width: 32px; height: 32px; background: var(--gradient-cyan); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #0d1321;">B</div>
+        <div class="footer-brand-name">Bridge AI OS</div>
+      </div>
+      <div class="footer-brand-desc">
+        Autonomous intelligence infrastructure. Deployed natively on Linea zkEVM.
+        Fixed supply. Real revenue. Engineered for long-term value.
+      </div>
+      <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <div style="padding: 4px 10px; background: rgba(97,223,255,0.08); border: 1px solid rgba(97,223,255,0.15); border-radius: 4px; font-size: 11px; color: var(--linea-green); font-weight: 600;">Linea Mainnet</div>
+        <div style="padding: 4px 10px; background: rgba(99,179,237,0.08); border: 1px solid rgba(99,179,237,0.15); border-radius: 4px; font-size: 11px; color: var(--accent-cyan); font-weight: 600;">Chain 59144</div>
+        <div style="padding: 4px 10px; background: rgba(104,211,145,0.08); border: 1px solid rgba(104,211,145,0.15); border-radius: 4px; font-size: 11px; color: var(--accent-green); font-weight: 600;">ERC-20</div>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Token</div>
+      <ul class="footer-links">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#distribution">Distribution</a></li>
+        <li><a href="#emission">Emission Curve</a></li>
+        <li><a href="#burn">Burn Mechanics</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Protocol</div>
+      <ul class="footer-links">
+        <li><a href="#utility">Utility</a></li>
+        <li><a href="#liquidity">Liquidity</a></li>
+        <li><a href="#governance">Governance</a></li>
+        <li><a href="#flywheel">Flywheel</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Ecosystem</div>
+      <ul class="footer-links">
+        <li><a href="#linea">Linea Alignment</a></li>
+        <li><a href="#listing">Listing Readiness</a></li>
+        <li><a href="https://lineascan.build" target="_blank">Lineascan ↗</a></li>
+        <li><a href="/">Bridge AI OS ↗</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 Bridge AI OS. All rights reserved.</span>
+    <div style="display: flex; gap: 20px;">
+      <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 12px;">Privacy Policy</a>
+      <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 12px;">Terms of Service</a>
+    </div>
+  </div>
+
+  <div class="footer-disclaimer">
+    <strong>Important Notice:</strong> This document is for informational purposes only and does not constitute financial, investment, or legal advice. BRDG token is a utility token. Participation in any token economy involves significant risk, including the potential loss of all invested capital. This document does not constitute a prospectus or offering document in any jurisdiction. Prospective participants should consult with qualified financial and legal advisors before making any decisions. Past performance and projected metrics are not indicative of future results.
+  </div>
+</footer>
+
+<script>
+  // ── SCROLL REVEAL ────────────────────────────────────────
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        // animate progress bars
+        e.target.querySelectorAll('.progress-bar-fill[data-width]').forEach(bar => {
+          setTimeout(() => {
+            bar.style.width = bar.dataset.width + '%';
+          }, 200);
+        });
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  reveals.forEach(r => observer.observe(r));
+
+  // ── DISTRIBUTION PIE CHART ───────────────────────────────
+  const distCtx = document.getElementById('distChart').getContext('2d');
+  new Chart(distCtx, {
+    type: 'doughnut',
+    data: {
+      labels: [
+        'Ecosystem Incentives',
+        'Liquidity & Market Making',
+        'Treasury Operations',
+        'Community & Growth',
+        'Founders & Team',
+        'Strategic Reserve'
+      ],
+      datasets: [{
+        data: [35, 20, 15, 15, 10, 5],
+        backgroundColor: [
+          '#63b3ed',
+          '#4fd1c5',
+          '#9f7aea',
+          '#ecc94b',
+          '#f6ad55',
+          '#68d391'
+        ],
+        borderColor: '#0d1321',
+        borderWidth: 3,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      cutout: '68%',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          borderColor: 'rgba(255,255,255,0.07)',
+          borderWidth: 1,
+          titleColor: '#f7fafc',
+          bodyColor: '#a0aec0',
+          padding: 12,
+          callbacks: {
+            label: ctx => `  ${ctx.label}: ${ctx.raw}M BRDG (${ctx.raw}%)`
+          }
+        }
+      },
+      animation: {
+        animateRotate: true,
+        duration: 1200,
+        easing: 'easeInOutQuart'
+      }
+    }
+  });
+
+  // ── EMISSION CURVE CHART ─────────────────────────────────
+  const months = Array.from({length: 49}, (_, i) => i === 0 ? 'Genesis' : `M${i}`);
+
+  // Max supply release curve (cumulative %)
+  function cumulativeRelease(month) {
+    let total = 10; // 10M at genesis (treasury ops + 50% liquidity)
+    // Liquidity: 50% at genesis (10M), remaining 10M over 12 months
+    total += Math.min(month / 12, 1) * 10;
+    // Community: 5% TGE (0.75M) after M1 cliff, 36M vest
+    if (month >= 1) total += 0.75 + Math.min((month - 1) / 36, 1) * 14.25;
+    // Ecosystem: 0% TGE, 48M linear
+    total += Math.min(month / 48, 1) * 35;
+    // Treasury Ops: 0% TGE, 3M cliff, 36M linear
+    if (month >= 3) total += Math.min((month - 3) / 36, 1) * 15;
+    // Founders: 0% TGE, 12M cliff, 36M linear
+    if (month >= 12) total += Math.min((month - 12) / 36, 1) * 10;
+    // Reserve: 0% TGE, 12M cliff, governance
+    if (month >= 12) total += Math.min((month - 12) / 36, 1) * 5;
+    return Math.min(total, 100);
+  }
+
+  // Burn-adjusted circulating (approximation)
+  function circulatingBurnAdjusted(month) {
+    const maxRelease = cumulativeRelease(month);
+    // Staking lock: assume 20-35% of circulating staked
+    const stakingLock = maxRelease * (0.20 + (month / 48) * 0.15);
+    // Cumulative burn: grows with transaction volume (slow start, ramps)
+    const burnAccum = (month / 48) * (month / 48) * 15; // ~15M burned at full maturity
+    return Math.max(0, maxRelease - stakingLock - burnAccum);
+  }
+
+  const emissionData = months.map((_, i) => cumulativeRelease(i));
+  const circulatingData = months.map((_, i) => circulatingBurnAdjusted(i));
+
+  const emCtx = document.getElementById('emissionChart').getContext('2d');
+  new Chart(emCtx, {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: 'Max Supply Released',
+          data: emissionData,
+          borderColor: '#63b3ed',
+          backgroundColor: 'rgba(99,179,237,0.06)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 4
+        },
+        {
+          label: 'Effective Circulating (burn + stake adjusted)',
+          data: circulatingData,
+          borderColor: '#fc8181',
+          backgroundColor: 'rgba(252,129,129,0.04)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          borderDash: [6, 3]
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)', lineWidth: 1 },
+          ticks: {
+            color: '#4a5568',
+            font: { family: 'JetBrains Mono', size: 10 },
+            maxTicksLimit: 13,
+            maxRotation: 0
+          },
+          border: { color: 'rgba(255,255,255,0.06)' }
+        },
+        y: {
+          min: 0,
+          max: 110,
+          grid: { color: 'rgba(255,255,255,0.04)', lineWidth: 1 },
+          ticks: {
+            color: '#4a5568',
+            font: { family: 'JetBrains Mono', size: 11 },
+            callback: v => v + 'M'
+          },
+          border: { color: 'rgba(255,255,255,0.06)' }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          borderColor: 'rgba(255,255,255,0.07)',
+          borderWidth: 1,
+          titleColor: '#a0aec0',
+          bodyColor: '#a0aec0',
+          padding: 12,
+          callbacks: {
+            label: ctx => `  ${ctx.dataset.label}: ${ctx.raw.toFixed(1)}M BRDG`
+          }
+        }
+      },
+      animation: { duration: 1600, easing: 'easeInOutQuart' }
+    }
+  });
+
+  // ── LIVE ON-CHAIN DATA ───────────────────────────────────
+  (async function loadLiveData() {
+    try {
+      const res = await fetch('/api/brdg/token');
+      if (!res.ok) return;
+      const d = await res.json();
+
+      const fmt = (n) => {
+        const num = parseFloat(n);
+        if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+        if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+        return num.toFixed(2);
+      };
+
+      // Hero stats
+      const burned = document.getElementById('stat-burned');
+      const circ   = document.getElementById('stat-circulating');
+      const treas  = document.getElementById('stat-treasury');
+
+      if (burned && d.token?.totalBurned !== undefined)
+        burned.textContent = fmt(d.token.totalBurned) + ' BRDG';
+
+      if (circ && d.token?.circulatingSupply !== undefined)
+        circ.textContent = fmt(d.token.circulatingSupply) + ' BRDG';
+
+      if (treas && d.treasury?.brdgBalance !== undefined)
+        treas.textContent = fmt(d.treasury.brdgBalance) + ' BRDG';
+
+      // Contract link
+      const contractEl = document.getElementById('live-contract');
+      if (contractEl && d.token?.address) {
+        const addr = d.token.address;
+        const short = addr.slice(0, 6) + '…' + addr.slice(-4);
+        contractEl.textContent = short;
+        contractEl.href = d.lineascan || ('#');
+      }
+
+      // Timestamp
+      const tsEl = document.getElementById('live-ts');
+      if (tsEl) tsEl.textContent = 'updated ' + new Date().toLocaleTimeString();
+
+    } catch (_) {
+      // Fail silently — static content remains visible
+    }
+  })();
+</script>
+
+  <script src="/ehsa-brain-status.js" defer></script>
+</body>
+</html>

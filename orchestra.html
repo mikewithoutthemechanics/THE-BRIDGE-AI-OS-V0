@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!doctype html>
 <html lang="en">
 <head>
@@ -458,3 +459,975 @@
 <script src="/public/js/orchestra.js" defer></script>
 </body>
 </html>
+=======
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<title>ORCHESTRA — Neural Exchange</title>
+<style>
+  :root{
+    --bg:#0a0e13; --bg2:#0d1218; --panel:#0f151c; --panel2:#111923;
+    --line:#1a2430; --line2:#243041;
+    --text:#cfe7dd; --dim:#7c8a94; --faint:#4a5561;
+    --accent:#00ff9c; --accent2:#00bfff; --warn:#ffb347; --err:#ff4d6d;
+    --shadow: 0 0 0 1px #1a2430, 0 20px 40px -20px rgba(0,255,156,.05);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(0,191,255,.08), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(0,255,156,.07), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font: 13px/1.45 ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+    overflow:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer}
+  .icon{font-family:"Material Symbols Outlined","Material Icons";font-size:20px;font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;vertical-align:middle}
+  .app{display:grid;grid-template-columns:72px 1fr 360px;grid-template-rows:56px 1fr 56px;height:100vh;gap:0}
+
+  /* ── top bar ───────────────────────────────────── */
+  .topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(0,0,0,.25),transparent)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:2px}
+  .brand b{color:var(--accent)}
+  .pills{display:flex;gap:6px;margin-left:10px}
+  .pill{font-size:10px;letter-spacing:1.2px;padding:4px 9px;border:1px solid var(--line2);border-radius:999px;color:var(--dim);background:var(--panel)}
+  .pill.hot{color:var(--accent);border-color:rgba(0,255,156,.35);box-shadow:inset 0 0 12px rgba(0,255,156,.08)}
+  .pill.cold{color:var(--accent2);border-color:rgba(0,191,255,.35)}
+  .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .netstate{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .dot.warn{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+  .dot.err{background:var(--err);box-shadow:0 0 10px var(--err)}
+  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#00ff9c,#00bfff);display:inline-block;box-shadow:0 0 0 2px #0a0e13, 0 0 0 3px var(--line2)}
+  .proto{font-size:10px;color:var(--dim);letter-spacing:1px}
+
+  /* ── left rail ─────────────────────────────────── */
+  .rail{border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px;background:var(--bg2)}
+  .rail .r{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;color:var(--dim);cursor:pointer;position:relative}
+  .rail .r:hover{color:var(--text);background:var(--panel)}
+  .rail .r.active{color:var(--accent);background:var(--panel2);box-shadow:inset 0 0 0 1px var(--line2)}
+  .rail .r .label{position:absolute;left:56px;top:50%;transform:translateY(-50%);background:var(--panel2);border:1px solid var(--line2);padding:4px 8px;border-radius:6px;white-space:nowrap;font-size:11px;color:var(--text);opacity:0;pointer-events:none;transition:opacity .12s}
+  .rail .r:hover .label{opacity:1}
+  .rail .spacer{flex:1}
+
+  /* ── main ──────────────────────────────────────── */
+  .main{overflow:auto;padding:22px 26px 80px 26px}
+  h1.title{font-size:22px;margin:0 0 4px;letter-spacing:3px}
+  h1.title span{color:var(--accent)}
+  .sub{color:var(--dim);max-width:720px;margin:0 0 18px}
+
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 18px}
+  .tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);padding:4px;border-radius:12px}
+  .tab{padding:7px 12px;border-radius:8px;color:var(--dim);font-size:12px;letter-spacing:.5px}
+  .tab:hover{color:var(--text)}
+  .tab.active{background:var(--panel2);color:var(--accent);box-shadow:inset 0 0 0 1px var(--line2)}
+  .search{flex:1;min-width:240px;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);padding:7px 12px;border-radius:10px}
+  .search input{all:unset;flex:1;color:var(--text);font:inherit}
+  .search .icon{color:var(--dim);font-size:16px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+  .card{
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;position:relative;overflow:hidden;
+    transition:transform .15s, border-color .15s;
+  }
+  .card:hover{transform:translateY(-1px);border-color:var(--line2)}
+  .card::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(500px 120px at 10% 0%, rgba(0,255,156,.08), transparent 60%)}
+  .statusRow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .status{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:1px;color:var(--dim);text-transform:uppercase}
+  .status .d{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+  .status.online .d{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+  .status.warn .d{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+  .status.down .d{background:var(--err);box-shadow:0 0 6px var(--err)}
+  .cat{font-size:10px;color:var(--accent2);letter-spacing:1px}
+  .name{font-size:16px;letter-spacing:1.5px;margin:2px 0 6px;color:var(--text)}
+  .desc{color:var(--dim);font-size:12px;min-height:34px;margin-bottom:14px}
+  .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px;margin-bottom:14px}
+  .metric{display:flex;flex-direction:column}
+  .metric .k{font-size:10px;color:var(--dim);letter-spacing:1px}
+  .metric .v{font-size:14px;color:var(--accent);font-variant-numeric:tabular-nums}
+  .metric .v.dim{color:var(--text)}
+  .cta{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:10px}
+  .link{color:var(--accent);font-size:11px;letter-spacing:1.5px;display:inline-flex;align-items:center;gap:6px}
+  .link .icon{font-size:14px}
+  .restarts{font-size:10px;color:var(--dim)}
+  .restarts b{color:var(--warn)}
+
+  /* ── feed ──────────────────────────────────────── */
+  .feed{border-left:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;min-height:0}
+  .feedhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .feedhead h3{margin:0;font-size:13px;letter-spacing:2px;color:var(--accent2)}
+  .feedhead .icon{color:var(--accent);font-size:18px}
+  .events{flex:1;overflow:auto;padding:4px 10px}
+  .ev{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:10px 6px;border-bottom:1px dashed var(--line);font-size:12px}
+  .ev .t{color:var(--faint);font-variant-numeric:tabular-nums;font-size:11px}
+  .ev .b{color:var(--text)}
+  .ev .b .k{color:var(--accent)}
+  .ev.warn .b .k{color:var(--warn)}
+  .ev.err .b .k{color:var(--err)}
+  .ev .b .d{color:var(--dim);font-size:11px;margin-top:2px}
+  .feedfoot{padding:10px 14px;border-top:1px solid var(--line);display:flex;gap:8px;font-size:11px;color:var(--dim);align-items:center}
+  .feedfoot a{color:var(--accent);display:inline-flex;align-items:center;gap:4px}
+
+  /* ── bottom bar ────────────────────────────────── */
+  .bottom{grid-column:1/-1;border-top:1px solid var(--line);background:var(--bg2);display:flex;align-items:center;gap:26px;padding:0 22px;font-size:11px;color:var(--dim)}
+  .stat{display:flex;flex-direction:column}
+  .stat .k{letter-spacing:1px;color:var(--faint);font-size:10px}
+  .stat .v{color:var(--text);font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:1px}
+  .stat .v b{color:var(--accent)}
+  .dealers{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .av2{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#00bfff,#8a5cff);box-shadow:0 0 0 2px var(--bg2)}
+  .av2+.av2{margin-left:-8px}
+
+  /* ── banner ─────────────────────────────────────── */
+  .banner{margin:0 0 16px;padding:10px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--panel);display:flex;gap:10px;align-items:center;font-size:12px;color:var(--dim)}
+  .banner.ok{border-color:rgba(0,255,156,.25)}
+  .banner.warn{border-color:rgba(255,179,71,.35);color:#ffd699}
+  .banner a{color:var(--accent);text-decoration:underline}
+
+  /* ── topology canvas ────────────────────────────── */
+  .topo{position:relative;margin:0 0 18px;border:1px solid var(--line);border-radius:var(--radius);
+        background:radial-gradient(600px 320px at 50% 50%, rgba(0,191,255,.06), transparent 65%), var(--panel);
+        overflow:hidden}
+  .topo svg{display:block;width:100%;height:auto;aspect-ratio: 16/9;max-height:58vh;touch-action:manipulation}
+  .topo .legend{position:absolute;top:10px;left:14px;display:flex;gap:14px;font-size:10px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;pointer-events:none}
+  .topo .legend b{color:var(--text);font-weight:500}
+  .topo .legend .s{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;box-shadow:0 0 6px currentColor}
+  .topo .legend .on{color:var(--accent)} .topo .legend .wa{color:var(--warn)} .topo .legend .of{color:var(--err)}
+  .topo .sel{position:absolute;top:10px;right:14px;font-size:11px;color:var(--dim);background:var(--panel2);border:1px solid var(--line2);padding:5px 10px;border-radius:8px;max-width:55%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topo .sel b{color:var(--accent);letter-spacing:1px}
+  .topo .hubLabel{font:600 12px/1 ui-monospace,monospace;letter-spacing:3px;fill:var(--text);text-anchor:middle;pointer-events:none}
+  .topo .hubSub{font:10px/1 ui-monospace,monospace;letter-spacing:2px;fill:var(--dim);text-anchor:middle;pointer-events:none}
+  .topo .nodeG{cursor:pointer}
+  .topo .nodeG text{font:11px/1 ui-monospace,monospace;fill:var(--text);pointer-events:none;text-anchor:middle;letter-spacing:.5px}
+  .topo .nodeG .ring{fill:none;stroke:var(--line2);stroke-width:1}
+  .topo .nodeG.active .ring,.topo .nodeG:hover .ring{stroke:var(--accent)}
+  .topo .edge{fill:none;stroke-width:1;opacity:.45}
+  .topo .edge.on{stroke:var(--accent)} .topo .edge.wa{stroke:var(--warn)} .topo .edge.of{stroke:var(--err)}
+  .topo .edge.hot{opacity:.9;filter:drop-shadow(0 0 4px currentColor)}
+  /* Background tactical grid — subtle, non-distracting */
+  .topo .bg{opacity:.85}
+  /* Orbit rings spin slowly; compass ticks inherit the spin so the bearing marks drift past */
+  @keyframes topoSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .topo .orbit{transform-box:fill-box;transform-origin:50% 50%;animation:topoSpin 240s linear infinite}
+  /* Radar sweep wedge: faster counter-spin, origin pinned to hub */
+  @keyframes sweepSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .topo .sweep{transform-box:fill-box;transform-origin:400px 225px;animation:sweepSpin 8s linear infinite}
+  /* Edge flow particles: short dashes travel along the path toward each node */
+  @keyframes topoDash{to{stroke-dashoffset:-40}}
+  .topo .edge{stroke-dasharray:2 6;animation:topoDash 6s linear infinite}
+  .topo .edge.hot{animation-duration:2s}
+  /* Node pulse rings expanding outward */
+  @keyframes topoPulse{0%{r:8;opacity:.9}100%{r:26;opacity:0}}
+  .topo .pulse{animation:topoPulse 1.8s ease-out infinite}
+  .topo .pulse.wa{animation-duration:1.2s} .topo .pulse.of{animation-duration:.9s}
+  /* Two-phase hub heartbeat: inner pulse + offset outer pulse */
+  .topo .hubPulse{animation:topoPulse 2.4s ease-out infinite}
+  .topo .hubPulse2{animation:topoPulse 2.4s ease-out infinite;animation-delay:1.2s}
+  /* Corona breathe: halo softly inhales/exhales */
+  @keyframes coronaBreathe{
+    0%,100%{opacity:.45;transform:scale(.92)}
+    50%    {opacity:.95;transform:scale(1.05)}
+  }
+  .topo .hubCorona{transform-box:fill-box;transform-origin:400px 225px;animation:coronaBreathe 4.5s ease-in-out infinite}
+  /* Halo ring slow rotation so it feels alive without spinning the orbit */
+  @keyframes haloSpin{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+  .topo .hubHalo{transform-box:fill-box;transform-origin:400px 225px;animation:haloSpin 30s linear infinite,coronaBreathe 6s ease-in-out infinite}
+  /* Data packets flowing from hub to nodes along edges */
+  .topo .packet{fill:#b9ffe0;filter:drop-shadow(0 0 4px #00ff9c)}
+  .topo .packet.wa{fill:#ffd699;filter:drop-shadow(0 0 4px #ffb347)}
+  .topo .packet.of{fill:#ffadbb;filter:drop-shadow(0 0 4px #ff4d6d)}
+  /* Accessibility: kill all animation for users that ask */
+  @media (prefers-reduced-motion: reduce){
+    .topo .orbit,.topo .edge,.topo .pulse,.topo .hubPulse,.topo .hubPulse2,
+    .topo .sweep,.topo .hubCorona,.topo .hubHalo,.topo .packet{animation:none}
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  }
+  /* Anchor-stub sections: invisible but scroll-addressable so rail nav has a target */
+  .anchor-stub{display:block;height:1px;width:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);position:relative}
+  /* Focus ring for keyboard-reachable SVG nodes (pair with tabindex="0" in script) */
+  .topo .nodeG:focus{outline:none}
+  .topo .nodeG:focus .ring{stroke:var(--accent);stroke-width:2}
+  /* Tablet / narrow laptop */
+  @media (max-width: 1100px){
+    .topo svg{max-height:52vh}
+  }
+  /* Mobile portrait */
+  @media (max-width: 768px){
+    .topo svg{aspect-ratio: 4/3;max-height:72vh}
+    .topo .legend{font-size:9px;gap:10px;top:8px;left:10px}
+    .topo .sel{font-size:10px;max-width:60%;top:8px;right:10px;padding:4px 8px}
+    .topo .hubLabel{font-size:11px;letter-spacing:2px}
+    .topo .hubSub{font-size:9px;letter-spacing:1.5px}
+    /* Thin out the background grid so it reads cleanly on small screens */
+    .topo .bg{opacity:.55}
+  }
+  /* Mobile landscape — prioritize height of SVG */
+  @media (max-width: 900px) and (orientation: landscape){
+    .topo svg{aspect-ratio:16/9;max-height:88vh}
+  }
+  /* Very small phones */
+  @media (max-width: 480px){
+    .topo svg{aspect-ratio:1/1;max-height:82vh}
+    .topo .legend span:not(:first-child){display:none}
+    .topo .hubLabel{font-size:10px}
+    .topo .hubSub{display:none}
+  }
+
+  /* ── scrollbar ──────────────────────────────────── */
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#111a24;border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:#182330;background-clip:padding-box;border:2px solid transparent}
+
+  @media (max-width: 1100px){ .app{grid-template-columns:60px 1fr} .feed{display:none} }
+
+  /* mobile-guardian: added mobile collapse @ 768px */
+  @media (max-width: 768px){
+    body{overflow:auto}
+    .app{grid-template-columns:1fr;grid-template-rows:auto 1fr auto;height:auto;min-height:100vh}
+    .topbar{flex-wrap:wrap;gap:10px;padding:10px 14px;height:auto}
+    .topbar .pills,.topbar .proto{display:none}
+    .topbar .right{gap:10px}
+    .rail{grid-row:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);padding:8px;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .rail .r{flex:0 0 auto;width:40px;height:40px}
+    .rail .r .label{display:none}
+    .rail .spacer{display:none}
+    .main{padding:16px 14px 24px}
+    h1.title{font-size:18px;letter-spacing:2px}
+    .toolbar{gap:8px}
+    .tabs{overflow-x:auto;max-width:100%}
+    .search{min-width:0;width:100%}
+    .search input{min-width:0}
+    .grid{grid-template-columns:1fr;gap:12px}
+    .bottom{grid-column:auto;flex-wrap:wrap;gap:14px;padding:10px 14px;height:auto}
+    .stat .v{font-size:14px}
+    .dealers{margin-left:0}
+    button,.r,.tab{min-height:44px}
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0">
+</head>
+<body>
+<div class="app">
+
+  <!-- ── top ─────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand"><span class="icon" style="color:var(--accent)">hub</span> ORCH<b>ESTRA</b></div>
+    <div class="pills">
+      <span class="pill hot">A2A</span>
+      <span class="pill cold">H2A</span>
+      <span class="pill">HUMAN API</span>
+    </div>
+    <div class="right">
+      <div class="netstate"><span id="netDot" class="dot"></span><span id="netLabel">Network: Optimal</span></div>
+      <div class="proto" id="proto">Protocol v4.2 · commit —</div>
+      <span class="avatar" title="you"></span>
+    </div>
+  </header>
+
+  <!-- ── left rail ───────────────────────────────── -->
+  <nav class="rail">
+    <button class="r active" data-href="."><span class="icon">hub</span><span class="label">Hub</span></button>
+    <button class="r" data-href="#topo"><span class="icon">lan</span><span class="label">Nodes</span></button>
+    <button class="r" data-href="#flows"><span class="icon">sync_alt</span><span class="label">Exchanges</span></button>
+    <button class="r" data-href="#metrics"><span class="icon">speed</span><span class="label">Latency</span></button>
+    <button class="r" data-href="#control"><span class="icon">account_balance</span><span class="label">Governance</span></button>
+    <div class="spacer"></div>
+    <button class="r" id="btnDeploy"><span class="icon">rocket_launch</span><span class="label">Deploy Node</span></button>
+    <button class="r" id="btnSettings"><span class="icon">settings</span><span class="label">Settings</span></button>
+  </nav>
+
+  <!-- ── main ────────────────────────────────────── -->
+  <main class="main">
+    <h1 class="title">NEURAL <span>EXCHANGE</span></h1>
+    <p class="sub">Autonomous agent orchestration layer. Trade intelligence fragments, raw GPU clusters, and semantic logic gates in real-time.</p>
+
+    <div id="banner" class="banner" style="display:none"></div>
+
+    <section class="topo" id="topo" aria-label="fleet topology">
+      <div class="legend">
+        <span><span class="s on"></span><b>online</b></span>
+        <span><span class="s wa"></span><b>warn</b></span>
+        <span><span class="s of"></span><b>offline</b></span>
+      </div>
+      <div class="sel" id="topoSel">click a node</div>
+      <svg id="topoSvg" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet" role="img" aria-describedby="topoDesc">
+        <desc id="topoDesc">Animated fleet topology. Central Neural Exchange hub connected by energy edges to concentric rings of agent nodes; particles flow along active edges.</desc>
+        <defs>
+          <!-- Hub radial gradient: deeper, multi-stop for richer core glow -->
+          <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"  stop-color="#b9ffe0" stop-opacity=".95"/>
+            <stop offset="25%" stop-color="#00ff9c" stop-opacity=".85"/>
+            <stop offset="60%" stop-color="#00bfff" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="#00bfff" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="hubCorona" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"  stop-color="#00ff9c" stop-opacity=".0"/>
+            <stop offset="70%" stop-color="#00bfff" stop-opacity=".10"/>
+            <stop offset="100%" stop-color="#00bfff" stop-opacity="0"/>
+          </radialGradient>
+          <!-- Edge gradients per tone -->
+          <linearGradient id="edgeOn" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#00bfff" stop-opacity=".15"/>
+            <stop offset="50%"  stop-color="#00ff9c" stop-opacity=".55"/>
+            <stop offset="100%" stop-color="#00ff9c" stop-opacity=".95"/>
+          </linearGradient>
+          <linearGradient id="edgeWa" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#ffb34700" />
+            <stop offset="100%" stop-color="#ffb347" stop-opacity=".9"/>
+          </linearGradient>
+          <linearGradient id="edgeOf" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#ff4d6d00" />
+            <stop offset="100%" stop-color="#ff4d6d" stop-opacity=".9"/>
+          </linearGradient>
+          <!-- Sweep beam: narrow fading wedge used by the radar -->
+          <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#00ff9c" stop-opacity="0"/>
+            <stop offset="85%"  stop-color="#00ff9c" stop-opacity=".06"/>
+            <stop offset="100%" stop-color="#00ff9c" stop-opacity=".32"/>
+          </linearGradient>
+          <!-- Multi-level bloom: small inner glow + wider halo -->
+          <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="2" result="b1"/>
+            <feGaussianBlur stdDeviation="6" in="SourceGraphic" result="b2"/>
+            <feMerge><feMergeNode in="b2"/><feMergeNode in="b1"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="1.4" result="sg"/>
+            <feMerge><feMergeNode in="sg"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Tactical grid pattern -->
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0e1a26" stroke-width=".6"/>
+          </pattern>
+          <pattern id="gridMajor" width="200" height="200" patternUnits="userSpaceOnUse">
+            <path d="M 200 0 L 0 0 0 200" fill="none" stroke="#142232" stroke-width=".8"/>
+          </pattern>
+          <!-- Scanline fade mask (horizontal vignette) -->
+          <radialGradient id="vignette" cx="50%" cy="50%" r="65%">
+            <stop offset="60%" stop-color="#000" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#000" stop-opacity=".55"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Tactical background: soft grid + major grid + vignette -->
+        <g class="bg" pointer-events="none">
+          <rect x="0" y="0" width="800" height="450" fill="url(#grid)" opacity=".55"/>
+          <rect x="0" y="0" width="800" height="450" fill="url(#gridMajor)" opacity=".9"/>
+          <rect x="0" y="0" width="800" height="450" fill="url(#vignette)"/>
+        </g>
+
+        <!-- Concentric orbits + compass ticks + radar sweep.
+             Orbit group spins slowly; tick marks ride with it. Sweep is a separate layer that spins faster. -->
+        <g class="orbit" pointer-events="none">
+          <circle cx="400" cy="225" r="90"  fill="none" stroke="#1a2430" stroke-dasharray="2 6"/>
+          <circle cx="400" cy="225" r="150" fill="none" stroke="#1a2430" stroke-dasharray="2 6"/>
+          <circle cx="400" cy="225" r="200" fill="none" stroke="#1a2430" stroke-dasharray="2 6"/>
+          <circle cx="400" cy="225" r="240" fill="none" stroke="#0e1a26" stroke-dasharray="1 9"/>
+          <!-- Compass ticks at 8 bearings on the outer ring -->
+          <g class="ticks" stroke="#23384b" stroke-width="1">
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(45 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(90 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(135 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(180 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(225 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(270 400 225)"/>
+            <line x1="400" y1="-15" x2="400" y2="15"   transform="translate(0 225) rotate(315 400 225)"/>
+          </g>
+        </g>
+
+        <!-- Radar sweep: wedge that rotates around the hub independently of the orbit -->
+        <g class="sweep" pointer-events="none">
+          <path d="M400 225 L640 225 A240 240 0 0 1 578.6 394.3 Z" fill="url(#sweep)"/>
+        </g>
+
+        <g id="topoEdges"></g>
+
+        <!-- Hub: corona halo → outer ring → core gradient → inner pulse → label -->
+        <g id="topoHub">
+          <circle class="hubCorona" cx="400" cy="225" r="110" fill="url(#hubCorona)" pointer-events="none"/>
+          <circle class="hubHalo"   cx="400" cy="225" r="56"  fill="none" stroke="#00bfff" stroke-opacity=".18" stroke-width="1"/>
+          <circle cx="400" cy="225" r="34" fill="url(#hubGrad)" filter="url(#glow)"/>
+          <circle class="hubPulse"  cx="400" cy="225" r="8"  fill="none" stroke="#00ff9c" stroke-width="1.5"/>
+          <circle class="hubPulse2" cx="400" cy="225" r="8"  fill="none" stroke="#00bfff" stroke-width="1"/>
+          <text class="hubLabel" x="400" y="222">ORCHESTRA</text>
+          <text class="hubSub"   x="400" y="238">NEURAL EXCHANGE</text>
+        </g>
+
+        <!-- Dynamic content -->
+        <g id="topoPackets" pointer-events="none"></g>
+        <g id="topoNodes"></g>
+      </svg>
+    </section>
+
+    <!-- Anchor targets for rail navigation. Kept lightweight; content is sourced from #grid + #feed. -->
+    <section id="flows"   class="anchor-stub" aria-label="protocol exchanges" data-rail-target="1"></section>
+    <section id="metrics" class="anchor-stub" aria-label="latency metrics"    data-rail-target="1"></section>
+    <section id="control" class="anchor-stub" aria-label="governance control" data-rail-target="1"></section>
+
+    <div class="toolbar">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-cat="all">All Agents</button>
+        <button class="tab" data-cat="compute">Compute Nodes</button>
+        <button class="tab" data-cat="logic">Logic Engines</button>
+        <button class="tab" data-cat="synth">Data Synthesizers</button>
+      </div>
+      <div class="search">
+        <span class="icon">search</span>
+        <input id="search" placeholder="Query Node ID..." autocomplete="off">
+        <span class="icon" title="memory">memory</span>
+      </div>
+    </div>
+
+    <div id="grid" class="grid"></div>
+  </main>
+
+  <!-- ── feed ────────────────────────────────────── -->
+  <aside class="feed">
+    <div class="feedhead"><span class="icon">sensors</span><h3>PROTOCOL FEED</h3></div>
+    <div class="events" id="events"></div>
+    <div class="feedfoot">
+      <a href="/admin" target="_blank" rel="noopener"><span class="icon" style="font-size:14px">open_in_new</span>View Network Map</a>
+      <span style="margin-left:auto" id="feedSource">source: /admin/overview</span>
+    </div>
+  </aside>
+
+  <!-- ── bottom ──────────────────────────────────── -->
+  <footer class="bottom">
+    <div class="stat"><span class="k">Nodes Connected</span><span class="v" id="sNodes">—</span></div>
+    <div class="stat"><span class="k">Total TFLOPs</span><span class="v" id="sFlops">—</span></div>
+    <div class="stat"><span class="k">Market Liquidity</span><span class="v" id="sLiq">—</span></div>
+    <div class="stat"><span class="k">Latency p95</span><span class="v" id="sLat">—</span></div>
+    <div class="dealers">
+      <span class="av2"></span><span class="av2"></span><span class="av2"></span>
+      <span>+<b id="sDealers">—</b> Active Dealers</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* ──────────────────────────────────────────────────────────
+   ORCHESTRA — data wiring
+   - Reads /admin/overview (real PM2 stats)  and /api/status (per-service port/latency)
+   - Shows offline banner when upstream unreachable (no synthetic data)
+   - Derives "Protocol Feed" events from real state diffs
+   ────────────────────────────────────────────────────────── */
+const API = {
+  overview: '/admin/overview',
+  status:   '/api/status',
+  // Cross-origin fallback only fires when same-origin returns non-OK. Requires go.ai-os.co.za
+  // to set Access-Control-Allow-Origin for bridge-ai-os.com, otherwise the fetch is a no-op.
+  absOverview: 'https://go.ai-os.co.za/admin/overview',
+  absStatus:   'https://go.ai-os.co.za/api/status',
+};
+
+// Escape untrusted strings before they enter innerHTML or HTML attributes. Service names,
+// statuses and feed text come from the PM2 admin API and must not be interpolated raw.
+function esc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Categorize a PM2 service name into one of the 4 buckets visible on screen.
+function categorize(name){
+  const n = name.toLowerCase();
+  if (/(brain|logic|god|gateway|auth|consensus|treasury|admin|api|govern)/.test(n)) return 'logic';
+  if (/(engine|worker|runner|ban|svg|ainode|compute|gpu|server|unified|rotate|pm2)/.test(n)) return 'compute';
+  if (/(proxy|stream|vector|data|archive|synth|embed|search|terminal|ws|socket|pipe)/.test(n)) return 'synth';
+  return 'compute';
+}
+
+// Short human description shown on each service card. Keyed by PM2 name; falls back
+// to a generic line for services not in the map. Descriptions are static copy, not metrics.
+function describe(s){
+  const map = {
+    'super-brain':        'Top-level reasoning kernel. Recursive planner + tool router for the stack.',
+    'auth-service':       'Identity + session issuance. Gatekeeps A2A and H2A handshakes.',
+    'god-mode-system':    'Elevated-privilege control surface for stack-wide operators.',
+    'terminal-proxy':     'Streams shell I/O over WS. Bridges agent → human terminal.',
+    'ban-engine':         'Bridge Task Runner. OSINT + automation execution.',
+    'svg-engine':         'Vector synthesis engine. Generates visual artefacts on demand.',
+    'core-gateway':       'Unified edge router. All inbound traffic lands here first.',
+    'system':             'System dashboard API. Fleet health and aggregate telemetry.',
+    'live-system':        'Live-state broadcaster. Pushes realtime metrics to subscribers.',
+    'pm2-logrotate':      'Log-rotation worker. Keeps the fleet\'s tape clean.',
+    'bridge-gateway':     'Legacy gateway. Bridges older routes into the unified plane.',
+    'admin-api':          'Control-plane API. Backs the operator console and overview feed.',
+    'treasury':           'On-chain economy ledger. Settlement for Φ-denominated exchanges.',
+    'unified-server':     'Unified stack entrypoint. Serves /engine, /loop, /master, /docs.',
+  };
+  return map[s.name] || 'Fleet node · PM2-managed service.';
+}
+
+function fmtMem(mb){ return mb >= 1024 ? (mb/1024).toFixed(2)+' GB' : Math.round(mb)+' MB'; }
+function fmtPct(v){ return (Math.round(v*10)/10) + '%'; }
+function fmtK(n){ if (n>=1e9) return (n/1e9).toFixed(2)+'B'; if (n>=1e6) return (n/1e6).toFixed(2)+'M'; if (n>=1e3) return (n/1e3).toFixed(1)+'k'; return String(n); }
+function nowClock(){ const d=new Date(); return d.toTimeString().slice(0,8); }
+
+// Fetch helper with timeout + dual-origin fallback (relative first, then absolute).
+async function j(rel, abs){
+  const controller = new AbortController();
+  const t = setTimeout(()=>controller.abort(), 6000);
+  try{
+    const r = await fetch(rel, {signal: controller.signal, cache:'no-store'});
+    if (r.ok) return await r.json();
+  }catch{}
+  finally{ clearTimeout(t); }
+  try{
+    const r2 = await fetch(abs, {cache:'no-store'});
+    if (r2.ok) return await r2.json();
+  }catch{}
+  return null;
+}
+
+// ── state ──────────────────────────────────────────
+const state = {
+  services: [],     // latest /admin/overview services[]
+  status:   [],     // latest /api/status services[]
+  overview: null,
+  prev:     new Map(),
+  events:   [],
+  cat: 'all',
+  q: '',
+  offline: false,
+};
+
+// ── render: cards (in-place, no DOM wipe) ─────────
+function cardMetrics(s){
+  const cat = categorize(s.name);
+  const online = s.status==='online';
+  const stClass = online ? (s.restarts>5?'warn':'online') : 'down';
+  const stText  = online ? (s.restarts>5?'Unstable':'Active') : (s.status||'Offline');
+  const portRow = (state.status||[]).find(x => s.name.toLowerCase().includes(x.id));
+  const latMs = portRow ? portRow.latency_ms : null;
+  const tflops = Math.max(1, Math.round(s.cpu * 140) / 10);
+  const tokenCost = ((s.mem_mb * 0.00001) + 0.0001).toFixed(4);
+  const rel = online ? (Math.max(90, 100 - s.restarts*1.5)).toFixed(2) : '0.00';
+  const tier = s.mem_mb > 120 ? 'HEAVY' : (s.restarts===0 ? 'v4' : 'LIGHT');
+  const icon = cat==='logic' ? 'psychology' : cat==='synth' ? 'dataset' : 'memory';
+  return { cat, stClass, stText, latMs, tflops, tokenCost, rel, tier, icon };
+}
+function buildCard(s){
+  const m = cardMetrics(s);
+  const el = document.createElement('article');
+  el.className = 'card';
+  el.dataset.name = s.name;
+  el.innerHTML = `
+    <div class="statusRow">
+      <span class="status ${esc(m.stClass)}" data-f="status"><span class="d"></span><span data-f="stText">${esc(m.stText)}</span></span>
+      <span class="cat">${esc(m.cat.toUpperCase())}</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span class="icon" style="color:var(--accent);font-size:22px">${esc(m.icon)}</span>
+      <div class="name">${esc(s.name.toUpperCase())} <span style="color:var(--dim);font-size:11px;letter-spacing:2px" data-f="tier">· ${esc(m.tier)}</span></div>
+    </div>
+    <div class="desc">${esc(describe(s))}</div>
+    <div class="metrics">
+      <div class="metric"><span class="k">Latency</span><span class="v" data-f="lat">${m.latMs==null?'—':m.latMs+'ms'}</span></div>
+      <div class="metric"><span class="k">Reliability</span><span class="v" data-f="rel">${m.rel}%</span></div>
+      <div class="metric" title="~ estimated: mem_mb × 0.00001 + 0.0001"><span class="k">Token Cost</span><span class="v" data-f="tok">~${m.tokenCost}Φ</span></div>
+      <div class="metric" title="~ estimated: cpu% × 14"><span class="k">Throughput</span><span class="v" data-f="tf">~${m.tflops} TF</span></div>
+      <div class="metric"><span class="k">CPU</span><span class="v dim" data-f="cpu">${fmtPct(s.cpu||0)}</span></div>
+      <div class="metric"><span class="k">Memory</span><span class="v dim" data-f="mem">${fmtMem(s.mem_mb||0)}</span></div>
+    </div>
+    <div class="cta">
+      <a class="link" href="#" data-handshake="${esc(s.name)}">INITIATE HANDSHAKE <span class="icon">arrow_forward</span></a>
+      <span class="restarts">restarts <b data-f="restarts">${s.restarts|0}</b> · pid <span data-f="pid">${esc(s.pid||'—')}</span></span>
+    </div>`;
+  return el;
+}
+function updateCard(el, s){
+  const m = cardMetrics(s);
+  const set = (f, v) => { const t = el.querySelector(`[data-f="${f}"]`); if (t && t.textContent !== v) t.textContent = v; };
+  const stEl = el.querySelector('[data-f="status"]');
+  if (stEl){ const want = `status ${m.stClass}`; if (stEl.className !== want) stEl.className = want; }
+  set('stText', m.stText);
+  set('tier',   '· ' + m.tier);
+  set('lat',    m.latMs==null ? '—' : m.latMs+'ms');
+  set('rel',    m.rel + '%');
+  set('tok',    m.tokenCost + 'Φ');
+  set('tf',     m.tflops + ' TF');
+  set('cpu',    fmtPct(s.cpu||0));
+  set('mem',    fmtMem(s.mem_mb||0));
+  set('restarts', String(s.restarts));
+  set('pid',    String(s.pid||'—'));
+}
+// ── render: animated SVG topology ─────────────────
+// Lay nodes out on concentric rings around a central hub. Ring assignment is deterministic
+// (category-driven) so the same service lands in the same spot across ticks — no flicker.
+const TOPO = { cx:400, cy:225, rings:[140, 190, 240] };
+function topoPos(i, total, ring){
+  // Distribute this ring's members evenly; add a small phase offset per ring so rings don't align.
+  const angle = (i/total) * Math.PI*2 + (ring*0.37);
+  return { x: TOPO.cx + Math.cos(angle)*TOPO.rings[ring], y: TOPO.cy + Math.sin(angle)*TOPO.rings[ring] };
+}
+function nodeTone(s){
+  if (s.status !== 'online') return 'of';
+  if ((s.restarts||0) > 5 || (s.cpu||0) > 70) return 'wa';
+  return 'on';
+}
+// Packet factory: creates a small circle that animates along an edge using <animateMotion>.
+// Keyed by service name + phase so re-renders can reuse the same element (no flicker/restart).
+// A packet is only emitted for ONLINE and WARN edges; offline edges stay dark with no flow.
+function ensurePacket(packetsG, name, tone, fromX, fromY, toX, toY){
+  const key = `pkt-${name}`;
+  let pkt = packetsG.querySelector(`[data-name="${CSS.escape(name)}"]`);
+  if (!pkt){
+    pkt = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    pkt.setAttribute('r','2.6');
+    pkt.dataset.name = name;
+    const am = document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+    am.setAttribute('dur','2.6s');
+    am.setAttribute('repeatCount','indefinite');
+    am.setAttribute('rotate','auto');
+    // Deterministic phase per service so packets don't all strobe in lockstep
+    const hash = [...name].reduce((a,c)=>a + c.charCodeAt(0), 0);
+    am.setAttribute('begin', `-${(hash % 26) * 0.1}s`);
+    pkt.appendChild(am);
+    packetsG.appendChild(pkt);
+  }
+  pkt.setAttribute('class', `packet ${tone}`);
+  const am = pkt.querySelector('animateMotion');
+  // Travel slightly past endpoint so the packet appears to "arrive" at the node
+  am.setAttribute('path', `M ${fromX} ${fromY} L ${toX} ${toY}`);
+  // Throttle the flow on warn edges so operators can read the difference
+  am.setAttribute('dur', tone==='wa' ? '3.4s' : '2.6s');
+  pkt.style.display = '';
+  return pkt;
+}
+function renderTopology(){
+  const nodesG = document.getElementById('topoNodes');
+  const edgesG = document.getElementById('topoEdges');
+  const pktG   = document.getElementById('topoPackets');
+  if (!nodesG || !edgesG) return;
+  const services = state.services.slice();
+  // Bucket by category → ring (logic=inner, compute=mid, synth=outer). Keeps visual grouping legible.
+  const byRing = [[],[],[]];
+  for (const s of services){
+    const cat = categorize(s.name);
+    const ring = cat==='logic' ? 0 : cat==='compute' ? 1 : 2;
+    byRing[ring].push(s);
+  }
+  const active = state._selected;
+  // Re-use existing node groups keyed by service name to avoid flicker
+  const existing = new Map(Array.from(nodesG.querySelectorAll('.nodeG')).map(g => [g.dataset.name, g]));
+  const existingE = new Map(Array.from(edgesG.querySelectorAll('.edge')).map(p => [p.dataset.name, p]));
+  const existingP = pktG ? new Map(Array.from(pktG.querySelectorAll('[data-name]')).map(p => [p.dataset.name, p])) : new Map();
+  const wanted = new Set();
+  byRing.forEach((list, ringIdx) => {
+    list.forEach((s, i) => {
+      const p = topoPos(i, Math.max(list.length, 1), ringIdx);
+      const tone = nodeTone(s);
+      wanted.add(s.name);
+      // Edge
+      let edge = existingE.get(s.name);
+      if (!edge){
+        edge = document.createElementNS('http://www.w3.org/2000/svg','path');
+        edge.setAttribute('class', `edge ${tone}`);
+        edge.dataset.name = s.name;
+        edgesG.appendChild(edge);
+      } else {
+        edge.setAttribute('class', `edge ${tone}${edge.classList.contains('hot')?' hot':''}`);
+      }
+      edge.setAttribute('d', `M ${TOPO.cx} ${TOPO.cy} L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`);
+      edge.setAttribute('stroke', tone==='on' ? 'url(#edgeOn)' : (tone==='wa' ? '#ffb347' : '#ff4d6d'));
+
+      // Emit a flow packet along live edges; drop packet for offline nodes.
+      if (pktG && tone !== 'of'){
+        ensurePacket(pktG, s.name, tone, TOPO.cx, TOPO.cy, p.x, p.y);
+        existingP.delete(s.name);
+      }
+
+      // Node group
+      let g = existing.get(s.name);
+      if (!g){
+        g = document.createElementNS('http://www.w3.org/2000/svg','g');
+        g.setAttribute('class','nodeG');
+        g.dataset.name = s.name;
+        const hit = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        hit.setAttribute('r','22'); hit.setAttribute('fill','transparent'); hit.setAttribute('pointer-events','all');
+        const ringEl = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        ringEl.setAttribute('class','ring'); ringEl.setAttribute('r','14');
+        const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        dot.setAttribute('class','dot'); dot.setAttribute('r','6');
+        const pulse = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        pulse.setAttribute('class','pulse'); pulse.setAttribute('fill','none'); pulse.setAttribute('stroke-width','1.2');
+        const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('dy','28');
+        g.appendChild(hit); g.appendChild(ringEl); g.appendChild(dot); g.appendChild(pulse); g.appendChild(label);
+        g.addEventListener('click', () => selectNode(s.name));
+        nodesG.appendChild(g);
+      }
+      g.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+      g.classList.toggle('active', s.name===active);
+      const color = tone==='on' ? '#00ff9c' : tone==='wa' ? '#ffb347' : '#ff4d6d';
+      g.querySelector('.dot').setAttribute('fill', color);
+      g.querySelector('.pulse').setAttribute('stroke', color);
+      g.querySelector('.pulse').setAttribute('class', `pulse ${tone}`);
+      const short = s.name.length > 14 ? s.name.slice(0,12)+'…' : s.name;
+      const label = g.querySelector('text');
+      if (label.textContent !== short) label.textContent = short;
+    });
+  });
+  // Drop any nodes/edges/packets no longer in the fleet (or now offline)
+  for (const [name, g] of existing) if (!wanted.has(name)) g.remove();
+  for (const [name, p] of existingE) if (!wanted.has(name)) p.remove();
+  for (const [, p] of existingP) p.remove();
+}
+function selectNode(name){
+  state._selected = (state._selected===name) ? null : name;
+  const sel = document.getElementById('topoSel');
+  if (state._selected){
+    const s = state.services.find(x => x.name===name);
+    sel.innerHTML = `<b>${esc(name)}</b> · ${esc(s?.status||'?')} · cpu ${fmtPct(s?.cpu||0)} · ${fmtMem(s?.mem_mb||0)}`;
+    // Scroll card into view for deeper inspection
+    document.querySelector(`.card[data-name="${CSS.escape(name)}"]`)?.scrollIntoView({behavior:'smooth',block:'center'});
+  } else {
+    sel.textContent = 'click a node';
+  }
+  renderTopology();
+}
+// Briefly highlight one edge (e.g. on restart/CPU spike) so operators see activity pulse through the graph.
+function flashEdge(name){
+  const p = document.querySelector(`#topoEdges .edge[data-name="${CSS.escape(name)}"]`);
+  if (!p) return;
+  p.classList.add('hot');
+  setTimeout(()=>p.classList.remove('hot'), 1800);
+}
+
+function render(){
+  const grid = document.getElementById('grid');
+  const q = state.q.trim().toLowerCase();
+  const items = state.services
+    .filter(s => state.cat==='all' || categorize(s.name)===state.cat)
+    .filter(s => !q || s.name.toLowerCase().includes(q));
+
+  // Toggle visibility of existing cards; build any missing.
+  const existing = new Map(Array.from(grid.querySelectorAll('.card')).map(c => [c.dataset.name, c]));
+  const wanted = new Set(items.map(s => s.name));
+
+  for (const s of items){
+    let el = existing.get(s.name);
+    if (!el){ el = buildCard(s); grid.appendChild(el); }
+    else { updateCard(el, s); }
+    el.style.display = '';
+    existing.delete(s.name);
+  }
+  // Hide (don't delete) cards that are filtered out — preserves hover state when toggling tabs back
+  for (const [name, el] of existing){
+    if (state.services.find(x => x.name===name)) el.style.display = 'none';
+    else el.remove();
+  }
+
+  // Empty state
+  let empty = grid.querySelector('.empty-state');
+  if (!items.length){
+    if (!empty){
+      empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.style.cssText = 'color:var(--dim);padding:20px;grid-column:1/-1';
+      empty.textContent = 'No agents match this filter.';
+      grid.appendChild(empty);
+    }
+  } else if (empty){ empty.remove(); }
+}
+
+// ── render: feed ──────────────────────────────────
+function renderFeed(){
+  const el = document.getElementById('events');
+  el.innerHTML = state.events.slice(0, 30).map(ev => `
+    <div class="ev ${esc(ev.tone||'')}">
+      <div class="t">${esc(ev.t)}</div>
+      <div class="b"><span class="k">${esc(ev.head)}</span><div class="d">${esc(ev.body)}</div></div>
+    </div>`).join('') || `<div style="color:var(--dim);padding:20px">Waiting for fleet activity…</div>`;
+}
+
+// ── render: bottom stats ──────────────────────────
+function renderStats(){
+  const o = state.overview;
+  const up = o?.services_up ?? state.services.filter(s=>s.status==='online').length;
+  const total = o?.services_total ?? state.services.length;
+  const cpu = o?.cpu_avg ?? 0;
+  const mem = o?.mem_avg ?? 0;
+  const totalCpu = state.services.reduce((a,s)=>a+(s.cpu||0),0);
+  const totalMem = state.services.reduce((a,s)=>a+(s.mem_mb||0),0);
+
+  document.getElementById('sNodes').innerHTML = `${up}<span style="color:var(--dim)">/${total}</span>`;
+  document.getElementById('sFlops').textContent = fmtK(Math.round(totalCpu*140)) + ' TF';
+  document.getElementById('sLiq').textContent   = (totalMem/1024).toFixed(2) + ' GB·mem';
+  document.getElementById('sLat').textContent   = (o?.latency_p95_ms ?? 0) + ' ms';
+  document.getElementById('sDealers').textContent = up;
+
+  // top bar network state
+  const dot = document.getElementById('netDot');
+  const lbl = document.getElementById('netLabel');
+  if (state.offline){ dot.className='dot err'; lbl.textContent='Network: Offline'; }
+  else if (up < total){ dot.className='dot warn'; lbl.textContent=`Network: Degraded (${up}/${total})`; }
+  else { dot.className='dot'; lbl.textContent='Network: Optimal'; }
+
+  if (o?.git_commit){
+    document.getElementById('proto').textContent = `Protocol v4.2 · commit ${o.git_commit.slice(0,7)}`;
+  }
+}
+
+// ── event derivation (emits only on real state diffs) ──────
+// Guard against the "heartbeat ← undefined" class of bug: coerce every field
+// so the feed never renders the literal string "undefined".
+function pushEvent(head, body, tone){
+  const H = (head==null||head==='') ? 'event' : String(head);
+  const B = (body==null) ? '' : String(body);
+  state.events.unshift({ t: nowClock(), head:H, body:B, tone: tone||'' });
+  if (state.events.length > 80) state.events.length = 80;
+  renderFeed();
+}
+
+function diffAndEmit(next){
+  for (const s of next){
+    const prev = state.prev.get(s.name);
+    if (!prev){
+      if (state.prev.size) pushEvent('Node joined', `${s.name} · status=${s.status}`);
+    } else {
+      if (prev.status !== s.status){
+        const tone = s.status==='online' ? '' : 'err';
+        pushEvent(`${s.name} → ${s.status}`, `transition from ${prev.status}`, tone);
+        flashEdge(s.name);
+      }
+      if ((s.restarts||0) > (prev.restarts||0)){
+        pushEvent(`${s.name} restarted`, `restart count ${prev.restarts} → ${s.restarts}`, 'warn');
+        flashEdge(s.name);
+      }
+      if (Math.abs((s.cpu||0) - (prev.cpu||0)) > 10){
+        pushEvent(`${s.name} CPU spike`, `${fmtPct(prev.cpu||0)} → ${fmtPct(s.cpu||0)}`, 'warn');
+        flashEdge(s.name);
+      }
+    }
+    state.prev.set(s.name, { status:s.status, restarts:s.restarts||0, cpu:s.cpu||0 });
+  }
+}
+
+// ── tick ──────────────────────────────────────────
+async function tick(){
+  const overview = await j(API.overview, API.absOverview);
+  const status   = await j(API.status,   API.absStatus);
+  const banner = document.getElementById('banner');
+
+  if (!overview){
+    state.offline = true;
+    banner.style.display = 'flex';
+    banner.className = 'banner warn';
+    if (!state.services.length){
+      banner.innerHTML = `<span class="icon">cloud_off</span>
+        Live backend unreachable — <code>/admin/overview</code> returned no data.
+        Ensure this page is served from
+        <a href="https://bridge-ai-os.com" target="_blank" rel="noopener noreferrer">bridge-ai-os.com</a>
+        or proxied via <code>node orchestra-proxy.js</code>. No synthetic data will be shown.`;
+    } else {
+      // Transient failure after healthy start — keep last-known real state visible, surface stall.
+      banner.innerHTML = `<span class="icon">cloud_off</span>
+        Last poll failed — showing last-known real data from previous tick.`;
+    }
+  } else {
+    state.overview = overview;
+    diffAndEmit(overview.services || []);
+    state.services = overview.services || [];
+    state.status = (status && status.services) || [];
+    state.offline = false;
+    banner.style.display = 'none';
+  }
+  render(); renderStats(); renderTopology();
+}
+
+// ── wiring ────────────────────────────────────────
+document.getElementById('tabs').addEventListener('click', e => {
+  const b = e.target.closest('.tab'); if (!b) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  b.classList.add('active'); state.cat = b.dataset.cat; render();
+});
+document.getElementById('search').addEventListener('input', e => { state.q = e.target.value; render(); });
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-handshake]');
+  if (a){ e.preventDefault();
+    const name = a.dataset.handshake;
+    pushEvent(`Handshake → ${name}`, `A2A channel opened from operator console`);
+  }
+});
+document.getElementById('btnDeploy').addEventListener('click', ()=>{
+  pushEvent('Deploy Node', 'operator requested node deployment — awaiting target');
+});
+document.getElementById('btnSettings').addEventListener('click', ()=>{
+  pushEvent('Settings opened', 'operator console → preferences');
+});
+// Rail nav with anchor validation. Hard-stops on missing target so broken links
+// surface in the feed instead of silently no-op-ing.
+document.querySelectorAll('.rail .r[data-href]').forEach(r=>{
+  r.addEventListener('click', ()=>{
+    const href = r.dataset.href;
+    if (href && href.startsWith('#')){
+      // CSS.escape guards against IDs with special characters
+      const sel = '#' + CSS.escape(href.slice(1));
+      const target = document.querySelector(sel);
+      if (!target){
+        pushEvent('Navigation error', `missing anchor target ${href}`);
+        return; // do NOT mark active — leave focus on currently active button
+      }
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+    } else if (href === '.'){
+      document.querySelector('.main')?.scrollTo({top:0,behavior:'smooth'});
+    }
+    document.querySelectorAll('.rail .r').forEach(x=>x.classList.remove('active'));
+    r.classList.add('active');
+  });
+});
+
+// Keyboard-nav for SVG nodes: Enter or Space triggers the existing click handler.
+// Applied in a mutation observer because nodes are injected dynamically by renderTopo().
+(function wireNodeKeyboard(){
+  const container = document.getElementById('topoNodes');
+  if (!container) return;
+  const enhance = g => {
+    if (g.dataset.a11yWired) return;
+    g.dataset.a11yWired = '1';
+    g.setAttribute('tabindex','0');
+    g.setAttribute('role','button');
+    const name = g.dataset.name || 'node';
+    g.setAttribute('aria-label', `agent node ${name}`);
+    g.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        g.dispatchEvent(new MouseEvent('click', {bubbles:true}));
+      }
+    });
+  };
+  new MutationObserver(() => {
+    container.querySelectorAll('.nodeG').forEach(enhance);
+  }).observe(container, {childList:true, subtree:false});
+  // Enhance any nodes already present on first paint
+  container.querySelectorAll('.nodeG').forEach(enhance);
+})();
+
+// seed feed with real boot lines (live diff events take over on first successful tick)
+state.events = [
+  { t:nowClock(), head:'Orchestra booted',     body:'Protocol v4.2 · operator terminal ready' },
+  { t:nowClock(), head:'Binding /admin/overview', body:'Discovering fleet…' },
+];
+renderFeed();
+
+tick();
+setInterval(tick, 5000);
+</script>
+</body>
+</html>
+>>>>>>> a65a24150727639fde77daadeba4361af473827a

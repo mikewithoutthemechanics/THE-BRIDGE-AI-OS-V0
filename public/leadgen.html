@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="description" content="LeadGen Pipeline — Bridge AI — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/leadgen">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/leadgen">
+<meta property="og:title" content="LeadGen Pipeline — Bridge AI">
+<meta property="og:description" content="LeadGen Pipeline — Bridge AI — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LeadGen Pipeline — Bridge AI">
+<meta name="twitter:description" content="LeadGen Pipeline — Bridge AI — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeadGen Pipeline — Bridge AI</title>
+  <link rel="stylesheet" href="/bridge-tokens.css">
+  <style>
+    body { background: var(--bg, #0a0a0f); color: var(--text, #e0e0e0); font-family: system-ui, sans-serif; margin: 0; padding: 0; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+    h1 { color: var(--accent, #00e5ff); margin-bottom: 0.5rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+    .card { background: var(--card-bg, #13131a); border: 1px solid var(--border, #222); border-radius: 12px; padding: 1.5rem; }
+    .card h2 { margin: 0 0 1rem; font-size: 1.1rem; color: var(--accent, #00e5ff); }
+    .stat-row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #1a1a24; }
+    .stat-val { font-weight: 700; color: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #1a1a24; }
+    th { color: var(--accent, #00e5ff); font-weight: 600; }
+    button { background: var(--accent, #00e5ff); color: #000; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 600; margin: 0.3rem; }
+    button:hover { opacity: 0.85; }
+    button.secondary { background: #333; color: #fff; }
+    .actions { margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    input, select { background: #1a1a24; border: 1px solid #333; color: #fff; padding: 0.5rem; border-radius: 6px; }
+    .log { background: #0d0d14; border: 1px solid #222; border-radius: 8px; padding: 1rem; margin-top: 1rem; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <script src="/bridge-nav.js"></script>
+  <div class="container">
+    <h1>LeadGen Pipeline</h1>
+    <p style="color:#888;">AI-powered prospecting, nurture, and close automation</p>
+
+    <div class="grid">
+      <div class="card" id="stats-card">
+        <h2>Pipeline Stats</h2>
+        <div id="stats-content"><em>Loading...</em></div>
+      </div>
+
+      <div class="card">
+        <h2>Outreach Stats</h2>
+        <div id="outreach-content"><em>Loading...</em></div>
+      </div>
+
+      <div class="card">
+        <h2>Orchestration</h2>
+        <div id="orchestration-content"><em>Loading...</em></div>
+      </div>
+
+      <div class="card">
+        <h2>Actions</h2>
+        <div style="margin-bottom:0.8rem;">
+          <label>Industry: <input id="inp-industry" value="technology" style="width:120px;"></label>
+          <label>Region: <input id="inp-region" value="South Africa" style="width:120px;"></label>
+          <label>Count: <input id="inp-count" type="number" value="5" style="width:50px;"></label>
+        </div>
+        <div class="actions">
+          <button onclick="autoProspect()">Auto-Prospect</button>
+          <button onclick="autoNurture()">Launch Nurture</button>
+          <button onclick="autoCloseAll()" class="secondary">Auto-Close All</button>
+        </div>
+        <div class="log" id="action-log">Ready.</div>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Leads</h2>
+        <table>
+          <thead><tr><th>Company</th><th>Email</th><th>Source</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="leads-body"><tr><td colspan="5"><em>Loading...</em></td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Campaigns</h2>
+        <table>
+          <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Created</th></tr></thead>
+          <tbody id="campaigns-body"><tr><td colspan="4"><em>Loading...</em></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '';
+    function log(msg) {
+      const el = document.getElementById('action-log');
+      el.textContent += '\n' + new Date().toLocaleTimeString() + ' ' + msg;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.textContent;
+    }
+
+    function formatKey(key) {
+      var raw = String(key || '');
+      var aliases = {
+        mrr: 'MRR',
+        ai_insights: 'AI Insights',
+        open_rate_pct: 'Open Rate %',
+        reply_rate_pct: 'Reply Rate %'
+      };
+      if (aliases[raw]) return aliases[raw];
+      return raw.replace(/_/g, ' ').replace(/\b\w/g, function(ch) { return ch.toUpperCase(); });
+    }
+
+    function stringifyObjectInline(obj) {
+      if (!obj || typeof obj !== 'object') return '-';
+      return Object.entries(obj).map(function(entry) {
+        return entry[0] + ': ' + entry[1];
+      }).join(' | ');
+    }
+
+    function renderStats(data, containerId) {
+      const el = document.getElementById(containerId);
+      el.textContent = '';
+      if (data && typeof data === 'object') {
+        Object.entries(data).forEach(function(entry) {
+          if (entry[0] === 'ts') return;
+          const row = document.createElement('div');
+          row.className = 'stat-row';
+          const label = document.createElement('span');
+          label.textContent = formatKey(entry[0]);
+          const val = document.createElement('span');
+          val.className = 'stat-val';
+          if (entry[0] === 'ai_insights' && entry[1] && typeof entry[1] === 'object') {
+            var ai = entry[1];
+            var cq = ai.lead_quality_score != null ? ai.lead_quality_score : '-';
+            var cv = ai.conversion_velocity != null ? ai.conversion_velocity : '-';
+            var ne = ai.nurture_effectiveness != null ? Math.round(ai.nurture_effectiveness * 100) + '%' : '-';
+            val.textContent = 'Quality ' + cq + ' | Velocity ' + cv + 'd | Nurture ' + ne;
+          } else if (entry[0] === 'by_platform' && entry[1] && typeof entry[1] === 'object') {
+            val.textContent = stringifyObjectInline(entry[1]);
+          } else if (entry[0] === 'sample' && Array.isArray(entry[1])) {
+            val.textContent = entry[1].length + ' records';
+          } else if (typeof entry[1] === 'boolean') {
+            val.textContent = entry[1] ? 'Yes' : 'No';
+          } else {
+            val.textContent = typeof entry[1] === 'object' ? JSON.stringify(entry[1]) : entry[1];
+          }
+          row.appendChild(label);
+          row.appendChild(val);
+          el.appendChild(row);
+        });
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const r = await fetch(API + '/api/crm/stats').then(function(r) { return r.json(); });
+        renderStats(r, 'stats-content');
+      } catch(e) { document.getElementById('stats-content').textContent = 'Failed to load stats'; }
+    }
+
+    async function loadOutreach() {
+      try {
+        const r = await fetch(API + '/api/outreach/stats').then(function(r) { return r.json(); });
+        renderStats(r, 'outreach-content');
+      } catch(e) { document.getElementById('outreach-content').textContent = 'No outreach stats available'; }
+    }
+
+    async function loadLeads() {
+      try {
+        const r = await fetch(API + '/api/crm/leads').then(function(r) { return r.json(); });
+        const tbody = document.getElementById('leads-body');
+        const leads = Array.isArray(r) ? r : (r.leads || []);
+        tbody.textContent = '';
+        if (!leads.length) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.colSpan = 5; td.textContent = 'No leads yet';
+          tr.appendChild(td); tbody.appendChild(tr);
+          return;
+        }
+        leads.forEach(function(l) {
+          const tr = document.createElement('tr');
+          var fields = [l.company || '-', l.email || '-', l.source || '-'];
+          fields.forEach(function(f) {
+            var td = document.createElement('td');
+            td.textContent = f;
+            tr.appendChild(td);
+          });
+          var statusTd = document.createElement('td');
+          var badge = document.createElement('span');
+          badge.textContent = l.status || 'new';
+          badge.style.cssText = 'display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;background:#1a3a2a;color:#4ade80;';
+          statusTd.appendChild(badge);
+          tr.appendChild(statusTd);
+          var actionTd = document.createElement('td');
+          var btn = document.createElement('button');
+          btn.textContent = 'Close';
+          btn.addEventListener('click', function() { autoClose(l.id || l.lead_id); });
+          actionTd.appendChild(btn);
+          tr.appendChild(actionTd);
+          tbody.appendChild(tr);
+        });
+      } catch(e) {
+        var tbody = document.getElementById('leads-body');
+        tbody.textContent = '';
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.colSpan = 5; td.textContent = 'Failed to load';
+        tr.appendChild(td); tbody.appendChild(tr);
+      }
+    }
+
+    async function loadOrchestration() {
+      try {
+        const r = await fetch(API + '/api/leadgen/orchestration/status').then(function(r) { return r.json(); });
+        renderStats(r, 'orchestration-content');
+      } catch (e) {
+        document.getElementById('orchestration-content').textContent = 'Orchestration unavailable';
+      }
+    }
+
+    async function loadCampaigns() {
+      try {
+        const r = await fetch(API + '/api/crm/campaigns').then(function(r) { return r.json(); });
+        const tbody = document.getElementById('campaigns-body');
+        const camps = Array.isArray(r) ? r : (r.campaigns || []);
+        tbody.textContent = '';
+        if (!camps.length) {
+          var tr = document.createElement('tr');
+          var td = document.createElement('td');
+          td.colSpan = 4; td.textContent = 'No campaigns yet';
+          tr.appendChild(td); tbody.appendChild(tr);
+          return;
+        }
+        camps.forEach(function(c) {
+          var tr = document.createElement('tr');
+          [c.name || '-', c.template_type || c.type || '-', c.status || 'draft', c.created_at || c.started_at || '-'].forEach(function(f) {
+            var td = document.createElement('td');
+            td.textContent = f;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      } catch(e) {
+        var tbody = document.getElementById('campaigns-body');
+        tbody.textContent = '';
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.colSpan = 4; td.textContent = 'Failed to load';
+        tr.appendChild(td); tbody.appendChild(tr);
+      }
+    }
+
+    async function autoProspect() {
+      log('Prospecting...');
+      try {
+        var industry = document.getElementById('inp-industry').value || 'technology';
+        var region = document.getElementById('inp-region').value || 'South Africa';
+        var count = parseInt(document.getElementById('inp-count').value) || 5;
+        var created = 0;
+        for (var i = 0; i < count; i++) {
+          var email = 'autoprospect+' + Date.now() + '-' + i + '@bridge-ai-os.local';
+          var company = industry.charAt(0).toUpperCase() + industry.slice(1) + ' Prospect ' + (i + 1) + ' (' + region + ')';
+          await fetch(API + '/api/crm/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: company + ' Lead',
+              email: email,
+              company: company,
+              source: 'auto_prospect',
+              industry: industry,
+              status: 'lead',
+              stage: 'new',
+              score: 15
+            })
+          });
+          created++;
+        }
+        await fetch(API + '/api/leadgen/orchestration/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'leadgen-auto-prospect',
+            feature: 'auto_prospect_run',
+            meta: { platform: 'leadgen', service: 'crm', company: 'Bridge AI OS', estimated_value: 75000 }
+          })
+        });
+        log('Generated ' + created + ' leads via CRM flow');
+        setTimeout(function() { loadLeads(); loadStats(); loadOrchestration(); }, 1000);
+      } catch(e) { log('Error: ' + e.message); }
+    }
+
+    async function autoNurture() {
+      log('Launching nurture campaign...');
+      try {
+        const leadsResp = await fetch(API + '/api/crm/leads').then(function(r) { return r.json(); });
+        const leads = Array.isArray(leadsResp) ? leadsResp : (leadsResp.leads || []);
+        const active = leads.filter(function(l) { return l.status !== 'closed_won' && l.status !== 'closed_lost'; }).slice(0, 5);
+        for (var i = 0; i < active.length; i++) {
+          await fetch(API + '/api/leadgen/orchestration/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: active[i].email || active[i].id || ('lead-' + i),
+              feature: 'auto_nurture_run',
+              meta: {
+                platform: 'leadgen',
+                service: 'nurture',
+                email: active[i].email || null,
+                company: active[i].company || active[i].company_name || 'Bridge Lead',
+                estimated_value: active[i].deal_value || active[i].value || 45000
+              }
+            })
+          });
+        }
+        log('Nurture launched for ' + active.length + ' leads');
+        setTimeout(function() { loadCampaigns(); loadOutreach(); loadOrchestration(); }, 1000);
+      } catch(e) { log('Error: ' + e.message); }
+    }
+
+    async function autoClose(leadId) {
+      log('Closing lead ' + leadId + '...');
+      try {
+        const r = await fetch(API + '/api/crm/leads/' + encodeURIComponent(leadId), {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'closed_won', stage: 'closed', score: 100 })
+        }).then(function(r) { return r.json(); });
+        var idOut = (r && (r.lead_id || (r.lead && r.lead.id) || (r.contact && r.contact.id))) || leadId;
+        log('Closed: ' + idOut);
+        setTimeout(function() { loadLeads(); loadStats(); loadOrchestration(); }, 600);
+      } catch(e) { log('Error: ' + e.message); }
+    }
+
+    async function autoCloseAll() {
+      log('Auto-closing all leads...');
+      try {
+        const r = await fetch(API + '/api/crm/leads').then(function(r) { return r.json(); });
+        const leads = Array.isArray(r) ? r : (r.leads || []);
+        for (var i = 0; i < leads.length; i++) {
+          await autoClose(leads[i].id || leads[i].lead_id);
+        }
+        log('Done -- processed ' + leads.length + ' leads');
+      } catch(e) { log('Error: ' + e.message); }
+    }
+
+    loadStats(); loadOutreach(); loadLeads(); loadCampaigns(); loadOrchestration();
+    setInterval(function() { loadStats(); loadOutreach(); loadOrchestration(); }, 30000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treasury Dashboard — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/wallet.html" class="text-slate-400 hover:text-cyan-400">Wallet</a>
+      <a href="/defi.html" class="text-slate-400 hover:text-cyan-400">DeFi</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-cyan-400">Treasury Dashboard</h1>
+      <button onclick="exportReport()" class="bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-600">
+        Export Report
+      </button>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400" id="balance">$0</div>
+        <div class="text-sm text-slate-400">Total Balance</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="income">$0</div>
+        <div class="text-sm text-slate-400">Monthly Income</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-red-400" id="expenses">$0</div>
+        <div class="text-sm text-slate-400">Monthly Expenses</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400" id="net">$0</div>
+        <div class="text-sm text-slate-400">Net Change</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">Holdings by Asset</h2>
+        <div id="holdings" class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400">BRDG Token</span>
+            <span class="text-white font-bold">$450,000</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400">ETH</span>
+            <span class="text-white font-bold">$320,000</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400">USDC</span>
+            <span class="text-white font-bold">$180,000</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400">SOL</span>
+            <span class="text-white font-bold">$50,000</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">Recent Transactions</h2>
+        <div id="transactions" class="space-y-3">
+          <div class="text-slate-500">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">Cash Flow</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-700">
+            <tr>
+              <th class="p-3 text-left">Date</th>
+              <th class="p-3 text-left">Description</th>
+              <th class="p-3 text-left">Category</th>
+              <th class="p-3 text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="ledger">
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadTreasury() {
+      try {
+        const [status, summary, ledger] = await Promise.all([
+          fetch('/api/treasury/status').then(r => r.json()),
+          fetch('/api/treasury/summary').then(r => r.json()),
+          fetch('/api/treasury/ledger').then(r => r.json())
+        ]);
+
+        document.getElementById('balance').textContent = '$' + (status.balance || 0).toLocaleString();
+        document.getElementById('income').textContent = '$' + (summary.income || 0).toLocaleString();
+        document.getElementById('expenses').textContent = '$' + (summary.expenses || 0).toLocaleString();
+        document.getElementById('net').textContent = '$' + (summary.net || 0).toLocaleString();
+
+        const txns = ledger.transactions || ledger.slice(0, 10) || [];
+        if (txns.length === 0) {
+          document.getElementById('transactions').innerHTML = '<p class="text-slate-500">No recent transactions</p>';
+          document.getElementById('ledger').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">No transactions</td></tr>';
+        } else {
+          document.getElementById('transactions').innerHTML = txns.slice(0, 5).map(t => `
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">${t.description}</span>
+              <span class="${t.amount > 0 ? 'text-green-400' : 'text-red-400'}">$${Math.abs(t.amount).toLocaleString()}</span>
+            </div>
+          `).join('');
+
+          document.getElementById('ledger').innerHTML = txns.map(t => `
+            <tr class="border-t border-slate-700">
+              <td class="p-3 text-slate-400">${t.date}</td>
+              <td class="p-3">${t.description}</td>
+              <td class="p-3 text-slate-400">${t.category}</td>
+              <td class="p-3 text-right ${t.amount > 0 ? 'text-green-400' : 'text-red-400'}">$${Math.abs(t.amount).toLocaleString()}</td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('transactions').innerHTML = '<p class="text-slate-500">Unable to load treasury data</p>';
+      }
+    }
+
+    function exportReport() {
+      alert('Export functionality would generate a PDF/CSV report');
+    }
+
+    loadTreasury();
+  </script>
+</body>
+</html>

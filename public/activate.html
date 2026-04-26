@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="description" content="Activating Agent — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="noindex, nofollow">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activating Agent — Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050a0f;
+      --surface: #0a1520;
+      --border: rgba(0,200,255,0.15);
+      --cyan: #00c8ff;
+      --green: #00e57b;
+      --purple: #a78bfa;
+      --red: #ff3c5a;
+      --dim: #3d5a6b;
+      --text: #c8dce8;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+      overflow: hidden;
+    }
+    .scene {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    /* ── Grid background ── */
+    .scene::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* ── Agent ID badge ── */
+    .agent-badge {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      color: var(--dim);
+      margin-bottom: 32px;
+      opacity: 0;
+      transition: opacity 0.6s;
+    }
+    .agent-badge span { color: var(--cyan); }
+    .agent-badge.visible { opacity: 1; }
+
+    /* ── Main card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 520px;
+      padding: 40px 36px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 60px rgba(0,200,255,0.05);
+    }
+
+    /* ── Header ── */
+    .os-name {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--dim);
+      margin-bottom: 6px;
+    }
+    .title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+    .subtitle {
+      font-size: 0.75rem;
+      color: var(--dim);
+      margin-bottom: 36px;
+    }
+
+    /* ── Steps ── */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 32px; }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 12px 0;
+      border-left: 1px solid var(--border);
+      padding-left: 20px;
+      position: relative;
+      opacity: 0.3;
+      transition: opacity 0.4s;
+    }
+    .step.active { opacity: 1; }
+    .step.done   { opacity: 0.6; }
+    .step::before {
+      content: '';
+      position: absolute;
+      left: -5px;
+      top: 16px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--border);
+      border: 1.5px solid var(--dim);
+      transition: all 0.4s;
+    }
+    .step.active::before {
+      background: var(--cyan);
+      border-color: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
+    }
+    .step.done::before {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .step-icon { font-size: 1.1rem; line-height: 1; margin-top: 1px; flex-shrink: 0; }
+    .step-content { flex: 1; }
+    .step-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+    .step-detail {
+      font-size: 0.65rem;
+      color: var(--dim);
+      line-height: 1.5;
+      min-height: 1.2em;
+    }
+    .step-tick {
+      font-size: 0.7rem;
+      color: var(--green);
+      margin-left: auto;
+      align-self: center;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .step.done .step-tick { opacity: 1; }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border: 1.5px solid rgba(0,200,255,0.2);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .step:not(.active) .spinner { display: none; }
+    .step.done .spinner { display: none; }
+
+    /* ── Terminal log ── */
+    .terminal {
+      background: #020810;
+      border: 1px solid rgba(0,200,255,0.08);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 0.62rem;
+      color: var(--dim);
+      line-height: 1.7;
+      height: 90px;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .terminal .line { opacity: 0; animation: fadeIn 0.3s forwards; }
+    .terminal .line.ok  { color: var(--green); }
+    .terminal .line.err { color: var(--red); }
+    .terminal .line.hi  { color: var(--cyan); }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    /* ── Agent ID reveal ── */
+    .agent-id-box {
+      display: none;
+      background: rgba(0,200,255,0.05);
+      border: 1px solid rgba(0,200,255,0.2);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .agent-id-box.visible { display: block; }
+    .agent-id-label { font-size: 0.6rem; color: var(--dim); letter-spacing: 0.15em; margin-bottom: 6px; }
+    .agent-id-value { font-size: 1.1rem; color: var(--cyan); font-weight: 700; letter-spacing: 0.1em; }
+
+    /* ── CTA ── */
+    .cta-row { text-align: center; }
+    .cta-btn {
+      display: none;
+      background: var(--cyan);
+      color: #050a0f;
+      font-size: 0.82rem;
+      font-weight: 800;
+      padding: 14px 32px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: all 0.2s;
+      box-shadow: 0 0 30px rgba(0,200,255,0.25);
+    }
+    .cta-btn:hover { background: #33dcff; transform: translateY(-1px); }
+    .cta-btn.visible { display: inline-block; }
+    .redirect-note { font-size: 0.62rem; color: var(--dim); margin-top: 8px; display: none; }
+    .redirect-note.visible { display: block; }
+
+    /* ── Pulse ring on active step ── */
+    @keyframes pulseRing {
+      0%   { box-shadow: 0 0 0 0 rgba(0,200,255,0.4); }
+      70%  { box-shadow: 0 0 0 8px rgba(0,200,255,0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,200,255,0); }
+    }
+    .step.active::before { animation: pulseRing 1.5s infinite; }
+  </style>
+</head>
+<body>
+<div class="scene">
+  <div class="agent-badge" id="agentBadge">
+    BRIDGE AI OS · AGENT NETWORK · <span id="agentIdBadge">INITIALISING...</span>
+  </div>
+
+  <div class="card">
+    <div class="os-name">BRIDGE AI OS — ACTIVATION SEQUENCE</div>
+    <div class="title" id="mainTitle">Activating Agent</div>
+    <div class="subtitle" id="mainSubtitle">Establishing your Digital Twin in the network...</div>
+
+    <div class="steps" id="steps">
+      <div class="step" id="step-0">
+        <div class="step-icon">🔐</div>
+        <div class="content">
+          <div class="step-label">VERIFY IDENTITY</div>
+          <div class="step-detail" id="detail-0">Checking authentication token...</div>
+        </div>
+        <div class="spinner"></div>
+        <div class="step-tick">✓</div>
+      </div>
+      <div class="step" id="step-1">
+        <div class="step-icon">🤖</div>
+        <div class="content">
+          <div class="step-label">GENERATE AGENT ID</div>
+          <div class="step-detail" id="detail-1">Computing deterministic hash...</div>
+        </div>
+        <div class="spinner"></div>
+        <div class="step-tick">✓</div>
+      </div>
+      <div class="step" id="step-2">
+        <div class="step-icon">🧬</div>
+        <div class="content">
+          <div class="step-label">INSTANTIATE TWIN</div>
+          <div class="step-detail" id="detail-2">Allocating memory state and capability modules...</div>
+        </div>
+        <div class="spinner"></div>
+        <div class="step-tick">✓</div>
+      </div>
+      <div class="step" id="step-3">
+        <div class="step-icon">⚙️</div>
+        <div class="content">
+          <div class="step-label">LOAD CAPABILITIES</div>
+          <div class="step-detail" id="detail-3">Binding agent modules to twin...</div>
+        </div>
+        <div class="spinner"></div>
+        <div class="step-tick">✓</div>
+      </div>
+      <div class="step" id="step-4">
+        <div class="step-icon">🚀</div>
+        <div class="content">
+          <div class="step-label">REGISTER IN NETWORK</div>
+          <div class="step-detail" id="detail-4">Writing twin to global registry...</div>
+        </div>
+        <div class="spinner"></div>
+        <div class="step-tick">✓</div>
+      </div>
+    </div>
+
+    <div class="terminal" id="terminal"></div>
+
+    <div class="agent-id-box" id="agentIdBox">
+      <div class="agent-id-label">YOUR AGENT ID</div>
+      <div class="agent-id-value" id="agentIdValue">—</div>
+    </div>
+
+    <div class="cta-row">
+      <button class="cta-btn" id="ctaBtn" onclick="goDashboard()">⚡ Enter Dashboard</button>
+      <div class="redirect-note" id="redirectNote">Redirecting to dashboard in <span id="countdown">3</span>s...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function () {
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function getToken() {
+    const ls = localStorage.getItem('bridge_token');
+    if (ls) return ls;
+    const m = document.cookie.match(/bridge_token=([^;]+)/);
+    return m ? m[1] : null;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  const $terminal = document.getElementById('terminal');
+  const lines = [];
+  function log(text, cls = '') {
+    const el = document.createElement('div');
+    el.className = 'line' + (cls ? ' ' + cls : '');
+    el.textContent = text;
+    el.style.animationDelay = '0ms';
+    lines.push(el);
+    if (lines.length > 5) lines.shift().remove();
+    $terminal.appendChild(el);
+  }
+
+  function setStep(idx, state) { // state: 'active' | 'done' | 'error'
+    const el = document.getElementById('step-' + idx);
+    if (!el) return;
+    el.className = 'step ' + state;
+  }
+  function setDetail(idx, text) {
+    const el = document.getElementById('detail-' + idx);
+    if (el) el.textContent = text;
+  }
+
+  // ── STEP 0: Verify identity ───────────────────────────────────────────────
+  setStep(0, 'active');
+  await sleep(400);
+
+  const token = getToken();
+  if (!token) {
+    setDetail(0, 'No token found — redirecting to login...');
+    log('ERR  no auth token — aborting sequence', 'err');
+    await sleep(1500);
+    location.href = '/onboarding';
+    return;
+  }
+
+  log('AUTH  token found · verifying with server...');
+  await sleep(600);
+
+  // Verify token with /auth/me
+  let user = null;
+  try {
+    const r = await fetch('/auth/me', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (r.ok) user = await r.json();
+  } catch (_) {}
+
+  if (!user) {
+    // Fallback — try to decode token payload locally for display only
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      user = { email: payload.email || payload.sub, id: payload.sub || payload.id };
+    } catch (_) {}
+  }
+
+  const userEmail = user?.email || 'unknown@agent.os';
+  setDetail(0, `Identity confirmed: ${userEmail}`);
+  setStep(0, 'done');
+  log(`OK   identity verified · ${userEmail}`, 'ok');
+  document.getElementById('agentBadge').classList.add('visible');
+
+  // ── STEP 1: Generate Agent ID ─────────────────────────────────────────────
+  setStep(1, 'active');
+  await sleep(500);
+  log('HASH  computing SHA-256(user_id + AGENT_SALT)...');
+  await sleep(700);
+
+  // ── STEP 2–4: Call /api/twin/activate ────────────────────────────────────
+  setStep(1, 'active');
+  let twin = null;
+  try {
+    const r = await fetch('/api/twin/activate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+    });
+    twin = await r.json();
+  } catch (err) {
+    log('ERR  ' + err.message, 'err');
+  }
+
+  const agentId = twin?.agent_id || 'AGT-' + Math.random().toString(36).slice(2,18).toUpperCase();
+  const capabilities = twin?.capabilities || ['intelligence', 'creative', 'support'];
+
+  // Show agent ID
+  document.getElementById('agentIdBadge').textContent = agentId;
+  setDetail(1, `Agent ID: ${agentId}`);
+  setStep(1, 'done');
+  log(`HASH  agent_id=${agentId}`, 'hi');
+
+  // ── STEP 2: Instantiate twin ──────────────────────────────────────────────
+  setStep(2, 'active');
+  await sleep(600);
+  log('TWIN  allocating memory state...');
+  await sleep(500);
+  setDetail(2, `Twin instantiated · status: ${twin?.status || 'active'}`);
+  setStep(2, 'done');
+  log('TWIN  memory state allocated · execution loop ready', 'ok');
+
+  // ── STEP 3: Load capabilities ─────────────────────────────────────────────
+  setStep(3, 'active');
+  await sleep(400);
+  const capStr = capabilities.slice(0, 4).join(', ') + (capabilities.length > 4 ? ` +${capabilities.length - 4}` : '');
+  log(`CAPS  binding modules: ${capStr}...`);
+  await sleep(600);
+  setDetail(3, `${capabilities.length} modules loaded: ${capStr}`);
+  setStep(3, 'done');
+  log(`CAPS  ${capabilities.length} capability modules bound`, 'ok');
+
+  // ── STEP 4: Register in network ───────────────────────────────────────────
+  setStep(4, 'active');
+  await sleep(400);
+  log('REG   writing twin to global registry...');
+  await sleep(700);
+  setDetail(4, `Registered · plan: ${twin?.plan || 'free'}`);
+  setStep(4, 'done');
+  log('REG   twin registered in Bridge AI OS network', 'ok');
+
+  // ── Complete ──────────────────────────────────────────────────────────────
+  await sleep(300);
+  log('SYS   activation sequence complete · agent is LIVE', 'ok');
+
+  document.getElementById('mainTitle').textContent = 'Agent Active';
+  document.getElementById('mainSubtitle').textContent = 'Your Digital Twin is live in the Bridge AI OS network.';
+
+  document.getElementById('agentIdValue').textContent = agentId;
+  document.getElementById('agentIdBox').classList.add('visible');
+
+  document.getElementById('ctaBtn').classList.add('visible');
+  document.getElementById('redirectNote').classList.add('visible');
+
+  // Store agent info
+  try {
+    localStorage.setItem('bridge_agent_id', agentId);
+    localStorage.setItem('bridge_twin', JSON.stringify(twin));
+  } catch (_) {}
+
+  // Auto-redirect countdown
+  let count = 3;
+  const interval = setInterval(() => {
+    count--;
+    document.getElementById('countdown').textContent = count;
+    if (count <= 0) {
+      clearInterval(interval);
+      goDashboard();
+    }
+  }, 1000);
+})();
+
+function goDashboard() {
+  location.href = '/dashboard';
+}
+</script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

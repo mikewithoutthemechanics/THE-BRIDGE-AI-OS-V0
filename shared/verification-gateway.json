@@ -1,0 +1,39 @@
+{
+  "agent": "2B",
+  "ts": "2026-03-25T22:07:53.674Z",
+  "endpoints_tested": 5,
+  "passed": 3,
+  "score_pct": 60,
+  "results": [
+    {
+      "endpoint": "/health",
+      "status": 200,
+      "latency_ms": 3,
+      "pass": true
+    },
+    {
+      "endpoint": "/orchestrator/status",
+      "status": 200,
+      "latency_ms": 1,
+      "pass": true
+    },
+    {
+      "endpoint": "/billing",
+      "status": 200,
+      "latency_ms": 1,
+      "pass": true
+    },
+    {
+      "endpoint": "/api/status",
+      "status": 404,
+      "latency_ms": 2,
+      "pass": false
+    },
+    {
+      "endpoint": "/api/contracts",
+      "status": 404,
+      "latency_ms": 0,
+      "pass": false
+    }
+  ]
+}

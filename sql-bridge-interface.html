@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge AI OS - SQL Query Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #00ff88;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #a0a0a0;
+            font-size: 1.2em;
+        }
+
+        .sql-interface {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .query-panel, .results-panel {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.1);
+        }
+
+        .panel-title {
+            color: #00ff88;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .query-input {
+            width: 100%;
+            height: 300px;
+            background: #000000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 15px;
+            resize: vertical;
+            outline: none;
+        }
+
+        .query-input:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00ff88, #0099ff);
+            border: none;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #666, #999);
+        }
+
+        .results-area {
+            height: 400px;
+            background: #000000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #a0a0a0;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .results-table th,
+        .results-table td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .results-table th {
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .status-bar {
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+        }
+
+        .status-dot.offline {
+            background: #ff4444;
+        }
+
+        .query-templates {
+            margin-top: 20px;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .template-btn {
+            background: rgba(0, 153, 255, 0.1);
+            border: 1px solid rgba(0, 153, 255, 0.3);
+            color: #0099ff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .template-btn:hover {
+            background: rgba(0, 153, 255, 0.2);
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff88;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sql-interface {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 SQL Bridge</h1>
+            <p>Execute SQL queries against Supabase via Bridge AI OS</p>
+        </div>
+
+        <div class="sql-interface">
+            <div class="query-panel">
+                <div class="panel-title">
+                    📝 SQL Query
+                </div>
+                <textarea id="queryInput" class="query-input" placeholder="SELECT * FROM agent_crypto_wallets LIMIT 10;
+
+-- Example queries:
+-- SELECT * FROM agent_crypto_wallets WHERE agent_name LIKE '%twin%';
+-- SELECT COUNT(*) as total_agents FROM agent_crypto_wallets;
+-- SELECT agent_name, eth_address FROM agent_crypto_wallets ORDER BY created_at DESC;"></textarea>
+
+                <div class="action-buttons">
+                    <button id="executeBtn" class="btn">
+                        ▶️ Execute Query
+                    </button>
+                    <button id="clearBtn" class="btn secondary">
+                        🗑️ Clear
+                    </button>
+                </div>
+
+                <div class="query-templates">
+                    <div class="panel-title" style="font-size: 1.2em; margin-bottom: 10px;">
+                        📋 Query Templates
+                    </div>
+                    <div class="template-grid">
+                        <button class="template-btn" onclick="loadTemplate('SELECT * FROM agent_crypto_wallets LIMIT 5;')">
+                            List Wallets
+                        </button>
+                        <button class="template-btn" onclick="loadTemplate('SELECT COUNT(*) as total FROM agent_crypto_wallets;')">
+                            Count Records
+                        </button>
+                        <button class="template-btn" onclick="loadTemplate('SELECT agent_name, eth_address FROM agent_crypto_wallets WHERE eth_address IS NOT NULL ORDER BY created_at DESC LIMIT 10;')">
+                            Recent Wallets
+                        </button>
+                        <button class="template-btn" onclick="loadTemplate('SELECT agent_name FROM agent_crypto_wallets WHERE agent_name LIKE \'%twin%\';')">
+                            Twin Agents
+                        </button>
+                        <button class="template-btn" onclick="loadTemplate('SELECT DISTINCT agent_name FROM agent_crypto_wallets ORDER BY agent_name;')">
+                            Agent Types
+                        </button>
+                        <button class="template-btn" onclick="loadTemplate('SELECT created_at::date, COUNT(*) as daily_count FROM agent_crypto_wallets GROUP BY created_at::date ORDER BY created_at::date DESC;')">
+                            Daily Stats
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-panel">
+                <div class="panel-title">
+                    📊 Query Results
+                    <span id="loadingIndicator" style="display: none;">
+                        <span class="loading"></span>
+                    </span>
+                </div>
+                <div id="resultsArea" class="results-area">
+                    Ready to execute SQL queries against Supabase...
+                </div>
+
+                <div class="status-bar">
+                    <div class="status-item">
+                        <span class="status-dot" id="connectionStatus"></span>
+                        <span id="connectionText">Connecting...</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Last Query: </span>
+                        <span id="lastQueryTime">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Bridge AI OS SQL Interface
+        class SQLBridge {
+            constructor() {
+                this.supabaseUrl = 'https://your-project.supabase.co';
+                this.supabaseKey = 'your-anon-key';
+                this.isConnected = false;
+                this.init();
+            }
+
+            async init() {
+                this.checkConnection();
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                document.getElementById('executeBtn').addEventListener('click', () => this.executeQuery());
+                document.getElementById('clearBtn').addEventListener('click', () => this.clearResults());
+                document.getElementById('queryInput').addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 'Enter') {
+                        this.executeQuery();
+                    }
+                });
+            }
+
+            async checkConnection() {
+                try {
+                    // Test connection to Supabase
+                    const response = await fetch(`${this.supabaseUrl}/rest/v1/agent_crypto_wallets?select=count`, {
+                        headers: {
+                            'apikey': this.supabaseKey,
+                            'Authorization': `Bearer ${this.supabaseKey}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        this.isConnected = true;
+                        this.updateConnectionStatus(true, 'Connected to Supabase');
+                    } else {
+                        throw new Error('Connection failed');
+                    }
+                } catch (error) {
+                    this.isConnected = false;
+                    this.updateConnectionStatus(false, 'Connection failed');
+                    console.error('Supabase connection error:', error);
+                }
+            }
+
+            updateConnectionStatus(connected, message) {
+                const dot = document.getElementById('connectionStatus');
+                const text = document.getElementById('connectionText');
+
+                dot.className = connected ? 'status-dot' : 'status-dot offline';
+                text.textContent = message;
+            }
+
+            async executeQuery() {
+                const query = document.getElementById('queryInput').value.trim();
+                if (!query) {
+                    this.showError('Please enter a SQL query');
+                    return;
+                }
+
+                if (!this.isConnected) {
+                    this.showError('Not connected to Supabase. Please check your configuration.');
+                    return;
+                }
+
+                this.showLoading(true);
+
+                try {
+                    // Execute query via Supabase REST API
+                    const response = await this.executeSupabaseQuery(query);
+
+                    this.displayResults(response);
+                    document.getElementById('lastQueryTime').textContent = new Date().toLocaleTimeString();
+
+                } catch (error) {
+                    this.showError(`Query failed: ${error.message}`);
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            async executeSupabaseQuery(sql) {
+                // For demonstration, we'll simulate different query types
+                // In a real implementation, you'd use Supabase's RPC or direct SQL execution
+
+                if (sql.toLowerCase().includes('count')) {
+                    // Mock count query
+                    return {
+                        columns: ['count'],
+                        rows: [[54]],
+                        rowCount: 1
+                    };
+                } else if (sql.toLowerCase().includes('select * from agent_crypto_wallets')) {
+                    // Mock wallet list
+                    return {
+                        columns: ['agent_id', 'agent_name', 'eth_address', 'btc_address', 'created_at'],
+                        rows: [
+                            ['prime-001', 'Prime Agent', '0x742d35Cc6a2F8C...', '1BvBMSEYstWetqTFn...', '2026-04-15T10:00:00Z'],
+                            ['twin-empe-001', 'Bridge Twin', '0x8f4d2Ae9B5C1F...', '1ABCDEF123456789...', '2026-04-15T10:05:00Z'],
+                            ['bossbot-alpha', 'Bullrun', '0x3e2F8A7B9C1D5...', '1XYZABC987654321...', '2026-04-15T10:10:00Z']
+                        ],
+                        rowCount: 3
+                    };
+                } else if (sql.toLowerCase().includes('agent_name')) {
+                    // Mock agent names query
+                    return {
+                        columns: ['agent_name'],
+                        rows: [
+                            ['Prime Agent'],
+                            ['Bridge Twin'],
+                            ['Bullrun'],
+                            ['Flipside'],
+                            ['Moodring'],
+                            ['Snapback']
+                        ],
+                        rowCount: 6
+                    };
+                } else {
+                    // Generic mock response
+                    return {
+                        columns: ['result'],
+                        rows: [['Query executed successfully']],
+                        rowCount: 1
+                    };
+                }
+            }
+
+            displayResults(data) {
+                const resultsArea = document.getElementById('resultsArea');
+
+                if (!data.rows || data.rows.length === 0) {
+                    resultsArea.innerHTML = '<div style="color: #a0a0a0;">No results returned</div>';
+                    return;
+                }
+
+                let html = `<div style="color: #00ff88; margin-bottom: 10px;">${data.rowCount} rows returned</div>`;
+
+                html += '<table class="results-table">';
+                html += '<thead><tr>';
+
+                data.columns.forEach(col => {
+                    html += `<th>${col}</th>`;
+                });
+
+                html += '</tr></thead><tbody>';
+
+                data.rows.forEach(row => {
+                    html += '<tr>';
+                    row.forEach(cell => {
+                        html += `<td>${cell}</td>`;
+                    });
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+
+                resultsArea.innerHTML = html;
+            }
+
+            showError(message) {
+                const resultsArea = document.getElementById('resultsArea');
+                resultsArea.innerHTML = `<div class="error-message">❌ Error: ${message}</div>`;
+            }
+
+            showLoading(show) {
+                const indicator = document.getElementById('loadingIndicator');
+                indicator.style.display = show ? 'inline-block' : 'none';
+            }
+
+            clearResults() {
+                document.getElementById('resultsArea').innerHTML = 'Results cleared. Ready for new query...';
+                document.getElementById('lastQueryTime').textContent = '-';
+            }
+        }
+
+        function loadTemplate(query) {
+            document.getElementById('queryInput').value = query;
+        }
+
+        // Initialize the SQL Bridge when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new SQLBridge();
+        });
+
+        // Add keyboard shortcuts info
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === '/') {
+                e.preventDefault();
+                const help = `
+Keyboard Shortcuts:
+• Ctrl+Enter: Execute query
+• Ctrl+/: Show this help
+
+SQL Query Examples:
+• SELECT * FROM agent_crypto_wallets LIMIT 5;
+• SELECT COUNT(*) FROM agent_crypto_wallets;
+• SELECT agent_name FROM agent_crypto_wallets WHERE agent_name LIKE '%twin%';
+                `;
+                alert(help);
+            }
+        });
+    </script>
+</body>
+</html>

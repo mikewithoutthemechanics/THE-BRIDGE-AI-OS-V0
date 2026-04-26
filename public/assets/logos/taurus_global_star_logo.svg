@@ -1,0 +1,412 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" width="1200" height="1200">
+  <defs>
+
+    <!-- FILTERS -->
+    <filter id="coreGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="22" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="neonGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="starGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="textGlow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="hornGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- GRADIENTS -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#050a1a"/>
+      <stop offset="60%" stop-color="#020510"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <linearGradient id="hornGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffdd00"/>
+      <stop offset="40%" stop-color="#ff8800"/>
+      <stop offset="100%" stop-color="#ff0040"/>
+    </linearGradient>
+
+    <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1affee" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#0066ff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000033" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="taurusTextGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#7df9ff"/>
+      <stop offset="100%" stop-color="#0099cc"/>
+    </linearGradient>
+
+    <linearGradient id="taglineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#007a4d"/>
+      <stop offset="35%" stop-color="#ffffff"/>
+      <stop offset="65%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d4224e"/>
+    </linearGradient>
+
+    <linearGradient id="saRing1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#007a4d"/>
+      <stop offset="50%" stop-color="#007a4d"/>
+      <stop offset="100%" stop-color="#00b060"/>
+    </linearGradient>
+    <linearGradient id="saRing2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0e0e0"/>
+    </linearGradient>
+    <linearGradient id="saRing3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d4224e"/>
+      <stop offset="100%" stop-color="#ff003c"/>
+    </linearGradient>
+    <linearGradient id="saRing4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#002395"/>
+      <stop offset="100%" stop-color="#0040c0"/>
+    </linearGradient>
+    <linearGradient id="saRing5" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffb612"/>
+      <stop offset="100%" stop-color="#ffd700"/>
+    </linearGradient>
+    <linearGradient id="saRing6" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="100%" stop-color="#222222"/>
+    </linearGradient>
+
+    <!-- ORBIT DASH ANIMATION PATH (ellipse approximation) -->
+    <ellipse id="orbitPath" cx="600" cy="600" rx="310" ry="90"/>
+
+  </defs>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- BACKGROUND                                              -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <rect width="1200" height="1200" fill="url(#bgGrad)"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- STAR FIELD - static small stars                         -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <g opacity="0.85">
+    <!-- Far dim stars -->
+    <circle cx="72" cy="48" r="1" fill="#aac8ff" opacity="0.5"/>
+    <circle cx="145" cy="133" r="1.2" fill="#ffffff" opacity="0.4"/>
+    <circle cx="221" cy="77" r="0.8" fill="#cce0ff" opacity="0.5"/>
+    <circle cx="310" cy="22" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="415" cy="88" r="1.2" fill="#aac8ff" opacity="0.5"/>
+    <circle cx="530" cy="38" r="0.9" fill="#ffffff" opacity="0.45"/>
+    <circle cx="612" cy="68" r="1" fill="#cce0ff" opacity="0.35"/>
+    <circle cx="740" cy="28" r="1.2" fill="#ffffff" opacity="0.5"/>
+    <circle cx="835" cy="92" r="0.8" fill="#aac8ff" opacity="0.4"/>
+    <circle cx="910" cy="45" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="1020" cy="78" r="1.1" fill="#cce0ff" opacity="0.5"/>
+    <circle cx="1100" cy="30" r="0.9" fill="#ffffff" opacity="0.4"/>
+    <circle cx="1155" cy="120" r="1" fill="#aac8ff" opacity="0.5"/>
+    <circle cx="55" cy="190" r="0.8" fill="#ffffff" opacity="0.3"/>
+    <circle cx="180" cy="240" r="1.2" fill="#cce0ff" opacity="0.4"/>
+    <circle cx="290" cy="195" r="1" fill="#ffffff" opacity="0.5"/>
+    <circle cx="380" cy="160" r="0.9" fill="#aac8ff" opacity="0.35"/>
+    <circle cx="475" cy="210" r="1.1" fill="#ffffff" opacity="0.45"/>
+    <circle cx="570" cy="170" r="0.8" fill="#cce0ff" opacity="0.4"/>
+    <circle cx="680" cy="145" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="775" cy="205" r="1.2" fill="#aac8ff" opacity="0.5"/>
+    <circle cx="870" cy="175" r="0.9" fill="#ffffff" opacity="0.4"/>
+    <circle cx="960" cy="148" r="1" fill="#cce0ff" opacity="0.35"/>
+    <circle cx="1050" cy="195" r="1.1" fill="#ffffff" opacity="0.5"/>
+    <circle cx="1140" cy="222" r="0.8" fill="#aac8ff" opacity="0.4"/>
+    <!-- More scattered stars -->
+    <circle cx="35" cy="320" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="120" cy="380" r="1.3" fill="#cce0ff" opacity="0.5"/>
+    <circle cx="210" cy="340" r="0.8" fill="#ffffff" opacity="0.4"/>
+    <circle cx="330" cy="310" r="1" fill="#aac8ff" opacity="0.35"/>
+    <circle cx="440" cy="360" r="1.1" fill="#ffffff" opacity="0.45"/>
+    <circle cx="550" cy="295" r="0.9" fill="#cce0ff" opacity="0.4"/>
+    <circle cx="650" cy="330" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="760" cy="285" r="1.2" fill="#aac8ff" opacity="0.5"/>
+    <circle cx="858" cy="350" r="0.8" fill="#ffffff" opacity="0.35"/>
+    <circle cx="945" cy="308" r="1" fill="#cce0ff" opacity="0.45"/>
+    <circle cx="1040" cy="370" r="1.1" fill="#ffffff" opacity="0.4"/>
+    <circle cx="1130" cy="320" r="0.9" fill="#aac8ff" opacity="0.5"/>
+    <circle cx="88" cy="440" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="195" cy="480" r="1.2" fill="#cce0ff" opacity="0.4"/>
+    <circle cx="295" cy="450" r="0.8" fill="#ffffff" opacity="0.35"/>
+    <circle cx="400" cy="420" r="1.1" fill="#aac8ff" opacity="0.5"/>
+    <circle cx="505" cy="465" r="0.9" fill="#ffffff" opacity="0.4"/>
+    <!-- Lower half stars -->
+    <circle cx="42" cy="720" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="148" cy="770" r="1.2" fill="#cce0ff" opacity="0.4"/>
+    <circle cx="248" cy="735" r="0.8" fill="#aac8ff" opacity="0.45"/>
+    <circle cx="345" cy="778" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="862" cy="742" r="1" fill="#aac8ff" opacity="0.5"/>
+    <circle cx="958" cy="780" r="1.1" fill="#ffffff" opacity="0.35"/>
+    <circle cx="1055" cy="748" r="0.9" fill="#cce0ff" opacity="0.4"/>
+    <circle cx="1148" cy="790" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="65" cy="860" r="1.2" fill="#aac8ff" opacity="0.45"/>
+    <circle cx="165" cy="910" r="0.8" fill="#ffffff" opacity="0.4"/>
+    <circle cx="268" cy="875" r="1" fill="#cce0ff" opacity="0.35"/>
+    <circle cx="368" cy="930" r="1.1" fill="#ffffff" opacity="0.5"/>
+    <circle cx="845" cy="895" r="0.9" fill="#aac8ff" opacity="0.4"/>
+    <circle cx="940" cy="940" r="1" fill="#ffffff" opacity="0.3"/>
+    <circle cx="1038" cy="900" r="1.2" fill="#cce0ff" opacity="0.5"/>
+    <circle cx="1132" cy="958" r="0.8" fill="#ffffff" opacity="0.35"/>
+    <circle cx="90" cy="1010" r="1" fill="#aac8ff" opacity="0.4"/>
+    <circle cx="188" cy="1060" r="1.1" fill="#ffffff" opacity="0.45"/>
+    <circle cx="288" cy="1020" r="0.9" fill="#cce0ff" opacity="0.3"/>
+    <circle cx="388" cy="1075" r="1" fill="#ffffff" opacity="0.5"/>
+    <circle cx="840" cy="1040" r="1.2" fill="#aac8ff" opacity="0.45"/>
+    <circle cx="938" cy="1085" r="0.8" fill="#ffffff" opacity="0.4"/>
+    <circle cx="1032" cy="1048" r="1" fill="#cce0ff" opacity="0.35"/>
+    <circle cx="1125" cy="1100" r="1.1" fill="#ffffff" opacity="0.5"/>
+    <circle cx="112" cy="1140" r="0.9" fill="#ffffff" opacity="0.3"/>
+    <circle cx="210" cy="1165" r="1" fill="#aac8ff" opacity="0.4"/>
+    <circle cx="310" cy="1145" r="1.2" fill="#ffffff" opacity="0.45"/>
+    <circle cx="900" cy="1155" r="0.8" fill="#cce0ff" opacity="0.4"/>
+    <circle cx="1000" cy="1140" r="1" fill="#ffffff" opacity="0.35"/>
+    <circle cx="1100" cy="1168" r="1.1" fill="#aac8ff" opacity="0.5"/>
+    <!-- Brighter accent stars -->
+    <circle cx="95" cy="612" r="1.8" fill="#ffffff" opacity="0.7" filter="url(#starGlow)"/>
+    <circle cx="1108" cy="588" r="1.6" fill="#ffffff" opacity="0.65" filter="url(#starGlow)"/>
+    <circle cx="175" cy="145" r="2" fill="#7df9ff" opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="1025" cy="168" r="1.8" fill="#7df9ff" opacity="0.75" filter="url(#starGlow)"/>
+    <circle cx="145" cy="1055" r="1.7" fill="#7df9ff" opacity="0.7" filter="url(#starGlow)"/>
+    <circle cx="1060" cy="1040" r="2" fill="#7df9ff" opacity="0.8" filter="url(#starGlow)"/>
+    <circle cx="600" cy="95" r="1.5" fill="#ffffff" opacity="0.6" filter="url(#starGlow)"/>
+    <circle cx="598" cy="1105" r="1.5" fill="#ffffff" opacity="0.6" filter="url(#starGlow)"/>
+    <!-- Twinkling animated stars -->
+    <circle cx="340" cy="115" r="1.8" fill="#ffffff" opacity="0.9" filter="url(#starGlow)">
+      <animate attributeName="opacity" values="0.9;0.2;0.9" dur="2.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="860" cy="130" r="1.5" fill="#aac8ff" opacity="0.8" filter="url(#starGlow)">
+      <animate attributeName="opacity" values="0.8;0.15;0.8" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="112" cy="510" r="2" fill="#7df9ff" opacity="0.9" filter="url(#starGlow)">
+      <animate attributeName="opacity" values="0.9;0.1;0.9" dur="4.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1090" cy="490" r="1.8" fill="#7df9ff" opacity="0.85" filter="url(#starGlow)">
+      <animate attributeName="opacity" values="0.85;0.2;0.85" dur="3.1s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="225" cy="900" r="1.6" fill="#ffffff" opacity="0.9" filter="url(#starGlow)">
+      <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2.4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="975" cy="880" r="1.7" fill="#aac8ff" opacity="0.8" filter="url(#starGlow)">
+      <animate attributeName="opacity" values="0.8;0.1;0.8" dur="3.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="490" cy="1090" r="1.5" fill="#7df9ff" opacity="0.85" filter="url(#starGlow)">
+      <animate attributeName="opacity" values="0.85;0.2;0.85" dur="5.1s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="712" cy="1075" r="1.8" fill="#ffffff" opacity="0.9" filter="url(#starGlow)">
+      <animate attributeName="opacity" values="0.9;0.15;0.9" dur="2.9s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- GLOBAL NETWORK LABEL (top)                              -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <text x="600" y="125" text-anchor="middle"
+    font-family="'Courier New', monospace" font-size="26" font-weight="700"
+    letter-spacing="10" fill="#7df9ff" opacity="0.75" filter="url(#textGlow)">
+    GLOBAL NETWORK
+  </text>
+  <!-- Decorative line under label -->
+  <line x1="390" y1="140" x2="810" y2="140" stroke="#7df9ff" stroke-width="1" opacity="0.3"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SOUTH AFRICAN COLOUR RINGS (outermost)                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- Ring 1 - Black -->
+  <circle cx="600" cy="600" r="430" fill="none" stroke="url(#saRing6)" stroke-width="10" opacity="0.9"/>
+  <!-- Ring 2 - Gold/Yellow -->
+  <circle cx="600" cy="600" r="418" fill="none" stroke="url(#saRing5)" stroke-width="8" opacity="0.9" filter="url(#ringGlow)"/>
+  <!-- Ring 3 - Blue -->
+  <circle cx="600" cy="600" r="407" fill="none" stroke="url(#saRing4)" stroke-width="8" opacity="0.9"/>
+  <!-- Ring 4 - White -->
+  <circle cx="600" cy="600" r="397" fill="none" stroke="url(#saRing2)" stroke-width="6" opacity="0.85"/>
+  <!-- Ring 5 - Red -->
+  <circle cx="600" cy="600" r="388" fill="none" stroke="url(#saRing3)" stroke-width="8" opacity="0.9" filter="url(#ringGlow)"/>
+  <!-- Ring 6 - Green -->
+  <circle cx="600" cy="600" r="378" fill="none" stroke="url(#saRing1)" stroke-width="10" opacity="0.95" filter="url(#ringGlow)"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- GLOBAL ORBIT RING (rotating dashed ellipse)             -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <g transform="translate(600,600)">
+    <!-- Orbit plane tilt -->
+    <ellipse cx="0" cy="0" rx="310" ry="88"
+      fill="none" stroke="#7df9ff" stroke-width="2.5"
+      stroke-dasharray="18 10" opacity="0.55" filter="url(#ringGlow)">
+      <animateTransform attributeName="transform" type="rotate"
+        from="0" to="360" dur="12s" repeatCount="indefinite"/>
+    </ellipse>
+    <!-- Second orbit ring tilted differently -->
+    <ellipse cx="0" cy="0" rx="270" ry="70"
+      fill="none" stroke="#00c8ff" stroke-width="1.5"
+      stroke-dasharray="10 14" opacity="0.38">
+      <animateTransform attributeName="transform" type="rotate"
+        from="360" to="0" dur="18s" repeatCount="indefinite"/>
+    </ellipse>
+    <!-- Orbit satellite dot -->
+    <circle cx="310" cy="0" r="6" fill="#7df9ff" opacity="0.9" filter="url(#starGlow)">
+      <animateTransform attributeName="transform" type="rotate"
+        from="0" to="360" dur="12s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Second satellite -->
+    <circle cx="-270" cy="0" r="4" fill="#ffb612" opacity="0.85" filter="url(#starGlow)">
+      <animateTransform attributeName="transform" type="rotate"
+        from="180" to="540" dur="18s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- INNER NEON RING                                         -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <circle cx="600" cy="600" r="248" fill="none" stroke="#7df9ff" stroke-width="2" opacity="0.3" filter="url(#ringGlow)"/>
+  <circle cx="600" cy="600" r="235" fill="none" stroke="#0066ff" stroke-width="1" opacity="0.25"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- CORE GLOW AURA                                          -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <circle cx="600" cy="600" r="210" fill="url(#coreGrad)" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.5;0.8" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="600" cy="600" r="160" fill="none" stroke="#1affee" stroke-width="1.5" opacity="0.2" filter="url(#coreGlow)"/>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAURUS CONSTELLATION (star pattern)                     -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <g transform="translate(600,580)" filter="url(#neonGlow)">
+    <!-- Constellation star nodes -->
+    <circle cx="-105" cy="10" r="7" fill="#ffffff" opacity="0.95"/>
+    <circle cx="-52" cy="-55" r="6" fill="#aac8ff" opacity="0.9"/>
+    <circle cx="0" cy="-30" r="9" fill="#ffffff" opacity="1"/>
+    <circle cx="55" cy="-65" r="6" fill="#aac8ff" opacity="0.9"/>
+    <circle cx="108" cy="-15" r="7" fill="#ffffff" opacity="0.95"/>
+    <!-- Horn tips -->
+    <circle cx="-65" cy="-125" r="5" fill="#7df9ff" opacity="0.85"/>
+    <circle cx="65" cy="-125" r="5" fill="#7df9ff" opacity="0.85"/>
+    <!-- Bottom anchor -->
+    <circle cx="0" cy="60" r="8" fill="#ffb612" opacity="0.9"/>
+
+    <!-- Constellation connecting lines -->
+    <line x1="-105" y1="10" x2="-52" y2="-55" stroke="#7df9ff" stroke-width="1.5" opacity="0.7"/>
+    <line x1="-52" y1="-55" x2="0" y2="-30" stroke="#7df9ff" stroke-width="1.5" opacity="0.7"/>
+    <line x1="0" y1="-30" x2="55" y2="-65" stroke="#7df9ff" stroke-width="1.5" opacity="0.7"/>
+    <line x1="55" y1="-65" x2="108" y2="-15" stroke="#7df9ff" stroke-width="1.5" opacity="0.7"/>
+    <!-- Horn lines -->
+    <line x1="-52" y1="-55" x2="-65" y2="-125" stroke="#7df9ff" stroke-width="1.2" opacity="0.55" stroke-dasharray="4 3"/>
+    <line x1="55" y1="-65" x2="65" y2="-125" stroke="#7df9ff" stroke-width="1.2" opacity="0.55" stroke-dasharray="4 3"/>
+    <!-- Anchor line down -->
+    <line x1="0" y1="-30" x2="0" y2="60" stroke="#ffb612" stroke-width="1.5" opacity="0.5"/>
+    <!-- Outer lines -->
+    <line x1="-105" y1="10" x2="0" y2="60" stroke="#7df9ff" stroke-width="1" opacity="0.35"/>
+    <line x1="108" y1="-15" x2="0" y2="60" stroke="#7df9ff" stroke-width="1" opacity="0.35"/>
+
+    <!-- Twinkling on key stars -->
+    <circle cx="0" cy="-30" r="9" fill="#ffffff" opacity="0">
+      <animate attributeName="opacity" values="0;0.6;0" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="9;14;9" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="0" cy="60" r="8" fill="#ffb612" opacity="0">
+      <animate attributeName="opacity" values="0;0.5;0" dur="4s" begin="1.5s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="8;13;8" dur="4s" begin="1.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAURUS HORNS (bold neon)                                -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <g filter="url(#hornGlow)">
+    <!-- Left horn -->
+    <path d="M 520 545 Q 450 430 390 370 Q 350 328 330 280"
+      fill="none" stroke="url(#hornGrad)" stroke-width="22"
+      stroke-linecap="round" opacity="0.92"/>
+    <!-- Right horn -->
+    <path d="M 680 545 Q 750 430 810 370 Q 850 328 870 280"
+      fill="none" stroke="url(#hornGrad)" stroke-width="22"
+      stroke-linecap="round" opacity="0.92"/>
+    <!-- Horn tips glow dots -->
+    <circle cx="330" cy="280" r="12" fill="#ff8800" opacity="0.7" filter="url(#starGlow)"/>
+    <circle cx="870" cy="280" r="12" fill="#ff8800" opacity="0.7" filter="url(#starGlow)"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAURUS BADGE / SIGNAGE                                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- Badge outer frame -->
+  <rect x="330" y="738" width="540" height="118" rx="28"
+    fill="#050a1a" stroke="#7df9ff" stroke-width="3" opacity="0.97"/>
+  <!-- Badge inner accent line -->
+  <rect x="338" y="746" width="524" height="102" rx="22"
+    fill="none" stroke="#0044aa" stroke-width="1.5" opacity="0.5"/>
+  <!-- Corner neon accents -->
+  <rect x="330" y="738" width="28" height="5" rx="2" fill="#7df9ff" opacity="0.9"/>
+  <rect x="330" y="738" width="5" height="28" rx="2" fill="#7df9ff" opacity="0.9"/>
+  <rect x="842" y="738" width="28" height="5" rx="2" fill="#7df9ff" opacity="0.9"/>
+  <rect x="865" y="738" width="5" height="28" rx="2" fill="#7df9ff" opacity="0.9"/>
+  <rect x="330" y="851" width="28" height="5" rx="2" fill="#7df9ff" opacity="0.9"/>
+  <rect x="330" y="828" width="5" height="28" rx="2" fill="#7df9ff" opacity="0.9"/>
+  <rect x="842" y="851" width="28" height="5" rx="2" fill="#7df9ff" opacity="0.9"/>
+  <rect x="865" y="828" width="5" height="28" rx="2" fill="#7df9ff" opacity="0.9"/>
+
+  <!-- TAURUS text -->
+  <text x="600" y="821" text-anchor="middle"
+    font-family="'Arial Black', 'Impact', sans-serif" font-size="82" font-weight="900"
+    letter-spacing="16" fill="url(#taurusTextGrad)" filter="url(#textGlow)">TAURUS</text>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- PROUDLY SOUTH AFRICAN TAGLINE                           -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- Tagline bar -->
+  <rect x="340" y="888" width="520" height="46" rx="14"
+    fill="#07111f" stroke="#ffffff" stroke-width="1" opacity="0.7"/>
+
+  <!-- SA flag colour micro-stripe at bottom of tagline bar -->
+  <rect x="340" y="926" width="87" height="8" rx="0" fill="#007a4d"/>
+  <rect x="427" y="926" width="86" height="8" rx="0" fill="#000000"/>
+  <rect x="513" y="926" width="87" height="8" rx="0" fill="#d4224e"/>
+  <rect x="600" y="926" width="86" height="8" rx="0" fill="#002395"/>
+  <rect x="686" y="926" width="87" height="8" rx="0" fill="#ffffff"/>
+  <rect x="773" y="926" width="87" height="8" rx="0" fill="#ffb612"/>
+  <!-- Round the far ends -->
+  <rect x="340" y="926" width="10" height="8" rx="4" fill="#007a4d"/>
+  <rect x="850" y="926" width="10" height="8" rx="4" fill="#ffb612"/>
+
+  <text x="600" y="916" text-anchor="middle"
+    font-family="'Courier New', monospace" font-size="19" font-weight="700"
+    letter-spacing="6" fill="url(#taglineGrad)" filter="url(#textGlow)">PROUDLY SOUTH AFRICAN</text>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- DECORATIVE TICK MARKS on outer ring                     -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <g opacity="0.4" stroke="#7df9ff" stroke-width="1.5">
+    <!-- Cardinal points -->
+    <line x1="600" y1="162" x2="600" y2="178"/>
+    <line x1="600" y1="1022" x2="600" y2="1038"/>
+    <line x1="162" y1="600" x2="178" y2="600"/>
+    <line x1="1022" y1="600" x2="1038" y2="600"/>
+    <!-- 45 degree marks -->
+    <line x1="295" y1="295" x2="306" y2="306"/>
+    <line x1="905" y1="295" x2="894" y2="306"/>
+    <line x1="295" y1="905" x2="306" y2="894"/>
+    <line x1="905" y1="905" x2="894" y2="894"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TOP ACCENT - small orbit node indicator                 -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <circle cx="600" cy="170" r="8" fill="#7df9ff" opacity="0.7" filter="url(#starGlow)">
+    <animate attributeName="opacity" values="0.7;0.2;0.7" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <line x1="600" y1="178" x2="600" y2="210" stroke="#7df9ff" stroke-width="1.5" opacity="0.25" stroke-dasharray="4 4"/>
+
+</svg>

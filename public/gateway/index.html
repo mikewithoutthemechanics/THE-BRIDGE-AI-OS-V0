@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Bridge AI OS — Sovereign Web3 Entry Protocol. Wallet, chain, contract, owner, gas, block, SIWE-style auth.">
+<title>Bridge AI OS Sovereign Gateway</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/bridge-tokens.css">
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<style>
+body {
+  background: #0b0f1a;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 40px;
+  padding-top: 60px;
+  margin: 0;
+}
+.container { max-width: 900px; margin: auto; }
+h1 { color: #00e5ff; margin-bottom: 8px; }
+h2 { color: #00ffd1; font-size: 1.1em; margin-top: 0; }
+.card {
+  border: 2px solid #00e5ff;
+  border-radius: 16px;
+  padding: 25px;
+  margin: 20px 0;
+  background: rgba(0,229,255,0.03);
+}
+button {
+  background: #00e5ff;
+  color: #0b0f1a;
+  border: none;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 8px;
+  margin: 5px;
+}
+button:hover { background: #00ffd1; }
+button.secondary { background: #7b61ff; color: #fff; }
+button.secondary:hover { background: #9b81ff; }
+a { text-decoration: none; color: inherit; }
+.status-good { color: #00ffb2; }
+.status-bad { color: #ff4d4d; }
+.mono { font-family: monospace; word-break: break-all; font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>Bridge AI OS Sovereign Gateway</h1>
+<p style="color:#888;margin-bottom:24px;">Sovereign entry protocol · Chain · Contract · Owner · Gas · Block · SIWE</p>
+
+<div class="card">
+<h2>Wallet</h2>
+<p id="walletStatus">Not Connected</p>
+<button onclick="connectWallet()">Connect</button>
+</div>
+
+<div class="card">
+<h2>Network</h2>
+<p id="networkStatus">Awaiting connection...</p>
+</div>
+
+<div class="card">
+<h2>Live Chain Data</h2>
+<p>Gas Price: <span id="gasPrice">--</span></p>
+<p>Block Height: <span id="blockHeight">--</span></p>
+</div>
+
+<div class="card">
+<h2>BRDG Token</h2>
+<p class="mono"><a href="https://lineascan.build/address/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank" rel="noopener" style="color:#00e5ff;">0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f</a></p>
+<p>Owner: <span class="mono" id="contractOwner">--</span></p>
+<p>Total Supply: <span class="mono" id="totalSupply">--</span></p>
+<p>Treasury Balance: <span class="mono" id="treasuryBal">--</span></p>
+<p id="contractBadge" style="margin-top:12px;"></p>
+<button onclick="copyContract()">Copy BRDG</button>
+<a href="https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank" rel="noopener"><button class="secondary">Lineascan</button></a>
+</div>
+
+<div class="card">
+<h2>Treasury Vault</h2>
+<p class="mono"><a href="https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A" target="_blank" rel="noopener" style="color:#00e5ff;">0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A</a></p>
+<p style="color:#888;font-size:0.9em;">On-chain split: Ops 40% · Liquidity 25% · Reserve 20% · Founders 15%</p>
+</div>
+
+<div class="card">
+<h2>Staking Vault</h2>
+<p class="mono"><a href="https://lineascan.build/address/0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB" target="_blank" rel="noopener" style="color:#00e5ff;">0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB</a></p>
+<p style="color:#888;font-size:0.9em;">Burn-exempt · Reward pool: 500,000 BRDG</p>
+</div>
+
+<div class="card">
+<h2>SyncSwap BRDG/ETH Pool</h2>
+<p class="mono"><a href="https://lineascan.build/address/0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81" target="_blank" rel="noopener" style="color:#00e5ff;">0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81</a></p>
+<p style="color:#888;font-size:0.9em;">Liquidity venue · Linea Mainnet (59144)</p>
+</div>
+
+<div class="card">
+<h2>Signature Login (SIWE)</h2>
+<p id="loginStatus">Not authenticated</p>
+<button onclick="signIn()">Sign Message</button>
+<p style="color:#888;font-size:0.85em;margin-top:12px;">Backend verify → JWT → nonce DB. Token stored for API calls.</p>
+</div>
+
+<div class="card">
+<h2>Join as Agent</h2>
+<p style="color:#888;font-size:0.95em;margin-bottom:6px;">Decentralized platform — Bridge, Supac, Taurus &amp; Wiki. All share Digital Twins.</p>
+<p style="color:#00ffd1;font-size:0.85em;margin-bottom:14px;">Scan to open gateway → connect wallet → join as agent</p>
+<canvas id="qrJoin" width="220" height="220" style="display:block;margin:0 auto 10px;background:#fff;border-radius:8px;padding:8px;"></canvas>
+<p class="mono" id="joinUrl" style="font-size:0.78em;word-break:break-all;color:#63b3ed;">https://bridge-ai-os.com/join.html</p>
+<div style="margin-top:14px;">
+  <a href="https://go.ai-os.co.za/join.html"><button>Open Gateway</button></a>
+  <a href="/agents.html"><button class="secondary">Agents &amp; Twins</button></a>
+  <a href="/docs.html"><button class="secondary">Wiki &amp; Docs</button></a>
+  <a href="/twin.html"><button class="secondary">Digital Twin</button></a>
+</div>
+<p style="color:#666;font-size:0.8em;margin-top:14px;font-style:italic;">Integrated: Bridge AI OS · Supac · Taurus · Wiki — one twin registry, shared state.</p>
+</div>
+
+<div class="card">
+<h2>Actions</h2>
+<a href="/twin.html"><button>Enter Digital Twin</button></a>
+<a href="/marketplace.html"><button class="secondary">Marketplace</button></a>
+<a href="/tokenomics"><button class="secondary">Tokenomics</button></a>
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+const CONFIG = {
+  EXPECTED_CHAIN_ID: 59144,
+  CHAIN_ID_HEX: "0xe708",
+  BRDG_ADDRESS: "0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f",
+  TREASURY_VAULT: "0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A",
+  STAKING_VAULT:  "0x51eaaAAB3Fa6b62811ba8F4bcd674dc6D121A9bB",
+  DEX_POOL:       "0x1873b75Fc9e85ef693B4Bcaa2a1e5c5Cef4c1F81",
+  RPC_URL: "https://rpc.linea.build",
+  AUTH_URL: "/api/siwe/verify",
+  JWT_KEY: "bridge_siwe_jwt",
+  JOIN_URL: "https://bridge-ai-os.com/join.html"
+};
+
+let provider;
+let signer;
+let readProvider = null;
+
+const BRDG_ABI = [
+  "function owner() view returns (address)",
+  "function totalSupply() view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function decimals() view returns (uint8)"
+];
+
+function fmt(n, decimals) {
+  try { return Number(ethers.formatUnits(n, decimals || 18)).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+  catch (_) { return "--"; }
+}
+
+async function loadReadOnlyData() {
+  if (typeof ethers === "undefined" || !readProvider) return;
+  // Live chain data (gas, block) without a wallet
+  try {
+    const feeData = await readProvider.getFeeData();
+    const gasGwei = Number(ethers.formatUnits(feeData.gasPrice || 0n, "gwei")).toFixed(3);
+    document.getElementById("gasPrice").textContent = gasGwei + " Gwei";
+  } catch (_) {}
+  try {
+    const block = await readProvider.getBlockNumber();
+    document.getElementById("blockHeight").textContent = block;
+  } catch (_) {}
+
+  // BRDG on-chain stats
+  try {
+    const brdg = new ethers.Contract(CONFIG.BRDG_ADDRESS, BRDG_ABI, readProvider);
+    const [owner, supply, treasuryBal] = await Promise.all([
+      brdg.owner().catch(() => null),
+      brdg.totalSupply().catch(() => 0n),
+      brdg.balanceOf(CONFIG.TREASURY_VAULT).catch(() => 0n)
+    ]);
+    if (owner) document.getElementById("contractOwner").textContent = owner;
+    document.getElementById("totalSupply").textContent = fmt(supply) + " BRDG";
+    document.getElementById("treasuryBal").textContent = fmt(treasuryBal) + " BRDG";
+    document.getElementById("contractBadge").innerHTML =
+      "<span class='status-good'>Verified On-Chain · Linea Mainnet</span>";
+  } catch (e) {
+    document.getElementById("contractBadge").innerHTML =
+      "<span class='status-bad'>Chain read failed</span>";
+  }
+
+  // Refresh block height every 10s
+  setInterval(async () => {
+    try {
+      const b = await readProvider.getBlockNumber();
+      document.getElementById("blockHeight").textContent = b;
+    } catch (_) {}
+  }, 10000);
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function ensureEthers() {
+  if (typeof ethers !== 'undefined') return true;
+  const candidates = [
+    'https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js',
+    'https://unpkg.com/ethers@6.13.4/dist/ethers.umd.min.js'
+  ];
+  for (const src of candidates) {
+    try {
+      await loadScript(src);
+      if (typeof ethers !== 'undefined') return true;
+    } catch (_) {}
+  }
+  return false;
+}
+
+// QR code → go.ai-os.co.za/join.html
+const joinUrl = CONFIG.JOIN_URL;
+document.getElementById("joinUrl").textContent = joinUrl;
+if (typeof QRCode !== 'undefined') {
+  QRCode.toCanvas(document.getElementById("qrJoin"), joinUrl, { width: 220, margin: 1, color: { dark: "#0b0f1a", light: "#ffffff" } }, function(err) { if (err) console.warn('QR render:', err); });
+} else {
+  const ctx = document.getElementById("qrJoin").getContext('2d');
+  ctx.fillStyle = '#111';
+  ctx.fillText('QR', 100, 110);
+}
+
+async function connectWallet() {
+  if (typeof ethers === "undefined") {
+    document.getElementById("walletStatus").innerHTML = "<span class='status-bad'>ethers.js unavailable. Refresh and try again.</span>";
+    return;
+  }
+  if (!window.ethereum) {
+    document.getElementById("walletStatus").innerHTML = "<span class='status-bad'>Web3 wallet not detected.</span>";
+    return;
+  }
+  try {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = await provider.getSigner();
+    const address = await signer.getAddress();
+    document.getElementById("walletStatus").innerHTML =
+      "<span class='status-good'>Connected:</span> <span class='mono'>" + address + "</span>";
+    await enforceNetwork();
+    await loadChainData();
+  } catch (e) {
+    document.getElementById("walletStatus").innerHTML =
+      "<span class='status-bad'>" + (e.message || "Connection failed") + "</span>";
+  }
+}
+
+async function enforceNetwork() {
+  const network = await provider.getNetwork();
+  if (Number(network.chainId) !== CONFIG.EXPECTED_CHAIN_ID) {
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: CONFIG.CHAIN_ID_HEX }]
+      });
+      document.getElementById("networkStatus").innerHTML =
+        "<span class='status-good'>Switched to Linea Mainnet</span>";
+    } catch (err) {
+      if (err.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: CONFIG.CHAIN_ID_HEX,
+              chainName: "Linea Mainnet",
+              rpcUrls: [CONFIG.RPC_URL]
+            }]
+          });
+          document.getElementById("networkStatus").innerHTML =
+            "<span class='status-good'>Linea Mainnet Added & Connected</span>";
+        } catch (_) {
+          document.getElementById("networkStatus").innerHTML =
+            "<span class='status-bad'>Please add Linea Mainnet manually</span>";
+        }
+      } else {
+        document.getElementById("networkStatus").innerHTML =
+          "<span class='status-bad'>Please switch to Linea Mainnet</span>";
+      }
+      return;
+    }
+  } else {
+    document.getElementById("networkStatus").innerHTML =
+      "<span class='status-good'>Linea Mainnet Connected</span>";
+  }
+}
+
+async function loadChainData() {
+  if (typeof ethers === "undefined" || !provider) return;
+  try {
+    const feeData = await provider.getFeeData();
+    const gasGwei = ethers.formatUnits(feeData.gasPrice || 0n, "gwei");
+    document.getElementById("gasPrice").textContent = gasGwei + " Gwei";
+  } catch (_) {
+    document.getElementById("gasPrice").textContent = "--";
+  }
+  try {
+    const block = await provider.getBlockNumber();
+    document.getElementById("blockHeight").textContent = block;
+  } catch (_) {
+    document.getElementById("blockHeight").textContent = "--";
+  }
+  setInterval(async () => {
+    try {
+      const blockNow = await provider.getBlockNumber();
+      document.getElementById("blockHeight").textContent = blockNow;
+    } catch (_) {}
+  }, 10000);
+}
+
+function copyContract() {
+  navigator.clipboard.writeText(CONFIG.BRDG_ADDRESS);
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = "Copied";
+  setTimeout(() => { btn.textContent = orig; }, 1500);
+}
+
+// Friendly copy for edge-enforced error statuses (auto-kill.js returns
+// JSON 403 "banned" / 429 "rate_limited"; CDNs and upstream proxies may
+// surface 5xx without a JSON body). Returns null when the status is fine
+// or should be handled by the caller's normal error path.
+function friendlyErrorForStatus(status) {
+  if (status === 403) {
+    return "Access blocked from your IP. If this looks wrong, contact support@bridge-ai-os.com.";
+  }
+  if (status === 429) {
+    return "Too many requests — rate limit hit. Wait a minute and try again.";
+  }
+  if (status >= 500) {
+    return "Server error. Please retry in a moment.";
+  }
+  return null;
+}
+
+// Safely parse a Response as JSON, falling back to { } on non-JSON payloads
+// (e.g. the plain-text bodies auto-kill and some proxies return).
+async function safeJson(resp) {
+  try { return await resp.clone().json(); } catch (_) { return {}; }
+}
+
+async function signIn() {
+  if (typeof ethers === "undefined") {
+    document.getElementById("loginStatus").innerHTML =
+      "<span class='status-bad'>ethers.js unavailable.</span>";
+    return;
+  }
+  if (!signer) {
+    document.getElementById("loginStatus").innerHTML =
+      "<span class='status-bad'>Connect wallet first.</span>";
+    return;
+  }
+  try {
+    const address = await signer.getAddress();
+    const nonceResp = await fetch('/api/siwe/nonce');
+    const friendlyNonceErr = friendlyErrorForStatus(nonceResp.status);
+    if (friendlyNonceErr) {
+      document.getElementById("loginStatus").innerHTML =
+        "<span class='status-bad'>" + friendlyNonceErr + "</span>";
+      return;
+    }
+    const nonceData = await safeJson(nonceResp);
+    if (!nonceResp.ok || !nonceData.ok || !nonceData.token) {
+      throw new Error((nonceData && (nonceData.error || nonceData.message)) || 'Failed to fetch nonce');
+    }
+    const nonceToken = nonceData.token;
+    let nonceValue = nonceData.nonce || '';
+    if (!nonceValue) {
+      try {
+        const decoded = atob(nonceToken.replace(/-/g, '+').replace(/_/g, '/'));
+        nonceValue = decoded.split(':')[0] || '';
+      } catch (_) {}
+    }
+    const issuedAt = new Date().toISOString();
+    const message = `
+Bridge AI OS Login
+Domain: ${window.location.host}
+Address: ${address}
+URI: https://${window.location.host}
+Version: 1
+Chain ID: ${CONFIG.EXPECTED_CHAIN_ID}
+Nonce: ${nonceValue || Date.now()}
+Issued At: ${issuedAt}
+`;
+    const signature = await signer.signMessage(message);
+    const res = await fetch(CONFIG.AUTH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address, message, signature, nonce_token: nonceToken })
+    });
+    const friendlyAuthErr = friendlyErrorForStatus(res.status);
+    if (friendlyAuthErr) {
+      document.getElementById("loginStatus").innerHTML =
+        "<span class='status-bad'>" + friendlyAuthErr + "</span>";
+      return;
+    }
+    const data = await safeJson(res);
+    if (!res.ok) {
+      let err = data.detail || data.error || "Auth failed";
+      if (Array.isArray(err)) err = err.map(e => e.msg || e).join("; ");
+      if (typeof err !== "string") err = JSON.stringify(err);
+      const errEl = document.getElementById("loginStatus");
+      const span = document.createElement("span");
+      span.className = "status-bad";
+      span.textContent = err;
+      errEl.textContent = "";
+      errEl.appendChild(span);
+      return;
+    }
+    const token = data.data?.token || data.token;
+    if (token) {
+      localStorage.setItem(CONFIG.JWT_KEY, token);
+      document.getElementById("loginStatus").innerHTML =
+        "<span class='status-good'>Authenticated. JWT stored.</span>";
+    } else {
+      document.getElementById("loginStatus").innerHTML =
+        "<span class='status-bad'>No token in response</span>";
+    }
+  } catch (e) {
+    const errEl = document.getElementById("loginStatus");
+    const span = document.createElement("span");
+    span.className = "status-bad";
+    span.textContent = e.message || "Sign failed";
+    errEl.textContent = "";
+    errEl.appendChild(span);
+  }
+}
+
+if (window.ethereum) {
+  window.ethereum.on("chainChanged", () => location.reload());
+  window.ethereum.on("accountsChanged", () => location.reload());
+}
+
+(async function initGateway() {
+  const ok = await ensureEthers();
+  if (!ok) {
+    document.getElementById("walletStatus").innerHTML =
+      "<span class='status-bad'>ethers is not defined (library failed to load)</span>";
+    document.getElementById("networkStatus").innerHTML =
+      "<span class='status-bad'>Could not initialize Web3 library</span>";
+    return;
+  }
+  readProvider = new ethers.JsonRpcProvider(CONFIG.RPC_URL, { name: "linea", chainId: CONFIG.EXPECTED_CHAIN_ID });
+  await loadReadOnlyData();
+})();
+</script>
+<script src="/bridge-nav.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Bridge SVG Skill Engine — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/svg-engine">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/svg-engine">
+<meta property="og:title" content="Bridge SVG Skill Engine">
+<meta property="og:description" content="Bridge SVG Skill Engine — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bridge SVG Skill Engine">
+<meta name="twitter:description" content="Bridge SVG Skill Engine — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Bridge SVG Skill Engine</title>
+<style>
+  :root {
+    --bg:     #050a0f;
+    --bg2:    #0a0e17;
+    --bg3:    #0d1424;
+    --border: #1a2540;
+    --cyan:   #63ffda;
+    --purple: #a855f7;
+    --gold:   #f59e0b;
+    --green:  #22c55e;
+    --red:    #ef4444;
+    --dim:    #64748b;
+    --text:   #cbd5e1;
+    --font:   'JetBrains Mono','Fira Code',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:12px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+  /* TOPBAR */
+  #topbar{display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;height:42px}
+  .logo{color:var(--cyan);font-size:13px;font-weight:700;letter-spacing:2px}
+  .logo span{color:var(--gold)}
+  #topbar .spacer{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:99px;border:1px solid var(--border);font-size:9px;color:var(--dim)}
+  .pill .dot{width:5px;height:5px;border-radius:50%;background:var(--dim)}
+  .pill.ok .dot{background:var(--green)}.pill.ok{color:var(--green);border-color:#1a3a2a}
+  .tbar-stat{font-size:9px;color:var(--dim)}
+
+  /* TOOLBAR */
+  #toolbar{display:flex;align-items:center;gap:6px;padding:5px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+  .tbtn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:3px 10px;border-radius:4px;cursor:pointer;font-family:var(--font);font-size:10px;letter-spacing:1px;transition:border-color .12s,color .12s}
+  .tbtn:hover{border-color:var(--cyan);color:var(--cyan)}
+  .tbtn.active{background:#0a1f1a;border-color:var(--cyan);color:var(--cyan)}
+  .tbtn.exec{border-color:var(--green);color:var(--green);background:#0a1f12}
+  .tbtn.exec:hover{background:#0d2a18}
+  .tsep{width:1px;height:20px;background:var(--border)}
+  #search-inp{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:3px 9px;border-radius:4px;font-family:var(--font);font-size:10px;width:180px;outline:none}
+  #search-inp:focus{border-color:var(--cyan)}
+  #tele-bar{color:var(--dim);font-size:9px;margin-left:auto}
+
+  /* MAIN LAYOUT */
+  #layout{display:flex;flex:1;overflow:hidden}
+
+  /* GRAPH CANVAS */
+  #graph-wrap{flex:1;position:relative;overflow:hidden;cursor:grab}
+  #graph-wrap.grabbing{cursor:grabbing}
+  #graph-svg{width:100%;height:100%;display:block}
+
+  /* DETAIL PANEL */
+  #detail{width:280px;flex-shrink:0;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:transform .2s}
+  #detail.hidden{transform:translateX(100%)}
+  #detail-hdr{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  #detail-hdr .title{font-size:10px;letter-spacing:1px;color:var(--dim)}
+  #detail-close{background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;padding:0 4px}
+  #detail-body{flex:1;overflow-y:auto;padding:12px}
+  .dfield{margin-bottom:10px}
+  .dlbl{font-size:8px;letter-spacing:2px;color:var(--dim);margin-bottom:3px}
+  .dval{color:var(--text);font-size:11px;line-height:1.5}
+  .dval.id{color:var(--cyan)}
+  .dtags{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+  .dtag{font-size:8px;padding:1px 5px;border-radius:3px;background:#1a1040;color:var(--purple)}
+  .dio{display:flex;gap:4px;flex-wrap:wrap}
+  .dchip{font-size:8px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);color:var(--dim)}
+  .dchip.in{border-color:#0d3a1e;color:var(--green)}
+  .dchip.out{border-color:#1a1040;color:var(--purple)}
+  #exec-btn{width:100%;margin-top:8px;background:#0a1f12;border:1px solid var(--green);color:var(--green);padding:7px;border-radius:4px;cursor:pointer;font-family:var(--font);font-size:10px;letter-spacing:1px;transition:background .12s}
+  #exec-btn:hover{background:#0d2a18}
+  #exec-result{margin-top:8px;font-size:9px;color:var(--dim);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px;word-break:break-all;white-space:pre-wrap;display:none}
+  #exec-result.ok{border-color:var(--green);color:var(--green)}
+  #exec-result.err{border-color:var(--red);color:var(--red)}
+  #detail-tele{padding:8px 12px;border-top:1px solid var(--border);font-size:9px}
+  .tele-row{display:flex;justify-content:space-between;padding:2px 0}
+  .tele-k{color:var(--dim)}.tele-v{color:var(--cyan)}
+
+  /* HUMAN READABLE PANEL */
+  #human-panel{position:absolute;bottom:10px;left:10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;max-width:320px;font-size:10px;display:none;z-index:10}
+  #human-panel h4{color:var(--cyan);font-size:12px;margin-bottom:6px}
+  #human-panel .hfield{margin-bottom:5px}
+  #human-panel .hk{color:var(--dim);font-size:8px;letter-spacing:1px}
+  #human-panel .hv{color:var(--text);margin-top:2px}
+  #human-panel .hio{color:var(--dim);font-size:9px}
+  #human-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px}
+
+  /* TOOLTIP */
+  #tooltip{position:absolute;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:5px 9px;font-size:9px;color:var(--text);pointer-events:none;display:none;z-index:20;max-width:200px;white-space:nowrap}
+
+  /* MOBILE BOTTOM PANEL */
+  @media(max-width:768px){
+    #detail{position:fixed;right:0;top:42px;bottom:0;z-index:50;width:100%;max-width:340px}
+    #detail.hidden{transform:translateX(100%)}
+    #toolbar{overflow-x:auto;flex-wrap:nowrap}
+    #tele-bar{display:none}
+    #search-inp{width:120px}
+    .tbtn{white-space:nowrap}
+  }
+
+  ::-webkit-scrollbar{width:4px}.:-webkit-scrollbar-track{background:transparent}.:-webkit-scrollbar-thumb{background:var(--border)}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="logo">BRIDGE<span>OS</span> · SVG ENGINE</div>
+  <div class="pill ok" id="p-eng"><div class="dot"></div>ENGINE</div>
+  <div class="pill" id="p-sk"><div class="dot"></div>SKILLS</div>
+  <div class="spacer"></div>
+  <div class="tbar-stat" id="tbar-info">Loading…</div>
+</div>
+
+<div id="toolbar">
+  <button class="tbtn active" id="btn-graph" onclick="setMode('graph')">⬡ GRAPH</button>
+  <button class="tbtn" id="btn-list" onclick="setMode('list')">☰ LIST</button>
+  <div class="tsep"></div>
+  <button class="tbtn" id="btn-human" onclick="toggleHuman()">◉ HUMAN MODE</button>
+  <button class="tbtn exec" id="btn-exec-sel" onclick="execSelected()" style="display:none">▶ EXECUTE</button>
+  <div class="tsep"></div>
+  <input id="search-inp" placeholder="filter skills…" oninput="filterGraph(this.value)">
+  <div class="tsep"></div>
+  <button class="tbtn" onclick="resetView()">⟳ RESET</button>
+  <a class="tbtn" href="/aoe-dashboard" style="text-decoration:none">← DASHBOARD</a>
+  <div id="tele-bar">Loading telemetry…</div>
+</div>
+
+<div id="layout">
+  <!-- GRAPH CANVAS -->
+  <div id="graph-wrap">
+    <svg id="graph-svg" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow"><feGaussianBlur stdDeviation="3" result="g"/>
+          <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glow-sm"><feGaussianBlur stdDeviation="1.5" result="g"/>
+          <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <g id="graph-root"></g>
+    </svg>
+    <!-- Human readable overlay -->
+    <div id="human-panel">
+      <button id="human-close" onclick="closeHuman()">✕</button>
+      <h4 id="hp-name">—</h4>
+      <div class="hfield"><div class="hk">SKILL ID</div><div class="hv" id="hp-id">—</div></div>
+      <div class="hfield"><div class="hk">DESCRIPTION</div><div class="hv" id="hp-desc">—</div></div>
+      <div class="hfield"><div class="hk">INPUTS</div><div class="hio" id="hp-inputs">—</div></div>
+      <div class="hfield"><div class="hk">OUTPUTS</div><div class="hio" id="hp-outputs">—</div></div>
+      <div class="hfield"><div class="hk">VERSION</div><div class="hv" id="hp-ver">—</div></div>
+    </div>
+    <div id="tooltip"></div>
+  </div>
+
+  <!-- DETAIL PANEL (right sidebar) -->
+  <div id="detail" class="hidden">
+    <div id="detail-hdr">
+      <span class="title" id="detail-title">SELECT A SKILL</span>
+      <button id="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div id="detail-body">
+      <div class="dfield"><div class="dlbl">SKILL ID</div><div class="dval id" id="d-id">—</div></div>
+      <div class="dfield"><div class="dlbl">NAME</div><div class="dval" id="d-name">—</div></div>
+      <div class="dfield"><div class="dlbl">DESCRIPTION</div><div class="dval" id="d-desc">—</div></div>
+      <div class="dfield"><div class="dlbl">TAGS</div><div class="dval dtags" id="d-tags"></div></div>
+      <div class="dfield"><div class="dlbl">INPUTS</div><div class="dval dio" id="d-inputs"></div></div>
+      <div class="dfield"><div class="dlbl">OUTPUTS</div><div class="dval dio" id="d-outputs"></div></div>
+      <div class="dfield"><div class="dlbl">VERSION</div><div class="dval" id="d-ver">—</div></div>
+      <button id="exec-btn" onclick="execSelected()">▶ EXECUTE SKILL</button>
+      <div id="exec-result"></div>
+    </div>
+    <div id="detail-tele">
+      <div class="tele-row"><span class="tele-k">p50</span><span class="tele-v" id="t-p50">—</span></div>
+      <div class="tele-row"><span class="tele-k">p95</span><span class="tele-v" id="t-p95">—</span></div>
+      <div class="tele-row"><span class="tele-k">executions</span><span class="tele-v" id="t-exec">—</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────────
+let graphData = { nodes: [], edges: [] };
+let selectedNode = null;
+let _mode = 'graph';
+let _humanOn = false;
+let _filter = '';
+// Pan/zoom state
+let viewX = 0, viewY = 0, viewScale = 1;
+let isPanning = false, panStart = { x: 0, y: 0 };
+let execCount = {};
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+async function boot() {
+  await Promise.all([loadGraph(), loadTelemetry()]);
+  setInterval(loadTelemetry, 5000);
+}
+
+async function loadGraph() {
+  try {
+    const data = await fetch('/api/svg/graph.json').then(r => r.json());
+    if (!data || data.ok === false) {
+      throw new Error((data && data.error) || 'graph unavailable');
+    }
+    graphData = {
+      nodes: Array.isArray(data.nodes) ? data.nodes : [],
+      edges: Array.isArray(data.edges) ? data.edges : [],
+      canvas: data.canvas || { width: 900, height: 560 },
+    };
+    renderGraph();
+    const sk = graphData.nodes.length;
+    document.getElementById('p-sk').className = 'pill ok';
+    document.getElementById('p-sk').innerHTML = '<div class="dot"></div>' + sk + ' SKILLS';
+    document.getElementById('p-eng').className = 'pill ok';
+    document.getElementById('tbar-info').textContent = sk + ' skills · ' + graphData.edges.length + ' connections · click=inspect · dblclick=execute';
+  } catch (e) {
+    document.getElementById('tbar-info').textContent = 'Engine offline: ' + e.message;
+  }
+}
+
+async function loadTelemetry() {
+  try {
+    const t = await fetch('/api/svg/telemetry').then(r => r.json());
+    document.getElementById('t-p50').textContent = (t.latency_p50_ms || 0) + 'ms';
+    document.getElementById('t-p95').textContent = (t.latency_p95_ms || 0) + 'ms';
+    document.getElementById('t-exec').textContent = t.total_executions || 0;
+    document.getElementById('tele-bar').textContent =
+      'skills ' + (t.skills_loaded||0) + ' · p50 ' + (t.latency_p50_ms||0) + 'ms · execs ' + (t.total_executions||0);
+  } catch (_) {}
+}
+
+// ── GRAPH RENDER ─────────────────────────────────────────────────────────────
+function renderGraph() {
+  const root = document.getElementById('graph-root');
+  root.innerHTML = '';
+  if (!graphData.nodes.length) return;
+
+  const svg = document.getElementById('graph-svg');
+  const vw = svg.clientWidth || 900, vh = svg.clientHeight || 560;
+
+  // Scale canvas coords to viewport
+  const canvas = graphData.canvas || { width: 900, height: 560 };
+  const scaleX = vw / canvas.width, scaleY = vh / canvas.height;
+  const sc = Math.min(scaleX, scaleY) * 0.9;
+  const offX = (vw - canvas.width * sc) / 2;
+  const offY = (vh - canvas.height * sc) / 2;
+  const px = x => offX + x * sc;
+  const py = y => offY + y * sc;
+
+  const visNodes = _filter
+    ? graphData.nodes.filter(n => {
+      const id = String((n && n.id) || '').toLowerCase();
+      const name = String((n && n.name) || '').toLowerCase();
+      return id.includes(_filter) || name.includes(_filter);
+    })
+    : graphData.nodes;
+  const visIds = new Set(visNodes.map(n => n.id));
+
+  // EDGES
+  const edgeG = document.createElementNS(svg.namespaceURI, 'g');
+  edgeG.setAttribute('opacity', _filter ? '0.15' : '1');
+  graphData.edges.forEach(e => {
+    if (!visIds.has(e.from) && !visIds.has(e.to)) return;
+    const a = graphData.nodes.find(n => n.id === e.from);
+    const b = graphData.nodes.find(n => n.id === e.to);
+    if (!a || !b) return;
+    const ax = Number(a.position && a.position.x) || 0;
+    const ay = Number(a.position && a.position.y) || 0;
+    const bx = Number(b.position && b.position.x) || 0;
+    const by = Number(b.position && b.position.y) || 0;
+    const active = visIds.has(e.from) && visIds.has(e.to);
+    const line = document.createElementNS(svg.namespaceURI, 'line');
+    line.setAttribute('x1', px(ax)); line.setAttribute('y1', py(ay));
+    line.setAttribute('x2', px(bx)); line.setAttribute('y2', py(by));
+    line.setAttribute('stroke', active ? 'rgba(99,255,218,0.2)' : 'rgba(26,37,64,0.5)');
+    line.setAttribute('stroke-width', '1');
+    edgeG.appendChild(line);
+  });
+  root.appendChild(edgeG);
+
+  // NODES
+  graphData.nodes.forEach(n => {
+    const active = visIds.has(n.id);
+    const isSelected = selectedNode && selectedNode.id === n.id;
+    const heat = Math.min((execCount[n.id] || 0) / 5, 1);
+    const rad = 16 + Math.floor(heat * 10);
+    const posX = Number(n && n.position && n.position.x) || 0;
+    const posY = Number(n && n.position && n.position.y) || 0;
+    const nodeName = String((n && n.name) || (n && n.id) || 'unnamed');
+    const x = px(posX), y = py(posY);
+
+    const g = document.createElementNS(svg.namespaceURI, 'g');
+    g.style.cursor = 'pointer';
+    g.style.opacity = active ? '1' : '0.25';
+
+    // Pulse ring for selected/executed
+    if (isSelected || heat > 0) {
+      const ring = document.createElementNS(svg.namespaceURI, 'circle');
+      ring.setAttribute('cx', x); ring.setAttribute('cy', y);
+      ring.setAttribute('r', rad + 10);
+      ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', n.color || '#63ffda');
+      ring.setAttribute('stroke-width', '0.8');
+      ring.setAttribute('opacity', isSelected ? '0.6' : '0.3');
+      if (heat > 0) {
+        const anim = document.createElementNS(svg.namespaceURI, 'animateTransform');
+        anim.setAttribute('attributeName', 'r'); anim.setAttribute('from', rad);
+        anim.setAttribute('to', rad + 14); anim.setAttribute('dur', '2s');
+        anim.setAttribute('repeatCount', 'indefinite'); ring.appendChild(anim);
+      }
+      g.appendChild(ring);
+    }
+
+    // Main circle
+    const circle = document.createElementNS(svg.namespaceURI, 'circle');
+    circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', rad);
+    circle.setAttribute('fill', (n.color || '#63ffda') + '15');
+    circle.setAttribute('stroke', n.color || '#63ffda');
+    circle.setAttribute('stroke-width', isSelected ? '2.5' : '1.5');
+    if (isSelected || heat > 0.5) circle.setAttribute('filter', 'url(#glow-sm)');
+    g.appendChild(circle);
+
+    // Center dot
+    const dot = document.createElementNS(svg.namespaceURI, 'circle');
+    dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r', 4);
+    dot.setAttribute('fill', n.color || '#63ffda');
+    g.appendChild(dot);
+
+    // Exec count badge
+    if (execCount[n.id]) {
+      const badge = document.createElementNS(svg.namespaceURI, 'text');
+      badge.setAttribute('x', x + rad - 4); badge.setAttribute('y', y - rad + 8);
+      badge.setAttribute('text-anchor', 'middle'); badge.setAttribute('fill', '#f59e0b');
+      badge.setAttribute('font-family', 'JetBrains Mono,monospace'); badge.setAttribute('font-size', '9');
+      badge.textContent = execCount[n.id] + 'x';
+      g.appendChild(badge);
+    }
+
+    // Label
+    const lbl = document.createElementNS(svg.namespaceURI, 'text');
+    lbl.setAttribute('x', x); lbl.setAttribute('y', y - rad - 6);
+    lbl.setAttribute('text-anchor', 'middle'); lbl.setAttribute('fill', n.color || '#63ffda');
+    lbl.setAttribute('font-family', 'JetBrains Mono,monospace'); lbl.setAttribute('font-size', '9');
+    lbl.textContent = nodeName.length > 18 ? nodeName.slice(0, 16) + '…' : nodeName;
+    g.appendChild(lbl);
+
+    // Events
+    g.addEventListener('click', () => onNodeClick(n));
+    g.addEventListener('dblclick', e => { e.preventDefault(); onNodeDblClick(n); });
+    g.addEventListener('mouseenter', e => showTooltip(e, n));
+    g.addEventListener('mouseleave', hideTooltip);
+    g.addEventListener('touchstart', e => { e.preventDefault(); onNodeClick(n); }, { passive: false });
+
+    root.appendChild(g);
+  });
+
+  applyTransform();
+}
+
+// ── NODE INTERACTION ─────────────────────────────────────────────────────────
+function onNodeClick(n) {
+  selectedNode = n;
+  renderGraph();
+  openDetail(n);
+  if (_humanOn) showHumanPanel(n);
+}
+
+async function onNodeDblClick(n) {
+  selectedNode = n;
+  openDetail(n);
+  await execNode(n);
+}
+
+function openDetail(n) {
+  document.getElementById('detail').classList.remove('hidden');
+  document.getElementById('detail-title').textContent = n.id.toUpperCase();
+  document.getElementById('d-id').textContent = n.id;
+  document.getElementById('d-name').textContent = n.name;
+  document.getElementById('d-desc').textContent = n.description || '—';
+  document.getElementById('d-ver').textContent = n.version || '1.0.0';
+
+  const tags = document.getElementById('d-tags');
+  tags.innerHTML = '';
+  (n.tags || []).forEach(t => { const s = document.createElement('span'); s.className = 'dtag'; s.textContent = t; tags.appendChild(s); });
+
+  const inputs = document.getElementById('d-inputs');
+  inputs.innerHTML = '';
+  (n.inputs || []).forEach(i => { const c = document.createElement('div'); c.className = 'dchip in'; c.textContent = i; inputs.appendChild(c); });
+
+  const outputs = document.getElementById('d-outputs');
+  outputs.innerHTML = '';
+  (n.outputs || []).forEach(o => { const c = document.createElement('div'); c.className = 'dchip out'; c.textContent = o; outputs.appendChild(c); });
+
+  const execRes = document.getElementById('exec-result');
+  execRes.style.display = 'none'; execRes.textContent = '';
+  document.getElementById('btn-exec-sel').style.display = '';
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.add('hidden');
+  selectedNode = null;
+  renderGraph();
+}
+
+async function execSelected() {
+  if (!selectedNode) return;
+  await execNode(selectedNode);
+}
+
+async function execNode(n) {
+  const btn = document.getElementById('exec-btn');
+  const res = document.getElementById('exec-result');
+  if (!document.getElementById('detail').classList.contains('hidden')) {
+    btn.textContent = '⟳ EXECUTING…';
+    btn.disabled = true;
+    res.style.display = 'none';
+  }
+  try {
+    const r = await fetch('/api/execute', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skill: n.id }),
+    });
+    const data = await r.json();
+    execCount[n.id] = (execCount[n.id] || 0) + 1;
+    renderGraph();
+    if (res.style !== undefined) {
+      res.style.display = 'block';
+      res.className = data.ok ? 'ok' : 'err';
+      res.textContent = JSON.stringify(data, null, 2);
+    }
+    if (_humanOn) showHumanPanel(n, data);
+  } catch (e) {
+    if (res.style !== undefined) {
+      res.style.display = 'block'; res.className = 'err';
+      res.textContent = 'Execute failed: ' + e.message;
+    }
+  } finally {
+    btn.textContent = '▶ EXECUTE SKILL'; btn.disabled = false;
+  }
+}
+
+// ── HUMAN READABLE MODE ──────────────────────────────────────────────────────
+function toggleHuman() {
+  _humanOn = !_humanOn;
+  document.getElementById('btn-human').classList.toggle('active', _humanOn);
+  if (!_humanOn) document.getElementById('human-panel').style.display = 'none';
+  else if (selectedNode) showHumanPanel(selectedNode);
+}
+
+function showHumanPanel(n, result) {
+  const p = document.getElementById('human-panel');
+  p.style.display = 'block';
+  document.getElementById('hp-name').textContent = n.name;
+  document.getElementById('hp-id').textContent = n.id;
+  document.getElementById('hp-desc').textContent = n.description || '—';
+  document.getElementById('hp-inputs').textContent = (n.inputs || []).join(' · ') || '—';
+  document.getElementById('hp-outputs').textContent = (n.outputs || []).join(' · ') || '—';
+  document.getElementById('hp-ver').textContent = n.version || '1.0.0';
+  if (result) {
+    const extra = document.createElement('div');
+    extra.className = 'hfield';
+    extra.innerHTML = '<div class="hk">LAST RESULT</div><div class="hv" style="font-size:9px;color:var(--green)">' +
+      JSON.stringify(result.result || result, null, 1) + '</div>';
+    const existing = document.getElementById('human-panel').querySelector('.hresult');
+    if (existing) existing.remove();
+    extra.classList.add('hresult');
+    document.getElementById('human-panel').appendChild(extra);
+  }
+}
+
+function closeHuman() {
+  document.getElementById('human-panel').style.display = 'none';
+  _humanOn = false;
+  document.getElementById('btn-human').classList.remove('active');
+}
+
+// ── TOOLTIP ──────────────────────────────────────────────────────────────────
+function showTooltip(e, n) {
+  const tt = document.getElementById('tooltip');
+  tt.style.display = 'block';
+  tt.textContent = n.id + (execCount[n.id] ? ' · ' + execCount[n.id] + ' execs' : '') +
+    ((n.tags || []).length ? ' · ' + (n.tags || []).slice(0,3).join(',') : '');
+  moveTt(e);
+}
+function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+function moveTt(e) {
+  const tt = document.getElementById('tooltip');
+  const r = document.getElementById('graph-wrap').getBoundingClientRect();
+  tt.style.left = (e.clientX - r.left + 12) + 'px';
+  tt.style.top  = (e.clientY - r.top - 28) + 'px';
+}
+document.addEventListener('mousemove', e => {
+  if (document.getElementById('tooltip').style.display !== 'none') moveTt(e);
+});
+
+// ── PAN / ZOOM ────────────────────────────────────────────────────────────────
+function applyTransform() {
+  document.getElementById('graph-root').setAttribute('transform',
+    'translate(' + viewX + ',' + viewY + ') scale(' + viewScale + ')');
+}
+
+const wrap = document.getElementById('graph-wrap');
+wrap.addEventListener('mousedown', e => {
+  if (e.target.closest('g')) return; // don't pan when clicking nodes
+  isPanning = true; panStart = { x: e.clientX - viewX, y: e.clientY - viewY };
+  wrap.classList.add('grabbing');
+});
+wrap.addEventListener('mousemove', e => {
+  if (!isPanning) return;
+  viewX = e.clientX - panStart.x; viewY = e.clientY - panStart.y;
+  applyTransform();
+});
+wrap.addEventListener('mouseup', () => { isPanning = false; wrap.classList.remove('grabbing'); });
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  viewScale = Math.max(0.3, Math.min(3, viewScale * delta));
+  applyTransform();
+}, { passive: false });
+
+// Touch pan
+let touch0 = null;
+wrap.addEventListener('touchstart', e => { if (e.touches.length === 1) touch0 = { x: e.touches[0].clientX - viewX, y: e.touches[0].clientY - viewY }; }, { passive: true });
+wrap.addEventListener('touchmove', e => {
+  if (e.touches.length === 1 && touch0) {
+    viewX = e.touches[0].clientX - touch0.x;
+    viewY = e.touches[0].clientY - touch0.y;
+    applyTransform();
+  }
+}, { passive: true });
+wrap.addEventListener('touchend', () => { touch0 = null; });
+
+function resetView() { viewX = 0; viewY = 0; viewScale = 1; applyTransform(); }
+
+// ── LIST MODE ────────────────────────────────────────────────────────────────
+function setMode(m) {
+  _mode = m;
+  document.getElementById('btn-graph').classList.toggle('active', m === 'graph');
+  document.getElementById('btn-list').classList.toggle('active', m === 'list');
+  if (m === 'graph') {
+    document.getElementById('graph-wrap').style.display = '';
+    renderGraph();
+  } else {
+    document.getElementById('graph-wrap').style.display = '';
+    renderListMode();
+  }
+}
+
+function renderListMode() {
+  const root = document.getElementById('graph-root');
+  root.innerHTML = '';
+  const svg = document.getElementById('graph-svg');
+  const W = svg.clientWidth || 900;
+  const nodes = graphData.nodes;
+  const cols = Math.floor(W / 200) || 1;
+
+  nodes.forEach((n, i) => {
+    const col = i % cols, row = Math.floor(i / cols);
+    const x = col * 200 + 20, y = row * 100 + 30;
+    const g = document.createElementNS(svg.namespaceURI, 'g');
+    g.style.cursor = 'pointer';
+
+    const rect = document.createElementNS(svg.namespaceURI, 'rect');
+    rect.setAttribute('x', x); rect.setAttribute('y', y);
+    rect.setAttribute('width', 180); rect.setAttribute('height', 80);
+    rect.setAttribute('rx', 6); rect.setAttribute('fill', '#0a0e17');
+    rect.setAttribute('stroke', n.color || '#63ffda'); rect.setAttribute('stroke-width', '1.5');
+    g.appendChild(rect);
+
+    const t1 = document.createElementNS(svg.namespaceURI, 'text');
+    t1.setAttribute('x', x + 10); t1.setAttribute('y', y + 22);
+    t1.setAttribute('fill', n.color || '#63ffda'); t1.setAttribute('font-family', 'JetBrains Mono,monospace'); t1.setAttribute('font-size', '10');
+    t1.textContent = n.name;
+    g.appendChild(t1);
+
+    const t2 = document.createElementNS(svg.namespaceURI, 'text');
+    t2.setAttribute('x', x + 10); t2.setAttribute('y', y + 38);
+    t2.setAttribute('fill', '#64748b'); t2.setAttribute('font-family', 'JetBrains Mono,monospace'); t2.setAttribute('font-size', '8');
+    t2.textContent = n.id;
+    g.appendChild(t2);
+
+    const t3 = document.createElementNS(svg.namespaceURI, 'text');
+    t3.setAttribute('x', x + 10); t3.setAttribute('y', y + 54);
+    t3.setAttribute('fill', '#475569'); t3.setAttribute('font-family', 'JetBrains Mono,monospace'); t3.setAttribute('font-size', '8');
+    t3.textContent = (n.description || '').slice(0, 34) + ((n.description||'').length > 34 ? '…' : '');
+    g.appendChild(t3);
+
+    g.addEventListener('click', () => onNodeClick(n));
+    g.addEventListener('dblclick', e => { e.preventDefault(); onNodeDblClick(n); });
+    root.appendChild(g);
+  });
+
+  document.getElementById('graph-svg').setAttribute('height', (Math.ceil(nodes.length / cols) * 100 + 40) + 'px');
+}
+
+// ── FILTER ───────────────────────────────────────────────────────────────────
+function filterGraph(v) {
+  _filter = v.toLowerCase().trim();
+  if (_mode === 'graph') renderGraph();
+  else renderListMode();
+}
+
+// ── RESPONSIVE RESIZE ────────────────────────────────────────────────────────
+const ro = new ResizeObserver(() => { if (graphData.nodes.length) renderGraph(); });
+ro.observe(document.getElementById('graph-wrap'));
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+boot();
+</script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

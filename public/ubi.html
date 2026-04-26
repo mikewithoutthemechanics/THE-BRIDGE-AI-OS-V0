@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UBI — Universal Basic Income</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-green-400">💚 UBI</a>
+    <div class="flex gap-4">
+      <a href="/platforms.html" class="text-slate-400 hover:text-cyan-400">Platforms</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-green-400 mb-2">Universal Basic Income</h1>
+    <p class="text-slate-400 mb-8">Distribution of platform revenue to token holders</p>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="recipients">156</div>
+        <div class="text-sm text-slate-400">Active Recipients</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400">$5,800</div>
+        <div class="text-sm text-slate-400">Monthly Distribution</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400">$37</div>
+        <div class="text-sm text-slate-400">Per Recipient</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-purple-400">2.3%</div>
+        <div class="text-sm text-slate-400">of Treasury</div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6 mb-6">
+      <h2 class="text-lg font-bold text-green-400 mb-4">How It Works</h2>
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="text-center p-4">
+          <div class="text-2xl mb-2">1️⃣</div>
+          <div class="font-bold">Hold BRDG</div>
+          <div class="text-sm text-slate-400">Own Bridge tokens</div>
+        </div>
+        <div class="text-center p-4">
+          <div class="text-2xl mb-2">2️⃣</div>
+          <div class="font-bold">Claim Monthly</div>
+          <div class="text-sm text-slate-400">Connect wallet</div>
+        </div>
+        <div class="text-center p-4">
+          <div class="text-2xl mb-2">3️⃣</div>
+          <div class="font-bold">Receive UBI</div>
+          <div class="text-sm text-slate-400">USD stablecoin</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-green-400 mb-4">Recent Distributions</h2>
+      <div id="distributions" class="text-slate-500">Loading...</div>
+    </div>
+  </main>
+
+  <script>
+    fetch('/api/ubi/status').then(r => r.json()).then(d => {
+      document.getElementById('recipients').textContent = d.recipients || 156;
+    }).catch(() => {});
+  </script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

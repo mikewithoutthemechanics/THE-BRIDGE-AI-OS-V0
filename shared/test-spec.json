@@ -1,0 +1,34 @@
+{
+  "contract_id": "test-spec",
+  "published_by": "Agent-6A",
+  "published_at": "$TIMESTAMP",
+  "status": "framework",
+  "title": "Test Specification & Framework",
+  "description": "Master test framework for all 43 features + 200+ unit tests + integration tests",
+  "test_categories": [
+    {
+      "name": "Feature Tests",
+      "count": 43,
+      "requirement": "All 43 original features must pass",
+      "framework": "Jest"
+    },
+    {
+      "name": "Unit Tests",
+      "count": 200,
+      "requirement": "Minimum coverage 80%",
+      "framework": "Jest"
+    },
+    {
+      "name": "Integration Tests",
+      "count": "TBD",
+      "requirement": "Cross-service workflows (gateway + dashboard + data + auth)",
+      "framework": "Jest"
+    }
+  ],
+  "continuous_testing": "Tests run as code is committed (not batch at end)",
+  "load_testing": "24/7 soak test starting Day 2, running continuously until Day 8+",
+  "gate_condition": "7 days of clean load test, zero errors, p95 < 500ms",
+  "depends_on": ["gateway-api-spec", "dashboard-manifest"],
+  "used_by": ["all agents"],
+  "update_frequency": "daily as tests added"
+}

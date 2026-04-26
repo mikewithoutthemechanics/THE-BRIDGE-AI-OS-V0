@@ -1,0 +1,112 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    SUPADASH DUAL-LAPTOP QUICK START
+═══════════════════════════════════════════════════════════════════════════════
+
+STEP 1: LAPTOP 1 (Claude Code)
+─────────────────────────────
+cd /c/aoe-unified-final
+git checkout -b feature/supadash-consolidation
+
+# Launches 6 Claude agents (1, 2A, 3A, 4A, 5A, 6A)
+# Port: 9000
+# Token budget: 450,000
+
+
+STEP 2: LAPTOP 2 (Kimi Code)
+─────────────────────────────
+cd /c/aoe-unified-final
+git checkout -b feature/supadash-consolidation
+
+# Launches 7 Specialist agents (1B, 2B, 3B, 4B, 5B, 6B)
+# Port: 9001
+# Models: Kimi, Nemotron, Minimax, Xiaomi
+
+
+STEP 3: MONITOR STATUS
+──────────────────────
+# From Laptop 1 or 2, run:
+curl http://localhost:9000/api/status | jq
+
+# Or watch git updates:
+watch -n 15 'git log --oneline | head -10'
+
+
+TIMELINE
+────────
+Days 1-2:    Port reassignments (L1)
+Days 3-7:    Gateway + Dashboard + Data + Auth (L1 code, L2 verify)
+Days 8-14:   Integration + Load testing (L1 tests, L2 24/7 stress)
+Day 15:      Cutover dry-run (both)
+Day 16:      Production (L1 primary, L2 fallback)
+
+TOTAL: 16 days (vs 25 sequential)
+
+
+KEY FILES
+─────────
+SUPADASH_FEATURE_MATRIX.md          → Master feature tracking
+SUPADASH_CRITICAL_DECISIONS.md      → All approvals logged
+SUPADASH_COMPACT_GUIDE.md           → Full reference
+LOGS/LAPTOP_1.log                   → L1 progress
+LOGS/LAPTOP_2.log                   → L2 progress
+
+
+DAILY STANDUP
+─────────────
+Time: 09:00 UTC
+Duration: 15 min
+Leader: Agent 1 (Opus)
+Attendee: Agent 1B (Kimi)
+
+Each agent: Status + blockers
+Decision: Approvals + next steps
+All update git
+
+
+IF SOMETHING BREAKS
+───────────────────
+1. Check latest git status: git log --oneline
+2. View L2 conflict detection: curl http://localhost:9001/api/conflicts
+3. Check token usage: curl http://localhost:9000/api/status | jq '.token_usage'
+4. Restart agent: docker restart agent-2a (or similar)
+5. Escalate to Laptop 1 Agent 1 (Opus) for decision
+
+
+SUCCESS CRITERIA
+────────────────
+✓ All 120+ endpoints via port 8080
+✓ All 43 features in 4 dashboards
+✓ Zero data loss
+✓ Cutover < 2 hours downtime
+✓ Load test: p95 < 1s
+
+
+COMMANDS
+────────
+# Status
+curl http://localhost:9000/api/status
+
+# View all agents
+curl http://localhost:9000/api/agents | jq
+
+# Pull latest updates
+git pull origin feature/supadash-consolidation
+
+# Check feature preservation
+grep "✓" SUPADASH_FEATURE_MATRIX.md | wc -l
+
+# View critical decisions
+tail -20 SUPADASH_CRITICAL_DECISIONS.md
+
+
+NETWORK SETUP
+─────────────
+Both laptops on same WiFi:
+- Laptop 1: hostname L1
+- Laptop 2: hostname L2
+- Test: ping laptop2 (from L1), ping laptop1 (from L2)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+Ready to start? Open both laptops, run STEP 1 on each, watch git pull updates!
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="description" content="Billing &mdash; Bridge AI OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/billing">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/billing">
+<meta property="og:title" content="Billing &mdash; Bridge AI OS">
+<meta property="og:description" content="Billing &mdash; Bridge AI OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Billing &mdash; Bridge AI OS">
+<meta name="twitter:description" content="Billing &mdash; Bridge AI OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing &mdash; Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{--bg:#050a0f;--surface:#0d1f2d;--surface2:#111d2b;--border:#1a2d40;--accent:#00d4ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,'Segoe UI',sans-serif;min-height:100vh}
+    a{color:inherit;text-decoration:none}
+
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:.9rem 2rem;border-bottom:1px solid var(--border);background:var(--surface)}
+    .logo{font-size:1.3rem;font-weight:800;color:var(--accent);letter-spacing:.2em}
+    .topbar-nav{display:flex;gap:1.5rem;align-items:center;font-size:.82rem}
+    .topbar-nav a{color:var(--dim);transition:color .2s}
+    .topbar-nav a:hover,.topbar-nav a.active{color:var(--text)}
+
+    .page{max-width:1100px;margin:0 auto;padding:2rem 1.5rem}
+
+    .banner{padding:.9rem 1.4rem;border-radius:.5rem;font-size:.85rem;font-weight:600;margin-bottom:1.5rem;display:none;align-items:center;gap:.6rem}
+    .banner.show{display:flex}
+    .banner-success{background:rgba(0,229,123,.1);border:1px solid rgba(0,229,123,.35);color:var(--green)}
+    .banner-error{background:rgba(255,60,90,.1);border:1px solid rgba(255,60,90,.35);color:var(--red)}
+
+    .plan-hero{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.75rem 2rem;margin-bottom:2.5rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+    .plan-hero-icon{width:52px;height:52px;border-radius:.6rem;background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.25);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:var(--accent);flex-shrink:0}
+    .plan-hero-info{flex:1}
+    .plan-hero-label{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.25rem}
+    .plan-hero-name{font-size:1.8rem;font-weight:900;color:var(--accent);letter-spacing:.02em}
+    .plan-hero-desc{font-size:.82rem;color:var(--dim);margin-top:.3rem}
+
+    .section-title{font-size:1rem;font-weight:800;margin-bottom:1.2rem;color:var(--text)}
+
+    .plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.2rem;margin-bottom:3rem}
+
+    .plan-card{background:var(--surface);border:1.5px solid var(--border);border-radius:.75rem;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;position:relative;transition:border-color .2s,box-shadow .2s}
+    .plan-card.current{border-color:var(--accent);box-shadow:0 0 0 1px rgba(0,212,255,.15)}
+    .plan-card.disabled-card{opacity:.55}
+
+    .plan-badge{position:absolute;top:.85rem;right:.85rem;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .5rem;border-radius:2rem}
+    .badge-current{background:rgba(0,212,255,.15);color:var(--accent);border:1px solid rgba(0,212,255,.3)}
+    .badge-downgrade{background:rgba(77,102,120,.12);color:var(--dim);border:1px solid var(--border)}
+
+    .plan-name{font-size:1rem;font-weight:800;color:var(--text)}
+    .plan-price{font-size:1.8rem;font-weight:900;color:var(--accent);line-height:1}
+    .plan-price-suffix{font-size:.8rem;font-weight:400;color:var(--dim)}
+
+    .plan-features{list-style:none;display:flex;flex-direction:column;gap:.45rem;flex:1}
+    .plan-features li{font-size:.78rem;color:var(--dim);display:flex;align-items:flex-start;gap:.4rem;line-height:1.4}
+    .feat-check{color:var(--green);font-weight:700;flex-shrink:0;margin-top:.05rem}
+    .feat-cross{color:var(--dim);flex-shrink:0;margin-top:.05rem}
+
+    .btn{padding:.6rem 1.2rem;border-radius:.4rem;font-size:.8rem;font-weight:700;cursor:pointer;border:none;transition:all .2s;width:100%;text-align:center}
+    .btn-primary{background:var(--accent);color:#050a0f}
+    .btn-primary:hover:not(:disabled){opacity:.88}
+    .btn-disabled-style{background:var(--surface2);color:var(--dim);cursor:not-allowed;border:1px solid var(--border)}
+    .btn-current-style{background:transparent;color:var(--accent);border:1px solid rgba(0,212,255,.3);cursor:default}
+
+    .loading-state{text-align:center;padding:4rem 2rem;color:var(--dim);font-size:.9rem}
+    .spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:1rem}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    @media(max-width:600px){
+      .topbar{padding:.8rem 1rem}
+      .page{padding:1.5rem 1rem}
+      .plan-hero{padding:1.2rem 1.2rem}
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/dashboard" class="logo">BRIDGE.OS</a>
+  <nav class="topbar-nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/projects">Projects</a>
+    <a href="/outputs">Outputs</a>
+    <a href="/billing" class="active">Billing</a>
+    <a href="/profile">Profile</a>
+  </nav>
+</div>
+
+<div class="page">
+
+  <div id="banner-success" class="banner banner-success" role="alert"></div>
+  <div id="banner-error" class="banner banner-error" role="alert"></div>
+
+  <div id="loading-state" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading billing information&hellip;</p>
+  </div>
+
+  <div id="billing-content" style="display:none">
+    <div class="plan-hero">
+      <div class="plan-hero-icon" id="hero-icon"></div>
+      <div class="plan-hero-info">
+        <div class="plan-hero-label">Current Plan</div>
+        <div class="plan-hero-name" id="hero-plan-name"></div>
+        <div class="plan-hero-desc" id="hero-plan-desc"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Choose Your Plan</div>
+    <div class="plans-grid" id="plans-grid"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var PLANS = [
+    {
+      id: 'free',
+      label: 'Free',
+      price: 0,
+      priceText: 'R0',
+      priceSuffix: ' free forever',
+      iconText: 'F',
+      desc: 'Basic access. Upgrade any time.',
+      features: [
+        '2 projects',
+        '10 runs / day',
+        '5 outputs / month',
+        'JSON export only',
+        '1 agent per run',
+      ],
+      naFeatures: [
+        'Integrations',
+        'Advanced export formats',
+      ],
+    },
+    {
+      id: 'starter',
+      label: 'Starter',
+      price: 199,
+      priceText: 'R199',
+      priceSuffix: ' / month',
+      iconText: 'S',
+      desc: 'For individuals getting serious.',
+      features: [
+        '10 projects',
+        '100 runs / day',
+        '50 outputs / month',
+        'JSON, Markdown, Report export',
+        '3 agents per run',
+        'Integrations included',
+      ],
+      naFeatures: [],
+    },
+    {
+      id: 'pro',
+      label: 'Pro',
+      price: 499,
+      priceText: 'R499',
+      priceSuffix: ' / month',
+      iconText: 'P',
+      desc: 'For power users and small teams.',
+      features: [
+        '50 projects',
+        '1 000 runs / day',
+        '500 outputs / month',
+        'All export formats',
+        '10 agents per run',
+        'Integrations included',
+      ],
+      naFeatures: [],
+    },
+    {
+      id: 'admin',
+      label: 'Admin',
+      price: 1499,
+      priceText: 'R1 499',
+      priceSuffix: ' / month',
+      iconText: 'A',
+      desc: 'Unlimited access for power operators.',
+      features: [
+        'Unlimited projects',
+        'Unlimited runs',
+        'Unlimited outputs',
+        'All formats + API / Webhook',
+        'Unlimited agents',
+        'Integrations included',
+      ],
+      naFeatures: [],
+    },
+  ];
+
+  var TIER_RANK = { free: 0, starter: 1, pro: 2, admin: 3, enterprise: 4 };
+
+  function getToken() {
+    try { return localStorage.getItem('bridge_token') || ''; } catch (_) { return ''; }
+  }
+
+  function authHeaders() {
+    var token = getToken();
+    return token ? { 'Authorization': 'Bearer ' + token } : {};
+  }
+
+  function el(tag, cls) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    return e;
+  }
+
+  function txt(str) {
+    return document.createTextNode(str);
+  }
+
+  function showBanners() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      var s = document.getElementById('banner-success');
+      s.classList.add('show');
+      s.appendChild(txt('Payment successful! Your plan has been upgraded.'));
+    }
+    if (params.get('payment') === 'cancelled') {
+      var e = document.getElementById('banner-error');
+      e.classList.add('show');
+      e.appendChild(txt('Payment was cancelled. Your plan was not changed.'));
+    }
+  }
+
+  function renderHero(currentPlan) {
+    var planData = null;
+    for (var i = 0; i < PLANS.length; i++) {
+      if (PLANS[i].id === currentPlan) { planData = PLANS[i]; break; }
+    }
+    if (!planData) planData = PLANS[0];
+
+    document.getElementById('hero-icon').textContent = planData.iconText;
+    document.getElementById('hero-plan-name').textContent = planData.label;
+    document.getElementById('hero-plan-desc').textContent = planData.desc;
+  }
+
+  function buildPlanCard(plan, currentPlan) {
+    var currentRank = TIER_RANK[currentPlan] !== undefined ? TIER_RANK[currentPlan] : 0;
+    var planRank = TIER_RANK[plan.id] !== undefined ? TIER_RANK[plan.id] : 0;
+    var isCurrent = plan.id === currentPlan;
+    var isDowngrade = planRank < currentRank;
+
+    var cardClass = 'plan-card';
+    if (isCurrent) cardClass += ' current';
+    if (isDowngrade && !isCurrent) cardClass += ' disabled-card';
+
+    var card = el('div', cardClass);
+
+    if (isCurrent) {
+      var badge = el('div', 'plan-badge badge-current');
+      badge.appendChild(txt('Current Plan'));
+      card.appendChild(badge);
+    } else if (isDowngrade) {
+      var badge2 = el('div', 'plan-badge badge-downgrade');
+      badge2.appendChild(txt('Downgrade'));
+      card.appendChild(badge2);
+    }
+
+    var nameEl = el('div', 'plan-name');
+    nameEl.appendChild(txt(plan.label));
+    card.appendChild(nameEl);
+
+    var priceEl = el('div', 'plan-price');
+    priceEl.appendChild(txt(plan.priceText));
+    var suffix = el('span', 'plan-price-suffix');
+    suffix.appendChild(txt(plan.priceSuffix));
+    priceEl.appendChild(suffix);
+    card.appendChild(priceEl);
+
+    var ul = el('ul', 'plan-features');
+    plan.features.forEach(function (feat) {
+      var li = el('li', '');
+      var check = el('span', 'feat-check');
+      check.appendChild(txt('\u2713'));
+      li.appendChild(check);
+      li.appendChild(txt(feat));
+      ul.appendChild(li);
+    });
+    if (plan.naFeatures) {
+      plan.naFeatures.forEach(function (feat) {
+        var li = el('li', '');
+        var cross = el('span', 'feat-cross');
+        cross.appendChild(txt('\u2717'));
+        li.appendChild(cross);
+        li.appendChild(txt(feat));
+        ul.appendChild(li);
+      });
+    }
+    card.appendChild(ul);
+
+    var btn = el('button', 'btn');
+    btn.setAttribute('type', 'button');
+
+    if (isCurrent) {
+      btn.className += ' btn-current-style';
+      btn.appendChild(txt('Current Plan'));
+      btn.disabled = true;
+    } else if (plan.id === 'free') {
+      btn.className += ' btn-disabled-style';
+      btn.appendChild(txt('Free'));
+      btn.disabled = true;
+    } else if (isDowngrade) {
+      btn.className += ' btn-disabled-style';
+      btn.appendChild(txt('Downgrade Unavailable'));
+      btn.disabled = true;
+    } else {
+      btn.className += ' btn-primary';
+      btn.appendChild(txt('Upgrade to ' + plan.label));
+      (function (planId, btnEl) {
+        btnEl.addEventListener('click', function () {
+          initiatePurchase(planId, btnEl, plan.label);
+        });
+      }(plan.id, btn));
+    }
+
+    card.appendChild(btn);
+    return card;
+  }
+
+  function initiatePurchase(planId, btn, planLabel) {
+    btn.disabled = true;
+    btn.textContent = 'Redirecting\u2026';
+
+    var headers = Object.assign({ 'Content-Type': 'application/json' }, authHeaders());
+
+    fetch('/api/platform/billing/initiate', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ plan: planId }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok && data.redirect_url) {
+          window.location.href = data.redirect_url;
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Upgrade to ' + planLabel;
+          alert((data.error && typeof data.error === 'string') ? data.error : 'Could not initiate payment. Please try again.');
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Upgrade to ' + planLabel;
+        alert('Network error. Please try again.');
+      });
+  }
+
+  function render(currentPlan) {
+    renderHero(currentPlan);
+
+    var grid = document.getElementById('plans-grid');
+    while (grid.firstChild) { grid.removeChild(grid.firstChild); }
+
+    PLANS.forEach(function (plan) {
+      grid.appendChild(buildPlanCard(plan, currentPlan));
+    });
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('billing-content').style.display = 'block';
+  }
+
+  function init() {
+    showBanners();
+
+    fetch('/auth/me', { headers: authHeaders() })
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          window.location.href = '/join';
+          return null;
+        }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        if (!data.ok || !data.user) {
+          window.location.href = '/join';
+          return;
+        }
+        render(data.user.plan || 'free');
+      })
+      .catch(function () {
+        window.location.href = '/join';
+      });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+}());
+</script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

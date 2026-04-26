@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+<<<<<<< HEAD
       "Bash(ssh -o ConnectTimeout=10 root@102.208.228.44 \"cd /var/www/bridgeai && git diff --stat HEAD && echo '---UNTRACKED TO ADD---' && git status --short | grep '^\\\\?\\\\?' | grep -E 'routes/unified-api' \")",
       "Bash(ssh -o ConnectTimeout=10 root@102.208.228.44 \"cd /var/www/bridgeai && git diff middleware/auth.js | head -60\")",
       "Bash(ssh -o ConnectTimeout=10 root@102.208.228.44 \"grep -rn 'isSuperUser\\\\|SUPERUSERS' /var/www/bridgeai --include='*.js' | grep -v node_modules | grep -v .bak | grep -v '.bak-'\")",
@@ -72,6 +73,41 @@
     ],
     "additionalDirectories": [
       "\\tmp"
+=======
+      "Bash(curl -s --max-time 10 https://bridge-ai-os.com/health)",
+      "Bash(curl -sI --max-time 10 https://wall.bridge-ai-os.com)",
+      "Bash(curl -sI --max-time 10 https://api.bridge-ai-os.com)",
+      "Bash(git stash:*)",
+      "Bash(npx jest:*)",
+      "Read(//c/aoe-unified-final/**)",
+      "Bash(find /c/aoe-unified-final -name \"*.js\" -type f -exec grep -l \"Math.random\\(\\)\\\\|faker\\\\|mock\\\\|stub\" {} \\\\;)",
+      "Bash(npx vercel:*)",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(gh api:*)",
+      "WebFetch(domain:ai-os.co.za)",
+      "WebFetch(domain:go.ai-os.co.za)",
+      "WebFetch(domain:aid.ai-os.co.za)",
+      "WebFetch(domain:aoe-unified-final-j2zbs37qk-thebridgeaiagency-1199s-projects.vercel.app)",
+      "WebFetch(domain:ehsa.ai-os.co.za)",
+      "Bash(nslookup aid.ai-os.co.za)",
+      "Bash(gh workflow:*)",
+      "Bash(xargs wc:*)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__list_tables",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(gh secret:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/librarian-boot.sh" }
+        ]
+      }
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
     ]
   }
 }

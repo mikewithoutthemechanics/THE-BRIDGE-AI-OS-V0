@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Outputs — Bridge AI OS. Your AI-generated deliverables, exports, and integration payloads.">
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://go.ai-os.co.za/outputs">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://go.ai-os.co.za/outputs">
+  <meta property="og:title" content="Outputs — Bridge AI OS">
+  <meta property="og:description" content="Your AI-generated deliverables, exports, and integration payloads.">
+  <meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+  <meta property="og:site_name" content="Bridge AI OS">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Outputs — Bridge AI OS">
+  <meta name="twitter:description" content="Your AI-generated deliverables, exports, and integration payloads.">
+  <meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outputs — Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{--bg:#050a0f;--surface:#0d1620;--surface2:#111d2b;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa;--orange:#ff9f43}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,'Segoe UI',sans-serif;min-height:100vh}
+    a{color:inherit;text-decoration:none}
+    .btn{padding:.5rem 1rem;border-radius:.4rem;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-block}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--dim)}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-primary{background:var(--accent);color:#050a0f}
+    .btn-primary:hover{opacity:.88}
+    .btn-danger{background:transparent;border:1px solid rgba(255,60,90,.4);color:var(--red)}
+    .btn-danger:hover{border-color:var(--red)}
+    .btn-sm{padding:.35rem .75rem;font-size:.73rem}
+    .btn-green{background:var(--green);color:#050a0f}
+    .btn-green:hover{opacity:.88}
+    .btn-purple{background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);color:var(--purple)}
+    .btn-purple:hover{background:rgba(167,139,250,.25)}
+
+    /* Topbar */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:.9rem 2rem;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:50}
+    .logo{font-size:1.3rem;font-weight:800;color:var(--accent);letter-spacing:.2em}
+    .logo span{color:var(--green)}
+    .topbar-nav{display:flex;gap:1.5rem;align-items:center;font-size:.82rem}
+    .topbar-nav a{color:var(--dim);transition:color .2s}
+    .topbar-nav a:hover,.topbar-nav a.active{color:var(--text)}
+
+    /* Layout */
+    .page{max-width:1200px;margin:0 auto;padding:2rem}
+    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem}
+    .page-title{font-size:1.4rem;font-weight:800}
+    .page-subtitle{font-size:.78rem;color:var(--dim);margin-top:.2rem}
+
+    /* Stats bar */
+    .stats-bar{display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap}
+    .stat-chip{background:var(--surface);border:1px solid var(--border);border-radius:.5rem;padding:.55rem 1rem;font-size:.75rem;display:flex;align-items:center;gap:.5rem}
+    .stat-chip strong{font-size:1.05rem;font-weight:800}
+    .stat-chip.accent strong{color:var(--accent)}
+    .stat-chip.green strong{color:var(--green)}
+    .stat-chip.yellow strong{color:var(--yellow)}
+    .stat-chip.red strong{color:var(--red)}
+
+    /* Filters */
+    .filter-row{display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center}
+    .filter-group{display:flex;gap:.4rem;flex-wrap:wrap}
+    .filter-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);align-self:center;margin-right:.2rem}
+    .filter-btn{background:var(--surface2);border:1px solid var(--border);color:var(--dim);padding:.3rem .8rem;border-radius:2rem;font-size:.73rem;cursor:pointer;transition:all .2s}
+    .filter-btn:hover,.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(0,200,255,.06)}
+    .filter-sep{width:1px;height:20px;background:var(--border);align-self:center}
+
+    /* Search */
+    .search-wrap{position:relative;margin-bottom:1.5rem}
+    .search-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:.5rem;padding:.6rem 1rem .6rem 2.5rem;font-size:.85rem;font-family:inherit;outline:none;transition:border-color .2s;max-width:420px}
+    .search-input:focus{border-color:var(--accent)}
+    .search-icon{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--dim);font-size:.9rem;pointer-events:none}
+
+    /* Output grid */
+    .output-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1rem}
+
+    .output-card{background:var(--surface);border:1.5px solid var(--border);border-radius:.7rem;overflow:hidden;transition:all .2s;cursor:pointer;display:flex;flex-direction:column}
+    .output-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,200,255,.06)}
+    .output-card-header{padding:1rem 1rem .7rem;flex:1}
+    .output-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.5rem}
+    .output-format-badge{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:.18rem .55rem;border-radius:2rem}
+    .fmt-json{background:rgba(0,200,255,.1);color:var(--accent)}
+    .fmt-markdown,.fmt-report{background:rgba(167,139,250,.1);color:var(--purple)}
+    .fmt-zip,.fmt-bundle{background:rgba(255,159,67,.1);color:var(--orange)}
+    .fmt-api,.fmt-webhook{background:rgba(0,229,123,.1);color:var(--green)}
+    .fmt-repo{background:rgba(255,209,102,.1);color:var(--yellow)}
+    .output-status-badge{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.18rem .55rem;border-radius:2rem}
+    .st-pending,.st-generating{background:rgba(255,209,102,.1);color:var(--yellow)}
+    .st-ready{background:rgba(0,200,255,.1);color:var(--accent)}
+    .st-delivered{background:rgba(0,229,123,.1);color:var(--green)}
+    .st-failed{background:rgba(255,60,90,.08);color:var(--red)}
+    .st-retry{background:rgba(255,159,67,.1);color:var(--orange)}
+    .output-card-title{font-size:.9rem;font-weight:700;margin-bottom:.3rem;line-height:1.3}
+    .output-card-project{font-size:.72rem;color:var(--dim);display:flex;align-items:center;gap:.3rem}
+    .output-card-project span{color:var(--text);font-weight:500}
+    .output-card-footer{padding:.65rem 1rem;display:flex;justify-content:space-between;align-items:center;background:var(--surface2);gap:.5rem}
+    .output-footer-left{font-size:.68rem;color:var(--dim)}
+    .output-footer-right{display:flex;gap:.4rem}
+
+    /* Detail panel */
+    .detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:none;align-items:stretch;justify-content:flex-end}
+    .detail-overlay.open{display:flex}
+    .detail-panel{width:540px;max-width:100vw;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;animation:slideIn .22s ease}
+    @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+    .detail-header{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.5rem;border-bottom:1px solid var(--border);gap:1rem}
+    .detail-title-wrap{flex:1;min-width:0}
+    .detail-title{font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .detail-subtitle{font-size:.7rem;color:var(--dim);margin-top:.15rem}
+    .close-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:1.2rem;padding:.2rem .4rem;flex-shrink:0}
+    .close-btn:hover{color:var(--text)}
+    .detail-body{flex:1;overflow-y:auto;padding:1.5rem}
+    .detail-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.6rem;flex-wrap:wrap}
+    .detail-section{margin-bottom:1.5rem}
+    .detail-label{font-size:.63rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.6rem}
+    .kv-row{display:flex;justify-content:space-between;font-size:.8rem;padding:.35rem 0;border-bottom:1px solid var(--border)}
+    .kv-key{color:var(--dim)}
+    .kv-val{font-weight:500;text-align:right;max-width:65%;word-break:break-word}
+
+    /* Payload preview */
+    .payload-pre{background:var(--surface2);border:1px solid var(--border);border-radius:.4rem;padding:.9rem;font-size:.73rem;font-family:monospace;color:var(--text);overflow-x:auto;max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;line-height:1.5}
+    .payload-empty{font-size:.78rem;color:var(--dim);font-style:italic}
+
+    /* Integration targets */
+    .target-grid{display:flex;gap:.5rem;flex-wrap:wrap}
+    .target-chip{background:var(--surface2);border:1px solid var(--border);border-radius:.35rem;padding:.4rem .75rem;font-size:.75rem;display:flex;align-items:center;gap:.5rem;cursor:pointer;transition:all .2s}
+    .target-chip:hover{border-color:var(--purple);color:var(--purple)}
+    .target-chip.pushed{border-color:var(--green);color:var(--green);background:rgba(0,229,123,.05)}
+
+    /* Rename inline */
+    .rename-wrap{display:flex;gap:.4rem;align-items:center}
+    .rename-input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:.35rem;padding:.4rem .7rem;font-size:.83rem;font-family:inherit;outline:none}
+    .rename-input:focus{border-color:var(--accent)}
+
+    /* Toast */
+    .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:.5rem;padding:.75rem 1.1rem;font-size:.8rem;z-index:9999;animation:fadeIn .2s ease;display:none;max-width:320px}
+    .toast.show{display:block}
+    .toast.success{border-color:var(--green);color:var(--green)}
+    .toast.error{border-color:var(--red);color:var(--red)}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+    /* Loading / empty */
+    .loading{color:var(--dim);font-size:.85rem;text-align:center;padding:3rem}
+    .empty-state{text-align:center;padding:4rem 2rem;color:var(--dim)}
+    .empty-state .icon{font-size:3rem;opacity:.25;margin-bottom:1rem}
+    .empty-state p{margin-bottom:.75rem}
+    .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:.4rem}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:1.5rem">
+    <a href="/" class="logo">BRIDGE<span>AI</span></a>
+    <div class="topbar-nav">
+      <a href="/profile">Profile</a>
+      <a href="/projects">Projects</a>
+      <a href="/outputs" class="active">Outputs</a>
+      <a href="/dashboard">Dashboard</a>
+    </div>
+  </div>
+  <div style="display:flex;gap:.6rem;align-items:center">
+    <button class="btn btn-outline btn-sm" onclick="loadOutputs()">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Output Registry</div>
+      <div class="page-subtitle">All AI-generated deliverables across your projects</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat-chip accent"><strong id="statTotal">0</strong> Total</div>
+    <div class="stat-chip green"><strong id="statDelivered">0</strong> Delivered</div>
+    <div class="stat-chip"><strong id="statReady">0</strong> Ready</div>
+    <div class="stat-chip yellow"><strong id="statPending">0</strong> Pending</div>
+    <div class="stat-chip red"><strong id="statFailed">0</strong> Failed</div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input class="search-input" type="text" id="searchInput" placeholder="Search outputs by title or project…" oninput="onSearch()">
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row">
+    <span class="filter-label">Type</span>
+    <div class="filter-group">
+      <button class="filter-btn active" data-type="all" onclick="setTypeFilter('all',this)">All</button>
+      <button class="filter-btn" data-type="export" onclick="setTypeFilter('export',this)">Export</button>
+      <button class="filter-btn" data-type="integration" onclick="setTypeFilter('integration',this)">Integration</button>
+      <button class="filter-btn" data-type="hybrid" onclick="setTypeFilter('hybrid',this)">Hybrid</button>
+    </div>
+    <div class="filter-sep"></div>
+    <span class="filter-label">Status</span>
+    <div class="filter-group">
+      <button class="filter-btn active" data-status="all" onclick="setStatusFilter('all',this)">All</button>
+      <button class="filter-btn" data-status="ready" onclick="setStatusFilter('ready',this)">Ready</button>
+      <button class="filter-btn" data-status="delivered" onclick="setStatusFilter('delivered',this)">Delivered</button>
+      <button class="filter-btn" data-status="pending" onclick="setStatusFilter('pending',this)">Pending</button>
+      <button class="filter-btn" data-status="failed" onclick="setStatusFilter('failed',this)">Failed</button>
+    </div>
+  </div>
+
+  <div class="output-grid" id="outputGrid">
+    <div class="loading"><span class="spinner"></span>Loading outputs…</div>
+  </div>
+</div>
+
+<!-- Detail Panel -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetailOverlay(event)">
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+      <div class="detail-title-wrap">
+        <div class="detail-title" id="detailTitle">Output</div>
+        <div class="detail-subtitle" id="detailSubtitle"></div>
+      </div>
+      <button class="close-btn" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body" id="detailBody">
+      <div class="loading"><span class="spinner"></span>Loading…</div>
+    </div>
+    <div class="detail-footer" id="detailFooter"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+let token = null;
+let allOutputs = [];
+let typeFilter = 'all';
+let statusFilter = 'all';
+let searchQuery = '';
+let currentOutputId = null;
+let integrationTargets = [];
+
+// ── Auth ────────────────────────────────────────────────────────────────────
+
+function getToken() {
+  const match = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('bridge_token='));
+  return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : localStorage.getItem('bridge_token');
+}
+
+async function authFetch(url, opts = {}) {
+  return fetch(url, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + token,
+      ...(opts.headers || {}),
+    },
+  });
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = 'toast'; }, 3200);
+}
+
+// ── Filters ──────────────────────────────────────────────────────────────────
+
+function setTypeFilter(val, el) {
+  typeFilter = val;
+  document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderGrid();
+}
+
+function setStatusFilter(val, el) {
+  statusFilter = val;
+  document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderGrid();
+}
+
+function onSearch() {
+  searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+  renderGrid();
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+async function loadOutputs() {
+  const grid = document.getElementById('outputGrid');
+  grid.innerHTML = '<div class="loading"><span class="spinner"></span>Loading outputs…</div>';
+
+  try {
+    const res = await authFetch('/api/platform/outputs?limit=200');
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      grid.innerHTML = '<div class="loading">Failed to load: ' + (data.error || res.status) + '</div>';
+      return;
+    }
+    const data = await res.json();
+    allOutputs = data.outputs || [];
+    computeStats(allOutputs);
+    document.getElementById('statsBar').style.display = '';
+    renderGrid();
+  } catch (err) {
+    grid.innerHTML = '<div class="loading">Network error. <button class="btn btn-outline btn-sm" onclick="loadOutputs()">Retry</button></div>';
+  }
+}
+
+async function loadIntegrationTargets() {
+  try {
+    const res = await authFetch('/api/platform/integrations/targets');
+    if (res.ok) {
+      const data = await res.json();
+      integrationTargets = data.targets || [];
+    }
+  } catch {}
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+
+function computeStats(list) {
+  const counts = { delivered: 0, ready: 0, pending: 0, generating: 0, failed: 0, retry: 0 };
+  list.forEach(o => { counts[o.status] = (counts[o.status] || 0) + 1; });
+  document.getElementById('statTotal').textContent = list.length;
+  document.getElementById('statDelivered').textContent = counts.delivered;
+  document.getElementById('statReady').textContent = counts.ready;
+  document.getElementById('statPending').textContent = (counts.pending || 0) + (counts.generating || 0);
+  document.getElementById('statFailed').textContent = (counts.failed || 0) + (counts.retry || 0);
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────────
+
+function filteredOutputs() {
+  return allOutputs.filter(o => {
+    if (typeFilter !== 'all' && o.type !== typeFilter) return false;
+    if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+    if (searchQuery) {
+      const title = (o.title || '').toLowerCase();
+      const project = (o.projects?.name || '').toLowerCase();
+      const tool = (o.projects?.tool_id || '').toLowerCase();
+      if (!title.includes(searchQuery) && !project.includes(searchQuery) && !tool.includes(searchQuery)) return false;
+    }
+    return true;
+  });
+}
+
+function fmtClass(fmt) {
+  const map = { json:'fmt-json', markdown:'fmt-markdown', report:'fmt-report', zip:'fmt-zip', bundle:'fmt-bundle', api:'fmt-api', webhook:'fmt-webhook', repo:'fmt-repo' };
+  return map[fmt] || 'fmt-json';
+}
+
+function stClass(st) {
+  const map = { pending:'st-pending', generating:'st-generating', ready:'st-ready', delivered:'st-delivered', failed:'st-failed', retry:'st-retry' };
+  return map[st] || 'st-pending';
+}
+
+function relativeTime(iso) {
+  const d = new Date(iso);
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+  return d.toLocaleDateString();
+}
+
+function makeCard(o) {
+  const card = document.createElement('div');
+  card.className = 'output-card';
+  card.addEventListener('click', () => openDetail(o.id));
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.className = 'output-card-header';
+
+  const top = document.createElement('div');
+  top.className = 'output-card-top';
+
+  const fmtBadge = document.createElement('span');
+  fmtBadge.className = 'output-format-badge ' + fmtClass(o.format);
+  fmtBadge.textContent = o.format;
+
+  const stBadge = document.createElement('span');
+  stBadge.className = 'output-status-badge ' + stClass(o.status);
+  stBadge.textContent = o.status;
+
+  top.appendChild(fmtBadge);
+  top.appendChild(stBadge);
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'output-card-title';
+  titleEl.textContent = o.title || 'Untitled Output';
+
+  const projEl = document.createElement('div');
+  projEl.className = 'output-card-project';
+  if (o.projects?.name) {
+    projEl.textContent = 'Project: ';
+    const pName = document.createElement('span');
+    pName.textContent = o.projects.name;
+    projEl.appendChild(pName);
+    if (o.projects.tool_id) {
+      const tool = document.createElement('span');
+      tool.style.cssText = 'margin-left:.4rem;font-size:.65rem;color:var(--purple);opacity:.8';
+      tool.textContent = '· ' + o.projects.tool_id.replace(/-/g,' ');
+      projEl.appendChild(tool);
+    }
+  } else {
+    projEl.textContent = 'No project linked';
+  }
+
+  hdr.appendChild(top);
+  hdr.appendChild(titleEl);
+  hdr.appendChild(projEl);
+
+  // Footer
+  const ftr = document.createElement('div');
+  ftr.className = 'output-card-footer';
+
+  const leftEl = document.createElement('div');
+  leftEl.className = 'output-footer-left';
+  leftEl.textContent = relativeTime(o.created_at);
+  if (o.delivery_attempts > 0) {
+    leftEl.textContent += ' · ' + o.delivery_attempts + ' attempt' + (o.delivery_attempts > 1 ? 's' : '');
+  }
+
+  const rightEl = document.createElement('div');
+  rightEl.className = 'output-footer-right';
+
+  if (o.status === 'ready' || o.status === 'delivered') {
+    const dlBtn = document.createElement('a');
+    dlBtn.href = '/api/platform/outputs/' + encodeURIComponent(o.id) + '/export?token=' + encodeURIComponent(token);
+    dlBtn.className = 'btn btn-outline btn-sm';
+    dlBtn.title = 'Download';
+    dlBtn.textContent = '↓';
+    dlBtn.addEventListener('click', e => e.stopPropagation());
+    rightEl.appendChild(dlBtn);
+  }
+
+  const viewBtn = document.createElement('button');
+  viewBtn.className = 'btn btn-primary btn-sm';
+  viewBtn.textContent = 'View';
+  viewBtn.addEventListener('click', e => { e.stopPropagation(); openDetail(o.id); });
+  rightEl.appendChild(viewBtn);
+
+  ftr.appendChild(leftEl);
+  ftr.appendChild(rightEl);
+
+  card.appendChild(hdr);
+  card.appendChild(ftr);
+  return card;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('outputGrid');
+  grid.textContent = '';
+  const list = filteredOutputs();
+
+  if (list.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.style.gridColumn = '1/-1';
+    const icon = document.createElement('div'); icon.className = 'icon'; icon.textContent = '📦';
+    const msg = document.createElement('p');
+    msg.textContent = allOutputs.length === 0
+      ? 'No outputs yet. Run a project to generate your first output.'
+      : 'No outputs match your filters.';
+    const sub = document.createElement('p');
+    sub.style.fontSize = '.75rem';
+    if (allOutputs.length === 0) {
+      const link = document.createElement('a'); link.href = '/projects'; link.className = 'btn btn-primary btn-sm';
+      link.textContent = '→ Go to Projects'; sub.appendChild(link);
+    } else {
+      sub.textContent = 'Try adjusting the type or status filter.';
+    }
+    empty.appendChild(icon); empty.appendChild(msg); empty.appendChild(sub);
+    grid.appendChild(empty);
+    return;
+  }
+
+  list.forEach(o => grid.appendChild(makeCard(o)));
+}
+
+// ── Detail panel ──────────────────────────────────────────────────────────────
+
+async function openDetail(outputId) {
+  currentOutputId = outputId;
+  const overlay = document.getElementById('detailOverlay');
+  const body = document.getElementById('detailBody');
+  const footer = document.getElementById('detailFooter');
+  overlay.classList.add('open');
+  body.innerHTML = '<div class="loading"><span class="spinner"></span>Loading…</div>';
+  footer.textContent = '';
+
+  try {
+    const res = await authFetch('/api/platform/outputs/' + encodeURIComponent(outputId));
+    const data = await res.json();
+    if (!data.ok || !data.output) {
+      body.innerHTML = '<div class="loading">Output not found or access denied.</div>';
+      return;
+    }
+    renderDetail(data.output);
+  } catch {
+    body.innerHTML = '<div class="loading">Error loading output.</div>';
+  }
+}
+
+function renderDetail(o) {
+  const body = document.getElementById('detailBody');
+  const footer = document.getElementById('detailFooter');
+  body.textContent = '';
+  footer.textContent = '';
+
+  document.getElementById('detailTitle').textContent = o.title || 'Untitled Output';
+  document.getElementById('detailSubtitle').textContent = o.format.toUpperCase() + ' · ' + o.type + ' · ' + o.status;
+
+  // Metadata
+  const metaSection = document.createElement('div');
+  metaSection.className = 'detail-section';
+  const metaLabel = document.createElement('div'); metaLabel.className = 'detail-label'; metaLabel.textContent = 'Details';
+  metaSection.appendChild(metaLabel);
+
+  const kvRows = [
+    ['Status', o.status],
+    ['Format', o.format],
+    ['Type', o.type],
+    ['Project', o.projects?.name || o.project_id || '—'],
+    ['Tool', o.projects?.tool_id || '—'],
+    ['Created', new Date(o.created_at).toLocaleString()],
+    ['Updated', new Date(o.updated_at).toLocaleString()],
+    ['Attempts', o.delivery_attempts || 0],
+    ['Destination', o.destination || '—'],
+  ];
+  if (o.delivered_at) kvRows.push(['Delivered', new Date(o.delivered_at).toLocaleString()]);
+  if (o.error) kvRows.push(['Last Error', o.error]);
+
+  kvRows.forEach(([k, v]) => {
+    const row = document.createElement('div'); row.className = 'kv-row';
+    const kEl = document.createElement('span'); kEl.className = 'kv-key'; kEl.textContent = k;
+    const vEl = document.createElement('span'); vEl.className = 'kv-val'; vEl.textContent = String(v);
+    if (k === 'Status') {
+      vEl.innerHTML = '';
+      const badge = document.createElement('span');
+      badge.className = 'output-status-badge ' + stClass(o.status);
+      badge.textContent = o.status;
+      vEl.appendChild(badge);
+    }
+    if (k === 'Last Error') { vEl.style.color = 'var(--red)'; vEl.style.fontSize = '.75rem'; }
+    row.appendChild(kEl); row.appendChild(vEl);
+    metaSection.appendChild(row);
+  });
+  body.appendChild(metaSection);
+
+  // Rename
+  const renameSection = document.createElement('div');
+  renameSection.className = 'detail-section';
+  const rLabel = document.createElement('div'); rLabel.className = 'detail-label'; rLabel.textContent = 'Rename Output';
+  renameSection.appendChild(rLabel);
+  const renameWrap = document.createElement('div'); renameWrap.className = 'rename-wrap';
+  const renameInput = document.createElement('input');
+  renameInput.type = 'text'; renameInput.className = 'rename-input';
+  renameInput.value = o.title || ''; renameInput.placeholder = 'Enter new title…';
+  const renameBtn = document.createElement('button'); renameBtn.className = 'btn btn-outline btn-sm';
+  renameBtn.textContent = 'Save';
+  renameBtn.addEventListener('click', async () => {
+    const newTitle = renameInput.value.trim();
+    if (!newTitle) return;
+    renameBtn.disabled = true; renameBtn.textContent = '…';
+    try {
+      const res = await authFetch('/api/platform/outputs/' + encodeURIComponent(o.id), {
+        method: 'PUT',
+        body: JSON.stringify({ title: newTitle }),
+      });
+      const d = await res.json();
+      if (d.ok) {
+        showToast('Output renamed.', 'success');
+        document.getElementById('detailTitle').textContent = newTitle;
+        o.title = newTitle;
+        const idx = allOutputs.findIndex(x => x.id === o.id);
+        if (idx !== -1) allOutputs[idx].title = newTitle;
+        renderGrid();
+      } else {
+        showToast('Rename failed: ' + (d.error || 'unknown'), 'error');
+      }
+    } catch { showToast('Network error.', 'error'); }
+    finally { renameBtn.disabled = false; renameBtn.textContent = 'Save'; }
+  });
+  renameWrap.appendChild(renameInput); renameWrap.appendChild(renameBtn);
+  renameSection.appendChild(renameWrap);
+  body.appendChild(renameSection);
+
+  // Payload preview
+  const paySection = document.createElement('div');
+  paySection.className = 'detail-section';
+  const pLabel = document.createElement('div'); pLabel.className = 'detail-label'; pLabel.textContent = 'Payload Preview';
+  paySection.appendChild(pLabel);
+
+  if (o.payload) {
+    const pre = document.createElement('pre'); pre.className = 'payload-pre';
+    const raw = typeof o.payload === 'string' ? o.payload : JSON.stringify(o.payload, null, 2);
+    pre.textContent = raw.length > 4000 ? raw.slice(0, 4000) + '\n… (truncated)' : raw;
+    paySection.appendChild(pre);
+  } else {
+    const empty = document.createElement('div'); empty.className = 'payload-empty';
+    empty.textContent = o.status === 'pending' || o.status === 'generating'
+      ? 'Output is still being generated…'
+      : 'No payload available.';
+    paySection.appendChild(empty);
+  }
+  body.appendChild(paySection);
+
+  // Integration dispatch (only if ready or delivered and targets available)
+  if ((o.status === 'ready' || o.status === 'delivered') && integrationTargets.length > 0) {
+    const intgSection = document.createElement('div');
+    intgSection.className = 'detail-section';
+    const iLabel = document.createElement('div'); iLabel.className = 'detail-label'; iLabel.textContent = 'Push to Integration';
+    intgSection.appendChild(iLabel);
+    const targetGrid = document.createElement('div'); targetGrid.className = 'target-grid';
+    integrationTargets.forEach(t => {
+      const chip = document.createElement('button'); chip.className = 'target-chip';
+      chip.textContent = t.id || t;
+      chip.addEventListener('click', () => pushIntegration(o, t.id || t, chip));
+      targetGrid.appendChild(chip);
+    });
+    intgSection.appendChild(targetGrid);
+    body.appendChild(intgSection);
+  }
+
+  // Footer actions
+  if (o.status === 'ready' || o.status === 'delivered') {
+    const dlBtn = document.createElement('a');
+    dlBtn.href = '/api/platform/outputs/' + encodeURIComponent(o.id) + '/export?token=' + encodeURIComponent(token);
+    dlBtn.className = 'btn btn-green btn-sm';
+    dlBtn.textContent = '↓ Download';
+    dlBtn.target = '_blank';
+    footer.appendChild(dlBtn);
+  }
+
+  const closeBtn = document.createElement('button'); closeBtn.className = 'btn btn-outline btn-sm';
+  closeBtn.textContent = 'Close'; closeBtn.addEventListener('click', closeDetail);
+  footer.appendChild(closeBtn);
+
+  const projBtn = document.createElement('a');
+  projBtn.href = '/projects#' + o.project_id;
+  projBtn.className = 'btn btn-outline btn-sm';
+  projBtn.textContent = '→ Open Project';
+  footer.appendChild(projBtn);
+}
+
+async function pushIntegration(output, target, chip) {
+  if (!confirm('Push output "' + (output.title || 'this output') + '" to ' + target + '?')) return;
+  chip.classList.add('pushed');
+  chip.textContent = '…sending';
+  try {
+    const res = await authFetch('/api/platform/integrations/run', {
+      method: 'POST',
+      body: JSON.stringify({ outputId: output.id, target }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      chip.textContent = target + ' ✓';
+      showToast('Dispatched to ' + target, 'success');
+      // Refresh to show delivered status
+      setTimeout(() => { loadOutputs(); }, 800);
+    } else {
+      chip.classList.remove('pushed');
+      chip.textContent = target;
+      showToast('Integration failed: ' + (data.error || 'unknown'), 'error');
+    }
+  } catch {
+    chip.classList.remove('pushed');
+    chip.textContent = target;
+    showToast('Network error pushing integration.', 'error');
+  }
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('open');
+  currentOutputId = null;
+}
+
+function closeDetailOverlay(e) {
+  if (e.target === document.getElementById('detailOverlay')) closeDetail();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+async function init() {
+  token = getToken();
+  if (!token) { window.location.href = '/join?next=/outputs'; return; }
+
+  // Open specific output from hash
+  if (location.hash && location.hash.length > 1) {
+    openDetail(location.hash.slice(1));
+  }
+
+  await Promise.all([loadOutputs(), loadIntegrationTargets()]);
+}
+
+init();
+</script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

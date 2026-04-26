@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="description" content="BRIDGE AI OS — Unified Runtime Terminal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/runtime">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/runtime">
+<meta property="og:title" content="BRIDGE AI OS — Unified Runtime Terminal">
+<meta property="og:description" content="BRIDGE AI OS — Unified Runtime Terminal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BRIDGE AI OS — Unified Runtime Terminal">
+<meta name="twitter:description" content="BRIDGE AI OS — Unified Runtime Terminal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BRIDGE AI OS — Unified Runtime Terminal</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'JetBrains Mono','Fira Code',monospace;background:#05070d;color:#00ffc3;min-height:100vh;display:flex;flex-direction:column}
+  #topbar{display:flex;align-items:center;gap:10px;padding:6px 16px;background:#0b0f1a;border-bottom:1px solid #0ff2;flex-shrink:0;height:40px}
+  #topbar .logo{color:#00ffc3;font-size:13px;font-weight:700;letter-spacing:3px}
+  #topbar .logo span{color:#f59e0b}
+  .pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;border:1px solid #0ff2;font-size:10px;color:#64748b}
+  .pill .dot{width:5px;height:5px;border-radius:50%;background:#64748b}
+  .pill.ok .dot{background:#00ff88;box-shadow:0 0 4px #00ff88}.pill.ok{color:#00ff88;border-color:#00ff8833}
+  #topbar .sp{flex:1}
+  #clock{color:#64748b;font-size:10px}
+
+  #app{display:flex;flex:1;overflow:hidden}
+
+  /* Sidebar */
+  #sidebar{width:240px;background:#0b0f1a;padding:10px;box-sizing:border-box;border-right:1px solid #0ff2;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+  .scard{background:#0e1422;padding:10px;border:1px solid #0ff2;border-radius:6px}
+  .scard b{display:block;font-size:10px;letter-spacing:2px;color:#64748b;margin-bottom:6px;text-transform:uppercase}
+  .scard-val{font-size:1.1rem;font-weight:700;color:#00ffc3;margin-bottom:2px}
+  .scard-sub{font-size:.72rem;color:#64748b}
+  .scard-row{display:flex;justify-content:space-between;font-size:.75rem;padding:3px 0;border-bottom:1px solid #0ff1}
+  .scard-row:last-child{border:none}
+  .scard-row span:first-child{color:#64748b}
+  .scard-row span:last-child{color:#00ffc3;font-weight:700}
+
+  /* Federation platform links */
+  .fed-link{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;cursor:pointer;transition:background .15s;text-decoration:none;color:#00ffc3;font-size:.72rem;border:1px solid transparent}
+  .fed-link:hover{background:#0e1422;border-color:#0ff3}
+  .fed-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;animation:pulse-dot 2s infinite}
+  @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* Main terminal */
+  #main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  #terminal{flex:1;padding:12px 16px;overflow-y:auto;background:#05070d;font-size:.8rem;line-height:1.6}
+  .t-line{padding:.1rem 0}
+  .t-line.ok{color:#00ff88}
+  .t-line.err{color:#ff4466}
+  .t-line.info{color:#00d4ff}
+  .t-line.warn{color:#f59e0b}
+  .t-line.dim{color:#64748b}
+  .t-line.svg{margin:.5rem 0}
+  #inputBar{display:flex;border-top:1px solid #0ff2;flex-shrink:0}
+  #cmd{flex:1;background:#0b0f1a;color:#00ffc3;border:none;padding:10px 14px;font-family:inherit;font-size:.82rem;outline:none}
+  #cmd::placeholder{color:#64748b}
+  #execBtn{background:#00ffc3;color:#05070d;border:none;padding:10px 18px;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:700;transition:opacity .15s}
+  #execBtn:hover{opacity:.85}
+
+  /* Asset SVG animations */
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes spinr{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}
+
+  /* ── Mobile responsive ── */
+  @media(max-width:768px){
+    body{min-height:100dvh;overflow:auto}
+    #topbar{flex-wrap:wrap;gap:6px;height:auto;padding:8px 12px}
+    #topbar .pill:nth-child(n+4){display:none}
+    #app{flex-direction:column;overflow:visible;min-height:0}
+    #sidebar{width:100%;height:auto;max-height:260px;border-right:none;border-bottom:1px solid #0ff2;flex-direction:row;flex-wrap:wrap;overflow-x:auto;overflow-y:hidden;gap:6px;padding:8px}
+    .scard{min-width:140px;flex:1}
+    #positionCard{order:-1;min-width:100%}
+    #main{min-height:60dvh;overflow:hidden}
+    #terminal{font-size:.72rem}
+    #cmd{font-size:.78rem;padding:8px 10px}
+    #execBtn{padding:8px 12px;font-size:.75rem}
+    #pixi-runtime{display:none}
+  }
+  @media(max-width:480px){
+    .scard{min-width:120px;font-size:.72rem}
+    .fed-link{font-size:.65rem}
+    #topbar .logo{font-size:11px}
+  }
+</style>
+</head>
+<body>
+<!-- PixiJS data stream canvas (fullscreen, behind everything) -->
+<canvas id="pixi-runtime" style="position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.45"></canvas>
+
+<div id="topbar" style="position:relative;z-index:10">
+  <span class="logo">BRIDGE<span>OS</span></span>
+  <span class="pill ok"><span class="dot"></span>Runtime</span>
+  <span class="pill ok" id="brainPill"><span class="dot"></span>Brain</span>
+  <span class="pill ok" id="svgPill"><span class="dot"></span>SVG 27 skills</span>
+  <span class="sp"></span>
+  <span id="clock"></span>
+</div>
+
+<div id="app" style="position:relative;z-index:5">
+  <div id="sidebar">
+
+    <div class="scard">
+      <b>Profile</b>
+      <div class="scard-val" id="sUser">Loading...</div>
+      <div class="scard-sub" id="sRole">--</div>
+    </div>
+
+    <div class="scard" id="positionCard" style="background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.14)">
+      <b style="color:#00d4ff">Position Index</b>
+      <div class="scard-row"><span>Level</span><span id="sLevel" style="color:#00ffc3">--</span></div>
+      <div class="scard-row"><span>Rank</span><span id="sRank" style="color:#a855f7;font-size:.7rem">--</span></div>
+      <div class="scard-row"><span>XP</span><span id="sXP">--</span></div>
+    </div>
+
+    <div class="scard">
+      <b>BRDG Balance</b>
+      <div class="scard-val" id="sBrdg">-- BRDG</div>
+      <div class="scard-sub" id="sWallet">No wallet</div>
+    </div>
+
+    <div class="scard">
+      <b>Treasury</b>
+      <div class="scard-row"><span>Total BRDG</span><span id="sTreas">--</span></div>
+      <div class="scard-row"><span>UBI Pool</span><span id="sUbi">--</span></div>
+      <div class="scard-row"><span>Ops Bucket</span><span id="sOps">--</span></div>
+    </div>
+
+    <div class="scard">
+      <b>SVG Engine</b>
+      <div class="scard-row"><span>Skills</span><span id="sSkills">27</span></div>
+      <div class="scard-row"><span>Executions</span><span id="sExec">--</span></div>
+      <div class="scard-row"><span>p50</span><span id="sP50">12ms</span></div>
+      <div class="scard-row"><span>p95</span><span id="sP95">45ms</span></div>
+    </div>
+
+    <div class="scard">
+      <b>Federation Platforms</b>
+      <a class="fed-link" href="/aid-home.html" target="_blank"><span class="fed-dot" style="background:#00d4ff"></span>AID · AI for Development</a>
+      <a class="fed-link" href="/ehsa-app.html" target="_blank"><span class="fed-dot" style="background:#00ff88"></span>EHSA · Health Systems</a>
+      <a class="fed-link" href="/hospital-home.html" target="_blank"><span class="fed-dot" style="background:#f59e0b"></span>Hospital in a Box</a>
+      <a class="fed-link" href="/rootedearth-home.html" target="_blank"><span class="fed-dot" style="background:#22c55e"></span>Rooted Earth</a>
+      <a class="fed-link" href="/supac-home.html" target="_blank"><span class="fed-dot" style="background:#a855f7"></span>SUPAC · Sovereign AI</a>
+      <a class="fed-link" href="/ban-home.html" target="_blank"><span class="fed-dot" style="background:#ef4444"></span>BAN · Node Network</a>
+      <a class="fed-link" href="/ubi-home.html" target="_blank"><span class="fed-dot" style="background:#63ffda"></span>UBI · Basic Income</a>
+      <a class="fed-link" href="/abaas.html" target="_blank"><span class="fed-dot" style="background:#ffd166"></span>ABAAS · Agent Layer</a>
+    </div>
+
+    <div class="scard">
+      <b>Quick Links</b>
+      <a class="fed-link" href="/control.html" target="_blank"><span class="fed-dot" style="background:#00d4ff"></span>Control Panel</a>
+      <a class="fed-link" href="/wallet.html" target="_blank"><span class="fed-dot" style="background:#f59e0b"></span>Wallet &amp; Payments</a>
+      <a class="fed-link" href="/activation.html" target="_blank"><span class="fed-dot" style="background:#00ff88"></span>Activation Pipeline</a>
+      <a class="fed-link" href="/aoe-dashboard.html" target="_blank"><span class="fed-dot" style="background:#a855f7"></span>AOE Dashboard</a>
+      <a class="fed-link" href="/governance.html" target="_blank"><span class="fed-dot" style="background:#63ffda"></span>Governance</a>
+    </div>
+
+  </div>
+
+  <div id="main">
+    <div id="terminal"></div>
+    <div id="inputBar">
+      <input id="cmd" placeholder="Enter command (type 'help')..." autocomplete="off" onkeydown="if(event.key==='Enter')run()"/>
+      <button id="execBtn" onclick="run()">EXEC</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── State ────────────────────────────────────────────────────────────────────
+var state = {
+  wallet: null,
+  balance: 0,
+  treasury: { total: 10914.7974, ubi: 209899.95, ops: 629699.85 },
+  svg: { skills: 27, executions: 218, p50: 12, p95: 45 },
+  assets: [
+    { id:'taurus-global-star',   label:'Taurus Global Star',  earn:2.4 },
+    { id:'taurus-global-star-v', label:'Taurus Star Variant', earn:1.8 },
+    { id:'supac-unified-agents', label:'SUPAC Unified',       earn:3.1 },
+    { id:'supac-prime-agents',   label:'SUPAC Prime',         earn:2.9 },
+    { id:'supac-prime-agents-v', label:'SUPAC Prime Var',     earn:2.2 },
+    { id:'supac-logo',           label:'SUPAC Logo',          earn:1.5 },
+    { id:'living-system-bible',  label:'Living System Bible', earn:5.0 },
+    { id:'bridge-living-map',    label:'Bridge Living Map',   earn:4.2 },
+  ],
+  history: [],
+  user: null,
+};
+
+// ── Terminal output ──────────────────────────────────────────────────────────
+var term = document.getElementById('terminal');
+function log(msg, cls) {
+  var div = document.createElement('div');
+  div.className = 't-line ' + (cls || '');
+  div.innerHTML = msg;
+  term.appendChild(div);
+  term.scrollTop = term.scrollHeight;
+}
+function logInfo(m){ log(m,'info'); }
+function logOk(m){ log(m,'ok'); }
+function logErr(m){ log(m,'err'); }
+function logDim(m){ log(m,'dim'); }
+
+// ── Clock ────────────────────────────────────────────────────────────────────
+function tick() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+setInterval(tick, 1000); tick();
+
+// ── Load live data ───────────────────────────────────────────────────────────
+async function loadData() {
+  // Auth user
+  var token = document.cookie.split(';').map(function(c){return c.trim()}).find(function(c){return c.startsWith('bridge_token=')});
+  if (!token) token = localStorage.getItem('bridge_token');
+
+  if (token) {
+    try {
+      var r = await fetch('/auth/me', { credentials:'include', headers:{Authorization:'Bearer '+token} });
+      var d = await r.json();
+      if (d.ok && d.user) {
+        state.user = d.user;
+        document.getElementById('sUser').textContent = d.user.name || d.user.email || 'User';
+        document.getElementById('sRole').textContent = (d.user.role || 'user') + ' · ' + (d.user.plan || 'free');
+        document.getElementById('sBrdg').textContent = (d.user.brdg_balance || 0) + ' BRDG';
+        document.getElementById('sWallet').textContent = d.user.wallet_address ? d.user.wallet_address.slice(0,10)+'...' : 'No wallet';
+      }
+    } catch(_) {}
+  }
+
+  // Position Index (from gamification localStorage)
+  try {
+    var pos = JSON.parse(localStorage.getItem('brdg_position') || '{}');
+    if (pos.level) {
+      document.getElementById('sLevel').textContent = pos.level;
+      document.getElementById('sRank').textContent = pos.rank || 'CREW MEMBER';
+      document.getElementById('sXP').textContent = (pos.xp || 0) + ' XP';
+    }
+  } catch(_) {}
+
+  // Treasury
+  try {
+    var tr = await fetch('/api/treasury/status');
+    var td = await tr.json();
+    var t = td.treasury || td;
+    state.treasury.total = t.total_brdg || t.balance || state.treasury.total;
+    state.treasury.ubi   = t.ubi_pool || t.ubi || state.treasury.ubi;
+    state.treasury.ops   = t.ops_pool || t.ops || state.treasury.ops;
+  } catch(_) {}
+  document.getElementById('sTreas').textContent = parseFloat(state.treasury.total).toLocaleString(undefined,{maximumFractionDigits:4});
+  document.getElementById('sUbi').textContent   = parseFloat(state.treasury.ubi).toLocaleString(undefined,{maximumFractionDigits:2});
+  document.getElementById('sOps').textContent   = parseFloat(state.treasury.ops).toLocaleString(undefined,{maximumFractionDigits:2});
+
+  // SVG telemetry
+  try {
+    var se = await fetch('/api/svg/telemetry');
+    var sd = await se.json();
+    if (sd.skills) document.getElementById('sSkills').textContent = sd.skills;
+    if (sd.executions) { state.svg.executions = sd.executions; document.getElementById('sExec').textContent = sd.executions; }
+    if (sd.p50) { state.svg.p50 = sd.p50; document.getElementById('sP50').textContent = sd.p50+'ms'; }
+    if (sd.p95) { state.svg.p95 = sd.p95; document.getElementById('sP95').textContent = sd.p95+'ms'; }
+  } catch(_) {
+    document.getElementById('sExec').textContent = state.svg.executions;
+  }
+}
+
+// ── SVG asset renderer ───────────────────────────────────────────────────────
+function renderAssetSVG(id, label, earn) {
+  var colors = ['#00ffc3','#00d4ff','#a855f7','#f59e0b','#00ff88','#63ffda'];
+  var c = colors[Math.abs(id.length * 7) % colors.length];
+  return '<svg width="48" height="48" viewBox="0 0 48 48">'
+    + '<circle cx="24" cy="24" r="20" fill="none" stroke="'+c+'" stroke-width="1" opacity="0.3">'
+    + '<animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="10s" repeatCount="indefinite"/></circle>'
+    + '<circle cx="24" cy="24" r="12" fill="none" stroke="'+c+'" stroke-width="1" stroke-dasharray="3 2">'
+    + '<animateTransform attributeName="transform" type="rotate" from="360 24 24" to="0 24 24" dur="6s" repeatCount="indefinite"/></circle>'
+    + '<circle cx="24" cy="24" r="4" fill="'+c+'">'
+    + '<animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/></circle>'
+    + '</svg>';
+}
+
+// ── Command processor ────────────────────────────────────────────────────────
+var COMMANDS = {
+  help: function() {
+    logInfo('═══ BRIDGE AI OS RUNTIME COMMANDS ═══');
+    logDim('  help                — this menu');
+    logDim('  status              — full system status');
+    logDim('  treasury            — treasury snapshot');
+    logDim('  ubi                 — UBI pool details');
+    logDim('  assets              — list monetized assets');
+    logDim('  render [asset-id]   — render SVG token animation');
+    logDim('  connect             — connect Web3 wallet');
+    logDim('  mint [n]            — mint BRDG (simulation)');
+    logDim('  send [n] [address]  — send BRDG (simulation)');
+    logDim('  federation          — list all federated platforms');
+    logDim('  agents              — list active AI agents');
+    logDim('  pipeline            — activation pipeline status');
+    logDim('  lifecycle           — run lifecycle engine');
+    logDim('  position            — your XP rank and position index');
+    logDim('  clear               — clear terminal');
+    logInfo('═══════════════════════════════════════');
+  },
+
+  status: async function() {
+    logInfo('▶ SYSTEM STATUS');
+    try {
+      var r = await fetch('/health');
+      var d = await r.json();
+      logOk('  Gateway:    ' + (d.status || 'ok').toUpperCase());
+    } catch(_){ logErr('  Gateway:    UNREACHABLE'); }
+    try {
+      var r2 = await fetch('/api/aoe/economy');
+      var d2 = await r2.json();
+      logOk('  Economy:    ' + (d2.ok ? 'RUNNING' : 'DEGRADED'));
+      if (d2.economy) logDim('  BRDG circ:  ' + (d2.economy.total_brdg_circulating||0).toLocaleString());
+    } catch(_){ logErr('  Economy:    UNREACHABLE'); }
+    logOk('  SVG Engine: ' + state.svg.skills + ' skills · p50 ' + state.svg.p50 + 'ms');
+    logOk('  Treasury:   ' + parseFloat(state.treasury.total).toLocaleString() + ' BRDG total');
+  },
+
+  treasury: function() {
+    logInfo('◈ TREASURY SNAPSHOT');
+    logDim('  Total BRDG:  ' + parseFloat(state.treasury.total).toFixed(4));
+    logDim('  UBI Pool:    ' + parseFloat(state.treasury.ubi).toFixed(4));
+    logDim('  Ops Bucket:  ' + parseFloat(state.treasury.ops).toFixed(4));
+    logDim('  Chain:       Linea Mainnet (59144)');
+    logDim('  Explorer:    https://lineascan.build');
+  },
+
+  ubi: function() {
+    logInfo('◐ UBI SYSTEM');
+    logDim('  Pool balance: ' + parseFloat(state.treasury.ubi).toFixed(4) + ' BRDG');
+    logDim('  Distribution: Per staked BRDG × uptime factor');
+    logDim('  Cycle:        Monthly · Next cycle: ' + new Date(Date.now() + 15 * 86400000).toLocaleDateString());
+    logDim('  Your share:   Claim at /ubi-home.html');
+  },
+
+  assets: function() {
+    logInfo('◆ MONETIZED DIGITAL ASSET REGISTRY (' + state.assets.length + ' assets)');
+    state.assets.forEach(function(a) {
+      log('  <span style="color:#00ffc3">'+a.id+'</span> <span style="color:#64748b">—</span> <span style="color:#f59e0b">+'+a.earn+' BRDG/view</span>', '');
+    });
+    logDim('  All assets earn BRDG on view. Use: render [id]');
+  },
+
+  render: function(arg) {
+    if (!arg) { logErr('Usage: render [asset-id]'); return; }
+    var asset = state.assets.find(function(a){ return a.id === arg || a.label.toLowerCase().includes(arg.toLowerCase()); });
+    if (!asset) { logErr('Asset not found: ' + arg + '. Type "assets" to list.'); return; }
+    logOk('Rendering: ' + asset.label + ' (+' + asset.earn + ' BRDG earned)');
+    var div = document.createElement('div');
+    div.className = 't-line svg';
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.gap = '12px';
+    div.innerHTML = renderAssetSVG(asset.id, asset.label, asset.earn)
+      + '<span style="font-size:.75rem"><span style="color:#00ffc3">'+asset.label+'</span><br><span style="color:#64748b">'+asset.id+'</span><br><span style="color:#f59e0b">+'+asset.earn+' BRDG/view</span></span>';
+    term.appendChild(div);
+    term.scrollTop = term.scrollHeight;
+    // Fire usage event
+    fetch('/api/usage/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: (state.user && state.user.id) || 'anonymous', feature: 'asset_view', meta: { asset_id: asset.id } }) }).catch(function(){});
+  },
+
+  connect: async function() {
+    if (!window.ethereum) { logErr('MetaMask not detected. Install MetaMask or use a Web3 browser.'); return; }
+    try {
+      var accounts = await window.ethereum.request({ method:'eth_requestAccounts' });
+      state.wallet = accounts[0];
+      document.getElementById('sWallet').textContent = state.wallet.slice(0,10)+'...';
+      logOk('Wallet connected: ' + state.wallet);
+      logInfo('Switching to Linea Mainnet (chainId 59144)...');
+      try {
+        await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{chainId:'0xE708'}] });
+        logOk('Linea Mainnet active.');
+      } catch(_) { logErr('Could not switch to Linea. Add it manually in MetaMask.'); }
+    } catch(e) {
+      if (e.code !== 4001) logErr('Connection failed: ' + e.message);
+    }
+  },
+
+  mint: function(arg) {
+    var n = parseFloat(arg) || 10;
+    if (!state.wallet) { logErr('Connect wallet first: "connect"'); return; }
+    state.balance += n;
+    document.getElementById('sBrdg').textContent = state.balance.toFixed(4) + ' BRDG';
+    logOk('Minted ' + n + ' BRDG → balance: ' + state.balance.toFixed(4));
+  },
+
+  send: function(arg, arg2) {
+    var n = parseFloat(arg) || 1;
+    if (!state.wallet) { logErr('Connect wallet first: "connect"'); return; }
+    if (state.balance < n) { logErr('Insufficient balance: ' + state.balance.toFixed(4) + ' BRDG'); return; }
+    state.balance -= n;
+    document.getElementById('sBrdg').textContent = state.balance.toFixed(4) + ' BRDG';
+    logOk('Sent ' + n + ' BRDG' + (arg2 ? ' → ' + arg2 : '') + ' · new balance: ' + state.balance.toFixed(4));
+  },
+
+  federation: function() {
+    logInfo('⬡ BRIDGE AI FEDERATION PLATFORMS');
+    var platforms = [
+      { id:'AID',         url:'/aid-home.html',       desc:'AI for Development — humanitarian AI' },
+      { id:'EHSA',        url:'/ehsa-app.html',        desc:'Electronic Health Systems Africa' },
+      { id:'HOSPITAL',    url:'/hospital-home.html',   desc:'Hospital in a Box — deployable health' },
+      { id:'ROOTEDEARTH', url:'/rootedearth-home.html',desc:'Ecological sovereignty & regeneration' },
+      { id:'SUPAC',       url:'/supac-home.html',      desc:'Sovereign Unified AI Platform Architecture' },
+      { id:'BAN',         url:'/ban-home.html',        desc:'Bridge AI Node Network' },
+      { id:'UBI',         url:'/ubi-home.html',        desc:'Universal Basic Income — BRDG distribution' },
+      { id:'ABAAS',       url:'/abaas.html',           desc:'AI-Based Agent Architecture Systems' },
+    ];
+    platforms.forEach(function(p) {
+      log('  <span style="color:#00ffc3">'+p.id+'</span> <span style="color:#64748b">'+p.desc+'</span>', '');
+    });
+    logDim('  All platforms share BRDG economy + governance');
+  },
+
+  agents: async function() {
+    logInfo('⬢ ACTIVE AI AGENTS');
+    try {
+      var r = await fetch('/api/agents');
+      var d = await r.json();
+      var agents = d.agents || d.data || [];
+      if (!agents.length) { logDim('  No agents running'); return; }
+      agents.slice(0,10).forEach(function(a) {
+        var status = a.status === 'active' ? '<span style="color:#00ff88">●</span>' : '<span style="color:#64748b">○</span>';
+        log('  ' + status + ' <span style="color:#00ffc3">'+a.name+'</span> <span style="color:#64748b">'+a.type+'</span>', '');
+      });
+      if (agents.length > 10) logDim('  ... +' + (agents.length - 10) + ' more');
+    } catch(_) { logErr('Could not reach agent registry'); }
+  },
+
+  pipeline: async function() {
+    logInfo('▶ ACTIVATION PIPELINE STATUS');
+    try {
+      var r = await fetch('/api/activation/pipeline');
+      var d = await r.json();
+      if (!d.ok) { logErr('Pipeline: ' + (d.error||'unreachable')); return; }
+      var users = d.users || [];
+      var byStage = {};
+      users.forEach(function(u){ byStage[u.stage] = (byStage[u.stage]||0)+1; });
+      Object.keys(byStage).forEach(function(s){ logDim('  '+s+': '+byStage[s]+' users'); });
+      logOk('  Total: ' + users.length + ' in pipeline');
+    } catch(_) { logErr('Pipeline API unreachable'); }
+  },
+
+  lifecycle: async function() {
+    logInfo('♻ RUNNING LIFECYCLE ENGINE...');
+    try {
+      var r = await fetch('/api/lifecycle/process', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({limit:10}) });
+      var d = await r.json();
+      logOk('Lifecycle complete — ' + (d.processed||0) + ' subscribers processed');
+    } catch(_) { logErr('Lifecycle API unreachable'); }
+  },
+
+  position: function() {
+    logInfo('◉ POSITION INDEX');
+    try {
+      var pos = JSON.parse(localStorage.getItem('brdg_position') || '{}');
+      if (pos.level) {
+        logOk('  Level:     ' + pos.level);
+        logOk('  Rank:      ' + (pos.rank || 'CREW MEMBER'));
+        logDim('  XP:        ' + (pos.xp || 0));
+        logDim('  Referrals: ' + (pos.referrals || 0));
+        logDim('  Updated:   ' + (pos.ts ? new Date(pos.ts).toLocaleString() : 'not set'));
+      } else {
+        logDim('  No position data — register at /onboarding to begin');
+      }
+    } catch(_) { logDim('  No position data found'); }
+    logDim('  Registry:  /registry · Network topology: /topology');
+  },
+
+  rank: function() {
+    COMMANDS.position();
+  },
+
+  xp: function() {
+    COMMANDS.position();
+  },
+
+  clear: function() {
+    term.innerHTML = '';
+  },
+};
+
+function run() {
+  var input = document.getElementById('cmd').value.trim();
+  document.getElementById('cmd').value = '';
+  if (!input) return;
+  state.history.push(input);
+  log('<span style="color:#64748b">› </span>' + input, '');
+  var parts = input.split(' ');
+  var cmd   = parts[0].toLowerCase();
+  var args  = parts.slice(1);
+  var fn = COMMANDS[cmd];
+  if (fn) {
+    fn.apply(null, args);
+  } else {
+    logErr('Unknown command: ' + cmd + ' — type "help"');
+  }
+}
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+(async function boot() {
+  logOk('BRIDGE AI OS RUNTIME — v3.0');
+  logInfo('Connecting to live services...');
+  await loadData();
+  logOk('Treasury: ' + parseFloat(state.treasury.total).toFixed(4) + ' BRDG');
+  logOk('SVG Engine: ' + state.svg.skills + ' skills active · p50 ' + state.svg.p50 + 'ms');
+  logDim('Federation: AID · EHSA · HospitalInABox · RootedEarth · SUPAC · BAN · UBI · ABAAS');
+  logInfo('Type "help" for commands. Type "assets" to view the digital asset registry.');
+  log('', '');
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
+<script>
+// ── PixiJS Data Stream Background ──────────────────────────────────────────
+(function initDataStream() {
+  var pixiCanvas = document.getElementById('pixi-runtime');
+  if (!pixiCanvas || typeof PIXI === 'undefined') return;
+
+  var W = window.innerWidth, H = window.innerHeight;
+  pixiCanvas.width  = W;
+  pixiCanvas.height = H;
+
+  var app = new PIXI.Application({
+    view: pixiCanvas,
+    width: W,
+    height: H,
+    backgroundAlpha: 0,
+    antialias: false,
+    resolution: 1,
+  });
+
+  window.addEventListener('resize', function() {
+    W = window.innerWidth; H = window.innerHeight;
+    app.renderer.resize(W, H);
+    initColumns();
+  });
+
+  // Matrix-style falling code columns
+  var COLS = [];
+  var CHARS = 'ABRDGビリジIA01∑∆Ω⬡◈⧆▶◉⎔Ξ';
+
+  function initColumns() {
+    COLS = [];
+    var colCount = Math.floor(W / 14);
+    for (var i = 0; i < colCount; i++) {
+      COLS.push({
+        x: i * 14 + 7,
+        y: -Math.random() * H,
+        speed: 0.8 + Math.random() * 1.8,
+        len: 8 + Math.floor(Math.random() * 14),
+        chars: [],
+        opacity: 0.04 + Math.random() * 0.08,
+        color: Math.random() < 0.7 ? 0x00ffc3 : (Math.random() < 0.5 ? 0x00d4ff : 0xa855f7),
+      });
+      for (var j = 0; j < 20; j++) {
+        COLS[COLS.length-1].chars.push(CHARS[Math.floor(Math.random() * CHARS.length)]);
+      }
+    }
+  }
+  initColumns();
+
+  var gfx = new PIXI.Graphics();
+  app.stage.addChild(gfx);
+
+  // Horizontal scan lines
+  var scanLines = [];
+  for (var s = 0; s < 3; s++) {
+    scanLines.push({ y: Math.random() * H, speed: 0.3 + Math.random() * 0.5, alpha: 0.06 + Math.random() * 0.06 });
+  }
+
+  app.ticker.add(function() {
+    gfx.clear();
+
+    // Scan lines (horizontal glow streaks)
+    scanLines.forEach(function(sl) {
+      sl.y += sl.speed;
+      if (sl.y > H) sl.y = 0;
+      gfx.lineStyle(1, 0x00ffc3, sl.alpha);
+      gfx.moveTo(0, sl.y);
+      gfx.lineTo(W, sl.y);
+    });
+
+    // Matrix column drops — lightweight version using Graphics dots
+    COLS.forEach(function(col) {
+      col.y += col.speed;
+      if (col.y > H + col.len * 14) {
+        col.y = -Math.random() * 200;
+        col.speed = 0.8 + Math.random() * 1.8;
+      }
+
+      for (var k = 0; k < col.len; k++) {
+        var ky = col.y - k * 13;
+        if (ky < 0 || ky > H) continue;
+        var fade = (1 - k / col.len) * col.opacity;
+        // Head char is brighter
+        if (k === 0) fade = Math.min(0.35, col.opacity * 4);
+        gfx.beginFill(col.color, fade);
+        gfx.drawRect(col.x - 4, ky, 8, 2);
+        gfx.endFill();
+      }
+    });
+
+    // Avatar-linked sparkle burst — fires from top of sidebar area on load
+    // (subtle: 3 random sparkle particles per frame)
+    for (var i = 0; i < 2; i++) {
+      gfx.beginFill(0x00ffc3, 0.05 + Math.random() * 0.06);
+      gfx.drawCircle(
+        Math.random() * 220,   // sidebar width ~220px
+        Math.random() * 160,   // top of sidebar
+        0.8 + Math.random() * 1.5
+      );
+      gfx.endFill();
+    }
+  });
+})();
+</script>
+<script src="/bridge-nav.js" defer></script>
+</body>
+</html>

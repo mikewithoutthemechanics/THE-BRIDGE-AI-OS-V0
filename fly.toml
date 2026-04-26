@@ -1,0 +1,39 @@
+# Fly.io deployment config
+# Deploy: fly launch  (first time)
+#         fly deploy  (subsequent)
+
+app = "god-mode-topology"
+primary_region = "iad"
+
+[build]
+  # Fly.io auto-detects Node.js via package.json
+
+[env]
+  NODE_ENV = "production"
+  # PORT is injected as 8080 by Fly.io automatically
+
+[http_service]
+  internal_port       = 8080
+  force_https         = true
+  auto_stop_machines  = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type       = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[checks]
+  [checks.health]
+    grace_period = "10s"
+    interval     = "30s"
+    method       = "GET"
+    path         = "/health"
+    protocol     = "http"
+    timeout      = "5s"

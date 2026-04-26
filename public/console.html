@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="description" content="BRIDGE AI OS v3 -- Terminal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/console">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/console">
+<meta property="og:title" content="BRIDGE AI OS v3 -- Terminal">
+<meta property="og:description" content="BRIDGE AI OS v3 -- Terminal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BRIDGE AI OS v3 -- Terminal">
+<meta name="twitter:description" content="BRIDGE AI OS v3 -- Terminal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRIDGE AI OS v3 -- Terminal</title>
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+    style-src  'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;
+    font-src   'self' https://cdn.jsdelivr.net https://fonts.gstatic.com data:;
+    connect-src 'self' https://cdn.jsdelivr.net wss: ws:;
+    img-src 'self' data:;
+    object-src 'none';
+    base-uri 'self';
+  ">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0e14; --surface: #0d1521; --border: #1a2d40;
+      --cyan: #00e0ff; --green: #00e57b; --red: #ff3c5a;
+      --yellow: #ffd166; --magenta: #c678dd; --dim: #4a6070;
+      --text: #c8dce8;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; overflow: hidden; }
+
+    /* Matrix rain canvas */
+    #matrix-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0; opacity: 0.04; pointer-events: none;
+    }
+
+    .app { display: flex; flex-direction: column; height: calc(100vh - 56px); position: relative; z-index: 1; }
+
+    /* Header bar */
+    .header {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.4rem 0.75rem; background: var(--surface);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .header-title { color: var(--cyan); font-size: 0.85rem; font-weight: bold; letter-spacing: 0.15em; }
+    .header-nav { display: flex; gap: 2px; margin-left: 1rem; }
+    .header-nav a {
+      color: var(--dim); text-decoration: none; font-size: 0.65rem; padding: 3px 8px;
+      border-radius: 4px; transition: all 0.15s; border: 1px solid transparent;
+    }
+    .header-nav a:hover { color: var(--cyan); border-color: rgba(0,200,255,.2); background: rgba(0,200,255,.05); }
+    .header-stats { display: flex; gap: 1.2rem; margin-left: auto; font-size: 0.7rem; color: var(--dim); }
+    .header-stats span { display: flex; align-items: center; gap: 0.3rem; }
+    .header-stats .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; }
+    .header-stats .val { color: var(--text); }
+
+    /* Terminal container */
+    #terminal-container { flex: 1; padding: 4px; overflow: hidden; }
+
+    /* Status bar */
+    .status-bar {
+      display: flex; align-items: center; gap: 1.5rem;
+      padding: 0.35rem 1rem; background: var(--surface);
+      border-top: 1px solid var(--border); font-size: 0.65rem;
+      color: var(--dim); flex-shrink: 0;
+    }
+    .status-bar .active { color: var(--green); }
+    .status-bar .label { color: var(--dim); }
+
+    /* Blinking cursor via xterm config */
+    .xterm-cursor-layer { animation: none; }
+  </style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+<div class="app">
+  <div class="header">
+    <span class="header-title">BRIDGE AI OS v3</span>
+    <nav class="header-nav">
+      <a href="/">Home</a>
+      <a href="/portal.html">Portal</a>
+      <a href="/economy.html">Economy</a>
+      <a href="/admin-revenue.html">Revenue</a>
+      <a href="/treasury-dashboard.html">Treasury</a>
+      <a href="/agents.html">Agents</a>
+    </nav>
+    <div class="header-stats">
+      <span><span class="dot"></span> <span class="val" id="h-session">---</span></span>
+      <span class="label">AGENTS:</span><span class="val" id="h-agents">8</span>
+      <span class="label">CIRC:</span><span class="val" id="h-circ">--</span>
+      <span class="label">BURNED:</span><span class="val" id="h-burned">--</span>
+    </div>
+  </div>
+  <div id="terminal-container"></div>
+  <div class="status-bar">
+    <span><span class="label">AGENTS </span><span class="active" id="sb-agents">8 connected</span></span>
+    <span><span class="label">MEMORY </span><span id="sb-memory">0 entries</span></span>
+    <span><span class="label">UPTIME </span><span id="sb-uptime">00:00:00</span></span>
+    <span style="margin-left:auto;"><span class="label">SESSION </span><span id="sb-session">---</span></span>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ── Session ─────────────────────────────────────────────────────────── */
+  var sessionId = localStorage.getItem('bridge_session_id');
+  if (!sessionId) {
+    sessionId = 'ses_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+    localStorage.setItem('bridge_session_id', sessionId);
+  }
+  var sessionStart = Date.now();
+  var memoryEntries = 0;
+
+  document.getElementById('h-session').textContent = sessionId.slice(0, 12);
+  document.getElementById('sb-session').textContent = sessionId;
+
+  /* ── Command history ─────────────────────────────────────────────────── */
+  var MAX_HISTORY = 100;
+  var history = [];
+  try { history = JSON.parse(localStorage.getItem('bridge_cmd_history') || '[]'); } catch (_) { history = []; }
+  var historyIdx = -1;
+  var savedLine = '';
+
+  function pushHistory(cmd) {
+    if (!cmd.trim()) return;
+    if (history.length > 0 && history[history.length - 1] === cmd) return;
+    history.push(cmd);
+    if (history.length > MAX_HISTORY) history.shift();
+    localStorage.setItem('bridge_cmd_history', JSON.stringify(history));
+  }
+
+  /* ── Session memory store ────────────────────────────────────────────── */
+  var sessionMemory = [];
+
+  /* ── Auto-complete data ──────────────────────────────────────────────── */
+  var COMMANDS = ['/agent', '/chain', '/process', '/agents', '/memory', '/clear', '/help', '/primes', '/economy', '/status', '/treasury', '/verify', '/ask', 'ls', 'pwd', 'whoami', 'history', 'nav', 'open', 'exit'];
+  var AGENT_NAMES = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'sales', 'finance', 'growth', 'intelligence', 'nurture', 'closer', 'campaign', 'creative', 'support', 'supply'];
+
+  /* ── Help system ────────────────────────────────────────────────────── */
+  var HELP_TOPICS = {
+    'agent':    { usage: '/agent <name> <task>', desc: 'Execute a single AI agent by name', examples: ['/agent sales Find 5 leads for a SaaS startup', '/agent finance Generate invoice for R5,000', '/agent support Check open tickets'] },
+    'chain':    { usage: '/chain <task>', desc: 'Auto-detect the best agents and chain them together', examples: ['/chain Onboard a new client named TechBridge IO', '/chain Research competitors in the AI agent space'] },
+    'process':  { usage: '/process <input>', desc: 'Auto-route input to the best single agent', examples: ['/process What is our current revenue?', '/process Draft a proposal for consulting services'] },
+    'ask':      { usage: '/ask <question>', desc: 'Ask the AI a question directly (LLM inference)', examples: ['/ask What is our burn rate?', '/ask Summarize today\'s agent activity'] },
+    'agents':   { usage: '/agents', desc: 'List all registered agents with status, layer, and trust score' },
+    'primes':   { usage: '/primes', desc: 'Show the prime agent topology (Aurora, Atlas, Vega, etc.)' },
+    'economy':  { usage: '/economy', desc: 'Full economy dashboard: treasury, revenue, DeFi, bossbots' },
+    'treasury': { usage: '/treasury', desc: 'Treasury balance, buckets, and on-chain verification links' },
+    'verify':   { usage: '/verify', desc: 'Zero-trust verification: chain integrity, proof count, key IDs' },
+    'status':   { usage: '/status', desc: 'Health check across Brain, Swarm, Treasury, and Network' },
+    'memory':   { usage: '/memory', desc: 'Show commands and results stored in this session' },
+    'clear':    { usage: '/clear or Ctrl+L', desc: 'Clear the terminal screen' },
+    'ls':       { usage: 'ls [path]', desc: 'List the virtual filesystem' },
+    'pwd':      { usage: 'pwd', desc: 'Show current virtual path' },
+    'whoami':   { usage: 'whoami', desc: 'Show your session identity' },
+    'history':  { usage: 'history', desc: 'Show recent command history' },
+    'nav':      { usage: 'nav', desc: 'Show all pages you can navigate to from this console' },
+    'open':     { usage: 'open <page>', desc: 'Navigate to a page by name', examples: ['open revenue', 'open treasury', 'open agents', 'open home'] },
+    'exit':     { usage: 'exit', desc: 'Leave the console and return to the home page' },
+  };
+
+  /* ── Terminal init ───────────────────────────────────────────────────── */
+  var term = new Terminal({
+    theme: {
+      background: '#0a0e14',
+      foreground: '#c8dce8',
+      cursor: '#00e0ff',
+      cursorAccent: '#0a0e14',
+      selectionBackground: '#1a3a5c',
+      cyan: '#00e0ff',
+      green: '#00e57b',
+      red: '#ff3c5a',
+      yellow: '#ffd166',
+      magenta: '#c678dd',
+      white: '#c8dce8',
+      brightBlack: '#4a6070'
+    },
+    cursorBlink: true,
+    cursorStyle: 'block',
+    fontSize: 14,
+    fontFamily: "'Courier New', 'Consolas', monospace",
+    scrollback: 5000,
+    allowProposedApi: true
+  });
+
+  var fitAddon = new FitAddon.FitAddon();
+  term.loadAddon(fitAddon);
+  var termEl = document.getElementById('terminal-container');
+  if (!termEl) { console.error('terminal-container not found'); return; }
+  term.open(termEl);
+  // xterm 5.x needs a frame to initialize internal buffers before write()
+  requestAnimationFrame(function () { fitAddon.fit(); });
+  window.addEventListener('resize', function () { fitAddon.fit(); });
+
+  /* ── Color helpers ───────────────────────────────────────────────────── */
+  var C = {
+    cyan:    function (s) { return '\x1b[36m' + s + '\x1b[0m'; },
+    green:   function (s) { return '\x1b[32m' + s + '\x1b[0m'; },
+    red:     function (s) { return '\x1b[31m' + s + '\x1b[0m'; },
+    yellow:  function (s) { return '\x1b[33m' + s + '\x1b[0m'; },
+    magenta: function (s) { return '\x1b[35m' + s + '\x1b[0m'; },
+    dim:     function (s) { return '\x1b[2m' + s + '\x1b[0m'; },
+    bold:    function (s) { return '\x1b[1m' + s + '\x1b[0m'; },
+    reset:   '\x1b[0m'
+  };
+
+  function writeLn(s) { term.writeln(s || ''); }
+
+  /* ── Boot banner ─────────────────────────────────────────────────────── */
+  function showBanner() {
+    writeLn('');
+    writeLn(C.cyan('  ╔══════════════════════════════════════════════════════════╗'));
+    writeLn(C.cyan('  ║') + C.bold('  ____       _     _              ___  ____  ') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.bold(' | __ ) _ __(_) __| | __ _  ___ / _ \\/ ___|') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.bold(' |  _ \\| \'__| |/ _` |/ _` |/ _ \\ | | \\___ \\') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.bold(' | |_) | |  | | (_| | (_| |  __/ |_| |___) |') + C.cyan('           ║'));
+    writeLn(C.cyan('  ║') + C.bold(' |____/|_|  |_|\\__,_|\\__, |\\___|\\___/|____/') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.bold('                      |___/                 ') + C.cyan('            ║'));
+    writeLn(C.cyan('  ║') + C.dim('  Autonomous Agent Orchestration Engine') + C.green(' v3.0') + C.cyan('          ║'));
+    writeLn(C.cyan('  ╚══════════════════════════════════════════════════════════╝'));
+    writeLn('');
+    writeLn('  ' + C.dim('Session ') + C.yellow(sessionId) + C.dim(' | Linea L2 | 35 agents | 150+ endpoints'));
+    writeLn('');
+    writeLn('  ' + C.green('>') + ' Type a question or task — AI routes it automatically');
+    writeLn('  ' + C.green('>') + ' ' + C.bold('help') + C.dim(' commands') + '  ' + C.bold('agents') + C.dim(' list') + '  ' + C.bold('treasury') + C.dim(' balance') + '  ' + C.bold('status') + C.dim(' health'));
+    writeLn('');
+  }
+
+  // Defer first writes until xterm internal buffers are initialized
+  requestAnimationFrame(function () {
+    showBanner();
+    prompt();
+  });
+
+  /* ── Prompt ──────────────────────────────────────────────────────────── */
+  var PROMPT_STR = '\x1b[36mbridge\x1b[0m\x1b[2m@v3\x1b[0m\x1b[36m $\x1b[0m ';
+  var PROMPT_LEN = 12; // visible char count of prompt
+  var currentLine = '';
+  var cursorPos = 0;
+
+  function prompt() {
+    term.write(PROMPT_STR);
+    currentLine = '';
+    cursorPos = 0;
+    historyIdx = -1;
+    savedLine = '';
+  }
+
+  /* ── Redraw current line (for editing / history) ─────────────────────── */
+  function redrawLine() {
+    // Move cursor to prompt start, clear line, rewrite
+    term.write('\r' + PROMPT_STR + currentLine + '\x1b[K');
+    // Position cursor correctly
+    var back = currentLine.length - cursorPos;
+    if (back > 0) term.write('\x1b[' + back + 'D');
+  }
+
+  /* ── Tab completion ──────────────────────────────────────────────────── */
+  function tabComplete() {
+    var parts = currentLine.split(/\s+/);
+    if (parts.length === 1) {
+      // Complete command
+      var partial = parts[0];
+      var matches = COMMANDS.filter(function (c) { return c.indexOf(partial) === 0; });
+      if (matches.length === 1) {
+        currentLine = matches[0] + ' ';
+        cursorPos = currentLine.length;
+        redrawLine();
+      } else if (matches.length > 1) {
+        writeLn('');
+        writeLn(C.dim(matches.join('  ')));
+        prompt();
+        currentLine = partial;
+        cursorPos = currentLine.length;
+        term.write(currentLine);
+      }
+    } else if (parts[0] === '/agent' && parts.length === 2) {
+      // Complete agent name
+      var partialA = parts[1];
+      var matchesA = AGENT_NAMES.filter(function (n) { return n.indexOf(partialA) === 0; });
+      if (matchesA.length === 1) {
+        currentLine = '/agent ' + matchesA[0] + ' ';
+        cursorPos = currentLine.length;
+        redrawLine();
+      } else if (matchesA.length > 1) {
+        writeLn('');
+        writeLn(C.dim(matchesA.join('  ')));
+        prompt();
+        currentLine = '/agent ' + partialA;
+        cursorPos = currentLine.length;
+        term.write(currentLine);
+      }
+    }
+  }
+
+  /* ── Spinner ─────────────────────────────────────────────────────────── */
+  var SPINNER_FRAMES = ['|', '/', '-', '\\'];
+  var spinnerTimer = null;
+  var spinnerFrame = 0;
+
+  function startSpinner(label) {
+    spinnerFrame = 0;
+    term.write('\r\x1b[K  ' + C.yellow(SPINNER_FRAMES[0]) + ' ' + C.dim(label || 'Executing...'));
+    spinnerTimer = setInterval(function () {
+      spinnerFrame = (spinnerFrame + 1) % SPINNER_FRAMES.length;
+      term.write('\r\x1b[K  ' + C.yellow(SPINNER_FRAMES[spinnerFrame]) + ' ' + C.dim(label || 'Executing...'));
+    }, 100);
+  }
+
+  function stopSpinner() {
+    if (spinnerTimer) { clearInterval(spinnerTimer); spinnerTimer = null; }
+    term.write('\r\x1b[K');
+  }
+
+  /* ── API helpers ─────────────────────────────────────────────────────── */
+  function apiPost(path, body) {
+    return fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({}, body, { session_id: sessionId }))
+    }).then(function (r) { return r.json(); });
+  }
+
+  function apiGet(path) {
+    return fetch(path + (path.indexOf('?') >= 0 ? '&' : '?') + 'session_id=' + sessionId)
+      .then(function (r) { return r.json(); });
+  }
+
+  /* ── Format data with indentation ────────────────────────────────────── */
+  function formatData(obj, indent) {
+    indent = indent || 0;
+    var pad = '  '.repeat(indent);
+    var lines = [];
+    if (obj === null || obj === undefined) return [];
+    if (typeof obj !== 'object') {
+      lines.push(pad + String(obj));
+      return lines;
+    }
+    var keys = Object.keys(obj);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      var v = obj[k];
+      if (v === null || v === undefined) {
+        lines.push(pad + C.dim(k + ': ') + C.dim('null'));
+      } else if (typeof v === 'object' && !Array.isArray(v)) {
+        lines.push(pad + C.cyan(k + ':'));
+        lines = lines.concat(formatData(v, indent + 1));
+      } else if (Array.isArray(v)) {
+        lines.push(pad + C.cyan(k + ':') + C.dim(' [' + v.length + ' items]'));
+        for (var j = 0; j < Math.min(v.length, 10); j++) {
+          if (typeof v[j] === 'object') {
+            lines.push(pad + '  ' + C.dim('-'));
+            lines = lines.concat(formatData(v[j], indent + 2));
+          } else {
+            lines.push(pad + '  ' + C.dim('- ') + String(v[j]));
+          }
+        }
+        if (v.length > 10) lines.push(pad + '  ' + C.dim('... +' + (v.length - 10) + ' more'));
+      } else if (typeof v === 'number') {
+        lines.push(pad + C.dim(k + ': ') + C.yellow(String(v)));
+      } else if (typeof v === 'boolean') {
+        lines.push(pad + C.dim(k + ': ') + (v ? C.green('true') : C.red('false')));
+      } else {
+        lines.push(pad + C.dim(k + ': ') + String(v));
+      }
+    }
+    return lines;
+  }
+
+  /* ── Display agent response ──────────────────────────────────────────── */
+  function displayResponse(data, label) {
+    writeLn('');
+    if (label) writeLn('  ' + C.magenta('[' + label + ']'));
+    if (data.ok === false || data.error) {
+      writeLn('  ' + C.red('ERROR: ') + (data.error || 'Unknown error'));
+    } else if (data.ok) {
+      writeLn('  ' + C.green('OK'));
+    }
+    // Show main data, skip meta keys
+    var skip = { ok: 1, ts: 1, session_id: 1, latency_ms: 1, cost: 1, tokens: 1, model: 1 };
+    var keys = Object.keys(data);
+    var body = {};
+    var meta = {};
+    for (var i = 0; i < keys.length; i++) {
+      if (skip[keys[i]]) {
+        meta[keys[i]] = data[keys[i]];
+      } else {
+        body[keys[i]] = data[keys[i]];
+      }
+    }
+    var lines = formatData(body, 1);
+    for (var j = 0; j < lines.length; j++) writeLn(lines[j]);
+
+    // Meta line
+    var metaParts = [];
+    if (meta.latency_ms) metaParts.push('latency: ' + meta.latency_ms + 'ms');
+    if (meta.cost) metaParts.push('cost: $' + meta.cost);
+    if (meta.tokens) metaParts.push('tokens: ' + meta.tokens);
+    if (meta.model) metaParts.push('model: ' + meta.model);
+    if (meta.ts) metaParts.push('ts: ' + new Date(meta.ts).toISOString());
+    if (metaParts.length) {
+      writeLn('');
+      writeLn('  ' + C.dim(metaParts.join(' | ')));
+    }
+    writeLn('');
+  }
+
+  /* ── Chain display (sequential steps) ────────────────────────────────── */
+  function displayChain(steps) {
+    if (!steps || !steps.length) return;
+    writeLn('  ' + C.cyan('Chain execution:'));
+    for (var i = 0; i < steps.length; i++) {
+      var s = steps[i];
+      var statusIcon = s.status === 'done' || s.status === 'completed' ? C.green('[OK]') :
+                       s.status === 'failed' ? C.red('[FAIL]') : C.yellow('[' + (s.status || '..') + ']');
+      writeLn('  ' + C.dim((i + 1) + '.') + ' ' + C.magenta(s.agent || s.action || 'step') + ' ' + statusIcon);
+      if (s.result) writeLn('     ' + C.dim(typeof s.result === 'string' ? s.result : JSON.stringify(s.result)));
+    }
+  }
+
+  /* ── Command execution ───────────────────────────────────────────────── */
+  function storeMemory(cmd, result) {
+    sessionMemory.push({ cmd: cmd, result: result, ts: Date.now() });
+    memoryEntries = sessionMemory.length;
+    document.getElementById('sb-memory').textContent = memoryEntries + ' entries';
+  }
+
+  async function executeCommand(raw) {
+    var trimmed = raw.trim();
+    if (!trimmed) { prompt(); return; }
+
+    pushHistory(trimmed);
+
+    var parts = trimmed.split(/\s+/);
+    var cmd = parts[0].toLowerCase();
+    var args = parts.slice(1);
+
+    // Auto-prefix / if user types bare command name
+    var KNOWN_BARE = ['help','clear','agents','agent','chain','process','memory','primes','economy','status','ls','pwd','whoami','treasury','verify','ask','history','nav','exit','open'];
+    if (!cmd.startsWith('/') && KNOWN_BARE.indexOf(cmd) !== -1) {
+      cmd = '/' + cmd;
+    }
+
+    switch (cmd) {
+
+      case '/help':
+        writeLn('');
+        if (args.length > 0) {
+          // Topic-specific help: /help agent, /help chain, etc.
+          var topic = args[0].replace(/^\//, '').toLowerCase();
+          var h = HELP_TOPICS[topic];
+          if (h) {
+            writeLn('  ' + C.cyan(h.usage));
+            writeLn('  ' + h.desc);
+            if (h.examples) {
+              writeLn('');
+              writeLn('  ' + C.dim('Examples:'));
+              for (var ex = 0; ex < h.examples.length; ex++) {
+                writeLn('    ' + C.green('$') + ' ' + h.examples[ex]);
+              }
+            }
+          } else {
+            writeLn('  ' + C.red('No help for: ') + C.yellow(topic));
+            writeLn('  ' + C.dim('Available topics: ') + Object.keys(HELP_TOPICS).join(', '));
+          }
+        } else {
+          // Full help listing, grouped by category
+          writeLn('  ' + C.bold(C.cyan('BRIDGE AI OS v3 — Command Reference')));
+          writeLn('');
+          writeLn('  ' + C.yellow('Agent Commands'));
+          writeLn('    ' + C.bold('/agent <name> <task>') + '   Execute a specific agent');
+          writeLn('    ' + C.bold('/chain <task>') + '          Chain multiple agents on a task');
+          writeLn('    ' + C.bold('/process <input>') + '       Auto-route to best agent');
+          writeLn('    ' + C.bold('/ask <question>') + '        Ask the AI directly');
+          writeLn('    ' + C.bold('/agents') + '                List all agents + status');
+          writeLn('    ' + C.bold('/primes') + '                Show prime agent topology');
+          writeLn('');
+          writeLn('  ' + C.yellow('System & Treasury'));
+          writeLn('    ' + C.bold('/status') + '                Health check (Brain, Swarm, Treasury)');
+          writeLn('    ' + C.bold('/economy') + '               Full economy dashboard');
+          writeLn('    ' + C.bold('/treasury') + '              Treasury balances + on-chain links');
+          writeLn('    ' + C.bold('/verify') + '                Zero-trust verification status');
+          writeLn('');
+          writeLn('  ' + C.yellow('Navigation'));
+          writeLn('    ' + C.bold('nav') + '                    Show all pages');
+          writeLn('    ' + C.bold('open <page>') + '            Go to a page  ' + C.dim('(e.g. open revenue)'));
+          writeLn('    ' + C.bold('exit') + '                   Return to home');
+          writeLn('');
+          writeLn('  ' + C.yellow('Session'));
+          writeLn('    ' + C.bold('/memory') + '                Show session memory');
+          writeLn('    ' + C.bold('history') + '                Recent command history');
+          writeLn('    ' + C.bold('/clear') + ' ' + C.dim('(Ctrl+L)') + '       Clear terminal');
+          writeLn('    ' + C.bold('ls') + '                     Virtual filesystem');
+          writeLn('    ' + C.bold('pwd') + '  ' + C.bold('whoami') + '            Path / identity');
+          writeLn('');
+          writeLn('  ' + C.dim('Tip: Type ') + C.cyan('help <command>') + C.dim(' for details, e.g. ') + C.cyan('help agent'));
+          writeLn('  ' + C.dim('Tip: / prefix is optional — "help" and "/help" both work'));
+          writeLn('  ' + C.dim('Tip: Just type a question and it routes to an AI agent automatically'));
+        }
+        writeLn('');
+        prompt();
+        return;
+
+      case '/clear':
+        term.clear();
+        showBanner();
+        prompt();
+        return;
+
+      case '/memory':
+        writeLn('');
+        writeLn('  ' + C.cyan('Session Memory') + C.dim(' (' + sessionMemory.length + ' entries)'));
+        if (sessionMemory.length === 0) {
+          writeLn('  ' + C.dim('No entries yet. Execute commands to build memory.'));
+        } else {
+          var show = sessionMemory.slice(-15);
+          for (var m = 0; m < show.length; m++) {
+            var entry = show[m];
+            var age = Math.round((Date.now() - entry.ts) / 1000);
+            writeLn('  ' + C.dim('[' + age + 's ago]') + ' ' + C.yellow(entry.cmd) + ' ' +
+              (entry.result.ok ? C.green('OK') : C.red('ERR')));
+          }
+        }
+        writeLn('');
+        prompt();
+        return;
+
+      case '/agents':
+        startSpinner('Fetching agents...');
+        try {
+          var agentsData = await apiGet('/api/swarm/agents');
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Registered Agents') + C.dim(' (' + (agentsData.count || 0) + ')'));
+          var agents = agentsData.agents || [];
+          for (var a = 0; a < agents.length; a++) {
+            var ag = agents[a];
+            var st = ag.status === 'active' ? C.green(ag.status) : C.yellow(ag.status);
+            writeLn('  ' + C.magenta(ag.name.padEnd(10)) + ' ' + C.dim(ag.role.padEnd(14)) +
+              ' ' + st + '  ' + C.dim('L' + ag.layer + ' trust:' + ag.trust + ' tasks:' + ag.tasks_done));
+          }
+          writeLn('');
+          storeMemory(trimmed, agentsData);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/primes':
+        startSpinner('Loading prime agents...');
+        try {
+          var primeData = await apiGet('/api/swarm/topology');
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Prime Agent Topology'));
+          displayResponse(primeData, 'PRIME');
+          storeMemory(trimmed, primeData);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/economy':
+        startSpinner('Fetching economy stats...');
+        try {
+          var econData = await apiGet('/api/economy/full');
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Bridge Economy Dashboard'));
+          displayResponse(econData, 'ECONOMY');
+          storeMemory(trimmed, econData);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/status':
+        startSpinner('Running health check...');
+        try {
+          var results = await Promise.allSettled([
+            apiGet('/api/health'),
+            apiGet('/api/swarm/health'),
+            apiGet('/api/treasury/status'),
+            apiGet('/api/network/status')
+          ]);
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('System Health Check'));
+          var labels = ['Brain', 'Swarm', 'Treasury', 'Network'];
+          for (var h = 0; h < results.length; h++) {
+            var r = results[h];
+            if (r.status === 'fulfilled' && r.value.ok) {
+              writeLn('  ' + C.green('[OK]') + ' ' + labels[h]);
+            } else {
+              var err = r.status === 'rejected' ? r.reason.message : (r.value.error || 'fail');
+              writeLn('  ' + C.red('[FAIL]') + ' ' + labels[h] + ' - ' + C.dim(err));
+            }
+          }
+          writeLn('');
+          storeMemory(trimmed, { ok: true, checks: labels.length });
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/agent':
+        if (args.length < 1) {
+          writeLn('  ' + C.red('Usage: /agent <name> <input>'));
+          prompt();
+          return;
+        }
+        var agentName = args[0];
+        var agentInput = args.slice(1).join(' ') || 'status check';
+        startSpinner('Executing agent ' + agentName + '...');
+        try {
+          var execResult = await apiPost('/api/twin/decide', {
+            prompt: '[Agent:' + agentName + '] ' + agentInput,
+            context: { agent: agentName, session: sessionId }
+          });
+          stopSpinner();
+          displayResponse(execResult, agentName.toUpperCase());
+          storeMemory(trimmed, execResult);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/chain':
+        if (args.length < 1) {
+          writeLn('  ' + C.red('Usage: /chain <task description>'));
+          prompt();
+          return;
+        }
+        var chainTask = args.join(' ');
+        startSpinner('Chaining agents for task...');
+        try {
+          var chainResult = await apiPost('/api/swarm/execute', {
+            plan: chainTask,
+            agents: null
+          });
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.magenta('[CHAIN]') + ' ' + C.cyan(chainTask));
+          if (chainResult.steps) {
+            displayChain(chainResult.steps);
+          }
+          displayResponse(chainResult, 'CHAIN');
+          storeMemory(trimmed, chainResult);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/process':
+        if (args.length < 1) {
+          writeLn('  ' + C.red('Usage: /process <input>'));
+          prompt();
+          return;
+        }
+        var processInput = args.join(' ');
+        startSpinner('Processing input...');
+        try {
+          var procResult = await apiPost('/api/twin/decide', {
+            prompt: processInput,
+            context: { mode: 'auto_route', session: sessionId }
+          });
+          stopSpinner();
+          displayResponse(procResult, 'PROCESS');
+          storeMemory(trimmed, procResult);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+          storeMemory(trimmed, { ok: false, error: e.message });
+        }
+        prompt();
+        return;
+
+      case '/treasury':
+        startSpinner('Loading treasury...');
+        try {
+          var tResults = await Promise.allSettled([
+            apiGet('/api/metrics/treasury'),
+            apiGet('/api/brdg/token')
+          ]);
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Treasury Status'));
+          // Fiat
+          var tData = tResults[0].status === 'fulfilled' ? tResults[0].value : null;
+          if (tData && tData.data) tData = tData.data;
+          if (tData && tData.combined) {
+            writeLn('  ' + C.green('Fiat (ZAR):    ') + 'R' + Number(tData.combined.fiatZar).toLocaleString());
+            writeLn('  ' + C.green('Crypto (ETH):  ') + tData.combined.cryptoEth + ' ETH');
+            writeLn('  ' + C.green('Crypto (BRDG): ') + Number(tData.combined.cryptoBrdg).toLocaleString() + ' BRDG');
+            writeLn('  ' + C.dim('Source: ') + (tData.onChain ? C.green('on-chain verified') : C.yellow('signed attestation')));
+          } else if (tData && tData.balance) {
+            writeLn('  ' + C.green('Balance: ') + 'R' + Number(tData.balance).toLocaleString());
+          }
+          // Token
+          var bData = tResults[1].status === 'fulfilled' ? tResults[1].value : null;
+          if (bData && bData.ok) {
+            writeLn('');
+            writeLn('  ' + C.cyan('BRDG Token (Linea L2)'));
+            writeLn('  ' + C.dim('Supply:  ') + Number(bData.totalSupply).toLocaleString() + ' BRDG');
+            writeLn('  ' + C.dim('Burned:  ') + Number(bData.ethBalance || 0) + ' ETH in vault');
+            writeLn('  ' + C.dim('Verify:  ') + C.cyan('https://lineascan.build/token/0x5f054130...'));
+          }
+          writeLn('');
+          storeMemory(trimmed, { ok: true });
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+        }
+        prompt();
+        return;
+
+      case '/verify':
+        startSpinner('Running verification...');
+        try {
+          var vResults = await Promise.allSettled([
+            apiGet('/api/verify/chain'),
+            apiGet('/api/verify/info')
+          ]);
+          stopSpinner();
+          writeLn('');
+          writeLn('  ' + C.cyan('Zero-Trust Verification'));
+          // Chain integrity
+          var chainData = vResults[0].status === 'fulfilled' ? vResults[0].value : null;
+          if (chainData && chainData.data) chainData = chainData.data;
+          if (chainData && chainData.chainIntegrity) {
+            var ci = chainData.chainIntegrity;
+            writeLn('  ' + (ci.valid ? C.green('[INTACT]') : C.red('[BROKEN]')) + ' Payment proof chain');
+            writeLn('  ' + C.dim('Transactions: ') + ci.length);
+            if (ci.tipHash) writeLn('  ' + C.dim('Tip hash: ') + ci.tipHash.slice(0, 24) + '...');
+          }
+          // Verification info
+          var vInfo = vResults[1].status === 'fulfilled' ? vResults[1].value : null;
+          if (vInfo && vInfo.keys) {
+            writeLn('');
+            writeLn('  ' + C.dim('Signing: ') + (vInfo.scheme || 'HMAC-SHA256'));
+            var keyNames = Object.keys(vInfo.keys);
+            for (var ki = 0; ki < keyNames.length; ki++) {
+              writeLn('  ' + C.dim(keyNames[ki] + ': ') + C.yellow(vInfo.keys[keyNames[ki]].keyId));
+            }
+          }
+          if (vInfo && vInfo.contracts) {
+            writeLn('');
+            writeLn('  ' + C.cyan('Contracts'));
+            writeLn('  ' + C.dim('BRDG:     ') + (vInfo.contracts.brdg ? vInfo.contracts.brdg.address : '--'));
+            writeLn('  ' + C.dim('Vault:    ') + (vInfo.contracts.vault ? vInfo.contracts.vault.address : '--'));
+            writeLn('  ' + C.dim('Treasury: ') + (vInfo.contracts.treasury ? vInfo.contracts.treasury.address : '--'));
+          }
+          writeLn('');
+          storeMemory(trimmed, { ok: true });
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+        }
+        prompt();
+        return;
+
+      case '/ask':
+        if (args.length < 1) {
+          writeLn('  ' + C.red('Usage: /ask <question>'));
+          writeLn('  ' + C.dim('Example: /ask What is our current monthly burn rate?'));
+          prompt();
+          return;
+        }
+        var askInput = args.join(' ');
+        startSpinner('Thinking...');
+        try {
+          var askResult = await apiPost('/ask', { prompt: askInput });
+          stopSpinner();
+          writeLn('');
+          if (askResult.text || askResult.response) {
+            writeLn('  ' + C.green('AI: ') + (askResult.text || askResult.response));
+          } else {
+            displayResponse(askResult, 'AI');
+          }
+          if (askResult.provider) writeLn('  ' + C.dim('Provider: ' + askResult.provider + (askResult.model ? ' / ' + askResult.model : '')));
+          writeLn('');
+          storeMemory(trimmed, askResult);
+        } catch (e) {
+          stopSpinner();
+          writeLn('  ' + C.red('Error: ') + e.message);
+        }
+        prompt();
+        return;
+
+      case '/history':
+        writeLn('');
+        writeLn('  ' + C.cyan('Command History') + C.dim(' (last 20)'));
+        var showHist = history.slice(-20);
+        if (showHist.length === 0) {
+          writeLn('  ' + C.dim('No history yet.'));
+        } else {
+          for (var hi = 0; hi < showHist.length; hi++) {
+            writeLn('  ' + C.dim(String(hi + 1).padStart(3) + ')') + ' ' + showHist[hi]);
+          }
+        }
+        writeLn('');
+        prompt();
+        return;
+
+      case '/nav':
+        writeLn('');
+        writeLn('  ' + C.cyan('Navigation — Bridge AI OS Pages'));
+        writeLn('');
+        var navItems = [
+          { key: 'home',      path: '/',                       desc: 'Landing page' },
+          { key: 'portal',    path: '/portal.html',            desc: 'Client portal' },
+          { key: 'economy',   path: '/economy.html',           desc: 'BRDG token economy' },
+          { key: 'agents',    path: '/agents.html',            desc: 'Agent workforce' },
+          { key: 'crm',       path: '/crm.html',               desc: 'Customer management' },
+          { key: 'invoicing', path: '/invoicing.html',         desc: 'Invoice management' },
+          { key: 'revenue',   path: '/admin-revenue.html',     desc: 'Verified revenue dashboard' },
+          { key: 'treasury',  path: '/treasury-dashboard.html', desc: 'Treasury management' },
+          { key: 'withdraw',  path: '/admin-withdraw.html',    desc: 'Treasury withdrawals' },
+          { key: 'topology',  path: '/topology.html',          desc: 'Network topology' },
+          { key: 'banks',     path: '/banks.html',             desc: 'Bank system' },
+          { key: 'trading',   path: '/trading.html',           desc: 'Trading terminal' },
+          { key: 'defi',      path: '/defi.html',              desc: 'DeFi dashboard' },
+          { key: 'voice',     path: '/voice.html',             desc: 'Voice AI' },
+          { key: 'settings',  path: '/settings.html',          desc: 'Account settings' },
+        ];
+        for (var ni = 0; ni < navItems.length; ni++) {
+          var n = navItems[ni];
+          writeLn('    ' + C.bold(n.key.padEnd(12)) + C.dim(n.path.padEnd(30)) + n.desc);
+        }
+        writeLn('');
+        writeLn('  ' + C.dim('Type ') + C.cyan('open <name>') + C.dim(' to navigate, e.g. ') + C.cyan('open revenue'));
+        writeLn('');
+        prompt();
+        return;
+
+      case '/open':
+      case '/exit':
+        var target = args[0] ? args[0].toLowerCase() : '';
+        var NAV_MAP = {
+          'home': '/', '': '/', 'portal': '/portal.html', 'economy': '/economy.html',
+          'agents': '/agents.html', 'crm': '/crm.html', 'invoicing': '/invoicing.html',
+          'revenue': '/admin-revenue.html', 'treasury': '/treasury-dashboard.html',
+          'withdraw': '/admin-withdraw.html', 'topology': '/topology.html',
+          'banks': '/banks.html', 'trading': '/trading.html', 'defi': '/defi.html',
+          'voice': '/voice.html', 'settings': '/settings.html', 'console': '/console.html',
+          'admin': '/admin-command.html', 'dashboard': '/dashboard',
+        };
+        if (cmd === '/exit' && !target) target = 'home';
+        if (NAV_MAP[target] !== undefined) {
+          writeLn('  ' + C.dim('Navigating to ') + C.cyan(NAV_MAP[target]) + C.dim('...'));
+          setTimeout(function () { window.location.href = NAV_MAP[target]; }, 300);
+        } else {
+          writeLn('  ' + C.red('Unknown page: ') + C.yellow(target));
+          writeLn('  ' + C.dim('Type ') + C.cyan('nav') + C.dim(' to see available pages'));
+        }
+        return;
+
+      case '/ls':
+        writeLn('');
+        writeLn('  ' + C.cyan('Bridge AI OS — Virtual Filesystem'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('agents/') + '       ' + C.dim('35 AI agents'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('treasury/') + '     ' + C.dim('On-chain vaults'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('economy/') + '      ' + C.dim('BRDG token system'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('skills/') + '       ' + C.dim('1,266 skill modules'));
+        writeLn('  ' + C.dim('drwxr-x---') + '  ' + C.cyan('proofs/') + '       ' + C.dim('Payment proof chain'));
+        writeLn('  ' + C.dim('-rw-r-----') + '  config.json   ' + C.dim('System configuration'));
+        writeLn('  ' + C.dim('-rw-r-----') + '  status.log    ' + C.dim('Health matrix'));
+        writeLn('');
+        prompt();
+        return;
+
+      case '/pwd':
+        writeLn('  /bridge-ai-os/v3');
+        prompt();
+        return;
+
+      case '/whoami':
+        writeLn('  ' + C.cyan('bridge@v3') + ' — Session ' + sessionId);
+        writeLn('  ' + C.dim('Memory: ') + sessionMemory.length + ' entries');
+        writeLn('  ' + C.dim('Uptime: ') + Math.floor((Date.now() - sessionStart) / 1000) + 's');
+        prompt();
+        return;
+
+      default:
+        // Natural language routing: if it looks like a question/task, send to /ask
+        if (trimmed.length > 5 && !trimmed.startsWith('/')) {
+          writeLn('  ' + C.dim('Routing to AI...'));
+          startSpinner('Thinking...');
+          try {
+            var nlResult = await apiPost('/ask', { prompt: trimmed });
+            stopSpinner();
+            writeLn('');
+            if (nlResult.text || nlResult.response) {
+              writeLn('  ' + C.green('AI: ') + (nlResult.text || nlResult.response));
+            } else if (nlResult.error) {
+              writeLn('  ' + C.red('AI: ') + nlResult.error);
+            } else {
+              displayResponse(nlResult, 'AI');
+            }
+            if (nlResult.provider) writeLn('  ' + C.dim('Provider: ' + nlResult.provider));
+            writeLn('');
+            storeMemory(trimmed, nlResult);
+          } catch (e) {
+            stopSpinner();
+            writeLn('  ' + C.red('Error: ') + e.message);
+            writeLn('  ' + C.dim('Tip: type /help for available commands'));
+            writeLn('');
+          }
+          prompt();
+          return;
+        }
+        writeLn('  ' + C.red('Unknown command: ') + C.yellow(parts[0]));
+        writeLn('  ' + C.dim('Type /help or just type a question'));
+        writeLn('');
+        prompt();
+        return;
+    }
+  }
+
+  /* ── Key handling ────────────────────────────────────────────────────── */
+  term.onKey(function (e) {
+    var ev = e.domEvent;
+    var key = ev.key;
+
+    // Ctrl+C — cancel
+    if (ev.ctrlKey && key === 'c') {
+      if (spinnerTimer) stopSpinner();
+      term.write('^C');
+      writeLn('');
+      prompt();
+      return;
+    }
+
+    // Ctrl+L — clear
+    if (ev.ctrlKey && key === 'l') {
+      term.clear();
+      showBanner();
+      prompt();
+      term.write(currentLine);
+      return;
+    }
+
+    // Enter — execute
+    if (key === 'Enter') {
+      writeLn('');
+      executeCommand(currentLine);
+      return;
+    }
+
+    // Tab — autocomplete
+    if (key === 'Tab') {
+      ev.preventDefault();
+      tabComplete();
+      return;
+    }
+
+    // Backspace
+    if (key === 'Backspace') {
+      if (cursorPos > 0) {
+        currentLine = currentLine.slice(0, cursorPos - 1) + currentLine.slice(cursorPos);
+        cursorPos--;
+        redrawLine();
+      }
+      return;
+    }
+
+    // Delete
+    if (key === 'Delete') {
+      if (cursorPos < currentLine.length) {
+        currentLine = currentLine.slice(0, cursorPos) + currentLine.slice(cursorPos + 1);
+        redrawLine();
+      }
+      return;
+    }
+
+    // Arrow Up — history previous
+    if (key === 'ArrowUp') {
+      if (history.length === 0) return;
+      if (historyIdx === -1) {
+        savedLine = currentLine;
+        historyIdx = history.length - 1;
+      } else if (historyIdx > 0) {
+        historyIdx--;
+      }
+      currentLine = history[historyIdx];
+      cursorPos = currentLine.length;
+      redrawLine();
+      return;
+    }
+
+    // Arrow Down — history next
+    if (key === 'ArrowDown') {
+      if (historyIdx === -1) return;
+      if (historyIdx < history.length - 1) {
+        historyIdx++;
+        currentLine = history[historyIdx];
+      } else {
+        historyIdx = -1;
+        currentLine = savedLine;
+      }
+      cursorPos = currentLine.length;
+      redrawLine();
+      return;
+    }
+
+    // Arrow Left
+    if (key === 'ArrowLeft') {
+      if (cursorPos > 0) { cursorPos--; term.write('\x1b[D'); }
+      return;
+    }
+
+    // Arrow Right
+    if (key === 'ArrowRight') {
+      if (cursorPos < currentLine.length) { cursorPos++; term.write('\x1b[C'); }
+      return;
+    }
+
+    // Home
+    if (key === 'Home') {
+      if (cursorPos > 0) { term.write('\x1b[' + cursorPos + 'D'); cursorPos = 0; }
+      return;
+    }
+
+    // End
+    if (key === 'End') {
+      var diff = currentLine.length - cursorPos;
+      if (diff > 0) { term.write('\x1b[' + diff + 'C'); cursorPos = currentLine.length; }
+      return;
+    }
+
+    // Printable characters
+    if (key.length === 1 && !ev.ctrlKey && !ev.altKey && !ev.metaKey) {
+      currentLine = currentLine.slice(0, cursorPos) + key + currentLine.slice(cursorPos);
+      cursorPos++;
+      redrawLine();
+    }
+  });
+
+  /* ── Matrix rain effect ──────────────────────────────────────────────── */
+  (function initMatrix() {
+    var canvas = document.getElementById('matrix-canvas');
+    var ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    var fontSize = 14;
+    var columns = Math.floor(canvas.width / fontSize);
+    var drops = new Array(columns);
+    for (var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+
+    var chars = '01ABCDEFbrdgBRDG<>{}[]|/\\';
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(10, 14, 20, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00e0ff';
+      ctx.font = fontSize + 'px monospace';
+
+      for (var i = 0; i < drops.length; i++) {
+        if (drops[i] < 0) { drops[i] += 0.1; continue; }
+        var ch = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(ch, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i] += 0.5;
+      }
+    }
+
+    setInterval(drawMatrix, 60);
+
+    window.addEventListener('resize', function () {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      var newCols = Math.floor(canvas.width / fontSize);
+      var newDrops = new Array(newCols);
+      for (var i = 0; i < newCols; i++) {
+        newDrops[i] = i < drops.length ? drops[i] : Math.random() * -100;
+      }
+      drops = newDrops;
+    });
+  })();
+
+  /* ── Header stats refresh ────────────────────────────────────────────── */
+  function refreshHeaderStats() {
+    apiGet('/api/economy/full').then(function (data) {
+      if (!data.ok) return;
+      var t = data.treasury || {};
+      document.getElementById('h-circ').textContent = (t.balance || 0).toLocaleString();
+      document.getElementById('h-burned').textContent = (t.spent || 0).toLocaleString();
+    }).catch(function () { /* silent */ });
+
+    apiGet('/api/swarm/agents').then(function (data) {
+      if (!data.ok) return;
+      var count = data.count || 0;
+      document.getElementById('h-agents').textContent = String(count);
+      var active = (data.agents || []).filter(function (a) { return a.status === 'active'; }).length;
+      document.getElementById('sb-agents').textContent = active + '/' + count + ' active';
+    }).catch(function () { /* silent */ });
+  }
+
+  refreshHeaderStats();
+  setInterval(refreshHeaderStats, 30000);
+
+  /* ── Uptime ticker ───────────────────────────────────────────────────── */
+  setInterval(function () {
+    var elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    var h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    var m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    var s = String(elapsed % 60).padStart(2, '0');
+    document.getElementById('sb-uptime').textContent = h + ':' + m + ':' + s;
+  }, 1000);
+
+})();
+</script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Bridge AI OS — SUPADASH — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/supadash">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/supadash">
+<meta property="og:title" content="Bridge AI OS — SUPADASH">
+<meta property="og:description" content="Bridge AI OS — SUPADASH — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bridge AI OS — SUPADASH">
+<meta name="twitter:description" content="Bridge AI OS — SUPADASH — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge AI OS — SUPADASH</title>
+
+    <!-- Unified Design System -->
+    <link rel="stylesheet" href="/bridge-phere.css" id="bridge-phere-css">
+    <script src="/bridge-phere.js" defer></script>
+
+    <!-- Navigation & Theme -->
+    <style>
+        :root {
+            --primary-color: #00c8ff;
+            --secondary-color: #00e57b;
+            --accent-color: #ffd166;
+            --bg-primary: #0a1520;
+            --bg-secondary: #1a2d40;
+            --text-primary: #ffffff;
+            --text-secondary: #4d6678;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        #supadash-nav {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--primary-color);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        #supadash-nav .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: 2px solid transparent;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(0, 200, 255, 0.1);
+        }
+
+        #dashboard-container {
+            padding: 2rem;
+            min-height: calc(100vh - 80px);
+        }
+
+        .dashboard-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bg-secondary);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            #supadash-nav {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- SUPADASH Navigation -->
+    <nav id="supadash-nav">
+        <a href="/" class="logo">BRIDGE AI OS</a>
+        <div class="nav-tabs">
+            <a href="#topology" class="nav-tab active" data-dashboard="topology">
+                <span>🏗️</span> Topology
+            </a>
+            <a href="#avatar" class="nav-tab" data-dashboard="avatar">
+                <span>🎭</span> Avatar
+            </a>
+            <a href="#registry" class="nav-tab" data-dashboard="registry">
+                <span>📊</span> Registry
+            </a>
+            <a href="#marketplace" class="nav-tab" data-dashboard="marketplace">
+                <span>🛒</span> Marketplace
+            </a>
+        </div>
+    </nav>
+
+    <!-- Dashboard Container -->
+    <div id="dashboard-container">
+        <div id="dashboard-content">
+            <!-- Initial loading state -->
+            <div class="dashboard-loading">
+                <div class="loading-spinner"></div>
+                <div>Loading SUPADASH...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Dashboard Scripts -->
+    <script>
+        class SupadashManager {
+            constructor() {
+                this.currentDashboard = 'topology';
+                this.dashboards = {
+                    topology: '/supadash-topology.html',
+                    avatar: '/supadash-avatar.html',
+                    registry: '/supadash-registry.html',
+                    marketplace: '/supadash-marketplace.html'
+                };
+
+                this.init();
+            }
+
+            init() {
+                // Set up navigation
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const dashboard = e.currentTarget.dataset.dashboard;
+                        this.loadDashboard(dashboard);
+                    });
+                });
+
+                // Load initial dashboard
+                this.loadDashboard(this.currentDashboard);
+
+                // Handle browser back/forward
+                window.addEventListener('popstate', (e) => {
+                    if (e.state && e.state.dashboard) {
+                        this.loadDashboard(e.state.dashboard, false);
+                    }
+                });
+            }
+
+            async loadDashboard(dashboardName, updateHistory = true) {
+                if (!this.dashboards[dashboardName]) return;
+
+                // Update navigation
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`[data-dashboard="${dashboardName}"]`).classList.add('active');
+
+                // Show loading state
+                const container = document.getElementById('dashboard-content');
+                container.innerHTML = `
+                    <div class="dashboard-loading">
+                        <div class="loading-spinner"></div>
+                        <div>Loading ${dashboardName} dashboard...</div>
+                    </div>
+                `;
+
+                try {
+                    // Fetch dashboard HTML
+                    const response = await fetch(this.dashboards[dashboardName]);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const html = await response.text();
+
+                    // Inject HTML
+                    container.innerHTML = html;
+
+                    // Execute any scripts in the loaded HTML
+                    this.executeScripts(container);
+
+                    // Update browser history
+                    if (updateHistory) {
+                        history.pushState({ dashboard: dashboardName }, '', `#${dashboardName}`);
+                    }
+
+                    this.currentDashboard = dashboardName;
+
+                    console.log(`✅ SUPADASH: ${dashboardName} dashboard loaded`);
+
+                } catch (error) {
+                    console.error(`❌ SUPADASH: Failed to load ${dashboardName}:`, error);
+                    container.innerHTML = `
+                        <div class="dashboard-loading">
+                            <div style="color: #ff6b6b;">
+                                Failed to load ${dashboardName} dashboard<br>
+                                <small>${error.message}</small>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            executeScripts(container) {
+                // Find and execute scripts in the loaded HTML
+                const scripts = container.querySelectorAll('script');
+                scripts.forEach(script => {
+                    if (script.src) {
+                        // External script
+                        const newScript = document.createElement('script');
+                        newScript.src = script.src;
+                        document.head.appendChild(newScript);
+                    } else {
+                        // Inline script
+                        try {
+                            eval(script.textContent);
+                        } catch (e) {
+                            console.warn('Script execution failed:', e);
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize SUPADASH when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            window.supadash = new SupadashManager();
+        });
+
+        // Handle initial hash in URL
+        if (window.location.hash) {
+            const dashboard = window.location.hash.substring(1);
+            if (['topology', 'avatar', 'registry', 'marketplace'].includes(dashboard)) {
+                // Will be handled by SupadashManager init
+            }
+        }
+    </script>
+</body>
+</html>

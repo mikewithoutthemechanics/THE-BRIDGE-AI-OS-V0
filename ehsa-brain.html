@@ -180,6 +180,7 @@ button.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--f
   #bottomnav{display:flex}
   #ui{padding-bottom:calc(76px + var(--sab))}
 }
+<<<<<<< HEAD
 
 /* ── prompt cortex (God Mode) ──────────────────────── */
 #cortex{display:flex;flex-direction:column;gap:6px}
@@ -201,6 +202,8 @@ button.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--f
 }
 #cortex .empty{font-size:.6rem;color:var(--dim);font-style:italic;padding:4px 0}
 @keyframes cortex-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+=======
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
 </style>
 <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
 </head>
@@ -251,9 +254,12 @@ button.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--f
     <div class="agent"><span><span class="dot"></span>Supply Chain</span><span style="font-size:.6rem;color:var(--dim)">idle</span></div>
   </div>
 
+<<<<<<< HEAD
   <div class="section">PROMPT CORTEX <span style="font-size:.5rem;color:var(--dim);letter-spacing:.04em">(god-mode)</span></div>
   <div id="cortex"><div class="empty">waiting for first signal…</div></div>
 
+=======
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
   <div class="section">FUNNEL</div>
   <div id="funnel"></div>
 
@@ -267,6 +273,7 @@ button.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--f
   <div class="section">CONNECTED SYSTEMS</div>
   <div class="sysgrid" id="sysgrid">
     <a class="tile" href="/crm.html"             data-sys="crm"><span class="ico">👥</span><span class="nm">CRM</span><span class="st" id="st-crm">—</span></a>
+<<<<<<< HEAD
     <a class="tile" href="/leadgen.html"         data-sys="leadgen"><span class="ico">🎯</span><span class="nm">LEADGEN</span><span class="st" id="st-leadgen">—</span></a>
     <a class="tile" href="/corporate.html"       data-sys="corp"><span class="ico">🏢</span><span class="nm">CORPORATE</span><span class="st" id="st-corp">—</span></a>
     <a class="tile" href="/trading.html"         data-sys="trading"><span class="ico">📈</span><span class="nm">TRADING</span><span class="st" id="st-trading">—</span></a>
@@ -275,6 +282,16 @@ button.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--f
     <a class="tile" href="/ban.html"             data-sys="ban"><span class="ico">⚡</span><span class="nm">BAN</span><span class="st" id="st-ban">—</span></a>
     <a class="tile" href="/abaas.html"           data-sys="abaas"><span class="ico">🛰️</span><span class="nm">ABAAS</span><span class="st" id="st-abaas">—</span></a>
     <a class="tile" href="/aoe-dashboard.html"   data-sys="aoe"><span class="ico">🌐</span><span class="nm">AOE</span><span class="st" id="st-aoe">—</span></a>
+=======
+    <a class="tile" href="/leadgen.html"         data-sys="leadgen"><span class="ico">🎯</span><span class="nm">LEADGEN</span><span class="st">leads</span></a>
+    <a class="tile" href="/corporate.html"       data-sys="corp"><span class="ico">🏢</span><span class="nm">CORPORATE</span><span class="st">suite</span></a>
+    <a class="tile" href="/trading.html"         data-sys="trading"><span class="ico">📈</span><span class="nm">TRADING</span><span class="st">desk</span></a>
+    <a class="tile" href="/banks.html"           data-sys="bank"><span class="ico">🏦</span><span class="nm">BANK</span><span class="st" id="st-bank">—</span></a>
+    <a class="tile" href="/gateway.html"         data-sys="mesh"><span class="ico">🕸️</span><span class="nm">MESH</span><span class="st" id="st-mesh">—</span></a>
+    <a class="tile" href="/ban.html"             data-sys="ban"><span class="ico">⚡</span><span class="nm">BAN</span><span class="st" id="st-ban">—</span></a>
+    <a class="tile" href="/abaas.html"           data-sys="abaas"><span class="ico">🛰️</span><span class="nm">ABAAS</span><span class="st">platform</span></a>
+    <a class="tile" href="/aoe-dashboard.html"   data-sys="aoe"><span class="ico">🌐</span><span class="nm">AOE</span><span class="st">unified</span></a>
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
   </div>
 
   <div class="section">API ENDPOINTS</div>
@@ -470,7 +487,10 @@ async function poll(){
     document.getElementById('pipeline').textContent = (d.pipeline?.total ?? 0).toLocaleString();
     document.getElementById('osint').textContent    = (d.osint?.findings ?? 0).toLocaleString();
     document.getElementById('rev').textContent      = zar(d.pipeline?.won_value ?? 0);
+<<<<<<< HEAD
     cortexTick(d);
+=======
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
   } catch(_) { errCount++; }
 
   // Treasury: prefer /api/treasury/status (bucketed policy-split total), fall back to /api/core/treasury
@@ -505,6 +525,7 @@ async function poll(){
     setTile('st-crm', n > 0, n.toLocaleString() + ' leads');
   } catch(_) { setTile('st-crm', false, 'offline'); }
 
+<<<<<<< HEAD
   // admin-api is only proxied on go.ai-os.co.za today. On other vhosts, the
   // /admin/overview path 404s — avoid a misleading "offline" label there.
   const adminHere = (location.hostname === 'go.ai-os.co.za' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
@@ -523,6 +544,18 @@ async function poll(){
   } else {
     setTile('st-ban', true, 'see go.ai-os');
     setTile('st-mesh', true, 'see go.ai-os');
+=======
+  try {
+    const o = await fetchJSON('/admin/overview');
+    const svc = (o.services || []);
+    const ban = svc.find(s => /ban/i.test(s.name || ''));
+    const mesh = svc.find(s => /gateway|mesh/i.test(s.name || ''));
+    setTile('st-ban', ban && ban.status === 'online', ban ? (ban.status || '—') : 'missing');
+    setTile('st-mesh', mesh && mesh.status === 'online', mesh ? (mesh.status || '—') : 'missing');
+  } catch(_) {
+    setTile('st-ban', false, 'offline');
+    setTile('st-mesh', false, 'offline');
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
   }
 
   // Connection status
@@ -543,6 +576,7 @@ function escapeHTML(s){
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+<<<<<<< HEAD
 /* ═════════ Prompt Cortex — God Mode prompt engine (browser-vendored) ═════════
    Pure prompt-template methods extracted from src/prompt-engine/bridge-prompt-engine.js.
    No eventBus / economyCycle dependencies — pure string formatters. */
@@ -638,6 +672,8 @@ async function probeTiles(){
   }));
 }
 probeTiles();
+=======
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
 poll();
 setInterval(poll, 5000);
 setInterval(neuroCompute, 1500);

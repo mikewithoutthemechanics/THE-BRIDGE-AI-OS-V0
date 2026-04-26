@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="canonical" href="https://go.ai-os.co.za/portal">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/portal">
+<meta property="og:title" content="Portal — Bridge AI OS">
+<meta property="og:description" content="Portal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Portal — Bridge AI OS">
+<meta name="twitter:description" content="Portal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal — Bridge AI OS</title>
+<meta name="description" content="Your personalized client dashboard for Bridge AI OS.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+:root{--bg:#0a0e17;--card:#131a2b;--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444;--border:#1e293b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.container{max-width:1100px;margin:0 auto;padding:24px}
+@media(max-width:640px){.container{padding:14px}}
+
+/* Welcome header */
+.welcome-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:16px}
+.welcome-left h1{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.welcome-left .sub{font-size:.82rem;color:var(--dim);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.plan-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.plan-starter{background:rgba(56,189,248,.12);color:var(--cyan)}
+.plan-pro{background:rgba(167,139,250,.14);color:var(--purple)}
+.plan-admin{background:rgba(34,197,94,.12);color:var(--green)}
+.plan-enterprise{background:rgba(245,158,11,.12);color:var(--orange)}
+.plan-free{background:rgba(255,255,255,.06);color:var(--dim)}
+.brdg-balance{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:.85rem;font-weight:600}
+.brdg-icon{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--green));display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:#0a0e17}
+
+/* Funnel indicator */
+.funnel-indicator{display:flex;gap:4px;margin-top:8px}
+.funnel-step{height:4px;flex:1;border-radius:2px;background:var(--border);max-width:60px}
+.funnel-step.active{background:var(--cyan)}
+.funnel-label{font-size:.65rem;color:var(--dim);margin-top:4px}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+@media(max-width:768px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px}
+.stat-icon{font-size:1.3rem;margin-bottom:8px}
+.stat-value{font-size:1.8rem;font-weight:800;color:var(--cyan);margin-bottom:2px}
+.stat-label{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+
+/* Quick actions */
+.quick-actions{display:flex;gap:10px;margin-bottom:32px;flex-wrap:wrap}
+.action-btn{padding:10px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:.8rem;font-weight:600;color:#e2e8f0;cursor:pointer;transition:all .15s;text-decoration:none}
+.action-btn:hover{border-color:var(--cyan);color:var(--cyan);text-decoration:none}
+
+/* Projects section */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:1rem;font-weight:700}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:32px}
+.project-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;transition:border-color .2s}
+.project-card:hover{border-color:rgba(56,189,248,.3)}
+.project-name{font-size:.9rem;font-weight:600;margin-bottom:4px}
+.project-meta{font-size:.72rem;color:var(--dim);margin-bottom:10px}
+.project-status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.62rem;font-weight:700;text-transform:uppercase}
+.status-active{background:rgba(34,197,94,.1);color:var(--green)}
+.status-completed{background:rgba(56,189,248,.1);color:var(--cyan)}
+.status-archived{background:rgba(255,255,255,.05);color:var(--dim)}
+.project-actions{display:flex;gap:6px;margin-top:10px}
+.project-btn{padding:6px 12px;border-radius:6px;font-size:.7rem;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer}
+.project-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.project-btn-run{border-color:var(--green);color:var(--green)}
+.new-project-card{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer}
+.new-project-card:hover{border-color:var(--cyan)}
+.new-icon{width:40px;height:40px;border-radius:50%;background:rgba(56,189,248,.1);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--cyan)}
+
+/* Activity feed */
+.activity-feed{margin-bottom:32px}
+.activity-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.activity-dot-project{background:var(--cyan)}
+.activity-dot-invoice{background:var(--orange)}
+.activity-dot-ticket{background:var(--purple)}
+.activity-dot-login{background:var(--green)}
+.activity-content{flex:1}
+.activity-text{font-size:.82rem;margin-bottom:2px}
+.activity-time{font-size:.7rem;color:var(--dim)}
+.empty-state{text-align:center;padding:24px;color:var(--dim);font-size:.82rem;border:1px dashed var(--border);border-radius:8px}
+
+/* Newsletter modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:10000;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:400px;width:90%;text-align:center}
+.modal-title{font-size:1.2rem;font-weight:700;margin-bottom:8px}
+.modal-desc{font-size:.82rem;color:var(--dim);margin-bottom:20px}
+.modal-input{width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#e2e8f0;font-size:.88rem;margin-bottom:12px}
+.modal-input:focus{outline:none;border-color:var(--cyan)}
+.modal-btn{width:100%;padding:12px;background:var(--cyan);color:#0a0e17;border:none;border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer;margin-bottom:8px}
+.modal-btn:hover{opacity:.9}
+.modal-dismiss{font-size:.78rem;color:var(--dim);cursor:pointer;border:none;background:none;font-family:inherit}
+.modal-dismiss:hover{color:#e2e8f0}
+.modal-msg{font-size:.75rem;color:var(--green);margin-top:8px;min-height:1.2em}
+
+/* Pulse animation for provision button */
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+
+/* ── Mobile responsive ── */
+@media(max-width:640px){
+  body{padding-bottom:40px}
+  .welcome-bar{flex-direction:column;align-items:flex-start;margin-bottom:20px}
+  .welcome-left h1{font-size:1.2rem}
+  .brdg-balance{font-size:.75rem;padding:6px 10px}
+  .stats-grid{gap:8px;margin-bottom:20px}
+  .stat-value{font-size:1.4rem}
+  .quick-actions{gap:6px;margin-bottom:20px}
+  .action-btn{padding:8px 12px;font-size:.72rem}
+  .projects-grid{grid-template-columns:1fr;margin-bottom:20px}
+  h2{font-size:.9rem}
+  .modal-box{padding:20px;border-radius:12px;max-width:92vw}
+  .modal-title{font-size:1rem}
+  .modal-btn{padding:10px;font-size:.82rem}
+}
+@media(max-width:380px){
+  .stat-card{padding:12px}
+  .stat-value{font-size:1.2rem}
+  .funnel-step{max-width:40px}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Welcome -->
+  <div class="welcome-bar">
+    <div class="welcome-left">
+      <h1 id="welcomeHeading">Welcome back</h1>
+      <div class="sub">
+        <span class="plan-badge plan-free" id="portalPlanBadge">--</span>
+        <span id="portalEmail"></span>
+      </div>
+      <div class="funnel-indicator" id="funnelIndicator">
+        <div class="funnel-step"></div>
+        <div class="funnel-step"></div>
+        <div class="funnel-step"></div>
+        <div class="funnel-step"></div>
+      </div>
+      <div class="funnel-label" id="funnelLabel"></div>
+    </div>
+    <div class="brdg-balance">
+      <div class="brdg-icon">B</div>
+      <span id="portalBrdg">-- BRDG</span>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">📁</div><div class="stat-value" id="statProjects">--</div><div class="stat-label">Active Projects</div></div>
+    <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value" id="statInvoices">--</div><div class="stat-label">Pending Invoices</div></div>
+    <div class="stat-card"><div class="stat-icon">🎫</div><div class="stat-value" id="statTickets">--</div><div class="stat-label">Open Tickets</div></div>
+    <div class="stat-card"><div class="stat-icon">💎</div><div class="stat-value" id="statBrdg">--</div><div class="stat-label">BRDG Balance</div></div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <a href="/invoicing" class="action-btn">Create Invoice</a>
+    <a href="/crm" class="action-btn">View CRM</a>
+    <a href="/marketplace" class="action-btn">Post a Job</a>
+    <a href="/tickets" class="action-btn">Get Support</a>
+  </div>
+
+  <!-- Projects -->
+  <div class="section-header">
+    <div class="section-title">Your Projects <span id="projectCountBadge" style="font-size:.72rem;font-weight:400;color:var(--dim);margin-left:6px"></span></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button id="provisionBtn" class="action-btn" style="font-size:.72rem;padding:7px 14px;background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:var(--green)" onclick="provisionApps()">⚡ Provision All 50 Apps</button>
+      <a href="/wizard" style="font-size:.8rem;font-weight:600">+ New</a>
+    </div>
+  </div>
+
+  <!-- Category filter -->
+  <div id="categoryFilter" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"></div>
+
+  <div class="projects-grid" id="projectsGrid" style="max-height:540px;overflow-y:auto;padding-right:4px">
+    <div class="empty-state">Loading projects...</div>
+  </div>
+
+  <!-- Activity Feed -->
+  <div class="section-header" style="margin-top:32px">
+    <div class="section-title">Recent Activity</div>
+    <span id="activityCount" style="font-size:.72rem;color:var(--dim)"></span>
+  </div>
+  <div class="activity-feed" id="activityFeed">
+    <div class="empty-state">Loading activity...</div>
+  </div>
+</div>
+
+<!-- Newsletter Modal -->
+<div class="modal-overlay" id="newsletterModal">
+  <div class="modal-box">
+    <div class="modal-title">Stay in the loop</div>
+    <div class="modal-desc">We only send 4 updates a year!</div>
+    <input type="email" class="modal-input" id="newsletterEmail" placeholder="your@email.com">
+    <button class="modal-btn" onclick="subscribeNewsletter()">Subscribe</button>
+    <button class="modal-dismiss" onclick="dismissNewsletter()">No thanks</button>
+    <div class="modal-msg" id="newsletterMsg"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var user = null;
+  var token = null;
+  var allProjects = [];
+  var activeCategory = 'all';
+
+  var CAT_LABELS = {
+    'smart-city-twin':    'Infrastructure',
+    'patient-twin':       'Healthcare',
+    'marketplace-builder':'Business',
+    'factory-twin':       'Industry',
+    'ap2-orchestrator':   'Consumer',
+  };
+
+  function getToken() {
+    var match = document.cookie.split(';').map(function(c){return c.trim()}).find(function(c){return c.startsWith('bridge_token=')});
+    return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : localStorage.getItem('bridge_token');
+  }
+
+  function authHeader() {
+    return token ? { Authorization: 'Bearer ' + token } : {};
+  }
+
+  function relativeTime(dateStr) {
+    if (!dateStr) return '';
+    var diff = Date.now() - new Date(dateStr).getTime();
+    var mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    var days = Math.floor(hrs / 24);
+    if (days === 1) return 'Yesterday';
+    if (days < 30) return days + 'd ago';
+    return new Date(dateStr).toLocaleDateString();
+  }
+
+  var FUNNEL_STAGES = ['visitor', 'activated', 'converting', 'customer'];
+  function setFunnel(stage) {
+    var idx = FUNNEL_STAGES.indexOf(stage);
+    if (idx < 0) idx = 0;
+    var steps = document.querySelectorAll('.funnel-step');
+    steps.forEach(function(s, i) { s.classList.toggle('active', i <= idx); });
+    document.getElementById('funnelLabel').textContent = (stage || 'visitor').charAt(0).toUpperCase() + (stage || 'visitor').slice(1);
+  }
+
+  // ── Deduplication helper ────────────────────────────────────────────────────
+  function dedupProjects(list) {
+    var seen = new Set();
+    return list.filter(function(p) {
+      // Prefer scaffold.catalog_id dedup; fallback to name+tool dedup
+      var key = p.scaffold && p.scaffold.catalog_id
+        ? 'cat:' + p.scaffold.catalog_id
+        : (p.name || '').toLowerCase().trim() + '|' + (p.tool_id || '');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  // ── Category filter UI ──────────────────────────────────────────────────────
+  function buildCategoryFilter(projects) {
+    var bar = document.getElementById('categoryFilter');
+    bar.innerHTML = '';
+    // Collect categories present
+    var cats = new Map();
+    cats.set('all', 0);
+    projects.forEach(function(p) {
+      var cat = (p.scaffold && p.scaffold.category) || p.tool_id || 'other';
+      cats.set(cat, (cats.get(cat) || 0) + 1);
+      cats.set('all', cats.get('all') + 1);
+    });
+
+    var catNames = {
+      'all': 'All',
+      'infrastructure-smart-cities': 'Infrastructure',
+      'healthcare': 'Healthcare',
+      'business-enterprise': 'Business',
+      'industry-manufacturing': 'Industry',
+      'consumer-society': 'Consumer',
+    };
+
+    cats.forEach(function(count, key) {
+      var btn = document.createElement('button');
+      btn.style.cssText = 'padding:4px 10px;border-radius:12px;font-size:.68rem;font-weight:600;border:1px solid var(--border);background:' + (key === activeCategory ? 'rgba(56,189,248,.12)' : 'var(--card)') + ';color:' + (key === activeCategory ? 'var(--cyan)' : 'var(--dim)') + ';cursor:pointer;transition:all .15s';
+      btn.textContent = (catNames[key] || key) + ' (' + count + ')';
+      btn.dataset.cat = key;
+      btn.addEventListener('click', function() {
+        activeCategory = key;
+        buildCategoryFilter(allProjects);
+        renderProjectGrid(allProjects);
+      });
+      bar.appendChild(btn);
+    });
+  }
+
+  // ── Project grid ────────────────────────────────────────────────────────────
+  function renderProjectGrid(projects) {
+    var grid = document.getElementById('projectsGrid');
+    grid.innerHTML = '';
+
+    var filtered = activeCategory === 'all' ? projects : projects.filter(function(p) {
+      return (p.scaffold && p.scaffold.category) === activeCategory || p.tool_id === activeCategory;
+    });
+
+    // Count badge
+    var active = filtered.filter(function(p){return p.status==='active'}).length;
+    document.getElementById('projectCountBadge').textContent = active + ' active · ' + filtered.length + ' total';
+    document.getElementById('statProjects').textContent = projects.filter(function(p){return p.status==='active'}).length;
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div class="empty-state">No projects in this category. <button class="action-btn" style="margin-top:8px;font-size:.72rem" onclick="provisionApps()">⚡ Provision All 50 Apps</button></div>';
+      return;
+    }
+
+    filtered.forEach(function(p) {
+      var card = document.createElement('div');
+      card.className = 'project-card';
+
+      var catLabel = (p.scaffold && p.scaffold.category_label) || CAT_LABELS[p.tool_id] || (p.tool_id || 'Platform');
+      var market = (p.scaffold && p.scaffold.market) ? ' · ' + p.scaffold.market : '';
+      var statusClass = 'status-' + (p.status || 'active');
+      // Resolve the "open" link: explicit app_page_url wins, then smart defaults by category
+      var catalogId = p.scaffold && p.scaffold.catalog_id;
+      var catId = p.scaffold && p.scaffold.category;
+      var defaultLink = catId === 'telco_esim' || catalogId === 'pbx-carrier' ? '/esim'
+                      : catId === 'healthcare' ? '/ehsa'
+                      : catId === 'infrastructure-smart-cities' ? '/twins'
+                      : '/apps';
+      var appPageLink = (p.scaffold && p.scaffold.app_page_url) ? p.scaffold.app_page_url : defaultLink;
+
+      card.innerHTML =
+        '<div class="project-name">' + escHtml(p.name || 'Untitled') + '</div>' +
+        '<div class="project-meta">' + escHtml(catLabel) + market + ' &middot; ' + relativeTime(p.updated_at) + '</div>' +
+        '<span class="project-status ' + statusClass + '">' + (p.status || 'active') + '</span>' +
+        '<div class="project-actions">' +
+          '<button class="project-btn project-btn-run" onclick="runProject(\'' + p.id + '\')">Run</button>' +
+          '<button class="project-btn" onclick="location.href=\'/projects#' + p.id + '\'">Details</button>' +
+          '<button class="project-btn" style="font-size:.62rem;color:var(--purple);border-color:rgba(167,139,250,.3)" onclick="location.href=\'' + appPageLink + '\'">Catalog</button>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+
+    // New project card
+    var newCard = document.createElement('div');
+    newCard.className = 'project-card new-project-card';
+    newCard.onclick = function() { location.href = '/wizard'; };
+    newCard.innerHTML = '<div class="new-icon">+</div><div style="font-size:.82rem;color:var(--dim)">New Project</div>';
+    grid.appendChild(newCard);
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Load + auto-provision ────────────────────────────────────────────────────
+  async function loadProjects() {
+    try {
+      var res = await fetch('/api/platform/projects?status=all&limit=200', { headers: authHeader() });
+      var data = await res.json();
+      allProjects = dedupProjects(data.projects || []);
+
+      buildCategoryFilter(allProjects);
+      renderProjectGrid(allProjects);
+
+      // Auto-provision if fewer than 50 catalog apps
+      var catalogCount = allProjects.filter(function(p) { return p.scaffold && p.scaffold.catalog_id; }).length;
+      if (catalogCount < 50) {
+        showProvisionBanner(catalogCount);
+      }
+    } catch(e) {
+      document.getElementById('projectsGrid').innerHTML = '<div class="empty-state">Unable to load projects. <button class="action-btn" style="margin-top:8px" onclick="loadProjects()">Retry</button></div>';
+    }
+  }
+
+  function showProvisionBanner(current) {
+    var btn = document.getElementById('provisionBtn');
+    if (btn) {
+      btn.textContent = '⚡ Provision ' + (50 - current) + ' Missing Apps';
+      btn.style.animation = 'pulse 2s infinite';
+    }
+  }
+
+  window.provisionApps = async function() {
+    var btn = document.getElementById('provisionBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '⚡ Provisioning…'; }
+
+    try {
+      var res = await fetch('/api/platform/provision', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeader()),
+        body: JSON.stringify({}),
+      });
+      var data = await res.json();
+      if (data.ok) {
+        var msg = 'Created ' + data.created + ' projects' + (data.skipped ? ', ' + data.skipped + ' already existed' : '') + '.';
+        showToast(msg, 'green');
+        await loadProjects();
+        await loadActivity();
+      } else {
+        showToast('Provision failed: ' + (data.error || 'unknown'), 'red');
+      }
+    } catch(e) {
+      showToast('Network error during provision.', 'red');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '⚡ Provision All 50 Apps'; btn.style.animation = ''; }
+    }
+  };
+
+  window.runProject = async function(projectId) {
+    showToast('Starting run…', 'cyan');
+    location.href = '/projects?run=' + projectId;
+  };
+
+  // ── Activity feed (from project runs) ──────────────────────────────────────
+  async function loadActivity() {
+    var feed = document.getElementById('activityFeed');
+    try {
+      // Fetch recent project runs (most activity-rich source)
+      var res = await fetch('/api/platform/projects?status=all&limit=200', { headers: authHeader() });
+      var data = await res.json();
+      var projects = dedupProjects(data.projects || []);
+
+      // Build activity from project metadata (run_count, updated_at)
+      var events = projects
+        .filter(function(p) { return p.run_count > 0 || p.updated_at; })
+        .sort(function(a, b) { return new Date(b.updated_at) - new Date(a.updated_at); })
+        .slice(0, 12)
+        .map(function(p) {
+          var isNew = p.run_count <= 1 && p.scaffold && p.scaffold.catalog_id;
+          return {
+            type: 'project',
+            description: isNew
+              ? 'Initialized: ' + (p.name || 'Project') + (p.scaffold && p.scaffold.market ? ' (' + p.scaffold.market + ')' : '')
+              : 'Run completed: ' + (p.name || 'Project') + (p.run_count > 1 ? ' · ' + p.run_count + ' runs' : ''),
+            created_at: p.updated_at,
+          };
+        });
+
+      feed.innerHTML = '';
+      document.getElementById('activityCount').textContent = events.length + ' recent';
+
+      if (events.length === 0) {
+        feed.innerHTML = '<div class="empty-state">No activity yet. Run a project or provision the 50-app catalog.</div>';
+        return;
+      }
+
+      events.forEach(function(ev) {
+        var item = document.createElement('div');
+        item.className = 'activity-item';
+        item.innerHTML =
+          '<div class="activity-dot activity-dot-project"></div>' +
+          '<div class="activity-content">' +
+            '<div class="activity-text">' + escHtml(ev.description) + '</div>' +
+            '<div class="activity-time">' + relativeTime(ev.created_at) + '</div>' +
+          '</div>';
+        feed.appendChild(item);
+      });
+    } catch(e) {
+      feed.innerHTML = '<div class="empty-state">Unable to load activity</div>';
+    }
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  function showToast(msg, type) {
+    var t = document.createElement('div');
+    var color = type === 'green' ? 'var(--green)' : type === 'red' ? 'var(--red)' : 'var(--cyan)';
+    t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid ' + color + ';color:' + color + ';border-radius:8px;padding:10px 16px;font-size:.8rem;z-index:9999;animation:none;max-width:340px';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() { t.remove(); }, 4000);
+  }
+
+  // ── Invoice stats ────────────────────────────────────────────────────────────
+  async function loadInvoiceStats() {
+    try {
+      var res = await fetch('/api/invoices/stats', { headers: authHeader() });
+      var data = await res.json();
+      var byStatus = data.by_status || {};
+      document.getElementById('statInvoices').textContent = (byStatus.sent || 0) + (byStatus.overdue || 0);
+    } catch(e) { document.getElementById('statInvoices').textContent = '0'; }
+  }
+
+  async function loadTickets() {
+    try {
+      var res = await fetch('/api/tickets', { headers: authHeader() });
+      var data = await res.json();
+      var tickets = Array.isArray(data) ? data : (data.tickets || []);
+      document.getElementById('statTickets').textContent = tickets.filter(function(t) { return t.status !== 'closed'; }).length;
+    } catch(e) { document.getElementById('statTickets').textContent = '0'; }
+  }
+
+  // ── Newsletter ───────────────────────────────────────────────────────────────
+  function checkNewsletter() {
+    if (localStorage.getItem('bridge_newsletter_dismissed')) return;
+    if (localStorage.getItem('bridge_newsletter_subscribed')) return;
+    setTimeout(function() {
+      document.getElementById('newsletterModal').classList.add('show');
+      if (user && user.email) document.getElementById('newsletterEmail').value = user.email;
+    }, 5000);
+  }
+
+  window.subscribeNewsletter = async function() {
+    var email = document.getElementById('newsletterEmail').value.trim();
+    var msg = document.getElementById('newsletterMsg');
+    if (!email || email.indexOf('@') < 0) { msg.textContent = 'Enter a valid email'; msg.style.color = 'var(--red)'; return; }
+    try {
+      var res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
+      var data = await res.json();
+      if (data.ok) {
+        msg.style.color = 'var(--green)'; msg.textContent = 'Subscribed! Thanks.';
+        localStorage.setItem('bridge_newsletter_subscribed', '1');
+        setTimeout(function() { document.getElementById('newsletterModal').classList.remove('show'); }, 1500);
+      } else { msg.style.color = 'var(--red)'; msg.textContent = data.error || 'Error'; }
+    } catch(e) { msg.style.color = 'var(--red)'; msg.textContent = 'Network error'; }
+  };
+
+  window.dismissNewsletter = function() {
+    localStorage.setItem('bridge_newsletter_dismissed', '1');
+    document.getElementById('newsletterModal').classList.remove('show');
+  };
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  async function init() {
+    token = getToken();
+
+    try {
+      var res = await fetch('/auth/me', { credentials: 'include', headers: token ? { Authorization: 'Bearer ' + token } : {} });
+      var data = await res.json();
+      if (!data.ok || !data.user) { window.location.href = '/onboarding?redirect=/portal'; return; }
+      user = data.user;
+    } catch(e) { window.location.href = '/onboarding?redirect=/portal'; return; }
+
+    // Personalization
+    var firstName = (user.name || user.email.split('@')[0] || '').split(' ')[0];
+    document.getElementById('welcomeHeading').textContent = 'Welcome back, ' + firstName;
+    var plan = user.plan || 'free';
+    var badge = document.getElementById('portalPlanBadge');
+    badge.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+    badge.className = 'plan-badge plan-' + plan;
+    document.getElementById('portalEmail').textContent = user.email || '';
+    document.getElementById('portalBrdg').textContent = (user.brdg_balance || 0).toLocaleString() + ' BRDG';
+    document.getElementById('statBrdg').textContent = user.brdg_balance || 0;
+    setFunnel(user.funnel_stage);
+
+    Promise.all([
+      loadProjects(),
+      loadInvoiceStats(),
+      loadTickets(),
+      loadActivity(),
+    ]);
+
+    checkNewsletter();
+  }
+
+  init();
+})();
+</script>
+<script src="/bridge-nav.js" defer></script>
+  <script src="/ehsa-brain-status.js" defer></script>
+</body>
+</html>

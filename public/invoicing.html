@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="description" content="AI invoicing — generate, send, and track invoices automatically. Integrated with treasury and PayFast payments.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/invoicing">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/invoicing">
+<meta property="og:title" content="BridgeAI · Smart Invoicing">
+<meta property="og:description" content="AI invoicing — generate, send, and track invoices automatically. Integrated with treasury and PayFast payments.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BridgeAI · Smart Invoicing">
+<meta name="twitter:description" content="AI invoicing — generate, send, and track invoices automatically. Integrated with treasury and PayFast payments.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BridgeAI · Smart Invoicing</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--surface:#0f172a;--surface2:#1e293b;
+  --border:#1e293b;--border2:#334155;
+  --accent:#38bdf8;--accent2:#0284c7;--green:#34d399;
+  --yellow:#fbbf24;--red:#f87171;--purple:#a78bfa;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --font:Inter,system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;
+  padding:.6rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50}
+.nav-brand{font-size:1rem;font-weight:700;color:#fff;letter-spacing:.5px}
+.nav-links{display:flex;gap:.25rem}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:.82rem;padding:.35rem .75rem;
+  border-radius:4px;transition:all .15s}
+.nav-links a:hover,.nav-links a.active{color:#fff;background:var(--surface2)}
+.nav-actions{display:flex;gap:.5rem;align-items:center}
+.nav-btn{padding:.35rem .9rem;border-radius:5px;border:none;cursor:pointer;
+  font-family:var(--font);font-size:.8rem;font-weight:600}
+.nav-btn-primary{background:var(--accent2);color:#fff}
+.nav-btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.nav-btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.nav-btn-warn{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:var(--yellow)}
+.nav-btn-warn:hover{background:rgba(251,191,36,.2)}
+
+/* ── STATS BAR ── */
+.stats-bar{display:flex;gap:.75rem;padding:.75rem 1.5rem;background:var(--surface);
+  border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:wrap}
+.stat{background:var(--surface2);border-radius:6px;padding:.5rem 1rem;min-width:110px;flex-shrink:0}
+.stat-val{font-size:1.2rem;font-weight:700;color:var(--accent)}
+.stat-val.green{color:var(--green)}
+.stat-val.yellow{color:var(--yellow)}
+.stat-val.red{color:var(--red)}
+.stat-lbl{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+
+/* ── MAIN GRID ── */
+.main{display:grid;grid-template-columns:380px 1fr;gap:0;height:calc(100vh - 112px);overflow:hidden}
+.panel-left{border-right:1px solid var(--border);overflow-y:auto;padding:1.25rem}
+.panel-right{overflow-y:auto;padding:1.25rem}
+
+/* ── FORM ── */
+.section-label{font-size:.72rem;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem}
+.field{margin-bottom:.65rem}
+.field label{display:block;font-size:.7rem;color:var(--text3);margin-bottom:.25rem}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:5px;padding:.45rem .7rem;color:#f1f5f9;font-size:.82rem;
+  font-family:var(--font);outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.65rem}
+
+/* ── ITEMS TABLE ── */
+.items-hdr{display:flex;justify-content:space-between;align-items:center;margin:.75rem 0 .4rem}
+.items-hdr-lbl{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.items-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:.75rem}
+.items-table th{background:var(--surface);padding:.4rem .6rem;
+  text-align:left;color:var(--text3);border-bottom:1px solid var(--border);font-weight:500}
+.items-table td{padding:.35rem .6rem;border-bottom:1px solid var(--border)}
+.items-table input{background:var(--surface);border:1px solid var(--border2);
+  border-radius:4px;padding:.3rem .45rem;color:#f1f5f9;font-size:.78rem;width:100%;font-family:var(--font)}
+.totals{background:var(--surface);border-radius:6px;padding:.75rem;margin-top:.5rem}
+.total-row{display:flex;justify-content:space-between;padding:.2rem 0;font-size:.82rem;color:var(--text2)}
+.total-row.grand{font-size:1rem;font-weight:700;color:#f1f5f9;
+  border-top:1px solid var(--border2);margin-top:.4rem;padding-top:.4rem}
+.form-actions{display:flex;gap:.6rem;margin-top:1rem}
+.btn{padding:.45rem 1.1rem;border-radius:5px;border:none;cursor:pointer;
+  font-size:.82rem;font-weight:600;font-family:var(--font)}
+.btn-primary{background:var(--accent2);color:#fff}
+.btn-secondary{background:var(--surface2);color:var(--text2)}
+.btn-danger{background:#7f1d1d;color:#fca5a5;padding:.25rem .5rem;font-size:.72rem}
+.btn-sm{padding:.25rem .65rem;font-size:.75rem}
+.btn-green{background:#064e3b;color:var(--green)}
+
+/* ── INVOICE LIST ── */
+.list-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+.filter-group{display:flex;gap:.5rem;align-items:center}
+.filter-group select{background:var(--surface2);border:1px solid var(--border2);
+  border-radius:5px;padding:.35rem .6rem;color:#f1f5f9;font-size:.78rem;font-family:var(--font)}
+.inv-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:.85rem 1rem;margin-bottom:.6rem;display:flex;justify-content:space-between;
+  align-items:flex-start;transition:border-color .15s}
+.inv-card:hover{border-color:var(--accent)}
+.inv-num{font-size:.82rem;font-weight:600;color:#f1f5f9}
+.inv-client{font-size:.72rem;color:var(--text2);margin-top:2px}
+.inv-actions{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap}
+.inv-amount{font-size:1rem;font-weight:700;color:var(--accent);text-align:right}
+.inv-meta{font-size:.68rem;color:var(--text3);margin-top:2px;text-align:right}
+.badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:.66rem;font-weight:600}
+.s-draft{background:var(--surface2);color:var(--text2)}
+.s-sent{background:#0c4a6e;color:#7dd3fc}
+.s-paid{background:#064e3b;color:var(--green)}
+.s-overdue{background:#7f1d1d;color:#fca5a5}
+.s-pending{background:#451a03;color:var(--yellow)}
+.empty-state{text-align:center;color:var(--text3);padding:2rem;font-size:.82rem}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:1.25rem;right:1.25rem;background:var(--surface);
+  border:1px solid var(--accent);color:var(--accent);font-size:.82rem;
+  padding:.6rem 1.1rem;border-radius:6px;display:none;z-index:999}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">BRIDGE AI</div>
+  <div class="nav-links">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/crm">CRM</a>
+    <a href="/leads">Leads</a>
+    <a href="/invoicing" class="active">Invoicing</a>
+    <a href="/agents">Agents</a>
+    <a href="/settings">Settings</a>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-warn" id="btnFollowUp">Follow Up Unpaid</button>
+    <button class="nav-btn nav-btn-outline" id="btnSendAll">Send All Pending</button>
+    <button class="nav-btn nav-btn-primary" id="btnNewInvoice">+ New Invoice</button>
+  </div>
+</nav>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat"><div class="stat-val" id="ss-total">—</div><div class="stat-lbl">Total Invoices</div></div>
+  <div class="stat"><div class="stat-val green" id="ss-paid">—</div><div class="stat-lbl">Paid</div></div>
+  <div class="stat"><div class="stat-val yellow" id="ss-pending">—</div><div class="stat-lbl">Pending</div></div>
+  <div class="stat"><div class="stat-val red" id="ss-overdue">—</div><div class="stat-lbl">Overdue</div></div>
+  <div class="stat"><div class="stat-val green" id="ss-revenue">—</div><div class="stat-lbl">Revenue</div></div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- CREATE PANEL -->
+  <div class="panel-left" id="createPanel">
+    <div class="section-label">Smart Invoicing</div>
+    <div class="row2">
+      <div class="field"><label>Client Email *</label>
+        <input type="email" id="c-email" placeholder="client@company.com"/></div>
+      <div class="field"><label>Client Name</label>
+        <input type="text" id="c-name" placeholder="Jane Smith"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Company</label>
+        <input type="text" id="c-company" placeholder="Acme Corp"/></div>
+      <div class="field"><label>Currency</label>
+        <select id="c-currency">
+          <option value="ZAR">ZAR (R)</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+        </select>
+      </div>
+    </div>
+    <div class="row3">
+      <div class="field"><label>Tax %</label>
+        <input type="number" id="c-tax" value="15" min="0" max="100"/></div>
+      <div class="field"><label>Due Days</label>
+        <input type="number" id="c-due" value="30"/></div>
+      <div class="field"><label>Status</label>
+        <select id="c-status">
+          <option value="draft">Draft</option>
+          <option value="sent">Send Now</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Notes / Payment Terms</label>
+      <textarea id="c-notes" rows="2" placeholder="Bank details, payment terms…"></textarea></div>
+
+    <div class="items-hdr">
+      <div class="items-hdr-lbl">Line Items</div>
+      <button class="btn btn-secondary btn-sm" onclick="addItem()">+ Add Item</button>
+    </div>
+    <table class="items-table">
+      <thead><tr>
+        <th>Description</th><th style="width:60px">Qty</th>
+        <th style="width:90px">Unit Price</th><th style="width:28px"></th>
+      </tr></thead>
+      <tbody id="items-body"></tbody>
+    </table>
+    <div class="totals">
+      <div class="total-row"><span>Subtotal</span><span id="t-sub">R 0.00</span></div>
+      <div class="total-row"><span>Tax (<span id="t-taxrate">15</span>%)</span><span id="t-tax">R 0.00</span></div>
+      <div class="total-row grand"><span>TOTAL</span><span id="t-total">R 0.00</span></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="createInvoice()">Create Invoice</button>
+      <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+    </div>
+  </div>
+
+  <!-- INVOICE LIST -->
+  <div class="panel-right">
+    <div class="list-hdr">
+      <div class="section-label" style="margin:0">All Invoices</div>
+      <div class="filter-group">
+        <select id="filter-status" onchange="loadInvoices()">
+          <option value="">All</option>
+          <option value="draft">Draft</option>
+          <option value="sent">Sent</option>
+          <option value="paid">Paid</option>
+          <option value="overdue">Overdue</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadInvoices()">↺</button>
+      </div>
+    </div>
+    <div id="invoice-list"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const DEV_SECRET = 'dev-secret-bridge-2026';
+const DEV_ADDR   = '0xDEV000000000000000000000000000000000001';
+let _items = [];
+let _authToken = localStorage.getItem('bridge_token') || '';
+
+async function ensureAuth() {
+  if (_authToken) {
+    const r = await fetch('/api/auth/me', {
+      credentials: 'include',
+      headers: { Authorization: 'Bearer ' + _authToken }
+    });
+    if (r.ok) return true;
+  }
+  const r2 = await fetch('/api/auth/me', { credentials: 'include' });
+  if (r2.ok) return true;
+  try {
+    const r3 = await fetch('/api/auth/dev-login', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: DEV_ADDR, secret: DEV_SECRET, role: 'admin' })
+    });
+    if (r3.ok) {
+      const d = await r3.json();
+      if (d.token) { _authToken = d.token; localStorage.setItem('bridge_token', d.token); }
+      return true;
+    }
+  } catch {}
+  window.location.href = '/join?next=/invoicing';
+  return false;
+}
+
+let _csrfToken = '';
+async function fetchCsrf() {
+  try {
+    const r = await fetch('/api/invoices/stats', { credentials: 'include',
+      headers: _authToken ? { Authorization: 'Bearer ' + _authToken } : {} });
+    const t = r.headers.get('X-CSRF-Token');
+    if (t) _csrfToken = t;
+  } catch {}
+}
+
+async function apiFetch(path, opts = {}) {
+  const method = (opts.method || 'GET').toUpperCase();
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (_authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+  if (['POST','PUT','DELETE','PATCH'].includes(method) && _csrfToken)
+    headers['X-CSRF-Token'] = _csrfToken;
+  const res = await fetch('/api' + path, { credentials: 'include', ...opts, headers });
+  const newCsrf = res.headers.get('X-CSRF-Token');
+  if (newCsrf) _csrfToken = newCsrf;
+  if (res.status === 401) {
+    _authToken = ''; localStorage.removeItem('bridge_token');
+    await ensureAuth(); await fetchCsrf();
+    if (_authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+    if (_csrfToken) headers['X-CSRF-Token'] = _csrfToken;
+    const retry = await fetch('/api' + path, { credentials: 'include', ...opts, headers });
+    if (!retry.ok) throw new Error(await retry.text());
+    return retry.json();
+  }
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+const _p = new URLSearchParams(location.search);
+if (_p.get('email'))   document.getElementById('c-email').value   = _p.get('email');
+if (_p.get('company')) document.getElementById('c-company').value = _p.get('company');
+if (_p.get('name'))    document.getElementById('c-name').value    = _p.get('name');
+
+function toast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.color = color || 'var(--accent)';
+  t.style.borderColor = color || 'var(--accent)';
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+function addItem(desc='', qty=1, price=0) {
+  _items.push({ id: Date.now() + Math.random(), desc, qty, price });
+  renderItems();
+}
+function removeItem(id) { _items = _items.filter(i => i.id !== id); renderItems(); }
+function renderItems() {
+  const tbody = document.getElementById('items-body');
+  tbody.textContent = '';
+  _items.forEach(item => {
+    const tr = document.createElement('tr');
+    const mkInput = (type, val, min, step, onInput) => {
+      const el = document.createElement('input');
+      el.type = type; el.value = val;
+      if (min !== undefined) el.min = min;
+      if (step !== undefined) el.step = step;
+      el.addEventListener('input', onInput);
+      return el;
+    };
+    const dTd = document.createElement('td');
+    const dIn = mkInput('text', item.desc, undefined, undefined, e => { item.desc = e.target.value; });
+    dIn.placeholder = 'Service description';
+    dTd.appendChild(dIn); tr.appendChild(dTd);
+    const qTd = document.createElement('td');
+    qTd.appendChild(mkInput('number', item.qty, '0.01', '1', e => { item.qty = parseFloat(e.target.value)||1; updateTotals(); }));
+    tr.appendChild(qTd);
+    const pTd = document.createElement('td');
+    pTd.appendChild(mkInput('number', item.price, '0', '0.01', e => { item.price = parseFloat(e.target.value)||0; updateTotals(); }));
+    tr.appendChild(pTd);
+    const dBtnTd = document.createElement('td');
+    const dBtn = document.createElement('button');
+    dBtn.className = 'btn btn-danger'; dBtn.textContent = '✕';
+    dBtn.onclick = () => removeItem(item.id);
+    dBtnTd.appendChild(dBtn); tr.appendChild(dBtnTd);
+    tbody.appendChild(tr);
+  });
+  updateTotals();
+}
+function updateTotals() {
+  const sym = { ZAR:'R', USD:'$', EUR:'€', GBP:'£' }[document.getElementById('c-currency').value] || 'R';
+  const tax = (parseFloat(document.getElementById('c-tax').value)||0) / 100;
+  const sub = _items.reduce((a,i) => a + i.qty * i.price, 0);
+  const taxAmt = sub * tax;
+  document.getElementById('t-taxrate').textContent = document.getElementById('c-tax').value || '0';
+  document.getElementById('t-sub').textContent = sym + ' ' + sub.toFixed(2);
+  document.getElementById('t-tax').textContent = sym + ' ' + taxAmt.toFixed(2);
+  document.getElementById('t-total').textContent = sym + ' ' + (sub + taxAmt).toFixed(2);
+}
+document.getElementById('c-currency').addEventListener('change', updateTotals);
+document.getElementById('c-tax').addEventListener('input', updateTotals);
+
+function clearForm() {
+  ['c-email','c-name','c-company','c-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('c-currency').value = 'ZAR';
+  document.getElementById('c-tax').value = '15';
+  document.getElementById('c-due').value = '30';
+  document.getElementById('c-status').value = 'draft';
+  _items = []; renderItems();
+}
+
+async function createInvoice() {
+  const email = document.getElementById('c-email').value.trim();
+  if (!email) { toast('Client email required', 'var(--red)'); return; }
+  if (!_items.length) { toast('Add at least one line item', 'var(--red)'); return; }
+  try {
+    const r = await apiFetch('/invoices', {
+      method: 'POST', body: JSON.stringify({
+        client_email:   email,
+        client_name:    document.getElementById('c-name').value.trim(),
+        client_company: document.getElementById('c-company').value.trim(),
+        currency:       document.getElementById('c-currency').value,
+        tax_rate:       (parseFloat(document.getElementById('c-tax').value)||0)/100,
+        due_days:       parseInt(document.getElementById('c-due').value,10)||30,
+        notes:          document.getElementById('c-notes').value.trim(),
+        lead_id:        _p.get('lead_id') || null,
+        items: _items.map(i => ({ description:i.desc, quantity:i.qty, unit_price:i.price })),
+      })
+    });
+    toast('Invoice ' + r.invoice.invoice_number + ' created!', 'var(--green)');
+    clearForm(); loadInvoices(); loadStats();
+  } catch(e) { toast('Error: ' + e.message, 'var(--red)'); }
+}
+
+document.getElementById('btnFollowUp').addEventListener('click', async () => {
+  try {
+    const r = await apiFetch('/invoices/flag-overdue', { method: 'POST', body: '{}' });
+    toast('Flagged ' + (r.flagged||0) + ' overdue invoices', 'var(--yellow)');
+    loadInvoices(); loadStats();
+  } catch(e) { toast('Error: ' + e.message, 'var(--red)'); }
+});
+
+document.getElementById('btnSendAll').addEventListener('click', async () => {
+  const drafts = document.querySelectorAll('[data-status="draft"]');
+  if (!drafts.length) { toast('No draft invoices to send', 'var(--text2)'); return; }
+  let sent = 0;
+  for (const el of drafts) {
+    try { await apiFetch('/invoices/' + encodeURIComponent(el.dataset.id) + '/send', { method:'POST', body:'{}' }); sent++; }
+    catch {}
+  }
+  toast('Sent ' + sent + ' invoices', 'var(--green)');
+  loadInvoices(); loadStats();
+});
+
+document.getElementById('btnNewInvoice').addEventListener('click', () => {
+  document.querySelector('.panel-left').scrollIntoView({ behavior:'smooth' });
+  document.getElementById('c-email').focus();
+});
+
+const SYM = { ZAR:'R', USD:'$', EUR:'€', GBP:'£' };
+const SC  = { draft:'s-draft', sent:'s-sent', paid:'s-paid', overdue:'s-overdue', pending:'s-pending' };
+
+async function loadInvoices() {
+  const status = document.getElementById('filter-status').value;
+  const url = '/invoices' + (status ? '?status=' + encodeURIComponent(status) : '');
+  const renderInvoiceCards = (invs) => {
+    const el = document.getElementById('invoice-list');
+    el.textContent = '';
+    if (!invs.length) {
+      const e = document.createElement('div');
+      e.className = 'empty-state'; e.textContent = 'No invoices yet';
+      el.appendChild(e); return;
+    }
+    invs.forEach(inv => {
+      const card = document.createElement('div');
+      card.className = 'inv-card';
+      card.dataset.id = inv.id;
+      card.dataset.status = inv.status;
+      const left = document.createElement('div');
+      const num = document.createElement('div'); num.className='inv-num'; num.textContent=inv.invoice_number || inv.number || inv.id; left.appendChild(num);
+      const cli = document.createElement('div'); cli.className='inv-client';
+      cli.textContent=(inv.client_name||inv.client||inv.client_email||'Client')+(inv.client_company?' · '+inv.client_company:'');
+      left.appendChild(cli);
+      const badge = document.createElement('span');
+      badge.className='badge '+(SC[inv.status]||'s-draft'); badge.textContent=inv.status || 'draft';
+      left.appendChild(badge);
+      const acts = document.createElement('div'); acts.className='inv-actions';
+      if (inv.status==='draft') {
+        const b=document.createElement('button'); b.className='btn btn-secondary btn-sm';
+        b.textContent='✉ Send'; b.onclick=()=>sendOne(inv.id); acts.appendChild(b);
+      }
+      if (inv.status!=='paid') {
+        const b=document.createElement('button'); b.className='btn btn-green btn-sm';
+        b.textContent='✓ Paid'; b.onclick=()=>markPaid(inv.id); acts.appendChild(b);
+      }
+      const pdf=document.createElement('button'); pdf.className='btn btn-secondary btn-sm';
+      pdf.textContent='⬇ PDF'; pdf.onclick=()=>dlPdf(inv.id,inv.invoice_number||inv.number||inv.id); acts.appendChild(pdf);
+      if (inv.payment_link) {
+        const a=document.createElement('a'); a.className='btn btn-primary btn-sm';
+        a.textContent='💳 Pay'; a.href=inv.payment_link; a.target='_blank'; a.rel='noopener'; acts.appendChild(a);
+      }
+      left.appendChild(acts); card.appendChild(left);
+      const right = document.createElement('div');
+      const amt = document.createElement('div'); amt.className='inv-amount';
+      const total = Number(inv.total ?? inv.amount ?? 0);
+      amt.textContent=(SYM[inv.currency]||inv.currency||'R')+' '+total.toFixed(2); right.appendChild(amt);
+      const meta = document.createElement('div'); meta.className='inv-meta';
+      meta.textContent=(inv.currency||'ZAR')+' · due '+(inv.due_date||'—'); right.appendChild(meta);
+      card.appendChild(right); el.appendChild(card);
+    });
+  };
+
+  const fallbackInvoices = async () => {
+    const headers = _authToken ? { Authorization: 'Bearer ' + _authToken } : {};
+    const res = await fetch('/api/corporate/state', { credentials: 'include', headers });
+    if (!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+    let invs = Array.isArray(d.invoices) ? d.invoices : [];
+    if (status) invs = invs.filter(i => String(i.status || '').toLowerCase() === status.toLowerCase());
+    return invs;
+  };
+
+  try {
+    const r = await apiFetch(url);
+    renderInvoiceCards(r.invoices || []);
+  } catch(e) {
+    try {
+      const invs = await fallbackInvoices();
+      renderInvoiceCards(invs);
+      toast('Using fallback invoice source', 'var(--yellow)');
+    } catch {
+      toast('Failed to load invoices: '+e.message, 'var(--red)');
+    }
+  }
+}
+
+async function sendOne(id) {
+  try { await apiFetch('/invoices/'+encodeURIComponent(id)+'/send',{method:'POST',body:'{}'}); loadInvoices(); toast('Sent','var(--green)'); }
+  catch(e){ toast('Error: '+e.message,'var(--red)'); }
+}
+async function markPaid(id) {
+  try { await apiFetch('/invoices/'+encodeURIComponent(id)+'/mark-paid',{method:'POST',body:JSON.stringify({payment_method:'manual'})}); loadInvoices(); loadStats(); toast('Marked paid','var(--green)'); }
+  catch(e){ toast('Error: '+e.message,'var(--red)'); }
+}
+async function dlPdf(id, num) {
+  try {
+    const headers = _authToken ? { Authorization:'Bearer '+_authToken } : {};
+    const res = await fetch('/api/invoices/'+encodeURIComponent(id)+'/pdf',{credentials:'include',headers});
+    if (!res.ok) { toast('PDF error: '+res.status,'var(--red)'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=(num||id)+'.pdf';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  } catch(e){ toast('PDF error: '+e.message,'var(--red)'); }
+}
+
+async function loadStats() {
+  try {
+    const s = await apiFetch('/invoices/stats');
+    document.getElementById('ss-total').textContent   = s.total_invoices ?? 0;
+    document.getElementById('ss-paid').textContent    = 'R '+(s.total_paid ?? 0).toFixed(0);
+    document.getElementById('ss-pending').textContent = s.by_status?.sent ?? 0;
+    document.getElementById('ss-overdue').textContent = s.by_status?.overdue ?? 0;
+    document.getElementById('ss-revenue').textContent = 'R '+(s.total_billed ?? 0).toFixed(0);
+  } catch {
+    try {
+      const headers = _authToken ? { Authorization: 'Bearer ' + _authToken } : {};
+      const r = await fetch('/api/corporate/state', { credentials: 'include', headers });
+      if (!r.ok) return;
+      const d = await r.json();
+      const invs = Array.isArray(d.invoices) ? d.invoices : [];
+      const paid = invs.filter(i => i.status === 'paid');
+      const sent = invs.filter(i => i.status === 'sent');
+      const overdue = invs.filter(i => i.status === 'overdue');
+      const billed = invs.reduce((a, i) => a + Number(i.total || i.amount || 0), 0);
+      const paidSum = paid.reduce((a, i) => a + Number(i.total || i.amount || 0), 0);
+      document.getElementById('ss-total').textContent   = invs.length;
+      document.getElementById('ss-paid').textContent    = 'R '+paidSum.toFixed(0);
+      document.getElementById('ss-pending').textContent = sent.length;
+      document.getElementById('ss-overdue').textContent = overdue.length;
+      document.getElementById('ss-revenue').textContent = 'R '+billed.toFixed(0);
+    } catch {}
+  }
+}
+
+(async () => {
+  await ensureAuth();
+  await fetchCsrf();
+  addItem('Professional Services', 1, 0);
+  await Promise.all([loadInvoices(), loadStats()]);
+  setInterval(() => { loadInvoices(); loadStats(); }, 30000);
+})();
+</script>
+</body>
+</html>

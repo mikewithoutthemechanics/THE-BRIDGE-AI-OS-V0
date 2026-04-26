@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Runtime settings store — contains super-admin grants and audit log
 data/settings.runtime.json
 data/*.runtime.json
@@ -30,3 +31,115 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+=======
+node_modules/
+frontend/dist/
+.env
+.env.*
+!.env.example
+*.secure.json
+keys.json
+credentials.json
+certs/
+logs/
+*.log
+.DS_Store
+Thumbs.db
+
+.vercel
+users.db
+users.db-shm
+users.db-wal
+.env.production
+*.db-shm
+*.db-wal
+
+# Secrets / tunnel credentials — never commit
+cloudflared/
+rotate.ps1
+*.pem
+*.key
+wp-cli.phar
+.env*.local
+
+# Large runtime data files — not for version control
+data/neuro-history/
+data/*.db
+data/sessions/
+
+# Python bytecode
+*.pyc
+__pycache__/
+
+# Editor/deploy backups
+*.bak
+*.bak.*
+
+# Runtime SQLite for services
+services/*/config.db
+services/*/*.db
+
+# Legacy empty file
+/ssh
+
+# Hardhat build output
+artifacts/
+contracts/cache/
+cache/
+typechain-types/
+
+# ============================================================
+# Added 2026-04-21 for VPS/GitHub sync: keep runtime noise out
+# ============================================================
+
+# Python cache
+__pycache__/
+*.pyc
+
+# SQLite runtime WAL/SHM
+*.db-shm
+*.db-wal
+
+# Hand-made file backups/scratch
+*.bak
+*.bak*
+*.backup
+*.pre-*
+*.preauthgate-*
+*.broken.*
+*.stub*
+
+# Runtime state JSONs
+adaptive-recovery-state.json
+brain-orchestration-state.json
+orchestrator-state.json
+predictive-state.json
+
+# Local IDE/tool dirs
+.bridge-state/
+.snapshots/
+.kilo/
+.playwright-mcp/
+.claude/state/
+.vscode/
+
+# Runtime state snapshots (do not track)
+**/state.snapshot
+engine/config-intelligence/data/snapshots/
+data/snapshots/
+
+# Logs
+logs/
+*.log
+
+# Env (preserve .env.example)
+.env
+.env.bak.*
+.env.compiled
+
+# Debug artifacts
+shot-*.png
+gateway-execute.tar.gz
+artifacts/
+*.env
+>>>>>>> a65a24150727639fde77daadeba4361af473827a

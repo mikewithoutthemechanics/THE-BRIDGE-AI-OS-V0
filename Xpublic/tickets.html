@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Tickets — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/crm.html" class="text-slate-400 hover:text-cyan-400">CRM</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-cyan-400">Support Tickets</h1>
+      <button onclick="createTicket()" class="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-cyan-500">
+        + New Ticket
+      </button>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="total">0</div>
+        <div class="text-sm text-slate-400">Total Tickets</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400" id="open">0</div>
+        <div class="text-sm text-slate-400">Open</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-blue-400" id="pending">0</div>
+        <div class="text-sm text-slate-400">Pending</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400" id="resolved">0</div>
+        <div class="text-sm text-slate-400">Resolved</div>
+      </div>
+    </div>
+
+    <div class="flex gap-2 mb-6">
+      <button class="px-4 py-2 bg-cyan-600 rounded-lg text-sm">All</button>
+      <button class="px-4 py-2 bg-slate-700 rounded-lg text-sm hover:bg-slate-600">Open</button>
+      <button class="px-4 py-2 bg-slate-700 rounded-lg text-sm hover:bg-slate-600">Pending</button>
+      <button class="px-4 py-2 bg-slate-700 rounded-lg text-sm hover:bg-slate-600">Resolved</button>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-slate-700">
+          <tr>
+            <th class="p-4 text-left text-sm font-bold">ID</th>
+            <th class="p-4 text-left text-sm font-bold">Subject</th>
+            <th class="p-4 text-left text-sm font-bold">Customer</th>
+            <th class="p-4 text-left text-sm font-bold">Priority</th>
+            <th class="p-4 text-left text-sm font-bold">Status</th>
+            <th class="p-4 text-left text-sm font-bold">Created</th>
+          </tr>
+        </thead>
+        <tbody id="tickets-table">
+          <tr><td colspan="6" class="p-8 text-center text-slate-500">Loading tickets...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    async function loadTickets() {
+      try {
+        const res = await fetch('/api/tickets');
+        const data = await res.json();
+        const tickets = data.tickets || data || [];
+        
+        document.getElementById('total').textContent = tickets.length;
+        document.getElementById('open').textContent = tickets.filter(t => t.status === 'open').length;
+        document.getElementById('pending').textContent = tickets.filter(t => t.status === 'pending').length;
+        document.getElementById('resolved').textContent = tickets.filter(t => t.status === 'resolved').length;
+
+        if (tickets.length === 0) {
+          document.getElementById('tickets-table').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">No tickets found</td></tr>';
+        } else {
+          document.getElementById('tickets-table').innerHTML = tickets.map(t => `
+            <tr class="border-t border-slate-700 hover:bg-slate-750 cursor-pointer">
+              <td class="p-4 font-mono text-cyan-400">#${t.id}</td>
+              <td class="p-4">${t.subject}</td>
+              <td class="p-4">${t.customer || t.email}</td>
+              <td class="p-4">
+                <span class="px-2 py-1 rounded text-xs font-bold ${
+                  t.priority === 'high' ? 'bg-red-900 text-red-400' :
+                  t.priority === 'medium' ? 'bg-yellow-900 text-yellow-400' :
+                  'bg-green-900 text-green-400'
+                }">${t.priority?.toUpperCase() || 'LOW'}
+                </span>
+              </td>
+              <td class="p-4">
+                <span class="px-2 py-1 rounded text-xs font-bold ${
+                  t.status === 'open' ? 'bg-cyan-900 text-cyan-400' :
+                  t.status === 'pending' ? 'bg-yellow-900 text-yellow-400' :
+                  'bg-green-900 text-green-400'
+                }">${t.status?.toUpperCase() || 'NEW'}
+                </span>
+              </td>
+              <td class="p-4 text-slate-400">${t.created || t.date}</td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('tickets-table').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-400">Error loading tickets</td></tr>';
+      }
+    }
+
+    function createTicket() {
+      const subject = prompt('Ticket subject:');
+      if (subject) {
+        fetch('/api/tickets', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ subject })
+        }).then(() => loadTickets());
+      }
+    }
+
+    loadTickets();
+  </script>
+</body>
+</html>

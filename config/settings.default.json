@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
   "version": 1,
   "schema_description": "Authoritative settings baseline. Layered resolution: defaults.global -> defaults.tiers[user.tier] -> runtime.users[email].overrides (deep-merged). Mutations only via /settings/* API; never edit this file at runtime.",
@@ -112,3 +113,119 @@
     "feature_flag_resolution_is_deep_merge_not_replace"
   ]
 }
+=======
+{
+  "version": 1,
+  "schema_description": "Authoritative settings baseline. Layered resolution: defaults.global -> defaults.tiers[user.tier] -> runtime.users[email].overrides (deep-merged). Mutations only via /settings/* API; never edit this file at runtime.",
+  "global": {
+    "theme": "dark",
+    "api_base": "https://go.ai-os.co.za",
+    "settings_endpoint": "https://go.ai-os.co.za/settings",
+    "notifications_enabled": true,
+    "live_refresh_ms": 2000,
+    "default_user_id": "bridge-operator",
+    "features": {
+      "orchestra_dashboard": true,
+      "admin_actions": true,
+      "sse_event_stream": true,
+      "topology_visualization": true,
+      "audio_event_stream": true,
+      "blockchain_admin": false,
+      "super_brain_auto_econ": false,
+      "multi_tenant": false,
+      "billing_portal": false
+    },
+    "limits": {
+      "api_requests_per_hour": 1000,
+      "max_concurrent_sessions": 3,
+      "max_admin_actions_per_minute": 10,
+      "max_settings_mutations_per_hour": 20,
+      "max_audit_entries_retained": 10000
+    },
+    "ui": {
+      "accent_color": "#00ff9c",
+      "info_color": "#00bfff",
+      "warn_color": "#ffb347",
+      "err_color": "#ff4d6d"
+    }
+  },
+  "tiers": {
+    "free": {
+      "description": "Read-only dashboard access. No admin actions.",
+      "features": {
+        "admin_actions": false,
+        "blockchain_admin": false,
+        "multi_tenant": false,
+        "billing_portal": false
+      },
+      "limits": {
+        "api_requests_per_hour": 100,
+        "max_concurrent_sessions": 1,
+        "max_admin_actions_per_minute": 0
+      }
+    },
+    "pro": {
+      "description": "Admin actions + extended telemetry. No treasury access.",
+      "features": {
+        "admin_actions": true,
+        "blockchain_admin": false,
+        "multi_tenant": true,
+        "billing_portal": true
+      },
+      "limits": {
+        "api_requests_per_hour": 5000,
+        "max_concurrent_sessions": 5,
+        "max_admin_actions_per_minute": 30
+      }
+    },
+    "enterprise": {
+      "description": "Full admin + blockchain admin + SLA dashboard.",
+      "features": {
+        "admin_actions": true,
+        "blockchain_admin": true,
+        "multi_tenant": true,
+        "billing_portal": true
+      },
+      "limits": {
+        "api_requests_per_hour": 50000,
+        "max_concurrent_sessions": 20,
+        "max_admin_actions_per_minute": 120
+      }
+    },
+    "super_admin": {
+      "description": "Bypass all limits. Override any setting for any user. Full audit visibility.",
+      "features": {
+        "admin_actions": true,
+        "blockchain_admin": true,
+        "multi_tenant": true,
+        "billing_portal": true,
+        "super_brain_auto_econ": true
+      },
+      "limits": {
+        "api_requests_per_hour": -1,
+        "max_concurrent_sessions": -1,
+        "max_admin_actions_per_minute": -1
+      },
+      "capabilities": [
+        "settings.read.any",
+        "settings.write.global",
+        "settings.write.tier",
+        "settings.write.user_override",
+        "settings.grant_super_admin",
+        "settings.revoke_super_admin",
+        "settings.audit.read",
+        "settings.audit.purge",
+        "system.break_glass",
+        "system.pm2_control",
+        "system.blockchain_withdraw"
+      ]
+    }
+  },
+  "invariants": [
+    "negative_limits_mean_unlimited_only_for_super_admin",
+    "runtime_overrides_can_NEVER_reduce_audit_retention_below_1000",
+    "super_admin_grants_are_append_only_in_audit_log",
+    "feature_flag_resolution_is_deep_merge_not_replace"
+  ]
+}
+>>>>>>> a65a24150727639fde77daadeba4361af473827a

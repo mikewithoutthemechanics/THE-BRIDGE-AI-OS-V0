@@ -62,7 +62,11 @@ case "${1:-help}" in
   c35) find . -type f -not -path "*/node_modules/*" -not -path "*/.git/*" | wc -l ;;
   c36) [ -r baseline.sha256 ] && diff baseline.sha256 <(find . -type f -not -path "*/node_modules/*" -not -path "*/.git/*" -exec sha256sum {} \; 2>/dev/null | sort | sha256sum) || echo "no baseline.sha256 — run: scripts/ops.sh baseline" ;;
   c37) stat orchestra.html 2>/dev/null || ls -la orchestra.html ;;
+<<<<<<< HEAD
   c38) md5sum orchestra-server.js 2>/dev/null || md5 orchestra-server.js ;;
+=======
+  c38) md5sum server.js 2>/dev/null || md5 server.js ;;
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
 
   # --- Logs / Observability ---
   c39) tail -f logs/quant.log 2>/dev/null || echo "logs/quant.log not yet produced" ;;

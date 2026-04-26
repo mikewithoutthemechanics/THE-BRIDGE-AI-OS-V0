@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="canonical" href="https://go.ai-os.co.za/legal">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/legal">
+<meta property="og:title" content="Legal — Bridge AI OS">
+<meta property="og:description" content="Bridge AI OS legal documentation — terms of service, privacy policy, and token disclaimer.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Legal — Bridge AI OS">
+<meta name="twitter:description" content="Bridge AI OS legal documentation — terms of service, privacy policy, and token disclaimer.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legal — Bridge AI OS</title>
+<meta name="description" content="Legal documents, compliance tools, and AI-powered contract generation">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e17;--card:#131a2b;--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444;--border:#1e293b;--text:#e2e8f0;--text-dim:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 20% 80%,rgba(56,189,248,.04) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(167,139,250,.03) 0%,transparent 50%);pointer-events:none;z-index:0}
+a:focus-visible,button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.skip-link{position:absolute;top:-40px;left:0;background:var(--cyan);color:#000;padding:8px 16px;z-index:9999;font-weight:600;border-radius:0 0 8px 0;transition:top .2s}
+.skip-link:focus{top:0}
+
+.shell{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:32px 24px}
+.header{text-align:center;margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.header h1{font-size:1.75rem;font-weight:700;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.header p{color:var(--dim);font-size:.9rem;max-width:600px;margin:0 auto}
+
+/* AI Tools */
+.ai-tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:40px}
+.ai-tool-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all .25s;text-align:center}
+.ai-tool-card:hover{border-color:var(--cyan);transform:translateY(-2px);box-shadow:0 4px 20px rgba(56,189,248,.1)}
+.ai-tool-card .icon{font-size:1.8rem;margin-bottom:8px}
+.ai-tool-card h3{font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:4px}
+.ai-tool-card p{font-size:.7rem;color:var(--dim)}
+
+/* Accordion */
+.accordion{display:flex;flex-direction:column;gap:8px}
+.accordion-item{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.accordion-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;cursor:pointer;transition:background .2s;user-select:none}
+.accordion-header:hover{background:rgba(56,189,248,.03)}
+.accordion-header h2{font-size:1rem;font-weight:600;color:var(--text)}
+.accordion-header .meta{display:flex;align-items:center;gap:12px}
+.accordion-header .updated{font-size:.7rem;color:var(--dim)}
+.accordion-header .chevron{width:20px;height:20px;transition:transform .3s;color:var(--dim)}
+.accordion-item.open .accordion-header .chevron{transform:rotate(180deg)}
+.accordion-header .dl-btn{padding:4px 12px;font-size:.7rem;font-weight:600;border:1px solid rgba(56,189,248,.3);color:var(--cyan);background:rgba(56,189,248,.05);border-radius:6px;cursor:pointer;transition:all .2s}
+.accordion-header .dl-btn:hover{background:rgba(56,189,248,.15)}
+.accordion-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.accordion-item.open .accordion-body{max-height:5000px}
+.accordion-content{padding:0 24px 24px;color:var(--text-dim);font-size:.875rem;line-height:1.8;max-width:72ch}
+.accordion-content h3{color:var(--text);font-size:.95rem;margin:20px 0 8px;font-weight:600}
+.accordion-content p{margin:8px 0}
+.accordion-content ul,.accordion-content ol{margin:8px 0 8px 20px}
+.accordion-content li{margin:4px 0}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000;justify-content:center;align-items:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;width:100%;max-width:700px;max-height:85vh;overflow-y:auto}
+.modal h2{font-size:1.2rem;font-weight:700;color:var(--cyan);margin-bottom:16px}
+.modal textarea{width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:.875rem;outline:none;resize:vertical;min-height:120px;transition:border-color .2s}
+.modal textarea:focus{border-color:var(--cyan)}
+.modal-result{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:20px;margin-top:16px;font-size:.85rem;line-height:1.7;color:var(--text-dim);white-space:pre-wrap;max-height:400px;overflow-y:auto}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0284c7);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(56,189,248,.3)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:10px 20px;border-radius:8px;font-size:.875rem;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-copy{background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:8px 16px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer}
+.btn-copy:hover{background:rgba(34,197,94,.2)}
+
+.loading-spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:10px;font-size:.85rem;font-weight:500;z-index:9999;transform:translateX(120%);transition:transform .3s ease;max-width:360px}
+.toast.show{transform:translateX(0)}
+.toast-success{background:#065f46;color:#6ee7b7;border:1px solid #10b981}
+.toast-error{background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="shell">
+  <div class="header">
+    <h1>Legal & Compliance</h1>
+    <p>AI-powered legal tools, compliance documents, and policies for Bridge AI OS. All documents comply with POPIA (South Africa) and GDPR (EU).</p>
+  </div>
+
+  <!-- AI Legal Tools -->
+  <section aria-label="AI Legal Tools">
+    <div class="ai-tools">
+      <div class="ai-tool-card" onclick="openAITool('nda')" role="button" tabindex="0" aria-label="Generate NDA">
+        <div class="icon">&#128221;</div>
+        <h3>Generate NDA</h3>
+        <p>AI-drafted Non-Disclosure Agreement</p>
+      </div>
+      <div class="ai-tool-card" onclick="openAITool('terms')" role="button" tabindex="0" aria-label="Generate Terms">
+        <div class="icon">&#128196;</div>
+        <h3>Generate Terms</h3>
+        <p>Custom business terms & conditions</p>
+      </div>
+      <div class="ai-tool-card" onclick="openAITool('popia')" role="button" tabindex="0" aria-label="POPIA Compliance Check">
+        <div class="icon">&#9989;</div>
+        <h3>POPIA Check</h3>
+        <p>Interactive compliance checklist</p>
+      </div>
+      <div class="ai-tool-card" onclick="openAITool('review')" role="button" tabindex="0" aria-label="Contract Review">
+        <div class="icon">&#128270;</div>
+        <h3>Contract Review</h3>
+        <p>AI risk analysis on any contract</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Legal Documents Accordion -->
+  <main id="main-content">
+    <div class="accordion" role="region" aria-label="Legal documents">
+
+      <div class="accordion-item" id="terms-of-service">
+        <div class="accordion-header" role="button" tabindex="0" aria-expanded="false" aria-controls="tos-body" onclick="toggleAccordion(this)">
+          <h2>Terms of Service</h2>
+          <div class="meta">
+            <span class="updated">Updated: 2026-04-01</span>
+            <button class="dl-btn" onclick="event.stopPropagation();downloadSection('tos-content','Terms of Service')">PDF</button>
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+          </div>
+        </div>
+        <div class="accordion-body" id="tos-body" role="region" aria-labelledby="terms-of-service">
+          <div class="accordion-content" id="tos-content">
+            <h3>1. Acceptance of Terms</h3>
+            <p>By accessing or using Bridge AI OS ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, you may not access or use the Platform.</p>
+
+            <h3>2. Description of Service</h3>
+            <p>Bridge AI OS is an autonomous business intelligence platform providing AI agent workforce, CRM, invoicing, DeFi treasury management, and related services. The Platform operates on a subscription model with tiered access levels.</p>
+
+            <h3>3. User Accounts</h3>
+            <p>You must provide accurate, current, and complete registration information. You are responsible for maintaining the confidentiality of your credentials and all activities under your account.</p>
+
+            <h3>4. Subscription & Payment</h3>
+            <p>Paid features require an active subscription. All fees are quoted in South African Rand (ZAR) unless otherwise specified. Subscription renewals are automatic unless cancelled before the renewal date.</p>
+            <ul>
+              <li>Starter: R0/month (limited features)</li>
+              <li>Pro: R499/month</li>
+              <li>Enterprise: R2,499/month</li>
+            </ul>
+
+            <h3>5. Intellectual Property</h3>
+            <p>All content generated by AI agents on your behalf belongs to you. The Platform retains ownership of its underlying technology, algorithms, and infrastructure.</p>
+
+            <h3>6. Limitation of Liability</h3>
+            <p>Bridge AI OS shall not be liable for indirect, incidental, or consequential damages. Our total liability shall not exceed the amount paid by you in the 12 months preceding the claim.</p>
+
+            <h3>7. Termination</h3>
+            <p>We may terminate or suspend your account for violation of these terms. You may cancel your subscription at any time via the settings dashboard.</p>
+
+            <h3>8. Governing Law</h3>
+            <p>These terms are governed by the laws of the Republic of South Africa. Disputes shall be resolved in the courts of Johannesburg, Gauteng.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="privacy-policy">
+        <div class="accordion-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAccordion(this)">
+          <h2>Privacy Policy (POPIA + GDPR)</h2>
+          <div class="meta">
+            <span class="updated">Updated: 2026-04-01</span>
+            <button class="dl-btn" onclick="event.stopPropagation();downloadSection('privacy-content','Privacy Policy')">PDF</button>
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+          </div>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content" id="privacy-content">
+            <h3>1. Information We Collect</h3>
+            <p>We collect personal information you provide directly (name, email, payment details) and information generated through your use of the Platform (usage data, AI interactions, preferences).</p>
+
+            <h3>2. Lawful Basis for Processing (GDPR Art. 6 / POPIA s.11)</h3>
+            <ul>
+              <li>Consent: Where you explicitly opt in</li>
+              <li>Contract: To provide our services to you</li>
+              <li>Legitimate Interest: Platform improvement, fraud prevention</li>
+              <li>Legal Obligation: Tax, regulatory compliance</li>
+            </ul>
+
+            <h3>3. How We Use Your Data</h3>
+            <p>To provide, maintain, and improve the Platform; communicate with you about your account; process payments; and comply with legal obligations.</p>
+
+            <h3>4. Data Sharing</h3>
+            <p>We do not sell your personal data. We may share data with: payment processors (Stripe, PayFast), cloud infrastructure providers, and as required by law.</p>
+
+            <h3>5. Data Retention</h3>
+            <p>We retain personal data for as long as your account is active or as needed to provide services. You may request deletion at any time (subject to legal retention requirements).</p>
+
+            <h3>6. Your Rights</h3>
+            <p>Under POPIA and GDPR, you have the right to: access your data, rectify inaccuracies, request erasure, restrict processing, data portability, and object to processing.</p>
+
+            <h3>7. Information Officer</h3>
+            <p>POPIA Information Officer: legal@bridge-ai-os.com. You may lodge complaints with the Information Regulator of South Africa.</p>
+
+            <h3>8. International Transfers</h3>
+            <p>Data may be processed in jurisdictions outside South Africa. Where this occurs, we ensure adequate safeguards per POPIA s.72 and GDPR Art. 46.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="acceptable-use">
+        <div class="accordion-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAccordion(this)">
+          <h2>Acceptable Use Policy</h2>
+          <div class="meta">
+            <span class="updated">Updated: 2026-03-15</span>
+            <button class="dl-btn" onclick="event.stopPropagation();downloadSection('aup-content','Acceptable Use Policy')">PDF</button>
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+          </div>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content" id="aup-content">
+            <h3>Prohibited Activities</h3>
+            <p>You may not use Bridge AI OS to:</p>
+            <ul>
+              <li>Generate content that is illegal, harmful, threatening, abusive, or discriminatory</li>
+              <li>Engage in unauthorized data scraping or harvesting</li>
+              <li>Attempt to reverse-engineer, decompile, or hack the Platform</li>
+              <li>Use AI agents for spam, phishing, or fraudulent activities</li>
+              <li>Violate intellectual property rights of third parties</li>
+              <li>Circumvent rate limits, security measures, or access controls</li>
+              <li>Process personal data in violation of POPIA/GDPR without consent</li>
+            </ul>
+
+            <h3>Fair Use</h3>
+            <p>API usage is subject to fair use limits based on your subscription tier. Excessive usage that degrades service for other users may result in temporary throttling.</p>
+
+            <h3>Enforcement</h3>
+            <p>Violations may result in immediate suspension, account termination, and/or legal action. We reserve the right to report illegal activities to appropriate authorities.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="cookie-policy">
+        <div class="accordion-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAccordion(this)">
+          <h2>Cookie Policy</h2>
+          <div class="meta">
+            <span class="updated">Updated: 2026-03-15</span>
+            <button class="dl-btn" onclick="event.stopPropagation();downloadSection('cookie-content','Cookie Policy')">PDF</button>
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+          </div>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content" id="cookie-content">
+            <h3>What Are Cookies</h3>
+            <p>Cookies are small text files stored on your device when you visit our Platform. They help us provide a better experience.</p>
+
+            <h3>Types of Cookies We Use</h3>
+            <ul>
+              <li><strong>Essential Cookies:</strong> Required for authentication, security, and core functionality. Cannot be disabled.</li>
+              <li><strong>Functional Cookies:</strong> Remember your preferences (theme, language). Optional.</li>
+              <li><strong>Analytics Cookies:</strong> Help us understand usage patterns and improve the Platform. Optional.</li>
+            </ul>
+
+            <h3>Managing Cookies</h3>
+            <p>You can control cookies through your browser settings. Disabling essential cookies may prevent you from using certain features of the Platform.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="sla">
+        <div class="accordion-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAccordion(this)">
+          <h2>Service Level Agreement (SLA)</h2>
+          <div class="meta">
+            <span class="updated">Updated: 2026-04-01</span>
+            <button class="dl-btn" onclick="event.stopPropagation();downloadSection('sla-content','Service Level Agreement')">PDF</button>
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+          </div>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content" id="sla-content">
+            <h3>Uptime Commitment</h3>
+            <p>Bridge AI OS targets 99.9% monthly uptime for Pro and Enterprise subscribers. Starter tier has no uptime guarantee.</p>
+
+            <h3>Response Times</h3>
+            <ul>
+              <li>Critical (service down): 1 hour response, 4 hour resolution target</li>
+              <li>High (major feature impacted): 4 hour response, 24 hour resolution target</li>
+              <li>Medium (degraded performance): 8 hour response, 72 hour resolution target</li>
+              <li>Low (minor issue): 24 hour response, 5 business day resolution target</li>
+            </ul>
+
+            <h3>Credits</h3>
+            <p>If monthly uptime falls below 99.9%, eligible subscribers receive service credits: 10% for 99.0-99.9%, 25% for 95.0-99.0%, 50% for below 95.0%.</p>
+
+            <h3>Exclusions</h3>
+            <p>SLA does not apply during scheduled maintenance (announced 48h in advance), force majeure events, or issues caused by customer infrastructure.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="data-processing">
+        <div class="accordion-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAccordion(this)">
+          <h2>Data Processing Agreement</h2>
+          <div class="meta">
+            <span class="updated">Updated: 2026-04-01</span>
+            <button class="dl-btn" onclick="event.stopPropagation();downloadSection('dpa-content','Data Processing Agreement')">PDF</button>
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+          </div>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content" id="dpa-content">
+            <h3>Roles</h3>
+            <p>Where you use Bridge AI OS to process personal data of your end users, you are the Responsible Party (POPIA) / Controller (GDPR), and Bridge AI OS acts as Operator / Processor.</p>
+
+            <h3>Processing Instructions</h3>
+            <p>We process personal data only on your documented instructions. Processing is limited to what is necessary to provide the contracted services.</p>
+
+            <h3>Security Measures</h3>
+            <ul>
+              <li>Encryption at rest (AES-256) and in transit (TLS 1.3)</li>
+              <li>Access controls with principle of least privilege</li>
+              <li>Regular security audits and penetration testing</li>
+              <li>Incident response within 72 hours of discovery</li>
+            </ul>
+
+            <h3>Sub-processors</h3>
+            <p>We maintain a list of sub-processors. You will be notified of changes 30 days in advance. Current sub-processors: Vercel (hosting), Supabase (database), Stripe (payments).</p>
+
+            <h3>Data Deletion</h3>
+            <p>Upon termination of the agreement, we will delete all personal data within 30 days unless retention is required by law.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- AI Tool Modal -->
+<div class="modal-overlay" id="aiModal">
+  <div class="modal">
+    <h2 id="ai-modal-title"></h2>
+    <div id="ai-modal-input"></div>
+    <div id="ai-modal-result" style="display:none"></div>
+    <div class="modal-actions" id="ai-modal-actions"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast toast-' + (type || 'success') + ' show';
+    setTimeout(function() { t.classList.remove('show'); }, 3500);
+  }
+
+  // Accordion
+  window.toggleAccordion = function(headerEl) {
+    var item = headerEl.closest('.accordion-item');
+    var isOpen = item.classList.contains('open');
+    item.classList.toggle('open');
+    headerEl.setAttribute('aria-expanded', !isOpen);
+  };
+
+  // Keyboard support for accordion
+  document.querySelectorAll('.accordion-header').forEach(function(h) {
+    h.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleAccordion(h); }
+    });
+  });
+
+  // Keyboard support for AI tool cards
+  document.querySelectorAll('.ai-tool-card').forEach(function(c) {
+    c.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); }
+    });
+  });
+
+  // Handle hash links
+  if (window.location.hash) {
+    var target = document.querySelector(window.location.hash);
+    if (target && target.classList.contains('accordion-item')) {
+      target.classList.add('open');
+      setTimeout(function() { target.scrollIntoView({ behavior: 'smooth' }); }, 100);
+    }
+  }
+
+  // PDF Download
+  window.downloadSection = function(sectionId, title) {
+    var el = document.getElementById(sectionId);
+    if (!el) return;
+    var w = window.open('', '_blank');
+    w.document.write('<html><head><title>' + title + ' — Bridge AI OS</title><style>body{font-family:Inter,system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1e293b;line-height:1.7}h1{color:#0284c7;border-bottom:2px solid #e2e8f0;padding-bottom:12px}h2{color:#334155;margin-top:2rem}h3{color:#334155;margin-top:1.5rem}p{margin:.75rem 0}ul,ol{margin:.75rem 0 .75rem 1.5rem}li{margin:.25rem 0}</style></head><body><h1>' + title + '</h1><p style="color:#64748b;font-size:13px">Bridge AI OS | Generated: ' + new Date().toLocaleDateString() + '</p>' + el.innerHTML + '</body></html>');
+    w.document.close();
+    setTimeout(function() { w.print(); }, 300);
+  };
+
+  // AI Tools
+  var aiToolConfigs = {
+    nda: {
+      title: 'Generate NDA',
+      prompt: 'Generate a Non-Disclosure Agreement for a South African business. Include: parties, confidential information definition, obligations, term of 2 years, jurisdiction: South Africa. Format with clear headings.',
+      hasInput: false
+    },
+    terms: {
+      title: 'Generate Business Terms',
+      prompt: 'Generate comprehensive Terms and Conditions for a South African technology business. Include: definitions, scope of services, payment terms, liability limitations, intellectual property, termination, dispute resolution, governing law (South Africa). Format with numbered sections.',
+      hasInput: false
+    },
+    popia: {
+      title: 'POPIA Compliance Check',
+      prompt: 'Create a POPIA (Protection of Personal Information Act) compliance checklist for a South African business using AI services. For each item, indicate whether it is typically compliant, needs attention, or non-compliant for a SaaS platform. Score out of 100 and provide recommendations.',
+      hasInput: false
+    },
+    review: {
+      title: 'AI Contract Review',
+      prompt: null,
+      hasInput: true,
+      inputPlaceholder: 'Paste your contract text here for AI risk analysis...'
+    }
+  };
+
+  window.openAITool = function(type) {
+    var config = aiToolConfigs[type];
+    if (!config) return;
+
+    var modal = document.getElementById('aiModal');
+    document.getElementById('ai-modal-title').textContent = config.title;
+    var inputDiv = document.getElementById('ai-modal-input');
+    var resultDiv = document.getElementById('ai-modal-result');
+    var actionsDiv = document.getElementById('ai-modal-actions');
+
+    resultDiv.style.display = 'none';
+    resultDiv.innerHTML = '';
+
+    if (config.hasInput) {
+      inputDiv.innerHTML = '<textarea id="ai-input-text" placeholder="' + (config.inputPlaceholder || '') + '" rows="8"></textarea>';
+      actionsDiv.innerHTML = '<button class="btn-secondary" onclick="closeAIModal()">Cancel</button><button class="btn-primary" onclick="runAITool(\'' + type + '\')">Analyze</button>';
+    } else {
+      inputDiv.innerHTML = '<p style="color:var(--text-dim);font-size:.85rem;margin-bottom:8px">Click Generate to create this document using AI.</p>';
+      actionsDiv.innerHTML = '<button class="btn-secondary" onclick="closeAIModal()">Cancel</button><button class="btn-primary" id="ai-gen-btn" onclick="runAITool(\'' + type + '\')">Generate</button>';
+    }
+
+    modal.classList.add('open');
+  };
+
+  window.closeAIModal = function() {
+    document.getElementById('aiModal').classList.remove('open');
+  };
+
+  window.runAITool = async function(type) {
+    var config = aiToolConfigs[type];
+    var prompt = config.prompt;
+
+    if (config.hasInput) {
+      var inputText = document.getElementById('ai-input-text').value.trim();
+      if (!inputText) { showToast('Please paste your contract text', 'error'); return; }
+      prompt = 'Review this contract for legal risks, unfavorable terms, missing clauses, and compliance issues. Provide a risk score (Low/Medium/High) and specific recommendations. Contract text:\n\n' + inputText;
+    }
+
+    var actionsDiv = document.getElementById('ai-modal-actions');
+    var resultDiv = document.getElementById('ai-modal-result');
+
+    // Show loading
+    actionsDiv.innerHTML = '<button class="btn-secondary" onclick="closeAIModal()">Cancel</button><button class="btn-primary" disabled><span class="loading-spinner"></span>Generating...</button>';
+
+    try {
+      var res = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt, agent: 'agent-biz-legal' })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      var text = data.text || data.response || data.content || 'No response received.';
+
+      resultDiv.innerHTML = '<div class="modal-result">' + escHtml(text) + '</div>';
+      resultDiv.style.display = 'block';
+      actionsDiv.innerHTML = '<button class="btn-copy" onclick="copyResult()">Copy</button><button class="btn-secondary" onclick="printResult(\'' + escAttr(config.title) + '\')">Download PDF</button><button class="btn-secondary" onclick="closeAIModal()">Close</button>';
+    } catch(e) {
+      resultDiv.innerHTML = '<p style="color:var(--red);font-size:.85rem">Failed: ' + escHtml(e.message) + '</p>';
+      resultDiv.style.display = 'block';
+      actionsDiv.innerHTML = '<button class="btn-secondary" onclick="closeAIModal()">Close</button><button class="btn-primary" onclick="runAITool(\'' + type + '\')">Retry</button>';
+    }
+  };
+
+  window.copyResult = function() {
+    var el = document.querySelector('.modal-result');
+    if (el) {
+      navigator.clipboard.writeText(el.textContent).then(function() { showToast('Copied to clipboard!'); });
+    }
+  };
+
+  window.printResult = function(title) {
+    var el = document.querySelector('.modal-result');
+    if (!el) return;
+    var w = window.open('', '_blank');
+    w.document.write('<html><head><title>' + title + ' — Bridge AI OS</title><style>body{font-family:Inter,system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1e293b;line-height:1.7;white-space:pre-wrap}h1{color:#0284c7;border-bottom:2px solid #e2e8f0;padding-bottom:12px}</style></head><body><h1>' + title + '</h1><p style="color:#64748b;font-size:13px">Generated by Bridge AI OS | ' + new Date().toLocaleDateString() + '</p><hr style="margin:20px 0;border-color:#e2e8f0">' + el.textContent + '</body></html>');
+    w.document.close();
+    setTimeout(function() { w.print(); }, 300);
+  };
+
+  function escHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+  function escAttr(s) { return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+  // Click outside modal
+  document.getElementById('aiModal').addEventListener('click', function(e) { if (e.target === this) closeAIModal(); });
+})();
+</script>
+<script src="/bridge-nav.js?v=2" defer></script>
+</body>
+</html>

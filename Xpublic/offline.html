@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline — Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#050a0f;color:#c8dce8;font-family:system-ui,monospace;min-height:100vh;display:flex;align-items:center;justify-content:center}
+    .container{text-align:center;max-width:500px;padding:2rem}
+    h1{font-size:3rem;color:#ff3c5a;margin-bottom:1rem}
+    p{color:#4d6678;margin-bottom:2rem;line-height:1..6}
+    .retry{background:#00c8ff;color:#050a0f;padding:1rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;cursor:pointer;border:none}
+    .retry:hover{background:#00e57b}
+  </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('online', () => location.reload());
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>⚠️ You're Offline</h1>
+    <p>It looks like you've lost your internet connection. Some features may not be available until you're back online.</p>
+    <button class="retry" onclick="location.reload()">Try Again</button>
+  </div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "contract_id": "l2-activation",
+  "published_by": "Agent-1",
+  "published_at": "2026-03-25T21:25:15Z",
+  "status": "active",
+  "title": "L2 Activation Contract — Specialist Agents Begin Work",
+  "description": "L2 is live. All 7 specialist agents activate immediately and begin parallel verification, stress testing, and optimization.",
+  "agent_assignments": {
+    "Agent-1B": {
+      "model": "Minimax M2.5",
+      "task": "Meta-Orchestrator + Conflict Detection",
+      "action": "Monitor all L1 agents for conflicts every 60s. Escalate to Agent-1 on L1 port 9000 immediately.",
+      "starts": "now"
+    },
+    "Agent-2B": {
+      "model": "Nemotron 3 Super",
+      "task": "Gateway Stress Testing",
+      "action": "Hit L1 gateway port 8080 with load tests. Target: p95 < 100ms, zero 5xx.",
+      "starts": "now"
+    },
+    "Agent-3B": {
+      "model": "Xiaomi mimo v2 pro x2",
+      "task": "UI/UX Optimization",
+      "action": "Review dashboard HTML files from L1 commits. Flag layout issues, missing features.",
+      "starts": "now"
+    },
+    "Agent-4B": {
+      "model": "Minimax M2.5 x2",
+      "task": "SQL Query Optimization",
+      "action": "Review DB migration scripts from Agent-4A. Optimize queries, verify zero data loss.",
+      "starts": "now"
+    },
+    "Agent-5B": {
+      "model": "Minimax M2.5",
+      "task": "Auth Load Testing",
+      "action": "Hammer auth endpoints on L1. Target: 1000 concurrent users, p95 < 200ms.",
+      "starts": "now"
+    },
+    "Agent-6B": {
+      "model": "Nemotron 3 Super",
+      "task": "24/7 Soak Testing",
+      "action": "Continuous soak test on L1 endpoints. Run non-stop Days 2-8. Report every hour.",
+      "starts": "now"
+    }
+  },
+  "l1_endpoints": {
+    "status": "http://localhost:9000/api/status",
+    "gateway": "http://localhost:9000/health",
+    "conflicts": "http://localhost:9000/webhook/conflict",
+    "contracts": "http://localhost:9000/api/contracts"
+  },
+  "depends_on": ["gateway-api-spec", "dashboard-manifest", "database-schema", "auth-api-spec", "test-spec", "parallel-dev-days2-5"],
+  "gate_condition": "Day 5: zero conflicts unresolved, soak test green, all L1 gates passed"
+}

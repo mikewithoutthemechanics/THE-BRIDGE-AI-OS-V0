@@ -20,10 +20,17 @@ case "$ID" in
     echo "recover: mv orchestra.html.bak orchestra.html"
     ;;
   c45)
+<<<<<<< HEAD
     PID="$(pgrep -f orchestra-server.js | head -1)"
     [ -n "$PID" ] || { echo "no orchestra-server.js process"; exit 1; }
     kill -9 "$PID"
     echo "killed orchestra-server.js pid=$PID"
+=======
+    PID="$(pgrep -f server.js | head -1)"
+    [ -n "$PID" ] || { echo "no server.js process"; exit 1; }
+    kill -9 "$PID"
+    echo "killed server.js pid=$PID"
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
     echo "expect: PM2 autorestart within restart_delay (2s)"
     ;;
   c46)

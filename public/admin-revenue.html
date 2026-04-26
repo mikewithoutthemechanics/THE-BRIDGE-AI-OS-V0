@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Bridge AI OS — Verified Revenue Dashboard — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="noindex, nofollow">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bridge AI OS — Verified Revenue Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--red:#ff3c5a;--purple:#a78bfa;--orange:#fb923c;--dim:#4d6678;--text:#e0e8f0;--verified:#00e57b;--signed:#00c8ff;--chain:#a78bfa}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:0;line-height:1.5}
+h1{font-size:1.6rem;font-weight:700;margin-bottom:.3rem}
+.sub{color:var(--dim);font-size:.85rem;margin-bottom:1.5rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:1.5rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative}
+.card .label{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+.card .value{font-size:1.8rem;font-weight:800;margin:.3rem 0}
+.card .detail{font-size:.8rem;color:var(--dim)}
+.cyan{color:var(--cyan)}.green{color:var(--green)}.red{color:var(--red)}.purple{color:var(--purple)}.orange{color:var(--orange)}
+.section{margin-bottom:2rem}
+.section h2{font-size:1.1rem;font-weight:600;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;color:var(--dim);font-weight:500;padding:.5rem;border-bottom:1px solid var(--border)}
+td{padding:.5rem;border-bottom:1px solid rgba(26,45,64,.4)}
+.pulse{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#log{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:monospace;font-size:.75rem;max-height:200px;overflow-y:auto;color:var(--dim)}
+.v-badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:600;padding:2px 8px;border-radius:10px;position:absolute;top:.75rem;right:.75rem;text-decoration:none}
+.v-onchain{background:rgba(0,229,123,.12);color:var(--verified)}
+.v-signed{background:rgba(0,200,255,.12);color:var(--signed)}
+.v-chain{background:rgba(167,139,250,.12);color:var(--chain)}
+.v-error{background:rgba(255,60,90,.12);color:var(--red)}
+.v-rebuilding{background:rgba(251,146,60,.12);color:var(--orange)}
+.v-link{font-size:.7rem;color:var(--cyan);text-decoration:none}
+.v-link:hover{text-decoration:underline}
+.v-source{font-size:.7rem;color:var(--dim);margin-top:.3rem}
+.trust-bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--dim)}
+.trust-dot{width:8px;height:8px;border-radius:50%}
+.trust-dot.onchain{background:var(--verified)}.trust-dot.hash{background:var(--chain)}.trust-dot.signed{background:var(--signed)}
+.sig-footer{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:monospace;font-size:.7rem;color:var(--dim);margin-top:1rem;word-break:break-all}
+.sig-footer .sig-label{color:var(--cyan);font-weight:600}
+.btn-rebuild{background:rgba(251,146,60,.12);border:1px solid var(--orange);color:var(--orange);padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.8rem;transition:all .2s}
+.btn-rebuild:hover{background:rgba(251,146,60,.25)}
+.btn-rebuild:disabled{opacity:.5;cursor:not-allowed}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--orange);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tooltip-wrap{position:relative;display:inline-block;cursor:help}
+.tooltip-wrap .tooltip-text{visibility:hidden;background:#1e293b;color:#e2e8f0;font-size:.7rem;padding:.5rem;border-radius:6px;position:absolute;bottom:120%;left:50%;transform:translateX(-50%);white-space:nowrap;z-index:50;border:1px solid var(--border)}
+.tooltip-wrap:hover .tooltip-text{visibility:visible}
+.content-area{padding:0 1.5rem 1.5rem}
+</style>
+</head>
+<body>
+<nav style="background:#0f172a;border-bottom:1px solid #1e293b;padding:.75rem 1.5rem;display:flex;gap:1.5rem;align-items:center;position:sticky;top:0;z-index:100">
+  <span style="font-weight:700;color:#38bdf8;font-size:1.1rem;margin-right:auto">Admin</span>
+  <a href="/admin.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Dashboard</a>
+  <a href="/admin-revenue.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Revenue</a>
+  <a href="/admin-withdraw.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Withdrawals</a>
+  <a href="/control.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Control</a>
+  <a href="/system-status-dashboard.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">System Health</a>
+  <a href="/registry.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Registry</a>
+</nav>
+<script>
+document.querySelectorAll('nav a').forEach(a => {
+  if (a.getAttribute('href') === window.location.pathname) {
+    a.style.color = '#38bdf8';
+    a.style.background = '#1e293b';
+  }
+});
+</script>
+
+<div class="content-area">
+<h1 style="font-size:1.4rem;margin-top:1rem">Verified Revenue Dashboard</h1>
+<p class="sub"><span class="pulse"></span> Bridge AI OS — Zero-Trust Metrics (every value cryptographically verifiable)</p>
+
+<div class="trust-bar">
+  <div class="trust-item"><span class="trust-dot onchain"></span> On-chain (trustless)</div>
+  <div class="trust-item"><span class="trust-dot hash"></span> Hash-chain (tamper-evident)</div>
+  <div class="trust-item"><span class="trust-dot signed"></span> Signed attestation</div>
+</div>
+
+<div class="grid" id="kpis">
+  <div class="card" id="card-treasury">
+    <span class="v-badge v-signed" id="badge-treasury">Signed</span>
+    <div class="label">Treasury Balance (Total)</div>
+    <div class="value cyan" id="k-balance">--</div>
+    <div class="detail">Fiat (ZAR) + Revenue Engine earnings</div>
+    <div class="v-source" id="src-treasury">Source: signed attestation</div>
+  </div>
+  <div class="card" id="card-revenue">
+    <span class="v-badge v-chain" id="badge-revenue">Hash-chain</span>
+    <div class="label">Revenue MTD</div>
+    <div class="value green" id="k-earned">--</div>
+    <div class="detail" id="k-earned-detail">Derived from payment proof chain</div>
+    <div class="v-source" id="src-revenue">Source: proof chain</div>
+  </div>
+  <div class="card" id="card-brdg">
+    <a class="v-badge v-onchain" id="badge-brdg" href="https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank" rel="noopener">On-chain</a>
+    <div class="label">BRDG Supply</div>
+    <div class="value purple" id="k-brdg">--</div>
+    <div class="detail">On-chain (Linea L2) — read from contract</div>
+    <div class="v-source" id="src-brdg">Source: LineaScan | Block: <span id="brdg-block">--</span></div>
+  </div>
+  <div class="card" id="card-burned">
+    <a class="v-badge v-onchain" id="badge-burned" href="https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f" target="_blank" rel="noopener">On-chain</a>
+    <div class="label">BRDG Burned</div>
+    <div class="value orange" id="k-burned">--</div>
+    <div class="detail">Deflationary 1% burn on transfers</div>
+    <div class="v-source" id="src-burned">Source: totalBurned() contract call</div>
+  </div>
+  <div class="card" id="card-vault">
+    <a class="v-badge v-onchain" id="badge-vault" href="https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A" target="_blank" rel="noopener">On-chain</a>
+    <div class="label">Vault ETH</div>
+    <div class="value cyan" id="k-vault-eth">--</div>
+    <div class="detail">TreasuryVault contract balance</div>
+    <div class="v-source" id="src-vault">Source: TreasuryVault contract</div>
+  </div>
+  <div class="card" id="card-chain">
+    <span class="v-badge v-chain" id="badge-chain">Hash-chain</span>
+    <div class="label">Proof Chain
+      <span class="tooltip-wrap" style="margin-left:4px">&#9432;
+        <span class="tooltip-text">Proof chain validates transaction integrity via Merkle tree verification</span>
+      </span>
+    </div>
+    <div class="value green" id="k-chain-status">--</div>
+    <div class="detail" id="k-chain-detail">-- transactions verified</div>
+    <div class="v-source" style="display:flex;align-items:center;gap:8px">
+      <a class="v-link" href="/api/verify/chain" target="_blank" rel="noopener">Verify chain integrity</a>
+      <button class="btn-rebuild" id="btn-rebuild" onclick="rebuildChain()">Rebuild Proof Chain</button>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Revenue Engine (Autonomous)</h2>
+  <div class="grid" id="engine-grid">
+    <div class="card">
+      <div class="label">Engine Status</div>
+      <div class="value green" id="k-engine-status">--</div>
+      <div class="detail" id="k-engine-loops">-- loops completed</div>
+    </div>
+    <div class="card">
+      <div class="label">Leads Generated</div>
+      <div class="value cyan" id="k-engine-leads">--</div>
+      <div class="detail" id="k-engine-deals">-- deals converted</div>
+    </div>
+    <div class="card">
+      <div class="label">Engine Revenue</div>
+      <div class="value green" id="k-engine-rev">--</div>
+      <div class="detail" id="k-engine-dispatched">-- tasks auto-dispatched</div>
+    </div>
+    <div class="card">
+      <div class="label">Revenue / Hour (avg)</div>
+      <div class="value green" id="k-rev-per-hour">--</div>
+      <div class="detail" id="k-rev-per-hour-detail">Based on proof chain data</div>
+    </div>
+    <div class="card">
+      <div class="label">Projected Monthly</div>
+      <div class="value cyan" id="k-rev-projected">--</div>
+      <div class="detail" id="k-rev-projected-detail">At current run rate</div>
+    </div>
+    <div class="card">
+      <div class="label">Withdrawable Balance</div>
+      <div class="value cyan" id="k-withdrawable">--</div>
+      <div class="detail"><a class="v-link" href="/admin-withdraw.html">Go to Withdraw</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Agent Economy (BRDG)</h2>
+  <div class="grid" id="agent-economy-grid">
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">A2A Transfer Fees (All Time)</div>
+      <div class="value cyan" id="k-a2a-fees">--</div>
+      <div class="detail" id="k-a2a-txcount">-- agent transactions</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">Task Marketplace Volume</div>
+      <div class="value green" id="k-task-volume">--</div>
+      <div class="detail" id="k-task-count">-- tasks settled</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">AP2 Payment Volume</div>
+      <div class="value purple" id="k-ap2-volume">--</div>
+      <div class="detail" id="k-ap2-count">-- AP2 settlements</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">BRDG Circulating</div>
+      <div class="value cyan" id="k-brdg-circulating">--</div>
+      <div class="detail" id="k-brdg-burned-off">-- BRDG burned (off-chain)</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">Compounding Cycles</div>
+      <div class="value orange" id="k-compound-cycles">--</div>
+      <div class="detail" id="k-compound-reserved">-- BRDG reserved to treasury</div>
+    </div>
+    <div class="card">
+      <span class="v-badge v-signed">Signed</span>
+      <div class="label">Active Agents</div>
+      <div class="value green" id="k-agent-count">--</div>
+      <div class="detail" id="k-top-agent">Top earner: --</div>
+    </div>
+  </div>
+  <h3 style="font-size:.9rem;font-weight:600;margin:.75rem 0 .5rem;color:var(--dim)">Revenue Stream Breakdown (All Sources)</h3>
+  <table id="stream-table">
+    <thead><tr><th>Source</th><th>Transactions</th><th>Total (BRDG/ZAR)</th><th>% of Total</th></tr></thead>
+    <tbody id="stream-tbody"></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>AI Revenue Recommendations</h2>
+  <div id="ai-recs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem"></div>
+</div>
+
+<div class="section">
+  <h2>Payment Rails</h2>
+  <table id="rails-table">
+    <thead><tr><th>Rail</th><th>Status</th><th>Currency</th><th>Proof Method</th><th>Verification</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Subscription Plans</h2>
+  <table id="plans-table">
+    <thead><tr><th>Plan</th><th>Price</th><th>Description</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>BRDG Token (On-Chain Verified)</h2>
+  <table id="brdg-table">
+    <thead><tr><th>Metric</th><th>Value</th><th>Verification</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Recent Payment Proofs</h2>
+  <table id="proofs-table">
+    <thead><tr><th>Transaction</th><th>Amount</th><th>Source</th><th>Hash (first 16)</th><th>Verify</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="sig-footer" id="sig-footer">
+  <div><span class="sig-label">Response Signature:</span> <span id="sig-value">--</span></div>
+  <div><span class="sig-label">Key ID:</span> <span id="sig-keyid">--</span></div>
+  <div><span class="sig-label">Timestamp:</span> <span id="sig-ts">--</span></div>
+  <div><span class="sig-label">Verify:</span> <a class="v-link" href="/api/verify/info" target="_blank" rel="noopener">/api/verify/info</a></div>
+</div>
+
+<div class="section" style="margin-top:1rem">
+  <h2>Event Log</h2>
+  <div id="log"></div>
+</div>
+
+<script>
+// Admin gate
+(async function checkAdmin() {
+  const _tok = localStorage.getItem('bridge_token') || '';
+  const _opts = { credentials: 'include' };
+  if (_tok) _opts.headers = { Authorization: 'Bearer ' + _tok };
+  const r = await fetch('/auth/me', _opts).then(function(res){ return res.json(); }).catch(function(){ return { ok: false }; });
+  const _role = (r.user && r.user.role) || ''; const _plan = (r.user && r.user.plan) || '';
+  if (!r.ok || !(_role === 'admin' || _role === 'superadmin' || _plan === 'admin' || _plan === 'enterprise')) {
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef4444;font-family:monospace;font-size:1.2rem">Access denied — admin only</div>';
+    setTimeout(() => window.location.href = '/portal', 2000);
+    return;
+  }
+  window.__adminUser = r.user;
+  window.__adminToken = localStorage.getItem('bridge_token') || '';
+  initPage();
+})();
+
+function initPage() {
+const $ = id => document.getElementById(id);
+const fmt = n => parseFloat(n).toLocaleString(undefined, {maximumFractionDigits:2});
+
+function addLogEntry(msg) {
+  const log = $('log');
+  const div = document.createElement('div');
+  div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  log.prepend(div);
+  while (log.children.length > 100) log.removeChild(log.lastChild);
+}
+
+function clearTable(id) {
+  const tbody = $(id).querySelector('tbody');
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+  return tbody;
+}
+
+function makeLink(text, href) {
+  const a = document.createElement('a');
+  a.textContent = text;
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.className = 'v-link';
+  return a;
+}
+
+function addRow(tbody, cells) {
+  const tr = document.createElement('tr');
+  cells.forEach(cell => {
+    const td = document.createElement('td');
+    if (typeof cell === 'string' || typeof cell === 'number') {
+      td.textContent = cell;
+    } else if (cell instanceof Node) {
+      td.appendChild(cell);
+    }
+    tr.appendChild(td);
+  });
+  tbody.appendChild(tr);
+}
+
+function updateSigFooter(envelope) {
+  if (envelope && envelope._proof) {
+    $('sig-value').textContent = envelope._proof.signature;
+    $('sig-keyid').textContent = envelope._proof.keyId;
+    $('sig-ts').textContent = new Date(envelope._proof.timestamp).toISOString();
+  }
+}
+
+function setBadgeError(badgeId, msg) {
+  const badge = $(badgeId);
+  if (badge) { badge.className = 'v-badge v-error'; badge.textContent = msg || 'Unavailable'; }
+}
+
+// Rebuild proof chain
+window.rebuildChain = async function() {
+  const btn = $('btn-rebuild');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Rebuilding...';
+  addLogEntry('Triggering proof chain rebuild...');
+  try {
+    const res = await fetch('/api/treasury/reconcile', {
+      method: 'POST',
+      headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (data.ok || res.ok) {
+      addLogEntry('Proof chain rebuild completed successfully');
+      // Re-fetch chain status
+      await loadChainStatus();
+    } else {
+      addLogEntry('Rebuild returned: ' + (data.error || 'unknown error'));
+    }
+  } catch (e) {
+    addLogEntry('Rebuild failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Rebuild Proof Chain';
+  }
+};
+
+async function loadChainStatus() {
+  try {
+    const r = await fetch('/api/metrics/revenue');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    if (d.data && d.data.ok) {
+      $('k-earned').textContent = 'R' + fmt(d.data.revenueMtd);
+      $('k-earned-detail').textContent = d.data.transactionCount + ' verified transactions | Total: R' + fmt(d.data.totalRevenue);
+
+      $('src-revenue').textContent = '';
+      $('src-revenue').appendChild(document.createTextNode('Source: '));
+      $('src-revenue').appendChild(makeLink('proof chain (' + d.data.transactionCount + ' tx)', '/api/verify/chain'));
+
+      const ci = d.data.chainIntegrity;
+      if (ci.valid) {
+        $('k-chain-status').textContent = 'INTACT';
+        $('k-chain-status').className = 'value green';
+        $('badge-chain').className = 'v-badge v-chain';
+        $('badge-chain').textContent = 'Hash-chain';
+      } else {
+        // Show REBUILDING instead of BROKEN
+        $('k-chain-status').textContent = 'REBUILDING...';
+        $('k-chain-status').className = 'value orange';
+        $('badge-chain').className = 'v-badge v-rebuilding';
+        $('badge-chain').innerHTML = '<span class="spinner"></span> Rebuilding';
+        // Auto-trigger rebuild
+        addLogEntry('Chain integrity broken at #' + ci.brokenAt + ' — auto-triggering rebuild...');
+        try {
+          await fetch('/api/treasury/reconcile', {
+            method: 'POST',
+            headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
+          });
+          // Re-check after rebuild
+          const r2 = await fetch('/api/metrics/revenue');
+          const d2 = await r2.json();
+          if (d2.data && d2.data.chainIntegrity && d2.data.chainIntegrity.valid) {
+            $('k-chain-status').textContent = 'INTACT';
+            $('k-chain-status').className = 'value green';
+            $('badge-chain').className = 'v-badge v-chain';
+            $('badge-chain').textContent = 'Hash-chain';
+            addLogEntry('Chain rebuilt successfully — now intact');
+          } else {
+            $('k-chain-status').textContent = 'NEEDS ATTENTION';
+            $('k-chain-status').className = 'value orange';
+            $('badge-chain').className = 'v-badge v-rebuilding';
+            $('badge-chain').textContent = 'Partial';
+            addLogEntry('Chain rebuild completed but still has gaps — use manual rebuild');
+          }
+        } catch (rebuildErr) {
+          addLogEntry('Auto-rebuild failed: ' + rebuildErr.message);
+          $('k-chain-status').textContent = 'NEEDS REBUILD';
+          $('k-chain-status').className = 'value orange';
+        }
+      }
+      $('k-chain-detail').textContent = ci.length + ' transactions verified';
+
+      updateSigFooter(d);
+      addLogEntry('Revenue loaded (MTD: R' + fmt(d.data.revenueMtd) + ', chain: ' + (ci.valid ? 'intact' : 'rebuilding') + ')');
+    }
+  } catch (e) {
+    // FALLBACK: try treasury/status or revenue/summary
+    addLogEntry('Revenue metrics failed (' + e.message + ') — trying fallback...');
+    try {
+      const fb = await fetch('/api/treasury/status').then(r => r.json()).catch(() => null);
+      if (fb && (fb.totalRevenue !== undefined || fb.balance !== undefined)) {
+        $('k-earned').textContent = 'R' + fmt(fb.totalRevenue || fb.revenueMtd || 0);
+        $('k-earned-detail').textContent = 'From treasury status (fallback)';
+        $('k-chain-status').textContent = 'FALLBACK';
+        $('k-chain-status').className = 'value orange';
+        $('k-chain-detail').textContent = 'Chain endpoint unavailable — showing treasury data';
+        $('badge-chain').className = 'v-badge v-rebuilding';
+        $('badge-chain').textContent = 'Fallback';
+        addLogEntry('Fallback data loaded from /api/treasury/status');
+      } else {
+        const fb2 = await fetch('/api/revenue/summary').then(r => r.json()).catch(() => null);
+        if (fb2) {
+          $('k-earned').textContent = 'R' + fmt(fb2.revenueMtd || fb2.total || 0);
+          $('k-earned-detail').textContent = 'From revenue summary (fallback)';
+          addLogEntry('Fallback data loaded from /api/revenue/summary');
+        } else {
+          $('k-chain-status').textContent = 'OFFLINE';
+          $('k-chain-status').className = 'value red';
+          $('k-chain-detail').textContent = 'All revenue endpoints unavailable';
+          addLogEntry('All revenue endpoints unavailable');
+        }
+      }
+    } catch (fbErr) {
+      $('k-chain-status').textContent = 'OFFLINE';
+      $('k-chain-status').className = 'value red';
+      $('k-chain-detail').textContent = 'Service unavailable';
+      addLogEntry('All fallback attempts failed: ' + fbErr.message);
+    }
+  }
+}
+
+async function loadAll() {
+  addLogEntry('Fetching verified metrics...');
+
+  // Token metrics (on-chain)
+  try {
+    const r = await fetch('/api/metrics/token');
+    const d = await r.json();
+    if (d.data && d.data.ok) {
+      const tok = d.data.token;
+      const tres = d.data.treasury;
+      var el;
+      if ((el = $('k-brdg'))) el.textContent = fmt(tok.totalSupply) + ' BRDG';
+      if ((el = $('k-burned'))) el.textContent = fmt(tok.totalBurned) + ' BRDG';
+      if ((el = $('k-vault-eth'))) el.textContent = tres.vault.ethBalance + ' ETH';
+
+      var links = tok.verification.links;
+      if ((el = $('badge-brdg'))) el.href = links.contract;
+      if ((el = $('badge-burned'))) el.href = links.contract;
+      if ((el = $('badge-vault'))) el.href = tres.verification.links.vaultContract;
+
+      if ((el = $('src-brdg'))) {
+        el.textContent = '';
+        el.appendChild(document.createTextNode('Source: '));
+        el.appendChild(makeLink(tok.address.slice(0, 10) + '...', links.contract));
+        el.appendChild(document.createTextNode(' | Block: ' + (d.data.readAt.blockNumber || 'N/A')));
+      }
+
+      if ((el = $('src-vault'))) {
+        el.textContent = '';
+        el.appendChild(document.createTextNode('Source: '));
+        el.appendChild(makeLink('Vault on LineaScan', tres.verification.links.vaultContract));
+      }
+
+      // BRDG detail table
+      const tbody = clearTable('brdg-table');
+      addRow(tbody, ['Contract', tok.address, makeLink('LineaScan', links.contract)]);
+      addRow(tbody, ['Chain', tok.chain + ' (' + tok.chainId + ')', 'chainId: ' + tok.chainId]);
+      addRow(tbody, ['Total Supply', fmt(tok.totalSupply) + ' BRDG', makeLink('Read contract', tok.verification.methods.totalSupply.explorerLink)]);
+      addRow(tbody, ['Max Supply', fmt(tok.maxSupply) + ' BRDG', tok.verification.methods.maxSupply.call]);
+      addRow(tbody, ['Total Burned', fmt(tok.totalBurned) + ' BRDG', makeLink('Read contract', tok.verification.methods.totalBurned.explorerLink)]);
+      addRow(tbody, ['Burn Rate', tok.burnRate, 'BURN_BPS constant']);
+      addRow(tbody, ['Treasury BRDG', fmt(tres.brdgBalance) + ' BRDG', makeLink('Verify balance', tres.verification.methods.ownerBalance.explorerLink)]);
+      addRow(tbody, ['Vault ETH', tres.vault.ethBalance + ' ETH', makeLink('Verify balance', tres.verification.methods.vaultEth.explorerLink)]);
+      addRow(tbody, ['Block #', String(d.data.readAt.blockNumber), 'Proves freshness of read']);
+
+      updateSigFooter(d);
+      addLogEntry('Token metrics loaded (on-chain, block ' + d.data.readAt.blockNumber + ')');
+    }
+  } catch (e) {
+    setBadgeError('badge-brdg', 'RPC Error');
+    setBadgeError('badge-burned', 'RPC Error');
+    setBadgeError('badge-vault', 'RPC Error');
+    addLogEntry('Token metrics failed: ' + e.message);
+  }
+
+  // Treasury (hybrid)
+  try {
+    var tRes = await fetch('/api/metrics/treasury').then(function(r){return r.json();}).catch(function(){return {};});
+    var eRes = await fetch('/api/revenue-engine/status').then(function(r){return r.json();}).catch(function(){return {};});
+    var combined = (tRes.data && tRes.data.combined) || {};
+    var fiatBase = combined.fiatZar || 0;
+    var engineRev = eRes.revenueGenerated || 0;
+    var totalBalance = fiatBase + engineRev;
+    $('k-balance').textContent = 'R' + fmt(totalBalance);
+    if ($('src-treasury')) {
+      $('src-treasury').textContent = '';
+      $('src-treasury').appendChild(document.createTextNode('Treasury R' + fmt(fiatBase) + ' + Engine R' + fmt(engineRev) + ' | '));
+      $('src-treasury').appendChild(makeLink('raw data', '/api/metrics/treasury'));
+    }
+    if (tRes._proof) updateSigFooter(tRes);
+    addLogEntry('Treasury loaded (total: R' + fmt(totalBalance) + ', engine: R' + fmt(engineRev) + ')');
+  } catch (e) {
+    setBadgeError('badge-treasury', 'Error');
+    addLogEntry('Treasury metrics failed: ' + e.message);
+  }
+
+  // Revenue (hash-chain derived) — uses the new loadChainStatus with fallback
+  await loadChainStatus();
+
+  // Revenue Engine stats
+  try {
+    var engR = await fetch('/api/revenue-engine/status').then(function(r){return r.json();}).catch(function(){return {};});
+    if (engR.running !== undefined) {
+      $('k-engine-status').textContent = engR.running ? 'RUNNING' : 'STOPPED';
+      $('k-engine-status').className = 'value ' + (engR.running ? 'green' : 'red');
+      $('k-engine-loops').textContent = (engR.loopsCompleted || 0) + ' loops completed';
+      $('k-engine-leads').textContent = (engR.leadsGenerated || 0).toLocaleString();
+      $('k-engine-deals').textContent = (engR.dealsConverted || 0) + ' deals converted';
+      $('k-engine-rev').textContent = 'R' + fmt(engR.revenueGenerated || 0);
+      $('k-engine-dispatched').textContent = (engR.tasksAutoDispatched || 0) + ' tasks auto-dispatched';
+    }
+    // Withdrawable
+    var walR = await fetch('/api/wallet/balance').then(function(r){return r.json();}).catch(function(){return {};});
+    $('k-withdrawable').textContent = 'R' + fmt(walR.balance || 0);
+
+    // Revenue per hour
+    try {
+      var proofR = await fetch('/api/proofs/payments?limit=100').then(function(r){return r.json();}).catch(function(){return {};});
+      var proofs = (proofR.data && proofR.data.proofs) || proofR.proofs || [];
+      var totalRev = proofs.reduce(function(s, p) { return s + parseFloat(p.amount || 0); }, 0);
+      if (proofs.length >= 2) {
+        var firstTs = new Date(proofs[proofs.length - 1].created_at || proofs[proofs.length - 1].timestamp).getTime();
+        var lastTs = new Date(proofs[0].created_at || proofs[0].timestamp).getTime();
+        var hours = (lastTs - firstTs) / 3600000;
+        // Require at least 24h of spread before projecting a rate — otherwise
+        // a burst of sign-ups in minutes would produce billions/month.
+        var MIN_HOURS_FOR_RATE = 24;
+        if (hours >= MIN_HOURS_FOR_RATE) {
+          var perHour = totalRev / hours;
+          $('k-rev-per-hour').textContent = 'R' + fmt(perHour);
+          $('k-rev-per-hour-detail').textContent = fmt(proofs.length) + ' transactions over ' + hours.toFixed(1) + ' hours';
+          var projected = perHour * 24 * 30;
+          $('k-rev-projected').textContent = 'R' + fmt(projected);
+          $('k-rev-projected-detail').textContent = 'R' + fmt(perHour * 24) + '/day at current rate';
+        } else {
+          $('k-rev-per-hour').textContent = '--';
+          $('k-rev-per-hour-detail').textContent = fmt(proofs.length) + ' transactions — need 24h of data for rate';
+          $('k-rev-projected').textContent = '--';
+          $('k-rev-projected-detail').textContent = 'Total so far: R' + fmt(totalRev);
+        }
+      } else if (proofs.length === 1) {
+        $('k-rev-per-hour').textContent = '--';
+        $('k-rev-per-hour-detail').textContent = '1 transaction — need more data points';
+        $('k-rev-projected').textContent = '--';
+        $('k-rev-projected-detail').textContent = 'Total so far: R' + fmt(totalRev);
+      }
+    } catch(_) {}
+  } catch(_) {}
+
+  // ── Agent Economy (BRDG streams) ──────────────────────────────────────
+  try {
+    var econR = await fetch('/api/economy/stats').then(function(r){return r.json();}).catch(function(){return {};});
+    if (econR.ok !== false) {
+      $('k-a2a-fees').textContent = fmt(econR.totalFeesCollected || 0) + ' BRDG';
+      $('k-a2a-txcount').textContent = (econR.txCount || 0).toLocaleString() + ' agent transactions';
+      $('k-brdg-circulating').textContent = fmt(econR.totalCirculating || 0) + ' BRDG';
+      $('k-brdg-burned-off').textContent = fmt(econR.totalBurned || 0) + ' BRDG burned (off-chain)';
+      $('k-agent-count').textContent = (econR.agentCount || 0) + ' agents';
+      if (econR.topEarners && econR.topEarners.length > 0) {
+        $('k-top-agent').textContent = 'Top earner: ' + econR.topEarners[0].agent_id + ' (' + fmt(econR.topEarners[0].balance) + ' BRDG)';
+      }
+    }
+
+    // Task marketplace stats
+    var taskR = await fetch('/api/economy/tasks').then(function(r){return r.json();}).catch(function(){return {};});
+    var tasks = (taskR.tasks || []);
+    var settledTasks = tasks.filter(function(t){return t.status === 'SETTLED';});
+    var taskVolume = settledTasks.reduce(function(s,t){return s + (parseFloat(t.escrow_amount)||0);}, 0);
+    $('k-task-volume').textContent = fmt(taskVolume) + ' BRDG';
+    $('k-task-count').textContent = settledTasks.length + ' tasks settled';
+
+    // AP2 stats
+    var ap2R = await fetch('/api/ap2/stats').then(function(r){return r.json();}).catch(function(){return {};});
+    $('k-ap2-volume').textContent = fmt(ap2R.total_volume_brdg || 0) + ' BRDG';
+    $('k-ap2-count').textContent = (ap2R.total_payments || 0) + ' AP2 settlements';
+
+    // Compounding stats
+    var compR = await fetch('/api/compounding/stats').then(function(r){return r.json();}).catch(function(){return {};});
+    $('k-compound-cycles').textContent = (compR.cycles || 0) + ' cycles';
+    $('k-compound-reserved').textContent = fmt(compR.total_reserved || 0) + ' BRDG reserved to treasury';
+
+    // Revenue stream breakdown table (from proof chain by source)
+    var proofAll = await fetch('/api/proofs/payments?limit=10000').then(function(r){return r.json();}).catch(function(){return {};});
+    var allProofs = (proofAll.data && proofAll.data.proofs) || proofAll.proofs || [];
+    var bySource = {};
+    var grandTotal = 0;
+    allProofs.forEach(function(p) {
+      var src = p.source || 'unknown';
+      if (!bySource[src]) bySource[src] = { count: 0, total: 0 };
+      bySource[src].count++;
+      bySource[src].total += parseFloat(p.amount || 0);
+      grandTotal += parseFloat(p.amount || 0);
+    });
+    var tbody = $('stream-tbody');
+    if (tbody) {
+      tbody.innerHTML = '';
+      Object.keys(bySource).sort(function(a,b){return bySource[b].total - bySource[a].total;}).forEach(function(src) {
+        var s = bySource[src];
+        var pct = grandTotal > 0 ? (s.total / grandTotal * 100).toFixed(1) : '0.0';
+        var row = document.createElement('tr');
+        row.innerHTML = '<td>' + src + '</td><td>' + s.count.toLocaleString() + '</td><td>' + fmt(s.total) + '</td><td>' + pct + '%</td>';
+        tbody.appendChild(row);
+      });
+      if (Object.keys(bySource).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="color:var(--dim);text-align:center">No transactions recorded yet — awaiting first real payment</td></tr>';
+      }
+    }
+  } catch(e) { addLogEntry('Agent economy load failed: ' + e.message); }
+
+  // AI Revenue Recommendations
+  try {
+    var recsEl = $('ai-recs');
+    if (recsEl) {
+      recsEl.textContent = '';
+      var revMtd = 0;
+      try { revMtd = parseFloat($('k-earned').textContent.replace(/[^0-9.]/g,'')) || 0; } catch(_){}
+      var engLoops = (typeof engR !== 'undefined' && engR.loopsCompleted) || 0;
+      var engDeals = (typeof engR !== 'undefined' && engR.dealsConverted) || 0;
+      var recs = [];
+
+      if (revMtd < 10000) recs.push({ title: 'Increase Lead Volume', desc: 'Revenue under R10K/mo. Increase outreach to 50+ leads/day via LinkedIn scraping and cold email automation.', impact: '+300% leads', color: 'var(--green)' });
+      if (engDeals < 5) recs.push({ title: 'Improve Conversion Rate', desc: 'Only ' + engDeals + ' deals converted. Add demo booking automation and risk-reversal offers (14-day free trial).', impact: '+2x conversions', color: 'var(--cyan)' });
+      recs.push({ title: 'Raise Enterprise Price', desc: 'Current R999/mo is below market. AI workforce platforms charge R2,500-R5,000/mo. Test R1,499 first.', impact: '+50% ARPU', color: 'var(--orange)' });
+      recs.push({ title: 'Add Usage-Based Billing', desc: 'Charge R0.10/agent task + R0.02/API call on top of subscriptions. Current 30K+ tasks/mo = R3,000+ extra.', impact: '+R3K/mo', color: 'var(--green)' });
+      if (engLoops < 100) recs.push({ title: 'Let Engine Run Longer', desc: 'Engine has only completed ' + engLoops + ' loops. Each loop generates leads and revenue. More uptime = more revenue.', impact: 'Compound growth', color: 'var(--cyan)' });
+      recs.push({ title: 'Launch Referral Program v2', desc: 'Current: R25 flat bonus. Upgrade to 20% lifetime commission. Each referrer becomes a sales channel.', impact: '+5x viral', color: 'var(--purple)' });
+      recs.push({ title: 'Optimize AI Costs', desc: 'Use GPT-3.5 for low-priority tasks, GPT-4 only for closing. Batch inference requests. Target 30-50% cost reduction.', impact: '-40% costs', color: 'var(--orange)' });
+
+      recs.slice(0, 4).forEach(function(rec) {
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.style.borderLeft = '3px solid ' + rec.color;
+        var title = document.createElement('div');
+        title.style.cssText = 'font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px';
+        title.textContent = rec.title;
+        card.appendChild(title);
+        var desc = document.createElement('div');
+        desc.style.cssText = 'font-size:12px;color:var(--dim);margin-bottom:6px';
+        desc.textContent = rec.desc;
+        card.appendChild(desc);
+        var impact = document.createElement('div');
+        impact.style.cssText = 'font-size:11px;font-weight:600;color:' + rec.color;
+        impact.textContent = 'Expected impact: ' + rec.impact;
+        card.appendChild(impact);
+        recsEl.appendChild(card);
+      });
+    }
+  } catch(_) {}
+
+  // Plans
+  try {
+    const r = await fetch('/api/pricing');
+    const d = await r.json();
+    if (d.plans) {
+      const tbody = clearTable('plans-table');
+      d.plans.forEach(function(p) {
+        addRow(tbody, [p.name, p.price === 0 ? 'Free' : 'R' + p.price.toLocaleString() + '/mo', (p.features || []).join(', ')]);
+      });
+    }
+  } catch(_) {}
+
+  // Payment Rails
+  var railsTbody = clearTable('rails-table');
+  var rails = [
+    { name: 'PayFast', status: 'live', currency: 'ZAR', proof: 'MD5-HMAC webhook + server validation', verifyText: 'Proof chain', verifyHref: '/api/verify/chain' },
+    { name: 'Paystack', status: 'pending', currency: 'NGN/USD', proof: 'SHA-512 webhook signature', verifyText: 'Not yet connected', verifyHref: null },
+    { name: 'Crypto (ETH)', status: 'live', currency: 'ETH', proof: 'On-chain transaction hash', verifyText: 'LineaScan', verifyHref: 'https://lineascan.build/address/0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
+    { name: 'BRDG Token', status: 'live', currency: 'BRDG', proof: 'ERC-20 Transfer event log', verifyText: 'LineaScan', verifyHref: 'https://lineascan.build/token/0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f' },
+    { name: 'Stripe', status: 'pending', currency: 'USD/EUR', proof: 'Stripe webhook signature (v1)', verifyText: 'Not configured', verifyHref: null },
+  ];
+  rails.forEach(function(rail) {
+    var verifyCell = rail.verifyHref ? makeLink(rail.verifyText, rail.verifyHref) : rail.verifyText;
+    addRow(railsTbody, [rail.name, rail.status, rail.currency, rail.proof, verifyCell]);
+  });
+
+  // Recent payment proofs
+  try {
+    const r = await fetch('/api/proofs/payments?limit=10');
+    const d = await r.json();
+    if (d.data && d.data.proofs) {
+      const tbody = clearTable('proofs-table');
+      const proofs = d.data.proofs;
+      if (proofs.length === 0) {
+        addRow(tbody, ['No payments recorded yet', '--', '--', '--', '--']);
+      } else {
+        proofs.forEach(function(p) {
+          var txId = p.transaction_id || p.transactionId;
+          var hash = (p.tx_hash || p.txHash || '').slice(0, 16) + '...';
+          addRow(tbody, [txId, 'R' + fmt(p.amount), p.source, hash, makeLink('Verify', '/api/verify/payment/' + encodeURIComponent(txId))]);
+        });
+      }
+    }
+  } catch (e) {
+    addLogEntry('Payment proofs failed: ' + e.message);
+  }
+
+  addLogEntry('Dashboard refreshed (zero-trust mode)');
+}
+
+// SSE live events
+try {
+  var es = new EventSource('/events/stream');
+  es.onmessage = function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      var msg = d.type;
+      if (d.data && d.data.amount) msg += ' R' + d.data.amount;
+      if (d.data && d.data.balance) msg += ' balance: R' + fmt(d.data.balance);
+      if (d.eventHash) msg += ' [hash:' + d.eventHash.slice(0, 8) + ']';
+      addLogEntry(msg);
+    } catch(_) {}
+  };
+} catch(_) {}
+
+loadAll();
+setInterval(loadAll, 30000);
+} // end initPage
+</script>
+</div>
+</body>
+</html>

@@ -14,7 +14,11 @@ URL="http://127.0.0.1:${PORT}/healthz"
 CSV="${DISCOVERY_CSV:-logs/discovery.csv}"
 DURATION="${DURATION:-300}"
 INTERVAL="${INTERVAL:-5}"
+<<<<<<< HEAD
 PROCESS_MATCH="${PROCESS_MATCH:-orchestra-server.js}"
+=======
+PROCESS_MATCH="${PROCESS_MATCH:-server.js}"
+>>>>>>> a65a24150727639fde77daadeba4361af473827a
 
 mkdir -p "$(dirname "$CSV")"
 [ -s "$CSV" ] || echo "ts,code,latency,mem_mb" > "$CSV"

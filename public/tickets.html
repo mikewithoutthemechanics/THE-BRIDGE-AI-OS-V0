@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="canonical" href="https://go.ai-os.co.za/tickets">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/tickets">
+<meta property="og:title" content="Support — Bridge AI OS">
+<meta property="og:description" content="Support — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Support — Bridge AI OS">
+<meta name="twitter:description" content="Support — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support — Bridge AI OS</title>
+<meta name="description" content="Support — Create and manage support tickets">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e17;--card:#131a2b;--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444;--border:#1e293b;--text:#e2e8f0;--text-dim:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 20% 80%,rgba(56,189,248,.04) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(167,139,250,.03) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.shell{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:32px 24px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:1.75rem;font-weight:700;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* Form Card */
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:40px}
+.form-card h2{font-size:1.1rem;font-weight:600;color:var(--cyan);margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.75rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:500}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:.875rem;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--cyan)}
+.form-group textarea{resize:vertical;min-height:120px}
+
+/* Priority Segments */
+.priority-segments{display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.priority-seg{flex:1;padding:10px 8px;text-align:center;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;background:var(--bg);border-right:1px solid var(--border);user-select:none}
+.priority-seg:last-child{border-right:none}
+.priority-seg.active-low{background:rgba(34,197,94,.15);color:var(--green);box-shadow:inset 0 -3px 0 var(--green)}
+.priority-seg.active-medium{background:rgba(245,158,11,.15);color:var(--orange);box-shadow:inset 0 -3px 0 var(--orange)}
+.priority-seg.active-high{background:rgba(239,68,68,.15);color:var(--red);box-shadow:inset 0 -3px 0 var(--red)}
+.priority-seg.active-urgent{background:rgba(239,68,68,.2);color:#ff6b6b;box-shadow:inset 0 -3px 0 #ff6b6b;animation:urgentPulse 1.5s infinite}
+@keyframes urgentPulse{0%,100%{opacity:1}50%{opacity:.7}}
+
+/* AI Suggestion */
+.ai-suggest{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;color:var(--purple);background:rgba(167,139,250,.1);padding:2px 8px;border-radius:4px;margin-left:8px;opacity:0;transition:opacity .3s}
+.ai-suggest.visible{opacity:1}
+
+/* Category with AI */
+.category-wrap{position:relative}
+.category-wrap select{padding-right:40px}
+
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0284c7);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(56,189,248,.3)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* Ticket List */
+.tickets-section{margin-top:20px}
+.tickets-section h2{font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:16px}
+.ticket-list{display:flex;flex-direction:column;gap:8px}
+.ticket-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;cursor:pointer;transition:all .2s;display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center}
+.ticket-item:hover{border-color:var(--cyan);transform:translateX(2px)}
+.ticket-subject{font-size:.9rem;font-weight:500}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.badge-open{background:rgba(56,189,248,.12);color:var(--cyan)}
+.badge-in_progress,.badge-in-progress{background:rgba(245,158,11,.12);color:var(--orange)}
+.badge-resolved{background:rgba(34,197,94,.12);color:var(--green)}
+.badge-closed{background:rgba(107,114,128,.12);color:var(--dim)}
+.priority-badge{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:4px}
+.priority-low{color:var(--green);background:rgba(34,197,94,.1)}
+.priority-medium{color:var(--orange);background:rgba(245,158,11,.1)}
+.priority-high{color:var(--red);background:rgba(239,68,68,.1)}
+.priority-urgent{color:#ff6b6b;background:rgba(239,68,68,.15)}
+.ticket-date{font-size:.7rem;color:var(--dim)}
+
+/* Expanded ticket */
+.ticket-detail{display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;margin-top:-4px;border-top:none;border-top-left-radius:0;border-top-right-radius:0}
+.ticket-detail.open{display:block}
+.ticket-body{font-size:.85rem;color:var(--text-dim);line-height:1.7;margin-bottom:16px;white-space:pre-wrap}
+.comment-list{margin-top:12px}
+.comment-item{background:var(--bg);border-radius:8px;padding:12px;margin-bottom:8px}
+.comment-meta{font-size:.7rem;color:var(--dim);margin-bottom:4px}
+.comment-text{font-size:.85rem;color:var(--text-dim);line-height:1.5}
+
+/* Empty / Loading */
+.empty-msg{text-align:center;padding:40px;color:var(--dim);font-size:.9rem}
+.loading-msg{text-align:center;padding:40px;color:var(--text-dim);font-size:.85rem}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:10px;font-size:.85rem;font-weight:500;z-index:9999;transform:translateX(120%);transition:transform .3s ease;max-width:360px}
+.toast.show{transform:translateX(0)}
+.toast-success{background:#065f46;color:#6ee7b7;border:1px solid #10b981}
+.toast-error{background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444}
+
+@media(max-width:600px){
+  .ticket-item{grid-template-columns:1fr;gap:6px}
+  .priority-segments{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="header"><h1>Support Center</h1></div>
+
+  <!-- Ticket Creation Form -->
+  <div class="form-card">
+    <h2>Create a Ticket</h2>
+    <div class="form-group">
+      <label>Subject *</label>
+      <input id="tk-subject" placeholder="Brief description of your issue">
+    </div>
+    <div class="form-group">
+      <label>Description *</label>
+      <textarea id="tk-body" placeholder="Describe your issue in detail..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Priority</label>
+      <div class="priority-segments" id="priority-bar">
+        <div class="priority-seg" data-val="low" onclick="setPriority('low')">Low</div>
+        <div class="priority-seg active-medium" data-val="medium" onclick="setPriority('medium')">Medium</div>
+        <div class="priority-seg" data-val="high" onclick="setPriority('high')">High</div>
+        <div class="priority-seg" data-val="urgent" onclick="setPriority('urgent')">Urgent</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Category <span class="ai-suggest" id="ai-badge">AI suggested</span></label>
+      <div class="category-wrap">
+        <select id="tk-category">
+          <option value="General">General</option>
+          <option value="Bug Report">Bug Report</option>
+          <option value="Feature Request">Feature Request</option>
+          <option value="Billing">Billing</option>
+          <option value="Account">Account</option>
+          <option value="Technical Support">Technical Support</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" id="submit-btn" onclick="createTicket()">Submit Ticket</button>
+  </div>
+
+  <!-- My Tickets -->
+  <div class="tickets-section">
+    <h2>My Tickets</h2>
+    <div id="ticket-list"><div class="loading-msg">Loading tickets...</div></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var tickets = [];
+  var currentUser = null;
+  var selectedPriority = 'medium';
+  var aiDebounceTimer = null;
+  var expandedId = null;
+
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast toast-' + (type || 'success') + ' show';
+    setTimeout(function() { t.classList.remove('show'); }, 3500);
+  }
+
+  // Auth
+  async function checkAuth() {
+    try {
+      var res = await fetch('/auth/me', { credentials: 'include' });
+      if (res.ok) { var d = await res.json(); if (d.ok && d.user) { currentUser = d.user; return true; } }
+    } catch(e) {}
+    var token = localStorage.getItem('bridge_token');
+    if (token) {
+      try {
+        var res2 = await fetch('/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res2.ok) { var d2 = await res2.json(); if (d2.ok && d2.user) { currentUser = d2.user; return true; } }
+      } catch(e) {}
+    }
+    return false;
+  }
+
+  // Priority selector
+  window.setPriority = function(val) {
+    selectedPriority = val;
+    var segs = document.querySelectorAll('.priority-seg');
+    segs.forEach(function(s) {
+      s.className = 'priority-seg' + (s.dataset.val === val ? ' active-' + val : '');
+    });
+  };
+
+  // AI auto-categorization
+  document.getElementById('tk-subject').addEventListener('input', function() {
+    clearTimeout(aiDebounceTimer);
+    var subject = this.value.trim();
+    if (subject.length < 5) { document.getElementById('ai-badge').classList.remove('visible'); return; }
+    aiDebounceTimer = setTimeout(function() { aiCategorize(subject); }, 500);
+  });
+
+  async function aiCategorize(subject) {
+    try {
+      var res = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: 'Categorize this support ticket into one of: Bug Report, Feature Request, Billing, Account, Technical Support, General. Ticket: "' + subject + '". Return ONLY the category name.',
+          agent: 'agent-biz-support'
+        })
+      });
+      if (!res.ok) return;
+      var data = await res.json();
+      var text = (data.text || data.response || '').trim();
+      var categories = ['Bug Report','Feature Request','Billing','Account','Technical Support','General'];
+      var match = categories.find(function(c) { return text.toLowerCase().indexOf(c.toLowerCase()) !== -1; });
+      if (match) {
+        document.getElementById('tk-category').value = match;
+        document.getElementById('ai-badge').classList.add('visible');
+      }
+    } catch(e) {}
+  }
+
+  // Create ticket
+  window.createTicket = async function() {
+    var authed = await checkAuth();
+    if (!authed) { window.location.href = '/join?next=/tickets'; return; }
+
+    var subject = document.getElementById('tk-subject').value.trim();
+    var body = document.getElementById('tk-body').value.trim();
+    var category = document.getElementById('tk-category').value;
+
+    if (!subject) { showToast('Subject is required', 'error'); return; }
+    if (!body) { showToast('Description is required', 'error'); return; }
+
+    var btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+      var res = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('bridge_token') || '') },
+        credentials: 'include',
+        body: JSON.stringify({ subject: subject, body: body, priority: selectedPriority, category: category })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      document.getElementById('tk-subject').value = '';
+      document.getElementById('tk-body').value = '';
+      setPriority('medium');
+      document.getElementById('tk-category').value = 'General';
+      document.getElementById('ai-badge').classList.remove('visible');
+      showToast('Ticket submitted!');
+      loadTickets();
+    } catch(e) {
+      showToast('Failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit Ticket';
+    }
+  };
+
+  // Load tickets
+  async function loadTickets() {
+    var container = document.getElementById('ticket-list');
+    try {
+      var res = await fetch('/api/tickets', {
+        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('bridge_token') || '') },
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      tickets = Array.isArray(data) ? data : (data.tickets || data.data || []);
+      renderTickets();
+    } catch(e) {
+      container.innerHTML = '<div class="empty-msg">Failed to load tickets: ' + escHtml(e.message) + '</div>';
+    }
+  }
+
+  function escHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    var diff = Date.now() - new Date(dateStr).getTime();
+    var mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    var days = Math.floor(hrs / 24);
+    return days + 'd ago';
+  }
+
+  function renderTickets() {
+    var container = document.getElementById('ticket-list');
+    if (!tickets.length) {
+      container.innerHTML = '<div class="empty-msg">No tickets yet. Create one above to get started.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    tickets.forEach(function(t) {
+      var status = (t.status || 'open').toLowerCase().replace(/[\s_]/g, '_');
+      var priority = (t.priority || 'medium').toLowerCase();
+
+      var item = document.createElement('div');
+      item.className = 'ticket-item';
+      item.onclick = function() { toggleDetail(t); };
+      item.innerHTML = '<span class="ticket-subject">' + escHtml(t.subject || t.title || 'Untitled') + '</span>'
+        + '<span class="badge badge-' + status + '">' + escHtml(t.status || 'open') + '</span>'
+        + '<span class="priority-badge priority-' + priority + '">' + priority + '</span>'
+        + '<span class="ticket-date">' + timeAgo(t.created_at || t.updated_at) + '</span>';
+      container.appendChild(item);
+
+      // Detail panel
+      var detail = document.createElement('div');
+      detail.className = 'ticket-detail';
+      detail.id = 'detail-' + t.id;
+      detail.innerHTML = '<div class="ticket-body">' + escHtml(t.body || t.description || 'No description.') + '</div>'
+        + '<div style="font-size:.75rem;color:var(--dim);margin-bottom:8px">Category: ' + escHtml(t.category || 'General') + ' | Assigned: ' + escHtml(t.assigned_to || 'Unassigned') + '</div>'
+        + '<div class="comment-list" id="comments-' + t.id + '"></div>';
+      container.appendChild(detail);
+
+      // Render comments if available
+      var comments = t.comments || t.replies || [];
+      if (comments.length) {
+        var cl = detail.querySelector('.comment-list');
+        comments.forEach(function(c) {
+          var ci = document.createElement('div');
+          ci.className = 'comment-item';
+          ci.innerHTML = '<div class="comment-meta">' + escHtml(c.author_type || c.author || 'user') + ' - ' + timeAgo(c.created_at) + '</div>'
+            + '<div class="comment-text">' + escHtml(c.body || c.text || '') + '</div>';
+          cl.appendChild(ci);
+        });
+      }
+    });
+  }
+
+  function toggleDetail(t) {
+    var el = document.getElementById('detail-' + t.id);
+    if (!el) return;
+    if (expandedId === t.id) {
+      el.classList.remove('open');
+      expandedId = null;
+    } else {
+      if (expandedId) {
+        var prev = document.getElementById('detail-' + expandedId);
+        if (prev) prev.classList.remove('open');
+      }
+      el.classList.add('open');
+      expandedId = t.id;
+    }
+  }
+
+  // Init
+  checkAuth();
+  loadTickets();
+})();
+</script>
+<script src="/bridge-nav.js?v=2" defer></script>
+</body>
+</html>

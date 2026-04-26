@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketing — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/crm.html" class="text-slate-400 hover:text-cyan-400">CRM</a>
+      <a href="/leadgen.html" class="text-slate-400 hover:text-cyan-400">LeadGen</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-cyan-400">Marketing Hub</h1>
+      <button onclick="createCampaign()" class="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-cyan-500">
+        + New Campaign
+      </button>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="campaigns">0</div>
+        <div class="text-sm text-slate-400">Active Campaigns</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400" id="leads">0</div>
+        <div class="text-sm text-slate-400">Leads Generated</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400" id="emails">0</div>
+        <div class="text-sm text-slate-400">Emails Sent</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-purple-400" id="conversions">0%</div>
+        <div class="text-sm text-slate-400">Conversion Rate</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">📧 Email Campaigns</h2>
+        <div class="space-y-3">
+          <div class="bg-slate-700 p-3 rounded cursor-pointer hover:bg-slate-600">
+            <div class="flex justify-between">
+              <div class="font-bold">Welcome Series</div>
+              <span class="text-green-400 text-sm">Active</span>
+            </div>
+            <div class="text-sm text-slate-400">1,234 subscribers · 45% open rate</div>
+          </div>
+          <div class="bg-slate-700 p-3 rounded cursor-pointer hover:bg-slate-600">
+            <div class="flex justify-between">
+              <div class="font-bold">Product Launch</div>
+              <span class="text-yellow-400 text-sm">Draft</span>
+            </div>
+            <div class="text-sm text-slate-400">Scheduled for next week</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">📱 SMS Campaigns</h2>
+        <div class="space-y-3">
+          <div class="bg-slate-700 p-3 rounded cursor-pointer hover:bg-slate-600">
+            <div class="flex justify-between">
+              <div class="font-bold">Flash Sale Alert</div>
+              <span class="text-green-400 text-sm">Active</span>
+            </div>
+            <div class="text-sm text-slate-400">567 recipients · 12% CTR</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">📊 Channel Performance</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-700">
+            <tr>
+              <th class="p-3 text-left">Channel</th>
+              <th class="p-3 text-left">Sent</th>
+              <th class="p-3 text-left">Delivered</th>
+              <th class="p-3 text-left">Open Rate</th>
+              <th class="p-3 text-left">CTR</th>
+            </tr>
+          </thead>
+          <tbody id="channels">
+            <tr><td colspan="5" class="p-4 text-center text-slate-500">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadMarketing() {
+      try {
+        const res = await fetch('/api/marketing');
+        const data = await res.json();
+        
+        document.getElementById('campaigns').textContent = data.campaigns || 0;
+        document.getElementById('leads').textContent = data.leads || 0;
+        document.getElementById('emails').textContent = data.emails || 0;
+        document.getElementById('conversions').textContent = (data.conversion || 0) + '%';
+        
+        if (data.channels) {
+          document.getElementById('channels').innerHTML = data.channels.map(c => `
+            <tr class="border-t border-slate-700">
+              <td class="p-3">${c.name}</td>
+              <td class="p-3">${c.sent}</td>
+              <td class="p-3">${c.delivered}</td>
+              <td class="p-3">${c.openRate}%</td>
+              <td class="p-3">${c.ctr}%</td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('channels').innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-400">Error loading data</td></tr>';
+      }
+    }
+
+    function createCampaign() {
+      alert('Campaign creation would open here');
+    }
+
+    loadMarketing();
+  </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aurora — AI Assistant</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-purple-400">✨ Aurora</a>
+    <div class="flex gap-4">
+      <a href="/platforms.html" class="text-slate-400 hover:text-cyan-400">Platforms</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-purple-400 mb-2">Aurora AI Assistant</h1>
+    <p class="text-slate-400 mb-8">Conversational AI with emotion, speech synthesis, and avatar</p>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-slate-800 p-4 rounded-lg text-center">
+        <div class="text-2xl font-bold text-cyan-400">8</div>
+        <div class="text-sm text-slate-400">Emotion States</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg text-center">
+        <div class="text-2xl font-bold text-cyan-400">12</div>
+        <div class="text-sm text-slate-400">Voice Types</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg text-center">
+        <div class="text-2xl font-bold text-cyan-400">6</div>
+        <div class="text-sm text-slate-400">Avatar Modes</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg text-center">
+        <div class="text-2xl font-bold text-cyan-400">99%</div>
+        <div class="text-sm text-slate-400">Speech Accuracy</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6 mb-8">
+      <a href="/aurora-home.html" class="bg-slate-800 p-6 rounded-xl hover:bg-slate-700">
+        <div class="text-3xl mb-2">🎭</div>
+        <h3 class="text-lg font-bold text-cyan-400">Avatar</h3>
+        <p class="text-slate-400 text-sm">3D avatar with emotion engine</p>
+      </a>
+      <a href="/avatar.html" class="bg-slate-800 p-6 rounded-xl hover:bg-slate-700">
+        <div class="text-3xl mb-2">🗣️</div>
+        <h3 class="text-lg font-bold text-cyan-400">Speech</h3>
+        <p class="text-slate-400 text-sm">Text-to-speech with emotions</p>
+      </a>
+      <a href="/voice.html" class="bg-slate-800 p-6 rounded-xl hover:bg-slate-700">
+        <div class="text-3xl mb-2">🎤</div>
+        <h3 class="text-lg font-bold text-cyan-400">Voice AI</h3>
+        <p class="text-slate-400 text-sm">Voice conversations</p>
+      </a>
+    </div>
+  </main>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "_comment": "Canonical superuser register. Both Node backends (auth.js, middleware/auth.js, server.js) and the Python backend (backend/main.py) read this file at boot. Each backend keeps a hardcoded fallback list for resilience if the file fails to parse. Do not edit without verifying all three backends still start cleanly.",
+  "_canonical_wiring": true,
+  "superusers": [
+    {
+      "email": "ryanpcowan@gmail.com",
+      "honored_by": ["node", "python"],
+      "role": "superadmin"
+    },
+    {
+      "email": "michaelgraemek@gmail.com",
+      "honored_by": ["node", "python"],
+      "role": "superadmin"
+    },
+    {
+      "email": "marvin.saunders@gmail.com",
+      "honored_by": ["node", "python"],
+      "role": "superadmin"
+    }
+  ]
+}

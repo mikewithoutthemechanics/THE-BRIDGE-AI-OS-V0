@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legal AI — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/legal.html" class="text-cyan-400">Legal</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-center mb-2 text-cyan-400">Legal AI Assistant</h1>
+    <p class="text-center text-slate-400 mb-8">AI-powered legal research and document analysis</p>
+
+    <div class="grid md:grid-cols-3 gap-4 mb-8">
+      <div class="bg-slate-800 p-4 rounded-lg text-center">
+        <div class="text-2xl mb-2">📝</div>
+        <div class="font-bold">Document Review</div>
+        <div class="text-sm text-slate-400">Analyze contracts</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg text-center">
+        <div class="text-2xl mb-2">⚖️</div>
+        <div class="font-bold">Case Research</div>
+        <div class="text-sm text-slate-400">Find precedents</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg text-center">
+        <div class="text-2xl mb-2">📋</div>
+        <div class="font-bold">Compliance Check</div>
+        <div class="text-sm text-slate-400">Regulatory compliance</div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">Ask Legal AI</h2>
+      <textarea id="question" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-4 text-white" rows="4" placeholder="Describe your legal question or paste contract text..."></textarea>
+      <div class="flex gap-4 mt-4">
+        <button onclick="askAI('review')" class="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-cyan-500">Review Document</button>
+        <button onclick="askAI('research')" class="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-purple-500">Research</button>
+        <button onclick="askAI('compliance')" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-500">Check Compliance</button>
+      </div>
+    </div>
+
+    <div id="result" class="mt-6 bg-slate-800 rounded-xl p-6 hidden">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">Analysis Results</h2>
+      <div id="resultContent" class="text-white"></div>
+    </div>
+
+    <div class="mt-6 bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">Recent Analyses</h2>
+      <div id="history" class="text-slate-500 text-center py-4">Loading history...</div>
+    </div>
+  </main>
+
+  <script>
+    async function askAI(type) {
+      const question = document.getElementById('question').value;
+      if (!question) { alert('Please enter a question or paste a document'); return; }
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.classList.remove('hidden');
+      document.getElementById('resultContent').innerHTML = '<p class="text-cyan-400">Analyzing...</p>';
+
+      try {
+        const res = await fetch('/api/legal-ai', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ text: question, type })
+        });
+        const data = await res.json();
+        
+        document.getElementById('resultContent').innerHTML = `
+          <div class="prose max-w-none text-white">${data.result || data.response || data.analysis}</div>
+        `;
+        
+        if (data.risks) {
+          document.getElementById('resultContent').innerHTML += `
+            <div class="mt-4 p-4 bg-red-900/30 rounded">
+              <div class="font-bold text-red-400">Potential Risks:</div>
+              <ul class="list-disc pl-5 mt-2">${data.risks.map(r => `<li>${r}</li>`).join('')}</ul>
+            </div>
+          `;
+        }
+      } catch(e) {
+        document.getElementById('resultContent').innerHTML = '<p class="text-red-400">Error: ' + e.message + '</p>';
+      }
+    }
+
+    fetch('/api/legal/history').then(r => r.json()).then(d => {
+      const items = d.history || d || [];
+      if (items.length === 0) {
+        document.getElementById('history').innerHTML = '<p class="text-slate-500">No recent analyses</p>';
+      } else {
+        document.getElementById('history').innerHTML = items.map(i => `
+          <div class="bg-slate-700 p-3 rounded mb-2">
+            <div class="font-bold">${i.type}</div>
+            <div class="text-sm text-slate-400">${i.date}</div>
+          </div>
+        `).join('');
+      }
+    }).catch(() => {
+      document.getElementById('history').innerHTML = '<p class="text-slate-500">Unable to load history</p>';
+    });
+  </script>
+</body>
+</html>

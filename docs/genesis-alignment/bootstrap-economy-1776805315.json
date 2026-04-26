@@ -1,0 +1,49 @@
+{
+  "network": {
+    "name": "linea",
+    "chainId": 59144,
+    "rpc": "https://rpc.linea.build",
+    "explorer": "https://lineascan.build",
+    "provenance": "AUTO"
+  },
+  "signer": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+  "txs": [
+    {
+      "step": "setBurnExempt.Treasury",
+      "hash": "0xd67c30a34b8366e1a474c97ae2e25ee9be7dc332f039a7f2002363151da74d3f",
+      "block": 30323970,
+      "gasUsed": "47791"
+    },
+    {
+      "step": "setBurnExempt.Pool",
+      "hash": "0xb3dbd7fb8e43b96a792ad117efdb57ef3c9e13abc84996f4bedddba79a10a0c7",
+      "block": 30323972,
+      "gasUsed": "47791"
+    },
+    {
+      "step": "transfer.Staking",
+      "hash": "0xe288bef09142e92e5e62b182bb538c2df9ec29be79acf8f188faadc9cdd806f2",
+      "block": 30323973,
+      "gasUsed": "36888",
+      "amount": "4500000000000000000000000"
+    },
+    {
+      "step": "transfer.Treasury",
+      "hash": "0x7d43a577b939aaa823936f7fc6a81d57513d8f3cbaa3abb3731367d12becf429",
+      "block": 30323974,
+      "gasUsed": "49188",
+      "amount": "4994999000000000000000000"
+    }
+  ],
+  "postState": {
+    "eoa_BRDG": "0",
+    "treasuryVault_BRDG": "4994999000000000000000000",
+    "stakingVault_BRDG": "5000000000000000000000000",
+    "treasuryVault_burnExempt": true,
+    "syncSwapPool_burnExempt": true,
+    "totalSupply": "10000000000000000000000000",
+    "totalBurned": "0"
+  },
+  "errors": [],
+  "ok": true
+}
