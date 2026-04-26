@@ -26,12 +26,12 @@ async function registerServiceWorker() {
   }
 }
 
-// ── 1. WEBSOCKET CLIENT (DETERMINISTIC HEARTBEAT) ───────────────────────────
+// ── 1. WEBSOCKET CLIENT (DETERMINISTIC HEARTBEAT + EVENT LOOP MONITORING) ───
 class WebSocketClient {
   constructor(url) {
     this.url = url;
     this.ws = null;
-    this.lastHeartbeat = Date.now();
+    this.lastPong = Date.now();
     this.reconnectDelay = 1000;
     this.maxReconnectDelay = 30000;
     this.heartbeatTimeout = 5000;
@@ -39,6 +39,9 @@ class WebSocketClient {
     this.intervals = {};
     this.messageQueue = [];
     this.isShuttingDown = false;
+    this.lastFrameTime = performance.now();
+    this.eventLoopLag = 0;
+    this.isLoopHealthy = true;
   }
 
   connect() {
@@ -50,15 +53,17 @@ class WebSocketClient {
     this.ws.onopen = () => {
       console.log('[WS] Connected');
       this.reconnectDelay = 1000;
-      this.lastHeartbeat = Date.now();
+      this.lastPong = Date.now();
       this.startHeartbeatMonitor();
+      this.startEventLoopMonitor();
       this.flushMessageQueue();
     };
 
     this.ws.onmessage = (event) => {
       const msg = event.data;
       if (msg === 'pong') {
-        this.lastHeartbeat = Date.now();
+        this.lastPong = Date.now();
+        this.isLoopHealthy = true;
         return;
       }
       this.dispatchMessage(msg);
@@ -69,6 +74,7 @@ class WebSocketClient {
     this.ws.onclose = () => {
       console.log('[WS] Disconnected');
       this.stopHeartbeatMonitor();
+      this.stopEventLoopMonitor();
       if (!this.isShuttingDown) this.scheduleReconnect();
     };
   }
@@ -76,11 +82,19 @@ class WebSocketClient {
   startHeartbeatMonitor() {
     this.stopHeartbeatMonitor();
     this.intervals.heartbeat = setInterval(() => {
-      if (Date.now() - this.lastHeartbeat > this.heartbeatTimeout) {
-        console.error('[WS] Heartbeat timeout - closing connection');
-        this.ws.close();
+      const now = Date.now();
+      const lag = now - this.lastPong;
+
+      if (lag > this.heartbeatTimeout) {
+        console.warn('[WS] Heartbeat timeout - lag:', lag + 'ms');
+        this.isLoopHealthy = false;
+        if (this.ws) this.ws.close();
       }
-    }, 2000);
+
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send('ping');
+      }
+    }, this.heartbeatInterval);
   }
 
   stopHeartbeatMonitor() {
@@ -88,6 +102,34 @@ class WebSocketClient {
       clearInterval(this.intervals.heartbeat);
       delete this.intervals.heartbeat;
     }
+  }
+
+  startEventLoopMonitor() {
+    const monitor = () => {
+      const now = performance.now();
+      const delta = now - this.lastFrameTime;
+
+      if (delta > 50) {
+        this.eventLoopLag = delta;
+        this.isLoopHealthy = false;
+      }
+
+      this.lastFrameTime = now;
+      this.intervals.eventLoopMonitor = requestAnimationFrame(monitor);
+    };
+    this.intervals.eventLoopMonitor = requestAnimationFrame(monitor);
+  }
+
+  stopEventLoopMonitor() {
+    if (this.intervals.eventLoopMonitor) {
+      cancelAnimationFrame(this.intervals.eventLoopMonitor);
+      delete this.intervals.eventLoopMonitor;
+    }
+  }
+
+  isHealthy() {
+    const heartbeatOk = (Date.now() - this.lastPong) < this.heartbeatTimeout;
+    return this.isLoopHealthy && heartbeatOk;
   }
 
   sendPing() {

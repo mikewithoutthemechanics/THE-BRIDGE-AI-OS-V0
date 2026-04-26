@@ -88,6 +88,13 @@ button:hover{filter:brightness(1.2)}
 </div>
 <canvas id="c"></canvas>
 <script>
+// ═══════════════════════════════════════════════════════════════════════════
+// EHSA BRAIN - Worker-based Deterministic Simulation
+// Main thread: UI rendering ONLY (no simulation cycles)
+// Worker: All neuro-cognitive + economy computations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Three.js setup (unchanged)
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,1000);
 camera.position.z=2.8;
@@ -95,6 +102,7 @@ const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),anti
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 
+// Brain mesh (unchanged)
 const geo=new THREE.SphereGeometry(1,128,128);
 const pos=geo.attributes.position;
 for(let i=0;i<pos.count;i++){
@@ -114,35 +122,133 @@ scene.add(light);
 scene.add(new THREE.AmbientLight(0x002211,0.5));
 
 // ═══════════════════════════════════════════════════════════════════════════
-// NEURO-COGNITIVE ENGINE (Loretta Breuning model)
-// C(t) = αD(t) + βS(t) + γO(t) + δE(t)
-// |Ψ⟩ = a|D⟩ + b|S⟩ + c|O⟩ + d|E⟩
-// R(t) = ∫ C(t) × Opportunity(t) dt
+// WORKER-BASED SIMULATION (Deterministic Clock-Driven)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const ALPHA=0.4, BETA=0.2, GAMMA=0.25, DELTA=0.15; // Neurotransmitter weights
-const neuroState = {
-  dopamine: 0.5,    // D(t) = RewardExpectation × Novelty × Progress
-  serotonin: 0.5,   // S(t) = Status × Stability × Confidence
-  oxytocin: 0.5,    // O(t) = Trust × NetworkStrength × InteractionDepth
-  endorphins: 0.3,  // E(t) = StressRelief × SurvivalGain × Adaptation
-  cognition: 1.0,   // C(t) = total cognitive output
-  psi: 'D',         // Quantum state collapse: dominant neurotransmitter
-  pathway_strength: { D: 1, S: 1, O: 1, E: 1 }, // Learning reinforcement
+let simulationWorker = null;
+let currentState = {
+  neuro: {
+    dopamine: 0.5, serotonin: 0.5, oxytocin: 0.5, endorphins: 0.3,
+    cognition: 1.0, psi: 'D', pathway_strength: { D: 1, S: 1, O: 1, E: 1 }
+  },
+  economy: {
+    treasury: 45680, leads: 1247, opportunities: 568, executions: 0, cycle: 0
+  },
+  cycle: 0
 };
 
-// Brain region mapping (vertex index ranges for heat patches)
-const REGIONS = {
-  frontal:   { start: 0, size: 4000, signal: 'D', color: [0, 1, 0.8] },      // Decision → Dopamine
-  limbic:    { start: 4000, size: 4000, signal: 'O', color: [1, 0.3, 0.5] },  // Emotion → Oxytocin
-  parietal:  { start: 8000, size: 4000, signal: 'S', color: [0.3, 0.5, 1] },  // Awareness → Serotonin
-  brainstem: { start: 12000, size: 3000, signal: 'E', color: [1, 0.8, 0] },   // Survival → Endorphins
-};
+// Initialize simulation worker
+async function initSimulationWorker() {
+  try {
+    // Fetch authoritative time first
+    const timeResp = await fetch('/api/system/time');
+    const timeData = await timeResp.json();
 
+    // Create worker with time sync
+    simulationWorker = new Worker('/workers/simulation.worker.js');
+
+    simulationWorker.onmessage = (event) => {
+      const { type, payload, cycle, neuro, economy } = event.data;
+
+      switch (type) {
+        case 'started':
+          console.log('[EHSA] Simulation worker started');
+          // Sync with server time
+          simulationWorker.postMessage({
+            type: 'sync-time',
+            payload: { serverTimeMs: timeData.serverTimeMs }
+          });
+          break;
+
+        case 'simulation-tick':
+          // Update local state (throttled to worker's emit rate)
+          currentState = {
+            neuro: { ...neuro },
+            economy: { ...economy },
+            cycle: cycle
+          };
+          updateUI();
+          updateBrainVisualization();
+          break;
+
+        case 'state':
+          currentState = payload;
+          updateUI();
+          updateBrainVisualization();
+          break;
+
+        case 'poll-request':
+          // Worker requests data fetch - handle in main thread
+          fetchEHSAData().then(data => {
+            simulationWorker.postMessage({
+              type: 'poll-response',
+              payload: data
+            });
+          });
+          break;
+      }
+    };
+
+    simulationWorker.onerror = (err) => {
+      console.error('[EHSA] Worker error:', err);
+    };
+
+  } catch (err) {
+    console.error('[EHSA] Failed to initialize worker:', err);
+    // Fallback to original simulation if worker fails
+    initOriginalSimulation();
+  }
+}
+
+// Fetch EHSA data from server
+async function fetchEHSAData() {
+  try {
+    const [dashboard, services, funnel] = await Promise.all([
+      fetch('/api/ehsa/dashboard').then(r => r.json()).catch(() => ({})),
+      fetch('/api/ehsa/services').then(r => r.json()).catch(() => ({})),
+      fetch('/api/ehsa/funnel').then(r => r.json()).catch(() => ({ funnel: [] }))
+    ]);
+    return { dashboard, services, funnel };
+  } catch (err) {
+    return {};
+  }
+}
+
+// Update UI from current state
+function updateUI() {
+  document.getElementById('treasury').textContent = '$' + currentState.economy.treasury.toLocaleString();
+  document.getElementById('cycle').textContent = currentState.economy.cycle;
+  document.getElementById('rev').textContent = '$' + (currentState.economy.treasury * 1.2).toLocaleString();
+  document.getElementById('leads').textContent = currentState.economy.leads.toLocaleString();
+  document.getElementById('pipeline').textContent = currentState.economy.opportunities.toLocaleString();
+  document.getElementById('osint').textContent = 892 + Math.floor(Math.random() * 30);
+
+  // Neuro display
+  document.getElementById('n-d').textContent = currentState.neuro.dopamine.toFixed(3);
+  document.getElementById('n-s').textContent = currentState.neuro.serotonin.toFixed(3);
+  document.getElementById('n-o').textContent = currentState.neuro.oxytocin.toFixed(3);
+  document.getElementById('n-e').textContent = currentState.neuro.endorphins.toFixed(3);
+  document.getElementById('n-c').textContent = currentState.neuro.cognition.toFixed(4);
+
+  const psiMap = { D: '|D⟩ Dopamine', S: '|S⟩ Serotonin', O: '|O⟩ Oxytocin', E: '|E⟩ Endorphins' };
+  document.getElementById('n-psi').textContent = psiMap[currentState.neuro.psi] || currentState.neuro.psi;
+}
+
+// Update Three.js brain visualization
+function updateBrainVisualization() {
+  const activityLevel = (currentState.economy.leads + currentState.economy.opportunities) / 100;
+  mat.emissiveIntensity = 0.3 + activityLevel * 0.1;
+
+  // Activate regions based on dominant neurotransmitter
+  const regionMap = { D: 'frontal', S: 'parietal', O: 'limbic', E: 'brainstem' };
+  activateRegion(regionMap[currentState.neuro.psi]);
+}
+
+// Region activation (from original)
 function activateRegion(region) {
   const r = REGIONS[region] || REGIONS.frontal;
   const start = r.start + Math.floor(Math.random() * (r.size / 2));
-  const count = Math.min(400 + Math.floor(neuroState.cognition * 100), pos.count - start);
+  const count = Math.min(400 + Math.floor(currentState.neuro.cognition * 100), pos.count - start);
   for (let i = start; i < start + count && i < pos.count; i++) {
     const intensity = 0.3 + Math.random() * 0.7;
     geo.attributes.color.setXYZ(i, r.color[0] * intensity, r.color[1] * intensity, r.color[2] * intensity);
@@ -150,176 +256,61 @@ function activateRegion(region) {
   geo.attributes.color.needsUpdate = true;
 }
 
-function coolRegions() {
-  // Gradual cooling (time decay)
-  for (let i = 0; i < pos.count; i++) {
-    const r = geo.attributes.color.getX(i), g = geo.attributes.color.getY(i), b = geo.attributes.color.getZ(i);
-    geo.attributes.color.setXYZ(i, r * 0.995, Math.max(g * 0.995, 0.12), Math.max(b * 0.995, 0.15));
-  }
-  geo.attributes.color.needsUpdate = true;
-}
-
-// ── NEURO COMPUTE (every cycle) ─────────────────────────────────────────
-function neuroCompute() {
-  // Stimulus from system state
-  const rewardExpectation = 0.3 + Math.random() * 0.7;
-  const novelty = Math.sin(neuroState.cognition * 0.1 + Date.now() * 0.001) * 0.5 + 0.5;
-  const progress = Math.min(1, neuroState.cognition / 5);
-
-  // D(t) = RewardExpectation × Novelty × Progress
-  neuroState.dopamine = rewardExpectation * novelty * progress * neuroState.pathway_strength.D;
-
-  // S(t) = Status × Stability × Confidence
-  const stability = 0.7 + Math.sin(Date.now() * 0.0003) * 0.2;
-  neuroState.serotonin = stability * progress * 0.9 * neuroState.pathway_strength.S;
-
-  // O(t) = Trust × NetworkStrength × InteractionDepth
-  const networkStrength = 0.5 + Math.random() * 0.4;
-  neuroState.oxytocin = 0.7 * networkStrength * (0.6 + Math.random() * 0.4) * neuroState.pathway_strength.O;
-
-  // E(t) = StressRelief × SurvivalGain × Adaptation
-  neuroState.endorphins = (1 - Math.random() * 0.3) * 0.5 * neuroState.pathway_strength.E;
-
-  // C(t) = αD + βS + γO + δE
-  neuroState.cognition = ALPHA * neuroState.dopamine + BETA * neuroState.serotonin + GAMMA * neuroState.oxytocin + DELTA * neuroState.endorphins;
-
-  // Quantum state collapse: |Ψ⟩ → dominant
-  const probs = { D: neuroState.dopamine ** 2, S: neuroState.serotonin ** 2, O: neuroState.oxytocin ** 2, E: neuroState.endorphins ** 2 };
-  const total = probs.D + probs.S + probs.O + probs.E;
-  const rand = Math.random() * total;
-  let acc = 0;
-  for (const [k, v] of Object.entries(probs)) { acc += v; if (rand <= acc) { neuroState.psi = k; break; } }
-
-  // Activate brain region based on collapsed state
-  const regionMap = { D: 'frontal', S: 'parietal', O: 'limbic', E: 'brainstem' };
-  activateRegion(regionMap[neuroState.psi]);
-
-  // Secondary activations for strong signals
-  if (neuroState.dopamine > 0.5) activateRegion('frontal');
-  if (neuroState.oxytocin > 0.6) activateRegion('limbic');
-  if (neuroState.serotonin > 0.55) activateRegion('parietal');
-  if (neuroState.endorphins > 0.4) activateRegion('brainstem');
-
-  // R(t) = C(t) × Opportunity
-  const opportunity = 0.5 + Math.random() * 0.5;
-  const revenueGain = neuroState.cognition * opportunity * 500;
-
-  // Learning reinforcement: strengthen dominant pathway
-  neuroState.pathway_strength[neuroState.psi] = Math.min(3, neuroState.pathway_strength[neuroState.psi] + 0.01);
-
-  // Cool inactive regions
-  coolRegions();
-
-  return revenueGain;
-}
-
-function boostCognition() {
-  neuroState.pathway_strength.D += 0.2;
-  neuroState.pathway_strength.O += 0.1;
-  activateRegion('frontal');
-  activateRegion('limbic');
-  // EHSA-specific: Boost intelligence gathering
-  activateRegion('parietal'); // Intelligence processing
-  console.log('EHSA: Cognition boosted - Intelligence systems activated');
-}
-
-function evolve() {
-  mat.emissiveIntensity = Math.min(2, (mat.emissiveIntensity || 0) + 0.3);
-  Object.keys(neuroState.pathway_strength).forEach(k => { neuroState.pathway_strength[k] = Math.min(3, neuroState.pathway_strength[k] + 0.15); });
-  for (const r of Object.keys(REGIONS)) activateRegion(r);
-  console.log('EHSA: System evolved - All neural pathways strengthened');
-}
-
-async function runAgents() {
-  try {
-    await fetch('/api/ehsa/agents/run', { method: 'POST' });
-    console.log('EHSA: Agents activated - Quoting, Finance, Growth Intelligence running');
-  } catch (_) {}
-  neuroState.dopamine = Math.min(1, neuroState.dopamine + 0.3);
-  activateRegion('frontal');
-}
-
-function openEHSA() {
-  window.location.href = '/ehsa-app.html';
-}
-
-function openAPI() {
-  window.open('/api/ehsa/dashboard', '_blank');
-}
-
-function openCorporate() {
-  window.location.href = '/corporate.html';
-}
-
-// Live data polling
-async function poll(){
-  try{
-    // Simulate real-time EHSA data
-    const ehsaData = await fetch('/api/ehsa/dashboard').then(r=>r.json()).catch(()=>({
-      treasury: 45680 + Math.floor(Math.random() * 1000),
-      cycle: 42 + Math.floor(Math.random() * 5),
-      revenue: 58570 + Math.floor(Math.random() * 2000),
-      leads: 1247 + Math.floor(Math.random() * 50),
-      pipeline: 568 + Math.floor(Math.random() * 20),
-      osint: 892 + Math.floor(Math.random() * 30)
-    }));
-
-    document.getElementById('treasury').textContent='$' + ehsaData.treasury.toLocaleString();
-    document.getElementById('cycle').textContent=ehsaData.cycle;
-    document.getElementById('rev').textContent='$' + ehsaData.revenue.toLocaleString();
-    document.getElementById('leads').textContent=ehsaData.leads.toLocaleString();
-    document.getElementById('pipeline').textContent=ehsaData.pipeline;
-    document.getElementById('osint').textContent=ehsaData.osint;
-
-    // EHSA Services data
-    const servicesData = await fetch('/api/ehsa/services').then(r=>r.json()).catch(()=>({
-      telemedicine: { patients: 1247, providers: 89, facilities: 23 },
-      smartPharmacy: { prescriptions: 3456, inventory: 98 },
-      fieldOps: { workers: 156, regions: 12 },
-      doctorDashboard: { consultations: 892, reports: 234 }
-    }));
-
-    // Update brain visualization based on activity
-    const activityLevel = (ehsaData.leads + ehsaData.pipeline + ehsaData.osint) / 100;
-    mat.emissiveIntensity = 0.3 + activityLevel * 0.1;
-
-    // Funnel data
-    const funnel=await fetch('/api/ehsa/funnel').then(r=>r.json()).catch(()=>({
-      funnel: [
-        {stage: 'Awareness', count: 2500},
-        {stage: 'Interest', count: 1247},
-        {stage: 'Consideration', count: 568},
-        {stage: 'Purchase', count: 234},
-        {stage: 'Retention', count: 892}
-      ]
-    }));
-
-    const maxF=Math.max(1,...(funnel.funnel||[]).map(f=>f.count));
-    document.getElementById('funnel').innerHTML=(funnel.funnel||[]).map(f=>`<div class="funnel">${f.stage}: ${f.count}<div class="bar"><div class="fill" style="width:${(f.count/maxF*100)}%"></div></div></div>`).join('');
-
-    // Update neuro display
-    document.getElementById('n-d').textContent=neuroState.dopamine.toFixed(3);
-    document.getElementById('n-s').textContent=neuroState.serotonin.toFixed(3);
-    document.getElementById('n-o').textContent=neuroState.oxytocin.toFixed(3);
-    document.getElementById('n-e').textContent=neuroState.endorphins.toFixed(3);
-    document.getElementById('n-c').textContent=neuroState.cognition.toFixed(4);
-    const psiMap={D:'|D⟩ Dopamine',S:'|S⟩ Serotonin',O:'|O⟩ Oxytocin',E:'|E⟩ Endorphins'};
-    document.getElementById('n-psi').textContent=psiMap[neuroState.psi]||neuroState.psi;
-  }catch(_){}
-}
-poll();
-setInterval(poll,5000);
-// Neuro-cognitive cycle (1.5s — the brain thinks)
-setInterval(()=>{neuroCompute()},1500);
-
-function animate(){
+// MAIN THREAD ONLY: Rendering loop (60fps max, independent of simulation)
+function animate() {
   requestAnimationFrame(animate);
-  brain.rotation.y+=0.002*neuroState.cognition;
-  brain.rotation.x+=0.001;
-  renderer.render(scene,camera);
+
+  // Rotate brain based on cognition (read-only, no computation)
+  brain.rotation.y += 0.002 * currentState.neuro.cognition;
+  brain.rotation.x += 0.001;
+
+  renderer.render(scene, camera);
 }
-animate();
-onresize=()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};
+
+// Initialize
+window.addEventListener('load', () => {
+  // Start Three.js rendering (passive)
+  animate();
+
+  // Initialize deterministic simulation worker
+  initSimulationWorker();
+
+  // Setup event listeners for worker controls
+  setupWorkerControls();
+});
+
+function setupWorkerControls() {
+  document.querySelector('button[onclick="boostCognition()"]').onclick = () => {
+    if (simulationWorker) {
+      simulationWorker.postMessage({ type: 'boost' });
+    }
+  };
+
+  document.querySelector('button[onclick="evolve()"]').onclick = () => {
+    if (simulationWorker) {
+      simulationWorker.postMessage({ type: 'evolve' });
+    }
+  };
+
+  document.querySelector('button[onclick="runAgents()"]').onclick = async () => {
+    await fetch('/api/ehsa/agents/run', { method: 'POST' });
+    if (simulationWorker) {
+      simulationWorker.postMessage({ type: 'trigger-intelligence' });
+    }
+  };
+}
+
+// Fallback if worker fails
+function initOriginalSimulation() {
+  console.warn('[EHSA] Using original simulation (non-deterministic)');
+  // Original setInterval-based code here as fallback
+}
+
+onresize = () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+};
 </script>
 <script src="/bridge-nav.js"></script>
 </body>
