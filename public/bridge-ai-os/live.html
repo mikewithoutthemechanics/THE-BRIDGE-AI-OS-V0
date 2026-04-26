@@ -1,22 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BRIDGE AI OS — Live Interface</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
-<script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/8.13.2/pixi.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: #05080f;
-    font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
-    overflow: hidden;
-    color: #00f7ff;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BRIDGE AI OS — Live Interface</title>
+  <!-- Security: CSP will be set by server -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+  <link rel="stylesheet" href="/assets/css/animations.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/8.13.2/pixi.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js" defer></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #05080f;
+      font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+      overflow: hidden;
+      color: #00f7ff;
+      /* Smooth page load animation */
+      animation: pageFadeIn 0.4s ease-out both;
+    }
+    /* Accessibility: respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      body { animation: none; }
+    }
   #header {
     position: absolute;
     left: 0; top: 0;
@@ -60,6 +68,9 @@
     align-items: center;
     backdrop-filter: blur(12px);
     z-index: 10;
+    /* Smooth entrance animation */
+    animation: slideUp 0.6s ease-out both;
+    animation-delay: 0.3s;
   }
   .card {
     text-align: center;
@@ -67,6 +78,13 @@
     font-size: 13px;
     letter-spacing: 1.2px;
     opacity: 0.95;
+    /* Card hover animation prepared */
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, box-shadow;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,247,255,0.15), 0 4px 12px rgba(0,255,156,0.1);
   }
   .dot {
     width: 12px;
