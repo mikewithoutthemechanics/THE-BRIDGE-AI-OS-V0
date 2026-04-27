@@ -80,6 +80,21 @@
     .cta-panel p{font-size:.78rem;color:var(--dim);margin-bottom:.75rem;line-height:1.5}
     .cta-panel strong{color:var(--text)}
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
 <div class="header">
@@ -327,6 +342,7 @@ document.getElementById('promptInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runDemo(); }
 });
 </script>
+<script src="/nav-routes.js"></script>
 <script src="/bridge-nav.js"></script>
 </body>
 </html>

@@ -81,6 +81,15 @@
     document.documentElement.setAttribute('data-theme', resolved);
   })();
 
+  // ── Global mobile CSS (idempotent) ─────────────────────────────────────────
+  if (!document.querySelector("#bridge-mobile-css")) {
+    var mLink = document.createElement("link");
+    mLink.id = "bridge-mobile-css";
+    mLink.rel = "stylesheet";
+    mLink.href = "/mobile.css";
+    document.head.appendChild(mLink);
+  }
+
   // ── Fonts (idempotent) ────────────────────────────────────────────────────
   if (!document.querySelector('#bridge-fonts')) {
     var lnk = document.createElement('link');
@@ -117,6 +126,15 @@
     '#bridge-nav-drawer .bn-signout:hover{background:rgba(255,60,60,.08)}',
     '@media(max-width:820px){#bridge-nav .bn-links{display:none}#bridge-nav .bn-hamburger{display:flex}#bridge-nav .bn-status{display:none}}',
     '@media(max-width:480px){#bridge-nav{padding:0 12px}#bridge-nav .bn-cta{font-size:.7rem;padding:4px 10px}}',
+    '#bridge-nav-drawer .bn-section{margin:4px 0 2px}',
+    '#bridge-nav-drawer .bn-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 4px;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(99,255,218,0.4);cursor:pointer;user-select:none;-webkit-user-select:none}',
+    '#bridge-nav-drawer .bn-section-hdr:hover{color:rgba(99,255,218,.7)}',
+    '#bridge-nav-drawer .bn-section-body{display:flex;flex-direction:column;gap:1px}',
+    '#bridge-nav-drawer .bn-section-body.collapsed{display:none}',
+    '#bridge-nav-drawer .bn-section-arrow{font-size:.6rem;transition:transform .15s}',
+    '#bridge-nav-drawer .bn-section-hdr.open .bn-section-arrow{transform:rotate(0deg)}',
+    '#bridge-nav-drawer .bn-section-hdr .bn-section-arrow{transform:rotate(-90deg)}',
+    '#bridge-nav-drawer .bn-primary-label{padding:4px 14px 2px;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(99,255,218,0.4)}',
   ].join('\n');
 
   // ── Complete Breadcrumb Config ──────────────────────────────────────────────
@@ -322,19 +340,54 @@
         '</button>' +
       '</div>';
 
-    // -- Drawer (full route list, all visible routes) --
-    var drawerLinksHtml = visibleRoutes.map(function (r) {
-      return '<a class="bn-link' + (isActive(r.href) ? ' active' : '') + '" href="' + r.href + '">' + r.label + '</a>';
+    // -- Drawer (grouped, UX-friendly mobile navigation) --
+    var PRIMARY_HREFS = ['/home', '/economy', '/wallet', '/agents', '/billing', '/settings', '/admin-hub'];
+    var primaryRoutes = visibleRoutes.filter(function(r) { return PRIMARY_HREFS.indexOf(r.href) !== -1; });
+    // Sort primary routes in defined order
+    primaryRoutes.sort(function(a,b) { return PRIMARY_HREFS.indexOf(a.href) - PRIMARY_HREFS.indexOf(b.href); });
+    var primaryHtml = primaryRoutes.length
+      ? '<div class="bn-primary-label">Quick Access</div>' + primaryRoutes.map(function(r) {
+          return '<a class="bn-link' + (isActive(r.href) ? ' active' : '') + '" href="' + r.href + '">' + r.label + '</a>';
+        }).join('')
+      : visibleRoutes.slice(0, 6).map(function(r) {
+          return '<a class="bn-link' + (isActive(r.href) ? ' active' : '') + '" href="' + r.href + '">' + r.label + '</a>';
+        }).join('');
+
+    // Group remaining routes by category
+    var SECTIONS = [
+      { title: 'Business', hrefs: ['/crm','/customers','/invoicing','/quotes','/leadgen','/leads','/marketing','/tickets','/legal','/workforce','/affiliate'] },
+      { title: 'Economy',  hrefs: ['/economy','/treasury-dashboard','/wallet','/tokenomics','/defi','/trading','/banks','/vault','/marketplace'] },
+      { title: 'Agents',   hrefs: ['/agents','/avatar','/twin','/neurolink','/topology','/registry','/command-center'] },
+      { title: 'Platform', hrefs: ['/ehsa','/aurora','/ban','/ubi','/aid','/supac','/abaas'] },
+      { title: 'System',   hrefs: ['/control','/terminal','/logs','/system-status-dashboard','/infra'] },
+      { title: 'Admin',    hrefs: ['/admin-hub','/admin','/admin-command','/admin-revenue','/intelligence','/executive-dashboard'] },
+    ];
+
+    var sectionsHtml = SECTIONS.map(function(sec) {
+      var sectionRoutes = sec.hrefs.map(function(h) {
+        return visibleRoutes.find(function(r) { return r.href === h; });
+      }).filter(Boolean);
+      if (!sectionRoutes.length) return '';
+      var linksHtml = sectionRoutes.map(function(r) {
+        return '<a class="bn-link' + (isActive(r.href) ? ' active' : '') + '" href="' + r.href + '">' + r.label + '</a>';
+      }).join('');
+      return '<div class="bn-section">' +
+        '<div class="bn-section-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('collapsed')">' +
+        sec.title + '<span class="bn-section-arrow">▾</span></div>' +
+        '<div class="bn-section-body collapsed">' + linksHtml + '</div>' +
+        '</div>';
     }).join('');
 
     var signOutHtml = isLoggedIn
       ? '<div class="bn-divider"></div><button class="bn-signout" id="bn-signout">Sign Out</button>'
-      : '';
+      : '<div class="bn-divider"></div><a class="bn-link" href="/onboarding">Sign In / Join</a>';
+
+    var divider = '<div class="bn-divider"></div>';
 
     var drawer = document.createElement('div');
     drawer.id = 'bridge-nav-drawer';
     drawer.setAttribute('aria-label', 'Mobile navigation');
-    drawer.innerHTML = drawerLinksHtml + signOutHtml;
+    drawer.innerHTML = primaryHtml + divider + sectionsHtml + signOutHtml;
 
     // Prepend both so they sit above page content
     var body = document.body;

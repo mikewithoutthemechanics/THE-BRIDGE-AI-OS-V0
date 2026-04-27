@@ -123,6 +123,21 @@ tr:hover td{background:var(--surface2)}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .empty{text-align:center;padding:2.5rem;color:var(--text3);font-size:.83rem}
 </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
 
@@ -524,5 +539,7 @@ document.getElementById('provModal').addEventListener('click', e => { if (e.targ
 loadAll();
 setInterval(loadStats, 30000);
 </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

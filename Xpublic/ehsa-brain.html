@@ -25,6 +25,14 @@ button:hover{filter:brightness(1.2)}
 #links a:hover{color:#00ffd5}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
 </head>
 <body>
 <div id="ui">
@@ -307,5 +315,7 @@ function animate(){
 animate();
 onresize=()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};
 </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

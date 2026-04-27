@@ -32,6 +32,21 @@
         .endpoint .method { background: #7b2cff; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; margin-right: 10px; }
         .endpoint .path { font-family: monospace; color: #00d4ff; }
     </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
     <div class="hero">
@@ -115,5 +130,7 @@
             <p style="margin-top:10px;color:#666">List available services</p>
         </div>
     </div>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

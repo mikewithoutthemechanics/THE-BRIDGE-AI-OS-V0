@@ -1,0 +1,105 @@
+/* Bridge AI OS — Global Mobile Responsive Overrides */
+/* Loaded by bridge-mobile-base style tag on every page */
+
+/* ── Base reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body { margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh; }
+
+/* ── Responsive images + media ──────────────────────────────────── */
+img, video, canvas, svg, iframe { max-width: 100%; height: auto; }
+table { max-width: 100%; overflow-x: auto; display: block; }
+
+/* ── Container utility ──────────────────────────────────────────── */
+.container, .content, .main, main, [class*="container"] {
+  max-width: 100%;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+}
+
+/* ── Grid responsiveness ────────────────────────────────────────── */
+@media (max-width: 768px) {
+  [class*="grid-"] { grid-template-columns: 1fr !important; }
+  [class*="col-"]  { width: 100% !important; float: none !important; }
+  [style*="display:grid"], [style*="display: grid"] { grid-template-columns: 1fr !important; }
+}
+
+/* ── Flex wrapping ──────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  [class*="flex-row"], .row { flex-wrap: wrap !important; }
+  [class*="flex-"] { flex: 1 1 auto !important; min-width: 0; }
+}
+
+/* ── Typography scale ───────────────────────────────────────────── */
+@media (max-width: 820px) {
+  h1 { font-size: clamp(1.4rem, 5vw, 2.5rem) !important; }
+  h2 { font-size: clamp(1.15rem, 4vw, 1.8rem) !important; }
+  h3 { font-size: clamp(1rem, 3.5vw, 1.4rem) !important; }
+  body { font-size: 15px; }
+  .desktop-only { display: none !important; }
+}
+
+@media (max-width: 480px) {
+  body { font-size: 14px; }
+  .mobile-stack { flex-direction: column !important; }
+  .mobile-full  { width: 100% !important; }
+  input, select, textarea, button { font-size: 16px !important; } /* Prevent iOS zoom */
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="number"], input[type="tel"], textarea {
+    width: 100% !important; max-width: 100%;
+  }
+}
+
+/* ── Sidebar / side-panel collapse ─────────────────────────────── */
+@media (max-width: 900px) {
+  .sidebar, [class*="sidebar"], aside {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(99,255,218,0.1);
+  }
+  .main-content, [class*="main-content"] { margin-left: 0 !important; }
+}
+
+/* ── Cards responsive ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  [class*="card"] {
+    border-radius: 8px !important;
+    padding: 16px !important;
+  }
+}
+
+/* ── Modal / overlay safe area ──────────────────────────────────── */
+@media (max-width: 480px) {
+  [class*="modal"], [class*="dialog"], [role="dialog"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+  }
+}
+
+/* ── Touch targets ──────────────────────────────────────────────── */
+@media (max-width: 820px) {
+  a, button, [role="button"], [tabindex] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  nav a, #bridge-nav a { min-height: 32px; min-width: unset; }
+}
+
+/* ── Scrollable tables ──────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── Hide scrollbars on mobile (aesthetic) ──────────────────────── */
+@media (max-width: 820px) {
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(99,255,218,0.2); border-radius: 2px; }
+}
+
+/* ── Safe area insets for notched phones ────────────────────────── */
+body { padding-bottom: env(safe-area-inset-bottom, 0); }
