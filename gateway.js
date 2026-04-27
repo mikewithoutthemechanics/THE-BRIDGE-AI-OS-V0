@@ -2927,7 +2927,7 @@ app.post('/api/subscribe', express.json(), async (req, res) => {
       return res.status(500).json({ ok: false, error: error.message });
     }
     // Also tag any matching user in users table
-    await sb.from('users').update({ newsletter: true }).eq('email', email.toLowerCase().trim()).catch(() => {});
+    try { await sb.from('users').update({ newsletter: true }).eq('email', email.toLowerCase().trim()); } catch (_) {}
     res.json({ ok: true, message: 'Subscribed successfully' });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
@@ -3490,6 +3490,170 @@ app.post('/api/cognitive/execute', express.json(), (req, res) => {
   pr.write(body); pr.end();
 });
 
+
+
+// /api/admin/users — list users (superadmin only, served directly from gateway)
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const { supabaseAdmin: sb, isConfigured: ic } = require('./lib/supabase');
+    if (!ic || !sb) return res.json({ ok: true, users: [], count: 0 });
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const offset = parseInt(req.query.offset) || 0;
+    const { data, error } = await sb
+      .from('users')
+      .select('id, email, role')
+      .range(offset, offset + limit - 1);
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    res.json({ ok: true, users: data || [], count: (data || []).length });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// /api/admin/users/:userId/tier — update user tier
+app.patch('/api/admin/users/:userId/tier', express.json(), async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { tier, plan } = req.body || {};
+    const { supabaseAdmin: sb, isConfigured: ic } = require('./lib/supabase');
+    if (!ic || !sb) return res.status(503).json({ ok: false, error: 'db unavailable' });
+    const update = {};
+    if (tier) update.role = tier;
+    if (plan) update.plan = plan;
+    const { error } = await sb.from('users').update(update).eq('id', userId);
+    if (error) return res.status(500).json({ ok: false, error: error.message });
+    res.json({ ok: true, userId, updated: update });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// /api/admin/wallet/credit — credit a user wallet (superadmin)
+app.post('/api/admin/wallet/credit', express.json(), async (req, res) => {
+  try {
+    const { user_email, amount_zar, amount_brdg, reference } = req.body || {};
+    if (!user_email) return res.status(400).json({ ok: false, error: 'user_email required' });
+    const ledger = require('./lib/agent-ledger');
+    const brdgAmt = amount_brdg || (amount_zar ? amount_zar * 10 : 0);
+    if (brdgAmt <= 0) return res.status(400).json({ ok: false, error: 'amount_brdg or amount_zar required' });
+    await ledger.credit(user_email, brdgAmt, 'admin_credit', reference || 'admin:wallet:credit');
+    res.json({ ok: true, user_email, brdg_credited: brdgAmt, reference: reference || 'admin:wallet:credit' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// /api/admin/plan-requests — list plan upgrade requests
+app.get('/api/admin/plan-requests', async (_req, res) => {
+  try {
+    const { supabaseAdmin: sb, isConfigured: ic } = require('./lib/supabase');
+    if (!ic || !sb) return res.json({ ok: true, requests: [] });
+    const { data } = await sb
+      .from('plan_requests')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
+      .catch(() => ({ data: [] }));
+    res.json({ ok: true, requests: data || [] });
+  } catch (e) { res.json({ ok: true, requests: [] }); }
+});
+
+// /api/admin/system-report — live system health report
+app.get('/api/admin/system-report', (_req, res) => {
+  const os = require('os');
+  res.json({
+    ok: true,
+    report: {
+      generated_at: new Date().toISOString(),
+      uptime_seconds: os.uptime(),
+      memory: { total_mb: Math.round(os.totalmem()/1e6), free_mb: Math.round(os.freemem()/1e6) },
+      load: os.loadavg(),
+      platform: os.platform(),
+      node_version: process.version,
+    }
+  });
+});
+
+// /api/tiers — subscription tier definitions
+app.get('/api/tiers', async (_req, res) => {
+  const STATIC_TIERS = [
+    { id: 'free',       name: 'Free',       price_zar: 0,    price_usd: 0,   max_apps: 1,  max_leads: 50,   features: ['1 app','50 leads/mo','Basic dashboard'] },
+    { id: 'starter',    name: 'Starter',    price_zar: 1490, price_usd: 79,  max_apps: 5,  max_leads: 1000, features: ['5 apps','1k leads/mo','Analytics','API access'] },
+    { id: 'pro',        name: 'Pro',        price_zar: 4690, price_usd: 249, max_apps: 20, max_leads: 10000,features: ['20 apps','10k leads/mo','Full CRM','Automation','Priority support'] },
+    { id: 'enterprise', name: 'Enterprise', price_zar: 18800,price_usd: 999, max_apps: -1, max_leads: -1,   features: ['Unlimited apps','Unlimited leads','Custom twin','SLA','Dedicated support'] },
+  ];
+  try {
+    const { supabaseAdmin: sb, isConfigured: ic } = require('./lib/supabase');
+    if (ic && sb) {
+      const { data } = await sb.from('tier_config').select('*').order('price_zar', { ascending: true }).catch(() => ({ data: null }));
+      if (data && data.length > 0) return res.json({ ok: true, tiers: data });
+    }
+  } catch (_) {}
+  res.json({ ok: true, tiers: STATIC_TIERS });
+});
+
+
+// /api/admin/* — proxy to super-brain (admin routes defined in brain.js)
+app.use('/api/admin', (req, res) => {
+  const http = require('http');
+  const fwdPath = '/api/admin' + (req.url === '/' ? '' : req.url);
+  const opts = {
+    hostname: '127.0.0.1', port: 8000, path: fwdPath, method: req.method,
+    headers: { ...req.headers, host: '127.0.0.1:8000' },
+  };
+  const pr = http.request(opts, up => { res.writeHead(up.statusCode, up.headers); up.pipe(res); });
+  pr.on('error', () => res.status(502).json({ ok: false, error: 'admin service unavailable' }));
+  if (req.method !== 'GET' && req.body) { const b = JSON.stringify(req.body); pr.write(b); }
+  pr.end();
+});
+
+// /api/tiers — proxy to brain (tier config endpoint)
+app.get('/api/tiers', (req, res) => {
+  const http = require('http');
+  const pr = http.request({ hostname: '127.0.0.1', port: 8000, path: '/api/tiers', method: 'GET', headers: { ...req.headers, host: '127.0.0.1:8000' } }, up => { res.writeHead(up.statusCode, up.headers); up.pipe(res); });
+  pr.on('error', () => res.json({ ok: true, tiers: [
+    { id: 'free',       name: 'Free',       price: 0,   features: ['1 app', '50 leads/mo', 'Basic dashboard'] },
+    { id: 'starter',    name: 'Starter',    price: 79,  features: ['5 apps', '1k leads/mo', 'Analytics', 'API'] },
+    { id: 'pro',        name: 'Pro',        price: 249, features: ['20 apps', '10k leads/mo', 'CRM', 'Full API', 'Automation'] },
+    { id: 'enterprise', name: 'Enterprise', price: 999, features: ['Unlimited', 'SLA', 'Custom twin', 'Dedicated support'] },
+  ]}));
+  pr.end();
+});
+
+// /api/notifications — in-app notifications for current user
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const token = (req.headers.authorization || '').replace(/^Bearer\s+/, '') || req.cookies?.bridge_token || '';
+    if (!token) return res.json({ ok: true, notifications: [], count: 0 });
+    const { supabaseAdmin: sb, isConfigured: ic } = require('./lib/supabase');
+    if (!ic || !sb) return res.json({ ok: true, notifications: [], count: 0 });
+    // Get user from token
+    const { data: { user } } = await sb.auth.getUser(token).catch(() => ({ data: { user: null } }));
+    if (!user) return res.json({ ok: true, notifications: [], count: 0 });
+    const { data: rows } = await sb.from('notifications')
+      .select('id, type, title, body, read, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .catch(() => ({ data: [] }));
+    res.json({ ok: true, notifications: rows || [], count: (rows || []).length });
+  } catch (e) {
+    res.json({ ok: true, notifications: [], count: 0 });
+  }
+});
+
+// /api/platform/billing/initiate — billing initiation (proxy to brain)
+app.post('/api/platform/billing/initiate', express.json(), (req, res) => {
+  const http = require('http');
+  const body = JSON.stringify(req.body || {});
+  const pr = http.request({
+    hostname: '127.0.0.1', port: 8000,
+    path: '/api/platform/billing/initiate', method: 'POST',
+    headers: { ...req.headers, host: '127.0.0.1:8000', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+  }, up => { let d = ''; up.on('data', c => d += c); up.on('end', () => { try { res.json(JSON.parse(d)); } catch { res.json({ ok: false, error: 'parse error' }); } }); });
+  pr.on('error', () => res.status(502).json({ ok: false, error: 'billing service unavailable' }));
+  pr.write(body); pr.end();
+});
 
 // LIVE SITEMAP API — must be mounted BEFORE the /api/*path catch-all proxy
 // below, otherwise GET /api/admin/sitemap matches isDashboardApi() and gets
