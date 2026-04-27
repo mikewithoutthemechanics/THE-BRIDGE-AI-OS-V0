@@ -2,149 +2,339 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Bridge AI OS — Platform Network — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://go.ai-os.co.za/platforms">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://go.ai-os.co.za/platforms">
-<meta property="og:title" content="Bridge AI OS — Platform Network">
-<meta property="og:description" content="Bridge AI OS — Platform Network — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
-<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
-<meta property="og:site_name" content="Bridge AI OS">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Bridge AI OS — Platform Network">
-<meta name="twitter:description" content="Bridge AI OS — Platform Network — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
-<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bridge AI OS — Platform Network</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Bridge AI Network — 10 platforms, 6 payment rails, 1 unified treasury.">
+<title>Bridge AI Network — Platform Overview</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#050a0f;--s:#0d1620;--s2:#111d2b;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--t:#c8dce8;--d:#4d6678;--p:#a78bfa;--o:#fb923c}
-body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}
-.c{max-width:1200px;margin:0 auto;padding:1.5rem}
-h1{color:var(--a);font-size:1.3rem;letter-spacing:.2em}
-.sub{color:var(--d);font-size:.72rem;margin-bottom:.5rem}
-.motto{color:var(--g);font-size:.85rem;font-style:italic;margin-bottom:1.5rem;border-left:3px solid var(--g);padding-left:.8rem}
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;margin-bottom:1.5rem}
-.stat{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.7rem;text-align:center}
-.stat .v{font-size:1.3rem;font-weight:700;color:var(--g)}
-.stat .l{font-size:.6rem;color:var(--d);letter-spacing:.1em;margin-top:.2rem}
-h2{color:var(--a);font-size:.85rem;letter-spacing:.12em;margin:1.5rem 0 .6rem;border-bottom:1px solid var(--b);padding-bottom:.3rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:.8rem}
-.card{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;transition:border-color .2s;cursor:pointer}
-.card:hover{border-color:var(--a)}
-.card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
-.card h3{font-size:.9rem;color:var(--a)}
-.badge{font-size:.55rem;padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:.05em}
-.badge.live{background:rgba(0,229,123,.15);color:var(--g);border:1px solid var(--g)}
-.badge.ready{background:rgba(0,200,255,.15);color:var(--a);border:1px solid var(--a)}
-.badge.plan{background:rgba(255,209,102,.15);color:var(--y);border:1px solid var(--y)}
-.card .desc{font-size:.72rem;color:var(--d);line-height:1.5;margin-bottom:.5rem}
-.card .domain{font-size:.65rem;color:var(--p);margin-bottom:.4rem}
-.card .rails{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.4rem}
-.rail{font-size:.55rem;padding:1px 5px;border-radius:3px;background:rgba(0,229,123,.08);color:var(--g);border:1px solid rgba(0,229,123,.2)}
-.rail.fiat{color:var(--a);border-color:rgba(0,200,255,.2);background:rgba(0,200,255,.08)}
-.rail.crypto{color:var(--o);border-color:rgba(251,146,60,.2);background:rgba(251,146,60,.08)}
-.card .pool{font-size:.65rem;color:var(--d);display:flex;gap:.5rem;flex-wrap:wrap}
-.pool span{color:var(--t)}
-.spine{background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:1rem;margin:1.5rem 0}
-.spine h3{color:var(--g);font-size:.85rem;margin-bottom:.5rem}
-.spine .flow{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;font-size:.7rem}
-.spine .node{background:var(--s);border:1px solid var(--b);padding:3px 8px;border-radius:4px;color:var(--a)}
-.spine .arrow{color:var(--d)}
-.net{background:var(--s);border:1px solid var(--g);border-radius:8px;padding:1rem;margin-top:1rem;text-align:center}
-.net h3{color:var(--g);margin-bottom:.3rem}
-.net .val{font-size:2rem;font-weight:800;color:var(--g)}
-.net .sub{font-size:.7rem;color:var(--d)}
-</style>
+  :root {
+    --bg:    #04080f;
+    --s1:    #080f1a;
+    --s2:    #0c1524;
+    --b:     #162338;
+    --b2:    #1e3050;
+    --g:     #00e57b;
+    --g2:    #00c864;
+    --a:     #00c8ff;
+    --a2:    #0099cc;
+    --p:     #a78bfa;
+    --o:     #fb923c;
+    --y:     #fbbf24;
+    --r:     #f87171;
+    --t:     #cbd5e1;
+    --d:     #475569;
+    --d2:    #334155;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--t); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
 
-<style id="bridge-mobile-base">
-*{box-sizing:border-box}
-body{margin:0;padding:0;overflow-x:hidden}
-img,video,iframe,table{max-width:100%}
-@media(max-width:820px){
-  body{font-size:15px}
-  .desktop-only{display:none!important}
-}
-@media(max-width:480px){
-  body{font-size:14px}
-  h1{font-size:1.5rem!important}
-  h2{font-size:1.25rem!important}
-}
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #04080f 0%, #080f1a 50%, #04080f 100%);
+    border-bottom: 1px solid var(--b);
+    padding: 3rem 1.5rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,229,123,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(0,229,123,0.08); border: 1px solid rgba(0,229,123,0.2);
+    border-radius: 999px; padding: 4px 14px; font-size: .72rem;
+    font-weight: 600; color: var(--g); letter-spacing: .08em;
+    margin-bottom: 1.2rem;
+  }
+  .hero-badge .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--g); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+  .hero h1 {
+    font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, var(--g) 60%, var(--a) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; letter-spacing: -.02em; margin-bottom: .6rem;
+  }
+  .hero .tagline {
+    font-size: clamp(.8rem, 2vw, 1rem); color: var(--d); letter-spacing: .15em;
+    text-transform: uppercase; margin-bottom: .8rem;
+  }
+  .hero .motto {
+    font-size: clamp(.9rem, 2vw, 1.1rem); color: var(--g); font-style: italic;
+    margin-bottom: 2rem;
+  }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: .8rem; max-width: 900px; margin: 0 auto 0;
+  }
+  .stat {
+    background: var(--s1); border: 1px solid var(--b);
+    border-radius: 12px; padding: .9rem .6rem; text-align: center;
+    transition: border-color .2s, transform .2s;
+  }
+  .stat:hover { border-color: var(--g); transform: translateY(-2px); }
+  .stat .v {
+    font-size: clamp(1.2rem, 3vw, 1.6rem); font-weight: 800;
+    color: var(--g); font-variant-numeric: tabular-nums;
+    line-height: 1.1; min-height: 1.8rem;
+  }
+  .stat .v.loading { color: var(--d); animation: shimmer 1.5s infinite; }
+  @keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:1} }
+  .stat .l { font-size: .6rem; color: var(--d); letter-spacing: .12em; margin-top: .3rem; text-transform: uppercase; }
+
+  /* ── Section headings ── */
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .section-title {
+    display: flex; align-items: center; gap: .75rem;
+    font-size: .72rem; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--d);
+    border-bottom: 1px solid var(--b); padding-bottom: .75rem; margin-bottom: 1.25rem;
+  }
+  .section-title .accent { width: 3px; height: 14px; background: var(--g); border-radius: 2px; }
+
+  /* ── Treasury spine ── */
+  .spine {
+    background: var(--s1); border: 1px solid var(--b); border-radius: 16px;
+    padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+  }
+  .spine-title { font-size: .75rem; font-weight: 700; color: var(--g); letter-spacing: .1em; margin-bottom: .75rem; text-transform: uppercase; }
+  .spine-flow {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; font-size: .72rem;
+  }
+  .snode {
+    background: var(--s2); border: 1px solid var(--b2); color: var(--a);
+    padding: 4px 10px; border-radius: 6px; white-space: nowrap; font-weight: 500;
+  }
+  .snode.green { color: var(--g); border-color: rgba(0,229,123,.2); background: rgba(0,229,123,.04); }
+  .sarr { color: var(--d); font-size: .8rem; }
+  .spine-buckets {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; margin-top: 1rem;
+  }
+  .bucket {
+    background: var(--s2); border: 1px solid var(--b); border-radius: 8px;
+    padding: .6rem; text-align: center;
+  }
+  .bucket .pct { font-size: 1.1rem; font-weight: 800; color: var(--g); }
+  .bucket .bname { font-size: .6rem; color: var(--d); letter-spacing: .08em; text-transform: uppercase; margin-top: .2rem; }
+  .bucket .bval { font-size: .72rem; color: var(--t); margin-top: .15rem; font-variant-numeric: tabular-nums; }
+
+  /* ── Platform grid ── */
+  .platform-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .pcard {
+    background: var(--s1); border: 1px solid var(--b);
+    border-radius: 14px; padding: 1.25rem; cursor: pointer;
+    transition: border-color .2s, transform .2s, box-shadow .2s;
+    position: relative; overflow: hidden;
+  }
+  .pcard::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--g), var(--a));
+    opacity: 0; transition: opacity .2s;
+  }
+  .pcard:hover { border-color: rgba(0,229,123,.4); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,229,123,.08); }
+  .pcard:hover::before { opacity: 1; }
+  .pcard-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .75rem; }
+  .pcard h3 { font-size: .95rem; font-weight: 700; color: #fff; line-height: 1.2; }
+  .pcard .pdomain { font-size: .65rem; color: var(--p); margin-top: .15rem; }
+  .status-badge {
+    font-size: .55rem; padding: 3px 8px; border-radius: 999px;
+    font-weight: 700; letter-spacing: .06em; white-space: nowrap; flex-shrink: 0;
+  }
+  .status-badge.live   { background: rgba(0,229,123,.12); color: var(--g); border: 1px solid rgba(0,229,123,.3); }
+  .status-badge.ready  { background: rgba(0,200,255,.12); color: var(--a); border: 1px solid rgba(0,200,255,.3); }
+  .status-badge.plan   { background: rgba(251,191,36,.12); color: var(--y); border: 1px solid rgba(251,191,36,.3); }
+  .pcard .desc { font-size: .75rem; color: var(--d); line-height: 1.6; margin-bottom: .75rem; }
+  .rails-row { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .6rem; }
+  .rail-tag {
+    font-size: .58rem; padding: 2px 7px; border-radius: 4px; font-weight: 600;
+    letter-spacing: .03em;
+  }
+  .rail-tag.fiat   { background: rgba(0,200,255,.08);  color: var(--a); border: 1px solid rgba(0,200,255,.2); }
+  .rail-tag.crypto { background: rgba(251,146,60,.08); color: var(--o); border: 1px solid rgba(251,146,60,.2); }
+  .rail-tag.token  { background: rgba(167,139,250,.08); color: var(--p); border: 1px solid rgba(167,139,250,.2); }
+  .pools-row { font-size: .65rem; color: var(--d); }
+  .pools-row .pname { color: var(--t); }
+  .revenue-row { font-size: .65rem; color: var(--d); margin-top: .3rem; }
+  .revenue-row .rev { color: var(--g2); }
+
+  /* ── Rail mesh ── */
+  .rail-mesh {
+    background: var(--s1); border: 1px solid var(--b); border-radius: 16px;
+    padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+  }
+  .rail-grid { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .75rem; }
+  .rail-chip {
+    display: flex; align-items: center; gap: .5rem;
+    background: var(--s2); border: 1px solid var(--b2);
+    border-radius: 10px; padding: .6rem 1rem; font-size: .75rem;
+  }
+  .rail-chip .rc-icon { font-size: 1.1rem; }
+  .rail-chip .rc-name { font-weight: 600; color: var(--t); }
+  .rail-chip .rc-desc { font-size: .62rem; color: var(--d); }
+
+  /* ── Net worth banner ── */
+  .net-banner {
+    background: linear-gradient(135deg, rgba(0,229,123,.06) 0%, rgba(0,200,255,.04) 100%);
+    border: 1px solid rgba(0,229,123,.2); border-radius: 16px;
+    padding: 2rem; text-align: center;
+  }
+  .net-banner .nb-label { font-size: .72rem; color: var(--d); letter-spacing: .12em; text-transform: uppercase; margin-bottom: .5rem; }
+  .net-banner .nb-val { font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 900; color: var(--g); font-variant-numeric: tabular-nums; line-height: 1; }
+  .net-banner .nb-sub { font-size: .8rem; color: var(--d); margin-top: .75rem; line-height: 1.8; }
+  .nb-breakdown {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  .nb-item { text-align: center; }
+  .nb-item .ni-val { font-size: 1.1rem; font-weight: 700; color: var(--t); }
+  .nb-item .ni-label { font-size: .6rem; color: var(--d); letter-spacing: .08em; text-transform: uppercase; margin-top: .15rem; }
+
+  /* ── Mobile ── */
+  @media (max-width: 820px) {
+    .hero { padding: 2rem 1rem 1.5rem; }
+    .stats-bar { grid-template-columns: repeat(3, 1fr); }
+    .stats-bar .stat:nth-child(4), .stats-bar .stat:nth-child(5) { grid-column: span 1; }
+    .spine-buckets { grid-template-columns: repeat(2, 1fr); }
+    .platform-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .stats-bar .stat:last-child { grid-column: span 2; }
+    .rail-grid { flex-direction: column; }
+    .nb-breakdown { gap: 1rem; }
+  }
 </style>
 </head>
 <body>
-<div class="c">
-<h1>BRIDGE AI NETWORK</h1>
-<div class="sub">10 PLATFORMS · 6 PAYMENT RAILS · 1 UNIFIED TREASURY · INFINITE VALUE</div>
-<div class="motto">"Your network is your net worth"</div>
 
-<div class="stats" id="stats"></div>
+<!-- ── Hero ─────────────────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-badge"><span class="pulse"></span> LIVE NETWORK</div>
+  <h1>Bridge AI Network</h1>
+  <div class="tagline">10 Platforms · 6 Payment Rails · 1 Unified Treasury</div>
+  <div class="motto">"Your network is your net worth"</div>
 
-<div class="spine">
-  <h3>UNIFIED TREASURY SPINE</h3>
-  <div class="flow">
-    <span class="node">Platform Revenue</span><span class="arrow">→</span>
-    <span class="node">Payment Rails</span><span class="arrow">→</span>
-    <span class="node">Treasury Pool</span><span class="arrow">→</span>
-    <span class="node">UBI (30%)</span><span class="arrow">|</span>
-    <span class="node">Ops (40%)</span><span class="arrow">|</span>
-    <span class="node">Reserve (20%)</span><span class="arrow">|</span>
-    <span class="node">Evolution (10%)</span>
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat"><div class="v loading" id="s-platforms">10</div><div class="l">Platforms</div></div>
+    <div class="stat"><div class="v loading" id="s-treasury">—</div><div class="l">Treasury</div></div>
+    <div class="stat"><div class="v loading" id="s-wallet">—</div><div class="l">Wallet</div></div>
+    <div class="stat"><div class="v loading" id="s-agents">—</div><div class="l">Agents</div></div>
+    <div class="stat"><div class="v">6</div><div class="l">Payment Rails</div></div>
   </div>
 </div>
 
-<h2>PLATFORMS</h2>
-<div class="grid" id="platforms"></div>
+<div class="wrap">
 
-<div class="spine">
-  <h3>PAYMENT RAIL MESH</h3>
-  <div class="flow">
-    <span class="node">PayFast (ZAR)</span><span class="arrow">↔</span>
-    <span class="node">Paystack (NGN/GHS)</span><span class="arrow">↔</span>
-    <span class="node">Stripe (USD/EUR)</span><span class="arrow">↔</span>
-    <span class="node">ETH/BTC/SOL</span><span class="arrow">↔</span>
-    <span class="node">BRDG Token</span><span class="arrow">↔</span>
-    <span class="node">IBAN/SEPA</span>
+  <!-- ── Treasury Spine ──────────────────────────────────────────────────── -->
+  <div class="spine">
+    <div class="spine-title">⚡ Unified Treasury Spine</div>
+    <div class="spine-flow">
+      <span class="snode">Platform Revenue</span>
+      <span class="sarr">→</span>
+      <span class="snode">Payment Rails</span>
+      <span class="sarr">→</span>
+      <span class="snode">Treasury Pool</span>
+      <span class="sarr">→</span>
+      <span class="snode green">UBI 30%</span>
+      <span class="sarr">|</span>
+      <span class="snode green">Ops 40%</span>
+      <span class="sarr">|</span>
+      <span class="snode green">Reserve 20%</span>
+      <span class="sarr">|</span>
+      <span class="snode green">Evolution 10%</span>
+    </div>
+    <div class="spine-buckets" id="buckets">
+      <div class="bucket"><div class="pct">40%</div><div class="bname">Operations</div><div class="bval" id="b-ops">—</div></div>
+      <div class="bucket"><div class="pct">30%</div><div class="bname">Growth</div><div class="bval" id="b-treasury">—</div></div>
+      <div class="bucket"><div class="pct">20%</div><div class="bname">Reserve</div><div class="bval" id="b-reserve">—</div></div>
+      <div class="bucket"><div class="pct">10%</div><div class="bname">Founder</div><div class="bval" id="b-founder">—</div></div>
+    </div>
   </div>
-</div>
 
-<div class="net" id="net-worth"></div>
-</div>
+  <!-- ── Platforms ───────────────────────────────────────────────────────── -->
+  <div class="section-title"><span class="accent"></span> Platforms</div>
+  <div class="platform-grid" id="platforms"></div>
+
+  <!-- ── Payment Rail Mesh ───────────────────────────────────────────────── -->
+  <div class="rail-mesh">
+    <div class="spine-title">💳 Payment Rail Mesh</div>
+    <div class="rail-grid">
+      <div class="rail-chip"><span class="rc-icon">🇿🇦</span><div><div class="rc-name">PayFast</div><div class="rc-desc">ZAR · South Africa</div></div></div>
+      <div class="rail-chip"><span class="rc-icon">🇳🇬</span><div><div class="rc-name">Paystack</div><div class="rc-desc">NGN/GHS · West Africa</div></div></div>
+      <div class="rail-chip"><span class="rc-icon">🇺🇸</span><div><div class="rc-name">Stripe</div><div class="rc-desc">USD/EUR · International</div></div></div>
+      <div class="rail-chip"><span class="rc-icon">⛓</span><div><div class="rc-name">ETH / BTC / SOL</div><div class="rc-desc">Crypto · On-chain</div></div></div>
+      <div class="rail-chip"><span class="rc-icon">🔷</span><div><div class="rc-name">BRDG Token</div><div class="rc-desc">Linea zkEVM · Native</div></div></div>
+      <div class="rail-chip"><span class="rc-icon">🏦</span><div><div class="rc-name">IBAN / SEPA</div><div class="rc-desc">EUR · Europe</div></div></div>
+    </div>
+  </div>
+
+  <!-- ── Network Net Worth ───────────────────────────────────────────────── -->
+  <div class="net-banner">
+    <div class="nb-label">Network Net Worth</div>
+    <div class="nb-val" id="net-val">—</div>
+    <div class="nb-breakdown">
+      <div class="nb-item"><div class="ni-val" id="nb-treasury">—</div><div class="ni-label">Treasury</div></div>
+      <div class="nb-item"><div class="ni-val" id="nb-wallet">—</div><div class="ni-label">Wallet</div></div>
+      <div class="nb-item"><div class="ni-val" id="nb-brdg">—</div><div class="ni-label">BRDG Circulating</div></div>
+      <div class="nb-item"><div class="ni-val" id="nb-agents">—</div><div class="ni-label">Active Agents</div></div>
+      <div class="nb-item"><div class="ni-val" id="nb-txs">—</div><div class="ni-label">Transactions</div></div>
+    </div>
+    <div class="nb-sub">10 platforms · 6 payment rails · Linea zkEVM</div>
+  </div>
+
+</div><!-- /wrap -->
 
 <script>
-const BRAIN = location.port === '8000' ? '' : (location.port === '8080' || location.port === '443' || !location.port ? '' : `${location.protocol}//${location.hostname}:8000`);
-
-const platforms = [
-  { id:'bridge', name:'Bridge AI OS', domain:'bridge-ai-os.com', subdomain:'bridge.ai-os.co.za', status:'live', desc:'Core AI operating system. Dashboard, topology, registry, marketplace, avatar, terminal, control panel. The central nervous system.', rails:['payfast','paystack','crypto','brdg'], pools:['treasury','ubi','reserve'], revenue:'SaaS subscriptions + API metering', spine:'brain:8000' },
-  { id:'ban', name:'BAN Task Engine', domain:'bridge-ai-os.com/ban', subdomain:'ban.ai-os.co.za', status:'live', desc:'Multi-objective task orchestration. Priority scoring, economic filtering, node routing (Ryan/Mike/Marvin), consensus engine.', rails:['brdg','crypto'], pools:['marketplace','execution'], revenue:'Task fees (15% commission)', spine:'brain:8000/api/marketplace' },
-  { id:'supac', name:'SupAC Unified Agents', domain:'bridge-ai-os.com/abaas.html', subdomain:'supac.ai-os.co.za', status:'live', desc:'8 AI agents: Sales, Support, Research, Marketing, Legal, Finance, Dev, Trading. Deploy, manage, monetize autonomous workforce.', rails:['payfast','paystack','brdg'], pools:['agent_pool','ubi'], revenue:'Agent rental + task completion', spine:'brain:8000/api/agents/workforce' },
-  { id:'ehsa', name:'EHSA Health System', domain:'#', subdomain:'ehsa.ai-os.co.za', status:'ready', desc:'Electronic Health System for Africa. Patient records, appointment scheduling, treatment optimization, pharmacy management, telemedicine.', rails:['payfast','paystack','iban'], pools:['health_pool','ubi'], revenue:'Per-patient SaaS + government contracts', spine:'brain:8000/api/neurolink' },
-  { id:'aurora', name:'Aurora AI Assistant', domain:'#', subdomain:'aurora.ai-os.co.za', status:'ready', desc:'Conversational AI with emotion engine, speech synthesis, lip-sync avatar. Personal and enterprise assistant.', rails:['payfast','stripe','crypto'], pools:['ai_pool','ubi'], revenue:'Per-conversation + subscription', spine:'brain:8000/api/twin' },
-  { id:'ubi', name:'Universal Basic Income', domain:'#', subdomain:'ubi.ai-os.co.za', status:'live', desc:'Automated UBI distribution from all platform revenue. 30% of treasury flows to community. Activity-based + network-value rewards.', rails:['crypto','brdg','payfast'], pools:['ubi_main'], revenue:'30% of all platform revenue', spine:'brain:8000/api/ubi' },
-  { id:'aid', name:'Aid Distribution', domain:'#', subdomain:'aid.ai-os.co.za', status:'ready', desc:'Transparent aid distribution platform. Track donations, verify recipients, automate disbursement. NGO + government integration.', rails:['payfast','paystack','crypto','iban'], pools:['aid_pool','ubi'], revenue:'Platform fee (2%) + grants', spine:'brain:8000/api/defi' },
-  { id:'abaas', name:'Agent-as-a-Service', domain:'bridge-ai-os.com/abaas.html', subdomain:'abaas.ai-os.co.za', status:'live', desc:'Enterprise API for deploying AI agents. White-label, custom SLAs, dedicated capacity. Competitive marketplace for agent skills.', rails:['stripe','payfast','crypto'], pools:['enterprise_pool','agent_pool'], revenue:'API usage + enterprise contracts', spine:'brain:8000/api/business/manifest' },
-  { id:'hospital', name:'Hospital in a Box', domain:'#', subdomain:'hospitalinabox.ai-os.co.za', status:'plan', desc:'Complete hospital management system in a container. EMR, pharmacy, billing, telemedicine, AI diagnostics. Deploy anywhere.', rails:['payfast','iban','crypto'], pools:['health_pool'], revenue:'License + per-bed SaaS', spine:'brain:8000/api/analytics' },
-  { id:'rootedearth', name:'Rooted Earth', domain:'#', subdomain:'rootedearth.ai-os.co.za', status:'plan', desc:'Sustainability platform. Carbon tracking, regenerative agriculture, supply chain transparency, impact investing, SDG alignment.', rails:['crypto','brdg','paystack'], pools:['earth_pool','ubi'], revenue:'Impact credits + certification', spine:'brain:8000/api/sdg/metrics' },
+const PLATFORMS = [
+  { id:'bridge',      name:'Bridge AI OS',         sub:'bridge.ai-os.co.za',              href:'/',                        status:'live',  desc:'Core AI operating system. Dashboard, topology, registry, marketplace, avatar, terminal, control panel. The central nervous system.', rails:['payfast','paystack','crypto','brdg'], pools:['treasury','ubi','reserve'], revenue:'SaaS subscriptions + API metering' },
+  { id:'ban',         name:'BAN Task Engine',       sub:'ban.ai-os.co.za',                 href:'/ban',                     status:'live',  desc:'Multi-objective task orchestration. Priority scoring, economic filtering, node routing (Ryan/Mike/Marvin), consensus engine.', rails:['brdg','crypto'], pools:['marketplace','execution'], revenue:'Task fees (15% commission)' },
+  { id:'supac',       name:'SupAC Unified Agents',  sub:'supac.ai-os.co.za',               href:'/supac',                   status:'live',  desc:'8 AI agents: Sales, Support, Research, Marketing, Legal, Finance, Dev, Trading. Deploy, manage, monetize autonomous workforce.', rails:['payfast','paystack','brdg'], pools:['agent_pool','ubi'], revenue:'Agent rental + task completion' },
+  { id:'ehsa',        name:'EHSA Health System',    sub:'ehsa.ai-os.co.za',                href:'/ehsa',                    status:'ready', desc:'Electronic Health System for Africa. Patient records, appointment scheduling, treatment optimization, pharmacy management, telemedicine.', rails:['payfast','paystack','iban'], pools:['health_pool','ubi'], revenue:'Per-patient SaaS + government contracts' },
+  { id:'aurora',      name:'Aurora AI Assistant',   sub:'aurora.ai-os.co.za',              href:'/aurora',                  status:'ready', desc:'Conversational AI with emotion engine, speech synthesis, lip-sync avatar. Personal and enterprise assistant.', rails:['payfast','stripe','crypto'], pools:['ai_pool','ubi'], revenue:'Per-conversation + subscription' },
+  { id:'ubi',         name:'Universal Basic Income',sub:'ubi.ai-os.co.za',                 href:'/ubi',                     status:'live',  desc:'Automated UBI distribution from all platform revenue. 30% of treasury flows to community. Activity-based + network-value rewards.', rails:['crypto','brdg','payfast'], pools:['ubi_main'], revenue:'30% of all platform revenue' },
+  { id:'aid',         name:'Aid Distribution',      sub:'aid.ai-os.co.za',                 href:'/aid',                     status:'ready', desc:'Transparent aid distribution platform. Track donations, verify recipients, automate disbursement. NGO + government integration.', rails:['payfast','paystack','crypto','iban'], pools:['aid_pool','ubi'], revenue:'Platform fee (2%) + grants' },
+  { id:'abaas',       name:'Agent-as-a-Service',    sub:'abaas.ai-os.co.za',               href:'/abaas',                   status:'live',  desc:'Enterprise API for deploying AI agents. White-label, custom SLAs, dedicated capacity. Competitive marketplace for agent skills.', rails:['stripe','payfast','crypto'], pools:['enterprise_pool','agent_pool'], revenue:'API usage + enterprise contracts' },
+  { id:'hospital',    name:'Hospital in a Box',     sub:'hospitalinabox.ai-os.co.za',      href:'#',                        status:'plan',  desc:'Complete hospital management system in a container. EMR, pharmacy, billing, telemedicine, AI diagnostics. Deploy anywhere in the world.', rails:['payfast','iban','crypto'], pools:['health_pool'], revenue:'License + per-bed SaaS' },
+  { id:'rootedearth', name:'Rooted Earth',           sub:'rootedearth.ai-os.co.za',         href:'/rootedearth',             status:'plan',  desc:'Sustainability platform. Carbon tracking, regenerative agriculture, supply chain transparency, impact investing, SDG alignment.', rails:['crypto','brdg','paystack'], pools:['earth_pool','ubi'], revenue:'Impact credits + certification' },
 ];
 
-const railColors = { payfast:'fiat', paystack:'fiat', stripe:'fiat', iban:'fiat', crypto:'crypto', brdg:'crypto' };
-const railNames = { payfast:'PayFast (ZA)', paystack:'Paystack (NG)', stripe:'Stripe (US)', iban:'IBAN/SEPA', crypto:'ETH/BTC/SOL', brdg:'BRDG Token' };
+const RAIL_META = {
+  payfast:  { label:'PayFast (ZA)',    cls:'fiat'   },
+  paystack: { label:'Paystack (NG)',   cls:'fiat'   },
+  stripe:   { label:'Stripe (US)',     cls:'fiat'   },
+  iban:     { label:'IBAN/SEPA',       cls:'fiat'   },
+  crypto:   { label:'ETH/BTC/SOL',    cls:'crypto' },
+  brdg:     { label:'BRDG Token',      cls:'token'  },
+};
 
-document.getElementById('platforms').innerHTML = platforms.map(p => `
-  <div class="card" onclick="${p.domain !== '#' ? `location='${p.domain.startsWith('http') ? p.domain : 'https://'+p.domain}'` : ''}">
-    <div class="top">
-      <h3>${p.name}</h3>
-      <span class="badge ${p.status}">${p.status.toUpperCase()}</span>
+// Render platforms
+document.getElementById('platforms').innerHTML = PLATFORMS.map(p => `
+  <div class="pcard" onclick="${p.href !== '#' ? `location.href='${p.href}'` : ''}">
+    <div class="pcard-top">
+      <div>
+        <h3>${p.name}</h3>
+        <div class="pdomain">${p.sub}</div>
+      </div>
+      <span class="status-badge ${p.status}">${p.status.toUpperCase()}</span>
     </div>
-    <div class="domain">${p.subdomain}</div>
     <div class="desc">${p.desc}</div>
-    <div class="rails">${p.rails.map(r => `<span class="rail ${railColors[r]}">${railNames[r]}</span>`).join('')}</div>
-    <div class="pool">Pools: ${p.pools.map(pl => `<span>${pl}</span>`).join(' · ')} | Revenue: <span>${p.revenue}</span></div>
+    <div class="rails-row">
+      ${p.rails.map(r => `<span class="rail-tag ${RAIL_META[r].cls}">${RAIL_META[r].label}</span>`).join('')}
+    </div>
+    <div class="pools-row">Pools: ${p.pools.map(pl => `<span class="pname">${pl}</span>`).join(' · ')}</div>
+    <div class="revenue-row">Revenue: <span class="rev">${p.revenue}</span></div>
   </div>
 `).join('');
 
-// ── Formatting helpers ─────────────────────────────────────────────────────
+// ── Formatters ──────────────────────────────────────────────────────────────
 function fmtZAR(n) {
   if (!n || isNaN(n)) return 'R0';
   if (n >= 1e9) return 'R' + (n/1e9).toFixed(2) + 'B';
@@ -154,54 +344,56 @@ function fmtZAR(n) {
 }
 function fmtNum(n) {
   if (!n || isNaN(n)) return '0';
-  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e9) return (n/1e9).toFixed(2) + 'B';
   if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
   if (n >= 1e3) return (n/1e3).toFixed(0) + 'K';
   return String(Math.round(n));
 }
+function set(id, val) { const el = document.getElementById(id); if (el) { el.textContent = val; el.classList.remove('loading'); } }
 
 // ── Load live data ──────────────────────────────────────────────────────────
-async function loadStats() {
+async function loadData() {
   try {
     const [treasury, wallet, econStats, analytics] = await Promise.all([
-      fetch('/api/treasury').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/wallet/balance').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/economy/stats').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/analytics/overview').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/treasury',            { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('/api/wallet/balance',      { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('/api/economy/stats',       { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('/api/analytics/overview',  { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
     ]);
 
-    const treasuryBal = treasury.balance || treasury.balance_zar || 0;
-    const walletBal   = wallet.balance   || wallet.total_usd    || wallet.balance_zar || 0;
-    const agentCount  = econStats.agent_count || econStats.agentCount || 104;
-    const txCount     = econStats.txCount     || econStats.totalTransactions || 0;
-    const brdgCirc    = econStats.totalCirculating || 0;
-    const arrRevenue  = analytics.revenue?.arr || analytics.revenue?.mtd || 0;
+    const tBal  = treasury.balance  || treasury.total   || 0;
+    const wBal  = wallet.balance    || wallet.total_usd || wallet.balance_zar || 0;
+    const agents= econStats.agent_count   || econStats.agentCount  || 104;
+    const txs   = econStats.txCount       || econStats.totalTransactions || 0;
+    const brdg  = econStats.totalCirculating || 0;
+    const net   = tBal + wBal;
 
-    document.getElementById('stats').innerHTML = `
-      <div class="stat"><div class="v">10</div><div class="l">PLATFORMS</div></div>
-      <div class="stat"><div class="v" id="s-treasury">${fmtZAR(treasuryBal)}</div><div class="l">TREASURY</div></div>
-      <div class="stat"><div class="v" id="s-wallet">${fmtZAR(walletBal)}</div><div class="l">WALLET</div></div>
-      <div class="stat"><div class="v" id="s-agents">${agentCount}</div><div class="l">AGENTS</div></div>
-      <div class="stat"><div class="v">6</div><div class="l">PAYMENT RAILS</div></div>
-    `;
+    // Stats bar
+    set('s-treasury', fmtZAR(tBal));
+    set('s-wallet',   fmtZAR(wBal));
+    set('s-agents',   String(agents));
 
-    const netWorth = treasuryBal + walletBal;
-    document.getElementById('net-worth').innerHTML = `
-      <h3>NETWORK NET WORTH</h3>
-      <div class="val">${fmtZAR(netWorth)}</div>
-      <div class="sub" style="margin-top:.5rem">
-        Treasury ${fmtZAR(treasuryBal)} &nbsp;·&nbsp; Wallet ${fmtZAR(walletBal)} &nbsp;·&nbsp; BRDG ${fmtNum(brdgCirc)} circulating
-      </div>
-      <div class="sub" style="margin-top:.3rem">
-        ${agentCount} agents &nbsp;·&nbsp; ${fmtNum(txCount)} transactions &nbsp;·&nbsp; 6 payment rails &nbsp;·&nbsp; 10 platforms
-      </div>
-    `;
-  } catch(e) { console.warn('[platforms] loadStats error:', e.message); }
+    // Buckets
+    const buckets = treasury.buckets || [];
+    buckets.forEach(b => {
+      const id = 'b-' + b.name;
+      const el = document.getElementById(id);
+      if (el) el.textContent = fmtZAR(b.balance || b.value || 0);
+    });
+
+    // Net worth
+    set('net-val',     fmtZAR(net));
+    set('nb-treasury', fmtZAR(tBal));
+    set('nb-wallet',   fmtZAR(wBal));
+    set('nb-brdg',     fmtNum(brdg));
+    set('nb-agents',   String(agents));
+    set('nb-txs',      fmtNum(txs));
+
+  } catch(e) { console.warn('[platforms] data load error:', e.message); }
 }
 
-loadStats();
-// Auto-refresh every 30 seconds
-setInterval(loadStats, 30000);
+loadData();
+setInterval(loadData, 30000);
 </script>
 <script src="/nav-routes.js"></script>
 <script src="/bridge-nav.js"></script>

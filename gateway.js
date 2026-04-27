@@ -39,7 +39,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 const app = express();
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false, crossOriginOpenerPolicy: false, crossOriginEmbedderPolicy: false }));
 app.set('trust proxy', true);   // nginx sits in front — trust X-Forwarded-* headers
 
 // ── Auto-Kill (IP rate-limit + ban enforcement) ────────────────────────────
