@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+(function(){try{var t=localStorage.getItem('bridge_token')||localStorage.getItem('bridge_user_token');if(!t){var m=document.cookie.split(';').map(function(c){return c.trim();}).find(function(c){return c.startsWith('bridge_token=');});if(m)t=decodeURIComponent(m.split('=').slice(1).join('='));}if(!t)return;var p=t.split('.');if(p.length!==3)return;var pl=JSON.parse(atob(p[1].replace(/-/g,'+').replace(/_/g,'/')));var ca=JSON.parse(localStorage.getItem('bridge_user')||'{}');if(ca.email&&pl.email&&ca.email.toLowerCase()!==pl.email.toLowerCase())localStorage.removeItem('bridge_user');}catch(_){}})();
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portfolio — Bridge AI OS</title>
+<meta name="description" content="Bridge AI OS — Platform portfolio and capability showcase">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060810;--bg2:#0a0e17;--surface:rgba(10,14,23,.85);--border:rgba(99,255,218,.1);--accent:#00c8ff;--gold:#ffb400;--text:#e2e8f0;--dim:#64748b;--radius:.75rem}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;padding-top:56px}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(0,200,255,.06) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(255,180,0,.04) 0%,transparent 55%);pointer-events:none;z-index:0}
+.hero{text-align:center;padding:5rem 2rem 3rem;position:relative}
+.hero-badge{display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);border:1px solid rgba(0,200,255,.3);border-radius:2rem;padding:.3rem 1rem;margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;background:linear-gradient(135deg,#fff 0%,var(--accent) 60%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.15;margin-bottom:1rem}
+.hero p{color:var(--dim);font-size:1rem;max-width:560px;margin:0 auto 2rem;line-height:1.7}
+.stats-row{display:flex;justify-content:center;gap:3rem;flex-wrap:wrap;margin-bottom:4rem}
+.stat{text-align:center}.stat-val{font-size:2rem;font-weight:800;color:var(--accent)}.stat-lab{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:.2rem}
+main{max-width:1200px;margin:0 auto;padding:0 1.5rem 5rem;position:relative}
+.section-label{font-size:.7rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem}
+.section-title{font-size:1.6rem;font-weight:700;margin-bottom:.5rem}
+.section-sub{color:var(--dim);font-size:.88rem;margin-bottom:2rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;margin-bottom:4rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;transition:border-color .2s,transform .15s;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .2s}
+.card:hover{border-color:rgba(0,200,255,.3);transform:translateY(-3px)}.card:hover::before{opacity:1}
+.card-icon{font-size:2rem;margin-bottom:.75rem}
+.card-title{font-weight:700;font-size:1rem;margin-bottom:.4rem}
+.card-desc{font-size:.83rem;color:var(--dim);line-height:1.6;margin-bottom:1rem}
+.tag{display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .55rem;border-radius:2rem;background:rgba(0,200,255,.08);color:var(--accent);border:1px solid rgba(0,200,255,.2);margin:.15rem}
+.tag.gold{background:rgba(255,180,0,.08);color:var(--gold);border-color:rgba(255,180,0,.2)}
+.tag.green{background:rgba(0,200,100,.08);color:#4dff9a;border-color:rgba(0,200,100,.2)}
+.cap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-bottom:4rem}
+.cap{background:var(--surface);border:1px solid var(--border);border-radius:.6rem;padding:1.2rem;display:flex;align-items:flex-start;gap:.75rem}
+.cap-icon{font-size:1.4rem;flex-shrink:0}.cap-title{font-weight:600;font-size:.88rem;margin-bottom:.2rem}.cap-desc{font-size:.75rem;color:var(--dim);line-height:1.5}
+.tier-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-bottom:3rem}
+.tier{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;position:relative}
+.tier.featured{border-color:rgba(0,200,255,.4);box-shadow:0 0 30px rgba(0,200,255,.08)}
+.tier-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .8rem;border-radius:2rem}
+.tier-name{font-weight:700;font-size:1rem;margin-bottom:.25rem}
+.tier-price{font-size:2rem;font-weight:800;line-height:1;margin-bottom:.4rem}
+.tier-price span{font-size:.8rem;font-weight:400;color:var(--dim)}
+.tier-desc{font-size:.78rem;color:var(--dim);margin-bottom:1rem;line-height:1.5}
+.tier ul{list-style:none;font-size:.78rem;display:flex;flex-direction:column;gap:.35rem}
+.tier li::before{content:'✓ ';color:#4dff9a;font-weight:700}
+.cta-bar{text-align:center;padding:3rem 1rem;border-top:1px solid var(--border)}
+.cta-bar h2{font-size:1.8rem;font-weight:700;margin-bottom:.75rem}
+.cta-bar p{color:var(--dim);margin-bottom:2rem}
+.btn{display:inline-block;padding:.75rem 2rem;border-radius:.5rem;font-weight:700;font-size:.88rem;text-decoration:none;letter-spacing:.05em;transition:filter .2s,transform .15s;cursor:pointer;border:none}
+.btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#0088cc);color:#000}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.profile-cta{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,180,0,.08);border:1px solid rgba(255,180,0,.3);color:var(--gold);padding:.6rem 1.2rem;border-radius:.5rem;font-size:.82rem;font-weight:600;text-decoration:none;transition:background .2s,border-color .2s;margin-top:1rem}
+.profile-cta:hover{background:rgba(255,180,0,.15);border-color:rgba(255,180,0,.5)}
+.sep{border:none;border-top:1px solid var(--border);margin:3rem 0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-badge">Bridge AI OS — Platform Portfolio</div>
+  <h1>The Full-Stack<br>AI Business Operating System</h1>
+  <p>50 enterprise AI applications. One unified platform. Built for the next era of autonomous business operations.</p>
+  <div class="stats-row">
+    <div class="stat"><div class="stat-val" id="s-apps">50</div><div class="stat-lab">AI Applications</div></div>
+    <div class="stat"><div class="stat-val">9</div><div class="stat-lab">Industry Verticals</div></div>
+    <div class="stat"><div class="stat-val">$1T+</div><div class="stat-lab">Market Opportunity</div></div>
+    <div class="stat"><div class="stat-val">∞</div><div class="stat-lab">BRDG Utility</div></div>
+  </div>
+</div>
+
+<main>
+
+  <!-- Platform Portfolio -->
+  <div class="section-label">Platform Portfolio</div>
+  <div class="section-title">50 Enterprise AI Applications</div>
+  <div class="section-sub">Each application is a production-ready AI agent stack addressing a billion-dollar market vertical.</div>
+
+  <div class="grid" id="appGrid"></div>
+
+  <hr class="sep">
+
+  <!-- Core Capabilities -->
+  <div class="section-label">Core Platform</div>
+  <div class="section-title">What Powers It All</div>
+  <div class="section-sub">The infrastructure layer every application is built on.</div>
+
+  <div class="cap-grid">
+    <div class="cap"><div class="cap-icon">🧠</div><div><div class="cap-title">Super Brain</div><div class="cap-desc">Central AI orchestrator routing tasks across 50+ specialised agents in real time.</div></div></div>
+    <div class="cap"><div class="cap-icon">🔗</div><div><div class="cap-title">Linea zkEVM</div><div class="cap-desc">All economic actions — payments, BRDG minting, governance — settled on-chain.</div></div></div>
+    <div class="cap"><div class="cap-icon">💎</div><div><div class="cap-title">BRDG Economy</div><div class="cap-desc">Native utility token. Earned by running agents, spent to unlock capabilities.</div></div></div>
+    <div class="cap"><div class="cap-icon">👥</div><div><div class="cap-title">Digital Twin</div><div class="cap-desc">Every user gets a persistent AI persona that learns, acts, and earns autonomously.</div></div></div>
+    <div class="cap"><div class="cap-icon">📊</div><div><div class="cap-title">CRM + Invoicing</div><div class="cap-desc">Full business suite — leads, customers, quotes, invoices, legal, workforce.</div></div></div>
+    <div class="cap"><div class="cap-icon">🏥</div><div><div class="cap-title">EHSA Healthcare</div><div class="cap-desc">Patient twins, remote diagnostics, hospital optimisation, drug discovery.</div></div></div>
+    <div class="cap"><div class="cap-icon">🏙️</div><div><div class="cap-title">Smart City</div><div class="cap-desc">Traffic, energy, waste, water, safety — full urban intelligence stack.</div></div></div>
+    <div class="cap"><div class="cap-icon">🤖</div><div><div class="cap-title">Autonomous Agents</div><div class="cap-desc">Sales, support, finance, HR — fully autonomous AI workers that never sleep.</div></div></div>
+    <div class="cap"><div class="cap-icon">🔒</div><div><div class="cap-title">Auth + Security</div><div class="cap-desc">JWT, OAuth2, role-based access, audit logs, Merkle integrity verification.</div></div></div>
+  </div>
+
+  <hr class="sep">
+
+  <!-- Tiers -->
+  <div class="section-label">Pricing</div>
+  <div class="section-title">Choose Your Plan</div>
+  <div class="section-sub">Start free. Scale as you grow. Every plan includes the full AI agent workforce.</div>
+
+  <div class="tier-grid">
+    <div class="tier">
+      <div class="tier-name">Free</div>
+      <div class="tier-price">$0<span>/mo</span></div>
+      <div class="tier-desc">Explore the platform with basic access.</div>
+      <ul><li>100 API calls/day</li><li>1 AI agent</li><li>Public signals</li><li>Community support</li></ul>
+    </div>
+    <div class="tier featured">
+      <div class="tier-badge">MOST POPULAR</div>
+      <div class="tier-name">Pro</div>
+      <div class="tier-price">$49<span>/mo</span></div>
+      <div class="tier-desc">Full platform access for individuals and teams.</div>
+      <ul><li>10,000 API calls/day</li><li>5 AI agents</li><li>Live execution</li><li>DeFi + governance</li><li>Email support</li></ul>
+    </div>
+    <div class="tier">
+      <div class="tier-name">Enterprise</div>
+      <div class="tier-price">$499<span>/mo</span></div>
+      <div class="tier-desc">Advanced intelligence + custom integrations.</div>
+      <ul><li>100k API calls/day</li><li>50 AI agents</li><li>SSO + teams</li><li>Priority support</li></ul>
+    </div>
+    <div class="tier">
+      <div class="tier-name">Platform</div>
+      <div class="tier-price">$2,499<span>/mo</span></div>
+      <div class="tier-desc">White-label the entire OS for your operation.</div>
+      <ul><li>Unlimited everything</li><li>White-label</li><li>Dedicated infra</li><li>24/7 support + SLA</li></ul>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-bottom:3rem">
+    <a href="/pricing" class="btn btn-outline" style="margin-right:1rem">Compare Plans</a>
+    <a href="/profile#billing" class="btn btn-primary" id="selectTierBtn">Select Your Tier</a>
+    <br>
+    <a href="/profile" class="profile-cta" id="profileLink">👤 Complete Your Profile to Activate</a>
+  </div>
+
+  <hr class="sep">
+
+  <!-- Ryan — System -->
+  <div id="ryanPanel" style="display:none;background:rgba(255,180,0,.05);border:1px solid rgba(255,180,0,.25);border-radius:var(--radius);padding:2rem;margin-bottom:3rem">
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem">System Administration</div>
+    <div style="font-size:1.2rem;font-weight:700;margin-bottom:.5rem">Ryan Cowan — Superadmin</div>
+    <div style="font-size:.85rem;color:var(--dim);margin-bottom:1.5rem">Full platform access. All CRM, leads, invoicing, legal, admin, and system controls.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:.75rem">
+      <a href="/ryan-finance" class="btn btn-primary" style="background:rgba(255,180,0,.2);border-color:rgba(255,180,0,.5);color:var(--gold)">Financial Command Center</a>
+      <a href="/portal" class="btn btn-primary">Portal</a>
+      <a href="/crm" class="btn btn-outline">CRM</a>
+      <a href="/invoicing" class="btn btn-outline">Invoicing</a>
+      <a href="/quotes" class="btn btn-outline">Quotes</a>
+      <a href="/leads" class="btn btn-outline">Leads</a>
+      <a href="/legal" class="btn btn-outline">Legal</a>
+      <a href="/admin" class="btn btn-outline">Admin</a>
+      <a href="/godmode-terminal" class="btn btn-outline">God Mode</a>
+      <a href="/executive-dashboard" class="btn btn-outline">Exec Dashboard</a>
+    </div>
+  </div>
+
+  <div class="cta-bar">
+    <h2>Ready to deploy your AI workforce?</h2>
+    <p>Join the operators already running autonomous businesses on Bridge AI OS.</p>
+    <a href="/onboarding" class="btn btn-primary" style="margin-right:1rem">Get Started Free</a>
+    <a href="/portal" class="btn btn-outline">Go to Portal</a>
+  </div>
+
+</main>
+
+<script>
+var APPS = [
+  {icon:'🏙️',title:'Smart City Digital Twin',cat:'Infrastructure',market:'$100B+',tags:['Smart City','Digital Twin','IoT']},
+  {icon:'🚦',title:'Traffic Optimization AI',cat:'Infrastructure',market:'$40B',tags:['Smart City','Real-time']},
+  {icon:'⚡',title:'Energy Grid Optimization',cat:'Infrastructure',market:'$60B',tags:['Smart City','Sustainability']},
+  {icon:'💧',title:'Water Infrastructure Monitoring',cat:'Infrastructure',market:'$20B',tags:['Smart City','IoT']},
+  {icon:'🌪️',title:'Disaster Prediction Systems',cat:'Infrastructure',market:'$15B',tags:['Safety','AI']},
+  {icon:'♻️',title:'Smart Waste Management',cat:'Infrastructure',market:'$8B',tags:['Smart City']},
+  {icon:'🏗️',title:'City Planning Simulator',cat:'Infrastructure',market:'$25B',tags:['Digital Twin']},
+  {icon:'💡',title:'Smart Lighting Systems',cat:'Infrastructure',market:'$10B',tags:['IoT']},
+  {icon:'🛡️',title:'Infrastructure Predictive Maintenance',cat:'Infrastructure',market:'$30B',tags:['AI','IoT']},
+  {icon:'👮',title:'Public Safety AI Monitoring',cat:'Infrastructure',market:'$35B',tags:['Safety','AI']},
+  {icon:'🏥',title:'Patient Digital Twins',cat:'Healthcare',market:'$2.2B',tags:['EHSA','Digital Twin']},
+  {icon:'🩺',title:'Remote Diagnostics',cat:'Healthcare',market:'$15B',tags:['EHSA','AI']},
+  {icon:'🏨',title:'Hospital Optimization AI',cat:'Healthcare',market:'$25B',tags:['EHSA','Operations']},
+  {icon:'💊',title:'Drug Discovery Simulation',cat:'Healthcare',market:'$70B',tags:['EHSA','Research']},
+  {icon:'🧠',title:'Mental Health AI Agents',cat:'Healthcare',market:'$10B',tags:['EHSA','Consumer']},
+  {icon:'🔬',title:'Medical Imaging AI',cat:'Healthcare',market:'$40B',tags:['EHSA','Diagnostics']},
+  {icon:'🚑',title:'Emergency Response AI',cat:'Healthcare',market:'$20B',tags:['EHSA','Safety']},
+  {icon:'💉',title:'Personalized Treatment Planning',cat:'Healthcare',market:'$30B',tags:['EHSA','AI']},
+  {icon:'🚚',title:'Healthcare Logistics',cat:'Healthcare',market:'$12B',tags:['EHSA','Operations']},
+  {icon:'📡',title:'Medical Device Monitoring',cat:'Healthcare',market:'$12B',tags:['EHSA','IoT']},
+  {icon:'🛒',title:'AI Marketplaces',cat:'Business',market:'$100B+',tags:['Business','Platform']},
+  {icon:'👔',title:'Corporate Digital Twins',cat:'Business',market:'$60B',tags:['Enterprise','Digital Twin']},
+  {icon:'📦',title:'Supply Chain Optimization',cat:'Business',market:'$90B',tags:['Enterprise','AI']},
+  {icon:'👩‍💼',title:'AI Knowledge Workers',cat:'Business',market:'$150B',tags:['Enterprise','Autonomous']},
+  {icon:'📈',title:'Autonomous Market Research',cat:'Business',market:'$15B',tags:['Business','AI']},
+  {icon:'⚖️',title:'Smart Contract Governance',cat:'Business',market:'$30B',tags:['Blockchain','Legal']},
+  {icon:'🤝',title:'Autonomous Customer Support',cat:'Business',market:'$80B',tags:['Autonomous','Support']},
+  {icon:'💰',title:'Autonomous Sales Agents',cat:'Business',market:'$50B',tags:['Autonomous','Sales']},
+  {icon:'📊',title:'Autonomous Finance Agents',cat:'Business',market:'$35B',tags:['Autonomous','Finance']},
+  {icon:'🎯',title:'AI Product Managers',cat:'Business',market:'$20B',tags:['Enterprise','AI']},
+  {icon:'🏭',title:'Factory Digital Twins',cat:'Industry',market:'$80B',tags:['Manufacturing','Digital Twin']},
+  {icon:'🤖',title:'Robotics Fleet Coordination',cat:'Industry',market:'$40B',tags:['Manufacturing','Autonomous']},
+  {icon:'📦',title:'Warehouse Optimization',cat:'Industry',market:'$35B',tags:['Logistics','AI']},
+  {icon:'🔧',title:'Predictive Maintenance',cat:'Industry',market:'$50B',tags:['Manufacturing','IoT']},
+  {icon:'🏗️',title:'Autonomous Construction Planning',cat:'Industry',market:'$25B',tags:['Construction','AI']},
+  {icon:'⛏️',title:'Mining Operations AI',cat:'Industry',market:'$30B',tags:['Mining','Safety']},
+  {icon:'⚠️',title:'Industrial Safety AI',cat:'Industry',market:'$20B',tags:['Safety','IoT']},
+  {icon:'🛢️',title:'Oil & Gas Monitoring',cat:'Industry',market:'$60B',tags:['Energy','IoT']},
+  {icon:'🏭',title:'Asset Lifecycle Management',cat:'Industry',market:'$40B',tags:['Operations','AI']},
+  {icon:'🔩',title:'Manufacturing Simulation',cat:'Industry',market:'$70B',tags:['Digital Twin','AI']},
+  {icon:'🎓',title:'AI Education Tutors',cat:'Consumer',market:'$50B',tags:['EdTech','AI']},
+  {icon:'🎬',title:'Autonomous Media Generation',cat:'Consumer',market:'$11B',tags:['Creative','AI']},
+  {icon:'💳',title:'AI Personal Finance Advisors',cat:'Consumer',market:'$35B',tags:['FinTech','AI']},
+  {icon:'🤖',title:'AI Personal Assistants',cat:'Consumer',market:'$200B',tags:['Consumer','Autonomous']},
+  {icon:'🪪',title:'Digital Identity Networks',cat:'Consumer',market:'$30B',tags:['Identity','Blockchain']},
+  {icon:'🏠',title:'Smart Home AI Orchestration',cat:'Consumer',market:'$60B',tags:['IoT','Consumer']},
+  {icon:'🌐',title:'Global AI Agent Economy',cat:'Consumer',market:'$220B+',tags:['Platform','BRDG']},
+  {icon:'🎮',title:'Gaming AI NPC Ecosystems',cat:'Consumer',market:'$40B',tags:['Gaming','AI']},
+  {icon:'🎨',title:'Creator AI Tools',cat:'Consumer',market:'$20B',tags:['Creative','AI']},
+  {icon:'🌱',title:'Decentralized Work Platforms',cat:'Consumer',market:'$100B',tags:['Future of Work','Web3']},
+];
+
+var CAT_COLORS = {Infrastructure:'#00c8ff',Healthcare:'#4dff9a',Business:'#ffb400',Industry:'#a78bfa',Consumer:'#f472b6'};
+
+var grid = document.getElementById('appGrid');
+APPS.forEach(function(a) {
+  var c = document.createElement('div');
+  c.className = 'card';
+  c.innerHTML =
+    '<div class="card-icon">' + a.icon + '</div>' +
+    '<div class="card-title">' + a.title + '</div>' +
+    '<div class="card-desc" style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">' +
+      '<span style="font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:' + (CAT_COLORS[a.cat]||'var(--dim)') + '">' + a.cat + '</span>' +
+      '<span style="color:var(--dim);font-size:.75rem">· ' + a.market + ' market</span>' +
+    '</div>' +
+    '<div>' + a.tags.map(function(t){return '<span class="tag">'+t+'</span>';}).join('') + '</div>';
+  grid.appendChild(c);
+});
+
+// Auth awareness
+(function() {
+  var tok = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_user_token');
+  if (!tok) return;
+  fetch('/auth/me', { credentials: 'include', headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d) {
+      if (!d || !d.ok || !d.user) return;
+      var u = d.user;
+      localStorage.setItem('bridge_user', JSON.stringify(u));
+      // Update profile CTA
+      var pLink = document.getElementById('profileLink');
+      if (pLink) {
+        pLink.href = '/profile';
+        pLink.textContent = '👤 My Profile';
+      }
+      // Show Ryan admin panel
+      if (u.role === 'superadmin') {
+        var rp = document.getElementById('ryanPanel');
+        if (rp) rp.style.display = '';
+      }
+    }).catch(function(){});
+})();
+</script>
+
+<script src="/bridge-nav.js?v=20260425d" defer></script>
+<script src="/ehsa-brain-status.js" defer></script>
+</body>
+</html>

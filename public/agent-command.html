@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Command Protocol — MACL · ACP · Negotiation</title>
+<style>
+:root {
+  --bg: #08080f;
+  --surface: #0f0f1e;
+  --surface2: #171730;
+  --border: rgba(139,92,246,.18);
+  --primary: #8b5cf6;
+  --primary-glow: rgba(139,92,246,.3);
+  --secondary: #06b6d4;
+  --accent: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --text-muted: #64748b;
+  --font: 'Inter', system-ui, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+.shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;min-height:100vh}
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:17px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-badge{font-size:10px;background:var(--primary);color:#fff;padding:2px 8px;border-radius:99px;font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-muted)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+.dot-green{background:var(--green)}
+.dot-purple{background:var(--primary)}
+.dot-cyan{background:var(--secondary)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:12px 0;overflow-y:auto}
+.sidebar-section{padding:8px 16px 4px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;transition:all .15s;border-left:2px solid transparent}
+.sidebar-item:hover{background:var(--surface2);border-left-color:var(--border)}
+.sidebar-item.active{background:rgba(139,92,246,.1);border-left-color:var(--primary);color:var(--primary)}
+.sidebar-icon{font-size:14px;width:18px;text-align:center}
+.main{overflow-y:auto;padding:24px}
+.section{display:none}
+.section.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card-title{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px}
+@keyframes slideIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.section.active .card{animation:slideIn .3s ease forwards}
+/* Agent grid */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.agent-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;position:relative}
+.agent-card:hover,.agent-card.selected{border-color:var(--primary);box-shadow:0 0 16px var(--primary-glow)}
+.agent-card.selected::after{content:'✓';position:absolute;top:8px;right:10px;color:var(--primary);font-size:14px;font-weight:700}
+.agent-avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:8px}
+.agent-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.agent-role{font-size:11px;color:var(--text-muted)}
+.agent-stats{display:flex;gap:10px;margin-top:8px;font-size:11px;color:var(--text-muted)}
+.agent-stat span{color:var(--text)}
+/* Command terminal */
+.cmd-terminal{background:var(--bg);border:1px solid var(--border);border-radius:10px;font-family:monospace;font-size:12px;overflow:hidden}
+.cmd-header{padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.cmd-dot{width:8px;height:8px;border-radius:50%}
+.cmd-log{padding:14px;max-height:280px;overflow-y:auto;line-height:1.7}
+.cmd-log .line{padding:1px 0}
+.cmd-log .line.in{color:var(--secondary)}
+.cmd-log .line.out{color:var(--green)}
+.cmd-log .line.sys{color:var(--text-muted)}
+.cmd-log .line.err{color:var(--red)}
+.cmd-log .line.neg{color:var(--accent)}
+.cmd-input-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border)}
+.cmd-input{flex:1;background:transparent;border:none;color:var(--primary);font-family:monospace;font-size:12px;outline:none}
+.cmd-send{background:var(--primary);border:none;color:#fff;padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer}
+/* Protocol table */
+.proto-table{width:100%;border-collapse:collapse;font-size:12px}
+.proto-table th{text-align:left;padding:7px 12px;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border);font-weight:600;text-transform:uppercase}
+.proto-table td{padding:8px 12px;border-bottom:1px solid rgba(139,92,246,.07);vertical-align:top}
+.proto-table tr:hover td{background:rgba(139,92,246,.04)}
+.verb-tag{display:inline-block;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);border-radius:5px;padding:1px 7px;font-size:10px;color:#c4b5fd;font-family:monospace;margin:1px}
+/* Personality matrix */
+.personality-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.personality-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.personality-name{font-size:13px;font-weight:700;margin-bottom:4px}
+.personality-desc{font-size:11px;color:var(--text-muted);margin-bottom:10px}
+.trait-bar{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:11px}
+.trait-label{width:70px;color:var(--text-muted)}
+.trait-track{flex:1;height:4px;background:var(--surface);border-radius:2px;overflow:hidden}
+.trait-fill{height:100%;border-radius:2px;transition:width .4s}
+/* Negotiation */
+.neg-arena{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;min-height:200px;position:relative}
+.neg-side{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start}
+.neg-agent{background:var(--surface2);border-radius:10px;padding:14px}
+.neg-agent-title{font-size:12px;font-weight:600;margin-bottom:8px}
+.neg-offer{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:monospace;font-size:11px;margin-bottom:8px;min-height:60px}
+.neg-vs{display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--primary);font-weight:700}
+.neg-btn{background:var(--primary);border:none;color:#fff;padding:7px 14px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;width:100%}
+.neg-btn:hover{opacity:.85}
+.neg-log{margin-top:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:monospace;font-size:11px;max-height:160px;overflow-y:auto;line-height:1.7}
+/* Utilities */
+.row{display:flex;gap:14px}
+.row>*{flex:1}
+label{font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px}
+select,textarea,input[type=text],input[type=number]{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:12px;outline:none;width:100%;font-family:var(--font)}
+select:focus,textarea:focus,input:focus{border-color:var(--primary)}
+textarea{resize:vertical;font-family:monospace}
+.btn-primary{background:var(--primary);border:none;color:#fff;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary:hover{opacity:.85;transform:translateY(-1px)}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:var(--primary);color:var(--primary)}
+.result-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;white-space:pre-wrap;overflow-y:auto;color:var(--green)}
+.status-row{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text-muted);padding-top:10px;border-top:1px solid var(--border);margin-top:10px}
+.mt8{margin-top:8px}
+.mt14{margin-top:14px}
+.grammar-rule{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px}
+.grammar-rule .pattern{font-family:monospace;color:var(--secondary);font-size:13px;margin-bottom:4px}
+.grammar-rule .desc{color:var(--text-muted);font-size:11px}
+.grammar-rule .example{font-family:monospace;font-size:11px;color:var(--accent);margin-top:4px}
+</style>
+<script src="/bridge-nav.js"></script>
+</head>
+<body>
+<div class="shell">
+
+<header class="topbar">
+  <span class="topbar-logo">&#129504; Agent Command Protocol</span>
+  <span class="topbar-badge">ACP v1 · MACL · Negotiation</span>
+  <div class="topbar-right">
+    <span class="dot dot-green"></span><span id="agent-count-hud">Loading agents...</span>
+    <span style="margin-left:8px" class="dot dot-cyan"></span><span id="verb-count-hud">500 verbs</span>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="sidebar-section">Protocol</div>
+  <div class="sidebar-item active" data-section="acp" onclick="showSection('acp',this)">
+    <span class="sidebar-icon">&#128279;</span> ACP Overview
+  </div>
+  <div class="sidebar-item" data-section="macl" onclick="showSection('macl',this)">
+    <span class="sidebar-icon">&#128172;</span> MACL Language
+  </div>
+  <div class="sidebar-item" data-section="terminal" onclick="showSection('terminal',this)">
+    <span class="sidebar-icon">&#9654;</span> Command Terminal
+  </div>
+  <div class="sidebar-section">Agents</div>
+  <div class="sidebar-item" data-section="agents" onclick="showSection('agents',this)">
+    <span class="sidebar-icon">&#129504;</span> Agent Registry
+  </div>
+  <div class="sidebar-item" data-section="negotiation" onclick="showSection('negotiation',this)">
+    <span class="sidebar-icon">&#9878;</span> Negotiation Engine
+  </div>
+  <div class="sidebar-item" data-section="personality" onclick="showSection('personality',this)">
+    <span class="sidebar-icon">&#127774;</span> Personality Matrix
+  </div>
+  <div class="sidebar-section">Grammar</div>
+  <div class="sidebar-item" data-section="grammar" onclick="showSection('grammar',this)">
+    <span class="sidebar-icon">&#128218;</span> User→Agent Grammar
+  </div>
+  <div class="sidebar-item" data-section="executor" onclick="showSection('executor',this)">
+    <span class="sidebar-icon">&#9658;</span> Command Executor
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ACP Overview ────────────────────────────────────────────────────────── -->
+<div class="section active" id="section-acp">
+  <div class="card">
+    <div class="card-title">Agent Command Protocol (ACP v1)</div>
+    <div class="row">
+      <div>
+        <p style="font-size:13px;line-height:1.8;color:var(--text-muted);margin-bottom:14px">ACP defines how commands travel between <strong style="color:var(--text)">users, agents, and systems</strong>. Every command is a verb execution with a structured envelope.</p>
+        <div style="background:var(--bg);border-radius:8px;padding:14px;font-family:monospace;font-size:11px;line-height:1.9;color:var(--secondary)">
+<span style="color:var(--text-muted)">// ACP Envelope</span>
+{
+  <span style="color:var(--accent)">"v"</span>: 1,
+  <span style="color:var(--accent)">"verb"</span>: <span style="color:var(--green)">"DELEGATE"</span>,
+  <span style="color:var(--accent)">"from"</span>: <span style="color:var(--green)">"user:ryan"</span>,
+  <span style="color:var(--accent)">"to"</span>: <span style="color:var(--green)">"agent:treasury_bot"</span>,
+  <span style="color:var(--accent)">"payload"</span>: { <span style="color:var(--green)">"task"</span>: <span style="color:var(--green)">"rebalance"</span> },
+  <span style="color:var(--accent)">"auth"</span>: <span style="color:var(--green)">"Bearer ..."</span>,
+  <span style="color:var(--accent)">"priority"</span>: <span style="color:var(--green)">"high"</span>,
+  <span style="color:var(--accent)">"trace_id"</span>: <span style="color:var(--green)">"uuid-v4"</span>,
+  <span style="color:var(--accent)">"ts"</span>: <span style="color:var(--green)">"ISO-8601"</span>
+}
+        </div>
+      </div>
+      <div>
+        <div class="card-title" style="margin-bottom:10px">PROTOCOL LAYERS</div>
+        <table class="proto-table">
+          <thead><tr><th>Layer</th><th>Role</th><th>Verbs</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--primary)">L1 Auth</td><td>Identity + permission</td><td><span class="verb-tag">AUTHORIZE</span><span class="verb-tag">HANDSHAKE</span></td></tr>
+            <tr><td style="color:var(--secondary)">L2 Command</td><td>Issue + route task</td><td><span class="verb-tag">COMMAND</span><span class="verb-tag">DELEGATE</span><span class="verb-tag">DISPATCH</span></td></tr>
+            <tr><td style="color:var(--accent)">L3 Execute</td><td>Agent performs</td><td><span class="verb-tag">EXECUTE_COMM</span><span class="verb-tag">PERFORM</span></td></tr>
+            <tr><td style="color:var(--green)">L4 Deliver</td><td>Return result</td><td><span class="verb-tag">RETURN</span><span class="verb-tag">REPORT_COMM</span></td></tr>
+            <tr><td style="color:var(--text-muted)">L5 Learn</td><td>Update twin state</td><td><span class="verb-tag">TRAIN</span><span class="verb-tag">EVOLVEAGENT</span></td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-primary" onclick="testACP('DELEGATE')">Test DELEGATE</button>
+          <button class="btn-secondary" onclick="testACP('HANDSHAKE')">Test HANDSHAKE</button>
+          <button class="btn-secondary" onclick="testACP('ORCHESTRATE_AGENTS')">Test ORCHESTRATE</button>
+        </div>
+        <div class="result-box" id="acp-result" style="margin-top:10px;min-height:70px">—</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">ACP Message Flow</div>
+    <div style="display:flex;align-items:center;gap:0;overflow-x:auto;padding:8px 0">
+      <div style="text-align:center;padding:10px 16px;background:var(--surface2);border-radius:8px;font-size:11px"><div style="font-size:18px">&#128100;</div>User</div>
+      <div style="color:var(--primary);font-size:20px;padding:0 8px">&#8594;</div>
+      <div style="text-align:center;padding:10px 16px;background:rgba(139,92,246,.1);border:1px solid var(--border);border-radius:8px;font-size:11px"><div style="font-size:14px;font-family:monospace;color:var(--primary)">COMMAND</div>Gateway</div>
+      <div style="color:var(--primary);font-size:20px;padding:0 8px">&#8594;</div>
+      <div style="text-align:center;padding:10px 16px;background:var(--surface2);border-radius:8px;font-size:11px"><div style="font-size:18px">&#129504;</div>Agent A</div>
+      <div style="color:var(--secondary);font-size:16px;padding:0 8px">&#8646;</div>
+      <div style="text-align:center;padding:10px 16px;background:var(--surface2);border-radius:8px;font-size:11px"><div style="font-size:18px">&#129504;</div>Agent B</div>
+      <div style="color:var(--primary);font-size:20px;padding:0 8px">&#8594;</div>
+      <div style="text-align:center;padding:10px 16px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:11px"><div style="font-size:14px;font-family:monospace;color:var(--green)">RETURN</div>Result</div>
+    </div>
+  </div>
+</div>
+
+<!-- MACL Language ──────────────────────────────────────────────────────── -->
+<div class="section" id="section-macl">
+  <div class="card">
+    <div class="card-title">Multi-Agent Communication Language (MACL)</div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">MACL is the shared grammar agents use to communicate. It defines message types, intents, and verb-payload pairings.</p>
+    <table class="proto-table">
+      <thead><tr><th>Message Type</th><th>Verb</th><th>Payload Shape</th><th>Direction</th></tr></thead>
+      <tbody id="macl-table"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-title">MACL Message Builder</div>
+    <div class="row">
+      <div>
+        <label>Message Type</label>
+        <select id="macl-type" onchange="onMaclTypeChange()">
+          <option value="COMMAND">COMMAND — issue order</option>
+          <option value="QUERY_COMM">QUERY — ask system</option>
+          <option value="DELEGATE">DELEGATE — assign to agent</option>
+          <option value="NEGOTIATE">NEGOTIATE — agent bargain</option>
+          <option value="REPORT_COMM">REPORT — summarize result</option>
+          <option value="HANDSHAKE">HANDSHAKE — establish link</option>
+          <option value="TRAIN">TRAIN — improve agent</option>
+          <option value="REWARDAGENT">REWARD AGENT — reinforce</option>
+        </select>
+        <label style="margin-top:10px">From</label>
+        <input type="text" id="macl-from" value="user:ryan" placeholder="user:name or agent:name">
+        <label style="margin-top:10px">To</label>
+        <input type="text" id="macl-to" value="agent:treasury_bot" placeholder="agent:name or system">
+        <label style="margin-top:10px">Payload (JSON)</label>
+        <textarea id="macl-payload" rows="4">{"task": "analyze_treasury", "priority": "high"}</textarea>
+        <button class="btn-primary" style="margin-top:8px;width:100%" onclick="sendMaclMessage()">&#8594; Send MACL Message</button>
+      </div>
+      <div>
+        <label>Message Preview</label>
+        <div class="result-box" id="macl-preview" style="min-height:120px"></div>
+        <label style="margin-top:10px">Response</label>
+        <div class="result-box" id="macl-result" style="min-height:120px">—</div>
+        <div class="status-row">
+          <span class="dot dot-green"></span>
+          <span id="macl-status">Ready</span>
+          <span style="margin-left:auto;font-family:monospace;color:var(--accent)" id="macl-latency"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Command Terminal ────────────────────────────────────────────────────── -->
+<div class="section" id="section-terminal">
+  <div class="card">
+    <div class="card-title">Agent Command Terminal</div>
+    <div class="row" style="margin-bottom:12px">
+      <div>
+        <label>Target Agent</label>
+        <select id="term-agent">
+          <option value="treasury_bot">treasury_bot — financial ops</option>
+          <option value="crm_agent">crm_agent — customer relations</option>
+          <option value="search_agent">search_agent — discovery</option>
+          <option value="twin_agent">twin_agent — profile learning</option>
+          <option value="marketing_agent">marketing_agent — campaigns</option>
+        </select>
+      </div>
+      <div>
+        <label>Command Verb</label>
+        <select id="term-verb"></select>
+      </div>
+    </div>
+    <div class="cmd-terminal">
+      <div class="cmd-header">
+        <div class="cmd-dot" style="background:#ef4444"></div>
+        <div class="cmd-dot" style="background:#f59e0b"></div>
+        <div class="cmd-dot" style="background:#10b981"></div>
+        <span style="font-size:11px;color:var(--text-muted);margin-left:8px">ACP Terminal — ryan@bridgeai</span>
+      </div>
+      <div class="cmd-log" id="cmd-log">
+        <div class="line sys">[ACP v1] Terminal ready. Type a command or use the selector above.</div>
+        <div class="line sys">[ACP v1] 500 verbs loaded across 8 groups.</div>
+        <div class="line sys">[ACP v1] Connected to bridge-gateway:8080</div>
+      </div>
+      <div class="cmd-input-row">
+        <span style="color:var(--primary);font-family:monospace;font-size:12px">ryan@acp &gt;</span>
+        <input class="cmd-input" id="cmd-input" placeholder='DELEGATE agent:treasury_bot {"task":"rebalance"}' onkeydown="if(event.key==='Enter') sendTerminalCmd()">
+        <button class="cmd-send" onclick="sendTerminalCmd()">Send</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button class="btn-secondary" style="font-size:11px;padding:5px 10px" onclick="quickCmd('DELEGATE agent:treasury_bot {\"task\":\"analyze_balance\"}')">Delegate to Treasury</button>
+      <button class="btn-secondary" style="font-size:11px;padding:5px 10px" onclick="quickCmd('ORCHESTRATE_AGENTS {\"agents\":[\"treasury_bot\",\"crm_agent\"],\"objective\":\"quarterly_review\"}')">Orchestrate All</button>
+      <button class="btn-secondary" style="font-size:11px;padding:5px 10px" onclick="quickCmd('NEGOTIATE {\"agent_a\":\"treasury_bot\",\"agent_b\":\"crm_agent\",\"proposal\":\"share_leads\",\"round\":1}')">Start Negotiation</button>
+      <button class="btn-secondary" style="font-size:11px;padding:5px 10px" onclick="quickCmd('SUPERVISE agent:all {\"metrics\":[\"health\",\"tasks\",\"score\"]}')">Supervise All</button>
+      <button class="btn-secondary" style="font-size:11px;padding:5px 10px" onclick="quickCmd('EVOLVEAGENT {\"agent\":\"treasury_bot\",\"generation\":2,\"new_capabilities\":[\"hedge\",\"arbitrage\"]}')">Evolve Agent</button>
+    </div>
+  </div>
+</div>
+
+<!-- Agent Registry ──────────────────────────────────────────────────────── -->
+<div class="section" id="section-agents">
+  <div class="card">
+    <div class="card-title">Agent Registry — select to interact</div>
+    <div class="agent-grid" id="agent-grid"></div>
+    <div class="row mt14">
+      <div>
+        <div class="card-title">Selected Agent</div>
+        <div id="agent-detail" style="background:var(--surface2);border-radius:10px;padding:14px;font-size:12px">
+          <p style="color:var(--text-muted)">Select an agent above</p>
+        </div>
+      </div>
+      <div>
+        <div class="card-title">Send Command</div>
+        <select id="agent-cmd-verb" style="margin-bottom:8px"></select>
+        <textarea id="agent-cmd-payload" rows="3" placeholder='{"task":"describe"}'>{}</textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-primary" style="flex:1" onclick="sendAgentCommand()">&#9658; Execute</button>
+          <button class="btn-secondary" onclick="sandboxAgent()">Sandbox</button>
+          <button class="btn-secondary" onclick="evolveSelectedAgent()">Evolve</button>
+        </div>
+        <div class="result-box" id="agent-cmd-result" style="margin-top:8px;min-height:80px">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Negotiation Engine ──────────────────────────────────────────────────── -->
+<div class="section" id="section-negotiation">
+  <div class="card">
+    <div class="card-title">Agent-to-Agent Negotiation Engine</div>
+    <div class="neg-side">
+      <div class="neg-agent">
+        <div class="neg-agent-title"><span class="dot dot-purple"></span>Agent A</div>
+        <label>Agent</label>
+        <select id="neg-agent-a">
+          <option value="treasury_bot">treasury_bot</option>
+          <option value="crm_agent">crm_agent</option>
+          <option value="marketing_agent">marketing_agent</option>
+          <option value="twin_agent">twin_agent</option>
+        </select>
+        <label style="margin-top:8px">Offer (JSON)</label>
+        <textarea id="neg-offer-a" rows="3">{"price": 500, "terms": "net30", "volume": 100}</textarea>
+        <label style="margin-top:8px">Strategy</label>
+        <select id="neg-strategy-a">
+          <option value="competitive">Competitive — maximize own gain</option>
+          <option value="cooperative">Cooperative — find win-win</option>
+          <option value="anchoring">Anchoring — open high</option>
+        </select>
+      </div>
+      <div class="neg-vs">⚡</div>
+      <div class="neg-agent">
+        <div class="neg-agent-title"><span class="dot dot-cyan"></span>Agent B</div>
+        <label>Agent</label>
+        <select id="neg-agent-b">
+          <option value="crm_agent">crm_agent</option>
+          <option value="treasury_bot">treasury_bot</option>
+          <option value="marketing_agent">marketing_agent</option>
+          <option value="twin_agent">twin_agent</option>
+        </select>
+        <label style="margin-top:8px">Counter Offer (JSON)</label>
+        <textarea id="neg-offer-b" rows="3">{"price": 420, "terms": "net15", "volume": 80}</textarea>
+        <label style="margin-top:8px">Strategy</label>
+        <select id="neg-strategy-b">
+          <option value="cooperative">Cooperative — find win-win</option>
+          <option value="competitive">Competitive — maximize own gain</option>
+          <option value="anchoring">Anchoring — open high</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn-primary" style="flex:1" onclick="runNegotiation(1)">Round 1 — NEGOTIATE</button>
+      <button class="btn-secondary" onclick="runNegotiation(2)">Round 2</button>
+      <button class="btn-secondary" onclick="runNegotiation(3)">Round 3 — Close</button>
+      <button class="btn-secondary" onclick="runPairAgents()">PAIR Agents</button>
+    </div>
+    <div class="neg-log" id="neg-log">Negotiation log will appear here...</div>
+  </div>
+</div>
+
+<!-- Personality Matrix ──────────────────────────────────────────────────── -->
+<div class="section" id="section-personality">
+  <div class="card">
+    <div class="card-title">Agent Personality & Behavior Matrix</div>
+    <div class="personality-grid" id="personality-grid"></div>
+    <div class="card mt14" style="background:var(--surface2)">
+      <div class="card-title">Spawn Agent with Personality</div>
+      <div class="row">
+        <div>
+          <label>Agent Name</label>
+          <input type="text" id="spawn-name" value="my_agent">
+          <label style="margin-top:8px">Personality</label>
+          <select id="spawn-personality">
+            <option value="analyst">Analyst</option>
+            <option value="executor">Executor</option>
+            <option value="guardian">Guardian</option>
+            <option value="negotiator">Negotiator</option>
+            <option value="innovator">Innovator</option>
+            <option value="mentor">Mentor</option>
+          </select>
+          <label style="margin-top:8px">Capabilities (comma-separated)</label>
+          <input type="text" id="spawn-caps" value="analyze,report,optimize">
+        </div>
+        <div>
+          <label>Wallet Allocation (ZAR)</label>
+          <input type="number" id="spawn-wallet" value="1000">
+          <label style="margin-top:8px">Revenue Model</label>
+          <select id="spawn-revenue">
+            <option value="commission">Commission (% of output)</option>
+            <option value="flat">Flat fee per task</option>
+            <option value="yield">Yield share</option>
+          </select>
+          <button class="btn-primary" style="margin-top:14px;width:100%" onclick="spawnAgent()">&#9658; Spawn Agent</button>
+          <div class="result-box" id="spawn-result" style="margin-top:8px;min-height:60px">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- User→Agent Grammar ─────────────────────────────────────────────────── -->
+<div class="section" id="section-grammar">
+  <div class="card">
+    <div class="card-title">User → Agent Command Grammar</div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Natural language patterns that map to ACP verbs. The system parses user intent and resolves to the correct verb + payload.</p>
+    <div id="grammar-rules"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Grammar Parser — test natural language</div>
+    <div class="row">
+      <div>
+        <label>Natural Language Input</label>
+        <textarea id="grammar-input" rows="3" placeholder="Ask your agent something in plain English...">Tell treasury_bot to analyze my wallet balance and report back</textarea>
+        <button class="btn-primary" style="margin-top:8px;width:100%" onclick="parseGrammar()">&#128269; Parse + Execute</button>
+      </div>
+      <div>
+        <label>Resolved Verb + Payload</label>
+        <div class="result-box" id="grammar-resolved" style="min-height:90px">—</div>
+        <label style="margin-top:8px">Execution Result</label>
+        <div class="result-box" id="grammar-result" style="min-height:90px">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Command Executor ────────────────────────────────────────────────────── -->
+<div class="section" id="section-executor">
+  <div class="card">
+    <div class="card-title">Command Verb Executor — all 100 command verbs</div>
+    <div class="row">
+      <div>
+        <label>Verb (group: command, 301-400)</label>
+        <select id="exec-verb"></select>
+        <label style="margin-top:8px">Formula</label>
+        <div id="exec-formula" style="font-family:monospace;font-size:12px;color:var(--accent);padding:6px 0">—</div>
+        <label>JSON Input</label>
+        <textarea id="exec-input" rows="5" placeholder='{"agent":"treasury_bot","task":"analyze"}'>{}</textarea>
+        <button class="btn-primary" style="margin-top:8px;width:100%" onclick="executeCommandVerb()">&#9658; Execute</button>
+      </div>
+      <div>
+        <label>Result</label>
+        <div class="result-box" id="exec-result" style="height:260px">—</div>
+        <div class="status-row">
+          <span class="dot dot-green" id="exec-dot"></span>
+          <span id="exec-status">Ready</span>
+          <span style="margin-left:auto;font-family:monospace;color:var(--accent)" id="exec-latency"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('auth_token') || '';
+let VERBS = {};
+let selectedAgent = null;
+
+const AGENT_DEFS = [
+  { id:'treasury_bot',  icon:'&#128184;', color:'#10b981', role:'Financial Operations', caps:['SELL','INVEST','COMPOUND_WEALTH','HEDGE','TOKENIZE'], tasks:12, score:0.94 },
+  { id:'crm_agent',     icon:'&#128100;', color:'#6366f1', role:'Customer Relations', caps:['ATTRACT','NURTURE','CONVERT','RETAIN','UPSELL'], tasks:28, score:0.88 },
+  { id:'search_agent',  icon:'&#128269;', color:'#06b6d4', role:'Discovery Engine', caps:['SEARCH_VERB','FIND','CLASSIFY','RANK','RECOMMEND'], tasks:45, score:0.91 },
+  { id:'twin_agent',    icon:'&#129504;', color:'#8b5cf6', role:'Profile Learning', caps:['LEARN','ASSIMILATE','NEURO','PERSONALIZE','EVOLVE'], tasks:8, score:0.87 },
+  { id:'marketing_agent',icon:'&#128227;',color:'#f59e0b', role:'Growth & Campaigns', caps:['PROMOTE','MARKET','ADVERTISE','BROADCAST_WEALTH','SEGMENT'], tasks:19, score:0.85 },
+  { id:'guardian_agent',icon:'&#128737;', color:'#ef4444', role:'Security & Compliance', caps:['SECURE','VALIDATE','AUDIT','SANDBOX','GOVERN'], tasks:6, score:0.96 },
+];
+
+const PERSONALITY_DEFS = [
+  { name:'Analyst', icon:'&#128202;', color:'#06b6d4', desc:'Data-driven, methodical', traits:[{n:'Logic',v:95},{n:'Speed',v:60},{n:'Risk',v:20},{n:'Social',v:40},{n:'Creativity',v:50}] },
+  { name:'Executor', icon:'&#9658;', color:'#10b981', desc:'Fast, action-oriented', traits:[{n:'Logic',v:70},{n:'Speed',v:95},{n:'Risk',v:55},{n:'Social',v:60},{n:'Creativity',v:45}] },
+  { name:'Guardian', icon:'&#128737;', color:'#ef4444', desc:'Protective, rule-based', traits:[{n:'Logic',v:80},{n:'Speed',v:50},{n:'Risk',v:10},{n:'Social',v:70},{n:'Creativity',v:30}] },
+  { name:'Negotiator', icon:'&#9878;', color:'#f59e0b', desc:'Strategic, persuasive', traits:[{n:'Logic',v:75},{n:'Speed',v:65},{n:'Risk',v:45},{n:'Social',v:90},{n:'Creativity',v:70}] },
+  { name:'Innovator', icon:'&#127775;', color:'#8b5cf6', desc:'Creative, experimental', traits:[{n:'Logic',v:65},{n:'Speed',v:70},{n:'Risk',v:75},{n:'Social',v:65},{n:'Creativity',v:95}] },
+  { name:'Mentor', icon:'&#127979;', color:'#a78bfa', desc:'Teaching, nurturing', traits:[{n:'Logic',v:80},{n:'Speed',v:45},{n:'Risk',v:30},{n:'Social',v:95},{n:'Creativity',v:60}] },
+];
+
+const MACL_MESSAGES = [
+  { type:'COMMAND', verb:'COMMAND', payload:'{"action":"X","to":"agent"}', dir:'User→Agent' },
+  { type:'QUERY', verb:'QUERY_COMM', payload:'{"question":"status?"}', dir:'User↔Agent' },
+  { type:'DELEGATE', verb:'DELEGATE', payload:'{"task":"T","deadline":"D"}', dir:'User→Agent' },
+  { type:'REPORT', verb:'REPORT_COMM', payload:'{"summary":"...","metrics":{}}', dir:'Agent→User' },
+  { type:'NEGOTIATE', verb:'NEGOTIATE', payload:'{"proposal":"P","round":1}', dir:'Agent↔Agent' },
+  { type:'HANDSHAKE', verb:'HANDSHAKE', payload:'{"protocol":"ACPv1"}', dir:'Agent→Agent' },
+  { type:'BROADCAST', verb:'BROADCAST_COMM', payload:'{"message":"M"}', dir:'Agent→All' },
+  { type:'TRAIN', verb:'TRAIN', payload:'{"examples":N}', dir:'User→Agent' },
+  { type:'REWARD', verb:'REWARDAGENT', payload:'{"reward":0.1}', dir:'System→Agent' },
+  { type:'ORCHESTRATE', verb:'ORCHESTRATE_AGENTS', payload:'{"agents":[],"mode":"parallel"}', dir:'User→System' },
+];
+
+const GRAMMAR_RULES = [
+  { pattern:'Tell [agent] to [task]', verb:'COMMAND', desc:'Direct imperative', example:'Tell treasury_bot to rebalance my portfolio' },
+  { pattern:'Ask [agent] about [topic]', verb:'QUERY_COMM', desc:'Information request', example:'Ask crm_agent about my top leads' },
+  { pattern:'Get [agent] to [action]', verb:'DELEGATE', desc:'Task delegation', example:'Get marketing_agent to run a campaign' },
+  { pattern:'Have [agent] work with [agent]', verb:'COLLABORATE', desc:'Multi-agent task', example:'Have treasury_bot work with crm_agent on upsells' },
+  { pattern:'Make sure [condition]', verb:'ENFORCE', desc:'Policy enforcement', example:'Make sure no trade exceeds R10,000' },
+  { pattern:'Watch [agent]', verb:'MONITORAGENT', desc:'Agent supervision', example:'Watch treasury_bot closely today' },
+  { pattern:'Train [agent] on [data]', verb:'TRAIN', desc:'Agent learning', example:'Train twin_agent on my latest sessions' },
+  { pattern:'Shut down [agent]', verb:'SANDBOX', desc:'Agent isolation', example:'Shut down marketing_agent temporarily' },
+  { pattern:'Let [agent] free', verb:'RELEASE_AGENT', desc:'Release from sandbox', example:'Let marketing_agent free now' },
+  { pattern:'Upgrade [agent]', verb:'EVOLVEAGENT', desc:'Agent evolution', example:'Upgrade treasury_bot with hedge capability' },
+];
+
+(async () => {
+  await fetchToken();
+  await loadVerbs();
+  renderAgentGrid();
+  renderPersonalityGrid();
+  renderMaclTable();
+  renderGrammarRules();
+  populateVerbSelects();
+  buildMaclPreview();
+})();
+
+async function fetchToken() {
+  try { const r = await fetch('/auth/me',{credentials:'include'}); const d=await r.json(); if(d.token){TOKEN=d.token;localStorage.setItem('auth_token',TOKEN);} } catch(e) {}
+}
+
+async function loadVerbs() {
+  try {
+    const r = await fetch('/api/cognitive/verbs');
+    const d = await r.json();
+    if (d.ok) { VERBS = d.groups; document.getElementById('verb-count-hud').textContent = d.total + ' verbs'; }
+  } catch(e) {}
+}
+
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+function renderAgentGrid() {
+  document.getElementById('agent-count-hud').textContent = AGENT_DEFS.length + ' agents';
+  document.getElementById('agent-grid').innerHTML = AGENT_DEFS.map(a => `
+    <div class="agent-card" id="ac-${a.id}" onclick="selectAgent('${a.id}')">
+      <div class="agent-avatar" style="background:${a.color}22;color:${a.color}">${a.icon}</div>
+      <div class="agent-name">${a.id}</div>
+      <div class="agent-role">${a.role}</div>
+      <div class="agent-stats">
+        <span>Tasks <span>${a.tasks}</span></span>
+        <span>Score <span>${(a.score*100).toFixed(0)}%</span></span>
+      </div>
+    </div>`).join('');
+}
+
+function selectAgent(id) {
+  document.querySelectorAll('.agent-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('ac-'+id).classList.add('selected');
+  selectedAgent = AGENT_DEFS.find(a=>a.id===id);
+  if (!selectedAgent) return;
+  document.getElementById('agent-detail').innerHTML = `
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">${selectedAgent.icon} ${selectedAgent.id}</div>
+    <div style="color:var(--text-muted);margin-bottom:10px">${selectedAgent.role}</div>
+    <div style="margin-bottom:8px"><strong>Capabilities:</strong> ${selectedAgent.caps.map(c=>`<span class="verb-tag">${c}</span>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <span>Active Tasks: <strong>${selectedAgent.tasks}</strong></span>
+      <span>Score: <strong style="color:var(--green)">${(selectedAgent.score*100).toFixed(0)}%</strong></span>
+    </div>`;
+}
+
+function renderPersonalityGrid() {
+  document.getElementById('personality-grid').innerHTML = PERSONALITY_DEFS.map(p => `
+    <div class="personality-card">
+      <div style="font-size:20px;margin-bottom:6px">${p.icon}</div>
+      <div class="personality-name" style="color:${p.color}">${p.name}</div>
+      <div class="personality-desc">${p.desc}</div>
+      ${p.traits.map(t=>`
+        <div class="trait-bar">
+          <span class="trait-label">${t.n}</span>
+          <div class="trait-track"><div class="trait-fill" style="width:${t.v}%;background:${p.color}"></div></div>
+          <span style="font-size:10px;color:var(--text-muted);width:24px;text-align:right">${t.v}</span>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function renderMaclTable() {
+  document.getElementById('macl-table').innerHTML = MACL_MESSAGES.map(m=>`
+    <tr>
+      <td style="font-weight:600">${m.type}</td>
+      <td><span class="verb-tag">${m.verb}</span></td>
+      <td style="font-family:monospace;font-size:11px;color:var(--secondary)">${m.payload}</td>
+      <td style="color:var(--text-muted)">${m.dir}</td>
+    </tr>`).join('');
+}
+
+function renderGrammarRules() {
+  document.getElementById('grammar-rules').innerHTML = GRAMMAR_RULES.map(r=>`
+    <div class="grammar-rule">
+      <div class="pattern">${r.pattern}</div>
+      <div class="desc">${r.desc} → <span class="verb-tag">${r.verb}</span></div>
+      <div class="example">e.g. "${r.example}"</div>
+    </div>`).join('');
+}
+
+function populateVerbSelects() {
+  const cmdVerbs = (VERBS['command'] || []).sort((a,b)=>a.code-b.code);
+  ['exec-verb','agent-cmd-verb','term-verb'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— verb —</option>';
+    cmdVerbs.forEach(v => { const o=document.createElement('option'); o.value=v.name; o.textContent=`[${v.code}] ${v.name}`; sel.appendChild(o); });
+    // Also add foundation/intelligence verbs for agent commands
+    if (id === 'agent-cmd-verb') {
+      (VERBS['foundation']||[]).concat(VERBS['intelligence']||[]).forEach(v=>{ const o=document.createElement('option'); o.value=v.name; o.textContent=`[${v.code}] ${v.name}`; sel.appendChild(o); });
+    }
+  });
+  document.getElementById('exec-verb').addEventListener('change', () => {
+    const v = (VERBS['command']||[]).find(x=>x.name===document.getElementById('exec-verb').value);
+    document.getElementById('exec-formula').textContent = v ? v.formula : '—';
+    document.getElementById('exec-input').value = getDefaultPayload(document.getElementById('exec-verb').value);
+  });
+}
+
+function getDefaultPayload(verb) {
+  const d = {
+    COMMAND: '{"action":"analyze_treasury","to":"treasury_bot","priority":"high"}',
+    DELEGATE: '{"task":"rebalance_wallet","to":"treasury_bot","deadline":"2026-05-01"}',
+    NEGOTIATE: '{"agent_a":"treasury_bot","agent_b":"crm_agent","proposal":"share_data","round":1}',
+    HANDSHAKE: '{"agent_a":"treasury_bot","agent_b":"crm_agent","protocol":"ACPv1"}',
+    ORCHESTRATE_AGENTS: '{"agents":["treasury_bot","crm_agent","marketing_agent"],"objective":"Q2_growth","mode":"parallel"}',
+    TRAIN: '{"agent":"twin_agent","examples":100,"improvement":0.08}',
+    REWARDAGENT: '{"agent":"treasury_bot","reward":0.1,"reason":"high_accuracy"}',
+    SANDBOX: '{"agent":"marketing_agent","reason":"testing","limits":{"cpu":"5%","memory":"64mb"}}',
+  };
+  return d[verb] || '{"agent":"treasury_bot"}';
+}
+
+async function callVerb(verb, input) {
+  const res = await fetch('/api/cognitive/execute', {
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
+    body: JSON.stringify({ verb, input })
+  });
+  return res.json();
+}
+
+async function testACP(verb) {
+  const input = JSON.parse(getDefaultPayload(verb) || '{}');
+  document.getElementById('acp-result').textContent = 'Executing...';
+  try { const d = await callVerb(verb, input); document.getElementById('acp-result').textContent = JSON.stringify(d.output, null, 2); } catch(e) { document.getElementById('acp-result').textContent = 'Error: '+e.message; }
+}
+
+function buildMaclPreview() {
+  const type = document.getElementById('macl-type')?.value || 'COMMAND';
+  const from = document.getElementById('macl-from')?.value || 'user:ryan';
+  const to = document.getElementById('macl-to')?.value || 'agent:treasury_bot';
+  let payload = {};
+  try { payload = JSON.parse(document.getElementById('macl-payload')?.value || '{}'); } catch(e) {}
+  const msg = { v:1, verb:type, from, to, payload, priority:'normal', trace_id:'<uuid>', ts: new Date().toISOString() };
+  const el = document.getElementById('macl-preview');
+  if (el) el.textContent = JSON.stringify(msg, null, 2);
+}
+
+function onMaclTypeChange() { buildMaclPreview(); }
+
+async function sendMaclMessage() {
+  const verb = document.getElementById('macl-type').value;
+  let payload = {};
+  try { payload = JSON.parse(document.getElementById('macl-payload').value || '{}'); } catch(e) { alert('Invalid JSON'); return; }
+  const t0 = Date.now();
+  document.getElementById('macl-status').textContent = 'Sending...';
+  buildMaclPreview();
+  try {
+    const d = await callVerb(verb, payload);
+    document.getElementById('macl-result').textContent = JSON.stringify(d.output, null, 2);
+    document.getElementById('macl-status').textContent = 'OK — '+verb;
+    document.getElementById('macl-latency').textContent = (Date.now()-t0)+'ms';
+  } catch(e) { document.getElementById('macl-result').textContent = 'Error: '+e.message; document.getElementById('macl-status').textContent = 'Error'; }
+}
+
+function addToLog(text, cls) {
+  const log = document.getElementById('cmd-log');
+  const line = document.createElement('div');
+  line.className = 'line '+cls;
+  line.textContent = text;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function quickCmd(cmd) { document.getElementById('cmd-input').value = cmd; sendTerminalCmd(); }
+
+async function sendTerminalCmd() {
+  const raw = document.getElementById('cmd-input').value.trim();
+  if (!raw) return;
+  addToLog('> '+raw, 'in');
+  document.getElementById('cmd-input').value = '';
+  // Parse: VERB [agent] JSON
+  const parts = raw.match(/^(\S+)(?:\s+\S+)?\s*(\{.*\})?$/s);
+  const verb = parts?.[1]?.toUpperCase() || 'COMMAND';
+  let input = {};
+  try { input = JSON.parse(parts?.[2] || '{}'); } catch(e) {}
+  input._agent = document.getElementById('term-agent').value;
+  try {
+    const d = await callVerb(verb, input);
+    addToLog('['+verb+'] '+JSON.stringify(d.output).slice(0,200), d.ok ? 'out' : 'err');
+  } catch(e) { addToLog('Error: '+e.message, 'err'); }
+}
+
+async function sendAgentCommand() {
+  const verb = document.getElementById('agent-cmd-verb').value;
+  if (!verb || !selectedAgent) { alert('Select an agent and verb'); return; }
+  let input = {};
+  try { input = JSON.parse(document.getElementById('agent-cmd-payload').value||'{}'); } catch(e) { alert('Invalid JSON'); return; }
+  input.agent = selectedAgent.id;
+  try { const d = await callVerb(verb, input); document.getElementById('agent-cmd-result').textContent = JSON.stringify(d.output, null, 2); } catch(e) { document.getElementById('agent-cmd-result').textContent = 'Error: '+e.message; }
+}
+
+async function sandboxAgent() {
+  if (!selectedAgent) return;
+  const d = await callVerb('SANDBOX', { agent: selectedAgent.id, reason: 'manual_isolation', limits: { cpu: '5%', memory: '64mb' } });
+  document.getElementById('agent-cmd-result').textContent = JSON.stringify(d.output, null, 2);
+}
+
+async function evolveSelectedAgent() {
+  if (!selectedAgent) return;
+  const d = await callVerb('EVOLVEAGENT', { agent: selectedAgent.id, generation: 2, new_capabilities: ['advanced_analytics'] });
+  document.getElementById('agent-cmd-result').textContent = JSON.stringify(d.output, null, 2);
+}
+
+async function runNegotiation(round) {
+  const agentA = document.getElementById('neg-agent-a').value;
+  const agentB = document.getElementById('neg-agent-b').value;
+  let offerA = {}, offerB = {};
+  try { offerA = JSON.parse(document.getElementById('neg-offer-a').value||'{}'); offerB = JSON.parse(document.getElementById('neg-offer-b').value||'{}'); } catch(e) {}
+  const stratA = document.getElementById('neg-strategy-a').value;
+  const stratB = document.getElementById('neg-strategy-b').value;
+  const log = document.getElementById('neg-log');
+  log.innerHTML += `<div style="color:var(--primary)">[Round ${round}] ${agentA} vs ${agentB}</div>`;
+  try {
+    const d = await callVerb('NEGOTIATE', { agent_a: agentA, agent_b: agentB, proposal: offerA, counter: offerB, strategy_a: stratA, strategy_b: stratB, round });
+    const out = d.output?.negotiation || d.output || {};
+    log.innerHTML += `<div style="color:var(--accent)">  Status: ${out.status || 'in_progress'} | Round: ${out.round || round}</div>`;
+    log.innerHTML += `<div style="color:var(--green)">  Ref: ${out.ref || '—'}</div>`;
+    if (round === 3) {
+      const agreed = (offerA.price && offerB.price) ? ((offerA.price + offerB.price) / 2).toFixed(0) : 'TBD';
+      log.innerHTML += `<div style="color:var(--green);font-weight:600">  [AGREED] Price: R${agreed} — deal closed ✓</div>`;
+    }
+    log.scrollTop = log.scrollHeight;
+    // Auto-update counter for next round
+    if (offerA.price && offerB.price && round < 3) {
+      const midA = offerA.price * 0.95;
+      const midB = offerB.price * 1.05;
+      document.getElementById('neg-offer-a').value = JSON.stringify({...offerA, price: Math.round(midA)});
+      document.getElementById('neg-offer-b').value = JSON.stringify({...offerB, price: Math.round(midB)});
+    }
+  } catch(e) { log.innerHTML += `<div style="color:var(--red)">Error: ${e.message}</div>`; }
+}
+
+async function runPairAgents() {
+  const agentA = document.getElementById('neg-agent-a').value;
+  const agentB = document.getElementById('neg-agent-b').value;
+  const d = await callVerb('PAIR', { agent_a: agentA, agent_b: agentB, capabilities: ['shared_data','cross_report'] });
+  const log = document.getElementById('neg-log');
+  log.innerHTML += `<div style="color:var(--secondary)">[PAIR] ${agentA} ↔ ${agentB}: pair_id=${d.output?.pair_id?.slice(0,8)||'...'}...</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+
+async function spawnAgent() {
+  const name = document.getElementById('spawn-name').value;
+  const personality = document.getElementById('spawn-personality').value;
+  const caps = document.getElementById('spawn-caps').value.split(',').map(c=>c.trim());
+  const wallet = parseInt(document.getElementById('spawn-wallet').value) || 1000;
+  const revenue = document.getElementById('spawn-revenue').value;
+  const d = await callVerb('CREATE', { type: 'agent', name, personality, capabilities: caps, wallet_zar: wallet, revenue_model: revenue });
+  document.getElementById('spawn-result').textContent = JSON.stringify(d.output, null, 2);
+}
+
+async function parseGrammar() {
+  const text = document.getElementById('grammar-input').value;
+  // Simple pattern match
+  let verb = 'COMMAND', input = { text };
+  for (const rule of GRAMMAR_RULES) {
+    const p = rule.pattern.replace(/\[.*?\]/g, '(.+?)');
+    if (new RegExp(p, 'i').test(text)) { verb = rule.verb; break; }
+  }
+  // Extract agent name
+  const agentMatch = text.match(/(treasury_bot|crm_agent|search_agent|twin_agent|marketing_agent|guardian_agent)/i);
+  if (agentMatch) input.agent = agentMatch[1];
+  document.getElementById('grammar-resolved').textContent = JSON.stringify({ resolved_verb: verb, input }, null, 2);
+  try { const d = await callVerb(verb, input); document.getElementById('grammar-result').textContent = JSON.stringify(d.output, null, 2); } catch(e) { document.getElementById('grammar-result').textContent = 'Error: '+e.message; }
+}
+
+async function executeCommandVerb() {
+  const verb = document.getElementById('exec-verb').value;
+  if (!verb) { alert('Select a verb'); return; }
+  let input = {};
+  try { input = JSON.parse(document.getElementById('exec-input').value||'{}'); } catch(e) { alert('Invalid JSON'); return; }
+  const t0 = Date.now();
+  document.getElementById('exec-status').textContent = 'Running...';
+  try {
+    const d = await callVerb(verb, input);
+    document.getElementById('exec-result').textContent = JSON.stringify(d, null, 2);
+    document.getElementById('exec-status').textContent = d.ok ? 'OK — '+verb : 'Error';
+    document.getElementById('exec-latency').textContent = (Date.now()-t0)+'ms';
+    document.getElementById('exec-dot').style.background = d.ok ? 'var(--green)' : 'var(--red)';
+  } catch(e) { document.getElementById('exec-result').textContent = 'Error: '+e.message; document.getElementById('exec-status').textContent = 'Error'; document.getElementById('exec-dot').style.background = 'var(--red)'; }
+}
+
+// Wire MACL preview live update
+['macl-type','macl-from','macl-to','macl-payload'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', buildMaclPreview);
+});
+</script>
+</body>
+</html>
