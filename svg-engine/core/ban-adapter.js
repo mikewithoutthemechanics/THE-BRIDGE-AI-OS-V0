@@ -138,7 +138,7 @@ function fallbackSVG(id, name, desc, plugin, color) {
 
 export function loadBANSkills() {
   if (!fs.existsSync(BAN_DIR)) {
-    console.warn(`[BAN Adapter] Directory not found: ${BAN_DIR}`);
+    console.log(`[BAN Adapter] No BAN dir at ${BAN_DIR}, skipping`);
     return [];
   }
 

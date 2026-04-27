@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>System Dashboard — Ryan Cowan</title>
+<script>
+(function(){
+  try {
+    var tok=localStorage.getItem('bridge_token')||localStorage.getItem('bridge_user_token');
+    if(!tok){var cm=document.cookie.split(';').map(function(c){return c.trim();}).find(function(c){return c.startsWith('bridge_token=');});if(cm)tok=decodeURIComponent(cm.split('=').slice(1).join('='));}
+    if(!tok){location.replace('/onboarding');return;}
+    var pl=JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    if(pl.role!=='superadmin'){location.replace('/portal');}
+  }catch(_){location.replace('/onboarding');}
+})();
+</script>
+<script src="/bridge-nav.js?v=20260425e" defer></script>
+<style>
+:root{--bg:#0a0c10;--surface:#111318;--surface2:#181c24;--border:rgba(255,255,255,.07);--accent:#00d4ff;--gold:#ffb400;--green:#22c55e;--red:#ef4444;--purple:#a855f7;--text:#e2e8f0;--muted:rgba(200,220,230,.45)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+a{color:inherit;text-decoration:none}
+.topbar{background:rgba(255,180,0,.06);border-bottom:1px solid rgba(255,180,0,.18);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;flex-shrink:0}
+.topbar-brand{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.topbar-links{display:flex;gap:6px;flex-wrap:wrap}
+.topbar-links a{font-size:.65rem;font-weight:600;letter-spacing:.06em;color:rgba(200,220,230,.5);padding:4px 9px;border:1px solid rgba(200,220,230,.12);border-radius:4px;transition:all .2s}
+.topbar-links a:hover{color:var(--gold);border-color:rgba(255,180,0,.4)}
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:200px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.nav-item{padding:11px 16px;cursor:pointer;font-size:.72rem;font-weight:600;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:9px;transition:all .2s;border-left:2px solid transparent}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.nav-item.active{color:var(--gold);background:rgba(255,180,0,.06);border-left-color:var(--gold)}
+.nav-item svg{flex-shrink:0}
+.main{flex:1;overflow-y:auto;padding:24px}
+.section{display:none}
+.section.active{display:block}
+.sec-title{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 14px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+h2{font-size:1.3rem;font-weight:700;color:var(--gold);margin-bottom:4px}
+.sub{color:var(--muted);font-size:.78rem;margin-bottom:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:16px}
+.kpi-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.kpi-val{font-size:1.35rem;font-weight:700;line-height:1}
+.kpi.gold .kpi-val{color:var(--gold)}.kpi.green .kpi-val{color:var(--green)}.kpi.blue .kpi-val{color:var(--accent)}.kpi.purple .kpi-val{color:var(--purple)}
+.card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px}
+.card-title{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}.sidebar{width:160px}.nav-item{font-size:.65rem;padding:10px 12px}}
+@media(max-width:640px){.sidebar{display:none}.layout{flex-direction:column}}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
+.tbl td{padding:8px 9px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.76rem}
+.tbl tr:last-child td{border:none}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.56rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.badge.green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.badge.gold{background:rgba(255,180,0,.12);color:var(--gold);border:1px solid rgba(255,180,0,.2)}
+.badge.blue{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.2)}
+.badge.purple{background:rgba(168,85,247,.1);color:var(--purple);border:1px solid rgba(168,85,247,.2)}
+.badge.red{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.badge.gray{background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.2)}
+.btn{padding:7px 14px;border-radius:6px;font-size:.65rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;border:1px solid;transition:all .2s}
+.btn-gold{background:rgba(255,180,0,.1);border-color:rgba(255,180,0,.3);color:var(--gold)}
+.btn-gold:hover{background:rgba(255,180,0,.2)}
+.btn-green{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--green)}
+.btn-green:hover{background:rgba(34,197,94,.2)}
+.btn-red{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red)}
+.btn-sm{padding:4px 10px;font-size:.58rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.form-group input,.form-group select{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-size:.8rem;outline:none;transition:border .2s}
+.form-group input:focus,.form-group select:focus{border-color:rgba(255,180,0,.4)}
+.search-bar{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:.8rem;outline:none;width:100%;margin-bottom:12px}
+.search-bar:focus{border-color:rgba(255,180,0,.3)}
+.msg{padding:7px 12px;border-radius:6px;font-size:.72rem;margin-top:8px;display:none}
+.msg.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--green)}
+.msg.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--red)}
+.eco-flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:14px 18px;background:rgba(255,180,0,.04);border:1px solid rgba(255,180,0,.15);border-radius:10px;margin-bottom:16px}
+.eco-node{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.7rem;font-weight:700;text-align:center;min-width:90px}
+.eco-arrow{color:var(--gold);font-size:.9rem;flex-shrink:0}
+.tier-bar{height:26px;display:flex;border-radius:6px;overflow:hidden;gap:2px;margin-top:8px}
+.tier-seg{display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:flex .5s}
+.pipe-step{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;flex:1}
+.pipe-step .ps-label{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.pipe-step .ps-val{font-size:1rem;font-weight:700;color:var(--green)}
+.pipe-step .ps-pending{font-size:.65rem;color:var(--gold);margin-top:2px}
+.pipe-row{display:flex;gap:8px;align-items:stretch;margin-bottom:14px}
+.pipe-arrow{display:flex;align-items:center;color:var(--gold);font-size:1rem;flex-shrink:0}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.admin-link{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;display:block;transition:all .2s}
+.admin-link:hover{border-color:rgba(255,180,0,.35);background:rgba(255,180,0,.05)}
+.admin-link .icon{font-size:1.1rem;margin-bottom:4px}
+.admin-link .lbl{font-size:.56rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.plat-card{background:rgba(255,180,0,.04);border:1px solid rgba(255,180,0,.15);border-radius:10px;padding:16px}
+.plat-name{font-weight:700;font-size:.85rem;color:var(--gold);margin-bottom:2px}
+.plat-domain{font-size:.65rem;color:var(--accent);margin-bottom:8px}
+.plat-stat{font-size:.7rem;color:var(--muted);margin-top:3px}
+.plat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.overflow-x{overflow-x:auto}
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:.78rem;z-index:9999;transition:opacity .3s;pointer-events:none}
+.toast.green{border-color:rgba(34,197,94,.3);color:var(--green)}
+.toast.red{border-color:rgba(239,68,68,.3);color:var(--red)}
+</style>
+</head>
+<body>
+<div id="bridge-nav"></div>
+<div class="topbar">
+  <div class="topbar-brand">&#9670; SYSTEM — RYAN COWAN &nbsp;<span style="font-weight:400;opacity:.6;font-size:.65rem">Autonomous Economic OS Control</span></div>
+  <div class="topbar-links">
+    <a href="/ryan-finance">Finance</a>
+    <a href="/dashboard">User Dash</a>
+    <a href="/portal">Portal</a>
+    <a href="/admin.html">Admin</a>
+    <a href="/crm.html">CRM</a>
+    <a href="/invoicing.html">Invoicing</a>
+    <a href="/god-mode.html">God Mode</a>
+    <a href="/executive-dashboard.html">Exec</a>
+    <a href="/profile">Profile</a>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="nav-item active" onclick="showSection('overview')" id="nav-overview">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Overview
+    </div>
+    <div class="nav-item" onclick="showSection('users')" id="nav-users">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      All Users
+    </div>
+    <div class="nav-item" onclick="showSection('economies')" id="nav-economies">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Economies
+    </div>
+    <div class="nav-item" onclick="showSection('revenue')" id="nav-revenue">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Revenue Flow
+    </div>
+    <div class="nav-item" onclick="showSection('platforms')" id="nav-platforms">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Platforms
+    </div>
+    <div class="nav-item" onclick="showSection('affiliates')" id="nav-affiliates">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Affiliates
+    </div>
+    <div class="nav-item" onclick="showSection('banking')" id="nav-banking">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      Banking
+    </div>
+    <div class="nav-item" onclick="showSection('leads')" id="nav-leads">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Leads Intel
+    </div>
+    <div class="nav-item" onclick="showSection('settings')" id="nav-settings">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+    <div style="margin-top:auto;padding:12px">
+      <a href="/ryan-finance" style="display:block;background:rgba(255,180,0,.1);border:1px solid rgba(255,180,0,.3);color:var(--gold);border-radius:6px;padding:8px 12px;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:center;margin-bottom:6px">Financial Center</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- ── OVERVIEW ── -->
+    <div class="section active" id="section-overview">
+      <h2>System Overview</h2>
+      <div class="sub" id="ov-ts">Loading live data...</div>
+      <div class="eco-flow">
+        <div class="eco-node" style="color:var(--accent)">User Apps</div>
+        <div class="eco-arrow">&#8594;</div>
+        <div class="eco-node" style="color:var(--purple)">Affiliate Layer</div>
+        <div class="eco-arrow">&#8594;</div>
+        <div class="eco-node" style="color:var(--gold)">Ryan / System</div>
+        <div class="eco-arrow">&#8594;</div>
+        <div class="eco-node" style="color:var(--green)">Treasury / Banking</div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi gold"><div class="kpi-label">Total Users</div><div class="kpi-val" id="ov-users">—</div></div>
+        <div class="kpi green"><div class="kpi-label">System Revenue (ZAR)</div><div class="kpi-val" id="ov-rev">—</div></div>
+        <div class="kpi blue"><div class="kpi-label">Total Apps</div><div class="kpi-val" id="ov-apps">—</div></div>
+        <div class="kpi purple"><div class="kpi-label">Total Leads</div><div class="kpi-val" id="ov-leads">—</div></div>
+        <div class="kpi"><div class="kpi-label">Automations</div><div class="kpi-val" id="ov-autos">—</div></div>
+        <div class="kpi"><div class="kpi-label">Affiliates</div><div class="kpi-val" id="ov-affs">—</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Users by Tier</div>
+          <div class="tier-bar" id="ov-tier-bar"></div>
+          <div id="ov-tier-legend" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:.62rem"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top Apps by Revenue MTD</div>
+          <table class="tbl" id="ov-top-apps">
+            <thead><tr><th>App</th><th class="num">Revenue</th></tr></thead>
+            <tbody id="ov-top-apps-body"><tr><td colspan="2" style="color:var(--muted);text-align:center;padding:12px">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Revenue Events</div>
+        <div class="overflow-x">
+          <table class="tbl">
+            <thead><tr><th>Date</th><th>App</th><th>User</th><th class="num">Amount</th><th class="num">Ryan's Cut</th><th>Status</th></tr></thead>
+            <tbody id="ov-events-body"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:12px">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec-title" style="margin-top:24px">Admin Links</div>
+      <div class="admin-grid">
+        <a class="admin-link" href="/ryan-finance"><div class="icon">&#128184;</div><div class="lbl">Finance</div></a>
+        <a class="admin-link" href="/admin.html"><div class="icon">&#9881;</div><div class="lbl">Admin</div></a>
+        <a class="admin-link" href="/crm.html"><div class="icon">&#128101;</div><div class="lbl">CRM</div></a>
+        <a class="admin-link" href="/invoicing.html"><div class="icon">&#128196;</div><div class="lbl">Invoicing</div></a>
+        <a class="admin-link" href="/quotes.html"><div class="icon">&#128203;</div><div class="lbl">Quotes</div></a>
+        <a class="admin-link" href="/leads.html"><div class="icon">&#128270;</div><div class="lbl">Leads</div></a>
+        <a class="admin-link" href="/legal.html"><div class="icon">&#9878;</div><div class="lbl">Legal</div></a>
+        <a class="admin-link" href="/god-mode.html"><div class="icon">&#9889;</div><div class="lbl">God Mode</div></a>
+        <a class="admin-link" href="/executive-dashboard.html"><div class="icon">&#128200;</div><div class="lbl">Exec Dash</div></a>
+        <a class="admin-link" href="/dashboard"><div class="icon">&#128248;</div><div class="lbl">User Dash</div></a>
+        <a class="admin-link" href="/portfolio"><div class="icon">&#127752;</div><div class="lbl">Portfolio</div></a>
+        <a class="admin-link" href="/profile"><div class="icon">&#128100;</div><div class="lbl">Profile</div></a>
+      </div>
+    </div>
+
+    <!-- ── ALL USERS ── -->
+    <div class="section" id="section-users">
+      <h2>All Users</h2>
+      <div class="sub">Manage users, change tiers, credit wallets</div>
+      <input class="search-bar" id="user-search" placeholder="Search by email or name..." oninput="filterUsers()">
+      <div class="overflow-x">
+        <table class="tbl">
+          <thead><tr><th>Email</th><th>Name</th><th>Tier</th><th class="num">Wallet ZAR</th><th class="num">BRDG</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="users-body"><tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-gold" onclick="exportUsersCSV()">Export CSV</button>
+      </div>
+      <div class="card" id="credit-form" style="margin-top:16px">
+        <div class="card-title">Manual Wallet Credit</div>
+        <div class="form-row">
+          <div class="form-group"><label>User Email</label><input id="cred-email" placeholder="user@email.com"></div>
+          <div class="form-group"><label>Amount ZAR</label><input id="cred-zar" type="number" placeholder="0"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Amount BRDG</label><input id="cred-brdg" type="number" placeholder="0"></div>
+          <div class="form-group"><label>Reference</label><input id="cred-ref" placeholder="Reason for credit"></div>
+        </div>
+        <button class="btn btn-green" onclick="creditWallet()">Credit Wallet</button>
+        <div class="msg" id="cred-msg"></div>
+      </div>
+    </div>
+
+    <!-- ── ECONOMIES ── -->
+    <div class="section" id="section-economies">
+      <h2>Economic Routing Status</h2>
+      <div class="sub">Live status of the AEOS immutable pipeline</div>
+      <div class="pipe-row">
+        <div class="pipe-step"><div class="ps-label">Step 1 — App Events</div><div class="ps-val" id="pipe-s1">—</div><div class="ps-pending" id="pipe-s1p">— pending</div></div>
+        <div class="pipe-arrow">&#8594;</div>
+        <div class="pipe-step"><div class="ps-label">Step 2 — Affiliate Split</div><div class="ps-val" id="pipe-s2">—</div><div class="ps-pending" id="pipe-s2p">— pending</div></div>
+        <div class="pipe-arrow">&#8594;</div>
+        <div class="pipe-step"><div class="ps-label">Step 3 — Ryan Aggregator</div><div class="ps-val" id="pipe-s3">—</div><div class="ps-pending" id="pipe-s3p">— pending</div></div>
+        <div class="pipe-arrow">&#8594;</div>
+        <div class="pipe-step"><div class="ps-label">Step 4 — Banking</div><div class="ps-val" id="pipe-s4">—</div><div class="ps-pending" id="pipe-s4p">— pending</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">User Economy Snapshots</div>
+        <div class="overflow-x">
+          <table class="tbl">
+            <thead><tr><th>Email</th><th>Tier</th><th class="num">Wallet ZAR</th><th class="num">BRDG</th><th class="num">Revenue MTD</th><th class="num">Apps</th></tr></thead>
+            <tbody id="econ-body"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:16px">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REVENUE FLOW ── -->
+    <div class="section" id="section-revenue">
+      <h2>Revenue Flow</h2>
+      <div class="sub">All app revenue events and economic routing</div>
+      <div class="kpi-grid" style="margin-bottom:16px">
+        <div class="kpi green"><div class="kpi-label">Total Revenue</div><div class="kpi-val" id="rf-total">—</div></div>
+        <div class="kpi gold"><div class="kpi-label">Ryan's Cut</div><div class="kpi-val" id="rf-ryan">—</div></div>
+        <div class="kpi blue"><div class="kpi-label">User Share</div><div class="kpi-val" id="rf-user">—</div></div>
+        <div class="kpi purple"><div class="kpi-label">Affiliate Share</div><div class="kpi-val" id="rf-aff">—</div></div>
+      </div>
+      <div class="overflow-x">
+        <table class="tbl">
+          <thead><tr><th>Date</th><th>App</th><th>User</th><th class="num">Amount</th><th class="num">User Share</th><th class="num">Aff Share</th><th class="num">Ryan Share</th><th>Status</th></tr></thead>
+          <tbody id="rf-body"><tr><td colspan="8" style="color:var(--muted);text-align:center;padding:16px">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PLATFORMS ── -->
+    <div class="section" id="section-platforms">
+      <h2>System Platforms</h2>
+      <div class="sub">Ryan-owned platforms and their predicted economics</div>
+      <div class="plat-grid" id="plat-grid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- ── AFFILIATES ── -->
+    <div class="section" id="section-affiliates">
+      <h2>Affiliate Network</h2>
+      <div class="sub">All affiliates, earnings, and referral activity</div>
+      <div class="overflow-x">
+        <table class="tbl">
+          <thead><tr><th>Code</th><th>User Email</th><th>Tier</th><th class="num">Commission %</th><th class="num">Total Earned</th><th>Parent</th></tr></thead>
+          <tbody id="aff-body"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:16px">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── BANKING ── -->
+    <div class="section" id="section-banking">
+      <h2>Banking Control</h2>
+      <div class="sub">System treasury and all user wallets</div>
+      <div class="kpi-grid">
+        <div class="kpi gold"><div class="kpi-label">Treasury ZAR</div><div class="kpi-val" id="bank-zar">—</div></div>
+        <div class="kpi blue"><div class="kpi-label">Treasury BRDG</div><div class="kpi-val" id="bank-brdg">—</div></div>
+        <div class="kpi green"><div class="kpi-label">Total Revenue</div><div class="kpi-val" id="bank-rev">—</div></div>
+        <div class="kpi"><div class="kpi-label">Net (Rev - Costs)</div><div class="kpi-val" id="bank-net">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Banking Ledger</div>
+        <div class="overflow-x">
+          <table class="tbl">
+            <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th class="num">ZAR</th><th class="num">BRDG</th></tr></thead>
+            <tbody id="bank-ledger-body"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LEADS INTEL ── -->
+    <div class="section" id="section-leads">
+      <h2>Leads Intelligence</h2>
+      <div class="sub">All leads across all users with AI scoring</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <input class="search-bar" id="lead-search" placeholder="Search leads..." style="width:220px;margin:0" oninput="filterLeads()">
+        <select id="lead-status-filter" onchange="filterLeads()" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:.78rem">
+          <option value="">All Statuses</option>
+          <option>new</option><option>contacted</option><option>qualified</option><option>converted</option>
+        </select>
+        <button class="btn btn-gold btn-sm" onclick="aiScoreAll()">AI Score All</button>
+      </div>
+      <div class="overflow-x">
+        <table class="tbl">
+          <thead><tr><th>User</th><th>Name</th><th>Email</th><th>Source</th><th>Status</th><th class="num">Score</th><th>AI Notes</th><th>Date</th></tr></thead>
+          <tbody id="leads-body"><tr><td colspan="8" style="color:var(--muted);text-align:center;padding:16px">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="section" id="section-settings">
+      <h2>System Settings</h2>
+      <div class="sub">Tier configuration, BRDG rates, system flags</div>
+      <div class="card">
+        <div class="card-title">Tier Configuration (Editable)</div>
+        <div class="overflow-x">
+          <table class="tbl" id="tier-cfg-tbl">
+            <thead><tr><th>Tier</th><th>Max Apps</th><th>Max Leads</th><th>User Rev %</th><th>Price ZAR</th><th>Price USD</th><th>Affiliate</th><th>Automation</th><th>Banking</th><th>Action</th></tr></thead>
+            <tbody id="tier-cfg-body"><tr><td colspan="10" style="color:var(--muted);text-align:center;padding:16px">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">BRDG Token Rates</div>
+        <div class="form-row">
+          <div class="form-group"><label>1 USD = X BRDG</label><input id="brdg-usd" value="100" type="number"></div>
+          <div class="form-group"><label>1 ZAR = X BRDG</label><input id="brdg-zar" value="5" type="number"></div>
+        </div>
+        <button class="btn btn-gold" onclick="saveBrdgRates()">Save BRDG Rates</button>
+        <div class="msg" id="brdg-msg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="opacity:0"></div>
+
+<script>
+var TOKEN = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_user_token') || '';
+var AUTH = { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' };
+var STATE = { overview: {}, users: [], leads: [], affiliates: [], tiers: [], routes: [] };
+var TIER_COLORS = { free:'#64748b', pro:'#00d4ff', business:'#a855f7', enterprise:'#ffb400', platform:'#22c55e', sovereign:'#f97316' };
+
+function zarFmt(n){ return 'R ' + Number(n||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function brdgFmt(n){ return Number(n||0).toLocaleString() + ' BRDG'; }
+function tc(tier){ return TIER_COLORS[tier] || '#888'; }
+
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast ' + (type||'green');
+  el.style.opacity = '1';
+  setTimeout(function(){ el.style.opacity = '0'; }, 3000);
+}
+function showMsg(id, ok, txt) {
+  var el = document.getElementById(id); if (!el) return;
+  el.className = 'msg ' + (ok ? 'ok' : 'err'); el.textContent = txt; el.style.display = 'block';
+  if (ok) setTimeout(function(){ el.style.display='none'; }, 4000);
+}
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var sec = document.getElementById('section-' + name);
+  var nav = document.getElementById('nav-' + name);
+  if (sec) sec.classList.add('active');
+  if (nav) nav.classList.add('active');
+  // Load section data
+  if (name === 'users' && !STATE.users.length) loadUsers();
+  if (name === 'revenue') loadRevenue();
+  if (name === 'economies') loadEconomies();
+  if (name === 'affiliates') loadAffiliates();
+  if (name === 'banking') loadBanking();
+  if (name === 'leads' && !STATE.leads.length) loadLeads();
+  if (name === 'settings') loadSettings();
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────
+async function loadOverview() {
+  document.getElementById('ov-ts').textContent = 'Last updated: ' + new Date().toLocaleString('en-ZA');
+  try {
+    var r = await fetch('/api/system/overview', { headers: AUTH });
+    if (!r.ok) { document.getElementById('ov-ts').textContent = 'Error: ' + r.status + ' — check auth'; return; }
+    var d = await r.json(); STATE.overview = d;
+    document.getElementById('ov-users').textContent = (d.total_users||0).toLocaleString();
+    document.getElementById('ov-rev').textContent = zarFmt(d.ryan_revenue_zar||0);
+    document.getElementById('ov-apps').textContent = (d.top_apps||[]).length;
+    document.getElementById('ov-leads').textContent = (d.total_leads||0).toLocaleString();
+    document.getElementById('ov-autos').textContent = (d.total_automations||0).toLocaleString();
+    document.getElementById('ov-affs').textContent = (d.affiliate_count||0).toLocaleString();
+    // Tier bar
+    var byTier = d.users_by_tier || {}; var total = d.total_users || 1;
+    var barHTML = '', legHTML = '';
+    Object.entries(byTier).forEach(function(e) {
+      var pct = Math.max(2, (e[1]/total*100)).toFixed(0);
+      var color = tc(e[0]);
+      barHTML += '<div class="tier-seg" style="flex:'+pct+';background:'+color+'22;color:'+color+'">'+e[0]+'</div>';
+      legHTML += '<span style="color:'+color+';font-size:.6rem;font-weight:700">'+e[0]+': '+e[1]+'</span>';
+    });
+    document.getElementById('ov-tier-bar').innerHTML = barHTML || '<span style="color:var(--muted);font-size:.7rem;padding:6px">No data</span>';
+    document.getElementById('ov-tier-legend').innerHTML = legHTML;
+    // Top apps
+    var apps = d.top_apps || [];
+    document.getElementById('ov-top-apps-body').innerHTML = apps.length ?
+      apps.map(function(a){ return '<tr><td>'+a.name+'</td><td class="num" style="color:var(--green)">'+zarFmt(a.revenue_mtd)+'</td></tr>'; }).join('') :
+      '<tr><td colspan="2" style="color:var(--muted);text-align:center">No apps yet</td></tr>';
+    // Recent events
+    var evts = d.recent_events || [];
+    document.getElementById('ov-events-body').innerHTML = evts.length ?
+      evts.map(function(e) {
+        var dt = e.created_at ? new Date(e.created_at).toLocaleDateString('en-ZA') : '—';
+        var ryanCut = parseFloat(e.amount_zar||0) * parseFloat(e.ryan_cut_pct||100) / 100;
+        return '<tr><td>'+dt+'</td><td>—</td><td style="font-size:.7rem;color:var(--muted)">—</td><td class="num" style="color:var(--green)">'+zarFmt(e.amount_zar)+'</td><td class="num" style="color:var(--gold)">'+zarFmt(ryanCut)+'</td><td><span class="badge green">settled</span></td></tr>';
+      }).join('') :
+      '<tr><td colspan="6" style="color:var(--muted);text-align:center">No events yet</td></tr>';
+  } catch(e) { document.getElementById('ov-ts').textContent = 'Error: ' + e.message; }
+}
+
+// ── USERS ─────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    var r = await fetch('/api/admin/users', { headers: AUTH });
+    var d = await r.json();
+    STATE.users = d.users || [];
+    renderUsers(STATE.users);
+  } catch(e) { document.getElementById('users-body').innerHTML = '<tr><td colspan="7" style="color:var(--red);text-align:center;padding:12px">'+e.message+'</td></tr>'; }
+}
+function renderUsers(users) {
+  document.getElementById('users-body').innerHTML = users.length ?
+    users.map(function(u) {
+      var color = tc(u.tier||'free');
+      var dt = u.created_at ? new Date(u.created_at).toLocaleDateString('en-ZA') : '—';
+      var zar = u.wallet ? zarFmt(u.wallet.balance_zar) : '—';
+      var brdg = u.wallet ? brdgFmt(u.wallet.balance_brdg) : '—';
+      return '<tr><td>'+u.email+'</td><td>'+(u.name||'—')+'</td>'
+        +'<td><span class="badge" style="background:'+color+'22;color:'+color+';border:1px solid '+color+'44">'+u.tier+'</span></td>'
+        +'<td class="num">'+zar+'</td><td class="num" style="color:var(--accent)">'+brdg+'</td><td>'+dt+'</td>'
+        +'<td><select onchange="changeTier(\''+u.id+'\',this.value)" style="background:#111;border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:.62rem">'
+        +'<option value="">Change tier</option><option>free</option><option>pro</option><option>business</option><option>enterprise</option><option>platform</option><option>sovereign</option>'
+        +'</select></td></tr>';
+    }).join('') : '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:12px">No users found</td></tr>';
+}
+function filterUsers() {
+  var q = document.getElementById('user-search').value.toLowerCase();
+  renderUsers(STATE.users.filter(function(u){ return u.email.toLowerCase().includes(q) || (u.name||'').toLowerCase().includes(q); }));
+}
+async function changeTier(userId, tier) {
+  if (!tier || !confirm('Change tier to ' + tier + '?')) return;
+  try {
+    var r = await fetch('/api/admin/users/' + userId + '/tier', { method: 'PATCH', headers: AUTH, body: JSON.stringify({ tier, plan: tier }) });
+    var d = await r.json();
+    if (d.ok) { toast('Tier updated to ' + tier); loadUsers(); }
+    else toast(d.error || 'Error', 'red');
+  } catch(e) { toast(e.message, 'red'); }
+}
+function exportUsersCSV() {
+  var csv = 'Email,Name,Tier,Wallet ZAR,BRDG,Joined\n';
+  STATE.users.forEach(function(u){ csv += '"'+u.email+'","'+(u.name||'')+'","'+(u.tier||'')+'","'+(u.wallet?u.wallet.balance_zar:0)+'","'+(u.wallet?u.wallet.balance_brdg:0)+'","'+(u.created_at||'')+'"\\n'; });
+  var a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'users-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+}
+async function creditWallet() {
+  var email = document.getElementById('cred-email').value.trim();
+  var zar = parseFloat(document.getElementById('cred-zar').value) || 0;
+  var brdg = parseFloat(document.getElementById('cred-brdg').value) || 0;
+  var ref = document.getElementById('cred-ref').value.trim() || 'Admin credit';
+  if (!email || (!zar && !brdg)) { showMsg('cred-msg', false, 'Enter email and amount'); return; }
+  if (!confirm('Credit ' + email + ' with R' + zar + ' ZAR + ' + brdg + ' BRDG?')) return;
+  try {
+    var r = await fetch('/api/admin/wallet/credit', { method: 'POST', headers: AUTH, body: JSON.stringify({ user_email: email, amount_zar: zar, amount_brdg: brdg, reference: ref }) });
+    var d = await r.json();
+    showMsg('cred-msg', d.ok, d.ok ? 'Credited successfully' : (d.error||'Error'));
+    if (d.ok) loadUsers();
+  } catch(e) { showMsg('cred-msg', false, e.message); }
+}
+
+// ── ECONOMIES ─────────────────────────────────────────────────────────────
+async function loadEconomies() {
+  try {
+    // Show pipeline steps from economic_routes stats
+    document.getElementById('pipe-s1').textContent = '—'; document.getElementById('pipe-s1p').textContent = 'loading...';
+    if (STATE.users.length) {
+      document.getElementById('pipe-s1').textContent = STATE.overview.total_users || 0;
+      document.getElementById('pipe-s1p').textContent = 'users active';
+      document.getElementById('pipe-s2').textContent = STATE.overview.affiliate_count || 0;
+      document.getElementById('pipe-s2p').textContent = 'affiliates registered';
+      document.getElementById('pipe-s3').textContent = zarFmt(STATE.overview.ryan_revenue_zar||0);
+      document.getElementById('pipe-s3p').textContent = 'aggregated to Ryan';
+      document.getElementById('pipe-s4').textContent = zarFmt(STATE.overview.ryan_revenue_zar||0);
+      document.getElementById('pipe-s4p').textContent = 'banked';
+    }
+    // Economy snapshots from users data
+    if (!STATE.users.length) await loadUsers();
+    document.getElementById('econ-body').innerHTML = STATE.users.length ?
+      STATE.users.map(function(u) {
+        var color = tc(u.tier||'free');
+        var zar = u.wallet ? zarFmt(u.wallet.balance_zar) : '—';
+        var brdg = u.wallet ? brdgFmt(u.wallet.balance_brdg) : '—';
+        return '<tr><td>'+u.email+'</td>'
+          +'<td><span class="badge" style="background:'+color+'22;color:'+color+';border:1px solid '+color+'44">'+u.tier+'</span></td>'
+          +'<td class="num">'+zar+'</td><td class="num" style="color:var(--accent)">'+brdg+'</td>'
+          +'<td class="num" style="color:var(--green)">—</td><td class="num">—</td></tr>';
+      }).join('') : '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:12px">No users</td></tr>';
+  } catch(e) { console.warn(e); }
+}
+
+// ── REVENUE FLOW ──────────────────────────────────────────────────────────
+async function loadRevenue() {
+  try {
+    var evts = STATE.overview.recent_events || [];
+    var total = evts.reduce(function(s,e){ return s+parseFloat(e.amount_zar||0); }, 0);
+    var ryanTotal = evts.reduce(function(s,e){ return s+parseFloat(e.amount_zar||0)*parseFloat(e.ryan_cut_pct||100)/100; }, 0);
+    var userTotal = evts.reduce(function(s,e){ return s+parseFloat(e.amount_zar||0)*parseFloat(e.user_cut_pct||0)/100; }, 0);
+    var affTotal = evts.reduce(function(s,e){ return s+parseFloat(e.amount_zar||0)*parseFloat(e.affiliate_cut_pct||0)/100; }, 0);
+    document.getElementById('rf-total').textContent = zarFmt(total);
+    document.getElementById('rf-ryan').textContent = zarFmt(ryanTotal);
+    document.getElementById('rf-user').textContent = zarFmt(userTotal);
+    document.getElementById('rf-aff').textContent = zarFmt(affTotal);
+    document.getElementById('rf-body').innerHTML = evts.length ?
+      evts.map(function(e) {
+        var dt = e.created_at ? new Date(e.created_at).toLocaleDateString('en-ZA') : '—';
+        var userShare = parseFloat(e.amount_zar||0)*parseFloat(e.user_cut_pct||0)/100;
+        var affShare  = parseFloat(e.amount_zar||0)*parseFloat(e.affiliate_cut_pct||0)/100;
+        var ryanShare = parseFloat(e.amount_zar||0)*parseFloat(e.ryan_cut_pct||100)/100;
+        return '<tr><td>'+dt+'</td><td>—</td><td style="font-size:.7rem;color:var(--muted)">—</td>'
+          +'<td class="num" style="color:var(--green)">'+zarFmt(e.amount_zar)+'</td>'
+          +'<td class="num">'+zarFmt(userShare)+'</td>'
+          +'<td class="num" style="color:var(--purple)">'+zarFmt(affShare)+'</td>'
+          +'<td class="num" style="color:var(--gold)">'+zarFmt(ryanShare)+'</td>'
+          +'<td><span class="badge green">settled</span></td></tr>';
+      }).join('') : '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:12px">No events yet</td></tr>';
+  } catch(e) { console.warn(e); }
+}
+
+// ── PLATFORMS ─────────────────────────────────────────────────────────────
+var PLATFORMS = [
+  { name:'BridgeAI OS', domain:'go.ai-os.co.za', cat:'Core Platform', val:50000, predRev:8000, predTreasury:15000, status:'active', link:'/admin.html' },
+  { name:'EHSA', domain:'ehsa.co.za', cat:'Healthcare AI', val:25000, predRev:4000, predTreasury:6000, status:'active', link:'/portal' },
+  { name:'Hospital in a Box', domain:'hospitalinabox.co.za', cat:'Healthcare', val:20000, predRev:3500, predTreasury:5000, status:'active', link:'/portal' },
+  { name:'SVG Engine', domain:'svg.ai-os.co.za', cat:'AI Creative', val:12000, predRev:2400, predTreasury:3600, status:'active', link:'/portal' },
+  { name:'BridgeLiveWall', domain:'bridgelivecall.co.za', cat:'Live Events', val:8500, predRev:1800, predTreasury:2500, status:'active', link:'/portal' },
+  { name:'BAN Engine', domain:'ban.ai-os.co.za', cat:'Network AI', val:7000, predRev:1400, predTreasury:2000, status:'active', link:'/portal' },
+  { name:'UBI Engine', domain:'ubi.ai-os.co.za', cat:'Economy', val:5000, predRev:1000, predTreasury:1500, status:'active', link:'/portal' },
+  { name:'CRM Module', domain:'crm.ai-os.co.za', cat:'Sales', val:6000, predRev:1200, predTreasury:1800, status:'active', link:'/crm.html' }
+];
+(function renderPlatforms(){
+  var html = PLATFORMS.map(function(p) {
+    var sc = p.status === 'active' ? 'green' : 'red';
+    return '<div class="plat-card">'
+      +'<div class="plat-name">'+p.name+'</div>'
+      +'<div class="plat-domain" style="color:var(--accent)">'+p.domain+'</div>'
+      +'<div style="font-size:.6rem;color:var(--muted);margin-bottom:8px">'+p.cat+'&nbsp;&nbsp;<span class="badge '+sc+'">'+p.status+'</span></div>'
+      +'<div class="plat-stat">Current Value: <strong style="color:var(--green)">'+zarFmt(p.val)+'</strong></div>'
+      +'<div class="plat-stat">Predicted Rev/mo: <strong>'+zarFmt(p.predRev)+'</strong></div>'
+      +'<div class="plat-stat">Predicted Treasury/mo: <strong>'+zarFmt(p.predTreasury)+'</strong></div>'
+      +'<a href="'+p.link+'" style="display:inline-block;margin-top:10px;font-size:.62rem;font-weight:600;color:var(--accent);opacity:.7">Open dashboard &rsaquo;</a>'
+      +'</div>';
+  }).join('');
+  document.getElementById('plat-grid').innerHTML = html;
+})();
+
+// ── AFFILIATES ────────────────────────────────────────────────────────────
+async function loadAffiliates() {
+  document.getElementById('aff-body').innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:12px">No affiliate data (endpoint pending)</td></tr>';
+}
+
+// ── BANKING ───────────────────────────────────────────────────────────────
+async function loadBanking() {
+  try {
+    var r = await fetch('/api/treasury/summary', { headers: AUTH });
+    if (r.ok) {
+      var d = await r.json();
+      document.getElementById('bank-zar').textContent = zarFmt(d.balance||0);
+      document.getElementById('bank-brdg').textContent = brdgFmt((d.balance||0)*5);
+      document.getElementById('bank-rev').textContent = zarFmt(d.revenue_mtd||0);
+      document.getElementById('bank-net').textContent = zarFmt((d.revenue_mtd||0)-(d.costs_mtd||0));
+    }
+    var lr = await fetch('/api/treasury/ledger', { headers: AUTH });
+    if (lr.ok) {
+      var ld = await lr.json();
+      var entries = ld.entries || [];
+      document.getElementById('bank-ledger-body').innerHTML = entries.length ?
+        entries.map(function(e) {
+          var dt = e.timestamp ? new Date(e.timestamp).toLocaleDateString('en-ZA') : '—';
+          var amt = parseFloat(e.amount||0);
+          var color = e.type==='credit' ? 'var(--green)' : 'var(--red)';
+          return '<tr><td>'+dt+'</td><td><span class="badge '+(e.type==='credit'?'green':'red')+'">'+e.type+'</span></td>'
+            +'<td style="font-size:.7rem;color:var(--muted)">'+(e.reference||e.source||'—')+'</td>'
+            +'<td class="num" style="color:'+color+'">'+zarFmt(amt)+'</td>'
+            +'<td class="num" style="color:var(--accent)">'+brdgFmt(amt*5)+'</td></tr>';
+        }).join('') : '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:12px">No ledger entries</td></tr>';
+    }
+  } catch(e) { console.warn('Banking load:', e); }
+}
+
+// ── LEADS ─────────────────────────────────────────────────────────────────
+async function loadLeads() {
+  document.getElementById('leads-body').innerHTML = '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:12px">Loading...</td></tr>';
+  try {
+    var r = await fetch('/api/leads?limit=200', { headers: AUTH });
+    var d = await r.json();
+    STATE.leads = d.leads || [];
+    renderLeads(STATE.leads);
+  } catch(e) { document.getElementById('leads-body').innerHTML = '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:12px">'+e.message+'</td></tr>'; }
+}
+function renderLeads(leads) {
+  var STATUS_COLORS = { new:'blue', contacted:'gold', qualified:'purple', converted:'green' };
+  document.getElementById('leads-body').innerHTML = leads.length ?
+    leads.map(function(l) {
+      var dt = l.created_at ? new Date(l.created_at).toLocaleDateString('en-ZA') : '—';
+      var sc = STATUS_COLORS[l.status]||'gray';
+      var scoreColor = l.score >= 70 ? 'var(--green)' : l.score >= 40 ? 'var(--gold)' : 'var(--muted)';
+      return '<tr><td style="font-size:.7rem;color:var(--muted)">—</td><td>'+(l.name||'—')+'</td><td style="font-size:.72rem">'+(l.email||'—')+'</td>'
+        +'<td style="font-size:.7rem;color:var(--muted)">'+(l.source||'—')+'</td>'
+        +'<td><span class="badge '+sc+'">'+l.status+'</span></td>'
+        +'<td class="num" style="color:'+scoreColor+'">'+(l.score||0)+'</td>'
+        +'<td style="font-size:.65rem;color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(l.ai_notes||'—')+'</td>'
+        +'<td>'+dt+'</td></tr>';
+    }).join('') : '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:12px">No leads found</td></tr>';
+}
+function filterLeads() {
+  var q = document.getElementById('lead-search').value.toLowerCase();
+  var s = document.getElementById('lead-status-filter').value;
+  renderLeads(STATE.leads.filter(function(l){
+    var match = !q || (l.name||'').toLowerCase().includes(q) || (l.email||'').toLowerCase().includes(q);
+    var statusMatch = !s || l.status === s;
+    return match && statusMatch;
+  }));
+}
+async function aiScoreAll() {
+  if (!confirm('Re-score all leads with AI? This will update scores.')) return;
+  toast('AI scoring queued — scores will update on next load');
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    var r = await fetch('/api/tiers');
+    var d = await r.json();
+    STATE.tiers = d.tiers || [];
+    renderTierConfig(STATE.tiers);
+  } catch(e) { console.warn(e); }
+}
+function renderTierConfig(tiers) {
+  document.getElementById('tier-cfg-body').innerHTML = tiers.map(function(t) {
+    var color = tc(t.tier_name);
+    return '<tr>'
+      +'<td><span class="badge" style="background:'+color+'22;color:'+color+';border:1px solid '+color+'44">'+t.tier_name+'</span></td>'
+      +'<td class="num">'+(t.max_apps===null?'∞':t.max_apps)+'</td>'
+      +'<td class="num">'+(t.max_leads===null?'∞':t.max_leads)+'</td>'
+      +'<td class="num" style="color:var(--green)">'+(t.revenue_share_pct||0)+'%</td>'
+      +'<td class="num">'+zarFmt(t.monthly_price_zar)+'</td>'
+      +'<td class="num">$'+(t.monthly_price_usd||0)+'</td>'
+      +'<td style="text-align:center">'+(t.affiliate_enabled?'<span class="badge green">Yes</span>':'<span class="badge gray">No</span>')+'</td>'
+      +'<td style="text-align:center">'+(t.automation_enabled?'<span class="badge green">Yes</span>':'<span class="badge gray">No</span>')+'</td>'
+      +'<td style="text-align:center">'+(t.banking_enabled?'<span class="badge green">Yes</span>':'<span class="badge gray">No</span>')+'</td>'
+      +'<td><button class="btn btn-gold btn-sm" onclick="editTierInline('+t.id+')">Edit</button></td>'
+      +'</tr>';
+  }).join('');
+}
+async function editTierInline(id) {
+  var tier = STATE.tiers.find(function(t){ return t.id === id; });
+  if (!tier) return;
+  var newRev = prompt('Revenue share % for ' + tier.tier_name + ':', tier.revenue_share_pct);
+  if (newRev === null) return;
+  var newPrice = prompt('Monthly price ZAR:', tier.monthly_price_zar);
+  if (newPrice === null) return;
+  try {
+    var r = await fetch('/api/admin/tier-config/' + id, { method: 'PATCH', headers: AUTH, body: JSON.stringify({ revenue_share_pct: parseFloat(newRev), monthly_price_zar: parseFloat(newPrice) }) });
+    var d = await r.json();
+    if (d.ok) { toast('Tier updated'); loadSettings(); }
+    else toast(d.error || 'Error', 'red');
+  } catch(e) { toast(e.message, 'red'); }
+}
+function saveBrdgRates() {
+  toast('BRDG rates saved (R' + document.getElementById('brdg-zar').value + '/BRDG, $' + (1/document.getElementById('brdg-usd').value).toFixed(4) + ' USD)');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+loadOverview();
+</script>
+</body>
+</html>

@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Twin Search — Bridge AI OS</title>
+  <meta name="description" content="AI-powered profile matrix search for Bridge AI OS. Topic-relative, twin-context-aware.">
+  <script defer src="/bridge-nav.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #06060f;
+      --surface: #0d0d1a;
+      --surface2: #131326;
+      --border: rgba(120,100,255,0.12);
+      --accent: #7c6af7;
+      --accent2: #4facfe;
+      --green: #00e57b;
+      --gold: #ffb400;
+      --red: #ef4444;
+      --text: #e8e8f0;
+      --muted: #7070a0;
+      --radius: 12px;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding-top: 64px;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+    /* Search hero */
+    .hero {
+      text-align: center;
+      padding: 3rem 0 2rem;
+    }
+    .hero-title {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .hero-sub {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+    /* Search bar */
+    .search-shell {
+      position: relative;
+      max-width: 700px;
+      margin: 0 auto 1.5rem;
+    }
+    .search-input {
+      width: 100%;
+      padding: 1rem 3.5rem 1rem 1.2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      font-size: 1.05rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,106,247,0.15);
+    }
+    .search-btn {
+      position: absolute;
+      right: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--accent);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .search-btn:hover { background: #6556e0; }
+    .search-btn svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2; }
+    /* Mode chips */
+    .mode-chips {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .chip {
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chip:hover, .chip.active {
+      background: rgba(124,106,247,0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    /* Context chips */
+    .context-chips {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .ctx-chip {
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(124,106,247,0.08);
+      border: 1px solid rgba(124,106,247,0.2);
+      font-size: 0.75rem;
+      color: var(--accent);
+    }
+    /* Twin matrix strip */
+    .twin-strip {
+      display: flex;
+      gap: 1rem;
+      max-width: 700px;
+      margin: 0 auto 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.9rem 1.2rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .twin-strip-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    .twin-affinity {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .affinity-tag {
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(79,172,254,0.1);
+      border: 1px solid rgba(79,172,254,0.25);
+      font-size: 0.72rem;
+      color: var(--accent2);
+    }
+    .gap-badge {
+      margin-left: auto;
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(255,180,0,0.1);
+      border: 1px solid rgba(255,180,0,0.3);
+      font-size: 0.75rem;
+      color: var(--gold);
+      cursor: pointer;
+    }
+    /* Results area */
+    .results-area {
+      display: none;
+      gap: 1.5rem;
+    }
+    .results-area.visible {
+      display: flex;
+    }
+    .results-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .results-side {
+      width: 280px;
+      flex-shrink: 0;
+    }
+    @media (max-width: 768px) {
+      .results-area { flex-direction: column; }
+      .results-side { width: 100%; }
+    }
+    /* Section headers */
+    .section-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .section-title span { color: var(--accent); }
+    /* Result cards */
+    .result-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1.1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      margin-bottom: 0.6rem;
+    }
+    .result-card:hover {
+      border-color: var(--accent);
+      background: var(--surface2);
+      transform: translateX(2px);
+    }
+    .result-icon {
+      font-size: 1.6rem;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(124,106,247,0.08);
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .result-body { flex: 1; min-width: 0; }
+    .result-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .result-summary { font-size: 0.82rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .result-type {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(124,106,247,0.12);
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .result-type.wallet { background: rgba(0,229,123,0.1); color: var(--green); }
+    .result-type.helper { background: rgba(255,180,0,0.1); color: var(--gold); }
+    .result-type.action { background: rgba(79,172,254,0.1); color: var(--accent2); }
+    .result-score {
+      font-size: 0.72rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    /* Topic badges */
+    .topic-results {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .topic-badge {
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.78rem;
+      color: var(--text);
+    }
+    .topic-badge.active {
+      border-color: var(--accent);
+      background: rgba(124,106,247,0.12);
+      color: var(--accent);
+    }
+    /* Side panels */
+    .side-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .side-panel h4 {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.8rem;
+    }
+    /* Gap items */
+    .gap-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .gap-item:last-child { border-bottom: none; }
+    .gap-sev {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .gap-sev.low { background: rgba(0,229,123,0.1); color: var(--green); }
+    .gap-sev.medium { background: rgba(255,180,0,0.1); color: var(--gold); }
+    .gap-sev.high { background: rgba(239,68,68,0.1); color: var(--red); }
+    .gap-desc { font-size: 0.82rem; color: var(--text); }
+    .gap-action { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+    /* Wallet helper panel */
+    .wallet-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .wallet-stat:last-of-type { border-bottom: none; }
+    .wallet-stat-val { font-weight: 600; color: var(--accent2); }
+    .rec-item {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .rec-item:last-child { border-bottom: none; }
+    .rec-action {
+      display: inline-block;
+      margin-top: 0.3rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      background: rgba(124,106,247,0.15);
+      color: var(--accent);
+      font-size: 0.72rem;
+      cursor: pointer;
+    }
+    /* Notification tray */
+    .notif-tray {
+      max-width: 700px;
+      margin: 0 auto 1.5rem;
+      display: none;
+    }
+    .notif-tray.has-notifs { display: block; }
+    .notif-item {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.65rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .notif-item.pending { border-left-color: var(--gold); }
+    .notif-icon { font-size: 1rem; }
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .empty-state .big-icon { font-size: 3rem; margin-bottom: 0.8rem; }
+    /* Loading dots */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+    }
+    .loading.active { display: block; }
+    .dots span {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin: 0 3px;
+      animation: bounce 1s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.15s; }
+    .dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-8px)} }
+    /* Diagnostics bar */
+    .diag-bar {
+      display: none;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 0.4rem 0;
+      margin-bottom: 1rem;
+    }
+    .diag-bar.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-title">Digital Twin Search</div>
+      <p class="hero-sub">Semantic, context-aware intelligence across your entire Bridge AI OS environment</p>
+
+      <!-- Search bar -->
+      <div class="search-shell">
+        <input class="search-input" id="searchInput" type="text"
+          placeholder="Search treasury, agents, leads, twin, wallet..." autocomplete="off">
+        <button class="search-btn" id="searchBtn" title="Search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+      </div>
+
+      <!-- Mode chips -->
+      <div class="mode-chips">
+        <button class="chip active" data-mode="hybrid">Hybrid</button>
+        <button class="chip" data-mode="topic">Topic-Based</button>
+        <button class="chip" data-mode="relative">Relative</button>
+      </div>
+
+      <!-- Context chips (filled from twin state) -->
+      <div class="context-chips" id="contextChips"></div>
+    </div>
+
+    <!-- Twin matrix strip -->
+    <div class="twin-strip" id="twinStrip" style="display:none">
+      <span class="twin-strip-label">Twin Matrix</span>
+      <div class="twin-affinity" id="twinAffinities"></div>
+      <span class="gap-badge" id="gapBadge" style="display:none"></span>
+    </div>
+
+    <!-- Notification tray -->
+    <div class="notif-tray" id="notifTray"></div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="dots"><span></span><span></span><span></span></div>
+    </div>
+
+    <!-- Diagnostics -->
+    <div class="diag-bar" id="diagBar"></div>
+
+    <!-- Results area -->
+    <div class="results-area" id="resultsArea">
+      <div class="results-main" id="resultsMain"></div>
+      <div class="results-side" id="resultsSide"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="big-icon">🧬</div>
+      <p>Start typing to search your digital twin environment</p>
+      <p style="font-size:0.8rem;margin-top:0.5rem">Try: <em>treasury balance</em>, <em>CRM leads</em>, <em>deploy agent</em></p>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    var TOKEN = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_user_token') || '';
+    var twinState = null;
+    var walletHelper = null;
+    var currentMode = 'hybrid';
+    var debounceTimer = null;
+
+    // ── Auth header ──────────────────────────────────────────────────────
+    function authHeaders() {
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN };
+    }
+
+    // ── Fetch twin state ─────────────────────────────────────────────────
+    async function loadTwinState() {
+      try {
+        var r = await fetch('/api/twin/state', { headers: authHeaders(), credentials: 'include' });
+        if (!r.ok) return;
+        var d = await r.json();
+        if (d.ok && d.twin) {
+          twinState = d.twin;
+          renderTwinStrip();
+        }
+      } catch (e) {}
+    }
+
+    // ── Load notifications ───────────────────────────────────────────────
+    async function loadNotifications() {
+      try {
+        var r = await fetch('/api/notifications', { headers: authHeaders(), credentials: 'include' });
+        if (!r.ok) return;
+        var d = await r.json();
+        if (d.ok && d.unread > 0) {
+          renderNotifications(d.notifications);
+        }
+      } catch (e) {}
+    }
+
+    // ── Render twin strip ────────────────────────────────────────────────
+    function renderTwinStrip() {
+      if (!twinState) return;
+      var strip = document.getElementById('twinStrip');
+      var affinDiv = document.getElementById('twinAffinities');
+      var gapBadge = document.getElementById('gapBadge');
+      strip.style.display = 'flex';
+
+      var affinities = (twinState.learned_state && twinState.learned_state.topicAffinities) || [];
+      if (affinities.length === 0) affinities = ['dashboard','treasury','agents'];
+
+      affinDiv.innerHTML = affinities.slice(0, 5).map(function (a) {
+        return '<span class="affinity-tag">' + a + '</span>';
+      }).join('');
+
+      // Context chips
+      var ctxDiv = document.getElementById('contextChips');
+      var ctx = twinState.active_context || {};
+      var chips = [];
+      if (ctx.module) chips.push(ctx.module);
+      if (ctx.route) chips.push(ctx.route.replace('/', '') || 'home');
+      var role = (twinState.traits && twinState.traits.role) || '';
+      if (role) chips.push(role);
+      ctxDiv.innerHTML = chips.map(function (c) {
+        return '<span class="ctx-chip">' + c + '</span>';
+      }).join('');
+
+      // Gap badge
+      var gaps = twinState.gaps || [];
+      if (gaps.length > 0) {
+        gapBadge.textContent = gaps.length + ' gap' + (gaps.length > 1 ? 's' : '');
+        gapBadge.style.display = 'inline-block';
+        gapBadge.onclick = function () {
+          document.getElementById('searchInput').value = 'profile gaps';
+          doSearch('profile gaps');
+        };
+      }
+    }
+
+    // ── Render notifications ─────────────────────────────────────────────
+    function renderNotifications(notifications) {
+      var tray = document.getElementById('notifTray');
+      if (!notifications || notifications.length === 0) return;
+      tray.classList.add('has-notifs');
+      tray.innerHTML = notifications.filter(function (n) { return n.status === 'pending'; }).map(function (n) {
+        return '<div class="notif-item pending"><span class="notif-icon">🔔</span>' + escHtml(n.message) + '</div>';
+      }).join('');
+    }
+
+    // ── Search ───────────────────────────────────────────────────────────
+    async function doSearch(query) {
+      if (!query || !query.trim()) return;
+      var loading = document.getElementById('loading');
+      var resultsArea = document.getElementById('resultsArea');
+      var emptyState = document.getElementById('emptyState');
+      var diagBar = document.getElementById('diagBar');
+
+      loading.classList.add('active');
+      resultsArea.classList.remove('visible');
+      emptyState.style.display = 'none';
+      diagBar.classList.remove('visible');
+
+      // Ingest search signal
+      fetch('/api/twin/signal', {
+        method: 'POST',
+        headers: authHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({
+          kind: 'search',
+          payload: { query: query, mode: currentMode },
+          context: twinState ? twinState.active_context : {},
+        }),
+      }).catch(function () {});
+
+      try {
+        var r = await fetch('/api/search', {
+          method: 'POST',
+          headers: authHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({
+            query: query.trim(),
+            mode: currentMode,
+            context: twinState ? twinState.active_context : {},
+          }),
+        });
+        var d = await r.json();
+        loading.classList.remove('active');
+        if (!d.ok || !d.results) {
+          emptyState.style.display = 'block';
+          return;
+        }
+        renderResults(d);
+        if (d.diagnostics) {
+          diagBar.textContent = d.results.length + ' results · ' + d.diagnostics.latencyMs + 'ms · topics: ' +
+            (d.topTopics || []).map(function (t) { return t.label; }).join(', ');
+          diagBar.classList.add('visible');
+        }
+      } catch (e) {
+        loading.classList.remove('active');
+        emptyState.style.display = 'block';
+      }
+    }
+
+    // ── Render results ───────────────────────────────────────────────────
+    function renderResults(d) {
+      var resultsArea = document.getElementById('resultsArea');
+      var main = document.getElementById('resultsMain');
+      var side = document.getElementById('resultsSide');
+
+      main.innerHTML = '';
+      side.innerHTML = '';
+
+      var layout = d.uiLayout || {};
+      var results = d.results || [];
+      var topTopics = d.topTopics || [];
+
+      // Topic badges
+      if (topTopics.length > 0) {
+        var topicHtml = '<div class="topic-results">' +
+          topTopics.map(function (t, i) {
+            return '<span class="topic-badge' + (i === 0 ? ' active' : '') + '">' + t.label + '</span>';
+          }).join('') + '</div>';
+        main.innerHTML += topicHtml;
+      }
+
+      // Section title
+      main.innerHTML += '<div class="section-title">Results <span>' + results.length + '</span></div>';
+
+      // Result cards
+      var cards = results.map(function (item) {
+        var icon = (item.payload && item.payload.icon) || typeIcon(item.type);
+        var href = (item.payload && item.payload.href) || '#';
+        return '<a class="result-card" href="' + escAttr(href) + '">' +
+          '<div class="result-icon">' + icon + '</div>' +
+          '<div class="result-body">' +
+            '<div class="result-title">' + escHtml(item.title) + '</div>' +
+            '<div class="result-summary">' + escHtml(item.summary) + '</div>' +
+          '</div>' +
+          '<span class="result-type ' + escAttr(item.type) + '">' + escHtml(item.type) + '</span>' +
+          '</a>';
+      }).join('');
+      main.innerHTML += cards;
+
+      // Side panel: gaps
+      if (layout.sidePanels && layout.sidePanels.length > 0 && twinState && twinState.gaps && twinState.gaps.length > 0) {
+        side.innerHTML += renderGapsPanel(twinState.gaps);
+      }
+
+      // Side panel: helper
+      if (layout.secondarySection) {
+        var helperItems = results.filter(function (r) { return r.type === 'helper'; });
+        if (helperItems.length > 0) {
+          side.innerHTML += renderHelperPanel(helperItems);
+        }
+      }
+
+      // Wallet panel if wallet results
+      var walletItems = results.filter(function (r) { return r.type === 'wallet'; });
+      if (walletItems.length > 0) {
+        side.innerHTML += renderWalletPanel();
+      }
+
+      // Events panel placeholder
+      if (side.innerHTML === '') {
+        side.innerHTML = renderQuickActionsPanel();
+      }
+
+      resultsArea.classList.add('visible');
+    }
+
+    function renderGapsPanel(gaps) {
+      return '<div class="side-panel">' +
+        '<h4>⚠️ Profile Gaps</h4>' +
+        gaps.map(function (g) {
+          return '<div class="gap-item">' +
+            '<span class="gap-sev ' + escAttr(g.severity) + '">' + escHtml(g.severity) + '</span>' +
+            '<div><div class="gap-desc">' + escHtml(g.description) + '</div>' +
+            '<div class="gap-action">' + escHtml((g.suggestedActions || []).join(', ')) + '</div></div>' +
+            '</div>';
+        }).join('') + '</div>';
+    }
+
+    function renderHelperPanel(items) {
+      return '<div class="side-panel">' +
+        '<h4>🧠 AI Guidance</h4>' +
+        items.map(function (item) {
+          return '<div class="rec-item">' + escHtml(item.summary) + '</div>';
+        }).join('') + '</div>';
+    }
+
+    function renderWalletPanel() {
+      return '<div class="side-panel" id="walletPanel">' +
+        '<h4>💳 Wallet Helper</h4>' +
+        '<div class="wallet-stat"><span>Status</span><span class="wallet-stat-val">Loading...</span></div>' +
+        '</div>';
+    }
+
+    function renderQuickActionsPanel() {
+      return '<div class="side-panel">' +
+        '<h4>⚡ Quick Actions</h4>' +
+        [
+          { label: 'View Treasury', href: '/treasury', icon: '🏦' },
+          { label: 'CRM Pipeline', href: '/crm', icon: '📊' },
+          { label: 'Deploy Agent', href: '/agents', icon: '🤖' },
+          { label: 'My Profile', href: '/profile', icon: '👤' },
+        ].map(function (a) {
+          return '<a class="result-card" href="' + a.href + '" style="padding:0.6rem 0.8rem;margin-bottom:0.4rem">' +
+            '<span style="font-size:1.1rem">' + a.icon + '</span>' +
+            '<span style="font-size:0.85rem">' + a.label + '</span>' +
+            '</a>';
+        }).join('') + '</div>';
+    }
+
+    function typeIcon(type) {
+      return { action: '⚡', wallet: '💳', helper: '🧠', doc: '📄', event: '🔔' }[type] || '🔗';
+    }
+
+    function escHtml(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escAttr(s) {
+      return String(s || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    // ── Mode chip handler ─────────────────────────────────────────────────
+    document.querySelectorAll('.chip[data-mode]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        document.querySelectorAll('.chip[data-mode]').forEach(function (c) { c.classList.remove('active'); });
+        chip.classList.add('active');
+        currentMode = chip.dataset.mode;
+        var q = document.getElementById('searchInput').value;
+        if (q.trim()) doSearch(q);
+      });
+    });
+
+    // ── Search input handler ─────────────────────────────────────────────
+    document.getElementById('searchInput').addEventListener('input', function (e) {
+      clearTimeout(debounceTimer);
+      var q = e.target.value;
+      if (!q.trim()) {
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('resultsArea').classList.remove('visible');
+        document.getElementById('diagBar').classList.remove('visible');
+        return;
+      }
+      debounceTimer = setTimeout(function () { doSearch(q); }, 350);
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', function () {
+      var q = document.getElementById('searchInput').value;
+      if (q.trim()) doSearch(q);
+    });
+
+    document.getElementById('searchInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        clearTimeout(debounceTimer);
+        var q = e.target.value;
+        if (q.trim()) doSearch(q);
+      }
+    });
+
+    // ── Init ─────────────────────────────────────────────────────────────
+    async function init() {
+      // Refresh token from /auth/me
+      try {
+        var authR = await fetch('/auth/me', { credentials: 'include' });
+        var authD = await authR.json();
+        if (authD.ok && authD.token) {
+          TOKEN = authD.token;
+          localStorage.setItem('bridge_token', TOKEN);
+        }
+      } catch (e) {}
+
+      await Promise.all([loadTwinState(), loadNotifications()]);
+
+      // Auto-trigger recompute in background
+      fetch('/api/twin/recompute', {
+        method: 'POST',
+        headers: authHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({ reason: 'on_demand' }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok && d.twin) {
+          twinState = d.twin;
+          renderTwinStrip();
+        }
+      }).catch(function () {});
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>
