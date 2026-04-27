@@ -62,6 +62,21 @@
   @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
 <div class="page">
@@ -375,6 +390,7 @@ const urlRef = new URLSearchParams(location.search).get('ref');
 if (urlRef) document.getElementById('reg-referral').value = urlRef;
 </script>
 <script src="/onboarding.js"></script>
+<script src="/nav-routes.js"></script>
 <script src="/bridge-nav.js"></script>
 </body>
 </html>

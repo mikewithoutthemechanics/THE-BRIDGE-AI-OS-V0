@@ -12,6 +12,21 @@
     .highlight { border: 2px solid #00c8ff; border-radius: 8px; animation: pulse 2s infinite; }
     @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(0, 200, 255, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(0, 200, 255, 0); } }
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body class="min-h-screen p-8">
   <div class="max-w-4xl mx-auto">
@@ -289,6 +304,8 @@
 
     updateUI();
   </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html></content>
 <parameter name="filePath">public/linea-demo.html

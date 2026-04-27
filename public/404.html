@@ -29,6 +29,21 @@
     .btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
     .hint{margin-top:32px;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
   <div class="wrap">
@@ -46,5 +61,7 @@
     var p = window.location.pathname;
     document.getElementById('path-display').textContent = p;
   </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

@@ -201,6 +201,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .modal-title{font-size:1rem;font-weight:700;color:#fff;margin-bottom:1.25rem}
 .modal-actions{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem}
 </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
 <canvas id="bg"></canvas>
@@ -1150,5 +1165,7 @@ function toast(msg, type = 'ok') {
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 init();
 </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

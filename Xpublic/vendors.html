@@ -7,6 +7,14 @@
   <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen">
   <nav class="bg-slate-800 p-4 flex justify-between items-center">
@@ -104,5 +112,7 @@
 
     loadVendors();
   </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

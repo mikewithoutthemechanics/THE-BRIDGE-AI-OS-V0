@@ -319,6 +319,21 @@
     ::-webkit-scrollbar-thumb { background: #1a2d40; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #2a3d50; }
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
 <script>(function(){var t=localStorage.getItem('bridge_token')||(document.cookie.match(/(?:^|; )access_token=([^;]*)/)||[])[1];if(!t){location.replace('/onboarding?redirect='+encodeURIComponent(location.pathname));return;}fetch('/auth/me',{headers:{Authorization:'Bearer '+t}}).then(function(r){if(!r.ok)throw new Error();}).catch(function(){localStorage.removeItem('bridge_token');location.replace('/onboarding');});})()</script>
@@ -1057,5 +1072,7 @@
 </script>
 <script src="/bridge-widget.js" defer></script>
   <script src="/ehsa-brain-status.js" defer></script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

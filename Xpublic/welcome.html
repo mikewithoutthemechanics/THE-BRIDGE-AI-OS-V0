@@ -41,6 +41,14 @@ h2{color:var(--a);font-size:.8rem;letter-spacing:.12em;margin:1.5rem 0 .5rem;bor
 .profile .val{color:var(--t)}
 .logout{position:fixed;top:4rem;right:1rem;z-index:100}
 </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
 </head>
 <body>
 <a class="btn btn-danger logout" href="#" onclick="logout()">LOGOUT</a>
@@ -201,5 +209,7 @@ async function setupMFA() {
   }
 }
 </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>
