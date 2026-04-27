@@ -9,8 +9,6 @@ const path = require('path');
 
 const FALLBACK = [
   'ryanpcowan@gmail.com',
-  'michaelgraemek@gmail.com',
-  'marvin.saunders@gmail.com',
 ];
 
 function load() {
