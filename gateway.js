@@ -4017,3 +4017,13 @@ if (require.main === module) {
 
 // ── EXPORT (for supertest) ────────────────────────────────────────────────────
 module.exports = app;
+
+// Treasury balance endpoint
+app.get('/api/treasury/balance', async (req, res) => {
+  try {
+    const data = await fetchJSON('http://' + SYSTEM_HOST + ':3000/api/treasury/balance');
+    res.json(data);
+  } catch(e) {
+    res.json({ balance: 157500, currency: 'BRDG', mock: true });
+  }
+});

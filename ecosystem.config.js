@@ -72,11 +72,11 @@ module.exports = {
     {
       ...BASE,
       name:               'god-mode-system',
-      script:             'god-mode.js',
+      script:             'system.js',
       max_memory_restart: '256M',
       out_file:           './logs/god-mode-out.log',
       error_file:         './logs/god-mode-error.log',
-      env: { NODE_ENV: 'production', GOD_MODE_PORT: 6000 },
+      env: { NODE_ENV: 'production', PORT: 6000, GOD_MODE_PORT: 6000 },
     },
     {
       ...BASE,
@@ -107,7 +107,7 @@ module.exports = {
     {
       ...BASE,
       name:               'admin-api',
-      script:             'admin-api.js',
+      script:             'services/admin-api/index.js',
       max_memory_restart: '128M',
       out_file:           './logs/admin-out.log',
       error_file:         './logs/admin-error.log',
