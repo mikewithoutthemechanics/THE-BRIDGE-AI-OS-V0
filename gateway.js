@@ -93,14 +93,26 @@ try {
 const ALLOWED_ORIGINS = new Set([
   'https://wall.bridge-ai-os.com',
   'https://bridge-ai-os.com',
+  'https://go.ai-os.co.za',
+  'https://ai-os.co.za',
+  'https://aid.ai-os.co.za',
+  'https://ehsa.ai-os.co.za',
   `http://${SYSTEM_HOST}:3000`,
   'http://localhost:8080',
+  'http://localhost:3000',
 ]);
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
+  const originAllowed = origin && (
+    ALLOWED_ORIGINS.has(origin) ||
+    origin.endsWith('.ai-os.co.za') ||
+    origin.endsWith('.bridge-ai-os.com')
+  );
+  if (originAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else if (!origin) {
+    // Same-origin request (no Origin header) — always allow
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
