@@ -144,31 +144,64 @@ document.getElementById('platforms').innerHTML = platforms.map(p => `
   </div>
 `).join('');
 
-// Load live data
+// ── Formatting helpers ─────────────────────────────────────────────────────
+function fmtZAR(n) {
+  if (!n || isNaN(n)) return 'R0';
+  if (n >= 1e9) return 'R' + (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return 'R' + (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return 'R' + (n/1e3).toFixed(0) + 'K';
+  return 'R' + n.toFixed(0);
+}
+function fmtNum(n) {
+  if (!n || isNaN(n)) return '0';
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(0) + 'K';
+  return String(Math.round(n));
+}
+
+// ── Load live data ──────────────────────────────────────────────────────────
 async function loadStats() {
   try {
-    const [treasury, wallet, swarm, analytics] = await Promise.all([
-      fetch(BRAIN + '/api/treasury/status').then(r=>r.json()).catch(()=>({})),
-      fetch(BRAIN + '/api/wallet/balance').then(r=>r.json()).catch(()=>({total_usd:0})),
-      fetch(BRAIN + '/api/swarm/agents').then(r=>r.json()).catch(()=>({count:0})),
-      fetch(BRAIN + '/api/analytics/overview').then(r=>r.json()).catch(()=>({})),
+    const [treasury, wallet, econStats, analytics] = await Promise.all([
+      fetch('/api/treasury').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/wallet/balance').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/economy/stats').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/analytics/overview').then(r=>r.json()).catch(()=>({})),
     ]);
+
+    const treasuryBal = treasury.balance || treasury.balance_zar || 0;
+    const walletBal   = wallet.balance   || wallet.total_usd    || wallet.balance_zar || 0;
+    const agentCount  = econStats.agent_count || econStats.agentCount || 104;
+    const txCount     = econStats.txCount     || econStats.totalTransactions || 0;
+    const brdgCirc    = econStats.totalCirculating || 0;
+    const arrRevenue  = analytics.revenue?.arr || analytics.revenue?.mtd || 0;
+
     document.getElementById('stats').innerHTML = `
       <div class="stat"><div class="v">10</div><div class="l">PLATFORMS</div></div>
-      <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
-      <div class="stat"><div class="v">$${((wallet.total_usd||0)/1000).toFixed(0)}K</div><div class="l">WALLET</div></div>
-      <div class="stat"><div class="v">${swarm.count||8}</div><div class="l">AGENTS</div></div>
+      <div class="stat"><div class="v" id="s-treasury">${fmtZAR(treasuryBal)}</div><div class="l">TREASURY</div></div>
+      <div class="stat"><div class="v" id="s-wallet">${fmtZAR(walletBal)}</div><div class="l">WALLET</div></div>
+      <div class="stat"><div class="v" id="s-agents">${agentCount}</div><div class="l">AGENTS</div></div>
       <div class="stat"><div class="v">6</div><div class="l">PAYMENT RAILS</div></div>
     `;
-    const netWorth = (treasury.balance||0) + (wallet.total_usd||0);
+
+    const netWorth = treasuryBal + walletBal;
     document.getElementById('net-worth').innerHTML = `
       <h3>NETWORK NET WORTH</h3>
-      <div class="val">$${netWorth.toLocaleString()}</div>
-      <div class="sub">Treasury + Wallet + Token Value | 10 platforms × 6 rails × 8 agents</div>
+      <div class="val">${fmtZAR(netWorth)}</div>
+      <div class="sub" style="margin-top:.5rem">
+        Treasury ${fmtZAR(treasuryBal)} &nbsp;·&nbsp; Wallet ${fmtZAR(walletBal)} &nbsp;·&nbsp; BRDG ${fmtNum(brdgCirc)} circulating
+      </div>
+      <div class="sub" style="margin-top:.3rem">
+        ${agentCount} agents &nbsp;·&nbsp; ${fmtNum(txCount)} transactions &nbsp;·&nbsp; 6 payment rails &nbsp;·&nbsp; 10 platforms
+      </div>
     `;
-  } catch(e) { console.error(e); }
+  } catch(e) { console.warn('[platforms] loadStats error:', e.message); }
 }
+
 loadStats();
+// Auto-refresh every 30 seconds
+setInterval(loadStats, 30000);
 </script>
 <script src="/nav-routes.js"></script>
 <script src="/bridge-nav.js"></script>
