@@ -794,6 +794,18 @@ overseer_uptime_seconds ${uptime}
 # HELP overseer_health System health score
 # TYPE overseer_health gauge
 overseer_health ${this.lastState ? this.lastState.metrics.overall_health : 0}
+
+# HELP overseer_intents_total Total intent events received
+# TYPE overseer_intents_total counter
+overseer_intents_total ${this.stats.intents || 0}
+
+# HELP overseer_intent_failures_total Total failed intent executions
+# TYPE overseer_intent_failures_total counter
+overseer_intent_failures_total ${this.stats.intentFailures || 0}
+
+# HELP overseer_intent_latency_seconds Average intent execution latency
+# TYPE overseer_intent_latency_seconds gauge
+overseer_intent_latency_seconds ${this.stats.avgIntentLatency || 0}
         `.trim();
 
         res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -820,6 +832,33 @@ overseer_health ${this.lastState ? this.lastState.metrics.overall_health : 0}
         return;
       }
 
+      // Intent event ingestion endpoint
+      if (req.method === 'POST' && req.url === '/event') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+          try {
+            const event = JSON.parse(body);
+            this.handleEvent(event);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true }));
+          } catch (e) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+        });
+        return;
+      }
+
+      // Intent log query endpoint
+      if (req.url === '/intents' && req.method === 'GET') {
+        const limit = parseInt(req.url.split('limit=')[1]) || 100;
+        const intents = this.getIntentLog(limit);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, intents, count: intents.length }));
+        return;
+      }
+
       res.writeHead(404);
       res.end();
     });
@@ -828,7 +867,69 @@ overseer_health ${this.lastState ? this.lastState.metrics.overall_health : 0}
       console.log(`[OVERSEER] Metrics endpoint: http://localhost:${CONFIG.METRICS_PORT}/metrics`);
       console.log(`[OVERSEER] Health check: http://localhost:${CONFIG.METRICS_PORT}/health`);
       console.log(`[OVERSEER] State dump: http://localhost:${CONFIG.METRICS_PORT}/state`);
+      console.log(`[OVERSEER] Event ingestion: http://localhost:${CONFIG.METRICS_PORT}/event`);
+      console.log(`[OVERSEER] Intent log: http://localhost:${CONFIG.METRICS_PORT}/intents`);
     });
+  }
+
+  handleEvent(event) {
+    // Initialize intent stats if not present
+    if (!this.stats.intents) this.stats.intents = 0;
+    if (!this.stats.intentFailures) this.stats.intentFailures = 0;
+    if (!this.stats.intentLatencies) this.stats.intentLatencies = [];
+
+    // Log the event
+    logger.log('EVENT_RECEIVED', {
+      type: event.type || 'UNKNOWN',
+      timestamp: event.timestamp
+    });
+
+    // Handle intent events specifically
+    if (event.type === 'INTENT_EXECUTION') {
+      this.stats.intents++;
+      
+      if (event.execution === 'FAILURE' || event.status === 'UNAUTHORIZED') {
+        this.stats.intentFailures++;
+        logger.log('INTENT_FAILURE', {
+          intent: event.intent,
+          actor: event.actor,
+          traceId: event.traceId
+        }, 'WARN');
+      }
+
+      if (event.latency) {
+        this.stats.intentLatencies.push(event.latency);
+        if (this.stats.intentLatencies.length > 1000) {
+          this.stats.intentLatencies.shift();
+        }
+        // Calculate average latency
+        const avg = this.stats.intentLatencies.reduce((a, b) => a + b, 0) / this.stats.intentLatencies.length;
+        this.stats.avgIntentLatency = avg;
+      }
+
+      // Store in intent log for pattern analysis
+      if (!this.intentLog) this.intentLog = [];
+      this.intentLog.push({
+        timestamp: event.timestamp || now(),
+        intent: event.intent,
+        actor: event.actor,
+        status: event.status,
+        execution: event.execution,
+        traceId: event.traceId,
+        latency: event.latency,
+        statusCode: event.statusCode
+      });
+
+      // Maintain max 10000 entries
+      if (this.intentLog.length > 10000) {
+        this.intentLog.shift();
+      }
+    }
+  }
+
+  getIntentLog(limit = 100) {
+    if (!this.intentLog) return [];
+    return this.intentLog.slice(-limit).reverse();
   }
 
   stop() {
