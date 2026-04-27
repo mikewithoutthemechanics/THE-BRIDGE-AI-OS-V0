@@ -23,11 +23,14 @@ from prometheus_client import Counter, Gauge, Histogram, REGISTRY, generate_late
 # =====================
 # CONFIGURATION
 # =====================
+import os
+
 BASE_DIR = Path(__file__).parent
-STATE_FILE = BASE_DIR / "state.json"
-AUDIT_LOG = BASE_DIR / "audit.log"
+STATE_FILE = Path(os.getenv("OVERSEER_STATE_PATH", BASE_DIR / "state.json"))
+AUDIT_LOG = Path(os.getenv("OVERSEER_LOG_PATH", BASE_DIR / "audit.log"))
 CONFIG_DIR = BASE_DIR / "configs"
 METRICS_FILE = BASE_DIR / "metrics.json"
+OVERSEER_INTERVAL = float(os.getenv("OVERSEER_INTERVAL", "2.0"))
 
 CONFIG_DIR.mkdir(exist_ok=True)
 
@@ -868,9 +871,11 @@ class Overseer:
                 
         return candidates[0]
     
-    async def start(self, interval: float = 2.0):
+    async def start(self, interval: float = None):
         """Start the Overseer runtime loop"""
-        logger.info(f" Overseer starting — persona: {self.persona.name}")
+        if interval is None:
+            interval = OVERSEER_INTERVAL
+        logger.info(f" Overseer starting — persona: {self.persona.name}, interval: {interval}s")
         self.running = True
         
         # Start event processor
@@ -903,8 +908,9 @@ overseer: Optional[Overseer] = None
 @app.on_event("startup")
 async def startup():
     global overseer
+    interval = float(os.getenv("OVERSEER_INTERVAL", "2.0"))
     overseer = Overseer(persona_name=os.getenv("OVERSEER_PERSONA", "oracle"))
-    asyncio.create_task(overseer.start())
+    asyncio.create_task(overseer.start(interval=interval))
 
 @app.get("/health")
 async def health():
@@ -983,4 +989,5 @@ async def set_persona(name: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8084)
+    port = int(os.getenv("OVERSEER_PORT", "9091"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

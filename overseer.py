@@ -357,7 +357,7 @@ class InvariantEngine:
             "TOPOLOGY_CONNECTED": self._topology_must_connect,
             "ISOLATION_INTEGRITY": self._isolation_must_be_perfect,
             "OBSERVABILITY_COMPLETE": self._everything_must_be_logged,
-            "RESILIENCE_GUARANTEED": self _recovery_must_be_fast,
+            "RESILIENCE_GUARANTEED": self._recovery_must_be_fast,
             "AUDIT_IMMUTABLE": self._audit_trail_must_append,
             "DESTINY_MAINTAINED": self._design_is_destiny
         }

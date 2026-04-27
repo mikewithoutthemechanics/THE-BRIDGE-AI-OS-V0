@@ -11,33 +11,20 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'overseer'
-    static_configs:
-      - targets: ['overseer:9091']
-        labels:
-          service: 'overseer'
-          component: 'governor'
+   - job_name: 'overseer'
+     static_configs:
+       - targets: ['overseer:9091']
+         labels:
+           service: 'overseer'
+           component: 'governor'
 
-  - job_name: 'backend'
-    static_configs:
-      - targets: ['backend:8000']
-        labels:
-          service: 'backend'
-          component: 'api'
-
-  - job_name: 'frontend'
-    static_configs:
-      - targets: ['frontend:80']
-        labels:
-          service: 'frontend'
-          component: 'ui'
-
-  - job_name: 'overseer-events'
-    static_configs:
-      - targets: ['overseer-events:9092']
-        labels:
-          service: 'overseer-events'
-          component: 'event-ingest'
+# Overseer-events integrated into overseer core
+#   - job_name: 'overseer-events'
+#     static_configs:
+#       - targets: ['overseer:9091']
+#         labels:
+#           service: 'overseer'
+#           component: 'event-ingest'
 
 # Alertmanager configuration
 alerting:

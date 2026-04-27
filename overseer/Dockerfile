@@ -15,6 +15,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose metrics and API
-EXPOSE 8084
+EXPOSE 9091
 
 CMD ["python", "overseer.py"]
