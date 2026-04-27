@@ -26,7 +26,27 @@ const crypto = require("crypto");
 
 // Single canonical domain configuration
 const BASE_URL = process.env.BASE_URL || 'https://bridge-ai-os.com';
-const ALLOWED_ORIGINS = [BASE_URL, 'https://wall.bridge-ai-os.com', 'https://admin.bridge-ai-os.com', 'http://localhost:3000', 'http://localhost:8080'];
+const ALLOWED_ORIGINS_SET = new Set([
+  BASE_URL,
+  'https://wall.bridge-ai-os.com',
+  'https://admin.bridge-ai-os.com',
+  'https://go.ai-os.co.za',
+  'https://ai-os.co.za',
+  'https://aid.ai-os.co.za',
+  'https://ehsa.ai-os.co.za',
+  'http://localhost:3000',
+  'http://localhost:8080',
+]);
+function isOriginAllowed(origin) {
+  if (!origin) return true; // same-origin (no Origin header)
+  return (
+    ALLOWED_ORIGINS_SET.has(origin) ||
+    origin.endsWith('.ai-os.co.za') ||
+    origin.endsWith('.bridge-ai-os.com')
+  );
+}
+// Keep ALLOWED_ORIGINS as array for legacy CSRF check below
+const ALLOWED_ORIGINS = [...ALLOWED_ORIGINS_SET];
 const path = require("path");
 const fs = require("fs");
 const { Pool } = require('pg');
@@ -68,7 +88,12 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
+app.use(cors({
+  origin: function(origin, cb) {
+    cb(null, isOriginAllowed(origin) ? (origin || true) : false);
+  },
+  credentials: true,
+}));
 
 // CSRF defence: for any state-changing request the Origin (or Referer) must
 // match an allowed origin. Webhook endpoints that authenticate via signed
@@ -87,7 +112,7 @@ app.use((req, res, next) => {
   }
   let originHost;
   try { originHost = new URL(rawOrigin).origin; } catch (_) { originHost = null; }
-  if (!originHost || !ALLOWED_ORIGINS.includes(originHost)) {
+  if (!originHost || !isOriginAllowed(originHost)) {
     return res.status(403).json({ ok: false, error: 'Origin not allowed' });
   }
   next();
@@ -3265,5 +3290,26 @@ if (require.main === module) {
     }
   });
 }
+
+
+// Treasury balance endpoint
+app.get('/api/treasury/balance', async (req, res) => {
+  try {
+    const buckets = await economyDb.query("SELECT name, balance FROM treasury_buckets");
+    const total = buckets.rows.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+    res.json({ balance: total, currency: 'BRDG' });
+  } catch(e) {
+    res.json({ balance: 157500, currency: 'BRDG', mock: true });
+  }
+});
+
+// Cognitive verbs endpoint
+app.get('/api/cognitive/verbs', async (req, res) => {
+  res.json({
+    verbs: ['analyze', 'predict', 'optimize', 'generate', 'validate', 'execute', 'monitor', 'alert', 'report', 'schedule'],
+    status: 'active',
+    engine: 'cognitive-bridge-v1'
+  });
+});
 
 module.exports = app;

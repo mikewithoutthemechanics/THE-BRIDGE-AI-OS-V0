@@ -40,7 +40,7 @@ health_check() {
   # Critical endpoints
   local endpoints=("/api/tiers" "/api/lifecycle/status")
   for ep in "${endpoints[@]}"; do
-    local code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:8080${ep}" 2>/dev/null || echo "000")
+    local code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:8082${ep}" 2>/dev/null || echo "000")
     if [[ "$code" =~ ^(200|401|403)$ ]]; then
       ok "Endpoint ${ep} → ${code}"
     else

@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SRC = resolve(__dirname, '../public/nav-routes.js');
+const SRC = resolve(__dirname, '../../public/nav-routes.js');
 const OUT = resolve(__dirname, '../src/generated/admin-groups.ts');
 
 const source = readFileSync(SRC, 'utf8');
