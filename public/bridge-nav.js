@@ -372,7 +372,7 @@
         return '<a class="bn-link' + (isActive(r.href) ? ' active' : '') + '" href="' + r.href + '">' + r.label + '</a>';
       }).join('');
       return '<div class="bn-section">' +
-        '<div class="bn-section-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('collapsed')">' +
+        '<div class="bn-section-hdr" onclick="this.classList.toggle("open");this.nextElementSibling.classList.toggle("collapsed")">' +
         sec.title + '<span class="bn-section-arrow">▾</span></div>' +
         '<div class="bn-section-body collapsed">' + linksHtml + '</div>' +
         '</div>';
