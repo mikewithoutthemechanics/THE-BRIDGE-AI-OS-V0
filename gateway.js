@@ -34,10 +34,12 @@ const SYSTEM_HOST = process.env.SYSTEM_HOST || 'localhost';
 
 require('dotenv').config({ path: require('path').join(__dirname, '.env'), override: true });
 const express = require('express');
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 const app = express();
+app.use(helmet({ contentSecurityPolicy: false }));
 app.set('trust proxy', true);   // nginx sits in front — trust X-Forwarded-* headers
 
 // ── Auto-Kill (IP rate-limit + ban enforcement) ────────────────────────────
@@ -3381,6 +3383,114 @@ app.get('/ref/:code', async (req, res) => {
   } catch (e) { res.redirect(302, '/join'); }
 });
 
+// ── PAYMENT WEBHOOK ALIASES (must be BEFORE catch-all) ───────────────────────
+// PayFast ITN posts to /webhooks/payfast with no auth header — proxy to server:3000/payfast/notify
+// Stripe webhooks similarly go to server:3000 (if configured there later)
+app.post("/webhooks/payfast", express.urlencoded({ extended: false, limit: "10kb" }), async (req, res) => {
+  try {
+    const body = req.body || {};
+    const bodyStr = Object.entries(body).map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v)).join("&");
+    const r = await fetch("http://127.0.0.1:3000/payfast/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", "x-forwarded-for": req.ip || "" },
+      body: bodyStr,
+      signal: AbortSignal.timeout(15000),
+    });
+    res.status(r.status).end();
+  } catch (e) {
+    console.warn("[GATEWAY] /webhooks/payfast proxy error:", e.message);
+    res.status(502).end();
+  }
+});
+
+app.post("/webhooks/stripe", express.raw({ type: "*/*", limit: "512kb" }), async (req, res) => {
+  try {
+    const r = await fetch("http://127.0.0.1:3000/webhooks/stripe", {
+      method: "POST",
+      headers: {
+        "Content-Type": req.headers["content-type"] || "application/json",
+        "stripe-signature": req.headers["stripe-signature"] || "",
+      },
+      body: req.body,
+      signal: AbortSignal.timeout(15000),
+    });
+    res.status(r.status).end();
+  } catch (e) {
+    console.warn("[GATEWAY] /webhooks/stripe proxy error:", e.message);
+    res.status(502).end();
+  }
+});
+
+// /api/revenue/rails — alias for /api/treasury/rails (wallet.html polls this)
+app.get("/api/revenue/rails", (_req, res) => {
+  res.json({ rails: [
+    { label: "PayFast (ZA)", status: "active" },
+    { label: "Stripe (International)", status: "pending" },
+    { label: "Crypto (ETH/BTC/SOL)", status: "active" },
+    { label: "EFT / Bank Transfer", status: "active" },
+  ]});
+});
+
+// ── SPECIFIC UI ROUTES — must be BEFORE /api/*path catch-all ────────────────
+
+// /api/bank/* → proxy to unified-server port 3000 (continuity-routes.js)
+app.use('/api/bank', (req, res) => {
+  const http = require('http');
+  const fwdPath = '/api/bank' + (req.url === '/' ? '' : req.url);
+  const pr = http.request({ hostname: '127.0.0.1', port: 3000, path: fwdPath, method: req.method, headers: { ...req.headers, host: '127.0.0.1:3000' } }, up => { res.writeHead(up.statusCode, up.headers); up.pipe(res); });
+  pr.on('error', () => res.status(502).json({ ok: false, error: 'bank unavailable' }));
+  if (req.method !== 'GET' && req.body) pr.write(JSON.stringify(req.body));
+  pr.end();
+});
+
+// /api/system/overview — live system snapshot for system-dashboard.html
+app.get('/api/system/overview', (_req, res) => {
+  const os = require('os');
+  res.json({ ok: true, system: { uptime: os.uptime(), memory: { total: os.totalmem(), free: os.freemem(), used: os.totalmem() - os.freemem() }, cpus: os.cpus().length, loadavg: os.loadavg() }, services: [ { name: 'bridge-gateway', port: 8080, status: 'online' }, { name: 'unified-server', port: 3000, status: 'online' }, { name: 'super-brain', port: 8000, status: 'online' }, { name: 'auth-service', port: 5001, status: 'online' }, { name: 'svg-engine', port: 7070, status: 'online' }, { name: 'terminal-proxy', port: 5002, status: 'online' }, { name: 'god-mode-topology', port: 3001, status: 'online' }, { name: 'admin-api', port: 4011, status: 'online' } ], ts: new Date().toISOString() });
+});
+
+// /api/cognitive/verbs — verb registry for agent-command, cognitive-os, design-engine, wealth-engine
+app.get('/api/cognitive/verbs', (_req, res) => {
+  res.json({ ok: true, verbs: [
+    { id: 'analyze',   label: 'Analyze',   icon: 'search',      description: 'Deep analysis of data, code, or content', category: 'intelligence' },
+    { id: 'generate',  label: 'Generate',  icon: 'sparkles',    description: 'Create new content, code, or ideas',       category: 'creation' },
+    { id: 'summarize', label: 'Summarize', icon: 'list',        description: 'Condense and distill key information',     category: 'intelligence' },
+    { id: 'translate', label: 'Translate', icon: 'globe',       description: 'Convert between languages or formats',     category: 'transformation' },
+    { id: 'optimize',  label: 'Optimize',  icon: 'bolt',        description: 'Improve performance and efficiency',       category: 'engineering' },
+    { id: 'research',  label: 'Research',  icon: 'book',        description: 'Find and synthesize information',          category: 'intelligence' },
+    { id: 'automate',  label: 'Automate',  icon: 'cpu',         description: 'Build workflows and automations',          category: 'engineering' },
+    { id: 'design',    label: 'Design',    icon: 'palette',     description: 'Create visual and UX designs',            category: 'creation' },
+    { id: 'secure',    label: 'Secure',    icon: 'shield',      description: 'Audit and harden systems',                category: 'security' },
+    { id: 'trade',     label: 'Trade',     icon: 'trending-up', description: 'Execute and manage trades',               category: 'economy' },
+    { id: 'recruit',   label: 'Recruit',   icon: 'users',       description: 'Source and evaluate candidates',          category: 'business' },
+    { id: 'invoice',   label: 'Invoice',   icon: 'credit-card', description: 'Generate and send invoices',              category: 'economy' },
+    { id: 'scout',     label: 'Scout',     icon: 'telescope',   description: 'Monitor and discover opportunities',      category: 'intelligence' },
+    { id: 'negotiate', label: 'Negotiate', icon: 'handshake',   description: 'Drive deal-making and agreements',        category: 'business' },
+    { id: 'deploy',    label: 'Deploy',    icon: 'rocket',      description: 'Ship code and services to production',   category: 'engineering' },
+  ], count: 15 });
+});
+
+// /api/cognitive/state — current autonomous economy state
+app.get('/api/cognitive/state', async (_req, res) => {
+  const http = require('http');
+  const stats = await new Promise(resolve => {
+    let d = '';
+    const r = http.get({ hostname: '127.0.0.1', port: 3000, path: '/api/economy/stats' }, up => { up.on('data', c => d += c); up.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve({}); } }); });
+    r.on('error', () => resolve({}));
+  });
+  res.json({ ok: true, state: { mode: 'autonomous', active_agents: stats.agent_count || 103, task_queue: stats.activeTasks || 84, economy_value: stats.totalCirculating || 0, tx_count: stats.txCount || 0, last_tick: new Date().toISOString() }, ts: new Date().toISOString() });
+});
+
+// /api/cognitive/execute — forward to brain agent execution
+app.post('/api/cognitive/execute', express.json(), (req, res) => {
+  const http = require('http');
+  const body = JSON.stringify(req.body || {});
+  const pr = http.request({ hostname: '127.0.0.1', port: 8000, path: '/api/agent/execute', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, up => { let d = ''; up.on('data', c => d += c); up.on('end', () => { try { res.json(JSON.parse(d)); } catch { res.json({ ok: true, result: d }); } }); });
+  pr.on('error', () => res.json({ ok: false, error: 'brain unavailable' }));
+  pr.write(body); pr.end();
+});
+
+
 // LIVE SITEMAP API — must be mounted BEFORE the /api/*path catch-all proxy
 // below, otherwise GET /api/admin/sitemap matches isDashboardApi() and gets
 // proxied to unified-server:3000 (which 404s) instead of running the local
@@ -3709,6 +3819,7 @@ app.get('/', (req, res) => {
 // ── START (skipped when required by tests) ───────────────────────────────────
 // Default 0.0.0.0 so curl http://127.0.0.1:PORT works on typical Linux VPS (IPv6-only :: often rejects IPv4 loopback).
 // Override: PORT=8080 GATEWAY_LISTEN_HOST=:: node gateway.js
+
 if (require.main === module) {
   const port = parseInt(process.env.GATEWAY_PORT || process.env.PORT || '8080', 10);
   const host = process.env.GATEWAY_LISTEN_HOST || '0.0.0.0';

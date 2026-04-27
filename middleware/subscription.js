@@ -80,7 +80,7 @@ async function extractUser(req) {
   const authHeader = req.headers?.authorization || '';
   if (authHeader.startsWith('Bearer ')) token = authHeader.slice(7);
   if (!token && req.cookies?.bridge_token) token = req.cookies.bridge_token;
-  if (!token && req.query?.token) token = req.query.token;
+  // req.query.token removed — tokens must not appear in URLs (log leakage)
   if (!token) return null;
   try {
     return await userDb.verifyAuthToken(token);
