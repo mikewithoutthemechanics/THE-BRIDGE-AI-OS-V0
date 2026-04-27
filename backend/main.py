@@ -20,11 +20,18 @@ import uvicorn
 import logging
 
 # Import execution binding layer
-from architecture_binding import (
-    ExecutionBindingLayer,
-    get_execution_binding,
-    execution_binding_middleware
-)
+try:
+    from architecture_binding import (
+        ExecutionBindingLayer,
+        get_execution_binding,
+        execution_binding_middleware
+    )
+except ModuleNotFoundError:
+    from backend.architecture_binding import (
+        ExecutionBindingLayer,
+        get_execution_binding,
+        execution_binding_middleware
+    )
 
 # Structured logging setup
 class StructuredFormatter(logging.Formatter):
