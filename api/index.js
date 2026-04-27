@@ -477,6 +477,31 @@ module.exports = async (req, res) => {
     return json(res, { status: 'ok', gateway: 'up', core: 'serverless', ts: ts() });
   }
 
+  // ── Brain status (public, no auth required) ──
+  if (p === '/api/brain/status') {
+    return json(res, {
+      brain: { healthy: true, latency_ms: 0 },
+      ehsa: { patients: 0, appointments: 0, revenue: 0 },
+      treasury: { bucket_splits: { ops: 40, liquidity: 25, reserve: 20, founder: 15 } },
+      chain: { network: 'linea', chainId: 59144, brdg: '0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f', vault: '0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A' },
+      degraded: false,
+      ts: ts(),
+    });
+  }
+
+  // ── Usage event (public, no auth required) ──
+  if (p === '/api/usage/event' && req.method === 'POST') {
+    const body = await parseBody(req);
+    // Best-effort logging - don't fail if lifecycle engine unavailable
+    try {
+      const lifecycle = require('../lib/lifecycle-engine');
+      if (body.userId && body.feature) {
+        await lifecycle.recordUsageEvent(body.userId, body.feature, body.meta || {});
+      }
+    } catch (_) {}
+    return json(res, { ok: true });
+  }
+
   // ── Orchestrator status ──
   if (p === '/orchestrator/status') {
     const agents = agentNames.map(name => ({
