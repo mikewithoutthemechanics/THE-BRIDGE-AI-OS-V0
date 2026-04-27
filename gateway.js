@@ -3401,7 +3401,8 @@ app.get('/ref/:code', async (req, res) => {
 app.post("/webhooks/payfast", express.urlencoded({ extended: false, limit: "10kb" }), async (req, res) => {
   try {
     const body = req.body || {};
-    const bodyStr = Object.entries(body).map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v)).join("&");
+    // Ensure body is properly formatted as URL-encoded string
+    const bodyStr = new URLSearchParams(body).toString();
     const r = await fetch("http://127.0.0.1:3000/payfast/notify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", "x-forwarded-for": req.ip || "" },
