@@ -364,7 +364,7 @@ img,video,iframe,table{max-width:100%}
 let _supabase = null;
 (async function () {
   try {
-    const r = await fetch('/api/config/oauth');
+    const r = await fetch('https://bridge-ai-os.com/api/config/oauth');
     if (!r.ok) return;
     const cfg = await r.json();
     if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {

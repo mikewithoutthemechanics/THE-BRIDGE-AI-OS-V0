@@ -438,7 +438,7 @@ img,video,iframe,table{max-width:100%}
   // ── Load verb registry ────────────────────────────────────────────────────
   async function loadVerbs() {
     try {
-      var r = await fetch('/api/cognitive/verbs');
+      var r = await fetch('https://bridge-ai-os.com/api/cognitive/verbs');
       var d = await r.json();
       if (!d.ok) return;
       verbRegistry = {};
@@ -552,7 +552,7 @@ img,video,iframe,table{max-width:100%}
     spinner.style.display='inline-block';
     resultBox.classList.remove('visible','error');
     try {
-      var r = await fetch('/api/cognitive/execute', {
+      var r = await fetch('https://bridge-ai-os.com/api/cognitive/execute', {
         method:'POST', headers:authH(), credentials:'include',
         body: JSON.stringify({ verb, input, constraints, chain_id: chainId||undefined }),
       });
@@ -603,7 +603,7 @@ img,video,iframe,table{max-width:100%}
     resultBox.classList.remove('visible','error');
 
     try {
-      var r = await fetch('/api/cognitive/loop', {
+      var r = await fetch('https://bridge-ai-os.com/api/cognitive/loop', {
         method:'POST', headers:authH(), credentials:'include',
         body: JSON.stringify({ loop_type:loopType, trigger_event:trigger, verbs_to_run, input }),
       });
@@ -710,7 +710,7 @@ img,video,iframe,table{max-width:100%}
 
     if (!key) { alert('Key required'); return; }
     try {
-      var r = await fetch('/api/cognitive/memory', {
+      var r = await fetch('https://bridge-ai-os.com/api/cognitive/memory', {
         method:'POST', headers:authH(), credentials:'include',
         body: JSON.stringify({ key, memory_type:type, value, topics, importance }),
       });
@@ -723,7 +723,7 @@ img,video,iframe,table{max-width:100%}
   // ── Cognitive state ───────────────────────────────────────────────────────
   window.loadState = async function() {
     try {
-      var r = await fetch('/api/cognitive/state', { headers:authH(), credentials:'include' });
+      var r = await fetch('https://bridge-ai-os.com/api/cognitive/state', { headers:authH(), credentials:'include' });
       var d = await r.json();
       if (!d.ok) return;
       var s = d.state;
@@ -755,7 +755,7 @@ img,video,iframe,table{max-width:100%}
 
   async function updateHeaderStats() {
     try {
-      var r = await fetch('/api/cognitive/state', { headers:authH(), credentials:'include' });
+      var r = await fetch('https://bridge-ai-os.com/api/cognitive/state', { headers:authH(), credentials:'include' });
       var d = await r.json();
       if (d.ok) {
         document.getElementById('hstat-loops').textContent = d.state.loop_count||0;

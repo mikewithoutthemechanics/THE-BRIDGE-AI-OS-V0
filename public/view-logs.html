@@ -46,7 +46,7 @@ img,video,iframe,table{max-width:100%}
   <pre id="logs">Loading logs...</pre>
 
   <script>
-    fetch('/api/logs')
+    fetch('https://bridge-ai-os.com/api/logs')
       .then(res => res.text())
       .then(data => {
         document.getElementById('logs').innerText = data;

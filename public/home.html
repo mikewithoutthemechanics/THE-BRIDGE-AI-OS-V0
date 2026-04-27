@@ -131,7 +131,7 @@ img,video,iframe,table{max-width:100%}
 </div>
 
 <script>
-fetch('/api/treasury/status').then(r=>r.json()).then(d=>{
+fetch('https://bridge-ai-os.com/api/treasury/status').then(r=>r.json()).then(d=>{
   document.getElementById('s-treasury').textContent='$'+(d.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
 }).catch(()=>{});
 </script>

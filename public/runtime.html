@@ -263,7 +263,7 @@ async function loadData() {
 
   // Treasury
   try {
-    var tr = await fetch('/api/treasury/status');
+    var tr = await fetch('https://bridge-ai-os.com/api/treasury/status');
     var td = await tr.json();
     var t = td.treasury || td;
     state.treasury.total = t.total_brdg || t.balance || state.treasury.total;
@@ -276,7 +276,7 @@ async function loadData() {
 
   // SVG telemetry
   try {
-    var se = await fetch('/api/svg/telemetry');
+    var se = await fetch('https://bridge-ai-os.com/api/svg/telemetry');
     var sd = await se.json();
     if (sd.skills) document.getElementById('sSkills').textContent = sd.skills;
     if (sd.executions) { state.svg.executions = sd.executions; document.getElementById('sExec').textContent = sd.executions; }
@@ -331,7 +331,7 @@ var COMMANDS = {
       logOk('  Gateway:    ' + (d.status || 'ok').toUpperCase());
     } catch(_){ logErr('  Gateway:    UNREACHABLE'); }
     try {
-      var r2 = await fetch('/api/aoe/economy');
+      var r2 = await fetch('https://bridge-ai-os.com/api/aoe/economy');
       var d2 = await r2.json();
       logOk('  Economy:    ' + (d2.ok ? 'RUNNING' : 'DEGRADED'));
       if (d2.economy) logDim('  BRDG circ:  ' + (d2.economy.total_brdg_circulating||0).toLocaleString());
@@ -438,7 +438,7 @@ var COMMANDS = {
   agents: async function() {
     logInfo('⬢ ACTIVE AI AGENTS');
     try {
-      var r = await fetch('/api/agents');
+      var r = await fetch('https://bridge-ai-os.com/api/agents');
       var d = await r.json();
       var agents = d.agents || d.data || [];
       if (!agents.length) { logDim('  No agents running'); return; }
@@ -453,7 +453,7 @@ var COMMANDS = {
   pipeline: async function() {
     logInfo('▶ ACTIVATION PIPELINE STATUS');
     try {
-      var r = await fetch('/api/activation/pipeline');
+      var r = await fetch('https://bridge-ai-os.com/api/activation/pipeline');
       var d = await r.json();
       if (!d.ok) { logErr('Pipeline: ' + (d.error||'unreachable')); return; }
       var users = d.users || [];
@@ -467,7 +467,7 @@ var COMMANDS = {
   lifecycle: async function() {
     logInfo('♻ RUNNING LIFECYCLE ENGINE...');
     try {
-      var r = await fetch('/api/lifecycle/process', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({limit:10}) });
+      var r = await fetch('https://bridge-ai-os.com/api/lifecycle/process', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({limit:10}) });
       var d = await r.json();
       logOk('Lifecycle complete — ' + (d.processed||0) + ' subscribers processed');
     } catch(_) { logErr('Lifecycle API unreachable'); }

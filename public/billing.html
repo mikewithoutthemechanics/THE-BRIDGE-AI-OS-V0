@@ -354,7 +354,7 @@ img,video,iframe,table{max-width:100%}
 
     var headers = Object.assign({ 'Content-Type': 'application/json' }, authHeaders());
 
-    fetch('/api/platform/billing/initiate', {
+    fetch('https://bridge-ai-os.com/api/platform/billing/initiate', {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({ plan: planId }),

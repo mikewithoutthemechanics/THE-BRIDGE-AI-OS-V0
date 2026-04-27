@@ -244,15 +244,15 @@ const TIERS={
 };
 
 async function ensureAuth(){
-  if(_token){const r=await fetch('/api/auth/me',{credentials:'include',headers:{Authorization:'Bearer '+_token}});if(r.ok)return;}
-  const r2=await fetch('/api/auth/me',{credentials:'include'});if(r2.ok)return;
-  try{const r3=await fetch('/api/auth/dev-login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:DEV_ADDR,secret:DEV_SECRET,role:'admin'})});
+  if(_token){const r=await fetch('https://bridge-ai-os.com/api/auth/me',{credentials:'include',headers:{Authorization:'Bearer '+_token}});if(r.ok)return;}
+  const r2=await fetch('https://bridge-ai-os.com/api/auth/me',{credentials:'include'});if(r2.ok)return;
+  try{const r3=await fetch('https://bridge-ai-os.com/api/auth/dev-login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:DEV_ADDR,secret:DEV_SECRET,role:'admin'})});
   if(r3.ok){const d=await r3.json();if(d.token){_token=d.token;localStorage.setItem('bridge_token',d.token);}return;}}catch{}
   window.location.href='/join?next=/crm';
 }
 
 let _csrf='';
-async function fetchCsrf(){try{const r=await fetch('/api/crm/stats',{credentials:'include',headers:_token?{Authorization:'Bearer '+_token}:{}});const t=r.headers.get('X-CSRF-Token');if(t)_csrf=t;}catch{}}
+async function fetchCsrf(){try{const r=await fetch('https://bridge-ai-os.com/api/crm/stats',{credentials:'include',headers:_token?{Authorization:'Bearer '+_token}:{}});const t=r.headers.get('X-CSRF-Token');if(t)_csrf=t;}catch{}}
 
 async function api(path,opts={}){
   const method=(opts.method||'GET').toUpperCase();

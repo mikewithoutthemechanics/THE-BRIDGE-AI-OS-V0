@@ -316,7 +316,7 @@ async function loadOutputs() {
   grid.innerHTML = '<div class="loading"><span class="spinner"></span>Loading outputs…</div>';
 
   try {
-    const res = await authFetch('/api/platform/outputs?limit=200');
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/outputs?limit=200');
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       grid.innerHTML = '<div class="loading">Failed to load: ' + (data.error || res.status) + '</div>';
@@ -334,7 +334,7 @@ async function loadOutputs() {
 
 async function loadIntegrationTargets() {
   try {
-    const res = await authFetch('/api/platform/integrations/targets');
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/integrations/targets');
     if (res.ok) {
       const data = await res.json();
       integrationTargets = data.targets || [];
@@ -518,7 +518,7 @@ async function openDetail(outputId) {
   footer.textContent = '';
 
   try {
-    const res = await authFetch('/api/platform/outputs/' + encodeURIComponent(outputId));
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/outputs/' + encodeURIComponent(outputId));
     const data = await res.json();
     if (!data.ok || !data.output) {
       body.innerHTML = '<div class="loading">Output not found or access denied.</div>';
@@ -592,7 +592,7 @@ function renderDetail(o) {
     if (!newTitle) return;
     renameBtn.disabled = true; renameBtn.textContent = '…';
     try {
-      const res = await authFetch('/api/platform/outputs/' + encodeURIComponent(o.id), {
+      const res = await authfetch('https://bridge-ai-os.com/api/platform/outputs/' + encodeURIComponent(o.id), {
         method: 'PUT',
         body: JSON.stringify({ title: newTitle }),
       });
@@ -677,7 +677,7 @@ async function pushIntegration(output, target, chip) {
   chip.classList.add('pushed');
   chip.textContent = '…sending';
   try {
-    const res = await authFetch('/api/platform/integrations/run', {
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/integrations/run', {
       method: 'POST',
       body: JSON.stringify({ outputId: output.id, target }),
     });

@@ -275,7 +275,7 @@ async function runDemo() {
   const body = document.getElementById('body-' + runsUsed);
 
   try {
-    const res = await fetch('/api/ask', {
+    const res = await fetch('https://bridge-ai-os.com/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

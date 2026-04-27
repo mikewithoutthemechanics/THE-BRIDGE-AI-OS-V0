@@ -80,7 +80,7 @@ img,video,iframe,table{max-width:100%}
   </main>
 
   <script>
-    fetch('/api/health').then(r => r.json()).then(d => {
+    fetch('https://bridge-ai-os.com/api/health').then(r => r.json()).then(d => {
       document.getElementById('activity').innerHTML = '<p class="text-slate-400">System operational · ' + (d.patients || '12,450') + ' patients registered</p>';
     }).catch(() => {
       document.getElementById('activity').innerHTML = '<p class="text-slate-400">EHSA system online</p>';

@@ -921,7 +921,7 @@ function switchMode(mode){
   document.getElementById('layer-toggle').style.display = mode==='anatomical' ? 'flex' : 'none';
 
   // Fetch API data then build
-  fetch('/api/avatar/'+mode, {signal:AbortSignal.timeout(3000)})
+  fetch('https://bridge-ai-os.com/api/avatar/'+mode, {signal:AbortSignal.timeout(3000)})
     .then(r => {if(!r.ok) throw new Error(); return r.json();})
     .catch(() => ({mode:mode, status:'local', vertices:0, material:'default'}))
     .then(data => {
@@ -1223,7 +1223,7 @@ document.getElementById('chat-input').addEventListener('keypress', function(e) {
 });
 
 // ── INIT ──
-fetch('/api/avatar/modes', {signal:AbortSignal.timeout(3000)})
+fetch('https://bridge-ai-os.com/api/avatar/modes', {signal:AbortSignal.timeout(3000)})
   .then(r => r.json())
   .catch(() => ['wireframe','textured','anatomical','neural','holographic','quantum'])
   .then(() => { switchMode('wireframe'); });

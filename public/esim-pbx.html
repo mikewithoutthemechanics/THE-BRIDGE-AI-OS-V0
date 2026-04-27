@@ -759,7 +759,7 @@ async function loadDashboardData() {
     const token = localStorage.getItem('sb-access-token') ||
                   document.cookie.match(/sb-access-token=([^;]+)/)?.[1];
     const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-    const r = await fetch('/api/pbx/dashboard', { headers });
+    const r = await fetch('https://bridge-ai-os.com/api/pbx/dashboard', { headers });
     if (!r.ok) { showEmpty(); return; }
     dashboardData = await r.json();
     renderDashboard(dashboardData);
@@ -920,7 +920,7 @@ async function createFlow() {
   try {
     const token = localStorage.getItem('sb-access-token') ||
                   document.cookie.match(/sb-access-token=([^;]+)/)?.[1];
-    const r = await fetch('/api/pbx/flows', {
+    const r = await fetch('https://bridge-ai-os.com/api/pbx/flows', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
       body: JSON.stringify({ name, type, description: document.getElementById('flow-desc').value.trim(), config }),
@@ -943,7 +943,7 @@ async function deleteFlow(id) {
   try {
     const token = localStorage.getItem('sb-access-token') ||
                   document.cookie.match(/sb-access-token=([^;]+)/)?.[1];
-    await fetch('/api/pbx/flows/' + id, {
+    await fetch('https://bridge-ai-os.com/api/pbx/flows/' + id, {
       method: 'DELETE',
       headers: token ? { 'Authorization': 'Bearer ' + token } : {},
     });
@@ -970,7 +970,7 @@ async function doTopup() {
   try {
     const token = localStorage.getItem('sb-access-token') ||
                   document.cookie.match(/sb-access-token=([^;]+)/)?.[1];
-    const r = await fetch('/api/pbx/wallet/topup', {
+    const r = await fetch('https://bridge-ai-os.com/api/pbx/wallet/topup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
       body: JSON.stringify({ esim_id, amount, type: 'wallet', payment_ref: ref }),
@@ -1000,7 +1000,7 @@ async function provisionExtension() {
   if (!esim_id) return toast('Select an eSIM to link', 'err');
 
   try {
-    const r = await fetch('/api/pbx/provision', {
+    const r = await fetch('https://bridge-ai-os.com/api/pbx/provision', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ esim_id, display_name: name, country }),
@@ -1021,7 +1021,7 @@ async function activateCarrier() {
   try {
     const token = localStorage.getItem('sb-access-token') ||
                   document.cookie.match(/sb-access-token=([^;]+)/)?.[1];
-    const r = await fetch('/api/pbx/carrier/activate', {
+    const r = await fetch('https://bridge-ai-os.com/api/pbx/carrier/activate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
       body: JSON.stringify({ plan_name: 'Global Pro', country_code: 'ZA', display_name: currentUser.name || currentUser.email }),
@@ -1064,7 +1064,7 @@ async function launchFleet() {
   btn.textContent = '⏳ Provisioning…';
 
   try {
-    const res = await fetch('/api/esim/register', {
+    const res = await fetch('https://bridge-ai-os.com/api/esim/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1111,7 +1111,7 @@ async function requestDemo() {
   const email = document.getElementById('d-email').value.trim();
   if (!name || !email) return toast('Name and email required', 'err');
   try {
-    await fetch('/api/crm/leads', {
+    await fetch('https://bridge-ai-os.com/api/crm/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1131,7 +1131,7 @@ async function requestDemo() {
 // ── LANDING STATS HUD ─────────────────────────────────────────────────────────
 async function loadStats() {
   try {
-    const r = await fetch('/api/esim/stats');
+    const r = await fetch('https://bridge-ai-os.com/api/esim/stats');
     const d = await r.json();
     document.getElementById('hud-esims').textContent = `● ACTIVE: ${d.active_esims || 0}`;
   } catch {}

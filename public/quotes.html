@@ -208,7 +208,7 @@ img,video,iframe,table{max-width:100%}
     }
 
     function load() {
-        fetch('/api/quotes').then(function(r) { return r.json(); }).then(function(data) {
+        fetch('https://bridge-ai-os.com/api/quotes').then(function(r) { return r.json(); }).then(function(data) {
             var list = Array.isArray(data) ? data : (data.quotes || data.data || []);
             updateStats(list);
             body.replaceChildren();
@@ -238,7 +238,7 @@ img,video,iframe,table{max-width:100%}
     }
 
     function acceptQuote(id) {
-        fetch('/api/quotes/' + encodeURIComponent(id) + '/accept', { method: 'POST' })
+        fetch('https://bridge-ai-os.com/api/quotes/' + encodeURIComponent(id) + '/accept', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function() { load(); })
             .catch(function() { alert('Failed to accept quote'); });
@@ -251,7 +251,7 @@ img,video,iframe,table{max-width:100%}
             items: document.getElementById('f-items').value.split(',').map(function(s) { return s.trim(); }),
             notes: document.getElementById('f-notes').value
         };
-        fetch('/api/quotes', {
+        fetch('https://bridge-ai-os.com/api/quotes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

@@ -490,7 +490,7 @@ img,video,iframe,table{max-width:100%}
     // ── Fetch twin state ─────────────────────────────────────────────────
     async function loadTwinState() {
       try {
-        var r = await fetch('/api/twin/state', { headers: authHeaders(), credentials: 'include' });
+        var r = await fetch('https://bridge-ai-os.com/api/twin/state', { headers: authHeaders(), credentials: 'include' });
         if (!r.ok) return;
         var d = await r.json();
         if (d.ok && d.twin) {
@@ -503,7 +503,7 @@ img,video,iframe,table{max-width:100%}
     // ── Load notifications ───────────────────────────────────────────────
     async function loadNotifications() {
       try {
-        var r = await fetch('/api/notifications', { headers: authHeaders(), credentials: 'include' });
+        var r = await fetch('https://bridge-ai-os.com/api/notifications', { headers: authHeaders(), credentials: 'include' });
         if (!r.ok) return;
         var d = await r.json();
         if (d.ok && d.unread > 0) {
@@ -575,7 +575,7 @@ img,video,iframe,table{max-width:100%}
       diagBar.classList.remove('visible');
 
       // Ingest search signal
-      fetch('/api/twin/signal', {
+      fetch('https://bridge-ai-os.com/api/twin/signal', {
         method: 'POST',
         headers: authHeaders(),
         credentials: 'include',
@@ -587,7 +587,7 @@ img,video,iframe,table{max-width:100%}
       }).catch(function () {});
 
       try {
-        var r = await fetch('/api/search', {
+        var r = await fetch('https://bridge-ai-os.com/api/search', {
           method: 'POST',
           headers: authHeaders(),
           credentials: 'include',
@@ -788,7 +788,7 @@ img,video,iframe,table{max-width:100%}
       await Promise.all([loadTwinState(), loadNotifications()]);
 
       // Auto-trigger recompute in background
-      fetch('/api/twin/recompute', {
+      fetch('https://bridge-ai-os.com/api/twin/recompute', {
         method: 'POST',
         headers: authHeaders(),
         credentials: 'include',

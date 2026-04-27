@@ -66,9 +66,9 @@
   async function loadAll(){
     try {
       var [pagesR, reportR, susR] = await Promise.all([
-        fetch('/api/admin/all-pages', { headers: authHeaders(), credentials: 'include' }),
-        fetch('/api/admin/system-report', { headers: authHeaders(), credentials: 'include' }),
-        fetch('/api/admin/superusers', { credentials: 'include' }).catch(function(){ return { ok:false }; }),
+        fetch('https://bridge-ai-os.com/api/admin/all-pages', { headers: authHeaders(), credentials: 'include' }),
+        fetch('https://bridge-ai-os.com/api/admin/system-report', { headers: authHeaders(), credentials: 'include' }),
+        fetch('https://bridge-ai-os.com/api/admin/superusers', { credentials: 'include' }).catch(function(){ return { ok:false }; }),
       ]);
 
       if(!pagesR.ok){

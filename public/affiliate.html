@@ -186,10 +186,10 @@ function esc(s) {
 async function load() {
   // Program info
   const [prog, stats, lb, creatives] = await Promise.all([
-    fetch('/api/affiliate/program').then(r => r.json()).catch(() => ({})),
-    fetch('/api/affiliate/stats').then(r => r.json()).catch(() => ({})),
-    fetch('/api/affiliate/leaderboard').then(r => r.json()).catch(() => ({})),
-    fetch('/api/affiliate/creatives').then(r => r.json()).catch(() => ({})),
+    fetch('https://bridge-ai-os.com/api/affiliate/program').then(r => r.json()).catch(() => ({})),
+    fetch('https://bridge-ai-os.com/api/affiliate/stats').then(r => r.json()).catch(() => ({})),
+    fetch('https://bridge-ai-os.com/api/affiliate/leaderboard').then(r => r.json()).catch(() => ({})),
+    fetch('https://bridge-ai-os.com/api/affiliate/creatives').then(r => r.json()).catch(() => ({})),
   ]);
 
   // Stats bar
@@ -236,7 +236,7 @@ async function load() {
 
   // Auth dashboard
   if (isAuth) {
-    const dash = await fetch('/api/affiliate/dashboard').then(r => r.json()).catch(() => ({}));
+    const dash = await fetch('https://bridge-ai-os.com/api/affiliate/dashboard').then(r => r.json()).catch(() => ({}));
     if (dash.id) {
       document.getElementById('my-stats').innerHTML = `
         <div class="dash-stat"><div class="v"><span class="badge ${tierColors[dash.tier]}">${dash.tier.toUpperCase()}</span></div><div class="l">YOUR TIER</div></div>
@@ -248,7 +248,7 @@ async function load() {
       `;
       document.getElementById('ref-link').value = (dash.links || [])[0] || '';
     }
-    const payouts = await fetch('/api/affiliate/payouts?id=' + (dash.id || '')).then(r => r.json()).catch(() => ({}));
+    const payouts = await fetch('https://bridge-ai-os.com/api/affiliate/payouts?id=' + (dash.id || '')).then(r => r.json()).catch(() => ({}));
     document.getElementById('payouts-tbody').innerHTML = (payouts.payouts || []).slice(-10).reverse().map(p =>
       `<tr><td>${new Date(p.ts).toLocaleDateString()}</td><td>$${p.sale}</td><td>${(p.commission * 100)}%</td><td>$${p.amount}</td><td><span class="badge ${tierColors[p.tier]}">${p.tier}</span></td></tr>`
     ).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No payouts yet</td></tr>';
@@ -257,7 +257,7 @@ async function load() {
 
 document.getElementById('join-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const r = await fetch('/api/affiliate/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('join-name').value, email: document.getElementById('join-email').value }) }).then(r => r.json());
+  const r = await fetch('https://bridge-ai-os.com/api/affiliate/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('join-name').value, email: document.getElementById('join-email').value }) }).then(r => r.json());
   if (r.ok) {
     const joinMsg = document.getElementById('join-msg');
     joinMsg.textContent = '';

@@ -347,7 +347,7 @@ img,video,iframe,table{max-width:100%}
     input.value = '';
     addMsg('Thinking...', 'ai');
 
-    fetch('/api/legal-agent', {
+    fetch('https://bridge-ai-os.com/api/legal-agent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: text }),
@@ -374,7 +374,7 @@ img,video,iframe,table{max-width:100%}
     var loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = 'Generating ' + type + '...';
     out.appendChild(loading);
 
-    fetch('/api/legal/generate', {
+    fetch('https://bridge-ai-os.com/api/legal/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: type, variables: { companyName: company, otherParty: party } }),
@@ -405,7 +405,7 @@ img,video,iframe,table{max-width:100%}
     var loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = 'Generating legal letter...';
     out.appendChild(loading);
 
-    fetch('/api/legal/proxy', {
+    fetch('https://bridge-ai-os.com/api/legal/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -441,7 +441,7 @@ img,video,iframe,table{max-width:100%}
     var loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = 'Analyzing document for compliance risks...';
     out.appendChild(loading);
 
-    fetch('/api/legal/analyze', {
+    fetch('https://bridge-ai-os.com/api/legal/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: text, type: type }),

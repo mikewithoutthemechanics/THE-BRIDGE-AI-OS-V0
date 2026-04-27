@@ -559,7 +559,7 @@ async function loadAnalytics() {
   grid.appendChild(loading);
 
   try {
-    const res = await authFetch('/api/platform/profile/analytics');
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/profile/analytics');
     const { analytics } = await res.json();
     grid.textContent = '';
 
@@ -699,7 +699,7 @@ async function init() {
 
   // Load analytics for metrics
   try {
-    const res = await authFetch('/api/platform/profile/analytics');
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/profile/analytics');
     const { analytics } = await res.json();
     if (analytics) {
       document.getElementById('mRuns').textContent = analytics.projects?.total_runs || 0;
@@ -711,7 +711,7 @@ async function init() {
 
   // Load recent projects
   try {
-    const res = await authFetch('/api/platform/projects?status=active');
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/projects?status=active');
     const data = await res.json();
     const container = document.getElementById('recentProjects');
     container.textContent = '';
@@ -738,7 +738,7 @@ async function init() {
 
   // Load recent outputs
   try {
-    const res = await authFetch('/api/platform/outputs?limit=5');
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/outputs?limit=5');
     const data = await res.json();
     const container = document.getElementById('recentOutputs');
     container.textContent = '';
@@ -804,7 +804,7 @@ async function generateAvatar() {
   }, 2500);
 
   try {
-    const resp = await authFetch('/api/platform/avatar/generate', {
+    const resp = await authfetch('https://bridge-ai-os.com/api/platform/avatar/generate', {
       method: 'POST',
       body: JSON.stringify({ prompt, style: selectedStyle }),
     });
@@ -843,7 +843,7 @@ async function setAvatar() {
   msgEl.textContent = 'Saving…';
 
   try {
-    const resp = await authFetch('/api/platform/avatar/set', {
+    const resp = await authfetch('https://bridge-ai-os.com/api/platform/avatar/set', {
       method: 'POST',
       body: JSON.stringify({ avatarUrl: generatedUrl }),
     });

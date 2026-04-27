@@ -182,7 +182,7 @@ async function load() {
   // Show owner edit link if logged-in user is the kiosk owner
   const token = localStorage.getItem('bridge_token');
   if (token) {
-    fetch('/api/kiosk/mine', { headers: { Authorization: `Bearer ${token}` } })
+    fetch('https://bridge-ai-os.com/api/kiosk/mine', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(mine => {
         if (mine && mine.kiosk && mine.kiosk.id === k.id) {

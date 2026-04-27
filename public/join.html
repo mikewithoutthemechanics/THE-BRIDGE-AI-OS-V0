@@ -317,7 +317,7 @@ async function switchToLinea() {
 
 // ── Fetch nonce from backend ───────────────────────────────────────────────
 async function fetchNonce() {
-  const res = await fetch('/api/siwe/nonce');
+  const res = await fetch('https://bridge-ai-os.com/api/siwe/nonce');
   const data = await res.json();
   if (!data.ok) throw new Error('Could not fetch nonce');
   nonce      = data.nonce;
@@ -354,7 +354,7 @@ async function signRegistration() {
       params: [message, currentAddress],
     });
 
-    const res = await fetch('/api/siwe/verify', {
+    const res = await fetch('https://bridge-ai-os.com/api/siwe/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ address: currentAddress, signature, nonce_token: nonceToken, message }),

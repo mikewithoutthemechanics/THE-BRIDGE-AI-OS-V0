@@ -180,11 +180,11 @@ img,video,iframe,table{max-width:100%}
 async function load() {
   try {
     const [treasury, agents, economy, il, fabric] = await Promise.all([
-      fetch('/api/treasury/status').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/agents/economy').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/economy/dashboard').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/intelligence/dashboard').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/fabric/dashboard').then(r=>r.json()).catch(()=>({})),
+      fetch('https://bridge-ai-os.com/api/treasury/status').then(r=>r.json()).catch(()=>({})),
+      fetch('https://bridge-ai-os.com/api/agents/economy').then(r=>r.json()).catch(()=>({})),
+      fetch('https://bridge-ai-os.com/api/economy/dashboard').then(r=>r.json()).catch(()=>({})),
+      fetch('https://bridge-ai-os.com/api/intelligence/dashboard').then(r=>r.json()).catch(()=>({})),
+      fetch('https://bridge-ai-os.com/api/fabric/dashboard').then(r=>r.json()).catch(()=>({})),
     ]);
     document.getElementById('stats').innerHTML = `
       <div class="stat"><div class="v">$${((treasury.balance||0)/1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>

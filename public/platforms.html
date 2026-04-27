@@ -355,10 +355,10 @@ function set(id, val) { const el = document.getElementById(id); if (el) { el.tex
 async function loadData() {
   try {
     const [treasury, wallet, econStats, analytics] = await Promise.all([
-      fetch('/api/treasury',            { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
-      fetch('/api/wallet/balance',      { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
-      fetch('/api/economy/stats',       { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
-      fetch('/api/analytics/overview',  { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('https://bridge-ai-os.com/api/treasury',            { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('https://bridge-ai-os.com/api/wallet/balance',      { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('https://bridge-ai-os.com/api/economy/stats',       { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('https://bridge-ai-os.com/api/analytics/overview',  { credentials:'same-origin' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
     ]);
 
     const tBal  = treasury.balance  || treasury.total   || 0;

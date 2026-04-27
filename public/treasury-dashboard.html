@@ -307,9 +307,9 @@ img,video,iframe,table{max-width:100%}
   async function refreshAll() {
     try {
       const [treasury, economy, token] = await Promise.all([
-        fetch('/api/treasury/status').then(function(r){return r.json()}).catch(function(){return {}}),
-        fetch('/api/economy/dashboard').then(function(r){return r.json()}).catch(function(){return {}}),
-        fetch('/api/brdg/token').then(function(r){return r.json()}).catch(function(){return {}})
+        fetch('https://bridge-ai-os.com/api/treasury/status').then(function(r){return r.json()}).catch(function(){return {}}),
+        fetch('https://bridge-ai-os.com/api/economy/dashboard').then(function(r){return r.json()}).catch(function(){return {}}),
+        fetch('https://bridge-ai-os.com/api/brdg/token').then(function(r){return r.json()}).catch(function(){return {}})
       ]);
 
       // Hero — treasury.balance is on-chain BRDG held by the treasury wallet
@@ -366,7 +366,7 @@ img,video,iframe,table{max-width:100%}
 
   async function loadLedger() {
     try {
-      var res = await fetch('/api/treasury/ledger');
+      var res = await fetch('https://bridge-ai-os.com/api/treasury/ledger');
       var data = await res.json();
       allLedgerEntries = data.entries || [];
       ledgerOffset = 0;
@@ -406,7 +406,7 @@ img,video,iframe,table{max-width:100%}
     var msg = document.getElementById('subMsg');
     if (!email || email.indexOf('@') === -1) { msg.textContent = 'Enter a valid email.'; msg.style.color = 'var(--red)'; return; }
     try {
-      var res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: 'treasury-dashboard' }) });
+      var res = await fetch('https://bridge-ai-os.com/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, source: 'treasury-dashboard' }) });
       var data = await res.json();
       msg.style.color = 'var(--green)';
       msg.textContent = data.ok ? 'Subscribed!' : (data.error || 'Error');

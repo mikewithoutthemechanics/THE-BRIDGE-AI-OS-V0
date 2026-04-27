@@ -313,7 +313,7 @@ async function loadProjects() {
 
   try {
     const status = currentFilter === 'all' ? '' : '?status=' + currentFilter;
-    const res = await authFetch('/api/platform/projects' + status);
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/projects' + status);
     const data = await res.json();
     grid.textContent = '';
 
@@ -346,7 +346,7 @@ async function openDetail(projectId) {
   loading.textContent = 'Loading…'; body.appendChild(loading);
 
   try {
-    const res = await authFetch('/api/platform/projects/' + encodeURIComponent(projectId));
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/projects/' + encodeURIComponent(projectId));
     const data = await res.json();
     if (!data.ok) { body.textContent = 'Failed to load project.'; return; }
 
@@ -451,7 +451,7 @@ async function openDetail(projectId) {
     const archiveBtn = document.createElement('button'); archiveBtn.className = 'btn btn-danger btn-sm';
     archiveBtn.textContent = 'Archive'; archiveBtn.addEventListener('click', async () => {
       if (!confirm('Archive this project? You can restore it later.')) return;
-      await authFetch('/api/platform/projects/' + encodeURIComponent(projectId), { method: 'DELETE' });
+      await authfetch('https://bridge-ai-os.com/api/platform/projects/' + encodeURIComponent(projectId), { method: 'DELETE' });
       closeDetailPanel(); loadProjects();
     });
     footer.appendChild(closeBtn); footer.appendChild(archiveBtn);
@@ -518,7 +518,7 @@ async function createProject() {
   btn.disabled = true; btn.textContent = 'Creating…';
 
   try {
-    const res = await authFetch('/api/platform/projects', {
+    const res = await authfetch('https://bridge-ai-os.com/api/platform/projects', {
       method: 'POST',
       body: JSON.stringify({ name, toolId: toolId || null, intent, integrationTargets: [...selectedIntegrations] }),
     });

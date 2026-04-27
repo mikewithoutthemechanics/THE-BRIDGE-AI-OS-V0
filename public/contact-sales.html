@@ -97,7 +97,7 @@ img,video,iframe,table{max-width:100%}
             
             // Submit to API
             try {
-                const resp = await fetch('/api/contact', {
+                const resp = await fetch('https://bridge-ai-os.com/api/contact', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)

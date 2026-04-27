@@ -150,22 +150,22 @@ img,video,iframe,table{max-width:100%}
         }
 
         function refresh() {
-            fetch('/api/twin/supervisor', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) {
+            fetch('https://bridge-ai-os.com/api/twin/supervisor', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) {
                 renderTwins((d && d.twins) || []);
             }).catch(function () { renderTwins([]); });
-            fetch('/api/bank/ledger?limit=20', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) {
+            fetch('https://bridge-ai-os.com/api/bank/ledger?limit=20', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) {
                 renderEvents((d && d.events) || []);
             }).catch(function () { document.getElementById('events').textContent = '(ledger unreachable)'; });
         }
 
         document.getElementById('btn-refresh').addEventListener('click', refresh);
         document.getElementById('btn-spawn').addEventListener('click', function () {
-            fetch('/api/twin/spawn', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, headers), body: JSON.stringify({ siblings: 2 }) })
+            fetch('https://bridge-ai-os.com/api/twin/spawn', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, headers), body: JSON.stringify({ siblings: 2 }) })
                 .then(refresh);
         });
         document.getElementById('btn-stop-all').addEventListener('click', function () {
             if (!confirm('Stop ALL twins including siblings?')) return;
-            fetch('/api/twin/stop-all', { method: 'POST', headers: headers }).then(refresh);
+            fetch('https://bridge-ai-os.com/api/twin/stop-all', { method: 'POST', headers: headers }).then(refresh);
         });
 
         function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }

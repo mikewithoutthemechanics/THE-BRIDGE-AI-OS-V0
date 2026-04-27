@@ -530,7 +530,7 @@ async function fetchToken() {
   try { const r=await fetch('/auth/me',{credentials:'include'}); const d=await r.json(); if(d.token){TOKEN=d.token;localStorage.setItem('auth_token',TOKEN);} } catch(e) {}
 }
 async function loadVerbs() {
-  try { const r=await fetch('/api/cognitive/verbs'); const d=await r.json(); if(d.ok) VERBS=d.groups; } catch(e) {}
+  try { const r=await fetch('https://bridge-ai-os.com/api/cognitive/verbs'); const d=await r.json(); if(d.ok) VERBS=d.groups; } catch(e) {}
 }
 
 function showSection(id, el) {
@@ -635,7 +635,7 @@ function selectWealthVerb(name) {
 }
 
 async function callVerb(verb, input) {
-  const r = await fetch('/api/cognitive/execute', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}, body:JSON.stringify({verb,input}) });
+  const r = await fetch('https://bridge-ai-os.com/api/cognitive/execute', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}, body:JSON.stringify({verb,input}) });
   return r.json();
 }
 

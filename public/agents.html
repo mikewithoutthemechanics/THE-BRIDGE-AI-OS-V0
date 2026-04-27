@@ -247,7 +247,7 @@ img,video,iframe,table{max-width:100%}
     async function loadOutputs() {
       try {
         // Single source of truth — reads system_state, never triggers execution
-        var res   = await fetch('/api/system/state');
+        var res   = await fetch('https://bridge-ai-os.com/api/system/state');
         var state = await res.json();
 
         var agents  = state.agents  || {};
@@ -300,7 +300,7 @@ img,video,iframe,table{max-width:100%}
 
       var t0 = Date.now();
       try {
-        var r = await fetch('/api/agents/run', {
+        var r = await fetch('https://bridge-ai-os.com/api/agents/run', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ agentName: name, input: inp.value }),

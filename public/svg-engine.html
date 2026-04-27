@@ -226,7 +226,7 @@ async function boot() {
 
 async function loadGraph() {
   try {
-    const data = await fetch('/api/svg/graph.json').then(r => r.json());
+    const data = await fetch('https://bridge-ai-os.com/api/svg/graph.json').then(r => r.json());
     if (!data || data.ok === false) {
       throw new Error((data && data.error) || 'graph unavailable');
     }
@@ -248,7 +248,7 @@ async function loadGraph() {
 
 async function loadTelemetry() {
   try {
-    const t = await fetch('/api/svg/telemetry').then(r => r.json());
+    const t = await fetch('https://bridge-ai-os.com/api/svg/telemetry').then(r => r.json());
     document.getElementById('t-p50').textContent = (t.latency_p50_ms || 0) + 'ms';
     document.getElementById('t-p95').textContent = (t.latency_p95_ms || 0) + 'ms';
     document.getElementById('t-exec').textContent = t.total_executions || 0;
@@ -444,7 +444,7 @@ async function execNode(n) {
     res.style.display = 'none';
   }
   try {
-    const r = await fetch('/api/execute', {
+    const r = await fetch('https://bridge-ai-os.com/api/execute', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ skill: n.id }),
     });

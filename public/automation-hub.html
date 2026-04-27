@@ -120,7 +120,7 @@ img,video,iframe,table{max-width:100%}
         // Load automation stats from API
         async function loadStats() {
             try {
-                const resp = await fetch('/api/economy/loop-stats');
+                const resp = await fetch('https://bridge-ai-os.com/api/economy/loop-stats');
                 const data = await resp.json();
                 document.getElementById('activeWorkflows').textContent = data.activeWorkflows || 12;
                 document.getElementById('runsToday').textContent = data.runsToday || 247;

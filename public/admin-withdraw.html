@@ -336,8 +336,8 @@ function showStatus(msg, type) {
 async function loadBalances() {
     try {
         const [treasury, brdg] = await Promise.all([
-            fetch('/api/treasury').then(r => r.json()).catch(() => null),
-            fetch('/api/brdg/token').then(r => r.json()).catch(() => null)
+            fetch('https://bridge-ai-os.com/api/treasury').then(r => r.json()).catch(() => null),
+            fetch('https://bridge-ai-os.com/api/brdg/token').then(r => r.json()).catch(() => null)
         ]);
         if (treasury) {
             const buckets = treasury.buckets || [];
@@ -395,7 +395,7 @@ async function executeWithdraw() {
     showStatus('Step 1/2: Requesting KeyForge authorization...', 'pending');
 
     try {
-        const authRes = await fetch('/api/admin/withdraw/authorize', {
+        const authRes = await fetch('https://bridge-ai-os.com/api/admin/withdraw/authorize', {
             method: 'POST', headers: headers()
         });
         const authData = await authRes.json();
@@ -405,7 +405,7 @@ async function executeWithdraw() {
         showStatus('Step 2/2: Executing on-chain withdrawal...', 'pending');
         btn.textContent = 'Sending...';
 
-        const txRes = await fetch('/api/admin/withdraw/execute', {
+        const txRes = await fetch('https://bridge-ai-os.com/api/admin/withdraw/execute', {
             method: 'POST',
             headers: Object.assign({}, headers(), { 'x-kf-token': kfToken }),
             body: JSON.stringify({ to, amount, rail, memo })
@@ -430,7 +430,7 @@ async function executeWithdraw() {
 }
 
 function loadAudit() {
-    fetch('/api/admin/withdraw/audit', { headers: headers() })
+    fetch('https://bridge-ai-os.com/api/admin/withdraw/audit', { headers: headers() })
         .then(r => r.json())
         .then(data => {
             const rows = (data.log || []).slice(-10).reverse();
