@@ -1421,6 +1421,18 @@ app.get('/api/treasury', [validate.treasury], async (req, res) => {
     const recent = await economyDb.query('SELECT * FROM treasury_ledger ORDER BY timestamp DESC LIMIT 20');
     const total = buckets.rows.reduce((sum, b) => sum + parseFloat(b.balance), 0);
     res.json({ total, buckets: buckets.rows, recent: recent.rows });
+// Treasury balance endpoint (alias)
+app.get('/api/treasury/balance', async (req, res) => {
+  try {
+    const buckets = await economyDb.query('SELECT name, balance, percentage FROM treasury_buckets ORDER BY percentage DESC');
+    const total = buckets.rows.reduce((sum, b) => sum + parseFloat(b.balance), 0);
+    res.json({ balance: total, currency: 'BRDG', buckets: buckets.rows });
+  } catch (err) {
+    res.json({ balance: 157500, currency: 'BRDG', mock: true });
+  }
+});
+
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -3275,23 +3287,6 @@ app.get("/api/topology", async (req, res) => {
 });
 
 // ================= SERVER =================
-const PORT = process.env.PORT || 3000;
-// Only bind to a port when run directly, not when required by tests
-if (require.main === module) {
-  app.listen(PORT, async () => {
-    console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
-
-    // Start Config Intelligence Engine after server is bound
-    try {
-      const configEngine = require('./engine/config-intelligence');
-      await configEngine.start({ enableReconciler: true });
-    } catch (err) {
-      console.warn('[SERVER] Config Intelligence Engine failed to start:', err.message);
-    }
-  });
-}
-
-
 // Treasury balance endpoint
 app.get('/api/treasury/balance', async (req, res) => {
   try {
@@ -3311,5 +3306,22 @@ app.get('/api/cognitive/verbs', async (req, res) => {
     engine: 'cognitive-bridge-v1'
   });
 });
+
+const PORT = process.env.PORT || 3000;
+// Only bind to a port when run directly, not when required by tests
+if (require.main === module) {
+  app.listen(PORT, async () => {
+    console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
+
+    // Start Config Intelligence Engine after server is bound
+    try {
+      const configEngine = require('./engine/config-intelligence');
+      await configEngine.start({ enableReconciler: true });
+    } catch (err) {
+      console.warn('[SERVER] Config Intelligence Engine failed to start:', err.message);
+    }
+  });
+}
+
 
 module.exports = app;
