@@ -1,112 +1,32 @@
-{
-  "version": 2,
-  "framework": null,
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "buildCommand": "node build-static.js",
-  "outputDirectory": "public",
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 10,
-      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,api/svg-skills.js"
-    }
-  },
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains; preload" },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.ai-os.co.za https://*.bridge-ai-os.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
-        }
-      ]
-    },
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With" }
-      ]
-    },
-    {
-      "source": "/_next/static/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/(.+)\\.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/(.+)\\.css",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/(.+)\\.(svg|png|jpg|jpeg|webp|gif|ico)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=2592000" }
-      ]
-    },
-    {
-      "source": "/(.+)\\.html",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
-      ]
-    }
-  ],
-  "rewrites": [
-    { "source": "/apps",          "destination": "/50-applications" },
-    { "source": "/treasury-dash", "destination": "/treasury-dashboard" },
-    { "source": "/dashboard",     "destination": "/aoe-dashboard" },
-    { "source": "/status",        "destination": "/system-status-dashboard" },
-    { "source": "/ehsa",          "destination": "/ehsa-home" },
-    { "source": "/supac",         "destination": "/supac-home" },
-    { "source": "/ban",           "destination": "/ban-home" },
-    { "source": "/ubi",           "destination": "/ubi-home" },
-    { "source": "/aid",           "destination": "/aid-home" },
-    { "source": "/aurora",        "destination": "/aurora-home" },
-    { "source": "/health", "destination": "/api" },
-    { "source": "/live-map", "destination": "/api" },
-    { "source": "/telemetry", "destination": "/api" },
-    { "source": "/swarm/:path*", "destination": "/api" },
-    { "source": "/econ/:path*", "destination": "/api" },
-    { "source": "/ubi/status", "destination": "/api" },
-    { "source": "/ubi/claim", "destination": "/api" },
-    { "source": "/treasury/summary", "destination": "/api" },
-    { "source": "/treasury/ingest", "destination": "/api" },
-    { "source": "/teach/:path*", "destination": "/api" },
-    { "source": "/ban-ultra.svg", "destination": "/api" },
-    { "source": "/ban-live-console.svg", "destination": "/api" },
-    { "source": "/output/", "destination": "/api" },
-    { "source": "/output", "destination": "/api" },
-    { "source": "/api/svg/:path*", "destination": "/api" },
-    { "source": "/events/stream", "destination": "/api" },
-    { "source": "/orchestrator/status", "destination": "/api" },
-    { "source": "/billing", "destination": "/api" },
-    { "source": "/ask", "destination": "/api" },
-    { "source": "/api/l1/:path*", "destination": "/api" },
-    { "source": "/api/l2/:path*", "destination": "/api" },
-    { "source": "/api/l3/:path*", "destination": "/api" },
-    { "source": "/api/treasury/:path*", "destination": "/api" },
-    { "source": "/api/agents/dispatch", "destination": "/api" },
-    { "source": "/api/agents/queue", "destination": "/api" },
-    { "source": "/api/marketplace/tasks/:path*", "destination": "/api" },
-    { "source": "/api/users", "destination": "/api" },
-    { "source": "/api/events/recent", "destination": "/api" },
-    { "source": "/api/:path*", "destination": "/api" },
-    { "source": "/auth/:path*", "destination": "/api" },
-    { "source": "/referral/:path*", "destination": "/api" }
-  ]
-}
+# Preview Deployment Configuration
+
+# This file configures preview deployments for PRs
+# Each PR gets a live preview environment to validate changes
+
+# For Vercel (recommended for Next.js/React apps)
+[build]
+  command = "npm run build"
+  publish = "build"
+
+# For Netlify
+[build.environment]
+  NODE_VERSION = "18"
+
+# Build command
+[build]
+  command = "npm run build && npm run export"
+
+# Publish directory
+[build]
+  publish = "out"
+
+# Redirect rules for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables for preview
+[build.environment]
+  PREVIEW_MODE = "true"
+  PR_NUMBER = "$REVIEW_ID"

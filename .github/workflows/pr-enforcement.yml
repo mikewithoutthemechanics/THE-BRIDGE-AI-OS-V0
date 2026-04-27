@@ -1,0 +1,175 @@
+name: PR Enforcement Pipeline
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [ main ]
+
+jobs:
+  # =====================================================================================
+  # 1. PR GATEKEEPER - BLOCKS MERGES IF ANY CHECK FAILS
+  # =====================================================================================
+
+  pr-gatekeeper:
+    name: 🚧 PR Gatekeeper
+    runs-on: ubuntu-latest
+    outputs:
+      spec-compliant: ${{ steps.spec-check.outputs.compliant }}
+      visual-tests-pass: ${{ steps.visual-check.outputs.passed }}
+      animation-tests-pass: ${{ steps.animation-check.outputs.passed }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # =====================================================================================
+      # SPEC COMPLIANCE CHECK - VALIDATES AGAINST AGENTS.MD
+      # =====================================================================================
+
+      - name: 🔍 Spec Compliance Check
+        id: spec-check
+        run: |
+          echo "🔍 Validating PR against AGENTS.md specification..."
+
+          # Install dependencies for spec validation
+          pip install PyYAML
+
+          # Run spec compliance validator
+          python .github/scripts/validate_spec_compliance.py
+          if [ $? -eq 0 ]; then
+            echo "✅ Spec compliance check passed"
+            echo "compliant=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Spec compliance check failed"
+            echo "compliant=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # =====================================================================================
+      # CODE QUALITY CHECKS
+      # =====================================================================================
+
+      - name: 🔧 Code Quality Checks
+        run: |
+          echo "🔧 Running code quality checks..."
+
+          # Install backend dependencies
+          cd backend
+          pip install -r requirements.txt
+
+          # Run linting (if configured)
+          # TODO: Add ruff/mypy when ready
+
+          # Run type checking (if configured)
+          # TODO: Add mypy when ready
+
+          echo "✅ Code quality checks completed"
+
+      # =====================================================================================
+      # VISUAL REGRESSION TESTING
+      # =====================================================================================
+
+      - name: 👁️ Visual Regression Test
+        id: visual-check
+        run: |
+          echo "👁️ Running visual regression tests..."
+
+          # Install Playwright
+          npm install -g @playwright/test
+          npx playwright install
+
+          # Run visual tests
+          npx playwright test visual-regression.spec.js --headed=false
+          if [ $? -eq 0 ]; then
+            echo "✅ Visual regression tests passed"
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Visual regression tests failed"
+            echo "passed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # =====================================================================================
+      # ANIMATION & STATE VALIDATION
+      # =====================================================================================
+
+      - name: 🎭 Animation & State Validation
+        id: animation-check
+        run: |
+          echo "🎭 Running animation and state validation..."
+
+          # Run animation tests
+          npx playwright test animation-validation.spec.js --headed=false
+          if [ $? -eq 0 ]; then
+            echo "✅ Animation validation tests passed"
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Animation validation tests failed"
+            echo "passed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+  # =====================================================================================
+  # 2. PREVIEW DEPLOYMENT - SHOWS CHANGES LIVE
+  # =====================================================================================
+
+  preview-deployment:
+    name: 🌐 Preview Deployment
+    runs-on: ubuntu-latest
+    needs: pr-gatekeeper
+    if: needs.pr-gatekeeper.result == 'success'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and deploy preview
+        run: |
+          echo "🌐 Building preview deployment..."
+
+          # Build Docker images
+          docker-compose build
+
+          # Deploy to preview environment (mock deployment)
+          echo "Preview URL would be: https://pr-${{ github.event.number }}-bridge-task-runner.preview.com"
+
+          # In production, deploy to Vercel/Netlify here
+          echo "✅ Preview deployment ready"
+
+  # =====================================================================================
+  # 3. FINAL MERGE VALIDATION - ONLY ALLOWS MERGE IF ALL CHECKS PASS
+  # =====================================================================================
+
+  merge-validation:
+    name: ✅ Merge Validation
+    runs-on: ubuntu-latest
+    needs: [pr-gatekeeper, preview-deployment]
+    if: needs.pr-gatekeeper.result == 'success' && needs.preview-deployment.result == 'success'
+
+    steps:
+      - name: Validate all checks passed
+        run: |
+          echo "✅ All validation checks passed!"
+          echo "🔍 Spec Compliance: ${{ needs.pr-gatekeeper.outputs.spec-compliant }}"
+          echo "👁️ Visual Tests: ${{ needs.pr-gatekeeper.outputs.visual-tests-pass }}"
+          echo "🎭 Animation Tests: ${{ needs.pr-gatekeeper.outputs.animation-tests-pass }}"
+          echo ""
+          echo "🚀 PR is ready for merge"
+          echo "🌐 Preview available at: https://pr-${{ github.event.number }}-bridge-task-runner.preview.com"

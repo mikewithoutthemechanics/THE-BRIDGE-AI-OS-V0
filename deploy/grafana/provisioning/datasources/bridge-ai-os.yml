@@ -1,0 +1,77 @@
+# Bridge AI OS - Production Monitoring Configuration
+# Monitors 11 domains, 71 agents, 150+ APIs across Bridge AI OS ecosystem
+
+apiVersion: 1
+
+datasources:
+  # Primary Prometheus for Bridge AI OS metrics
+  - name: Bridge AI OS Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: 5s  # Fast updates for AI system
+      queryTimeout: 30s
+      httpMethod: POST
+    exemplarTraceIdDestinations:
+      - name: trace_id
+        datasourceUid: tempo
+
+  # Tempo for distributed tracing across 71 agents
+  - name: Bridge AI OS Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: true
+    jsonData:
+      tracesToLogs:
+        datasourceUid: 'bridge-ai-prometheus'
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      lokiSearch:
+        datasourceUid: 'loki'
+
+  # Loki for agent logs across 11 domains
+  - name: Bridge AI OS Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
+    jsonData:
+      maxLines: 2000  # High volume for 71 agents
+      derivedFields:
+        - name: agent_id
+          matcherRegex: '"agent_id":"([^"]+)"'
+          url: '$${__value.raw}'
+          datasourceUid: tempo
+        - name: domain
+          matcherRegex: '"domain":"([^"]+)"'
+          url: 'https://$${__value.raw}'
+        - name: trace_id
+          matcherRegex: '"trace_id":"([^"]+)"'
+          url: '$${__value.raw}'
+          datasourceUid: tempo
+
+  # Netdata for real-time infrastructure monitoring
+  - name: Bridge AI OS Netdata
+    type: prometheus
+    access: proxy
+    url: http://netdata:19999/api/v1/allmetrics?format=json
+    editable: true
+    jsonData:
+      timeInterval: 1s  # Per-second monitoring for AI system
+      queryTimeout: 15s
+
+  # Synthetic monitoring for 11 domains
+  - name: Bridge AI OS Synthetics
+    type: prometheus
+    access: proxy
+    url: http://prometheus-blackbox:9115
+    editable: true
+    jsonData:
+      timeInterval: 30s
+      queryTimeout: 10s

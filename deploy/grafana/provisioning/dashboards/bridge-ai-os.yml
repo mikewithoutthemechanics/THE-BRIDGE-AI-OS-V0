@@ -1,0 +1,36 @@
+apiVersion: 1
+
+providers:
+  - name: Bridge AI OS Dashboards
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/bridge-ai-os
+
+dashboards:
+  - name: Bridge AI OS Overview
+    type: file
+    file: bridge-ai-overview.json
+    folder: Bridge AI OS
+
+  - name: Agent Health Dashboard
+    type: file
+    file: agent-health.json
+    folder: Bridge AI OS
+
+  - name: Domain Monitoring
+    type: file
+    file: domain-monitoring.json
+    folder: Bridge AI OS
+
+  - name: API Performance
+    type: file
+    file: api-performance.json
+    folder: Bridge AI OS
+
+  - name: System Topology
+    type: file
+    file: system-topology.json
+    folder: Bridge AI OS

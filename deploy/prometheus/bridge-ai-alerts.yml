@@ -1,0 +1,141 @@
+groups:
+  # ============================================================================
+  # PUBLIC DOMAIN ALERTS
+  # ============================================================================
+
+  - name: bridge_ai_domains
+    rules:
+      - alert: BridgeAIDomainDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: bridge-ai-os
+        annotations:
+          summary: "Bridge AI OS domain is down"
+          description: "{{ $labels.instance }} has been down for more than 1 minute"
+          dashboard: "https://grafana.bridge-ai-os.com/d/bridge-ai-domain-monitoring"
+
+      - alert: BridgeAIDomainSlow
+        expr: probe_duration_seconds > 5
+        for: 30s
+        labels:
+          severity: warning
+          service: bridge-ai-os
+        annotations:
+          summary: "Bridge AI OS domain response slow"
+          description: "{{ $labels.instance }} response time > 5s for 30s"
+
+  # ============================================================================
+  # AGENT HEALTH ALERTS
+  # ============================================================================
+
+  - name: bridge_ai_agents
+    rules:
+      - alert: BridgeAIAgentUnhealthy
+        expr: bridge_ai_agent_health < 1
+        for: 30s
+        labels:
+          severity: critical
+          service: bridge-ai-agents
+        annotations:
+          summary: "Bridge AI agent unhealthy"
+          description: "Agent {{ $labels.agent_id }} is reporting unhealthy status"
+
+      - alert: BridgeAILowAgentCount
+        expr: count(bridge_ai_agent_health == 1) < 60
+        for: 5m
+        labels:
+          severity: warning
+          service: bridge-ai-agents
+        annotations:
+          summary: "Low agent count detected"
+          description: "Only {{ $value }} of 71 agents are healthy"
+
+  # ============================================================================
+  # API PERFORMANCE ALERTS
+  # ============================================================================
+
+  - name: bridge_ai_apis
+    rules:
+      - alert: BridgeAIAPIDown
+        expr: probe_success{job="bridge-ai-apis"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: bridge-ai-apis
+        annotations:
+          summary: "Bridge AI API endpoint down"
+          description: "API endpoint {{ $labels.instance }} is not responding"
+
+      - alert: BridgeAIAPISlow
+        expr: probe_duration_seconds{job="bridge-ai-apis"} > 3
+        for: 1m
+        labels:
+          severity: warning
+          service: bridge-ai-apis
+        annotations:
+          summary: "Bridge AI API response slow"
+          description: "API {{ $labels.instance }} response > 3s"
+
+  # ============================================================================
+  # VPS INFRASTRUCTURE ALERTS
+  # ============================================================================
+
+  - name: vps_infrastructure
+    rules:
+      - alert: VPSHighCPU
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: vps-infrastructure
+        annotations:
+          summary: "VPS high CPU usage"
+          description: "CPU usage > 85% for 5 minutes"
+
+      - alert: VPSHighMemory
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 90
+        for: 2m
+        labels:
+          severity: critical
+          service: vps-infrastructure
+        annotations:
+          summary: "VPS high memory usage"
+          description: "Memory usage > 90%"
+
+      - alert: VPSLowDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          service: vps-infrastructure
+        annotations:
+          summary: "VPS low disk space"
+          description: "Disk space < 10% available"
+
+  # ============================================================================
+  # SYSTEM TOPOLOGY ALERTS
+  # ============================================================================
+
+  - name: system_topology
+    rules:
+      - alert: BridgeAIServiceDisconnected
+        expr: bridge_ai_service_connections < 1
+        for: 1m
+        labels:
+          severity: critical
+          service: system-topology
+        annotations:
+          summary: "Bridge AI service disconnected"
+          description: "Service {{ $labels.service }} has lost connections"
+
+      - alert: BridgeAINetworkLatency
+        expr: bridge_ai_network_latency_ms > 1000
+        for: 30s
+        labels:
+          severity: warning
+          service: system-topology
+        annotations:
+          summary: "High network latency detected"
+          description: "Network latency > 1000ms between services"

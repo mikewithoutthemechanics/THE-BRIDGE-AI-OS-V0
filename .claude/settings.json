@@ -1,7 +1,6 @@
 {
   "permissions": {
     "allow": [
-<<<<<<< HEAD
       "Bash(ssh -o ConnectTimeout=10 root@102.208.228.44 \"cd /var/www/bridgeai && git diff --stat HEAD && echo '---UNTRACKED TO ADD---' && git status --short | grep '^\\\\?\\\\?' | grep -E 'routes/unified-api' \")",
       "Bash(ssh -o ConnectTimeout=10 root@102.208.228.44 \"cd /var/www/bridgeai && git diff middleware/auth.js | head -60\")",
       "Bash(ssh -o ConnectTimeout=10 root@102.208.228.44 \"grep -rn 'isSuperUser\\\\|SUPERUSERS' /var/www/bridgeai --include='*.js' | grep -v node_modules | grep -v .bak | grep -v '.bak-'\")",
@@ -33,7 +32,6 @@
       "Bash(ssh root@102.208.228.44 \"grep -n 'brain/status\\\\|brain.*status' /var/www/bridgeai/brain.js | head -10\")",
       "Bash(ssh root@102.208.228.44 \"sed -n '2217,2260p' /var/www/bridgeai/server.js\")",
       "Bash(ssh root@102.208.228.44 *)",
-      "Bash(', chr\\(96\\)\\) *)",
       "Bash(scp c:/tmp/patch_authme.py root@102.208.228.44:/tmp/patch_authme.py)",
       "Bash(scp c:/tmp/patch_platform_catch.py root@102.208.228.44:/tmp/patch_platform_catch.py)",
       "Bash(scp c:/tmp/patch_billing_catch.py root@102.208.228.44:/tmp/patch_billing_catch.py)",
@@ -69,18 +67,13 @@
       "Bash(scp c:/tmp/fix_mse_supabase.py root@102.208.228.44:/tmp/fix_mse_supabase.py)",
       "Bash(scp c:/tmp/platforms_new.html root@102.208.228.44:/var/www/bridgeai/public/platforms.html)",
       "Bash(scp c:/tmp/deploy_ehsa_aic.py root@102.208.228.44:/tmp/deploy_ehsa_aic.py)",
-      "Bash(scp C:/tmp/auth-callback-new.html root@102.208.228.44:/var/www/bridgeai/public/auth-callback.html)"
-    ],
-    "additionalDirectories": [
-      "\\tmp"
-=======
+      "Bash(scp C:/tmp/auth-callback-new.html root@102.208.228.44:/var/www/bridgeai/public/auth-callback.html)",
       "Bash(curl -s --max-time 10 https://bridge-ai-os.com/health)",
       "Bash(curl -sI --max-time 10 https://wall.bridge-ai-os.com)",
       "Bash(curl -sI --max-time 10 https://api.bridge-ai-os.com)",
       "Bash(git stash:*)",
       "Bash(npx jest:*)",
       "Read(//c/aoe-unified-final/**)",
-      "Bash(find /c/aoe-unified-final -name \"*.js\" -type f -exec grep -l \"Math.random\\(\\)\\\\|faker\\\\|mock\\\\|stub\" {} \\\\;)",
       "Bash(npx vercel:*)",
       "mcp__claude_ai_Supabase__list_migrations",
       "mcp__claude_ai_Supabase__apply_migration",
@@ -97,17 +90,29 @@
       "mcp__claude_ai_Supabase__list_projects",
       "mcp__claude_ai_Supabase__list_tables",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(gh secret:*)"
+      "Bash(gh secret:*)",
+      "Bash(scp root@102.208.228.44:/tmp/vps-untracked.tar.gz .)",
+      "Bash(tar xzf *)",
+      "Bash(scp c:/tmp/ecosystem.config.js root@102.208.228.44:/var/www/bridgeai/ecosystem.config.js)",
+      "Bash(scp c:/tmp/revenue-engine-fixed.js root@102.208.228.44:/var/www/bridgeai/lib/revenue-engine.js)",
+      "Bash(scp c:/tmp/fix_rev_cols.py root@102.208.228.44:/tmp/fix_rev_cols.py)",
+      "Bash(scp c:/tmp/fix_task_market_v2.py root@102.208.228.44:/tmp/fix_task_market_v2.py)",
+      "Bash(scp c:/tmp/fix_nav_quote_and_platforms.py root@102.208.228.44:/tmp/fix_nav_quote_and_platforms.py)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
     ]
   },
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "bash .claude/hooks/librarian-boot.sh" }
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/librarian-boot.sh"
+          }
         ]
       }
->>>>>>> a65a24150727639fde77daadeba4361af473827a
     ]
   }
 }

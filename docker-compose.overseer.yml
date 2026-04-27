@@ -17,7 +17,7 @@ services:
     volumes:
       - bridge_data:/var/lib/bridge
       - bridge_logs:/var/log/bridge
-      - ./:/app:ro  # Read-only codebase access
+      - ./:/app:ro  # Read-only access to codebase
     ports:
       - "9091:9091"  # Metrics endpoint
     networks:
@@ -29,9 +29,18 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.50'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
 
   # ============================================================
-  # OVERSEER EVENT INGESTION — External Triggers API
+  # OVERSEER EVENT INGESTION
+  # HTTP API for external triggers
   # ============================================================
   overseer-events:
     build: ./services/overseer-events
@@ -102,12 +111,98 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # ============================================================
+  # PROMETHEUS — Metrics Collection
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: bridge-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - bridge
+    restart: unless-stopped
+
+  # ============================================================
+  # GRAFANA — Visualization
+  # ============================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: bridge-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: ""
+      GF_PATHS_PROVISIONING: "/etc/grafana/provisioning"
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    networks:
+      - bridge
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # ============================================================
+  # LOKI — Log Aggregation
+  # ============================================================
+  loki:
+    image: grafana/loki:latest
+    container_name: bridge-loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./deploy/loki:/etc/loki:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - bridge
+    restart: unless-stopped
+
+  # ============================================================
+  # TEMPO — Distributed Tracing
+  # ============================================================
+  tempo:
+    image: grafana/tempo:latest
+    container_name: bridge-tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./deploy/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/tmp/tempo
+    ports:
+      - "3200:3200"
+    networks:
+      - bridge
+    restart: unless-stopped
+
+# ============================================================
+# VOLUMES
+# ============================================================
 volumes:
   bridge_data:
     name: bridge_overseer_data
   bridge_logs:
     name: bridge_overseer_logs
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:
 
+# ============================================================
+# NETWORKS
+# ============================================================
 networks:
   bridge:
     name: bridge_network

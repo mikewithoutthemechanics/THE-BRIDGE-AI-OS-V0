@@ -39,7 +39,12 @@
     "genesis:bundle:ownership": "node scripts/gen-safe-ownership-bundle.js",
     "genesis:bundle:staking": "node scripts/gen-safe-staking-topup-bundle.js",
     "genesis:bundle:liquidity": "node scripts/gen-safe-liquidity-bundle.js",
-    "genesis:deploy:vesting": "hardhat run scripts/deploy-vesting.js --network linea"
+    "genesis:deploy:vesting": "hardhat run scripts/deploy-vesting.js --network linea",
+    "pr:validate": "node .github/scripts/validate_spec_compliance.py",
+    "test:visual": "npx playwright test tests/visual-regression.spec.js",
+    "test:animation": "npx playwright test tests/animation-validation.spec.js",
+    "test:ui": "npm run test:visual && npm run test:animation",
+    "ci:pr-check": "npm run pr:validate && npm run test:ui"
   },
   "keywords": [
     "topology",
