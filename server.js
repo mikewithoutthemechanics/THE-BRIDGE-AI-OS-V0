@@ -15,6 +15,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 }
 
 const express = require("express");
+const helmet = require("helmet");
 // body-parser not needed — Express 5 has built-in JSON/urlencoded parsing
 const { supabase } = require('./lib/supabase');
 const validation = require('./lib/validation');
@@ -61,6 +62,7 @@ economyDb.on('error', (err) => {
 });
 
 const app = express();
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -334,7 +336,7 @@ app.post("/api/checkout/confirm",
       // Record in PostgreSQL economy DB
       if (typeof economyDb !== 'undefined') {
         const payment = await economyDb.query(
-          'INSERT INTO payments_received (provider, payment_id, amount, currency, payer_email, item_name, raw_payload) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+          'INSERT INTO payments_received (provider, payment_id, amount, currency, payer_email, item_name, raw_payload, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (payment_id) DO UPDATE SET status=EXCLUDED.status RETURNING id',
           [method || 'batch', ref, parseFloat(amount) || 0, 'ZAR', email || '', 'Bridge AI OS Pro', JSON.stringify({ ref, client, method, batch: true })]
         );
         // Apply founder tax first, then split remainder
@@ -431,11 +433,45 @@ app.post("/payfast/notify", async (req, res) => {
 
   await supabase.from('payments').update({ status: 'paid', pf_payment_id: pfId }).eq('reference', reference);
 
+  // === BridgeAI Agent Ledger: write fiat_revenue + token_ledger (fire-and-forget) ===
+  (function() {
+    var _ref = reference; var _pfId = pfId; var _gross = gross;
+    var _email = String(unsigned.email_address || 'system').toLowerCase().trim();
+    Promise.resolve().then(async function() {
+      try {
+        var ledger = require('./lib/agent-ledger');
+        await ledger.credit(_email || 'system', _gross, 'fiat_payment', 'PayFast ref=' + _ref);
+        await ledger.recordRevenue('prime-001', _gross, 'fiat');
+        console.log('[PAYFAST-ITN] fiat credited to ' + _email + ' brdg=' + _gross);
+      } catch (e) { console.warn('[PAYFAST-ITN] ledger err:', e.message); }
+
+      try {
+        var txId = 'pf_' + (_pfId || _ref) + '_' + Date.now();
+        await supabase.from('token_ledger').insert({
+          id: txId,
+          from_agent: 'fiat_gateway',
+          to_agent: _email,
+          amount: _gross,
+          fee: 0,
+          burn: 0,
+          type: 'fiat_deposit',
+          task_id: null,
+          memo: 'PayFast ITN ref=' + _ref,
+          ts: new Date().toISOString(),
+        });
+      } catch (e) {
+        if (!String(e.message).includes('does not exist')) {
+          console.warn('[PAYFAST-ITN] token_ledger err:', e.message);
+        }
+      }
+    }).catch(function(e) { console.warn('[PAYFAST-ITN] async block err:', e.message); });
+  }());
+
   // === BridgeAI Economy: record payment and split revenue ===
   try {
     const paymentRec = await economyDb.query(
-      'INSERT INTO payments_received (provider, payment_id, amount, currency, payer_email, item_name, raw_payload) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-      ['payfast', pfId, gross, 'ZAR', String(unsigned.email_address || ''), String(unsigned.item_name || ''), JSON.stringify(unsigned)]
+      'INSERT INTO payments_received (provider, payment_id, amount, currency, payer_email, item_name, raw_payload, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (payment_id) DO UPDATE SET status=EXCLUDED.status RETURNING id',
+      ['payfast', pfId || reference, gross, 'ZAR', String(unsigned.email_address || ''), String(unsigned.item_name || ''), JSON.stringify(unsigned), 'complete']
     );
 
     const splits = [
@@ -458,7 +494,7 @@ app.post("/payfast/notify", async (req, res) => {
 
     // Ledger entry
     await economyDb.query(
-      'INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      'INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (source, reference) WHERE reference IS NOT NULL AND reference <>  DO NOTHING',
       ['income', 'payfast', gross, 'ZAR', 'all', reference, JSON.stringify({ pf_payment_id: pfId, splits: splits.map(s => ({ ...s, amount: (gross * s.pct / 100).toFixed(2) })) })]
     );
   } catch (econErr) {

@@ -18,6 +18,7 @@
 
 require('dotenv').config({ path: require('path').join(__dirname, '.env'), override: true });
 const express = require('express');
+const helmet = require('helmet');
 const http = require('http');
 const { WebSocket, WebSocketServer } = require('ws');
 const crypto = require('crypto');
@@ -49,6 +50,7 @@ const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 const PORT = parseInt(process.env.BRAIN_PORT, 10) || 8080;
 const app = express();
+app.use(helmet({ contentSecurityPolicy: false }));
 // Honour X-Forwarded-Proto/Host from nginx so req.protocol returns 'https'
 // and req.get('host') returns the public domain — required for OAuth
 // redirect_uri to match the Google Cloud Console whitelist.

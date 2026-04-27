@@ -73,9 +73,7 @@ async function extractUser(req) {
   }
 
   // 3. Query param fallback
-  if (!token && req.query && req.query.token) {
-    token = req.query.token;
-  }
+  // query string token auth removed — header-only auth enforced
 
   if (!token) return null;
 
