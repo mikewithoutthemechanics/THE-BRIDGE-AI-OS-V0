@@ -98,10 +98,18 @@
       "Bash(scp c:/tmp/fix_rev_cols.py root@102.208.228.44:/tmp/fix_rev_cols.py)",
       "Bash(scp c:/tmp/fix_task_market_v2.py root@102.208.228.44:/tmp/fix_task_market_v2.py)",
       "Bash(scp c:/tmp/fix_nav_quote_and_platforms.py root@102.208.228.44:/tmp/fix_nav_quote_and_platforms.py)",
-      "Read(//c/c/aoe-unified-final-main/**)"
+      "Read(//c/c/aoe-unified-final-main/**)",
+      "Bash(git submodule *)",
+      "Bash(git -C /c/aoe-unified-final-main/Supa-Claw rev-parse HEAD)",
+      "Bash(git -C /c/aoe-unified-final-main/bridgeaios/THE-BRIDGE-AI-OS-V0 rev-parse HEAD)",
+      "Bash(git -C /c/aoe-unified-final-main/Supa-Claw status --short)",
+      "Bash(git -C /c/aoe-unified-final-main/bridgeaios/THE-BRIDGE-AI-OS-V0 status --short)",
+      "Bash(git -C /c/aoe-unified-final-main/Supa-Claw diff --stat HEAD)",
+      "Bash(git -C /c/aoe-unified-final-main/bridgeaios/THE-BRIDGE-AI-OS-V0 diff --stat HEAD)"
     ],
     "additionalDirectories": [
-      "\\tmp"
+      "\\tmp",
+      "C:\\aoe-unified-final-main"
     ]
   },
   "hooks": {
