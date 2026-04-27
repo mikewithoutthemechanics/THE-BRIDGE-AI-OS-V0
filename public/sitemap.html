@@ -1373,7 +1373,7 @@ async function checkBrain() {
   const badge = document.getElementById('brainBadge');
   const txt = document.getElementById('brainText');
   try {
-    const r = await fetch('/api/brain/status', { signal: AbortSignal.timeout(4000) });
+    const r = await fetch('https://bridge-ai-os.com/api/brain/status', { signal: AbortSignal.timeout(4000) });
     const j = await r.json().catch(() => ({}));
     badge.style.display = 'flex';
     txt.textContent = 'Brain ' + (j.status === 'ok' || j.status === 'OK' ? '&#129504; Online' : '&#129504; ' + (j.status || 'standby'));

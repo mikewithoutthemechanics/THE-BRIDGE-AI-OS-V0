@@ -380,7 +380,7 @@ var COMMANDS = {
     term.appendChild(div);
     term.scrollTop = term.scrollHeight;
     // Fire usage event
-    fetch('/api/usage/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: (state.user && state.user.id) || 'anonymous', feature: 'asset_view', meta: { asset_id: asset.id } }) }).catch(function(){});
+    fetch('https://bridge-ai-os.com/api/usage/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: (state.user && state.user.id) || 'anonymous', feature: 'asset_view', meta: { asset_id: asset.id } }) }).catch(function(){});
   },
 
   connect: async function() {

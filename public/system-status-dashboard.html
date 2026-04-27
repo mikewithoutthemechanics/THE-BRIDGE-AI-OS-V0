@@ -251,12 +251,12 @@ const HEALTH_ENDPOINTS = isLocalHost
       { id: "nginx",    url: "http://localhost:9090/-/ready" },
     ]
   : [
-      // VPS/public mode: same-origin probes to avoid mixed-content/CORS failures.
-      { id: "gateway",  url: "/health" },
-      { id: "business", url: "/api/brain/status" },
-      { id: "treasury", url: "/api/status" },
-      { id: "pm2",      url: "/api/swarm/health" },
-      { id: "nginx",    url: "/api/revenue/status" },
+      // VPS/public mode: direct VPS gateway URLs.
+      { id: "gateway",  url: "https://bridge-ai-os.com/health" },
+      { id: "business", url: "https://bridge-ai-os.com/api/brain/status" },
+      { id: "treasury", url: "https://bridge-ai-os.com/api/status" },
+      { id: "pm2",      url: "https://bridge-ai-os.com/api/swarm/health" },
+      { id: "nginx",    url: "https://bridge-ai-os.com/api/revenue/status" },
     ];
 
 const nodes = [
