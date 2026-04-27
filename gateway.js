@@ -1777,6 +1777,8 @@ app.get('/api/treasury/status', async (_req, res) => {
   }
 });
 
+
+
 app.get('/api/treasury/ledger', async (req, res) => {
   try {
     // Return mock transaction data for dashboard
@@ -1839,6 +1841,17 @@ app.get('/api/treasury', async (_req, res) => {
     ];
     res.json({ balance, total: balance, currency: 'ZAR', buckets, ts: Date.now() });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Treasury balance endpoint — reads from DB directly (must be before catch-all)
+app.get('/api/treasury/balance', async (_req, res) => {
+  try {
+    const db = require('./lib/db');
+    const balance = await db.getTreasuryBalance();
+    res.json({ ok: true, balance, currency: 'ZAR', ts: Date.now() });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 app.get('/api/wallet/balance', async (_req, res) => {
@@ -4018,12 +4031,4 @@ if (require.main === module) {
 // ── EXPORT (for supertest) ────────────────────────────────────────────────────
 module.exports = app;
 
-// Treasury balance endpoint
-app.get('/api/treasury/balance', async (req, res) => {
-  try {
-    const data = await fetchJSON('http://' + SYSTEM_HOST + ':3000/api/treasury/balance');
-    res.json(data);
-  } catch(e) {
-    res.json({ balance: 157500, currency: 'BRDG', mock: true });
-  }
-});
+
