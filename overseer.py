@@ -881,15 +881,15 @@ class Overseer:
             return
 
         print(f"""
-╔══════════════════════════════════════════════╗
-║           OVERSEER ACTIVATED                  ║
-║  Sovereign Authority Layer — Runtime Governor ║
-╠══════════════════════════════════════════════╣
-║  Cycle Interval: {OVERSEER_INTERVAL}s              ║
-║  State File:      {OVERSEER_STATE_PATH:<20} ║
-║  Log File:        {OVERSEER_LOG_PATH:<20} ║
-║  PID:             {os.getpid():<20} ║
-╚══════════════════════════════════════════════╝
++==========================================================================+
+|           OVERSEER ACTIVATED                  |
+|  Sovereign Authority Layer - Runtime Governor |
++==========================================================================+
+|  Cycle Interval: {OVERSEER_INTERVAL}s              |
+|  State File:      {OVERSEER_STATE_PATH:<20} |
+|  Log File:        {OVERSEER_LOG_PATH:<20} |
+|  PID:             {os.getpid():<20} |
++==========================================================================+
         """)
 
         overseer_logger.log("OVERSEER_START", {

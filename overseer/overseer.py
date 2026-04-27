@@ -875,7 +875,7 @@ class Overseer:
         """Start the Overseer runtime loop"""
         if interval is None:
             interval = OVERSEER_INTERVAL
-        logger.info(f" Overseer starting — persona: {self.persona.name}, interval: {interval}s")
+        logger.info(f" Overseer starting - persona: {self.persona.name}, interval: {interval}s")
         self.running = True
         
         # Start event processor
@@ -991,3 +991,5 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("OVERSEER_PORT", "9091"))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
+
