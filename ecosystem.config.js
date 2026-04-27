@@ -26,7 +26,7 @@ module.exports = {
       script:     'gateway.js',
       out_file:   './logs/gateway-out.log',
       error_file: './logs/gateway-error.log',
-      env: { NODE_ENV: 'production', PORT: 8080, GATEWAY_LISTEN_HOST: '127.0.0.1' },
+      env: { NODE_ENV: 'production', PORT: 8082, GATEWAY_LISTEN_HOST: '127.0.0.1' },
     },
     {
       ...BASE,
