@@ -9,7 +9,7 @@
  * enabling semantic RBAC, composable operations, and cognitive execution.
  */
 
-const { v4: uuidv4 } = require('crypto');
+const { randomUUID: uuidv4 } = require('crypto');
 
 // ═══════════════════════════════════════════════════════════════
 // CANONICAL VERB SET (SYSTEM-WIDE)
