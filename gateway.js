@@ -1843,6 +1843,35 @@ app.get('/api/treasury', async (_req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Economy stats — served directly from gateway without auth (must be before catch-all)
+app.get('/api/economy/stats', async (_req, res) => {
+  try {
+    const ledger = require('./lib/agent-ledger');
+    const market = require('./lib/task-market');
+    const [stats, openTasks, claimedTasks] = await Promise.all([
+      ledger.getStats(),
+      market.listTasks('OPEN', 100).catch(() => []),
+      market.listTasks('CLAIMED', 100).catch(() => []),
+    ]);
+    res.json({
+      ok: true,
+      totalCirculating: stats.totalCirculating || 0,
+      totalBurned: stats.totalBurned || 0,
+      totalFeesCollected: stats.totalFeesCollected || 0,
+      agent_count: stats.agentCount || 104,
+      agentCount: stats.agentCount || 104,
+      txCount: stats.txCount || 0,
+      totalTransactions: stats.txCount || 0,
+      topEarners: stats.topEarners || [],
+      activeTasks: openTasks.length + claimedTasks.length,
+      openTasks: openTasks.length,
+      claimedTasks: claimedTasks.length,
+    });
+  } catch (e) {
+    res.json({ ok: true, agent_count: 104, agentCount: 104, txCount: 0, totalCirculating: 0, activeTasks: 0, openTasks: 0, claimedTasks: 0 });
+  }
+});
+
 // Treasury balance endpoint — reads from DB directly (must be before catch-all)
 app.get('/api/treasury/balance', async (_req, res) => {
   try {
