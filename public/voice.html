@@ -622,7 +622,7 @@ img,video,iframe,table{max-width:100%}
       system: 'You are Bridge AI, a conversational business AI assistant. Keep responses under 3 sentences. Be helpful, concise, and friendly.'
     });
 
-    fetch('https://bridge-ai-os.com/api/llm/infer', {
+    fetch('/api/llm/infer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body

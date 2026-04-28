@@ -450,8 +450,8 @@ function showPage(name) {
 /* ─── Overview ─────────────────────────────────────────────────────────────── */
 async function loadOverview() {
   const [fedRes, resellerRes] = await Promise.all([
-    fetch('https://bridge-ai-os.com/api/pbx/federation/routes').then(r => r.json()).catch(() => ({})),
-    ROLE !== 'tenant' ? fetch('https://bridge-ai-os.com/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({})) : Promise.resolve({}),
+    fetch('/api/pbx/federation/routes').then(r => r.json()).catch(() => ({})),
+    ROLE !== 'tenant' ? fetch('/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({})) : Promise.resolve({}),
   ]);
 
   const activeCarriers = fedRes.active_carriers || 0;
@@ -488,7 +488,7 @@ async function loadOverview() {
 
 /* ─── Resellers ────────────────────────────────────────────────────────────── */
 async function loadResellers() {
-  const data = await fetch('https://bridge-ai-os.com/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({}));
+  const data = await fetch('/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({}));
   const body = document.getElementById('resellerTreeBody');
   if (!data.tree || !data.tree.length) {
     body.innerHTML = '<div class="empty">No resellers yet. Create one to start your channel network.</div>';
@@ -514,14 +514,14 @@ function renderTree(nodes, depth = 0) {
 }
 
 async function viewReseller(id) {
-  const data = await fetch('https://bridge-ai-os.com/api/pbx/reseller/' + id + '/analytics').then(r => r.json()).catch(() => null);
+  const data = await fetch('/api/pbx/reseller/' + id + '/analytics').then(r => r.json()).catch(() => null);
   if (!data) return;
   alert(JSON.stringify({ name: data.reseller?.name, revenue: data.analytics?.total_revenue_received, subs: data.analytics?.sub_resellers }, null, 2));
 }
 
 /* ─── Federation ────────────────────────────────────────────────────────────── */
 async function loadFederation() {
-  const data = await fetch('https://bridge-ai-os.com/api/pbx/federation/routes').then(r => r.json()).catch(() => ({}));
+  const data = await fetch('/api/pbx/federation/routes').then(r => r.json()).catch(() => ({}));
   const carriers = data.carriers || [];
 
   document.getElementById('federationBody').innerHTML = carriers.length
@@ -557,7 +557,7 @@ async function loadFederation() {
 }
 
 async function toggleCarrier(id, newStatus) {
-  const r = await fetch('https://bridge-ai-os.com/api/pbx/federation/' + id, {
+  const r = await fetch('/api/pbx/federation/' + id, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status: newStatus }),
@@ -598,7 +598,7 @@ async function loadMyNumbers() {
   document.getElementById('numbersTitle').textContent = 'My Numbers';
   document.getElementById('numbersBody').innerHTML = '<tr><td colspan="7"><div class="loading"><span class="spinner"></span></div></td></tr>';
 
-  const data = await fetch('https://bridge-ai-os.com/api/pbx/marketplace/my-numbers').then(r => r.json()).catch(() => ({ numbers: [] }));
+  const data = await fetch('/api/pbx/marketplace/my-numbers').then(r => r.json()).catch(() => ({ numbers: [] }));
   const nums = data.numbers || [];
 
   document.getElementById('numbersBody').innerHTML = nums.length
@@ -618,7 +618,7 @@ async function loadMyNumbers() {
 
 async function buyNumber(id, number, price) {
   if (!confirm(`Purchase ${number} for ZAR ${price}/month?\nThis will debit your wallet.`)) return;
-  const r = await fetch('https://bridge-ai-os.com/api/pbx/marketplace/buy', {
+  const r = await fetch('/api/pbx/marketplace/buy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ number_id: id }),
@@ -639,14 +639,14 @@ async function buyNumber(id, number, price) {
 
 async function releaseNumber(encodedNum) {
   if (!confirm('Release this number back to the marketplace?')) return;
-  const r = await fetch('https://bridge-ai-os.com/api/pbx/marketplace/release/' + encodedNum, { method: 'POST' }).then(r => r.json()).catch(() => null);
+  const r = await fetch('/api/pbx/marketplace/release/' + encodedNum, { method: 'POST' }).then(r => r.json()).catch(() => null);
   if (r?.ok) loadMyNumbers();
 }
 
 /* ─── Revenue ────────────────────────────────────────────────────────────────── */
 async function loadRevenue() {
   // Use the first reseller in tree (or self) for analytics
-  const treeRes = await fetch('https://bridge-ai-os.com/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({}));
+  const treeRes = await fetch('/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({}));
   const firstReseller = (treeRes.tree || [])[0];
 
   if (!firstReseller) {
@@ -655,7 +655,7 @@ async function loadRevenue() {
     return;
   }
 
-  const data = await fetch('https://bridge-ai-os.com/api/pbx/reseller/' + firstReseller.id + '/analytics').then(r => r.json()).catch(() => ({}));
+  const data = await fetch('/api/pbx/reseller/' + firstReseller.id + '/analytics').then(r => r.json()).catch(() => ({}));
   const a = data.analytics || {};
   const splits = data.recent_splits || [];
 
@@ -683,7 +683,7 @@ async function loadRevenue() {
 
 /* ─── Wallet ─────────────────────────────────────────────────────────────────── */
 async function loadWallet() {
-  const treeRes = await fetch('https://bridge-ai-os.com/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({}));
+  const treeRes = await fetch('/api/pbx/reseller/tree').then(r => r.json()).catch(() => ({}));
   const firstReseller = (treeRes.tree || [])[0];
   if (!firstReseller) {
     document.getElementById('walletStats').innerHTML = '<div class="empty" style="padding:0">No wallet data available.</div>';
@@ -691,7 +691,7 @@ async function loadWallet() {
     return;
   }
 
-  const data = await fetch('https://bridge-ai-os.com/api/pbx/reseller/' + firstReseller.id + '/analytics').then(r => r.json()).catch(() => ({}));
+  const data = await fetch('/api/pbx/reseller/' + firstReseller.id + '/analytics').then(r => r.json()).catch(() => ({}));
   const w = data.wallet || {};
   const txns = data.recent_transactions || [];
 
@@ -732,7 +732,7 @@ async function createReseller() {
   };
   if (!body.name) { err.textContent = 'Name is required'; err.style.display = ''; return; }
 
-  const r = await fetch('https://bridge-ai-os.com/api/pbx/reseller/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+  const r = await fetch('/api/pbx/reseller/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
   if (r?.ok) { closeModal('modalReseller'); loadResellers(); }
   else { err.textContent = r?.error || 'Failed to create reseller'; err.style.display = ''; }
 }
@@ -752,7 +752,7 @@ async function connectCarrier() {
   };
   if (!body.carrier_id || !body.name || !body.endpoint) { err.textContent = 'All fields are required'; err.style.display = ''; return; }
 
-  const r = await fetch('https://bridge-ai-os.com/api/pbx/federation/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+  const r = await fetch('/api/pbx/federation/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
   if (r?.ok) { closeModal('modalCarrier'); loadFederation(); }
   else { err.textContent = r?.error || 'Failed to connect carrier'; err.style.display = ''; }
 }
@@ -764,7 +764,7 @@ async function testRoute() {
   result.textContent = 'Routing...';
   result.style.display = '';
 
-  const r = await fetch('https://bridge-ai-os.com/api/pbx/federation/route', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ destination: dest }) }).then(r => r.json()).catch(() => null);
+  const r = await fetch('/api/pbx/federation/route', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ destination: dest }) }).then(r => r.json()).catch(() => null);
   result.textContent = r ? JSON.stringify(r, null, 2) : 'Request failed';
 }
 
@@ -781,7 +781,7 @@ async function listNumber() {
   };
   if (!body.number || !body.country) { err.textContent = 'Number and country are required'; err.style.display = ''; return; }
 
-  const r = await fetch('https://bridge-ai-os.com/api/pbx/marketplace/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+  const r = await fetch('/api/pbx/marketplace/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
   if (r?.ok) { closeModal('modalListNum'); loadNumbers(); }
   else { err.textContent = r?.error || 'Failed to list number'; err.style.display = ''; }
 }

@@ -802,7 +802,7 @@ function dispatchTask() {
   addEvent('DISPATCH', agent, `Task dispatched: ${task} [${priority}]`);
   document.getElementById('dispatchTask').value = '';
   // Try API
-  fetch('https://bridge-ai-os.com/api/agents/dispatch', {
+  fetch('/api/agents/dispatch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ agent, task, priority })

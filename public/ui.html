@@ -462,7 +462,7 @@ img,video,iframe,table{max-width:100%}
       <a href="/sitemap">Sitemap</a>
       <a href="/affiliate">Affiliates</a>
       <a href="/governance">Governance</a>
-      <a href="https://bridge-ai-os.com" rel="noopener">VPS Portal</a>
+      <a href="" rel="noopener">VPS Portal</a>
     </div>
     <div>Bridge AI OS v2.5 · <a href="https://ai-os.co.za">ai-os.co.za</a></div>
   </footer>
@@ -534,9 +534,9 @@ img,video,iframe,table{max-width:100%}
 
   async function loadStats() {
     try {
-      var treasury = await fetch('https://bridge-ai-os.com/api/treasury').then(function(r){return r.json()}).catch(function(){return {}});
-      var agents   = await fetch('https://bridge-ai-os.com/api/swarm/agents').then(function(r){return r.json()}).catch(function(){return {}});
-      var bos      = await fetch('https://bridge-ai-os.com/api/registry/bridgeos').then(function(r){return r.json()}).catch(function(){return {}});
+      var treasury = await fetch('/api/treasury').then(function(r){return r.json()}).catch(function(){return {}});
+      var agents   = await fetch('/api/swarm/agents').then(function(r){return r.json()}).catch(function(){return {}});
+      var bos      = await fetch('/api/registry/bridgeos').then(function(r){return r.json()}).catch(function(){return {}});
 
       var tval = Math.round(parseFloat(treasury.total || 0));
       document.getElementById('s-services').textContent = '12';

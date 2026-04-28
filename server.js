@@ -179,6 +179,16 @@ app.use("/whatsapp",                 strictLimiter(30));
 app.use("/api/agents/execute-paid",  strictLimiter(10));
 app.use("/api/ubi/claim",            strictLimiter(20));
 
+// ── API Authentication + Intent Pipeline ──────────────────────────────────────
+// These four middleware apply to ALL /api/* routes registered below.
+// Must be declared before any /api/* route handler.
+app.use('/api', intentMiddleware);
+app.use('/api', requireClient);  // JWT verification — 401 for unauthenticated callers
+app.use('/api', semanticRBAC);   // Semantic authorization based on verb+noun
+app.use('/api', logIntent);      // Intent telemetry logging for overseer
+app.use('/api', wrapExecution);  // Response wrapping with intent metadata (optional)
+
+
 // WhatsApp inbound webhook signature verification
 // Meta Cloud API sends X-Hub-Signature-256: sha256=<hex> keyed by WHATSAPP_APP_SECRET.
 // If no secret is configured we refuse the request (fail-closed) rather than
@@ -327,7 +337,7 @@ app.get("/checkout", (req, res) => {
 });
 
 // Confirm checkout — records to batch pool + treasury
-app.post("/api/checkout/confirm", 
+app.post("/api/checkout/confirm", requireClient,
   validation.validateRequest({
     ref: { type: 'string', required: true },
     amount: { type: 'positive', required: true },
@@ -521,7 +531,7 @@ app.post("/payfast/notify", async (req, res) => {
 
     // Ledger entry
     await economyDb.query(
-      'INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (source, reference) WHERE reference IS NOT NULL AND reference <>  DO NOTHING',
+      'INSERT INTO treasury_ledger (type, source, amount, currency, bucket, reference, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (source, reference) WHERE reference IS NOT NULL AND reference <> \'\' DO NOTHING',
       ['income', 'payfast', gross, 'ZAR', 'all', reference, JSON.stringify({ pf_payment_id: pfId, splits: splits.map(s => ({ ...s, amount: (gross * s.pct / 100).toFixed(2) })) })]
     );
   } catch (econErr) {
@@ -606,11 +616,7 @@ app.post("/whatsapp", async (req, res) => {
 // ================= VERB–NOUN ENGINE MIDDLEWARE =================
 // Language-Based Execution Layer for REST API
 // All /api requests pass through intent resolution and semantic RBAC
-app.use('/api', intentMiddleware);
-app.use('/api', requireClient);  // JWT verification
-app.use('/api', semanticRBAC);   // Semantic authorization based on verb+noun
-app.use('/api', logIntent);      // Intent telemetry logging for overseer
-app.use('/api', wrapExecution);  // Response wrapping with intent metadata (optional)
+
 
 // ================= REAL REGISTRY ENDPOINTS =================
 const os = require('os');
@@ -1591,11 +1597,11 @@ creditsService.init(economyDb);
 
 // ================= FOUNDER TAX CONTROL =================
 
-app.get('/api/founder/tax', (req, res) => {
+app.get('/api/founder/tax', requireAdmin, (req, res) => {
   res.json({ ok: true, taxRate: founderTaxRate, note: 'Additional founder extraction before standard split' });
 });
 
-app.post('/api/founder/tax', (req, res) => {
+app.post('/api/founder/tax', requireAdmin, (req, res) => {
   const { rate } = req.body;
   const r = parseFloat(rate);
   if (isNaN(r) || r < 0 || r > 20) return res.status(400).json({ error: 'Rate must be 0-20%' });
@@ -1808,72 +1814,50 @@ app.get('/api/auth/wp-plugin', [validate.authWpPlugin], (req, res) => {
 // In-memory store (TODO: replace with Supabase tables in production)
 // Schema mirrors the intended Supabase tables so migration is a
 // drop-in replacement of the CRUD helpers below.
-const _ecoUsers   = new Map(); // email → { id, email, avatarId, walletId }
-const _ecoAvatars = new Map(); // id    → { id, userId, name }
-const _ecoWallets = new Map(); // id    → { id, ownerId, ownerType, balance }
-const _ecoAgents  = new Map(); // id    → { id, parentAvatarId, walletId, name, tier }
-let   _ecoSeq     = 1;
-function _nextId(prefix) { return `${prefix}_${_ecoSeq++}`; }
+// Economy identity — persisted in Supabase (eco_users, eco_wallets, eco_agents).
+// Migration: migrations/012_eco_users_wallets_agents.sql
 
-function _ensureUserEconomy(userId, email) {
-  if (!_ecoUsers.has(email)) {
-    const avatarId = _nextId('av');
-    const walletId = _nextId('wl');
-    _ecoAvatars.set(avatarId, { id: avatarId, userId, name: email.split('@')[0] });
-    _ecoWallets.set(walletId, { id: walletId, ownerId: avatarId, ownerType: 'avatar', balance: 0 });
-    _ecoUsers.set(email, { id: userId, email, avatarId, walletId });
-  }
-  return _ecoUsers.get(email);
+async function _ensureUserEconomy(email) {
+  // Check for existing record
+  const { data: existing } = await supabase
+    .from('eco_users').select('*').eq('email', email).single();
+  if (existing) return existing;
+
+  // Create wallet then user in a single round-trip
+  const { data: wallet, error: wErr } = await supabase
+    .from('eco_wallets')
+    .insert({ owner_type: 'avatar', balance: 0 })
+    .select().single();
+  if (wErr) throw new Error('Failed to create wallet: ' + wErr.message);
+
+  const { data: user, error: uErr } = await supabase
+    .from('eco_users')
+    .insert({ email, wallet_id: wallet.id, avatar_id: wallet.id })
+    .select().single();
+  if (uErr) throw new Error('Failed to create eco user: ' + uErr.message);
+
+  // Patch wallet owner_id now that we have the user id
+  await supabase.from('eco_wallets').update({ owner_id: user.id }).eq('id', wallet.id);
+
+  return user;
 }
 
-// POST /api/auth/login — issue JWT, auto-create avatar + wallet
-// Public endpoint (listed in publicEndpoints above).
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email } = req.body || {};
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return res.status(400).json({ error: 'Valid email required' });
-    }
-    const normalEmail = email.toLowerCase().trim();
-    const secret = process.env.JWT_SECRET;
-    if (!secret) return res.status(500).json({ error: 'Authentication service unavailable' });
+// POST /api/auth/login — removed: canonical login is handled by auth.js (port 5001).
+// Keeping this comment to document the gap; the gateway proxies /api/auth/login to auth.js.
 
-    // Re-use existing user record; only create a new ID for genuinely new users
-    const existingUser = _ecoUsers.get(normalEmail);
-    const userId = existingUser ? existingUser.id : _nextId('u');
-    const ecoUser = _ensureUserEconomy(userId, normalEmail);
-
-    const payload = {
-      sub: ecoUser.id,
-      email: normalEmail,
-      role: isSuperUser(normalEmail) ? 'superadmin' : 'member',
-    };
-    const token = jwt.sign(payload, secret, { expiresIn: '7d' });
-
-    return res.json({
-      token,
-      email: normalEmail,
-      userId: ecoUser.id,
-      avatarId: ecoUser.avatarId,
-      walletId: ecoUser.walletId,
-    });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// GET /api/me — return user, avatar, wallet, agents (requires auth)
+// GET /api/me — return user, wallet, agents (requires auth)
 app.get('/api/me', async (req, res) => {
   try {
     const email = req.user?.email;
     if (!email) return res.status(401).json({ error: 'Not authenticated' });
 
-    const ecoUser = _ecoUsers.get(email) || _ensureUserEconomy(req.user.sub || _nextId('u'), email);
-    const avatar  = _ecoAvatars.get(ecoUser.avatarId);
-    const wallet  = _ecoWallets.get(ecoUser.walletId);
-    const agents  = [..._ecoAgents.values()].filter(a => a.parentAvatarId === ecoUser.avatarId);
+    const ecoUser = await _ensureUserEconomy(email);
+    const [{ data: wallet }, { data: agents }] = await Promise.all([
+      supabase.from('eco_wallets').select('*').eq('id', ecoUser.wallet_id).single(),
+      supabase.from('eco_agents').select('*').eq('avatar_id', ecoUser.avatar_id),
+    ]);
 
-    return res.json({ user: ecoUser, avatar, wallet, agents });
+    return res.json({ user: ecoUser, wallet: wallet || null, agents: agents || [] });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -1892,13 +1876,15 @@ app.post('/api/agents/create', async (req, res) => {
     const validTiers = ['standard', 'pro'];
     const agentTier = validTiers.includes(tier) ? tier : 'standard';
 
-    const ecoUser = _ecoUsers.get(email) || _ensureUserEconomy(req.user.sub || _nextId('u'), email);
-    const agentId   = _nextId('ag');
-    const agentWalletId = _nextId('wl');
+    const ecoUser = await _ensureUserEconomy(email);
 
-    _ecoWallets.set(agentWalletId, { id: agentWalletId, ownerId: agentId, ownerType: 'agent', balance: 0 });
-    const agent = { id: agentId, parentAvatarId: ecoUser.avatarId, walletId: agentWalletId, name, tier: agentTier };
-    _ecoAgents.set(agentId, agent);
+    const { data: agentWallet, error: wErr } = await supabase
+      .from('eco_wallets').insert({ owner_id: ecoUser.id, owner_type: 'agent', balance: 0 }).select().single();
+    if (wErr) throw new Error('Failed to create agent wallet: ' + wErr.message);
+
+    const { data: agent, error: aErr } = await supabase
+      .from('eco_agents').insert({ avatar_id: ecoUser.avatar_id, wallet_id: agentWallet.id, name, tier: agentTier }).select().single();
+    if (aErr) throw new Error('Failed to create agent: ' + aErr.message);
 
     return res.status(201).json({ agent });
   } catch (err) {
@@ -1925,12 +1911,12 @@ app.post('/api/pay', async (req, res) => {
       founder:  +(amount * 0.10).toFixed(2),
     };
 
-    // Credit the paying user's wallet
-    const ecoUser = _ecoUsers.get(email);
-    if (ecoUser) {
-      const wallet = _ecoWallets.get(ecoUser.walletId);
-      if (wallet) wallet.balance = +(wallet.balance + shares.ubi).toFixed(2);
-    }
+    // Credit the UBI share to the paying user's wallet
+    const ecoUser = await _ensureUserEconomy(email);
+    const { data: currentWallet } = await supabase
+      .from('eco_wallets').select('balance').eq('id', ecoUser.wallet_id).single();
+    const newBalance = +((parseFloat(currentWallet?.balance) || 0) + shares.ubi).toFixed(4);
+    await supabase.from('eco_wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('id', ecoUser.wallet_id);
 
     return res.json({ ok: true, amount, shares });
   } catch (err) {
@@ -1938,10 +1924,11 @@ app.post('/api/pay', async (req, res) => {
   }
 });
 
-// ── Topic Vector Matrix (TVM) ───────────const tvm = require('./lib/tvm');
+// ── Topic Vector Matrix (TVM) ──────────────────────────────────────────────
+const tvm = require('./lib/tvm');
 app.get('/api/tvm', [validate.tvm], (req, res) => res.json(tvm.getMatrix()));
 app.get('/api/tvm/summary', [validate.tvmSummary], (req, res) => res.json(tvm.getSummary()));
-app.get('/api/tvm/recommendations/all', [validate.tvmRecommendations], (req, res) => res.json(tvm.RECOMMENDATIONS));
+app.get('/api/tvm/recommendations/all', [validate.tvmRecommendations], (req, res) => res.json(tvm.RECOMMENDATION_LIB));
 app.get('/api/tvm/:topic', [validate.tvmTopic], (req, res) => {
   const row = tvm.getRow(req.params.topic);
   if (!row) return res.status(404).json({ error: 'topic not found' });
@@ -2711,6 +2698,24 @@ const shortRoutes = {
   '/auth-callback': '/auth-callback.html',
   '/tvm': '/tvm.html',
   '/gateway': '/gateway.html',
+  // Pages added to nav-routes.js
+  '/twin-create': '/twin-create.html',
+  '/twin-search': '/twin-search.html',
+  '/ai-agents': '/ai-agents.html',
+  '/agent-command': '/agent-command.html',
+  '/system-dashboard': '/system-dashboard.html',
+  '/cognitive-os': '/cognitive-os.html',
+  '/design-engine': '/design-engine.html',
+  '/orchestra': '/orchestra.html',
+  '/automation-hub': '/automation-hub.html',
+  '/wealth-engine': '/wealth-engine.html',
+  '/portfolio': '/portfolio.html',
+  '/contact-sales': '/contact-sales.html',
+  '/api-developers': '/api-developers.html',
+  '/supadash-ai': '/supadash-ai.html',
+  '/supadash-report': '/supadash-report.html',
+  '/supadash-settings': '/supadash-settings.html',
+  '/supadash-users': '/supadash-users.html',
 };
 Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));
@@ -2727,8 +2732,6 @@ app.get('/shop', (_req, res) =>
 app.get('/affiliate/dashboard', (_req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'affiliate-portal', 'dashboard.html')));
 
-// TVM routes registered earlier, before brain catch-all
-app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIONS));
 
 // ================= ECONOMY ENGINE (agent balances, tasks, auto-loop) =================
 const { registerEconomyRoutes } = require('./lib/economy-routes');
@@ -3275,23 +3278,6 @@ app.get("/api/topology", async (req, res) => {
 });
 
 // ================= SERVER =================
-const PORT = process.env.PORT || 3000;
-// Only bind to a port when run directly, not when required by tests
-if (require.main === module) {
-  app.listen(PORT, async () => {
-    console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
-
-    // Start Config Intelligence Engine after server is bound
-    try {
-      const configEngine = require('./engine/config-intelligence');
-      await configEngine.start({ enableReconciler: true });
-    } catch (err) {
-      console.warn('[SERVER] Config Intelligence Engine failed to start:', err.message);
-    }
-  });
-}
-
-
 // Treasury balance endpoint
 app.get('/api/treasury/balance', async (req, res) => {
   try {
@@ -3311,5 +3297,32 @@ app.get('/api/cognitive/verbs', async (req, res) => {
     engine: 'cognitive-bridge-v1'
   });
 });
+
+// ── Express error handler ─────────────────────────────────────────────────────
+// Must be registered with 4 parameters so Express recognises it as an error handler.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  console.error('[SERVER] Unhandled error', { route: req.originalUrl, message: err.message, status });
+  if (res.headersSent) return;
+  res.status(status).json({ ok: false, error: status < 500 ? err.message : 'Internal server error' });
+});
+
+const PORT = process.env.PORT || 3000;
+// Only bind to a port when run directly, not when required by tests
+if (require.main === module) {
+  app.listen(PORT, async () => {
+    console.log(`SYSTEM LIVE -> http://localhost:${PORT}`);
+
+    // Start Config Intelligence Engine after server is bound
+    try {
+      const configEngine = require('./engine/config-intelligence');
+      await configEngine.start({ enableReconciler: true });
+    } catch (err) {
+      console.warn('[SERVER] Config Intelligence Engine failed to start:', err.message);
+    }
+  });
+}
+
 
 module.exports = app;

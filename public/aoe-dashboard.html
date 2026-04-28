@@ -679,7 +679,7 @@ async function doExec(){
   _out.innerHTML='<div style="color:var(--dim);font-size:10px">Executing via Brain Orchestrator…</div>';
   try{
     // Always route through /api/execute — it tries SVG first, escalates to brain for learned skills
-    const d=await fetch('https://bridge-ai-os.com/api/execute',{method:'POST',headers:{'Content-Type':'application/json'},
+    const d=await fetch('/api/execute',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({skill:id,query:id})}).then(r=>r.json());
     const _card=document.createElement('div');_card.className='card';
     const src=d.escalated_from?'BRAIN ESCALATED':'SVG ENGINE';

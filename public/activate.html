@@ -406,7 +406,7 @@ img,video,iframe,table{max-width:100%}
   setStep(1, 'active');
   let twin = null;
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/twin/activate', {
+    const r = await fetch('/api/twin/activate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

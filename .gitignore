@@ -42,3 +42,43 @@ Thumbs.db
 .vercel
 users.db
 certs/
+
+# Backup / pre-edit snapshots created by patch scripts
+*.bak
+*.bak.*
+*.bak-*
+*.broken.*
+*.pre-*
+*.stub.*
+*.stub
+*.broken
+
+# Runtime state JSON
+adaptive-recovery-state.json
+brain-orchestration-state.json
+orchestrator-state.json
+predictive-state.json
+
+# SQLite WAL / SHM
+*.db-shm
+*.db-wal
+data/goals.db
+data/neuro-history/
+
+# Log rotation artifacts
+logs/*.log.1
+logs/*.log.[0-9]*
+logs/scan-*.jsonl
+
+# SSH keys/configs accidentally in repo root
+ssh/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+
+# Config service runtime DB
+services/config-service/config.db
+
+# Admin dashboard pre-edit snapshots
+apps/admin-dashboard/*.pre-*

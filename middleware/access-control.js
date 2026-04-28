@@ -8,6 +8,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const path = require('path');
 const jwt = require('jsonwebtoken');
 const userDb = require('../lib/user-identity');
 
@@ -204,7 +205,7 @@ async function requireSuperAdmin(req, res, next) {
     return res.status(403).json({ ok: false, error: 'Superadmin access required' });
   }
   const cfoToken = req.headers['x-cfo-token'];
-  if (!cfoToken || cfoToken !== process.env.CFO_TOKEN) {
+  if (!cfoToken || !safeCompare(cfoToken, process.env.CFO_TOKEN || '')) {
     if (wantsHtml(req)) {
       return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
     }
@@ -219,8 +220,8 @@ async function requireSuperAdmin(req, res, next) {
 // Enforces 4-tier page access control based on PATH_TO_TIER mapping.
 function pageGuard() {
   return async function pageGuardMiddleware(req, res, next) {
-    const path = req.path;
-    const tier = PATH_TO_TIER[path];
+    const reqPath = req.path;
+    const tier = PATH_TO_TIER[reqPath];
 
     // If path not in tier mapping, allow through (dynamic routes, API endpoints, etc.)
     if (!tier) {

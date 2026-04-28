@@ -239,7 +239,7 @@ img,video,iframe,table{max-width:100%}
     }
 
     function load() {
-        fetch('https://bridge-ai-os.com/api/agents/workforce').then(function(r) { return r.json(); }).then(function(data) {
+        fetch('/api/agents/workforce').then(function(r) { return r.json(); }).then(function(data) {
             var list = Array.isArray(data) ? data : (data.workforce || data.agents || data.data || []);
             updateStats(list);
             renderDepts(list);
@@ -286,7 +286,7 @@ img,video,iframe,table{max-width:100%}
         if (!name) return;
         var role = prompt('Role:') || 'Agent';
         var dept = prompt('Department:') || 'Operations';
-        fetch('https://bridge-ai-os.com/api/agents/workforce', {
+        fetch('/api/agents/workforce', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: name, role: role, department: dept, status: 'active', performance: 50 })

@@ -1,0 +1,28 @@
+# Dockerfile for SVG Skill Engine (Tier 3C)
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install dependencies (production only)
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy SVG engine
+COPY svg-engine ./
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    mkdir -p /app/logs && \
+    chown -R nodejs:nodejs /app
+
+USER nodejs
+
+EXPOSE 7070
+
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:7070/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+CMD ["node", "server.js"]

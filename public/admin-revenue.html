@@ -361,7 +361,7 @@ window.rebuildChain = async function() {
   btn.innerHTML = '<span class="spinner"></span> Rebuilding...';
   addLogEntry('Triggering proof chain rebuild...');
   try {
-    const res = await fetch('https://bridge-ai-os.com/api/treasury/reconcile', {
+    const res = await fetch('/api/treasury/reconcile', {
       method: 'POST',
       headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
     });
@@ -383,7 +383,7 @@ window.rebuildChain = async function() {
 
 async function loadChainStatus() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/metrics/revenue');
+    const r = await fetch('/api/metrics/revenue');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
     if (d.data && d.data.ok) {
@@ -409,12 +409,12 @@ async function loadChainStatus() {
         // Auto-trigger rebuild
         addLogEntry('Chain integrity broken at #' + ci.brokenAt + ' — auto-triggering rebuild...');
         try {
-          await fetch('https://bridge-ai-os.com/api/treasury/reconcile', {
+          await fetch('/api/treasury/reconcile', {
             method: 'POST',
             headers: { 'X-Admin-Token': window.__adminToken, 'Content-Type': 'application/json' }
           });
           // Re-check after rebuild
-          const r2 = await fetch('https://bridge-ai-os.com/api/metrics/revenue');
+          const r2 = await fetch('/api/metrics/revenue');
           const d2 = await r2.json();
           if (d2.data && d2.data.chainIntegrity && d2.data.chainIntegrity.valid) {
             $('k-chain-status').textContent = 'INTACT';
@@ -444,7 +444,7 @@ async function loadChainStatus() {
     // FALLBACK: try treasury/status or revenue/summary
     addLogEntry('Revenue metrics failed (' + e.message + ') — trying fallback...');
     try {
-      const fb = await fetch('https://bridge-ai-os.com/api/treasury/status').then(r => r.json()).catch(() => null);
+      const fb = await fetch('/api/treasury/status').then(r => r.json()).catch(() => null);
       if (fb && (fb.totalRevenue !== undefined || fb.balance !== undefined)) {
         $('k-earned').textContent = 'R' + fmt(fb.totalRevenue || fb.revenueMtd || 0);
         $('k-earned-detail').textContent = 'From treasury status (fallback)';
@@ -455,7 +455,7 @@ async function loadChainStatus() {
         $('badge-chain').textContent = 'Fallback';
         addLogEntry('Fallback data loaded from /api/treasury/status');
       } else {
-        const fb2 = await fetch('https://bridge-ai-os.com/api/revenue/summary').then(r => r.json()).catch(() => null);
+        const fb2 = await fetch('/api/revenue/summary').then(r => r.json()).catch(() => null);
         if (fb2) {
           $('k-earned').textContent = 'R' + fmt(fb2.revenueMtd || fb2.total || 0);
           $('k-earned-detail').textContent = 'From revenue summary (fallback)';
@@ -481,7 +481,7 @@ async function loadAll() {
 
   // Token metrics (on-chain)
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/metrics/token');
+    const r = await fetch('/api/metrics/token');
     const d = await r.json();
     if (d.data && d.data.ok) {
       const tok = d.data.token;
@@ -533,8 +533,8 @@ async function loadAll() {
 
   // Treasury (hybrid)
   try {
-    var tRes = await fetch('https://bridge-ai-os.com/api/metrics/treasury').then(function(r){return r.json();}).catch(function(){return {};});
-    var eRes = await fetch('https://bridge-ai-os.com/api/revenue-engine/status').then(function(r){return r.json();}).catch(function(){return {};});
+    var tRes = await fetch('/api/metrics/treasury').then(function(r){return r.json();}).catch(function(){return {};});
+    var eRes = await fetch('/api/revenue-engine/status').then(function(r){return r.json();}).catch(function(){return {};});
     var combined = (tRes.data && tRes.data.combined) || {};
     var fiatBase = combined.fiatZar || 0;
     var engineRev = eRes.revenueGenerated || 0;
@@ -557,7 +557,7 @@ async function loadAll() {
 
   // Revenue Engine stats
   try {
-    var engR = await fetch('https://bridge-ai-os.com/api/revenue-engine/status').then(function(r){return r.json();}).catch(function(){return {};});
+    var engR = await fetch('/api/revenue-engine/status').then(function(r){return r.json();}).catch(function(){return {};});
     if (engR.running !== undefined) {
       $('k-engine-status').textContent = engR.running ? 'RUNNING' : 'STOPPED';
       $('k-engine-status').className = 'value ' + (engR.running ? 'green' : 'red');
@@ -568,12 +568,12 @@ async function loadAll() {
       $('k-engine-dispatched').textContent = (engR.tasksAutoDispatched || 0) + ' tasks auto-dispatched';
     }
     // Withdrawable
-    var walR = await fetch('https://bridge-ai-os.com/api/wallet/balance').then(function(r){return r.json();}).catch(function(){return {};});
+    var walR = await fetch('/api/wallet/balance').then(function(r){return r.json();}).catch(function(){return {};});
     $('k-withdrawable').textContent = 'R' + fmt(walR.balance || 0);
 
     // Revenue per hour
     try {
-      var proofR = await fetch('https://bridge-ai-os.com/api/proofs/payments?limit=100').then(function(r){return r.json();}).catch(function(){return {};});
+      var proofR = await fetch('/api/proofs/payments?limit=100').then(function(r){return r.json();}).catch(function(){return {};});
       var proofs = (proofR.data && proofR.data.proofs) || proofR.proofs || [];
       var totalRev = proofs.reduce(function(s, p) { return s + parseFloat(p.amount || 0); }, 0);
       if (proofs.length >= 2) {
@@ -607,7 +607,7 @@ async function loadAll() {
 
   // ── Agent Economy (BRDG streams) ──────────────────────────────────────
   try {
-    var econR = await fetch('https://bridge-ai-os.com/api/economy/stats').then(function(r){return r.json();}).catch(function(){return {};});
+    var econR = await fetch('/api/economy/stats').then(function(r){return r.json();}).catch(function(){return {};});
     if (econR.ok !== false) {
       $('k-a2a-fees').textContent = fmt(econR.totalFeesCollected || 0) + ' BRDG';
       $('k-a2a-txcount').textContent = (econR.txCount || 0).toLocaleString() + ' agent transactions';
@@ -620,7 +620,7 @@ async function loadAll() {
     }
 
     // Task marketplace stats
-    var taskR = await fetch('https://bridge-ai-os.com/api/economy/tasks').then(function(r){return r.json();}).catch(function(){return {};});
+    var taskR = await fetch('/api/economy/tasks').then(function(r){return r.json();}).catch(function(){return {};});
     var tasks = (taskR.tasks || []);
     var settledTasks = tasks.filter(function(t){return t.status === 'SETTLED';});
     var taskVolume = settledTasks.reduce(function(s,t){return s + (parseFloat(t.escrow_amount)||0);}, 0);
@@ -628,17 +628,17 @@ async function loadAll() {
     $('k-task-count').textContent = settledTasks.length + ' tasks settled';
 
     // AP2 stats
-    var ap2R = await fetch('https://bridge-ai-os.com/api/ap2/stats').then(function(r){return r.json();}).catch(function(){return {};});
+    var ap2R = await fetch('/api/ap2/stats').then(function(r){return r.json();}).catch(function(){return {};});
     $('k-ap2-volume').textContent = fmt(ap2R.total_volume_brdg || 0) + ' BRDG';
     $('k-ap2-count').textContent = (ap2R.total_payments || 0) + ' AP2 settlements';
 
     // Compounding stats
-    var compR = await fetch('https://bridge-ai-os.com/api/compounding/stats').then(function(r){return r.json();}).catch(function(){return {};});
+    var compR = await fetch('/api/compounding/stats').then(function(r){return r.json();}).catch(function(){return {};});
     $('k-compound-cycles').textContent = (compR.cycles || 0) + ' cycles';
     $('k-compound-reserved').textContent = fmt(compR.total_reserved || 0) + ' BRDG reserved to treasury';
 
     // Revenue stream breakdown table (from proof chain by source)
-    var proofAll = await fetch('https://bridge-ai-os.com/api/proofs/payments?limit=10000').then(function(r){return r.json();}).catch(function(){return {};});
+    var proofAll = await fetch('/api/proofs/payments?limit=10000').then(function(r){return r.json();}).catch(function(){return {};});
     var allProofs = (proofAll.data && proofAll.data.proofs) || proofAll.proofs || [];
     var bySource = {};
     var grandTotal = 0;
@@ -707,7 +707,7 @@ async function loadAll() {
 
   // Plans
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/pricing');
+    const r = await fetch('/api/pricing');
     const d = await r.json();
     if (d.plans) {
       const tbody = clearTable('plans-table');
@@ -733,7 +733,7 @@ async function loadAll() {
 
   // Recent payment proofs
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/proofs/payments?limit=10');
+    const r = await fetch('/api/proofs/payments?limit=10');
     const d = await r.json();
     if (d.data && d.data.proofs) {
       const tbody = clearTable('proofs-table');

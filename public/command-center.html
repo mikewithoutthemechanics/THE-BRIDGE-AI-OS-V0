@@ -251,9 +251,9 @@ img,video,iframe,table{max-width:100%}
     async function refresh() {
       try {
         var results = await Promise.allSettled([
-          authfetch('https://bridge-ai-os.com/api/brain'),
-          authfetch('https://bridge-ai-os.com/api/treasury'),
-          authfetch('https://bridge-ai-os.com/api/neuro'),
+          authfetch('/api/brain'),
+          authfetch('/api/treasury'),
+          authfetch('/api/neuro'),
         ]);
 
         var brain    = results[0].status === 'fulfilled' ? results[0].value : {};

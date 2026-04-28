@@ -156,7 +156,7 @@ let currentState = {
 async function initSimulationWorker() {
   try {
     // Fetch authoritative time first
-    const timeResp = await fetch('https://bridge-ai-os.com/api/system/time');
+    const timeResp = await fetch('/api/system/time');
     const timeData = await timeResp.json();
 
     // Create worker with time sync
@@ -219,9 +219,9 @@ async function initSimulationWorker() {
 async function fetchEHSAData() {
   try {
     const [dashboard, services, funnel] = await Promise.all([
-      fetch('https://bridge-ai-os.com/api/ehsa/dashboard').then(r => r.json()).catch(() => ({})),
-      fetch('https://bridge-ai-os.com/api/ehsa/services').then(r => r.json()).catch(() => ({})),
-      fetch('https://bridge-ai-os.com/api/ehsa/funnel').then(r => r.json()).catch(() => ({ funnel: [] }))
+      fetch('/api/ehsa/dashboard').then(r => r.json()).catch(() => ({})),
+      fetch('/api/ehsa/services').then(r => r.json()).catch(() => ({})),
+      fetch('/api/ehsa/funnel').then(r => r.json()).catch(() => ({ funnel: [] }))
     ]);
     return { dashboard, services, funnel };
   } catch (err) {
@@ -308,7 +308,7 @@ function setupWorkerControls() {
   };
 
   document.querySelector('button[onclick="runAgents()"]').onclick = async () => {
-    await fetch('https://bridge-ai-os.com/api/ehsa/agents/run', { method: 'POST' });
+    await fetch('/api/ehsa/agents/run', { method: 'POST' });
     if (simulationWorker) {
       simulationWorker.postMessage({ type: 'trigger-intelligence' });
     }

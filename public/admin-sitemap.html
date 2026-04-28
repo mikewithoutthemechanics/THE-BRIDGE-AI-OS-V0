@@ -255,7 +255,7 @@ function render(sections) {
     if (tok) headers['Authorization'] = 'Bearer ' + tok;
   } catch (_) { /* localStorage may be blocked */ }
 
-  fetch('https://bridge-ai-os.com/api/admin/sitemap', { credentials: 'same-origin', cache: 'no-store', headers })
+  fetch('/api/admin/sitemap', { credentials: 'same-origin', cache: 'no-store', headers })
     .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
     .then(data => {
       if (!data || !data.sections || !Object.keys(data.sections).length) {

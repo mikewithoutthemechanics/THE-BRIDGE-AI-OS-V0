@@ -22,7 +22,7 @@
 <script>
 (function(){
   var token = localStorage.getItem('bridge_token');
-  fetch('https://bridge-ai-os.com/api/config/oauth').then(function(r){ return r.json(); }).then(function(cfg){
+  fetch('/api/config/oauth').then(function(r){ return r.json(); }).then(function(cfg){
     var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
     sb.auth.getSession().then(function(res){
       var hasSession = res && res.data && res.data.session;
@@ -226,7 +226,7 @@ img,video,iframe,table{max-width:100%}
       result.className = 'tour-result visible';
       result.textContent = 'Sending to ' + selectedAgent + '...';
 
-      fetch('https://bridge-ai-os.com/api/agents/' + encodeURIComponent(selectedAgent) + '/command', {
+      fetch('/api/agents/' + encodeURIComponent(selectedAgent) + '/command', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ command: cmd })

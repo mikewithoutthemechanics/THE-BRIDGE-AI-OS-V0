@@ -54,6 +54,7 @@ const SHARED_DIR = path.join(ROOT, 'shared');
 const data = require('./data-service');
 const db = require('./lib/db');
 const { requireAuth: gatewayAuth } = require('./middleware/auth');
+const { requireAdmin, requireSuperAdmin } = require('./middleware/access-control');
 let agents; try { agents = require('./lib/agents'); } catch (_) { agents = null; }
 
 // ── NeuroLink BCI Runtime ──────────────────────────────────────────────────
@@ -290,11 +291,11 @@ app.get('/api/wallet/status', (_req, res) => {
 
 // ── HEALTH ────────────────────────────────────────��──────────────────────────
 // ── Auto-Kill sidecar endpoints (alert-engine triggers + bans dashboard) ──
-app.post('/block', (req, res) => {
+app.post('/block', requireAdmin, (req, res) => {
   console.log('[AUTO-KILL] BLOCK TRIGGERED');
   res.send('ok');
 });
-app.get('/bans', async (req, res) => {
+app.get('/bans', requireAdmin, async (req, res) => {
   try {
     const { createClient } = require('@supabase/supabase-js');
     const s = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -594,9 +595,9 @@ app.get('/api/status', async (req, res) => {
 
 // ── ORCHESTRATOR PORT MAP ─────────────────────────────────────────────────────
 const ORCHESTRATORS = {
-  L1: 'http://localhost:9001',
-  L2: 'http://192.168.110.203:9001',  // L2 real LAN IP
-  L3: 'http://localhost:9003',
+  L1: process.env.L1_ORCHESTRATOR_URL || 'http://localhost:9001',
+  L2: process.env.L2_ORCHESTRATOR_URL || null,
+  L3: process.env.L3_ORCHESTRATOR_URL || 'http://localhost:9003',
 };
 
 // ── L1 / L2 / L3 PROXY ROUTES ────────────────────────────────────────────────
@@ -605,6 +606,9 @@ const ORCHESTRATORS = {
 for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
   const prefix = `/api/${layer.toLowerCase()}`;
   app.all(`${prefix}/*path`, gatewayAuth(), async (req, res) => {
+    if (!base) {
+      return res.status(503).json({ ok: false, error: `${layer} orchestrator not configured` });
+    }
     const subpath = req.path.slice(prefix.length) || '/';
     const url = `${base}${subpath}`;
     try {
@@ -784,40 +788,51 @@ async function proxyToUnified(req, res) {
     res.status(502).json({ error: 'unified-server unreachable', details: e.message });
   }
 }
-// /auth/me — AUTH DISABLED on this branch. Always returns a synthetic
-// superadmin so client-side admin gating (nav-routes.js checkAdmin,
-// portal init, invoicing ensureAuth, etc.) passes without a token.
-// Restore the JWT verification + Supabase lookup before shipping to prod.
-async function handleAuthMe(_req, res) {
-  return res.json({
-    ok: true,
-    user: {
-      id: 'system',
-      email: 'ryanpcowan@gmail.com',
-      name: 'System (auth disabled)',
-      plan: 'enterprise',
-      role: 'superadmin',
-      tier: 'super_admin',
-      funnel_stage: 'customer',
-    },
-  });
+// /auth/me — returns the authenticated user's identity from their JWT/cookie.
+// Returns 401 when no valid token is present.
+async function handleAuthMe(req, res) {
+  try {
+    const { extractUser } = require('./middleware/access-control');
+    const user = await extractUser(req);
+    if (!user) {
+      return res.status(401).json({ ok: false, error: 'Authentication required' });
+    }
+    return res.json({
+      ok: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || user.email,
+        plan: user.plan || 'free',
+        role: user.role || 'member',
+        tier: user.role || 'member',
+        funnel_stage: user.funnel_stage || 'identified',
+      },
+    });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: 'Auth check failed' });
+  }
 }
 app.get('/auth/me', handleAuthMe);
 
-// API aliases used by frontend pages (e.g. invoicing.html ensureAuth()).
-// Keep these explicit so /api/auth/* never falls through to generic /api proxy
-// paths that may return HTML from non-API upstreams.
+// API alias used by frontend pages (e.g. invoicing.html ensureAuth()).
 app.get('/api/auth/me', handleAuthMe);
 
 // Dev login endpoint used by local admin pages (e.g. /invoicing fallback auth).
 // Returns JSON token directly instead of proxying through upstream stacks that
 // may enforce bearer auth and break bootstrap flows.
 app.post('/api/auth/dev-login', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ ok: false, error: 'Not found' });
+  }
+  const expected = process.env.DEV_LOGIN_SECRET;
+  if (!expected) {
+    return res.status(503).json({ ok: false, error: 'Dev login not configured' });
+  }
   try {
     const secret = String(req.body?.secret || '');
     const address = String(req.body?.address || '').trim();
     const role = String(req.body?.role || 'admin');
-    const expected = process.env.DEV_LOGIN_SECRET || 'dev-secret-bridge-2026';
     if (!secret || secret !== expected) {
       return res.status(401).json({ ok: false, error: 'Invalid dev secret' });
     }
@@ -1777,6 +1792,8 @@ app.get('/api/treasury/status', async (_req, res) => {
   }
 });
 
+
+
 app.get('/api/treasury/ledger', async (req, res) => {
   try {
     // Return mock transaction data for dashboard
@@ -1839,6 +1856,46 @@ app.get('/api/treasury', async (_req, res) => {
     ];
     res.json({ balance, total: balance, currency: 'ZAR', buckets, ts: Date.now() });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Economy stats — served directly from gateway without auth (must be before catch-all)
+app.get('/api/economy/stats', async (_req, res) => {
+  try {
+    const ledger = require('./lib/agent-ledger');
+    const market = require('./lib/task-market');
+    const [stats, openTasks, claimedTasks] = await Promise.all([
+      ledger.getStats(),
+      market.listTasks('OPEN', 100).catch(() => []),
+      market.listTasks('CLAIMED', 100).catch(() => []),
+    ]);
+    res.json({
+      ok: true,
+      totalCirculating: stats.totalCirculating || 0,
+      totalBurned: stats.totalBurned || 0,
+      totalFeesCollected: stats.totalFeesCollected || 0,
+      agent_count: stats.agentCount || 104,
+      agentCount: stats.agentCount || 104,
+      txCount: stats.txCount || 0,
+      totalTransactions: stats.txCount || 0,
+      topEarners: stats.topEarners || [],
+      activeTasks: openTasks.length + claimedTasks.length,
+      openTasks: openTasks.length,
+      claimedTasks: claimedTasks.length,
+    });
+  } catch (e) {
+    res.json({ ok: true, agent_count: 104, agentCount: 104, txCount: 0, totalCirculating: 0, activeTasks: 0, openTasks: 0, claimedTasks: 0 });
+  }
+});
+
+// Treasury balance endpoint — reads from DB directly (must be before catch-all)
+app.get('/api/treasury/balance', async (_req, res) => {
+  try {
+    const db = require('./lib/db');
+    const balance = await db.getTreasuryBalance();
+    res.json({ ok: true, balance, currency: 'ZAR', ts: Date.now() });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 app.get('/api/wallet/balance', async (_req, res) => {
@@ -3506,7 +3563,7 @@ app.post('/api/cognitive/execute', express.json(), (req, res) => {
 
 
 // /api/admin/users — list users (superadmin only, served directly from gateway)
-app.get('/api/admin/users', async (req, res) => {
+app.get('/api/admin/users', requireSuperAdmin, async (req, res) => {
   try {
     const { supabaseAdmin: sb, isConfigured: ic } = require('./lib/supabase');
     if (!ic || !sb) return res.json({ ok: true, users: [], count: 0 });
@@ -3524,7 +3581,7 @@ app.get('/api/admin/users', async (req, res) => {
 });
 
 // /api/admin/users/:userId/tier — update user tier
-app.patch('/api/admin/users/:userId/tier', express.json(), async (req, res) => {
+app.patch('/api/admin/users/:userId/tier', requireSuperAdmin, express.json(), async (req, res) => {
   try {
     const { userId } = req.params;
     const { tier, plan } = req.body || {};
@@ -3542,7 +3599,7 @@ app.patch('/api/admin/users/:userId/tier', express.json(), async (req, res) => {
 });
 
 // /api/admin/wallet/credit — credit a user wallet (superadmin)
-app.post('/api/admin/wallet/credit', express.json(), async (req, res) => {
+app.post('/api/admin/wallet/credit', requireSuperAdmin, express.json(), async (req, res) => {
   try {
     const { user_email, amount_zar, amount_brdg, reference } = req.body || {};
     if (!user_email) return res.status(400).json({ ok: false, error: 'user_email required' });
@@ -3557,7 +3614,7 @@ app.post('/api/admin/wallet/credit', express.json(), async (req, res) => {
 });
 
 // /api/admin/plan-requests — list plan upgrade requests
-app.get('/api/admin/plan-requests', async (_req, res) => {
+app.get('/api/admin/plan-requests', requireAdmin, async (_req, res) => {
   try {
     const { supabaseAdmin: sb, isConfigured: ic } = require('./lib/supabase');
     if (!ic || !sb) return res.json({ ok: true, requests: [] });
@@ -3572,7 +3629,7 @@ app.get('/api/admin/plan-requests', async (_req, res) => {
 });
 
 // /api/admin/system-report — live system health report
-app.get('/api/admin/system-report', (_req, res) => {
+app.get('/api/admin/system-report', requireAdmin, (_req, res) => {
   const os = require('os');
   res.json({
     ok: true,
@@ -3620,18 +3677,6 @@ app.use('/api/admin', (req, res) => {
   pr.end();
 });
 
-// /api/tiers — proxy to brain (tier config endpoint)
-app.get('/api/tiers', (req, res) => {
-  const http = require('http');
-  const pr = http.request({ hostname: '127.0.0.1', port: 8000, path: '/api/tiers', method: 'GET', headers: { ...req.headers, host: '127.0.0.1:8000' } }, up => { res.writeHead(up.statusCode, up.headers); up.pipe(res); });
-  pr.on('error', () => res.json({ ok: true, tiers: [
-    { id: 'free',       name: 'Free',       price: 0,   features: ['1 app', '50 leads/mo', 'Basic dashboard'] },
-    { id: 'starter',    name: 'Starter',    price: 79,  features: ['5 apps', '1k leads/mo', 'Analytics', 'API'] },
-    { id: 'pro',        name: 'Pro',        price: 249, features: ['20 apps', '10k leads/mo', 'CRM', 'Full API', 'Automation'] },
-    { id: 'enterprise', name: 'Enterprise', price: 999, features: ['Unlimited', 'SLA', 'Custom twin', 'Dedicated support'] },
-  ]}));
-  pr.end();
-});
 
 // /api/notifications — in-app notifications for current user
 app.get('/api/notifications', async (req, res) => {
@@ -3993,6 +4038,15 @@ app.get('/', (req, res) => {
   serveWithNav(path.join(ROOT, 'ui.html'), res);
 });
 
+// ── Express error handler ─────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  console.error('[GATEWAY] Unhandled error', { route: req.originalUrl, message: err.message, status });
+  if (res.headersSent) return;
+  res.status(status).json({ ok: false, error: status < 500 ? err.message : 'Internal server error' });
+});
+
 // ── START (skipped when required by tests) ───────────────────────────────────
 // Default 0.0.0.0 so curl http://127.0.0.1:PORT works on typical Linux VPS (IPv6-only :: often rejects IPv4 loopback).
 // Override: PORT=8080 GATEWAY_LISTEN_HOST=:: node gateway.js
@@ -4018,12 +4072,4 @@ if (require.main === module) {
 // ── EXPORT (for supertest) ────────────────────────────────────────────────────
 module.exports = app;
 
-// Treasury balance endpoint
-app.get('/api/treasury/balance', async (req, res) => {
-  try {
-    const data = await fetchJSON('http://' + SYSTEM_HOST + ':3000/api/treasury/balance');
-    res.json(data);
-  } catch(e) {
-    res.json({ balance: 157500, currency: 'BRDG', mock: true });
-  }
-});
+

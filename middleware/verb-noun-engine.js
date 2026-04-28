@@ -9,7 +9,7 @@
  * enabling semantic RBAC, composable operations, and cognitive execution.
  */
 
-const { v4: uuidv4 } = require('crypto');
+const { randomUUID: uuidv4 } = require('crypto');
 
 // ═══════════════════════════════════════════════════════════════
 // CANONICAL VERB SET (SYSTEM-WIDE)
@@ -172,17 +172,20 @@ function resolveIntent(req) {
   const method = req.method.toUpperCase();
   const verb = VERB_MAP[method] || 'READ';
   
-  // Extract noun from path: /api/banks → BANK
+  // Extract noun from path: /api/banks → BANK (middleware mounted at /api so path is relative)
   const pathParts = req.path.split('/').filter(Boolean);
-  let noun = pathParts[1]?.toUpperCase();
-  
+  // pathParts[0] is the resource (banks), pathParts[1] is sub-resource
+  let noun = (pathParts[0] || '').toUpperCase();
+
   // Handle sub-resources: /api/banks/compound → BANK.COMPOUND
-  if (pathParts[2]) {
-    noun = `${noun}.${pathParts[2].toUpperCase()}`;
+  if (pathParts[1]) {
+    noun = `${noun}.${pathParts[1].toUpperCase()}`;
   }
-  
-  // Map to canonical noun
-  const canonicalNoun = Object.values(NOUNS).find(n => noun.startsWith(n)) || noun;
+
+  // Map to canonical noun (guard against empty noun)
+  const canonicalNoun = noun
+    ? (Object.values(NOUNS).find(n => noun.startsWith(n)) || noun)
+    : 'UNKNOWN';
   
   return {
     verb,

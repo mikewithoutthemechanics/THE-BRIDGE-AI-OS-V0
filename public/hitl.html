@@ -286,7 +286,7 @@ function switchTab(name, el) {
 // ── Stats ──────────────────────────────────────────────────────────────────────
 async function loadStats() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/hitl/stats', { headers: headers() });
+    const r = await fetch('/api/hitl/stats', { headers: headers() });
     const d = await r.json();
     if (!d.ok) return;
     const runs = d.runs || {};
@@ -305,7 +305,7 @@ async function loadStats() {
 // ── Approval Queue ─────────────────────────────────────────────────────────────
 async function loadQueue() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/hitl/queue', { headers: headers() });
+    const r = await fetch('/api/hitl/queue', { headers: headers() });
     const d = await r.json();
     const list = document.getElementById('queue-list');
     if (!d.ok || !d.items?.length) {
@@ -392,7 +392,7 @@ async function decide(action) {
 // ── Pipeline Runs ──────────────────────────────────────────────────────────────
 async function loadRuns() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/orch/runs', { headers: headers() });
+    const r = await fetch('/api/orch/runs', { headers: headers() });
     const d = await r.json();
     const tbody = document.getElementById('runs-body');
     if (!d.ok || !d.runs?.length) {
@@ -445,7 +445,7 @@ async function cancelRun(id) {
 // ── Contacts ───────────────────────────────────────────────────────────────────
 async function loadContacts() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/orch/contacts', { headers: headers() });
+    const r = await fetch('/api/orch/contacts', { headers: headers() });
     const d = await r.json();
     const list = document.getElementById('contacts-list');
     if (!d.ok || !d.contacts?.length) {
@@ -472,7 +472,7 @@ async function addContact() {
   const plan  = document.getElementById('new-plan').value;
   if (!email) { toast('Email required', 'error'); return; }
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/orch/contacts', {
+    const r = await fetch('/api/orch/contacts', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ email, name, plan_interest: plan }),

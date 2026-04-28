@@ -83,7 +83,7 @@ img,video,iframe,table{max-width:100%}
   </main>
 
   <script>
-    fetch('https://bridge-ai-os.com/api/ubi/status').then(r => r.json()).then(d => {
+    fetch('/api/ubi/status').then(r => r.json()).then(d => {
       document.getElementById('recipients').textContent = d.recipients || 156;
     }).catch(() => {});
   </script>

@@ -176,7 +176,7 @@ let _oauthLoading = false;
 
 (async function initSupabaseAuth() {
   try {
-    const res = await fetch('https://bridge-ai-os.com/api/config/oauth');
+    const res = await fetch('/api/config/oauth');
     if (!res.ok) throw new Error('Config endpoint unavailable');
     const cfg = await res.json();
     if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {

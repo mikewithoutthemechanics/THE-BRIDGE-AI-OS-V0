@@ -649,7 +649,7 @@ img,video,iframe,table{max-width:100%}
   var agentData = [];
 
   function loadAgents() {
-    fetch('https://bridge-ai-os.com/api/economy/balances', { headers: authHeaders() })
+    fetch('/api/economy/balances', { headers: authHeaders() })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         agentData = Array.isArray(d) ? d : (d.agents || d.balances || []);
@@ -784,7 +784,7 @@ img,video,iframe,table{max-width:100%}
     box.textContent = 'Executing...';
     box.className = 'result-box';
 
-    fetch('https://bridge-ai-os.com/api/agents/' + encodeURIComponent(agent) + '/command', {
+    fetch('/api/agents/' + encodeURIComponent(agent) + '/command', {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify({ command: cmd })
@@ -810,7 +810,7 @@ img,video,iframe,table{max-width:100%}
     box.textContent = 'Thinking...';
     box.className = 'result-box';
 
-    fetch('https://bridge-ai-os.com/api/llm/infer', {
+    fetch('/api/llm/infer', {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify({ prompt: prompt })
@@ -829,7 +829,7 @@ img,video,iframe,table{max-width:100%}
 
   // ---- Toggles ----
   function fetchLoopStats() {
-    fetch('https://bridge-ai-os.com/api/economy/loop-stats', { headers: authHeaders() })
+    fetch('/api/economy/loop-stats', { headers: authHeaders() })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         var el = document.getElementById('loopStats');
@@ -872,7 +872,7 @@ img,video,iframe,table{max-width:100%}
 
     if (!body.title) { resBox.textContent = 'ERROR: Title is required.'; return; }
 
-    fetch('https://bridge-ai-os.com/api/economy/tasks', {
+    fetch('/api/economy/tasks', {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify(body)
@@ -904,7 +904,7 @@ img,video,iframe,table{max-width:100%}
 
     if (!body.email) { resBox.textContent = 'ERROR: Email is required.'; return; }
 
-    fetch('https://bridge-ai-os.com/api/keys/create', {
+    fetch('/api/keys/create', {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify(body)
@@ -956,7 +956,7 @@ img,video,iframe,table{max-width:100%}
     if (!body.to) { resBox.textContent = 'ERROR: Recipient is required.'; return; }
     if (body.amount <= 0) { resBox.textContent = 'ERROR: Amount must be positive.'; return; }
 
-    fetch('https://bridge-ai-os.com/api/economy/transfer', {
+    fetch('/api/economy/transfer', {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify(body)
@@ -1044,7 +1044,7 @@ img,video,iframe,table{max-width:100%}
   // ---- Transaction flow ----
   window.loadTransactionFlow = function() {
     addEvent('SYSTEM', 'Loading recent transactions...');
-    fetch('https://bridge-ai-os.com/api/economy/flow', { headers: authHeaders() })
+    fetch('/api/economy/flow', { headers: authHeaders() })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         var txns = Array.isArray(d) ? d : (d.transactions || d.flow || d.recent || []);

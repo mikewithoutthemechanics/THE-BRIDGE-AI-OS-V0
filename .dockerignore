@@ -1,69 +1,79 @@
-# Dependencies — rebuilt inside image
-node_modules/
+.dockerignore
 
-# Secrets & credentials — must never enter the image layer
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+.pnp
+.pnp.js
+
+# Testing
+coverage
+.nyc_output
+*.lcov
+
+# Production
+dist
+build
+out
+
+# Misc
 .env
-.env.*
-!.env.example
-*.secure.json
-keys.json
-credentials.json
-certs/
-cloudflared/
-rotate.ps1
+.env.local
+.env.*.local
+.DS_Store
 *.pem
 *.key
+*.crt
 
-# Databases — managed via volume mounts at runtime
-*.db
-*.db-shm
-*.db-wal
-
-# Logs & audit artefacts
-logs/
+# Logs
+logs
 *.log
-unified.log
-gitleaks-report.json
-gitleaks-stderr.txt
-semgrep-report.json
-semgrep-stderr.txt
-grype-report.json
-grype-stderr.txt
-hadolint-report.json
-hadolint-stderr.txt
-npm-audit.json
-npm-audit-stderr.txt
-precommit-scan*.md
-hs_err_pid*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
 
 # Git
-.git/
+.git
 .gitignore
+.gitattributes
 
-# Dev tooling
-.vscode/
-.vercel/
-jest.setup.js
-tests/
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
 
-# Docs & planning (not needed at runtime)
+# Documentation
 *.md
-!README.md
-STANDUPS/
-SUPADASH_*/
-LOGS/
-Xlogs/
-Xpayments/
-Xscripts/
-Xcontainerx/
+docs
+README*
 
-# Deployment scripts (run from CI, not inside container)
-deploy-*.sh
-vps-fix.sh
-purge-secrets-from-git.sh
-setup-laptop*.sh
-scripts/
+# Backups
+*.bak
+*.backup
+*.tmp
+*.swp
+*-backup.*
 
-# Windows artefacts
-Thumbs.db
-wp-cli.phar
+# System
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Optional services
+overseer
+OLD_RUNTIME
+junkyard
+zombie-backups

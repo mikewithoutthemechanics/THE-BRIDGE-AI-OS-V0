@@ -667,7 +667,7 @@ img,video,iframe,table{max-width:100%}
   async function loadState() {
     let data = null;
     try {
-      const r = await fetch('https://bridge-ai-os.com/api/twin/state', { headers });
+      const r = await fetch('/api/twin/state', { headers });
       if (r.ok) data = await r.json();
     } catch (_) {}
 
@@ -827,7 +827,7 @@ img,video,iframe,table{max-width:100%}
     result.textContent = `[${selectedAgent.toUpperCase()}] Processing...\n`;
 
     try {
-      const r = await fetch('https://bridge-ai-os.com/api/twin/task', {
+      const r = await fetch('/api/twin/task', {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({ agent_name: selectedAgent, input }),
@@ -839,7 +839,7 @@ img,video,iframe,table{max-width:100%}
         const text = typeof out?.text === 'string' ? out.text : JSON.stringify(out, null, 2);
         result.textContent = `[${selectedAgent.toUpperCase()}] ✓ ${data.brdg_cost} BRDG\n\n${text}`;
         // Refresh task list
-        const ts = await fetch('https://bridge-ai-os.com/api/twin/tasks', { headers });
+        const ts = await fetch('/api/twin/tasks', { headers });
         if (ts.ok) { const { tasks } = await ts.json(); renderTasks(tasks); }
         // Bump counter
         const cur = parseInt(document.getElementById('sTasksRun').textContent) || 0;

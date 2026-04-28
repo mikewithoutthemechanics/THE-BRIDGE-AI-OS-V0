@@ -2220,7 +2220,7 @@ img,video,iframe,table{max-width:100%}
   // ── LIVE ON-CHAIN DATA ───────────────────────────────────
   (async function loadLiveData() {
     try {
-      const res = await fetch('https://bridge-ai-os.com/api/brdg/token');
+      const res = await fetch('/api/brdg/token');
       if (!res.ok) return;
       const d = await res.json();
 

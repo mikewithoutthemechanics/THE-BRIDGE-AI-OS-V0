@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Shop — Bridge AI OS</title>
 <meta name="description" content="Affiliate marketplace on Bridge AI OS — products, services, subscriptions, and referral links from every affiliate kiosk.">
-<link rel="canonical" href="https://bridge-ai-os.com/shop.html">
+<link rel="canonical" href="/shop.html">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Shop — Bridge AI OS">
 <meta property="og:description" content="Browse the full Bridge AI OS affiliate marketplace.">
@@ -114,7 +114,7 @@ let chipsRendered = false;
 
 async function loadCategories() {
   if (chipsRendered) return;
-  const r = await fetch('https://bridge-ai-os.com/api/shop/categories').catch(() => null);
+  const r = await fetch('/api/shop/categories').catch(() => null);
   if (!r || !r.ok) return;
   const d = await r.json();
   const wrap = document.getElementById('chips');
@@ -148,7 +148,7 @@ async function render() {
   if (state.q) qs.set('q', state.q);
   if (state.featured) qs.set('featured', 'true');
 
-  const r = await fetch('https://bridge-ai-os.com/api/shop/listings?' + qs.toString()).catch(() => null);
+  const r = await fetch('/api/shop/listings?' + qs.toString()).catch(() => null);
   const grid = document.getElementById('grid');
   const empty = document.getElementById('empty');
   grid.textContent = '';

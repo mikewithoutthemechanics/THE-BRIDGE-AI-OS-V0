@@ -452,7 +452,7 @@ function initLayer(layer) {
 // ===========================================================================
 async function fetchTopology() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/topology');
+    const r = await fetch('/api/topology');
     if (r.ok) {
       const d = await r.json();
       if (d.nodes && d.nodes.length) {
@@ -467,7 +467,7 @@ async function fetchTopology() {
     }
   } catch(e) { /* use defaults */ }
   try {
-    const r2 = await fetch('https://bridge-ai-os.com/api/status');
+    const r2 = await fetch('/api/status');
     if (r2.ok) {
       const st = await r2.json();
       if (st.services) {

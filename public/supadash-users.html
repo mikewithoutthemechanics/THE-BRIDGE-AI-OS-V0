@@ -86,7 +86,7 @@
 
   async function load(){
     try {
-      var r = await fetch('https://bridge-ai-os.com/api/admin/users', { headers: authHeaders(), credentials: 'include' });
+      var r = await fetch('/api/admin/users', { headers: authHeaders(), credentials: 'include' });
       if(!r.ok){
         document.getElementById('sa-users-tbody').innerHTML =
           '<tr><td colspan="7" style="color:#f66;padding:1rem;">Access denied — superadmin required. Sign in as ryanpcowan@gmail.com.</td></tr>';
@@ -143,7 +143,7 @@
 
   async function patch(id, body){
     try {
-      var r = await fetch('https://bridge-ai-os.com/api/admin/users/' + encodeURIComponent(id), {
+      var r = await fetch('/api/admin/users/' + encodeURIComponent(id), {
         method:'POST',
         headers: authHeaders({'Content-Type':'application/json'}),
         credentials:'include',

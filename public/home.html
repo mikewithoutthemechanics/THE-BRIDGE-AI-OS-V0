@@ -112,7 +112,7 @@ img,video,iframe,table{max-width:100%}
   <h2>11 LIVE DOMAINS</h2>
   <div class="domains">
     <a class="domain" href="https://ai-os.co.za">ai-os.co.za</a>
-    <a class="domain" href="https://bridge-ai-os.com">bridge-ai-os.com</a>
+    <a class="domain" href="">bridge-ai-os.com</a>
     <a class="domain" href="https://bridge.ai-os.co.za">bridge</a>
     <a class="domain" href="https://ban.ai-os.co.za">ban</a>
     <a class="domain" href="https://supac.ai-os.co.za">supac</a>
@@ -131,7 +131,7 @@ img,video,iframe,table{max-width:100%}
 </div>
 
 <script>
-fetch('https://bridge-ai-os.com/api/treasury/status').then(r=>r.json()).then(d=>{
+fetch('/api/treasury/status').then(r=>r.json()).then(d=>{
   document.getElementById('s-treasury').textContent='$'+(d.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
 }).catch(()=>{});
 </script>

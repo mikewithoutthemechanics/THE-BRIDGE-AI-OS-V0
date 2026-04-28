@@ -16,6 +16,7 @@ const BASE = {
   max_memory_restart:        '512M',
   kill_timeout:              5000,
   listen_timeout:            10000,
+  cwd:                       '/var/www/bridgeai',
 };
 
 module.exports = {
@@ -26,7 +27,7 @@ module.exports = {
       script:     'gateway.js',
       out_file:   './logs/gateway-out.log',
       error_file: './logs/gateway-error.log',
-      env: { NODE_ENV: 'production', PORT: 8082, GATEWAY_LISTEN_HOST: '127.0.0.1' },
+      env: { NODE_ENV: 'production', PORT: 8080, GATEWAY_LISTEN_HOST: '127.0.0.1' },
     },
     {
       ...BASE,
@@ -94,7 +95,7 @@ module.exports = {
       ...BASE,
       name:       'svg-engine',
       script:     'api/server.js',
-      cwd:        './svg-engine',
+      cwd:        '/var/www/bridgeai/svg-engine',
       node_args:  '--experimental-modules',
       out_file:   './logs/svg-engine-out.log',
       error_file: './logs/svg-engine-error.log',

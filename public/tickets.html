@@ -257,7 +257,7 @@ img,video,iframe,table{max-width:100%}
     btn.textContent = 'Submitting...';
 
     try {
-      var res = await fetch('https://bridge-ai-os.com/api/tickets', {
+      var res = await fetch('/api/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('bridge_token') || '') },
         credentials: 'include',
@@ -283,7 +283,7 @@ img,video,iframe,table{max-width:100%}
   async function loadTickets() {
     var container = document.getElementById('ticket-list');
     try {
-      var res = await fetch('https://bridge-ai-os.com/api/tickets', {
+      var res = await fetch('/api/tickets', {
         headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('bridge_token') || '') },
         credentials: 'include'
       });

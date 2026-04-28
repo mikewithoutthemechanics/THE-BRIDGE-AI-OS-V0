@@ -104,7 +104,7 @@ img,video,iframe,table{max-width:100%}
         }
 
         function refresh() {
-            fetch('https://bridge-ai-os.com/api/twin/lineages', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) { render((d && d.lineages) || []); }).catch(function(){
+            fetch('/api/twin/lineages', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) { render((d && d.lineages) || []); }).catch(function(){
                 document.getElementById('lineages').innerHTML = '<div class="empty">Lineage API unreachable.</div>';
             });
         }

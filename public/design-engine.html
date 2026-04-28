@@ -552,7 +552,7 @@ async function fetchToken() {
 
 async function loadVerbs() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/cognitive/verbs');
+    const r = await fetch('/api/cognitive/verbs');
     const d = await r.json();
     if (d.ok) {
       VERBS = d.groups;
@@ -563,7 +563,7 @@ async function loadVerbs() {
 
 async function loadCognitiveState() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/cognitive/state', { headers: { Authorization: 'Bearer ' + TOKEN } });
+    const r = await fetch('/api/cognitive/state', { headers: { Authorization: 'Bearer ' + TOKEN } });
     const d = await r.json();
     if (d.ok) {
       cognitiveState = d.state || {};
@@ -644,7 +644,7 @@ async function executePreviewVerb() {
   const r = document.getElementById('verb-preview-result');
   r.textContent = 'Executing...';
   try {
-    const res = await fetch('https://bridge-ai-os.com/api/cognitive/execute', {
+    const res = await fetch('/api/cognitive/execute', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
       body: JSON.stringify({ verb: selectedVerb.name, input })
     });
@@ -735,7 +735,7 @@ async function applyBrandToken(verbName) {
   const glow = document.getElementById('tok-glow').value;
   const input = { primary, secondary, accent, bg, glow: parseInt(glow), c1: primary, c2: secondary, dir: 135 };
   try {
-    const res = await fetch('https://bridge-ai-os.com/api/cognitive/execute', {
+    const res = await fetch('/api/cognitive/execute', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
       body: JSON.stringify({ verb: verbName, input })
     });
@@ -763,7 +763,7 @@ async function playBrandMotion(verb) {
     GLASS: () => { preview.style.backdropFilter='blur(16px)'; preview.style.background='rgba(255,255,255,0.05)'; },
   };
   if (motions[verb]) motions[verb]();
-  await fetch('https://bridge-ai-os.com/api/cognitive/execute', {
+  await fetch('/api/cognitive/execute', {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
     body: JSON.stringify({ verb, input: { target: 'brand-preview' } })
   });
@@ -809,7 +809,7 @@ async function applyCinematic(verb) {
   inner.style.animation = animMap[verb] || 'fadeIn 0.4s ease';
   setTimeout(() => { inner.style.animation = ''; }, 1600);
   try {
-    const res = await fetch('https://bridge-ai-os.com/api/cognitive/execute', {
+    const res = await fetch('/api/cognitive/execute', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
       body: JSON.stringify({ verb, input: { scene: 'menu', duration: 600 } })
     });
@@ -848,7 +848,7 @@ async function runNeuroVerb(verb) {
   const t0 = Date.now();
   document.getElementById('neuro-status').textContent = 'Running ' + verb + '...';
   try {
-    const res = await fetch('https://bridge-ai-os.com/api/cognitive/execute', {
+    const res = await fetch('/api/cognitive/execute', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
       body: JSON.stringify({ verb, input: { profile: cognitiveState, rules: ['adapt to cognitive load'] } })
     });
@@ -950,7 +950,7 @@ async function executeVerb() {
   document.getElementById('exec-status').textContent = 'Running...';
   document.getElementById('exec-result').textContent = '...';
   try {
-    const res = await fetch('https://bridge-ai-os.com/api/cognitive/execute', {
+    const res = await fetch('/api/cognitive/execute', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
       body: JSON.stringify({ verb, input })
     });
