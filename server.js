@@ -1591,11 +1591,11 @@ creditsService.init(economyDb);
 
 // ================= FOUNDER TAX CONTROL =================
 
-app.get('/api/founder/tax', (req, res) => {
+app.get('/api/founder/tax', requireAdmin, (req, res) => {
   res.json({ ok: true, taxRate: founderTaxRate, note: 'Additional founder extraction before standard split' });
 });
 
-app.post('/api/founder/tax', (req, res) => {
+app.post('/api/founder/tax', requireAdmin, (req, res) => {
   const { rate } = req.body;
   const r = parseFloat(rate);
   if (isNaN(r) || r < 0 || r > 20) return res.status(400).json({ error: 'Rate must be 0-20%' });
@@ -1826,41 +1826,8 @@ function _ensureUserEconomy(userId, email) {
   return _ecoUsers.get(email);
 }
 
-// POST /api/auth/login — issue JWT, auto-create avatar + wallet
-// Public endpoint (listed in publicEndpoints above).
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email } = req.body || {};
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return res.status(400).json({ error: 'Valid email required' });
-    }
-    const normalEmail = email.toLowerCase().trim();
-    const secret = process.env.JWT_SECRET;
-    if (!secret) return res.status(500).json({ error: 'Authentication service unavailable' });
-
-    // Re-use existing user record; only create a new ID for genuinely new users
-    const existingUser = _ecoUsers.get(normalEmail);
-    const userId = existingUser ? existingUser.id : _nextId('u');
-    const ecoUser = _ensureUserEconomy(userId, normalEmail);
-
-    const payload = {
-      sub: ecoUser.id,
-      email: normalEmail,
-      role: isSuperUser(normalEmail) ? 'superadmin' : 'member',
-    };
-    const token = jwt.sign(payload, secret, { expiresIn: '7d' });
-
-    return res.json({
-      token,
-      email: normalEmail,
-      userId: ecoUser.id,
-      avatarId: ecoUser.avatarId,
-      walletId: ecoUser.walletId,
-    });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
+// POST /api/auth/login — removed: canonical login is handled by auth.js (port 5001).
+// Keeping this comment to document the gap; the gateway proxies /api/auth/login to auth.js.
 
 // GET /api/me — return user, avatar, wallet, agents (requires auth)
 app.get('/api/me', async (req, res) => {
@@ -3310,6 +3277,16 @@ app.get('/api/cognitive/verbs', async (req, res) => {
     status: 'active',
     engine: 'cognitive-bridge-v1'
   });
+});
+
+// ── Express error handler ─────────────────────────────────────────────────────
+// Must be registered with 4 parameters so Express recognises it as an error handler.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  console.error('[SERVER] Unhandled error', { route: req.originalUrl, message: err.message, status });
+  if (res.headersSent) return;
+  res.status(status).json({ ok: false, error: status < 500 ? err.message : 'Internal server error' });
 });
 
 const PORT = process.env.PORT || 3000;

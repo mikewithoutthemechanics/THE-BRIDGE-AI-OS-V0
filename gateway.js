@@ -54,6 +54,7 @@ const SHARED_DIR = path.join(ROOT, 'shared');
 const data = require('./data-service');
 const db = require('./lib/db');
 const { requireAuth: gatewayAuth } = require('./middleware/auth');
+const { requireAdmin, requireSuperAdmin } = require('./middleware/access-control');
 let agents; try { agents = require('./lib/agents'); } catch (_) { agents = null; }
 
 // ── NeuroLink BCI Runtime ──────────────────────────────────────────────────
@@ -290,11 +291,11 @@ app.get('/api/wallet/status', (_req, res) => {
 
 // ── HEALTH ────────────────────────────────────────��──────────────────────────
 // ── Auto-Kill sidecar endpoints (alert-engine triggers + bans dashboard) ──
-app.post('/block', (req, res) => {
+app.post('/block', requireAdmin, (req, res) => {
   console.log('[AUTO-KILL] BLOCK TRIGGERED');
   res.send('ok');
 });
-app.get('/bans', async (req, res) => {
+app.get('/bans', requireAdmin, async (req, res) => {
   try {
     const { createClient } = require('@supabase/supabase-js');
     const s = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -594,9 +595,9 @@ app.get('/api/status', async (req, res) => {
 
 // ── ORCHESTRATOR PORT MAP ─────────────────────────────────────────────────────
 const ORCHESTRATORS = {
-  L1: 'http://localhost:9001',
-  L2: 'http://192.168.110.203:9001',  // L2 real LAN IP
-  L3: 'http://localhost:9003',
+  L1: process.env.L1_ORCHESTRATOR_URL || 'http://localhost:9001',
+  L2: process.env.L2_ORCHESTRATOR_URL || null,
+  L3: process.env.L3_ORCHESTRATOR_URL || 'http://localhost:9003',
 };
 
 // ── L1 / L2 / L3 PROXY ROUTES ────────────────────────────────────────────────
@@ -605,6 +606,9 @@ const ORCHESTRATORS = {
 for (const [layer, base] of Object.entries(ORCHESTRATORS)) {
   const prefix = `/api/${layer.toLowerCase()}`;
   app.all(`${prefix}/*path`, gatewayAuth(), async (req, res) => {
+    if (!base) {
+      return res.status(503).json({ ok: false, error: `${layer} orchestrator not configured` });
+    }
     const subpath = req.path.slice(prefix.length) || '/';
     const url = `${base}${subpath}`;
     try {
@@ -784,40 +788,51 @@ async function proxyToUnified(req, res) {
     res.status(502).json({ error: 'unified-server unreachable', details: e.message });
   }
 }
-// /auth/me — AUTH DISABLED on this branch. Always returns a synthetic
-// superadmin so client-side admin gating (nav-routes.js checkAdmin,
-// portal init, invoicing ensureAuth, etc.) passes without a token.
-// Restore the JWT verification + Supabase lookup before shipping to prod.
-async function handleAuthMe(_req, res) {
-  return res.json({
-    ok: true,
-    user: {
-      id: 'system',
-      email: 'ryanpcowan@gmail.com',
-      name: 'System (auth disabled)',
-      plan: 'enterprise',
-      role: 'superadmin',
-      tier: 'super_admin',
-      funnel_stage: 'customer',
-    },
-  });
+// /auth/me — returns the authenticated user's identity from their JWT/cookie.
+// Returns 401 when no valid token is present.
+async function handleAuthMe(req, res) {
+  try {
+    const { extractUser } = require('./middleware/access-control');
+    const user = await extractUser(req);
+    if (!user) {
+      return res.status(401).json({ ok: false, error: 'Authentication required' });
+    }
+    return res.json({
+      ok: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || user.email,
+        plan: user.plan || 'free',
+        role: user.role || 'member',
+        tier: user.role || 'member',
+        funnel_stage: user.funnel_stage || 'identified',
+      },
+    });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: 'Auth check failed' });
+  }
 }
 app.get('/auth/me', handleAuthMe);
 
-// API aliases used by frontend pages (e.g. invoicing.html ensureAuth()).
-// Keep these explicit so /api/auth/* never falls through to generic /api proxy
-// paths that may return HTML from non-API upstreams.
+// API alias used by frontend pages (e.g. invoicing.html ensureAuth()).
 app.get('/api/auth/me', handleAuthMe);
 
 // Dev login endpoint used by local admin pages (e.g. /invoicing fallback auth).
 // Returns JSON token directly instead of proxying through upstream stacks that
 // may enforce bearer auth and break bootstrap flows.
 app.post('/api/auth/dev-login', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ ok: false, error: 'Not found' });
+  }
+  const expected = process.env.DEV_LOGIN_SECRET;
+  if (!expected) {
+    return res.status(503).json({ ok: false, error: 'Dev login not configured' });
+  }
   try {
     const secret = String(req.body?.secret || '');
     const address = String(req.body?.address || '').trim();
     const role = String(req.body?.role || 'admin');
-    const expected = process.env.DEV_LOGIN_SECRET || 'dev-secret-bridge-2026';
     if (!secret || secret !== expected) {
       return res.status(401).json({ ok: false, error: 'Invalid dev secret' });
     }
@@ -3548,7 +3563,7 @@ app.post('/api/cognitive/execute', express.json(), (req, res) => {
 
 
 // /api/admin/users — list users (superadmin only, served directly from gateway)
-app.get('/api/admin/users', async (req, res) => {
+app.get('/api/admin/users', requireSuperAdmin, async (req, res) => {
   try {
     const { supabaseAdmin: sb, isConfigured: ic } = require('./lib/supabase');
     if (!ic || !sb) return res.json({ ok: true, users: [], count: 0 });
@@ -3566,7 +3581,7 @@ app.get('/api/admin/users', async (req, res) => {
 });
 
 // /api/admin/users/:userId/tier — update user tier
-app.patch('/api/admin/users/:userId/tier', express.json(), async (req, res) => {
+app.patch('/api/admin/users/:userId/tier', requireSuperAdmin, express.json(), async (req, res) => {
   try {
     const { userId } = req.params;
     const { tier, plan } = req.body || {};
@@ -3584,7 +3599,7 @@ app.patch('/api/admin/users/:userId/tier', express.json(), async (req, res) => {
 });
 
 // /api/admin/wallet/credit — credit a user wallet (superadmin)
-app.post('/api/admin/wallet/credit', express.json(), async (req, res) => {
+app.post('/api/admin/wallet/credit', requireSuperAdmin, express.json(), async (req, res) => {
   try {
     const { user_email, amount_zar, amount_brdg, reference } = req.body || {};
     if (!user_email) return res.status(400).json({ ok: false, error: 'user_email required' });
@@ -3599,7 +3614,7 @@ app.post('/api/admin/wallet/credit', express.json(), async (req, res) => {
 });
 
 // /api/admin/plan-requests — list plan upgrade requests
-app.get('/api/admin/plan-requests', async (_req, res) => {
+app.get('/api/admin/plan-requests', requireAdmin, async (_req, res) => {
   try {
     const { supabaseAdmin: sb, isConfigured: ic } = require('./lib/supabase');
     if (!ic || !sb) return res.json({ ok: true, requests: [] });
@@ -3614,7 +3629,7 @@ app.get('/api/admin/plan-requests', async (_req, res) => {
 });
 
 // /api/admin/system-report — live system health report
-app.get('/api/admin/system-report', (_req, res) => {
+app.get('/api/admin/system-report', requireAdmin, (_req, res) => {
   const os = require('os');
   res.json({
     ok: true,
@@ -4021,6 +4036,15 @@ app.get('/', (req, res) => {
     return serveWithNav(path.join(XPUBLIC, subPage), res);
   }
   serveWithNav(path.join(ROOT, 'ui.html'), res);
+});
+
+// ── Express error handler ─────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  console.error('[GATEWAY] Unhandled error', { route: req.originalUrl, message: err.message, status });
+  if (res.headersSent) return;
+  res.status(status).json({ ok: false, error: status < 500 ? err.message : 'Internal server error' });
 });
 
 // ── START (skipped when required by tests) ───────────────────────────────────
