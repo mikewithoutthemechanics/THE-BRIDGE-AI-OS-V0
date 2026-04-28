@@ -112,7 +112,14 @@
       "Read(//e/UnifiedProjects/taurus/tests//**)",
       "Bash(git -C /e/UnifiedProjects log --oneline -3)",
       "Read(//e/UnifiedProjects/.git/**)",
-      "Bash(git -C /e/UnifiedProjects add -A)"
+      "Bash(git -C /e/UnifiedProjects add -A)",
+      "Read(//e/UnifiedProjects/contracts//**)",
+      "Read(//e/UnifiedProjects/contracts/solidity//**)",
+      "Read(//e/UnifiedProjects/**)",
+      "Read(//e/UnifiedProjects/scripts//**)",
+      "Bash(awk '$1 > 1 {print}')",
+      "Bash([ ! -f \"/c/aoe-unified-final-main/middleware/$mw.js\" ])",
+      "Bash(xargs -I{} basename {})"
     ],
     "additionalDirectories": [
       "\\tmp",
