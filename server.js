@@ -1571,8 +1571,8 @@ creditsService.init(economyDb);
     } catch(e) { res.json({ ok: true, total: 0, month: 0 }); }
   });
 
-// Economy intelligence
-  app.get('/api/economy/intelligence', [validate.economyIntelligence], async (req, res) => {
+// Economy intelligence — admin-only: exposes revenue totals, splits, and tx counts
+  app.get('/api/economy/intelligence', requireAdmin, [validate.economyIntelligence], async (req, res) => {
     try {
       const revenue = await economyDb.query("SELECT COALESCE(SUM(amount),0) as total FROM payments_received");
       const splits = await economyDb.query("SELECT bucket, COALESCE(SUM(amount),0) as total FROM revenue_splits GROUP BY bucket");
@@ -2750,7 +2750,7 @@ console.log('[CONTINUITY] Twin supervisor + Bank ledger routes mounted');
 const autoLoop = require('./lib/auto-task-loop');
 autoLoop.startAutoLoop();
 app.get('/api/economy/loop-stats', (_req, res) => res.json({ ok: true, ...autoLoop.getLoopStats() }));
-app.post('/api/economy/run-cycle', async (_req, res) => {
+app.post('/api/economy/run-cycle', requireAdmin, async (_req, res) => {
   try {
     const generated = await autoLoop.generateTasks();
     const claimed = await autoLoop.claimTasks();

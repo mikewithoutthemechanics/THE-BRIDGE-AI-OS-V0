@@ -125,8 +125,8 @@ const POLICY = {
     ANALYZE: 'ADMIN'
   },
   ECONOMY: {
-    READ: 'ADMIN',
-    WRITE: 'ADMIN',
+    READ: 'CLIENT',
+    WRITE: 'CLIENT',
     EXECUTE: 'ADMIN',
     ANALYZE: 'ADMIN'
   },
