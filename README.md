@@ -388,6 +388,15 @@ await fetch('/api/a2a/broadcast', {
 - **svg.bridge-ai-os.com** — SVG Skill Engine UI
 - *+ 20 more sub-domains active*
 
+## 🖥️ VPS — static frontend (Vite + nginx)
+
+The repo includes **`web/`** (Vite), **`docker-compose.vps.yml`**, **`Dockerfile.frontend`**, **`docker/vps/`** (minimal `bridge-api` — separate from the root `Dockerfile` / brain stack).
+
+- **Build UI:** `npm run frontend:build`
+- **Deploy:** `docker compose -f docker-compose.vps.yml up -d --build` (optional `VPS_HTTP_PORT` in `.env`)
+
+Full guide: **[docs/VPS_DEPLOYMENT.md](docs/VPS_DEPLOYMENT.md)**
+
 ## 📊 Live Stats
 
 [![GitHub Stats](https://github-readme-stats.vercel.app/api?username=bridgeaios&show_icons=true&theme=dark)](https://github.com/bridgeaios)

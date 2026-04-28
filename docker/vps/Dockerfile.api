@@ -1,0 +1,20 @@
+# Minimal Node API for docker-compose.vps.yml (does not replace repo root Dockerfile)
+FROM node:20-alpine
+
+RUN apk add --no-cache wget
+
+WORKDIR /app
+
+COPY launch.js ./
+
+ENV NODE_ENV=production \
+    PORT=3000
+
+USER node
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget -q -O- http://127.0.0.1:3000/health || exit 1
+
+CMD ["node", "launch.js"]

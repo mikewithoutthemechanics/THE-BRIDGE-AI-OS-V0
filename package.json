@@ -44,7 +44,13 @@
     "test:visual": "npx playwright test tests/visual-regression.spec.js",
     "test:animation": "npx playwright test tests/animation-validation.spec.js",
     "test:ui": "npm run test:visual && npm run test:animation",
-    "ci:pr-check": "npm run pr:validate && npm run test:ui"
+    "ci:pr-check": "npm run pr:validate && npm run test:ui",
+    "frontend:install": "npm install --prefix web",
+    "frontend:build": "npm run build --prefix web",
+    "frontend:dev": "npm run dev --prefix web",
+    "vps:compose:config": "docker compose -f docker-compose.vps.yml config",
+    "vps:up": "docker compose -f docker-compose.vps.yml up -d --build",
+    "vps:down": "docker compose -f docker-compose.vps.yml down"
   },
   "keywords": [
     "topology",

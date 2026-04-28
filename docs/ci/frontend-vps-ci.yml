@@ -1,0 +1,43 @@
+# Copy to .github/workflows/frontend-vps-ci.yml — Git PAT must include `workflow` scope to push workflow files via HTTPS.
+name: Frontend build & VPS compose
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "web/**"
+      - "nginx/**"
+      - "docker/**"
+      - "Dockerfile.frontend"
+      - "docker-compose.vps.yml"
+      - ".github/workflows/frontend-vps-ci.yml"
+  pull_request:
+    paths:
+      - "web/**"
+      - "nginx/**"
+      - "docker/**"
+      - "Dockerfile.frontend"
+      - "docker-compose.vps.yml"
+      - ".github/workflows/frontend-vps-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install & build web
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Validate VPS compose file
+        run: docker compose -f docker-compose.vps.yml config

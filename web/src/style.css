@@ -1,0 +1,131 @@
+:root {
+  color-scheme: dark light;
+  --bg: #0c0f14;
+  --fg: #e8eaf0;
+  --muted: #8b929e;
+  --accent: #3b82f6;
+  --card: #151a22;
+  --radius: 12px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(1200px circle at 20% -10%, #1e293b 0%, transparent 55%), var(--bg);
+  color: var(--fg);
+}
+
+.hdr {
+  padding: 2.5rem 1.5rem 1rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.logo {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sub {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.card {
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.35rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.facts {
+  margin: 1rem 0 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.95rem;
+}
+
+.facts dt {
+  color: var(--muted);
+}
+
+.facts code {
+  font-size: 0.84em;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.links {
+  margin: 0;
+  padding-left: 1.2rem;
+  line-height: 1.7;
+}
+
+.links a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+.pill {
+  display: inline-block;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pill.ok {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.pill.bad {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.ft {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 2.5rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.ft a {
+  color: var(--accent);
+}
