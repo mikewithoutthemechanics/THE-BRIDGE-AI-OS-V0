@@ -3633,18 +3633,6 @@ app.use('/api/admin', (req, res) => {
   pr.end();
 });
 
-// /api/tiers — proxy to brain (tier config endpoint)
-app.get('/api/tiers', (req, res) => {
-  const http = require('http');
-  const pr = http.request({ hostname: '127.0.0.1', port: 8000, path: '/api/tiers', method: 'GET', headers: { ...req.headers, host: '127.0.0.1:8000' } }, up => { res.writeHead(up.statusCode, up.headers); up.pipe(res); });
-  pr.on('error', () => res.json({ ok: true, tiers: [
-    { id: 'free',       name: 'Free',       price: 0,   features: ['1 app', '50 leads/mo', 'Basic dashboard'] },
-    { id: 'starter',    name: 'Starter',    price: 79,  features: ['5 apps', '1k leads/mo', 'Analytics', 'API'] },
-    { id: 'pro',        name: 'Pro',        price: 249, features: ['20 apps', '10k leads/mo', 'CRM', 'Full API', 'Automation'] },
-    { id: 'enterprise', name: 'Enterprise', price: 999, features: ['Unlimited', 'SLA', 'Custom twin', 'Dedicated support'] },
-  ]}));
-  pr.end();
-});
 
 // /api/notifications — in-app notifications for current user
 app.get('/api/notifications', async (req, res) => {

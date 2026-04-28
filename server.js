@@ -1421,18 +1421,6 @@ app.get('/api/treasury', [validate.treasury], async (req, res) => {
     const recent = await economyDb.query('SELECT * FROM treasury_ledger ORDER BY timestamp DESC LIMIT 20');
     const total = buckets.rows.reduce((sum, b) => sum + parseFloat(b.balance), 0);
     res.json({ total, buckets: buckets.rows, recent: recent.rows });
-// Treasury balance endpoint (alias)
-app.get('/api/treasury/balance', async (req, res) => {
-  try {
-    const buckets = await economyDb.query('SELECT name, balance, percentage FROM treasury_buckets ORDER BY percentage DESC');
-    const total = buckets.rows.reduce((sum, b) => sum + parseFloat(b.balance), 0);
-    res.json({ balance: total, currency: 'BRDG', buckets: buckets.rows });
-  } catch (err) {
-    res.json({ balance: 157500, currency: 'BRDG', mock: true });
-  }
-});
-
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -2723,6 +2711,24 @@ const shortRoutes = {
   '/auth-callback': '/auth-callback.html',
   '/tvm': '/tvm.html',
   '/gateway': '/gateway.html',
+  // Pages added to nav-routes.js
+  '/twin-create': '/twin-create.html',
+  '/twin-search': '/twin-search.html',
+  '/ai-agents': '/ai-agents.html',
+  '/agent-command': '/agent-command.html',
+  '/system-dashboard': '/system-dashboard.html',
+  '/cognitive-os': '/cognitive-os.html',
+  '/design-engine': '/design-engine.html',
+  '/orchestra': '/orchestra.html',
+  '/automation-hub': '/automation-hub.html',
+  '/wealth-engine': '/wealth-engine.html',
+  '/portfolio': '/portfolio.html',
+  '/contact-sales': '/contact-sales.html',
+  '/api-developers': '/api-developers.html',
+  '/supadash-ai': '/supadash-ai.html',
+  '/supadash-report': '/supadash-report.html',
+  '/supadash-settings': '/supadash-settings.html',
+  '/supadash-users': '/supadash-users.html',
 };
 Object.entries(shortRoutes).forEach(([short, target]) => {
   app.get(short, (req, res) => res.redirect(target));
@@ -2739,8 +2745,6 @@ app.get('/shop', (_req, res) =>
 app.get('/affiliate/dashboard', (_req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'affiliate-portal', 'dashboard.html')));
 
-// TVM routes registered earlier, before brain catch-all
-app.get('/api/tvm/recommendations/all', (req, res) => res.json(tvm.RECOMMENDATIONS));
 
 // ================= ECONOMY ENGINE (agent balances, tasks, auto-loop) =================
 const { registerEconomyRoutes } = require('./lib/economy-routes');
