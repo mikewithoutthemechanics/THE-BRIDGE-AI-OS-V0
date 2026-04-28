@@ -107,6 +107,20 @@ module.exports = {
     },
     {
       ...BASE,
+      name:                'overseer',
+      script:              'overseer/overseer.py',
+      interpreter:       'python3',
+      exec_mode:           'fork',
+      max_memory_restart:  '256M',
+      out_file:            './logs/overseer-out.log',
+      error_file:          './logs/overseer-error.log',
+      env: {
+        NODE_ENV:        'production',
+        PYTHONUNBUFFERED: '1',
+      },
+    },
+    {
+      ...BASE,
       name:               'admin-api',
       script:             'services/admin-api/index.js',
       max_memory_restart: '128M',

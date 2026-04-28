@@ -76,14 +76,19 @@ async function main() {
   }
 
   const pm2Cmd = getPm2Command();
+  // Same app names as ecosystem.config.js apps[] — keep in sync when adding processes
   const managedApps = [
     'bridge-gateway',
     'unified-server',
     'super-brain',
     'auth-service',
     'terminal-proxy',
+    'god-mode-topology',
     'god-mode-system',
+    'ban-engine',
     'svg-engine',
+    'overseer',
+    'admin-api',
   ];
   if (pm2Cmd) {
     for (const app of managedApps) {
