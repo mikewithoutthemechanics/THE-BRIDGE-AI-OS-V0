@@ -370,8 +370,18 @@ img,video,iframe,table{max-width:100%}
       }
 
       // --- Fetch helpers ---
+      function getToken() {
+        return localStorage.getItem('bridge_token') ||
+          (document.cookie.match(/(?:^|; )access_token=([^;]*)/) || [])[1];
+      }
+
       function fetchJSON(url) {
-        return fetch(url).then(function (res) {
+        var headers = {};
+        var token = getToken();
+        if (token) {
+          headers['Authorization'] = 'Bearer ' + token;
+        }
+        return fetch(url, { headers: headers }).then(function (res) {
           if (!res.ok) throw new Error('HTTP ' + res.status);
           return res.json();
         });
