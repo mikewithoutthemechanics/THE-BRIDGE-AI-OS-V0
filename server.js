@@ -1941,7 +1941,7 @@ app.post('/api/pay', async (req, res) => {
 // ── Topic Vector Matrix (TVM) ───────────const tvm = require('./lib/tvm');
 app.get('/api/tvm', [validate.tvm], (req, res) => res.json(tvm.getMatrix()));
 app.get('/api/tvm/summary', [validate.tvmSummary], (req, res) => res.json(tvm.getSummary()));
-app.get('/api/tvm/recommendations/all', [validate.tvmRecommendations], (req, res) => res.json(tvm.RECOMMENDATIONS));
+app.get('/api/tvm/recommendations/all', [validate.tvmRecommendations], (req, res) => res.json(tvm.RECOMMENDATION_LIB));
 app.get('/api/tvm/:topic', [validate.tvmTopic], (req, res) => {
   const row = tvm.getRow(req.params.topic);
   if (!row) return res.status(404).json({ error: 'topic not found' });
