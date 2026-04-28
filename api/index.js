@@ -4363,29 +4363,32 @@ module.exports = async (req, res) => {
     if (!to || !/^0x[a-fA-F0-9]{40}$/.test(to)) return json(res, { ok: false, error: 'Invalid destination address' }, 400);
     const numAmount = parseFloat(amount);
     if (!amount || isNaN(numAmount) || numAmount <= 0) return json(res, { ok: false, error: 'Invalid amount' }, 400);
-    // Log the withdrawal
-    const entry = { id: Date.now().toString(36), to, amount: numAmount, rail: rail || 'brdg', memo: memo || '', admin: 'admin', ts: ts() };
-    try {
-      if (supabaseConfigured()) {
-        await supabase.from('admin_withdrawals').insert(entry);
-      }
-    } catch (e) { console.warn('[AdminWithdraw] DB log error:', e.message); }
-    // Attempt on-chain transfer
-    let txHash = null;
-    try {
-      if (rail === 'eth') {
-        const ethTreasury = require('../lib/eth-treasury');
-        const result = await ethTreasury.withdraw(to, String(amount));
-        txHash = result.tx_hash || result.txHash;
-      } else {
-        const brdgChain = require('../lib/brdg-chain');
-        const result = await brdgChain.transferBRDG(to, String(amount));
-        txHash = result.tx_hash || result.txHash;
-      }
-    } catch (e) {
-      return json(res, { ok: false, error: 'On-chain transfer failed: ' + e.message }, 500);
+    
+    // Use treasury-withdraw engine for all rails (supports eth, brdg, brdg_to_eth)
+    const withdrawEngine = require('../lib/treasury-withdraw');
+    const treasury = await withdrawEngine.getTreasuryState();
+    
+    const result = await withdrawEngine.executeWithdrawal({
+      treasuryBalance: treasury.available,
+      to: to,
+      amount: numAmount,
+      rail: rail || 'brdg',
+      memo: memo || `Admin withdrawal via ${rail || 'brdg'}`,
+    });
+    
+    if (!result.ok) {
+      return json(res, { ok: false, error: result.error || 'Withdrawal failed' }, 400);
     }
-    return json(res, { ok: true, tx_hash: txHash, amount: numAmount, to, rail: rail || 'brdg' });
+    
+    return json(res, { 
+      ok: true, 
+      tx_hash: result.tx_hash, 
+      amount: numAmount, 
+      to, 
+      rail: rail || 'brdg',
+      pipeline: result.pipeline,
+      eth_out: result.pipeline?.find(p => p.eth_out)?.eth_out,
+    });
   }
 
   // ── /api/admin/stats — aggregate admin dashboard stats ──
@@ -4462,6 +4465,90 @@ module.exports = async (req, res) => {
       }
     } catch (e) { console.warn('[AdminWithdraw] Audit fetch error:', e.message); }
     return json(res, { ok: true, log });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SWAP / DEX API — BRDG → ETH conversion endpoints
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // GET /api/swap/quote — Get BRDG→ETH conversion quote
+  if (p === '/api/swap/quote' && req.method === 'GET') {
+    try {
+      const { amount } = query;
+      if (!amount || isNaN(parseFloat(amount))) {
+        return json(res, { ok: false, error: 'amount query param required' }, 400);
+      }
+      const brdgSwap = require('../lib/brdg-swap');
+      const quote = await brdgSwap.getSwapQuote(amount);
+      return json(res, { ok: true, quote });
+    } catch (e) {
+      console.error('[SwapAPI] Quote error:', e.message);
+      return json(res, { ok: false, error: e.message }, 500);
+    }
+  }
+
+  // GET /api/swap/pool — Check pool liquidity
+  if (p === '/api/swap/pool' && req.method === 'GET') {
+    try {
+      const brdgSwap = require('../lib/brdg-swap');
+      const status = await brdgSwap.checkPoolLiquidity();
+      return json(res, { ok: true, ...status });
+    } catch (e) {
+      console.error('[SwapAPI] Pool check error:', e.message);
+      return json(res, { ok: false, error: e.message }, 500);
+    }
+  }
+
+  // POST /api/swap/brdg-to-eth — Execute BRDG→ETH swap (user or admin)
+  if (p === '/api/swap/brdg-to-eth' && req.method === 'POST') {
+    try {
+      const { to, amount, memo } = body;
+      if (!to || !/^0x[a-fA-F0-9]{40}$/.test(to)) {
+        return json(res, { ok: false, error: 'Valid to address required (0x...)' }, 400);
+      }
+      const numAmount = parseFloat(amount);
+      if (!amount || isNaN(numAmount) || numAmount <= 0) {
+        return json(res, { ok: false, error: 'amount must be positive' }, 400);
+      }
+      
+      const brdgSwap = require('../lib/brdg-swap');
+      const withdrawEngine = require('../lib/treasury-withdraw');
+      
+      // Check pool
+      const poolStatus = await brdgSwap.checkPoolLiquidity();
+      if (!poolStatus.exists) {
+        return json(res, { ok: false, error: 'BRDG/ETH pool has no liquidity', pool: poolStatus }, 503);
+      }
+      
+      // Get quote
+      const quote = await brdgSwap.getSwapQuote(amount);
+      
+      // Execute via treasury engine
+      const treasury = await withdrawEngine.getTreasuryState();
+      const result = await withdrawEngine.executeWithdrawal({
+        treasuryBalance: treasury.available,
+        to: to,
+        amount: numAmount,
+        rail: 'brdg_to_eth',
+        memo: memo || `Swap to ETH for ${to.slice(0, 8)}...`,
+      });
+      
+      if (!result.ok) {
+        return json(res, { ok: false, error: result.error || 'Swap failed' }, 400);
+      }
+      
+      return json(res, {
+        ok: true,
+        tx_hash: result.tx_hash,
+        brdg_amount: numAmount,
+        eth_estimate: quote.ethOut,
+        to: to,
+        pipeline: result.pipeline,
+      });
+    } catch (e) {
+      console.error('[SwapAPI] Swap error:', e.message);
+      return json(res, { ok: false, error: e.message }, 500);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

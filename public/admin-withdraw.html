@@ -256,9 +256,10 @@ document.querySelectorAll('nav a').forEach(a => {
     <div class="section-title">2. Withdraw Details</div>
     <div class="form-group">
         <label for="rail">Rail</label>
-        <select id="rail" aria-label="Select withdrawal rail">
+        <select id="rail" aria-label="Select withdrawal rail" onchange="updateRailHint()">
             <option value="eth">ETH (Linea Mainnet)</option>
             <option value="brdg">BRDG Token</option>
+            <option value="brdg_to_eth">BRDG → ETH (Swap via SyncSwap)</option>
         </select>
     </div>
     <div class="form-group">
@@ -355,10 +356,17 @@ async function loadBalances() {
     } catch (e) { /* silent */ }
 }
 
-$('rail').addEventListener('change', () => {
-    $('amountHint').textContent = $('rail').value === 'eth'
-        ? 'ETH amount to withdraw' : 'BRDG token amount to withdraw';
-});
+function updateRailHint() {
+    const rail = $('rail').value;
+    const hints = {
+        eth: 'ETH amount to withdraw',
+        brdg: 'BRDG token amount to withdraw',
+        brdg_to_eth: 'BRDG amount to swap to ETH (recipient gets ETH)'
+    };
+    $('amountHint').textContent = hints[rail] || 'Amount to withdraw';
+}
+
+$('rail').addEventListener('change', updateRailHint);
 
 function initiateWithdraw() {
     const to = $('toAddress').value.trim();
@@ -371,10 +379,12 @@ function initiateWithdraw() {
     if (!amount || parseFloat(amount) <= 0) return showStatus('Amount must be greater than 0', 'error');
 
     const details = $('confirmDetails');
+    const railLabel = rail === 'brdg_to_eth' ? 'BRDG→ETH SWAP' : rail.toUpperCase();
+    const amountLabel = rail === 'brdg_to_eth' ? amount + ' BRDG → ETH' : amount + ' ' + rail.toUpperCase();
     details.textContent = [
-        'Rail: ' + rail.toUpperCase(),
+        'Rail: ' + railLabel,
         'To: ' + to,
-        'Amount: ' + amount + ' ' + rail.toUpperCase(),
+        'Amount: ' + amountLabel,
         memo ? 'Memo: ' + memo : ''
     ].filter(Boolean).join('\n');
     $('confirmOverlay').classList.add('active');
@@ -415,7 +425,10 @@ async function executeWithdraw() {
 
         const shortTo = to.slice(0, 8) + '...' + to.slice(-4);
         const txHash = txData.tx_hash || 'pending';
-        showStatus('Sent ' + amount + ' ' + rail.toUpperCase() + ' to ' + shortTo + ' | Tx: ' + txHash, 'success');
+        const successMsg = rail === 'brdg_to_eth' 
+            ? 'Swapped ' + amount + ' BRDG → ETH to ' + shortTo + ' | Tx: ' + txHash
+            : 'Sent ' + amount + ' ' + rail.toUpperCase() + ' to ' + shortTo + ' | Tx: ' + txHash;
+        showStatus(successMsg, 'success');
         loadBalances();
         loadAudit();
         $('amount').value = '';
