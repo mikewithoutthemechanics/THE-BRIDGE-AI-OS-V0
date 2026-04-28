@@ -260,16 +260,16 @@ let _authToken = localStorage.getItem('bridge_token') || '';
 
 async function ensureAuth() {
   if (_authToken) {
-    const r = await fetch('https://bridge-ai-os.com/api/auth/me', {
+    const r = await fetch('/api/auth/me', {
       credentials: 'include',
       headers: { Authorization: 'Bearer ' + _authToken }
     });
     if (r.ok) return true;
   }
-  const r2 = await fetch('https://bridge-ai-os.com/api/auth/me', { credentials: 'include' });
+  const r2 = await fetch('/api/auth/me', { credentials: 'include' });
   if (r2.ok) return true;
   try {
-    const r3 = await fetch('https://bridge-ai-os.com/api/auth/dev-login', {
+    const r3 = await fetch('/api/auth/dev-login', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ address: DEV_ADDR, secret: DEV_SECRET, role: 'admin' })
@@ -287,7 +287,7 @@ async function ensureAuth() {
 let _csrfToken = '';
 async function fetchCsrf() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/invoices/stats', { credentials: 'include',
+    const r = await fetch('/api/invoices/stats', { credentials: 'include',
       headers: _authToken ? { Authorization: 'Bearer ' + _authToken } : {} });
     const t = r.headers.get('X-CSRF-Token');
     if (t) _csrfToken = t;
@@ -492,7 +492,7 @@ async function loadInvoices() {
 
   const fallbackInvoices = async () => {
     const headers = _authToken ? { Authorization: 'Bearer ' + _authToken } : {};
-    const res = await fetch('https://bridge-ai-os.com/api/corporate/state', { credentials: 'include', headers });
+    const res = await fetch('/api/corporate/state', { credentials: 'include', headers });
     if (!res.ok) throw new Error(await res.text());
     const d = await res.json();
     let invs = Array.isArray(d.invoices) ? d.invoices : [];
@@ -525,7 +525,7 @@ async function markPaid(id) {
 async function dlPdf(id, num) {
   try {
     const headers = _authToken ? { Authorization:'Bearer '+_authToken } : {};
-    const res = await fetch('https://bridge-ai-os.com/api/invoices/'+encodeURIComponent(id)+'/pdf',{credentials:'include',headers});
+    const res = await fetch('/api/invoices/'+encodeURIComponent(id)+'/pdf',{credentials:'include',headers});
     if (!res.ok) { toast('PDF error: '+res.status,'var(--red)'); return; }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -545,7 +545,7 @@ async function loadStats() {
   } catch {
     try {
       const headers = _authToken ? { Authorization: 'Bearer ' + _authToken } : {};
-      const r = await fetch('https://bridge-ai-os.com/api/corporate/state', { credentials: 'include', headers });
+      const r = await fetch('/api/corporate/state', { credentials: 'include', headers });
       if (!r.ok) return;
       const d = await r.json();
       const invs = Array.isArray(d.invoices) ? d.invoices : [];

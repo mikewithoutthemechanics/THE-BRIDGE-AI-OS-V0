@@ -133,8 +133,8 @@ img,video,iframe,table{max-width:100%}
         }
 
         function refresh() {
-            fetch('https://bridge-ai-os.com/api/bank/summary', { headers: headers }).then(function (r) { return r.json(); }).then(renderSummary).catch(function(){});
-            fetch('https://bridge-ai-os.com/api/bank/ledger?limit=50', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) { renderLedger((d && d.events) || []); }).catch(function(){
+            fetch('/api/bank/summary', { headers: headers }).then(function (r) { return r.json(); }).then(renderSummary).catch(function(){});
+            fetch('/api/bank/ledger?limit=50', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) { renderLedger((d && d.events) || []); }).catch(function(){
                 document.getElementById('ledger-wrap').innerHTML = '<div class="empty">Ledger API unreachable.</div>';
             });
         }

@@ -952,7 +952,7 @@ img,video,iframe,table{max-width:100%}
   }
 
   function loadAll() {
-    apifetch('https://bridge-ai-os.com/api/infra/status')
+    apifetch('/api/infra/status')
       .then(function (data) {
         renderMetrics(data.metrics || data);
         renderServices(data.services || []);
@@ -963,8 +963,8 @@ img,video,iframe,table{max-width:100%}
         }
 
         return Promise.all([
-          apifetch('https://bridge-ai-os.com/api/infra/actions'),
-          apifetch('https://bridge-ai-os.com/api/system/state')
+          apifetch('/api/infra/actions'),
+          apifetch('/api/system/state')
         ]);
       })
       .then(function (results) {
@@ -986,7 +986,7 @@ img,video,iframe,table{max-width:100%}
 
   function triggerSnapshot() {
     toast('Triggering snapshot + analysis\u2026', 'warn');
-    apifetch('https://bridge-ai-os.com/api/infra/snapshot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+    apifetch('/api/infra/snapshot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
       .then(function (data) {
         toast('Snapshot complete. Reloading\u2026', 'ok');
         setTimeout(loadAll, 1200);
@@ -997,7 +997,7 @@ img,video,iframe,table{max-width:100%}
   }
 
   function queueAction(type, params, requestedBy) {
-    apifetch('https://bridge-ai-os.com/api/infra/action', {
+    apifetch('/api/infra/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: type, params: params || {}, requestedBy: requestedBy || 'dashboard' })
@@ -1017,7 +1017,7 @@ img,video,iframe,table{max-width:100%}
   }
 
   function loadActionQueue() {
-    apifetch('https://bridge-ai-os.com/api/infra/actions')
+    apifetch('/api/infra/actions')
       .then(function (data) {
         renderActionQueue(data.actions || data || []);
       })
@@ -1027,7 +1027,7 @@ img,video,iframe,table{max-width:100%}
   }
 
   function approveAction(actionId) {
-    apifetch('https://bridge-ai-os.com/api/infra/approve', {
+    apifetch('/api/infra/approve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ actionId: actionId })
@@ -1042,7 +1042,7 @@ img,video,iframe,table{max-width:100%}
   }
 
   function denyAction(actionId) {
-    apifetch('https://bridge-ai-os.com/api/infra/deny', {
+    apifetch('/api/infra/deny', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ actionId: actionId })

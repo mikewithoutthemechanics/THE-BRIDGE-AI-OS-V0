@@ -230,7 +230,7 @@ img,video,iframe,table{max-width:100%}
 // Optionally fetch dynamic pricing
 (async()=>{
   try{
-    const r=await fetch('https://bridge-ai-os.com/api/pricing');
+    const r=await fetch('/api/pricing');
     if(!r.ok)return;
     const data=await r.json();
     // Could override plan cards with API data if available

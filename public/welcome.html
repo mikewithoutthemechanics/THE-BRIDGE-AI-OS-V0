@@ -174,10 +174,10 @@ document.getElementById('platforms').innerHTML = platformCards.map(t => `
 async function load() {
   try {
     const [agents, treasury, wallet, integrations] = await Promise.all([
-      fetch('https://bridge-ai-os.com/api/agents/workforce').then(r=>r.json()).catch(()=>({agents:[]})),
-      fetch('https://bridge-ai-os.com/api/treasury/status').then(r=>r.json()).catch(()=>({})),
-      fetch('https://bridge-ai-os.com/api/wallet/balance').then(r=>r.json()).catch(()=>({total_usd:0})),
-      fetch('https://bridge-ai-os.com/api/integrations/status').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/agents/workforce').then(r=>r.json()).catch(()=>({agents:[]})),
+      fetch('/api/treasury/status').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/wallet/balance').then(r=>r.json()).catch(()=>({total_usd:0})),
+      fetch('/api/integrations/status').then(r=>r.json()).catch(()=>({})),
     ]);
 
     document.getElementById('stats').innerHTML = `
@@ -223,7 +223,7 @@ function logout() {
 
 async function setupMFA() {
   const email = user.email || 'default';
-  const res = await fetch('https://bridge-ai-os.com/api/mfa/setup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: email}) });
+  const res = await fetch('/api/mfa/setup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: email}) });
   const data = await res.json();
   if (data.ok) {
     alert('MFA Setup:\\n\\nSecret: ' + data.secret + '\\n\\nBackup codes:\\n' + data.backup_codes.join('\\n') + '\\n\\nAdd to your authenticator app, then verify with a code.');

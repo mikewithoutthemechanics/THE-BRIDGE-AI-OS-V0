@@ -246,12 +246,12 @@ async function ensureLinea() {
 }
 
 async function siweSignIn(address, signer) {
-  const nonceRes = await fetch('https://bridge-ai-os.com/api/auth/wallet/nonce?address=' + address, { credentials: 'include' });
+  const nonceRes = await fetch('/api/auth/wallet/nonce?address=' + address, { credentials: 'include' });
   if (!nonceRes.ok) throw new Error('nonce request failed (' + nonceRes.status + ')');
   const { message } = await nonceRes.json();
   if (!message) throw new Error('nonce response missing message');
   const signature = await signer.signMessage(message);
-  const verifyRes = await fetch('https://bridge-ai-os.com/api/auth/wallet/verify', {
+  const verifyRes = await fetch('/api/auth/wallet/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -296,7 +296,7 @@ async function loadConfig() {
   // Pull live vault from gateway if available
   if (!CONFIG.VAULT) {
     try {
-      const r = await fetch('https://bridge-ai-os.com/api/modular-vault/config');
+      const r = await fetch('/api/modular-vault/config');
       if (r.ok) {
         const cfg = await r.json();
         CONFIG.VAULT  = cfg.vault  || CONFIG.VAULT;

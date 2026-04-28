@@ -474,7 +474,7 @@ function renderTx(txs) {
 }
 
 function loadAll() {
-  fetch('https://bridge-ai-os.com/api/banks')
+  fetch('/api/banks')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var banks = data.banks || data || [];
@@ -502,7 +502,7 @@ function runCompound() {
   var btn = document.getElementById('compoundBtn');
   btn.disabled = true;
   btn.textContent = 'Running...';
-  fetch('https://bridge-ai-os.com/api/banks/compound', { method: 'POST' })
+  fetch('/api/banks/compound', { method: 'POST' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       closeModal('compoundModal');
@@ -527,7 +527,7 @@ function executeTrade() {
   if (!fromId || !toId || !amount || amount <= 0) { toast('Fill all fields', true); return; }
   if (fromId === toId) { toast('From and To banks must differ', true); return; }
 
-  fetch('https://bridge-ai-os.com/api/banks/trade', {
+  fetch('/api/banks/trade', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: fromId, to: toId, amount: amount, reason: reason })
@@ -551,7 +551,7 @@ function registerPartner() {
 
   if (!id || !name || !owner) { toast('id, name and owner are required', true); return; }
 
-  fetch('https://bridge-ai-os.com/api/banks', {
+  fetch('/api/banks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'register', id: id, name: name, owner: owner, splitPct: splitPct, compoundRate: compoundRate })

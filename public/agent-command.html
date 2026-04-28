@@ -572,7 +572,7 @@ async function fetchToken() {
 
 async function loadVerbs() {
   try {
-    const r = await fetch('https://bridge-ai-os.com/api/cognitive/verbs');
+    const r = await fetch('/api/cognitive/verbs');
     const d = await r.json();
     if (d.ok) { VERBS = d.groups; document.getElementById('verb-count-hud').textContent = d.total + ' verbs'; }
   } catch(e) {}
@@ -682,7 +682,7 @@ function getDefaultPayload(verb) {
 }
 
 async function callVerb(verb, input) {
-  const res = await fetch('https://bridge-ai-os.com/api/cognitive/execute', {
+  const res = await fetch('/api/cognitive/execute', {
     method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
     body: JSON.stringify({ verb, input })
   });

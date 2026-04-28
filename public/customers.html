@@ -249,7 +249,7 @@ img,video,iframe,table{max-width:100%}
     }
 
     function load() {
-        fetch('https://bridge-ai-os.com/api/customers').then(function(r) { return r.json(); }).then(function(data) {
+        fetch('/api/customers').then(function(r) { return r.json(); }).then(function(data) {
             var list = Array.isArray(data) ? data : (data.customers || data.data || []);
             updateStats(list);
             body.replaceChildren();
@@ -279,7 +279,7 @@ img,video,iframe,table{max-width:100%}
     }
 
     function showDetail(id) {
-        fetch('https://bridge-ai-os.com/api/customers/' + encodeURIComponent(id)).then(function(r) { return r.json(); }).then(function(c) {
+        fetch('/api/customers/' + encodeURIComponent(id)).then(function(r) { return r.json(); }).then(function(c) {
             modalName.textContent = c.name || 'Customer';
             modalDetails.replaceChildren();
             var fields = [
@@ -311,7 +311,7 @@ img,video,iframe,table{max-width:100%}
             plan: document.getElementById('f-plan').value,
             status: document.getElementById('f-status').value
         };
-        fetch('https://bridge-ai-os.com/api/customers', {
+        fetch('/api/customers', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

@@ -178,7 +178,7 @@ img,video,iframe,table{max-width:100%}
 
       try {
         var token = localStorage.getItem('bridge_token') || '';
-        var res = await fetch('https://bridge-ai-os.com/api/create-payment', {
+        var res = await fetch('/api/create-payment', {
           method:  'POST',
           headers: {
             'Content-Type': 'application/json',

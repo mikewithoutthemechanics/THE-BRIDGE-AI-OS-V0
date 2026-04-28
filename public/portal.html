@@ -390,7 +390,7 @@ img,video,iframe,table{max-width:100%}
   // ── Load + auto-provision ────────────────────────────────────────────────────
   async function loadProjects() {
     try {
-      var res = await fetch('https://bridge-ai-os.com/api/platform/projects?status=all&limit=200', { headers: authHeader() });
+      var res = await fetch('/api/platform/projects?status=all&limit=200', { headers: authHeader() });
       var data = await res.json();
       allProjects = dedupProjects(data.projects || []);
 
@@ -420,7 +420,7 @@ img,video,iframe,table{max-width:100%}
     if (btn) { btn.disabled = true; btn.textContent = '⚡ Provisioning…'; }
 
     try {
-      var res = await fetch('https://bridge-ai-os.com/api/platform/provision', {
+      var res = await fetch('/api/platform/provision', {
         method: 'POST',
         headers: Object.assign({ 'Content-Type': 'application/json' }, authHeader()),
         body: JSON.stringify({}),
@@ -451,7 +451,7 @@ img,video,iframe,table{max-width:100%}
     var feed = document.getElementById('activityFeed');
     try {
       // Fetch recent project runs (most activity-rich source)
-      var res = await fetch('https://bridge-ai-os.com/api/platform/projects?status=all&limit=200', { headers: authHeader() });
+      var res = await fetch('/api/platform/projects?status=all&limit=200', { headers: authHeader() });
       var data = await res.json();
       var projects = dedupProjects(data.projects || []);
 
@@ -508,7 +508,7 @@ img,video,iframe,table{max-width:100%}
   // ── Invoice stats ────────────────────────────────────────────────────────────
   async function loadInvoiceStats() {
     try {
-      var res = await fetch('https://bridge-ai-os.com/api/invoices/stats', { headers: authHeader() });
+      var res = await fetch('/api/invoices/stats', { headers: authHeader() });
       var data = await res.json();
       var byStatus = data.by_status || {};
       document.getElementById('statInvoices').textContent = (byStatus.sent || 0) + (byStatus.overdue || 0);
@@ -517,7 +517,7 @@ img,video,iframe,table{max-width:100%}
 
   async function loadTickets() {
     try {
-      var res = await fetch('https://bridge-ai-os.com/api/tickets', { headers: authHeader() });
+      var res = await fetch('/api/tickets', { headers: authHeader() });
       var data = await res.json();
       var tickets = Array.isArray(data) ? data : (data.tickets || []);
       document.getElementById('statTickets').textContent = tickets.filter(function(t) { return t.status !== 'closed'; }).length;
@@ -539,7 +539,7 @@ img,video,iframe,table{max-width:100%}
     var msg = document.getElementById('newsletterMsg');
     if (!email || email.indexOf('@') < 0) { msg.textContent = 'Enter a valid email'; msg.style.color = 'var(--red)'; return; }
     try {
-      var res = await fetch('https://bridge-ai-os.com/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
+      var res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
       var data = await res.json();
       if (data.ok) {
         msg.style.color = 'var(--green)'; msg.textContent = 'Subscribed! Thanks.';

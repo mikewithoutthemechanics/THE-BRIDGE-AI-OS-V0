@@ -447,7 +447,7 @@ function showSection(name) {
 async function loadOverview() {
   document.getElementById('ov-ts').textContent = 'Last updated: ' + new Date().toLocaleString('en-ZA');
   try {
-    var r = await fetch('https://bridge-ai-os.com/api/system/overview', { headers: AUTH });
+    var r = await fetch('/api/system/overview', { headers: AUTH });
     if (!r.ok) { document.getElementById('ov-ts').textContent = 'Error: ' + r.status + ' — check auth'; return; }
     var d = await r.json(); STATE.overview = d;
     document.getElementById('ov-users').textContent = (d.total_users||0).toLocaleString();
@@ -487,7 +487,7 @@ async function loadOverview() {
 // ── USERS ─────────────────────────────────────────────────────────────────
 async function loadUsers() {
   try {
-    var r = await fetch('https://bridge-ai-os.com/api/admin/users', { headers: AUTH });
+    var r = await fetch('/api/admin/users', { headers: AUTH });
     var d = await r.json();
     STATE.users = d.users || [];
     renderUsers(STATE.users);
@@ -515,7 +515,7 @@ function filterUsers() {
 async function changeTier(userId, tier) {
   if (!tier || !confirm('Change tier to ' + tier + '?')) return;
   try {
-    var r = await fetch('https://bridge-ai-os.com/api/admin/users/' + userId + '/tier', { method: 'PATCH', headers: AUTH, body: JSON.stringify({ tier, plan: tier }) });
+    var r = await fetch('/api/admin/users/' + userId + '/tier', { method: 'PATCH', headers: AUTH, body: JSON.stringify({ tier, plan: tier }) });
     var d = await r.json();
     if (d.ok) { toast('Tier updated to ' + tier); loadUsers(); }
     else toast(d.error || 'Error', 'red');
@@ -535,7 +535,7 @@ async function creditWallet() {
   if (!email || (!zar && !brdg)) { showMsg('cred-msg', false, 'Enter email and amount'); return; }
   if (!confirm('Credit ' + email + ' with R' + zar + ' ZAR + ' + brdg + ' BRDG?')) return;
   try {
-    var r = await fetch('https://bridge-ai-os.com/api/admin/wallet/credit', { method: 'POST', headers: AUTH, body: JSON.stringify({ user_email: email, amount_zar: zar, amount_brdg: brdg, reference: ref }) });
+    var r = await fetch('/api/admin/wallet/credit', { method: 'POST', headers: AUTH, body: JSON.stringify({ user_email: email, amount_zar: zar, amount_brdg: brdg, reference: ref }) });
     var d = await r.json();
     showMsg('cred-msg', d.ok, d.ok ? 'Credited successfully' : (d.error||'Error'));
     if (d.ok) loadUsers();
@@ -635,7 +635,7 @@ async function loadAffiliates() {
 // ── BANKING ───────────────────────────────────────────────────────────────
 async function loadBanking() {
   try {
-    var r = await fetch('https://bridge-ai-os.com/api/treasury/summary', { headers: AUTH });
+    var r = await fetch('/api/treasury/summary', { headers: AUTH });
     if (r.ok) {
       var d = await r.json();
       document.getElementById('bank-zar').textContent = zarFmt(d.balance||0);
@@ -643,7 +643,7 @@ async function loadBanking() {
       document.getElementById('bank-rev').textContent = zarFmt(d.revenue_mtd||0);
       document.getElementById('bank-net').textContent = zarFmt((d.revenue_mtd||0)-(d.costs_mtd||0));
     }
-    var lr = await fetch('https://bridge-ai-os.com/api/treasury/ledger', { headers: AUTH });
+    var lr = await fetch('/api/treasury/ledger', { headers: AUTH });
     if (lr.ok) {
       var ld = await lr.json();
       var entries = ld.entries || [];
@@ -665,7 +665,7 @@ async function loadBanking() {
 async function loadLeads() {
   document.getElementById('leads-body').innerHTML = '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:12px">Loading...</td></tr>';
   try {
-    var r = await fetch('https://bridge-ai-os.com/api/leads?limit=200', { headers: AUTH });
+    var r = await fetch('/api/leads?limit=200', { headers: AUTH });
     var d = await r.json();
     STATE.leads = d.leads || [];
     renderLeads(STATE.leads);
@@ -703,7 +703,7 @@ async function aiScoreAll() {
 // ── SETTINGS ─────────────────────────────────────────────────────────────
 async function loadSettings() {
   try {
-    var r = await fetch('https://bridge-ai-os.com/api/tiers');
+    var r = await fetch('/api/tiers');
     var d = await r.json();
     STATE.tiers = d.tiers || [];
     renderTierConfig(STATE.tiers);
@@ -734,7 +734,7 @@ async function editTierInline(id) {
   var newPrice = prompt('Monthly price ZAR:', tier.monthly_price_zar);
   if (newPrice === null) return;
   try {
-    var r = await fetch('https://bridge-ai-os.com/api/admin/tier-config/' + id, { method: 'PATCH', headers: AUTH, body: JSON.stringify({ revenue_share_pct: parseFloat(newRev), monthly_price_zar: parseFloat(newPrice) }) });
+    var r = await fetch('/api/admin/tier-config/' + id, { method: 'PATCH', headers: AUTH, body: JSON.stringify({ revenue_share_pct: parseFloat(newRev), monthly_price_zar: parseFloat(newPrice) }) });
     var d = await r.json();
     if (d.ok) { toast('Tier updated'); loadSettings(); }
     else toast(d.error || 'Error', 'red');

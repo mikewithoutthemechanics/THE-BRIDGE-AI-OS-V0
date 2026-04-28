@@ -524,9 +524,9 @@ async function loadTreasury(){
   document.getElementById('page-ts').textContent = 'Last updated: ' + new Date().toLocaleString('en-ZA');
   try {
     var [sumR, statusR, pnlR] = await Promise.allSettled([
-      fetch('https://bridge-ai-os.com/api/treasury/summary', {headers: AUTH_HDR}),
-      fetch('https://bridge-ai-os.com/api/treasury/status', {headers: AUTH_HDR}),
-      fetch('https://bridge-ai-os.com/api/finance/pnl', {headers: AUTH_HDR})
+      fetch('/api/treasury/summary', {headers: AUTH_HDR}),
+      fetch('/api/treasury/status', {headers: AUTH_HDR}),
+      fetch('/api/finance/pnl', {headers: AUTH_HDR})
     ]);
     var sum={}, status={}, pnl={};
     if(sumR.status==='fulfilled' && sumR.value.ok) sum = await sumR.value.json();
@@ -591,8 +591,8 @@ async function loadTreasury(){
 async function loadTransactions(){
   try {
     var [payR, ledR] = await Promise.allSettled([
-      fetch('https://bridge-ai-os.com/api/treasury/payments', {headers: AUTH_HDR}),
-      fetch('https://bridge-ai-os.com/api/treasury/ledger', {headers: AUTH_HDR})
+      fetch('/api/treasury/payments', {headers: AUTH_HDR}),
+      fetch('/api/treasury/ledger', {headers: AUTH_HDR})
     ]);
     var rows=[];
     if(payR.status==='fulfilled' && payR.value.ok){
@@ -667,7 +667,7 @@ var PLATFORMS = [
 // ── PLAN REQUESTS ──
 async function loadPlanRequests(){
   try {
-    var r=await fetch('https://bridge-ai-os.com/api/admin/plan-requests',{headers:AUTH_HDR});
+    var r=await fetch('/api/admin/plan-requests',{headers:AUTH_HDR});
     if(!r.ok) throw new Error(r.status);
     var data=await r.json();
     var reqs=data.requests||data||[];
@@ -687,7 +687,7 @@ async function loadPlanRequests(){
 async function approvePlan(id,email,plan){
   if(!confirm('Approve '+plan+' plan for '+email+'?')) return;
   try {
-    var r=await fetch('https://bridge-ai-os.com/api/admin/plan-requests/'+id+'/approve',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({plan:plan,email:email})});
+    var r=await fetch('/api/admin/plan-requests/'+id+'/approve',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({plan:plan,email:email})});
     var d=await r.json();
     if(d.ok) loadPlanRequests(); else alert(d.error||'Error');
   } catch(e){ alert('Network error'); }
@@ -715,7 +715,7 @@ async function doSendBrdg(){
   var memo=document.getElementById('sb-memo').value.trim();
   if(!to||!amt){ showMsg('sb-msg',false,'Enter recipient and amount'); return; }
   try {
-    var r=await fetch('https://bridge-ai-os.com/api/treasury/send-brdg',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({to:to,amount:amt,memo:memo})});
+    var r=await fetch('/api/treasury/send-brdg',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({to:to,amount:amt,memo:memo})});
     var d=await r.json();
     showMsg('sb-msg',d.ok,d.ok?'Sent '+amt+' BRDG to '+to:(d.error||'Error'));
     if(d.ok){ document.getElementById('sb-to').value=''; document.getElementById('sb-amt').value=''; loadTransactions(); }
@@ -726,7 +726,7 @@ async function doSendFiat(){
   var amt=parseFloat(document.getElementById('sf-amt').value)||0;
   if(!to||!amt){ showMsg('sf-msg',false,'Enter recipient and amount'); return; }
   try {
-    var r=await fetch('https://bridge-ai-os.com/api/treasury/send-fiat',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({to:to,amount:amt,bank:document.getElementById('sf-bank').value,reference:document.getElementById('sf-ref').value})});
+    var r=await fetch('/api/treasury/send-fiat',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({to:to,amount:amt,bank:document.getElementById('sf-bank').value,reference:document.getElementById('sf-ref').value})});
     var d=await r.json();
     showMsg('sf-msg',d.ok,d.ok?'Fiat transfer initiated for R'+amt:(d.error||'Error'));
   } catch(e){ showMsg('sf-msg',false,'Network error'); }
@@ -737,7 +737,7 @@ async function doTransfer(){
   if(from===to){ showMsg('tr-msg',false,'From and To must differ'); return; }
   if(!amt){ showMsg('tr-msg',false,'Enter an amount'); return; }
   try {
-    var r=await fetch('https://bridge-ai-os.com/api/treasury/transfer',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({from_bucket:from,to_bucket:to,amount_zar:amt,reason:document.getElementById('tr-reason').value})});
+    var r=await fetch('/api/treasury/transfer',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({from_bucket:from,to_bucket:to,amount_zar:amt,reason:document.getElementById('tr-reason').value})});
     var d=await r.json();
     showMsg('tr-msg',d.ok,d.ok?'Transferred R'+amt+' from '+from+' to '+to:(d.error||'Error'));
     if(d.ok) loadTreasury();
@@ -748,7 +748,7 @@ async function doWithdraw(){
   var amt=parseFloat(document.getElementById('wd-amt').value)||0;
   if(!amt){ showMsg('wd-msg',false,'Enter amount'); return; }
   try {
-    var r=await fetch('https://bridge-ai-os.com/api/treasury/withdraw',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({currency:from,amount:amt,destination:document.getElementById('wd-dest').value,reference:document.getElementById('wd-ref').value})});
+    var r=await fetch('/api/treasury/withdraw',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({currency:from,amount:amt,destination:document.getElementById('wd-dest').value,reference:document.getElementById('wd-ref').value})});
     var d=await r.json();
     showMsg('wd-msg',d.ok,d.ok?'Withdrawal initiated':(d.error||'Error'));
   } catch(e){ showMsg('wd-msg',false,'Network error'); }
@@ -758,7 +758,7 @@ async function doSwap(){
   var amt=parseFloat(document.getElementById('sw-amt').value)||0;
   if(!amt){ showMsg('sw-msg',false,'Enter amount'); return; }
   try {
-    var r=await fetch('https://bridge-ai-os.com/api/treasury/swap',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({from_currency:from,to_currency:to,amount:amt})});
+    var r=await fetch('/api/treasury/swap',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({from_currency:from,to_currency:to,amount:amt})});
     var d=await r.json();
     showMsg('sw-msg',d.ok,d.ok?'Swap executed: '+amt+' '+from+' → '+document.getElementById('sw-receive').value+' '+to:(d.error||'Error'));
     if(d.ok) loadTreasury();

@@ -231,21 +231,21 @@ var APP=(function(){
   }
   function loadState(){
     if(AUTH.isSimulated()){renderState(simState());return;}
-    fetch('https://bridge-ai-os.com/api/neurolink/status',{headers:hdr()})
+    fetch('/api/neurolink/status',{headers:hdr()})
     .then(function(r){if(r.status===401){AUTH.logout();throw new Error('unauth');}return r.json();})
     .then(renderState)
     .catch(function(e){if(e.message==='unauth')return;errCount++;if(errCount>=2){document.getElementById('api-banner').style.display='block';renderState(simState());}document.getElementById('status-text').textContent='API error';document.getElementById('status-dot').className='dot off';});
   }
   function loadDevices(){
     if(AUTH.isSimulated()){renderDevices(simDevices());return;}
-    fetch('https://bridge-ai-os.com/api/neurolink/devices',{headers:hdr()})
+    fetch('/api/neurolink/devices',{headers:hdr()})
     .then(function(r){if(r.status===401){AUTH.logout();throw new Error('unauth');}return r.json();})
     .then(renderDevices)
     .catch(function(e){if(e.message==='unauth')return;renderDevices(simDevices());});
   }
   function switchDev(deviceId){
     if(AUTH.isSimulated()){toast('Simulated: switched to '+deviceId,'ok');return;}
-    fetch('https://bridge-ai-os.com/api/neurolink/switch',{method:'POST',headers:hdr(),body:JSON.stringify({device:deviceId})})
+    fetch('/api/neurolink/switch',{method:'POST',headers:hdr(),body:JSON.stringify({device:deviceId})})
     .then(function(r){if(r.status===401){AUTH.logout();throw new Error('unauth');}return r.json();})
     .then(function(d){if(d.ok){toast('Switched to '+(d.device||deviceId),'ok');setTimeout(function(){loadDevices();loadState();},1000);}else{toast('Switch failed: '+(d.error||'unknown'),'err');}})
     .catch(function(e){if(e.message!=='unauth')toast('Error: '+e.message,'err');});
