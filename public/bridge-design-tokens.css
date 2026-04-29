@@ -1,0 +1,406 @@
+/* ============================================================
+   BRIDGE AI OS — UNIFIED DESIGN TOKEN SYSTEM
+   Theme-based color grouping: Admin (Orange), Agent (Red), User (Blue-Cyan)
+   Single source of truth for all design tokens
+   ============================================================ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE FOUNDATION — Shared across all themes
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Typography */
+  --font-ui: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* Text sizes */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
+  
+  /* Font weights */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  
+  /* Border radius */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.7);
+  
+  /* Transitions */
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 400ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Z-index scale */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-modal: 400;
+  --z-tooltip: 700;
+  --z-nav: 800;
+  --z-widget: 900;
+  --z-max: 9999;
+  
+  /* Status colors (shared) */
+  --status-success: #4ade80;
+  --status-success-glow: rgba(74, 222, 128, 0.35);
+  --status-warning: #fbbf24;
+  --status-warning-glow: rgba(251, 191, 36, 0.35);
+  --status-error: #f87171;
+  --status-error-glow: rgba(248, 113, 113, 0.35);
+  --status-offline: #64748b;
+  --status-offline-glow: rgba(100, 116, 139, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN THEME — Orange + Obsidian/Charcoal
+   For: admin.html, admin-command.html, admin-revenue.html, admin-sitemap.html, admin-withdraw.html
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.admin-theme {
+  /* Primary colors — Orange spectrum */
+  --theme-primary: #ff8c00;
+  --theme-primary-hover: #ffa500;
+  --theme-primary-dim: #cc7000;
+  --theme-primary-glow: rgba(255, 140, 0, 0.35);
+  --theme-primary-muted: rgba(255, 140, 0, 0.12);
+  
+  /* Secondary accent — Amber */
+  --theme-secondary: #fbbf24;
+  --theme-secondary-glow: rgba(251, 191, 36, 0.35);
+  
+  /* Backgrounds — Obsidian/Charcoal with orange tint */
+  --theme-bg-void: #0a0808;
+  --theme-bg-primary: #0f0a0a;
+  --theme-bg-secondary: #1a1212;
+  --theme-bg-tertiary: #251a1a;
+  --theme-bg-elevated: #201515;
+  --theme-bg-glass: rgba(26, 18, 18, 0.85);
+  
+  /* Borders */
+  --theme-border: rgba(255, 140, 0, 0.15);
+  --theme-border-hover: rgba(255, 140, 0, 0.3);
+  --theme-border-focus: rgba(255, 140, 0, 0.5);
+  
+  /* Text hierarchy */
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #b8b8b8;
+  --theme-text-muted: #6b6b6b;
+  
+  /* Gradient */
+  --theme-gradient: linear-gradient(135deg, #ff8c00 0%, #ffa500 50%, #fbbf24 100%);
+  
+  /* Glow effects */
+  --theme-glow-primary: 0 0 12px var(--theme-primary-glow), 0 0 24px rgba(255, 140, 0, 0.15);
+  --theme-glow-soft: 0 0 6px rgba(255, 140, 0, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AGENT THEME — Red + Obsidian/Charcoal
+   For: agents.html, join.html
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.agent-theme {
+  /* Primary colors — Red spectrum */
+  --theme-primary: #e63946;
+  --theme-primary-hover: #ff4757;
+  --theme-primary-dim: #b82d38;
+  --theme-primary-glow: rgba(230, 57, 70, 0.35);
+  --theme-primary-muted: rgba(230, 57, 70, 0.12);
+  
+  /* Secondary accent — Crimson */
+  --theme-secondary: #ff6b6b;
+  --theme-secondary-glow: rgba(255, 107, 107, 0.35);
+  
+  /* Backgrounds — Obsidian/Charcoal with red tint */
+  --theme-bg-void: #080808;
+  --theme-bg-primary: #100a0a;
+  --theme-bg-secondary: #1a1212;
+  --theme-bg-tertiary: #241a1a;
+  --theme-bg-elevated: #1f1515;
+  --theme-bg-glass: rgba(26, 18, 18, 0.85);
+  
+  /* Borders */
+  --theme-border: rgba(230, 57, 70, 0.15);
+  --theme-border-hover: rgba(230, 57, 70, 0.3);
+  --theme-border-focus: rgba(230, 57, 70, 0.5);
+  
+  /* Text hierarchy */
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #b8b8b8;
+  --theme-text-muted: #6b6b6b;
+  
+  /* Gradient */
+  --theme-gradient: linear-gradient(135deg, #e63946 0%, #ff4757 50%, #ff6b6b 100%);
+  
+  /* Glow effects */
+  --theme-glow-primary: 0 0 12px var(--theme-primary-glow), 0 0 24px rgba(230, 57, 70, 0.15);
+  --theme-glow-soft: 0 0 6px rgba(230, 57, 70, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   USER THEME — Blue-Cyan + Dark Charcoal/Obsidian (DEFAULT)
+   For: ui.html, auth-dashboard.html, welcome.html, and all other user-facing pages
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.user-theme {
+  /* Primary colors — Blue-Cyan spectrum */
+  --theme-primary: #00d4ff;
+  --theme-primary-hover: #00e5ff;
+  --theme-primary-dim: #00a8cc;
+  --theme-primary-glow: rgba(0, 212, 255, 0.35);
+  --theme-primary-muted: rgba(0, 212, 255, 0.12);
+  
+  /* Secondary accent — Deep Blue */
+  --theme-secondary: #0099ff;
+  --theme-secondary-glow: rgba(0, 153, 255, 0.35);
+  
+  /* Backgrounds — Dark Charcoal/Obsidian */
+  --theme-bg-void: #050508;
+  --theme-bg-primary: #060810;
+  --theme-bg-secondary: #0a0e17;
+  --theme-bg-tertiary: #111827;
+  --theme-bg-elevated: #0f121a;
+  --theme-bg-glass: rgba(10, 14, 23, 0.85);
+  
+  /* Borders */
+  --theme-border: rgba(0, 212, 255, 0.15);
+  --theme-border-hover: rgba(0, 212, 255, 0.3);
+  --theme-border-focus: rgba(0, 212, 255, 0.5);
+  
+  /* Text hierarchy */
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #94a3b8;
+  --theme-text-muted: #64748b;
+  
+  /* Gradient */
+  --theme-gradient: linear-gradient(135deg, #00d4ff 0%, #0099ff 50%, #63ffda 100%);
+  
+  /* Glow effects */
+  --theme-glow-primary: 0 0 12px var(--theme-primary-glow), 0 0 24px rgba(0, 212, 255, 0.15);
+  --theme-glow-soft: 0 0 6px rgba(0, 212, 255, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FALLBACK — Default to user theme if no body class
+   ═══════════════════════════════════════════════════════════════════════════ */
+body:not(.admin-theme):not(.agent-theme):not(.user-theme) {
+  --theme-primary: #00d4ff;
+  --theme-primary-hover: #00e5ff;
+  --theme-primary-dim: #00a8cc;
+  --theme-primary-glow: rgba(0, 212, 255, 0.35);
+  --theme-primary-muted: rgba(0, 212, 255, 0.12);
+  --theme-secondary: #0099ff;
+  --theme-secondary-glow: rgba(0, 153, 255, 0.35);
+  --theme-bg-void: #050508;
+  --theme-bg-primary: #060810;
+  --theme-bg-secondary: #0a0e17;
+  --theme-bg-tertiary: #111827;
+  --theme-bg-elevated: #0f121a;
+  --theme-bg-glass: rgba(10, 14, 23, 0.85);
+  --theme-border: rgba(0, 212, 255, 0.15);
+  --theme-border-hover: rgba(0, 212, 255, 0.3);
+  --theme-border-focus: rgba(0, 212, 255, 0.5);
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #94a3b8;
+  --theme-text-muted: #64748b;
+  --theme-gradient: linear-gradient(135deg, #00d4ff 0%, #0099ff 50%, #63ffda 100%);
+  --theme-glow-primary: 0 0 12px var(--theme-primary-glow), 0 0 24px rgba(0, 212, 255, 0.15);
+  --theme-glow-soft: 0 0 6px rgba(0, 212, 255, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES — Theme-aware components
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Card component */
+.theme-card {
+  background: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition: border-color var(--duration-normal) var(--ease-out),
+              box-shadow var(--duration-normal) var(--ease-out),
+              transform var(--duration-normal) var(--ease-out);
+}
+
+.theme-card:hover {
+  border-color: var(--theme-border-hover);
+  box-shadow: var(--theme-glow-soft);
+  transform: translateY(-2px);
+}
+
+/* Button primary */
+.theme-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--theme-gradient);
+  color: var(--theme-bg-void);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all var(--duration-normal) var(--ease-out);
+  box-shadow: 0 0 0 0 var(--theme-primary-glow);
+}
+
+.theme-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--theme-glow-primary);
+  filter: brightness(1.1);
+}
+
+.theme-btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Button secondary */
+.theme-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-secondary);
+  color: var(--theme-primary);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.theme-btn-secondary:hover {
+  border-color: var(--theme-primary);
+  background: var(--theme-primary-muted);
+}
+
+/* Input field */
+.theme-input {
+  width: 100%;
+  background: var(--theme-bg-tertiary);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: var(--theme-text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.theme-input:focus {
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px var(--theme-primary-muted);
+}
+
+.theme-input::placeholder {
+  color: var(--theme-text-muted);
+}
+
+/* Status badge */
+.theme-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-primary-muted);
+  color: var(--theme-primary);
+}
+
+/* Section title */
+.theme-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--theme-primary);
+  margin-bottom: var(--space-3);
+}
+
+.theme-section-title::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--theme-primary));
+}
+
+.theme-section-title::after {
+  content: '';
+  display: block;
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--theme-primary), transparent);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--theme-bg-void);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-border);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-border-hover);
+}
+
+/* Selection */
+::selection {
+  background: var(--theme-primary-muted);
+  color: var(--theme-text-primary);
+}

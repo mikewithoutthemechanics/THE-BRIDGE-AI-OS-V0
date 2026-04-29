@@ -4,26 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BRIDGE AI OS — Admin Withdraw</title>
-    <meta name="description" content="Bridge AI OS admin treasury withdrawal panel — authorize and execute on-chain ETH and BRDG withdrawals on Linea mainnet.">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/bridge-design-tokens.css">
     <style>
         :root {
-            --bg-primary: var(--theme-bg-primary);
-            --bg-secondary: var(--theme-bg-secondary);
-            --bg-glass: var(--theme-bg-glass);
-            --border-color: var(--theme-border);
-            --border-glow: var(--theme-border-hover);
-            --text-primary: var(--theme-text-primary);
-            --text-secondary: var(--theme-text-secondary);
-            --text-muted: var(--theme-text-muted);
-            --accent-cyan: var(--theme-primary);
+            --bg-primary: #060810;
+            --bg-secondary: #0a0e17;
+            --bg-glass: rgba(10, 14, 23, 0.85);
+            --border-color: rgba(99, 255, 218, 0.12);
+            --border-glow: rgba(99, 255, 218, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #63ffda;
             --accent-purple: #a78bfa;
             --accent-orange: #fb923c;
-            --accent-red: var(--status-error);
-            --accent-green: var(--status-success);
-            --gradient-primary: var(--theme-gradient);
+            --accent-red: #f87171;
+            --accent-green: #4ade80;
+            --gradient-primary: linear-gradient(135deg, #63ffda 0%, #38bdf8 50%, #a78bfa 100%);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
@@ -37,7 +35,7 @@
             position: fixed;
             inset: 0;
             background:
-                radial-gradient(ellipse at 20% 80%, var(--theme-primary-glow) 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 80%, rgba(99, 255, 218, 0.06) 0%, transparent 50%),
                 radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
             pointer-events: none;
         }
@@ -59,7 +57,9 @@
         .header h1 {
             font-size: 22px;
             font-weight: 700;
-            color: var(--accent-cyan);
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .header .back {
             color: var(--text-secondary);
@@ -135,8 +135,8 @@
             outline: none;
             transition: border-color 0.2s;
         }
-        .form-group input:focus, .form-group select:focus { border-color: var(--accent-cyan); outline: 2px solid var(--theme-primary-muted); outline-offset: 2px; }
-        .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent-cyan); }
+        .form-group .hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
         .btn-withdraw {
             width: 100%;
@@ -197,7 +197,7 @@
         }
     </style>
 </head>
-<body class="admin-theme">
+<body>
 <script src="/bridge-nav.js?v=2"></script>
 <div class="shell">
     <div class="header">
@@ -218,31 +218,31 @@
 
     <div class="section-title">1. Authenticate</div>
     <div class="form-group">
-        <label for="adminToken">Admin Token</label>
-        <input type="password" id="adminToken" placeholder="Enter admin token" autocomplete="current-password">
+        <label>Admin Token</label>
+        <input type="password" id="adminToken" placeholder="Enter admin token">
         <div class="hint">Same token used for other admin operations</div>
     </div>
 
     <div class="section-title">2. Withdraw Details</div>
     <div class="form-group">
-        <label for="rail">Rail</label>
-        <select id="rail" aria-label="Select withdrawal rail">
+        <label>Rail</label>
+        <select id="rail">
             <option value="eth">ETH (Linea Mainnet)</option>
             <option value="brdg">BRDG Token</option>
         </select>
     </div>
     <div class="form-group">
-        <label for="toAddress">Destination Address</label>
+        <label>Destination Address</label>
         <input type="text" id="toAddress" placeholder="0x..." spellcheck="false">
         <div class="hint">Linea-compatible address (0x...)</div>
     </div>
     <div class="form-group">
-        <label for="amount">Amount</label>
+        <label>Amount</label>
         <input type="number" id="amount" placeholder="0.00" step="any" min="0">
         <div class="hint" id="amountHint">ETH amount to withdraw</div>
     </div>
     <div class="form-group">
-        <label for="memo">Memo (optional)</label>
+        <label>Memo (optional)</label>
         <input type="text" id="memo" placeholder="e.g. Ops payout April 2026">
     </div>
 
@@ -299,10 +299,8 @@ async function loadBalances() {
             $('resBal').textContent = res ? res.balance.toLocaleString() + ' BRDG' : '--';
         }
         if (brdg && brdg.ok) {
-            const brdgBal = brdg.treasury?.brdgBalance || brdg.token?.totalSupply || brdg.totalSupply || '0';
-            const ethBal = brdg.treasury?.vault?.ethBalance || brdg.ethBalance || '0';
-            $('brdgBal').textContent = Number(brdgBal).toLocaleString() + ' BRDG';
-            $('ethBal').textContent = ethBal + ' ETH';
+            $('brdgBal').textContent = Number(brdg.totalSupply || 0).toLocaleString() + ' BRDG';
+            $('ethBal').textContent = (brdg.ethBalance || '0') + ' ETH';
         }
     } catch (e) { /* silent */ }
 }

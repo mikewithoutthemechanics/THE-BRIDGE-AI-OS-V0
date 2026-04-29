@@ -14,51 +14,12 @@
   const LS_JOURNEY = 'bridge_widget_journey';
   const LS_TOKEN = 'bridge_user_token';
   const MAX_MSGS = 50;
+  const CYAN = '#00c8ff';
+  const CYAN_RGB = '0,200,255';
   const ORB_SIZE = 60;
   const ORB_EXPAND = 80;
   const PANEL_W = 350;
   const PANEL_H = 500;
-
-  // ── Theme Detection ─────────────────────────────────────────────────────
-  function detectTheme() {
-    var path = window.location.pathname.toLowerCase();
-    // Admin pages
-    if (path.indexOf('/admin') !== -1 || path.indexOf('/admin-') !== -1 || path.indexOf('/executive') !== -1 || path.indexOf('/intelligence') !== -1 || path.indexOf('/bridge-audit') !== -1 || path.indexOf('/aoe') !== -1) {
-      return 'admin';
-    }
-    // Agent pages
-    if (path.indexOf('/agent') !== -1 || path.indexOf('/join') !== -1 || path.indexOf('/neurolink') !== -1) {
-      return 'agent';
-    }
-    // Default to user theme
-    return 'user';
-  }
-
-  var theme = detectTheme();
-  var themeColors = {
-    admin: {
-      primary: '#ff8c00',
-      primaryRgb: '255,140,0',
-      primaryGlow: 'rgba(255, 140, 0, 0.35)',
-      bg1: '#0f0a0a',
-      bg2: '#1a1212'
-    },
-    agent: {
-      primary: '#e63946',
-      primaryRgb: '230,57,70',
-      primaryGlow: 'rgba(230, 57, 70, 0.35)',
-      bg1: '#100a0a',
-      bg2: '#1a1212'
-    },
-    user: {
-      primary: '#00c8ff',
-      primaryRgb: '0,200,255',
-      primaryGlow: 'rgba(0, 212, 255, 0.35)',
-      bg1: '#0a0e17',
-      bg2: '#111827'
-    }
-  };
-  var c = themeColors[theme];
 
   const PAGE_CONTEXT = {
     '/': 'The user is on the landing page. Help them understand Bridge AI OS and guide them to try the portal or sign up.',
@@ -117,32 +78,32 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       .${PFX}orb-wrap{width:${ORB_SIZE}px;height:${ORB_SIZE}px;cursor:pointer;position:relative;transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
       .${PFX}orb-wrap:hover{transform:scale(1.08);}
       .${PFX}orb-canvas{width:100%;height:100%;border-radius:50%;}
-      .${PFX}bubble{position:absolute;bottom:70px;right:0;background:${c.bg1}cc;border:1px solid ${c.primaryGlow};color:#e0e8f0;padding:8px 14px;border-radius:12px 12px 2px 12px;font-size:13px;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .4s,transform .4s;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+      .${PFX}bubble{position:absolute;bottom:70px;right:0;background:rgba(10,21,32,.92);border:1px solid rgba(${CYAN_RGB},.3);color:#e0e8f0;padding:8px 14px;border-radius:12px 12px 2px 12px;font-size:13px;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .4s,transform .4s;box-shadow:0 4px 20px rgba(0,0,0,.4);}
       .${PFX}bubble.${PFX}show{opacity:1;transform:translateY(0);}
-      .${PFX}panel{position:absolute;bottom:0;right:0;width:${PANEL_W}px;height:${PANEL_H}px;background:${c.bg2};border:1px solid ${c.primaryGlow};border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);opacity:0;transform:scale(.3) translateY(40px);transform-origin:bottom right;transition:opacity .35s cubic-bezier(.34,1.56,.64,1),transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+      .${PFX}panel{position:absolute;bottom:0;right:0;width:${PANEL_W}px;height:${PANEL_H}px;background:#0a1520;border:1px solid rgba(${CYAN_RGB},.25);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);opacity:0;transform:scale(.3) translateY(40px);transform-origin:bottom right;transition:opacity .35s cubic-bezier(.34,1.56,.64,1),transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
       .${PFX}panel.${PFX}open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto;}
-      .${PFX}header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:${c.bg1};border-bottom:1px solid ${c.primaryGlow};}
-      .${PFX}header-title{font-weight:700;font-size:15px;color:${c.primary};}
+      .${PFX}header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#0d1a28;border-bottom:1px solid rgba(${CYAN_RGB},.15);}
+      .${PFX}header-title{font-weight:700;font-size:15px;color:${CYAN};}
       .${PFX}header-close{background:none;border:none;color:#4d6678;font-size:20px;cursor:pointer;padding:0 4px;line-height:1;}
       .${PFX}header-close:hover{color:#e0e8f0;}
-      .${PFX}messages{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:${c.primaryGlow} transparent;}
+      .${PFX}messages{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:rgba(${CYAN_RGB},.2) transparent;}
       .${PFX}msg{max-width:85%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.45;word-wrap:break-word;}
-      .${PFX}msg-user{align-self:flex-end;background:${c.primaryGlow};color:#b0c4d8;border-bottom-right-radius:3px;}
-      .${PFX}msg-ai{align-self:flex-start;background:${c.primaryGlow};color:#e0e8f0;border-bottom-left-radius:3px;border-left:2px solid ${c.primary};}
+      .${PFX}msg-user{align-self:flex-end;background:rgba(${CYAN_RGB},.1);color:#b0c4d8;border-bottom-right-radius:3px;}
+      .${PFX}msg-ai{align-self:flex-start;background:rgba(${CYAN_RGB},.15);color:#e0e8f0;border-bottom-left-radius:3px;border-left:2px solid ${CYAN};}
       .${PFX}typing{align-self:flex-start;padding:8px 14px;display:none;gap:4px;}
-      .${PFX}typing span{width:6px;height:6px;border-radius:50%;background:${c.primary};display:inline-block;animation:${PFX}bounce .6s infinite alternate;}
+      .${PFX}typing span{width:6px;height:6px;border-radius:50%;background:${CYAN};display:inline-block;animation:${PFX}bounce .6s infinite alternate;}
       .${PFX}typing span:nth-child(2){animation-delay:.15s;}
       .${PFX}typing span:nth-child(3){animation-delay:.3s;}
       @keyframes ${PFX}bounce{to{opacity:.3;transform:translateY(-4px);}}
-      .${PFX}input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid ${c.primaryGlow};background:${c.bg1};}
-      .${PFX}input{flex:1;background:#050a0f;border:1px solid ${c.primaryGlow};border-radius:8px;padding:8px 12px;color:#e0e8f0;font-size:13px;outline:none;font-family:inherit;}
-      .${PFX}input:focus{border-color:${c.primary};}
-      .${PFX}send-btn,.${PFX}mic-btn{background:none;border:1px solid ${c.primaryGlow};border-radius:8px;color:${c.primary};cursor:pointer;padding:6px 10px;font-size:14px;transition:background .2s;}
-      .${PFX}send-btn:hover,.${PFX}mic-btn:hover{background:${c.primaryGlow};}
+      .${PFX}input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(${CYAN_RGB},.12);background:#0d1a28;}
+      .${PFX}input{flex:1;background:#050a0f;border:1px solid rgba(${CYAN_RGB},.2);border-radius:8px;padding:8px 12px;color:#e0e8f0;font-size:13px;outline:none;font-family:inherit;}
+      .${PFX}input:focus{border-color:${CYAN};}
+      .${PFX}send-btn,.${PFX}mic-btn{background:none;border:1px solid rgba(${CYAN_RGB},.25);border-radius:8px;color:${CYAN};cursor:pointer;padding:6px 10px;font-size:14px;transition:background .2s;}
+      .${PFX}send-btn:hover,.${PFX}mic-btn:hover{background:rgba(${CYAN_RGB},.1);}
       .${PFX}mic-btn.${PFX}active{background:rgba(255,60,90,.2);border-color:rgba(255,60,90,.4);color:#ff3c5a;}
-      .${PFX}highlight-ring{position:fixed;pointer-events:none;z-index:999998;border:2px solid ${c.primary};border-radius:8px;box-shadow:0 0 12px ${c.primaryGlow},inset 0 0 12px ${c.primaryGlow};animation:${PFX}pulse-ring 1.2s ease-in-out infinite;}
-      .${PFX}highlight-tip{position:fixed;z-index:999998;background:${c.bg1}cc;border:1px solid ${c.primaryGlow};color:#e0e8f0;padding:6px 12px;border-radius:8px;font-size:12px;pointer-events:none;max-width:220px;}
-      @keyframes ${PFX}pulse-ring{0%,100%{box-shadow:0 0 8px ${c.primaryGlow}}50%{box-shadow:0 0 20px ${c.primaryGlow}}}
+      .${PFX}highlight-ring{position:fixed;pointer-events:none;z-index:999998;border:2px solid ${CYAN};border-radius:8px;box-shadow:0 0 12px rgba(${CYAN_RGB},.4),inset 0 0 12px rgba(${CYAN_RGB},.1);animation:${PFX}pulse-ring 1.2s ease-in-out infinite;}
+      .${PFX}highlight-tip{position:fixed;z-index:999998;background:rgba(10,21,32,.95);border:1px solid rgba(${CYAN_RGB},.3);color:#e0e8f0;padding:6px 12px;border-radius:8px;font-size:12px;pointer-events:none;max-width:220px;}
+      @keyframes ${PFX}pulse-ring{0%,100%{box-shadow:0 0 8px rgba(${CYAN_RGB},.3)}50%{box-shadow:0 0 20px rgba(${CYAN_RGB},.6)}}
       @media(max-width:500px){
         .${PFX}panel{width:calc(100vw - 20px);height:calc(100vh - 100px);right:-10px;bottom:-10px;border-radius:16px 16px 0 0;}
       }
@@ -175,206 +136,280 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
       this._buildDOM();
       this._startOrbAnimation();
       this._setupProactive();
+      if (this.open) this._showPanel();
     }
 
-    /* ── auth ──────────────────────────────────────────────────── */
-    _initAuth() {
+    /* ── auth + identity ──────────────────────────────────────── */
+    async _initAuth() {
+      const token = localStorage.getItem(LS_TOKEN);
+      if (!token) return;
       try {
-        const token = localStorage.getItem(LS_TOKEN) || localStorage.getItem('bridge_token');
-        if (token) {
-          this._verifyToken(token);
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) { localStorage.removeItem(LS_TOKEN); return; }
+        const data = await res.json();
+        if (data.ok && data.user) {
+          this.authUser = data.user;
+          this.nurturePrompt = data.nurture_prompt || '';
+          this.userData.name = data.user.name || this.userData.name;
+          this.userData.email = data.user.email || this.userData.email;
+          this.userData.funnel_stage = data.user.funnel_stage;
+          this.userData.plan = data.user.plan;
+          saveJSON(LS_USER, this.userData);
         }
-      } catch {}
-    }
-
-    async _verifyToken(token) {
-      try {
-        const r = await fetch('/auth/verify', { headers: { 'Authorization': 'Bearer ' + token } });
-        if (r.ok) {
-          const d = await r.json();
-          this.authUser = d.user || d;
-        }
-      } catch {}
+      } catch (_) {}
     }
 
     async _autoRegister(email, name) {
       try {
-        const r = await fetch('/auth/register', {
+        const res = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password: 'auto-' + Date.now().toString(36), name: name || email.split('@')[0] })
+          body: JSON.stringify({ email, name: name || this.userData.name, password: Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('') })
         });
-        if (r.ok) {
-          const d = await r.json();
-          if (d.token) {
-            localStorage.setItem(LS_TOKEN, d.token);
-            this.authUser = d.user || d;
-          }
+        const data = await res.json();
+        if (data.ok && data.token) {
+          localStorage.setItem(LS_TOKEN, data.token);
+          this.authUser = data.user;
+          this.nurturePrompt = '';
+          this.userData.email = email;
+          saveJSON(LS_USER, this.userData);
         }
-      } catch {}
+      } catch (_) {}
     }
 
-    /* ── page tracking ──────────────────────────────────────────── */
+    _getAuthHeaders() {
+      const token = localStorage.getItem(LS_TOKEN);
+      if (!token) return {};
+      return { 'Authorization': 'Bearer ' + token };
+    }
+
+    async _recordConversation() {
+      try {
+        await fetch('/api/user/conversation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...this._getAuthHeaders() }
+        });
+      } catch (_) {}
+    }
+
+    /* ── journey tracking ──────────────────────────────────────── */
     _trackPage() {
       const path = location.pathname;
-      if (this.journey.pages[this.journey.pages.length - 1] !== path) {
-        this.journey.pages.push(path);
-        saveJSON(LS_JOURNEY, this.journey);
+      const j = this.journey;
+      if (!j.pages.find(p => p.path === path)) {
+        j.pages.push({ path: path, entered: Date.now() });
       }
+      saveJSON(LS_JOURNEY, j);
     }
 
-    /* ── DOM building ───────────────────────────────────────────── */
+    /* ── DOM construction ──────────────────────────────────────── */
     _buildDOM() {
-      const root = el('div', 'root');
-      const orbWrap = el('div', 'orb-wrap');
+      this.root = el('div', 'root');
+
+      // orb
+      this.orbWrap = el('div', 'orb-wrap');
       this.canvas = el('canvas', 'orb-canvas');
-      this.canvas.width = ORB_SIZE;
-      this.canvas.height = ORB_SIZE;
+      this.canvas.width = ORB_SIZE * 2;
+      this.canvas.height = ORB_SIZE * 2;
       this.ctx = this.canvas.getContext('2d');
-      orbWrap.appendChild(this.canvas);
-      orbWrap.onclick = () => this._toggle();
+      this.orbWrap.appendChild(this.canvas);
+      this.orbWrap.addEventListener('click', () => this._toggle());
 
+      // speech bubble
       this.bubble = el('div', 'bubble');
-      root.appendChild(this.bubble);
-      root.appendChild(orbWrap);
+      this.bubble.textContent = 'Need help?';
+      this.orbWrap.appendChild(this.bubble);
+      this.root.appendChild(this.orbWrap);
 
-      const panel = el('div', 'panel');
-      const header = el('div', 'header');
-      const title = el('div', 'header-title');
-      title.textContent = 'BRIDGE AI';
-      const close = el('button', 'header-close');
-      close.textContent = '×';
-      close.onclick = () => this._toggle();
-      header.appendChild(title);
-      header.appendChild(close);
+      // panel
+      this.panel = el('div', 'panel');
+      this._buildPanel();
+      this.root.appendChild(this.panel);
 
-      const messages = el('div', 'messages');
-      this.messagesEl = messages;
-
-      const typing = el('div', 'typing');
-      typing.innerHTML = '<span></span><span></span><span></span>';
-      this.typingEl = typing;
-
-      const inputRow = el('div', 'input-row');
-      this.input = el('input', 'input');
-      this.input.placeholder = 'Type a message...';
-      this.input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') this._send();
-      });
-      const sendBtn = el('button', 'send-btn');
-      sendBtn.textContent = '→';
-      sendBtn.onclick = () => this._send();
-      const micBtn = el('button', 'mic-btn');
-      micBtn.textContent = '🎤';
-      micBtn.onclick = () => this._toggleVoice();
-      this.micBtn = micBtn;
-
-      inputRow.appendChild(this.input);
-      inputRow.appendChild(sendBtn);
-      inputRow.appendChild(micBtn);
-
-      panel.appendChild(header);
-      panel.appendChild(messages);
-      panel.appendChild(typing);
-      panel.appendChild(inputRow);
-
-      root.appendChild(panel);
-      this.panel = panel;
-      document.body.appendChild(root);
-
-      // load existing messages
-      this._renderMessages();
+      document.body.appendChild(this.root);
 
       // mouse proximity
       document.addEventListener('mousemove', (e) => {
-        const rect = orbWrap.getBoundingClientRect();
-        const dx = e.clientX - (rect.left + rect.width / 2);
-        const dy = e.clientY - (rect.top + rect.height / 2);
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        this.mouseNear = dist < 120;
-      });
-
-      orbWrap.addEventListener('mouseenter', () => { this.mouseNear = true; });
-      orbWrap.addEventListener('mouseleave', () => { this.mouseNear = false; });
+        const r = this.orbWrap.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+        this.mouseNear = dist < 150;
+      }, { passive: true });
     }
 
+    _buildPanel() {
+      // header
+      const hdr = el('div', 'header');
+      const title = el('span', 'header-title');
+      title.textContent = 'Bridge AI';
+      const closeBtn = el('button', 'header-close');
+      closeBtn.textContent = '\u00D7';
+      closeBtn.addEventListener('click', () => this._toggle());
+      hdr.appendChild(title);
+      hdr.appendChild(closeBtn);
+      this.panel.appendChild(hdr);
+
+      // messages area
+      this.msgArea = el('div', 'messages');
+      this.panel.appendChild(this.msgArea);
+
+      // typing indicator
+      this.typingEl = el('div', 'typing');
+      for (let i = 0; i < 3; i++) this.typingEl.appendChild(document.createElement('span'));
+      this.msgArea.appendChild(this.typingEl);
+
+      // render stored messages
+      this.messages.forEach(m => this._renderMsg(m.role, m.text, false));
+
+      // input row
+      const inputRow = el('div', 'input-row');
+      this.input = el('input', 'input', { type: 'text', placeholder: 'Type a message...' });
+      this.input.addEventListener('keydown', (e) => { if (e.key === 'Enter') this._send(); });
+      const sendBtn = el('button', 'send-btn');
+      sendBtn.textContent = '\u27A4';
+      sendBtn.addEventListener('click', () => this._send());
+      this.micBtn = el('button', 'mic-btn');
+      this.micBtn.textContent = '\uD83C\uDF99';
+      this.micBtn.addEventListener('click', () => this._toggleVoice());
+      inputRow.appendChild(this.input);
+      inputRow.appendChild(sendBtn);
+      inputRow.appendChild(this.micBtn);
+      this.panel.appendChild(inputRow);
+    }
+
+    /* ── open / close ──────────────────────────────────────────── */
     _toggle() {
       this.open = !this.open;
       saveJSON(LS_OPEN, this.open);
-      this.panel.classList.toggle(PFX + 'open', this.open);
-      if (this.open) {
-        this.input.focus();
-        this.journey.interactions++;
-        saveJSON(LS_JOURNEY, this.journey);
+      if (this.open) this._showPanel(); else this._hidePanel();
+    }
+
+    _showPanel() {
+      this.open = true;
+      this.panel.classList.add(PFX + 'open');
+      this.orbWrap.style.display = 'none';
+      this.input.focus();
+      this._scrollBottom();
+      if (this.messages.length === 0) {
+        this._addAIMsg('Hey there! I\'m Bridge, your AI assistant. How can I help you today?');
       }
     }
 
-    _renderMessages() {
-      this.messagesEl.innerHTML = '';
-      this.messages.forEach(m => {
-        const msgEl = el('div', 'msg ' + (m.role === 'user' ? 'msg-user' : 'msg-ai'));
-        msgEl.textContent = m.text;
-        this.messagesEl.appendChild(msgEl);
-      });
-      this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
+    _hidePanel() {
+      this.open = false;
+      this.panel.classList.remove(PFX + 'open');
+      this.orbWrap.style.display = '';
     }
 
-    async _send() {
+    /* ── messaging ─────────────────────────────────────────────── */
+    _send() {
       const text = this.input.value.trim();
       if (!text) return;
       this.input.value = '';
-
-      // add user message
-      this.messages.push({ role: 'user', text, time: Date.now() });
-      if (this.messages.length > MAX_MSGS) this.messages.shift();
-      saveJSON(LS_CHAT, this.messages);
-      this._renderMessages();
-
-      // capture lead info
+      this._addMsg('user', text);
       this._captureLeadInfo(text);
-
-      // show typing
-      this.typingEl.style.display = 'flex';
-      this.messagesEl.appendChild(this.typingEl);
-      this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
-
-      // generate response
-      const response = await this._generateResponse(text);
-
-      // hide typing
-      this.typingEl.style.display = 'none';
-
-      // add AI message
-      this.messages.push({ role: 'ai', text: response, time: Date.now() });
-      if (this.messages.length > MAX_MSGS) this.messages.shift();
-      saveJSON(LS_CHAT, this.messages);
-      this._renderMessages();
+      this._callLLM(text);
+      this._recordConversation();
+      this.journey.interactions++;
+      saveJSON(LS_JOURNEY, this.journey);
     }
 
-    async _generateResponse(text) {
-      const context = PAGE_CONTEXT[location.pathname] || 'The user is on a Bridge AI OS page.';
-      const prompt = `${SYSTEM_KB}\n\nPage context: ${context}\n\nUser message: ${text}`;
-      
+    _addMsg(role, text) {
+      this.messages.push({ role, text, ts: Date.now() });
+      if (this.messages.length > MAX_MSGS) this.messages = this.messages.slice(-MAX_MSGS);
+      saveJSON(LS_CHAT, this.messages);
+      this._renderMsg(role, text, true);
+    }
+
+    _addAIMsg(text) {
+      this._addMsg('ai', text);
+    }
+
+    _renderMsg(role, text, scroll) {
+      const m = el('div', 'msg msg-' + role);
+      m.textContent = text;
+      this.msgArea.insertBefore(m, this.typingEl);
+      if (scroll) this._scrollBottom();
+    }
+
+    _scrollBottom() {
+      requestAnimationFrame(() => { this.msgArea.scrollTop = this.msgArea.scrollHeight; });
+    }
+
+    _showTyping(show) {
+      this.typingEl.style.display = show ? 'flex' : 'none';
+      if (show) this._scrollBottom();
+    }
+
+    /* ── LLM call ──────────────────────────────────────────────── */
+    async _callLLM(userText) {
+      this._showTyping(true);
+      const path = location.pathname;
+      const pageCtx = PAGE_CONTEXT[path] || 'The user is browsing Bridge AI OS.';
+      const journeyDesc = this.journey.pages.map(p => p.path).join(' -> ');
+      const history = this.messages.slice(-10).map(m => (m.role === 'user' ? 'User' : 'Bridge') + ': ' + m.text).join('\n');
+
+      const userCtx = this.authUser
+        ? `Authenticated user: ${this.authUser.name || 'unnamed'} (${this.authUser.email}), plan: ${this.authUser.plan || 'visitor'}, funnel: ${this.authUser.funnel_stage || 'visitor'}, score: ${this.authUser.lead_score || 0}`
+        : `Anonymous visitor. User info: ${JSON.stringify(this.userData)}`;
+      const nurtureAddon = this.nurturePrompt ? `\nNurture guidance: ${this.nurturePrompt}` : '';
+
+      const systemPrompt = `${SYSTEM_KB}
+
+Current page: ${path}
+Page context: ${pageCtx}
+User journey: ${journeyDesc}
+Pages visited: ${this.journey.pages.length}
+${userCtx}${nurtureAddon}
+
+Recent conversation:
+${history}
+
+Respond concisely (2-3 sentences max). Be helpful and guide the user. If you mention a UI element they should click, wrap it like [click: selector] e.g. [click: .nav-cta] so the widget can highlight it.`;
+
       try {
-        const r = await fetch('/api/ai/chat', {
+        const res = await fetch('/api/llm/infer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, context })
+          body: JSON.stringify({ system: systemPrompt, prompt: userText, max_tokens: 200 })
         });
-        if (r.ok) {
-          const d = await r.json();
-          return d.response || d.message || this._fallbackResponse(text);
-        }
-      } catch {}
 
-      return this._fallbackResponse(text);
+        this._showTyping(false);
+
+        if (!res.ok) {
+          this._addAIMsg(this._fallbackResponse(userText));
+          return;
+        }
+
+        const data = await res.json();
+        const reply = (data.response || data.text || data.content || '').trim();
+        if (!reply) { this._addAIMsg(this._fallbackResponse(userText)); return; }
+
+        // check for highlight directives
+        const highlightMatch = reply.match(/\[click:\s*([^\]]+)\]/);
+        const cleanReply = reply.replace(/\[click:\s*[^\]]+\]/g, '').trim();
+        this._addAIMsg(cleanReply);
+        if (highlightMatch) {
+          this.highlightElement(highlightMatch[1].trim(), 'Click here');
+        }
+      } catch (e) {
+        this._showTyping(false);
+        this._addAIMsg(this._fallbackResponse(userText));
+      }
     }
 
     _fallbackResponse(text) {
-      const lower = text.toLowerCase();
-      if (lower.includes('price') || lower.includes('cost') || lower.includes('plan'))
-        return 'We have three pricing tiers: Starter (free), Pro at R499/mo, and Enterprise at R2,499/mo. The Pro plan includes 10 AI agents, CRM, invoicing, and the agent economy dashboard. Enterprise adds dedicated support and custom integrations.';
-      if (lower.includes('hello') || lower.includes('hi'))
+      const t = text.toLowerCase();
+      if (t.includes('price') || t.includes('cost') || t.includes('plan'))
+        return 'We offer three plans: Starter (free), Pro at R499/mo, and Enterprise at R2,499/mo. The Pro plan is the most popular! Visit our checkout page for details.';
+      if (t.includes('token') || t.includes('brdg') || t.includes('economy'))
+        return 'BRDG tokens power our agent economy. Agents earn tokens by completing tasks, and 1% of every transaction is burned to keep the economy deflationary. Check the Economy dashboard for live stats.';
+      if (t.includes('help') || t.includes('how'))
+        return 'I can help you navigate Bridge AI OS! Try asking about pricing, features, the agent economy, or how to get started.';
+      if (t.includes('hello') || t.includes('hi ') || t === 'hi')
         return 'Hello! Welcome to Bridge AI OS. I can help you explore the platform, answer pricing questions, or guide you through any feature. What interests you?';
       return 'Thanks for your message! I\'m here to help with anything about Bridge AI OS — pricing, features, agent economy, or getting started. What would you like to know?';
     }
@@ -554,7 +589,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
 
         // outer glow
         const outerGrad = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, r * 2.2);
-        outerGrad.addColorStop(0, `rgba(${c.primaryRgb},${0.12 * glow})`);
+        outerGrad.addColorStop(0, `rgba(${CYAN_RGB},${0.12 * glow})`);
         outerGrad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = outerGrad;
         ctx.beginPath();
@@ -566,7 +601,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
           const ringPhase = (frame * 0.02 + i * 2.1) % (Math.PI * 2);
           const ringR = r * (1.2 + Math.sin(ringPhase) * 0.3 + i * 0.25);
           const alpha = (0.15 - i * 0.04) * glow;
-          ctx.strokeStyle = `rgba(${c.primaryRgb},${alpha})`;
+          ctx.strokeStyle = `rgba(${CYAN_RGB},${alpha})`;
           ctx.lineWidth = 1.2;
           ctx.beginPath();
           ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
@@ -575,9 +610,9 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
 
         // core orb gradient
         const coreGrad = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.2, 0, cx, cy, r);
-        coreGrad.addColorStop(0, `rgba(${c.primaryRgb},0.9)`);
-        coreGrad.addColorStop(0.5, `rgba(${c.primaryRgb},0.7)`);
-        coreGrad.addColorStop(1, `rgba(${c.primaryRgb},0.3)`);
+        coreGrad.addColorStop(0, `rgba(${CYAN_RGB},0.9)`);
+        coreGrad.addColorStop(0.5, `rgba(0,160,220,0.7)`);
+        coreGrad.addColorStop(1, `rgba(0,80,140,0.3)`);
         ctx.fillStyle = coreGrad;
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -614,7 +649,7 @@ Always be friendly and knowledgeable. You represent Bridge AI OS.`;
           p.life--;
           if (p.life <= 0) { this.particles.splice(i, 1); continue; }
           const alpha = p.life / p.maxLife;
-          ctx.fillStyle = `rgba(${c.primaryRgb},${alpha * 0.8})`;
+          ctx.fillStyle = `rgba(${CYAN_RGB},${alpha * 0.8})`;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
           ctx.fill();

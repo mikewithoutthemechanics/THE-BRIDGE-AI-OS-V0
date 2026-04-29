@@ -21,46 +21,6 @@
   'use strict';
 
   /* ──────────────────────────────────────────────────────────────────────────
-     THEME DETECTION
-     ──────────────────────────────────────────────────────────────────────── */
-  function detectTheme() {
-    var path = window.location.pathname.toLowerCase();
-    // Admin pages
-    if (path.indexOf('/admin') !== -1 || path.indexOf('/admin-') !== -1 || path.indexOf('/executive') !== -1 || path.indexOf('/intelligence') !== -1 || path.indexOf('/bridge-audit') !== -1 || path.indexOf('/aoe') !== -1) {
-      return 'admin';
-    }
-    // Agent pages
-    if (path.indexOf('/agent') !== -1 || path.indexOf('/join') !== -1 || path.indexOf('/neurolink') !== -1) {
-      return 'agent';
-    }
-    // Default to user theme
-    return 'user';
-  }
-
-  var theme = detectTheme();
-  var themeColors = {
-    admin: {
-      primaryRgb: '255,140,0',
-      secondaryRgb: '251,146,60',
-      tertiaryRgb: '168,85,247',
-      glow: 'rgba(255,140,0,0.08)'
-    },
-    agent: {
-      primaryRgb: '230,57,70',
-      secondaryRgb: '251,146,60',
-      tertiaryRgb: '168,85,247',
-      glow: 'rgba(230,57,70,0.08)'
-    },
-    user: {
-      primaryRgb: '99,255,218',
-      secondaryRgb: '0,229,123',
-      tertiaryRgb: '168,85,247',
-      glow: 'rgba(99,255,218,0.08)'
-    }
-  };
-  var c = themeColors[theme];
-
-  /* ──────────────────────────────────────────────────────────────────────────
      GATE: respect user motion preferences
      ──────────────────────────────────────────────────────────────────────── */
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -108,10 +68,10 @@
     window.addEventListener('resize', resize, { passive: true });
 
     var COLORS = [
-      'rgba(' + c.primaryRgb + ',',
-      'rgba(' + c.secondaryRgb + ',',
-      'rgba(' + c.primaryRgb + ',',
-      'rgba(' + c.tertiaryRgb + ',',
+      'rgba(99,255,218,',
+      'rgba(0,229,123,',
+      'rgba(99,255,218,',
+      'rgba(168,85,247,',
     ];
 
     for (var i = 0; i < PERF.particles; i++) {
@@ -161,7 +121,7 @@
               ctx.beginPath();
               ctx.moveTo(particles[a].x, particles[a].y);
               ctx.lineTo(particles[b].x, particles[b].y);
-              ctx.strokeStyle = 'rgba(' + c.primaryRgb + ',' + ((1 - dist / THRESH) * 0.08).toFixed(3) + ')';
+              ctx.strokeStyle = 'rgba(99,255,218,' + ((1 - dist / THRESH) * 0.08).toFixed(3) + ')';
               ctx.lineWidth = 0.5;
               ctx.stroke();
             }
@@ -259,33 +219,48 @@
   }
 
   /* ──────────────────────────────────────────────────────────────────────────
-     4. KINETIC TYPOGRAPHY ENGINE
+     4. KINETIC TYPOGRAPHY
+        Safe: uses createElement + textContent, never innerHTML with user data
      ──────────────────────────────────────────────────────────────────────── */
   function initKineticType() {
-    if (REDUCED || PERF.tier === 'low') return;
+    if (REDUCED) return;
 
-    var headings = document.querySelectorAll('h1, h2, h3, .phere-kinetic');
-    headings.forEach(function (h) {
-      var text = h.textContent;
-      if (!text) return;
-      h.textContent = '';
-      var chars = text.split('');
-      chars.forEach(function (ch, i) {
+    var targets = document.querySelectorAll('h1, .phere-display, .boot-logo');
+    targets.forEach(function (el) {
+      if (el.dataset.phereKinetic) return;
+      // Skip if element has child elements (complex HTML — don't touch)
+      if (el.children.length > 0) return;
+
+      el.dataset.phereKinetic = '1';
+      var text = el.textContent || '';
+      if (!text.trim()) return;
+
+      // Clear and rebuild using safe DOM methods only
+      while (el.firstChild) { el.removeChild(el.firstChild); }
+
+      text.split('').forEach(function (c, i) {
+        if (c === ' ') {
+          el.appendChild(document.createTextNode(' '));
+          return;
+        }
         var span = document.createElement('span');
-        span.textContent = ch === ' ' ? '\u00A0' : ch;
-        span.style.display = 'inline-block';
-        span.style.transition = 'transform 0.3s cubic-bezier(0.16,1,0.3,1)';
-        span.dataset.phereIndex = String(i);
-        h.appendChild(span);
+        span.textContent = c;
+        span.style.cssText = [
+          'display:inline-block',
+          'opacity:0',
+          'transform:translateY(8px)',
+          'transition:opacity 280ms ' + (i * 28 + ((Math.random() * 12) | 0)) + 'ms cubic-bezier(0.34,1.56,0.64,1),' +
+                    'transform 280ms ' + (i * 28 + ((Math.random() * 12) | 0)) + 'ms cubic-bezier(0.34,1.56,0.64,1)',
+        ].join(';');
+        el.appendChild(span);
       });
-      h.addEventListener('mouseenter', function () {
-        h.querySelectorAll('span').forEach(function (s) {
-          var idx = parseInt(s.dataset.phereIndex, 10);
-          var delay = idx * 20;
-          setTimeout(function () {
-            s.style.transform = 'translateY(-4px)';
-            setTimeout(function () { s.style.transform = ''; }, 200);
-          }, delay);
+
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          el.querySelectorAll('span').forEach(function (s) {
+            s.style.opacity = '1';
+            s.style.transform = 'translateY(0)';
+          });
         });
       });
     });
@@ -297,16 +272,46 @@
   function initPageTransitions() {
     if (REDUCED) return;
 
+    var overlay = document.createElement('div');
+    overlay.id = 'phere-transition-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.style.cssText = [
+      'position:fixed', 'inset:0', 'z-index:99999', 'pointer-events:none',
+      'background:linear-gradient(135deg,#020408,#080f1a)',
+      'opacity:0',
+      'transition:opacity 300ms cubic-bezier(0.16,1,0.3,1)',
+    ].join(';');
+    document.body.appendChild(overlay);
+
+    // Fade from black on load
+    window.addEventListener('load', function () {
+      overlay.style.opacity = '1';
+      overlay.style.transition = 'none';
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          overlay.style.transition = 'opacity 500ms cubic-bezier(0.16,1,0.3,1)';
+          overlay.style.opacity = '0';
+        });
+      });
+    });
+
     document.addEventListener('click', function (e) {
-      var a = e.target.closest('a');
+      var a = e.target.closest('a[href]');
       if (!a) return;
       var href = a.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:')) return;
+      if (!href) return;
+      var skip = href.charAt(0) === '#' ||
+                 href.indexOf('javascript') === 0 ||
+                 href.indexOf('http') === 0 ||
+                 href.indexOf('mailto') === 0 ||
+                 a.getAttribute('target') === '_blank';
+      if (skip) return;
 
       e.preventDefault();
-      document.body.style.transition = 'opacity 0.3s ease';
-      document.body.style.opacity = '0';
-      setTimeout(function () { window.location.href = href; }, 300);
+      overlay.style.transition = 'opacity 220ms cubic-bezier(0.4,0,1,1)';
+      overlay.style.opacity = '1';
+      var dest = href;
+      setTimeout(function () { window.location.href = dest; }, 240);
     });
   }
 
@@ -319,9 +324,9 @@
     function addRipple(e) {
       var btn = e.currentTarget;
       var rect = btn.getBoundingClientRect();
-      var x = e.clientX - rect.left;
-      var y = e.clientY - rect.top;
-      var size = Math.max(rect.width, rect.height) * 2.5;
+      var size = Math.max(rect.width, rect.height) * 2;
+      var x = e.clientX - rect.left - size / 2;
+      var y = e.clientY - rect.top - size / 2;
 
       var ripple = document.createElement('span');
       ripple.setAttribute('aria-hidden', 'true');
@@ -435,8 +440,8 @@
         card.style.background = [
           'radial-gradient(',
           'circle at ' + x + '% ' + y + '%,',
-          c.glow + ' 0%,',
-          'transparent 60%,',
+          'rgba(99,255,218,0.04) 0%,',
+          'transparent 60%',
           '),var(--bg2,#0a0e17)',
         ].join('');
       });
@@ -470,14 +475,13 @@
   window.BRIDGE_PHERE = {
     version: '1.0.0',
     tier: PERF.tier,
-    theme: theme,
     init: bootstrap,
     injectWordPress: function () {
       // Signal to WP REST API that PHERE is active
       fetch('/wp-json/bridge-ai/v1/phere/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ version: '1.0.0', tier: PERF.tier, theme: theme }),
+        body: JSON.stringify({ version: '1.0.0', tier: PERF.tier }),
       }).catch(function () {});
     },
     animate: function (selector, props) {

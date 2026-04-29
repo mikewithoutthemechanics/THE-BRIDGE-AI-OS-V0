@@ -4,24 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bridge AI OS — Verified Revenue Dashboard</title>
-<link rel="stylesheet" href="/bridge-design-tokens.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:var(--theme-bg-void);
-  --surface:var(--theme-bg-primary);
-  --border:var(--theme-border);
-  --cyan:var(--theme-primary);
-  --green:var(--status-success);
-  --red:var(--status-error);
-  --purple:#a78bfa;
-  --orange:#fb923c;
-  --dim:var(--theme-text-muted);
-  --text:var(--theme-text-primary);
-  --verified:var(--status-success);
-  --signed:var(--theme-primary);
-  --chain:#a78bfa
-}
+:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--red:#ff3c5a;--purple:#a78bfa;--orange:#fb923c;--dim:#4d6678;--text:#e0e8f0;--verified:#00e57b;--signed:#00c8ff;--chain:#a78bfa}
 body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:1.5rem;line-height:1.5}
 h1{font-size:1.6rem;font-weight:700;margin-bottom:.3rem}
 .sub{color:var(--dim);font-size:.85rem;margin-bottom:1.5rem}
@@ -42,10 +27,10 @@ td{padding:.5rem;border-bottom:1px solid rgba(26,45,64,.4)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 #log{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:monospace;font-size:.75rem;max-height:200px;overflow-y:auto;color:var(--dim)}
 .v-badge{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:600;padding:2px 8px;border-radius:10px;position:absolute;top:.75rem;right:.75rem;text-decoration:none}
-.v-onchain{background:rgba(74,222,128,.12);color:var(--verified)}
-.v-signed{background:rgba(255,140,0,.12);color:var(--signed)}
+.v-onchain{background:rgba(0,229,123,.12);color:var(--verified)}
+.v-signed{background:rgba(0,200,255,.12);color:var(--signed)}
 .v-chain{background:rgba(167,139,250,.12);color:var(--chain)}
-.v-error{background:rgba(248,113,113,.12);color:var(--red)}
+.v-error{background:rgba(255,60,90,.12);color:var(--red)}
 .v-link{font-size:.7rem;color:var(--cyan);text-decoration:none}
 .v-link:hover{text-decoration:underline}
 .v-source{font-size:.7rem;color:var(--dim);margin-top:.3rem}
@@ -59,10 +44,10 @@ td{padding:.5rem;border-bottom:1px solid rgba(26,45,64,.4)}
 .nav-header h1{font-size:15px;font-weight:700;color:var(--text);margin:0;white-space:nowrap}.nav-header h1 span{color:var(--cyan)}
 .nav-header nav{display:flex;gap:2px;overflow-x:auto}
 .nav-header nav a{color:var(--dim);text-decoration:none;font-size:12px;padding:4px 8px;border-radius:4px;white-space:nowrap}
-.nav-header nav a:hover{color:var(--cyan);background:rgba(255,140,0,.05)}
+.nav-header nav a:hover{color:var(--cyan);background:rgba(0,200,255,.05)}
 </style>
 </head>
-<body class="admin-theme">
+<body>
 <div class="nav-header">
   <h1>Verified <span>Revenue</span></h1>
   <nav>
@@ -171,77 +156,186 @@ td{padding:.5rem;border-bottom:1px solid rgba(26,45,64,.4)}
 
 <div class="section">
   <h2>AI Revenue Recommendations</h2>
-  <div class="grid" id="ai-recs"></div>
+  <div id="ai-recs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem"></div>
 </div>
 
 <div class="section">
   <h2>Payment Rails</h2>
-  <table><thead><tr><th>Rail</th><th>Status</th><th>Currency</th><th>Proof Type</th><th>Verify</th></tr></thead><tbody id="rails-table"></tbody></table>
+  <table id="rails-table">
+    <thead><tr><th>Rail</th><th>Status</th><th>Currency</th><th>Proof Method</th><th>Verification</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Subscription Plans</h2>
+  <table id="plans-table">
+    <thead><tr><th>Plan</th><th>Price</th><th>Description</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>BRDG Token (On-Chain Verified)</h2>
+  <table id="brdg-table">
+    <thead><tr><th>Metric</th><th>Value</th><th>Verification</th></tr></thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <div class="section">
   <h2>Recent Payment Proofs</h2>
-  <table><thead><tr><th>Transaction ID</th><th>Amount</th><th>Source</th><th>Hash</th><th>Verify</th></tr></thead><tbody id="proofs-table"></tbody></table>
+  <table id="proofs-table">
+    <thead><tr><th>Transaction</th><th>Amount</th><th>Source</th><th>Hash (first 16)</th><th>Verify</th></tr></thead>
+    <tbody></tbody>
+  </table>
 </div>
 
-<div class="section">
-  <h2>Plans</h2>
-  <table><thead><tr><th>Name</th><th>Price</th><th>Features</th></tr></thead><tbody id="plans-table"></tbody></table>
+<div class="sig-footer" id="sig-footer">
+  <div><span class="sig-label">Response Signature:</span> <span id="sig-value">--</span></div>
+  <div><span class="sig-label">Key ID:</span> <span id="sig-keyid">--</span></div>
+  <div><span class="sig-label">Timestamp:</span> <span id="sig-ts">--</span></div>
+  <div><span class="sig-label">Verify:</span> <a class="v-link" href="/api/verify/info" target="_blank" rel="noopener">/api/verify/info</a></div>
 </div>
 
-<div class="section">
+<div class="section" style="margin-top:1rem">
   <h2>Event Log</h2>
   <div id="log"></div>
 </div>
 
-<div class="sig-footer" id="sigFooter"></div>
-
-<button class="refresh" onclick="loadAll()">Refresh</button>
-
 <script>
 const $ = id => document.getElementById(id);
-const fmt = n => Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-const clearTable = id => { const t=$(id); if(t) t.innerHTML=''; return t; };
-const addRow = (tbody, cells) => {
+const fmt = n => parseFloat(n).toLocaleString(undefined, {maximumFractionDigits:2});
+
+function addLogEntry(msg) {
+  const log = $('log');
+  const div = document.createElement('div');
+  div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  log.prepend(div);
+  while (log.children.length > 100) log.removeChild(log.lastChild);
+}
+
+function clearTable(id) {
+  const tbody = $(id).querySelector('tbody');
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+  return tbody;
+}
+
+function makeLink(text, href) {
+  const a = document.createElement('a');
+  a.textContent = text;
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.className = 'v-link';
+  return a;
+}
+
+function addRow(tbody, cells) {
   const tr = document.createElement('tr');
-  cells.forEach(c => {
+  cells.forEach(cell => {
     const td = document.createElement('td');
-    td.textContent = c;
+    if (typeof cell === 'string' || typeof cell === 'number') {
+      td.textContent = cell;
+    } else if (cell instanceof Node) {
+      td.appendChild(cell);
+    }
     tr.appendChild(td);
   });
   tbody.appendChild(tr);
-};
-const makeLink = (text, href) => {
-  const a = document.createElement('a');
-  a.href = href;
-  a.textContent = text;
-  a.target = '_blank';
-  a.rel = 'noopener';
-  return a;
-};
-const setBadgeError = (id, txt) => { const b=$(id); if(b) { b.className='v-badge v-error'; b.textContent=txt; }};
-const addLogEntry = msg => {
-  const l=$('log');
-  const d=document.createElement('div');
-  d.textContent = new Date().toISOString() + ' ' + msg;
-  d.style.borderBottom='1px solid var(--border)';
-  l.insertBefore(d, l.firstChild);
-  while(l.children.length>50) l.removeChild(l.lastChild);
-};
+}
+
+function updateSigFooter(envelope) {
+  if (envelope && envelope._proof) {
+    $('sig-value').textContent = envelope._proof.signature;
+    $('sig-keyid').textContent = envelope._proof.keyId;
+    $('sig-ts').textContent = new Date(envelope._proof.timestamp).toISOString();
+  }
+}
+
+function setBadgeError(badgeId, msg) {
+  const badge = $(badgeId);
+  if (badge) { badge.className = 'v-badge v-error'; badge.textContent = msg || 'Unavailable'; }
+}
 
 async function loadAll() {
-  // ── Treasury (signed attestation) ──
-  try {
-    const r = await fetch('/api/treasury');
-    const d = await r.json();
-    if (d.balance) {
-      $('k-balance').textContent = 'R' + fmt(d.balance);
-      $('badge-treasury').className = 'v-badge v-signed';
-      $('badge-treasury').textContent = 'Signed';
-    }
-  } catch (e) { addLogEntry('Treasury fetch failed: ' + e.message); }
+  addLogEntry('Fetching verified metrics...');
 
-  // ── Revenue (hash chain derived) ──
+  // ── Token metrics (on-chain) ──
+  try {
+    const r = await fetch('/api/metrics/token');
+    const d = await r.json();
+    if (d.data && d.data.ok) {
+      const tok = d.data.token;
+      const tres = d.data.treasury;
+      var el;
+      if ((el = $('k-brdg'))) el.textContent = fmt(tok.totalSupply) + ' BRDG';
+      if ((el = $('k-burned'))) el.textContent = fmt(tok.totalBurned) + ' BRDG';
+      if ((el = $('k-vault-eth'))) el.textContent = tres.vault.ethBalance + ' ETH';
+
+      var links = tok.verification.links;
+      if ((el = $('badge-brdg'))) el.href = links.contract;
+      if ((el = $('badge-burned'))) el.href = links.contract;
+      if ((el = $('badge-vault'))) el.href = tres.verification.links.vaultContract;
+
+      // Update source links safely (clears children, so do brdg-block separately)
+      if ((el = $('src-brdg'))) {
+        el.textContent = '';
+        el.appendChild(document.createTextNode('Source: '));
+        el.appendChild(makeLink(tok.address.slice(0, 10) + '...', links.contract));
+        el.appendChild(document.createTextNode(' | Block: ' + (d.data.readAt.blockNumber || 'N/A')));
+      }
+
+      if ((el = $('src-vault'))) {
+        el.textContent = '';
+        el.appendChild(document.createTextNode('Source: '));
+        el.appendChild(makeLink('Vault on LineaScan', tres.verification.links.vaultContract));
+      }
+
+      // BRDG detail table
+      const tbody = clearTable('brdg-table');
+      addRow(tbody, ['Contract', tok.address, makeLink('LineaScan', links.contract)]);
+      addRow(tbody, ['Chain', tok.chain + ' (' + tok.chainId + ')', 'chainId: ' + tok.chainId]);
+      addRow(tbody, ['Total Supply', fmt(tok.totalSupply) + ' BRDG', makeLink('Read contract', tok.verification.methods.totalSupply.explorerLink)]);
+      addRow(tbody, ['Max Supply', fmt(tok.maxSupply) + ' BRDG', tok.verification.methods.maxSupply.call]);
+      addRow(tbody, ['Total Burned', fmt(tok.totalBurned) + ' BRDG', makeLink('Read contract', tok.verification.methods.totalBurned.explorerLink)]);
+      addRow(tbody, ['Burn Rate', tok.burnRate, 'BURN_BPS constant']);
+      addRow(tbody, ['Treasury BRDG', fmt(tres.brdgBalance) + ' BRDG', makeLink('Verify balance', tres.verification.methods.ownerBalance.explorerLink)]);
+      addRow(tbody, ['Vault ETH', tres.vault.ethBalance + ' ETH', makeLink('Verify balance', tres.verification.methods.vaultEth.explorerLink)]);
+      addRow(tbody, ['Block #', String(d.data.readAt.blockNumber), 'Proves freshness of read']);
+
+      updateSigFooter(d);
+      addLogEntry('Token metrics loaded (on-chain, block ' + d.data.readAt.blockNumber + ')');
+    }
+  } catch (e) {
+    setBadgeError('badge-brdg', 'RPC Error');
+    setBadgeError('badge-burned', 'RPC Error');
+    setBadgeError('badge-vault', 'RPC Error');
+    addLogEntry('Token metrics failed: ' + e.message);
+  }
+
+  // ── Treasury (hybrid: on-chain + signed + revenue engine) ──
+  try {
+    var tRes = await fetch('/api/metrics/treasury').then(function(r){return r.json();}).catch(function(){return {};});
+    var eRes = await fetch('/api/revenue-engine/status').then(function(r){return r.json();}).catch(function(){return {};});
+    var combined = (tRes.data && tRes.data.combined) || {};
+    var fiatBase = combined.fiatZar || 0;
+    var engineRev = eRes.revenueGenerated || 0;
+    var totalBalance = fiatBase + engineRev;
+    $('k-balance').textContent = 'R' + fmt(totalBalance);
+    if ($('src-treasury')) {
+      $('src-treasury').textContent = '';
+      $('src-treasury').appendChild(document.createTextNode('Treasury R' + fmt(fiatBase) + ' + Engine R' + fmt(engineRev) + ' | '));
+      $('src-treasury').appendChild(makeLink('raw data', '/api/metrics/treasury'));
+    }
+    if (tRes._proof) updateSigFooter(tRes);
+    addLogEntry('Treasury loaded (total: R' + fmt(totalBalance) + ', engine: R' + fmt(engineRev) + ')');
+  } catch (e) {
+    setBadgeError('badge-treasury', 'Error');
+    addLogEntry('Treasury metrics failed: ' + e.message);
+  }
+
+  // ── Revenue (hash-chain derived) ──
   try {
     const r = await fetch('/api/metrics/revenue');
     const d = await r.json();
@@ -394,21 +488,6 @@ async function loadAll() {
   }
 
   addLogEntry('Dashboard refreshed (zero-trust mode)');
-}
-
-function updateSigFooter(d) {
-  const f = $('sigFooter');
-  if (!f) return;
-  f.innerHTML = '';
-  if (d.data && d.data.signature) {
-    const l = document.createElement('div');
-    l.className = 'sig-label';
-    l.textContent = 'Attestation Signature (Ed25519): ';
-    f.appendChild(l);
-    const s = document.createElement('div');
-    s.textContent = d.data.signature;
-    f.appendChild(s);
-  }
 }
 
 // SSE live events

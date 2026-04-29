@@ -6,85 +6,66 @@
   <title>Agent Control | Bridge AI-OS</title>
   <meta name="description" content="Bridge AI OS Agent Control Centre — manage and run 10 autonomous AI agents across L1, L2, and L3 layers.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/bridge-design-tokens.css">
   <link rel="stylesheet" href="/bridge-tokens.css">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--theme-bg-primary);color:var(--theme-text-primary);font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+    body{background:#060810;color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh}
     .dashboard{max-width:1100px;margin:0 auto;padding:24px}
-    h1{font-size:1.6rem;font-weight:800;color:var(--theme-primary);margin-bottom:6px}
-    .sub{color:var(--theme-text-muted);font-size:0.85rem;margin-bottom:28px}
+    h1{font-size:1.6rem;font-weight:800;color:#63ffda;margin-bottom:6px}
+    .sub{color:#94a3b8;font-size:0.85rem;margin-bottom:28px}
     .toolbar{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
     .btn{padding:9px 20px;border-radius:8px;font-size:0.82rem;font-weight:700;border:none;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s}
-    .btn-primary{background:var(--theme-gradient);color:var(--theme-bg-void)}
-    .btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
-    .btn-secondary{background:var(--theme-bg-secondary);color:var(--theme-primary);border:1px solid var(--theme-border)}
-    .btn-secondary:hover{border-color:var(--theme-primary)}
+    .btn-primary{background:#63ffda;color:#060810}
+    .btn-primary:hover{background:#00dda8}
+    .btn-secondary{background:#0a0e17;color:#63ffda;border:1px solid rgba(99,255,218,0.2)}
+    .btn-secondary:hover{border-color:#63ffda}
     .btn:disabled{opacity:0.4;cursor:not-allowed}
-    .run-status{font-size:0.8rem;color:var(--theme-text-muted);margin-left:auto}
-    .run-status.running{color:var(--status-warning)}
-    .run-status.done{color:var(--status-success)}
+    .run-status{font-size:0.8rem;color:#94a3b8;margin-left:auto}
+    .run-status.running{color:#fbbf24}
+    .run-status.done{color:#4ade80}
     .agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-    .agent-card{background:var(--theme-bg-secondary);border:1px solid var(--theme-border);border-radius:12px;padding:20px;transition:border-color 0.2s}
-    .agent-card.running{border-color:var(--status-warning);animation:pulse 1.5s ease-in-out infinite}
-    .agent-card.done{border-color:var(--status-success)}
-    .agent-card.error{border-color:var(--status-error)}
-    .agent-card.cached{border-color:var(--theme-border-focus)}
+    .agent-card{background:#0a0e17;border:1px solid #1a2a3a;border-radius:12px;padding:20px;transition:border-color 0.2s}
+    .agent-card.running{border-color:#fbbf24;animation:pulse 1.5s ease-in-out infinite}
+    .agent-card.done{border-color:#4ade80}
+    .agent-card.error{border-color:#f87171}
+    .agent-card.cached{border-color:rgba(99,255,218,0.25)}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
     .agent-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-    .agent-dot{width:8px;height:8px;border-radius:50%;background:var(--theme-border);flex-shrink:0}
-    .agent-dot.active{background:var(--status-success);box-shadow:0 0 6px var(--status-success-glow)}
-    .agent-dot.cached{background:var(--theme-primary);box-shadow:0 0 6px var(--theme-primary-glow)}
-    .agent-dot.running{background:var(--status-warning);box-shadow:0 0 6px var(--status-warning-glow)}
-    .agent-dot.error{background:var(--status-error)}
+    .agent-dot{width:8px;height:8px;border-radius:50%;background:#1a2a3a;flex-shrink:0}
+    .agent-dot.active{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.5)}
+    .agent-dot.cached{background:#63ffda;box-shadow:0 0 6px rgba(99,255,218,0.4)}
+    .agent-dot.running{background:#fbbf24;box-shadow:0 0 6px rgba(251,191,36,0.5)}
+    .agent-dot.error{background:#f87171}
     .agent-name{font-size:0.92rem;font-weight:700}
-    .agent-layer{font-size:0.7rem;color:var(--theme-primary);background:var(--theme-primary-muted);padding:2px 8px;border-radius:10px;margin-left:auto}
-    .agent-output{font-size:0.78rem;color:var(--theme-text-muted);line-height:1.5;min-height:40px;margin-bottom:12px;word-break:break-word;max-height:160px;overflow-y:auto}
-    .agent-output.loaded{color:var(--theme-text-secondary)}
+    .agent-layer{font-size:0.7rem;color:#63ffda;background:rgba(99,255,218,0.1);padding:2px 8px;border-radius:10px;margin-left:auto}
+    .agent-output{font-size:0.78rem;color:#94a3b8;line-height:1.5;min-height:40px;margin-bottom:12px;word-break:break-word;max-height:160px;overflow-y:auto}
+    .agent-output.loaded{color:#cbd5e1}
     .agent-footer{display:flex;align-items:center;gap:8px}
-    .agent-run-btn{padding:5px 14px;font-size:0.75rem;font-weight:700;background:var(--theme-primary-muted);border:1px solid var(--theme-border);color:var(--theme-primary);border-radius:6px;cursor:pointer;transition:all 0.15s}
-    .agent-run-btn:hover{background:var(--theme-primary-glow)}
+    .agent-run-btn{padding:5px 14px;font-size:0.75rem;font-weight:700;background:rgba(99,255,218,0.08);border:1px solid rgba(99,255,218,0.2);color:#63ffda;border-radius:6px;cursor:pointer;transition:all 0.15s}
+    .agent-run-btn:hover{background:rgba(99,255,218,0.15)}
     .agent-run-btn:disabled{opacity:0.3;cursor:not-allowed}
-    .agent-time{font-size:0.7rem;color:var(--theme-text-muted);margin-left:auto}
+    .agent-time{font-size:0.7rem;color:#4a5568;margin-left:auto}
     .input-row{display:flex;gap:8px;margin-bottom:8px}
-    .agent-input{flex:1;padding:6px 10px;background:var(--theme-bg-tertiary);border:1px solid var(--theme-border);border-radius:6px;color:var(--theme-text-primary);font-size:0.78rem;outline:none}
-    .agent-input:focus{border-color:var(--theme-primary)}
-    .stats-bar{background:var(--theme-bg-secondary);border:1px solid var(--theme-border);border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+    .agent-input{flex:1;padding:6px 10px;background:#111827;border:1px solid #1a2a3a;border-radius:6px;color:#fff;font-size:0.78rem;outline:none}
+    .agent-input:focus{border-color:#63ffda}
+    .stats-bar{background:#0a0e17;border:1px solid #1a2a3a;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
     .t-stat{text-align:center}
-    .t-val{font-size:1.4rem;font-weight:800;color:var(--theme-primary)}
-    .t-label{font-size:0.7rem;color:var(--theme-text-muted);text-transform:uppercase;letter-spacing:1px}
-    .auto-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;background:var(--theme-primary-muted);border:1px solid var(--theme-border);color:var(--theme-primary);margin-left:auto}
-    .auto-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--status-success);animation:blink 2s ease-in-out infinite}
+    .t-val{font-size:1.4rem;font-weight:800;color:#63ffda}
+    .t-label{font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+    .auto-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;background:rgba(99,255,218,0.08);border:1px solid rgba(99,255,218,0.2);color:#63ffda;margin-left:auto}
+    .auto-badge .dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:blink 2s ease-in-out infinite}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-    .spend-bar{width:100%;height:3px;background:var(--theme-bg-tertiary);border-radius:2px;margin-top:6px;overflow:hidden}
-    .spend-fill{height:100%;background:var(--theme-gradient);border-radius:2px;transition:width 0.5s}
-    @media(max-width:768px){
+    .spend-bar{width:100%;height:3px;background:#1e293b;border-radius:2px;margin-top:6px;overflow:hidden}
+    .spend-fill{height:100%;background:linear-gradient(90deg,#63ffda,#fbbf24);border-radius:2px;transition:width 0.5s}
+    @media(max-width:640px){
       .agents-grid{grid-template-columns:1fr}
-      .dashboard{padding:12px}
-      h1{font-size:1.2rem}
-      .sub{font-size:0.78rem;margin-bottom:16px}
-      .stats-bar{gap:10px;padding:12px 14px;flex-wrap:wrap;justify-content:space-between}
-      .t-stat{min-width:unset;flex:1 1 45%}
-      .t-val{font-size:1.1rem}
-      .t-label{font-size:0.62rem}
-      .toolbar{gap:8px}
-      .btn{padding:8px 14px;font-size:0.78rem}
-      .agent-card{padding:14px}
-      .agent-name{font-size:0.85rem}
-      .agent-output{font-size:0.75rem;max-height:120px}
-      .input-row{flex-direction:column}
-      .agent-input{width:100%}
-      .auto-badge{font-size:0.65rem;padding:3px 8px;margin-left:0;margin-top:4px}
-      .run-status{margin-left:0;width:100%;text-align:center;margin-top:4px}
-    }
-    @media(max-width:380px){
-      .stats-bar{gap:6px;padding:10px}
-      .t-val{font-size:0.95rem}
-      .btn{padding:7px 10px;font-size:0.72rem}
+      .dashboard{padding:14px}
+      h1{font-size:1.3rem}
+      .stats-bar{gap:14px}
     }
   </style>
 </head>
-<body class="agent-theme">
+<body>
   <script src="/bridge-nav.js?v=2"></script>
   <div class="dashboard">
     <h1>Agent Control Centre</h1>
@@ -228,11 +209,11 @@
 
     // Status colour map for execution_status field
     var STATUS_COLOUR = {
-      complete: 'var(--status-success)',
-      partial:  'var(--status-warning)',
-      failed:   'var(--status-error)',
-      never:    'var(--theme-text-muted)',
-      running:  'var(--status-warning)',
+      complete: '#4ade80',
+      partial:  '#fbbf24',
+      failed:   '#f87171',
+      never:    '#64748b',
+      running:  '#fbbf24',
     };
 
     async function loadOutputs() {
@@ -247,7 +228,7 @@
         // Last run + status badge
         var lbl    = document.getElementById('lastRunLabel');
         var status = agents.execution_status || 'never';
-        var colour = STATUS_COLOUR[status] || 'var(--theme-text-muted)';
+        var colour = STATUS_COLOUR[status] || '#64748b';
         lbl.textContent = agents.last_run
           ? status.toUpperCase() + ' · ' + timeAgo(agents.last_run)
           : 'No cycle yet';
