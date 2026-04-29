@@ -1151,6 +1151,7 @@ function requireAuth(req, res, next) {
     '/api/twin/',     // twin layer handles its own auth via resolveUser()
     '/api/bank/',     // continuity ledger — gated by requireAdmin in continuity-routes.js
     '/api/siwe/',               // SIWE is public — no token needed to get nonce or verify
+    '/siwe/',                   // SIWE path when /api middleware strips prefix
     '/api/config-engine/health', // engine health is public
     '/api/uloe/health',          // ULOE health is public
     '/api/uloe/validate/',       // API key validation is public (used by gateway)
