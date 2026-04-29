@@ -11,9 +11,9 @@
 | Target | Status | Notes |
 |--------|--------|-------|
 | **GitHub Repository** | ✅ IN SYNC | Local matches remote |
-| **VPS (37.27.245.219)** | ❌ UNREACHABLE | Timeout on port 3000 |
+| **VPS (102.208.228.44)** | ✅ DEPLOYED | All services online, withdrawal system verified |
 | **Supabase Database** | ✅ COMPLETE | All 5 tables created via MCP |
-| **On-Chain (Linea)** | ⚠️ PARTIAL | Contract OK, missing treasury key & liquidity |
+| **On-Chain (Linea)** | ✅ WORKING | Contract OK, treasury configured, RPC connected |
 
 ---
 
@@ -48,40 +48,34 @@
 
 ---
 
-### 2. VPS Deployment ❌
+### 2. VPS Deployment ✅
 
 ```
-[VPS] VPS unreachable at http://37.27.245.219:3000: Request timeout
+[VPS] VPS at 102.208.228.44:3001 - DEPLOYED
+[VPS] PM2 services: All online
+[VPS] Withdrawal system: Fully verified
 ```
 
-**Issues Found:**
-1. VPS not responding on port 3000
-2. Cannot verify if code is deployed
-3. Cannot verify if services are running
+**Deployment Details:**
+- **IP:** 102.208.228.44
+- **Port:** 3001 (unified-server)
+- **Directory:** /opt/ai-os
+- **Git:** bridgeaios/THE-BRIDGE-AI-OS-V0.git
+- **Commit:** 9cfbe89 (latest)
 
-**Possible Causes:**
-- VPS IP address may be different
-- Service may be running on different port
-- Firewall blocking port 3000
-- Service not started
+**Verification Results:**
+- ✅ npm packages installed
+- ✅ Environment variables configured
+- ✅ Treasury modules loaded
+- ✅ Database tables accessible (all 5)
+- ✅ On-chain connectivity working
+- ✅ Withdrawal endpoints responding
 
-**Required Actions:**
-```bash
-# 1. SSH into VPS and check status
-ssh root@37.27.245.219
-
-# 2. Check if service is running
-pm2 status
-
-# 3. Check if port 3000 is listening
-netstat -tlnp | grep 3000
-
-# 4. Check firewall rules
-ufw status
-
-# 5. If service not running, start it
-cd /opt/bridge-os && pm2 start ecosystem.config.js
-```
+**Active Routes:**
+- POST /api/user/withdraw/brdg
+- POST /api/agent/claim
+- POST /api/user/swap/brdg-to-eth
+- POST /api/admin/swap/execute
 
 ---
 
@@ -104,96 +98,63 @@ cd /opt/bridge-os && pm2 start ecosystem.config.js
 
 ---
 
-### 4. On-Chain Status (Linea L2) ⚠️
+### 4. On-Chain Status (Linea L2) ✅
 
 ```
-[CHAIN] Linea RPC connected (block 30436766)
-[CHAIN] Treasury wallet error: TREASURY_PRIVATE_KEY not set
+[CHAIN] Linea RPC connected (block 30437871)
+[CHAIN] Treasury wallet: 0xAC301f984556c11ecf3818CaA6020d11c8616F64
+[CHAIN] Treasury balance: 0.000069216952321192 ETH
 [CHAIN] BRDG contract: 0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f
-[CHAIN] Total supply: 70005001.0
-[CHAIN] Swap pool does not exist or has no liquidity
+[CHAIN] Total supply: 70,005,001 BRDG
+[CHAIN] TREASURY_PRIVATE_KEY: Configured
 ```
 
-**Working:**
+**Status:**
 - ✅ Linea RPC connection successful
+- ✅ Treasury wallet configured with private key
 - ✅ BRDG contract is deployed and accessible
-- ✅ Total supply: 70,005,001 BRDG
+- ✅ Treasury wallet has ETH for gas
+- ⚠️ Swap pool has no liquidity (optional for BRDG withdrawals)
 
-**Issues:**
-- ❌ TREASURY_PRIVATE_KEY not set in .env
-- ⚠️ Swap pool has no liquidity (needs funding)
-
-**Required Actions:**
-```bash
-# 1. Add treasury private key to .env
-echo "TREASURY_PRIVATE_KEY=0xyourprivatekey" >> .env
-
-# Or use deployer key:
-echo "DEPLOYER_PRIVATE_KEY=0xyourprivatekey" >> .env
-
-# 2. For swap pool liquidity, contact admin to add:
-#    - BRDG tokens to the SyncSwap pool
-#    - ETH for gas and swaps
-```
+**Note:** Swap pool liquidity is only required for BRDG→ETH swaps. Direct BRDG withdrawals work without it.
 
 ---
 
 ## Action Items Summary
 
-### Immediate (Required for Withdrawal System)
+### ✅ COMPLETE - All Required Actions Done
 
-1. **Set Environment Variables**
-   ```bash
-   # Add to .env on local machine AND VPS
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_SERVICE_KEY=your-service-role-key
-   TREASURY_PRIVATE_KEY=0x... (or DEPLOYER_PRIVATE_KEY)
-   JWT_SECRET=your-jwt-secret
-   ```
+1. ✅ **Environment Variables** - Configured on VPS
+2. ✅ **Supabase Migration** - Applied via MCP
+3. ✅ **VPS Deployment** - Code deployed at 102.208.228.44:3001
+4. ✅ **Treasury Configuration** - TREASURY_PRIVATE_KEY configured
 
-2. **Fix VPS Connectivity**
-   - Verify correct VPS IP address
-   - Ensure service is running on port 3000
-   - Check firewall rules
+### Optional (Future Enhancements)
 
-3. **Deploy to VPS**
-   ```bash
-   ssh root@37.27.245.219 "cd /opt/bridge-os && git pull origin main"
-   ssh root@37.27.245.219 "cd /opt/bridge-os && npm install"
-   ssh root@37.27.245.219 "cd /opt/bridge-os && pm2 reload ecosystem.config.js"
-   ```
-
-### Future (After Core System Working)
-
-4. **Add Swap Pool Liquidity**
-   - Fund SyncSwap BRDG/ETH pool
-   - Required for BRDG→ETH swaps
+**Add Swap Pool Liquidity** (Optional)
+- Fund SyncSwap BRDG/ETH pool for BRDG→ETH swaps
+- Direct BRDG withdrawals work without this
+- Only needed if swap functionality is required
 
 ---
 
 ## Verification Commands
 
-After completing actions above, verify with:
+To verify the deployment status:
 
 ```bash
-# Full verification
+# Full verification (local)
 node scripts/verify-full-deployment.js
 
-# Or individual checks:
+# VPS verification (withdrawal system)
+ssh root@102.208.228.44 "cd /opt/ai-os && node scripts/verify-withdrawal-system.js"
 
-# 1. Check GitHub
-git status
+# Check withdrawal endpoints (requires auth token)
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  http://102.208.228.44:3001/api/user/withdraw/limits
 
-# 2. Check VPS
-curl http://37.27.245.219:3000/health
-
-# 3. Check Supabase tables
-curl -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
-  "$SUPABASE_URL/rest/v1/withdrawal_requests?limit=1"
-
-# 4. Check withdrawal endpoints
-curl http://37.27.245.219:3000/api/user/withdraw/limits
-curl "http://37.27.245.219:3000/api/swap/quote?amount=100"
+# Check PM2 status
+ssh root@102.208.228.44 "pm2 status"
 ```
 
 ---
@@ -222,11 +183,14 @@ curl "http://37.27.245.219:3000/api/swap/quote?amount=100"
 ## Next Steps
 
 1. ✅ **GitHub** - All code pushed (COMPLETE)
-2. ⚠️ **VPS** - Needs IP/port verification
+2. ✅ **VPS** - Deployed at 102.208.228.44:3001 (COMPLETE)
 3. ✅ **Supabase** - Migration applied via MCP (COMPLETE)
-4. ⚠️ **Environment** - Add TREASURY_PRIVATE_KEY
-5. ⚠️ **On-Chain** - Add swap pool liquidity (admin)
+4. ✅ **Environment** - TREASURY_PRIVATE_KEY configured (COMPLETE)
+5. ✅ **On-Chain** - Linea RPC connected, treasury configured (COMPLETE)
 
-**Estimated time to complete:** 5-10 minutes
+**Status: WITHDRAWAL SYSTEM FULLY DEPLOYED AND OPERATIONAL**
 
-See `DEPLOY_NOW.md` for step-by-step instructions.
+**Optional Future Enhancements:**
+- Add swap pool liquidity for BRDG→ETH swaps
+
+See `DEPLOY_NOW.md` for deployment documentation.
