@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge AI - Automation Hub</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+        .header { background: #151520; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #252535; }
+        .logo { font-size: 1.5rem; font-weight: 700; color: #00d4ff; }
+        nav a { color: #888; text-decoration: none; margin-left: 30px; }
+        nav a:hover { color: #00d4ff; }
+        .hero { padding: 80px 40px; text-align: center; background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0f 100%); }
+        h1 { font-size: 3rem; margin-bottom: 20px; }
+        .subtitle { color: #888; font-size: 1.2rem; max-width: 600px; margin: 0 auto 40px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 40px; max-width: 1200px; margin: 0 auto; }
+        .card { background: #151520; padding: 25px; border-radius: 12px; border: 1px solid #252535; }
+        .card h3 { color: #00d4ff; margin-bottom: 10px; }
+        .card p { color: #888; font-size: 0.9rem; line-height: 1.5; }
+        .status { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; margin-top: 10px; }
+        .status.active { background: #1a3a2a; color: #4ade80; }
+        .status.paused { background: #3a3a2a; color: #f59e0b; }
+        .btn { background: linear-gradient(90deg, #00d4ff, #7b2cff); color: #000; padding: 12px 24px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 15px; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 40px; max-width: 1200px; margin: 0 auto; background: #0f0f1a; }
+        .stat { text-align: center; }
+        .stat .value { font-size: 2.5rem; font-weight: 700; color: #00d4ff; }
+        .stat .label { color: #666; font-size: 0.9rem; }
+    </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🤖 Bridge AI</div>
+        <nav>
+            <a href="/portal">Portal</a>
+            <a href="/economy">Economy</a>
+            <a href="/admin">Admin</a>
+        </nav>
+    </div>
+    
+    <div class="hero">
+        <h1>⚙️ Automation Hub</h1>
+        <p class="subtitle">Manage your automated workflows, schedulers, and triggers. All your automation in one place.</p>
+    </div>
+    
+    <div class="stats">
+        <div class="stat">
+            <div class="value" id="activeWorkflows">12</div>
+            <div class="label">Active Workflows</div>
+        </div>
+        <div class="stat">
+            <div class="value" id="runsToday">247</div>
+            <div class="label">Runs Today</div>
+        </div>
+        <div class="stat">
+            <div class="value" id="brdgEarned">1.2K</div>
+            <div class="label">BRDG Earned</div>
+        </div>
+        <div class="stat">
+            <div class="value" id="uptime">99.9%</div>
+            <div class="label">Uptime</div>
+        </div>
+    </div>
+    
+    <div class="grid">
+        <div class="card">
+            <h3>📧 Email Automation</h3>
+            <p>Automated follow-ups, nurturing sequences, and cold outreach.</p>
+            <span class="status active">Active</span>
+            <button class="btn">Configure →</button>
+        </div>
+        <div class="card">
+            <h3>📊 Data Sync</h3>
+            <p>Sync CRM data, enrich leads, update dashboards.</p>
+            <span class="status active">Active</span>
+            <button class="btn">Configure →</button>
+        </div>
+        <div class="card">
+            <h3>💰 Payment Collection</h3>
+            <p>Auto-charge on usage, subscription billing, invoicing.</p>
+            <span class="status active">Active</span>
+            <button class="btn">Configure →</button>
+        </div>
+        <div class="card">
+            <h3>🔔 Notifications</h3>
+            <p>Slack, Discord, Email alerts on events.</p>
+            <span class="status paused">Paused</span>
+            <button class="btn">Enable →</button>
+        </div>
+        <div class="card">
+            <h3>📅 Scheduled Tasks</h3>
+            <p>Cron jobs, recurring reports, maintenance.</p>
+            <span class="status active">Active</span>
+            <button class="btn">Configure →</button>
+        </div>
+        <div class="card">
+            <h3>🤖 AI Triggers</h3>
+            <p>Auto-execute tasks based on AI decisions.</p>
+            <span class="status active">Active</span>
+            <button class="btn">Configure →</button>
+        </div>
+    </div>
+    
+    <script>
+        // Load automation stats from API
+        async function loadStats() {
+            try {
+                const resp = await fetch('/api/economy/loop-stats');
+                const data = await resp.json();
+                document.getElementById('activeWorkflows').textContent = data.activeWorkflows || 12;
+                document.getElementById('runsToday').textContent = data.runsToday || 247;
+                document.getElementById('brdgEarned').textContent = (data.brdgEarned || 1200) + ' BRDG';
+            } catch(e) { console.log('Using default stats'); }
+        }
+        loadStats();
+    </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

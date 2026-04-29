@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cognitive OS — Bridge AI</title>
+  <script defer src="/bridge-nav.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #04040c; --surface: #0a0a18; --surface2: #101024;
+      --border: rgba(120,100,255,0.12); --border2: rgba(120,100,255,0.22);
+      --accent: #7c6af7; --accent2: #4facfe; --green: #00e57b;
+      --gold: #ffb400; --red: #ef4444; --purple: #c084fc;
+      --text: #e8e8f0; --muted: #6060a0; --radius: 10px;
+    }
+    body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; min-height:100vh; padding-top:64px; }
+
+    /* Layout */
+    .page { display:grid; grid-template-columns:260px 1fr; min-height:calc(100vh - 64px); }
+    @media(max-width:900px){ .page{grid-template-columns:1fr;} .sidebar{display:none;} }
+
+    /* Sidebar */
+    .sidebar { background:var(--surface); border-right:1px solid var(--border); padding:1.5rem 1rem; position:sticky; top:64px; height:calc(100vh - 64px); overflow-y:auto; }
+    .sidebar-title { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:0.75rem; padding:0 0.5rem; }
+    .sidebar-link { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.75rem; border-radius:var(--radius); cursor:pointer; font-size:0.85rem; color:var(--muted); transition:all 0.15s; margin-bottom:2px; text-decoration:none; }
+    .sidebar-link:hover, .sidebar-link.active { background:rgba(124,106,247,0.12); color:var(--accent); }
+    .sidebar-link .icon { width:20px; text-align:center; font-size:1rem; }
+    .group-badge { font-size:0.65rem; padding:0.15rem 0.45rem; border-radius:999px; margin-left:auto; }
+    .group-badge.foundation { background:rgba(0,229,123,0.12); color:var(--green); }
+    .group-badge.transformation { background:rgba(79,172,254,0.12); color:var(--accent2); }
+    .group-badge.control { background:rgba(255,180,0,0.12); color:var(--gold); }
+    .group-badge.intelligence { background:rgba(192,132,252,0.12); color:var(--purple); }
+    .group-badge.system { background:rgba(239,68,68,0.12); color:var(--red); }
+
+    /* Main */
+    .main { padding:1.5rem; overflow-y:auto; }
+
+    /* Header */
+    .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem; }
+    .page-title { font-size:1.5rem; font-weight:700; background:linear-gradient(135deg,var(--accent),var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .header-stats { display:flex; gap:1rem; flex-wrap:wrap; }
+    .hstat { text-align:center; }
+    .hstat-val { font-size:1.3rem; font-weight:700; color:var(--accent); }
+    .hstat-label { font-size:0.7rem; color:var(--muted); }
+
+    /* Panels */
+    .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.2rem; margin-bottom:1.2rem; }
+    .panel-title { font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--muted); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; }
+    .panel-title span { color:var(--accent); }
+
+    /* Verb executor */
+    .verb-form { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+    @media(max-width:600px){ .verb-form{grid-template-columns:1fr;} }
+    .field-group { display:flex; flex-direction:column; gap:0.4rem; }
+    .field-group label { font-size:0.75rem; color:var(--muted); }
+    .field-input, .field-select, .field-textarea {
+      background:var(--surface2); border:1px solid var(--border); color:var(--text);
+      padding:0.6rem 0.8rem; border-radius:var(--radius); font-size:0.85rem; font-family:inherit;
+      transition:border-color 0.15s;
+    }
+    .field-input:focus, .field-select:focus, .field-textarea:focus { outline:none; border-color:var(--accent); }
+    .field-textarea { resize:vertical; min-height:80px; font-family:'Monaco','Menlo',monospace; font-size:0.8rem; }
+    .full-col { grid-column:1/-1; }
+    .btn { padding:0.6rem 1.4rem; border-radius:999px; border:none; cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.15s; display:inline-flex; align-items:center; gap:0.4rem; }
+    .btn-primary { background:linear-gradient(135deg,var(--accent),var(--purple)); color:#fff; }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 15px rgba(124,106,247,0.35); }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--muted); }
+    .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-green { background:rgba(0,229,123,0.15); border:1px solid rgba(0,229,123,0.3); color:var(--green); }
+    .btn-gold { background:rgba(255,180,0,0.15); border:1px solid rgba(255,180,0,0.3); color:var(--gold); }
+
+    /* Result output */
+    .result-box { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; font-family:'Monaco','Menlo',monospace; font-size:0.78rem; color:var(--green); overflow-x:auto; white-space:pre-wrap; word-break:break-all; min-height:60px; max-height:300px; overflow-y:auto; display:none; margin-top:0.8rem; }
+    .result-box.visible { display:block; }
+    .result-box.error { color:var(--red); }
+
+    /* Loop visualiser */
+    .loop-chain { display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.8rem; }
+    .loop-verb { padding:0.3rem 0.7rem; border-radius:999px; font-size:0.72rem; font-weight:600; background:rgba(124,106,247,0.12); color:var(--accent); border:1px solid rgba(124,106,247,0.2); display:flex; align-items:center; gap:0.3rem; }
+    .loop-verb.done { background:rgba(0,229,123,0.1); color:var(--green); border-color:rgba(0,229,123,0.25); }
+    .loop-verb .arrow { color:var(--muted); font-size:0.65rem; }
+
+    /* Log table */
+    .log-table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+    .log-table th { text-align:left; padding:0.5rem 0.7rem; color:var(--muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid var(--border); }
+    .log-table td { padding:0.5rem 0.7rem; border-bottom:1px solid rgba(120,100,255,0.07); vertical-align:top; }
+    .log-table tr:last-child td { border-bottom:none; }
+    .log-table tr:hover td { background:rgba(124,106,247,0.04); }
+    .verb-pill { display:inline-block; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:600; }
+    .verb-pill.foundation { background:rgba(0,229,123,0.1); color:var(--green); }
+    .verb-pill.transformation { background:rgba(79,172,254,0.1); color:var(--accent2); }
+    .verb-pill.control { background:rgba(255,180,0,0.1); color:var(--gold); }
+    .verb-pill.intelligence { background:rgba(192,132,252,0.1); color:var(--purple); }
+    .verb-pill.system { background:rgba(239,68,68,0.1); color:var(--red); }
+    .status-ok { color:var(--green); font-size:0.75rem; }
+    .status-err { color:var(--red); font-size:0.75rem; }
+
+    /* Memory cards */
+    .memory-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:0.8rem; }
+    .memory-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:0.9rem; }
+    .memory-type { font-size:0.65rem; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.4rem; }
+    .memory-type.episodic { color:var(--gold); }
+    .memory-type.semantic { color:var(--accent2); }
+    .memory-type.procedural { color:var(--purple); }
+    .memory-type.working { color:var(--green); }
+    .memory-key { font-size:0.88rem; font-weight:600; margin-bottom:0.3rem; }
+    .memory-val { font-size:0.75rem; color:var(--muted); overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+    .memory-imp { font-size:0.7rem; color:var(--accent); margin-top:0.4rem; }
+    .memory-topics { display:flex; gap:0.3rem; flex-wrap:wrap; margin-top:0.4rem; }
+    .mem-topic { font-size:0.65rem; padding:0.1rem 0.4rem; border-radius:999px; background:rgba(124,106,247,0.1); color:var(--accent); }
+
+    /* State vector */
+    .state-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:0.6rem; }
+    .state-item { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:0.7rem 0.9rem; }
+    .state-key { font-size:0.7rem; color:var(--muted); margin-bottom:0.2rem; }
+    .state-val { font-size:1rem; font-weight:700; color:var(--accent2); word-break:break-all; }
+
+    /* Verb browser */
+    .verb-browser { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:0.5rem; }
+    .verb-item { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:0.6rem 0.8rem; cursor:pointer; transition:all 0.15s; }
+    .verb-item:hover { border-color:var(--accent); background:rgba(124,106,247,0.05); }
+    .verb-item.selected { border-color:var(--accent); background:rgba(124,106,247,0.12); }
+    .verb-name { font-size:0.82rem; font-weight:700; }
+    .verb-formula { font-size:0.68rem; color:var(--muted); font-family:monospace; margin-top:2px; }
+    .verb-code { font-size:0.65rem; color:var(--muted); }
+
+    /* Tabs */
+    .tabs { display:flex; gap:0.3rem; margin-bottom:1.2rem; flex-wrap:wrap; }
+    .tab { padding:0.45rem 1rem; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:0.82rem; cursor:pointer; transition:all 0.15s; }
+    .tab:hover, .tab.active { background:rgba(124,106,247,0.15); border-color:var(--accent); color:var(--accent); }
+
+    /* Verb group filter */
+    .group-filter { display:flex; gap:0.4rem; margin-bottom:1rem; flex-wrap:wrap; }
+
+    /* Loading spinner */
+    .spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(124,106,247,0.3); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg);} }
+
+    /* Insights box */
+    .insight-box { background:rgba(124,106,247,0.06); border:1px solid rgba(124,106,247,0.2); border-radius:var(--radius); padding:0.9rem 1.1rem; font-size:0.82rem; color:var(--muted); line-height:1.6; margin-bottom:1rem; }
+    .insight-box strong { color:var(--accent); }
+  </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Navigation</div>
+    <a class="sidebar-link active" data-panel="executor" href="#">
+      <span class="icon">⚡</span> Verb Executor
+    </a>
+    <a class="sidebar-link" data-panel="loop" href="#">
+      <span class="icon">🔄</span> Cognitive Loop
+    </a>
+    <a class="sidebar-link" data-panel="log" href="#">
+      <span class="icon">📋</span> Unified Log
+    </a>
+    <a class="sidebar-link" data-panel="memory" href="#">
+      <span class="icon">🧠</span> Brain Memory
+    </a>
+    <a class="sidebar-link" data-panel="state" href="#">
+      <span class="icon">🌐</span> Cognitive State
+    </a>
+    <a class="sidebar-link" data-panel="verbs" href="#">
+      <span class="icon">📚</span> Verb Registry
+    </a>
+
+    <div class="sidebar-title" style="margin-top:1.5rem">Quick Execute</div>
+    <a class="sidebar-link" href="#" onclick="quickExec('MONITOR')"><span class="icon">👁</span> MONITOR <span class="group-badge foundation">F</span></a>
+    <a class="sidebar-link" href="#" onclick="quickExec('PREDICT')"><span class="icon">🔮</span> PREDICT <span class="group-badge intelligence">I</span></a>
+    <a class="sidebar-link" href="#" onclick="quickExec('OPTIMIZE')"><span class="icon">🎯</span> OPTIMIZE <span class="group-badge transformation">T</span></a>
+    <a class="sidebar-link" href="#" onclick="quickExec('EVOLVE')"><span class="icon">🌱</span> EVOLVE <span class="group-badge system">S</span></a>
+    <a class="sidebar-link" href="#" onclick="quickExec('AUDIT')"><span class="icon">🔍</span> AUDIT <span class="group-badge system">S</span></a>
+    <a class="sidebar-link" href="#" onclick="runLoop('standard')"><span class="icon">🔁</span> Run Standard Loop</a>
+    <a class="sidebar-link" href="#" onclick="runLoop('self_healing')"><span class="icon">🩹</span> Self-Heal Loop</a>
+    <a class="sidebar-link" href="#" onclick="runLoop('learning')"><span class="icon">📈</span> Learning Loop</a>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Cognitive OS</div>
+        <div style="font-size:0.82rem;color:var(--muted);margin-top:2px">100-Verb Execution Engine · State: <span id="stateLabel" style="color:var(--accent)">Loading...</span></div>
+      </div>
+      <div class="header-stats">
+        <div class="hstat"><div class="hstat-val" id="hstat-verbs">100</div><div class="hstat-label">Verbs</div></div>
+        <div class="hstat"><div class="hstat-val" id="hstat-loops">0</div><div class="hstat-label">Loops</div></div>
+        <div class="hstat"><div class="hstat-val" id="hstat-gen">0</div><div class="hstat-label">Generation</div></div>
+        <div class="hstat"><div class="hstat-val" id="hstat-mem">0</div><div class="hstat-label">Memories</div></div>
+      </div>
+    </div>
+
+    <!-- Panels -->
+    <div id="panel-executor">
+      <div class="insight-box">
+        <strong>State Transition:</strong> OUTPUT = VERB(Input, Context, Constraints) → every verb is computable, auditable, and chainable.
+        Select any of the 100 verbs, provide input as JSON, and execute. Result is logged to the Unified Log automatically.
+      </div>
+      <div class="panel">
+        <div class="panel-title">⚡ Execute Verb <span id="selectedVerbLabel">— select a verb below</span></div>
+        <div class="verb-form">
+          <div class="field-group">
+            <label>Verb (1–100)</label>
+            <select class="field-select" id="execVerb">
+              <option value="">— select —</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Formula</label>
+            <input class="field-input" id="execFormula" readonly placeholder="auto-filled">
+          </div>
+          <div class="field-group full-col">
+            <label>Input (JSON)</label>
+            <textarea class="field-textarea" id="execInput">{"value": 100, "label": "test"}</textarea>
+          </div>
+          <div class="field-group">
+            <label>Constraints (JSON)</label>
+            <textarea class="field-textarea" id="execConstraints">{"min": 0, "max": 10000}</textarea>
+          </div>
+          <div class="field-group">
+            <label>Chain ID (optional)</label>
+            <input class="field-input" id="execChainId" placeholder="leave empty for new chain">
+          </div>
+          <div class="field-group full-col" style="flex-direction:row;align-items:center;gap:0.8rem;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="executeVerb()">⚡ Execute</button>
+            <button class="btn btn-outline" onclick="clearExec()">Clear</button>
+            <span id="execSpinner" style="display:none"><span class="spin"></span></span>
+          </div>
+        </div>
+        <div class="result-box" id="execResult"></div>
+      </div>
+
+      <!-- Verb quick browser -->
+      <div class="panel">
+        <div class="panel-title">📚 Verb Browser <span id="verbCount"></span></div>
+        <div class="group-filter" id="groupFilter">
+          <button class="tab active" data-group="all">All</button>
+          <button class="tab" data-group="foundation">Foundation (1–20)</button>
+          <button class="tab" data-group="transformation">Transformation (21–40)</button>
+          <button class="tab" data-group="control">Control (41–60)</button>
+          <button class="tab" data-group="intelligence">Intelligence (61–80)</button>
+          <button class="tab" data-group="system">System (81–100)</button>
+        </div>
+        <div class="verb-browser" id="verbBrowser"></div>
+      </div>
+    </div>
+
+    <div id="panel-loop" style="display:none">
+      <div class="insight-box">
+        <strong>Cognitive Loop:</strong> State(t+1) = CHAIN[VERB₁, VERB₂, …, VERBₙ](State(t), Input) — each verb feeds output to the next.
+        The loop observes → learns → optimises → evolves in one transaction, writing every step to the Unified Log.
+      </div>
+      <div class="panel">
+        <div class="panel-title">🔄 Run Cognitive Loop</div>
+        <div class="verb-form">
+          <div class="field-group">
+            <label>Loop Type</label>
+            <select class="field-select" id="loopType">
+              <option value="standard">Standard (MONITOR→LEARN→OPTIMIZE→EVOLVE)</option>
+              <option value="self_healing">Self-Healing (MONITOR→REPAIR→RECOVER)</option>
+              <option value="learning">Learning (INGEST→EMBED→CLASSIFY→EVOLVE)</option>
+              <option value="audit">Audit (CAPTURE→VALIDATE→DIFF→AUDIT)</option>
+              <option value="search">Search (INGEST→EMBED→RANK→RETRIEVE)</option>
+              <option value="custom">Custom (define verbs below)</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Trigger Event</label>
+            <input class="field-input" id="loopTrigger" value="manual">
+          </div>
+          <div class="field-group">
+            <label>Custom Verbs (comma-separated, only for custom type)</label>
+            <input class="field-input" id="loopVerbs" placeholder="MONITOR,LEARN,PREDICT,EVOLVE">
+          </div>
+          <div class="field-group">
+            <label>Input (JSON)</label>
+            <textarea class="field-textarea" id="loopInput">{"context": "dashboard_session"}</textarea>
+          </div>
+          <div class="field-group full-col" style="flex-direction:row;gap:0.8rem;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-primary" onclick="runLoop()">🔄 Run Loop</button>
+            <button class="btn btn-green" onclick="runLoop('standard')">Standard</button>
+            <button class="btn btn-gold" onclick="runLoop('self_healing')">Self-Heal</button>
+            <span id="loopSpinner" style="display:none"><span class="spin"></span></span>
+          </div>
+        </div>
+        <div id="loopChain" class="loop-chain"></div>
+        <div class="result-box" id="loopResult"></div>
+      </div>
+    </div>
+
+    <div id="panel-log" style="display:none">
+      <div class="panel">
+        <div class="panel-title">📋 Unified Log <span id="logCount"></span></div>
+        <div style="display:flex;gap:0.6rem;margin-bottom:0.8rem;flex-wrap:wrap;align-items:center">
+          <select class="field-select" id="logFilterVerb" style="max-width:160px">
+            <option value="">All verbs</option>
+          </select>
+          <select class="field-select" id="logFilterGroup" style="max-width:160px">
+            <option value="">All groups</option>
+            <option value="foundation">Foundation</option>
+            <option value="transformation">Transformation</option>
+            <option value="control">Control</option>
+            <option value="intelligence">Intelligence</option>
+            <option value="system">System</option>
+          </select>
+          <button class="btn btn-outline" onclick="loadLog()">Refresh</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="log-table">
+            <thead><tr><th>#</th><th>Verb</th><th>Group</th><th>Topics</th><th>Status</th><th>Latency</th><th>Time</th></tr></thead>
+            <tbody id="logBody"></tbody>
+          </table>
+        </div>
+        <div id="logEmpty" style="text-align:center;padding:2rem;color:var(--muted);display:none">No log entries yet — execute a verb to start</div>
+      </div>
+    </div>
+
+    <div id="panel-memory" style="display:none">
+      <div class="panel">
+        <div class="panel-title">🧠 Brain Memory <span id="memCount"></span></div>
+        <div style="display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+          <select class="field-select" id="memFilterType" style="max-width:160px">
+            <option value="">All types</option>
+            <option value="episodic">Episodic</option>
+            <option value="semantic">Semantic</option>
+            <option value="procedural">Procedural</option>
+            <option value="working">Working</option>
+          </select>
+          <button class="btn btn-outline" onclick="loadMemory()">Refresh</button>
+          <button class="btn btn-primary" onclick="showAddMemory()">+ Add Memory</button>
+        </div>
+        <div id="addMemoryForm" style="display:none;margin-bottom:1rem">
+          <div class="verb-form">
+            <div class="field-group"><label>Key</label><input class="field-input" id="memKey" placeholder="e.g. ryan_preferences"></div>
+            <div class="field-group"><label>Type</label><select class="field-select" id="memType"><option value="working">Working</option><option value="semantic">Semantic</option><option value="episodic">Episodic</option><option value="procedural">Procedural</option></select></div>
+            <div class="field-group full-col"><label>Value (JSON or text)</label><textarea class="field-textarea" id="memValue">{"note": "remember this"}</textarea></div>
+            <div class="field-group"><label>Topics (comma-separated)</label><input class="field-input" id="memTopics" placeholder="treasury,wallet"></div>
+            <div class="field-group"><label>Importance (0–1)</label><input class="field-input" type="number" id="memImportance" value="0.7" min="0" max="1" step="0.1"></div>
+            <div class="field-group full-col" style="flex-direction:row;gap:0.6rem">
+              <button class="btn btn-primary" onclick="saveMemory()">Save</button>
+              <button class="btn btn-outline" onclick="document.getElementById('addMemoryForm').style.display='none'">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="memory-grid" id="memoryGrid"></div>
+        <div id="memEmpty" style="text-align:center;padding:2rem;color:var(--muted);display:none">No memories found</div>
+      </div>
+    </div>
+
+    <div id="panel-state" style="display:none">
+      <div class="panel">
+        <div class="panel-title">🌐 Cognitive State Vector</div>
+        <div class="state-grid" id="stateGrid"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">🎯 Verb Weights (Most Used)</div>
+        <div id="verbWeights" style="display:flex;gap:0.5rem;flex-wrap:wrap"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">🗺 Topic Weights</div>
+        <div id="topicWeights" style="display:flex;gap:0.5rem;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
+    <div id="panel-verbs" style="display:none">
+      <div class="panel">
+        <div class="panel-title">📚 Full Verb Registry — 100 Operators</div>
+        <div class="insight-box">
+          Every verb follows: <strong>State(t+1) = VERB(State(t), Input, Constraints)</strong>.
+          Click any verb to populate the executor.
+        </div>
+        <div class="group-filter" id="verbRegistryFilter">
+          <button class="tab active" data-group="all" onclick="filterVerbRegistry('all',this)">All 100</button>
+          <button class="tab" data-group="foundation" onclick="filterVerbRegistry('foundation',this)">Foundation</button>
+          <button class="tab" data-group="transformation" onclick="filterVerbRegistry('transformation',this)">Transform</button>
+          <button class="tab" data-group="control" onclick="filterVerbRegistry('control',this)">Control</button>
+          <button class="tab" data-group="intelligence" onclick="filterVerbRegistry('intelligence',this)">Intelligence</button>
+          <button class="tab" data-group="system" onclick="filterVerbRegistry('system',this)">System</button>
+        </div>
+        <div class="verb-browser" id="fullVerbBrowser"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function() {
+  var TOKEN = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_user_token') || '';
+  var verbRegistry = {};
+  var currentPanel = 'executor';
+
+  function authH() { return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function relTime(ts) { const d=Date.now()-new Date(ts).getTime(); if(d<60000)return Math.round(d/1000)+'s ago'; if(d<3600000)return Math.round(d/60000)+'m ago'; return Math.round(d/3600000)+'h ago'; }
+  function groupColor(g) { return {foundation:'green',transformation:'accent2',control:'gold',intelligence:'purple',system:'red'}[g]||'accent'; }
+
+  // ── Panel navigation ──────────────────────────────────────────────────────
+  document.querySelectorAll('.sidebar-link[data-panel]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var panel = link.dataset.panel;
+      showPanel(panel);
+      document.querySelectorAll('.sidebar-link[data-panel]').forEach(function(l){l.classList.remove('active');});
+      link.classList.add('active');
+    });
+  });
+
+  function showPanel(name) {
+    ['executor','loop','log','memory','state','verbs'].forEach(function(p) {
+      var el = document.getElementById('panel-'+p);
+      if (el) el.style.display = p===name ? 'block' : 'none';
+    });
+    currentPanel = name;
+    if (name==='log') loadLog();
+    if (name==='memory') loadMemory();
+    if (name==='state') loadState();
+    if (name==='verbs') renderFullVerbBrowser();
+  }
+
+  // ── Load verb registry ────────────────────────────────────────────────────
+  async function loadVerbs() {
+    try {
+      var r = await fetch('/api/cognitive/verbs');
+      var d = await r.json();
+      if (!d.ok) return;
+      verbRegistry = {};
+      document.getElementById('verbCount').textContent = '— ' + d.total;
+      var sel = document.getElementById('execVerb');
+      // Build flat list sorted by code
+      var allVerbs = [];
+      for (var g in d.groups) { allVerbs = allVerbs.concat(d.groups[g]); }
+      allVerbs.sort(function(a,b){return a.code-b.code;});
+      allVerbs.forEach(function(v) {
+        verbRegistry[v.name] = v;
+        var opt = document.createElement('option');
+        opt.value = v.name;
+        opt.textContent = v.code + '. ' + v.name + ' — ' + v.formula;
+        sel.appendChild(opt);
+        // Also add to log filter
+        var lo = document.createElement('option');
+        lo.value = v.name; lo.textContent = v.name;
+        document.getElementById('logFilterVerb').appendChild(lo);
+      });
+      renderVerbBrowser(allVerbs);
+    } catch(e) {}
+  }
+
+  function renderVerbBrowser(verbs) {
+    var browser = document.getElementById('verbBrowser');
+    browser.innerHTML = verbs.slice(0, 60).map(function(v) {
+      return '<div class="verb-item" onclick="selectVerb(\''+v.name+'\')">' +
+        '<div class="verb-code">#'+v.code+'</div>'+
+        '<div class="verb-name">'+esc(v.name)+'</div>'+
+        '<div class="verb-formula">'+esc(v.formula)+'</div>'+
+        '<span class="group-badge '+esc(v.group)+'">'+v.group[0].toUpperCase()+'</span>'+
+        '</div>';
+    }).join('');
+  }
+
+  function renderFullVerbBrowser(filterGroup) {
+    var allVerbs = Object.values(verbRegistry).sort(function(a,b){return a.code-b.code;});
+    if (filterGroup && filterGroup !== 'all') allVerbs = allVerbs.filter(function(v){return v.group===filterGroup;});
+    document.getElementById('fullVerbBrowser').innerHTML = allVerbs.map(function(v) {
+      return '<div class="verb-item" onclick="selectVerbAndGo(\''+v.name+'\')">' +
+        '<div class="verb-code">#'+v.code+' · '+esc(v.group)+'</div>'+
+        '<div class="verb-name">'+esc(v.name)+'</div>'+
+        '<div class="verb-formula">'+esc(v.formula)+'</div>'+
+        '</div>';
+    }).join('');
+  }
+
+  window.filterVerbRegistry = function(group, btn) {
+    document.querySelectorAll('#verbRegistryFilter .tab').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    renderFullVerbBrowser(group);
+  };
+
+  // ── Group filter for verb browser ─────────────────────────────────────────
+  document.querySelectorAll('#groupFilter .tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#groupFilter .tab').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      var g = btn.dataset.group;
+      var allVerbs = Object.values(verbRegistry).sort(function(a,b){return a.code-b.code;});
+      renderVerbBrowser(g === 'all' ? allVerbs : allVerbs.filter(function(v){return v.group===g;}));
+    });
+  });
+
+  // ── Verb selection ────────────────────────────────────────────────────────
+  document.getElementById('execVerb').addEventListener('change', function() {
+    var v = verbRegistry[this.value];
+    if (v) {
+      document.getElementById('execFormula').value = v.formula;
+      document.getElementById('selectedVerbLabel').textContent = '— '+this.value+' ('+v.group+' #'+v.code+')';
+    }
+  });
+
+  window.selectVerb = function(name) {
+    document.getElementById('execVerb').value = name;
+    document.getElementById('execVerb').dispatchEvent(new Event('change'));
+    document.querySelectorAll('.verb-item').forEach(function(el){el.classList.remove('selected');});
+    event.currentTarget.classList.add('selected');
+  };
+
+  window.selectVerbAndGo = function(name) {
+    document.getElementById('execVerb').value = name;
+    document.getElementById('execVerb').dispatchEvent(new Event('change'));
+    showPanel('executor');
+    document.querySelectorAll('.sidebar-link[data-panel]').forEach(function(l){l.classList.remove('active');});
+    document.querySelector('.sidebar-link[data-panel="executor"]').classList.add('active');
+  };
+
+  window.quickExec = function(verb) {
+    document.getElementById('execVerb').value = verb;
+    document.getElementById('execVerb').dispatchEvent(new Event('change'));
+    showPanel('executor');
+    executeVerb();
+  };
+
+  // ── Execute verb ──────────────────────────────────────────────────────────
+  window.executeVerb = async function() {
+    var verb = document.getElementById('execVerb').value;
+    if (!verb) { alert('Select a verb first'); return; }
+    var inputRaw = document.getElementById('execInput').value;
+    var constraintsRaw = document.getElementById('execConstraints').value;
+    var chainId = document.getElementById('execChainId').value.trim();
+    var resultBox = document.getElementById('execResult');
+    var spinner = document.getElementById('execSpinner');
+
+    var input, constraints;
+    try { input = JSON.parse(inputRaw||'{}'); } catch(e) { showResult(resultBox,'JSON parse error in input: '+e.message,true); return; }
+    try { constraints = JSON.parse(constraintsRaw||'{}'); } catch(e) { constraints = {}; }
+
+    spinner.style.display='inline-block';
+    resultBox.classList.remove('visible','error');
+    try {
+      var r = await fetch('/api/cognitive/execute', {
+        method:'POST', headers:authH(), credentials:'include',
+        body: JSON.stringify({ verb, input, constraints, chain_id: chainId||undefined }),
+      });
+      var d = await r.json();
+      spinner.style.display='none';
+      if (d.ok) {
+        showResult(resultBox, JSON.stringify({ verb:d.verb, code:d.code, formula:d.formula, output:d.output, latency_ms:d.latency_ms, log_id:d.log_id }, null, 2), false);
+        updateHeaderStats();
+      } else {
+        showResult(resultBox, 'ERROR: '+(d.error||JSON.stringify(d)), true);
+      }
+    } catch(e) {
+      spinner.style.display='none';
+      showResult(resultBox, 'Request failed: '+e.message, true);
+    }
+  };
+
+  window.clearExec = function() {
+    document.getElementById('execVerb').value='';
+    document.getElementById('execFormula').value='';
+    document.getElementById('execInput').value='{"value":100,"label":"test"}';
+    document.getElementById('execConstraints').value='{"min":0,"max":10000}';
+    document.getElementById('execResult').classList.remove('visible','error');
+    document.getElementById('selectedVerbLabel').textContent='— select a verb below';
+  };
+
+  function showResult(box, text, isError) {
+    box.textContent = text;
+    box.className = 'result-box visible' + (isError ? ' error' : '');
+  }
+
+  // ── Cognitive loop ────────────────────────────────────────────────────────
+  window.runLoop = async function(typeOverride) {
+    var loopType = typeOverride || document.getElementById('loopType').value;
+    var trigger = document.getElementById('loopTrigger').value || 'manual';
+    var customVerbs = document.getElementById('loopVerbs').value.trim();
+    var inputRaw = document.getElementById('loopInput').value;
+    var chainDiv = document.getElementById('loopChain');
+    var resultBox = document.getElementById('loopResult');
+    var spinner = document.getElementById('loopSpinner');
+
+    var input;
+    try { input = JSON.parse(inputRaw||'{}'); } catch(e) { input = {}; }
+
+    var verbs_to_run = loopType==='custom' && customVerbs ? customVerbs.split(',').map(function(v){return v.trim();}) : undefined;
+    spinner.style.display='inline-block';
+    chainDiv.innerHTML='';
+    resultBox.classList.remove('visible','error');
+
+    try {
+      var r = await fetch('/api/cognitive/loop', {
+        method:'POST', headers:authH(), credentials:'include',
+        body: JSON.stringify({ loop_type:loopType, trigger_event:trigger, verbs_to_run, input }),
+      });
+      var d = await r.json();
+      spinner.style.display='none';
+
+      if (d.ok) {
+        // Render loop chain
+        chainDiv.innerHTML = (d.verbs_fired||[]).map(function(v,i) {
+          return '<span class="loop-verb done">'+esc(v)+(i<d.verbs_fired.length-1?'<span class="arrow">→</span>':'')+'</span>';
+        }).join('');
+
+        showResult(resultBox, JSON.stringify({
+          ok:true, loop_type:loopType, chain_id:d.chain_id,
+          verbs_fired:d.verbs_fired, loop_count:d.loop_count,
+          gaps_detected:d.gaps_detected?.length, gaps_closed:d.gaps_closed?.length,
+          total_latency_ms:d.total_latency_ms,
+        }, null, 2), false);
+        updateHeaderStats();
+      } else {
+        showResult(resultBox, 'ERROR: '+(d.error||JSON.stringify(d)), true);
+      }
+    } catch(e) {
+      spinner.style.display='none';
+      showResult(resultBox, 'Loop failed: '+e.message, true);
+    }
+  };
+
+  // ── Unified log ───────────────────────────────────────────────────────────
+  window.loadLog = async function() {
+    var verb = document.getElementById('logFilterVerb').value;
+    var group = document.getElementById('logFilterGroup').value;
+    var url = '/api/cognitive/log?limit=50' + (verb?'&verb='+verb:'') + (group?'&group='+group:'');
+    try {
+      var r = await fetch(url, { headers:authH(), credentials:'include' });
+      var d = await r.json();
+      if (!d.ok) return;
+      document.getElementById('logCount').textContent = '— '+d.total+' entries';
+      var tbody = document.getElementById('logBody');
+      if (!d.entries || d.entries.length===0) {
+        tbody.innerHTML='';
+        document.getElementById('logEmpty').style.display='block';
+        return;
+      }
+      document.getElementById('logEmpty').style.display='none';
+      tbody.innerHTML = d.entries.map(function(e,i) {
+        return '<tr>'+
+          '<td style="color:var(--muted)">'+(d.entries.length-i)+'</td>'+
+          '<td><span class="verb-pill '+esc(e.verb_group||'')+'">'+esc(e.verb)+'</span></td>'+
+          '<td style="color:var(--muted);font-size:0.75rem">'+esc(e.verb_group||'')+'</td>'+
+          '<td style="font-size:0.72rem;color:var(--accent2)">'+(e.topic_vector||[]).slice(0,2).join(', ')+'</td>'+
+          '<td><span class="status-'+(e.status==='ok'?'ok':'err')+'">●</span></td>'+
+          '<td style="color:var(--muted);font-size:0.75rem">'+(e.latency_ms||0)+'ms</td>'+
+          '<td style="color:var(--muted);font-size:0.72rem">'+relTime(e.created_at)+'</td>'+
+        '</tr>';
+      }).join('');
+    } catch(e) {}
+  };
+
+  // ── Brain memory ──────────────────────────────────────────────────────────
+  window.loadMemory = async function() {
+    var type = document.getElementById('memFilterType').value;
+    var url = '/api/cognitive/memory?limit=50' + (type?'&type='+type:'');
+    try {
+      var r = await fetch(url, { headers:authH(), credentials:'include' });
+      var d = await r.json();
+      if (!d.ok) return;
+      document.getElementById('memCount').textContent = '— '+d.total;
+      document.getElementById('hstat-mem').textContent = d.total;
+      var grid = document.getElementById('memoryGrid');
+      if (!d.memories || d.memories.length===0) {
+        grid.innerHTML='';
+        document.getElementById('memEmpty').style.display='block';
+        return;
+      }
+      document.getElementById('memEmpty').style.display='none';
+      grid.innerHTML = d.memories.map(function(m) {
+        var valStr = typeof m.value==='object' ? JSON.stringify(m.value) : String(m.value||'');
+        return '<div class="memory-card">'+
+          '<div class="memory-type '+esc(m.memory_type)+'">'+esc(m.memory_type)+'</div>'+
+          '<div class="memory-key">'+esc(m.key)+'</div>'+
+          '<div class="memory-val">'+esc(valStr.slice(0,120))+'</div>'+
+          '<div class="memory-imp">⭐ '+parseFloat(m.importance||0).toFixed(2)+' · '+m.access_count+' accesses</div>'+
+          '<div class="memory-topics">'+(m.topics||[]).map(function(t){return '<span class="mem-topic">'+esc(t)+'</span>';}).join('')+'</div>'+
+          '</div>';
+      }).join('');
+    } catch(e) {}
+  };
+
+  window.showAddMemory = function() {
+    var f = document.getElementById('addMemoryForm');
+    f.style.display = f.style.display==='none' ? 'block' : 'none';
+  };
+
+  window.saveMemory = async function() {
+    var key = document.getElementById('memKey').value.trim();
+    var type = document.getElementById('memType').value;
+    var valueRaw = document.getElementById('memValue').value.trim();
+    var topics = document.getElementById('memTopics').value.split(',').map(function(t){return t.trim();}).filter(Boolean);
+    var importance = parseFloat(document.getElementById('memImportance').value)||0.7;
+
+    var value;
+    try { value = JSON.parse(valueRaw); } catch(e) { value = valueRaw; }
+
+    if (!key) { alert('Key required'); return; }
+    try {
+      var r = await fetch('/api/cognitive/memory', {
+        method:'POST', headers:authH(), credentials:'include',
+        body: JSON.stringify({ key, memory_type:type, value, topics, importance }),
+      });
+      var d = await r.json();
+      if (d.ok) { document.getElementById('addMemoryForm').style.display='none'; loadMemory(); }
+      else alert('Error: '+d.error);
+    } catch(e) { alert('Error: '+e.message); }
+  };
+
+  // ── Cognitive state ───────────────────────────────────────────────────────
+  window.loadState = async function() {
+    try {
+      var r = await fetch('/api/cognitive/state', { headers:authH(), credentials:'include' });
+      var d = await r.json();
+      if (!d.ok) return;
+      var s = d.state;
+
+      document.getElementById('hstat-loops').textContent = s.loop_count||0;
+      document.getElementById('hstat-gen').textContent = s.evolution_gen||0;
+      document.getElementById('stateLabel').textContent = s.last_verb ? 'last: '+s.last_verb : 'ready';
+
+      // State vector
+      var sv = s.state_vector || {};
+      var grid = document.getElementById('stateGrid');
+      grid.innerHTML = Object.entries(sv).map(function(kv) {
+        return '<div class="state-item"><div class="state-key">'+esc(kv[0])+'</div><div class="state-val">'+esc(String(kv[1]).slice(0,40))+'</div></div>';
+      }).join('') || '<div style="color:var(--muted);font-size:0.85rem">No state vector entries yet — run a loop to populate</div>';
+
+      // Verb weights
+      var vw = s.verb_weights || {};
+      document.getElementById('verbWeights').innerHTML = Object.entries(vw).sort(function(a,b){return b[1]-a[1];}).slice(0,12).map(function(kv) {
+        return '<div style="padding:0.3rem 0.7rem;border-radius:999px;background:rgba(124,106,247,0.1);font-size:0.78rem;color:var(--accent)">'+esc(kv[0])+' <span style="color:var(--muted)">('+kv[1]+')</span></div>';
+      }).join('') || '<span style="color:var(--muted);font-size:0.82rem">No verb executions yet</span>';
+
+      // Topic weights
+      var tw = s.topic_weights || {};
+      document.getElementById('topicWeights').innerHTML = Object.entries(tw).sort(function(a,b){return b[1]-a[1];}).slice(0,12).map(function(kv) {
+        return '<div style="padding:0.3rem 0.7rem;border-radius:999px;background:rgba(79,172,254,0.08);font-size:0.78rem;color:var(--accent2)">'+esc(kv[0])+' <span style="color:var(--muted)">'+kv[1].toFixed(1)+'</span></div>';
+      }).join('') || '<span style="color:var(--muted);font-size:0.82rem">No topic weights yet</span>';
+    } catch(e) {}
+  };
+
+  async function updateHeaderStats() {
+    try {
+      var r = await fetch('/api/cognitive/state', { headers:authH(), credentials:'include' });
+      var d = await r.json();
+      if (d.ok) {
+        document.getElementById('hstat-loops').textContent = d.state.loop_count||0;
+        document.getElementById('hstat-gen').textContent = d.state.evolution_gen||0;
+        document.getElementById('stateLabel').textContent = d.state.last_verb ? 'last: '+d.state.last_verb : 'ready';
+      }
+    } catch(e) {}
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  async function init() {
+    try {
+      var r = await fetch('/auth/me', { credentials:'include' });
+      var d = await r.json();
+      if (d.ok && d.token) { TOKEN = d.token; localStorage.setItem('bridge_token',TOKEN); }
+    } catch(e) {}
+    await loadVerbs();
+    await updateHeaderStats();
+    loadMemory();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="BRIDGE AI OS — Bank Ledger. Idempotent expense ledger for twin-incurred costs, settled across Bank L1/L2/L3.">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'">
+    <title>BRIDGE AI OS — Bank Ledger</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <script src="/admin-auth.js"></script>
+    <script src="/nav-routes.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-primary: #060810; --bg-glass: rgba(10, 14, 23, 0.85); --border-color: rgba(99, 255, 218, 0.12); --text-primary: #e2e8f0; --text-secondary: #94a3b8; --text-muted: #64748b; --accent-cyan: #63ffda; --accent-blue: #38bdf8; --accent-purple: #a78bfa; --accent-green: #4ade80; --accent-orange: #fb923c; --accent-red: #f87171; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100vh; background: var(--bg-primary); font-family: 'Outfit', -apple-system, sans-serif; color: var(--text-primary); }
+        body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 80%, rgba(99,255,218,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+        .shell { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 32px 24px 80px; }
+        header.page-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .page-head h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; background: linear-gradient(135deg, #63ffda 0%, #38bdf8 55%, #a78bfa 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .sub { color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px; max-width: 680px; }
+        .ident { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-glass); }
+        .ident b { color: var(--accent-cyan); }
+        .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 24px; }
+        .kpi { padding: 16px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-glass); }
+        .kpi .label { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+        .kpi .value { font-size: 1.5rem; font-weight: 700; color: var(--accent-cyan); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+        .kpi .layer { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+        section.card { margin-top: 28px; padding: 22px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-glass); }
+        section.card h2 { font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-cyan); margin-bottom: 10px; }
+        section.card p { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 14px; line-height: 1.5; }
+        table.ledger { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        table.ledger th, table.ledger td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        table.ledger th { font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.06em; }
+        table.ledger td { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-secondary); }
+        .layer-pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; }
+        .layer-pill.L1 { background: rgba(99,255,218,0.1); color: var(--accent-cyan); border: 1px solid rgba(99,255,218,0.3); }
+        .layer-pill.L2 { background: rgba(251,146,60,0.1); color: var(--accent-orange); border: 1px solid rgba(251,146,60,0.3); }
+        .layer-pill.L3 { background: rgba(248,113,113,0.1); color: var(--accent-red); border: 1px solid rgba(248,113,113,0.3); }
+        .settled { color: var(--accent-green); }
+        .pending { color: var(--accent-orange); }
+        .duped { color: var(--text-muted); text-decoration: line-through; }
+        .empty { padding: 28px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border-color); border-radius: 8px; }
+        footer.page-foot { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.75rem; color: var(--text-muted); }
+        footer a { color: var(--accent-blue); text-decoration: none; }
+        footer a:hover { color: var(--accent-cyan); }
+    </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+    <div class="shell">
+        <header class="page-head">
+            <div>
+                <h1>Bank Ledger</h1>
+                <div class="sub">Idempotent expense ledger. Every <code>expense.incurred</code> event is keyed; duplicate events from sibling twins are discarded, so the Bank settles each real expense exactly once across Layer 1 (operational), Layer 2 (reserves), and Layer 3 (treasury).</div>
+            </div>
+            <div class="ident">user: <b id="user">—</b> · role: <b id="role">—</b></div>
+        </header>
+
+        <div class="kpis">
+            <div class="kpi"><div class="label">Layer 1 (Operational)</div><div class="value" id="kpi-l1">—</div><div class="layer">day-to-day twin ops</div></div>
+            <div class="kpi"><div class="label">Layer 2 (Reserves)</div><div class="value" id="kpi-l2">—</div><div class="layer">safety buffer</div></div>
+            <div class="kpi"><div class="label">Layer 3 (Treasury)</div><div class="value" id="kpi-l3">—</div><div class="layer">long-term capital</div></div>
+            <div class="kpi"><div class="label">Dedup ratio</div><div class="value" id="kpi-dedup">—</div><div class="layer">duplicates discarded</div></div>
+        </div>
+
+        <section class="card">
+            <h2>Recent ledger entries</h2>
+            <p>Most recent 50 events. Status <span class="settled">settled</span> = paid; <span class="pending">pending</span> = queued; <span class="duped">duplicate</span> = discarded by idempotency key.</p>
+            <div id="ledger-wrap"><div class="empty">Loading ledger…</div></div>
+        </section>
+
+        <footer class="page-foot">
+            <div>API: <a href="/api/bank/ledger">/api/bank/ledger</a> · <a href="/api/bank/summary">/api/bank/summary</a></div>
+            <div><a href="/admin-hub">← Admin Hub</a> · <a href="/twin-orchestration">Twin Orchestration</a> · <a href="/affiliate-flow">Affiliate Flow</a></div>
+        </footer>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var email = (localStorage.getItem('user_email') || '').toLowerCase();
+        var user = {}; try { user = JSON.parse(localStorage.getItem('bridge_user') || '{}'); } catch(_){}
+        document.getElementById('user').textContent = email || user.email || 'unknown';
+        document.getElementById('role').textContent = user.role || 'admin';
+
+        var headers = { 'x-admin-token': (user.admin_token || localStorage.getItem('admin_token') || '') };
+
+        function fmt(n) { return (typeof n === 'number') ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '—'; }
+        function pct(n) { return (typeof n === 'number') ? (n * 100).toFixed(1) + '%' : '—'; }
+
+        function renderSummary(s) {
+            document.getElementById('kpi-l1').textContent = fmt(s.L1);
+            document.getElementById('kpi-l2').textContent = fmt(s.L2);
+            document.getElementById('kpi-l3').textContent = fmt(s.L3);
+            document.getElementById('kpi-dedup').textContent = pct(s.dedup_ratio);
+        }
+
+        function renderLedger(events) {
+            var wrap = document.getElementById('ledger-wrap');
+            if (!events.length) { wrap.innerHTML = '<div class="empty">No ledger entries yet.</div>'; return; }
+            var rows = events.map(function (e) {
+                var st = e.status || 'settled';
+                var amt = fmt(e.amount);
+                return '<tr>' +
+                    '<td>' + escapeHtml(e.ts) + '</td>' +
+                    '<td><span class="layer-pill ' + escapeHtml(e.layer || 'L1') + '">' + escapeHtml(e.layer || 'L1') + '</span></td>' +
+                    '<td>' + escapeHtml(e.twin_id || '—') + '</td>' +
+                    '<td>' + escapeHtml(e.type || 'expense.incurred') + '</td>' +
+                    '<td>' + escapeHtml(amt) + '</td>' +
+                    '<td class="' + escapeHtml(st) + '">' + escapeHtml(st) + '</td>' +
+                    '<td>' + escapeHtml(e.idempotency_key || '—') + '</td>' +
+                '</tr>';
+            }).join('');
+            wrap.innerHTML = '<table class="ledger"><thead><tr><th>When</th><th>Layer</th><th>Twin</th><th>Type</th><th>Amount</th><th>Status</th><th>Idem key</th></tr></thead><tbody>' + rows + '</tbody></table>';
+        }
+
+        function refresh() {
+            fetch('/api/bank/summary', { headers: headers }).then(function (r) { return r.json(); }).then(renderSummary).catch(function(){});
+            fetch('/api/bank/ledger?limit=50', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) { renderLedger((d && d.events) || []); }).catch(function(){
+                document.getElementById('ledger-wrap').innerHTML = '<div class="empty">Ledger API unreachable.</div>';
+            });
+        }
+
+        function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        refresh();
+        setInterval(refresh, 7000);
+    })();
+    </script>
+    <script src="/bridge-nav.js" defer></script>
+</body>
+</html>

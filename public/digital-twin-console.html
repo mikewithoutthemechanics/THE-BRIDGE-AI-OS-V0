@@ -2,418 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Bridge AI OS Digital Twin Console — live brain state, emotion, swarm health, treasury, and mission board.">
+<meta name="description" content="Digital Twin Console — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/digital-twin-console">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/digital-twin-console">
+<meta property="og:title" content="Digital Twin Console — Bridge AI OS">
+<meta property="og:description" content="Digital Twin Console — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Digital Twin Console — Bridge AI OS">
+<meta name="twitter:description" content="Digital Twin Console — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digital Twin Console — Bridge AI OS</title>
+  <script>
+    // Single fallback: __CONSOLE_SYNC_URL, else same-origin if port 3022, else localhost:3022. Used for redirect, meta refresh, and link.
+    (function(){
+      var url = (typeof window !== 'undefined' && window.__CONSOLE_SYNC_URL)
+        ? window.__CONSOLE_SYNC_URL
+        : (location.port === '3022' ? location.origin + '/' : 'http://localhost:3022/');
+      window.__CONSOLE_SYNC_URL = url;
+      var meta = document.createElement('meta');
+      meta.httpEquiv = 'refresh';
+      meta.content = '0;url=' + url;
+      document.head.appendChild(meta);
+      location.replace(url);
+    })();
+  </script>
   <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#050a0f;--bg2:#0a0e17;--bg3:#0d1620;--border:#1a2d40;--accent:#63ffda;--purple:#a78bfa;--gold:#ffd166;--red:#ff3c5a;--green:#00e57b;--cyan:#00c8ff;--text:#c8dce8;--dim:#628ba0;--font:system-ui,-apple-system,sans-serif;--mono:'Courier New',monospace;}
-    html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;padding-bottom:64px;}
-
-    /* ── Header ── */
-    .header{position:sticky;top:0;z-index:50;display:flex;align-items:center;padding:0 20px;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);gap:16px;}
-    .header-brand{display:flex;align-items:center;gap:10px;}
-    .header-brand .icon{font-size:20px;color:var(--accent);}
-    .header-brand h1{font-size:15px;font-weight:700;color:var(--text);letter-spacing:.5px;}
-    .header-brand h1 span{color:var(--accent);}
-    .header-nav{display:flex;gap:2px;margin-left:16px;}
-    .header-nav a{color:var(--dim);text-decoration:none;font-size:12px;padding:4px 10px;border-radius:4px;transition:all .15s;}
-    .header-nav a:hover{color:var(--cyan);background:rgba(0,200,255,.05);}
-    .header-nav a.active{color:var(--accent);background:rgba(99,255,218,.08);}
-    .header-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
-    .header-right .dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red);transition:all .3s;}
-    .header-right .dot.online{background:var(--green);box-shadow:0 0 6px var(--green);}
-    .header-right .status{font-size:11px;color:var(--dim);}
-    .header-right .mood-tag{font-size:10px;padding:2px 10px;border-radius:10px;background:rgba(99,255,218,.08);border:1px solid rgba(99,255,218,.2);color:var(--accent);font-weight:600;}
-
-    /* ── Page layout ── */
-    .page{max-width:1200px;margin:0 auto;padding:20px;}
-    .section{margin-bottom:28px;}
-    .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
-    .section-title .line{flex:1;height:1px;background:var(--border);}
-
-    /* ── Cards ── */
-    .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;}
-    .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
-    .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-    .card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
-    .card-head h3{font-size:13px;font-weight:600;color:var(--text);}
-    .card-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;}
-    .card-badge.green{background:rgba(0,229,123,.1);color:var(--green);}
-    .card-badge.gold{background:rgba(255,209,102,.1);color:var(--gold);}
-    .card-badge.red{background:rgba(255,60,90,.1);color:var(--red);}
-    .card-badge.cyan{background:rgba(0,200,255,.1);color:var(--cyan);}
-    .card-body{padding:14px 16px;}
-
-    /* ── Data rows ── */
-    .data-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(99,255,218,.04);}
-    .data-row:last-child{border-bottom:none;}
-    .data-label{font-size:12px;color:var(--dim);}
-    .data-value{font-size:13px;font-weight:700;font-family:var(--mono);}
-    .data-value.green{color:var(--green);}
-    .data-value.gold{color:var(--gold);}
-    .data-value.red{color:var(--red);}
-    .data-value.cyan{color:var(--cyan);}
-    .data-value.purple{color:var(--purple);}
-    .data-value.accent{color:var(--accent);}
-
-    /* ── Skill chips ── */
-    .chips{display:flex;flex-wrap:wrap;gap:5px;padding-top:8px;}
-    .chip{padding:3px 9px;background:rgba(99,255,218,.06);border:1px solid rgba(99,255,218,.12);border-radius:6px;font-size:11px;color:var(--accent);}
-
-    /* ── Progress bars ── */
-    .progress-row{display:flex;align-items:center;gap:10px;padding:5px 0;}
-    .progress-label{width:140px;font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .progress-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
-    .progress-fill{height:100%;border-radius:3px;transition:width .4s;}
-    .progress-fill.green{background:var(--green);}
-    .progress-fill.cyan{background:var(--cyan);}
-    .progress-pct{width:36px;text-align:right;font-size:12px;color:var(--text);font-family:var(--mono);}
-
-    /* ── Command forms ── */
-    .cmd-form{display:flex;gap:8px;margin-top:10px;}
-    .cmd-input{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-family:var(--mono);font-size:13px;}
-    .cmd-input:focus{outline:2px solid var(--accent);outline-offset:1px;}
-    .cmd-btn{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;border:none;}
-    .cmd-btn.primary{background:var(--accent);color:#050a0f;}
-    .cmd-btn.primary:hover{opacity:.85;}
-    .cmd-btn.secondary{background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);color:var(--purple);}
-    .cmd-out{font-size:12px;color:var(--dim);padding-top:6px;min-height:16px;font-family:var(--mono);}
-
-    /* ── Loading skeleton ── */
-    .skel{height:14px;border-radius:4px;background:linear-gradient(90deg,#0a1a1a 25%,#0d2020 50%,#0a1a1a 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;margin:4px 0;}
-    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-    /* ── Description text ── */
-    .section-desc{font-size:12px;color:var(--dim);margin-bottom:14px;max-width:600px;}
-
-    /* ── Empty state ── */
-    .empty{padding:16px;text-align:center;color:var(--dim);font-size:12px;}
+    body { font-family: system-ui, sans-serif; background: #0a0c12; color: #8fc; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .box { background: rgba(0,0,0,0.85); padding: 2rem; border-radius: 8px; border: 1px solid #333; max-width: 420px; text-align: center; }
+    h1 { font-size: 1.1rem; color: #6af; margin-top: 0; }
+    a { display: inline-block; margin-top: 1rem; padding: 12px 24px; background: #2a6; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; }
+    a:hover { background: #3a7; }
+    .footer { font-size: 11px; color: #666; margin-top: 16px; }
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
-
-<!-- ═══ HEADER ═══ -->
-<div class="header">
-  <div class="header-brand">
-    <span class="icon">&#9651;</span>
-    <h1>Digital <span>Twin</span></h1>
+  <div class="box">
+    <h1>Digital Twin Console</h1>
+    <p>Redirecting to Digital Twin…</p>
+    <a id="link" href="#">Open console</a>
+    <p class="footer" id="footer">Synced with console — Human API at /api/human</p>
   </div>
-  <nav class="header-nav">
-    <a href="/">Home</a>
-    <a href="/portal.html">Portal</a>
-    <a href="/agents.html">Agents</a>
-    <a href="/economy.html">Economy</a>
-    <a href="/console.html">Terminal</a>
-    <a href="/admin-revenue.html">Revenue</a>
-    <a href="/digital-twin-console.html" class="active">Twin</a>
-  </nav>
-  <div class="header-right">
-    <span class="mood-tag" id="mood-tag">--</span>
-    <span class="status" id="last-ts">--</span>
-    <span class="dot" id="brain-dot"></span>
-  </div>
-</div>
-
-<div class="page">
-
-  <!-- ═══ SECTION: Identity ═══ -->
-  <div class="section">
-    <div class="section-title">Identity &amp; Personality <span class="line"></span></div>
-    <div class="section-desc">Your digital twin is an AI entity that represents Bridge AI OS. It has emotions, skills, memory, and can speak on your behalf.</div>
-    <div class="grid-2">
-      <!-- Twin Profile -->
-      <div class="card">
-        <div class="card-head"><h3>Twin Profile</h3><span class="card-badge green" id="badge-twin">--</span></div>
-        <div class="card-body" id="body-twin"><div class="skel"></div><div class="skel" style="width:70%"></div></div>
-      </div>
-      <!-- Emotion State -->
-      <div class="card">
-        <div class="card-head"><h3>Emotional State</h3><span class="card-badge cyan" id="badge-emo">--</span></div>
-        <div class="card-body" id="body-emo"><div class="skel"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ SECTION: Operations ═══ -->
-  <div class="section">
-    <div class="section-title">Operations &amp; Finance <span class="line"></span></div>
-    <div class="section-desc">Live treasury balance, revenue tracking, and AI agent swarm health across all orchestration layers.</div>
-    <div class="grid-3">
-      <!-- Treasury -->
-      <div class="card">
-        <div class="card-head"><h3>Treasury</h3><span class="card-badge green" id="badge-treasury">--</span></div>
-        <div class="card-body" id="body-treasury"><div class="skel"></div></div>
-      </div>
-      <!-- Swarm Health -->
-      <div class="card">
-        <div class="card-head"><h3>Agent Swarm</h3><span class="card-badge green" id="badge-swarm">--</span></div>
-        <div class="card-body" id="body-swarm"><div class="skel"></div></div>
-      </div>
-      <!-- Network -->
-      <div class="card">
-        <div class="card-head"><h3>Network</h3><span class="card-badge cyan" id="badge-net">--</span></div>
-        <div class="card-body" id="body-net"><div class="skel"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ SECTION: Intelligence ═══ -->
-  <div class="section">
-    <div class="section-title">Intelligence &amp; Evolution <span class="line"></span></div>
-    <div class="section-desc">Mission tracking, sustainable development goals, and evolutionary simulation of the AI population.</div>
-    <div class="grid-3">
-      <!-- Missions -->
-      <div class="card">
-        <div class="card-head"><h3>Mission Board</h3><span class="card-badge gold" id="badge-missions">--</span></div>
-        <div class="card-body" id="body-missions"><div class="skel"></div></div>
-      </div>
-      <!-- SDG Goals -->
-      <div class="card">
-        <div class="card-head"><h3>Impact Goals (SDG)</h3><span class="card-badge green" id="badge-sdg">--</span></div>
-        <div class="card-body" id="body-sdg"><div class="skel"></div></div>
-      </div>
-      <!-- Evolution -->
-      <div class="card">
-        <div class="card-head"><h3>Evolution Sim</h3><span class="card-badge gold" id="badge-esim">--</span></div>
-        <div class="card-body" id="body-esim"><div class="skel"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ SECTION: Interact ═══ -->
-  <div class="section">
-    <div class="section-title">Interact with the Twin <span class="line"></span></div>
-    <div class="section-desc">Send commands to the AI queue or speak as the twin. Commands are processed in order.</div>
-    <div class="grid-2">
-      <!-- CLI -->
-      <div class="card">
-        <div class="card-head"><h3>Command Queue</h3><span class="card-badge cyan" id="badge-cli">--</span></div>
-        <div class="card-body">
-          <div id="body-cli"><div class="skel"></div></div>
-          <form class="cmd-form" id="cli-form">
-            <input class="cmd-input" id="cli-input" type="text" placeholder="Enter a command..." autocomplete="off">
-            <button class="cmd-btn primary" type="submit">Run</button>
-          </form>
-          <div class="cmd-out" id="cli-out"></div>
-        </div>
-      </div>
-      <!-- Speak -->
-      <div class="card">
-        <div class="card-head"><h3>Twin Voice</h3><span class="card-badge" style="background:rgba(167,139,250,.1);color:var(--purple);">Speech</span></div>
-        <div class="card-body">
-          <div class="data-row"><span class="data-label">Avatar interface</span><a href="/avatar.html" style="color:var(--purple);text-decoration:none;font-size:12px;">Open Avatar &#8594;</a></div>
-          <div class="data-row"><span class="data-label">Terminal</span><a href="/console.html" style="color:var(--cyan);text-decoration:none;font-size:12px;">Open Terminal &#8594;</a></div>
-          <form class="cmd-form" id="speak-form">
-            <input class="cmd-input" id="speak-input" type="text" placeholder="Say something as the twin...">
-            <button class="cmd-btn secondary" type="submit">Speak</button>
-          </form>
-          <div class="cmd-out" id="speak-out"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<script>
-(function(){
-  function money(n){ return 'R' + Number(n||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-
-  function apiFetch(path){ return fetch(path).then(function(r){ return r.json(); }).catch(function(){ return {}; }); }
-
-  function makeRow(lbl, valText, colorClass) {
-    var div = document.createElement('div');
-    div.className = 'data-row';
-    var l = document.createElement('span'); l.className = 'data-label'; l.textContent = lbl;
-    var v = document.createElement('span'); v.className = 'data-value ' + (colorClass || ''); v.textContent = String(valText);
-    div.appendChild(l); div.appendChild(v); return div;
-  }
-
-  function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
-
-  function setRows(id, rows) {
-    var el = document.getElementById(id); if (!el) return; clearEl(el);
-    rows.forEach(function(r) { el.appendChild(makeRow(r[0], r[1], r[2])); });
-  }
-
-  function loadTwin() {
-    return apiFetch('/api/twin/profile').then(function(d) {
-      if (!d.ok) return;
-      document.getElementById('badge-twin').textContent = 'Active';
-      setRows('body-twin', [
-        ['ID', d.id || '--', 'accent'],
-        ['Name', d.name || '--', 'gold'],
-        ['Role', (d.profile && d.profile.role) || 'AI Operating System'],
-        ['Skills', (d.skills || []).length + ' loaded', 'cyan'],
-      ]);
-      if (d.skills && d.skills.length) {
-        var body = document.getElementById('body-twin');
-        var chips = document.createElement('div'); chips.className = 'chips';
-        d.skills.slice(0,10).forEach(function(s) {
-          var c = document.createElement('span'); c.className = 'chip'; c.textContent = s; chips.appendChild(c);
-        });
-        body.appendChild(chips);
-      }
-    });
-  }
-
-  function loadEmotion() {
-    return apiFetch('/api/emotion/status').then(function(d) {
-      if (!d.ok && !d.mood) return;
-      var mood = d.mood || 'neutral';
-      document.getElementById('badge-emo').textContent = mood;
-      document.getElementById('mood-tag').textContent = mood;
-      var body = document.getElementById('body-emo'); clearEl(body);
-      var emotionMap = { valence: 'Positivity', arousal: 'Energy', dominance: 'Confidence', mood: 'Current Mood' };
-      var keys = Object.keys(d).filter(function(k){ return k !== 'ok' && k !== 'ts'; });
-      keys.forEach(function(k) {
-        var label = emotionMap[k] || k;
-        var val = d[k];
-        var cls = '';
-        if (typeof val === 'number') cls = val > 0.6 ? 'green' : val > 0.3 ? 'gold' : 'red';
-        body.appendChild(makeRow(label, val, cls));
-      });
-    });
-  }
-
-  function loadTreasury() {
-    return Promise.all([apiFetch('/api/treasury/status'), apiFetch('/api/revenue/status')]).then(function(rs) {
-      var t = rs[0]; var rev = rs[1];
-      var earned = rev.revenue_mtd || t.balance || 0;
-      var spent  = rev.costs_mtd || 0;
-      document.getElementById('badge-treasury').textContent = t.ok ? 'Live' : 'Offline';
-      document.getElementById('badge-treasury').className = 'card-badge ' + (t.ok ? 'green' : 'red');
-      setRows('body-treasury', [
-        ['Balance',  money(t.balance || 0), 'green'],
-        ['Revenue',  money(earned),         'cyan'],
-        ['AI Spend', money(spent),          spent > 100 ? 'red' : 'gold'],
-        ['Net',      money(earned - spent), (earned - spent) >= 0 ? 'green' : 'red'],
-      ]);
-    });
-  }
-
-  function loadSwarm() {
-    return apiFetch('/api/swarm/health').then(function(d) {
-      document.getElementById('badge-swarm').textContent = d.ok ? d.agents + ' agents' : 'Offline';
-      document.getElementById('badge-swarm').className = 'card-badge ' + (d.ok ? 'green' : 'red');
-      setRows('body-swarm', [
-        ['Total Agents', d.agents || 0, 'green'],
-        ['Healthy',      d.healthy || 0, 'cyan'],
-        ['Queued Tasks', d.tasks_queued || 0, 'gold'],
-        ['Uptime',       d.uptime_s ? Math.floor(d.uptime_s / 3600) + 'h ' + Math.floor((d.uptime_s % 3600) / 60) + 'm' : '--'],
-      ]);
-    });
-  }
-
-  function loadNetwork() {
-    return apiFetch('/api/network/status').then(function(d) {
-      document.getElementById('badge-net').textContent = d.ok ? 'Connected' : 'Offline';
-      setRows('body-net', [
-        ['Nodes',      d.nodes || 0,       'green'],
-        ['Active',     d.connections || 0,  'cyan'],
-        ['Latency',    (d.latency_ms || d.latency || 0) + 'ms', 'gold'],
-        ['Bandwidth',  d.bandwidth || '--'],
-        ['Topology',   d.mode || 'mesh',    'accent'],
-      ]);
-    });
-  }
-
-  function loadMissions() {
-    return apiFetch('/api/mission/board').then(function(d) {
-      var missions = d.missions || [];
-      document.getElementById('badge-missions').textContent = missions.length ? missions.length + ' active' : 'None';
-      var body = document.getElementById('body-missions'); clearEl(body);
-      if (!missions.length) {
-        var empty = document.createElement('div'); empty.className = 'empty';
-        empty.textContent = 'No active missions. Missions appear when agents are assigned long-running tasks.';
-        body.appendChild(empty);
-      } else {
-        missions.slice(0,5).forEach(function(m) { body.appendChild(makeRow(m.title || m.id, m.status || 'active', 'gold')); });
-      }
-    });
-  }
-
-  function loadSDG() {
-    return apiFetch('/api/sdg/metrics').then(function(d) {
-      var goals = d.goals || [];
-      document.getElementById('badge-sdg').textContent = goals.length + ' goals';
-      var body = document.getElementById('body-sdg'); clearEl(body);
-      goals.forEach(function(g) {
-        var pct = Math.min(100, Math.round((g.progress || 0) * 100));
-        var row = document.createElement('div'); row.className = 'progress-row';
-        var lbl = document.createElement('span'); lbl.className = 'progress-label'; lbl.textContent = g.name || g.label || 'Goal';
-        var wrap = document.createElement('div'); wrap.className = 'progress-bar';
-        var fill = document.createElement('div'); fill.className = 'progress-fill green'; fill.style.width = pct + '%';
-        wrap.appendChild(fill);
-        var pctEl = document.createElement('span'); pctEl.className = 'progress-pct'; pctEl.textContent = pct + '%';
-        row.appendChild(lbl); row.appendChild(wrap); row.appendChild(pctEl); body.appendChild(row);
-      });
-    });
-  }
-
-  function loadESim() {
-    return apiFetch('/api/esim/status').then(function(d) {
-      document.getElementById('badge-esim').textContent = 'Gen ' + (d.generation || 1);
-      setRows('body-esim', [
-        ['Generation', d.generation || 1,              'gold'],
-        ['Best Fitness', (+(d.fitness || 0)).toFixed(3), 'green'],
-        ['Population',  d.population || 50,             'cyan'],
-        ['Mutations',   d.mutations || 0],
-        ['Status',      d.ok ? 'Running' : 'Idle',     d.ok ? 'green' : 'gold'],
-      ]);
-    });
-  }
-
-  function loadCLI() {
-    return apiFetch('/api/cli/status').then(function(d) {
-      document.getElementById('badge-cli').textContent = (d.queue_size || 0) + ' queued';
-      setRows('body-cli', [
-        ['Status', d.status || 'idle', 'green'],
-        ['Queue',  d.queue_size || 0,  d.queue_size > 0 ? 'gold' : 'green'],
-      ]);
-    });
-  }
-
-  // ── Actions ──
-  document.getElementById('cli-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var inp = document.getElementById('cli-input'), out = document.getElementById('cli-out');
-    var cmd = inp.value.trim(); if (!cmd) return; inp.value = '';
-    out.textContent = 'Sending...';
-    fetch('/api/cli/enqueue', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({command:cmd}) })
-      .then(function(r){ return r.json(); }).then(function(d) {
-        out.textContent = d.ok ? 'Queued: ' + cmd : 'Error: ' + (d.error || 'failed'); loadCLI();
-      }).catch(function(){ out.textContent = 'Connection error'; });
-  });
-
-  document.getElementById('speak-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var inp = document.getElementById('speak-input'), out = document.getElementById('speak-out');
-    var text = inp.value.trim(); if (!text) return; inp.value = '';
-    out.textContent = 'Speaking...';
-    fetch('/api/speech/speak', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:text}) })
-      .then(function(r){ return r.json(); }).then(function(d) {
-        out.textContent = d.ok ? 'Said: "' + text + '"' : 'Error: ' + (d.error || 'failed');
-      }).catch(function(){ out.textContent = 'Brain offline'; });
-  });
-
-  // ── Refresh loop ──
-  function refresh() {
-    var ts = document.getElementById('last-ts'), dot = document.getElementById('brain-dot');
-    ts.textContent = 'Refreshing...';
-    Promise.allSettled([loadTwin(), loadEmotion(), loadTreasury(), loadSwarm(), loadNetwork(), loadMissions(), loadSDG(), loadESim(), loadCLI()])
-      .then(function(results) {
-        var ok = results.some(function(r){ return r.status === 'fulfilled'; });
-        if (ok) dot.classList.add('online'); else dot.classList.remove('online');
-        ts.textContent = new Date().toLocaleTimeString();
-      });
-  }
-
-  refresh();
-  setInterval(refresh, 10000);
-})();
-</script>
-<script src="/global-nav.js" defer></script>
+  <script>
+    (function(){
+      var url = (typeof window !== 'undefined' && window.__CONSOLE_SYNC_URL) ? window.__CONSOLE_SYNC_URL : (location.port === '3022' ? location.origin + '/' : 'http://localhost:3022/');
+      var link = document.getElementById('link');
+      var footer = document.getElementById('footer');
+      if (link) { link.href = url; link.textContent = 'Open at ' + url; }
+      if (footer) footer.innerHTML = 'Synced with ' + url + ' — Human API at /api/human';
+    })();
+  </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

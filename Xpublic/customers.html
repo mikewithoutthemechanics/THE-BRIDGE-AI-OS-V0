@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customers — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/crm.html" class="text-slate-400 hover:text-cyan-400">CRM</a>
+      <a href="/invoicing.html" class="text-slate-400 hover:text-cyan-400">Invoicing</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-cyan-400">Customer Database</h1>
+      <button onclick="addCustomer()" class="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-cyan-500">
+        + Add Customer
+      </button>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="total">0</div>
+        <div class="text-sm text-slate-400">Total Customers</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400" id="active">0</div>
+        <div class="text-sm text-slate-400">Active</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-purple-400" id="premium">0</div>
+        <div class="text-sm text-slate-400">Premium</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400" id="revenue">$0</div>
+        <div class="text-sm text-slate-400">Total Revenue</div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-slate-700">
+          <tr>
+            <th class="p-4 text-left text-sm font-bold">Name</th>
+            <th class="p-4 text-left text-sm font-bold">Email</th>
+            <th class="p-4 text-left text-sm font-bold">Plan</th>
+            <th class="p-4 text-left text-sm font-bold">LTV</th>
+            <th class="p-4 text-left text-sm font-bold">Status</th>
+            <th class="p-4 text-left text-sm font-bold">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="customers-table">
+          <tr><td colspan="6" class="p-8 text-center text-slate-500">Loading customers...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    async function loadCustomers() {
+      try {
+        const res = await fetch('/api/customers');
+        const data = await res.json();
+        const customers = data.customers || data || [];
+        
+        document.getElementById('total').textContent = customers.length;
+        document.getElementById('active').textContent = customers.filter(c => c.status === 'active').length;
+        document.getElementById('premium').textContent = customers.filter(c => c.plan === 'premium' || c.plan === 'pro').length;
+        
+        const total = customers.reduce((sum, c) => sum + (c.ltv || c.revenue || c.spent || 0), 0);
+        document.getElementById('revenue').textContent = '$' + total.toLocaleString();
+
+        if (customers.length === 0) {
+          document.getElementById('customers-table').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">No customers yet</td></tr>';
+        } else {
+          document.getElementById('customers-table').innerHTML = customers.map(c => `
+            <tr class="border-t border-slate-700 hover:bg-slate-750">
+              <td class="p-4 font-bold">${c.name}</td>
+              <td class="p-4 text-slate-400">${c.email}</td>
+              <td class="p-4">
+                <span class="px-2 py-1 rounded text-xs font-bold ${
+                  c.plan === 'premium' || c.plan === 'pro' ? 'bg-purple-900 text-purple-400' :
+                  c.plan === 'enterprise' ? 'bg-cyan-900 text-cyan-400' :
+                  'bg-slate-600 text-slate-400'
+                }">${(c.plan || 'free').toUpperCase()}
+                </span>
+              </td>
+              <td class="p-4 text-green-400">$${(c.ltv || c.revenue || 0).toLocaleString()}</td>
+              <td class="p-4">
+                <span class="px-2 py-1 rounded text-xs font-bold ${c.status === 'active' ? 'bg-green-900 text-green-400' : 'bg-slate-600 text-slate-400'}">
+                  ${(c.status || 'active').toUpperCase()}
+                </span>
+              </td>
+              <td class="p-4">
+                <button class="text-cyan-400 hover:text-cyan-300">View</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('customers-table').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red-400">Error loading customers</td></tr>';
+      }
+    }
+
+    function addCustomer() {
+      alert('Add customer form would open here');
+    }
+
+    loadCustomers();
+  </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

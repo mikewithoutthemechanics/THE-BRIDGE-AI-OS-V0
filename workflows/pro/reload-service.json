@@ -1,0 +1,20 @@
+{
+  "id": "reload-service",
+  "name": "Reload PM2 service (zero-downtime)",
+  "description": "Reload a service with PM2 cluster-mode zero-downtime swap. Falls back to restart if service is in fork mode.",
+  "category": "operations",
+  "required_tier": "pro",
+  "required_capability": null,
+  "confirmation_required": true,
+  "params": [
+    { "name": "service", "type": "string", "required": true, "values_from": "/admin/services", "label": "Target service" }
+  ],
+  "steps": [
+    { "type": "confirm",    "message": "Reload {service}?" },
+    { "type": "http_post",  "path": "/admin/services/{service}/reload" },
+    { "type": "wait_for",   "path": "/healthz", "match": "status=ok", "timeout_s": 30 }
+  ],
+  "estimated_duration_s": 3,
+  "audit": true,
+  "audit_action": "service_reload"
+}

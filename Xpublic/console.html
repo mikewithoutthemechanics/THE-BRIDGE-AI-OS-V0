@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Console v3 — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    #terminal{background:#0d1117;min-height:500px;padding:1rem;font-family:monospace;font-size:14px;color:#c9d1d9}
+    .prompt{color:#58a6ff}
+    .output{white-space:pre-wrap;margin-bottom:0.5rem}
+    .error{color:#f85149}
+    .success{color:#3fb950}
+  </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
+</head>
+<body class="bg-slate-900 text-slate-200">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/home.html" class="text-slate-400 hover:text-cyan-400">Home</a>
+      <a href="/terminal-v3.html" class="text-cyan-400">Terminal v3</a>
+      <a href="/terminal.html" class="text-slate-400 hover:text-cyan-400">Legacy</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-cyan-400 mb-4">Console v3</h1>
+    <p class="text-slate-400 mb-4">Advanced terminal with AI command assistance</p>
+
+    <div class="bg-slate-800 rounded-xl overflow-hidden">
+      <div class="bg-slate-700 px-4 py-2 flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+        <span class="ml-4 text-sm text-slate-400">bridge@ai-os</span>
+      </div>
+      
+      <div id="terminal">
+        <div class="output">Bridge AI OS Console v3.0.0</div>
+        <div class="output text-slate-500">Type 'help' for available commands</div>
+        <div class="output">---</div>
+      </div>
+
+      <div class="p-4 bg-slate-700 flex gap-2">
+        <input type="text" id="cmd" class="flex-1 bg-slate-900 border border-slate-600 rounded px-4 py-2 text-white font-mono" placeholder="Enter command..." autofocus>
+        <button onclick="execute()" class="bg-cyan-600 text-white px-6 py-2 rounded font-bold hover:bg-cyan-500">Run</button>
+        <button onclick="clearTerminal()" class="bg-slate-600 text-white px-4 py-2 rounded hover:bg-slate-500">Clear</button>
+      </div>
+    </div>
+
+    <div class="mt-6 bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">Quick Commands</h2>
+      <div class="grid md:grid-cols-3 gap-4">
+        <button onclick="runCommand('status')" class="bg-slate-700 p-4 rounded-lg text-left hover:bg-slate-600">
+          <div class="font-bold">system status</div>
+          <div class="text-sm text-slate-400">Check system health</div>
+        </button>
+        <button onclick="runCommand('agents list')" class="bg-slate-700 p-4 rounded-lg text-left hover:bg-slate-600">
+          <div class="font-bold">agents list</div>
+          <div class="text-sm text-slate-400">List all AI agents</div>
+        </button>
+        <button onclick="runCommand('topology')" class="bg-slate-700 p-4 rounded-lg text-left hover:bg-slate-600">
+          <div class="font-bold">topology</div>
+          <div class="text-sm text-slate-400">View network topology</div>
+        </button>
+        <button onclick="runCommand('treasury')" class="bg-slate-700 p-4 rounded-lg text-left hover:bg-slate-600">
+          <div class="font-bold">treasury</div>
+          <div class="text-sm text-slate-400">Check treasury status</div>
+        </button>
+        <button onclick="runCommand('help')" class="bg-slate-700 p-4 rounded-lg text-left hover:bg-slate-600">
+          <div class="font-bold">help</div>
+          <div class="text-sm text-slate-400">Show all commands</div>
+        </button>
+        <button onclick="runCommand('api health')" class="bg-slate-700 p-4 rounded-lg text-left hover:bg-slate-600">
+          <div class="font-bold">api health</div>
+          <div class="text-sm text-slate-400">Check API endpoints</div>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const terminal = document.getElementById('terminal');
+    const cmdInput = document.getElementById('cmd');
+
+    cmdInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') execute();
+    });
+
+    function print(text, type = '') {
+      const div = document.createElement('div');
+      div.className = 'output ' + type;
+      div.textContent = text;
+      terminal.appendChild(div);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function runCommand(cmd) {
+      cmdInput.value = cmd;
+      execute();
+    }
+
+    async function execute() {
+      const cmd = cmdInput.value.trim();
+      if (!cmd) return;
+      
+      print('$ ' + cmd);
+      cmdInput.value = '';
+
+      const parts = cmd.split(' ');
+      const action = parts[0].toLowerCase();
+      const args = parts.slice(1).join(' ');
+
+      try {
+        let result;
+        
+        switch(action) {
+          case 'help':
+            print(`Available commands:
+  status      - System status
+  agents      - List AI agents
+  topology    - Network topology
+  treasury    - Treasury status
+  wallet      - Wallet balance
+  defi        - DeFi status
+  api         - API health check
+  exec <cmd>  - Execute custom command
+  clear       - Clear terminal`, 'success');
+            break;
+            
+          case 'status':
+            const statusRes = await fetch('/api/health');
+            const status = await statusRes.json();
+            print(JSON.stringify(status, null, 2), 'success');
+            break;
+            
+          case 'agents':
+            const agentsRes = await fetch('/api/agents');
+            const agents = await agentsRes.json();
+            print(JSON.stringify(agents, null, 2), 'success');
+            break;
+            
+          case 'topology':
+            const topoRes = await fetch('/api/topology');
+            const topo = await topoRes.json();
+            print(JSON.stringify(topo, null, 2), 'success');
+            break;
+            
+          case 'treasury':
+            const treaRes = await fetch('/api/treasury/status');
+            const trea = await treaRes.json();
+            print(JSON.stringify(trea, null, 2), 'success');
+            break;
+            
+          case 'wallet':
+            const walRes = await fetch('/api/wallet/balance');
+            const wal = await walRes.json();
+            print(JSON.stringify(wal, null, 2), 'success');
+            break;
+            
+          case 'defi':
+            const defiRes = await fetch('/api/defi/status');
+            const defi = await defiRes.json();
+            print(JSON.stringify(defi, null, 2), 'success');
+            break;
+            
+          case 'api':
+            const apiRes = await fetch('/api/status');
+            const api = await apiRes.json();
+            print(JSON.stringify(api, null, 2), 'success');
+            break;
+            
+          case 'clear':
+          case 'cls':
+            clearTerminal();
+            break;
+            
+          default:
+            print('Unknown command: ' + action + '. Type "help" for available commands.', 'error');
+        }
+      } catch(e) {
+        print('Error: ' + e.message, 'error');
+      }
+    }
+
+    function clearTerminal() {
+      terminal.innerHTML = '<div class="output">Console cleared</div>';
+    }
+  </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

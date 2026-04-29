@@ -1,0 +1,87 @@
+<svg width="600" height="300" viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a0a0a;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:0" />
+      <stop offset="50%" style="stop-color:#00ff88;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:0" />
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="300" fill="url(#bgGradient)" rx="10" />
+
+  <!-- SQL Interface Box -->
+  <rect x="50" y="100" width="150" height="80" fill="rgba(0, 255, 136, 0.1)" stroke="#00ff88" stroke-width="2" rx="8" />
+  <text x="125" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#00ff88">SQL Interface</text>
+  <text x="125" y="155" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#a0a0a0">User Queries</text>
+
+  <!-- Bridge AI OS Processing -->
+  <circle cx="300" cy="140" r="40" fill="url(#bgGradient)" stroke="#0099ff" stroke-width="3" filter="url(#glow)" />
+  <text x="300" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#0099ff">Bridge AI OS</text>
+  <text x="300" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#a0a0a0">Processing</text>
+
+  <!-- Supabase Database -->
+  <rect x="450" y="110" width="100" height="60" fill="rgba(0, 153, 255, 0.1)" stroke="#0099ff" stroke-width="2" rx="8" />
+  <text x="500" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#0099ff">Supabase</text>
+  <text x="500" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#a0a0a0">PostgreSQL</text>
+
+  <!-- Data Flow Arrows -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#00ff88" />
+    </marker>
+  </defs>
+
+  <!-- SQL Query Flow -->
+  <line x1="200" y1="140" x2="260" y2="140" stroke="#00ff88" stroke-width="3" marker-end="url(#arrowhead)" />
+  <text x="230" y="130" font-family="Arial, sans-serif" font-size="10" fill="#00ff88">SQL Query</text>
+
+  <!-- Results Flow -->
+  <line x1="340" y1="140" x2="450" y2="140" stroke="#0099ff" stroke-width="3" marker-end="url(#arrowhead)" />
+  <text x="395" y="130" font-family="Arial, sans-serif" font-size="10" fill="#0099ff">Execute</text>
+
+  <!-- Response Flow -->
+  <line x1="340" y1="160" x2="200" y2="160" stroke="#00ff88" stroke-width="3" marker-end="url(#arrowhead)" />
+  <text x="270" y="175" font-family="Arial, sans-serif" font-size="10" fill="#00ff88">Results</text>
+
+  <!-- Database Tables -->
+  <rect x="460" y="180" width="80" height="20" fill="rgba(0, 153, 255, 0.2)" stroke="#0099ff" stroke-width="1" rx="3" />
+  <text x="500" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#0099ff">agent_crypto_wallets</text>
+
+  <!-- Flow Animation -->
+  <circle cx="200" cy="140" r="4" fill="#00ff88">
+    <animateMotion dur="2s" repeatCount="indefinite">
+      <path d="M 0 0 L 60 0" />
+    </animateMotion>
+  </circle>
+
+  <circle cx="450" cy="140" r="4" fill="#0099ff">
+    <animateMotion dur="2s" repeatCount="indefinite" begin="0.5s">
+      <path d="M 0 0 L -60 0" />
+    </animateMotion>
+  </circle>
+
+  <!-- Title -->
+  <text x="300" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff">
+    SQL Bridge Architecture
+  </text>
+
+  <!-- Description -->
+  <text x="300" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#a0a0a0">
+    Bridge AI OS ↔ Supabase SQL Interface
+  </text>
+</svg>

@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BridgeAI AEOS — Dashboard</title>
+<script>
+(function () {
+  var raw = localStorage.getItem('bridge_token');
+  if (!raw) {
+    var m = document.cookie.match(/(?:^|;\s*)bridge_token=([^;]+)/);
+    raw = m ? decodeURIComponent(m[1]) : null;
+  }
+  if (!raw) { window.location.replace('/onboarding'); return; }
+  try {
+    var parts = raw.split('.');
+    if (parts.length !== 3) throw new Error('bad jwt');
+    var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    var stored = localStorage.getItem('bridge_user');
+    if (stored) {
+      try {
+        var u = JSON.parse(stored);
+        if (u.email && payload.email && u.email !== payload.email) {
+          localStorage.removeItem('bridge_user');
+        }
+      } catch (e) { localStorage.removeItem('bridge_user'); }
+    }
+    window.__JWT_PAYLOAD__ = payload;
+  } catch (e) {
+    localStorage.removeItem('bridge_token');
+    window.location.replace('/onboarding');
+  }
+})();
+</script>
+<script src="/bridge-nav.js?v=20260425e" defer></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #181c24;
+  --border: rgba(255,255,255,.07);
+  --accent: #00d4ff;
+  --gold: #ffb400;
+  --green: #22c55e;
+  --red: #ef4444;
+  --purple: #a855f7;
+  --text: #e2e8f0;
+  --muted: rgba(200,220,230,.45);
+  --nav-height: 56px;
+  --sidebar-width: 200px;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button { cursor: pointer; font-family: inherit; font-size: 14px; border: none; outline: none; }
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 12px;
+  width: 100%;
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 80px; }
+select option { background: var(--surface); }
+
+label { display: block; margin-bottom: 4px; color: var(--muted); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+
+/* ─── LAYOUT ─── */
+#bridge-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; min-height: var(--nav-height); }
+
+#shell {
+  display: flex;
+  height: 100vh;
+  padding-top: var(--nav-height);
+}
+
+/* ─── SIDEBAR ─── */
+#sidebar {
+  position: fixed;
+  top: var(--nav-height);
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: transform .25s ease;
+  overflow-y: auto;
+}
+
+#sidebar .sidebar-menu {
+  flex: 1;
+  padding: 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 500;
+  transition: background .15s, color .15s;
+  user-select: none;
+  white-space: nowrap;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: rgba(0,212,255,.1); color: var(--accent); }
+.nav-item svg { flex-shrink: 0; }
+
+#sidebar .sidebar-footer {
+  padding: 12px 8px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,180,0,.12);
+  color: var(--gold);
+  border: 1px solid rgba(255,180,0,.3);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  align-self: flex-start;
+  margin-left: 4px;
+}
+
+#btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 500;
+  transition: background .15s, color .15s, border-color .15s;
+}
+#btn-logout:hover { background: rgba(239,68,68,.1); color: var(--red); border-color: rgba(239,68,68,.3); }
+
+/* ─── MAIN CONTENT ─── */
+#main {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+
+/* ─── HAMBURGER ─── */
+#hamburger {
+  display: none;
+  position: fixed;
+  top: calc(var(--nav-height) + 8px);
+  left: 12px;
+  z-index: 150;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px;
+  color: var(--text);
+}
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0,0,0,.5);
+}
+
+@media (max-width: 768px) {
+  #hamburger { display: flex; }
+  #sidebar { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar-overlay.open { display: block; }
+  #main { margin-left: 0; padding: 20px 16px; }
+}
+
+/* ─── CARDS ─── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 8px;
+}
+.card-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.section-sub {
+  color: var(--muted);
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+/* ─── TABLES ─── */
+.tbl-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; }
+th {
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 10px 14px;
+  text-align: left;
+  white-space: nowrap;
+}
+td {
+  padding: 11px 14px;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--text);
+}
+tr:hover td { background: rgba(255,255,255,.02); }
+
+/* ─── BADGES ─── */
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.badge-green  { background: rgba(34,197,94,.15);  color: var(--green);  }
+.badge-red    { background: rgba(239,68,68,.15);   color: var(--red);   }
+.badge-yellow { background: rgba(255,180,0,.15);   color: var(--gold);  }
+.badge-blue   { background: rgba(0,212,255,.12);   color: var(--accent);}
+.badge-purple { background: rgba(168,85,247,.15);  color: var(--purple);}
+.badge-gray   { background: rgba(200,220,230,.08); color: var(--muted); }
+
+/* ─── BUTTONS ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: opacity .15s, background .15s;
+}
+.btn:hover { opacity: .85; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-danger  { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: var(--red); }
+.btn-sm      { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+/* ─── FORMS ─── */
+.form-row { margin-bottom: 14px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+
+.inline-form {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  display: none;
+}
+.inline-form.open { display: block; }
+
+/* ─── FEEDBACK ─── */
+.msg {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 10px;
+  display: none;
+}
+.msg.ok  { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.3); display: block; }
+.msg.err { background: rgba(239,68,68,.15); color: var(--red);   border: 1px solid rgba(239,68,68,.3); display: block; }
+
+/* ─── ACTIVITY FEED ─── */
+.feed-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.feed-item:last-child { border-bottom: none; }
+.feed-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.feed-label { font-weight: 500; }
+.feed-time  { font-size: 12px; color: var(--muted); }
+
+/* ─── SCORE BAR ─── */
+.score-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; width: 80px; display: inline-block; vertical-align: middle; }
+.score-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s; }
+
+/* ─── FILTER BAR ─── */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.filter-bar input { max-width: 200px; width: auto; }
+
+/* ─── TIER LIMIT ─── */
+.tier-limit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.tier-limit-bar { height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; width: 100px; }
+.tier-limit-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+
+/* ─── COPY CODE ─── */
+.code-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+/* ─── AFFILIATE STATS ─── */
+.aff-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+@media (max-width: 480px) { .aff-stats { grid-template-columns: 1fr; } }
+
+/* ─── TOGGLE ─── */
+.toggle-wrap { display: flex; align-items: center; gap: 8px; }
+.toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  display: inline-block;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--surface2);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 3px;
+  top: 3px;
+  background: var(--muted);
+  border-radius: 50%;
+  transition: transform .2s, background .2s;
+}
+.toggle input:checked + .toggle-slider { background: rgba(0,212,255,.2); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--accent); }
+
+/* ─── WALLET CARD ─── */
+.wallet-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+@media (max-width: 560px) { .wallet-grid { grid-template-columns: 1fr; } }
+
+/* ─── UPGRADE PROMPT ─── */
+.upgrade-prompt {
+  text-align: center;
+  padding: 40px 24px;
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+.upgrade-prompt h3 { font-size: 18px; margin-bottom: 8px; }
+.upgrade-prompt p { color: var(--muted); margin-bottom: 20px; }
+
+/* ─── EMPTY STATE ─── */
+.empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ─── SPINNER ─── */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── SECTION VISIBILITY ─── */
+.dash-section { display: none; }
+.dash-section.active { display: block; }
+
+/* ─── REVENUE SPLIT INFO ─── */
+.split-info {
+  background: rgba(0,212,255,.06);
+  border: 1px solid rgba(0,212,255,.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ─── TIER GATE ─── */
+.section-blocked { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.18); }
+
+/* app cards */
+.apps-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 16px; }
+.app-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.app-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.app-card-name { font-weight: 700; font-size: 15px; }
+.app-card-actions { display: flex; gap: 6px; margin-top: 12px; }
+.app-revenue { font-size: 22px; font-weight: 700; color: var(--green); }
+.app-revenue-label { font-size: 11px; color: var(--muted); }
+
+/* automation cards */
+.auto-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.auto-meta { flex: 1; min-width: 160px; }
+.auto-name { font-weight: 700; }
+.auto-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.auto-stats { display: flex; gap: 16px; font-size: 12px; color: var(--muted); align-items: center; flex-wrap: wrap; }
+.auto-actions { display: flex; gap: 6px; }
+
+/* Withdraw info */
+.withdrawal-info {
+  background: rgba(168,85,247,.08);
+  border: 1px solid rgba(168,85,247,.25);
+  border-radius: 10px;
+  padding: 16px 20px;
+  color: var(--purple);
+  font-size: 13px;
+  margin-top: 16px;
+}
+</style>
+</head>
+<body>
+
+<div id="bridge-nav"></div>
+
+<button id="hamburger" aria-label="Toggle sidebar" onclick="toggleSidebar()">
+  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path d="M4 6h16M4 12h16M4 18h16"/>
+  </svg>
+</button>
+
+<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div id="shell">
+  <nav id="sidebar">
+    <div class="sidebar-menu">
+      <div class="nav-item active" data-section="overview" onclick="showSection('overview')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" data-section="economy" onclick="showSection('economy')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v1m0 8v1m-3-5h6m-5-2c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2"/></svg>
+        Economy
+      </div>
+      <div class="nav-item" data-section="apps" onclick="showSection('apps')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="10" width="6" height="6" rx="1"/><rect x="9" y="10" width="6" height="6" rx="1"/><rect x="16" y="10" width="6" height="6" rx="1"/><rect x="2" y="17" width="6" height="6" rx="1"/><rect x="9" y="17" width="6" height="6" rx="1"/><rect x="16" y="17" width="6" height="6" rx="1"/></svg>
+        Apps
+      </div>
+      <div class="nav-item" data-section="leads" onclick="showSection('leads')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Leads
+      </div>
+      <div class="nav-item" data-section="affiliates" onclick="showSection('affiliates')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Affiliates
+      </div>
+      <div class="nav-item" data-section="banking" onclick="showSection('banking')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M8 10v11M12 10v11M16 10v11M20 10v11"/></svg>
+        Banking
+      </div>
+      <div class="nav-item" data-section="automation" onclick="showSection('automation')">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14M12 2v2m0 18v-2m10-8h-2M4 12H2m15.07-7.07-1.41 1.41M8.34 15.66l-1.41 1.41M18.66 15.66l-1.41-1.41M6.75 6.75 5.34 5.34"/></svg>
+        Automation
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div id="tier-badge">⭐ Free</div>
+      <button id="btn-logout" onclick="doLogout()">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log Out
+      </button>
+    </div>
+  </nav>
+
+  <main id="main">
+
+    <!-- OVERVIEW -->
+    <div id="section-overview" class="dash-section active">
+      <div class="section-title">Welcome back, <span id="ov-name">...</span></div>
+      <div class="section-sub" id="ov-tier-line">Loading your account...</div>
+
+      <div class="kpi-grid">
+        <div class="card">
+          <div class="card-title">Wallet Balance</div>
+          <div class="card-value" id="ov-wallet">R 0.00</div>
+          <div class="card-sub">ZAR</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Revenue MTD</div>
+          <div class="card-value" id="ov-revenue">R 0.00</div>
+          <div class="card-sub">Month to date</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Active Apps</div>
+          <div class="card-value" id="ov-apps">0</div>
+          <div class="card-sub">Running</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Active Leads</div>
+          <div class="card-value" id="ov-leads">0</div>
+          <div class="card-sub">In pipeline</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div style="font-weight:700;font-size:15px;">Recent Activity</div>
+          <a href="#" onclick="showSection('banking');return false;" style="font-size:12px;">View all</a>
+        </div>
+        <div id="ov-feed"><div class="empty">Loading activity...</div></div>
+      </div>
+    </div>
+
+    <!-- ECONOMY -->
+    <div id="section-economy" class="dash-section">
+      <div class="section-title">Economy</div>
+      <div class="section-sub">Wallet balances, revenue tracking, and your share of earnings.</div>
+
+      <div class="wallet-grid">
+        <div class="card">
+          <div class="card-title">ZAR Balance</div>
+          <div class="card-value" id="ec-zar">R 0.00</div>
+        </div>
+        <div class="card">
+          <div class="card-title">BRDG Balance</div>
+          <div class="card-value" id="ec-brdg">0.00 BRDG</div>
+        </div>
+        <div class="card">
+          <div class="card-title">USD Balance</div>
+          <div class="card-value" id="ec-usd">$0.00</div>
+        </div>
+      </div>
+
+      <div class="split-info" id="ec-split-info">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Loading revenue split...
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+          <div style="font-weight:700;font-size:15px;">Revenue Events</div>
+          <button class="btn btn-primary btn-sm" onclick="toggleForm('form-rev-event')">+ Submit Event</button>
+        </div>
+
+        <div class="inline-form" id="form-rev-event">
+          <div class="form-grid">
+            <div class="form-row">
+              <label>App</label>
+              <select id="rev-app-id"><option value="">— select app —</option></select>
+            </div>
+            <div class="form-row">
+              <label>Amount (ZAR)</label>
+              <input type="number" id="rev-amount" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="form-row">
+              <label>Source</label>
+              <input type="text" id="rev-source" placeholder="e.g. stripe, manual">
+            </div>
+            <div class="form-row">
+              <label>Affiliate Code (optional)</label>
+              <input type="text" id="rev-aff-code" placeholder="BRIDGE123">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="btn btn-primary btn-sm" onclick="submitRevEvent()">Submit</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleForm('form-rev-event')">Cancel</button>
+          </div>
+          <div class="msg" id="msg-rev-event"></div>
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Source</th>
+                <th>Amount</th>
+                <th>Your Share</th>
+                <th>System Share</th>
+              </tr>
+            </thead>
+            <tbody id="ec-events-body">
+              <tr><td colspan="5" class="empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPS -->
+    <div id="section-apps" class="dash-section">
+      <div class="section-title">Apps</div>
+      <div class="section-sub">Manage your deployed applications.</div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div class="tier-limit" id="apps-limit-bar">
+          <div class="tier-limit-bar"><div class="tier-limit-fill" id="apps-limit-fill" style="width:0%"></div></div>
+          <span id="apps-limit-text">0/0 apps used</span>
+          <a href="/profile#billing" style="font-size:12px;">Upgrade</a>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="toggleForm('form-new-app')">+ New App</button>
+      </div>
+
+      <div class="inline-form" id="form-new-app">
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">New Application</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>App Name</label>
+            <input type="text" id="app-name" placeholder="My Awesome App" oninput="genSlug()">
+          </div>
+          <div class="form-row">
+            <label>Type</label>
+            <select id="app-type">
+              <option value="saas">SaaS</option>
+              <option value="ecommerce">E-Commerce</option>
+              <option value="blog">Blog</option>
+              <option value="leadgen">Lead Gen</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Slug (auto-generated)</label>
+            <input type="text" id="app-slug" placeholder="my-awesome-app">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-primary btn-sm" onclick="createApp()">Create App</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleForm('form-new-app')">Cancel</button>
+        </div>
+        <div class="msg" id="msg-new-app"></div>
+      </div>
+
+      <div id="apps-edit-panel" class="inline-form" style="margin-bottom:16px;">
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">Edit App</div>
+        <input type="hidden" id="edit-app-id">
+        <div class="form-grid">
+          <div class="form-row">
+            <label>App Name</label>
+            <input type="text" id="edit-app-name">
+          </div>
+          <div class="form-row">
+            <label>Type</label>
+            <select id="edit-app-type">
+              <option value="saas">SaaS</option>
+              <option value="ecommerce">E-Commerce</option>
+              <option value="blog">Blog</option>
+              <option value="leadgen">Lead Gen</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-primary btn-sm" onclick="saveEditApp()">Save</button>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('apps-edit-panel').classList.remove('open')">Cancel</button>
+        </div>
+        <div class="msg" id="msg-edit-app"></div>
+      </div>
+
+      <div id="apps-grid" class="apps-grid"><div class="empty">Loading apps...</div></div>
+    </div>
+
+    <!-- LEADS -->
+    <div id="section-leads" class="dash-section">
+      <div class="section-title">Leads</div>
+      <div class="section-sub">Manage your pipeline and generate AI leads.</div>
+
+      <div class="filter-bar">
+        <button class="btn btn-ghost btn-sm lead-filter active" data-status="all" onclick="filterLeads('all',this)">All</button>
+        <button class="btn btn-ghost btn-sm lead-filter" data-status="new" onclick="filterLeads('new',this)">New</button>
+        <button class="btn btn-ghost btn-sm lead-filter" data-status="contacted" onclick="filterLeads('contacted',this)">Contacted</button>
+        <button class="btn btn-ghost btn-sm lead-filter" data-status="qualified" onclick="filterLeads('qualified',this)">Qualified</button>
+        <button class="btn btn-ghost btn-sm lead-filter" data-status="converted" onclick="filterLeads('converted',this)">Converted</button>
+        <input type="text" id="lead-search" placeholder="Search..." oninput="renderLeads()" style="max-width:180px;">
+        <button class="btn btn-primary btn-sm" onclick="toggleForm('form-add-lead')">+ Add Lead</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleForm('form-ai-leads')">🤖 AI Generate</button>
+      </div>
+
+      <div class="tier-limit">
+        <div class="tier-limit-bar"><div class="tier-limit-fill" id="leads-limit-fill" style="width:0%"></div></div>
+        <span id="leads-limit-text">0/0 leads used</span>
+        <a href="/profile#billing" style="font-size:12px;">Upgrade</a>
+      </div>
+
+      <div class="inline-form" id="form-add-lead">
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">Add Lead</div>
+        <div class="form-grid">
+          <div class="form-row"><label>Name</label><input type="text" id="lead-name" placeholder="Jane Smith"></div>
+          <div class="form-row"><label>Email</label><input type="email" id="lead-email" placeholder="jane@example.com"></div>
+          <div class="form-row"><label>Phone</label><input type="tel" id="lead-phone" placeholder="+27 ..."></div>
+          <div class="form-row"><label>Source</label><input type="text" id="lead-source" placeholder="organic, linkedin..."></div>
+          <div class="form-row"><label>App</label><select id="lead-app-id"><option value="">— none —</option></select></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-primary btn-sm" onclick="addLead()">Add Lead</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleForm('form-add-lead')">Cancel</button>
+        </div>
+        <div class="msg" id="msg-add-lead"></div>
+      </div>
+
+      <div class="inline-form" id="form-ai-leads">
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">AI Lead Generation</div>
+        <div class="form-grid">
+          <div class="form-row"><label>Target Description</label><input type="text" id="ai-target" placeholder="SaaS founders in Cape Town interested in automation"></div>
+          <div class="form-row"><label>Count</label><input type="number" id="ai-count" value="5" min="1" max="50"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-primary btn-sm" onclick="aiGenerateLeads()">Generate</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleForm('form-ai-leads')">Cancel</button>
+        </div>
+        <div class="msg" id="msg-ai-leads"></div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Source</th>
+              <th>Status</th>
+              <th>Score</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="leads-body">
+            <tr><td colspan="7" class="empty">Loading leads...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AFFILIATES -->
+    <div id="section-affiliates" class="dash-section">
+      <div class="section-title">Affiliates</div>
+      <div class="section-sub">Your referral program and partner links.</div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Your Affiliate Code</div>
+        <div class="code-display" id="aff-code-display">
+          <span id="aff-code-text">—</span>
+          <button class="btn btn-ghost btn-sm" onclick="copyAffCode()">Copy</button>
+        </div>
+        <div style="color:var(--muted);font-size:12px;" id="aff-ref-url">Referral URL: —</div>
+      </div>
+
+      <div class="aff-stats">
+        <div class="card">
+          <div class="card-title">Total Earned</div>
+          <div class="card-value" id="aff-earned">R 0.00</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Clicks</div>
+          <div class="card-value" id="aff-clicks">0</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Conversions</div>
+          <div class="card-value" id="aff-conversions">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+          <div style="font-weight:700;font-size:15px;">Affiliate Links</div>
+          <button class="btn btn-primary btn-sm" onclick="toggleForm('form-create-link')">+ Create Link</button>
+        </div>
+
+        <div class="inline-form" id="form-create-link">
+          <div class="form-row">
+            <label>Select App</label>
+            <select id="aff-link-app"><option value="">— select app —</option></select>
+          </div>
+          <div id="aff-link-preview" style="display:none;margin:10px 0;padding:10px 14px;background:var(--surface2);border-radius:6px;font-size:13px;word-break:break-all;color:var(--accent);"></div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="btn btn-primary btn-sm" onclick="createAffLink()">Generate Link</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleForm('form-create-link')">Cancel</button>
+          </div>
+          <div class="msg" id="msg-create-link"></div>
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>App</th>
+                <th>Tracking URL</th>
+                <th>Clicks</th>
+                <th>Conversions</th>
+                <th>Revenue</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="aff-links-body">
+              <tr><td colspan="6" class="empty">Loading links...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BANKING -->
+    <div id="section-banking" class="dash-section">
+      <div class="section-title">Banking</div>
+      <div class="section-sub">Your ledger, balances, and transaction history.</div>
+
+      <div class="wallet-grid" style="margin-bottom:20px;">
+        <div class="card">
+          <div class="card-title">ZAR Balance</div>
+          <div class="card-value" id="bk-zar">R 0.00</div>
+        </div>
+        <div class="card">
+          <div class="card-title">BRDG Balance</div>
+          <div class="card-value" id="bk-brdg">0.00 BRDG</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Net Position</div>
+          <div class="card-value" id="bk-net">R 0.00</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex;gap:24px;flex-wrap:wrap;">
+          <div>
+            <div class="card-title">Total Credited</div>
+            <div style="font-size:20px;font-weight:700;color:var(--green);" id="bk-credited">R 0.00</div>
+          </div>
+          <div>
+            <div class="card-title">Total Debited</div>
+            <div style="font-size:20px;font-weight:700;color:var(--red);" id="bk-debited">R 0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:700;font-size:15px;margin-bottom:14px;">Transaction Ledger</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Balance After</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-body">
+              <tr><td colspan="5" class="empty">Loading ledger...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="withdrawal-info">
+        <div style="font-weight:700;margin-bottom:6px;">Withdrawal Requests</div>
+        Withdrawals are processed manually by the system administrator. To request a withdrawal, contact support via the help portal with your user ID and desired withdrawal amount. Minimum withdrawal is R 500 ZAR.
+      </div>
+    </div>
+
+    <!-- AUTOMATION -->
+    <div id="section-automation" class="dash-section">
+      <div class="section-title">Automation</div>
+      <div class="section-sub">Schedule and automate business workflows.</div>
+
+      <div id="auto-gate-prompt" class="upgrade-prompt" style="display:none;">
+        <h3>Automation is a Pro Feature</h3>
+        <p>Upgrade your plan to unlock scheduled automations, AI lead generation triggers, and revenue-based actions.</p>
+        <a href="/profile#billing" class="btn btn-primary">Upgrade Now</a>
+      </div>
+
+      <div id="auto-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:14px;color:var(--muted);">Active automations running in the background.</div>
+          <button class="btn btn-primary btn-sm" onclick="toggleForm('form-new-auto')">+ New Automation</button>
+        </div>
+
+        <div class="inline-form" id="form-new-auto">
+          <div style="font-weight:700;margin-bottom:14px;font-size:14px;">New Automation</div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label>Name</label>
+              <input type="text" id="auto-name" placeholder="My Automation">
+            </div>
+            <div class="form-row">
+              <label>Trigger Type</label>
+              <select id="auto-trigger-type" onchange="prefillTriggerConfig()">
+                <option value="schedule">Schedule</option>
+                <option value="lead_score">Lead Score</option>
+                <option value="revenue_threshold">Revenue Threshold</option>
+                <option value="new_signup">New Signup</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Trigger Config (JSON)</label>
+            <textarea id="auto-trigger-cfg" rows="3">{"cron":"0 9 * * 1","timezone":"Africa/Johannesburg"}</textarea>
+          </div>
+          <div class="form-grid" style="margin-top:10px;">
+            <div class="form-row">
+              <label>Action Type</label>
+              <select id="auto-action-type" onchange="prefillActionConfig()">
+                <option value="send_email">Send Email</option>
+                <option value="generate_leads">Generate Leads</option>
+                <option value="run_report">Run Report</option>
+                <option value="optimize_pricing">Optimize Pricing</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Action Config (JSON)</label>
+            <textarea id="auto-action-cfg" rows="3">{"template":"weekly_summary","recipients":["me"]}</textarea>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="btn btn-primary btn-sm" onclick="createAutomation()">Create</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleForm('form-new-auto')">Cancel</button>
+          </div>
+          <div class="msg" id="msg-new-auto"></div>
+        </div>
+
+        <div id="auto-list"><div class="empty">Loading automations...</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── GLOBALS ────────────────────────────────────────────────────────────────
+var TOKEN = localStorage.getItem('bridge_token') || (function(){
+  var m = document.cookie.match(/(?:^|;\s*)bridge_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+})();
+
+var AUTH = {
+  'Authorization': 'Bearer ' + TOKEN,
+  'Content-Type': 'application/json'
+};
+
+var STATE = {
+  user: {},
+  economy: {},
+  apps: [],
+  leads: [],
+  affiliates: {},
+  ledger: [],
+  automations: [],
+  currentLeadFilter: 'all'
+};
+
+// ─── UTILITIES ───────────────────────────────────────────────────────────────
+function fmt(n, prefix, decimals) {
+  prefix = prefix || '';
+  decimals = decimals === undefined ? 2 : decimals;
+  var v = parseFloat(n) || 0;
+  return prefix + v.toLocaleString('en-ZA', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function fmtDate(str) {
+  if (!str) return '—';
+  try {
+    var d = new Date(str);
+    return d.toLocaleDateString('en-ZA', { day:'2-digit', month:'short', year:'numeric' });
+  } catch(e) { return str; }
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showMsg(id, ok, text) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+  el.textContent = text;
+  if (ok) setTimeout(function(){ el.className='msg'; el.textContent=''; }, 4000);
+}
+
+function toggleForm(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+
+function doLogout() {
+  localStorage.removeItem('bridge_token');
+  localStorage.removeItem('bridge_user');
+  document.cookie = 'bridge_token=; max-age=0; path=/';
+  window.location.replace('/onboarding');
+}
+
+async function apiFetch(path, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({}, AUTH, opts.headers || {});
+  try {
+    var r = await fetch(path, opts);
+    var body = null;
+    try { body = await r.json(); } catch(e) {}
+    return { ok: r.ok, status: r.status, data: body };
+  } catch(e) {
+    return { ok: false, status: 0, data: { error: e.message } };
+  }
+}
+
+function statusBadge(s) {
+  var map = {
+    active: 'badge-green', inactive: 'badge-gray', paused: 'badge-yellow',
+    new: 'badge-blue', contacted: 'badge-yellow', qualified: 'badge-purple',
+    converted: 'badge-green', lost: 'badge-red',
+    credit: 'badge-green', debit: 'badge-red',
+    enabled: 'badge-green', disabled: 'badge-gray'
+  };
+  var cls = map[s] || 'badge-gray';
+  return '<span class="badge ' + cls + '">' + esc(s) + '</span>';
+}
+
+// ─── SECTION NAVIGATION ──────────────────────────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.dash-section').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.remove('active'); });
+  var sec = document.getElementById('section-' + name);
+  if (sec) sec.classList.add('active');
+  var nav = document.querySelector('.nav-item[data-section="' + name + '"]');
+  if (nav) nav.classList.add('active');
+  // close sidebar on mobile
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  loadSection(name);
+}
+
+function loadSection(name) {
+  switch(name) {
+    case 'overview':   loadOverview(); break;
+    case 'economy':    loadEconomy(); break;
+    case 'apps':       loadApps(); break;
+    case 'leads':      loadLeads(); break;
+    case 'affiliates': loadAffiliates(); break;
+    case 'banking':    loadBanking(); break;
+    case 'automation': loadAutomation(); break;
+  }
+}
+
+// ─── BOOTSTRAP ───────────────────────────────────────────────────────────────
+async function loadAll() {
+  var res = await apiFetch('/api/economy/me');
+  if (!res.ok) {
+    if (res.status === 401) { doLogout(); return; }
+    STATE.economy = {};
+  } else {
+    STATE.economy = res.data || {};
+    STATE.user = STATE.economy.user || window.__JWT_PAYLOAD__ || {};
+  }
+  populateTierUI();
+  loadSection('overview');
+}
+
+function populateTierUI() {
+  var tier = (STATE.economy.tier || STATE.economy.plan || STATE.user.tier || 'free').toUpperCase();
+  var tb = document.getElementById('tier-badge');
+  if (tb) tb.textContent = '⭐ ' + tier;
+
+  var name = STATE.user.full_name || STATE.user.name ||
+             (STATE.user.email ? STATE.user.email.split('@')[0] : 'there');
+  var ovName = document.getElementById('ov-name');
+  if (ovName) ovName.textContent = name;
+
+  var ovTier = document.getElementById('ov-tier-line');
+  if (ovTier) {
+    ovTier.innerHTML = 'Your tier: <span class="badge badge-yellow">' + tier + '</span> &nbsp;<a href="/profile#billing">Upgrade</a>';
+  }
+}
+
+function tierAllows(feature) {
+  var cfg = STATE.economy.tier_config || {};
+  var tier = (STATE.economy.tier || 'free').toLowerCase();
+  if (feature === 'automation') {
+    return cfg.automation_enabled !== false && tier !== 'free';
+  }
+  if (feature === 'ai_leads') {
+    return cfg.ai_leads_enabled !== false && tier !== 'free';
+  }
+  return true;
+}
+
+function getAppsLimit() {
+  var cfg = STATE.economy.tier_config || {};
+  return cfg.max_apps || 3;
+}
+
+function getLeadsLimit() {
+  var cfg = STATE.economy.tier_config || {};
+  return cfg.max_leads || 50;
+}
+
+// ─── OVERVIEW ────────────────────────────────────────────────────────────────
+async function loadOverview() {
+  var ec = STATE.economy;
+  var wallet = ec.wallet_balance_zar || ec.wallet_zar || 0;
+  var rev = ec.revenue_mtd || 0;
+
+  document.getElementById('ov-wallet').textContent = 'R ' + fmt(wallet);
+  document.getElementById('ov-revenue').textContent = 'R ' + fmt(rev);
+
+  // apps count
+  if (STATE.apps.length === 0) {
+    var ar = await apiFetch('/api/apps');
+    if (ar.ok) STATE.apps = Array.isArray(ar.data) ? ar.data : (ar.data.apps || []);
+  }
+  var activeApps = STATE.apps.filter(function(a){ return a.status !== 'deleted'; }).length;
+  document.getElementById('ov-apps').textContent = activeApps;
+
+  // leads count
+  if (STATE.leads.length === 0) {
+    var lr = await apiFetch('/api/leads');
+    if (lr.ok) STATE.leads = Array.isArray(lr.data) ? lr.data : (lr.data.leads || []);
+  }
+  var activeLeads = STATE.leads.filter(function(l){ return l.status !== 'lost'; }).length;
+  document.getElementById('ov-leads').textContent = activeLeads;
+
+  // activity feed from ledger
+  if (STATE.ledger.length === 0) {
+    var br = await apiFetch('/api/banking/ledger');
+    if (br.ok) STATE.ledger = Array.isArray(br.data) ? br.data : (br.data.entries || br.data.ledger || []);
+  }
+  renderActivityFeed();
+}
+
+function renderActivityFeed() {
+  var el = document.getElementById('ov-feed');
+  if (!el) return;
+  var items = STATE.ledger.slice(0, 5);
+  if (!items.length) {
+    el.innerHTML = '<div class="empty">No recent activity.</div>';
+    return;
+  }
+  el.innerHTML = items.map(function(e) {
+    var isCredit = (e.type || '').toLowerCase() === 'credit' || parseFloat(e.amount) > 0;
+    var color = isCredit ? 'var(--green)' : 'var(--red)';
+    var sign = isCredit ? '+' : '';
+    return '<div class="feed-item">' +
+      '<div class="feed-dot" style="background:' + color + '"></div>' +
+      '<div><div class="feed-label">' + esc(e.description || e.type || 'Transaction') + '</div>' +
+      '<div class="feed-time">' + fmtDate(e.created_at || e.date) + ' &nbsp;·&nbsp; ' +
+      '<span style="color:' + color + ';font-weight:700;">' + sign + 'R ' + fmt(Math.abs(parseFloat(e.amount)||0)) + '</span></div></div>' +
+      '</div>';
+  }).join('');
+}
+
+// ─── ECONOMY ─────────────────────────────────────────────────────────────────
+async function loadEconomy() {
+  var res = await apiFetch('/api/economy/me');
+  if (res.ok) {
+    STATE.economy = res.data || STATE.economy;
+    STATE.user = STATE.economy.user || STATE.user;
+    populateTierUI();
+  }
+  var ec = STATE.economy;
+
+  document.getElementById('ec-zar').textContent = 'R ' + fmt(ec.wallet_balance_zar || ec.wallet_zar || 0);
+  document.getElementById('ec-brdg').textContent = fmt(ec.wallet_balance_brdg || ec.wallet_brdg || 0) + ' BRDG';
+  document.getElementById('ec-usd').textContent = '$' + fmt(ec.wallet_balance_usd || ec.wallet_usd || 0);
+
+  var userPct = ec.user_share_pct || ec.user_share || 70;
+  var sysPct = ec.system_share_pct || ec.ryan_share || (100 - userPct);
+  document.getElementById('ec-split-info').innerHTML =
+    '<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+    'Revenue split: <strong style="color:var(--green)">You keep ' + userPct + '%</strong> &nbsp;—&nbsp; Ryan/System receives ' + sysPct + '% based on your <strong>' + (ec.tier||'Free').toUpperCase() + '</strong> tier.';
+
+  // populate app select in form
+  populateAppSelect('rev-app-id');
+
+  // load events
+  var er = await apiFetch('/api/economy/events?limit=20');
+  var events = [];
+  if (er.ok) events = Array.isArray(er.data) ? er.data : (er.data.events || []);
+  renderEconomyEvents(events);
+}
+
+function renderEconomyEvents(events) {
+  var tb = document.getElementById('ec-events-body');
+  if (!events.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="empty">No revenue events yet.</td></tr>';
+    return;
+  }
+  tb.innerHTML = events.map(function(e) {
+    return '<tr>' +
+      '<td>' + fmtDate(e.created_at || e.date) + '</td>' +
+      '<td>' + esc(e.source || '—') + '</td>' +
+      '<td style="font-weight:600;">R ' + fmt(e.amount_zar || e.amount || 0) + '</td>' +
+      '<td style="color:var(--green);font-weight:600;">R ' + fmt(e.user_share || 0) + '</td>' +
+      '<td style="color:var(--muted);">R ' + fmt(e.ryan_share || e.system_share || 0) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function submitRevEvent() {
+  var app_id = document.getElementById('rev-app-id').value;
+  var amount_zar = parseFloat(document.getElementById('rev-amount').value);
+  var source = document.getElementById('rev-source').value.trim();
+  var affiliate_code = document.getElementById('rev-aff-code').value.trim();
+
+  if (!amount_zar || amount_zar <= 0) { showMsg('msg-rev-event', false, 'Enter a valid amount.'); return; }
+  if (!source) { showMsg('msg-rev-event', false, 'Source is required.'); return; }
+
+  var body = { amount_zar: amount_zar, source: source };
+  if (app_id) body.app_id = app_id;
+  if (affiliate_code) body.affiliate_code = affiliate_code;
+
+  var res = await apiFetch('/api/economy/revenue-event', { method: 'POST', body: JSON.stringify(body) });
+  if (res.ok) {
+    showMsg('msg-rev-event', true, 'Revenue event submitted!');
+    document.getElementById('rev-amount').value = '';
+    document.getElementById('rev-source').value = '';
+    document.getElementById('rev-aff-code').value = '';
+    setTimeout(function(){ loadEconomy(); }, 1000);
+  } else {
+    showMsg('msg-rev-event', false, (res.data && res.data.error) || 'Submission failed.');
+  }
+}
+
+// ─── APPS ────────────────────────────────────────────────────────────────────
+async function loadApps() {
+  var res = await apiFetch('/api/apps');
+  if (res.ok) STATE.apps = Array.isArray(res.data) ? res.data : (res.data.apps || []);
+  renderApps();
+}
+
+function renderApps() {
+  var grid = document.getElementById('apps-grid');
+  var apps = STATE.apps.filter(function(a){ return a.status !== 'deleted'; });
+  var limit = getAppsLimit();
+
+  var pct = Math.min(100, Math.round(apps.length / limit * 100));
+  document.getElementById('apps-limit-fill').style.width = pct + '%';
+  document.getElementById('apps-limit-text').textContent = apps.length + '/' + limit + ' apps used';
+
+  if (!apps.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">No apps yet. Create your first app above.</div>';
+    return;
+  }
+
+  grid.innerHTML = apps.map(function(a) {
+    var statusCls = a.status === 'active' ? 'badge-green' : a.status === 'paused' ? 'badge-yellow' : 'badge-gray';
+    return '<div class="app-card">' +
+      '<div class="app-card-header">' +
+        '<div><div class="app-card-name">' + esc(a.name) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px;">' + esc(a.type||'—') + ' &nbsp;·&nbsp; ' + esc(a.slug||'—') + '</div></div>' +
+        '<span class="badge ' + statusCls + '">' + esc(a.status||'active') + '</span>' +
+      '</div>' +
+      '<div class="app-revenue">' + fmt(a.revenue_mtd||0,'R ') + '</div>' +
+      '<div class="app-revenue-label">Revenue MTD</div>' +
+      '<div class="app-card-actions">' +
+        '<button class="btn btn-ghost btn-sm" onclick="openEditApp(' + JSON.stringify(a.id) + ')">Edit</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="pauseApp(' + JSON.stringify(a.id) + ',' + JSON.stringify(a.status) + ')">' +
+          (a.status === 'paused' ? 'Resume' : 'Pause') +
+        '</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteApp(' + JSON.stringify(a.id) + ')">Delete</button>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function genSlug() {
+  var name = document.getElementById('app-name').value;
+  var slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  document.getElementById('app-slug').value = slug;
+}
+
+async function createApp() {
+  var name = document.getElementById('app-name').value.trim();
+  var type = document.getElementById('app-type').value;
+  var slug = document.getElementById('app-slug').value.trim();
+  if (!name) { showMsg('msg-new-app', false, 'App name is required.'); return; }
+
+  var limit = getAppsLimit();
+  var current = STATE.apps.filter(function(a){ return a.status !== 'deleted'; }).length;
+  if (current >= limit) { showMsg('msg-new-app', false, 'App limit reached. Upgrade your plan.'); return; }
+
+  var res = await apiFetch('/api/apps', { method: 'POST', body: JSON.stringify({ name: name, type: type, slug: slug }) });
+  if (res.ok) {
+    showMsg('msg-new-app', true, 'App created!');
+    document.getElementById('app-name').value = '';
+    document.getElementById('app-slug').value = '';
+    toggleForm('form-new-app');
+    await loadApps();
+  } else {
+    showMsg('msg-new-app', false, (res.data && res.data.error) || 'Failed to create app.');
+  }
+}
+
+function openEditApp(id) {
+  var app = STATE.apps.find(function(a){ return a.id === id; });
+  if (!app) return;
+  document.getElementById('edit-app-id').value = id;
+  document.getElementById('edit-app-name').value = app.name || '';
+  document.getElementById('edit-app-type').value = app.type || 'saas';
+  var panel = document.getElementById('apps-edit-panel');
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function saveEditApp() {
+  var id = document.getElementById('edit-app-id').value;
+  var name = document.getElementById('edit-app-name').value.trim();
+  var type = document.getElementById('edit-app-type').value;
+  if (!id || !name) { showMsg('msg-edit-app', false, 'Name is required.'); return; }
+
+  var res = await apiFetch('/api/apps/' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ name: name, type: type }) });
+  if (res.ok) {
+    showMsg('msg-edit-app', true, 'Saved!');
+    document.getElementById('apps-edit-panel').classList.remove('open');
+    await loadApps();
+  } else {
+    showMsg('msg-edit-app', false, (res.data && res.data.error) || 'Failed to save.');
+  }
+}
+
+async function pauseApp(id, currentStatus) {
+  var newStatus = currentStatus === 'paused' ? 'active' : 'paused';
+  var res = await apiFetch('/api/apps/' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
+  if (res.ok) await loadApps();
+}
+
+async function deleteApp(id) {
+  if (!confirm('Delete this app? This cannot be undone.')) return;
+  var res = await apiFetch('/api/apps/' + encodeURIComponent(id), { method: 'DELETE' });
+  if (res.ok) {
+    STATE.apps = STATE.apps.filter(function(a){ return a.id !== id; });
+    renderApps();
+  }
+}
+
+function populateAppSelect(selectId) {
+  var sel = document.getElementById(selectId);
+  if (!sel) return;
+  var current = sel.value;
+  var placeholder = sel.options[0] ? sel.options[0].text : '— select app —';
+  sel.innerHTML = '<option value="">' + placeholder + '</option>';
+  STATE.apps.filter(function(a){ return a.status !== 'deleted'; }).forEach(function(a) {
+    var opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = a.name;
+    if (a.id === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+// ─── LEADS ───────────────────────────────────────────────────────────────────
+async function loadLeads() {
+  var res = await apiFetch('/api/leads');
+  if (res.ok) STATE.leads = Array.isArray(res.data) ? res.data : (res.data.leads || []);
+  populateAppSelect('lead-app-id');
+  renderLeads();
+}
+
+function filterLeads(status, btn) {
+  STATE.currentLeadFilter = status;
+  document.querySelectorAll('.lead-filter').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderLeads();
+}
+
+function renderLeads() {
+  var tb = document.getElementById('leads-body');
+  var search = (document.getElementById('lead-search').value || '').toLowerCase();
+  var filter = STATE.currentLeadFilter || 'all';
+
+  var leads = STATE.leads.filter(function(l) {
+    if (filter !== 'all' && l.status !== filter) return false;
+    if (search && !((l.name||'').toLowerCase().includes(search) || (l.email||'').toLowerCase().includes(search))) return false;
+    return true;
+  });
+
+  var limit = getLeadsLimit();
+  var pct = Math.min(100, Math.round(STATE.leads.length / limit * 100));
+  document.getElementById('leads-limit-fill').style.width = pct + '%';
+  document.getElementById('leads-limit-text').textContent = STATE.leads.length + '/' + limit + ' leads used';
+
+  if (!leads.length) {
+    tb.innerHTML = '<tr><td colspan="7" class="empty">No leads found.</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = leads.map(function(l) {
+    var score = parseFloat(l.score || l.ai_score || 0);
+    var scorePct = Math.min(100, score * 10);
+    return '<tr>' +
+      '<td>' + esc(l.name || '—') + '</td>' +
+      '<td style="color:var(--muted);">' + esc(l.email || '—') + '</td>' +
+      '<td>' + esc(l.source || '—') + '</td>' +
+      '<td>' + statusBadge(l.status || 'new') + '</td>' +
+      '<td><div style="display:flex;align-items:center;gap:6px;"><div class="score-bar"><div class="score-fill" style="width:' + scorePct + '%"></div></div><span style="font-size:11px;color:var(--muted);">' + score.toFixed(1) + '</span></div></td>' +
+      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--muted);" title="' + esc(l.ai_notes||'') + '">' + esc((l.ai_notes||'').substring(0,60) + ((l.ai_notes||'').length>60?'…':'')) + '</td>' +
+      '<td><select class="btn btn-ghost btn-sm" style="padding:4px 6px;font-size:11px;" onchange="updateLeadStatus(' + JSON.stringify(l.id) + ', this.value)">' +
+        ['new','contacted','qualified','converted','lost'].map(function(s){ return '<option value="' + s + '"' + (l.status===s?' selected':'') + '>' + s + '</option>'; }).join('') +
+      '</select></td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function addLead() {
+  var name = document.getElementById('lead-name').value.trim();
+  var email = document.getElementById('lead-email').value.trim();
+  var phone = document.getElementById('lead-phone').value.trim();
+  var source = document.getElementById('lead-source').value.trim();
+  var app_id = document.getElementById('lead-app-id').value;
+
+  if (!name) { showMsg('msg-add-lead', false, 'Name is required.'); return; }
+
+  var limit = getLeadsLimit();
+  if (STATE.leads.length >= limit) { showMsg('msg-add-lead', false, 'Lead limit reached. Upgrade your plan.'); return; }
+
+  var body = { name: name };
+  if (email) body.email = email;
+  if (phone) body.phone = phone;
+  if (source) body.source = source;
+  if (app_id) body.app_id = app_id;
+
+  var res = await apiFetch('/api/leads', { method: 'POST', body: JSON.stringify(body) });
+  if (res.ok) {
+    showMsg('msg-add-lead', true, 'Lead added!');
+    document.getElementById('lead-name').value = '';
+    document.getElementById('lead-email').value = '';
+    document.getElementById('lead-phone').value = '';
+    document.getElementById('lead-source').value = '';
+    toggleForm('form-add-lead');
+    await loadLeads();
+  } else {
+    showMsg('msg-add-lead', false, (res.data && res.data.error) || 'Failed to add lead.');
+  }
+}
+
+async function updateLeadStatus(id, status) {
+  var res = await apiFetch('/api/leads/' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify({ status: status }) });
+  if (res.ok) {
+    var lead = STATE.leads.find(function(l){ return l.id === id; });
+    if (lead) lead.status = status;
+  }
+}
+
+async function aiGenerateLeads() {
+  if (!tierAllows('ai_leads')) {
+    showMsg('msg-ai-leads', false, 'AI lead generation requires a paid plan. Upgrade at /profile#billing.');
+    return;
+  }
+  var target = document.getElementById('ai-target').value.trim();
+  var count = parseInt(document.getElementById('ai-count').value) || 5;
+  if (!target) { showMsg('msg-ai-leads', false, 'Describe your target audience.'); return; }
+
+  showMsg('msg-ai-leads', true, 'Generating leads... this may take a moment.');
+  var res = await apiFetch('/api/leads/ai-generate', { method: 'POST', body: JSON.stringify({ target_description: target, count: count }) });
+  if (res.ok) {
+    showMsg('msg-ai-leads', true, 'Generated ' + (res.data.count || count) + ' leads!');
+    toggleForm('form-ai-leads');
+    await loadLeads();
+  } else {
+    showMsg('msg-ai-leads', false, (res.data && res.data.error) || 'AI generation failed.');
+  }
+}
+
+// ─── AFFILIATES ──────────────────────────────────────────────────────────────
+async function loadAffiliates() {
+  var res = await apiFetch('/api/affiliates/me');
+  if (res.ok) STATE.affiliates = res.data || {};
+
+  var aff = STATE.affiliates;
+  var code = aff.code || aff.affiliate_code || '—';
+  document.getElementById('aff-code-text').textContent = code;
+  document.getElementById('aff-ref-url').textContent = 'Referral URL: ' + window.location.origin + '/onboarding?ref=' + code;
+  document.getElementById('aff-earned').textContent = 'R ' + fmt(aff.total_earned || 0);
+  document.getElementById('aff-clicks').textContent = (aff.click_count || 0).toLocaleString();
+  document.getElementById('aff-conversions').textContent = (aff.conversion_count || 0).toLocaleString();
+
+  populateAppSelect('aff-link-app');
+  document.getElementById('aff-link-app').addEventListener('change', function() {
+    var app = STATE.apps.find(function(a){ return a.id === this.value; }.bind(this));
+    var preview = document.getElementById('aff-link-preview');
+    if (app && this.value) {
+      var url = window.location.origin + '/onboarding?ref=' + code + '&app=' + esc(app.slug || app.id);
+      preview.textContent = url;
+      preview.style.display = 'block';
+    } else {
+      preview.style.display = 'none';
+    }
+  });
+
+  // load links
+  var lr = await apiFetch('/api/affiliates/links');
+  var links = [];
+  if (lr.ok) links = Array.isArray(lr.data) ? lr.data : (lr.data.links || []);
+  renderAffLinks(links, code);
+}
+
+function copyAffCode() {
+  var code = document.getElementById('aff-code-text').textContent;
+  navigator.clipboard.writeText(code).then(function() {
+    var btn = document.querySelector('#aff-code-display .btn');
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy'; }, 2000); }
+  });
+}
+
+function renderAffLinks(links, code) {
+  var tb = document.getElementById('aff-links-body');
+  if (!links.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="empty">No affiliate links yet.</td></tr>';
+    return;
+  }
+  tb.innerHTML = links.map(function(l) {
+    var url = l.url || (window.location.origin + '/onboarding?ref=' + code + '&app=' + esc(l.app_slug || l.app_id || ''));
+    return '<tr>' +
+      '<td>' + esc(l.app_name || l.app_id || '—') + '</td>' +
+      '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><a href="' + esc(url) + '" target="_blank" style="font-size:12px;">' + esc(url) + '</a></td>' +
+      '<td>' + (l.clicks || 0) + '</td>' +
+      '<td>' + (l.conversions || 0) + '</td>' +
+      '<td style="color:var(--green);">R ' + fmt(l.revenue || 0) + '</td>' +
+      '<td><button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(' + JSON.stringify(url) + ')">Copy</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function createAffLink() {
+  var appId = document.getElementById('aff-link-app').value;
+  if (!appId) { showMsg('msg-create-link', false, 'Select an app first.'); return; }
+  var code = STATE.affiliates.code || STATE.affiliates.affiliate_code || '';
+  var app = STATE.apps.find(function(a){ return a.id === appId; });
+  var url = window.location.origin + '/onboarding?ref=' + code + '&app=' + (app ? (app.slug || app.id) : appId);
+
+  var res = await apiFetch('/api/affiliates/links', { method: 'POST', body: JSON.stringify({ app_id: appId, url: url }) });
+  if (res.ok) {
+    showMsg('msg-create-link', true, 'Link created!');
+    toggleForm('form-create-link');
+    loadAffiliates();
+  } else {
+    // if API doesn't exist, just show the URL
+    showMsg('msg-create-link', true, 'Your link: ' + url);
+  }
+}
+
+// ─── BANKING ─────────────────────────────────────────────────────────────────
+async function loadBanking() {
+  var res = await apiFetch('/api/banking/ledger');
+  if (res.ok) STATE.ledger = Array.isArray(res.data) ? res.data : (res.data.entries || res.data.ledger || []);
+
+  var ec = STATE.economy;
+  document.getElementById('bk-zar').textContent  = 'R ' + fmt(ec.wallet_balance_zar || ec.wallet_zar || 0);
+  document.getElementById('bk-brdg').textContent = fmt(ec.wallet_balance_brdg || ec.wallet_brdg || 0) + ' BRDG';
+
+  var totalCredited = 0, totalDebited = 0;
+  STATE.ledger.forEach(function(e) {
+    var amt = parseFloat(e.amount) || 0;
+    var isCredit = (e.type||'').toLowerCase() === 'credit' || amt > 0;
+    if (isCredit) totalCredited += Math.abs(amt);
+    else totalDebited += Math.abs(amt);
+  });
+  var net = totalCredited - totalDebited;
+  document.getElementById('bk-credited').textContent = 'R ' + fmt(totalCredited);
+  document.getElementById('bk-debited').textContent  = 'R ' + fmt(totalDebited);
+  document.getElementById('bk-net').textContent      = (net >= 0 ? 'R ' : '-R ') + fmt(Math.abs(net));
+
+  renderLedger();
+}
+
+function renderLedger() {
+  var tb = document.getElementById('ledger-body');
+  if (!STATE.ledger.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="empty">No transactions yet.</td></tr>';
+    return;
+  }
+  tb.innerHTML = STATE.ledger.map(function(e) {
+    var amt = parseFloat(e.amount) || 0;
+    var isCredit = (e.type||'').toLowerCase() === 'credit' || amt > 0;
+    var color = isCredit ? 'var(--green)' : 'var(--red)';
+    var sign = isCredit ? '+' : '-';
+    return '<tr>' +
+      '<td style="white-space:nowrap;">' + fmtDate(e.created_at || e.date) + '</td>' +
+      '<td>' + statusBadge(e.type || (isCredit?'credit':'debit')) + '</td>' +
+      '<td>' + esc(e.description || '—') + '</td>' +
+      '<td style="color:' + color + ';font-weight:700;">' + sign + 'R ' + fmt(Math.abs(amt)) + '</td>' +
+      '<td style="color:var(--muted);">R ' + fmt(Math.abs(parseFloat(e.balance_after || e.running_balance || 0))) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ─── AUTOMATION ──────────────────────────────────────────────────────────────
+async function loadAutomation() {
+  var gatePrompt = document.getElementById('auto-gate-prompt');
+  var content    = document.getElementById('auto-content');
+
+  if (!tierAllows('automation')) {
+    gatePrompt.style.display = 'block';
+    content.style.display = 'none';
+    return;
+  }
+  gatePrompt.style.display = 'none';
+  content.style.display = 'block';
+
+  var res = await apiFetch('/api/automations');
+  if (res.ok) STATE.automations = Array.isArray(res.data) ? res.data : (res.data.automations || []);
+  renderAutomations();
+}
+
+function renderAutomations() {
+  var el = document.getElementById('auto-list');
+  if (!STATE.automations.length) {
+    el.innerHTML = '<div class="empty">No automations yet. Create your first one above.</div>';
+    return;
+  }
+  el.innerHTML = STATE.automations.map(function(a) {
+    var statusEnabled = a.status === 'enabled' || a.enabled === true || a.active === true;
+    return '<div class="auto-card">' +
+      '<div class="auto-meta">' +
+        '<div class="auto-name">' + esc(a.name) + '</div>' +
+        '<div class="auto-detail">Trigger: <strong>' + esc(a.trigger_type||'—') + '</strong> &nbsp;→&nbsp; Action: <strong>' + esc(a.action_type||'—') + '</strong></div>' +
+      '</div>' +
+      '<div class="auto-stats">' +
+        '<div>Last run: ' + (a.last_run ? fmtDate(a.last_run) : 'Never') + '</div>' +
+        '<div>Runs: ' + (a.run_count || 0) + '</div>' +
+      '</div>' +
+      '<div class="auto-actions">' +
+        '<label class="toggle toggle-wrap" title="' + (statusEnabled?'Disable':'Enable') + '">' +
+          '<input type="checkbox" ' + (statusEnabled?'checked':'') + ' onchange="toggleAutomation(' + JSON.stringify(a.id) + ', this.checked)">' +
+          '<span class="toggle-slider"></span>' +
+        '</label>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteAutomation(' + JSON.stringify(a.id) + ')">Delete</button>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+}
+
+async function toggleAutomation(id, enabled) {
+  var res = await apiFetch('/api/automations/' + encodeURIComponent(id), {
+    method: 'PATCH',
+    body: JSON.stringify({ status: enabled ? 'enabled' : 'disabled', enabled: enabled })
+  });
+  if (res.ok) {
+    var a = STATE.automations.find(function(x){ return x.id === id; });
+    if (a) { a.status = enabled ? 'enabled' : 'disabled'; a.enabled = enabled; }
+  }
+}
+
+async function deleteAutomation(id) {
+  if (!confirm('Delete this automation?')) return;
+  var res = await apiFetch('/api/automations/' + encodeURIComponent(id), { method: 'DELETE' });
+  if (res.ok) {
+    STATE.automations = STATE.automations.filter(function(a){ return a.id !== id; });
+    renderAutomations();
+  }
+}
+
+async function createAutomation() {
+  var name = document.getElementById('auto-name').value.trim();
+  var trigger_type = document.getElementById('auto-trigger-type').value;
+  var action_type  = document.getElementById('auto-action-type').value;
+  var triggerCfgRaw = document.getElementById('auto-trigger-cfg').value;
+  var actionCfgRaw  = document.getElementById('auto-action-cfg').value;
+
+  if (!name) { showMsg('msg-new-auto', false, 'Name is required.'); return; }
+  var trigger_config, action_config;
+  try { trigger_config = JSON.parse(triggerCfgRaw); } catch(e) { showMsg('msg-new-auto', false, 'Invalid trigger config JSON.'); return; }
+  try { action_config  = JSON.parse(actionCfgRaw);  } catch(e) { showMsg('msg-new-auto', false, 'Invalid action config JSON.');  return; }
+
+  var res = await apiFetch('/api/automations', {
+    method: 'POST',
+    body: JSON.stringify({ name: name, trigger_type: trigger_type, trigger_config: trigger_config, action_type: action_type, action_config: action_config })
+  });
+  if (res.ok) {
+    showMsg('msg-new-auto', true, 'Automation created!');
+    document.getElementById('auto-name').value = '';
+    toggleForm('form-new-auto');
+    await loadAutomation();
+  } else {
+    showMsg('msg-new-auto', false, (res.data && res.data.error) || 'Failed to create automation.');
+  }
+}
+
+var TRIGGER_DEFAULTS = {
+  schedule:          '{"cron":"0 9 * * 1","timezone":"Africa/Johannesburg"}',
+  lead_score:        '{"min_score":7,"check_interval_hours":6}',
+  revenue_threshold: '{"threshold_zar":10000,"period":"month"}',
+  new_signup:        '{"delay_minutes":5,"platforms":["all"]}'
+};
+
+var ACTION_DEFAULTS = {
+  send_email:       '{"template":"weekly_summary","recipients":["me"]}',
+  generate_leads:   '{"count":10,"target":"warm leads in my niche"}',
+  run_report:       '{"report_type":"revenue","format":"summary"}',
+  optimize_pricing: '{"strategy":"competitive","adjustment_pct":5}'
+};
+
+function prefillTriggerConfig() {
+  var type = document.getElementById('auto-trigger-type').value;
+  document.getElementById('auto-trigger-cfg').value = TRIGGER_DEFAULTS[type] || '{}';
+}
+
+function prefillActionConfig() {
+  var type = document.getElementById('auto-action-type').value;
+  document.getElementById('auto-action-cfg').value = ACTION_DEFAULTS[type] || '{}';
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  loadAll();
+});
+</script>
+</body>
+</html>

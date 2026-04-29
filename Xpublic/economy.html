@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Economy — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/defi.html" class="text-slate-400 hover:text-cyan-400">DeFi</a>
+      <a href="/trading.html" class="text-slate-400 hover:text-cyan-400">Trading</a>
+      <a href="/wallet.html" class="text-slate-400 hover:text-cyan-400">Wallet</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-cyan-400 mb-6">Token Economy Dashboard</h1>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400" id="totalSupply">Loading...</div>
+        <div class="text-sm text-slate-400">Total Supply</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400" id="circulating">Loading...</div>
+        <div class="text-sm text-slate-400">Circulating</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400" id="staked">Loading...</div>
+        <div class="text-sm text-slate-400">Staked</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-purple-400" id="burned">Loading...</div>
+        <div class="text-sm text-slate-400">Burned</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">Token Distribution</h2>
+        <div id="distribution" class="space-y-3">
+          <div class="flex justify-between"><span class="text-slate-400">Community</span><span class="text-white">40%</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Team</span><span class="text-white">20%</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Treasury</span><span class="text-white">25%</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Investors</span><span class="text-white">15%</span></div>
+        </div>
+      </div>
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">Revenue Streams</h2>
+        <div id="revenue" class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400">Agent Subscriptions</span>
+            <span class="text-green-400">$12,450</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400">Marketplace Fees</span>
+            <span class="text-green-400">$8,230</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400">DeFi Yield</span>
+            <span class="text-green-400">$3,120</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400">UBI Distribution</span>
+            <span class="text-red-400">-$5,800</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">Token Economics</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <div class="text-sm text-slate-400 mb-1">Token</div>
+          <div class="text-xl font-bold text-white">BRDG</div>
+        </div>
+        <div>
+          <div class="text-sm text-slate-400 mb-1">Max Supply</div>
+          <div class="text-xl font-bold text-white">1,000,000,000</div>
+        </div>
+        <div>
+          <div class="text-sm text-slate-400 mb-1">Current Price</div>
+          <div class="text-xl font-bold text-green-400" id="price">$0.00</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadEconomy() {
+      try {
+        const res = await fetch('/api/economy');
+        const data = await res.json();
+        
+        document.getElementById('totalSupply').textContent = (data.totalSupply || data.max_supply || '1B');
+        document.getElementById('circulating').textContent = (data.circulating || '750M');
+        document.getElementById('staked').textContent = (data.staked || '200M');
+        document.getElementById('burned').textContent = (data.burned || '50M');
+        document.getElementById('price').textContent = '$' + (data.price || '0.12');
+      } catch(e) {
+        document.getElementById('price').textContent = '$0.12';
+      }
+    }
+
+    loadEconomy();
+  </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

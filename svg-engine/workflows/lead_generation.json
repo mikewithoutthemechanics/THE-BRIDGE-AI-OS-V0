@@ -1,0 +1,48 @@
+{
+  "id": "lead_generation",
+  "name": "Lead Generation → Outreach → Close Loop",
+  "description": "Scrape leads, enrich, score, send outreach, notify team, log to CRM.",
+  "tags": ["leads", "outreach", "revenue", "high-value"],
+  "steps": [
+    {
+      "type": "skill",
+      "name": "ban:apify-lead-generation",
+      "input": { "limit": 20 },
+      "label": "Scrape leads"
+    },
+    {
+      "type": "transform",
+      "operation": "normalize",
+      "label": "Normalize lead data"
+    },
+    {
+      "type": "llm",
+      "prompt": "Score these leads 1-10 and add a one-line outreach hook for each. Input: {{_prev}}",
+      "label": "Score + personalize"
+    },
+    {
+      "type": "skill",
+      "name": "ban:email-systems",
+      "input": { "to": "{{lead_email}}", "subject": "Quick question about your business", "operation": "send_sequence" },
+      "label": "Queue outreach emails",
+      "required": false
+    },
+    {
+      "type": "plugin",
+      "name": "crm_writer",
+      "input": { "collection": "leads" },
+      "label": "Write leads to CRM"
+    },
+    {
+      "type": "notify",
+      "message": "Lead generation complete. New leads queued for outreach.",
+      "label": "Notify team on Slack"
+    },
+    {
+      "type": "plugin",
+      "name": "metrics_reporter",
+      "input": { "event": "lead_generation_run" },
+      "label": "Track metrics"
+    }
+  ]
+}

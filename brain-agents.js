@@ -49,6 +49,14 @@ const AGENTS = [
   { id: 'bossbot-gamma', name: 'Gamma Sentiment', role: 'trading', layer: 'bossbots', source: 'twins/services.py', type: 'bossbot', skills: ['sentiment_analysis', 'sol_usd'], status: 'paused' },
   { id: 'bossbot-delta', name: 'Delta Scalper', role: 'trading', layer: 'bossbots', source: 'twins/services.py', type: 'bossbot', skills: ['mean_reversion', 'eth_usd'], status: 'active' },
 
+  // === IoT DEVICE AGENTS (physical hardware in the economy) ===
+  // These are template agents — real devices register dynamically via /api/iot/register
+  { id: 'iot-env-001', name: 'Environmental Sensor Alpha', role: 'data_producer', layer: 'iot', source: 'lib/iot-agent.js', type: 'iot_device', agent_type: 'iot', skills: ['temperature', 'humidity', 'air_quality', 'co2'], status: 'template', earn_rate: '1 BRDG/push' },
+  { id: 'iot-energy-001', name: 'Energy Monitor Beta', role: 'data_producer', layer: 'iot', source: 'lib/iot-agent.js', type: 'iot_device', agent_type: 'iot', skills: ['power_monitoring', 'solar_tracking', 'load_balancing'], status: 'template', earn_rate: '1 BRDG/push' },
+  { id: 'iot-gateway-001', name: 'Edge Gateway Prime', role: 'mesh_coordinator', layer: 'iot', source: 'lib/iot-agent.js', type: 'iot_device', agent_type: 'iot', skills: ['mesh_routing', 'protocol_bridge', 'edge_compute', 'local_inference'], status: 'template', earn_rate: '3 BRDG/push' },
+  { id: 'iot-camera-001', name: 'Vision Agent Delta', role: 'perception', layer: 'iot', source: 'lib/iot-agent.js', type: 'iot_device', agent_type: 'iot', skills: ['vision', 'motion_detection', 'object_recognition'], status: 'template', earn_rate: '1 BRDG/push' },
+  { id: 'iot-wearable-001', name: 'BioSync Wearable', role: 'biometric_producer', layer: 'iot', source: 'lib/iot-agent.js', type: 'iot_device', agent_type: 'iot', skills: ['biometrics', 'location', 'activity', 'health_monitoring'], status: 'template', earn_rate: '1 BRDG/push' },
+
   // === BAN NODE AGENTS (from BAN/) ===
   { id: 'ban-ryan', name: 'Ryan (Node)', role: 'execution', layer: 'ban', source: 'BAN/nodes/registry.py', type: 'ban_node', skills: ['task_execution', 'high_trust'], status: 'active' },
   { id: 'ban-mike', name: 'Mike (Node)', role: 'execution', layer: 'ban', source: 'BAN/nodes/registry.py', type: 'ban_node', skills: ['task_execution', 'medium_trust'], status: 'active' },

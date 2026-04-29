@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="BRIDGE AI OS - Control Panel — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/control">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/control">
+<meta property="og:title" content="BRIDGE AI OS - Control Panel">
+<meta property="og:description" content="BRIDGE AI OS - Control Panel — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BRIDGE AI OS - Control Panel">
+<meta name="twitter:description" content="BRIDGE AI OS - Control Panel — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BRIDGE AI OS - Control Panel</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,9 +25,9 @@
   --bg:#050a0f;--surface:#0d1620;--border:#1a2d40;
   --accent:#00c8ff;--accent2:#7b3ff5;--green:#00e57b;
   --red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;
-  --text-dim:#628ba0;--input-bg:#0a1520;
+  --text-dim:#4d6678;--input-bg:#0a1520;
 }
-html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;font-size:14px;min-height:100vh;padding-bottom:64px;}
+html,body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;font-size:14px;min-height:100vh;}
 a{color:var(--accent);text-decoration:none;}
 a:hover{opacity:0.8;}
 ::-webkit-scrollbar{width:6px;height:6px;}
@@ -78,7 +92,6 @@ tr:nth-child(even) td{background:rgba(13,22,32,0.5);}
 .form-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px;}
 .form-group label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-dim);}
 input,select,textarea{background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:4px;font-family:inherit;font-size:0.8rem;outline:none;transition:0.2s;}
-input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 textarea{resize:vertical;min-height:40px;}
 
@@ -151,23 +164,25 @@ textarea{resize:vertical;min-height:40px;}
   .stat-row{flex-direction:column;}
   .plan-row{flex-direction:column;}
   .service-grid{grid-template-columns:1fr;}
-  .header{flex-wrap:wrap;height:auto;padding:10px 12px;gap:8px}
-  .header-left{font-size:12px}
-  .nav{padding:0 8px}
-  .nav a{padding:10px 10px;font-size:0.65rem}
-  .main-content{padding:10px}
-  .section{padding:12px}
-  .stat-val{font-size:1.1rem}
-  input,select,textarea,button{font-size:15px;min-height:44px;padding:10px 12px}
-  .quick-bar{padding:8px 12px;gap:6px;flex-wrap:wrap}
-  table{font-size:12px}
-  th,td{padding:6px 8px}
 }
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
 </style>
 </head>
 <body>
-<h1 class="sr-only">BRIDGE AI OS — Control Centre</h1>
 
 <!-- HEADER -->
 <div class="header">
@@ -190,15 +205,19 @@ textarea{resize:vertical;min-height:40px;}
 <!-- NAV -->
 <div class="nav-row">
   <div class="nav">
-    <a href="/">Home</a>
-    <a href="/portal.html">Portal</a>
-    <a href="/agents.html">Agents</a>
-    <a href="/economy.html">Economy</a>
-    <a href="/admin-revenue.html">Revenue</a>
-    <a href="/treasury-dashboard.html">Treasury</a>
-    <a href="/legal-ai.html">Legal</a>
-    <a href="/console.html">Terminal</a>
-    <a href="/control.html" class="active">Control</a>
+    <a href="/ui.html">HOME</a>
+    <a href="/topology.html">TOPOLOGY</a>
+    <a href="/registry.html">REGISTRY</a>
+    <a href="/marketplace.html">MARKETPLACE</a>
+    <a href="/avatar.html">AVATAR</a>
+    <a href="/system-status-dashboard.html">STATUS</a>
+    <a href="/infra.html">INFRA</a>
+    <a href="/logs.html">LOGS</a>
+    <a href="/view-logs.html">VIEW LOGS</a>
+    <a href="/terminal.html">TERMINAL</a>
+    <a href="/admin.html">ADMIN</a>
+    <a href="/command-center.html">COMMAND</a>
+    <a href="/control.html" class="active">CONTROL</a>
   </div>
 </div>
 
@@ -226,7 +245,7 @@ textarea{resize:vertical;min-height:40px;}
   </div>
   <div class="form-row" id="txForm">
     <div class="form-group">
-      <label for="txType">Type</label>
+      <label>Type</label>
       <select id="txType">
         <option value="subscription">Subscription</option>
         <option value="cost">Cost</option>
@@ -257,7 +276,7 @@ textarea{resize:vertical;min-height:40px;}
       <div class="panel-header">DISPATCH TASK</div>
       <div class="form-row">
         <div class="form-group">
-          <label for="dispatchAgent">Agent</label>
+          <label>Agent</label>
           <select id="dispatchAgent"></select>
         </div>
         <div class="form-group" style="flex:2;">
@@ -265,7 +284,7 @@ textarea{resize:vertical;min-height:40px;}
           <input type="text" id="dispatchTask" placeholder="Task description">
         </div>
         <div class="form-group">
-          <label for="dispatchPriority">Priority</label>
+          <label>Priority</label>
           <select id="dispatchPriority">
             <option value="low">Low</option>
             <option value="medium" selected>Medium</option>
@@ -301,11 +320,6 @@ textarea{resize:vertical;min-height:40px;}
         </table>
       </div>
       <div class="panel-header" style="margin-top:16px;">CREATE TASK</div>
-      <div style="margin-bottom:8px">
-        <button class="btn" style="font-size:11px;padding:6px 12px;margin-right:4px;background:var(--accent2);color:#fff;border:none" onclick="aiSuggestTasks()">AI Suggest Tasks</button>
-        <span id="suggestStatus" style="font-size:11px;color:var(--text-dim)"></span>
-      </div>
-      <div id="aiSuggestions" style="margin-bottom:10px"></div>
       <div class="form-row">
         <div class="form-group">
           <label>Title</label>
@@ -343,7 +357,7 @@ textarea{resize:vertical;min-height:40px;}
       <div class="panel-header" style="margin-top:16px;">CREDIT USER</div>
       <div class="form-row">
         <div class="form-group" style="flex:2;">
-          <label for="creditUser">User</label>
+          <label>User</label>
           <select id="creditUser"></select>
         </div>
         <div class="form-group">
@@ -395,12 +409,6 @@ textarea{resize:vertical;min-height:40px;}
   <div class="feed-list" id="feedList"></div>
 </div>
 
-<!-- LIVE SYSTEM SUMMARY -->
-<div class="panel col-full" style="margin-top:16px">
-  <div class="panel-header">LIVE SYSTEM SUMMARY</div>
-  <div id="liveSummary" style="padding:12px;font-size:13px;color:var(--text-dim)">Loading summary...</div>
-</div>
-
 </div><!-- /main -->
 
 <!-- QUICK ACTIONS -->
@@ -439,10 +447,10 @@ function tsDate() {
 }
 
 // =========== SEED DATA ===========
-const AGENT_NAMES = ['QuoteGen AI','Finance AI','Growth Hunter','Intelligence AI','Nurture AI','Closer AI','Campaign AI','Creative AI','Support AI','Supply AI'];
+const AGENT_NAMES = ['alpha','beta','gamma','delta','epsilon','zeta','eta','theta'];
 
 const defaultTreasury = {
-  balance: 1389208.00,
+  balance: 137284.50,
   revenueMtd: 28450.00,
   costsMtd: 4210.50,
   ledger: [
@@ -497,26 +505,11 @@ let activeFilter = 'ALL';
 let revenueChart = null;
 
 function initState() {
-  // Version check: clear stale cache from older builds
-  var cacheVersion = loadState('bridge_control_version', 0);
-  if (cacheVersion < 4) {
-    Object.values(STORAGE_KEYS).forEach(function(k) { localStorage.removeItem(k); });
-    saveState('bridge_control_version', 4);
-  }
   treasury = loadState(STORAGE_KEYS.treasury, defaultTreasury);
-  // Fix corrupted treasury (NaN from API mismatch)
-  if (isNaN(treasury.balance) || treasury.revenueMtd === undefined) {
-    treasury = Object.assign({}, defaultTreasury, { balance: parseFloat(treasury.balance) || defaultTreasury.balance });
-    if (!treasury.ledger) treasury.ledger = defaultTreasury.ledger;
-    saveState(STORAGE_KEYS.treasury, treasury);
-  }
   agents = loadState(STORAGE_KEYS.agents, defaultAgents);
   tasks = loadState(STORAGE_KEYS.tasks, defaultTasks);
-  if (!Array.isArray(tasks)) tasks = defaultTasks;
   users = loadState(STORAGE_KEYS.users, defaultUsers);
-  if (!Array.isArray(users)) users = defaultUsers;
   events = loadState(STORAGE_KEYS.events, defaultEvents);
-  if (!Array.isArray(events)) events = defaultEvents;
   nextTaskId = Math.max(100, ...tasks.map(t => t.id || 0)) + 1;
 }
 
@@ -589,11 +582,11 @@ function initChart() {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: '#628ba0', font: { family: "'Courier New', monospace", size: 11 } } }
+        legend: { labels: { color: '#4d6678', font: { family: "'Courier New', monospace", size: 11 } } }
       },
       scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#628ba0', font: { family: "'Courier New', monospace", size: 10 } } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#628ba0', font: { family: "'Courier New', monospace", size: 10 }, callback: v => '$' + (v/1000) + 'k' } }
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4d6678', font: { family: "'Courier New', monospace", size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4d6678', font: { family: "'Courier New', monospace", size: 10 }, callback: v => '$' + (v/1000) + 'k' } }
       }
     }
   });
@@ -624,52 +617,23 @@ function renderAgents() {
 }
 
 function renderTaskQueue() {
-  var body = document.getElementById('taskQueueBody');
+  const body = document.getElementById('taskQueueBody');
   if (taskQueue.length === 0) {
-    body.textContent = '';
-    var tr = document.createElement('tr');
-    var td = document.createElement('td');
-    td.colSpan = 5; td.style.cssText = 'color:var(--text-dim);text-align:center';
-    td.textContent = 'No active tasks — use Dispatch above to run an agent';
-    tr.appendChild(td); body.appendChild(tr);
+    body.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim);text-align:center;">No active tasks</td></tr>';
     return;
   }
-  var now = Date.now();
-  body.textContent = '';
-  taskQueue.forEach(function(t) {
-    var elapsed = Math.floor(((t.endTime || now) - t.startTime) / 1000);
-    var tr = document.createElement('tr');
-
-    var td1 = document.createElement('td'); td1.style.textTransform = 'uppercase'; td1.textContent = t.agent; tr.appendChild(td1);
-
-    var td2 = document.createElement('td'); td2.textContent = t.task;
-    // Show output below task if available
-    if (t.output) {
-      var out = document.createElement('div');
-      out.style.cssText = 'font-size:11px;color:' + (t.status === 'done' ? 'var(--green)' : 'var(--red)') + ';margin-top:4px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-      out.textContent = t.output.slice(0, 150);
-      out.title = t.output;
-      td2.appendChild(out);
-    }
-    tr.appendChild(td2);
-
-    var priClass = t.priority === 'high' ? 'badge-red' : t.priority === 'medium' ? 'badge-yellow' : 'badge-blue';
-    var td3 = document.createElement('td');
-    var badge = document.createElement('span'); badge.className = 'badge ' + priClass;
-    var dot = document.createElement('span'); dot.className = 'dot'; badge.appendChild(dot);
-    badge.appendChild(document.createTextNode(t.priority));
-    td3.appendChild(badge); tr.appendChild(td3);
-
-    var statusClass = t.status === 'done' ? 'badge-green' : t.status === 'failed' ? 'badge-red' : 'badge-yellow';
-    var td4 = document.createElement('td');
-    var sBadge = document.createElement('span'); sBadge.className = 'badge ' + statusClass;
-    var sDot = document.createElement('span'); sDot.className = 'dot'; sBadge.appendChild(sDot);
-    sBadge.appendChild(document.createTextNode(t.status || 'running'));
-    td4.appendChild(sBadge); tr.appendChild(td4);
-
-    var td5 = document.createElement('td'); td5.textContent = elapsed + 's'; tr.appendChild(td5);
-    body.appendChild(tr);
-  });
+  const now = Date.now();
+  body.innerHTML = taskQueue.map(t => {
+    const elapsed = Math.floor((now - t.startTime) / 1000);
+    const priClass = t.priority === 'high' ? 'badge-red' : t.priority === 'medium' ? 'badge-yellow' : 'badge-blue';
+    return `<tr>
+      <td style="text-transform:uppercase">${t.agent}</td>
+      <td>${t.task}</td>
+      <td><span class="badge ${priClass}"><span class="dot"></span>${t.priority}</span></td>
+      <td><span class="badge badge-yellow"><span class="dot"></span>running</span></td>
+      <td>${elapsed}s</td>
+    </tr>`;
+  }).join('');
 }
 
 // =========== MARKETPLACE ===========
@@ -828,37 +792,21 @@ function addTransaction() {
 }
 
 function dispatchTask() {
-  var agent = document.getElementById('dispatchAgent').value;
-  var task = document.getElementById('dispatchTask').value.trim();
-  var priority = document.getElementById('dispatchPriority').value;
+  const agent = document.getElementById('dispatchAgent').value;
+  const task = document.getElementById('dispatchTask').value.trim();
+  const priority = document.getElementById('dispatchPriority').value;
   if (!task) return;
-  var entry = { agent: agent, task: task, priority: priority, startTime: Date.now(), status: 'running', output: null };
+  const entry = { agent, task, priority, startTime: Date.now(), duration: (10 + Math.floor(Math.random() * 21)) * 1000 };
   taskQueue.push(entry);
-  var idx = taskQueue.length - 1;
   renderTaskQueue();
-  addEvent('DISPATCH', agent, 'Task dispatched: ' + task + ' [' + priority + ']');
+  addEvent('DISPATCH', agent, `Task dispatched: ${task} [${priority}]`);
   document.getElementById('dispatchTask').value = '';
-
-  // Execute via real agent API
-  fetch('/api/agents/run', {
+  // Try API
+  fetch('/api/agents/dispatch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agentName: agent, input: task })
-  }).then(function(r) { return r.json(); }).then(function(d) {
-    if (taskQueue[idx]) {
-      taskQueue[idx].status = d.ok ? 'done' : 'failed';
-      taskQueue[idx].output = d.output || d.error || 'No output';
-      taskQueue[idx].endTime = Date.now();
-      renderTaskQueue();
-      addEvent('RESULT', agent, (d.output || d.error || '').slice(0, 120));
-    }
-  }).catch(function(e) {
-    if (taskQueue[idx]) {
-      taskQueue[idx].status = 'failed';
-      taskQueue[idx].output = e.message;
-      renderTaskQueue();
-    }
-  });
+    body: JSON.stringify({ agent, task, priority })
+  }).catch(() => {});
 }
 
 function toggleAgent(idx) {
@@ -869,16 +817,14 @@ function toggleAgent(idx) {
 }
 
 function createTask() {
-  var title = document.getElementById('mktTitle').value.trim();
-  var reward = parseFloat(document.getElementById('mktReward').value) || 0;
-  var desc = document.getElementById('mktDescInput').value.trim();
+  const title = document.getElementById('mktTitle').value.trim();
+  const reward = parseFloat(document.getElementById('mktReward').value) || 0;
+  const desc = document.getElementById('mktDescInput').value.trim();
   if (!title) return;
-  tasks.unshift({ id: nextTaskId++, title: title, reward: reward, status: 'open', desc: desc });
+  tasks.unshift({ id: nextTaskId++, title, reward, status: 'open', desc });
   saveState(STORAGE_KEYS.tasks, tasks);
   renderMarketplace();
-  addEvent('TASKS', '--', 'New task created: ' + title + ' ($' + reward.toFixed(2) + ')');
-  // Auto-claim and execute immediately
-  setTimeout(function() { claimTask(0); }, 500);
+  addEvent('TASKS', '--', `New task created: ${title} ($${reward})`);
   document.getElementById('mktTitle').value = '';
   document.getElementById('mktReward').value = '';
   document.getElementById('mktDescInput').value = '';
@@ -886,57 +832,16 @@ function createTask() {
 
 function claimTask(idx) {
   tasks[idx].status = 'in_progress';
-  tasks[idx].claimedAt = Date.now();
   saveState(STORAGE_KEYS.tasks, tasks);
   renderMarketplace();
-  addEvent('TASKS', '--', 'Task claimed: ' + tasks[idx].title);
-
-  // Auto-execute via AI agent — pick an active agent for this task
-  var activeAgents = agents.filter(function(a) { return a.status === 'active'; });
-  var picked = activeAgents.length > 0 ? activeAgents[Math.floor(Math.random() * activeAgents.length)] : agents[0];
-  var bestAgent = (picked && picked.name) || 'Finance AI';
-  addEvent('DISPATCH', bestAgent, 'Agent assigned to: ' + tasks[idx].title);
-
-  fetch('/api/agents/run', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agentName: bestAgent, input: tasks[idx].title + ': ' + (tasks[idx].desc || '') })
-  }).then(function(r) { return r.json(); }).then(function(d) {
-    if (d.ok) {
-      tasks[idx].output = (d.output || '').slice(0, 200);
-      tasks[idx].agent = bestAgent;
-      addEvent('RESULT', bestAgent, 'Completed: ' + (d.output || '').slice(0, 80));
-      // Auto-complete after agent finishes
-      completeTask(idx);
-    }
-  }).catch(function() {});
+  addEvent('TASKS', '--', `Task claimed: ${tasks[idx].title}`);
 }
 
 function completeTask(idx) {
-  var task = tasks[idx];
-  task.status = 'completed';
-  task.completedAt = Date.now();
+  tasks[idx].status = 'completed';
   saveState(STORAGE_KEYS.tasks, tasks);
-
-  // REVENUE LOOP: completed task = revenue earned
-  if (task.reward > 0) {
-    treasury.balance += task.reward;
-    treasury.revenueMtd += task.reward;
-    treasury.ledger.unshift({
-      time: new Date().toLocaleString(),
-      type: 'reward',
-      desc: 'Task completed: ' + task.title + (task.agent ? ' (by ' + task.agent + ')' : ''),
-      amount: task.reward,
-      balance: treasury.balance,
-    });
-    saveState(STORAGE_KEYS.treasury, treasury);
-    renderTreasury();
-    addEvent('TREASURY', task.agent || '--', 'Revenue earned: ' + fmt(task.reward) + ' from ' + task.title);
-  }
-
   renderMarketplace();
-  renderLiveSummary();
-  addEvent('TASKS', task.agent || '--', 'Task completed: ' + task.title + ' - reward ' + fmt(task.reward));
+  addEvent('TASKS', '--', `Task completed: ${tasks[idx].title} - reward ${fmt(tasks[idx].reward)}`);
 }
 
 function cancelTask(idx) {
@@ -1030,10 +935,10 @@ async function fetchSeedData() {
   try {
     const endpoints = [
       { url: '/api/treasury', key: 'treasury' },
-      { url: '/api/swarm/agents', key: 'agents' },
-      { url: '/api/economy/tasks?status=open', key: 'tasks' },
-      { url: '/api/system/state', key: 'users' },
-      { url: '/api/events/recent', key: 'events' },
+      { url: '/api/agents', key: 'agents' },
+      { url: '/api/tasks', key: 'tasks' },
+      { url: '/api/users', key: 'users' },
+      { url: '/api/events', key: 'events' },
     ];
     const results = await Promise.allSettled(endpoints.map(e => fetch(e.url).then(r => r.ok ? r.json() : null)));
     results.forEach((r, i) => {
@@ -1041,188 +946,17 @@ async function fetchSeedData() {
         const key = endpoints[i].key;
         const stored = loadState(STORAGE_KEYS[key], null);
         if (!stored) {
-          let val = r.value;
-          // Treasury: merge API balance into default structure (keeps revenueMtd, ledger)
-          if (key === 'treasury' && val.balance !== undefined) {
-            val = Object.assign({}, defaultTreasury, {
-              balance: parseFloat(val.balance) || defaultTreasury.balance,
-              revenueMtd: parseFloat(val.earned || val.revenue_mtd) || defaultTreasury.revenueMtd,
-              costsMtd: parseFloat(val.spent || val.costs_mtd) || defaultTreasury.costsMtd,
-            });
-          }
           // Unwrap API responses that wrap arrays in objects
+          let val = r.value;
           if (key === 'agents' && val.agents && Array.isArray(val.agents)) val = val.agents;
           if (key === 'users' && val.users && Array.isArray(val.users)) val = val.users;
           if (key === 'events' && val.events && Array.isArray(val.events)) val = val.events;
-          if (key === 'tasks') { val = val.tasks || (val.data ? val.data.listings : null) || (Array.isArray(val) ? val : []); }
+          if (key === 'tasks' && val.data && val.data.listings) val = val.data.listings;
           saveState(STORAGE_KEYS[key], val);
         }
       }
     });
   } catch (e) { /* use defaults */ }
-}
-
-// =========== LIVE SYSTEM SUMMARY ===========
-function renderLiveSummary() {
-  var el = document.getElementById('liveSummary');
-  if (!el) return;
-  el.textContent = '';
-
-  var openTasks = tasks.filter(function(t) { return t.status === 'open'; }).length;
-  var doneTasks = tasks.filter(function(t) { return t.status === 'completed'; }).length;
-  var activeAgents = agents.filter(function(a) { return a.status === 'active'; }).length;
-  var totalUsers = users.length;
-  var queueRunning = taskQueue.filter(function(t) { return t.status === 'running'; }).length;
-  var queueDone = taskQueue.filter(function(t) { return t.status === 'done'; }).length;
-  var queueFailed = taskQueue.filter(function(t) { return t.status === 'failed'; }).length;
-
-  var lines = [
-    { label: 'System Health', value: queueFailed > 0 ? 'Degraded' : 'Optimal', color: queueFailed > 0 ? 'var(--yellow)' : 'var(--green)' },
-    { label: 'Treasury', value: fmt(treasury.balance), color: 'var(--accent)' },
-    { label: 'Revenue MTD', value: fmt(treasury.revenueMtd), color: 'var(--green)' },
-    { label: 'Active Agents', value: activeAgents + '/' + agents.length, color: 'var(--accent)' },
-    { label: 'Marketplace Tasks', value: openTasks + ' open / ' + doneTasks + ' done', color: 'var(--text)' },
-    { label: 'Dispatch Queue', value: queueRunning + ' running / ' + queueDone + ' done / ' + queueFailed + ' failed', color: 'var(--text)' },
-    { label: 'Users', value: totalUsers + ' registered', color: 'var(--text)' },
-    { label: 'Latest Event', value: events.length > 0 ? events[0].type + ': ' + (events[0].details || '').slice(0, 80) : 'None', color: 'var(--text-dim)' },
-  ];
-
-  lines.forEach(function(line) {
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(26,45,64,0.2)';
-    var lbl = document.createElement('span');
-    lbl.style.color = 'var(--text-dim)';
-    lbl.textContent = line.label;
-    var val = document.createElement('span');
-    val.style.cssText = 'font-weight:600;color:' + line.color;
-    val.textContent = line.value;
-    row.appendChild(lbl);
-    row.appendChild(val);
-    el.appendChild(row);
-  });
-
-  // AI Suggestion
-  var insights = [
-    'Run a POPIA compliance audit — last scan was over 30 days ago',
-    'Treasury is healthy — consider reinvesting in growth agents',
-    agents.filter(function(a){return a.status!=='active'}).length > 0 ? 'Reactivate paused agents to improve task throughput' : 'All agents active — system at full capacity',
-    openTasks > 3 ? 'High task backlog — dispatch agents to clear the queue' : 'Task queue is manageable',
-    'Generate a weekly executive summary for stakeholder review',
-    'Optimize inference costs — current spend: ' + fmt(treasury.costsMtd),
-    'Review competitor pricing — market may have shifted',
-    'Schedule next treasury reconciliation to verify proof chain integrity',
-  ];
-  var suggestion = insights[Math.floor(Math.random() * insights.length)];
-
-  var aiRow = document.createElement('div');
-  aiRow.style.cssText = 'margin-top:10px;padding:10px 12px;background:rgba(123,63,245,0.06);border:1px solid rgba(123,63,245,0.15);border-radius:8px';
-  var aiLabel = document.createElement('div');
-  aiLabel.style.cssText = 'font-size:10px;color:var(--accent2);font-weight:700;margin-bottom:4px';
-  aiLabel.textContent = 'AI RECOMMENDATION';
-  aiRow.appendChild(aiLabel);
-  var aiText = document.createElement('div');
-  aiText.style.cssText = 'font-size:13px;color:var(--text)';
-  aiText.textContent = suggestion;
-  aiRow.appendChild(aiText);
-  el.appendChild(aiRow);
-}
-
-// =========== AI TASK SUGGESTIONS ===========
-var AI_TASK_TEMPLATES = [
-  { title: 'Audit POPIA compliance gaps', reward: 50, desc: 'Scan all data processing for POPIA violations' },
-  { title: 'Generate weekly sales report', reward: 25, desc: 'Compile CRM data into executive summary' },
-  { title: 'Analyze competitor pricing changes', reward: 40, desc: 'Monitor top 5 competitors for price adjustments' },
-  { title: 'Draft client onboarding email sequence', reward: 35, desc: '5-email nurture series for new signups' },
-  { title: 'Optimize API response times', reward: 60, desc: 'Profile slow endpoints and suggest fixes' },
-  { title: 'Generate BRDG token economy report', reward: 45, desc: 'Summarize burn rate, circulation, treasury split' },
-  { title: 'Scan for security vulnerabilities', reward: 80, desc: 'Run OWASP top 10 checks across all endpoints' },
-  { title: 'Create social media content calendar', reward: 30, desc: 'Plan 2 weeks of LinkedIn + Twitter posts' },
-  { title: 'Reconcile treasury against payment records', reward: 55, desc: 'Cross-reference PayFast webhooks with DB' },
-  { title: 'Train AI agent on new skill', reward: 70, desc: 'Add capability to existing agent via SVG engine' },
-  { title: 'Generate investor pitch deck data', reward: 65, desc: 'Compile KPIs, revenue, growth metrics' },
-  { title: 'Review and update legal documents', reward: 50, desc: 'Check ToS, Privacy Policy for recent law changes' },
-];
-
-function aiSuggestTasks() {
-  var el = document.getElementById('aiSuggestions');
-  var status = document.getElementById('suggestStatus');
-  status.textContent = 'Generating suggestions...';
-  el.textContent = '';
-
-  // Pick 3 random suggestions not already in tasks
-  var existing = tasks.map(function(t) { return t.title.toLowerCase(); });
-  var available = AI_TASK_TEMPLATES.filter(function(t) {
-    return existing.indexOf(t.title.toLowerCase()) === -1;
-  });
-  // Shuffle and take 3
-  for (var i = available.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    var tmp = available[i]; available[i] = available[j]; available[j] = tmp;
-  }
-  var suggestions = available.slice(0, 3);
-
-  if (suggestions.length === 0) {
-    status.textContent = 'All suggested tasks already exist.';
-    return;
-  }
-
-  status.textContent = suggestions.length + ' AI suggestions:';
-  suggestions.forEach(function(s) {
-    var card = document.createElement('div');
-    card.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer';
-    card.title = 'Click to add this task';
-
-    var info = document.createElement('div');
-    info.style.flex = '1';
-    var title = document.createElement('div');
-    title.style.cssText = 'color:var(--accent);font-weight:600';
-    title.textContent = s.title;
-    var desc = document.createElement('div');
-    desc.style.cssText = 'color:var(--text-dim);font-size:11px';
-    desc.textContent = s.desc + ' — $' + s.reward.toFixed(2);
-    info.appendChild(title);
-    info.appendChild(desc);
-    card.appendChild(info);
-
-    var addBtn = document.createElement('button');
-    addBtn.className = 'btn';
-    addBtn.style.cssText = 'font-size:11px;padding:4px 10px;min-height:auto';
-    addBtn.textContent = '+ Add';
-    addBtn.onclick = function() {
-      tasks.unshift({ id: nextTaskId++, title: s.title, reward: s.reward, status: 'open', desc: s.desc });
-      saveState(STORAGE_KEYS.tasks, tasks);
-      renderMarketplace();
-      addEvent('TASKS', 'AI', 'AI suggested task: ' + s.title);
-      card.style.opacity = '0.4';
-      addBtn.textContent = 'Running...';
-      addBtn.disabled = true;
-      // Auto-claim and execute — this starts the revenue loop
-      setTimeout(function() { claimTask(0); }, 600);
-    };
-    card.appendChild(addBtn);
-    el.appendChild(card);
-  });
-
-  // Also try the AI for a custom suggestion (use legal-agent which is unauthenticated)
-  fetch('/api/legal-agent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query: 'Suggest one high-value business task that an AI automation platform should prioritize this week. Be specific and actionable. One sentence only.' })
-  }).then(function(r) { return r.json(); }).then(function(d) {
-    if (d.text || d.response) {
-      var aiCard = document.createElement('div');
-      aiCard.style.cssText = 'background:rgba(123,63,245,0.08);border:1px solid rgba(123,63,245,0.2);border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px';
-      var lbl = document.createElement('div');
-      lbl.style.cssText = 'color:var(--accent2);font-size:10px;font-weight:600;margin-bottom:4px';
-      lbl.textContent = 'AI GENERATED';
-      aiCard.appendChild(lbl);
-      var txt = document.createElement('div');
-      txt.style.color = 'var(--text)';
-      txt.textContent = (d.text || d.response).slice(0, 200);
-      aiCard.appendChild(txt);
-      el.appendChild(aiCard);
-    }
-  }).catch(function() {});
 }
 
 // =========== INIT ===========
@@ -1232,30 +966,10 @@ async function init() {
 
   await fetchSeedData();
   initState();
-  // Always fetch real agent list from API (overrides cached defaults)
-  try {
-    var agentResp = await fetch('/api/swarm/agents').then(function(r){return r.json();});
-    var realAgents = agentResp.agents || [];
-    if (realAgents.length > 0) {
-      agents = realAgents.map(function(a) {
-        return { name: a.name, status: a.status || 'active', tasksCompleted: a.tasks_done || 0 };
-      });
-      saveState(STORAGE_KEYS.agents, agents);
-    }
-  } catch(_){}
-  // Also fetch real treasury balance
-  try {
-    var tResp = await fetch('/api/treasury').then(function(r){return r.json();});
-    if (tResp.balance) {
-      treasury.balance = parseFloat(tResp.balance);
-      saveState(STORAGE_KEYS.treasury, treasury);
-    }
-  } catch(_){}
   renderAll();
   initChart();
   renderServices();
   updateGauges();
-  renderLiveSummary();
 
   // Seed some initial events
   if (events.length === 0) {
@@ -1264,12 +978,13 @@ async function init() {
 
   // Polling
   setInterval(() => addEvent(), 3000);
-  setInterval(() => { renderServices(); updateGauges(); renderLiveSummary(); }, 10000);
+  setInterval(() => { renderServices(); updateGauges(); }, 10000);
   setInterval(simulateTasks, 5000);
 }
 
 init();
 </script>
-<script src="/global-nav.js" defer></script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

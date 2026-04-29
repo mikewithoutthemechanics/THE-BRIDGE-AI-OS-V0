@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'bridge-ai'
+    environment: 'production'
+
+# Scrape configurations
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+   - job_name: 'overseer'
+     static_configs:
+       - targets: ['overseer:9091']
+         labels:
+           service: 'overseer'
+           component: 'governor'
+
+# Overseer-events integrated into overseer core
+#   - job_name: 'overseer-events'
+#     static_configs:
+#       - targets: ['overseer:9091']
+#         labels:
+#           service: 'overseer'
+#           component: 'event-ingest'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Rule files
+rule_files:
+  - "/etc/prometheus/*.yml"

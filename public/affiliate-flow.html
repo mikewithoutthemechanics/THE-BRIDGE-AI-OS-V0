@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="BRIDGE AI OS — Affiliate Flow. Affiliate propagation across twin lineage, Bank-settled.">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'">
+    <title>BRIDGE AI OS — Affiliate Flow</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <script src="/admin-auth.js"></script>
+    <script src="/nav-routes.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-primary: #060810; --bg-glass: rgba(10, 14, 23, 0.85); --border-color: rgba(99, 255, 218, 0.12); --text-primary: #e2e8f0; --text-secondary: #94a3b8; --text-muted: #64748b; --accent-cyan: #63ffda; --accent-blue: #38bdf8; --accent-purple: #a78bfa; --accent-green: #4ade80; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100vh; background: var(--bg-primary); font-family: 'Outfit', -apple-system, sans-serif; color: var(--text-primary); }
+        body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 80%, rgba(99,255,218,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+        .shell { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 32px 24px 80px; }
+        header.page-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .page-head h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; background: linear-gradient(135deg, #63ffda 0%, #38bdf8 55%, #a78bfa 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .sub { color: var(--text-secondary); font-size: 0.9rem; margin-top: 6px; max-width: 680px; }
+        .ident { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-glass); }
+        .ident b { color: var(--accent-cyan); }
+        section.card { margin-top: 28px; padding: 22px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-glass); }
+        section.card h2 { font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-cyan); margin-bottom: 10px; }
+        section.card p { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 14px; line-height: 1.5; }
+        .lineage { display: grid; gap: 10px; }
+        .node { padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(6, 8, 16, 0.6); display: flex; align-items: center; gap: 14px; }
+        .node .id { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent-blue); min-width: 160px; }
+        .node .stats { display: flex; gap: 14px; font-size: 0.78rem; color: var(--text-muted); flex-wrap: wrap; }
+        .node .stats b { color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; }
+        .empty { padding: 28px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border-color); border-radius: 8px; }
+        footer.page-foot { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.75rem; color: var(--text-muted); }
+        footer a { color: var(--accent-blue); text-decoration: none; }
+        footer a:hover { color: var(--accent-cyan); }
+    </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+    <div class="shell">
+        <header class="page-head">
+            <div>
+                <h1>Affiliate Flow</h1>
+                <div class="sub">Affiliate credit flows up the twin lineage tree. A conversion on a child twin attributes to its parent and siblings per configured split; payouts are Bank-settled with the same idempotency key as the triggering expense.</div>
+            </div>
+            <div class="ident">user: <b id="user">—</b> · role: <b id="role">—</b></div>
+        </header>
+
+        <section class="card">
+            <h2>Active lineages</h2>
+            <p>Each twin's lineage ID is the root of its affiliate tree. Concurrent siblings share lineage so their conversions aggregate before splitting.</p>
+            <div id="lineages" class="lineage"><div class="empty">Loading lineages…</div></div>
+        </section>
+
+        <footer class="page-foot">
+            <div>API: <a href="/api/twin/lineages">/api/twin/lineages</a> · <a href="/api/bank/ledger?type=affiliate.payout">Affiliate payouts</a></div>
+            <div><a href="/admin-hub">← Admin Hub</a> · <a href="/twin-orchestration">Twin Orchestration</a> · <a href="/bank-ledger">Bank Ledger</a></div>
+        </footer>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var email = (localStorage.getItem('user_email') || '').toLowerCase();
+        var user = {}; try { user = JSON.parse(localStorage.getItem('bridge_user') || '{}'); } catch(_){}
+        document.getElementById('user').textContent = email || user.email || 'unknown';
+        document.getElementById('role').textContent = user.role || 'admin';
+
+        var headers = { 'x-admin-token': (user.admin_token || localStorage.getItem('admin_token') || '') };
+
+        function fmt(n) { return (typeof n === 'number') ? n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : '$0.00'; }
+        function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        function render(lineages) {
+            var el = document.getElementById('lineages');
+            if (!lineages.length) { el.innerHTML = '<div class="empty">No active lineages. Spawn a twin from Twin Orchestration to begin.</div>'; return; }
+            el.innerHTML = lineages.map(function (l) {
+                return '<div class="node">' +
+                    '<div class="id">' + escapeHtml(l.lineage_id) + '</div>' +
+                    '<div class="stats">' +
+                        '<span>twins: <b>' + (l.twin_count || 0) + '</b></span>' +
+                        '<span>conversions: <b>' + (l.conversions || 0) + '</b></span>' +
+                        '<span>credit earned: <b>' + fmt(l.credit_earned) + '</b></span>' +
+                        '<span>payouts settled: <b>' + (l.payouts_settled || 0) + '</b></span>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        function refresh() {
+            fetch('/api/twin/lineages', { headers: headers }).then(function (r) { return r.json(); }).then(function (d) { render((d && d.lineages) || []); }).catch(function(){
+                document.getElementById('lineages').innerHTML = '<div class="empty">Lineage API unreachable.</div>';
+            });
+        }
+        refresh();
+        setInterval(refresh, 7000);
+    })();
+    </script>
+    <script src="/bridge-nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+- generic [active] [ref=e1]:
+  - navigation "Main navigation" [ref=e2]:
+    - link "BRIDGE AI" [ref=e3] [cursor=pointer]:
+      - /url: /home
+      - text: BRIDGE
+      - generic [ref=e4]: AI
+    - menubar [ref=e5]:
+      - link "Home" [ref=e6] [cursor=pointer]:
+        - /url: /home
+      - link "Pricing" [ref=e7] [cursor=pointer]:
+        - /url: /pricing
+      - link "Docs" [ref=e8] [cursor=pointer]:
+        - /url: /docs
+      - link "Claude Partner" [ref=e9] [cursor=pointer]:
+        - /url: /claude-partner
+      - link "Voice AI" [ref=e10] [cursor=pointer]:
+        - /url: /voice
+    - generic [ref=e11]:
+      - link "Sign In" [ref=e12] [cursor=pointer]:
+        - /url: /onboarding
+        - text: Sign In
+      - link "Get Started" [ref=e14] [cursor=pointer]:
+        - /url: /onboarding
+  - banner [ref=e15]:
+    - link "Back" [ref=e16] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e17]:
+      - heading "Bridge AI Voice" [level=1] [ref=e18]
+      - generic [ref=e19]: Powered by BRDG token economy
+  - generic [ref=e21]:
+    - button "Click to speak" [ref=e22] [cursor=pointer]
+    - generic [ref=e28]: Click to speak
+    - generic [ref=e29]: Tap the orb to start a conversation
+  - generic [ref=e32]:
+    - generic [ref=e33] [cursor=pointer]:
+      - generic: Need help?
+    - button "Report Issue" [ref=e35] [cursor=pointer]: ✉
+    - generic:
+      - heading "Report an Issue" [level=4]
+      - textbox "Subject"
+      - textbox "Describe the issue..."
+      - combobox:
+        - option "Low Priority"
+        - option "Medium Priority" [selected]
+        - option "High Priority"
+        - option "Urgent"
+      - button "Submit Ticket"
+    - generic:
+      - generic:
+        - generic: Bridge AI
+        - button "×"
+      - generic:
+        - textbox "Type a message..."
+        - button "Send message": ➤
+        - button "Voice input": 🎙

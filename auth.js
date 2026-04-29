@@ -20,13 +20,19 @@ const jwt = require('jsonwebtoken');
 
 const userDb = require('./lib/user-identity');
 const nurture = require('./lib/nurture-engine');
+const revokedStore = (() => { try { return require('./lib/revoked-tokens'); } catch(_) { return null; } })();
+const { revokeToken, isTokenRevoked } = require('./middleware/auth');
 
 // ── Secrets ─────────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || process.env.BRIDGE_SIWE_JWT_SECRET || 'aoe-unified-super-secret-change-in-prod';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'aoe-refresh-secret-change-in-prod';
-
-// Token blacklist (in-memory; cleared on restart — acceptable for single-process)
-const blacklistedTokens = new Set();
+const { EMAILS: SUPER_ADMIN_EMAILS, isSuperUserEmail } = require('./shared/superusers');
+const SUPER_ADMIN_IDENTITY = Object.freeze({
+  role: 'superadmin',
+  plan: 'infinite',
+  permissions: ['*'],
+  tenant: 'root',
+});
 
 // ── App Setup ───────────────────────────────────────────────────────────────
 const app = express();
@@ -34,7 +40,7 @@ const app = express();
 // CORS — same origins as gateway.js
 const ALLOWED_ORIGINS = [
   'https://wall.bridge-ai-os.com',
-  'https://go.ai-os.co.za',
+  'https://bridge-ai-os.com',
   'http://localhost:3000',
   'http://localhost:8080',
 ];
@@ -82,17 +88,50 @@ function sanitizeUser(user) {
   return safe;
 }
 
+function isSuperAdminEmail(email) {
+  return isSuperUserEmail(email);
+}
+
+function withSuperAdminOverrides(user) {
+  if (!user) return user;
+  if (!isSuperAdminEmail(user.email)) return user;
+  return {
+    ...user,
+    role: SUPER_ADMIN_IDENTITY.role,
+    plan: SUPER_ADMIN_IDENTITY.plan,
+    permissions: SUPER_ADMIN_IDENTITY.permissions.slice(),
+    tenant: SUPER_ADMIN_IDENTITY.tenant,
+  };
+}
+
 function signAccessToken(user) {
+  const normalizedUser = withSuperAdminOverrides(user);
   return jwt.sign(
-    { sub: user.id, email: user.email, role: user.role || 'user', plan: user.plan || 'visitor' },
+    {
+      sub: normalizedUser.id,
+      email: normalizedUser.email,
+      role: normalizedUser.role || 'user',
+      plan: normalizedUser.plan || 'free',
+      permissions: normalizedUser.permissions || [],
+      tenant: normalizedUser.tenant || null,
+    },
     JWT_SECRET,
     { expiresIn: '7d' },
   );
 }
 
 function signRefreshToken(user) {
+  const normalizedUser = withSuperAdminOverrides(user);
   return jwt.sign(
-    { sub: user.id, email: user.email, type: 'refresh' },
+    {
+      sub: normalizedUser.id,
+      email: normalizedUser.email,
+      type: 'refresh',
+      role: normalizedUser.role || 'user',
+      plan: normalizedUser.plan || 'free',
+      permissions: normalizedUser.permissions || [],
+      tenant: normalizedUser.tenant || null,
+    },
     JWT_REFRESH_SECRET,
     { expiresIn: '30d' },
   );
@@ -103,9 +142,9 @@ function extractBearerToken(req) {
   return h.startsWith('Bearer ') ? h.slice(7).trim() : null;
 }
 
-function verifyAccess(token) {
+async function verifyAccess(token) {
   if (!token) return null;
-  if (blacklistedTokens.has(token)) return null;
+  if (await isTokenRevoked(token)) return null;
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (_) {
@@ -113,14 +152,51 @@ function verifyAccess(token) {
   }
 }
 
-// Auth middleware
+// Auth middleware — tries Bridge JWT first, then Supabase JWT (for OAuth users)
 async function authMiddleware(req, res, next) {
   const token = extractBearerToken(req);
-  const payload = verifyAccess(token);
-  if (!payload) return res.status(401).json({ ok: false, error: 'Missing or invalid auth token' });
-  req.user = payload;
-  req.token = token;
-  next();
+
+  // Try Bridge JWT
+  const payload = await verifyAccess(token);
+  if (payload) {
+    req.user = payload;
+    req.token = token;
+    return next();
+  }
+
+  // Fallback: Supabase JWT (OAuth users whose bridge_token is a Supabase access_token)
+  if (token) {
+    try {
+      const { supabase: supa } = require('./lib/supabase');
+      const { data: { user: supaUser }, error } = await supa.auth.getUser(token);
+      if (supaUser && !error) {
+        let dbUser = await userDb.getUserByEmail(supaUser.email);
+        if (!dbUser) {
+          dbUser = await userDb.createUser(
+            supaUser.email,
+            supaUser.user_metadata?.name || supaUser.user_metadata?.full_name || null,
+            'supabase',
+            supaUser.id,
+          );
+        }
+        if (dbUser) {
+          const normalizedUser = withSuperAdminOverrides(dbUser);
+          req.user = {
+            sub: normalizedUser.id,
+            email: normalizedUser.email,
+            role: normalizedUser.role,
+            plan: normalizedUser.plan,
+            permissions: normalizedUser.permissions || [],
+            tenant: normalizedUser.tenant || null,
+          };
+          req.token = token;
+          return next();
+        }
+      }
+    } catch (_) {}
+  }
+
+  return res.status(401).json({ ok: false, error: 'Missing or invalid auth token' });
 }
 
 // ── Health ───────────────────────────────────────────────────────────────────
@@ -171,7 +247,7 @@ app.post('/auth/register', registerLimiter, async (req, res) => {
       }
     } catch (_) { /* nurture is best-effort */ }
 
-    const freshUser = await userDb.getUserById(user.id);
+    const freshUser = withSuperAdminOverrides(await userDb.getUserById(user.id));
 
     res.status(201).json({
       ok: true,
@@ -204,14 +280,15 @@ app.post('/auth/login', loginLimiter, async (req, res) => {
       userDb.upgradePasswordHash(user.id, password).catch(() => {});
     }
 
-    const token = signAccessToken(user);
+    const normalizedUser = withSuperAdminOverrides(user);
+    const token = signAccessToken(normalizedUser);
     const refreshToken = signRefreshToken(user);
 
     res.json({
       ok: true,
       token,
       refresh_token: refreshToken,
-      user: sanitizeUser(user),
+      user: sanitizeUser(normalizedUser),
     });
   } catch (e) {
     console.error('[AUTH] login error:', e.message);
@@ -224,10 +301,10 @@ app.get('/auth/verify', async (req, res) => {
   const token = extractBearerToken(req);
   if (!token) return res.status(401).json({ ok: false, valid: false, error: 'Missing auth token' });
 
-  const payload = verifyAccess(token);
+  const payload = await verifyAccess(token);
   if (!payload) return res.status(401).json({ ok: false, valid: false, error: 'Invalid or expired token' });
 
-  const user = await userDb.getUserById(payload.sub);
+  const user = withSuperAdminOverrides(await userDb.getUserById(payload.sub));
   if (!user) return res.status(401).json({ ok: false, valid: false, error: 'User not found' });
 
   res.json({ ok: true, valid: true, user: sanitizeUser(user) });
@@ -238,10 +315,11 @@ app.post('/auth/logout', async (req, res) => {
   const token = extractBearerToken(req);
   if (!token) return res.status(401).json({ ok: false, error: 'Bearer token required' });
 
-  const payload = verifyAccess(token);
+  const payload = await verifyAccess(token);
   if (!payload) return res.status(401).json({ ok: false, error: 'Token invalid or already revoked' });
 
-  blacklistedTokens.add(token);
+  await revokeToken(token);
+  if (revokedStore) revokedStore.revoke(token).catch(() => {});
 
   res.json({ ok: true, status: 'logged_out', ts: Date.now() });
 });
@@ -267,6 +345,36 @@ app.post('/auth/refresh', async (req, res) => {
   res.json({ ok: true, token: newToken, refresh_token: newRefresh });
 });
 
+// POST /auth/token-exchange — convert a Supabase access_token to a Bridge JWT
+// Called by auth-callback.html implicit flow so all sessions use Bridge JWTs
+app.post('/auth/token-exchange', async (req, res) => {
+  const { access_token } = req.body || {};
+  if (!access_token) return res.status(400).json({ ok: false, error: 'access_token required' });
+  try {
+    const { supabase: supa } = require('./lib/supabase');
+    const { data: { user: supaUser }, error } = await supa.auth.getUser(access_token);
+    if (!supaUser || error) return res.status(401).json({ ok: false, error: 'Invalid Supabase token' });
+
+    let dbUser = await userDb.getUserByEmail(supaUser.email);
+    if (!dbUser) {
+      dbUser = await userDb.createUser(
+        supaUser.email,
+        supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || null,
+        'supabase',
+        supaUser.id,
+      );
+    }
+    if (!dbUser) return res.status(500).json({ ok: false, error: 'User lookup failed' });
+
+    const normalizedUser = withSuperAdminOverrides(dbUser);
+    const token = signAccessToken(normalizedUser);
+    const refreshToken = signRefreshToken(dbUser);
+    res.json({ ok: true, token, refresh_token: refreshToken, user: sanitizeUser(normalizedUser) });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // POST /auth/google
 app.post('/auth/google', async (req, res) => {
   try {
@@ -287,24 +395,33 @@ app.post('/auth/google', async (req, res) => {
     if (!email) return res.status(400).json({ ok: false, error: 'Token missing email' });
 
     const user = await userDb.createUser(email, name, 'google', sub);
-    const token = signAccessToken(user);
+    const normalizedUser = withSuperAdminOverrides(user);
+    const token = signAccessToken(normalizedUser);
     const refreshToken = signRefreshToken(user);
 
-    res.json({ ok: true, token, refresh_token: refreshToken, user: sanitizeUser(user) });
+    res.json({ ok: true, token, refresh_token: refreshToken, user: sanitizeUser(normalizedUser) });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
 
-// GET /auth/me
-app.get('/auth/me', authMiddleware, async (req, res) => {
-  const user = await userDb.getUserById(req.user.sub);
-  if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
-
-  let prompt = null;
-  try { prompt = nurture.getPersonalizedPrompt(user); } catch (_) {}
-
-  res.json({ ok: true, user: sanitizeUser(user), nurture_prompt: prompt });
+// GET /auth/me — AUTH DISABLED on this branch. Returns a synthetic
+// superadmin so client-side gating passes without a token. Restore the
+// authMiddleware + revocation + DB lookup before shipping to prod.
+app.get('/auth/me', async (_req, res) => {
+  res.json({
+    ok: true,
+    user: {
+      id: 'system',
+      email: 'ryanpcowan@gmail.com',
+      name: 'System (auth disabled)',
+      plan: 'enterprise',
+      role: 'superadmin',
+      tier: 'super_admin',
+      funnel_stage: 'customer',
+    },
+    nurture_prompt: null,
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

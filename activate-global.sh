@@ -24,7 +24,7 @@ echo "Nginx OK"
 echo "[4/6] SSL check..."
 certbot certificates 2>&1 | grep "Domains:" | head -3
 # Only expand if new domains resolve here - skip if they don't yet
-echo "SSL: existing cert covers go.ai-os.co.za"
+echo "SSL: existing cert covers bridge-ai-os.com"
 
 # 5. .env
 echo "[5/6] Environment..."

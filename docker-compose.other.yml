@@ -1,0 +1,277 @@
+# Docker Compose for "OTHER SIDE" - Mirrored Infrastructure
+# Full replica stack with isolated namespaces, networking, and state
+# Synchronized with THIS SIDE via Bridge Service
+
+version: "3.9"
+
+services:
+  # =============================================
+  # TIER 1: NGINX Reverse Proxy (Other Side)
+  # =============================================
+  nginx-other:
+    image: nginx:alpine
+    container_name: bridge-nginx-other-tier1
+    ports:
+      - "8443:443"
+      - "8080:80"
+    volumes:
+      - ./nginx-tier1-other.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - bridge_logs_other:/var/log/nginx
+    networks:
+      - bridge_network_other
+    depends_on:
+      - gateway-other
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    labels:
+      side: "other"
+      tier: "1"
+
+  # =============================================
+  # TIER 2: API Gateway (Other Side)
+  # =============================================
+  gateway-other:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: bridge-gateway-other-tier2
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      SERVICE_SIDE: "other"
+      REDIS_URL: redis://redis-other:6379
+      DB_HOST: postgres-other
+      DB_NAME: bridge_ai
+      DB_USER: ${DB_USER:-bridge}
+      DB_PASS: ${DB_PASS:-changeme}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      BRIDGE_SERVICE_URL: http://bridge-service:9000
+      THIS_SIDE_GATEWAY: http://gateway:8080
+    volumes:
+      - ./gateway-bridge.js:/app/gateway.js:ro
+      - ./middleware:/app/middleware:ro
+      - ./routes:/app/routes:ro
+      - ./utils:/app/utils:ro
+      - ./lib:/app/lib:ro
+      - bridge_logs_other:/app/logs
+    networks:
+      - bridge_network_other
+      - bridge_network_sync
+    depends_on:
+      redis-other:
+        condition: service_healthy
+      postgres-other:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    labels:
+      side: "other"
+      tier: "2"
+
+  # =============================================
+  # TIER 3A: Main Service (Other Side)
+  # =============================================
+  main-service-other:
+    build:
+      context: .
+      dockerfile: Dockerfile.main
+    container_name: bridge-main-other-tier3a
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      SERVICE_NAME: main-other
+      SERVICE_SIDE: "other"
+      REDIS_URL: redis://redis-other:6379
+      DB_HOST: postgres-other
+      DB_NAME: bridge_ai
+      DB_USER: ${DB_USER:-bridge}
+      DB_PASS: ${DB_PASS:-changeme}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      BRAIN_SERVICE_URL: http://brain-other:8000
+      SVG_SERVICE_URL: http://svg-engine-other:7070
+      GATEWAY_URL: http://gateway-other:8080
+      BRIDGE_SERVICE_URL: http://bridge-service:9000
+    volumes:
+      - ./server.js:/app/server.js:ro
+      - ./routes:/app/routes:ro
+      - ./middleware:/app/middleware:ro
+      - ./lib:/app/lib:ro
+      - bridge_data_other:/app/data
+      - bridge_logs_other:/app/logs
+    networks:
+      - bridge_network_other
+      - bridge_network_sync
+    depends_on:
+      redis-other:
+        condition: service_healthy
+      postgres-other:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    labels:
+      side: "other"
+      tier: "3a"
+
+  # =============================================
+  # TIER 3B: FastAPI Brain (Other Side)
+  # =============================================
+  brain-other:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bridge-brain-other-tier3b
+    environment:
+      PYTHONUNBUFFERED: 1
+      PORT: 8000
+      SERVICE_SIDE: other
+      REDIS_URL: redis://redis-other:6379
+      DB_HOST: postgres-other
+      DB_NAME: bridge_ai
+      DB_USER: ${DB_USER:-bridge}
+      DB_PASS: ${DB_PASS:-changeme}
+      MAIN_SERVICE_URL: http://main-service-other:3000
+      BRIDGE_SERVICE_URL: http://bridge-service:9000
+    volumes:
+      - ./backend:/app
+      - bridge_data_other:/app/data
+      - bridge_logs_other:/app/logs
+    networks:
+      - bridge_network_other
+      - bridge_network_sync
+    depends_on:
+      redis-other:
+        condition: service_healthy
+      postgres-other:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    labels:
+      side: "other"
+      tier: "3b"
+
+  # =============================================
+  # TIER 3C: SVG Engine (Other Side)
+  # =============================================
+  svg-engine-other:
+    build:
+      context: .
+      dockerfile: Dockerfile.svg
+    container_name: bridge-svg-other-tier3c
+    environment:
+      NODE_ENV: production
+      PORT: 7070
+      SERVICE_SIDE: other
+      REDIS_URL: redis://redis-other:6379
+      MAIN_SERVICE_URL: http://main-service-other:3000
+      BRIDGE_SERVICE_URL: http://bridge-service:9000
+    volumes:
+      - ./svg-engine:/app:ro
+      - bridge_logs_other:/app/logs
+    networks:
+      - bridge_network_other
+      - bridge_network_sync
+    depends_on:
+      redis-other:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7070/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    labels:
+      side: "other"
+      tier: "3c"
+
+  # =============================================
+  # TIER 4A: PostgreSQL (Other Side)
+  # =============================================
+  postgres-other:
+    image: postgres:16-alpine
+    container_name: bridge-postgres-other
+    environment:
+      POSTGRES_DB: bridge_ai
+      POSTGRES_USER: ${DB_USER:-bridge}
+      POSTGRES_PASSWORD: ${DB_PASS:-changeme}
+    volumes:
+      - bridge_db_other:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - bridge_network_other
+      - bridge_network_sync
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-bridge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    labels:
+      side: "other"
+      tier: "4a"
+
+  # =============================================
+  # TIER 4B: Redis (Other Side)
+  # =============================================
+  redis-other:
+    image: redis:7-alpine
+    container_name: bridge-redis-other
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASS:-changeme}
+    volumes:
+      - bridge_redis_other:/data
+    networks:
+      - bridge_network_other
+      - bridge_network_sync
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    labels:
+      side: "other"
+      tier: "4b"
+
+volumes:
+  bridge_data_other:
+    name: bridge_other_data
+  bridge_logs_other:
+    name: bridge_other_logs
+  bridge_db_other:
+    name: bridge_other_db
+  bridge_redis_other:
+    name: bridge_other_redis
+
+networks:
+  bridge_network_other:
+    name: bridge_network_other
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+  bridge_network_sync:
+    name: bridge_network_sync
+    driver: bridge

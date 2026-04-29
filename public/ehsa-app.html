@@ -1,7 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="description" content="EHSA Health — AI-driven health services automation on Bridge AI OS.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/ehsa">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/ehsa">
+<meta property="og:title" content="EHSA — Empeleni Health Services Africa">
+<meta property="og:description" content="EHSA Health — AI-driven health services automation on Bridge AI OS.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="EHSA — Empeleni Health Services Africa">
+<meta name="twitter:description" content="EHSA Health — AI-driven health services automation on Bridge AI OS.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>EHSA — Empeleni Health Services Africa</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#00e57b">
@@ -54,6 +68,21 @@ input:focus{border-color:var(--a);outline:none}
 .triage-input{width:100%;padding:.8rem;background:var(--bg);border:1px solid var(--b);border-radius:8px;color:var(--t);font-size:.85rem;margin:.5rem 0}
 .triage-result{margin-top:1rem;padding:1rem;border-radius:8px;font-size:.8rem;display:none}
 .triage-result.show{display:block}
+</style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
 </style>
 </head>
 <body>
@@ -291,6 +320,7 @@ async function loadSection(id) {
 }
 loadSection('dashboard');
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

@@ -518,3 +518,76 @@ CREATE INDEX IF NOT EXISTS idx_ap2_offers_status ON ap2_offers(status);
 CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);
 CREATE INDEX IF NOT EXISTS idx_transactions_ts ON transactions(created_at);
 CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_aff ON affiliate_clicks(affiliate_id);
+
+-- ============================================================
+-- WITHDRAWAL SYSTEM (withdrawal requests, agent claims, audit)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS withdrawal_requests (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id     text NOT NULL,
+  amount      numeric NOT NULL,
+  currency    text DEFAULT 'BRDG',
+  destination_address text,
+  tx_hash     text,
+  status      text DEFAULT 'pending'
+                CHECK (status IN ('pending', 'queued', 'processing', 'completed', 'failed', 'admin_review')),
+  failure_reason text,
+  admin_approved_by text,
+  created_at  timestamptz DEFAULT now(),
+  processed_at timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS agent_claims (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id     text NOT NULL,
+  agent_id    text NOT NULL,
+  amount      numeric NOT NULL,
+  status      text DEFAULT 'queued'
+                CHECK (status IN ('queued', 'processing', 'completed', 'failed', 'pending_wallet')),
+  tx_hash     text,
+  destination_address text,
+  created_at  timestamptz DEFAULT now(),
+  processed_at timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS withdrawal_audit (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  withdrawal_id uuid REFERENCES withdrawal_requests(id),
+  action      text NOT NULL,
+  actor       text,
+  metadata    jsonb,
+  created_at  timestamptz DEFAULT now()
+);
+
+-- Withdrawal system indexes
+CREATE INDEX IF NOT EXISTS idx_withdrawal_req_user_ts ON withdrawal_requests(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_withdrawal_req_status ON withdrawal_requests(status);
+CREATE INDEX IF NOT EXISTS idx_agent_claims_user ON agent_claims(user_id);
+CREATE INDEX IF NOT EXISTS idx_agent_claims_status ON agent_claims(status);
+
+-- ============================================================
+-- RLS POLICIES — WITHDRAWAL SYSTEM
+-- ============================================================
+ALTER TABLE withdrawal_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agent_claims ENABLE ROW LEVEL SECURITY;
+ALTER TABLE withdrawal_audit ENABLE ROW LEVEL SECURITY;
+
+-- Users can read their own withdrawal requests
+CREATE POLICY withdrawal_requests_select_own ON withdrawal_requests
+  FOR SELECT USING (auth.uid()::text = user_id);
+
+-- Service role bypasses RLS (full access)
+CREATE POLICY withdrawal_requests_service ON withdrawal_requests
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Users can read their own agent claims
+CREATE POLICY agent_claims_select_own ON agent_claims
+  FOR SELECT USING (auth.uid()::text = user_id);
+
+-- Service role bypasses RLS (full access)
+CREATE POLICY agent_claims_service ON agent_claims
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Withdrawal audit: service role only
+CREATE POLICY withdrawal_audit_service ON withdrawal_audit
+  FOR ALL USING (auth.role() = 'service_role');

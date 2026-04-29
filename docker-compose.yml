@@ -1,97 +1,78 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  gateway:
-    build: .
-    container_name: bridge_gateway
-    command: node gateway.js
-    ports:
-      - "8080:8080"
+  overseer:
+    build: ./overseer
+    container_name: bridge-overseer
     environment:
-      - NODE_ENV=production
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      OVERSEER_ENABLED: "true"
+      OVERSEER_INTERVAL: "2.0"
+      OVERSEER_STATE_PATH: "/var/lib/bridge/state.json"
+      OVERSEER_LOG_PATH: "/var/log/bridge/overseer.log"
+      OVERSEER_PERSONA: "oracle"
     volumes:
-      - ./shared:/app/shared
-      - ./logs:/app/logs
+      - bridge_data:/var/lib/bridge
+      - bridge_logs:/var/log/bridge
+      - ./:/app:ro
+    ports:
+      - "9091:9091"
     networks:
-      - bridge_net
+      - bridge
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
-  brain:
-    build: .
-    container_name: bridge_brain
-    command: node brain.js
+  backend:
+    build: ./backend
+    container_name: bridge-backend
+    environment:
+      DEMO_MODE: "true"
+      ALLOWED_ORIGINS: "http://localhost:3000"
+      RATE_LIMIT: "100"
+    volumes:
+      - ./backend:/app
+      - bridge_logs:/app/logs
     ports:
       - "8000:8000"
-    environment:
-      - NODE_ENV=production
-      - BRAIN_PORT=8000
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
-      - KEYFORGE_MASTER=${KEYFORGE_MASTER:?KEYFORGE_MASTER must be set in .env}
-    volumes:
-      - ./shared:/app/shared
-      - ./logs:/app/logs
     networks:
-      - bridge_net
+      - bridge
+    depends_on:
+      overseer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
-  system:
-    build: .
-    container_name: bridge_system
-    command: node system.js
+  frontend:
+    build: ./frontend
+    container_name: bridge-frontend
     ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
-    volumes:
-      - ./public:/app/public
-      - ./logs:/app/logs
+      - "3000:80"
     networks:
-      - bridge_net
+      - bridge
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     restart: unless-stopped
 
-  terminal:
-    build: .
-    container_name: bridge_terminal
-    command: node terminal-proxy.js
-    ports:
-      - "5002:5002"
-    environment:
-      - TERMINAL_PROXY_PORT=5002
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
-    networks:
-      - bridge_net
-    restart: unless-stopped
-
-  auth:
-    build: .
-    container_name: bridge_auth
-    command: node auth.js
-    ports:
-      - "5001:5001"
-    environment:
-      - AUTH_PORT=5001
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
-    volumes:
-      - ./users.db:/app/users.db
-    networks:
-      - bridge_net
-    restart: unless-stopped
-
-  ban:
-    build:
-      context: ./BAN
-      dockerfile: ../Dockerfile.ban
-    container_name: bridge_ban
-    ports:
-      - "8001:8001"
-    networks:
-      - bridge_net
-    restart: unless-stopped
+volumes:
+  bridge_data:
+    name: bridge_overseer_data
+  bridge_logs:
+    name: bridge_overseer_logs
 
 networks:
-  bridge_net:
+  bridge:
+    name: bridge_network
     driver: bridge

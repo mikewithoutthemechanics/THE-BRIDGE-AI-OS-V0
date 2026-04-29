@@ -1,0 +1,118 @@
+# Bridge AI OS - Public Domain Monitoring
+# Monitors all 11 public domains served from VPS
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "bridge-ai-alerts.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # ============================================================================
+  # BRIDGE AI OS - CORE SYSTEM MONITORING
+  # ============================================================================
+
+  - job_name: 'bridge-ai-os-core'
+    static_configs:
+      - targets: ['localhost:8080']  # Bridge AI OS FastAPI backend
+    metrics_path: '/api/system/architecture'
+    scrape_interval: 5s
+
+  # ============================================================================
+  # PUBLIC DOMAIN HEALTH CHECKS
+  # ============================================================================
+
+  - job_name: 'bridge-ai-domains'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://ai-os.co.za
+        - https://bridge-ai-os.com
+        - https://bridge.ai-os.co.za
+        - https://ban.ai-os.co.za
+        - https://supac.ai-os.co.za
+        - https://ehsa.ai-os.co.za
+        - https://aurora.ai-os.co.za
+        - https://ubi.ai-os.co.za
+        - https://aid.ai-os.co.za
+        - https://hospitalinabox.ai-os.co.za
+        - https://rootedearth.ai-os.co.za
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # ============================================================================
+  # VPS INFRASTRUCTURE MONITORING
+  # ============================================================================
+
+  - job_name: 'vps-node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+
+  - job_name: 'vps-nginx-exporter'
+    static_configs:
+      - targets: ['localhost:9113']
+
+  # ============================================================================
+  # AGENT HEALTH MONITORING (71 agents)
+  # ============================================================================
+
+  - job_name: 'bridge-ai-agents'
+    static_configs:
+      - targets:
+        - localhost:8080  # Agent health endpoint
+    metrics_path: '/api/agents/health'
+    scrape_interval: 10s
+
+  # ============================================================================
+  # API ENDPOINT MONITORING (150+ endpoints)
+  # ============================================================================
+
+  - job_name: 'bridge-ai-apis'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://bridge-ai-os.com/api/v3/spec
+        - https://bridge-ai-os.com/api/pricing
+        - https://bridge-ai-os.com/brain-live
+        - https://bridge-ai-os.com/topology.html
+        - https://bridge-ai-os.com/marketplace.html
+        - https://bridge-ai-os.com/avatar.html
+        - https://ban.ai-os.co.za
+        - https://ehsa.ai-os.co.za
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # ============================================================================
+  # DATABASE & CACHE MONITORING
+  # ============================================================================
+
+  - job_name: 'bridge-ai-database'
+    static_configs:
+      - targets: ['postgres:5432']
+    scrape_interval: 30s
+
+  - job_name: 'bridge-ai-redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 15s

@@ -1,27 +1,84 @@
-node_modules/
+# Runtime settings store - contains super-admin grants and audit log
+data/settings.runtime.json
+data/*.runtime.json
+
+# Secrets - never commit
 .env
 .env.*
+*.env
 !.env.example
-*.secure.json
-keys.json
-credentials.json
-certs/
-logs/
-*.log
+
+# Logs
+logs/*.log
+logs/*.log.gz
+logs/*.out
+logs/*.err
+
+# PM2 / Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+.pm2/
+
+# Claude Code runtime state (agent definitions are tracked, state is not)
+.claude/state/
+.claude/projects/
+
+# Cloudflare Workers local state
+.wrangler/
+*/.wrangler/
+
+# Frontend builds
+frontend/dist/
+
+# OS / editors
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+*.swp
 
+# Misc
 .vercel
 users.db
-users.db-shm
-users.db-wal
-.env.production
+certs/
+
+# Backup / pre-edit snapshots created by patch scripts
+*.bak
+*.bak.*
+*.bak-*
+*.broken.*
+*.pre-*
+*.stub.*
+*.stub
+*.broken
+
+# Runtime state JSON
+adaptive-recovery-state.json
+brain-orchestration-state.json
+orchestrator-state.json
+predictive-state.json
+
+# SQLite WAL / SHM
 *.db-shm
 *.db-wal
+data/goals.db
+data/neuro-history/
 
-# Secrets / tunnel credentials — never commit
-cloudflared/
-rotate.ps1
-*.pem
-*.key
-wp-cli.phar
+# Log rotation artifacts
+logs/*.log.1
+logs/*.log.[0-9]*
+logs/scan-*.jsonl
+
+# SSH keys/configs accidentally in repo root
+ssh/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+
+# Config service runtime DB
+services/config-service/config.db
+
+# Admin dashboard pre-edit snapshots
+apps/admin-dashboard/*.pre-*

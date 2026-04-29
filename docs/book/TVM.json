@@ -1,0 +1,336 @@
+{
+  "version": 1,
+  "generated": "2026-04-17",
+  "topics": {
+    "overview": {
+      "aliases": ["intro", "start here", "what is this"],
+      "chapters": ["00-overview.md#what-this-is", "00-overview.md#start-here-map"],
+      "related": ["glossary", "sources-index"],
+      "weight": 0.9,
+      "last_seeded": "2026-04-17"
+    },
+    "glossary": {
+      "aliases": ["terms", "definitions"],
+      "chapters": ["01-glossary.md"],
+      "related": ["overview"],
+      "weight": 0.5,
+      "last_seeded": "2026-04-17"
+    },
+    "env-vars": {
+      "aliases": ["env", "environment", "secrets", "configuration", ".env"],
+      "chapters": ["02-variables-and-parameters.md", "06-configs.md#environment"],
+      "related": ["auth", "secrets-rotation", "vps-env-blob"],
+      "weight": 1.0,
+      "last_seeded": "2026-04-17"
+    },
+    "ports": {
+      "aliases": ["port", "binding", "listen"],
+      "chapters": ["02-variables-and-parameters.md#server-runtime", "00-overview.md#runtime-shape-at-a-glance"],
+      "related": ["gateway", "pm2"],
+      "weight": 0.8,
+      "last_seeded": "2026-04-17"
+    },
+    "pm2": {
+      "aliases": ["process manager", "ecosystem", "daemon"],
+      "chapters": ["06-configs.md#pm2", "02-variables-and-parameters.md#pm2-process-defaults-tunables"],
+      "related": ["vps", "deploy"],
+      "weight": 0.8,
+      "last_seeded": "2026-04-17"
+    },
+    "schematics": {
+      "aliases": ["architecture", "diagram", "topology", "data flow"],
+      "chapters": ["03-schematics.md"],
+      "related": ["routes", "schema"],
+      "weight": 0.85,
+      "last_seeded": "2026-04-17"
+    },
+    "schema": {
+      "aliases": ["database", "tables", "supabase schema", "sql", "migrations"],
+      "chapters": ["04-schema.md"],
+      "related": ["rls", "rpcs", "treasury"],
+      "weight": 1.0,
+      "last_seeded": "2026-04-17"
+    },
+    "rls": {
+      "aliases": ["row level security", "auth.uid", "policy", "supabase policy"],
+      "chapters": ["04-schema.md#row-level-security-policies", "09-policies.md#row-level-security"],
+      "related": ["schema", "auth"],
+      "weight": 0.9,
+      "last_seeded": "2026-04-17"
+    },
+    "rpcs": {
+      "aliases": ["postgres function", "stored procedure", "bulk_claim_tasks", "market_stats"],
+      "chapters": ["04-schema.md#database-functions-rpcs-triggers"],
+      "related": ["schema", "tasks-market"],
+      "weight": 0.7,
+      "last_seeded": "2026-04-17"
+    },
+    "treasury": {
+      "aliases": ["ledger", "double-entry", "accounts", "payouts", "withdrawals", "audit log"],
+      "chapters": ["04-schema.md#tables-treasury-core-20260411000000_hardened_treasury_schemasql", "03-schematics.md#treasury-flow", "10-rules-and-states.md#invariants-enforced-by-db-triggers"],
+      "related": ["payments", "rls", "policies"],
+      "weight": 0.95,
+      "last_seeded": "2026-04-17"
+    },
+    "tasks-market": {
+      "aliases": ["tasks_market", "bulk claim", "agent job board"],
+      "chapters": ["04-schema.md#tables-complete-system", "10-rules-and-states.md#tasks-market-lifecycle", "03-schematics.md#tasks-market-claim-flow"],
+      "related": ["rpcs", "agents"],
+      "weight": 0.75,
+      "last_seeded": "2026-04-17"
+    },
+    "routes": {
+      "aliases": ["endpoints", "api", "http", "express"],
+      "chapters": ["05-routes-and-navigation.md"],
+      "related": ["auth", "navigation"],
+      "weight": 1.0,
+      "last_seeded": "2026-04-17"
+    },
+    "navigation": {
+      "aliases": ["pages", "bridge-nav.js", "sitemap", "route map"],
+      "chapters": ["05-routes-and-navigation.md#public-html-navigation"],
+      "related": ["routes"],
+      "weight": 0.7,
+      "last_seeded": "2026-04-17"
+    },
+    "gateway": {
+      "aliases": ["bridge-gateway", "gateway.js", "nginx upstream"],
+      "chapters": ["05-routes-and-navigation.md#gatewayjs-as-written-on-e-drive", "03-schematics.md#top-level-process-topology-vps"],
+      "related": ["ports", "nginx"],
+      "weight": 0.8,
+      "last_seeded": "2026-04-17"
+    },
+    "vercel": {
+      "aliases": ["edge", "serverless", "api/index.js", "go.ai-os.co.za"],
+      "chapters": ["06-configs.md#vercel", "05-routes-and-navigation.md#vercel-edge-rewrites", "03-schematics.md#edge-surface-vercel"],
+      "related": ["security-headers", "csp"],
+      "weight": 0.85,
+      "last_seeded": "2026-04-17"
+    },
+    "nginx": {
+      "aliases": ["reverse proxy", "proxy_pass", "tls", "certbot"],
+      "chapters": ["06-configs.md#nginx-vps", "08-procedures.md#nginx-update"],
+      "related": ["vps", "ipv4-upstream"],
+      "weight": 0.7,
+      "last_seeded": "2026-04-17"
+    },
+    "vps": {
+      "aliases": ["server", "ssh", "root@102.208.228.44", "var/www/bridgeai"],
+      "chapters": ["08-procedures.md#deploy", "12-referrals.md#hosting-infrastructure"],
+      "related": ["pm2", "nginx", "deploy"],
+      "weight": 0.85,
+      "last_seeded": "2026-04-17"
+    },
+    "configs": {
+      "aliases": ["config files", "package.json", "dockerfile", "procfile", "railway", "render"],
+      "chapters": ["06-configs.md"],
+      "related": ["env-vars", "pm2", "vercel"],
+      "weight": 0.8,
+      "last_seeded": "2026-04-17"
+    },
+    "security-headers": {
+      "aliases": ["csp", "hsts", "x-frame-options", "headers"],
+      "chapters": ["06-configs.md#security-headers-applied-to-", "09-policies.md#http-security-headers-vercel"],
+      "related": ["vercel", "policies"],
+      "weight": 0.6,
+      "last_seeded": "2026-04-17"
+    },
+    "auth": {
+      "aliases": ["login", "jwt", "bearer", "token", "admin token", "session", "clerk", "siwe"],
+      "chapters": ["09-policies.md#authentication-and-session", "07-methodologies.md#auth-methodology", "05-routes-and-navigation.md#auth-bearer-conventions"],
+      "related": ["secrets-rotation", "super-admin", "rls"],
+      "weight": 1.0,
+      "last_seeded": "2026-04-17"
+    },
+    "super-admin": {
+      "aliases": ["superuser", "override", "ryanpcowan", "SUPER_ADMIN_IDENTITY"],
+      "chapters": ["09-policies.md#super-admin-override"],
+      "related": ["auth"],
+      "weight": 0.8,
+      "last_seeded": "2026-04-17"
+    },
+    "secrets-rotation": {
+      "aliases": ["rotate", "90 days", "jwt secret"],
+      "chapters": ["09-policies.md#token-storage-and-verification", "02-variables-and-parameters.md#auth-secrets-rotate-every-90-days"],
+      "related": ["env-vars", "auth"],
+      "weight": 0.6,
+      "last_seeded": "2026-04-17"
+    },
+    "payments": {
+      "aliases": ["payfast", "ipn", "checkout", "zar", "stripe"],
+      "chapters": ["09-policies.md#payments", "05-routes-and-navigation.md#core-serverjs-route-map-selected", "11-legal.md#payments-compliance-payfast"],
+      "related": ["treasury", "withdrawals"],
+      "weight": 0.9,
+      "last_seeded": "2026-04-17"
+    },
+    "withdrawals": {
+      "aliases": ["withdraw", "payout", "admin withdraw", "fiat_payouts"],
+      "chapters": ["09-policies.md#withdrawals", "05-routes-and-navigation.md#core-serverjs-route-map-selected"],
+      "related": ["treasury", "payments"],
+      "weight": 0.7,
+      "last_seeded": "2026-04-17"
+    },
+    "llm": {
+      "aliases": ["ai provider", "anthropic", "openai", "openrouter", "kilo", "claude", "model routing"],
+      "chapters": ["07-methodologies.md#llm-fallback-methodology", "03-schematics.md#llm-provider-fallback-chain"],
+      "related": ["env-vars", "partnerships"],
+      "weight": 0.85,
+      "last_seeded": "2026-04-17"
+    },
+    "partnerships": {
+      "aliases": ["claude partner", "affiliate", "referral commission"],
+      "chapters": ["11-legal.md#partner-declarations", "12-referrals.md"],
+      "related": ["llm"],
+      "weight": 0.5,
+      "last_seeded": "2026-04-17"
+    },
+    "methodologies": {
+      "aliases": ["protocol", "how we work", "migration protocol", "deploy protocol"],
+      "chapters": ["07-methodologies.md"],
+      "related": ["procedures"],
+      "weight": 0.8,
+      "last_seeded": "2026-04-17"
+    },
+    "procedures": {
+      "aliases": ["runbook", "deploy", "backup", "restore", "watchdog", "seeding"],
+      "chapters": ["08-procedures.md"],
+      "related": ["methodologies", "vps"],
+      "weight": 0.9,
+      "last_seeded": "2026-04-17"
+    },
+    "backup": {
+      "aliases": ["restore", "s3", "cron", "recovery"],
+      "chapters": ["08-procedures.md#backup"],
+      "related": ["procedures", "incident"],
+      "weight": 0.7,
+      "last_seeded": "2026-04-17"
+    },
+    "deploy": {
+      "aliases": ["deployment", "release", "pm2 restart", "git pull"],
+      "chapters": ["08-procedures.md#deploy", "07-methodologies.md#deploy-protocol-vps"],
+      "related": ["vps", "vercel"],
+      "weight": 0.95,
+      "last_seeded": "2026-04-17"
+    },
+    "testing": {
+      "aliases": ["jest", "tests", "preflight", "health"],
+      "chapters": ["07-methodologies.md#testing-methodology"],
+      "related": ["procedures"],
+      "weight": 0.5,
+      "last_seeded": "2026-04-17"
+    },
+    "policies": {
+      "aliases": ["security policy", "coding policy", "data handling"],
+      "chapters": ["09-policies.md"],
+      "related": ["legal", "auth"],
+      "weight": 0.85,
+      "last_seeded": "2026-04-17"
+    },
+    "rules": {
+      "aliases": ["state machine", "lifecycle", "invariants", "status enum"],
+      "chapters": ["10-rules-and-states.md"],
+      "related": ["schema", "tasks-market"],
+      "weight": 0.75,
+      "last_seeded": "2026-04-17"
+    },
+    "invariants": {
+      "aliases": ["double-entry", "hash chain", "trigger"],
+      "chapters": ["10-rules-and-states.md#invariants-enforced-by-db-triggers"],
+      "related": ["treasury", "audit"],
+      "weight": 0.6,
+      "last_seeded": "2026-04-17"
+    },
+    "audit": {
+      "aliases": ["audit log", "hash-chain", "tamper-evident"],
+      "chapters": ["09-policies.md#data-handling", "11-legal.md#compliance-claims"],
+      "related": ["invariants", "treasury"],
+      "weight": 0.65,
+      "last_seeded": "2026-04-17"
+    },
+    "legal": {
+      "aliases": ["license", "mit", "gdpr", "ccpa", "privacy", "tos"],
+      "chapters": ["11-legal.md"],
+      "related": ["policies", "consent"],
+      "weight": 0.6,
+      "last_seeded": "2026-04-17"
+    },
+    "consent": {
+      "aliases": ["consentvault", "osint", "databunker", "data subject"],
+      "chapters": ["09-policies.md#data-handling", "11-legal.md#data-protection-and-privacy"],
+      "related": ["legal", "policies"],
+      "weight": 0.5,
+      "last_seeded": "2026-04-17"
+    },
+    "referrals": {
+      "aliases": ["external systems", "vps address", "supabase project", "lineascan"],
+      "chapters": ["12-referrals.md"],
+      "related": ["partnerships"],
+      "weight": 0.6,
+      "last_seeded": "2026-04-17"
+    },
+    "sources-index": {
+      "aliases": ["md files", "docs index", "junkyard"],
+      "chapters": ["13-index-of-sources.md"],
+      "related": ["overview"],
+      "weight": 0.4,
+      "last_seeded": "2026-04-17"
+    },
+    "gaps": {
+      "aliases": ["conflict", "missing docs", "drift", "todo"],
+      "chapters": ["14-gaps-and-conflicts.md"],
+      "related": ["changelog"],
+      "weight": 0.5,
+      "last_seeded": "2026-04-17"
+    },
+    "brdg": {
+      "aliases": ["bridge token", "linea", "totalSupply", "0x5f0541302bd4fC672018b07a35FA5f294A322947"],
+      "chapters": ["11-legal.md#compliance-claims", "12-referrals.md#blockchain"],
+      "related": ["treasury"],
+      "weight": 0.55,
+      "last_seeded": "2026-04-17"
+    },
+    "tvm-api": {
+      "aliases": ["/api/tvm", "topic vector matrix"],
+      "chapters": ["05-routes-and-navigation.md#core-serverjs-route-map-selected", "10-rules-and-states.md#tvm-approval-machine-product-surface"],
+      "related": ["routes"],
+      "weight": 0.4,
+      "last_seeded": "2026-04-17"
+    },
+    "ipv4-upstream": {
+      "aliases": ["localhost", "::1", "nginx 127.0.0.1", "error 111"],
+      "chapters": ["06-configs.md#nginx-vps", "08-procedures.md#nginx-update"],
+      "related": ["nginx"],
+      "weight": 0.45,
+      "last_seeded": "2026-04-17"
+    },
+    "vps-env-blob": {
+      "aliases": ["VPS_ENV_BLOB", "base64 env", "sed dedup"],
+      "chapters": ["02-variables-and-parameters.md#vps-env-blob"],
+      "related": ["env-vars", "secrets-rotation"],
+      "weight": 0.35,
+      "last_seeded": "2026-04-17"
+    }
+  },
+  "problem_patterns": [
+    { "match": ["401", "unauthorized", "token invalid", "Bearer"], "topics": ["auth", "super-admin"] },
+    { "match": ["403", "forbidden", "admin token", "X-Admin-Token"], "topics": ["auth"] },
+    { "match": ["500", "gateway", "502", "upstream"], "topics": ["gateway", "nginx", "ports"] },
+    { "match": ["error 111", "connection refused", "localhost", "::1"], "topics": ["ipv4-upstream", "nginx"] },
+    { "match": ["rls", "row-level", "auth.uid", "initplan"], "topics": ["rls", "schema"] },
+    { "match": ["N+1", "slow query", "market_stats", "bulk_claim_tasks"], "topics": ["rpcs", "tasks-market"] },
+    { "match": ["unbalanced", "double-entry", "ledger_entries"], "topics": ["invariants", "treasury"] },
+    { "match": ["payfast", "ipn", "signature mismatch"], "topics": ["payments"] },
+    { "match": ["zar", "r499", "r2499", "pricing"], "topics": ["payments"] },
+    { "match": ["pm2", "restart loop", "max_restarts"], "topics": ["pm2"] },
+    { "match": ["deploy", "git pull", "restart all"], "topics": ["deploy", "procedures"] },
+    { "match": ["supabase", "service role", "anon key"], "topics": ["env-vars", "schema"] },
+    { "match": ["brdg", "linea", "totalSupply"], "topics": ["brdg"] },
+    { "match": ["consent", "gdpr", "ccpa", "subject rights"], "topics": ["consent", "legal"] },
+    { "match": ["llm", "kilo", "anthropic", "openrouter", "provider order"], "topics": ["llm"] },
+    { "match": ["gateway.js port", "listen 3000", "listen 8080"], "topics": ["gaps", "gateway"] },
+    { "match": ["license file", "mit license", "LICENSE missing"], "topics": ["gaps", "legal"] },
+    { "match": ["junkyard", "duplicate docs"], "topics": ["sources-index", "gaps"] },
+    { "match": ["brain-live", "ehsa-brain", "cognitive brain", "blank page", "empty SPA", "three.js brain"], "topics": ["gaps", "gateway", "frontend"] },
+    { "match": ["gateway stub", "3781 deletions", "commit 7856244", "gateway.js shrunk"], "topics": ["gaps", "gateway"] }
+  ]
+}

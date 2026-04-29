@@ -2,12 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Bridge AI OS Affiliate Program — earn revenue by referring users to the Bridge AI OS platform.">
+<meta name="description" content="Bridge AI OS affiliate programme — earn 25 BRDG per referral. Grow the network, share the rewards.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/affiliate">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/affiliate">
+<meta property="og:title" content="Bridge AI OS — Affiliate Program">
+<meta property="og:description" content="Bridge AI OS affiliate programme — earn 25 BRDG per referral. Grow the network, share the rewards.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bridge AI OS — Affiliate Program">
+<meta name="twitter:description" content="Bridge AI OS affiliate programme — earn 25 BRDG per referral. Grow the network, share the rewards.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bridge AI OS — Affiliate Program</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--p:#a78bfa;--o:#fb923c;--t:#c8dce8;--d:#628ba0}
+:root{--bg:#050a0f;--s:#0d1620;--b:#1a2d40;--a:#00c8ff;--g:#00e57b;--r:#ff3c5a;--y:#ffd166;--p:#a78bfa;--o:#fb923c;--t:#c8dce8;--d:#4d6678}
 body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,sans-serif}
 .nav{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#0a1520;border-bottom:1px solid var(--b);font-size:10px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
 .nav a{color:var(--d);text-decoration:none;padding:3px 6px;border:1px solid var(--b);border-radius:3px}.nav a:hover{color:var(--a);border-color:var(--a)}
@@ -58,6 +70,21 @@ td{padding:.4rem .5rem;border-bottom:1px solid #0a1520}
 .footer{text-align:center;padding:2rem;border-top:1px solid var(--b);font-size:.6rem;color:var(--d)}
 .footer a{color:var(--a);text-decoration:none}
 @media(max-width:600px){.tiers{grid-template-columns:1fr 1fr}.features{grid-template-columns:1fr}}
+</style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
 </style>
 </head>
 <body>
@@ -150,6 +177,12 @@ document.querySelectorAll('.upgrade-cta').forEach(el => el.style.display = isAut
 
 const tierColors = { starter:'starter', bronze:'bronze', silver:'silver', gold:'gold', platinum:'plat', diamond:'dia' };
 
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s == null ? '' : s);
+  return d.innerHTML;
+}
+
 async function load() {
   // Program info
   const [prog, stats, lb, creatives] = await Promise.all([
@@ -175,9 +208,23 @@ async function load() {
   ).join('');
 
   // Leaderboard
-  document.getElementById('leaderboard-tbody').innerHTML = (lb.leaderboard || []).map(a =>
-    `<tr><td>${a.rank}</td><td>${a.name}</td><td><span class="badge ${tierColors[a.tier] || ''}">${a.tier.toUpperCase()}</span></td><td>${a.referrals}</td><td>${a.conversions}</td><td>$${a.earned.toLocaleString()}</td></tr>`
-  ).join('');
+  const lbTbody = document.getElementById('leaderboard-tbody');
+  lbTbody.textContent = '';
+  (lb.leaderboard || []).forEach(function(a) {
+    const tr = document.createElement('tr');
+    [a.rank, a.name].forEach(function(v) {
+      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+    });
+    const tierTd = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = 'badge ' + (tierColors[a.tier] || '');
+    badge.textContent = String(a.tier || '').toUpperCase();
+    tierTd.appendChild(badge); tr.appendChild(tierTd);
+    [a.referrals, a.conversions, '$' + (a.earned || 0).toLocaleString()].forEach(function(v) {
+      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+    });
+    lbTbody.appendChild(tr);
+  });
 
   // Creatives
   document.getElementById('creatives').innerHTML = (creatives.creatives || []).map(c =>
@@ -212,12 +259,22 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const r = await fetch('/api/affiliate/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('join-name').value, email: document.getElementById('join-email').value }) }).then(r => r.json());
   if (r.ok) {
-    document.getElementById('join-msg').innerHTML = '<span style="color:var(--g)">Welcome! Your code: <b>' + r.code + '</b> | Link: ' + (r.links || [''])[0] + '</span>';
+    const joinMsg = document.getElementById('join-msg');
+    joinMsg.textContent = '';
+    const span = document.createElement('span');
+    span.style.color = 'var(--g)';
+    span.textContent = 'Welcome! Your code: ';
+    const bold = document.createElement('b');
+    bold.textContent = r.code || '';
+    span.appendChild(bold);
+    span.appendChild(document.createTextNode(' | Link: ' + ((r.links || [''])[0] || '')));
+    joinMsg.appendChild(span);
   }
 });
 
 load();
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

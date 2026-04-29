@@ -1,0 +1,39 @@
+# Bridge AI OS — VPS stack: nginx (UI + proxy) + Node API (launch.js)
+#
+# Usage on Ubuntu VPS (Docker Compose v2):
+#   cp .env.example .env && nano .env
+#   docker compose -f docker-compose.vps.yml up -d --build
+#
+# UI + proxied /health:  http://YOUR_VPS_IP:${VPS_HTTP_PORT:-80}/
+# Direct API (optional): same host /health via nginx, or map bridge-api port for debugging.
+
+services:
+  bridge-api:
+    build:
+      context: ./docker/vps
+      dockerfile: Dockerfile.api
+    container_name: bridge-ai-os-api
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+    expose:
+      - "3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: bridge-ai-os-web
+    depends_on:
+      bridge-api:
+        condition: service_healthy
+    ports:
+      - "${VPS_HTTP_PORT:-80}:80"
+    restart: unless-stopped

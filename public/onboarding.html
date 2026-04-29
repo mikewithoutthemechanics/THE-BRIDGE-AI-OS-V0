@@ -1,385 +1,396 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bridge AI OS — Sign In</title>
-<meta name="description" content="Sign in or create your Bridge AI OS account. Access AI agents, CRM, invoicing, and DeFi treasury.">
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#00c8ff">
+<meta charset="UTF-8">
+<meta name="description" content="Get started with Bridge AI OS — quick setup wizard to configure your AI agents, CRM, and treasury.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/onboarding">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/onboarding">
+<meta property="og:title" content="Bridge AI OS — Join">
+<meta property="og:description" content="Get started with Bridge AI OS — quick setup wizard to configure your AI agents, CRM, and treasury.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bridge AI OS — Join">
+<meta name="twitter:description" content="Get started with Bridge AI OS — quick setup wizard to configure your AI agents, CRM, and treasury.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bridge AI OS — Join</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#050a0f;--surface:#0a1520;--card:#0d1a28;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#b794fc;--red:#ff3c5a;--dim:#7a8fa0;--text:#e0e8f0}
-body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:2rem}
-.hero-video{position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;transform:translate(-50%,-50%);z-index:0;object-fit:cover;opacity:.25}
-.hero-overlay{position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse at 50% 40%,transparent 20%,rgba(5,10,15,.8) 65%),linear-gradient(to bottom,rgba(5,10,15,.4) 0%,transparent 30%,transparent 50%,#050a0f 100%)}
-.auth-container{position:relative;z-index:10;width:100%;max-width:440px}
-.brand{text-align:center;margin-bottom:2rem}
-.brand h1{font-size:1.8rem;font-weight:900;letter-spacing:-.02em}
-.brand h1 span{color:var(--cyan)}
-.brand p{color:var(--dim);font-size:.85rem;margin-top:.3rem}
-.auth-box{background:rgba(10,21,32,.95);border:1px solid var(--border);border-radius:16px;padding:1.5rem;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.auth-title{font-size:1.1rem;font-weight:700;text-align:center;margin-bottom:1rem}
-.field{margin-bottom:.75rem}
-.field label{font-size:.8rem;color:var(--dim);font-weight:600;display:block;margin-bottom:.25rem}
-.field input{width:100%;padding:.65rem .8rem;background:#050a0f;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;font-family:inherit}
-.field input:focus{border-color:var(--cyan);outline:none}
-.field input::placeholder{color:#4d6678}
-.btn{width:100%;padding:.7rem;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:.9rem;font-weight:700;transition:all .2s}
-.btn-primary{background:linear-gradient(135deg,#00c8ff,#0090cc);color:#000}
-.btn-primary:hover{opacity:.9}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed}
-.btn-social{background:var(--card);border:1px solid var(--border);color:var(--text);font-weight:600;display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.6rem;margin-bottom:.5rem}
-.btn-social:hover{border-color:var(--cyan)}
-.btn-social svg{width:18px;height:18px;flex-shrink:0}
-.divider{display:flex;align-items:center;gap:.75rem;margin:.75rem 0}
-.divider-line{flex:1;height:1px;background:var(--border)}
-.divider-text{color:#4d6678;font-size:.75rem}
-.links{display:flex;justify-content:space-between;font-size:.8rem;margin-top:.5rem}
-.links button{color:var(--cyan);background:none;border:none;cursor:pointer;font-size:.8rem;font-family:inherit;padding:0}
-.links button:hover{text-decoration:underline}
-.msg{margin-top:1rem;padding:.6rem;border-radius:6px;font-size:.8rem;text-align:center;display:none}
-.msg.error{display:block;background:rgba(255,60,90,.1);color:var(--red);border:1px solid rgba(255,60,90,.15)}
-.msg.success{display:block;background:rgba(0,229,123,.1);color:var(--green);border:1px solid rgba(0,229,123,.15)}
-.footer-link{text-align:center;margin-top:1.5rem;font-size:.8rem;color:var(--dim)}
-.footer-link a{color:var(--cyan)}
-.redirect-notice{text-align:center;margin-bottom:1rem;padding:.5rem;background:rgba(0,200,255,.06);border:1px solid rgba(0,200,255,.15);border-radius:8px;font-size:.8rem;color:var(--cyan);display:none}
-#resetBox{display:none}
-.team-section{padding:4rem 2rem;max-width:900px;margin:0 auto;text-align:center}
-.team-section h2{font-size:1.8rem;font-weight:800;margin-bottom:.5rem}
-.team-section h2 span{color:var(--cyan)}
-.team-section .sub{color:var(--dim);margin-bottom:2rem;font-size:.95rem}
-.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem}
-.team-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:border-color .2s}
-.team-card:hover{border-color:var(--cyan)}
-.team-card .avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:#000;margin:0 auto 1rem}
-.team-card h3{font-size:1rem;font-weight:700;margin-bottom:.2rem}
-.team-card .role{font-size:.8rem;color:var(--cyan);margin-bottom:.5rem}
-.team-card p{font-size:.85rem;color:var(--dim);line-height:1.4}
-.team-cta{margin-top:2rem}
-.team-cta a{color:var(--cyan);font-weight:600;font-size:.9rem}
-:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
-@media(max-width:480px){.auth-box{padding:1rem}.brand h1{font-size:1.4rem}.team-grid{grid-template-columns:1fr}}
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#050a0f;--surface:#0d1620;--surface2:#111d2b;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa}
+  body{background:var(--bg);color:var(--text);font-family:system-ui,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+  .page{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:440px;overflow:hidden}
+  .card-header{padding:2rem 2rem 1rem;text-align:center;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0d1620 0%,#0a1218 100%)}
+  .logo{font-size:1.8rem;font-weight:800;color:var(--accent);letter-spacing:.25em;margin-bottom:.3rem}
+  .logo span{color:var(--green)}
+  .tagline{font-size:.72rem;color:var(--dim);letter-spacing:.1em}
+  .card-body{padding:1.5rem 2rem 2rem;position:relative}
+  .tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid var(--border)}
+  .tab{flex:1;padding:.6rem;text-align:center;font-size:.72rem;letter-spacing:.1em;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .form-panel{display:none}
+  .form-panel.active{display:block}
+  label{display:block;font-size:.68rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem;margin-top:.8rem}
+  label:first-child{margin-top:0}
+  input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.6rem .8rem;border-radius:6px;font-size:.82rem;outline:none;transition:border-color .2s}
+  input:focus{border-color:var(--accent)}
+  input::placeholder{color:#2a3a4a}
+  .btn{width:100%;padding:.7rem;border:none;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;letter-spacing:.08em;margin-top:1rem;transition:filter .2s}
+  .btn:hover{filter:brightness(1.15)}
+  .btn-primary{background:var(--accent);color:#050a0f}
+  .btn-google{background:#fff;color:#333;display:flex;align-items:center;justify-content:center;gap:.5rem;border:1px solid #ddd}
+  .btn-google svg{width:18px;height:18px}
+  .btn-github{background:#24292e;color:#fff;display:flex;align-items:center;justify-content:center;gap:.5rem}
+  .divider{display:flex;align-items:center;gap:.8rem;margin:1rem 0;font-size:.65rem;color:var(--dim);letter-spacing:.1em}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+  .referral-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.6rem .8rem;margin-top:.8rem}
+  .referral-box label{margin:0}
+  .msg{padding:.5rem .8rem;border-radius:6px;font-size:.72rem;margin-top:.8rem;display:none}
+  .msg.ok{display:block;background:rgba(0,229,123,.1);border:1px solid var(--green);color:var(--green)}
+  .msg.err{display:block;background:rgba(255,60,90,.1);border:1px solid var(--red);color:var(--red)}
+  .features{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+  .feat{font-size:.65rem;color:var(--dim);display:flex;align-items:center;gap:.3rem}
+  .feat .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+  .footer{text-align:center;padding:1rem;font-size:.6rem;color:var(--dim)}
+  .footer a{color:var(--accent);text-decoration:none}
+  .pw-strength{height:3px;border-radius:2px;margin-top:.3rem;background:var(--border);overflow:hidden}
+  .pw-strength-bar{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
 </style>
 </head>
 <body>
-
-<div class="hero">
-  <video class="hero-video" autoplay muted loop playsinline id="bgvid">
-    <source src="https://videos.pexels.com/video-files/3129957/3129957-hd_1920_1080_25fps.mp4" type="video/mp4">
-  </video>
-  <div class="hero-overlay"></div>
-
-  <div class="auth-container">
-    <div class="brand">
-      <h1><span>Bridge</span> AI OS</h1>
-      <p>Sign in to access your AI-powered business suite</p>
+<div class="page">
+<div class="card">
+  <div class="card-header">
+    <div class="logo">BRIDGE <span>AI</span></div>
+    <div class="tagline">AI OPERATING SYSTEM — JOIN THE NETWORK</div>
+  </div>
+  <div class="card-body">
+    <div class="tabs">
+      <div class="tab active" data-panel="register">REGISTER</div>
+      <div class="tab" data-panel="login">LOGIN</div>
     </div>
 
-    <div class="redirect-notice" id="redirectNotice"></div>
+    <!-- REGISTER -->
+    <div class="form-panel active" id="panel-register">
+      <button class="btn btn-google" onclick="googleAuth()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
 
-    <div class="auth-box">
-      <!-- Main auth view -->
-      <div id="mainBox">
-        <div class="auth-title" id="title">Sign In</div>
+      <button class="btn btn-github" onclick="githubAuth()">
+        <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        Continue with GitHub
+      </button>
 
-        <!-- Social buttons — plain divs, no form -->
-        <button type="button" class="btn btn-social" onclick="doGoogle()">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-          Continue with Google
-        </button>
+      <div class="divider">OR REGISTER WITH EMAIL</div>
 
-        <button type="button" class="btn btn-social" onclick="doGithub()">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85 0 1.673.114 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
-          Continue with GitHub
-        </button>
+      <form id="register-form">
+        <label>FULL NAME</label>
+        <input id="reg-name" placeholder="Ryan Saunders" autocomplete="name">
+        <label>EMAIL</label>
+        <input id="reg-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>PASSWORD</label>
+        <input id="reg-password" type="password" placeholder="Min 8 characters" autocomplete="new-password" required minlength="8">
+        <div class="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
 
-        <div class="divider">
-          <div class="divider-line"></div>
-          <span class="divider-text">or use email</span>
-          <div class="divider-line"></div>
+        <div class="referral-box">
+          <label>REFERRAL CODE (optional)</label>
+          <input id="reg-referral" placeholder="e.g. BRIDGE2025" style="margin-top:.3rem;background:var(--bg)">
         </div>
 
-        <div class="field" id="nameRow" style="display:none">
-          <label>Full Name</label>
-          <input type="text" id="nameIn" placeholder="Your name">
-        </div>
-        <div class="field">
-          <label>Email</label>
-          <input type="email" id="emailIn" placeholder="you@example.com">
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <input type="password" id="passIn" placeholder="Min 6 characters" minlength="6">
-        </div>
+        <button type="submit" class="btn btn-primary">CREATE ACCOUNT</button>
+      </form>
+      <div class="msg" id="reg-msg"></div>
 
-        <button type="button" class="btn btn-primary" id="submitBtn" onclick="doEmail()">Sign In</button>
-
-        <div class="links">
-          <button type="button" onclick="toggleMode()">Create Account</button>
-          <button type="button" onclick="showReset()">Forgot password?</button>
-        </div>
-      </div>
-
-      <!-- Reset password view -->
-      <div id="resetBox">
-        <div class="auth-title">Reset Password</div>
-        <p style="font-size:.8rem;color:var(--dim);text-align:center;margin-bottom:.75rem">Enter your email and we'll send a reset link.</p>
-        <div class="field">
-          <label>Email</label>
-          <input type="email" id="resetEmailIn" placeholder="you@example.com">
-        </div>
-        <button type="button" class="btn btn-primary" onclick="doReset()">Send Reset Link</button>
-        <div class="links" style="justify-content:center;margin-top:.75rem">
-          <button type="button" onclick="showMain()">Back to Sign In</button>
-        </div>
+      <div class="features">
+        <div class="feat"><span class="dot"></span> 8 AI Agents</div>
+        <div class="feat"><span class="dot"></span> Task Marketplace</div>
+        <div class="feat"><span class="dot"></span> Digital Twin</div>
+        <div class="feat"><span class="dot"></span> Trading Bots</div>
+        <div class="feat"><span class="dot"></span> PTY Terminal</div>
+        <div class="feat"><span class="dot"></span> Revenue Sharing</div>
       </div>
     </div>
 
-    <div class="msg" id="msg"></div>
-    <div class="footer-link"><a href="/">Back to home</a></div>
+    <!-- LOGIN -->
+    <div class="form-panel" id="panel-login">
+      <button class="btn btn-google" onclick="googleAuth()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+
+      <div class="divider">OR LOGIN WITH EMAIL</div>
+
+      <form id="login-form">
+        <label>EMAIL</label>
+        <input id="login-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label>PASSWORD</label>
+        <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit" class="btn btn-primary">SIGN IN</button>
+      </form>
+      <div class="msg" id="login-msg"></div>
+    </div>
+
+    <!-- OAUTH LOADING OVERLAY -->
+    <div id="oauth-loading" style="display:none;position:absolute;inset:0;background:rgba(5,10,15,.85);flex-direction:column;align-items:center;justify-content:center;gap:1rem;z-index:10;border-radius:12px">
+      <div style="width:36px;height:36px;border:3px solid rgba(0,200,255,.2);border-top-color:#00c8ff;border-radius:50%;animation:spin .8s linear infinite"></div>
+      <span style="color:var(--text);font-size:.8rem;letter-spacing:.05em">Connecting to your account...</span>
+    </div>
+  <div class="footer">
+    By joining you agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a><br>
+    <a href="/">Back to Dashboard</a>
   </div>
 </div>
-
-<div class="team-section">
-  <h2>Built by <span>humans</span>, powered by agents</h2>
-  <p class="sub">The team behind Bridge AI OS is building autonomous business infrastructure for Africa and beyond.</p>
-  <div class="team-grid">
-    <div class="team-card"><div class="avatar">RS</div><h3>Ryan Saunders</h3><div class="role">Founder & CEO</div><p>Architect of Bridge AI OS. Building sovereign AI infrastructure for Africa.</p></div>
-    <div class="team-card"><div class="avatar">MS</div><h3>Marvin Saunders</h3><div class="role">Co-Founder & COO</div><p>Operations and partnerships. Scaling the Bridge network across the continent.</p></div>
-    <div class="team-card"><div class="avatar" style="background:linear-gradient(135deg,var(--green),var(--cyan))">AI</div><h3>Bridge AI</h3><div class="role">Chief Intelligence</div><p>35+ autonomous agents managing CRM, finance, trading, marketing, and compliance 24/7.</p></div>
-    <div class="team-card"><div class="avatar" style="background:linear-gradient(135deg,var(--purple),var(--cyan))">7P</div><h3>Prime Council</h3><div class="role">C-Suite Agents</div><p>Aurora, Atlas, Vega, Omega, Halo, Nexus, Sentinel — autonomous executive team.</p></div>
-  </div>
-  <div class="team-cta">
-    <a href="https://agentcy.co.za" target="_blank" rel="noopener" style="display:inline-block;padding:.5rem 1rem">Visit Agentcy.co.za for consulting &rarr;</a>
-  </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-// ── Init ─────────────────────────────────────────────────────────────────
-var sb;
-try {
-  sb = window.supabase.createClient(
-    'https://sdkysuvmtqjqopmdpvoz.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNka3lzdXZtdHFqcW9wbWRwdm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2ODU4MzQsImV4cCI6MjA5MTI2MTgzNH0.fE28i7UyAmvun7046Jn4taHFN756-s70KFRnG863bV0'
-  );
-  console.log('[AUTH] Supabase client ready');
-} catch (e) {
-  console.error('[AUTH] Failed to init Supabase:', e);
-}
+// Supabase Auth — OAuth flows handled by Supabase, not raw client IDs
+const SUPERUSERS = [
+  'ryanpcowan@gmail.com',
+  'michaelgraemek@gmail.com',
+  'marvin.saunders@gmail.com',
+];
+let _supabaseClient = null;
+let _oauthLoading = false;
 
-// Expose for bridge-auth.js signOut
-window._supabase = sb;
-
-var isSignUp = false;
-var _redirecting = false;
-var params = new URLSearchParams(window.location.search);
-var redirectTo = params.get('redirect');
-var safeRedirect = (redirectTo && redirectTo.charAt(0) === '/' && redirectTo.charAt(1) !== '/') ? redirectTo : null;
-
-if (safeRedirect) {
-  document.getElementById('redirectNotice').style.display = 'block';
-  document.getElementById('redirectNotice').textContent = 'Sign in to access ' + safeRedirect;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────
-function showMsg(type, text) {
-  var m = document.getElementById('msg');
-  m.className = 'msg ' + type;
-  m.textContent = text;
-}
-function clearMsg() {
-  document.getElementById('msg').className = 'msg';
-}
-
-function handleSession(session) {
-  if (_redirecting) return;
-  _redirecting = true;
-  console.log('[AUTH] Session obtained:', session.user.email);
-
-  localStorage.setItem('bridge_token', session.access_token);
-  localStorage.setItem('bridge_user', JSON.stringify({
-    id: session.user.id,
-    email: session.user.email,
-    name: (session.user.user_metadata && session.user.user_metadata.name) || ''
-  }));
-
-  // Set cookie so server-side pageGuard can read it
-  document.cookie = 'bridge_token=' + session.access_token + ';path=/;max-age=' + (7*24*3600) + ';SameSite=Lax';
-
-  // Determine redirect destination
-  var dest = sessionStorage.getItem('auth_redirect') || '/console.html';
-  sessionStorage.removeItem('auth_redirect');
-
-  // First-time users go to welcome tour
-  if (!localStorage.getItem('bridge_tour_done')) {
-    dest = '/welcome-tour.html';
-  }
-
-  showMsg('success', 'Signed in! Redirecting...');
-  console.log('[AUTH] Redirecting to:', dest);
-  setTimeout(function() { window.location.replace(dest); }, 300);
-}
-
-// ── Check existing session on page load (handles OAuth callback) ─────────
-(async function() {
-  if (!sb) return;
+(async function initSupabaseAuth() {
   try {
-    var res = await sb.auth.getSession();
-    if (res.data && res.data.session) {
-      handleSession(res.data.session);
-      return; // Don't show login form
+    const res = await fetch('/api/config/oauth');
+    if (!res.ok) throw new Error('Config endpoint unavailable');
+    const cfg = await res.json();
+    if (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase) {
+      _supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
     }
-  } catch (e) {
-    console.error('[AUTH] getSession error:', e);
+  } catch {
+    document.querySelectorAll('.btn-google, .btn-github').forEach(btn => {
+      btn.disabled = true;
+      btn.title = 'Authentication unavailable — check your connection';
+    });
   }
-  // No session — show login form (it's already visible by default)
 })();
 
-// ── Listen for auth state changes (catches OAuth callback token exchange) ─
-if (sb) {
-  sb.auth.onAuthStateChange(function(event, session) {
-    console.log('[AUTH] onAuthStateChange:', event);
-    if (event === 'SIGNED_IN' && session) {
-      handleSession(session);
-    }
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
   });
+});
+
+// Password strength
+document.getElementById('reg-password').addEventListener('input', (e) => {
+  const pw = e.target.value;
+  const bar = document.getElementById('pw-bar');
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const pct = Math.min(100, score * 20);
+  const colors = ['var(--red)', 'var(--red)', 'var(--yellow)', 'var(--yellow)', 'var(--green)', 'var(--green)'];
+  bar.style.width = pct + '%';
+  bar.style.background = colors[score] || 'var(--red)';
+});
+
+function showMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
 }
 
-// ── View toggles ─────────────────────────────────────────────────────────
-function toggleMode() {
-  isSignUp = !isSignUp;
-  clearMsg();
-  document.getElementById('title').textContent = isSignUp ? 'Create Account' : 'Sign In';
-  document.getElementById('submitBtn').textContent = isSignUp ? 'Create Account' : 'Sign In';
-  document.getElementById('nameRow').style.display = isSignUp ? 'block' : 'none';
-}
-function showReset() {
-  clearMsg();
-  document.getElementById('mainBox').style.display = 'none';
-  document.getElementById('resetBox').style.display = 'block';
-  document.getElementById('resetEmailIn').value = document.getElementById('emailIn').value;
-}
-function showMain() {
-  clearMsg();
-  document.getElementById('resetBox').style.display = 'none';
-  document.getElementById('mainBox').style.display = 'block';
+function isSuperAdminEmail(email) {
+  return typeof email === 'string' && SUPERUSERS.includes(email.trim().toLowerCase());
 }
 
-// ── Auth actions ─────────────────────────────────────────────────────────
-async function doGoogle() {
-  console.log('[AUTH] Google OAuth clicked');
-  clearMsg();
-  if (!sb) { showMsg('error', 'Auth not initialized'); return; }
-  // Store redirect in sessionStorage before OAuth (query params get lost)
-  sessionStorage.setItem('auth_redirect', safeRedirect || '/portal.html');
+function getPostAuthDestination(email) {
+  return isSuperAdminEmail(email) ? '/admin.html' : '/dashboard.html';
+}
+
+// Register
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    email: document.getElementById('reg-email').value,
+    password: document.getElementById('reg-password').value,
+    name: document.getElementById('reg-name').value,
+  };
   try {
-    var res = await sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/onboarding.html' }
+    const res = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
-    console.log('[AUTH] Google result:', JSON.stringify(res));
-    if (res.error) showMsg('error', res.error.message);
-    // Browser will redirect to Google automatically
-  } catch (e) {
-    console.error('[AUTH] Google error:', e);
-    showMsg('error', 'Google sign-in failed: ' + e.message);
-  }
-}
-
-async function doGithub() {
-  console.log('[AUTH] GitHub OAuth clicked');
-  clearMsg();
-  if (!sb) { showMsg('error', 'Auth not initialized'); return; }
-  // Store redirect in sessionStorage before OAuth (query params get lost)
-  sessionStorage.setItem('auth_redirect', safeRedirect || '/portal.html');
-  try {
-    var res = await sb.auth.signInWithOAuth({
-      provider: 'github',
-      options: { redirectTo: window.location.origin + '/onboarding.html' }
-    });
-    console.log('[AUTH] GitHub result:', JSON.stringify(res));
-    if (res.error) showMsg('error', res.error.message);
-  } catch (e) {
-    console.error('[AUTH] GitHub error:', e);
-    showMsg('error', 'GitHub sign-in failed: ' + e.message);
-  }
-}
-
-async function doEmail() {
-  console.log('[AUTH] Email submit clicked, isSignUp:', isSignUp);
-  clearMsg();
-  if (!sb) { showMsg('error', 'Auth not initialized'); return; }
-
-  var email = document.getElementById('emailIn').value.trim();
-  var pass = document.getElementById('passIn').value;
-  if (!email || !pass) { showMsg('error', 'Email and password are required'); return; }
-  if (pass.length < 6) { showMsg('error', 'Password must be at least 6 characters'); return; }
-
-  var btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = isSignUp ? 'Creating...' : 'Signing in...';
-
-  try {
-    var res;
-    if (isSignUp) {
-      var opts = { email: email, password: pass };
-      var name = document.getElementById('nameIn').value.trim();
-      if (name) opts.options = { data: { name: name } };
-      res = await sb.auth.signUp(opts);
-      console.log('[AUTH] SignUp result:', JSON.stringify({ error: res.error, hasSession: !!res.data.session, hasUser: !!res.data.user }));
+    const data = await res.json();
+    if (res.ok && data.token) {
+      localStorage.setItem('bridge_token', data.token);
+      localStorage.setItem('user_email', body.email.toLowerCase());
+      localStorage.setItem('user_id', String(data.userId || data.id || data.user?.id || ''));
+      showMsg('reg-msg', 'Account created! Loading your dashboard...', true);
+      localStorage.setItem('bridge_user', JSON.stringify({
+        email: body.email,
+        role: isSuperAdminEmail(body.email) ? 'superadmin' : (data.role || 'member'),
+        name: data.name || body.email.split('@')[0],
+        credits: data.credits || 100,
+        plan: data.plan || 'free'
+      }));
+      // Claim referral if provided
+      const ref = document.getElementById('reg-referral').value.trim();
+      if (ref) {
+        await fetch('/referral/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + data.token },
+          body: JSON.stringify({ code: ref }),
+        });
+      }
+      const dest = getPostAuthDestination(body.email);
+      setTimeout(() => { location.href = dest; }, 1000);
     } else {
-      res = await sb.auth.signInWithPassword({ email: email, password: pass });
-      console.log('[AUTH] SignIn result:', JSON.stringify({ error: res.error, hasSession: !!res.data.session }));
+      showMsg('reg-msg', data.error || 'Registration failed', false);
     }
-
-    if (res.error) {
-      showMsg('error', res.error.message);
-    } else if (res.data.session) {
-      handleSession(res.data.session);
-      return;
-    } else if (res.data.user && !res.data.session) {
-      showMsg('success', 'Account created! Check your email to confirm, then sign in.');
-      isSignUp = false;
-      document.getElementById('title').textContent = 'Sign In';
-      document.getElementById('nameRow').style.display = 'none';
-    }
-  } catch (e) {
-    console.error('[AUTH] Email error:', e);
-    showMsg('error', 'Connection error: ' + e.message);
+  } catch (err) {
+    showMsg('reg-msg', 'Network error: ' + err.message, false);
   }
+});
 
-  btn.disabled = false;
-  btn.textContent = isSignUp ? 'Create Account' : 'Sign In';
-}
-
-async function doReset() {
-  clearMsg();
-  if (!sb) { showMsg('error', 'Auth not initialized'); return; }
-  var email = document.getElementById('resetEmailIn').value.trim();
-  if (!email) { showMsg('error', 'Enter your email'); return; }
+// Login
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    email: document.getElementById('login-email').value,
+    password: document.getElementById('login-password').value,
+  };
   try {
-    var res = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/onboarding.html'
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
-    if (res.error) showMsg('error', res.error.message);
-    else showMsg('success', 'Reset link sent! Check your email.');
-  } catch (e) {
-    showMsg('error', 'Connection error: ' + e.message);
+    const data = await res.json();
+    if (res.ok && data.token) {
+      localStorage.setItem('bridge_token', data.token);
+      localStorage.setItem('user_email', body.email.toLowerCase());
+      localStorage.setItem('user_id', String(data.userId || data.id || data.user?.id || ''));
+      showMsg('login-msg', 'Signed in! Loading your dashboard...', true);
+      localStorage.setItem('bridge_user', JSON.stringify({
+        email: body.email,
+        role: isSuperAdminEmail(body.email) ? 'superadmin' : (data.role || 'member'),
+        name: data.name || body.email.split('@')[0],
+        credits: data.credits || 100,
+        plan: data.plan || 'free'
+      }));
+      const dest = getPostAuthDestination(body.email);
+      setTimeout(() => { location.href = dest; }, 1000);
+    } else {
+      showMsg('login-msg', data.error || 'Login failed', false);
+    }
+  } catch (err) {
+    showMsg('login-msg', 'Network error: ' + err.message, false);
+  }
+});
+
+// Collect wizard/plan state from URL for passthrough to auth-callback
+function getWizardParams() {
+  const p = new URLSearchParams(location.search);
+  const wizard   = p.get('wizard')   || '';
+  const intent   = p.get('intent')   || '';
+  const industry = p.get('industry') || '';
+  const plan     = p.get('plan')     || '';
+  const next     = p.get('next')     || '';
+  return { wizard, intent, industry, plan, next };
+}
+
+function buildOAuthRedirectUrl(provider) {
+  const base = location.origin + '/auth-callback';
+  const wp = getWizardParams();
+  const params = new URLSearchParams();
+  if (wp.wizard)   params.set('wizard',   wp.wizard);
+  if (wp.intent)   params.set('intent',   wp.intent);
+  if (wp.industry) params.set('industry', wp.industry);
+  if (wp.plan)     params.set('plan',     wp.plan);
+  if (wp.next)     params.set('next',     wp.next);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+function setOAuthLoading(loading, activeMsgId) {
+  const overlay = document.getElementById('oauth-loading');
+  const msgEl  = document.getElementById(activeMsgId);
+  _oauthLoading = loading;
+  if (loading) {
+    overlay.style.display = 'flex';
+    if (msgEl) { msgEl.className = 'msg'; msgEl.style.display = 'none'; }
+  } else {
+    overlay.style.display = 'none';
   }
 }
 
-// ── Enter key submits email form ─────────────────────────────────────────
-document.getElementById('passIn').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') doEmail();
-});
-document.getElementById('emailIn').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') doEmail();
-});
+function showOAuthMsg(msgId, text, ok) {
+  const el = document.getElementById(msgId);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+async function startOAuth(provider, msgId) {
+  if (_oauthLoading) return;
+  if (!_supabaseClient) {
+    showOAuthMsg(msgId, 'Authentication unavailable — please try again shortly.', false);
+    return;
+  }
+  setOAuthLoading(true, msgId);
+  const redirectTo = buildOAuthRedirectUrl(provider);
+  const { error } = await _supabaseClient.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo },
+  });
+  setOAuthLoading(false, msgId);
+  if (error) showOAuthMsg(msgId, error.message, false);
+}
+
+// Google OAuth via Supabase Auth
+async function googleAuth() {
+  const activeTab = document.querySelector('.tab.active');
+  const msgId = activeTab && activeTab.dataset.panel === 'login' ? 'login-msg' : 'reg-msg';
+  await startOAuth('google', msgId);
+}
+
+// GitHub OAuth via Supabase Auth
+async function githubAuth() {
+  const activeTab = document.querySelector('.tab.active');
+  const msgId = activeTab && activeTab.dataset.panel === 'login' ? 'login-msg' : 'reg-msg';
+  await startOAuth('github', msgId);
+}
+
+// Auto-fill referral from URL
+const urlRef = new URLSearchParams(location.search).get('ref');
+if (urlRef) document.getElementById('reg-referral').value = urlRef;
 </script>
-<script src="/global-nav.js" defer></script>
-<script src="/bridge-widget.js" defer></script>
+<script src="/onboarding.js"></script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

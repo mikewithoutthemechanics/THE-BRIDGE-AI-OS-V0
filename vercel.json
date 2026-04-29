@@ -1,188 +1,32 @@
-{
-  "version": 2,
-  "framework": null,
-  "buildCommand": "node build-static.js",
-  "outputDirectory": "public",
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 60,
-      "includeFiles": "shared/**,port-assignments.json,agents/**,certs/**,lib/**"
-    }
-  },
-  "crons": [
-    { "path": "/api/agents/auto",        "schedule": "0 */6 * * *" },
-    { "path": "/api/infra/auto",         "schedule": "0 */1 * * *" },
-    { "path": "/api/banks/compound",     "schedule": "0 0 * * *"   },
-    { "path": "/api/treasury/reconcile", "schedule": "0 */3 * * *" },
-    { "path": "/api/economy/run-cycle",  "schedule": "*/5 * * * *" }
-  ],
-  "redirects": [
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "ehsa.ai-os.co.za" }],
-      "destination": "/ehsa",
-      "permanent": false
-    },
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "hospitalinabox.ai-os.co.za" }],
-      "destination": "/hospital",
-      "permanent": false
-    },
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "aid.ai-os.co.za" }],
-      "destination": "/aid",
-      "permanent": false
-    },
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "rootedearth.ai-os.co.za" }],
-      "destination": "/rootedearth",
-      "permanent": false
-    },
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "aurora.ai-os.co.za" }],
-      "destination": "/aurora",
-      "permanent": false
-    },
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "ubi.ai-os.co.za" }],
-      "destination": "/ubi",
-      "permanent": false
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Requested-With" }
-      ]
-    }
-  ],
-  "rewrites": [
-    { "source": "/apps",          "destination": "/50-applications.html" },
-    { "source": "/treasury-dash", "destination": "/aoe-dashboard.html" },
-    { "source": "/dashboard",     "destination": "/aoe-dashboard.html" },
-    { "source": "/status",        "destination": "/system-status-dashboard.html" },
-    { "source": "/ban",           "destination": "/ban-home.html" },
-    { "source": "/ehsa",          "destination": "/ehsa-app.html" },
-    { "source": "/supac",         "destination": "/supac-home.html" },
-    { "source": "/ubi",           "destination": "/ubi-home.html" },
-    { "source": "/aid",           "destination": "/aid-home.html" },
-    { "source": "/aurora",        "destination": "/aurora-home.html" },
-    { "source": "/twins",         "destination": "/digital-twin-console.html" },
-    { "source": "/executive",     "destination": "/executive-dashboard.html" },
-    { "source": "/face",          "destination": "/anatomical_face.html" },
-    { "source": "/hospital",      "destination": "/hospital-home.html" },
-    { "source": "/rootedearth",   "destination": "/rootedearth-home.html" },
-    { "source": "/abaas",         "destination": "/abaas.html" },
-    { "source": "/crm",           "destination": "/crm.html" },
-    { "source": "/invoicing",     "destination": "/invoicing.html" },
-    { "source": "/legal",         "destination": "/legal.html" },
-    { "source": "/marketing",     "destination": "/marketing.html" },
-    { "source": "/tickets",       "destination": "/tickets.html" },
-    { "source": "/pricing",       "destination": "/pricing.html" },
-    { "source": "/leadgen",       "destination": "/leadgen.html" },
-    { "source": "/control",       "destination": "/control.html" },
-    { "source": "/registry",      "destination": "/registry.html" },
-    { "source": "/agents",        "destination": "/agents.html" },
-    { "source": "/topology",      "destination": "/topology.html" },
-    { "source": "/docs",          "destination": "/docs.html" },
-    { "source": "/landing",       "destination": "/landing.html" },
-    { "source": "/sitemap",       "destination": "/sitemap.html" },
-    { "source": "/affiliate",     "destination": "/affiliate.html" },
-    { "source": "/governance",    "destination": "/governance.html" },
-    { "source": "/auth-dashboard","destination": "/auth-dashboard.html" },
-    { "source": "/join",          "destination": "/join.html" },
-    { "source": "/welcome",       "destination": "/welcome.html" },
-    { "source": "/home",          "destination": "/home.html" },
-    { "source": "/settings",      "destination": "/settings.html" },
-    { "source": "/marketplace",   "destination": "/marketplace.html" },
-    { "source": "/onboarding",    "destination": "/onboarding.html" },
-    { "source": "/brand",         "destination": "/brand.html" },
-    { "source": "/corporate",     "destination": "/corporate.html" },
-    { "source": "/intelligence",  "destination": "/intelligence.html" },
-    { "source": "/terminal",      "destination": "/terminal.html" },
-    { "source": "/wallet",        "destination": "/wallet.html" },
-    { "source": "/trading",       "destination": "/trading.html" },
-    { "source": "/defi",          "destination": "/defi.html" },
-    { "source": "/avatar",        "destination": "/avatar.html" },
-    { "source": "/admin",         "destination": "/admin.html" },
-    { "source": "/platforms",     "destination": "/platforms.html" },
-    { "source": "/bridge-home",   "destination": "/bridge-home.html" },
-    { "source": "/command-center","destination": "/command-center.html" },
-    { "source": "/infra",         "destination": "/infra.html" },
-    { "source": "/twin-wall",     "destination": "/twin-wall.html" },
-    { "source": "/banks",         "destination": "/banks.html" },
-    { "source": "/logs",          "destination": "/logs.html" },
-    { "source": "/payment",       "destination": "/payment.html" },
-    { "source": "/withdraw",      "destination": "/admin-withdraw.html" },
-    { "source": "/economy",       "destination": "/economy.html" },
-    { "source": "/treasury",      "destination": "/treasury-dashboard.html" },
-    { "source": "/checkout",      "destination": "/checkout.html" },
-    { "source": "/portal",        "destination": "/portal.html" },
-    { "source": "/voice",         "destination": "/voice.html" },
-    { "source": "/console",       "destination": "/console.html" },
-    { "source": "/twin",          "destination": "/twin.html" },
-    { "source": "/offline",       "destination": "/offline.html" },
-    { "source": "/welcome-tour",  "destination": "/welcome-tour.html" },
-    { "source": "/admin-command", "destination": "/admin-command.html" },
-    { "source": "/admin-revenue", "destination": "/admin-revenue.html" },
-    { "source": "/admin-sitemap", "destination": "/admin-sitemap.html" },
-    { "source": "/terminal-v3",   "destination": "/terminal-v3.html" },
-    { "source": "/bridge-audit",  "destination": "/bridge-audit-dashboard.html" },
-    { "source": "/auth-dashboard","destination": "/auth-dashboard.html" },
-    { "source": "/topology-layers","destination": "/topology-layers.html" },
-    { "source": "/view-logs",     "destination": "/view-logs.html" },
-    { "source": "/ui",            "destination": "/ui.html" },
-    { "source": "/applications",  "destination": "/applications.html" },
-    { "source": "/ehsa-app",      "destination": "/ehsa-app.html" },
-    { "source": "/ehsa-brain",    "destination": "/ehsa-brain.html" },
-    { "source": "/quotes",        "destination": "/quotes.html" },
-    { "source": "/customers",     "destination": "/customers.html" },
-    { "source": "/vendors",       "destination": "/vendors.html" },
-    { "source": "/workforce",     "destination": "/workforce.html" },
-    { "source": "/payment-success","destination": "/payment-success.html" },
-    { "source": "/payment-cancel", "destination": "/payment-cancel.html" },
-    { "source": "/face-constrained","destination": "/anatomical_face_constrained_system.html" },
-    { "source": "/face-embodied", "destination": "/anatomical_face_embodied.html" },
-    { "source": "/face-facs",     "destination": "/anatomical_face_facs.html" },
-    { "source": "/face-tension",  "destination": "/anatomical_face_tension_balanced.html" },
-    { "source": "/face-vector",   "destination": "/anatomical_face_vector_muscle.html" },
-    { "source": "/tvm",            "destination": "/tvm.html" },
-    { "source": "/api/tvm",        "destination": "/api" },
-    { "source": "/api/tvm/:path*", "destination": "/api" },
-    { "source": "/skills",        "destination": "/api" },
-    { "source": "/skills/:path*", "destination": "/api" },
-    { "source": "/telemetry",     "destination": "/api" },
-    { "source": "/graph",         "destination": "/api" },
-    { "source": "/teach/:path*",  "destination": "/api" },
-    { "source": "/run/:path*",    "destination": "/api" },
-    { "source": "/live-map",      "destination": "/api" },
-    { "source": "/treasury/:path*","destination": "/api" },
-    { "source": "/swarm/:path*",  "destination": "/api" },
-    { "source": "/econ/:path*",   "destination": "/api" },
-    { "source": "/ubi/:path*",    "destination": "/api" },
-    { "source": "/health", "destination": "/api" },
-    { "source": "/events/stream", "destination": "/api" },
-    { "source": "/orchestrator/status", "destination": "/api" },
-    { "source": "/billing", "destination": "/api" },
-    { "source": "/ask", "destination": "/api" },
-    { "source": "/api/l1/:path*", "destination": "/api" },
-    { "source": "/api/l2/:path*", "destination": "/api" },
-    { "source": "/api/l3/:path*", "destination": "/api" },
-    { "source": "/api/treasury/:path*", "destination": "/api" },
-    { "source": "/api/agents/dispatch", "destination": "/api" },
-    { "source": "/api/agents/queue", "destination": "/api" },
-    { "source": "/api/marketplace/tasks/:path*", "destination": "/api" },
-    { "source": "/api/users", "destination": "/api" },
-    { "source": "/api/events/recent", "destination": "/api" },
-    { "source": "/api/:path*", "destination": "/api" },
-    { "source": "/auth/:path*", "destination": "/api" },
-    { "source": "/referral/:path*", "destination": "/api" }
-  ]
-}
+# Preview Deployment Configuration
+
+# This file configures preview deployments for PRs
+# Each PR gets a live preview environment to validate changes
+
+# For Vercel (recommended for Next.js/React apps)
+[build]
+  command = "npm run build"
+  publish = "build"
+
+# For Netlify
+[build.environment]
+  NODE_VERSION = "18"
+
+# Build command
+[build]
+  command = "npm run build && npm run export"
+
+# Publish directory
+[build]
+  publish = "out"
+
+# Redirect rules for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables for preview
+[build.environment]
+  PREVIEW_MODE = "true"
+  PR_NUMBER = "$REVIEW_ID"

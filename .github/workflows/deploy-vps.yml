@@ -3,39 +3,142 @@ name: Deploy to VPS
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+    env:
+      VPS_ENV_BLOB: ${{ secrets.VPS_ENV_BLOB }}
+      GH_PAT: ${{ secrets.GH_PAT }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend deps
+        run: npm --prefix frontend install --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm --prefix frontend run lint
+
+      - name: Build
+        run: npm --prefix frontend run build
+
       - name: Deploy via SSH
+        if: github.event_name != 'pull_request'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
-          port: ${{ secrets.VPS_PORT || 22 }}
+          port: 22
+          envs: VPS_ENV_BLOB,GH_PAT
           script: |
-            cd /opt/ai-os || exit 1
-            echo "=== Pulling latest code ==="
+            set -e
+            DEPLOY_DIR=/var/www/bridgeai
+
+            if [ -z "$GH_PAT" ]; then
+              echo "ERROR: GH_PAT secret is empty — cannot fetch private repo"
+              exit 1
+            fi
+
+            cd "$DEPLOY_DIR" || { echo "ERROR: $DEPLOY_DIR not found"; exit 1; }
+
+            # Point to authenticated remote, fetch, hard-reset — no merge, no conflicts
+            git remote set-url origin "https://x-access-token:$GH_PAT@github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git"
             git fetch origin main
             git reset --hard origin/main
+            # Remove auth token from remote URL after fetch
+            git remote set-url origin https://github.com/bridgeaios/THE-BRIDGE-AI-OS-V0.git
 
-            echo "=== Installing dependencies ==="
-            npm install --production --no-audit 2>&1 | tail -5
+            echo "=== Deployed HEAD ==="
+            git log --oneline -1
 
-            echo "=== Ensuring .env has required vars ==="
-            # Only add if missing (don't duplicate)
-            grep -q SUPABASE_URL .env 2>/dev/null || echo 'SUPABASE_URL=${{ secrets.SUPABASE_URL }}' >> .env
-            grep -q SUPABASE_SERVICE_KEY .env 2>/dev/null || echo 'SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}' >> .env
-            grep -q SUPABASE_ANON_KEY .env 2>/dev/null || echo 'SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}' >> .env
-            grep -q JWT_SECRET .env 2>/dev/null || echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
+            # Node version guard — @tailwindcss/oxide requires Node ≥ 20
+            echo "=== Building frontend ==="
+            NODE_V="$(node -v 2>/dev/null || true)"
+            if [ -z "$NODE_V" ]; then
+              echo "ERROR: node is not installed on VPS"
+              exit 1
+            fi
+            NODE_MAJOR="$(echo "$NODE_V" | sed -E 's/^v([0-9]+).*/\1/')"
+            if [ -z "$NODE_MAJOR" ] || [ "$NODE_MAJOR" -lt 20 ]; then
+              echo "ERROR: VPS Node $NODE_V < 20 required for frontend build (@tailwindcss/oxide)."
+              echo "Fix on VPS: nvm install 20 && nvm alias default 20 — then re-deploy."
+              exit 1
+            fi
+            npm --prefix frontend install --no-audit --no-fund
+            npm --prefix frontend run build
+            ls -la frontend/dist || exit 1
+            test -f frontend/dist/index.html || exit 1
 
+            # Install production deps
+            npm install --omit=dev --no-audit 2>&1 | tail -5
+
+            # Inject secrets if blob is provided
+            if [ -n "$VPS_ENV_BLOB" ]; then
+              echo "=== Injecting secrets ==="
+              # Remove any existing values for these keys so we don't duplicate
+              sed -i '/^SUPABASE_URL=/d;/^SUPABASE_SERVICE_KEY=/d;/^SUPABASE_ANON_KEY=/d;/^JWT_SECRET=/d;/^GOOGLE_CLIENT_ID=/d;/^GOOGLE_CLIENT_SECRET=/d' .env 2>/dev/null || true
+              echo "$VPS_ENV_BLOB" | base64 -d >> .env
+              echo "" >> .env
+              echo "SUPABASE_URL len: $(grep '^SUPABASE_URL=' .env | cut -d= -f2 | wc -c)"
+              echo "SERVICE_KEY len:  $(grep '^SUPABASE_SERVICE_KEY=' .env | cut -d= -f2 | wc -c)"
+            fi
+
+            # Restart all services with updated env
             echo "=== Restarting services ==="
-            pm2 restart super-brain bridge-gateway --update-env
+            for svc in bridge-gateway super-brain unified-server god-mode-system auth-service; do
+              pm2 restart "$svc" --update-env 2>/dev/null && echo "  ✓ $svc" || echo "  WARN: $svc not running (skipped)"
+            done
             pm2 save
-            echo "=== Deploy complete ==="
+
+            # Quick health check
+            sleep 3
+            curl -sf http://127.0.0.1:8080/health && echo " ✓ gateway healthy" || echo " WARN: gateway health check failed"
+
+            # Reconfigure nginx (idempotent — safe to re-run every deploy)
+            if [ -f scripts/update-nginx.sh ]; then
+              echo "=== Updating nginx config ==="
+              bash scripts/update-nginx.sh
+            fi
+
+            # Ensure TLS cert covers ai-os.co.za and bridge domains
+            if command -v certbot >/dev/null 2>&1; then
+              echo "=== Ensuring TLS certificate SANs ==="
+              # Avoid overlapping certbot executions from concurrent runs/cron.
+              for i in $(seq 1 18); do
+                if pgrep -f "certbot" >/dev/null 2>&1; then
+                  echo "  certbot busy (attempt $i/18), waiting 10s..."
+                  sleep 10
+                else
+                  break
+                fi
+              done
+              certbot --nginx \
+                --non-interactive \
+                --agree-tos \
+                --keep-until-expiring \
+                --cert-name bridge-ai-os.com \
+                --expand \
+                --email admin@bridge-ai-os.com \
+                -d bridge-ai-os.com \
+                -d www.bridge-ai-os.com \
+                -d admin.bridge-ai-os.com \
+                -d go.ai-os.co.za \
+                -d ai-os.co.za \
+                2>&1 | tail -20 || echo "  WARN: certbot SAN update (admin.* may need DNS first)"
+            else
+              echo "  WARN: certbot not installed on VPS"
+            fi
+
             pm2 status

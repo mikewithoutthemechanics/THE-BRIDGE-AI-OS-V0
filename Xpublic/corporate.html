@@ -48,6 +48,14 @@ input:focus,select:focus{border-color:var(--a);outline:none}
 .actions{display:flex;gap:.5rem;margin-top:1rem}
 @media(max-width:768px){.app{grid-template-columns:1fr}.sidebar{display:none}}
 </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -323,5 +331,7 @@ async function loadSection(id) {
 // Initial load
 loadSection('dashboard');
 </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

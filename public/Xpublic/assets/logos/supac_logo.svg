@@ -1,0 +1,412 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <defs>
+
+    <!-- ╔══════════════════════════════╗ -->
+    <!-- ║         FILTERS              ║ -->
+    <!-- ╚══════════════════════════════╝ -->
+    <filter id="coreAura" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="30" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowCyan" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowGold" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowText" x="-15%" y="-40%" width="130%" height="180%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowStar" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowRed" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softBlur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+
+    <!-- ╔══════════════════════════════╗ -->
+    <!-- ║         GRADIENTS            ║ -->
+    <!-- ╚══════════════════════════════╝ -->
+
+    <!-- Deep space background -->
+    <radialGradient id="bgGrad" cx="50%" cy="48%" r="58%">
+      <stop offset="0%"   stop-color="#040d1f"/>
+      <stop offset="55%"  stop-color="#020810"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <!-- Core pulse glow -->
+    <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#00e5ff" stop-opacity="0.28"/>
+      <stop offset="45%"  stop-color="#0055cc" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000820" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Outer soft corona -->
+    <radialGradient id="coronaGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#0033aa" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- C-arc gradient -->
+    <linearGradient id="cArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#ffd200"/>
+      <stop offset="35%"  stop-color="#00e5ff"/>
+      <stop offset="75%"  stop-color="#00a8ff"/>
+      <stop offset="100%" stop-color="#0044cc"/>
+    </linearGradient>
+
+    <!-- Node ring gradient -->
+    <linearGradient id="nodeRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#0055cc"/>
+    </linearGradient>
+
+    <!-- SUPA text gradient -->
+    <linearGradient id="supaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="50%"  stop-color="#7df9ff"/>
+      <stop offset="100%" stop-color="#00aaff"/>
+    </linearGradient>
+
+    <!-- C text gradient -->
+    <linearGradient id="cGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffd200"/>
+      <stop offset="50%"  stop-color="#ff9500"/>
+      <stop offset="100%" stop-color="#ff4400"/>
+    </linearGradient>
+
+    <!-- Tagline gradient -->
+    <linearGradient id="tagGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#00e5ff" stop-opacity="0"/>
+      <stop offset="20%"  stop-color="#00e5ff"/>
+      <stop offset="80%"  stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Gold energy accent stroke -->
+    <linearGradient id="goldArc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#ffd200" stop-opacity="0"/>
+      <stop offset="30%"  stop-color="#ffd200"/>
+      <stop offset="70%"  stop-color="#ff9500"/>
+      <stop offset="100%" stop-color="#ff4400" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Hexagon clip for inner logo area -->
+    <clipPath id="hexClip">
+      <polygon points="500,220 720,340 720,580 500,700 280,580 280,340"/>
+    </clipPath>
+
+  </defs>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- BACKGROUND                                             -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <rect width="1000" height="1000" fill="url(#bgGrad)"/>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- STAR FIELD                                             -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <g opacity="0.8">
+    <!-- Static dim stars -->
+    <circle cx="58"  cy="42"  r="0.9" fill="#aac8ff" opacity="0.45"/>
+    <circle cx="142" cy="118" r="1.1" fill="#ffffff"  opacity="0.38"/>
+    <circle cx="228" cy="68"  r="0.8" fill="#cce0ff"  opacity="0.42"/>
+    <circle cx="318" cy="25"  r="1.0" fill="#ffffff"  opacity="0.30"/>
+    <circle cx="412" cy="82"  r="1.2" fill="#aac8ff"  opacity="0.48"/>
+    <circle cx="518" cy="35"  r="0.9" fill="#ffffff"  opacity="0.40"/>
+    <circle cx="628" cy="62"  r="1.0" fill="#cce0ff"  opacity="0.33"/>
+    <circle cx="735" cy="28"  r="1.1" fill="#ffffff"  opacity="0.45"/>
+    <circle cx="828" cy="88"  r="0.8" fill="#aac8ff"  opacity="0.38"/>
+    <circle cx="912" cy="48"  r="1.0" fill="#ffffff"  opacity="0.30"/>
+    <circle cx="965" cy="115" r="1.1" fill="#cce0ff"  opacity="0.45"/>
+    <circle cx="48"  cy="185" r="0.9" fill="#ffffff"  opacity="0.28"/>
+    <circle cx="178" cy="232" r="1.2" fill="#cce0ff"  opacity="0.38"/>
+    <circle cx="285" cy="192" r="1.0" fill="#ffffff"  opacity="0.45"/>
+    <circle cx="382" cy="158" r="0.9" fill="#aac8ff"  opacity="0.32"/>
+    <circle cx="472" cy="208" r="1.1" fill="#ffffff"  opacity="0.42"/>
+    <circle cx="682" cy="142" r="1.0" fill="#ffffff"  opacity="0.28"/>
+    <circle cx="772" cy="202" r="1.2" fill="#aac8ff"  opacity="0.45"/>
+    <circle cx="865" cy="172" r="0.9" fill="#ffffff"  opacity="0.38"/>
+    <circle cx="955" cy="145" r="1.0" fill="#cce0ff"  opacity="0.32"/>
+    <circle cx="32"  cy="312" r="1.0" fill="#ffffff"  opacity="0.28"/>
+    <circle cx="118" cy="375" r="1.2" fill="#cce0ff"  opacity="0.45"/>
+    <circle cx="208" cy="338" r="0.8" fill="#ffffff"  opacity="0.38"/>
+    <circle cx="978" cy="302" r="1.1" fill="#aac8ff"  opacity="0.42"/>
+    <circle cx="922" cy="372" r="0.9" fill="#ffffff"  opacity="0.35"/>
+    <circle cx="45"  cy="712" r="1.0" fill="#ffffff"  opacity="0.28"/>
+    <circle cx="148" cy="768" r="1.1" fill="#cce0ff"  opacity="0.38"/>
+    <circle cx="248" cy="728" r="0.8" fill="#aac8ff"  opacity="0.42"/>
+    <circle cx="855" cy="742" r="1.0" fill="#aac8ff"  opacity="0.45"/>
+    <circle cx="952" cy="775" r="1.1" fill="#ffffff"  opacity="0.32"/>
+    <circle cx="62"  cy="858" r="1.2" fill="#aac8ff"  opacity="0.42"/>
+    <circle cx="162" cy="905" r="0.8" fill="#ffffff"  opacity="0.38"/>
+    <circle cx="268" cy="872" r="1.0" fill="#cce0ff"  opacity="0.32"/>
+    <circle cx="840" cy="892" r="0.9" fill="#aac8ff"  opacity="0.38"/>
+    <circle cx="938" cy="938" r="1.0" fill="#ffffff"  opacity="0.28"/>
+    <circle cx="88"  cy="1008" r="1.0" fill="#aac8ff" opacity="0.38"/>
+    <circle cx="188" cy="1058" r="1.1" fill="#ffffff"  opacity="0.42"/>
+    <circle cx="888" cy="1048" r="1.0" fill="#cce0ff"  opacity="0.32"/>
+    <circle cx="958" cy="1005" r="1.2" fill="#ffffff"  opacity="0.45"/>
+    <!-- Accent bright stars -->
+    <circle cx="172" cy="142" r="1.9" fill="#7df9ff" opacity="0.82" filter="url(#glowStar)"/>
+    <circle cx="828" cy="162" r="1.7" fill="#7df9ff" opacity="0.75" filter="url(#glowStar)"/>
+    <circle cx="88"  cy="605" r="1.8" fill="#ffffff"  opacity="0.70" filter="url(#glowStar)"/>
+    <circle cx="912" cy="582" r="1.6" fill="#ffffff"  opacity="0.65" filter="url(#glowStar)"/>
+    <circle cx="148" cy="1052" r="1.7" fill="#7df9ff" opacity="0.72" filter="url(#glowStar)"/>
+    <circle cx="852" cy="1058" r="1.9" fill="#7df9ff" opacity="0.78" filter="url(#glowStar)"/>
+    <circle cx="500" cy="92"  r="1.5" fill="#ffffff"  opacity="0.55" filter="url(#glowStar)"/>
+    <!-- Gold accent star — energy signal -->
+    <circle cx="780" cy="310" r="2.2" fill="#ffd200" opacity="0.88" filter="url(#glowStar)"/>
+    <circle cx="222" cy="692" r="2.0" fill="#ffd200" opacity="0.80" filter="url(#glowStar)"/>
+    <!-- Red signal stars -->
+    <circle cx="858" cy="445" r="1.8" fill="#ff4400" opacity="0.75" filter="url(#glowStar)"/>
+    <circle cx="148" cy="558" r="1.6" fill="#ff4400" opacity="0.68" filter="url(#glowStar)"/>
+    <!-- Twinkling stars -->
+    <circle cx="338" cy="112" r="1.8" fill="#ffffff" opacity="0.9" filter="url(#glowStar)">
+      <animate attributeName="opacity" values="0.9;0.15;0.9" dur="2.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="862" cy="128" r="1.5" fill="#aac8ff" opacity="0.8" filter="url(#glowStar)">
+      <animate attributeName="opacity" values="0.8;0.1;0.8" dur="3.6s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="108" cy="508" r="1.9" fill="#7df9ff" opacity="0.85" filter="url(#glowStar)">
+      <animate attributeName="opacity" values="0.85;0.1;0.85" dur="4.4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="892" cy="488" r="1.7" fill="#7df9ff" opacity="0.80" filter="url(#glowStar)">
+      <animate attributeName="opacity" values="0.8;0.2;0.8" dur="3.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="225" cy="898" r="1.6" fill="#ffffff" opacity="0.88" filter="url(#glowStar)">
+      <animate attributeName="opacity" values="0.88;0.2;0.88" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="775" cy="882" r="1.8" fill="#ffd200" opacity="0.78" filter="url(#glowStar)">
+      <animate attributeName="opacity" values="0.78;0.1;0.78" dur="3.9s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="488" cy="958" r="1.5" fill="#7df9ff" opacity="0.82" filter="url(#glowStar)">
+      <animate attributeName="opacity" values="0.82;0.2;0.82" dur="5.2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- OUTER CORONA (ambient glow around the whole emblem)    -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <circle cx="500" cy="460" r="360" fill="url(#coronaGrad)" opacity="0.9">
+    <animate attributeName="opacity" values="0.9;0.5;0.9" dur="6s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- NETWORK GRID LINES (subtle — background intelligence)  -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <g stroke="#0a2a5a" stroke-width="0.8" opacity="0.5">
+    <!-- Radial spokes -->
+    <line x1="500" y1="460" x2="500" y2="100"/>
+    <line x1="500" y1="460" x2="500" y2="820"/>
+    <line x1="500" y1="460" x2="140" y2="460"/>
+    <line x1="500" y1="460" x2="860" y2="460"/>
+    <line x1="500" y1="460" x2="245" y2="205"/>
+    <line x1="500" y1="460" x2="755" y2="205"/>
+    <line x1="500" y1="460" x2="245" y2="715"/>
+    <line x1="500" y1="460" x2="755" y2="715"/>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- OUTER RINGS — node ring system                         -->
+  <!-- ══════════════════════════════════════════════════════ -->
+
+  <!-- Ring 3 — outermost, faintest -->
+  <circle cx="500" cy="460" r="340" fill="none"
+    stroke="#00e5ff" stroke-width="1" stroke-dasharray="6 18" opacity="0.2">
+    <animateTransform attributeName="transform" type="rotate"
+      from="0 500 460" to="360 500 460" dur="40s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Ring 2 — mid, dashed orbit -->
+  <circle cx="500" cy="460" r="295" fill="none"
+    stroke="#00e5ff" stroke-width="1.5" stroke-dasharray="14 20" opacity="0.3" filter="url(#glowCyan)">
+    <animateTransform attributeName="transform" type="rotate"
+      from="360 500 460" to="0 500 460" dur="28s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Ring 1 — close orbital ring -->
+  <circle cx="500" cy="460" r="248" fill="none"
+    stroke="#00e5ff" stroke-width="2" stroke-dasharray="20 12" opacity="0.45" filter="url(#glowCyan)">
+    <animateTransform attributeName="transform" type="rotate"
+      from="0 500 460" to="360 500 460" dur="18s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Solid inner boundary ring -->
+  <circle cx="500" cy="460" r="210" fill="none" stroke="#00e5ff" stroke-width="1.5" opacity="0.25"/>
+  <circle cx="500" cy="460" r="208" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.12"/>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- ORBITAL NODES (dots on rings)                          -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- Node on ring 1 — rotating -->
+  <g>
+    <circle cx="500" cy="212" r="7" fill="#00e5ff" opacity="0.9" filter="url(#glowCyan)">
+      <animateTransform attributeName="transform" type="rotate"
+        from="0 500 460" to="360 500 460" dur="18s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="500" cy="708" r="5" fill="#ffd200" opacity="0.85" filter="url(#glowGold)">
+      <animateTransform attributeName="transform" type="rotate"
+        from="180 500 460" to="540 500 460" dur="18s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Node on ring 2 -->
+  <g>
+    <circle cx="795" cy="460" r="6" fill="#00e5ff" opacity="0.8" filter="url(#glowCyan)">
+      <animateTransform attributeName="transform" type="rotate"
+        from="0 500 460" to="-360 500 460" dur="28s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Red signal node -->
+    <circle cx="205" cy="460" r="5" fill="#ff4400" opacity="0.78" filter="url(#glowRed)">
+      <animateTransform attributeName="transform" type="rotate"
+        from="0 500 460" to="-360 500 460" dur="28s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- GOLD ENERGY ARC — power signal                         -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <path d="M 290 280 Q 200 460 290 640"
+    fill="none" stroke="url(#goldArc)" stroke-width="3" opacity="0.55" filter="url(#glowGold)">
+    <animate attributeName="opacity" values="0.55;0.18;0.55" dur="5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 710 280 Q 800 460 710 640"
+    fill="none" stroke="url(#goldArc)" stroke-width="3" opacity="0.45" filter="url(#glowGold)">
+    <animate attributeName="opacity" values="0.45;0.12;0.45" dur="5s" begin="2.5s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- CORE AURA PULSE                                        -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <circle cx="500" cy="460" r="185" fill="url(#coreGrad)" opacity="0.85">
+    <animate attributeName="r"       values="185;200;185" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.85;0.45;0.85" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Secondary inner pulse -->
+  <circle cx="500" cy="460" r="130" fill="none"
+    stroke="#00e5ff" stroke-width="1.5" opacity="0.2" filter="url(#glowCyan)">
+    <animate attributeName="r"       values="130;148;130" dur="4s" begin="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.2;0.05;0.2" dur="4s" begin="2s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- THE C-ARC — SupaC's defining mark                      -->
+  <!-- Large bold C arc in gold→cyan, forming the outer shell -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- Shadow / depth of C -->
+  <path d="M 648 232 A 205 205 0 1 0 648 688"
+    fill="none" stroke="#001133" stroke-width="52" stroke-linecap="round" opacity="0.6"/>
+  <!-- Main C arc -->
+  <path d="M 648 232 A 205 205 0 1 0 648 688"
+    fill="none" stroke="url(#cArcGrad)" stroke-width="38" stroke-linecap="round"
+    opacity="0.95" filter="url(#glowCyan)"/>
+  <!-- C inner highlight edge -->
+  <path d="M 648 232 A 205 205 0 1 0 648 688"
+    fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.18"/>
+
+  <!-- C-arc tips — gold terminal nodes -->
+  <circle cx="648" cy="232" r="12" fill="#ffd200" opacity="0.92" filter="url(#glowGold)"/>
+  <circle cx="648" cy="688" r="12" fill="#ffd200" opacity="0.92" filter="url(#glowGold)"/>
+  <!-- Red energy pulse at tips -->
+  <circle cx="648" cy="232" r="12" fill="#ff6600" opacity="0">
+    <animate attributeName="opacity" values="0;0.7;0" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="r"       values="12;20;12" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="648" cy="688" r="12" fill="#ff6600" opacity="0">
+    <animate attributeName="opacity" values="0;0.7;0" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+    <animate attributeName="r"       values="12;20;12" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- WORDMARK — SupaC                                       -->
+  <!-- ══════════════════════════════════════════════════════ -->
+
+  <!-- "SUPA" — crisp white→cyan, tight tracking -->
+  <text x="468" y="510"
+    text-anchor="end"
+    font-family="'Arial Black', 'Helvetica Neue', sans-serif"
+    font-size="118" font-weight="900"
+    letter-spacing="-2"
+    fill="url(#supaGrad)"
+    filter="url(#glowText)">SUPA</text>
+
+  <!-- "C" — gold→red, slightly larger, the power letter -->
+  <text x="478" y="510"
+    text-anchor="start"
+    font-family="'Arial Black', 'Helvetica Neue', sans-serif"
+    font-size="138" font-weight="900"
+    letter-spacing="0"
+    fill="url(#cGrad)"
+    filter="url(#glowGold)">C</text>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- UNDERLINE — intelligence separator                      -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <line x1="248" y1="535" x2="660" y2="535"
+    stroke="url(#tagGrad)" stroke-width="1.5" opacity="0.55"/>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- TAGLINE                                                -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <text x="454" y="568"
+    text-anchor="middle"
+    font-family="'Courier New', monospace"
+    font-size="17.5" font-weight="700"
+    letter-spacing="7"
+    fill="#00e5ff"
+    opacity="0.68">SUPER COMPUTE CORE</text>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- TICK MARKS on inner ring (precision detail)            -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <g stroke="#00e5ff" stroke-width="1.2" opacity="0.35">
+    <!-- N/S/E/W -->
+    <line x1="500" y1="248" x2="500" y2="262"/>
+    <line x1="500" y1="658" x2="500" y2="672"/>
+    <line x1="288" y1="460" x2="302" y2="460"/>
+    <line x1="698" y1="460" x2="712" y2="460"/>
+    <!-- 45° diagonals -->
+    <line x1="351" y1="311" x2="361" y2="321"/>
+    <line x1="649" y1="311" x2="639" y2="321"/>
+    <line x1="351" y1="609" x2="361" y2="599"/>
+    <line x1="649" y1="609" x2="639" y2="599"/>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- CONSTELLATION NODES (subtle — network intelligence)    -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <g opacity="0.55" filter="url(#glowStar)">
+    <!-- Small network nodes scattered around outer field -->
+    <circle cx="192" cy="298" r="3.5" fill="#00e5ff"/>
+    <circle cx="808" cy="298" r="3.5" fill="#00e5ff"/>
+    <circle cx="192" cy="622" r="3.5" fill="#00e5ff"/>
+    <circle cx="808" cy="622" r="3.5" fill="#ffd200"/>
+    <!-- Connecting lines -->
+    <line x1="192" y1="298" x2="808" y2="298" stroke="#00e5ff" stroke-width="0.8" opacity="0.18"/>
+    <line x1="192" y1="622" x2="808" y2="622" stroke="#00e5ff" stroke-width="0.8" opacity="0.18"/>
+    <line x1="192" y1="298" x2="192" y2="622" stroke="#00e5ff" stroke-width="0.8" opacity="0.18"/>
+    <line x1="808" y1="298" x2="808" y2="622" stroke="#00e5ff" stroke-width="0.8" opacity="0.18"/>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- BOTTOM IDENTITY LINE                                   -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <text x="500" y="812"
+    text-anchor="middle"
+    font-family="'Courier New', monospace"
+    font-size="13" font-weight="400"
+    letter-spacing="5"
+    fill="#00e5ff"
+    opacity="0.38">● INTELLIGENCE AT SCALE ●</text>
+
+</svg>

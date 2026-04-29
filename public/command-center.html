@@ -2,7 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+<meta name="description" content="Command Center | Bridge AI-OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/command-center">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/command-center">
+<meta property="og:title" content="Command Center | Bridge AI-OS">
+<meta property="og:description" content="Command Center | Bridge AI-OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Command Center | Bridge AI-OS">
+<meta name="twitter:description" content="Command Center | Bridge AI-OS — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'">
   <title>Command Center | Bridge AI-OS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/bridge-tokens.css">
@@ -96,6 +112,21 @@
       .agent-list{grid-template-columns:1fr}
     }
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
   <script src="/bridge-nav.js?v=2"></script>
@@ -199,6 +230,11 @@
   <script>
     var prevTreasury = null;
 
+    function authFetch(url) {
+      var token = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_siwe_jwt') || '';
+      return fetch(url, token ? { headers: { 'Authorization': 'Bearer ' + token } } : undefined).then(function(r) { return r.json(); });
+    }
+
     var FUNNEL_LABELS = {
       osint_discovery: 'OSINT Discovery',
       lead_generated:  'Lead Generated',
@@ -215,9 +251,9 @@
     async function refresh() {
       try {
         var results = await Promise.allSettled([
-          fetch('/api/brain').then(function(r){return r.json();}),
-          fetch('/api/treasury').then(function(r){return r.json();}),
-          fetch('/api/neuro').then(function(r){return r.json();}),
+          authfetch('/api/brain'),
+          authfetch('/api/treasury'),
+          authfetch('/api/neuro'),
         ]);
 
         var brain    = results[0].status === 'fulfilled' ? results[0].value : {};

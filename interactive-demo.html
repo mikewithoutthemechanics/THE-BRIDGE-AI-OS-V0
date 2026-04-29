@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge AI OS - Interactive Demo</title>
+    <link rel="stylesheet" href="https://unpkg.com/xterm@5.3.0/css/xterm.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Animated SVG Header */
+        .hero-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .hero-section svg {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.3));
+        }
+
+        /* Terminal Section */
+        .terminal-section {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.1);
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .terminal-title {
+            color: #00ff88;
+            font-size: 18px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .terminal-controls {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .control-btn.red { background: #ff5f57; }
+        .control-btn.yellow { background: #ffbd2e; }
+        .control-btn.green { background: #28ca42; }
+
+        .terminal-container {
+            background: #000000;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terminal-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #00ff88, #0099ff, #00ff88);
+            animation: scanline 2s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        #terminal {
+            width: 100%;
+            height: 400px;
+            font-size: 14px;
+        }
+
+        /* Command Suggestions */
+        .commands-section {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(0, 153, 255, 0.3);
+        }
+
+        .commands-title {
+            color: #0099ff;
+            font-size: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .commands-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .command-card {
+            background: rgba(0, 153, 255, 0.1);
+            border: 1px solid rgba(0, 153, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .command-card:hover {
+            background: rgba(0, 153, 255, 0.2);
+            border-color: #0099ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 153, 255, 0.3);
+        }
+
+        .command-name {
+            color: #0099ff;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .command-desc {
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        /* Status Dashboard */
+        .status-section {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 5px;
+        }
+
+        .status-label {
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer a {
+            color: #00ff88;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .hero-section svg {
+                height: 150px;
+            }
+
+            #terminal {
+                height: 300px;
+                font-size: 12px;
+            }
+
+            .commands-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0099ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Animated SVG Hero Section -->
+        <div class="hero-section">
+            <svg width="800" height="200" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- Gradient Definitions -->
+                    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0a0a0a;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#1a1a2e;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#0a0a0a;stop-opacity:1" />
+                    </linearGradient>
+
+                    <radialGradient id="nodeGradient" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
+                        <stop offset="70%" style="stop-color:#0099ff;stop-opacity:0.8" />
+                        <stop offset="100%" style="stop-color:#0066cc;stop-opacity:0.6" />
+                    </radialGradient>
+
+                    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#00ff88;stop-opacity:0" />
+                        <stop offset="50%" style="stop-color:#00ff88;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#00ff88;stop-opacity:0" />
+                    </linearGradient>
+
+                    <!-- Filters for glow effects -->
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+
+                    <!-- Animations -->
+                    <style>
+                        @keyframes pulse {
+                            0%, 100% { r: 8; opacity: 0.8; }
+                            50% { r: 12; opacity: 1; }
+                        }
+
+                        @keyframes flow {
+                            0% { x: -100; }
+                            100% { x: 900; }
+                        }
+
+                        @keyframes rotate {
+                            from { transform: rotate(0deg); }
+                            to { transform: rotate(360deg); }
+                        }
+
+                        @keyframes textGlow {
+                            0%, 100% { text-shadow: 0 0 5px #00ff88, 0 0 10px #00ff88, 0 0 15px #00ff88; }
+                            50% { text-shadow: 0 0 10px #0099ff, 0 0 20px #0099ff, 0 0 30px #0099ff; }
+                        }
+
+                        @keyframes dataStream {
+                            0% { stroke-dashoffset: 1000; }
+                            100% { stroke-dashoffset: 0; }
+                        }
+
+                        .pulse-node { animation: pulse 2s ease-in-out infinite; }
+                        .flow-line { animation: flow 3s linear infinite; }
+                        .rotate-element { animation: rotate 20s linear infinite; }
+                        .text-glow { animation: textGlow 3s ease-in-out infinite; }
+                        .data-stream { animation: dataStream 2s linear infinite; }
+                    </style>
+                </defs>
+
+                <!-- Background -->
+                <rect width="800" height="200" fill="url(#bgGradient)" rx="10" />
+
+                <!-- Animated background particles -->
+                <circle cx="100" cy="50" r="2" fill="#00ff88" opacity="0.6">
+                    <animate attributeName="cy" values="50;150;50" dur="4s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="300" cy="80" r="1.5" fill="#0099ff" opacity="0.5">
+                    <animate attributeName="cx" values="300;500;300" dur="5s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="600" cy="120" r="2.5" fill="#00ff88" opacity="0.7">
+                    <animate attributeName="cy" values="120;30;120" dur="3s" repeatCount="indefinite" />
+                </circle>
+
+                <!-- Main Logo Text -->
+                <text x="400" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#ffffff" class="text-glow">
+                    BRIDGE AI OS
+                </text>
+
+                <!-- Subtitle -->
+                <text x="400" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#a0a0a0">
+                    v0 → ∞ Production Operational
+                </text>
+
+                <!-- Agent Network Visualization -->
+                <!-- Central Brain Node -->
+                <circle cx="400" cy="120" r="10" fill="url(#nodeGradient)" filter="url(#glow)" class="pulse-node" />
+
+                <!-- Surrounding Agent Nodes -->
+                <circle cx="250" cy="100" r="8" fill="#00ff88" opacity="0.8" class="pulse-node" />
+                <circle cx="550" cy="100" r="8" fill="#0099ff" opacity="0.8" class="pulse-node" />
+                <circle cx="325" cy="160" r="6" fill="#00ff88" opacity="0.7" class="pulse-node" />
+                <circle cx="475" cy="160" r="6" fill="#0099ff" opacity="0.7" class="pulse-node" />
+
+                <!-- Connection Lines with Data Flow -->
+                <g stroke="#00ff88" stroke-width="2" fill="none" opacity="0.6">
+                    <!-- Central connections -->
+                    <line x1="400" y1="120" x2="250" y2="100" />
+                    <line x1="400" y1="120" x2="550" y2="100" />
+                    <line x1="400" y1="120" x2="325" y2="160" />
+                    <line x1="400" y1="120" x2="475" y2="160" />
+
+                    <!-- Inter-agent connections -->
+                    <line x1="250" y1="100" x2="325" y2="160" stroke-dasharray="5,5" class="data-stream" />
+                    <line x1="550" y1="100" x2="475" y2="160" stroke-dasharray="5,5" class="data-stream" />
+                </g>
+
+                <!-- Flowing Data Particles -->
+                <circle cx="325" cy="130" r="3" fill="#00ff88" class="flow-line">
+                    <animateMotion dur="2s" repeatCount="indefinite">
+                        <path d="M 250 100 L 325 130 L 400 120" />
+                    </animateMotion>
+                </circle>
+
+                <circle cx="475" cy="130" r="3" fill="#0099ff" class="flow-line">
+                    <animateMotion dur="2.5s" repeatCount="indefinite" begin="0.5s">
+                        <path d="M 550 100 L 475 130 L 400 120" />
+                    </animateMotion>
+                </circle>
+
+                <!-- Agent Labels -->
+                <text x="250" y="85" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#00ff88">OSINT</text>
+                <text x="550" y="85" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#0099ff">BILLING</text>
+                <text x="325" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#00ff88">AUTH</text>
+                <text x="475" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#0099ff">SVG</text>
+                <text x="400" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#ffffff">BRAIN</text>
+
+                <!-- Status Indicators -->
+                <circle cx="700" cy="30" r="4" fill="#00ff88" class="pulse-node" />
+                <text x="715" y="35" font-family="Arial, sans-serif" font-size="12" fill="#00ff88">● OPERATIONAL</text>
+
+                <!-- Rotating accent elements -->
+                <g class="rotate-element" transform="translate(150,120)">
+                    <circle cx="0" cy="0" r="15" fill="none" stroke="#00ff88" stroke-width="1" opacity="0.3" />
+                    <circle cx="0" cy="-10" r="2" fill="#0099ff" />
+                </g>
+
+                <g class="rotate-element" transform="translate(650,120)">
+                    <circle cx="0" cy="0" r="15" fill="none" stroke="#0099ff" stroke-width="1" opacity="0.3" />
+                    <circle cx="10" cy="0" r="2" fill="#00ff88" />
+                </g>
+
+                <!-- Data flow waves -->
+                <path d="M 0 180 Q 200 170 400 180 T 800 180" stroke="url(#flowGradient)" stroke-width="3" fill="none" opacity="0.5" class="data-stream" />
+            </svg>
+
+            <p style="color: #a0a0a0; margin-top: 10px; font-size: 16px;">
+                Interactive Bridge AI OS Terminal Demo
+            </p>
+        </div>
+
+        <!-- Interactive Terminal -->
+        <div class="terminal-section">
+            <div class="terminal-header">
+                <div class="terminal-controls">
+                    <div class="control-btn red" onclick="clearTerminal()"></div>
+                    <div class="control-btn yellow"></div>
+                    <div class="control-btn green"></div>
+                </div>
+                <div class="terminal-title">Bridge AI OS Terminal</div>
+            </div>
+            <div class="terminal-container">
+                <div id="terminal"></div>
+            </div>
+        </div>
+
+        <!-- Command Suggestions -->
+        <div class="commands-section">
+            <h2 class="commands-title">Available Commands</h2>
+            <div class="commands-grid">
+                <div class="command-card" onclick="executeCommand('bridge status')">
+                    <div class="command-name">bridge status</div>
+                    <div class="command-desc">Check system status and agent health</div>
+                </div>
+                <div class="command-card" onclick="executeCommand('agent list')">
+                    <div class="command-name">agent list</div>
+                    <div class="command-desc">List all available AI agents</div>
+                </div>
+                <div class="command-card" onclick="executeCommand('tool registry')">
+                    <div class="command-name">tool registry</div>
+                    <div class="command-desc">Display available tools and integrations</div>
+                </div>
+                <div class="command-card" onclick="executeCommand('brain query \"What is Bridge AI OS?\"')">
+                    <div class="command-name">brain query</div>
+                    <div class="command-desc">Query the AI brain with natural language</div>
+                </div>
+                <div class="command-card" onclick="executeCommand('workflow create')">
+                    <div class="command-name">workflow create</div>
+                    <div class="command-desc">Create a new AI workflow</div>
+                </div>
+                <div class="command-card" onclick="executeCommand('system monitor')">
+                    <div class="command-name">system monitor</div>
+                    <div class="command-desc">Monitor system performance and metrics</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Status Dashboard -->
+        <div class="status-section">
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-value">
+                        <span class="status-dot"></span>26
+                    </div>
+                    <div class="status-label">Active Domains</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value">8</div>
+                    <div class="status-label">AI Agents Online</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value">∞</div>
+                    <div class="status-label">API Calls/Hour</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value">&lt;50ms</div>
+                    <div class="status-label">Avg Response Time</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Built with ❤️ by Bridge AI OS Team • <a href="https://bridge-ai-os.com">bridge-ai-os.com</a> • <a href="https://github.com/bridgeaios/THE-BRIDGE-AI-OS-V0">GitHub</a></p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/xterm@5.3.0/lib/xterm.js"></script>
+    <script>
+        let term;
+        let currentLine = '';
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        function initTerminal() {
+            term = new Terminal({
+                cursorBlink: true,
+                cursorStyle: 'block',
+                fontSize: 14,
+                fontFamily: 'Courier New, monospace',
+                theme: {
+                    background: '#000000',
+                    foreground: '#00ff88',
+                    cursor: '#00ff88',
+                    cursorAccent: '#000000',
+                    selection: 'rgba(0, 255, 136, 0.3)'
+                },
+                allowTransparency: true,
+                scrollback: 1000
+            });
+
+            term.open(document.getElementById('terminal'));
+
+            // Welcome message
+            term.writeln('\x1b[1;32mBridge AI OS v0 → ∞\x1b[0m');
+            term.writeln('\x1b[36m═══════════════════════════════════════════════════════════════\x1b[0m');
+            term.writeln('\x1b[33mWelcome to the Bridge AI OS Interactive Terminal!\x1b[0m');
+            term.writeln('\x1b[36mType "help" for available commands or click the command cards above.\x1b[0m');
+            term.writeln('\x1b[36m═══════════════════════════════════════════════════════════════\x1b[0m');
+            term.writeln('');
+
+            // Prompt
+            term.write('\x1b[1;32mbridge-ai-os $\x1b[0m ');
+
+            // Handle input
+            term.onData(handleInput);
+        }
+
+        function handleInput(data) {
+            const code = data.charCodeAt(0);
+
+            if (code === 13) { // Enter
+                term.writeln('');
+                processCommand(currentLine.trim());
+                currentLine = '';
+                term.write('\x1b[1;32mbridge-ai-os $\x1b[0m ');
+            } else if (code === 127) { // Backspace
+                if (currentLine.length > 0) {
+                    currentLine = currentLine.slice(0, -1);
+                    term.write('\b \b');
+                }
+            } else if (code === 27) { // Escape sequence (arrow keys)
+                // Handle arrow keys for history (simplified)
+            } else if (code >= 32) { // Printable characters
+                currentLine += data;
+                term.write(data);
+            }
+        }
+
+        function processCommand(cmd) {
+            if (cmd === '') return;
+
+            commandHistory.push(cmd);
+
+            switch (cmd.toLowerCase()) {
+                case 'help':
+                    term.writeln('\x1b[1;36mAvailable Commands:\x1b[0m');
+                    term.writeln('  \x1b[32mbridge status\x1b[0m     - Check system status');
+                    term.writeln('  \x1b[32magent list\x1b[0m        - List available agents');
+                    term.writeln('  \x1b[32mtool registry\x1b[0m     - Display tool registry');
+                    term.writeln('  \x1b[32mbrain query\x1b[0m       - Query the AI brain');
+                    term.writeln('  \x1b[32mworkflow create\x1b[0m   - Create new workflow');
+                    term.writeln('  \x1b[32msystem monitor\x1b[0m    - Monitor system metrics');
+                    term.writeln('  \x1b[32mclear\x1b[0m             - Clear terminal');
+                    term.writeln('  \x1b[32mexit\x1b[0m             - Exit terminal');
+                    break;
+
+                case 'bridge status':
+                    term.writeln('\x1b[1;32m✓ System Status: OPERATIONAL\x1b[0m');
+                    term.writeln('\x1b[36m├── Domains Active:\x1b[0m 26');
+                    term.writeln('\x1b[36m├── AI Agents Online:\x1b[0m 8');
+                    term.writeln('\x1b[36m├── API Response Time:\x1b[0m <50ms');
+                    term.writeln('\x1b[36m├── Memory Usage:\x1b[0m 2.4GB / 8GB');
+                    term.writeln('\x1b[36m└── Uptime:\x1b[0m 127d 14h 32m');
+                    break;
+
+                case 'agent list':
+                    term.writeln('\x1b[1;36mActive AI Agents:\x1b[0m');
+                    term.writeln('  \x1b[32m🧠 SUPER BRAIN\x1b[0m     - Central AI orchestrator');
+                    term.writeln('  \x1b[32m📡 OSINT Agent\x1b[0m      - Intelligence gathering');
+                    term.writeln('  \x1b[32m💼 CRM Agent\x1b[0m        - Lead scoring & management');
+                    term.writeln('  \x1b[32m💰 Billing Agent\x1b[0m     - Revenue engine & subscriptions');
+                    term.writeln('  \x1b[32m🔐 Auth Agent\x1b[0m       - JWT & SIWE authentication');
+                    term.writeln('  \x1b[32m📊 SVG Engine\x1b[0m       - Skill graph visualization');
+                    term.writeln('  \x1b[32m🌐 API Gateway\x1b[0m      - Unified proxy & routing');
+                    term.writeln('  \x1b[32m⚡ Workflow Agent\x1b[0m    - Dynamic pipeline execution');
+                    break;
+
+                case 'tool registry':
+                    term.writeln('\x1b[1;36mTool Registry:\x1b[0m');
+                    term.writeln('  \x1b[32m🔗 API Connectors\x1b[0m     - REST, GraphQL, WebSocket');
+                    term.writeln('  \x1b[32m🗄️ Database Tools\x1b[0m    - PostgreSQL, Redis, Neo4j');
+                    term.writeln('  \x1b[32m🤖 AI Providers\x1b[0m      - OpenAI, Anthropic, Local models');
+                    term.writeln('  \x1b[32m☁️ Cloud Services\x1b[0m    - AWS, GCP, Azure, Supabase');
+                    term.writeln('  \x1b[32m📧 Communication\x1b[0m     - Email, SMS, Push notifications');
+                    term.writeln('  \x1b[32m📊 Analytics\x1b[0m         - Real-time metrics & monitoring');
+                    break;
+
+                case 'system monitor':
+                    term.writeln('\x1b[1;36mSystem Metrics:\x1b[0m');
+                    term.writeln('  \x1b[32mCPU Usage:\x1b[0m       34% (4 cores)');
+                    term.writeln('  \x1b[32mMemory:\x1b[0m          2.4GB / 8GB');
+                    term.writeln('  \x1b[32mNetwork I/O:\x1b[0m     1.2 MB/s');
+                    term.writeln('  \x1b[32mActive Connections:\x1b[0m 1,247');
+                    term.writeln('  \x1b[32mQueue Depth:\x1b[0m      0');
+                    term.writeln('  \x1b[32mError Rate:\x1b[0m       0.01%');
+                    break;
+
+                case 'workflow create':
+                    term.writeln('\x1b[1;33mWorkflow Creation Wizard\x1b[0m');
+                    term.writeln('Step 1: Choose workflow type');
+                    term.writeln('  [1] Data Processing Pipeline');
+                    term.writeln('  [2] AI Agent Orchestration');
+                    term.writeln('  [3] Real-time Analytics');
+                    term.writeln('  [4] Custom Workflow');
+                    term.writeln('\x1b[36mType the number to continue...\x1b[0m');
+                    break;
+
+                case 'clear':
+                    term.clear();
+                    break;
+
+                case 'exit':
+                    term.writeln('\x1b[31mGoodbye! Bridge AI OS terminal closed.\x1b[0m');
+                    setTimeout(() => {
+                        term.writeln('\x1b[36mType any command to restart the terminal...\x1b[0m');
+                    }, 1000);
+                    break;
+
+                default:
+                    if (cmd.startsWith('brain query ')) {
+                        const query = cmd.replace('brain query ', '');
+                        term.writeln(`\x1b[1;36m🧠 Brain Query: "${query}"\x1b[0m`);
+                        term.writeln('\x1b[32mProcessing...\x1b[0m');
+
+                        setTimeout(() => {
+                            term.writeln('\x1b[32mResponse:\x1b[0m Bridge AI OS is a modular operating system');
+                            term.writeln('that orchestrates AI workflows, tools, and agents into');
+                            term.writeln('cohesive, production-ready systems. It bridges data,');
+                            term.writeln('models, and interfaces—turning fragmented AI capabilities');
+                            term.writeln('into unified, deployable pipelines.');
+                        }, 1000);
+                    } else {
+                        term.writeln(`\x1b[31mCommand not found: ${cmd}\x1b[0m`);
+                        term.writeln('\x1b[36mType "help" for available commands.\x1b[0m');
+                    }
+            }
+        }
+
+        function executeCommand(cmd) {
+            // Clear current input
+            while (currentLine.length > 0) {
+                term.write('\b \b');
+                currentLine = currentLine.slice(0, -1);
+            }
+
+            // Execute the command
+            currentLine = cmd;
+            term.write(cmd);
+            term.writeln('');
+            processCommand(cmd);
+            currentLine = '';
+            term.write('\x1b[1;32mbridge-ai-os $\x1b[0m ');
+        }
+
+        function clearTerminal() {
+            term.clear();
+            term.writeln('\x1b[1;32mBridge AI OS v0 → ∞\x1b[0m');
+            term.writeln('\x1b[36mTerminal cleared. Type "help" for commands.\x1b[0m');
+            term.writeln('');
+            term.write('\x1b[1;32mbridge-ai-os $\x1b[0m ');
+        }
+
+        // Typing effect for initial welcome
+        function typeWriter(text, i = 0) {
+            if (i < text.length) {
+                term.write(text.charAt(i));
+                setTimeout(() => typeWriter(text, i + 1), 50);
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initTerminal();
+
+            // Add some dynamic effects
+            setInterval(() => {
+                // Simulate live updates (you could connect this to real metrics)
+                const statusElement = document.querySelector('.status-value');
+                if (statusElement && statusElement.textContent.includes('26')) {
+                    // Keep static for demo, but could update with real data
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

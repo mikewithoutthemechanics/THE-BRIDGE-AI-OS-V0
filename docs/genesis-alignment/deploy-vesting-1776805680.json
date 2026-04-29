@@ -1,0 +1,62 @@
+{
+  "network": {
+    "name": "linea",
+    "chainId": 59144,
+    "rpc": "https://rpc.linea.build",
+    "explorer": "https://lineascan.build",
+    "provenance": "AUTO"
+  },
+  "deployer": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+  "tgeIso": "2026-04-21T21:07:42.000Z",
+  "tgeUnix": 1776805662,
+  "args": {
+    "FounderVesting": [
+      "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+      "1776805662",
+      "31104000",
+      "124416000"
+    ],
+    "CommunityDistributor": [
+      "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+      "1776805662",
+      "2592000",
+      "95904000"
+    ],
+    "TreasuryOpsTimelock": [
+      "0x6daA8db214B7c7D95fB26d98c4Fc4DE82430572A",
+      "1776805662",
+      "7776000",
+      "101088000"
+    ],
+    "ReserveLock": [
+      "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+      "1807909662"
+    ],
+    "_reserveLockNote": "ReserveLock unlock timestamp 1807909662 = TGE (1776805662) + 360 days (12 × 30-day months = 31,104,000 s). This corresponds to 2027-04-16T21:07:42Z, not 2027-04-21 as stated in the PR description. The 30-day-month convention is intentional and matches the on-chain parameter."
+  },
+  "results": {
+    "FounderVesting": {
+      "address": "0x57FfFCEaE127149dbDaf48431D934362FE8485b7",
+      "deployTx": "0x8abe913fdebec3de4ef92f7482a61a815c26fef07b4f6f3d6861a340b9df6e62"
+    },
+    "CommunityDistributor": {
+      "address": "0xdadEB2a9562B251AA33644896D5b6B22104a0f3C",
+      "deployTx": "0x6870162adbc1fe55b452aa471322c81ad2c91ce9dca6f7348eecb8d8ebf7aa6e"
+    },
+    "TreasuryOpsTimelock": {
+      "address": "0x763b504Aff3cF181dfF712E2bc07b6f68f2777F9",
+      "deployTx": "0xb269f4d7b363bc65260b1a0a61fd739c77d4f26cd6202492a8eb476bb529ef98"
+    },
+    "ReserveLock": {
+      "address": "0xF173122C8FeBF48219404fDb34462560d29A2E6a",
+      "deployTx": "0xaf8ce5b4d295642706c7d7e3d87deb9751e47438c14d78db07aa0548db1c64fc"
+    }
+  },
+  "safes": {
+    "PROTOCOL_SAFE": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+    "FOUNDER_SAFE": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+    "COMMUNITY_SAFE": "0xAC301f984556c11ecf3818CaA6020d11c8616F64",
+    "LP_SAFE": "0xAC301f984556c11ecf3818CaA6020d11c8616F64"
+  },
+  "deployedAt": "2026-04-21T21:08:00.945Z"
+}

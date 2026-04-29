@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="description" content="Profile — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/profile">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/profile">
+<meta property="og:title" content="Profile — Bridge AI OS">
+<meta property="og:description" content="Profile — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Profile — Bridge AI OS">
+<meta name="twitter:description" content="Profile — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{--bg:#050a0f;--surface:#0d1620;--surface2:#111d2b;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,'Segoe UI',sans-serif;min-height:100vh}
+    a{color:inherit;text-decoration:none}
+    .btn{padding:.5rem 1rem;border-radius:.4rem;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-block}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--dim)}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-primary{background:var(--accent);color:#050a0f}
+    .btn-primary:hover{opacity:.88}
+    .btn-sm{padding:.35rem .75rem;font-size:.73rem}
+    .badge{display:inline-block;padding:.15rem .5rem;border-radius:2rem;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .badge-free{background:rgba(255,255,255,.06);color:var(--dim)}
+    .badge-starter{background:rgba(0,200,255,.12);color:var(--accent)}
+    .badge-pro{background:rgba(167,139,250,.14);color:var(--purple)}
+    .badge-admin{background:rgba(0,229,123,.1);color:var(--green)}
+
+    /* Layout */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:.9rem 2rem;border-bottom:1px solid var(--border);background:var(--surface)}
+    .logo{font-size:1.3rem;font-weight:800;color:var(--accent);letter-spacing:.2em}
+    .logo span{color:var(--green)}
+    .topbar-nav{display:flex;gap:1.5rem;align-items:center;font-size:.82rem}
+    .topbar-nav a{color:var(--dim);transition:color .2s}
+    .topbar-nav a:hover,.topbar-nav a.active{color:var(--text)}
+    .avatar-circle{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#050a0f;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;cursor:pointer}
+
+    .layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 49px)}
+    @media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
+    .sidebar{border-right:1px solid var(--border);background:var(--surface);padding:1.5rem 1rem}
+    .nav-group{margin-bottom:1.5rem}
+    .nav-group-label{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem;padding:0 .5rem}
+    .nav-item{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border-radius:.4rem;font-size:.82rem;color:var(--dim);cursor:pointer;transition:all .2s;margin-bottom:.15rem}
+    .nav-item:hover{background:var(--surface2);color:var(--text)}
+    .nav-item.active{background:rgba(0,200,255,.08);color:var(--accent);border:1px solid rgba(0,200,255,.15)}
+    .nav-item .icon{width:16px;text-align:center;font-size:.9rem}
+
+    .main{padding:2rem;overflow-y:auto}
+    .page-section{display:none}
+    .page-section.active{display:block}
+
+    /* Section: Overview */
+    .welcome-strip{background:linear-gradient(135deg,rgba(0,200,255,.07),rgba(0,229,123,.04));border:1px solid rgba(0,200,255,.15);border-radius:.7rem;padding:1.5rem;margin-bottom:2rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+    .welcome-name{font-size:1.3rem;font-weight:700;margin-bottom:.3rem}
+    .welcome-sub{font-size:.8rem;color:var(--dim)}
+    .metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+    @media(max-width:900px){.metrics-grid{grid-template-columns:1fr 1fr}}
+    .metric-card{background:var(--surface);border:1px solid var(--border);border-radius:.6rem;padding:1.1rem}
+    .metric-label{font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+    .metric-val{font-size:1.6rem;font-weight:800;color:var(--accent)}
+    .metric-sub{font-size:.72rem;color:var(--dim);margin-top:.2rem}
+
+    /* Projects mini list */
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+    .section-title{font-size:.95rem;font-weight:700}
+    .project-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:.5rem;padding:.85rem 1rem;margin-bottom:.5rem;cursor:pointer;transition:all .2s}
+    .project-row:hover{border-color:var(--accent)}
+    .project-name{font-size:.85rem;font-weight:600;margin-bottom:.15rem}
+    .project-meta{font-size:.72rem;color:var(--dim)}
+    .project-status{font-size:.65rem;font-weight:700;text-transform:uppercase;padding:.2rem .5rem;border-radius:2rem}
+    .status-active{background:rgba(0,229,123,.1);color:var(--green)}
+    .status-archived{background:rgba(255,255,255,.05);color:var(--dim)}
+
+    /* Outputs mini list */
+    .output-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:.5rem}
+    .output-name{font-size:.83rem;font-weight:500}
+    .output-meta{font-size:.7rem;color:var(--dim)}
+    .output-format{font-size:.65rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--purple)}
+
+    /* Integrations */
+    .integration-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.5rem}
+    @media(max-width:600px){.integration-grid{grid-template-columns:1fr}}
+    .integration-card{background:var(--surface);border:1.5px solid var(--border);border-radius:.6rem;padding:1rem;display:flex;flex-direction:column;gap:.4rem}
+    .integration-card.connected{border-color:rgba(0,229,123,.3)}
+    .int-name{font-size:.85rem;font-weight:600}
+    .int-status{font-size:.68rem;font-weight:700;text-transform:uppercase}
+    .int-connected{color:var(--green)}
+    .int-not{color:var(--dim)}
+    .int-btn{margin-top:.3rem;align-self:flex-start}
+
+    /* Analytics */
+    .analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    @media(max-width:700px){.analytics-grid{grid-template-columns:1fr}}
+    .analytics-card{background:var(--surface);border:1px solid var(--border);border-radius:.6rem;padding:1.2rem}
+    .analytics-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:.75rem}
+    .bar-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.45rem;font-size:.78rem}
+    .bar-label{width:90px;color:var(--dim);flex-shrink:0}
+    .bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+    .bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .5s}
+    .bar-val{width:40px;text-align:right;color:var(--text);font-weight:600}
+
+    /* Billing */
+    .billing-card{background:var(--surface);border:1px solid var(--border);border-radius:.7rem;padding:1.5rem;margin-bottom:1.5rem}
+    .billing-tier{font-size:1.1rem;font-weight:800;margin-bottom:.3rem}
+    .billing-price{font-size:.85rem;color:var(--dim);margin-bottom:1rem}
+    .cap-row{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;padding:.4rem 0;border-bottom:1px solid var(--border)}
+    .cap-label{color:var(--dim)}
+    .cap-val{font-weight:600}
+
+    .loading{color:var(--dim);font-size:.85rem;text-align:center;padding:3rem}
+    .empty{color:var(--dim);font-size:.82rem;text-align:center;padding:2rem;border:1px dashed var(--border);border-radius:.5rem}
+
+    /* ── AI Avatar Generator ── */
+    @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    @keyframes imgReveal{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+
+    .avatar-gen-wrap{max-width:680px}
+    .avatar-hero{display:flex;align-items:center;gap:2rem;margin-bottom:2rem;flex-wrap:wrap}
+    .avatar-display{
+      width:120px;height:120px;border-radius:50%;flex-shrink:0;
+      background:linear-gradient(135deg,var(--accent),var(--purple));
+      display:flex;align-items:center;justify-content:center;
+      font-size:2.8rem;font-weight:800;color:#050a0f;
+      position:relative;overflow:hidden;
+      border:2px solid rgba(0,200,255,.3);
+      box-shadow:0 0 32px rgba(0,200,255,.2);
+      transition:box-shadow .3s;
+    }
+    .avatar-display img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .avatar-display.generating{animation:pulse 1.2s ease infinite}
+    .avatar-info h3{font-size:1.1rem;font-weight:700;margin-bottom:.3rem}
+    .avatar-info p{font-size:.82rem;color:var(--dim);line-height:1.6;max-width:360px}
+
+    .gen-form{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1.5rem}
+    .gen-form label{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:.5rem}
+    .gen-prompt{
+      width:100%;padding:.8rem 1rem;border-radius:.5rem;
+      background:var(--surface2);border:1px solid var(--border);
+      color:var(--text);font-size:.88rem;font-family:inherit;
+      resize:vertical;min-height:72px;line-height:1.5;
+      transition:border-color .2s;outline:none;
+    }
+    .gen-prompt:focus{border-color:var(--accent)}
+    .style-grid{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem;margin-bottom:1.2rem}
+    .style-chip{
+      padding:.35rem .8rem;border-radius:2rem;font-size:.72rem;font-weight:600;
+      border:1px solid var(--border);color:var(--dim);cursor:pointer;
+      transition:all .18s;background:transparent;letter-spacing:.04em;
+    }
+    .style-chip:hover{border-color:var(--accent);color:var(--accent)}
+    .style-chip.active{background:rgba(0,200,255,.12);border-color:var(--accent);color:var(--accent)}
+    .gen-actions{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+    .btn-generate{
+      padding:.7rem 1.6rem;background:linear-gradient(135deg,var(--accent),var(--purple));
+      background-size:200% auto;color:#050a0f;border:none;border-radius:.5rem;
+      font-size:.85rem;font-weight:700;cursor:pointer;letter-spacing:.04em;
+      transition:filter .2s,transform .15s;animation:gradShift 3s ease infinite;
+    }
+    .btn-generate:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px)}
+    .btn-generate:disabled{opacity:.5;cursor:not-allowed;animation:none}
+    .gen-hint{font-size:.72rem;color:var(--dim)}
+
+    .gen-result{display:none;animation:fadeUp .5s ease both}
+    .gen-result.visible{display:block}
+    .result-img-wrap{
+      position:relative;width:200px;height:200px;border-radius:.7rem;overflow:hidden;
+      border:1px solid var(--border);margin-bottom:1rem;
+      box-shadow:0 8px 32px rgba(0,200,255,.15);
+    }
+    .result-img-wrap img{width:100%;height:100%;object-fit:cover;animation:imgReveal .5s ease both}
+    .result-actions{display:flex;gap:.6rem;flex-wrap:wrap}
+
+    .gen-status{
+      display:none;align-items:center;gap:.75rem;
+      font-size:.8rem;color:var(--accent);margin-top:.75rem;
+    }
+    .gen-status.active{display:flex}
+    .gen-spinner{
+      width:18px;height:18px;border:2px solid rgba(0,200,255,.2);
+      border-top-color:var(--accent);border-radius:50%;
+      animation:spin .7s linear infinite;flex-shrink:0;
+    }
+
+    .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:.6rem;margin-top:1rem}
+    .gallery-item{
+      aspect-ratio:1;border-radius:.5rem;overflow:hidden;cursor:pointer;
+      border:1px solid var(--border);transition:border-color .2s,transform .2s;
+    }
+    .gallery-item:hover{border-color:var(--accent);transform:scale(1.04)}
+    .gallery-item img{width:100%;height:100%;object-fit:cover;display:block}
+    .gallery-item.selected{border-color:var(--accent);box-shadow:0 0 12px rgba(0,200,255,.3)}
+
+    .prompt-chips{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem}
+    .prompt-chip{
+      padding:.25rem .65rem;border-radius:2rem;font-size:.68rem;
+      background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);
+      color:var(--purple);cursor:pointer;transition:all .15s;
+    }
+    .prompt-chip:hover{background:rgba(167,139,250,.18)}
+  </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:1.5rem">
+    <a href="/" class="logo">BRIDGE<span>AI</span></a>
+    <div class="topbar-nav">
+      <a href="/profile" class="active">Profile</a>
+      <a href="/projects">Projects</a>
+      <a href="/dashboard">Dashboard</a>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:.75rem">
+    <a href="/billing" class="btn btn-outline btn-sm">Upgrade</a>
+    <div class="avatar-circle" id="avatarCircle">?</div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="nav-group">
+      <div class="nav-group-label">Profile</div>
+      <div class="nav-item active" onclick="showSection('overview')"><span class="icon">🏠</span> Overview</div>
+      <div class="nav-item" onclick="showSection('projects')"><span class="icon">📁</span> Projects</div>
+      <div class="nav-item" onclick="showSection('outputs')"><span class="icon">📤</span> Outputs</div>
+      <div class="nav-item" onclick="showSection('integrations')"><span class="icon">🔗</span> Integrations</div>
+      <div class="nav-item" onclick="showSection('analytics')"><span class="icon">📊</span> Analytics</div>
+      <div class="nav-item" onclick="showSection('avatar')"><span class="icon">🎨</span> AI Avatar</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Account</div>
+      <div class="nav-item" onclick="showSection('billing')"><span class="icon">💳</span> Billing</div>
+      <div class="nav-item" onclick="showSection('settings')"><span class="icon">⚙️</span> Settings</div>
+      <div class="nav-item" onclick="logout()" style="color:var(--red)"><span class="icon">↩</span> Sign Out</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Overview -->
+    <div class="page-section active" id="section-overview">
+      <div class="welcome-strip">
+        <div>
+          <div class="welcome-name" id="welcomeName">Loading…</div>
+          <div class="welcome-sub" id="welcomeSub">Bridge AI OS</div>
+        </div>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+          <a href="/projects" class="btn btn-outline btn-sm">View Projects</a>
+          <a href="/wizard" class="btn btn-primary btn-sm">New Project</a>
+        </div>
+      </div>
+      <div class="metrics-grid" id="metricsGrid">
+        <div class="metric-card"><div class="metric-label">Total Runs</div><div class="metric-val" id="mRuns">—</div><div class="metric-sub">Agent executions</div></div>
+        <div class="metric-card"><div class="metric-label">Outputs</div><div class="metric-val" id="mOutputs">—</div><div class="metric-sub">Generated artifacts</div></div>
+        <div class="metric-card"><div class="metric-label">Success Rate</div><div class="metric-val" id="mSuccess">—</div><div class="metric-sub">Execution success</div></div>
+        <div class="metric-card"><div class="metric-label">Avg Latency</div><div class="metric-val" id="mLatency">—</div><div class="metric-sub">Per run (ms)</div></div>
+      </div>
+      <div class="section-header">
+        <div class="section-title">Recent Projects</div>
+        <a href="/projects" class="btn btn-outline btn-sm">All projects →</a>
+      </div>
+      <div id="recentProjects"><div class="loading">Loading projects…</div></div>
+      <div class="section-header" style="margin-top:1.5rem">
+        <div class="section-title">Recent Outputs</div>
+        <button class="btn btn-outline btn-sm" onclick="showSection('outputs')">All outputs →</button>
+      </div>
+      <div id="recentOutputs"><div class="loading">Loading outputs…</div></div>
+    </div>
+
+    <!-- Projects -->
+    <div class="page-section" id="section-projects">
+      <div class="section-header">
+        <div class="section-title">Projects</div>
+        <a href="/projects" class="btn btn-primary btn-sm">+ New Project</a>
+      </div>
+      <div id="allProjectsList"><div class="loading">Loading…</div></div>
+    </div>
+
+    <!-- Outputs -->
+    <div class="page-section" id="section-outputs">
+      <div class="section-header">
+        <div class="section-title">Outputs</div>
+        <select id="outputTypeFilter" onchange="loadOutputs()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.3rem .6rem;border-radius:.3rem;font-size:.78rem">
+          <option value="">All types</option>
+          <option value="export">Export</option>
+          <option value="integration">Integration</option>
+          <option value="hybrid">Hybrid</option>
+        </select>
+      </div>
+      <div id="allOutputsList"><div class="loading">Loading…</div></div>
+    </div>
+
+    <!-- Integrations -->
+    <div class="page-section" id="section-integrations">
+      <div class="section-header">
+        <div class="section-title">Integrations</div>
+        <a href="/api/platform/integrations/targets" target="_blank" class="btn btn-outline btn-sm">API Reference</a>
+      </div>
+      <div class="integration-grid" id="integrationGrid"></div>
+    </div>
+
+    <!-- Analytics -->
+    <div class="page-section" id="section-analytics">
+      <div class="section-header"><div class="section-title">Analytics</div></div>
+      <div class="analytics-grid" id="analyticsGrid"><div class="loading">Loading analytics…</div></div>
+    </div>
+
+    <!-- Billing -->
+    <div class="page-section" id="section-billing">
+      <div class="section-header"><div class="section-title">Billing &amp; Plan</div></div>
+      <div class="billing-card" id="billingCard"><div class="loading">Loading…</div></div>
+      <a href="/billing" class="btn btn-primary">Manage Subscription →</a>
+    </div>
+
+    <!-- Settings -->
+    <div class="page-section" id="section-settings">
+      <div class="section-header"><div class="section-title">Account Settings</div></div>
+      <div style="color:var(--dim);font-size:.85rem;padding:1rem 0">Settings panel — manage email, password, API keys, and notification preferences.</div>
+      <a href="/settings" class="btn btn-outline">Open Full Settings</a>
+    </div>
+
+    <!-- AI Avatar Generator -->
+    <div class="page-section" id="section-avatar">
+      <div class="section-header"><div class="section-title">AI Avatar Generator</div></div>
+      <div class="avatar-gen-wrap">
+
+        <!-- Current avatar display -->
+        <div class="avatar-hero">
+          <div class="avatar-display" id="avatarDisplay">
+            <span id="avatarInitial">?</span>
+          </div>
+          <div class="avatar-info">
+            <h3>Your Profile Image</h3>
+            <p>Generate a unique AI avatar from a text prompt. Powered by DALL·E 3. Your generated image is set as your profile picture across all Bridge AI pages.</p>
+          </div>
+        </div>
+
+        <!-- Prompt suggestions -->
+        <div class="gen-form">
+          <label>Quick prompts</label>
+          <div class="prompt-chips" id="promptChips">
+            <span class="prompt-chip" onclick="useChip(this)">futuristic AI entrepreneur</span>
+            <span class="prompt-chip" onclick="useChip(this)">blockchain developer in a digital world</span>
+            <span class="prompt-chip" onclick="useChip(this)">African tech innovator, city skyline</span>
+            <span class="prompt-chip" onclick="useChip(this)">AI robot with human features</span>
+            <span class="prompt-chip" onclick="useChip(this)">digital twin silhouette</span>
+            <span class="prompt-chip" onclick="useChip(this)">CEO with neural network background</span>
+          </div>
+
+          <label>Describe your avatar</label>
+          <textarea class="gen-prompt" id="genPrompt" placeholder="e.g. a confident tech founder with glowing circuit patterns, dark background…" rows="3"></textarea>
+
+          <label style="margin-top:1rem">Style</label>
+          <div class="style-grid" id="styleGrid">
+            <button class="style-chip active" data-style="cyberpunk" onclick="selectStyle(this)">Cyberpunk</button>
+            <button class="style-chip" data-style="professional" onclick="selectStyle(this)">Professional</button>
+            <button class="style-chip" data-style="artistic" onclick="selectStyle(this)">Artistic</button>
+            <button class="style-chip" data-style="pixel" onclick="selectStyle(this)">Pixel Art</button>
+            <button class="style-chip" data-style="anime" onclick="selectStyle(this)">Anime</button>
+            <button class="style-chip" data-style="minimal" onclick="selectStyle(this)">Minimal</button>
+          </div>
+
+          <div class="gen-actions">
+            <button class="btn-generate" id="genBtn" onclick="generateAvatar()">✦ Generate Avatar</button>
+            <span class="gen-hint">Uses OpenAI DALL·E 3 · ~10 seconds</span>
+          </div>
+          <div class="gen-status" id="genStatus">
+            <div class="gen-spinner"></div>
+            <span id="genStatusText">Generating your avatar…</span>
+          </div>
+        </div>
+
+        <!-- Result -->
+        <div class="gen-result" id="genResult">
+          <label style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:.75rem">Generated Image</label>
+          <div class="result-img-wrap">
+            <img id="resultImg" src="" alt="Generated avatar">
+          </div>
+          <div class="result-actions">
+            <button class="btn btn-primary btn-sm" onclick="setAvatar()">✓ Set as My Avatar</button>
+            <button class="btn btn-outline btn-sm" onclick="generateAvatar()">↻ Regenerate</button>
+            <a id="resultDownload" href="#" download="bridge-ai-avatar.png" class="btn btn-outline btn-sm">↓ Download</a>
+          </div>
+          <div id="setAvatarMsg" style="margin-top:.75rem;font-size:.78rem;display:none"></div>
+        </div>
+
+        <!-- Gallery -->
+        <div id="avatarGalleryWrap" style="margin-top:2rem;display:none">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:.6rem">Previously Generated</div>
+          <div class="gallery-grid" id="avatarGallery"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let token = null;
+let user = null;
+
+const PLAN_CAPS = {
+  free:       { projects:2,       runs_per_day:10,    outputs_per_month:5,   agents_per_run:1,  api_calls_per_min:5 },
+  starter:    { projects:10,      runs_per_day:100,   outputs_per_month:50,  agents_per_run:3,  api_calls_per_min:30 },
+  pro:        { projects:100,     runs_per_day:1000,  outputs_per_month:500, agents_per_run:10, api_calls_per_min:120 },
+  admin:      { projects:'∞',    runs_per_day:'∞',   outputs_per_month:'∞', agents_per_run:'∞',api_calls_per_min:600 },
+  enterprise: { projects:'∞',    runs_per_day:'∞',   outputs_per_month:'∞', agents_per_run:'∞',api_calls_per_min:'∞' },
+};
+
+const INTEGRATIONS_LIST = [
+  { id:'slack',   label:'Slack',   icon:'💬', desc:'Post outputs to Slack channels' },
+  { id:'github',  label:'GitHub',  icon:'🐙', desc:'Create issues or trigger dispatches' },
+  { id:'notion',  label:'Notion',  icon:'📝', desc:'Create pages in a Notion database' },
+  { id:'zapier',  label:'Zapier',  icon:'⚡', desc:'Trigger Zapier zaps via webhook' },
+  { id:'mcp',     label:'MCP',     icon:'🧠', desc:'Push to Model Context Protocol runtimes' },
+  { id:'clr',     label:'CLR',     icon:'🔧', desc:'Trigger Composable Logic Runtimes' },
+];
+
+function getToken() {
+  const match = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('bridge_token='));
+  return match ? match.split('=')[1] : localStorage.getItem('bridge_token');
+}
+
+async function authFetch(url, opts = {}) {
+  return fetch(url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...(opts.headers || {}) },
+  });
+}
+
+function showSection(id) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(id)) n.classList.add('active');
+  });
+
+  if (id === 'outputs') loadOutputs();
+  if (id === 'analytics') loadAnalytics();
+  if (id === 'billing') renderBilling();
+  if (id === 'integrations') renderIntegrations();
+}
+
+function makeProjectRow(p) {
+  const row = document.createElement('div');
+  row.className = 'project-row';
+  row.addEventListener('click', () => { window.location.href = '/projects#' + p.id; });
+
+  const left = document.createElement('div');
+
+  const name = document.createElement('div');
+  name.className = 'project-name';
+  name.textContent = p.name;
+
+  const meta = document.createElement('div');
+  meta.className = 'project-meta';
+  meta.textContent = (p.tool_id || 'No tool') + ' · ' + (p.run_count || 0) + ' runs · ' + new Date(p.updated_at).toLocaleDateString();
+
+  left.appendChild(name); left.appendChild(meta);
+
+  const status = document.createElement('span');
+  status.className = 'project-status status-' + p.status;
+  status.textContent = p.status;
+
+  row.appendChild(left); row.appendChild(status);
+  return row;
+}
+
+function makeOutputRow(o) {
+  const row = document.createElement('div');
+  row.className = 'output-row';
+
+  const info = document.createElement('div');
+  const name = document.createElement('div');
+  name.className = 'output-name';
+  name.textContent = o.title || 'Output';
+  const meta = document.createElement('div');
+  meta.className = 'output-meta';
+  meta.textContent = new Date(o.created_at).toLocaleDateString() + ' · ' + o.status;
+  info.appendChild(name); info.appendChild(meta);
+
+  const fmt = document.createElement('div');
+  fmt.className = 'output-format';
+  fmt.textContent = o.format;
+
+  const actions = document.createElement('div');
+  actions.style.display = 'flex'; actions.style.gap = '.4rem';
+  if (o.status === 'ready' || o.status === 'delivered') {
+    const dl = document.createElement('a');
+    dl.href = '/api/platform/outputs/' + encodeURIComponent(o.id) + '/export?token=' + token;
+    dl.className = 'btn btn-outline btn-sm';
+    dl.textContent = '↓ Export';
+    actions.appendChild(dl);
+  }
+
+  row.appendChild(info); row.appendChild(fmt); row.appendChild(actions);
+  return row;
+}
+
+async function loadOutputs() {
+  const list = document.getElementById('allOutputsList');
+  const type = document.getElementById('outputTypeFilter').value;
+  list.textContent = '';
+  const loading = document.createElement('div');
+  loading.className = 'loading'; loading.textContent = 'Loading…';
+  list.appendChild(loading);
+
+  try {
+    const url = '/api/platform/outputs' + (type ? '?type=' + encodeURIComponent(type) : '');
+    const res = await authFetch(url);
+    const data = await res.json();
+    list.textContent = '';
+    if (!data.outputs || data.outputs.length === 0) {
+      const empty = document.createElement('div'); empty.className = 'empty';
+      empty.textContent = 'No outputs yet. Run a project to generate your first output.';
+      list.appendChild(empty);
+    } else {
+      data.outputs.forEach(o => list.appendChild(makeOutputRow(o)));
+    }
+  } catch {
+    list.textContent = '';
+    const err = document.createElement('div'); err.className = 'empty';
+    err.textContent = 'Failed to load outputs.'; list.appendChild(err);
+  }
+}
+
+async function loadAnalytics() {
+  const grid = document.getElementById('analyticsGrid');
+  grid.textContent = '';
+  const loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = 'Loading…';
+  grid.appendChild(loading);
+
+  try {
+    const res = await authfetch('/api/platform/profile/analytics');
+    const { analytics } = await res.json();
+    grid.textContent = '';
+
+    // Executions card
+    const card1 = document.createElement('div'); card1.className = 'analytics-card';
+    const t1 = document.createElement('div'); t1.className = 'analytics-title'; t1.textContent = 'Execution Summary';
+    card1.appendChild(t1);
+    [
+      ['Total runs', analytics.executions?.total || 0, analytics.executions?.total || 1],
+      ['Successful', analytics.executions?.successful || 0, analytics.executions?.total || 1],
+      ['Failed', analytics.executions?.failed || 0, analytics.executions?.total || 1],
+    ].forEach(([label, val, max]) => {
+      const row = document.createElement('div'); row.className = 'bar-row';
+      const lbl = document.createElement('div'); lbl.className = 'bar-label'; lbl.textContent = label;
+      const track = document.createElement('div'); track.className = 'bar-track';
+      const fill = document.createElement('div'); fill.className = 'bar-fill';
+      fill.style.width = Math.round((val / (max || 1)) * 100) + '%';
+      track.appendChild(fill);
+      const valEl = document.createElement('div'); valEl.className = 'bar-val'; valEl.textContent = val;
+      row.appendChild(lbl); row.appendChild(track); row.appendChild(valEl);
+      card1.appendChild(row);
+    });
+    grid.appendChild(card1);
+
+    // Outputs card
+    const card2 = document.createElement('div'); card2.className = 'analytics-card';
+    const t2 = document.createElement('div'); t2.className = 'analytics-title'; t2.textContent = 'Output Breakdown';
+    card2.appendChild(t2);
+    const byType = analytics.outputs?.by_type || {};
+    const total = analytics.outputs?.total || 1;
+    Object.entries(byType).forEach(([type, count]) => {
+      const row = document.createElement('div'); row.className = 'bar-row';
+      const lbl = document.createElement('div'); lbl.className = 'bar-label'; lbl.textContent = type;
+      const track = document.createElement('div'); track.className = 'bar-track';
+      const fill = document.createElement('div'); fill.className = 'bar-fill';
+      fill.style.width = Math.round((count / total) * 100) + '%';
+      fill.style.background = 'var(--purple)';
+      track.appendChild(fill);
+      const valEl = document.createElement('div'); valEl.className = 'bar-val'; valEl.textContent = count;
+      row.appendChild(lbl); row.appendChild(track); row.appendChild(valEl);
+      card2.appendChild(row);
+    });
+    if (Object.keys(byType).length === 0) {
+      const empty = document.createElement('div'); empty.style.color = 'var(--dim)';
+      empty.style.fontSize = '.8rem'; empty.textContent = 'No outputs yet.';
+      card2.appendChild(empty);
+    }
+    grid.appendChild(card2);
+
+  } catch {
+    grid.textContent = '';
+    const err = document.createElement('div'); err.className = 'loading'; err.textContent = 'Analytics unavailable.';
+    grid.appendChild(err);
+  }
+}
+
+function renderIntegrations() {
+  const grid = document.getElementById('integrationGrid');
+  grid.textContent = '';
+  const connectedIds = (user?.meta?.integrations) || [];
+
+  INTEGRATIONS_LIST.forEach(intg => {
+    const card = document.createElement('div');
+    const isConnected = connectedIds.includes(intg.id);
+    card.className = 'integration-card' + (isConnected ? ' connected' : '');
+
+    const nameEl = document.createElement('div'); nameEl.className = 'int-name';
+    nameEl.textContent = intg.icon + '  ' + intg.label;
+
+    const status = document.createElement('div');
+    status.className = 'int-status ' + (isConnected ? 'int-connected' : 'int-not');
+    status.textContent = isConnected ? '● Connected' : '○ Not connected';
+
+    const desc = document.createElement('div');
+    desc.style.fontSize = '.72rem'; desc.style.color = 'var(--dim)';
+    desc.textContent = intg.desc;
+
+    const btn = document.createElement('a');
+    btn.href = '/settings#integration-' + intg.id;
+    btn.className = 'btn btn-outline btn-sm int-btn';
+    btn.textContent = isConnected ? 'Configure' : 'Connect';
+
+    card.appendChild(nameEl); card.appendChild(status); card.appendChild(desc); card.appendChild(btn);
+    grid.appendChild(card);
+  });
+}
+
+function renderBilling() {
+  const card = document.getElementById('billingCard');
+  card.textContent = '';
+  if (!user) { card.textContent = 'Loading…'; return; }
+
+  const tier = user.plan || 'free';
+  const caps = PLAN_CAPS[tier] || PLAN_CAPS.free;
+
+  const nameEl = document.createElement('div'); nameEl.className = 'billing-tier';
+  nameEl.textContent = tier.charAt(0).toUpperCase() + tier.slice(1) + ' Plan';
+  const badge = document.createElement('span');
+  badge.className = 'badge badge-' + tier; badge.textContent = tier;
+  nameEl.appendChild(document.createTextNode(' ')); nameEl.appendChild(badge);
+
+  const priceEl = document.createElement('div'); priceEl.className = 'billing-price';
+  const prices = { free:'R0/month', starter:'R299/month', pro:'R799/month', admin:'Custom', enterprise:'Custom' };
+  priceEl.textContent = prices[tier] || 'Custom pricing';
+
+  card.appendChild(nameEl); card.appendChild(priceEl);
+
+  Object.entries(caps).forEach(([key, val]) => {
+    const row = document.createElement('div'); row.className = 'cap-row';
+    const label = document.createElement('span'); label.className = 'cap-label';
+    label.textContent = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const valEl = document.createElement('span'); valEl.className = 'cap-val';
+    valEl.textContent = val === -1 || val === '∞' ? '∞ Unlimited' : val;
+    row.appendChild(label); row.appendChild(valEl);
+    card.appendChild(row);
+  });
+}
+
+async function init() {
+  token = getToken();
+  if (!token) { window.location.href = '/join?next=/profile'; return; }
+
+  // Load profile
+  try {
+    const res = await authFetch('/auth/me');
+    const data = await res.json();
+    if (!data.ok || !data.user) { window.location.href = '/join?next=/profile'; return; }
+    user = data.user;
+
+    const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
+    document.getElementById('avatarCircle').textContent = initials;
+
+    const tier = user.plan || 'free';
+    document.getElementById('welcomeName').textContent = 'Welcome back, ' + (user.name || user.email.split('@')[0]);
+    document.getElementById('welcomeSub').textContent = tier.charAt(0).toUpperCase() + tier.slice(1) + ' Plan · ' + (user.email || '');
+  } catch { /* non-fatal */ }
+
+  // Load analytics for metrics
+  try {
+    const res = await authfetch('/api/platform/profile/analytics');
+    const { analytics } = await res.json();
+    if (analytics) {
+      document.getElementById('mRuns').textContent = analytics.projects?.total_runs || 0;
+      document.getElementById('mOutputs').textContent = analytics.outputs?.total || 0;
+      document.getElementById('mSuccess').textContent = (analytics.executions?.success_rate || 100) + '%';
+      document.getElementById('mLatency').textContent = analytics.performance?.avg_latency_ms || '—';
+    }
+  } catch { /* non-fatal */ }
+
+  // Load recent projects
+  try {
+    const res = await authfetch('/api/platform/projects?status=active');
+    const data = await res.json();
+    const container = document.getElementById('recentProjects');
+    container.textContent = '';
+    if (!data.projects || data.projects.length === 0) {
+      const empty = document.createElement('div'); empty.className = 'empty';
+      empty.textContent = 'No projects yet. ';
+      const link = document.createElement('a'); link.href = '/projects'; link.style.color = 'var(--accent)';
+      link.textContent = 'Create your first project →';
+      empty.appendChild(link); container.appendChild(empty);
+    } else {
+      data.projects.slice(0, 5).forEach(p => container.appendChild(makeProjectRow(p)));
+    }
+
+    // Same for all projects section
+    const allContainer = document.getElementById('allProjectsList');
+    allContainer.textContent = '';
+    if (!data.projects || data.projects.length === 0) {
+      const e = document.createElement('div'); e.className = 'empty';
+      e.textContent = 'No projects yet.'; allContainer.appendChild(e);
+    } else {
+      data.projects.forEach(p => allContainer.appendChild(makeProjectRow(p)));
+    }
+  } catch { /* non-fatal */ }
+
+  // Load recent outputs
+  try {
+    const res = await authfetch('/api/platform/outputs?limit=5');
+    const data = await res.json();
+    const container = document.getElementById('recentOutputs');
+    container.textContent = '';
+    if (!data.outputs || data.outputs.length === 0) {
+      const empty = document.createElement('div'); empty.className = 'empty';
+      empty.textContent = 'No outputs yet. Run a project to generate your first output.';
+      container.appendChild(empty);
+    } else {
+      data.outputs.forEach(o => container.appendChild(makeOutputRow(o)));
+    }
+  } catch { /* non-fatal */ }
+}
+
+function logout() {
+  document.cookie = 'bridge_token=;path=/;max-age=0';
+  localStorage.removeItem('bridge_token');
+  window.location.href = '/';
+}
+
+// ── AI Avatar Generator ──────────────────────────────────────────────────────
+let selectedStyle = 'cyberpunk';
+let generatedUrl = null;
+const AVATAR_GALLERY_KEY = 'bridge_avatar_gallery';
+
+function selectStyle(el) {
+  document.querySelectorAll('.style-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedStyle = el.dataset.style;
+}
+
+function useChip(el) {
+  document.getElementById('genPrompt').value = el.textContent;
+  document.getElementById('genPrompt').focus();
+}
+
+function setGenStatus(active, text) {
+  const s = document.getElementById('genStatus');
+  const t = document.getElementById('genStatusText');
+  s.classList.toggle('active', active);
+  if (text) t.textContent = text;
+}
+
+async function generateAvatar() {
+  const prompt = document.getElementById('genPrompt').value.trim();
+  if (prompt.length < 3) {
+    document.getElementById('genPrompt').focus();
+    return;
+  }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('genResult').classList.remove('visible');
+  document.getElementById('avatarDisplay').classList.add('generating');
+  setGenStatus(true, 'Generating your avatar…');
+
+  const statusMsgs = [
+    'Composing scene…', 'Rendering details…',
+    'Adding style effects…', 'Finalising image…'
+  ];
+  let si = 0;
+  const ticker = setInterval(() => {
+    setGenStatus(true, statusMsgs[si++ % statusMsgs.length]);
+  }, 2500);
+
+  try {
+    const resp = await authfetch('/api/platform/avatar/generate', {
+      method: 'POST',
+      body: JSON.stringify({ prompt, style: selectedStyle }),
+    });
+    const data = await resp.json();
+    clearInterval(ticker);
+
+    if (!data.ok || !data.url) throw new Error(data.error || 'Generation failed');
+
+    generatedUrl = data.url;
+    const img = document.getElementById('resultImg');
+    img.src = generatedUrl;
+    document.getElementById('resultDownload').href = generatedUrl;
+    document.getElementById('genResult').classList.add('visible');
+    setGenStatus(false);
+
+    // Add to local gallery
+    const gallery = JSON.parse(localStorage.getItem(AVATAR_GALLERY_KEY) || '[]');
+    gallery.unshift({ url: generatedUrl, prompt, style: selectedStyle, ts: Date.now() });
+    localStorage.setItem(AVATAR_GALLERY_KEY, JSON.stringify(gallery.slice(0, 12)));
+    renderGallery();
+
+  } catch (e) {
+    clearInterval(ticker);
+    setGenStatus(true, '⚠ ' + e.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('avatarDisplay').classList.remove('generating');
+  }
+}
+
+async function setAvatar() {
+  if (!generatedUrl) return;
+  const msgEl = document.getElementById('setAvatarMsg');
+  msgEl.style.display = 'block';
+  msgEl.style.color = 'var(--dim)';
+  msgEl.textContent = 'Saving…';
+
+  try {
+    const resp = await authfetch('/api/platform/avatar/set', {
+      method: 'POST',
+      body: JSON.stringify({ avatarUrl: generatedUrl }),
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error);
+
+    // Update avatar everywhere on this page
+    const disp = document.getElementById('avatarDisplay');
+    disp.innerHTML = `<img src="${generatedUrl}" alt="avatar">`;
+    document.getElementById('avatarCircle').style.backgroundImage = `url(${generatedUrl})`;
+    document.getElementById('avatarCircle').style.backgroundSize = 'cover';
+    document.getElementById('avatarCircle').textContent = '';
+
+    msgEl.style.color = 'var(--green)';
+    msgEl.textContent = '✓ Avatar updated! Visible across all Bridge AI pages.';
+    setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+  } catch (e) {
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = '⚠ ' + e.message;
+  }
+}
+
+function renderGallery() {
+  const gallery = JSON.parse(localStorage.getItem(AVATAR_GALLERY_KEY) || '[]');
+  const wrap = document.getElementById('avatarGalleryWrap');
+  const grid = document.getElementById('avatarGallery');
+  if (gallery.length === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  grid.innerHTML = '';
+  gallery.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'gallery-item';
+    div.title = item.prompt;
+    div.innerHTML = `<img src="${item.url}" alt="${item.prompt}" loading="lazy">`;
+    div.onclick = () => {
+      document.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('selected'));
+      div.classList.add('selected');
+      generatedUrl = item.url;
+      document.getElementById('resultImg').src = item.url;
+      document.getElementById('resultDownload').href = item.url;
+      document.getElementById('genResult').classList.add('visible');
+      document.getElementById('genPrompt').value = item.prompt;
+    };
+    grid.appendChild(div);
+  });
+}
+
+// ── Extend showSection to init avatar tab ─────────────────────────────────────
+const _origShow = showSection;
+// eslint-disable-next-line no-global-assign
+showSection = function(id) {
+  _origShow(id);
+  if (id === 'avatar') {
+    renderGallery();
+    const initEl = document.getElementById('avatarInitial');
+    if (initEl && user) initEl.textContent = (user.name || user.email || '?').charAt(0).toUpperCase();
+    // Restore saved avatar if any
+    const saved = user?.avatar_url;
+    if (saved) {
+      const disp = document.getElementById('avatarDisplay');
+      disp.innerHTML = `<img src="${saved}" alt="avatar">`;
+    }
+  }
+};
+
+init();
+</script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

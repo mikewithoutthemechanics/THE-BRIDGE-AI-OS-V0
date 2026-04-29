@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<meta name="description" content="AI invoicing — generate, send, and track invoices automatically. Integrated with treasury and PayFast payments.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/invoicing">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/invoicing">
+<meta property="og:title" content="BridgeAI · Smart Invoicing">
+<meta property="og:description" content="AI invoicing — generate, send, and track invoices automatically. Integrated with treasury and PayFast payments.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BridgeAI · Smart Invoicing">
+<meta name="twitter:description" content="AI invoicing — generate, send, and track invoices automatically. Integrated with treasury and PayFast payments.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>BridgeAI · Smart Invoicing</title>
 <style>
@@ -110,6 +124,21 @@ nav{display:flex;align-items:center;justify-content:space-between;
 #toast{position:fixed;bottom:1.25rem;right:1.25rem;background:var(--surface);
   border:1px solid var(--accent);color:var(--accent);font-size:.82rem;
   padding:.6rem 1.1rem;border-radius:6px;display:none;z-index:999}
+</style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
 </style>
 </head>
 <body>
@@ -251,7 +280,7 @@ async function ensureAuth() {
       return true;
     }
   } catch {}
-  window.location.href = '/login?next=/invoicing';
+  window.location.href = '/join?next=/invoicing';
   return false;
 }
 
@@ -414,11 +443,9 @@ const SC  = { draft:'s-draft', sent:'s-sent', paid:'s-paid', overdue:'s-overdue'
 async function loadInvoices() {
   const status = document.getElementById('filter-status').value;
   const url = '/invoices' + (status ? '?status=' + encodeURIComponent(status) : '');
-  try {
-    const r = await apiFetch(url);
+  const renderInvoiceCards = (invs) => {
     const el = document.getElementById('invoice-list');
     el.textContent = '';
-    const invs = r.invoices || [];
     if (!invs.length) {
       const e = document.createElement('div');
       e.className = 'empty-state'; e.textContent = 'No invoices yet';
@@ -430,12 +457,12 @@ async function loadInvoices() {
       card.dataset.id = inv.id;
       card.dataset.status = inv.status;
       const left = document.createElement('div');
-      const num = document.createElement('div'); num.className='inv-num'; num.textContent=inv.invoice_number; left.appendChild(num);
+      const num = document.createElement('div'); num.className='inv-num'; num.textContent=inv.invoice_number || inv.number || inv.id; left.appendChild(num);
       const cli = document.createElement('div'); cli.className='inv-client';
-      cli.textContent=(inv.client_name||inv.client_email)+(inv.client_company?' · '+inv.client_company:'');
+      cli.textContent=(inv.client_name||inv.client||inv.client_email||'Client')+(inv.client_company?' · '+inv.client_company:'');
       left.appendChild(cli);
       const badge = document.createElement('span');
-      badge.className='badge '+(SC[inv.status]||'s-draft'); badge.textContent=inv.status;
+      badge.className='badge '+(SC[inv.status]||'s-draft'); badge.textContent=inv.status || 'draft';
       left.appendChild(badge);
       const acts = document.createElement('div'); acts.className='inv-actions';
       if (inv.status==='draft') {
@@ -447,7 +474,7 @@ async function loadInvoices() {
         b.textContent='✓ Paid'; b.onclick=()=>markPaid(inv.id); acts.appendChild(b);
       }
       const pdf=document.createElement('button'); pdf.className='btn btn-secondary btn-sm';
-      pdf.textContent='⬇ PDF'; pdf.onclick=()=>dlPdf(inv.id,inv.invoice_number); acts.appendChild(pdf);
+      pdf.textContent='⬇ PDF'; pdf.onclick=()=>dlPdf(inv.id,inv.invoice_number||inv.number||inv.id); acts.appendChild(pdf);
       if (inv.payment_link) {
         const a=document.createElement('a'); a.className='btn btn-primary btn-sm';
         a.textContent='💳 Pay'; a.href=inv.payment_link; a.target='_blank'; a.rel='noopener'; acts.appendChild(a);
@@ -455,12 +482,36 @@ async function loadInvoices() {
       left.appendChild(acts); card.appendChild(left);
       const right = document.createElement('div');
       const amt = document.createElement('div'); amt.className='inv-amount';
-      amt.textContent=(SYM[inv.currency]||inv.currency)+' '+(inv.total??0).toFixed(2); right.appendChild(amt);
+      const total = Number(inv.total ?? inv.amount ?? 0);
+      amt.textContent=(SYM[inv.currency]||inv.currency||'R')+' '+total.toFixed(2); right.appendChild(amt);
       const meta = document.createElement('div'); meta.className='inv-meta';
-      meta.textContent=inv.currency+' · due '+(inv.due_date||'—'); right.appendChild(meta);
+      meta.textContent=(inv.currency||'ZAR')+' · due '+(inv.due_date||'—'); right.appendChild(meta);
       card.appendChild(right); el.appendChild(card);
     });
-  } catch(e) { toast('Failed to load invoices: '+e.message, 'var(--red)'); }
+  };
+
+  const fallbackInvoices = async () => {
+    const headers = _authToken ? { Authorization: 'Bearer ' + _authToken } : {};
+    const res = await fetch('/api/corporate/state', { credentials: 'include', headers });
+    if (!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+    let invs = Array.isArray(d.invoices) ? d.invoices : [];
+    if (status) invs = invs.filter(i => String(i.status || '').toLowerCase() === status.toLowerCase());
+    return invs;
+  };
+
+  try {
+    const r = await apiFetch(url);
+    renderInvoiceCards(r.invoices || []);
+  } catch(e) {
+    try {
+      const invs = await fallbackInvoices();
+      renderInvoiceCards(invs);
+      toast('Using fallback invoice source', 'var(--yellow)');
+    } catch {
+      toast('Failed to load invoices: '+e.message, 'var(--red)');
+    }
+  }
 }
 
 async function sendOne(id) {
@@ -491,7 +542,25 @@ async function loadStats() {
     document.getElementById('ss-pending').textContent = s.by_status?.sent ?? 0;
     document.getElementById('ss-overdue').textContent = s.by_status?.overdue ?? 0;
     document.getElementById('ss-revenue').textContent = 'R '+(s.total_billed ?? 0).toFixed(0);
-  } catch {}
+  } catch {
+    try {
+      const headers = _authToken ? { Authorization: 'Bearer ' + _authToken } : {};
+      const r = await fetch('/api/corporate/state', { credentials: 'include', headers });
+      if (!r.ok) return;
+      const d = await r.json();
+      const invs = Array.isArray(d.invoices) ? d.invoices : [];
+      const paid = invs.filter(i => i.status === 'paid');
+      const sent = invs.filter(i => i.status === 'sent');
+      const overdue = invs.filter(i => i.status === 'overdue');
+      const billed = invs.reduce((a, i) => a + Number(i.total || i.amount || 0), 0);
+      const paidSum = paid.reduce((a, i) => a + Number(i.total || i.amount || 0), 0);
+      document.getElementById('ss-total').textContent   = invs.length;
+      document.getElementById('ss-paid').textContent    = 'R '+paidSum.toFixed(0);
+      document.getElementById('ss-pending').textContent = sent.length;
+      document.getElementById('ss-overdue').textContent = overdue.length;
+      document.getElementById('ss-revenue').textContent = 'R '+billed.toFixed(0);
+    } catch {}
+  }
 }
 
 (async () => {
@@ -502,6 +571,7 @@ async function loadStats() {
   setInterval(() => { loadInvoices(); loadStats(); }, 30000);
 })();
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

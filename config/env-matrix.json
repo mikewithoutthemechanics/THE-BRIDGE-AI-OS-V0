@@ -1,0 +1,509 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "generated": "2026-04-19",
+    "description": "Authoritative env var matrix for BridgeAI ecosystem. Keys classified by concern. Secret values NEVER stored here — only names, flags, and wiring metadata.",
+    "sources_scanned": [
+      "C:/aoe-unified-final/.env*",
+      "C:/aoe-unified-final-main/.env*",
+      "C:/aoe-unified-final-main/bridgeaios/**/.env*",
+      "E:/BridgeAI/BridgeLiveWall/**/.env*",
+      "C:/aoe-unified-final/**/*.js (process.env.*)",
+      "E:/BridgeAI/BridgeLiveWall/backend/**/*.py (os.getenv/environ)"
+    ],
+    "flag_legend": {
+      "secret": "Value is sensitive — never log, never commit, rotate on exposure",
+      "required": "App fails to boot / crashes on first use without this",
+      "vps_present": "Confirmed present in VPS /var/www/bridgeai/.env",
+      "runtime_flag": "Boolean/toggle — changes behavior, not sensitive"
+    }
+  },
+
+  "categories": {
+    "auth_secrets": {
+      "label": "🔐 Auth & Sessions",
+      "description": "JWT secrets, admin tokens, internal service tokens. Rotate on any suspected exposure. Pair with short expiries.",
+      "vars": [
+        {"name": "JWT_SECRET",               "secret": true,  "required": true,  "vps_present": true,  "used_by": ["server.js", "gateway.js", "brain.js"]},
+        {"name": "JWT_REFRESH_SECRET",       "secret": true,  "required": false, "vps_present": false, "used_by": ["server.js"]},
+        {"name": "JWT_SECRET_KEY",           "secret": true,  "required": false, "vps_present": true,  "used_by": ["python backend"]},
+        {"name": "BRIDGE_SIWE_JWT_SECRET",   "secret": true,  "required": true,  "vps_present": true,  "used_by": ["backend/app/domains/infra/deps.py", "lib/siwe.js"]},
+        {"name": "BRIDGE_SIWE_JWT_EXPIRY",   "secret": false, "required": false, "vps_present": false, "default": "3600"},
+        {"name": "BRIDGE_SIWE_RPC_URL",      "secret": false, "required": true,  "vps_present": false, "note": "RPC endpoint for wallet signature verification"},
+        {"name": "BRIDGE_SIWE_CHAIN_ID",     "secret": false, "required": true,  "vps_present": false, "default": "59144"},
+        {"name": "BRIDGE_SIWE_ALLOWED_DOMAINS","secret": false, "required": false, "vps_present": false, "default": "bridge-ai-os.com,go.ai-os.co.za"},
+        {"name": "BRIDGE_SIWE_REQUIRE_ROLE", "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "BRIDGE_SIWE_ROLE_CONTRACT","secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_SIWE_ROLE_HASH",    "secret": false, "required": false, "vps_present": false},
+        {"name": "DEFI_JWT_SECRET",          "secret": true,  "required": false, "vps_present": false, "used_by": ["backend dex domain"]},
+        {"name": "BRIDGE_INTERNAL_SECRET",   "secret": true,  "required": true,  "vps_present": true,  "used_by": ["brain.js:924 /api/admin/keys", "server ↔ brain auth"]},
+        {"name": "BRIDGE_INTERNAL_TOKEN",    "secret": true,  "required": false, "vps_present": false, "used_by": ["python internal calls"]},
+        {"name": "BRIDGE_ORCHESTRATOR_SECRET","secret": true, "required": false, "vps_present": false},
+        {"name": "BRIDGE_VERIFY_SECRET",     "secret": true,  "required": false, "vps_present": false},
+        {"name": "BRIDGE_ADMIN_SECRET",      "secret": true,  "required": false, "vps_present": false},
+        {"name": "BRIDGE_DEV_SECRET",        "secret": true,  "required": false, "vps_present": false, "note": "Dev-only; MUST be unset in prod"},
+        {"name": "ADMIN_TOKEN",              "secret": true,  "required": true,  "vps_present": false, "used_by": ["server.js:requireAdmin", "brain.js withdraw auth"]},
+        {"name": "ORCHESTRA_ADMIN_TOKEN",    "secret": true,  "required": true,  "vps_present": false, "used_by": ["orchestra-server.js", "routes/settings.js"]},
+        {"name": "ORCHESTRA_SESSION_SECRET", "secret": true,  "required": true,  "vps_present": false, "note": "Falls back to ephemeral if unset — sessions invalidate on reboot"},
+        {"name": "ADVISOR_SHARED_SECRET",    "secret": true,  "required": true,  "vps_present": false, "used_by": ["services/config-advisor.js"]},
+        {"name": "CSRF_SECRET_KEY",          "secret": true,  "required": false, "vps_present": false},
+        {"name": "DEV_LOGIN_SECRET",         "secret": true,  "required": false, "vps_present": false, "note": "Dev-only"},
+        {"name": "AGENT_SALT",               "secret": true,  "required": false, "vps_present": false, "note": "Agent-ID hashing"},
+        {"name": "TOTP_ENCRYPTION_KEY",      "secret": true,  "required": false, "vps_present": false},
+        {"name": "SECRETS_MASTER_KEY",       "secret": true,  "required": true,  "vps_present": false, "used_by": ["lib/secrets.js"]},
+        {"name": "ENCRYPTION_KEY",           "secret": true,  "required": false, "vps_present": false},
+        {"name": "TVM_SECRET",               "secret": true,  "required": false, "vps_present": false, "used_by": ["Trust Verification Matrix"]},
+        {"name": "BRIDGE_TVM_SIGNING_KEY",   "secret": true,  "required": false, "vps_present": false},
+        {"name": "BRIDGE_TVM_DEV_HEADERS",   "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "CFO_TOKEN",                "secret": true,  "required": false, "vps_present": true,  "note": "Treasury write gate"},
+        {"name": "SIWE_SECRET",              "secret": true,  "required": false, "vps_present": false},
+        {"name": "CRON_SECRET",              "secret": true,  "required": false, "vps_present": false, "used_by": ["scheduled job auth"]},
+        {"name": "VERCEL_CRON_SECRET",       "secret": true,  "required": false, "vps_present": false},
+        {"name": "WEBHOOK_SECRET",           "secret": true,  "required": false, "vps_present": false, "used_by": ["webhook signature verification"]},
+        {"name": "BRIDGE_WEBHOOK_KEY",       "secret": true,  "required": false, "vps_present": false},
+        {"name": "ZAPIER_WEBHOOK_SECRET",    "secret": true,  "required": false, "vps_present": false},
+        {"name": "WP_HOOK_SECRET",           "secret": true,  "required": false, "vps_present": false},
+        {"name": "KEYFORGE_MASTER",          "secret": true,  "required": true,  "vps_present": false, "used_by": ["keyforge/ — rotates signing keys"]},
+        {"name": "KEYFORGE_MASTER_SECRET",   "secret": true,  "required": false, "vps_present": false},
+        {"name": "KEYFORGE_EPOCH_SEC",       "secret": false, "required": false, "vps_present": false, "default": "3600"},
+        {"name": "KEYFORGE_ACTIVE_KEYS",     "secret": false, "required": false, "vps_present": false, "default": "3"},
+        {"name": "KEYFORGE_DRIFT_EPOCHS",    "secret": false, "required": false, "vps_present": false, "default": "2"}
+      ]
+    },
+
+    "data_management_supabase": {
+      "label": "🗄️ Supabase (PRIMARY datastore)",
+      "description": "Supabase is the central data-store dependency. Most write paths go through one of these clients. SERVICE_KEY is root-equivalent — never expose to browser.",
+      "vars": [
+        {"name": "SUPABASE_URL",          "secret": false, "required": true,  "vps_present": false, "used_by": ["lib/supabase.js", "gateway.js:154", "server.js:3229", "boot-guard.js:30"]},
+        {"name": "SUPABASE_ANON_KEY",     "secret": false, "required": true,  "vps_present": false, "note": "Public key — RLS-protected; safe for browser"},
+        {"name": "SUPABASE_SERVICE_KEY",  "secret": true,  "required": true,  "vps_present": false, "note": "ROOT KEY — server-only, bypasses RLS. Rotate immediately on leak."},
+        {"name": "SUPABASE_DB_URL",       "secret": true,  "required": false, "vps_present": false, "note": "Direct Postgres connection string (fallback for migrations)"}
+      ]
+    },
+
+    "data_management_relational": {
+      "label": "🗄️ Postgres / Redis / Neo4j",
+      "description": "Secondary stores + caching.",
+      "vars": [
+        {"name": "DATABASE_URL",          "secret": true,  "required": true,  "vps_present": true,  "note": "Alt Postgres — used by Python + some Node migrations"},
+        {"name": "DATABASE_DEFI_URL",     "secret": true,  "required": false, "vps_present": false, "used_by": ["backend dex domain"]},
+        {"name": "ECONOMY_DB_URL",        "secret": true,  "required": false, "vps_present": false},
+        {"name": "POSTGRES_PASSWORD",     "secret": true,  "required": true,  "vps_present": true},
+        {"name": "POSTGRES_DB",           "secret": false, "required": true,  "vps_present": false, "default": "bridgeai"},
+        {"name": "POSTGRES_MAX_CONNECTIONS","secret": false, "required": false, "vps_present": false, "default": "20"},
+        {"name": "DB_HOST",               "secret": false, "required": false, "vps_present": true},
+        {"name": "DB_POOL_SIZE",          "secret": false, "required": false, "vps_present": false, "default": "10"},
+        {"name": "DB_POOL_TIMEOUT",       "secret": false, "required": false, "vps_present": false, "default": "30"},
+        {"name": "DB_POOL_RECYCLE",       "secret": false, "required": false, "vps_present": false, "default": "1800"},
+        {"name": "DB_MAX_OVERFLOW",       "secret": false, "required": false, "vps_present": false, "default": "5"},
+        {"name": "SQL_ECHO",              "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "0"},
+        {"name": "REDIS_URL",             "secret": true,  "required": false, "vps_present": true,  "default": "redis://localhost:6379"},
+        {"name": "REDIS_MAX_MEMORY",      "secret": false, "required": false, "vps_present": false, "default": "256mb"},
+        {"name": "NEO4J_URI",             "secret": false, "required": false, "vps_present": true},
+        {"name": "NEO4J_USER",            "secret": false, "required": false, "vps_present": false, "default": "neo4j"},
+        {"name": "NEO4J_PASSWORD",        "secret": true,  "required": false, "vps_present": true},
+        {"name": "NEO4J_DATABASE",        "secret": false, "required": false, "vps_present": false, "default": "neo4j"},
+        {"name": "DETERMINATOR_USER",     "secret": false, "required": false, "vps_present": true},
+        {"name": "DETERMINATOR_PASS",     "secret": true,  "required": false, "vps_present": true},
+        {"name": "BRIDGE_STATE_DB",       "secret": false, "required": false, "vps_present": false, "default": "data/state.db"},
+        {"name": "BRIDGE_STATE_MAX_LIST_LEN","secret": false, "required": false, "vps_present": false, "default": "1000"}
+      ]
+    },
+
+    "payments": {
+      "label": "🏦 Payments (Paystack / PayPal / PayFast)",
+      "description": "LIVE money. Secret keys gate all ledger-mutation paths. Rotate immediately on leak.",
+      "vars": [
+        {"name": "PAYSTACK_SECRET_KEY",     "secret": true,  "required": true,  "vps_present": true,  "note": "Paystack LIVE — gates /api/payments/paystack/*"},
+        {"name": "PAYSTACK_PUBLIC_KEY",     "secret": false, "required": true,  "vps_present": true},
+        {"name": "PAYSTACK_WEBHOOK_SECRET", "secret": true,  "required": true,  "vps_present": false, "note": "Signature verification for paystack webhooks"},
+        {"name": "PAYSTACK_PAYMENT_BASE",   "secret": false, "required": false, "vps_present": false, "default": "https://api.paystack.co"},
+        {"name": "PAYPAL_CLIENT_ID",        "secret": false, "required": true,  "vps_present": true},
+        {"name": "PAYPAL_CLIENT_SECRET",    "secret": true,  "required": true,  "vps_present": true},
+        {"name": "PAYPAL_WEBHOOK_ID",       "secret": true,  "required": true,  "vps_present": false},
+        {"name": "PAYPAL_SANDBOX",          "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "0"},
+        {"name": "PAYFAST_MERCHANT_ID",     "secret": false, "required": false, "vps_present": false},
+        {"name": "PAYFAST_MERCHANT_KEY",    "secret": true,  "required": false, "vps_present": false},
+        {"name": "PAYFAST_PASSPHRASE",      "secret": true,  "required": false, "vps_present": false},
+        {"name": "PAYFAST_NOTIFY_URL",      "secret": false, "required": false, "vps_present": false, "note": "Webhook endpoint URL"},
+        {"name": "PAYFAST_RETURN_URL",      "secret": false, "required": false, "vps_present": false},
+        {"name": "PAYFAST_CANCEL_URL",      "secret": false, "required": false, "vps_present": false},
+        {"name": "PAYFAST_VALIDATE_URL",    "secret": false, "required": false, "vps_present": false, "default": "https://www.payfast.co.za/eng/query/validate"},
+        {"name": "PAYFAST_ENABLE_IP_ALLOWLIST","secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "PAYFAST_IP_ALLOWLIST",    "secret": false, "required": false, "vps_present": false},
+        {"name": "PAYFAST_SANDBOX",         "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "STRIPE_SECRET_KEY",       "secret": true,  "required": false, "vps_present": false, "note": "Fallback provider — not live"}
+      ]
+    },
+
+    "email_smtp": {
+      "label": "📧 Email — Brevo / SMTP / SendGrid / Resend",
+      "description": "Multi-provider email stack. Primary is Brevo (transactional) with SMTP backup. Resend/SendGrid used by Python outreach domain.",
+      "vars": [
+        {"name": "SMTP_HOST",             "secret": false, "required": true,  "vps_present": true},
+        {"name": "SMTP_PORT",             "secret": false, "required": true,  "vps_present": true,  "default": "587"},
+        {"name": "SMTP_USER",             "secret": false, "required": true,  "vps_present": true},
+        {"name": "SMTP_PASS",             "secret": true,  "required": true,  "vps_present": true},
+        {"name": "SMTP_PASSWORD",         "secret": true,  "required": false, "vps_present": true,  "note": "Duplicate of SMTP_PASS in some Python paths"},
+        {"name": "SMTP_FROM",             "secret": false, "required": true,  "vps_present": true},
+        {"name": "SMTP_FROM_NAME",        "secret": false, "required": false, "vps_present": true},
+        {"name": "SMTP_SECURE",           "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "0"},
+        {"name": "SMTP_TLS_REJECT_UNAUTHORIZED","secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "1"},
+        {"name": "SMTP_BACKUP_HOST",      "secret": false, "required": false, "vps_present": false, "note": "Brevo backup relay"},
+        {"name": "SMTP_BACKUP_PORT",      "secret": false, "required": false, "vps_present": false, "default": "587"},
+        {"name": "SMTP_BACKUP_USER",      "secret": false, "required": false, "vps_present": false},
+        {"name": "SMTP_BACKUP_PASS",      "secret": true,  "required": false, "vps_present": false},
+        {"name": "BREVO_SMTP_USER",       "secret": false, "required": false, "vps_present": false, "used_by": ["Brevo transactional"]},
+        {"name": "BREVO_SMTP_KEY",        "secret": true,  "required": false, "vps_present": false},
+        {"name": "BREVO_FROM",            "secret": false, "required": false, "vps_present": false},
+        {"name": "BREVO_FROM_NAME",       "secret": false, "required": false, "vps_present": false},
+        {"name": "SENDGRID_API_KEY",      "secret": true,  "required": false, "vps_present": false, "used_by": ["Python outreach"]},
+        {"name": "RESEND_API_KEY",        "secret": true,  "required": false, "vps_present": true,  "used_by": ["Python outreach fallback"]},
+        {"name": "FROM_EMAIL",            "secret": false, "required": false, "vps_present": false},
+        {"name": "OUTREACH_EMAIL_PROVIDER","secret": false, "required": false, "vps_present": false, "default": "resend", "note": "sendgrid|resend|smtp"},
+        {"name": "OUTREACH_FROM_EMAIL",   "secret": false, "required": false, "vps_present": false},
+        {"name": "OUTREACH_FROM_NAME",    "secret": false, "required": false, "vps_present": false},
+        {"name": "GMAIL_USER",            "secret": false, "required": false, "vps_present": false},
+        {"name": "GMAIL_APP_PASS",        "secret": true,  "required": false, "vps_present": false}
+      ]
+    },
+
+    "ai_llm": {
+      "label": "🧠 AI / LLM Providers",
+      "description": "Provider fallback chain: Kilo → Anthropic → OpenRouter → OpenAI. config-advisor + ai-executor consume these. Budget caps prevent runaway spend.",
+      "vars": [
+        {"name": "ANTHROPIC_API_KEY",       "secret": true,  "required": true,  "vps_present": true,  "used_by": ["services/config-advisor.js", "ai-executor.js", "brain reasoning"]},
+        {"name": "ANTHROPIC_MODEL",         "secret": false, "required": false, "vps_present": false, "default": "claude-haiku-4-5-20251001"},
+        {"name": "OPENAI_API_KEY",          "secret": true,  "required": true,  "vps_present": true},
+        {"name": "OPENAI_MODEL",            "secret": false, "required": false, "vps_present": false, "default": "gpt-4o-mini"},
+        {"name": "OPENAI_COMPAT_API_KEY",   "secret": true,  "required": false, "vps_present": false, "note": "For OpenAI-compatible endpoints (local LLM, Together, etc.)"},
+        {"name": "OPENAI_COMPAT_BASE_URL",  "secret": false, "required": false, "vps_present": false},
+        {"name": "OPENAI_COMPAT_MODEL",     "secret": false, "required": false, "vps_present": false},
+        {"name": "OPENROUTER_API_KEY",      "secret": true,  "required": false, "vps_present": true},
+        {"name": "KILO_API_KEY",            "secret": true,  "required": false, "vps_present": false, "note": "Primary in ai-executor fallback chain"},
+        {"name": "KILO_MODEL",              "secret": false, "required": false, "vps_present": false},
+        {"name": "TOGETHER_API_KEY",        "secret": true,  "required": false, "vps_present": false},
+        {"name": "HF_TOKEN",                "secret": true,  "required": false, "vps_present": true,  "note": "HuggingFace (dup of HUGGING_FACE_API_KEY)"},
+        {"name": "HUGGING_FACE_API_KEY",    "secret": true,  "required": false, "vps_present": true},
+        {"name": "LLM_PROVIDER_ORDER",      "secret": false, "required": false, "vps_present": false, "default": "kilo,anthropic,openrouter,openai"},
+        {"name": "LLM_DAILY_CAP_USD",       "secret": false, "required": false, "vps_present": false, "default": "50"},
+        {"name": "LLM_MONTHLY_CAP_USD",     "secret": false, "required": false, "vps_present": false, "default": "500"},
+        {"name": "LLM_MAX_TOKENS",          "secret": false, "required": false, "vps_present": false, "default": "4096"},
+        {"name": "AI_MONTHLY_BUDGET",       "secret": false, "required": false, "vps_present": false},
+        {"name": "PROMPT_ENGINE_MODE",      "secret": false, "required": false, "vps_present": false, "default": "live", "note": "live|mock — God Mode prompt engine"},
+        {"name": "ADVISOR_PROVIDER",        "secret": false, "required": false, "vps_present": false, "default": "auto", "note": "anthropic|openai|openai-compat|auto"},
+        {"name": "ADVISOR_PORT",            "secret": false, "required": false, "vps_present": false, "default": "4721"}
+      ]
+    },
+
+    "web3_blockchain": {
+      "label": "🔗 Web3 / Blockchain (Linea / Eth / BRDG)",
+      "description": "RPC endpoints + contract addresses. TREASURY_PRIVATE_KEY and DEPLOYER_PRIVATE_KEY are wallet keys — compromise = total fund loss.",
+      "vars": [
+        {"name": "LINEA_RPC_URL",           "secret": false, "required": true,  "vps_present": false, "default": "https://rpc.linea.build"},
+        {"name": "ETHEREUM_RPC_URL",        "secret": false, "required": false, "vps_present": false},
+        {"name": "INFURA_PROJECT_ID",       "secret": true,  "required": false, "vps_present": false},
+        {"name": "LINEASCAN_API_KEY",       "secret": true,  "required": false, "vps_present": false, "note": "Contract verification"},
+        {"name": "DEPLOYER_PRIVATE_KEY",    "secret": true,  "required": false, "vps_present": false, "note": "⚠️ WALLET KEY — handles contract deploys"},
+        {"name": "TREASURY_PRIVATE_KEY",    "secret": true,  "required": false, "vps_present": false, "note": "⚠️ WALLET KEY — signs treasury withdrawals"},
+        {"name": "TREASURY_ADDRESS",        "secret": false, "required": false, "vps_present": false},
+        {"name": "BRDG_CONTRACT_ADDRESS",   "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_CONTRACT_ADDRESS", "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_CONTRACT_RPC_URL", "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_CONTRACT_LISTENER","secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "BRIDGE_CONTRACT_POLL_INTERVAL","secret": false, "required": false, "vps_present": false, "default": "15"}
+      ]
+    },
+
+    "voice_audio_music": {
+      "label": "🎙️ Voice / Audio / Music (ElevenLabs / Twilio / TTS)",
+      "description": "Audio generation + voice telephony. ElevenLabs for AI voice; Twilio for SIP/SMS; LOCAL_TTS_URL for offline fallback.",
+      "vars": [
+        {"name": "ELEVENLABS_API_KEY",      "secret": true,  "required": false, "vps_present": true,  "used_by": ["voice synthesis"]},
+        {"name": "ELEVEN_API_KEY",          "secret": true,  "required": false, "vps_present": false, "note": "Duplicate / alt spelling"},
+        {"name": "TWILIO_ACCOUNT_SID",      "secret": true,  "required": false, "vps_present": false, "used_by": ["SMS + SIP"]},
+        {"name": "TWILIO_AUTH_TOKEN",       "secret": true,  "required": false, "vps_present": false},
+        {"name": "SIP_DOMAIN",              "secret": false, "required": false, "vps_present": false, "note": "SIP endpoint"},
+        {"name": "LOCAL_TTS_URL",           "secret": false, "required": false, "vps_present": false, "default": "http://localhost:5050", "note": "Piper/Coqui offline TTS"},
+        {"name": "AFFILIATE_ELEVENLABS_ID", "secret": false, "required": false, "vps_present": false, "note": "Referral tracking"}
+      ]
+    },
+
+    "science_ml_weights": {
+      "label": "🔬 Science / ML weights (trust/priority/drift vectors)",
+      "description": "Model weights + thresholds for BridgeAI's priority vector, drift detection, and evolution budget. Tuning these changes agent behavior.",
+      "vars": [
+        {"name": "BRIDGE_PRIORITY_W_CAPITAL",  "secret": false, "required": false, "vps_present": false, "default": "0.2"},
+        {"name": "BRIDGE_PRIORITY_W_IMPACT",   "secret": false, "required": false, "vps_present": false, "default": "0.2"},
+        {"name": "BRIDGE_PRIORITY_W_LATENCY",  "secret": false, "required": false, "vps_present": false, "default": "0.1"},
+        {"name": "BRIDGE_PRIORITY_W_RISK",     "secret": false, "required": false, "vps_present": false, "default": "0.15"},
+        {"name": "BRIDGE_PRIORITY_W_TRUST",    "secret": false, "required": false, "vps_present": false, "default": "0.2"},
+        {"name": "BRIDGE_PRIORITY_W_URGENCY",  "secret": false, "required": false, "vps_present": false, "default": "0.1"},
+        {"name": "BRIDGE_PRIORITY_W_VALUE",    "secret": false, "required": false, "vps_present": false, "default": "0.05"},
+        {"name": "BRIDGE_PRIORITY_MIN_THRESHOLD","secret": false, "required": false, "vps_present": false, "default": "0.5"},
+        {"name": "BRIDGE_USE_VECTOR_PRIORITY", "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "BRIDGE_TARGET_PRIORITY",     "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_DRIFT_THRESHOLD",     "secret": false, "required": false, "vps_present": false, "default": "0.15"},
+        {"name": "BRIDGE_DRIFT_DEVIATION_THRESHOLD","secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_CONFIDENCE_FLOOR",    "secret": false, "required": false, "vps_present": false, "default": "0.7"},
+        {"name": "BRIDGE_ETHICAL_THRESHOLD",   "secret": false, "required": false, "vps_present": false, "default": "0.8"},
+        {"name": "BRIDGE_RISK_THRESHOLD",      "secret": false, "required": false, "vps_present": false, "default": "0.5"},
+        {"name": "BRIDGE_TRUST_DECAY_TAU",     "secret": false, "required": false, "vps_present": false, "default": "86400"},
+        {"name": "BRIDGE_URGENCY_TAU",         "secret": false, "required": false, "vps_present": false, "default": "3600"},
+        {"name": "BRIDGE_RECOVERY_RATE",       "secret": false, "required": false, "vps_present": false, "default": "0.1"},
+        {"name": "BRIDGE_EVOLUTION_BUDGET",    "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_CB_ENTROPY",          "secret": false, "required": false, "vps_present": false, "note": "Circuit-breaker: entropy threshold"},
+        {"name": "BRIDGE_CB_TRADE_FREQ",       "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_BASELINE_ECONOMIC_CONVERSION","secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_BASELINE_LATENCY_MS", "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_BASELINE_SILENCE_RATE","secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_MAX_EXPOSURE",        "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_MAX_EXPOSURE_PER_CYCLE","secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_GLOBAL_EXPOSURE",     "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_ECONOMIC_COOLDOWN",   "secret": false, "required": false, "vps_present": false}
+      ]
+    },
+
+    "neurolink_biosignals": {
+      "label": "📡 NeuroLink / BCI (Emotiv / EEG)",
+      "description": "Brain-computer interface integration for the Twin Wall Dashboard.",
+      "vars": [
+        {"name": "NEUROLINK_ENABLED",      "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "0"},
+        {"name": "NEUROLINK_DEVICE",       "secret": false, "required": false, "vps_present": false, "default": "emotiv"},
+        {"name": "NEUROLINK_INTERVAL",     "secret": false, "required": false, "vps_present": false, "default": "1000"},
+        {"name": "EMOTIV_CLIENT_ID",       "secret": true,  "required": false, "vps_present": false},
+        {"name": "EMOTIV_CLIENT_SECRET",   "secret": true,  "required": false, "vps_present": false}
+      ]
+    },
+
+    "economy_treasury": {
+      "label": "💸 Economy / Treasury / Withdrawals",
+      "description": "Gates + thresholds for the BRDG token economy. TREASURY_WRITES flag is a kill-switch — set to 0 to freeze disbursements.",
+      "vars": [
+        {"name": "ENABLE_ECONOMY",             "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "1"},
+        {"name": "BRIDGE_ALLOW_TREASURY_WRITES","secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "0", "note": "KILL-SWITCH: 0=frozen"},
+        {"name": "BRIDGE_ALLOW_CLI_RUNNER",    "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "0"},
+        {"name": "BRIDGE_CAP_LOCK",            "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "BRIDGE_AUTOMATION",          "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "BRIDGE_REPLICATION",         "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "UBI_SPLIT",                  "secret": false, "required": false, "vps_present": false, "default": "0.2"},
+        {"name": "OPS_SPLIT",                  "secret": false, "required": false, "vps_present": false, "default": "0.1"},
+        {"name": "RESERVE_SPLIT",              "secret": false, "required": false, "vps_present": false, "default": "0.3"},
+        {"name": "EVOLUTION_SPLIT",            "secret": false, "required": false, "vps_present": false, "default": "0.4"},
+        {"name": "WITHDRAWAL_MIN_AMOUNT",      "secret": false, "required": false, "vps_present": false, "default": "10"},
+        {"name": "WITHDRAWAL_DAILY_LIMIT",     "secret": false, "required": false, "vps_present": false, "default": "10000"},
+        {"name": "WITHDRAWAL_LARGE_THRESHOLD", "secret": false, "required": false, "vps_present": false, "default": "1000"},
+        {"name": "WITHDRAWAL_COOLDOWN_MINUTES","secret": false, "required": false, "vps_present": false, "default": "60"},
+        {"name": "DAILY_ACTION_CAP",           "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_CLAIM_TTL_SEC",       "secret": false, "required": false, "vps_present": false, "default": "300"},
+        {"name": "BRIDGE_IDENTITY_LOCK",       "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "USD",                        "secret": false, "required": false, "vps_present": false, "note": "FX rate override"},
+        {"name": "EUR",                        "secret": false, "required": false, "vps_present": false},
+        {"name": "GBP",                        "secret": false, "required": false, "vps_present": false},
+        {"name": "ZAR",                        "secret": false, "required": false, "vps_present": false},
+        {"name": "GHS",                        "secret": false, "required": false, "vps_present": false},
+        {"name": "NGN",                        "secret": false, "required": false, "vps_present": false}
+      ]
+    },
+
+    "routing_sites_domains": {
+      "label": "🗺️ Sites / Domains / Routing",
+      "description": "Hostnames, ports, proxy targets. Changing these shifts the topology — update nginx/PM2 configs in lockstep.",
+      "vars": [
+        {"name": "DOMAIN",                 "secret": false, "required": true,  "vps_present": false, "default": "bridge-ai-os.com"},
+        {"name": "SSL_ENABLED",            "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "1"},
+        {"name": "HTTPS",                  "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "PORT",                   "secret": false, "required": true,  "vps_present": false, "default": "3000", "note": "Per-app (see per-service overrides below)"},
+        {"name": "API_HOST",               "secret": false, "required": false, "vps_present": false, "default": "0.0.0.0"},
+        {"name": "API_PORT",               "secret": false, "required": false, "vps_present": false, "default": "8001"},
+        {"name": "GATEWAY_PORT",           "secret": false, "required": false, "vps_present": false, "default": "8080"},
+        {"name": "GATEWAY_LISTEN_HOST",    "secret": false, "required": false, "vps_present": false, "default": "0.0.0.0"},
+        {"name": "BRAIN_HOST",             "secret": false, "required": false, "vps_present": false, "default": "localhost"},
+        {"name": "BRAIN_PORT",             "secret": false, "required": false, "vps_present": false, "default": "8000"},
+        {"name": "AUTH_PORT",              "secret": false, "required": false, "vps_present": false, "default": "5001"},
+        {"name": "AUTH_SVC",               "secret": false, "required": false, "vps_present": false},
+        {"name": "TERMINAL_PROXY_PORT",    "secret": false, "required": false, "vps_present": false, "default": "5002"},
+        {"name": "ADMIN_PORT",             "secret": false, "required": false, "vps_present": false, "default": "3001"},
+        {"name": "CONFIG_PORT",            "secret": false, "required": false, "vps_present": false, "default": "4710"},
+        {"name": "CONTAINERX_PORT",        "secret": false, "required": false, "vps_present": false},
+        {"name": "PORT_MAPPER_PORT",       "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_GATEWAY",         "secret": false, "required": false, "vps_present": false, "default": "http://localhost:8080"},
+        {"name": "BRIDGE_CLOUD",           "secret": false, "required": false, "vps_present": false},
+        {"name": "SYSTEM_HOST",            "secret": false, "required": false, "vps_present": false, "default": "localhost"},
+        {"name": "BASE_URL",               "secret": false, "required": false, "vps_present": false},
+        {"name": "PUBLIC_URL",             "secret": false, "required": false, "vps_present": false},
+        {"name": "NEXT_PUBLIC_BASE_URL",   "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_FRONTEND_URL",    "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_API_URL",         "secret": false, "required": false, "vps_present": false, "note": "Frontend uses this"},
+        {"name": "BRIDGE_WS_URL",          "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_CRM_URL",         "secret": false, "required": false, "vps_present": false},
+        {"name": "BRIDGE_LIVE_WALL_PATH",  "secret": false, "required": false, "vps_present": true},
+        {"name": "BRIDGE_OUTPUT_ROOT",     "secret": false, "required": false, "vps_present": false, "default": "/var/www/bridgeai/output"},
+        {"name": "BRIDGE_API_KEY",         "secret": true,  "required": false, "vps_present": false, "note": "Public client-side key for bridge API"},
+        {"name": "CORS_ORIGINS",           "secret": false, "required": true,  "vps_present": false, "default": "https://bridge-ai-os.com"},
+        {"name": "BRIDGE_CORS_ORIGINS",    "secret": false, "required": false, "vps_present": false},
+        {"name": "ALLOWED_ORIGINS",        "secret": false, "required": false, "vps_present": false}
+      ]
+    },
+
+    "frequencies_intervals": {
+      "label": "📡 Frequencies / Intervals / Rate Limits",
+      "description": "Time-based controls: polling intervals, claim TTLs, rate limits. Tuning these changes observability cost + security posture.",
+      "vars": [
+        {"name": "HEALTH_CHECK_INTERVAL",  "secret": false, "required": false, "vps_present": false, "default": "30000"},
+        {"name": "CONFIG_ENGINE_ANOMALY_INTERVAL_MS","secret": false, "required": false, "vps_present": false, "default": "60000"},
+        {"name": "CONFIG_ENGINE_RECONCILE_INTERVAL_MS","secret": false, "required": false, "vps_present": false, "default": "300000"},
+        {"name": "CONFIG_ENGINE_PRUNE_KEEP","secret": false, "required": false, "vps_present": false, "default": "100"},
+        {"name": "CONFIG_WATCHER_DEBOUNCE_MS","secret": false, "required": false, "vps_present": false, "default": "500"},
+        {"name": "INTEGRATION_TIMEOUT_MS", "secret": false, "required": false, "vps_present": false, "default": "8000"},
+        {"name": "MCP_TIMEOUT",            "secret": false, "required": false, "vps_present": false, "default": "5000"},
+        {"name": "CACHE_ENABLED",          "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "1"},
+        {"name": "CACHE_TTL",              "secret": false, "required": false, "vps_present": false, "default": "300"},
+        {"name": "COMPRESSION_ENABLED",    "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "1"},
+        {"name": "RATE_LIMIT_WINDOW",      "secret": false, "required": false, "vps_present": false, "default": "60000"},
+        {"name": "RATE_LIMIT_WINDOW_MS",   "secret": false, "required": false, "vps_present": false, "default": "60000"},
+        {"name": "RATE_LIMIT_MAX",         "secret": false, "required": false, "vps_present": false, "default": "100"},
+        {"name": "RATE_LIMIT_MAX_REQUESTS","secret": false, "required": false, "vps_present": false, "default": "60"},
+        {"name": "API_RATE_LIMIT",         "secret": false, "required": false, "vps_present": false, "default": "100"},
+        {"name": "CRYPTO_RATE_LIMIT_MAX",  "secret": false, "required": false, "vps_present": false, "default": "10"},
+        {"name": "ORCHESTRA_RATE_LIMIT",   "secret": false, "required": false, "vps_present": false, "default": "60"},
+        {"name": "ORCHESTRA_ALLOW_IFRAME", "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "0"},
+        {"name": "ORCHESTRA_COOKIE_SECURE","secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "1"},
+        {"name": "SESSION_TIMEOUT",        "secret": false, "required": false, "vps_present": false, "default": "3600"},
+        {"name": "WORKER_CONCURRENCY",     "secret": false, "required": false, "vps_present": false, "default": "4"},
+        {"name": "BRIDGE_EVENT_QUEUE_MAX", "secret": false, "required": false, "vps_present": false, "default": "10000"},
+        {"name": "BRIDGE_EVENT_DROP_POLICY","secret": false, "required": false, "vps_present": false, "default": "drop_oldest"}
+      ]
+    },
+
+    "integrations_webhooks": {
+      "label": "🤝 Integrations & Webhooks",
+      "description": "External service integrations: messaging, CMS, CI, OAuth providers, analytics.",
+      "vars": [
+        {"name": "SLACK_WEBHOOK_URL",       "secret": true,  "required": false, "vps_present": false},
+        {"name": "DISCORD_WEBHOOK_URL",     "secret": true,  "required": false, "vps_present": false},
+        {"name": "DISCORD_BOT_TOKEN",       "secret": true,  "required": false, "vps_present": true},
+        {"name": "TELEGRAM_BOT_TOKEN",      "secret": true,  "required": false, "vps_present": false},
+        {"name": "TELEGRAM_CHAT_ID",        "secret": false, "required": false, "vps_present": false},
+        {"name": "NOTION_TOKEN",            "secret": true,  "required": false, "vps_present": false},
+        {"name": "NOTION_DATABASE_ID",      "secret": false, "required": false, "vps_present": false},
+        {"name": "NOTION_PARENT_PAGE",      "secret": false, "required": false, "vps_present": false},
+        {"name": "GITHUB_TOKEN",            "secret": true,  "required": false, "vps_present": false},
+        {"name": "GH_TOKEN",                "secret": true,  "required": false, "vps_present": false, "note": "Duplicate of GITHUB_TOKEN"},
+        {"name": "GITHUB_CLIENT_ID",        "secret": false, "required": false, "vps_present": false, "note": "OAuth"},
+        {"name": "GITHUB_CLIENT_SECRET",    "secret": true,  "required": false, "vps_present": false},
+        {"name": "GOOGLE_CLIENT_ID",        "secret": false, "required": false, "vps_present": false, "note": "OAuth"},
+        {"name": "GOOGLE_CLIENT_SECRET",    "secret": true,  "required": false, "vps_present": false},
+        {"name": "GOOGLE_SHEETS_CREDENTIALS_FILE","secret": false, "required": false, "vps_present": true},
+        {"name": "GOOGLE_SHEETS_CREDENTIALS_JSON","secret": true,  "required": false, "vps_present": true},
+        {"name": "AZURE_CLIENT_ID",         "secret": false, "required": false, "vps_present": false},
+        {"name": "AZURE_CLIENT_SECRET",     "secret": true,  "required": false, "vps_present": false},
+        {"name": "AZURE_TENANT",            "secret": false, "required": false, "vps_present": false},
+        {"name": "CLERK_PUBLISHABLE_KEY",   "secret": false, "required": false, "vps_present": true,  "note": "Clerk auth SaaS"},
+        {"name": "CLERK_SECRET_KEY",        "secret": true,  "required": false, "vps_present": true},
+        {"name": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY","secret": false, "required": false, "vps_present": false},
+        {"name": "VITE_CLERK_PUBLISHABLE_KEY","secret": false, "required": false, "vps_present": false},
+        {"name": "CF_API_TOKEN",            "secret": true,  "required": false, "vps_present": true,  "note": "Cloudflare"},
+        {"name": "CF_ZONE_ID",              "secret": false, "required": false, "vps_present": false},
+        {"name": "CLOUDFLARE_ACCOUNT_ID",   "secret": false, "required": false, "vps_present": true},
+        {"name": "TURNSTILE_SECRET_KEY",    "secret": true,  "required": false, "vps_present": true,  "note": "Cloudflare Turnstile (CAPTCHA)"},
+        {"name": "AFFILIATE_CLOUDFLARE_ID", "secret": false, "required": false, "vps_present": false},
+        {"name": "AFFILIATE_DO_ID",         "secret": false, "required": false, "vps_present": false, "note": "DigitalOcean"},
+        {"name": "AFFILIATE_LUNO_ID",       "secret": false, "required": false, "vps_present": false, "note": "Luno crypto exchange"},
+        {"name": "AFFILIATE_WEBWAY_ID",     "secret": false, "required": false, "vps_present": false},
+        {"name": "MCP_BEARER_TOKEN",        "secret": true,  "required": false, "vps_present": false},
+        {"name": "MCP_WPCOM_URL",           "secret": false, "required": false, "vps_present": false},
+        {"name": "YOUTUBE_API_KEY",         "secret": true,  "required": false, "vps_present": true},
+        {"name": "BRIDGE_YT_MAX_RESULTS",   "secret": false, "required": false, "vps_present": false, "default": "10"},
+        {"name": "BRIDGE_YT_TIMEOUT",       "secret": false, "required": false, "vps_present": false, "default": "8000"},
+        {"name": "R2_BUCKET_NAME",          "secret": false, "required": false, "vps_present": true,  "note": "Cloudflare R2"},
+        {"name": "BLOB_READ_WRITE_TOKEN",   "secret": true,  "required": false, "vps_present": false, "note": "Vercel Blob"},
+        {"name": "DA_BASE_URL",             "secret": false, "required": false, "vps_present": false, "note": "DirectAdmin"},
+        {"name": "DA_USERNAME",             "secret": false, "required": false, "vps_present": false},
+        {"name": "DA_LOGIN_KEY",            "secret": true,  "required": false, "vps_present": false},
+        {"name": "VERCEL",                  "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "VERCEL_OIDC_TOKEN",       "secret": true,  "required": false, "vps_present": false},
+        {"name": "VERCEL_DEPLOYMENT_ID",    "secret": false, "required": false, "vps_present": false}
+      ]
+    },
+
+    "wordpress_cms": {
+      "label": "📝 WordPress / CMS",
+      "description": "Multi-site WP integration. Bridge AI OS, gateway, and generic WP URLs all use application passwords (not real user passwords).",
+      "vars": [
+        {"name": "WP_URL",                  "secret": false, "required": false, "vps_present": false},
+        {"name": "WP_USERNAME",             "secret": false, "required": false, "vps_present": false},
+        {"name": "WP_APP_PASSWORD",         "secret": true,  "required": false, "vps_present": false},
+        {"name": "WP_BACKEND_URL",          "secret": false, "required": false, "vps_present": false},
+        {"name": "WP_BRIDGE_AI_OS_URL",     "secret": false, "required": false, "vps_present": false},
+        {"name": "WP_BRIDGE_AI_OS_USER",    "secret": false, "required": false, "vps_present": false},
+        {"name": "WP_BRIDGE_AI_OS_APP_PASS","secret": true,  "required": false, "vps_present": false},
+        {"name": "WP_GATEWAY_URL",          "secret": false, "required": false, "vps_present": false},
+        {"name": "WP_GATEWAY_USER",         "secret": false, "required": false, "vps_present": false},
+        {"name": "WP_GATEWAY_APP_PASS",     "secret": true,  "required": false, "vps_present": false},
+        {"name": "WP_COM_URL",              "secret": false, "required": false, "vps_present": false},
+        {"name": "WP_COM_USER",             "secret": false, "required": false, "vps_present": false},
+        {"name": "WP_COM_APP_PASS",         "secret": true,  "required": false, "vps_present": false}
+      ]
+    },
+
+    "invoices_branding": {
+      "label": "🎨 Invoices / Branding",
+      "description": "Company metadata stamped onto generated invoices + outgoing emails.",
+      "vars": [
+        {"name": "INVOICE_COMPANY_NAME",    "secret": false, "required": false, "vps_present": false, "default": "The Bridge AI Agency"},
+        {"name": "INVOICE_COMPANY_EMAIL",   "secret": false, "required": false, "vps_present": false, "default": "thebridgeaiagency@gmail.com"},
+        {"name": "INVOICE_COMPANY_ADDRESS", "secret": false, "required": false, "vps_present": false},
+        {"name": "INVOICE_COMPANY_VAT",     "secret": false, "required": false, "vps_present": false},
+        {"name": "ADMIN_EMAIL",             "secret": false, "required": false, "vps_present": true,  "default": "thebridgeaiagency@gmail.com"}
+      ]
+    },
+
+    "runtime_flags": {
+      "label": "⚙️ Runtime Flags (booleans + env mode)",
+      "description": "Boolean toggles that reshape behavior: env mode, dev-only knobs, feature flags.",
+      "vars": [
+        {"name": "NODE_ENV",                "secret": false, "required": true,  "vps_present": false, "default": "production"},
+        {"name": "ENV",                     "secret": false, "required": false, "vps_present": false, "note": "Python side (mirrors NODE_ENV)"},
+        {"name": "BRIDGE_ENV",              "secret": false, "required": false, "vps_present": false},
+        {"name": "AOE_MODE",                "secret": false, "required": false, "vps_present": false, "default": "production"},
+        {"name": "DEPLOY_ENV",              "secret": false, "required": false, "vps_present": false, "default": "production"},
+        {"name": "DEBUG",                   "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "0"},
+        {"name": "LOG_LEVEL",               "secret": false, "required": false, "vps_present": false, "default": "info"},
+        {"name": "LOG_MAX_SIZE",            "secret": false, "required": false, "vps_present": false, "default": "10m"},
+        {"name": "LOG_MAX_FILES",           "secret": false, "required": false, "vps_present": false, "default": "7"},
+        {"name": "METRICS_ENABLED",         "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "1"},
+        {"name": "APM_ENABLED",             "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "SERVERLESS",              "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "0"},
+        {"name": "CONSOLIDATED",            "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "BRIDGE_DETERMINISTIC",    "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "note": "Freezes RNG for reproducibility"},
+        {"name": "BRIDGE_TESTING",          "secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "BRIDGE_SECRETS_ROTATED",  "secret": false, "required": false, "vps_present": true,  "runtime_flag": true, "note": "Operator marker that secrets were rotated"},
+        {"name": "PYTEST_CURRENT_TEST",     "secret": false, "required": false, "vps_present": false, "note": "Set by pytest"},
+        {"name": "JEST_WORKER_ID",          "secret": false, "required": false, "vps_present": false, "note": "Set by jest"},
+        {"name": "NODE_TLS_REJECT_UNAUTHORIZED","secret": false, "required": false, "vps_present": false, "note": "Dev-only; MUST NOT be 0 in prod"},
+        {"name": "SANCTIONED_REDUCERS_STRICT","secret": false, "required": false, "vps_present": false, "runtime_flag": true},
+        {"name": "AUTO_APPROVE_TYPES",      "secret": false, "required": false, "vps_present": false},
+        {"name": "USER",                    "secret": false, "required": false, "vps_present": false, "note": "OS username"},
+        {"name": "USERNAME",                "secret": false, "required": false, "vps_present": false, "note": "OS username (Windows)"}
+      ]
+    },
+
+    "backup_infrastructure": {
+      "label": "🚀 Backup / Infrastructure",
+      "description": "Backups + Docker + Grafana. Backup config ships in .env but the jobs themselves run from scripts/.",
+      "vars": [
+        {"name": "BACKUP_ENABLED",          "secret": false, "required": false, "vps_present": false, "runtime_flag": true, "default": "1"},
+        {"name": "BACKUP_SCHEDULE",         "secret": false, "required": false, "vps_present": false, "default": "0 2 * * *", "note": "Cron expression"},
+        {"name": "BACKUP_RETENTION_DAYS",   "secret": false, "required": false, "vps_present": false, "default": "30"},
+        {"name": "BACKUP_S3_BUCKET",        "secret": false, "required": false, "vps_present": false},
+        {"name": "DOCKER_REGISTRY",         "secret": false, "required": false, "vps_present": false, "default": "ghcr.io"},
+        {"name": "GRAFANA_PASSWORD",        "secret": true,  "required": false, "vps_present": false},
+        {"name": "GRAFANA_ADMIN_PASSWORD",  "secret": true,  "required": false, "vps_present": true,  "note": "Duplicate of GRAFANA_PASSWORD"},
+        {"name": "BAN_PYTHON",              "secret": false, "required": false, "vps_present": false, "default": "/usr/bin/python3", "note": "BAN engine python path"},
+        {"name": "BAN_CWD",                 "secret": false, "required": false, "vps_present": false, "default": "/var/www/bridgeai/BAN"}
+      ]
+    }
+  }
+}

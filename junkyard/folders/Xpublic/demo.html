@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Demo — Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{--bg:#050a0f;--surface:#0d1620;--surface2:#111d2b;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+    .header{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid var(--border);background:var(--surface)}
+    .logo{font-size:1.4rem;font-weight:800;color:var(--accent);letter-spacing:.2em}
+    .logo span{color:var(--green)}
+    .demo-badge{background:rgba(0,200,255,.12);border:1px solid var(--accent);color:var(--accent);font-size:.65rem;font-weight:700;letter-spacing:.15em;padding:.2rem .6rem;border-radius:2rem;text-transform:uppercase}
+    .header-actions{display:flex;gap:.75rem;align-items:center}
+    .btn{padding:.5rem 1.1rem;border-radius:.4rem;font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none;display:inline-block}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-primary{background:var(--accent);color:#050a0f}
+    .btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+    .main{display:grid;grid-template-columns:300px 1fr 320px;flex:1;overflow:hidden}
+    @media(max-width:1000px){.main{grid-template-columns:1fr}.sidebar,.right-panel{display:none}}
+    .sidebar{border-right:1px solid var(--border);background:var(--surface);overflow-y:auto;padding:1.2rem}
+    .sidebar-title{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.8rem}
+    .tool-card{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;padding:.85rem 1rem;margin-bottom:.6rem;cursor:pointer;transition:all .2s}
+    .tool-card:hover,.tool-card.active{border-color:var(--accent);background:rgba(0,200,255,.06)}
+    .tool-card.active .tool-name{color:var(--accent)}
+    .tool-name{font-size:.85rem;font-weight:600;margin-bottom:.25rem}
+    .tool-desc{font-size:.72rem;color:var(--dim);line-height:1.4}
+    .tool-tier{display:inline-block;font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.15rem .45rem;border-radius:.2rem;margin-top:.4rem}
+    .tier-free{background:rgba(255,255,255,.06);color:var(--dim)}
+    .tier-starter{background:rgba(0,200,255,.1);color:var(--accent)}
+    .tier-pro{background:rgba(167,139,250,.12);color:var(--purple)}
+    .sandbox{display:flex;flex-direction:column;overflow:hidden}
+    .sandbox-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem}
+    .rate-limit{font-size:.72rem;color:var(--dim)}
+    .rate-bar{width:120px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:.5rem}
+    .rate-fill{height:100%;background:var(--green);border-radius:2px;transition:width .4s}
+    .prompt-area{padding:1rem 1.5rem;display:flex;gap:.75rem;border-bottom:1px solid var(--border)}
+    .prompt-input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:.4rem;padding:.7rem 1rem;font-size:.88rem;font-family:inherit;resize:none;height:80px;outline:none}
+    .prompt-input:focus{border-color:var(--accent)}
+    .run-btn{background:var(--green);color:#050a0f;font-weight:700;font-size:.85rem;padding:.7rem 1.4rem;border:none;border-radius:.4rem;cursor:pointer;align-self:flex-end;transition:all .2s;white-space:nowrap}
+    .run-btn:hover{opacity:.88}
+    .run-btn:disabled{opacity:.4;cursor:not-allowed}
+    .output-stream{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
+    .output-placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;color:var(--dim);text-align:center}
+    .output-placeholder .icon{font-size:3rem;opacity:.3}
+    .output-block{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;overflow:hidden}
+    .output-block-header{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--dim)}
+    .output-body{padding:1rem;font-size:.82rem;line-height:1.65;white-space:pre-wrap;font-family:inherit}
+    .output-body.streaming::after{content:'▌';animation:blink .7s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+    .convert-banner{margin:1rem 1.5rem;background:linear-gradient(135deg,rgba(0,200,255,.08),rgba(167,139,250,.08));border:1px solid rgba(0,200,255,.25);border-radius:.6rem;padding:1rem 1.25rem;display:none;align-items:center;justify-content:space-between;gap:1rem}
+    .convert-banner.show{display:flex}
+    .convert-text{font-size:.82rem;line-height:1.4}
+    .convert-text strong{color:var(--accent)}
+    .right-panel{border-left:1px solid var(--border);background:var(--surface);padding:1.2rem;overflow-y:auto}
+    .panel-section{margin-bottom:1.5rem}
+    .panel-label{font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.6rem}
+    .stat-row{display:flex;justify-content:space-between;font-size:.8rem;padding:.3rem 0;border-bottom:1px solid var(--border)}
+    .stat-val{color:var(--accent);font-weight:600}
+    .history-item{font-size:.75rem;padding:.4rem .6rem;border-radius:.3rem;background:var(--surface2);margin-bottom:.35rem;color:var(--dim)}
+    .history-tool{color:var(--accent);font-weight:600}
+    .cta-panel{background:linear-gradient(135deg,rgba(0,200,255,.08),rgba(0,229,123,.06));border:1px solid rgba(0,200,255,.2);border-radius:.5rem;padding:1rem;text-align:center}
+    .cta-panel p{font-size:.78rem;color:var(--dim);margin-bottom:.75rem;line-height:1.5}
+    .cta-panel strong{color:var(--text)}
+  </style>
+</head>
+<body>
+<div class="header">
+  <div style="display:flex;align-items:center;gap:.8rem">
+    <div class="logo">BRIDGE<span>AI</span></div>
+    <div class="demo-badge">Live Demo</div>
+  </div>
+  <div class="header-actions">
+    <span class="rate-limit">Runs left: <strong id="runsLeft">5</strong>/5
+      <span class="rate-bar"><span class="rate-fill" id="rateBar" style="width:100%"></span></span>
+    </span>
+    <a href="/join" class="btn btn-outline">Sign In</a>
+    <a href="/wizard" class="btn btn-primary">Start Free →</a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-title">Choose a Tool</div>
+    <div id="toolList"></div>
+  </div>
+
+  <div class="sandbox">
+    <div class="sandbox-header">
+      <div>
+        <div style="font-size:.9rem;font-weight:700" id="activeToolName">Growth Engine</div>
+        <div style="font-size:.72rem;color:var(--dim)" id="activeToolDesc">AI-powered growth strategy generator</div>
+      </div>
+    </div>
+    <div class="prompt-area">
+      <textarea class="prompt-input" id="promptInput"
+        placeholder="Describe your goal… e.g. 'Generate a 30-day content strategy for a SaaS startup in health tech'"></textarea>
+      <button class="run-btn" id="runBtn" onclick="runDemo()">Run Agent ▶</button>
+    </div>
+    <div class="convert-banner" id="convertBanner">
+      <div class="convert-text">
+        <strong>You've hit the demo limit.</strong><br>
+        Sign up free to get 100 runs/day, persistent projects, and real integrations.
+      </div>
+      <a href="/wizard" class="btn btn-primary" style="white-space:nowrap">Get Full Access →</a>
+    </div>
+    <div class="output-stream" id="outputStream">
+      <div class="output-placeholder" id="placeholder">
+        <div class="icon">⚡</div>
+        <div style="font-size:.9rem;font-weight:600">Select a tool and run your first prompt</div>
+        <div style="font-size:.78rem">No account needed for the demo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="panel-section">
+      <div class="panel-label">Session Stats</div>
+      <div class="stat-row"><span>Runs used</span><span class="stat-val" id="statRuns">0</span></div>
+      <div class="stat-row"><span>Outputs generated</span><span class="stat-val" id="statOutputs">0</span></div>
+      <div class="stat-row"><span>Tokens consumed</span><span class="stat-val" id="statTokens">0</span></div>
+      <div class="stat-row"><span>Tools tried</span><span class="stat-val" id="statTools">0</span></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-label">Run History</div>
+      <div id="runHistory"><div style="font-size:.75rem;color:var(--dim)">No runs yet</div></div>
+    </div>
+    <div class="cta-panel">
+      <p><strong>Want to save &amp; export?</strong><br>Sign up free to keep outputs, run integrations, and build persistent projects.</p>
+      <a href="/wizard" class="btn btn-primary" style="width:100%;display:block">Create Free Account</a>
+    </div>
+  </div>
+</div>
+
+<script>
+/* All user-controlled strings are inserted via textContent — never innerHTML. */
+
+const DEMO_TOOLS = [
+  { id:'growth-engine',       name:'Growth Engine',       desc:'AI growth strategy generator',        tier:'free',    prompt:'Generate a 30-day growth strategy for a SaaS startup' },
+  { id:'avatar-ai',           name:'Avatar AI',           desc:'Digital persona builder',             tier:'free',    prompt:'Build a professional digital persona for a tech founder' },
+  { id:'marketplace-builder', name:'Marketplace Builder', desc:'Multi-vendor marketplace planner',    tier:'starter', prompt:'Design a marketplace for freelance AI developers' },
+  { id:'neurolink',           name:'NeuroLink',           desc:'Real-time user intelligence stream',  tier:'pro',     prompt:'Analyse user behaviour patterns for e-commerce conversion' },
+  { id:'analytics',           name:'Analytics Engine',    desc:'Business performance insights',       tier:'free',    prompt:'Summarise key metrics for a B2B SaaS with 500 users' },
+  { id:'ap2-orchestrator',    name:'AP2 Orchestrator',    desc:'Multi-agent economic pipeline',       tier:'pro',     prompt:'Orchestrate a 5-agent pipeline for market intelligence' },
+];
+
+let activeTool = DEMO_TOOLS[0];
+let runsUsed = 0;
+const MAX_RUNS = 5;
+const toolsTriedSet = new Set();
+let totalTokens = 0;
+let outputCount = 0;
+const runHistory = [];
+
+function makeToolCard(tool) {
+  const card = document.createElement('div');
+  card.className = 'tool-card' + (tool.id === activeTool.id ? ' active' : '');
+
+  const name = document.createElement('div');
+  name.className = 'tool-name';
+  name.textContent = tool.name;
+
+  const desc = document.createElement('div');
+  desc.className = 'tool-desc';
+  desc.textContent = tool.desc;
+
+  const tier = document.createElement('div');
+  tier.className = 'tool-tier tier-' + tool.tier;
+  tier.textContent = tool.tier;
+
+  card.appendChild(name);
+  card.appendChild(desc);
+  card.appendChild(tier);
+  card.addEventListener('click', () => selectTool(tool, card));
+  return card;
+}
+
+const toolList = document.getElementById('toolList');
+DEMO_TOOLS.forEach(t => toolList.appendChild(makeToolCard(t)));
+
+function selectTool(tool, card) {
+  activeTool = tool;
+  document.querySelectorAll('.tool-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  document.getElementById('activeToolName').textContent = tool.name;
+  document.getElementById('activeToolDesc').textContent = tool.desc;
+  document.getElementById('promptInput').placeholder = tool.prompt + '…';
+}
+
+function makeOutputBlock(runNum) {
+  const block = document.createElement('div');
+  block.className = 'output-block';
+
+  const header = document.createElement('div');
+  header.className = 'output-block-header';
+
+  const left = document.createElement('span');
+  const tag = document.createElement('span');
+  tag.style.color = 'var(--accent)';
+  tag.style.fontWeight = '600';
+  tag.textContent = activeTool.name;
+  left.appendChild(tag);
+  left.appendChild(document.createTextNode(' · Demo run #' + runNum));
+
+  const right = document.createElement('span');
+  right.textContent = new Date().toLocaleTimeString();
+
+  header.appendChild(left);
+  header.appendChild(right);
+
+  const body = document.createElement('div');
+  body.className = 'output-body streaming';
+  body.id = 'body-' + runNum;
+  body.textContent = 'Initialising agent pipeline…';
+
+  block.appendChild(header);
+  block.appendChild(body);
+  return block;
+}
+
+async function runDemo() {
+  if (runsUsed >= MAX_RUNS) {
+    document.getElementById('convertBanner').classList.add('show');
+    return;
+  }
+  const prompt = document.getElementById('promptInput').value.trim() || activeTool.prompt;
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.textContent = 'Running…';
+
+  runsUsed++;
+  toolsTriedSet.add(activeTool.id);
+  updateStats();
+
+  const placeholder = document.getElementById('placeholder');
+  if (placeholder) placeholder.remove();
+
+  const stream = document.getElementById('outputStream');
+  const block = makeOutputBlock(runsUsed);
+  stream.appendChild(block);
+  stream.scrollTop = stream.scrollHeight;
+
+  const body = document.getElementById('body-' + runsUsed);
+
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: '[DEMO MODE — ' + activeTool.name + '] ' + prompt,
+        context: { demo: true, tool: activeTool.id, tier: 'free', maxTokens: 400 },
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = data.response || data.message || data.result || JSON.stringify(data, null, 2);
+      totalTokens += Math.ceil(text.split(' ').length * 1.3);
+      outputCount++;
+      body.classList.remove('streaming');
+      body.textContent = text;
+    } else {
+      throw new Error('non-ok');
+    }
+  } catch {
+    outputCount++;
+    body.classList.remove('streaming');
+    body.textContent = '[Demo Preview] ' + activeTool.name + ' would process:\n\n"' + prompt + '"\n\nCreate your free account to run live agent pipelines with persistent outputs.';
+  }
+
+  addToHistory(activeTool.name, prompt.slice(0, 50));
+  updateStats();
+  btn.disabled = false;
+  btn.textContent = 'Run Agent ▶';
+
+  if (runsUsed >= MAX_RUNS) {
+    document.getElementById('convertBanner').classList.add('show');
+    btn.disabled = true;
+    btn.textContent = 'Limit reached';
+  }
+
+  const pct = Math.max(0, ((MAX_RUNS - runsUsed) / MAX_RUNS) * 100);
+  document.getElementById('rateBar').style.width = pct + '%';
+  document.getElementById('runsLeft').textContent = MAX_RUNS - runsUsed;
+}
+
+function addToHistory(toolName, promptSnippet) {
+  runHistory.unshift({ toolName, promptSnippet });
+  const hist = document.getElementById('runHistory');
+  hist.textContent = '';
+  runHistory.slice(0, 6).forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const toolSpan = document.createElement('span');
+    toolSpan.className = 'history-tool';
+    toolSpan.textContent = h.toolName;
+    item.appendChild(toolSpan);
+    item.appendChild(document.createTextNode(' — ' + h.promptSnippet + '…'));
+    hist.appendChild(item);
+  });
+}
+
+function updateStats() {
+  document.getElementById('statRuns').textContent = runsUsed;
+  document.getElementById('statOutputs').textContent = outputCount;
+  document.getElementById('statTokens').textContent = totalTokens.toLocaleString();
+  document.getElementById('statTools').textContent = toolsTriedSet.size;
+}
+
+document.getElementById('promptInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runDemo(); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legal — Bridge AI OS</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">Bridge AI OS</a>
+    <div class="flex gap-4">
+      <a href="/crm.html" class="text-slate-400 hover:text-cyan-400">CRM</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-cyan-400 mb-6">Legal & Compliance</h1>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">📄 Contract Templates</h2>
+        <div class="space-y-3">
+          <div class="bg-slate-700 p-3 rounded cursor-pointer hover:bg-slate-600">
+            <div class="font-bold">Service Agreement</div>
+            <div class="text-sm text-slate-400">Standard service contract</div>
+          </div>
+          <div class="bg-slate-700 p-3 rounded cursor-pointer hover:bg-slate-600">
+            <div class="font-bold">NDA</div>
+            <div class="text-sm text-slate-400">Non-disclosure agreement</div>
+          </div>
+          <div class="bg-slate-700 p-3 rounded cursor-pointer hover:bg-slate-600">
+            <div class="font-bold">SaaS Terms</div>
+            <div class="text-sm text-slate-400">Software as a Service terms</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-xl p-6">
+        <h2 class="text-lg font-bold text-cyan-400 mb-4">⚖️ Compliance</h2>
+        <div class="space-y-3">
+          <div class="bg-slate-700 p-3 rounded">
+            <div class="flex justify-between items-center">
+              <div class="font-bold">GDPR</div>
+              <span class="text-green-400 text-sm">✓ Compliant</span>
+            </div>
+          </div>
+          <div class="bg-slate-700 p-3 rounded">
+            <div class="flex justify-between items-center">
+              <div class="font-bold">POPIA</div>
+              <span class="text-green-400 text-sm">✓ Compliant</span>
+            </div>
+          </div>
+          <div class="bg-slate-700 p-3 rounded">
+            <div class="flex justify-between items-center">
+              <div class="font-bold">KYC/AML</div>
+              <span class="text-yellow-400 text-sm">⏳ Pending Review</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6 mb-6">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">📜 Active Contracts</h2>
+      <div id="contracts" class="text-slate-500 text-center py-4">Loading contracts...</div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-cyan-400 mb-4">🔍 Legal AI Assistant</h2>
+      <div class="flex gap-4">
+        <input type="text" id="legalQuery" class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white" placeholder="Ask a legal question...">
+        <button onclick="askLegal()" class="bg-cyan-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-cyan-500">Ask</button>
+      </div>
+      <div id="legalResponse" class="mt-4 p-4 bg-slate-700 rounded-lg hidden">
+        <p id="responseText"></p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadContracts() {
+      try {
+        const res = await fetch('/api/legal/contracts');
+        const data = await res.json();
+        const contracts = data.contracts || [];
+        
+        if (contracts.length === 0) {
+          document.getElementById('contracts').innerHTML = '<p class="text-slate-500">No active contracts</p>';
+        } else {
+          document.getElementById('contracts').innerHTML = contracts.map(c => `
+            <div class="bg-slate-700 p-3 rounded mb-2">
+              <div class="font-bold">${c.name}</div>
+              <div class="text-sm text-slate-400">${c.status} · Expires: ${c.expiry}</div>
+            </div>
+          `).join('');
+        }
+      } catch(e) {
+        document.getElementById('contracts').innerHTML = '<p class="text-slate-500">Unable to load contracts</p>';
+      }
+    }
+
+    async function askLegal() {
+      const query = document.getElementById('legalQuery').value;
+      if (!query) return;
+      
+      const responseDiv = document.getElementById('legalResponse');
+      responseDiv.classList.remove('hidden');
+      document.getElementById('responseText').textContent = 'Processing your legal question...';
+      
+      try {
+        const res = await fetch('/api/legal', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ query })
+        });
+        const data = await res.json();
+        document.getElementById('responseText').textContent = data.response || data.answer || 'Response received';
+      } catch(e) {
+        document.getElementById('responseText').textContent = 'Error: ' + e.message;
+      }
+    }
+
+    loadContracts();
+  </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

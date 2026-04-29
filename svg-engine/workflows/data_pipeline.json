@@ -1,0 +1,41 @@
+{
+  "id": "data_pipeline",
+  "name": "Data Pipeline → Dataset → API Export",
+  "description": "Scrape structured data, normalize, store, export as CSV/API. Monetize dataset access.",
+  "tags": ["data", "scraping", "monetize", "high-value"],
+  "steps": [
+    {
+      "type": "skill",
+      "name": "ban:apify-ultimate-scraper",
+      "input": { "limit": 100 },
+      "label": "Scrape structured data"
+    },
+    {
+      "type": "transform",
+      "operation": "normalize",
+      "label": "Normalize + deduplicate"
+    },
+    {
+      "type": "transform",
+      "operation": "csv",
+      "label": "Export to CSV"
+    },
+    {
+      "type": "plugin",
+      "name": "crm_writer",
+      "input": { "collection": "dataset" },
+      "label": "Store in DB"
+    },
+    {
+      "type": "plugin",
+      "name": "metrics_reporter",
+      "input": { "event": "data_pipeline_run" },
+      "label": "Log pipeline run"
+    },
+    {
+      "type": "notify",
+      "message": "Data pipeline complete. Dataset updated and ready.",
+      "label": "Alert on completion"
+    }
+  ]
+}

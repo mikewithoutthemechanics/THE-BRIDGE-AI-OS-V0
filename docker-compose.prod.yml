@@ -1,0 +1,243 @@
+services:
+  # Tier 1: Nginx Reverse Proxy (TLS termination, load balancing)
+  nginx:
+    image: nginx:alpine
+    container_name: bridge-nginx-tier1
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-bridge.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - bridge_logs:/var/log/nginx
+    networks:
+      - bridge
+    depends_on:
+      - gateway
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Tier 2: API Gateway (Authentication, routing, SSE)
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: bridge-gateway-tier2
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      REDIS_URL: redis://redis:6379
+      DB_HOST: postgres
+      DB_NAME: bridge_ai
+      DB_USER: ${DB_USER:-bridge}
+      DB_PASS: ${DB_PASS:-changeme}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+    volumes:
+      - ./gateway.js:/app/gateway.js:ro
+      - ./middleware:/app/middleware:ro
+      - ./routes:/app/routes:ro
+      - ./utils:/app/utils:ro
+      - ./lib:/app/lib:ro
+      - bridge_logs:/app/logs
+    ports:
+      - "8080:8080"
+    networks:
+      - bridge
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # Tier 3A: Main Node.js Service (Core logic, economy, agents)
+  main-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.main
+    container_name: bridge-main-tier3a
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      SERVICE_NAME: main
+      REDIS_URL: redis://redis:6379
+      DB_HOST: postgres
+      DB_NAME: bridge_ai
+      DB_USER: ${DB_USER:-bridge}
+      DB_PASS: ${DB_PASS:-changeme}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      BRAIN_SERVICE_URL: http://brain:8000
+      SVG_SERVICE_URL: http://svg-engine:7070
+      GATEWAY_URL: http://gateway:8080
+    volumes:
+      - ./server.js:/app/server.js:ro
+      - ./routes:/app/routes:ro
+      - ./middleware:/app/middleware:ro
+      - ./lib:/app/lib:ro
+      - bridge_data:/app/data
+      - bridge_logs:/app/logs
+    networks:
+      - bridge
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # Tier 3B: FastAPI Brain Engine (AI twin, query processing)
+  brain:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bridge-brain-tier3b
+    environment:
+      PYTHONUNBUFFERED: 1
+      PORT: 8000
+      REDIS_URL: redis://redis:6379
+      DB_HOST: postgres
+      DB_NAME: bridge_ai
+      DB_USER: ${DB_USER:-bridge}
+      DB_PASS: ${DB_PASS:-changeme}
+      MAIN_SERVICE_URL: http://main-service:3000
+    volumes:
+      - ./backend:/app
+      - bridge_data:/app/data
+      - bridge_logs:/app/logs
+    networks:
+      - bridge
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  # Tier 3C: SVG Skill Engine (Visualization, skill graphs)
+  svg-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.svg
+    container_name: bridge-svg-tier3c
+    environment:
+      NODE_ENV: production
+      PORT: 7070
+      REDIS_URL: redis://redis:6379
+      MAIN_SERVICE_URL: http://main-service:3000
+    volumes:
+      - ./svg-engine:/app:ro
+      - bridge_logs:/app/logs
+    networks:
+      - bridge
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7070/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Tier 4A: PostgreSQL (Primary persistence)
+  postgres:
+    image: postgres:16-alpine
+    container_name: bridge-postgres
+    environment:
+      POSTGRES_DB: bridge_ai
+      POSTGRES_USER: ${DB_USER:-bridge}
+      POSTGRES_PASSWORD: ${DB_PASS:-changeme}
+    volumes:
+      - bridge_db:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - bridge
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-bridge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Tier 4B: Redis (Caching, pub/sub, sessions)
+  redis:
+    image: redis:7-alpine
+    container_name: bridge-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASS:-changeme}
+    volumes:
+      - bridge_redis:/data
+    networks:
+      - bridge
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Tier 4C: Neo4j (Optional: Knowledge graph, agent relationships)
+  neo4j:
+    image: neo4j:5-enterprise
+    container_name: bridge-neo4j
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASS:-changeme}
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"
+    volumes:
+      - bridge_neo4j:/var/lib/neo4j/data
+    networks:
+      - bridge
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7474/db/manage/info/server"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    profiles:
+      - optional
+
+volumes:
+  bridge_data:
+    name: bridge_prod_data
+  bridge_logs:
+    name: bridge_prod_logs
+  bridge_db:
+    name: bridge_prod_db
+  bridge_redis:
+    name: bridge_prod_redis
+  bridge_neo4j:
+    name: bridge_prod_neo4j
+
+networks:
+  bridge:
+    name: bridge_network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

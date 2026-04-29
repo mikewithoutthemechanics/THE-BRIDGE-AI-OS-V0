@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # ── CONFIG SERVICE (THE SPINE) ──────────────────────────────────────
+  config-service:
+    build: ./services/config-service
+    container_name: bridge-v3-config-service
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://bridge-v3-redis:6379
+      - POSTGRES_URL=postgresql://bridge:password@bridge-v3-postgres:5432/bridge_ai
+    volumes:
+      - config-data:/app/data
+    restart: unless-stopped
+
+  # ── ADMIN API (THE EYES + HANDS) ────────────────────────────────────
+  admin-api:
+    build: ./services/admin-api
+    container_name: bridge-v3-admin-api
+    ports:
+      - "3100:3100"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_SERVICE_URL=http://bridge-v3-config-service:8080
+      - DATABASE_URL=postgresql://bridge:password@bridge-v3-postgres:5432/bridge_ai
+      - REDIS_URL=redis://bridge-v3-redis:6379
+    restart: unless-stopped
+
+  # ── TREASURY (THE ECONOMY) ──────────────────────────────────────────
+  treasury:
+    build: ./services/treasury
+    container_name: bridge-v3-treasury
+    ports:
+      - "3200:3200"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_SERVICE_URL=http://bridge-v3-config-service:8080
+      - DATABASE_URL=postgresql://bridge:password@bridge-v3-postgres:5432/bridge_ai
+      - REDIS_URL=redis://bridge-v3-redis:6379
+    restart: unless-stopped
+
+  # ── GATEWAY (THE INTERFACE) ─────────────────────────────────────────
+  gateway:
+    build: ./services/gateway
+    container_name: bridge-v3-gateway
+    ports:
+      - "3300:3300"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_SERVICE_URL=http://bridge-v3-config-service:8080
+      - TREASURY_URL=http://bridge-v3-treasury:3200
+      - SUPER_BRAIN_URL=http://bridge-v3-super-brain:3400
+      - REDIS_URL=redis://bridge-v3-redis:6379
+    restart: unless-stopped
+
+  # ── SUPER BRAIN (THE INTELLIGENCE) ──────────────────────────────────
+  super-brain:
+    build: ./services/super-brain
+    container_name: bridge-v3-super-brain
+    ports:
+      - "3400:3400"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_SERVICE_URL=http://bridge-v3-config-service:8080
+    restart: unless-stopped
+
+  # ── TELEPHONY (THE VOICE) ───────────────────────────────────────────
+  telephony:
+    build: ./services/telephony
+    container_name: bridge-v3-telephony
+    ports:
+      - "3500:3500"
+      - "5060:5060/udp"
+      - "8089:8089"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_SERVICE_URL=http://bridge-v3-config-service:8080
+      - TREASURY_URL=http://bridge-v3-treasury:3200
+      - SUPER_BRAIN_URL=http://bridge-v3-super-brain:3400
+    restart: unless-stopped
+
+  # ── SVG ENGINE (THE NERVOUS SYSTEM) ────────────────────────────────
+  svg-engine:
+    build: ./services/svg-engine
+    container_name: bridge-v3-svg-engine
+    ports:
+      - "3600:3600"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_SERVICE_URL=http://bridge-v3-config-service:8080
+      - ADMIN_API_URL=http://bridge-v3-admin-api:3100
+    restart: unless-stopped
+
+  # ── INFRASTRUCTURE ──────────────────────────────────────────────────
+  postgres:
+    image: postgres:15
+    container_name: bridge-v3-postgres
+    environment:
+      - POSTGRES_DB=bridge_ai
+      - POSTGRES_USER=bridge
+      - POSTGRES_PASSWORD=bridge_password_2026
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: bridge-v3-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  config-data:
+  postgres-data:
+  redis-data:
+  brain-models:
+
+networks:
+  default:
+    name: bridge-ai-network

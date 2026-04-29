@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affiliate Admin — Bridge AI</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#e2e8f0;min-height:100vh}
+  .topbar{background:#111827;border-bottom:1px solid #1f2937;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+  .topbar h1{font-size:18px;font-weight:600;color:#f9fafb}
+  .topbar span{font-size:13px;color:#6b7280}
+  .auth-gate{display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;gap:16px}
+  .auth-gate input{background:#1f2937;border:1px solid #374151;color:#f9fafb;padding:12px 16px;border-radius:8px;width:320px;font-size:14px;outline:none}
+  .auth-gate input:focus{border-color:#6366f1}
+  .btn{background:#6366f1;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:background .2s}
+  .btn:hover{background:#4f46e5}
+  .btn.danger{background:#dc2626}
+  .btn.danger:hover{background:#b91c1c}
+  .btn.success{background:#059669}
+  .btn.success:hover{background:#047857}
+  .btn.sm{padding:6px 12px;font-size:12px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .container{padding:32px;max-width:1200px;margin:0 auto}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px}
+  .card{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:20px}
+  .card-label{font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .card-value{font-size:24px;font-weight:700;color:#f9fafb}
+  .card-value.green{color:#10b981}
+  .card-value.yellow{color:#f59e0b}
+  .section-title{font-size:16px;font-weight:600;color:#f9fafb;margin-bottom:16px}
+  .tabs{display:flex;gap:8px;margin-bottom:24px}
+  .tab{background:#1f2937;border:1px solid #374151;color:#9ca3af;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s}
+  .tab.active{background:#6366f1;border-color:#6366f1;color:#fff}
+  table{width:100%;border-collapse:collapse;background:#111827;border-radius:12px;overflow:hidden;border:1px solid #1f2937}
+  th{background:#1f2937;padding:12px 16px;text-align:left;font-size:12px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+  td{padding:12px 16px;font-size:13px;border-bottom:1px solid #1f2937;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase}
+  .badge.pending{background:#78350f22;color:#f59e0b;border:1px solid #78350f44}
+  .badge.approved{background:#064e3b22;color:#10b981;border:1px solid #064e3b44}
+  .badge.paid{background:#1e3a5f22;color:#3b82f6;border:1px solid #1e3a5f44}
+  .badge.rejected{background:#450a0a22;color:#ef4444;border:1px solid #450a0a44}
+  .actions{display:flex;gap:6px;flex-wrap:wrap}
+  .empty{text-align:center;color:#6b7280;padding:40px;font-size:14px}
+  .notification{position:fixed;bottom:24px;right:24px;background:#1f2937;border:1px solid #374151;border-radius:12px;padding:14px 20px;font-size:14px;color:#f9fafb;transform:translateY(100px);transition:transform .3s;z-index:999;max-width:360px}
+  .notification.show{transform:translateY(0)}
+  .notification.success{border-color:#059669}
+  .notification.error{border-color:#dc2626}
+  #mainContent{display:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Affiliate Admin</h1>
+  <span id="statusLabel">Not authenticated</span>
+</div>
+
+<div class="auth-gate" id="authGate">
+  <div class="card" style="width:360px;gap:16px;display:flex;flex-direction:column">
+    <div class="card-label" style="font-size:14px;text-transform:none;color:#f9fafb">Admin Access</div>
+    <input type="password" id="tokenInput" placeholder="Enter admin token" />
+    <button class="btn" onclick="authenticate()">Unlock Dashboard</button>
+  </div>
+</div>
+
+<div id="mainContent">
+  <div class="container">
+    <div class="summary-grid" id="summaryGrid">
+      <div class="card"><div class="card-label">Total Affiliates</div><div class="card-value" id="s-total">—</div></div>
+      <div class="card"><div class="card-label">Active</div><div class="card-value green" id="s-active">—</div></div>
+      <div class="card"><div class="card-label">Total Clicks</div><div class="card-value" id="s-clicks">—</div></div>
+      <div class="card"><div class="card-label">Total Signups</div><div class="card-value" id="s-signups">—</div></div>
+      <div class="card"><div class="card-label">Pending Payouts</div><div class="card-value yellow" id="s-pending">—</div></div>
+      <div class="card"><div class="card-label">Pending Amount</div><div class="card-value yellow" id="s-pendingAmt">—</div></div>
+    </div>
+
+    <div class="section-title">Withdrawal Requests</div>
+    <div class="tabs">
+      <div class="tab active" onclick="setTab('pending',this)">Pending</div>
+      <div class="tab" onclick="setTab('approved',this)">Approved</div>
+      <div class="tab" onclick="setTab('paid',this)">Paid</div>
+      <div class="tab" onclick="setTab('rejected',this)">Rejected</div>
+      <div class="tab" onclick="setTab('all',this)">All</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Affiliate Code</th>
+          <th>Tier</th>
+          <th>Amount</th>
+          <th>Method</th>
+          <th>Requested</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="withdrawalBody">
+        <tr><td colspan="8" class="empty">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="notification" id="notif"></div>
+
+<script>
+let adminToken = '';
+let currentTab = 'pending';
+
+function authenticate() {
+  const t = document.getElementById('tokenInput').value.trim();
+  if (!t) return;
+  adminToken = t;
+  loadDashboard();
+}
+
+document.getElementById('tokenInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') authenticate();
+});
+
+async function loadDashboard() {
+  const [sumRes, wdRes] = await Promise.all([
+    apiFetch('/api/affiliate/admin/dashboard'),
+    apiFetch('/api/affiliate/admin/withdrawals?status=' + currentTab),
+  ]);
+  if (!sumRes.ok) { showNotif('Auth failed — check token', 'error'); return; }
+
+  document.getElementById('authGate').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('statusLabel').textContent = 'Authenticated';
+
+  const s = sumRes.data.summary;
+  document.getElementById('s-total').textContent = s.total_affiliates;
+  document.getElementById('s-active').textContent = s.active_affiliates;
+  document.getElementById('s-clicks').textContent = Number(s.total_clicks).toLocaleString();
+  document.getElementById('s-signups').textContent = Number(s.total_signups).toLocaleString();
+  document.getElementById('s-pending').textContent = s.pending_withdrawals;
+  document.getElementById('s-pendingAmt').textContent = '$' + Number(s.pending_payout_total).toLocaleString();
+
+  renderWithdrawals(wdRes.ok ? wdRes.data.withdrawals : []);
+}
+
+function renderWithdrawals(rows) {
+  const tbody = document.getElementById('withdrawalBody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No records found</td></tr>'; return; }
+  tbody.innerHTML = rows.map(w => {
+    const actions = buildActions(w);
+    const date = w.requested_at ? new Date(w.requested_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+    return `<tr>
+      <td>${w.id}</td>
+      <td><code>${w.referral_code}</code></td>
+      <td>${w.tier || 'standard'}</td>
+      <td>$${Number(w.amount).toFixed(2)}</td>
+      <td>${w.payout_method || 'bank_transfer'}</td>
+      <td>${date}</td>
+      <td><span class="badge ${w.status}">${w.status}</span></td>
+      <td><div class="actions">${actions}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+function buildActions(w) {
+  const id = w.id;
+  if (w.status === 'pending') return `
+    <button class="btn success sm" onclick="doAction(${id},'approve')">Approve</button>
+    <button class="btn danger sm" onclick="doAction(${id},'reject')">Reject</button>`;
+  if (w.status === 'approved') return `
+    <button class="btn sm" onclick="doAction(${id},'pay')">Mark Paid</button>`;
+  return '—';
+}
+
+async function doAction(id, action) {
+  const r = await apiFetch(`/api/affiliate/admin/withdrawals/${id}/action`, {
+    method: 'POST', body: JSON.stringify({ action }),
+  });
+  if (r.ok) { showNotif(`Withdrawal #${id} → ${action}`, 'success'); loadWithdrawals(); }
+  else showNotif(r.data?.error || 'Action failed', 'error');
+}
+
+async function setTab(status, el) {
+  currentTab = status;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  await loadWithdrawals();
+}
+
+async function loadWithdrawals() {
+  const r = await apiFetch('/api/affiliate/admin/withdrawals?status=' + currentTab);
+  renderWithdrawals(r.ok ? r.data.withdrawals : []);
+}
+
+async function apiFetch(url, opts = {}) {
+  try {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+      ...opts,
+    });
+    const data = await res.json();
+    return { ok: res.ok, data };
+  } catch (e) {
+    return { ok: false, data: { error: e.message } };
+  }
+}
+
+function showNotif(msg, type = 'success') {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = 'notification show ' + type;
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+</script>
+</body>
+</html>

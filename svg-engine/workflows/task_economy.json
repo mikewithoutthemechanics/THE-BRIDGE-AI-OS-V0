@@ -1,0 +1,59 @@
+{
+  "id": "task_economy",
+  "name": "Task → Execution → Payment Loop",
+  "description": "Create tasks, assign to agents, execute, validate result, trigger payout. Scalable task marketplace.",
+  "tags": ["economy", "agents", "payment", "marketplace", "high-value"],
+  "steps": [
+    {
+      "type": "plugin",
+      "name": "scraper",
+      "input": { "operation": "fetch_tasks", "source": "ban_queue" },
+      "label": "Fetch pending tasks",
+      "required": false
+    },
+    {
+      "type": "transform",
+      "operation": "normalize",
+      "label": "Normalize task queue"
+    },
+    {
+      "type": "llm",
+      "prompt": "You are a task router. Given these tasks: {{_prev}}, assign each to the best agent type (scraper/writer/analyst/coder) and estimate value in USD. Return JSON array.",
+      "label": "Route tasks to agents"
+    },
+    {
+      "type": "plugin",
+      "name": "crm_writer",
+      "input": { "collection": "task_assignments" },
+      "label": "Log task assignments"
+    },
+    {
+      "type": "plugin",
+      "name": "metrics_reporter",
+      "input": { "event": "task_economy_cycle" },
+      "label": "Track economy metrics"
+    },
+    {
+      "type": "branch",
+      "label": "Trigger payout if tasks completed",
+      "condition": { "field": "tasks_completed", "op": "gt", "value": 0 },
+      "then": [
+        {
+          "type": "plugin",
+          "name": "payment_trigger",
+          "input": { "currency": "usd", "description": "Task completion payout" }
+        },
+        {
+          "type": "notify",
+          "message": "Task economy cycle complete. Payouts triggered."
+        }
+      ],
+      "else": [
+        {
+          "type": "notify",
+          "message": "Task economy cycle complete. No payouts this cycle."
+        }
+      ]
+    }
+  ]
+}

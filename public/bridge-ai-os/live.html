@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BRIDGE AI OS — Live Interface</title>
+  <!-- Security: CSP will be set by server -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+  <link rel="stylesheet" href="/assets/css/animations.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/8.13.2/pixi.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js" defer></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #05080f;
+      font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+      overflow: hidden;
+      color: #00f7ff;
+      /* Smooth page load animation */
+      animation: pageFadeIn 0.4s ease-out both;
+    }
+    /* Accessibility: respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      body { animation: none; }
+    }
+  #header {
+    position: absolute;
+    left: 0; top: 0;
+    width: 50%; height: 260px;
+    z-index: 4;
+    background: #05080f;
+    border-bottom: 1px solid rgba(0,247,255,0.22);
+  }
+  #header svg { display: block; width: 100%; height: 260px; }
+  #terminal {
+    position: absolute;
+    left: 0; top: 260px;
+    width: 50%;
+    height: calc(100% - 260px);
+    border-right: 1px solid rgba(0,247,255,0.18);
+    z-index: 3;
+  }
+  #pixi {
+    position: absolute;
+    right: 0; top: 0;
+    width: 50%; height: 100%;
+    z-index: 1;
+  }
+  #p5-container {
+    position: absolute;
+    left: 0; top: 260px;
+    width: 50%;
+    height: calc(100% - 260px);
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.48;
+  }
+  #dashboard {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 118px;
+    background: linear-gradient(to top, rgba(5,10,20,0.96), transparent);
+    border-top: 1px solid rgba(0,247,255,0.28);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    backdrop-filter: blur(12px);
+    z-index: 10;
+    /* Smooth entrance animation */
+    animation: slideUp 0.6s ease-out both;
+    animation-delay: 0.3s;
+  }
+  .card {
+    text-align: center;
+    min-width: 132px;
+    font-size: 13px;
+    letter-spacing: 1.2px;
+    opacity: 0.95;
+    /* Card hover animation prepared */
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, box-shadow;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,247,255,0.15), 0 4px 12px rgba(0,255,156,0.1);
+  }
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 0 auto 8px;
+    box-shadow: 0 0 14px currentColor;
+    animation: pulse 1.8s infinite ease-in-out;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.38; transform: scale(0.72); }
+  }
+  .scan {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,255,180,0.028) 0px,
+      rgba(0,255,180,0.028) 1px,
+      transparent 4px,
+      transparent 7px
+    );
+    animation: scanline 8s linear infinite;
+    z-index: 9;
+  }
+  @keyframes scanline {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 640px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <defs>
+      <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#00ff88"/><stop offset="55%" stop-color="#00f7ff"/><stop offset="100%" stop-color="#6bdcff"/>
+      </linearGradient>
+      <filter id="gf" x="-10%" y="-10%" width="120%" height="120%">
+        <feGaussianBlur stdDeviation="2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="gf2" x="-18%" y="-18%" width="136%" height="136%">
+        <feGaussianBlur stdDeviation="4.5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <pattern id="sl" width="2" height="6" patternUnits="userSpaceOnUse">
+        <rect width="2" height="2" fill="rgba(0,0,0,0.32)"/>
+      </pattern>
+    </defs>
+    <rect width="880" height="260" fill="#05080f"/>
+    <rect width="880" height="260" fill="url(#sl)" opacity="0.2"/>
+    <g id="brandShift">
+      <text x="42" y="72" fill="url(#lg)" font-size="42" font-weight="700" font-family="ui-monospace,'Courier New',monospace" letter-spacing="0.14em" filter="url(#gf)">BRIDGE</text>
+      <text x="42" y="118" fill="#00f7ff" font-size="28" font-weight="700" font-family="ui-monospace,'Courier New',monospace" letter-spacing="0.26em" filter="url(#gf)">AI OS</text>
+    </g>
+    <line x1="42" y1="132" x2="380" y2="132" stroke="#00f7ff" stroke-width="0.5" opacity="0.28"/>
+    <circle cx="440" cy="132" r="3" fill="#00f7ff" opacity="0.5">
+      <animate attributeName="opacity" values="0.5;0.15;0.5" dur="2.1s" repeatCount="indefinite"/>
+    </circle>
+    <line x1="500" y1="132" x2="838" y2="132" stroke="#00f7ff" stroke-width="0.5" opacity="0.28"/>
+    <text x="440" y="166" text-anchor="middle" fill="#00f7ff" font-size="14.5" font-family="ui-monospace,'Courier New',monospace" letter-spacing="0.42em" filter="url(#gf2)">BUILD • BRIDGE • DEPLOY</text>
+    <text x="440" y="188" text-anchor="middle" fill="#ffffff" opacity="0.52" font-size="10.5" font-family="ui-monospace,'Courier New',monospace" letter-spacing="0.18em">AUTONOMOUS AI INFRASTRUCTURE  •  v2.1</text>
+    <g font-family="ui-monospace,'Courier New',monospace" font-size="9.5">
+      <circle cx="68" cy="218" r="4" fill="#00ff88"><animate attributeName="opacity" values="1;0.22;1" dur="2s" repeatCount="indefinite"/></circle>
+      <text x="82" y="222" fill="#00ff88">SYSTEM ONLINE</text>
+      <circle cx="282" cy="218" r="4" fill="#00f7ff"><animate attributeName="opacity" values="1;0.22;1" dur="2.35s" repeatCount="indefinite"/></circle>
+      <text x="296" y="222" fill="#00f7ff">AGENTS ACTIVE</text>
+      <circle cx="498" cy="218" r="4" fill="#ffcc33"><animate attributeName="opacity" values="1;0.22;1" dur="1.85s" repeatCount="indefinite"/></circle>
+      <text x="512" y="222" fill="#ffcc33">GOD MODE</text>
+      <circle cx="692" cy="218" r="4" fill="#ff6b6b"><animate attributeName="opacity" values="1;0.22;1" dur="3.05s" repeatCount="indefinite"/></circle>
+      <text x="706" y="222" fill="#ff6b6b">∞ SCALE</text>
+    </g>
+    <rect x="0" y="0" width="880" height="3" fill="rgba(0,247,255,0.07)">
+      <animateTransform attributeName="transform" type="translate" values="0,0;0,257" dur="3.8s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="1" y="1" width="878" height="258" fill="none" stroke="#00f7ff" stroke-width="1" opacity="0.16" rx="2"/>
+  </svg>
+</div>
+
+<div id="terminal"></div>
+<div id="pixi"></div>
+<div id="p5-container"></div>
+
+<div id="dashboard">
+  <div class="card" style="color:#00ff88"><div class="dot"></div>CORE ONLINE</div>
+  <div class="card" style="color:#00f7ff"><div class="dot"></div>AGENTS SYNCED</div>
+  <div class="card" style="color:#ffdd57"><div class="dot"></div>GOD MODE</div>
+  <div class="card" style="color:#ff5c8a"><div class="dot"></div>SCALE ONLINE</div>
+</div>
+
+<div class="scan"></div>
+
+<script>
+(function glitchBrand(){
+  const g = document.getElementById('brandShift');
+  if (!g) return;
+  setInterval(function(){
+    if (Math.random() > 0.72) {
+      var ox = (Math.random() - 0.5) * 5;
+      var oy = (Math.random() - 0.5) * 2.5;
+      g.setAttribute('transform', 'translate(' + ox + ',' + oy + ')');
+      setTimeout(function(){ g.setAttribute('transform', 'translate(0,0)'); }, 70);
+    }
+  }, 1400);
+})();
+
+const term = new Terminal({
+  cursorBlink: true,
+  fontSize: 14,
+  fontFamily: "ui-monospace, 'Courier New', monospace",
+  theme: { background: '#05080f', foreground: '#00f7ff', cursor: '#00ff9d' }
+});
+term.open(document.getElementById('terminal'));
+
+const bootMessages = [
+  '[bridge-core] mounting semantic graph…',
+  '[bridge-core] attestation: OK',
+  '[orchestrator] warming agent contracts…',
+  '[mesh] edge routes: READY',
+  '[vault] zero-trust session: ACTIVE',
+  '',
+  'BRIDGE AI OS  v2.1',
+  'BUILD • BRIDGE • DEPLOY',
+  '────────────────────────────────────────',
+  ''
+];
+let idx = 0;
+(function bootSeq(){
+  if (idx < bootMessages.length) {
+    term.writeln(bootMessages[idx++]);
+    setTimeout(bootSeq, 68);
+  } else {
+    setTimeout(function(){
+      term.writeln('');
+      term.writeln('\x1b[32mall services nominal.\x1b[0m');
+      term.write('bridge\x1b[90m@\x1b[0mos\x1b[90m:\x1b[0m~\x1b[90m$ \x1b[0m');
+    }, 520);
+  }
+})();
+
+let line = '';
+term.onData(function(data){
+  if (data === '\r') {
+    term.writeln('');
+    if (line.trim()) {
+      term.writeln('\x1b[90m→\x1b[0m dispatched: \x1b[96m' + line + '\x1b[0m');
+    }
+    line = '';
+    term.write('bridge\x1b[90m@\x1b[0mos\x1b[90m:\x1b[0m~\x1b[90m$ \x1b[0m');
+    return;
+  }
+  if (data === '\x7f') {
+    if (line.length > 0) {
+      line = line.slice(0, -1);
+      term.write('\b \b');
+    }
+    return;
+  }
+  if (data.length === 1 && data >= ' ' && data <= '~') {
+    line += data;
+    term.write(data);
+  }
+});
+
+let app, coreContainer, ring1, ring2, particles = [], centerX, centerY;
+
+async function initPixi(){
+  try {
+    app = new PIXI.Application();
+    await app.init({
+      width: Math.floor(window.innerWidth / 2),
+      height: window.innerHeight,
+      backgroundColor: 0x05080f,
+      antialias: true,
+      resolution: Math.min(window.devicePixelRatio || 1, 2)
+    });
+    document.getElementById('pixi').appendChild(app.canvas);
+
+    centerX = app.screen.width / 2;
+    centerY = app.screen.height / 2;
+
+    coreContainer = new PIXI.Container();
+    app.stage.addChild(coreContainer);
+    coreContainer.x = centerX;
+    coreContainer.y = centerY;
+
+    const core = new PIXI.Graphics();
+    core.circle(0, 0, 92).stroke({ width: 4, color: 0x00f7ff, alpha: 0.92 });
+    coreContainer.addChild(core);
+
+    const inner = new PIXI.Graphics();
+    inner.circle(0, 0, 64).fill({ color: 0x00ff9d, alpha: 0.18 });
+    coreContainer.addChild(inner);
+
+    ring1 = new PIXI.Graphics();
+    ring1.circle(0, 0, 148).stroke({ width: 3.5, color: 0x00ff88, alpha: 0.88 });
+    app.stage.addChild(ring1);
+    ring1.x = centerX;
+    ring1.y = centerY;
+
+    ring2 = new PIXI.Graphics();
+    ring2.circle(0, 0, 198).stroke({ width: 2.5, color: 0xff5c8a, alpha: 0.82 });
+    app.stage.addChild(ring2);
+    ring2.x = centerX;
+    ring2.y = centerY;
+
+    const tex = PIXI.Texture.WHITE;
+    for (let i = 0; i < 780; i++) {
+      const p = new PIXI.Sprite(tex);
+      p.anchor.set(0.5);
+      const s = 2.2 + Math.random() * 2.4;
+      p.width = p.height = s;
+      p.tint = Math.random() > 0.52 ? 0x00f7ff : 0x88eedd;
+      p.alpha = 0.55 + Math.random() * 0.42;
+      p.x = centerX + (Math.random() - 0.5) * 500;
+      p.y = centerY + (Math.random() - 0.5) * 500;
+      p.speed = 0.35 + Math.random() * 1.1;
+      p.angle = Math.random() * Math.PI * 2;
+      p.phase = Math.random() * Math.PI * 2;
+      app.stage.addChild(p);
+      particles.push(p);
+    }
+
+    let time = 0;
+    app.ticker.add(function(delta){
+      time += delta * 0.015;
+      coreContainer.rotation = time * 0.0055;
+      coreContainer.scale.set(1 + Math.sin(time * 3) * 0.028);
+      ring1.rotation = time * 0.012;
+      ring2.rotation = -time * 0.018;
+      var s = Math.sin(time * 1.7);
+      var c = Math.cos(time * 1.35);
+      for (var k = 0; k < particles.length; k++) {
+        var p = particles[k];
+        p.angle += 0.0024 * p.speed;
+        var r = 158 + s * 42;
+        p.x = centerX + Math.cos(p.angle) * r;
+        p.y = centerY + Math.sin(p.angle * 1.3) * (r + c * 36);
+        p.alpha = 0.52 + Math.sin(time * 4.8 + p.phase) * 0.38;
+      }
+    });
+  } catch (err) {
+    console.error('PixiJS:', err);
+  }
+}
+
+let p5Ref = null;
+new p5(function(sketch){
+  let nodes = [];
+  var count = 34;
+  sketch.setup = function(){
+    var w = window.innerWidth / 2;
+    var h = window.innerHeight - 260;
+    var c = sketch.createCanvas(w, h);
+    c.parent('p5-container');
+    for (var i = 0; i < count; i++) {
+      nodes.push({
+        x: Math.random() * sketch.width,
+        y: Math.random() * sketch.height,
+        vx: (Math.random() - 0.5) * 0.55,
+        vy: (Math.random() - 0.5) * 0.55
+      });
+    }
+    p5Ref = sketch;
+  };
+  sketch.draw = function(){
+    sketch.fill(5, 8, 15, 16);
+    sketch.rect(0, 0, sketch.width, sketch.height);
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 24 || n.x > sketch.width - 24) n.vx *= -1;
+      if (n.y < 24 || n.y > sketch.height - 24) n.vy *= -1;
+      sketch.fill(0, 247, 255, 165);
+      sketch.noStroke();
+      sketch.circle(n.x, n.y, 2.4);
+    }
+    sketch.stroke(0, 247, 255, 22);
+    sketch.strokeWeight(0.75);
+    for (var a = 0; a < count; a++) {
+      for (var b = a + 1; b < count; b++) {
+        var dx = nodes[a].x - nodes[b].x;
+        var dy = nodes[a].y - nodes[b].y;
+        if (dx * dx + dy * dy < 150 * 150) {
+          sketch.line(nodes[a].x, nodes[a].y, nodes[b].x, nodes[b].y);
+        }
+      }
+    }
+  };
+}, document.getElementById('p5-container'));
+
+setTimeout(initPixi, 200);
+
+window.addEventListener('resize', function(){
+  var w = Math.floor(window.innerWidth / 2);
+  var h = window.innerHeight;
+  if (app && app.renderer) {
+    app.renderer.resize(w, h);
+    centerX = w / 2;
+    centerY = h / 2;
+    if (coreContainer) { coreContainer.x = centerX; coreContainer.y = centerY; }
+    if (ring1) { ring1.x = centerX; ring1.y = centerY; }
+    if (ring2) { ring2.x = centerX; ring2.y = centerY; }
+  }
+  if (p5Ref) {
+    p5Ref.resizeCanvas(w, Math.max(120, h - 260));
+  }
+});
+</script>
+</body>
+</html>

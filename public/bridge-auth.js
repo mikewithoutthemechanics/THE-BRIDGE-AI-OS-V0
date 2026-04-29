@@ -7,6 +7,13 @@
 
 'use strict';
 
+var SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
+
+function isSuperAdminUser(user) {
+  if (!user || !user.email) return false;
+  return String(user.email).trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+}
+
 window.BridgeAuth = {
 
   /** Get the current Bridge JWT token */
@@ -55,6 +62,7 @@ window.BridgeAuth = {
     localStorage.removeItem('bridge_user');
     localStorage.removeItem('bridge_tour_done');
     document.cookie = 'bridge_token=;path=/;max-age=0';
+    document.cookie = 'access_token=;path=/;max-age=0';
 
     // 3. Tell the server to invalidate the token (best-effort, non-blocking)
     if (token) {
@@ -69,11 +77,9 @@ window.BridgeAuth = {
       if (window._supabase) {
         await window._supabase.auth.signOut();
       } else {
-        var sb = window.supabase && window.supabase.createClient
-          ? window.supabase.createClient(
-              'https://sdkysuvmtqjqopmdpvoz.supabase.co',
-              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNka3lzdXZtdHFqcW9wbWRwdm96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4NTgzNCwiZXhwIjoyMDkxMjYxODM0fQ.fE28i7UyAmvun7046Jn4taHFN756-s70KFRnG863bV0'
-            )
+        var cfg = await fetch('/api/config/oauth').then(function(r){ return r.json(); }).catch(function(){ return {}; });
+        var sb = window.supabase && window.supabase.createClient && cfg.supabaseUrl
+          ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey)
           : null;
         if (sb) await sb.auth.signOut();
       }
@@ -81,5 +87,21 @@ window.BridgeAuth = {
 
     // 5. Redirect
     window.location.href = redirectUrl || '/onboarding.html';
+  },
+
+  /**
+   * Centralised post-login destination — single source of truth.
+   * All post-auth redirects should call this instead of hardcoding a path.
+   */
+  getPostLoginRoute: function(user, pendingPlan) {
+    // Critical override: super admin must always land on admin dashboard.
+    if (isSuperAdminUser(user)) return '/admin/dashboard';
+    if (pendingPlan || (user && user.pendingPlan)) {
+      return '/checkout?plan=' + (pendingPlan || user.pendingPlan);
+    }
+    if (!user || !user.onboarded) return '/welcome';
+    var role = user.role || 'user';
+    if (role === 'owner' || role === 'superadmin' || role === 'admin') return '/admin-command';
+    return '/portal';
   },
 };

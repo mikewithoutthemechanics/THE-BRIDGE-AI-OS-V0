@@ -2,736 +2,595 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<link rel="canonical" href="https://go.ai-os.co.za/portal">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/portal">
+<meta property="og:title" content="Portal — Bridge AI OS">
+<meta property="og:description" content="Portal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Portal — Bridge AI OS">
+<meta name="twitter:description" content="Portal — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bridge AI — Voice Portal</title>
-<meta name="description" content="Talk to Bridge AI using your voice. Real-time AI voice assistant for business automation, CRM, and agent management.">
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#00c8ff">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<title>Portal — Bridge AI OS</title>
+<meta name="description" content="Your personalized client dashboard for Bridge AI OS.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
+:root{--bg:#0a0e17;--card:#131a2b;--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444;--border:#1e293b}
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#02030a;--surface:rgba(5,12,25,0.85);--border:rgba(0,200,255,0.1);
-  --cyan:#00e0ff;--green:#00ff88;--amber:#ffb020;--purple:#a855f7;
-  --dim:#7a8fa0;--text:#d0dce6;
+body{background:var(--bg);color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.container{max-width:1100px;margin:0 auto;padding:24px}
+@media(max-width:640px){.container{padding:14px}}
+
+/* Welcome header */
+.welcome-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:16px}
+.welcome-left h1{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.welcome-left .sub{font-size:.82rem;color:var(--dim);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.plan-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.plan-starter{background:rgba(56,189,248,.12);color:var(--cyan)}
+.plan-pro{background:rgba(167,139,250,.14);color:var(--purple)}
+.plan-admin{background:rgba(34,197,94,.12);color:var(--green)}
+.plan-enterprise{background:rgba(245,158,11,.12);color:var(--orange)}
+.plan-free{background:rgba(255,255,255,.06);color:var(--dim)}
+.brdg-balance{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:.85rem;font-weight:600}
+.brdg-icon{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--green));display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:#0a0e17}
+
+/* Funnel indicator */
+.funnel-indicator{display:flex;gap:4px;margin-top:8px}
+.funnel-step{height:4px;flex:1;border-radius:2px;background:var(--border);max-width:60px}
+.funnel-step.active{background:var(--cyan)}
+.funnel-label{font-size:.65rem;color:var(--dim);margin-top:4px}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+@media(max-width:768px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px}
+.stat-icon{font-size:1.3rem;margin-bottom:8px}
+.stat-value{font-size:1.8rem;font-weight:800;color:var(--cyan);margin-bottom:2px}
+.stat-label{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+
+/* Quick actions */
+.quick-actions{display:flex;gap:10px;margin-bottom:32px;flex-wrap:wrap}
+.action-btn{padding:10px 18px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:.8rem;font-weight:600;color:#e2e8f0;cursor:pointer;transition:all .15s;text-decoration:none}
+.action-btn:hover{border-color:var(--cyan);color:var(--cyan);text-decoration:none}
+
+/* Projects section */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:1rem;font-weight:700}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:32px}
+.project-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;transition:border-color .2s}
+.project-card:hover{border-color:rgba(56,189,248,.3)}
+.project-name{font-size:.9rem;font-weight:600;margin-bottom:4px}
+.project-meta{font-size:.72rem;color:var(--dim);margin-bottom:10px}
+.project-status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.62rem;font-weight:700;text-transform:uppercase}
+.status-active{background:rgba(34,197,94,.1);color:var(--green)}
+.status-completed{background:rgba(56,189,248,.1);color:var(--cyan)}
+.status-archived{background:rgba(255,255,255,.05);color:var(--dim)}
+.project-actions{display:flex;gap:6px;margin-top:10px}
+.project-btn{padding:6px 12px;border-radius:6px;font-size:.7rem;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer}
+.project-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.project-btn-run{border-color:var(--green);color:var(--green)}
+.new-project-card{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer}
+.new-project-card:hover{border-color:var(--cyan)}
+.new-icon{width:40px;height:40px;border-radius:50%;background:rgba(56,189,248,.1);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--cyan)}
+
+/* Activity feed */
+.activity-feed{margin-bottom:32px}
+.activity-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.activity-dot-project{background:var(--cyan)}
+.activity-dot-invoice{background:var(--orange)}
+.activity-dot-ticket{background:var(--purple)}
+.activity-dot-login{background:var(--green)}
+.activity-content{flex:1}
+.activity-text{font-size:.82rem;margin-bottom:2px}
+.activity-time{font-size:.7rem;color:var(--dim)}
+.empty-state{text-align:center;padding:24px;color:var(--dim);font-size:.82rem;border:1px dashed var(--border);border-radius:8px}
+
+/* Newsletter modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:10000;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:400px;width:90%;text-align:center}
+.modal-title{font-size:1.2rem;font-weight:700;margin-bottom:8px}
+.modal-desc{font-size:.82rem;color:var(--dim);margin-bottom:20px}
+.modal-input{width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#e2e8f0;font-size:.88rem;margin-bottom:12px}
+.modal-input:focus{outline:none;border-color:var(--cyan)}
+.modal-btn{width:100%;padding:12px;background:var(--cyan);color:#0a0e17;border:none;border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer;margin-bottom:8px}
+.modal-btn:hover{opacity:.9}
+.modal-dismiss{font-size:.78rem;color:var(--dim);cursor:pointer;border:none;background:none;font-family:inherit}
+.modal-dismiss:hover{color:#e2e8f0}
+.modal-msg{font-size:.75rem;color:var(--green);margin-top:8px;min-height:1.2em}
+
+/* Pulse animation for provision button */
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+
+/* ── Mobile responsive ── */
+@media(max-width:640px){
+  body{padding-bottom:40px}
+  .welcome-bar{flex-direction:column;align-items:flex-start;margin-bottom:20px}
+  .welcome-left h1{font-size:1.2rem}
+  .brdg-balance{font-size:.75rem;padding:6px 10px}
+  .stats-grid{gap:8px;margin-bottom:20px}
+  .stat-value{font-size:1.4rem}
+  .quick-actions{gap:6px;margin-bottom:20px}
+  .action-btn{padding:8px 12px;font-size:.72rem}
+  .projects-grid{grid-template-columns:1fr;margin-bottom:20px}
+  h2{font-size:.9rem}
+  .modal-box{padding:20px;border-radius:12px;max-width:92vw}
+  .modal-title{font-size:1rem}
+  .modal-btn{padding:10px;font-size:.82rem}
 }
-html,body{height:100%;overflow:hidden}
-body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+@media(max-width:380px){
+  .stat-card{padding:12px}
+  .stat-value{font-size:1.2rem}
+  .funnel-step{max-width:40px}
+}
+</style>
 
-/* Top nav */
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1.5rem;background:rgba(2,3,10,0.95);border-bottom:1px solid var(--border);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-@supports not (backdrop-filter:blur(1px)){.nav{background:rgba(2,3,10,0.98)}}
-.nav-brand{font-weight:700;font-size:1rem;color:var(--cyan);letter-spacing:0.5px}
-.nav-links{display:flex;align-items:center;gap:1.2rem;font-size:0.8rem}
-.nav-links a{color:var(--dim);text-decoration:none;transition:color 0.2s}
-.nav-links a:hover{color:var(--cyan)}
-.mic-indicator{display:flex;align-items:center;gap:0.4rem;font-size:0.75rem;color:var(--dim)}
-.mic-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);transition:background 0.3s,box-shadow 0.3s}
-.mic-dot.active{background:var(--green);box-shadow:0 0 8px var(--green)}
-.mic-dot.error{background:#ff3c5a;box-shadow:0 0 8px #ff3c5a}
-
-/* Main layout */
-.main{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding-top:48px;padding-bottom:60px;position:relative}
-
-/* Brain canvas */
-#brainCanvas{width:100%;height:100%;position:absolute;top:0;left:0;z-index:0}
-
-/* Status text */
-.voice-status{position:relative;z-index:10;margin-top:auto;margin-bottom:0.5rem;font-size:0.85rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);transition:color 0.4s;text-align:center}
-.voice-status.listening{color:var(--green)}
-.voice-status.thinking{color:var(--amber)}
-.voice-status.speaking{color:var(--purple)}
-
-/* Transcript */
-.transcript{position:relative;z-index:10;width:90%;max-width:560px;min-height:120px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;padding:0.75rem;margin-bottom:0.5rem;scrollbar-width:none}
-.transcript::-webkit-scrollbar{display:none}
-.transcript-msg{padding:0.5rem 0.75rem;border-radius:10px;font-size:0.85rem;line-height:1.45;max-width:85%;opacity:0;animation:fadeIn 0.4s ease forwards}
-.transcript-msg.user{align-self:flex-end;color:var(--dim);background:rgba(255,255,255,0.04);text-align:right;border-bottom-right-radius:3px}
-.transcript-msg.ai{align-self:flex-start;color:var(--cyan);background:rgba(0,224,255,0.06);border-bottom-left-radius:3px}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-
-/* Text fallback */
-.text-fallback{position:relative;z-index:10;width:90%;max-width:480px;display:none;margin-bottom:0.5rem}
-.text-fallback-row{display:flex;gap:0.5rem}
-.text-fallback-row input{flex:1;padding:0.55rem 0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none;font-family:inherit}
-.text-fallback-row input:focus{border-color:var(--cyan)}
-.text-fallback-row button{padding:0.55rem 1rem;background:var(--cyan);color:#000;border:none;border-radius:8px;font-weight:600;font-size:0.8rem;cursor:pointer;min-height:44px}
-
-/* Economy bar */
-.eco-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;justify-content:center;gap:2.5rem;padding:0.5rem 1rem;background:rgba(2,3,10,0.95);border-top:1px solid var(--border);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font-size:0.75rem;color:var(--dim)}
-@supports not (backdrop-filter:blur(1px)){.eco-bar{background:rgba(2,3,10,0.98)}}
-.eco-item{display:flex;align-items:center;gap:0.35rem}
-.eco-val{color:var(--cyan);font-weight:600}
-
-/* Responsive */
-:focus-visible{outline:2px solid #00c8ff;outline-offset:2px}
-@media(max-width:600px){
-  .nav{padding:0.5rem 0.75rem}
-  .nav-links{gap:0.7rem;font-size:0.7rem}
-  .transcript{max-height:140px;min-height:90px}
-  .eco-bar{gap:1rem;font-size:0.6rem}
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
 }
 </style>
 </head>
 <body>
 
-<nav class="nav">
-  <h1 class="nav-brand">Bridge AI</h1>
-  <div class="nav-links">
-    <a href="/">Home</a>
-    <a href="/economy.html">Economy</a>
-    <div class="mic-indicator">
-      <div class="mic-dot" id="micDot"></div>
-      <span id="micLabel">Mic</span>
+<div class="container">
+  <!-- Welcome -->
+  <div class="welcome-bar">
+    <div class="welcome-left">
+      <h1 id="welcomeHeading">Welcome back</h1>
+      <div class="sub">
+        <span class="plan-badge plan-free" id="portalPlanBadge">--</span>
+        <span id="portalEmail"></span>
+      </div>
+      <div class="funnel-indicator" id="funnelIndicator">
+        <div class="funnel-step"></div>
+        <div class="funnel-step"></div>
+        <div class="funnel-step"></div>
+        <div class="funnel-step"></div>
+      </div>
+      <div class="funnel-label" id="funnelLabel"></div>
+    </div>
+    <div class="brdg-balance">
+      <div class="brdg-icon">B</div>
+      <span id="portalBrdg">-- BRDG</span>
     </div>
   </div>
-</nav>
 
-<div class="main">
-  <canvas id="brainCanvas"></canvas>
-  <div class="voice-status" id="voiceStatus">Initializing...</div>
-  <div class="transcript" id="transcript"></div>
-  <div class="text-fallback" id="textFallback">
-    <div class="text-fallback-row">
-      <input type="text" id="textInput" placeholder="Type your message...">
-      <button id="textSendBtn">Send</button>
+  <!-- Quick Stats -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">📁</div><div class="stat-value" id="statProjects">--</div><div class="stat-label">Active Projects</div></div>
+    <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value" id="statInvoices">--</div><div class="stat-label">Pending Invoices</div></div>
+    <div class="stat-card"><div class="stat-icon">🎫</div><div class="stat-value" id="statTickets">--</div><div class="stat-label">Open Tickets</div></div>
+    <div class="stat-card"><div class="stat-icon">💎</div><div class="stat-value" id="statBrdg">--</div><div class="stat-label">BRDG Balance</div></div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <a href="/invoicing" class="action-btn">Create Invoice</a>
+    <a href="/crm" class="action-btn">View CRM</a>
+    <a href="/marketplace" class="action-btn">Post a Job</a>
+    <a href="/tickets" class="action-btn">Get Support</a>
+  </div>
+
+  <!-- Projects -->
+  <div class="section-header">
+    <div class="section-title">Your Projects <span id="projectCountBadge" style="font-size:.72rem;font-weight:400;color:var(--dim);margin-left:6px"></span></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button id="provisionBtn" class="action-btn" style="font-size:.72rem;padding:7px 14px;background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:var(--green)" onclick="provisionApps()">⚡ Provision All 50 Apps</button>
+      <a href="/wizard" style="font-size:.8rem;font-weight:600">+ New</a>
     </div>
+  </div>
+
+  <!-- Category filter -->
+  <div id="categoryFilter" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"></div>
+
+  <div class="projects-grid" id="projectsGrid" style="max-height:540px;overflow-y:auto;padding-right:4px">
+    <div class="empty-state">Loading projects...</div>
+  </div>
+
+  <!-- Activity Feed -->
+  <div class="section-header" style="margin-top:32px">
+    <div class="section-title">Recent Activity</div>
+    <span id="activityCount" style="font-size:.72rem;color:var(--dim)"></span>
+  </div>
+  <div class="activity-feed" id="activityFeed">
+    <div class="empty-state">Loading activity...</div>
   </div>
 </div>
 
-<div class="eco-bar">
-  <div class="eco-item">BRDG Circulating <span class="eco-val" id="ecoCirc">--</span></div>
-  <div class="eco-item">Burned <span class="eco-val" id="ecoBurned">--</span></div>
-  <div class="eco-item">Transactions <span class="eco-val" id="ecoTx">--</span></div>
+<!-- Newsletter Modal -->
+<div class="modal-overlay" id="newsletterModal">
+  <div class="modal-box">
+    <div class="modal-title">Stay in the loop</div>
+    <div class="modal-desc">We only send 4 updates a year!</div>
+    <input type="email" class="modal-input" id="newsletterEmail" placeholder="your@email.com">
+    <button class="modal-btn" onclick="subscribeNewsletter()">Subscribe</button>
+    <button class="modal-dismiss" onclick="dismissNewsletter()">No thanks</button>
+    <div class="modal-msg" id="newsletterMsg"></div>
+  </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
 <script>
 (function(){
-'use strict';
+  'use strict';
 
-// ===== USER IDENTITY =====
-let portalUser = null;
-let portalNurturePrompt = '';
+  var user = null;
+  var token = null;
+  var allProjects = [];
+  var activeCategory = 'all';
 
-(async function initPortalUser() {
-  const token = localStorage.getItem('bridge_user_token');
-  if (!token) return;
-  try {
-    const res = await fetch('/api/auth/me', {
-      headers: { 'Authorization': 'Bearer ' + token }
+  var CAT_LABELS = {
+    'smart-city-twin':    'Infrastructure',
+    'patient-twin':       'Healthcare',
+    'marketplace-builder':'Business',
+    'factory-twin':       'Industry',
+    'ap2-orchestrator':   'Consumer',
+  };
+
+  function getToken() {
+    var match = document.cookie.split(';').map(function(c){return c.trim()}).find(function(c){return c.startsWith('bridge_token=')});
+    return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : localStorage.getItem('bridge_token');
+  }
+
+  function authHeader() {
+    return token ? { Authorization: 'Bearer ' + token } : {};
+  }
+
+  function relativeTime(dateStr) {
+    if (!dateStr) return '';
+    var diff = Date.now() - new Date(dateStr).getTime();
+    var mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    var days = Math.floor(hrs / 24);
+    if (days === 1) return 'Yesterday';
+    if (days < 30) return days + 'd ago';
+    return new Date(dateStr).toLocaleDateString();
+  }
+
+  var FUNNEL_STAGES = ['visitor', 'activated', 'converting', 'customer'];
+  function setFunnel(stage) {
+    var idx = FUNNEL_STAGES.indexOf(stage);
+    if (idx < 0) idx = 0;
+    var steps = document.querySelectorAll('.funnel-step');
+    steps.forEach(function(s, i) { s.classList.toggle('active', i <= idx); });
+    document.getElementById('funnelLabel').textContent = (stage || 'visitor').charAt(0).toUpperCase() + (stage || 'visitor').slice(1);
+  }
+
+  // ── Deduplication helper ────────────────────────────────────────────────────
+  function dedupProjects(list) {
+    var seen = new Set();
+    return list.filter(function(p) {
+      // Prefer scaffold.catalog_id dedup; fallback to name+tool dedup
+      var key = p.scaffold && p.scaffold.catalog_id
+        ? 'cat:' + p.scaffold.catalog_id
+        : (p.name || '').toLowerCase().trim() + '|' + (p.tool_id || '');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
-    if (!res.ok) { localStorage.removeItem('bridge_user_token'); return; }
-    const data = await res.json();
-    if (data.ok && data.user) {
-      portalUser = data.user;
-      portalNurturePrompt = data.nurture_prompt || '';
-      // Show user name in nav
-      const brand = document.querySelector('.nav-brand');
-      if (brand && portalUser.name) {
-        brand.textContent = 'Bridge AI — ' + portalUser.name;
-      }
-    }
-  } catch (_) {}
-})();
-
-function recordPortalPageVisit() {
-  const token = localStorage.getItem('bridge_user_token');
-  if (!token) return;
-  try {
-    fetch('/api/user/page-visit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ page: '/portal.html' })
-    });
-  } catch (_) {}
-}
-
-function recordPortalConversation() {
-  const token = localStorage.getItem('bridge_user_token');
-  if (!token) return;
-  try {
-    fetch('/api/user/conversation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-    });
-  } catch (_) {}
-}
-
-recordPortalPageVisit();
-
-// ===== STATE =====
-let state = 'idle'; // idle | listening | thinking | speaking
-let recognition = null;
-let synth = window.speechSynthesis;
-// Chrome loads voices async — preload them
-if (synth && synth.onvoiceschanged !== undefined) {
-  synth.onvoiceschanged = () => { synth.getVoices(); };
-}
-try { synth.getVoices(); } catch(_) {}
-let silenceTimer = null;
-let accumulatedText = '';
-let conversationHistory = [];
-const SILENCE_DELAY = 1500;
-const MAX_TRANSCRIPT = 4;
-let exchangeCount = 0;
-
-const BRIDGE_KB = `You are Bridge, the AI business assistant for Bridge AI OS. You help businesses automate their operations with AI.
-
-Your personality is warm, professional, and confident. You speak like a knowledgeable business advisor, not a salesperson. Keep responses concise, two to three sentences max since this is a voice conversation. Use natural conversational language. Be genuinely curious about their business.
-
-About Bridge AI OS:
-Bridge AI OS is an autonomous business platform with 35 AI agents that run your entire operation. It handles CRM, invoicing, quoting, ticketing, HR, compliance, and more with over 80 live API endpoints.
-
-The 35 agents cover eight domains. Sales agents handle lead scoring, pipeline management, and deal closing. Marketing agents do content generation, SEO, and campaign automation. Research agents provide market analysis and competitor tracking. Legal agents draft contracts and monitor compliance. Finance agents manage invoicing, expenses, and treasury. Development agents handle code review and deployment. Trading agents run quantitative strategies and DeFi. Support agents route tickets and manage SLAs.
-
-The platform runs on the BRDG token on Linea, which is an Ethereum Layer 2 network. The token is deflationary with a one percent burn on every transaction.
-
-We accept payments through PayFast in South African Rand, Paystack in Nigerian Naira, and crypto including Ethereum and USDT.
-
-Our plans are simple. The Starter plan is completely free and gives you 50 contacts, 10 invoices per month, and 5 AI tasks per day. The Pro plan costs 499 Rand per month and gives you unlimited contacts, 50 AI tasks per day, staking, and full CRM access. The Enterprise plan is 2499 Rand per month with white-label options, unlimited everything, dedicated agents, and priority support.
-
-The platform includes 1266 skill modules, digital twins, voice AI, and a real-time token economy. It is built for Africa and scaling globally.
-
-How you should sell:
-First ask what business they run and what challenges they face. Listen carefully for pain points like manual invoicing, lack of CRM, team management issues, or lead tracking problems. Match their pain points to specific Bridge AI features. After three or four exchanges, naturally suggest a plan that fits their needs. Use soft closes like "Would you like to try that for free?" or "I can set that up for you right now". When the user shows clear interest or agrees, say something like "Great, let me take you to get started" and include [ROUTE:checkout] at the very end of your response. Never be pushy. If they hesitate, offer the free Starter plan. If they ask about pricing, give them the specific numbers.
-
-Important rules for voice: Never use asterisks, bullet points, hashtags, or any markdown formatting. Never say "asterisk" or "hash". Speak in plain natural sentences only. Do not list items with dashes or numbers. Weave information into flowing sentences instead.`;
-
-function getSystemPrompt() {
-  let prompt = BRIDGE_KB;
-  // Add personalized nurture context if user is authenticated
-  if (portalUser && portalNurturePrompt) {
-    prompt += '\n\nUSER CONTEXT: ' + portalNurturePrompt;
-    if (portalUser.name) prompt += ' Their name is ' + portalUser.name + '.';
-    if (portalUser.plan && portalUser.plan !== 'visitor') prompt += ' They are on the ' + portalUser.plan + ' plan.';
   }
-  if (exchangeCount >= 4) {
-    prompt += '\n\nCLOSING GUIDANCE: The conversation has progressed well. Start naturally guiding toward a plan recommendation. When the user agrees, include [ROUTE:checkout] at the end of your response.';
-  }
-  if (exchangeCount >= 6) {
-    prompt += ' Be direct about next steps — recommend a specific plan and offer to set it up now.';
-  }
-  return prompt;
-}
-let speechSupported = true;
 
-// ===== THREE.JS BRAIN =====
-const canvas = document.getElementById('brainCanvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x02030a, 1);
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 0.2, 3);
-camera.lookAt(0, 0, 0);
-
-// Lighting
-const ambientLight = new THREE.AmbientLight(0x112233, 0.6);
-scene.add(ambientLight);
-const pointLight1 = new THREE.PointLight(0x00e0ff, 1.2, 10);
-pointLight1.position.set(2, 2, 3);
-scene.add(pointLight1);
-const pointLight2 = new THREE.PointLight(0x0088ff, 0.8, 10);
-pointLight2.position.set(-2, -1, 2);
-scene.add(pointLight2);
-const rimLight = new THREE.PointLight(0x4400aa, 0.5, 10);
-rimLight.position.set(0, -2, -3);
-scene.add(rimLight);
-
-// Brain geometry -- exact EHSA pattern
-const geo = new THREE.SphereGeometry(1, 128, 128);
-const pos = geo.attributes.position;
-for (let i = 0; i < pos.count; i++) {
-  let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-  let n = Math.sin(x * 8) * Math.cos(y * 8) * Math.sin(z * 8);
-  pos.setXYZ(i, x + n * 0.08, y + n * 0.08, z + n * 0.08);
-}
-const colors = [];
-for (let i = 0; i < pos.count; i++) colors.push(0, 0.15, 0.2);
-geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-geo.computeVertexNormals();
-
-const mat = new THREE.MeshStandardMaterial({
-  vertexColors: true, roughness: 0.3, metalness: 0.2,
-  emissive: new THREE.Color(0x001111), emissiveIntensity: 1
-});
-const brain = new THREE.Mesh(geo, mat);
-scene.add(brain);
-
-// Regions -- exact EHSA pattern
-const REGIONS = {
-  frontal:   { start: 0,     size: 4000, signal: 'D', color: [0, 1, 0.8] },
-  limbic:    { start: 4000,  size: 4000, signal: 'O', color: [1, 0.3, 0.5] },
-  parietal:  { start: 8000,  size: 4000, signal: 'S', color: [0.3, 0.5, 1] },
-  brainstem: { start: 12000, size: 3000, signal: 'E', color: [1, 0.8, 0] },
-};
-
-// State-based color targets
-const STATE_COLORS = {
-  idle:      { emissive: 0x001111, intensity: 1.0, regions: { frontal: 0.15, limbic: 0.05, parietal: 0.08, brainstem: 0.05 } },
-  listening: { emissive: 0x003311, intensity: 1.8, regions: { frontal: 0.9,  limbic: 0.2,  parietal: 0.15, brainstem: 0.1 } },
-  thinking:  { emissive: 0x221100, intensity: 2.2, regions: { frontal: 0.3,  limbic: 0.4,  parietal: 0.5,  brainstem: 0.8 } },
-  speaking:  { emissive: 0x110033, intensity: 1.6, regions: { frontal: 0.2,  limbic: 0.6,  parietal: 0.8,  brainstem: 0.3 } },
-};
-
-let rotationSpeed = 0.003;
-let targetRotationSpeed = 0.003;
-let currentRegionIntensities = { frontal: 0.15, limbic: 0.05, parietal: 0.08, brainstem: 0.05 };
-let pulsePhase = 0;
-
-function activateRegion(name, intensity, t) {
-  const r = REGIONS[name];
-  if (!r) return;
-  const col = geo.attributes.color;
-  for (let i = r.start; i < r.start + r.size && i < pos.count; i++) {
-    const px = pos.getX(i), py = pos.getY(i), pz = pos.getZ(i);
-    const wave = Math.sin(px * 4 + t * 2) * Math.cos(py * 4 + t * 1.5) * 0.3 + 0.7;
-    const pulse = Math.sin(pulsePhase + i * 0.001) * 0.15 + 0.85;
-    const factor = intensity * wave * pulse;
-    col.setXYZ(i,
-      r.color[0] * factor,
-      r.color[1] * factor,
-      r.color[2] * factor
-    );
-  }
-}
-
-function resetColors() {
-  const col = geo.attributes.color;
-  for (let i = 0; i < pos.count; i++) {
-    col.setXYZ(i, 0, 0.15, 0.2);
-  }
-}
-
-function updateBrainVisuals(t) {
-  const sc = STATE_COLORS[state];
-
-  // Smooth rotation speed transition
-  targetRotationSpeed = state === 'idle' ? 0.003 : state === 'listening' ? 0.008 : state === 'thinking' ? 0.012 : 0.006;
-  rotationSpeed += (targetRotationSpeed - rotationSpeed) * 0.05;
-  brain.rotation.y += rotationSpeed;
-  brain.rotation.x = Math.sin(t * 0.5) * 0.05;
-
-  // Pulse
-  pulsePhase += state === 'thinking' ? 0.08 : state === 'listening' ? 0.05 : 0.02;
-
-  // Vertex distortion pulse
-  const origPos = geo.getAttribute('position');
-  for (let i = 0; i < origPos.count; i++) {
-    let x = origPos.getX(i), y = origPos.getY(i), z = origPos.getZ(i);
-    const len = Math.sqrt(x * x + y * y + z * z);
-    if (len > 0) {
-      const baseLen = 1.0;
-      const n = Math.sin(x * 8) * Math.cos(y * 8) * Math.sin(z * 8);
-      const pulse = state !== 'idle' ? Math.sin(pulsePhase + i * 0.002) * 0.01 : 0;
-      const target = baseLen + n * 0.08 + pulse;
-      const scale = target / len;
-      origPos.setXYZ(i, x * scale, y * scale, z * scale);
-    }
-  }
-  origPos.needsUpdate = true;
-
-  // Reset then activate regions
-  resetColors();
-  for (const [name, region] of Object.entries(REGIONS)) {
-    const targetI = sc.regions[name];
-    currentRegionIntensities[name] += (targetI - currentRegionIntensities[name]) * 0.08;
-    activateRegion(name, currentRegionIntensities[name], t);
-  }
-  geo.attributes.color.needsUpdate = true;
-
-  // Emissive color transition
-  const targetEmissive = new THREE.Color(sc.emissive);
-  mat.emissive.lerp(targetEmissive, 0.06);
-  mat.emissiveIntensity += (sc.intensity - mat.emissiveIntensity) * 0.05;
-
-  // Point light color shifts
-  if (state === 'listening') {
-    pointLight1.color.lerp(new THREE.Color(0x00ff88), 0.05);
-  } else if (state === 'thinking') {
-    pointLight1.color.lerp(new THREE.Color(0xffaa00), 0.05);
-  } else if (state === 'speaking') {
-    pointLight1.color.lerp(new THREE.Color(0x8844ff), 0.05);
-  } else {
-    pointLight1.color.lerp(new THREE.Color(0x00e0ff), 0.05);
-  }
-}
-
-// Animation loop
-function animate() {
-  requestAnimationFrame(animate);
-  const t = performance.now() * 0.001;
-  updateBrainVisuals(t);
-  renderer.render(scene, camera);
-}
-animate();
-
-// Resize
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// ===== UI HELPERS =====
-const statusEl = document.getElementById('voiceStatus');
-const transcriptEl = document.getElementById('transcript');
-const micDot = document.getElementById('micDot');
-const micLabel = document.getElementById('micLabel');
-
-function setState(newState) {
-  state = newState;
-  statusEl.className = 'voice-status ' + newState;
-  switch (newState) {
-    case 'idle':
-      statusEl.textContent = 'Listening...';
-      micDot.className = 'mic-dot active';
-      micLabel.textContent = 'Live';
-      break;
-    case 'listening':
-      statusEl.textContent = 'Listening...';
-      micDot.className = 'mic-dot active';
-      micLabel.textContent = 'Hearing you';
-      break;
-    case 'thinking':
-      statusEl.textContent = 'Thinking...';
-      micDot.className = 'mic-dot';
-      micLabel.textContent = 'Processing';
-      break;
-    case 'speaking':
-      statusEl.textContent = 'Speaking...';
-      micDot.className = 'mic-dot';
-      micLabel.textContent = 'Responding';
-      break;
-  }
-}
-
-function addTranscriptMessage(role, text) {
-  const msg = document.createElement('div');
-  msg.className = 'transcript-msg ' + role;
-  msg.textContent = text;
-  transcriptEl.appendChild(msg);
-
-  // Keep only last MAX_TRANSCRIPT messages
-  while (transcriptEl.children.length > MAX_TRANSCRIPT) {
-    transcriptEl.removeChild(transcriptEl.firstChild);
-  }
-  transcriptEl.scrollTop = transcriptEl.scrollHeight;
-}
-
-// ===== LLM API =====
-async function sendToLLM(userText) {
-  setState('thinking');
-  addTranscriptMessage('user', userText);
-  conversationHistory.push({ role: 'user', content: userText });
-  exchangeCount++;
-  recordPortalConversation();
-
-  try {
-    const apiKey = localStorage.getItem('brdg_api_key') || '';
-    const headers = { 'Content-Type': 'application/json' };
-    if (apiKey) headers['X-API-Key'] = apiKey;
-
-    const resp = await fetch('/api/llm/infer', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        prompt: userText,
-        system: getSystemPrompt(),
-        messages: conversationHistory.slice(-8)
-      })
+  // ── Category filter UI ──────────────────────────────────────────────────────
+  function buildCategoryFilter(projects) {
+    var bar = document.getElementById('categoryFilter');
+    bar.innerHTML = '';
+    // Collect categories present
+    var cats = new Map();
+    cats.set('all', 0);
+    projects.forEach(function(p) {
+      var cat = (p.scaffold && p.scaffold.category) || p.tool_id || 'other';
+      cats.set(cat, (cats.get(cat) || 0) + 1);
+      cats.set('all', cats.get('all') + 1);
     });
 
-    const data = await resp.json();
-    console.log('[Bridge AI] LLM response:', data);
-    if (!resp.ok || data.error) throw new Error(data.error || 'API error ' + resp.status);
-    let reply = data.text || data.response || data.result || data.output || 'I received your message.';
+    var catNames = {
+      'all': 'All',
+      'infrastructure-smart-cities': 'Infrastructure',
+      'healthcare': 'Healthcare',
+      'business-enterprise': 'Business',
+      'industry-manufacturing': 'Industry',
+      'consumer-society': 'Consumer',
+    };
 
-    // Check for checkout route marker
-    const shouldRoute = reply.includes('[ROUTE:checkout]');
-    reply = reply.replace(/\[ROUTE:checkout\]/g, '').trim();
-
-    conversationHistory.push({ role: 'assistant', content: reply });
-    addTranscriptMessage('ai', reply);
-
-    if (shouldRoute) {
-      // Capture lead data immediately
-      try {
-        fetch('/api/leads/capture', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            conversation: conversationHistory,
-            source: 'voice_portal',
-            score: exchangeCount * 15,
-            ts: Date.now()
-          })
-        });
-      } catch (_) {}
-
-      // Speak the closing message, THEN redirect after voice finishes
-      speakThenDo(reply, () => {
-        addTranscriptMessage('ai', 'Taking you to sign up now...');
-        setTimeout(() => { window.location.href = '/checkout.html'; }, 1500);
+    cats.forEach(function(count, key) {
+      var btn = document.createElement('button');
+      btn.style.cssText = 'padding:4px 10px;border-radius:12px;font-size:.68rem;font-weight:600;border:1px solid var(--border);background:' + (key === activeCategory ? 'rgba(56,189,248,.12)' : 'var(--card)') + ';color:' + (key === activeCategory ? 'var(--cyan)' : 'var(--dim)') + ';cursor:pointer;transition:all .15s';
+      btn.textContent = (catNames[key] || key) + ' (' + count + ')';
+      btn.dataset.cat = key;
+      btn.addEventListener('click', function() {
+        activeCategory = key;
+        buildCategoryFilter(allProjects);
+        renderProjectGrid(allProjects);
       });
-    } else {
-      speak(reply);
-    }
-  } catch (e) {
-    const fallback = 'Sorry, I could not process that right now.';
-    addTranscriptMessage('ai', fallback);
-    speak(fallback);
-  }
-}
-
-// ===== SPEECH SYNTHESIS =====
-// Speak text, then call callback when done (used for checkout redirect)
-function speakThenDo(text, callback) {
-  setState('speaking');
-  if (recognition) { try { recognition.stop(); } catch(e) {} }
-  if (!synth || !text) { if (callback) callback(); return; }
-  synth.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 1.0;
-  utter.pitch = 1.0;
-  const voices = synth.getVoices();
-  const preferred = voices.find(v => /samantha|karen|google.*female|zira|microsoft.*natural/i.test(v.name)) || voices.find(v => /female|fiona/i.test(v.name)) || voices[0];
-  if (preferred) utter.voice = preferred;
-  utter.onend = () => { setState('idle'); if (callback) callback(); };
-  utter.onerror = () => { setState('idle'); if (callback) callback(); };
-  synth.speak(utter);
-  // Chrome keepalive
-  const ka = setInterval(() => { if (!synth.speaking) { clearInterval(ka); return; } synth.pause(); synth.resume(); }, 5000);
-  utter.onend = () => { clearInterval(ka); setState('idle'); if (callback) callback(); };
-  utter.onerror = () => { clearInterval(ka); setState('idle'); if (callback) callback(); };
-}
-
-function speak(text) {
-  setState('speaking');
-  if (recognition) {
-    try { recognition.stop(); } catch(e) {}
+      bar.appendChild(btn);
+    });
   }
 
-  if (!synth || !text) {
-    setState('idle');
-    startRecognition();
-    return;
-  }
+  // ── Project grid ────────────────────────────────────────────────────────────
+  function renderProjectGrid(projects) {
+    var grid = document.getElementById('projectsGrid');
+    grid.innerHTML = '';
 
-  synth.cancel();
+    var filtered = activeCategory === 'all' ? projects : projects.filter(function(p) {
+      return (p.scaffold && p.scaffold.category) === activeCategory || p.tool_id === activeCategory;
+    });
 
-  // Split long text into chunks (Chrome cuts off utterances >~200 chars)
-  const chunks = [];
-  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
-  let current = '';
-  for (const s of sentences) {
-    if ((current + s).length > 180) {
-      if (current) chunks.push(current.trim());
-      current = s;
-    } else {
-      current += s;
-    }
-  }
-  if (current.trim()) chunks.push(current.trim());
+    // Count badge
+    var active = filtered.filter(function(p){return p.status==='active'}).length;
+    document.getElementById('projectCountBadge').textContent = active + ' active · ' + filtered.length + ' total';
+    document.getElementById('statProjects').textContent = projects.filter(function(p){return p.status==='active'}).length;
 
-  // Pick voice once
-  const voices = synth.getVoices();
-  const preferred = voices.find(v => /samantha|karen|google.*female|zira|microsoft.*natural/i.test(v.name))
-    || voices.find(v => /female|fiona/i.test(v.name))
-    || voices[0];
-
-  let idx = 0;
-  function speakNext() {
-    if (idx >= chunks.length) {
-      setState('idle');
-      startRecognition();
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div class="empty-state">No projects in this category. <button class="action-btn" style="margin-top:8px;font-size:.72rem" onclick="provisionApps()">⚡ Provision All 50 Apps</button></div>';
       return;
     }
-    const utter = new SpeechSynthesisUtterance(chunks[idx]);
-    utter.rate = 1.0;
-    utter.pitch = 1.0;
-    if (preferred) utter.voice = preferred;
-    utter.onend = () => { idx++; speakNext(); };
-    utter.onerror = () => { idx++; speakNext(); };
-    synth.speak(utter);
 
-    // Chrome bug: long utterances pause. Keepalive workaround.
-    const keepAlive = setInterval(() => {
-      if (!synth.speaking) { clearInterval(keepAlive); return; }
-      synth.pause(); synth.resume();
+    filtered.forEach(function(p) {
+      var card = document.createElement('div');
+      card.className = 'project-card';
+
+      var catLabel = (p.scaffold && p.scaffold.category_label) || CAT_LABELS[p.tool_id] || (p.tool_id || 'Platform');
+      var market = (p.scaffold && p.scaffold.market) ? ' · ' + p.scaffold.market : '';
+      var statusClass = 'status-' + (p.status || 'active');
+      // Resolve the "open" link: explicit app_page_url wins, then smart defaults by category
+      var catalogId = p.scaffold && p.scaffold.catalog_id;
+      var catId = p.scaffold && p.scaffold.category;
+      var defaultLink = catId === 'telco_esim' || catalogId === 'pbx-carrier' ? '/esim'
+                      : catId === 'healthcare' ? '/ehsa'
+                      : catId === 'infrastructure-smart-cities' ? '/twins'
+                      : '/apps';
+      var appPageLink = (p.scaffold && p.scaffold.app_page_url) ? p.scaffold.app_page_url : defaultLink;
+
+      card.innerHTML =
+        '<div class="project-name">' + escHtml(p.name || 'Untitled') + '</div>' +
+        '<div class="project-meta">' + escHtml(catLabel) + market + ' &middot; ' + relativeTime(p.updated_at) + '</div>' +
+        '<span class="project-status ' + statusClass + '">' + (p.status || 'active') + '</span>' +
+        '<div class="project-actions">' +
+          '<button class="project-btn project-btn-run" onclick="runProject(\'' + p.id + '\')">Run</button>' +
+          '<button class="project-btn" onclick="location.href=\'/projects#' + p.id + '\'">Details</button>' +
+          '<button class="project-btn" style="font-size:.62rem;color:var(--purple);border-color:rgba(167,139,250,.3)" onclick="location.href=\'' + appPageLink + '\'">Catalog</button>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+
+    // New project card
+    var newCard = document.createElement('div');
+    newCard.className = 'project-card new-project-card';
+    newCard.onclick = function() { location.href = '/wizard'; };
+    newCard.innerHTML = '<div class="new-icon">+</div><div style="font-size:.82rem;color:var(--dim)">New Project</div>';
+    grid.appendChild(newCard);
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Load + auto-provision ────────────────────────────────────────────────────
+  async function loadProjects() {
+    try {
+      var res = await fetch('/api/platform/projects?status=all&limit=200', { headers: authHeader() });
+      var data = await res.json();
+      allProjects = dedupProjects(data.projects || []);
+
+      buildCategoryFilter(allProjects);
+      renderProjectGrid(allProjects);
+
+      // Auto-provision if fewer than 50 catalog apps
+      var catalogCount = allProjects.filter(function(p) { return p.scaffold && p.scaffold.catalog_id; }).length;
+      if (catalogCount < 50) {
+        showProvisionBanner(catalogCount);
+      }
+    } catch(e) {
+      document.getElementById('projectsGrid').innerHTML = '<div class="empty-state">Unable to load projects. <button class="action-btn" style="margin-top:8px" onclick="loadProjects()">Retry</button></div>';
+    }
+  }
+
+  function showProvisionBanner(current) {
+    var btn = document.getElementById('provisionBtn');
+    if (btn) {
+      btn.textContent = '⚡ Provision ' + (50 - current) + ' Missing Apps';
+      btn.style.animation = 'pulse 2s infinite';
+    }
+  }
+
+  window.provisionApps = async function() {
+    var btn = document.getElementById('provisionBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '⚡ Provisioning…'; }
+
+    try {
+      var res = await fetch('/api/platform/provision', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeader()),
+        body: JSON.stringify({}),
+      });
+      var data = await res.json();
+      if (data.ok) {
+        var msg = 'Created ' + data.created + ' projects' + (data.skipped ? ', ' + data.skipped + ' already existed' : '') + '.';
+        showToast(msg, 'green');
+        await loadProjects();
+        await loadActivity();
+      } else {
+        showToast('Provision failed: ' + (data.error || 'unknown'), 'red');
+      }
+    } catch(e) {
+      showToast('Network error during provision.', 'red');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '⚡ Provision All 50 Apps'; btn.style.animation = ''; }
+    }
+  };
+
+  window.runProject = async function(projectId) {
+    showToast('Starting run…', 'cyan');
+    location.href = '/projects?run=' + projectId;
+  };
+
+  // ── Activity feed (from project runs) ──────────────────────────────────────
+  async function loadActivity() {
+    var feed = document.getElementById('activityFeed');
+    try {
+      // Fetch recent project runs (most activity-rich source)
+      var res = await fetch('/api/platform/projects?status=all&limit=200', { headers: authHeader() });
+      var data = await res.json();
+      var projects = dedupProjects(data.projects || []);
+
+      // Build activity from project metadata (run_count, updated_at)
+      var events = projects
+        .filter(function(p) { return p.run_count > 0 || p.updated_at; })
+        .sort(function(a, b) { return new Date(b.updated_at) - new Date(a.updated_at); })
+        .slice(0, 12)
+        .map(function(p) {
+          var isNew = p.run_count <= 1 && p.scaffold && p.scaffold.catalog_id;
+          return {
+            type: 'project',
+            description: isNew
+              ? 'Initialized: ' + (p.name || 'Project') + (p.scaffold && p.scaffold.market ? ' (' + p.scaffold.market + ')' : '')
+              : 'Run completed: ' + (p.name || 'Project') + (p.run_count > 1 ? ' · ' + p.run_count + ' runs' : ''),
+            created_at: p.updated_at,
+          };
+        });
+
+      feed.innerHTML = '';
+      document.getElementById('activityCount').textContent = events.length + ' recent';
+
+      if (events.length === 0) {
+        feed.innerHTML = '<div class="empty-state">No activity yet. Run a project or provision the 50-app catalog.</div>';
+        return;
+      }
+
+      events.forEach(function(ev) {
+        var item = document.createElement('div');
+        item.className = 'activity-item';
+        item.innerHTML =
+          '<div class="activity-dot activity-dot-project"></div>' +
+          '<div class="activity-content">' +
+            '<div class="activity-text">' + escHtml(ev.description) + '</div>' +
+            '<div class="activity-time">' + relativeTime(ev.created_at) + '</div>' +
+          '</div>';
+        feed.appendChild(item);
+      });
+    } catch(e) {
+      feed.innerHTML = '<div class="empty-state">Unable to load activity</div>';
+    }
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  function showToast(msg, type) {
+    var t = document.createElement('div');
+    var color = type === 'green' ? 'var(--green)' : type === 'red' ? 'var(--red)' : 'var(--cyan)';
+    t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid ' + color + ';color:' + color + ';border-radius:8px;padding:10px 16px;font-size:.8rem;z-index:9999;animation:none;max-width:340px';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() { t.remove(); }, 4000);
+  }
+
+  // ── Invoice stats ────────────────────────────────────────────────────────────
+  async function loadInvoiceStats() {
+    try {
+      var res = await fetch('/api/invoices/stats', { headers: authHeader() });
+      var data = await res.json();
+      var byStatus = data.by_status || {};
+      document.getElementById('statInvoices').textContent = (byStatus.sent || 0) + (byStatus.overdue || 0);
+    } catch(e) { document.getElementById('statInvoices').textContent = '0'; }
+  }
+
+  async function loadTickets() {
+    try {
+      var res = await fetch('/api/tickets', { headers: authHeader() });
+      var data = await res.json();
+      var tickets = Array.isArray(data) ? data : (data.tickets || []);
+      document.getElementById('statTickets').textContent = tickets.filter(function(t) { return t.status !== 'closed'; }).length;
+    } catch(e) { document.getElementById('statTickets').textContent = '0'; }
+  }
+
+  // ── Newsletter ───────────────────────────────────────────────────────────────
+  function checkNewsletter() {
+    if (localStorage.getItem('bridge_newsletter_dismissed')) return;
+    if (localStorage.getItem('bridge_newsletter_subscribed')) return;
+    setTimeout(function() {
+      document.getElementById('newsletterModal').classList.add('show');
+      if (user && user.email) document.getElementById('newsletterEmail').value = user.email;
     }, 5000);
-    utter.onend = () => { clearInterval(keepAlive); idx++; speakNext(); };
-    utter.onerror = () => { clearInterval(keepAlive); idx++; speakNext(); };
-  }
-  speakNext();
-}
-
-// ===== SPEECH RECOGNITION =====
-function initRecognition() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    speechSupported = false;
-    showTextFallback();
-    return;
   }
 
-  recognition = new SpeechRecognition();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.lang = 'en-US';
-
-  recognition.onresult = (event) => {
-    if (state === 'thinking' || state === 'speaking') return;
-
-    setState('listening');
-    let finalText = '';
-    let interimText = '';
-
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const transcript = event.results[i][0].transcript;
-      if (event.results[i].isFinal) {
-        finalText += transcript + ' ';
-      } else {
-        interimText += transcript;
-      }
-    }
-
-    if (finalText) {
-      accumulatedText += finalText;
-    }
-
-    // Reset silence timer on any speech
-    clearTimeout(silenceTimer);
-    silenceTimer = setTimeout(() => {
-      const text = accumulatedText.trim();
-      if (text.length > 0) {
-        accumulatedText = '';
-        try { recognition.stop(); } catch(e) {}
-        sendToLLM(text);
-      } else {
-        setState('idle');
-      }
-    }, SILENCE_DELAY);
+  window.subscribeNewsletter = async function() {
+    var email = document.getElementById('newsletterEmail').value.trim();
+    var msg = document.getElementById('newsletterMsg');
+    if (!email || email.indexOf('@') < 0) { msg.textContent = 'Enter a valid email'; msg.style.color = 'var(--red)'; return; }
+    try {
+      var res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
+      var data = await res.json();
+      if (data.ok) {
+        msg.style.color = 'var(--green)'; msg.textContent = 'Subscribed! Thanks.';
+        localStorage.setItem('bridge_newsletter_subscribed', '1');
+        setTimeout(function() { document.getElementById('newsletterModal').classList.remove('show'); }, 1500);
+      } else { msg.style.color = 'var(--red)'; msg.textContent = data.error || 'Error'; }
+    } catch(e) { msg.style.color = 'var(--red)'; msg.textContent = 'Network error'; }
   };
 
-  recognition.onend = () => {
-    // Auto-restart if we're in idle/listening state
-    if (state === 'idle' || state === 'listening') {
-      setTimeout(() => {
-        if (state === 'idle' || state === 'listening') {
-          startRecognition();
-        }
-      }, 200);
-    }
+  window.dismissNewsletter = function() {
+    localStorage.setItem('bridge_newsletter_dismissed', '1');
+    document.getElementById('newsletterModal').classList.remove('show');
   };
 
-  recognition.onerror = (e) => {
-    if (e.error === 'no-speech' || e.error === 'aborted') {
-      // Normal -- will restart via onend
-      return;
-    }
-    if (e.error === 'not-allowed') {
-      micDot.className = 'mic-dot error';
-      micLabel.textContent = 'Denied';
-      statusEl.textContent = 'Microphone access denied. Please allow mic access and reload.';
-      showTextFallback();
-      return;
-    }
-    console.warn('Speech recognition error:', e.error);
-  };
-}
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  async function init() {
+    token = getToken();
 
-function startRecognition() {
-  if (!recognition) return;
-  try {
-    accumulatedText = '';
-    recognition.start();
-  } catch (e) {
-    // Already started -- ignore
-  }
-}
+    try {
+      var res = await fetch('/auth/me', { credentials: 'include', headers: token ? { Authorization: 'Bearer ' + token } : {} });
+      var data = await res.json();
+      if (!data.ok || !data.user) { window.location.href = '/onboarding?redirect=/portal'; return; }
+      user = data.user;
+    } catch(e) { window.location.href = '/onboarding?redirect=/portal'; return; }
 
-function showTextFallback() {
-  document.getElementById('textFallback').style.display = 'block';
-  if (!speechSupported) {
-    statusEl.textContent = 'Voice not supported in this browser. Type below.';
-  }
-}
+    // Personalization
+    var firstName = (user.name || user.email.split('@')[0] || '').split(' ')[0];
+    document.getElementById('welcomeHeading').textContent = 'Welcome back, ' + firstName;
+    var plan = user.plan || 'free';
+    var badge = document.getElementById('portalPlanBadge');
+    badge.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+    badge.className = 'plan-badge plan-' + plan;
+    document.getElementById('portalEmail').textContent = user.email || '';
+    document.getElementById('portalBrdg').textContent = (user.brdg_balance || 0).toLocaleString() + ' BRDG';
+    document.getElementById('statBrdg').textContent = user.brdg_balance || 0;
+    setFunnel(user.funnel_stage);
 
-// Text fallback handlers
-document.getElementById('textSendBtn').addEventListener('click', () => {
-  const input = document.getElementById('textInput');
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
-  sendToLLM(text);
-});
-document.getElementById('textInput').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    document.getElementById('textSendBtn').click();
-  }
-});
+    Promise.all([
+      loadProjects(),
+      loadInvoiceStats(),
+      loadTickets(),
+      loadActivity(),
+    ]);
 
-// ===== ECONOMY STATS =====
-async function fetchEconomyStats() {
-  try {
-    const apiKey = localStorage.getItem('brdg_api_key') || '';
-    const headers = {};
-    if (apiKey) headers['X-API-Key'] = apiKey;
-    const resp = await fetch('/api/economy/stats', { headers });
-    if (!resp.ok) return;
-    const d = await resp.json();
-    const fmt = (n) => n != null ? Number(n).toLocaleString() : '--';
-    document.getElementById('ecoCirc').textContent = fmt(d.total_circulating || d.circulating);
-    document.getElementById('ecoBurned').textContent = fmt(d.burned || d.total_burned);
-    document.getElementById('ecoTx').textContent = fmt(d.transactions || d.total_transactions || d.tx_count);
-  } catch (e) { /* silent */ }
-}
-
-// ===== INIT =====
-function init() {
-  // Load voices (some browsers need this)
-  synth.getVoices();
-  if (synth.onvoiceschanged !== undefined) {
-    synth.onvoiceschanged = () => synth.getVoices();
+    checkNewsletter();
   }
 
-  initRecognition();
-  fetchEconomyStats();
-  setInterval(fetchEconomyStats, 60000);
-
-  // Greeting after a short delay
-  setTimeout(() => {
-    const greeting = "Hi, I'm Bridge. How can I help you today?";
-    addTranscriptMessage('ai', greeting);
-    speak(greeting);
-  }, 1200);
-}
-
-init();
-
+  init();
 })();
 </script>
-
-<!-- Service Worker Registration -->
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('[Bridge AI] SW registered, scope:', reg.scope))
-      .catch(err => console.warn('[Bridge AI] SW registration failed:', err));
-  });
-}
-</script>
-<script src="/bridge-auth.js"></script>
-<script src="/global-nav.js" defer></script>
-<script src="/bridge-widget.js" defer></script>
+<script src="/bridge-nav.js" defer></script>
+  <script src="/ehsa-brain-status.js" defer></script>
 </body>
 </html>

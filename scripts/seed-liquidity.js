@@ -13,7 +13,7 @@ require('dotenv').config();
 const { ethers } = require('ethers');
 
 // ── Config ──────────────────────────────────────────────────────────────────
-const BRDG_ADDRESS = '0x5f0541302bd4fC672018b07a35FA5f294A322947';
+const BRDG_ADDRESS = '0x6Ee9Fb40b97139EEEc406c096393e0b53C89975f';
 const WETH_ADDRESS = '0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f'; // WETH on Linea
 const SYNCSWAP_ROUTER = '0x80e38291e06339d10AAB483C65695D004dBD5C69';
 const CLASSIC_FACTORY = '0x37BAc764494c8db4e54BDE72f6965beA9fa0AC2d';

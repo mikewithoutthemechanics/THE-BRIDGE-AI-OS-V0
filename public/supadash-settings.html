@@ -1,0 +1,111 @@
+<section style="font-family:system-ui,sans-serif;color:#fff;">
+  <style>
+    .sa-set{max-width:1200px;margin:0 auto;}
+    .sa-set h1{margin:0 0 0.5rem;color:#00c8ff;}
+    .sa-set .sub{color:#8aa;margin-bottom:1.5rem;}
+    .sa-section{background:#1a2d40;border:1px solid #2a4d60;border-radius:8px;padding:1rem;margin-bottom:1rem;}
+    .sa-section h3{margin:0 0 0.75rem;color:#00c8ff;font-size:0.95rem;text-transform:uppercase;letter-spacing:1px;}
+    .sa-pages{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0.5rem;}
+    .sa-page{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.75rem;background:#0e1c28;border-radius:6px;text-decoration:none;color:#fff;border:1px solid transparent;transition:all 0.2s;}
+    .sa-page:hover{border-color:#00c8ff;background:#243850;}
+    .sa-page-group{font-size:0.7rem;color:#8aa;text-transform:uppercase;}
+    .sa-rows{display:grid;gap:0.4rem;}
+    .sa-row{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0.6rem;background:#0e1c28;border-radius:4px;font-size:0.85rem;}
+    .sa-row span:first-child{color:#8aa;}
+    .sa-row span:last-child{font-family:monospace;color:#fff;}
+    .sa-ok{color:#00e57b !important;}
+    .sa-err{color:#f66 !important;}
+  </style>
+
+  <div class="sa-set">
+    <h1>⚙️ System Settings & Configs</h1>
+    <div class="sub">Superadmin console — every admin page, every config switch, every superuser.</div>
+
+    <div class="sa-section">
+      <h3>🔐 RBAC Baseline</h3>
+      <div class="sa-rows" id="sa-set-superusers">
+        <div style="color:#8aa;">Loading…</div>
+      </div>
+    </div>
+
+    <div class="sa-section">
+      <h3>🌐 All Admin & Dashboard Pages</h3>
+      <div class="sa-pages" id="sa-set-pages">
+        <div style="color:#8aa;">Loading…</div>
+      </div>
+    </div>
+
+    <div class="sa-section">
+      <h3>🧩 Runtime Environment</h3>
+      <div class="sa-rows" id="sa-set-env">
+        <div style="color:#8aa;">Loading…</div>
+      </div>
+    </div>
+
+    <div class="sa-section">
+      <h3>🪪 User Preferences (shared)</h3>
+      <div style="color:#8aa;font-size:0.85rem;margin-bottom:0.5rem;">Your personal account settings (theme, API base, notifications) live at <a href="/settings.html" style="color:#00c8ff;">/settings.html</a>.</div>
+      <a class="sa-page" href="/settings.html"><span>Open user settings →</span><span class="sa-page-group">personal</span></a>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  function getToken(){
+    var m = document.cookie.match(/(?:^|;\s*)bridge_token=([^;]+)/);
+    if(m) return decodeURIComponent(m[1]);
+    try { return localStorage.getItem('bridge_token') || ''; } catch(_) { return ''; }
+  }
+  function authHeaders(){
+    var t = getToken();
+    return t ? { Authorization: 'Bearer ' + t } : {};
+  }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+  async function loadAll(){
+    try {
+      var [pagesR, reportR, susR] = await Promise.all([
+        fetch('/api/admin/all-pages', { headers: authHeaders(), credentials: 'include' }),
+        fetch('/api/admin/system-report', { headers: authHeaders(), credentials: 'include' }),
+        fetch('/api/admin/superusers', { credentials: 'include' }).catch(function(){ return { ok:false }; }),
+      ]);
+
+      if(!pagesR.ok){
+        document.getElementById('sa-set-pages').innerHTML = '<div style="color:#f66;">Access denied — superadmin required.</div>';
+        document.getElementById('sa-set-env').innerHTML = '';
+        document.getElementById('sa-set-superusers').innerHTML = '';
+        return;
+      }
+
+      var pages = await pagesR.json();
+      var phost = document.getElementById('sa-set-pages');
+      phost.innerHTML = (pages.pages || []).map(function(p){
+        return '<a class="sa-page" href="' + esc(p.path) + '">'
+          + '<span>' + esc(p.label) + '</span>'
+          + '<span class="sa-page-group">' + esc(p.group) + '</span>'
+          + '</a>';
+      }).join('');
+
+      if(reportR.ok){
+        var r = await reportR.json();
+        var env = r.env || {};
+        document.getElementById('sa-set-env').innerHTML = Object.keys(env).map(function(k){
+          var v = env[k];
+          var cls = (typeof v === 'boolean') ? (v ? 'sa-ok' : 'sa-err') : '';
+          return '<div class="sa-row"><span>' + esc(k) + '</span><span class="' + cls + '">' + esc(String(v)) + '</span></div>';
+        }).join('');
+
+        var sus = r.superusers || [];
+        document.getElementById('sa-set-superusers').innerHTML = sus.map(function(e){
+          return '<div class="sa-row"><span>' + esc(e) + '</span><span class="sa-ok">baseline superadmin</span></div>';
+        }).join('') + '<div class="sa-row"><span style="color:#ffd166;">add more</span><span>use Users tab → Promote</span></div>';
+      }
+    } catch(e){
+      console.warn('settings load failed', e);
+    }
+  }
+
+  loadAll();
+})();
+</script>

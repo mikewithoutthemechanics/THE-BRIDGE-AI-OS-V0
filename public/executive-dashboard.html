@@ -2,7 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Bridge AI OS Executive Dashboard — real-time KPIs, revenue analytics, and system health.">
+<meta name="description" content="Executive Dashboard — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/executive-dashboard">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/executive-dashboard">
+<meta property="og:title" content="Executive Dashboard — Bridge AI OS">
+<meta property="og:description" content="Executive Dashboard — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Executive Dashboard — Bridge AI OS">
+<meta name="twitter:description" content="Executive Dashboard — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Executive Dashboard — Bridge AI OS</title>
   <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
@@ -22,6 +35,21 @@
     .key-placeholder { color:#d97706; }
     #refresh-btn { cursor:pointer; }
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body class="bg-slate-100 font-sans antialiased">
 
@@ -410,6 +438,7 @@
   setInterval(refreshAll, 20000);
 })();
   </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

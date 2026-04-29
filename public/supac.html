@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supac — Unified Agent Command</title>
+  <script>if(typeof window.__API_BASE==="undefined")window.__API_BASE="";</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+  <nav class="bg-slate-800 p-4 flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-cyan-400">⚡ SUPA</a>
+    <div class="flex gap-4">
+      <a href="/platforms.html" class="text-slate-400 hover:text-cyan-400">Platforms</a>
+      <a href="/settings.html" class="text-slate-400 hover:text-cyan-400">Settings</a>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-cyan-400 mb-2">Unified Agent Command</h1>
+    <p class="text-slate-400 mb-8">Command 8 specialized AI agents from one interface</p>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-cyan-400">8</div>
+        <div class="text-sm text-slate-400">Active Agents</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-green-400">2,450</div>
+        <div class="text-sm text-slate-400">Tasks Completed</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-yellow-400">99%</div>
+        <div class="text-sm text-slate-400">Success Rate</div>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-lg">
+        <div class="text-2xl font-bold text-purple-400">450</div>
+        <div class="text-sm text-slate-400">Active Users</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+      <a href="/supac-home.html" class="bg-slate-800 p-6 rounded-xl hover:bg-slate-700">
+        <div class="text-3xl mb-2">🔍</div>
+        <h3 class="font-bold text-cyan-400">Research</h3>
+        <p class="text-sm text-slate-400">Web search & analysis</p>
+      </a>
+      <a href="/supac-home.html" class="bg-slate-800 p-6 rounded-xl hover:bg-slate-700">
+        <div class="text-3xl mb-2">✍️</div>
+        <h3 class="font-bold text-cyan-400">Writer</h3>
+        <p class="text-sm text-slate-400">Content creation</p>
+      </a>
+      <a href="/supac-home.html" class="bg-slate-800 p-6 rounded-xl hover:bg-slate-700">
+        <div class="text-3xl mb-2">💻</div>
+        <h3 class="font-bold text-cyan-400">Coder</h3>
+        <p class="text-sm text-slate-400">Programming assistant</p>
+      </a>
+      <a href="/supac-home.html" class="bg-slate-800 p-6 rounded-xl hover:bg-slate-700">
+        <div class="text-3xl mb-2">📊</div>
+        <h3 class="font-bold text-cyan-400">Analyst</h3>
+        <p class="text-sm text-slate-400">Data & charts</p>
+      </a>
+    </div>
+  </main>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

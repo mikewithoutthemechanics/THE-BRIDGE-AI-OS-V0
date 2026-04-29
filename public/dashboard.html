@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="description" content="Dashboard — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/dashboard">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/dashboard">
+<meta property="og:title" content="Dashboard — Bridge AI OS">
+<meta property="og:description" content="Dashboard — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dashboard — Bridge AI OS">
+<meta name="twitter:description" content="Dashboard — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Bridge AI OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050a0f;
+      --surface: #0a1520;
+      --surface2: #0d1c2e;
+      --border: rgba(0,200,255,0.12);
+      --border2: rgba(0,200,255,0.06);
+      --cyan: #00c8ff;
+      --green: #00e57b;
+      --purple: #a78bfa;
+      --yellow: #ffd166;
+      --red: #ff3c5a;
+      --dim: #3d5a6b;
+      --text: #c8dce8;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOP NAV ── */
+    .topnav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 52px;
+      border-bottom: 1px solid var(--border2);
+      background: rgba(5,10,15,0.95);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .nav-brand {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--cyan);
+      letter-spacing: 0.15em;
+    }
+    .nav-brand span { color: var(--green); }
+    .nav-links {
+      display: flex;
+      gap: 4px;
+    }
+    .nav-link {
+      color: var(--dim);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.15s;
+      letter-spacing: 0.04em;
+    }
+    .nav-link:hover { color: var(--text); background: var(--surface); }
+    .nav-link.active { color: var(--cyan); background: rgba(0,200,255,0.08); }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .agent-pill {
+      font-size: 0.65rem;
+      color: var(--green);
+      background: rgba(0,229,123,0.08);
+      border: 1px solid rgba(0,229,123,0.2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .user-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(0,200,255,0.1);
+      border: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--cyan);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      flex: 1;
+      min-height: 0;
+    }
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      border-right: 1px solid var(--border2);
+      padding: 20px 12px;
+      background: rgba(10,21,32,0.5);
+    }
+    .sidebar-section {
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      color: var(--dim);
+      padding: 0 8px;
+      margin-bottom: 8px;
+      margin-top: 20px;
+    }
+    .sidebar-section:first-child { margin-top: 0; }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: 7px;
+      font-size: 0.75rem;
+      color: var(--dim);
+      text-decoration: none;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .sidebar-link:hover { color: var(--text); background: var(--surface); }
+    .sidebar-link.active { color: var(--cyan); background: rgba(0,200,255,0.08); }
+    .sidebar-icon { font-size: 0.9rem; width: 18px; text-align: center; }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      padding: 28px 28px;
+      overflow-y: auto;
+    }
+    .page-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .page-sub {
+      font-size: 0.75rem;
+      color: var(--dim);
+      margin-bottom: 28px;
+    }
+
+    /* ── METRIC ROW ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1100px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px)  { .metrics { grid-template-columns: 1fr; } }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent-color, var(--cyan));
+      opacity: 0.5;
+    }
+    .metric-label {
+      font-size: 0.62rem;
+      color: var(--dim);
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    .metric-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .metric-sub {
+      font-size: 0.62rem;
+      color: var(--dim);
+    }
+    .metric-icon {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 1.2rem;
+      opacity: 0.3;
+    }
+
+    /* ── GRID 2-COL ── */
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+
+    /* ── PANEL ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .panel-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-badge {
+      font-size: 0.6rem;
+      color: var(--green);
+      background: rgba(0,229,123,0.08);
+      border: 1px solid rgba(0,229,123,0.2);
+      padding: 2px 7px;
+      border-radius: 20px;
+    }
+    .panel-badge.warn {
+      color: var(--yellow);
+      background: rgba(255,209,102,0.08);
+      border-color: rgba(255,209,102,0.2);
+    }
+
+    /* ── AGENT STATUS ── */
+    .agent-status {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border2);
+      font-size: 0.72rem;
+    }
+    .status-row:last-child { border-bottom: none; }
+    .status-key { color: var(--dim); }
+    .status-val { color: #fff; font-weight: 600; font-family: 'SF Mono', monospace; font-size: 0.68rem; }
+    .status-val.green { color: var(--green); }
+    .status-val.cyan  { color: var(--cyan); }
+    .status-val.dim   { color: var(--dim); }
+
+    /* ── CAPABILITY CHIPS ── */
+    .caps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+    .cap-chip {
+      font-size: 0.62rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 6px;
+      border: 1px solid;
+      text-transform: capitalize;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cap-chip.active {
+      color: var(--cyan);
+      background: rgba(0,200,255,0.08);
+      border-color: rgba(0,200,255,0.25);
+    }
+    .cap-chip.active:hover {
+      background: rgba(0,200,255,0.15);
+    }
+    .cap-chip.locked {
+      color: var(--dim);
+      background: transparent;
+      border-color: rgba(255,255,255,0.06);
+    }
+
+    /* ── TASK RUNNER ── */
+    .task-form { display: flex; flex-direction: column; gap: 10px; }
+    .agent-select {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+    .agent-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      font-size: 0.62rem;
+      font-weight: 600;
+      padding: 6px 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      text-transform: capitalize;
+      transition: all 0.15s;
+    }
+    .agent-btn:hover { border-color: rgba(0,200,255,0.3); color: var(--text); }
+    .agent-btn.selected { background: rgba(0,200,255,0.1); border-color: var(--cyan); color: var(--cyan); }
+    .agent-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .task-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      resize: vertical;
+      min-height: 70px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .task-input:focus { border-color: var(--cyan); }
+    .task-input::placeholder { color: var(--dim); }
+    .run-btn {
+      background: var(--cyan);
+      color: #050a0f;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.06em;
+      align-self: flex-end;
+    }
+    .run-btn:hover { background: #33dcff; }
+    .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── TASK RESULT ── */
+    .task-result {
+      display: none;
+      background: #020810;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.68rem;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      color: var(--green);
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+    .task-result.visible { display: block; }
+
+    /* ── TASK HISTORY ── */
+    .task-list { display: flex; flex-direction: column; gap: 0; }
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border2);
+      font-size: 0.72rem;
+    }
+    .task-item:last-child { border-bottom: none; }
+    .task-agent {
+      color: var(--cyan);
+      font-weight: 700;
+      font-size: 0.65rem;
+      text-transform: capitalize;
+      min-width: 80px;
+    }
+    .task-summary { color: var(--dim); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .task-time { color: var(--dim); font-size: 0.6rem; white-space: nowrap; }
+    .task-status-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .task-status-dot.ok  { background: var(--green); }
+    .task-status-dot.err { background: var(--red); }
+
+    /* ── CRM STATS ── */
+    .crm-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .crm-stat {
+      text-align: center;
+      padding: 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      border: 1px solid var(--border2);
+    }
+    .crm-stat-value { font-size: 1.3rem; font-weight: 800; color: #fff; }
+    .crm-stat-label { font-size: 0.58rem; color: var(--dim); margin-top: 2px; }
+
+    /* ── LOADING SHIMMER ── */
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      color: transparent !important;
+      user-select: none;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center;
+      padding: 32px;
+      color: var(--dim);
+      font-size: 0.72rem;
+    }
+  </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="nav-brand">BRIDGE <span>AI</span> OS</div>
+  <div class="nav-links">
+    <a href="/dashboard" class="nav-link active">Dashboard</a>
+    <a href="/agents" class="nav-link">Agents</a>
+    <a href="/crm" class="nav-link">CRM</a>
+    <a href="/marketplace" class="nav-link">Market</a>
+    <a href="/profile" class="nav-link">Profile</a>
+  </div>
+  <div class="nav-right">
+    <div class="agent-pill" id="agentStatusPill">● LOADING</div>
+    <div class="user-dot" id="userDot">?</div>
+  </div>
+</nav>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">AGENT</div>
+    <a class="sidebar-link active"><span class="sidebar-icon">⚡</span> Overview</a>
+    <a class="sidebar-link" href="/agents"><span class="sidebar-icon">🤖</span> Run Task</a>
+    <a class="sidebar-link"><span class="sidebar-icon">📋</span> Task History</a>
+
+    <div class="sidebar-section">OPERATIONS</div>
+    <a class="sidebar-link" href="/crm"><span class="sidebar-icon">🎯</span> CRM</a>
+    <a class="sidebar-link" href="/marketplace"><span class="sidebar-icon">🏪</span> Marketplace</a>
+    <a class="sidebar-link" href="/projects"><span class="sidebar-icon">⚙️</span> Projects</a>
+
+    <div class="sidebar-section">SYSTEM</div>
+    <a class="sidebar-link" href="/profile"><span class="sidebar-icon">👤</span> Profile</a>
+    <a class="sidebar-link" href="/settings"><span class="sidebar-icon">🔧</span> Settings</a>
+    <a class="sidebar-link" id="logoutLink"><span class="sidebar-icon">🚪</span> Logout</a>
+  </div>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="page-title">Agent Dashboard</div>
+    <div class="page-sub" id="pageSubtitle">Loading agent state...</div>
+
+    <!-- METRICS ROW -->
+    <div class="metrics">
+      <div class="metric-card" style="--accent-color: var(--cyan)">
+        <div class="metric-label">AGENT STATUS</div>
+        <div class="metric-value skeleton" id="metricStatus">ACTIVE</div>
+        <div class="metric-sub" id="metricPlan">Plan: —</div>
+        <div class="metric-icon">🤖</div>
+      </div>
+      <div class="metric-card" style="--accent-color: var(--green)">
+        <div class="metric-label">TASKS RUN</div>
+        <div class="metric-value skeleton" id="metricTasks">0</div>
+        <div class="metric-sub" id="metricBrdg">0 BRDG spent</div>
+        <div class="metric-icon">⚡</div>
+      </div>
+      <div class="metric-card" style="--accent-color: var(--purple)">
+        <div class="metric-label">CRM CONTACTS</div>
+        <div class="metric-value skeleton" id="metricContacts">0</div>
+        <div class="metric-sub" id="metricDeals">0 active deals</div>
+        <div class="metric-icon">🎯</div>
+      </div>
+      <div class="metric-card" style="--accent-color: var(--yellow)">
+        <div class="metric-label">PIPELINE VALUE</div>
+        <div class="metric-value skeleton" id="metricPipeline">R0</div>
+        <div class="metric-sub">Active deal pipeline</div>
+        <div class="metric-icon">💰</div>
+      </div>
+    </div>
+
+    <!-- GRID: Agent Status + Task Runner -->
+    <div class="grid2">
+
+      <!-- AGENT STATUS -->
+      <div class="panel">
+        <div class="panel-title">
+          Twin State
+          <span class="panel-badge" id="statusBadge">LOADING</span>
+        </div>
+        <div class="agent-status" id="agentStatusRows">
+          <div class="status-row">
+            <span class="status-key">Agent ID</span>
+            <span class="status-val cyan skeleton" id="sAgentId">AGT-...</span>
+          </div>
+          <div class="status-row">
+            <span class="status-key">Status</span>
+            <span class="status-val green" id="sStatus">—</span>
+          </div>
+          <div class="status-row">
+            <span class="status-key">Plan</span>
+            <span class="status-val" id="sPlan">—</span>
+          </div>
+          <div class="status-row">
+            <span class="status-key">Activated</span>
+            <span class="status-val dim" id="sActivated">—</span>
+          </div>
+          <div class="status-row">
+            <span class="status-key">Tasks Run</span>
+            <span class="status-val" id="sTasksRun">—</span>
+          </div>
+        </div>
+        <div class="caps" id="capsContainer"></div>
+      </div>
+
+      <!-- TASK RUNNER -->
+      <div class="panel">
+        <div class="panel-title">
+          Dispatch Agent Task
+          <span class="panel-badge warn" id="runnerBadge">SELECT AGENT</span>
+        </div>
+        <div class="task-form">
+          <div class="agent-select" id="agentSelect"></div>
+          <textarea class="task-input" id="taskInput"
+            placeholder="Describe what you need the agent to do..."></textarea>
+          <button class="run-btn" id="runBtn" disabled onclick="runTask()">▶ Run Task</button>
+        </div>
+        <div class="task-result" id="taskResult"></div>
+      </div>
+    </div>
+
+    <!-- GRID: CRM + Task History -->
+    <div class="grid2">
+
+      <!-- CRM SNAPSHOT -->
+      <div class="panel">
+        <div class="panel-title">
+          CRM Snapshot
+          <a href="/crm" style="font-size:0.62rem;color:var(--cyan);text-decoration:none;">View all →</a>
+        </div>
+        <div class="crm-stats" id="crmStats">
+          <div class="crm-stat">
+            <div class="crm-stat-value skeleton" id="crmContacts">0</div>
+            <div class="crm-stat-label">CONTACTS</div>
+          </div>
+          <div class="crm-stat">
+            <div class="crm-stat-value skeleton" id="crmDeals">0</div>
+            <div class="crm-stat-label">DEALS</div>
+          </div>
+          <div class="crm-stat">
+            <div class="crm-stat-value skeleton" id="crmValue">R0</div>
+            <div class="crm-stat-label">PIPELINE</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK HISTORY -->
+      <div class="panel">
+        <div class="panel-title">
+          Recent Tasks
+          <span class="panel-badge" id="taskCount">0 tasks</span>
+        </div>
+        <div class="task-list" id="taskList">
+          <div class="empty">No tasks yet. Dispatch your first agent task above.</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  // ── Auth ────────────────────────────────────────────────────────────────
+  function getToken() {
+    const ls = localStorage.getItem('bridge_token');
+    if (ls) return ls;
+    const m = document.cookie.match(/bridge_token=([^;]+)/);
+    return m ? m[1] : null;
+  }
+
+  const token = getToken();
+  if (!token) { location.href = '/onboarding'; return; }
+
+  const headers = { Authorization: 'Bearer ' + token };
+  let selectedAgent = null;
+  let userCapabilities = [];
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function fmt(n) {
+    if (n === null || n === undefined) return '—';
+    if (typeof n === 'number') {
+      if (n >= 1000000) return 'R' + (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000)    return 'R' + (n / 1000).toFixed(0) + 'k';
+      return 'R' + n.toFixed(0);
+    }
+    return String(n);
+  }
+  function unskeleton(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('skeleton');
+  }
+  function timeAgo(iso) {
+    if (!iso) return '—';
+    const d = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (d < 60)   return d + 's ago';
+    if (d < 3600) return Math.floor(d / 60) + 'm ago';
+    return Math.floor(d / 3600) + 'h ago';
+  }
+
+  // ── Load twin state ───────────────────────────────────────────────────────
+  async function loadState() {
+    let data = null;
+    try {
+      const r = await fetch('/api/twin/state', { headers });
+      if (r.ok) data = await r.json();
+    } catch (_) {}
+
+    if (!data || !data.ok) {
+      // No twin yet — redirect to activate
+      const localAgent = localStorage.getItem('bridge_agent_id');
+      if (!localAgent) {
+        location.href = '/activate';
+        return;
+      }
+      // Show partial state from local storage
+      data = {
+        ok: true,
+        agent: {
+          id: localAgent,
+          status: 'active',
+          capabilities: ['intelligence', 'creative', 'support'],
+          plan: 'free',
+          tasks_run: 0,
+          brdg_spent: 0,
+        },
+        crm: { contacts: 0, deals: 0, pipeline_value: 0 },
+        tasks: [],
+      };
+    }
+
+    const { agent, crm, tasks } = data;
+    userCapabilities = agent.capabilities || [];
+
+    // ── User dot initials
+    try {
+      const u = JSON.parse(localStorage.getItem('bridge_user') || '{}');
+      const initial = (u.name || u.email || '?')[0].toUpperCase();
+      document.getElementById('userDot').textContent = initial;
+    } catch (_) {}
+
+    // ── Page subtitle
+    document.getElementById('pageSubtitle').textContent =
+      `Agent ${agent.id} · ${agent.status?.toUpperCase()} · ${userCapabilities.length} modules loaded`;
+
+    // ── Metrics
+    document.getElementById('metricStatus').textContent = (agent.status || 'unknown').toUpperCase();
+    document.getElementById('metricPlan').textContent = 'Plan: ' + (agent.plan || 'free');
+    document.getElementById('metricTasks').textContent = agent.tasks_run || 0;
+    document.getElementById('metricBrdg').textContent = (agent.brdg_spent || 0).toFixed(1) + ' BRDG spent';
+    document.getElementById('metricContacts').textContent = crm.contacts || 0;
+    document.getElementById('metricDeals').textContent = (crm.deals || 0) + ' active deals';
+    document.getElementById('metricPipeline').textContent = fmt(crm.pipeline_value);
+    ['metricStatus','metricTasks','metricContacts','metricPipeline'].forEach(unskeleton);
+
+    // ── Status pill
+    const isActive = agent.status === 'active';
+    document.getElementById('agentStatusPill').textContent = '● ' + (isActive ? 'LIVE' : 'INACTIVE');
+    document.getElementById('agentStatusPill').style.color = isActive ? 'var(--green)' : 'var(--red)';
+
+    // ── Status panel
+    document.getElementById('sAgentId').textContent = agent.id;
+    document.getElementById('sStatus').textContent = (agent.status || '—').toUpperCase();
+    document.getElementById('sStatus').className = 'status-val ' + (isActive ? 'green' : 'dim');
+    document.getElementById('sPlan').textContent = (agent.plan || '—').toUpperCase();
+    document.getElementById('sActivated').textContent = agent.activated_at ? new Date(agent.activated_at).toLocaleDateString() : '—';
+    document.getElementById('sTasksRun').textContent = agent.tasks_run || 0;
+    unskeleton('sAgentId');
+
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = isActive ? 'ACTIVE' : 'INACTIVE';
+    badge.className = 'panel-badge' + (isActive ? '' : ' warn');
+
+    // ── Capabilities chips
+    const allAgents = ['intelligence','creative','support','nurture','campaign','closer','growth','finance','quote','supply'];
+    const capsCtn = document.getElementById('capsContainer');
+    capsCtn.innerHTML = '';
+    allAgents.forEach(a => {
+      const locked = !userCapabilities.includes(a);
+      const chip = document.createElement('div');
+      chip.className = 'cap-chip ' + (locked ? 'locked' : 'active');
+      chip.textContent = locked ? '🔒 ' + a : a;
+      chip.title = locked ? 'Upgrade plan to unlock' : 'Click to use';
+      if (!locked) chip.onclick = () => selectAgentChip(a, chip);
+      capsCtn.appendChild(chip);
+    });
+
+    // ── Agent selector in task runner
+    buildAgentSelect(userCapabilities);
+
+    // ── CRM stats
+    document.getElementById('crmContacts').textContent = crm.contacts || 0;
+    document.getElementById('crmDeals').textContent = crm.deals || 0;
+    document.getElementById('crmValue').textContent = fmt(crm.pipeline_value);
+    ['crmContacts','crmDeals','crmValue'].forEach(unskeleton);
+
+    // ── Task history
+    renderTasks(tasks || []);
+  }
+
+  // ── Build agent selector buttons ──────────────────────────────────────────
+  const ALL_AGENTS = ['intelligence','creative','support','nurture','campaign','closer','growth','finance','quote','supply'];
+
+  function buildAgentSelect(caps) {
+    const ctn = document.getElementById('agentSelect');
+    ctn.innerHTML = '';
+    ALL_AGENTS.forEach(a => {
+      const locked = !caps.includes(a);
+      const btn = document.createElement('button');
+      btn.className = 'agent-btn';
+      btn.textContent = a;
+      btn.disabled = locked;
+      btn.title = locked ? 'Upgrade to unlock' : '';
+      btn.onclick = () => {
+        document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedAgent = a;
+        document.getElementById('runnerBadge').textContent = a.toUpperCase();
+        document.getElementById('runBtn').disabled = false;
+      };
+      ctn.appendChild(btn);
+    });
+  }
+
+  function selectAgentChip(name) {
+    const btns = document.querySelectorAll('.agent-btn');
+    btns.forEach(b => {
+      if (b.textContent === name) b.click();
+    });
+    document.getElementById('taskInput').focus();
+  }
+
+  // ── Render task list ──────────────────────────────────────────────────────
+  function renderTasks(tasks) {
+    const list = document.getElementById('taskList');
+    document.getElementById('taskCount').textContent = tasks.length + ' tasks';
+
+    if (!tasks.length) {
+      list.innerHTML = '<div class="empty">No tasks yet. Dispatch your first agent task above.</div>';
+      return;
+    }
+    list.innerHTML = tasks.map(t => `
+      <div class="task-item">
+        <div class="task-status-dot ${t.status === 'completed' ? 'ok' : 'err'}"></div>
+        <div class="task-agent">${t.agent_name}</div>
+        <div class="task-summary">${t.input_summary || '—'}</div>
+        <div class="task-time">${timeAgo(t.created_at)}</div>
+      </div>
+    `).join('');
+  }
+
+  // ── Run task ──────────────────────────────────────────────────────────────
+  window.runTask = async function () {
+    const input = document.getElementById('taskInput').value.trim();
+    if (!selectedAgent || !input) return;
+
+    const btn = document.getElementById('runBtn');
+    const result = document.getElementById('taskResult');
+    btn.disabled = true;
+    btn.textContent = '⟳ Running...';
+    result.className = 'task-result visible';
+    result.textContent = `[${selectedAgent.toUpperCase()}] Processing...\n`;
+
+    try {
+      const r = await fetch('/api/twin/task', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent_name: selectedAgent, input }),
+      });
+      const data = await r.json();
+
+      if (data.ok) {
+        const out = data.output;
+        const text = typeof out?.text === 'string' ? out.text : JSON.stringify(out, null, 2);
+        result.textContent = `[${selectedAgent.toUpperCase()}] ✓ ${data.brdg_cost} BRDG\n\n${text}`;
+        // Refresh task list
+        const ts = await fetch('/api/twin/tasks', { headers });
+        if (ts.ok) { const { tasks } = await ts.json(); renderTasks(tasks); }
+        // Bump counter
+        const cur = parseInt(document.getElementById('sTasksRun').textContent) || 0;
+        document.getElementById('sTasksRun').textContent = cur + 1;
+        document.getElementById('metricTasks').textContent = cur + 1;
+      } else {
+        result.textContent = `[ERROR] ${data.error || 'Task failed'}`;
+        result.style.color = 'var(--red)';
+      }
+    } catch (err) {
+      result.textContent = `[ERROR] ${err.message}`;
+      result.style.color = 'var(--red)';
+    }
+
+    btn.disabled = false;
+    btn.textContent = '▶ Run Task';
+  };
+
+  // ── Logout ────────────────────────────────────────────────────────────────
+  document.getElementById('logoutLink').onclick = async () => {
+    await fetch('/auth/logout', { method: 'POST', headers }).catch(() => {});
+    localStorage.removeItem('bridge_token');
+    localStorage.removeItem('bridge_user');
+    localStorage.removeItem('bridge_agent_id');
+    document.cookie = 'bridge_token=; Max-Age=0; Path=/';
+    location.href = '/onboarding';
+  };
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  loadState();
+})();
+</script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+</body>
+</html>

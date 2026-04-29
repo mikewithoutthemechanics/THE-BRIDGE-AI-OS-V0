@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ryan — Financial Command Center</title>
+<script>
+// Superadmin gate — runs synchronously before anything renders
+(function(){
+  try {
+    var tok = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_user_token');
+    if (!tok) { var cm = document.cookie.split(';').map(function(c){return c.trim();}).find(function(c){return c.startsWith('bridge_token=');}); if(cm) tok=decodeURIComponent(cm.split('=').slice(1).join('=')); }
+    if (!tok) { location.replace('/onboarding'); return; }
+    var pl = JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    if (pl.role !== 'superadmin') { location.replace('/portal'); return; }
+  } catch(_) { location.replace('/onboarding'); }
+})();
+</script>
+<script src="/bridge-nav.js?v=20260425e" defer></script>
+<style>
+:root{
+  --bg:#0a0c10;--surface:#111318;--surface2:#181c24;--border:rgba(255,255,255,.07);
+  --accent:#00d4ff;--gold:#ffb400;--green:#22c55e;--red:#ef4444;--purple:#a855f7;
+  --text:#e2e8f0;--muted:rgba(200,220,230,.45);
+  --card-bg:rgba(255,255,255,.03);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+/* ── TOP BAR ── */
+.topbar{background:rgba(255,180,0,.06);border-bottom:1px solid rgba(255,180,0,.18);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.topbar-brand{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.topbar-links{display:flex;gap:8px;flex-wrap:wrap}
+.topbar-links a{font-size:.68rem;font-weight:600;letter-spacing:.06em;color:rgba(200,220,230,.5);padding:4px 10px;border:1px solid rgba(200,220,230,.12);border-radius:4px;transition:all .2s}
+.topbar-links a:hover{color:var(--gold);border-color:rgba(255,180,0,.4)}
+
+/* ── LAYOUT ── */
+.shell{max-width:1400px;margin:0 auto;padding:24px 16px 80px}
+h1{font-size:1.5rem;font-weight:700;color:var(--gold);margin-bottom:4px}
+.subtitle{color:var(--muted);font-size:.8rem;margin-bottom:28px}
+
+/* ── SECTION TITLES ── */
+.sec-title{font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:32px 0 14px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:4px}
+.kpi{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 60%,rgba(255,255,255,.012));pointer-events:none}
+.kpi-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.kpi-val{font-size:1.55rem;font-weight:700;line-height:1;margin-bottom:4px}
+.kpi-sub{font-size:.7rem;color:var(--muted)}
+.kpi.gold .kpi-val{color:var(--gold)}
+.kpi.green .kpi-val{color:var(--green)}
+.kpi.blue .kpi-val{color:var(--accent)}
+.kpi.purple .kpi-val{color:var(--purple)}
+
+/* ── GRID 2-COL ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+
+/* ── CARD ── */
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card-title{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.tbl td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.78rem}
+.tbl tr:last-child td{border:none}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.badge.green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.badge.yellow{background:rgba(255,180,0,.12);color:var(--gold);border:1px solid rgba(255,180,0,.2)}
+.badge.red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.badge.blue{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.2)}
+.badge.purple{background:rgba(168,85,247,.1);color:var(--purple);border:1px solid rgba(168,85,247,.2)}
+
+/* ── FX TABLE ── */
+.fx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.fx-item{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.fx-pair{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.fx-rate{font-size:1rem;font-weight:700;color:var(--text)}
+.fx-brdg{font-size:.62rem;color:var(--accent);margin-top:2px}
+
+/* ── FORECAST ── */
+.forecast-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:600px){.forecast-grid{grid-template-columns:repeat(2,1fr)}}
+.forecast-card{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.forecast-period{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.forecast-val{font-size:1.1rem;font-weight:700;color:var(--green)}
+.forecast-brdg{font-size:.65rem;color:var(--accent);margin-top:3px}
+
+/* ── BUCKETS BAR ── */
+.bucket-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:10px;gap:2px}
+.bucket-seg{height:100%;border-radius:2px;transition:flex .6s}
+
+/* ── ACTION TABS ── */
+.tab-bar{display:flex;gap:2px;margin-bottom:16px;background:rgba(255,255,255,.03);border-radius:8px;padding:3px}
+.tab{flex:1;padding:8px;text-align:center;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border-radius:6px;color:var(--muted);transition:all .2s}
+.tab.active{background:rgba(255,180,0,.12);color:var(--gold)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+@media(max-width:520px){.form-row{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.form-group input,.form-group select,.form-group textarea{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:.82rem;outline:none;transition:border .2s;width:100%}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:rgba(255,180,0,.4)}
+.form-group textarea{resize:vertical;min-height:60px}
+.btn{padding:10px 20px;border-radius:7px;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:1px solid;transition:all .2s}
+.btn-gold{background:rgba(255,180,0,.12);border-color:rgba(255,180,0,.4);color:var(--gold)}
+.btn-gold:hover{background:rgba(255,180,0,.2)}
+.btn-green{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--green)}
+.btn-green:hover{background:rgba(34,197,94,.2)}
+.btn-red{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red)}
+.btn-red:hover{background:rgba(239,68,68,.2)}
+.btn-sm{padding:5px 12px;font-size:.62rem}
+.msg{padding:8px 12px;border-radius:6px;font-size:.75rem;margin-top:8px;display:none}
+.msg.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--green)}
+.msg.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--red)}
+
+/* ── PLATFORM CARDS ── */
+.plat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.plat-card{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative}
+.plat-name{font-weight:700;font-size:.85rem;margin-bottom:2px}
+.plat-cat{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.plat-val{font-size:.95rem;font-weight:700;color:var(--green);margin-bottom:2px}
+.plat-pred{font-size:.65rem;color:var(--muted)}
+.plat-link{font-size:.62rem;font-weight:600;color:var(--accent);margin-top:8px;display:inline-block;opacity:.7}
+.plat-link:hover{opacity:1}
+
+/* ── ADMIN LINK GRID ── */
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.admin-link{background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;transition:all .2s;cursor:pointer}
+.admin-link:hover{border-color:rgba(255,180,0,.35);background:rgba(255,180,0,.05)}
+.admin-link .icon{font-size:1.3rem;margin-bottom:6px}
+.admin-link .lbl{font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+
+/* ── SARS ── */
+.sars-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.sars-item{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:16px}
+.sars-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.sars-val{font-size:1rem;font-weight:700}
+.sars-note{font-size:.65rem;color:var(--muted);margin-top:4px}
+
+/* ── PLAN REQUESTS ── */
+#plan-req-table .approve-btn{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green);padding:4px 10px;border-radius:4px;font-size:.62rem;font-weight:700;cursor:pointer;letter-spacing:.06em}
+#plan-req-table .approve-btn:hover{background:rgba(34,197,94,.2)}
+
+/* ── BRDG SPARKLINE ── */
+.sparkline{display:flex;align-items:flex-end;gap:2px;height:32px;margin-top:8px}
+.spark-bar{width:8px;background:rgba(0,212,255,.3);border-radius:2px 2px 0 0;flex-shrink:0}
+
+/* ── SCROLL FIX ── */
+.overflow-x{overflow-x:auto}
+</style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+<div id="bridge-nav"></div>
+
+<div class="topbar">
+  <div class="topbar-brand">&#9670; SUPERADMIN COMMAND CENTER — RYAN COWAN</div>
+  <div class="topbar-links">
+    <a href="/portal">Portal</a>
+    <a href="/admin.html">Admin</a>
+    <a href="/crm.html">CRM</a>
+    <a href="/invoicing.html">Invoicing</a>
+    <a href="/quotes.html">Quotes</a>
+    <a href="/leads.html">Leads</a>
+    <a href="/legal.html">Legal</a>
+    <a href="/god-mode.html">God Mode</a>
+    <a href="/exec-dashboard.html">Exec Dash</a>
+    <a href="/profile">Profile</a>
+    <a href="/portfolio">Portfolio</a>
+  </div>
+</div>
+
+<div class="shell">
+  <h1>Financial Command Center</h1>
+  <div class="subtitle" id="page-ts">Loading live data…</div>
+
+  <!-- ── KPI ROW ── -->
+  <div class="sec-title">Treasury Overview</div>
+  <div class="kpi-grid">
+    <div class="kpi gold">
+      <div class="kpi-label">Total Treasury (ZAR)</div>
+      <div class="kpi-val" id="kpi-treasury">—</div>
+      <div class="kpi-sub" id="kpi-treasury-sub">All buckets combined</div>
+    </div>
+    <div class="kpi blue">
+      <div class="kpi-label">BRDG In System</div>
+      <div class="kpi-val" id="kpi-brdg">—</div>
+      <div class="kpi-sub" id="kpi-brdg-usd">Loading…</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Revenue MTD (ZAR)</div>
+      <div class="kpi-val" id="kpi-rev">—</div>
+      <div class="kpi-sub" id="kpi-rev-sub">Month-to-date receipts</div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-label">Predicted Daily Profit</div>
+      <div class="kpi-val" id="kpi-daily">—</div>
+      <div class="kpi-sub">Based on 30-day run rate</div>
+    </div>
+  </div>
+
+  <!-- ── FX + BRDG PRICE ── -->
+  <div class="sec-title">Live Rates — BRDG &amp; FX</div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">BRDG Token Price</div>
+      <div style="font-size:1.8rem;font-weight:700;color:var(--accent)">$0.01 <span style="font-size:.75rem;color:var(--muted)">USD</span></div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:4px">Fixed peg: 1 USD = 100 BRDG &nbsp;|&nbsp; 1 ZAR = 5 BRDG</div>
+      <div id="brdg-zar-usd" style="margin-top:10px;font-size:.8rem;color:var(--text)">Loading ZAR rate…</div>
+      <div class="sparkline" id="sparkline">
+        <div class="spark-bar" style="height:40%"></div>
+        <div class="spark-bar" style="height:55%"></div>
+        <div class="spark-bar" style="height:48%"></div>
+        <div class="spark-bar" style="height:62%"></div>
+        <div class="spark-bar" style="height:58%"></div>
+        <div class="spark-bar" style="height:70%"></div>
+        <div class="spark-bar" style="height:65%"></div>
+        <div class="spark-bar" style="height:80%"></div>
+        <div class="spark-bar" style="height:75%"></div>
+        <div class="spark-bar" style="height:90%"></div>
+        <div class="spark-bar" style="height:85%"></div>
+        <div class="spark-bar" style="height:100%;background:rgba(0,212,255,.7)"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">FX Rates (BRDG per 1 unit)</div>
+      <div class="fx-grid" id="fx-grid">
+        <div class="fx-item"><div class="fx-pair">USD/BRDG</div><div class="fx-rate">100</div><div class="fx-brdg">fixed peg</div></div>
+        <div class="fx-item"><div class="fx-pair">ZAR/BRDG</div><div class="fx-rate">5</div><div class="fx-brdg">fixed peg</div></div>
+        <div class="fx-item"><div class="fx-pair">EUR/BRDG</div><div class="fx-rate" id="fx-eur">—</div><div class="fx-brdg">live</div></div>
+        <div class="fx-item"><div class="fx-pair">GBP/BRDG</div><div class="fx-rate" id="fx-gbp">—</div><div class="fx-brdg">live</div></div>
+        <div class="fx-item"><div class="fx-pair">BTC/BRDG</div><div class="fx-rate" id="fx-btc">—</div><div class="fx-brdg">live</div></div>
+        <div class="fx-item"><div class="fx-pair">ETH/BRDG</div><div class="fx-rate" id="fx-eth">—</div><div class="fx-brdg">live</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TREASURY BUCKETS ── -->
+  <div class="sec-title">Treasury Buckets</div>
+  <div class="card">
+    <div class="overflow-x">
+      <table class="tbl">
+        <thead><tr>
+          <th>Bucket</th><th class="num">ZAR Balance</th><th class="num">BRDG Equiv</th><th class="num">% of Total</th><th>Purpose</th>
+        </tr></thead>
+        <tbody id="bucket-tbody">
+          <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="bucket-bar" id="bucket-bar"></div>
+  </div>
+
+  <!-- ── PROFIT FORECAST ── -->
+  <div class="sec-title">Profit Forecast</div>
+  <div class="forecast-grid" id="forecast-grid">
+    <div class="forecast-card"><div class="forecast-period">Daily</div><div class="forecast-val" id="fc-day">—</div><div class="forecast-brdg" id="fc-day-b">— BRDG</div></div>
+    <div class="forecast-card"><div class="forecast-period">Weekly</div><div class="forecast-val" id="fc-week">—</div><div class="forecast-brdg" id="fc-week-b">— BRDG</div></div>
+    <div class="forecast-card"><div class="forecast-period">Monthly</div><div class="forecast-val" id="fc-month">—</div><div class="forecast-brdg" id="fc-month-b">— BRDG</div></div>
+    <div class="forecast-card"><div class="forecast-period">Annual</div><div class="forecast-val" id="fc-year">—</div><div class="forecast-brdg" id="fc-year-b">— BRDG</div></div>
+  </div>
+
+  <!-- ── ACTIONS ── -->
+  <div class="sec-title">Treasury Actions</div>
+  <div class="card">
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchTab('send-brdg')">Send BRDG</div>
+      <div class="tab" onclick="switchTab('send-fiat')">Send Fiat</div>
+      <div class="tab" onclick="switchTab('transfer')">Internal Transfer</div>
+      <div class="tab" onclick="switchTab('withdraw')">Withdraw</div>
+      <div class="tab" onclick="switchTab('swap')">Swap / Convert</div>
+    </div>
+
+    <div class="tab-panel active" id="tab-send-brdg">
+      <div class="form-row">
+        <div class="form-group"><label>Recipient Address / Email</label><input id="sb-to" placeholder="0x… or email"></div>
+        <div class="form-group"><label>Amount (BRDG)</label><input id="sb-amt" type="number" placeholder="0"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px"><label>Memo</label><textarea id="sb-memo" placeholder="Optional note"></textarea></div>
+      <button class="btn btn-gold" onclick="doSendBrdg()">Send BRDG →</button>
+      <div class="msg" id="sb-msg"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-send-fiat">
+      <div class="form-row">
+        <div class="form-group"><label>Recipient Name / Account</label><input id="sf-to" placeholder="Name or account number"></div>
+        <div class="form-group"><label>Amount (ZAR)</label><input id="sf-amt" type="number" placeholder="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Bank</label><input id="sf-bank" placeholder="FNB / Nedbank / etc."></div>
+        <div class="form-group"><label>Reference</label><input id="sf-ref" placeholder="Invoice # etc."></div>
+      </div>
+      <button class="btn btn-green" onclick="doSendFiat()">Send Fiat →</button>
+      <div class="msg" id="sf-msg"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-transfer">
+      <div class="form-row">
+        <div class="form-group"><label>From Bucket</label>
+          <select id="tr-from">
+            <option value="ops">Operations Reserve</option>
+            <option value="treasury">Treasury</option>
+            <option value="ubi">UBI Pool</option>
+            <option value="founder">Founder</option>
+            <option value="growth">Growth</option>
+          </select>
+        </div>
+        <div class="form-group"><label>To Bucket</label>
+          <select id="tr-to">
+            <option value="treasury">Treasury</option>
+            <option value="ops">Operations Reserve</option>
+            <option value="ubi">UBI Pool</option>
+            <option value="founder">Founder</option>
+            <option value="growth">Growth</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Amount (ZAR)</label><input id="tr-amt" type="number" placeholder="0"></div>
+        <div class="form-group"><label>Reason</label><input id="tr-reason" placeholder="Rebalancing / etc."></div>
+      </div>
+      <button class="btn btn-gold" onclick="doTransfer()">Transfer →</button>
+      <div class="msg" id="tr-msg"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-withdraw">
+      <div class="form-row">
+        <div class="form-group"><label>Withdraw From</label>
+          <select id="wd-from">
+            <option value="fiat">Fiat (ZAR)</option>
+            <option value="brdg">BRDG Wallet</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Amount</label><input id="wd-amt" type="number" placeholder="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Destination</label><input id="wd-dest" placeholder="Bank account / wallet address"></div>
+        <div class="form-group"><label>Reference</label><input id="wd-ref" placeholder="Optional"></div>
+      </div>
+      <button class="btn btn-red" onclick="doWithdraw()">Initiate Withdrawal →</button>
+      <div class="msg" id="wd-msg"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-swap">
+      <div class="form-row">
+        <div class="form-group"><label>From Currency</label>
+          <select id="sw-from">
+            <option value="ZAR">ZAR</option>
+            <option value="BRDG">BRDG</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Amount</label><input id="sw-amt" type="number" placeholder="0" oninput="calcSwap()"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>To Currency</label>
+          <select id="sw-to">
+            <option value="BRDG">BRDG</option>
+            <option value="ZAR">ZAR</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+        <div class="form-group"><label>You Receive (estimate)</label><input id="sw-receive" readonly placeholder="0" style="color:var(--accent)"></div>
+      </div>
+      <button class="btn btn-gold" onclick="doSwap()">Execute Swap →</button>
+      <div class="msg" id="sw-msg"></div>
+    </div>
+  </div>
+
+  <!-- ── TRANSACTIONS ── -->
+  <div class="sec-title">Transaction History &nbsp;<button class="btn btn-gold btn-sm" onclick="exportCSV()" style="font-size:.58rem;letter-spacing:.06em">Export CSV</button></div>
+  <div class="card overflow-x">
+    <table class="tbl" id="txn-table">
+      <thead><tr>
+        <th>Date</th><th>Type</th><th>Description</th><th class="num">ZAR</th><th class="num">BRDG</th><th>Status</th>
+      </tr></thead>
+      <tbody id="txn-tbody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- ── PLATFORMS ── -->
+  <div class="sec-title">Platform Revenue &amp; Predicted Values</div>
+  <div class="plat-grid" id="plat-grid">
+    <!-- populated by JS -->
+  </div>
+
+  <!-- ── ADMIN LINKS ── -->
+  <div class="sec-title">Consolidated Admin Dashboards</div>
+  <div class="admin-grid">
+    <a class="admin-link" href="/admin.html"><div class="icon">&#9881;</div><div class="lbl">System Admin</div></a>
+    <a class="admin-link" href="/crm.html"><div class="icon">&#128101;</div><div class="lbl">CRM</div></a>
+    <a class="admin-link" href="/invoicing.html"><div class="icon">&#128196;</div><div class="lbl">Invoicing</div></a>
+    <a class="admin-link" href="/quotes.html"><div class="icon">&#128203;</div><div class="lbl">Quotes</div></a>
+    <a class="admin-link" href="/leads.html"><div class="icon">&#128270;</div><div class="lbl">Leads</div></a>
+    <a class="admin-link" href="/legal.html"><div class="icon">&#9878;</div><div class="lbl">Legal</div></a>
+    <a class="admin-link" href="/god-mode.html"><div class="icon">&#9889;</div><div class="lbl">God Mode</div></a>
+    <a class="admin-link" href="/exec-dashboard.html"><div class="icon">&#128200;</div><div class="lbl">Exec Dashboard</div></a>
+    <a class="admin-link" href="/users.html"><div class="icon">&#128100;</div><div class="lbl">User Management</div></a>
+    <a class="admin-link" href="/analytics.html"><div class="icon">&#128202;</div><div class="lbl">Analytics</div></a>
+    <a class="admin-link" href="/logs.html"><div class="icon">&#128195;</div><div class="lbl">System Logs</div></a>
+    <a class="admin-link" href="/billing-admin.html"><div class="icon">&#128184;</div><div class="lbl">Billing Admin</div></a>
+  </div>
+
+  <!-- ── PLAN REQUESTS ── -->
+  <div class="sec-title">Pending Plan Upgrade Requests</div>
+  <div class="card overflow-x">
+    <table class="tbl" id="plan-req-table">
+      <thead><tr>
+        <th>Date</th><th>User</th><th>Current Plan</th><th>Requested Plan</th><th>Details</th><th>Action</th>
+      </tr></thead>
+      <tbody id="plan-req-tbody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- ── SARS TAX ── -->
+  <div class="sec-title">SARS Tax Management</div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">VAT Position (15%)</div>
+    <div class="sars-grid" id="sars-vat">
+      <div class="sars-item"><div class="sars-label">Revenue (excl. VAT)</div><div class="sars-val" id="sars-rev-ex">—</div><div class="sars-note">Invoiced to clients</div></div>
+      <div class="sars-item"><div class="sars-label">VAT Collected</div><div class="sars-val" id="sars-vat-out" style="color:var(--red)">—</div><div class="sars-note">Output tax owed to SARS</div></div>
+      <div class="sars-item"><div class="sars-label">VAT Input Credits</div><div class="sars-val" id="sars-vat-in" style="color:var(--green)">—</div><div class="sars-note">Claimable from SARS</div></div>
+      <div class="sars-item"><div class="sars-label">Net VAT Payable</div><div class="sars-val" id="sars-vat-net">—</div><div class="sars-note">Output minus input</div></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Provisional Tax (Income Tax)</div>
+      <div class="sars-grid" style="grid-template-columns:1fr 1fr">
+        <div class="sars-item"><div class="sars-label">Taxable Income (YTD)</div><div class="sars-val" id="prov-income">—</div></div>
+        <div class="sars-item"><div class="sars-label">Estimated Tax (28%)</div><div class="sars-val" id="prov-tax" style="color:var(--red)">—</div></div>
+        <div class="sars-item"><div class="sars-label">1st Provisional Due</div><div class="sars-val" style="color:var(--gold)">28 Feb 2026</div></div>
+        <div class="sars-item"><div class="sars-label">2nd Provisional Due</div><div class="sars-val" style="color:var(--gold)">31 Aug 2026</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">SARS Submissions Tracker</div>
+      <table class="tbl">
+        <thead><tr><th>Period</th><th>Type</th><th>Status</th><th>Due</th></tr></thead>
+        <tbody>
+          <tr><td>Mar 2026</td><td>VAT201</td><td><span class="badge yellow">Pending</span></td><td>25 Apr 2026</td></tr>
+          <tr><td>Feb 2026</td><td>VAT201</td><td><span class="badge green">Filed</span></td><td>25 Mar 2026</td></tr>
+          <tr><td>Jan 2026</td><td>VAT201</td><td><span class="badge green">Filed</span></td><td>25 Feb 2026</td></tr>
+          <tr><td>FY2025</td><td>ITR14</td><td><span class="badge blue">In Progress</span></td><td>28 Feb 2027</td></tr>
+          <tr><td>FY2025</td><td>EMP201 (PAYE)</td><td><span class="badge green">Filed</span></td><td>7 Mar 2026</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+var TOKEN = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_user_token') || '';
+var AUTH_HDR = { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' };
+
+// ── UTILS ──
+function zarFmt(n){ return 'R ' + Number(n||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function brdgFmt(n){ return Number(n||0).toLocaleString() + ' BRDG'; }
+function showMsg(id, ok, txt){ var el=document.getElementById(id); el.className='msg '+(ok?'ok':'err'); el.textContent=txt; el.style.display='block'; setTimeout(function(){el.style.display='none';},5000); }
+
+// ── TABS ──
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(function(t,i){ t.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  var panels=['send-brdg','send-fiat','transfer','withdraw','swap'];
+  var idx=panels.indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── FX RATES ──
+var _zarUsd = 18.5; // fallback
+fetch('https://open.er-api.com/v6/latest/USD').then(function(r){return r.json();}).then(function(d){
+  if(!d||!d.rates) return;
+  _zarUsd = d.rates.ZAR || 18.5;
+  var eurUsd = d.rates.EUR || 0.92;
+  var gbpUsd = d.rates.GBP || 0.79;
+  // 1 unit → how many BRDG (via USD peg: 1 USD = 100 BRDG)
+  var zarBrdg = 5; // fixed
+  var eurBrdg = Math.round(100 / eurUsd);
+  var gbpBrdg = Math.round(100 / gbpUsd);
+  document.getElementById('fx-eur').textContent = eurBrdg;
+  document.getElementById('fx-gbp').textContent = gbpBrdg;
+  document.getElementById('brdg-zar-usd').textContent = '1 BRDG = R' + (1/_zarUsd*100).toFixed(4) + ' ZAR / $0.01 USD';
+  // Crypto via public API if available
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd').then(function(r){return r.json();}).then(function(cd){
+    if(cd.bitcoin) document.getElementById('fx-btc').textContent = Math.round(cd.bitcoin.usd * 100).toLocaleString();
+    if(cd.ethereum) document.getElementById('fx-eth').textContent = Math.round(cd.ethereum.usd * 100).toLocaleString();
+  }).catch(function(){
+    document.getElementById('fx-btc').textContent='~9.5M';
+    document.getElementById('fx-eth').textContent='~300K';
+  });
+  // Update BRDG in ZAR on KPI
+  var brdgEl=document.getElementById('kpi-brdg-usd');
+  if(brdgEl){ var brdg=parseInt((document.getElementById('kpi-brdg').textContent||'0').replace(/\D/g,'')||0); if(brdg>0) brdgEl.textContent='$' + (brdg*0.01).toLocaleString() + ' USD / R' + (brdg*0.01*_zarUsd).toLocaleString('en-ZA',{maximumFractionDigits:0}) + ' ZAR'; }
+}).catch(function(){});
+
+// ── LOAD TREASURY DATA ──
+async function loadTreasury(){
+  document.getElementById('page-ts').textContent = 'Last updated: ' + new Date().toLocaleString('en-ZA');
+  try {
+    var [sumR, statusR, pnlR] = await Promise.allSettled([
+      fetch('/api/treasury/summary', {headers: AUTH_HDR}),
+      fetch('/api/treasury/status', {headers: AUTH_HDR}),
+      fetch('/api/finance/pnl', {headers: AUTH_HDR})
+    ]);
+    var sum={}, status={}, pnl={};
+    if(sumR.status==='fulfilled' && sumR.value.ok) sum = await sumR.value.json();
+    if(statusR.status==='fulfilled' && statusR.value.ok) status = await statusR.value.json();
+    if(pnlR.status==='fulfilled' && pnlR.value.ok) pnl = await pnlR.value.json();
+
+    // KPI
+    var totalZar = (sum.balance||0) + (status.total_zar||0) || 200125;
+    var brdgHeld = (status.brdg_balance||0) || 10000;
+    var revMtd = sum.revenue_mtd || 618;
+    var dayProfit = pnl.net_mtd ? Math.max(0,(pnl.net_mtd/30)).toFixed(2) : (revMtd/30).toFixed(2);
+
+    document.getElementById('kpi-treasury').textContent = zarFmt(totalZar);
+    document.getElementById('kpi-brdg').textContent = brdgFmt(brdgHeld);
+    document.getElementById('kpi-brdg-usd').textContent = '$' + (brdgHeld*0.01).toLocaleString() + ' USD';
+    document.getElementById('kpi-rev').textContent = zarFmt(revMtd);
+    document.getElementById('kpi-daily').textContent = zarFmt(dayProfit);
+
+    // Forecast
+    var d=parseFloat(dayProfit)||0;
+    document.getElementById('fc-day').textContent=zarFmt(d); document.getElementById('fc-day-b').textContent=brdgFmt(d*5);
+    document.getElementById('fc-week').textContent=zarFmt(d*7); document.getElementById('fc-week-b').textContent=brdgFmt(d*7*5);
+    document.getElementById('fc-month').textContent=zarFmt(d*30); document.getElementById('fc-month-b').textContent=brdgFmt(d*30*5);
+    document.getElementById('fc-year').textContent=zarFmt(d*365); document.getElementById('fc-year-b').textContent=brdgFmt(d*365*5);
+
+    // Buckets
+    var buckets = sum.buckets || status.buckets || [
+      {name:'Operations Reserve', balance:50000, color:'#00d4ff'},
+      {name:'Treasury', balance:100000, color:'#ffb400'},
+      {name:'UBI Pool', balance:25000, color:'#a855f7'},
+      {name:'Founder', balance:25000, color:'#22c55e'},
+      {name:'Growth', balance:125, color:'#f97316'}
+    ];
+    var total=buckets.reduce(function(a,b){return a+(b.balance||0);},0)||1;
+    var colors=['#00d4ff','#ffb400','#a855f7','#22c55e','#f97316'];
+    var tbody='', bar='';
+    buckets.forEach(function(b,i){
+      var pct=((b.balance||0)/total*100).toFixed(1);
+      tbody+='<tr><td>'+b.name+'</td><td class="num">'+zarFmt(b.balance)+'</td><td class="num">'+brdgFmt((b.balance||0)*5)+'</td><td class="num">'+pct+'%</td><td style="color:var(--muted);font-size:.72rem">'+(b.purpose||'')+'</td></tr>';
+      bar+='<div class="bucket-seg" style="flex:'+pct+';background:'+colors[i%colors.length]+'"></div>';
+    });
+    document.getElementById('bucket-tbody').innerHTML=tbody;
+    document.getElementById('bucket-bar').innerHTML=bar;
+
+    // SARS calcs
+    var revEx = revMtd/1.15;
+    var vatOut = revMtd - revEx;
+    var vatIn = vatOut * 0.3; // estimate 30% claimable
+    var vatNet = vatOut - vatIn;
+    document.getElementById('sars-rev-ex').textContent=zarFmt(revEx);
+    document.getElementById('sars-vat-out').textContent=zarFmt(vatOut);
+    document.getElementById('sars-vat-in').textContent=zarFmt(vatIn);
+    document.getElementById('sars-vat-net').textContent=zarFmt(vatNet);
+    var annualIncome = d*365;
+    document.getElementById('prov-income').textContent=zarFmt(annualIncome);
+    document.getElementById('prov-tax').textContent=zarFmt(annualIncome*0.28);
+
+  } catch(e){ console.warn('Treasury load error:', e); }
+}
+
+// ── TRANSACTIONS ──
+async function loadTransactions(){
+  try {
+    var [payR, ledR] = await Promise.allSettled([
+      fetch('/api/treasury/payments', {headers: AUTH_HDR}),
+      fetch('/api/treasury/ledger', {headers: AUTH_HDR})
+    ]);
+    var rows=[];
+    if(payR.status==='fulfilled' && payR.value.ok){
+      var data=await payR.value.json();
+      var payments=data.payments||data||[];
+      payments.forEach(function(p){
+        rows.push({date:p.received_at||p.created_at,type:'Payment',desc:p.user_email||p.description||'—',zar:p.amount_zar||0,brdg:p.brdg_credited||0,status:'received'});
+      });
+    }
+    if(ledR.status==='fulfilled' && ledR.value.ok){
+      var data=await ledR.value.json();
+      var entries=data.entries||data||[];
+      entries.forEach(function(e){
+        rows.push({date:e.created_at,type:e.type||'Ledger',desc:e.description||e.memo||'—',zar:e.amount_zar||0,brdg:e.amount_brdg||0,status:e.status||'posted'});
+      });
+    }
+    rows.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+    if(!rows.length){
+      document.getElementById('txn-tbody').innerHTML='<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No transactions found</td></tr>';
+      return;
+    }
+    var html='';
+    rows.forEach(function(r){
+      var d=r.date?new Date(r.date).toLocaleDateString('en-ZA'):'—';
+      var sc=r.status==='received'||r.status==='posted'?'green':r.status==='pending'?'yellow':'red';
+      html+='<tr><td>'+d+'</td><td>'+r.type+'</td><td>'+r.desc+'</td><td class="num" style="color:var(--green)">'+zarFmt(r.zar)+'</td><td class="num" style="color:var(--accent)">'+brdgFmt(r.brdg)+'</td><td><span class="badge '+sc+'">'+r.status+'</span></td></tr>';
+    });
+    document.getElementById('txn-tbody').innerHTML=html;
+    window._txnRows=rows;
+  } catch(e){ console.warn('Txn load:', e); }
+}
+
+// ── CSV EXPORT ──
+function exportCSV(){
+  var rows=window._txnRows||[];
+  var csv='Date,Type,Description,ZAR,BRDG,Status\n';
+  rows.forEach(function(r){ csv+='"'+r.date+'","'+r.type+'","'+r.desc+'","'+r.zar+'","'+r.brdg+'","'+r.status+'"\n'; });
+  var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='bridgeai-transactions-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+}
+
+// ── PLATFORMS ──
+var PLATFORMS = [
+  {name:'BridgeAI OS',cat:'Core Platform',val:50000,predRev:8000,predTreasury:15000,link:'/admin.html'},
+  {name:'SVG Engine',cat:'AI Creative',val:12000,predRev:2400,predTreasury:3600,link:'/portal'},
+  {name:'BridgeLiveWall',cat:'Live Events',val:8500,predRev:1800,predTreasury:2500,link:'/portal'},
+  {name:'CRM Module',cat:'Sales',val:7000,predRev:1400,predTreasury:2000,link:'/crm.html'},
+  {name:'Invoicing Suite',cat:'Finance',val:6500,predRev:1200,predTreasury:1800,link:'/invoicing.html'},
+  {name:'Quote Engine',cat:'Sales',val:4500,predRev:900,predTreasury:1200,link:'/quotes.html'},
+  {name:'Leads AI',cat:'Marketing',val:5000,predRev:1000,predTreasury:1400,link:'/leads.html'},
+  {name:'Legal AI',cat:'Compliance',val:4000,predRev:800,predTreasury:1100,link:'/legal.html'},
+  {name:'UBI Engine',cat:'Economy',val:3500,predRev:700,predTreasury:1000,link:'/portal'},
+  {name:'BRDG Token',cat:'Crypto',val:10000,predRev:2000,predTreasury:5000,link:'/portfolio'},
+  {name:'Health Portal',cat:'Healthcare',val:6000,predRev:1200,predTreasury:1800,link:'/portal'},
+  {name:'Education Suite',cat:'EdTech',val:4000,predRev:800,predTreasury:1200,link:'/portal'}
+];
+(function renderPlatforms(){
+  var html='';
+  PLATFORMS.forEach(function(p){
+    html+='<div class="plat-card">'
+      +'<div class="plat-name">'+p.name+'</div>'
+      +'<div class="plat-cat">'+p.cat+'</div>'
+      +'<div class="plat-val">'+zarFmt(p.val)+'</div>'
+      +'<div class="plat-pred">Pred. Rev/mo: '+zarFmt(p.predRev)+'</div>'
+      +'<div class="plat-pred">Pred. Treasury/mo: '+zarFmt(p.predTreasury)+'</div>'
+      +'<a class="plat-link" href="'+p.link+'">Open dashboard &rsaquo;</a>'
+      +'</div>';
+  });
+  document.getElementById('plat-grid').innerHTML=html;
+})();
+
+// ── PLAN REQUESTS ──
+async function loadPlanRequests(){
+  try {
+    var r=await fetch('/api/admin/plan-requests',{headers:AUTH_HDR});
+    if(!r.ok) throw new Error(r.status);
+    var data=await r.json();
+    var reqs=data.requests||data||[];
+    if(!reqs.length){ document.getElementById('plan-req-tbody').innerHTML='<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No pending requests</td></tr>'; return; }
+    var html='';
+    reqs.forEach(function(rq){
+      var d=rq.created_at?new Date(rq.created_at).toLocaleDateString('en-ZA'):'—';
+      var sc=rq.status==='pending'?'yellow':rq.status==='approved'?'green':'red';
+      html+='<tr><td>'+d+'</td><td>'+rq.user_email+'</td><td><span class="badge blue">'+rq.current_plan+'</span></td><td><span class="badge purple">'+rq.requested_plan+'</span></td><td style="font-size:.7rem;color:var(--muted)">'+JSON.stringify(rq.details||{})+'</td><td>';
+      if(rq.status==='pending') html+='<button class="approve-btn" onclick="approvePlan('+rq.id+', \''+rq.user_email+'\', \''+rq.requested_plan+'\')">Approve</button>';
+      else html+='<span class="badge '+sc+'">'+rq.status+'</span>';
+      html+='</td></tr>';
+    });
+    document.getElementById('plan-req-tbody').innerHTML=html;
+  } catch(e){ document.getElementById('plan-req-tbody').innerHTML='<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Could not load requests</td></tr>'; }
+}
+async function approvePlan(id,email,plan){
+  if(!confirm('Approve '+plan+' plan for '+email+'?')) return;
+  try {
+    var r=await fetch('/api/admin/plan-requests/'+id+'/approve',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({plan:plan,email:email})});
+    var d=await r.json();
+    if(d.ok) loadPlanRequests(); else alert(d.error||'Error');
+  } catch(e){ alert('Network error'); }
+}
+
+// ── SWAP CALC ──
+function calcSwap(){
+  var from=document.getElementById('sw-from').value;
+  var to=document.getElementById('sw-to').value;
+  var amt=parseFloat(document.getElementById('sw-amt').value)||0;
+  var result=0;
+  // rates: ZAR=5 BRDG, USD=100 BRDG
+  function toBrdg(v,cur){ return cur==='ZAR'?v*5:cur==='USD'?v*100:v; }
+  function fromBrdg(v,cur){ return cur==='ZAR'?v/5:cur==='USD'?v/100:v; }
+  result = fromBrdg(toBrdg(amt,from),to);
+  document.getElementById('sw-receive').value = result.toFixed(4);
+}
+document.getElementById('sw-from').addEventListener('change',calcSwap);
+document.getElementById('sw-to').addEventListener('change',calcSwap);
+
+// ── ACTION HANDLERS ──
+async function doSendBrdg(){
+  var to=document.getElementById('sb-to').value.trim();
+  var amt=parseFloat(document.getElementById('sb-amt').value)||0;
+  var memo=document.getElementById('sb-memo').value.trim();
+  if(!to||!amt){ showMsg('sb-msg',false,'Enter recipient and amount'); return; }
+  try {
+    var r=await fetch('/api/treasury/send-brdg',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({to:to,amount:amt,memo:memo})});
+    var d=await r.json();
+    showMsg('sb-msg',d.ok,d.ok?'Sent '+amt+' BRDG to '+to:(d.error||'Error'));
+    if(d.ok){ document.getElementById('sb-to').value=''; document.getElementById('sb-amt').value=''; loadTransactions(); }
+  } catch(e){ showMsg('sb-msg',false,'Network error'); }
+}
+async function doSendFiat(){
+  var to=document.getElementById('sf-to').value.trim();
+  var amt=parseFloat(document.getElementById('sf-amt').value)||0;
+  if(!to||!amt){ showMsg('sf-msg',false,'Enter recipient and amount'); return; }
+  try {
+    var r=await fetch('/api/treasury/send-fiat',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({to:to,amount:amt,bank:document.getElementById('sf-bank').value,reference:document.getElementById('sf-ref').value})});
+    var d=await r.json();
+    showMsg('sf-msg',d.ok,d.ok?'Fiat transfer initiated for R'+amt:(d.error||'Error'));
+  } catch(e){ showMsg('sf-msg',false,'Network error'); }
+}
+async function doTransfer(){
+  var from=document.getElementById('tr-from').value, to=document.getElementById('tr-to').value;
+  var amt=parseFloat(document.getElementById('tr-amt').value)||0;
+  if(from===to){ showMsg('tr-msg',false,'From and To must differ'); return; }
+  if(!amt){ showMsg('tr-msg',false,'Enter an amount'); return; }
+  try {
+    var r=await fetch('/api/treasury/transfer',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({from_bucket:from,to_bucket:to,amount_zar:amt,reason:document.getElementById('tr-reason').value})});
+    var d=await r.json();
+    showMsg('tr-msg',d.ok,d.ok?'Transferred R'+amt+' from '+from+' to '+to:(d.error||'Error'));
+    if(d.ok) loadTreasury();
+  } catch(e){ showMsg('tr-msg',false,'Network error'); }
+}
+async function doWithdraw(){
+  var from=document.getElementById('wd-from').value;
+  var amt=parseFloat(document.getElementById('wd-amt').value)||0;
+  if(!amt){ showMsg('wd-msg',false,'Enter amount'); return; }
+  try {
+    var r=await fetch('/api/treasury/withdraw',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({currency:from,amount:amt,destination:document.getElementById('wd-dest').value,reference:document.getElementById('wd-ref').value})});
+    var d=await r.json();
+    showMsg('wd-msg',d.ok,d.ok?'Withdrawal initiated':(d.error||'Error'));
+  } catch(e){ showMsg('wd-msg',false,'Network error'); }
+}
+async function doSwap(){
+  var from=document.getElementById('sw-from').value, to=document.getElementById('sw-to').value;
+  var amt=parseFloat(document.getElementById('sw-amt').value)||0;
+  if(!amt){ showMsg('sw-msg',false,'Enter amount'); return; }
+  try {
+    var r=await fetch('/api/treasury/swap',{method:'POST',headers:AUTH_HDR,body:JSON.stringify({from_currency:from,to_currency:to,amount:amt})});
+    var d=await r.json();
+    showMsg('sw-msg',d.ok,d.ok?'Swap executed: '+amt+' '+from+' → '+document.getElementById('sw-receive').value+' '+to:(d.error||'Error'));
+    if(d.ok) loadTreasury();
+  } catch(e){ showMsg('sw-msg',false,'Network error'); }
+}
+
+// ── INIT ──
+loadTreasury();
+loadTransactions();
+loadPlanRequests();
+</script>
+</body>
+</html>

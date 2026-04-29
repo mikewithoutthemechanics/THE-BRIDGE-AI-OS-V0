@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="description" content="Bridge AI OS — Admin Site Map — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="noindex, nofollow">
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bridge AI OS — Admin Site Map</title>
 <link rel="stylesheet" href="/bridge-design-tokens.css">
@@ -45,6 +48,21 @@ h1{font-size:1.4rem;font-weight:800;margin-bottom:.3rem}
 .stats-bar{display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
 .stat-pill{padding:.3rem .8rem;background:var(--surface);border:1px solid var(--border);border-radius:20px;font-size:.75rem}
 .stat-pill .num{color:var(--cyan);font-weight:700}
+</style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
 </style>
 </head>
 <body class="admin-theme">
@@ -190,47 +208,82 @@ document.getElementById('total').textContent = totalPages;
 document.getElementById('visible').textContent = totalPages;
 document.querySelector('.sub').textContent = `All ${totalPages} pages — admin-only navigation hub`;
 
-Object.entries(PAGES).forEach(([sectionName, pages]) => {
-  const section = document.createElement('div');
-  section.className = 'section';
+function render(sections) {
+  container.innerHTML = '';
+  allLinks = [];
+  const totalPages = Object.values(sections).reduce((s, p) => s + p.length, 0);
+  document.getElementById('total').textContent = totalPages;
+  document.getElementById('visible').textContent = totalPages;
+  document.querySelector('.sub').textContent = `All ${totalPages} pages — admin-only navigation hub`;
 
-  const title = document.createElement('div');
-  title.className = 'section-title';
-  const titleText = document.createElement('span');
-  titleText.textContent = sectionName;
-  const count = document.createElement('span');
-  count.className = 'count';
-  count.textContent = pages.length;
-  title.appendChild(titleText);
-  title.appendChild(count);
-  section.appendChild(title);
+  Object.entries(sections).forEach(([sectionName, pages]) => {
+    if (!pages || !pages.length) return;
+    const section = document.createElement('div');
+    section.className = 'section';
 
-  const grid = document.createElement('div');
-  grid.className = 'grid';
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    const titleText = document.createElement('span');
+    titleText.textContent = sectionName;
+    const count = document.createElement('span');
+    count.className = 'count';
+    count.textContent = pages.length;
+    title.appendChild(titleText);
+    title.appendChild(count);
+    section.appendChild(title);
 
-  pages.forEach(page => {
-    const a = document.createElement('a');
-    a.className = 'page-link';
-    a.href = page.href;
-    a.dataset.name = page.name.toLowerCase();
-    a.dataset.href = page.href.toLowerCase();
+    const grid = document.createElement('div');
+    grid.className = 'grid';
 
-    const dot = document.createElement('span');
-    dot.className = 'dot dot-' + page.cat;
+    pages.forEach(page => {
+      const a = document.createElement('a');
+      a.className = 'page-link';
+      a.href = page.href;
+      a.dataset.name = (page.name || '').toLowerCase();
+      a.dataset.href = (page.href || '').toLowerCase();
 
-    const name = document.createElement('span');
-    name.className = 'name';
-    name.textContent = page.name;
+      const dot = document.createElement('span');
+      dot.className = 'dot dot-' + (page.cat || 'other');
 
-    a.appendChild(dot);
-    a.appendChild(name);
-    grid.appendChild(a);
-    allLinks.push(a);
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = page.name || page.href || 'Untitled';
+
+      a.appendChild(dot);
+      a.appendChild(name);
+      grid.appendChild(a);
+      allLinks.push(a);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
   });
+}
 
-  section.appendChild(grid);
-  container.appendChild(section);
-});
+// Prefer the live /api/admin/sitemap (reads public/*.html on the server).
+// Fall back to the hardcoded PAGES object if the endpoint is unavailable.
+// The endpoint requires admin auth; cookies are sent via credentials, and we
+// also forward the bridge_token bearer for clients that auth via localStorage.
+(function loadSitemap() {
+  const headers = {};
+  try {
+    const tok = localStorage.getItem('bridge_token');
+    if (tok) headers['Authorization'] = 'Bearer ' + tok;
+  } catch (_) { /* localStorage may be blocked */ }
+
+  fetch('/api/admin/sitemap', { credentials: 'same-origin', cache: 'no-store', headers })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(data => {
+      if (!data || !data.sections || !Object.keys(data.sections).length) {
+        throw new Error('empty sitemap payload');
+      }
+      render(data.sections);
+    })
+    .catch(err => {
+      console.warn('[admin-sitemap] live fetch failed, using fallback list:', err.message);
+      render(PAGES);
+    });
+})();
 
 searchInput.addEventListener('input', () => {
   const q = searchInput.value.toLowerCase().trim();
@@ -243,6 +296,7 @@ searchInput.addEventListener('input', () => {
   document.getElementById('visible').textContent = visible;
 });
 </script>
-<script src="/global-nav.js" defer></script>
+<script src="/bridge-nav.js" defer></script>
+  <script src="/ehsa-brain-status.js" defer></script>
 </body>
 </html>

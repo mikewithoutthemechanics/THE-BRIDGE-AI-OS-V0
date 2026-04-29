@@ -1,206 +1,381 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Support — Bridge AI OS</title>
-    <meta name="description" content="Tickets — Support Ticket Management">
-    <meta property="og:title" content="Support — Bridge AI OS">
-    <meta property="og:description" content="Tickets — Support Ticket Management">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://abaas.bridge-ai-os.com/tickets.html">
-    <meta name="twitter:card" content="summary">
-    <link rel="canonical" href="https://abaas.bridge-ai-os.com/tickets.html">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/bridge-tokens.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { min-height: 100vh; background: var(--bg-0); font-family: var(--font-ui); color: var(--text-primary); }
-        body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 80%, rgba(99,255,218,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
-        .shell { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
-        .header h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); background: linear-gradient(135deg, var(--cyan) 0%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stats-bar { display: flex; gap: var(--gap); margin-bottom: 24px; flex-wrap: wrap; }
-        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 22px; flex: 1; min-width: 150px; }
-        .stat-card .label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-family: var(--font-mono); margin-bottom: 6px; }
-        .stat-card .value { font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--cyan); }
-        .toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
-        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
-        th, td { text-align: left; padding: 12px 16px; font-size: var(--text-sm); border-bottom: 1px solid var(--border); }
-        th { background: var(--bg-2); color: var(--text-secondary); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-size: var(--text-xs); font-family: var(--font-mono); }
-        tr:hover td { background: rgba(99,255,218,0.03); }
-        .badge { display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: var(--text-xs); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
-        .loading, .error-msg { text-align: center; padding: 48px; color: var(--text-secondary); font-family: var(--font-mono); font-size: var(--text-sm); }
-        .error-msg { color: var(--signal-red); }
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: var(--z-overlay); justify-content: center; align-items: center; }
-        .modal-overlay.open { display: flex; }
-        .modal { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; width: 90%; max-width: 520px; max-height: 85vh; overflow-y: auto; }
-        .modal h2 { font-size: var(--text-lg); margin-bottom: 20px; color: var(--cyan); }
-        .modal label { display: block; font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: var(--tracking-wide); margin-bottom: 4px; margin-top: 12px; font-family: var(--font-mono); }
-        .modal input, .modal select, .modal textarea { width: 100%; padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-ui); font-size: var(--text-sm); outline: none; }
-        .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--cyan); }
-        .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+<meta charset="UTF-8">
+<link rel="canonical" href="https://go.ai-os.co.za/tickets">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/tickets">
+<meta property="og:title" content="Support — Bridge AI OS">
+<meta property="og:description" content="Support — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Support — Bridge AI OS">
+<meta name="twitter:description" content="Support — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
 
-        tr { cursor: pointer; }
-        .stat-card .value.open-val { color: var(--degraded); }
-        .stat-card .value.closed-val { color: var(--alive); }
-        .badge.open { background: rgba(255,170,0,0.12); color: var(--degraded); }
-        .badge.in-progress { background: rgba(99,255,218,0.12); color: var(--cyan); }
-        .badge.closed { background: rgba(0,255,136,0.12); color: var(--alive); }
-        .priority-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-        .priority-dot.high { background: var(--signal-red); box-shadow: 0 0 6px var(--signal-glow); }
-        .priority-dot.medium { background: var(--degraded); }
-        .priority-dot.low { background: var(--alive); }
-        .modal textarea { resize: vertical; }
-        .reply-item { background: var(--bg-2); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 8px; font-size: var(--text-sm); color: var(--text-secondary); }
-        .reply-meta { font-size: var(--text-xs); color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 4px; }
-        @media (max-width: 700px) { th:nth-child(5), td:nth-child(5) { display: none; } }
-    </style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support — Bridge AI OS</title>
+<meta name="description" content="Support — Create and manage support tickets">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e17;--card:#131a2b;--cyan:#38bdf8;--green:#22c55e;--orange:#f59e0b;--purple:#a78bfa;--dim:#6b7280;--red:#ef4444;--border:#1e293b;--text:#e2e8f0;--text-dim:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 20% 80%,rgba(56,189,248,.04) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(167,139,250,.03) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.shell{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:32px 24px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:1.75rem;font-weight:700;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* Form Card */
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:40px}
+.form-card h2{font-size:1.1rem;font-weight:600;color:var(--cyan);margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.75rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:500}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:.875rem;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--cyan)}
+.form-group textarea{resize:vertical;min-height:120px}
+
+/* Priority Segments */
+.priority-segments{display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.priority-seg{flex:1;padding:10px 8px;text-align:center;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;background:var(--bg);border-right:1px solid var(--border);user-select:none}
+.priority-seg:last-child{border-right:none}
+.priority-seg.active-low{background:rgba(34,197,94,.15);color:var(--green);box-shadow:inset 0 -3px 0 var(--green)}
+.priority-seg.active-medium{background:rgba(245,158,11,.15);color:var(--orange);box-shadow:inset 0 -3px 0 var(--orange)}
+.priority-seg.active-high{background:rgba(239,68,68,.15);color:var(--red);box-shadow:inset 0 -3px 0 var(--red)}
+.priority-seg.active-urgent{background:rgba(239,68,68,.2);color:#ff6b6b;box-shadow:inset 0 -3px 0 #ff6b6b;animation:urgentPulse 1.5s infinite}
+@keyframes urgentPulse{0%,100%{opacity:1}50%{opacity:.7}}
+
+/* AI Suggestion */
+.ai-suggest{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;color:var(--purple);background:rgba(167,139,250,.1);padding:2px 8px;border-radius:4px;margin-left:8px;opacity:0;transition:opacity .3s}
+.ai-suggest.visible{opacity:1}
+
+/* Category with AI */
+.category-wrap{position:relative}
+.category-wrap select{padding-right:40px}
+
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0284c7);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(56,189,248,.3)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* Ticket List */
+.tickets-section{margin-top:20px}
+.tickets-section h2{font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:16px}
+.ticket-list{display:flex;flex-direction:column;gap:8px}
+.ticket-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;cursor:pointer;transition:all .2s;display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center}
+.ticket-item:hover{border-color:var(--cyan);transform:translateX(2px)}
+.ticket-subject{font-size:.9rem;font-weight:500}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.badge-open{background:rgba(56,189,248,.12);color:var(--cyan)}
+.badge-in_progress,.badge-in-progress{background:rgba(245,158,11,.12);color:var(--orange)}
+.badge-resolved{background:rgba(34,197,94,.12);color:var(--green)}
+.badge-closed{background:rgba(107,114,128,.12);color:var(--dim)}
+.priority-badge{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:4px}
+.priority-low{color:var(--green);background:rgba(34,197,94,.1)}
+.priority-medium{color:var(--orange);background:rgba(245,158,11,.1)}
+.priority-high{color:var(--red);background:rgba(239,68,68,.1)}
+.priority-urgent{color:#ff6b6b;background:rgba(239,68,68,.15)}
+.ticket-date{font-size:.7rem;color:var(--dim)}
+
+/* Expanded ticket */
+.ticket-detail{display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;margin-top:-4px;border-top:none;border-top-left-radius:0;border-top-right-radius:0}
+.ticket-detail.open{display:block}
+.ticket-body{font-size:.85rem;color:var(--text-dim);line-height:1.7;margin-bottom:16px;white-space:pre-wrap}
+.comment-list{margin-top:12px}
+.comment-item{background:var(--bg);border-radius:8px;padding:12px;margin-bottom:8px}
+.comment-meta{font-size:.7rem;color:var(--dim);margin-bottom:4px}
+.comment-text{font-size:.85rem;color:var(--text-dim);line-height:1.5}
+
+/* Empty / Loading */
+.empty-msg{text-align:center;padding:40px;color:var(--dim);font-size:.9rem}
+.loading-msg{text-align:center;padding:40px;color:var(--text-dim);font-size:.85rem}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:10px;font-size:.85rem;font-weight:500;z-index:9999;transform:translateX(120%);transition:transform .3s ease;max-width:360px}
+.toast.show{transform:translateX(0)}
+.toast-success{background:#065f46;color:#6ee7b7;border:1px solid #10b981}
+.toast-error{background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444}
+
+@media(max-width:600px){
+  .ticket-item{grid-template-columns:1fr;gap:6px}
+  .priority-segments{flex-wrap:wrap}
+}
+</style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
 
 <div class="shell">
-    <div class="header"><h1>Support &#8212; Bridge AI OS</h1></div>
-    <div class="stats-bar">
-        <div class="stat-card"><div class="label">Open</div><div class="value open-val" id="stat-open">&#8212;</div></div>
-        <div class="stat-card"><div class="label">In Progress</div><div class="value" id="stat-progress">&#8212;</div></div>
-        <div class="stat-card"><div class="label">Closed</div><div class="value closed-val" id="stat-closed">&#8212;</div></div>
+  <div class="header"><h1>Support Center</h1></div>
+
+  <!-- Ticket Creation Form -->
+  <div class="form-card">
+    <h2>Create a Ticket</h2>
+    <div class="form-group">
+      <label>Subject *</label>
+      <input id="tk-subject" placeholder="Brief description of your issue">
     </div>
-    <div class="toolbar"><button class="btn-primary" onclick="openNewModal()">+ New Ticket</button></div>
-    <div id="table-container"><div class="loading">Loading tickets...</div></div>
-</div>
-<div class="modal-overlay" id="newModal">
-    <div class="modal">
-        <h2>New Ticket</h2>
-        <label>Subject</label><input id="tk-subject" placeholder="Brief description">
-        <label>Body</label><textarea id="tk-body" rows="4" placeholder="Describe the issue..."></textarea>
-        <label>Priority</label>
-        <select id="tk-priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
-        <div class="modal-actions">
-            <button class="btn-secondary" onclick="closeModal(&quot;newModal&quot;)">Cancel</button>
-            <button class="btn-primary" onclick="createTicket()">Submit</button>
-        </div>
+    <div class="form-group">
+      <label>Description *</label>
+      <textarea id="tk-body" placeholder="Describe your issue in detail..."></textarea>
     </div>
-</div>
-<div class="modal-overlay" id="detailModal">
-    <div class="modal">
-        <h2 id="detail-subject"></h2>
-        <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:12px;" id="detail-body"></p>
-        <div style="display:flex;gap:12px;font-size:var(--text-xs);color:var(--text-muted);font-family:var(--font-mono);">
-            <span id="detail-status"></span><span id="detail-priority"></span><span id="detail-assigned"></span>
-        </div>
-        <div style="margin-top:16px;"><label>Replies</label><div id="detail-replies"></div></div>
-        <div style="margin-top:12px;">
-            <label>Reply</label><textarea id="reply-body" rows="3" placeholder="Type your reply..."></textarea>
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeModal(&quot;detailModal&quot;)">Close</button>
-                <button class="btn-primary" onclick="sendReply()">Send Reply</button>
-            </div>
-        </div>
+    <div class="form-group">
+      <label>Priority</label>
+      <div class="priority-segments" id="priority-bar">
+        <div class="priority-seg" data-val="low" onclick="setPriority('low')">Low</div>
+        <div class="priority-seg active-medium" data-val="medium" onclick="setPriority('medium')">Medium</div>
+        <div class="priority-seg" data-val="high" onclick="setPriority('high')">High</div>
+        <div class="priority-seg" data-val="urgent" onclick="setPriority('urgent')">Urgent</div>
+      </div>
     </div>
+    <div class="form-group">
+      <label>Category <span class="ai-suggest" id="ai-badge">AI suggested</span></label>
+      <div class="category-wrap">
+        <select id="tk-category">
+          <option value="General">General</option>
+          <option value="Bug Report">Bug Report</option>
+          <option value="Feature Request">Feature Request</option>
+          <option value="Billing">Billing</option>
+          <option value="Account">Account</option>
+          <option value="Technical Support">Technical Support</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" id="submit-btn" onclick="createTicket()">Submit Ticket</button>
+  </div>
+
+  <!-- My Tickets -->
+  <div class="tickets-section">
+    <h2>My Tickets</h2>
+    <div id="ticket-list"><div class="loading-msg">Loading tickets...</div></div>
+  </div>
 </div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
+(function(){
+  var tickets = [];
+  var currentUser = null;
+  var selectedPriority = 'medium';
+  var aiDebounceTimer = null;
+  var expandedId = null;
 
-var tickets = [];
-var activeTicketId = null;
-async function loadTickets() {
-    var container = document.getElementById("table-container");
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast toast-' + (type || 'success') + ' show';
+    setTimeout(function() { t.classList.remove('show'); }, 3500);
+  }
+
+  // Auth
+  async function checkAuth() {
     try {
-        var res = await fetch("/api/tickets");
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        var data = await res.json();
-        tickets = Array.isArray(data) ? data : (data.tickets || data.data || []);
-        renderStats(); renderTable();
-    } catch (e) {
-        container.textContent = "";
-        var d = document.createElement("div"); d.className = "error-msg";
-        d.textContent = "Failed to load tickets: " + e.message;
-        container.appendChild(d);
+      var res = await fetch('/auth/me', { credentials: 'include' });
+      if (res.ok) { var d = await res.json(); if (d.ok && d.user) { currentUser = d.user; return true; } }
+    } catch(e) {}
+    var token = localStorage.getItem('bridge_token');
+    if (token) {
+      try {
+        var res2 = await fetch('/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res2.ok) { var d2 = await res2.json(); if (d2.ok && d2.user) { currentUser = d2.user; return true; } }
+      } catch(e) {}
     }
-}
-function renderStats() {
-    var count = function(v){ return tickets.filter(function(t){ return (t.status||"").toLowerCase().replace(/[\s_]/g,"-")===v; }).length; };
-    document.getElementById("stat-open").textContent = count("open");
-    document.getElementById("stat-progress").textContent = count("in-progress");
-    document.getElementById("stat-closed").textContent = count("closed");
-}
-function renderTable() {
-    var container = document.getElementById("table-container");
-    container.textContent = "";
-    if (!tickets.length) { var m=document.createElement("div"); m.className="loading"; m.textContent="No tickets found."; container.appendChild(m); return; }
-    var table = document.createElement("table");
-    var thead = document.createElement("thead"); var hr = document.createElement("tr");
-    ["ID","Subject","Priority","Status","Assigned"].forEach(function(h){ var th=document.createElement("th"); th.textContent=h; hr.appendChild(th); });
-    thead.appendChild(hr); table.appendChild(thead);
-    var tbody = document.createElement("tbody");
-    tickets.forEach(function(t, i) {
-        var tr = document.createElement("tr"); tr.onclick = function(){ showDetail(i); };
-        var t1=document.createElement("td"); t1.style.fontFamily="var(--font-mono)"; t1.style.color="var(--text-muted)"; t1.textContent=t.id||t._id||(i+1); tr.appendChild(t1);
-        var t2=document.createElement("td"); t2.textContent=t.subject||t.title||"\u2014"; tr.appendChild(t2);
-        var t3=document.createElement("td"); var priority=(t.priority||"medium").toLowerCase();
-        var dot=document.createElement("span"); dot.className="priority-dot "+priority;
-        t3.appendChild(dot); t3.appendChild(document.createTextNode(priority)); tr.appendChild(t3);
-        var t4=document.createElement("td"); var status=(t.status||"open").toLowerCase().replace(/[\s_]/g,"-");
-        var badge=document.createElement("span"); badge.className="badge "+(status==="closed"?"closed":status==="in-progress"?"in-progress":"open");
-        badge.textContent=status; t4.appendChild(badge); tr.appendChild(t4);
-        var t5=document.createElement("td"); t5.style.color="var(--text-secondary)"; t5.textContent=t.assigned||t.assignedTo||t.assignee||"\u2014"; tr.appendChild(t5);
-        tbody.appendChild(tr);
-    });
-    table.appendChild(tbody); container.appendChild(table);
-}
-function openNewModal(){ document.getElementById("newModal").classList.add("open"); }
-function closeModal(id){ document.getElementById(id).classList.remove("open"); }
-async function createTicket(){
-    var subject=document.getElementById("tk-subject").value;
-    var body=document.getElementById("tk-body").value;
-    var priority=document.getElementById("tk-priority").value;
-    if(!subject) return alert("Subject is required");
-    try {
-        var res=await fetch("/api/tickets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject:subject,body:body,priority:priority})});
-        if(!res.ok) throw new Error("HTTP "+res.status);
-        closeModal("newModal"); document.getElementById("tk-subject").value=""; document.getElementById("tk-body").value="";
-        loadTickets();
-    } catch(e){ alert("Failed to create ticket: "+e.message); }
-}
-function showDetail(i){
-    var t=tickets[i]; activeTicketId=t.id||t._id;
-    document.getElementById("detail-subject").textContent=t.subject||t.title||"Ticket";
-    document.getElementById("detail-body").textContent=t.body||t.description||"";
-    document.getElementById("detail-status").textContent="Status: "+(t.status||"open");
-    document.getElementById("detail-priority").textContent="Priority: "+(t.priority||"medium");
-    document.getElementById("detail-assigned").textContent="Assigned: "+(t.assigned||t.assignedTo||t.assignee||"Unassigned");
-    var re=document.getElementById("detail-replies"); re.textContent="";
-    var replies=t.replies||[];
-    if(replies.length){
-        replies.forEach(function(r){
-            var div=document.createElement("div"); div.className="reply-item";
-            var text=typeof r==="string"?r:(r.body||r.text||r.message||"");
-            var author=(typeof r==="object"&&(r.author||r.from))||"";
-            var date=(typeof r==="object"&&(r.date||r.createdAt))||"";
-            if(author||date){ var meta=document.createElement("div"); meta.className="reply-meta"; meta.textContent=author+(date?" \u2014 "+new Date(date).toLocaleString():""); div.appendChild(meta); }
-            div.appendChild(document.createTextNode(text)); re.appendChild(div);
-        });
-    } else { var sp=document.createElement("span"); sp.style.color="var(--text-muted)"; sp.textContent="No replies yet."; re.appendChild(sp); }
-    document.getElementById("reply-body").value="";
-    document.getElementById("detailModal").classList.add("open");
-}
-async function sendReply(){
-    if(!activeTicketId) return;
-    var body=document.getElementById("reply-body").value;
-    if(!body.trim()) return alert("Reply cannot be empty");
-    try {
-        var res=await fetch("/api/tickets/"+activeTicketId+"/reply",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({body:body})});
-        if(!res.ok) throw new Error("HTTP "+res.status);
-        closeModal("detailModal"); loadTickets();
-    } catch(e){ alert("Failed to send reply: "+e.message); }
-}
+    return false;
+  }
 
-document.querySelectorAll(".modal-overlay").forEach(function(el){
-    el.addEventListener("click", function(e){ if(e.target===el) el.classList.remove("open"); });
-});
-loadTickets();
+  // Priority selector
+  window.setPriority = function(val) {
+    selectedPriority = val;
+    var segs = document.querySelectorAll('.priority-seg');
+    segs.forEach(function(s) {
+      s.className = 'priority-seg' + (s.dataset.val === val ? ' active-' + val : '');
+    });
+  };
+
+  // AI auto-categorization
+  document.getElementById('tk-subject').addEventListener('input', function() {
+    clearTimeout(aiDebounceTimer);
+    var subject = this.value.trim();
+    if (subject.length < 5) { document.getElementById('ai-badge').classList.remove('visible'); return; }
+    aiDebounceTimer = setTimeout(function() { aiCategorize(subject); }, 500);
+  });
+
+  async function aiCategorize(subject) {
+    try {
+      var res = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: 'Categorize this support ticket into one of: Bug Report, Feature Request, Billing, Account, Technical Support, General. Ticket: "' + subject + '". Return ONLY the category name.',
+          agent: 'agent-biz-support'
+        })
+      });
+      if (!res.ok) return;
+      var data = await res.json();
+      var text = (data.text || data.response || '').trim();
+      var categories = ['Bug Report','Feature Request','Billing','Account','Technical Support','General'];
+      var match = categories.find(function(c) { return text.toLowerCase().indexOf(c.toLowerCase()) !== -1; });
+      if (match) {
+        document.getElementById('tk-category').value = match;
+        document.getElementById('ai-badge').classList.add('visible');
+      }
+    } catch(e) {}
+  }
+
+  // Create ticket
+  window.createTicket = async function() {
+    var authed = await checkAuth();
+    if (!authed) { window.location.href = '/join?next=/tickets'; return; }
+
+    var subject = document.getElementById('tk-subject').value.trim();
+    var body = document.getElementById('tk-body').value.trim();
+    var category = document.getElementById('tk-category').value;
+
+    if (!subject) { showToast('Subject is required', 'error'); return; }
+    if (!body) { showToast('Description is required', 'error'); return; }
+
+    var btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+      var res = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('bridge_token') || '') },
+        credentials: 'include',
+        body: JSON.stringify({ subject: subject, body: body, priority: selectedPriority, category: category })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      document.getElementById('tk-subject').value = '';
+      document.getElementById('tk-body').value = '';
+      setPriority('medium');
+      document.getElementById('tk-category').value = 'General';
+      document.getElementById('ai-badge').classList.remove('visible');
+      showToast('Ticket submitted!');
+      loadTickets();
+    } catch(e) {
+      showToast('Failed: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit Ticket';
+    }
+  };
+
+  // Load tickets
+  async function loadTickets() {
+    var container = document.getElementById('ticket-list');
+    try {
+      var res = await fetch('/api/tickets', {
+        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('bridge_token') || '') },
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      tickets = Array.isArray(data) ? data : (data.tickets || data.data || []);
+      renderTickets();
+    } catch(e) {
+      container.innerHTML = '<div class="empty-msg">Failed to load tickets: ' + escHtml(e.message) + '</div>';
+    }
+  }
+
+  function escHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    var diff = Date.now() - new Date(dateStr).getTime();
+    var mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    var days = Math.floor(hrs / 24);
+    return days + 'd ago';
+  }
+
+  function renderTickets() {
+    var container = document.getElementById('ticket-list');
+    if (!tickets.length) {
+      container.innerHTML = '<div class="empty-msg">No tickets yet. Create one above to get started.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    tickets.forEach(function(t) {
+      var status = (t.status || 'open').toLowerCase().replace(/[\s_]/g, '_');
+      var priority = (t.priority || 'medium').toLowerCase();
+
+      var item = document.createElement('div');
+      item.className = 'ticket-item';
+      item.onclick = function() { toggleDetail(t); };
+      item.innerHTML = '<span class="ticket-subject">' + escHtml(t.subject || t.title || 'Untitled') + '</span>'
+        + '<span class="badge badge-' + status + '">' + escHtml(t.status || 'open') + '</span>'
+        + '<span class="priority-badge priority-' + priority + '">' + priority + '</span>'
+        + '<span class="ticket-date">' + timeAgo(t.created_at || t.updated_at) + '</span>';
+      container.appendChild(item);
+
+      // Detail panel
+      var detail = document.createElement('div');
+      detail.className = 'ticket-detail';
+      detail.id = 'detail-' + t.id;
+      detail.innerHTML = '<div class="ticket-body">' + escHtml(t.body || t.description || 'No description.') + '</div>'
+        + '<div style="font-size:.75rem;color:var(--dim);margin-bottom:8px">Category: ' + escHtml(t.category || 'General') + ' | Assigned: ' + escHtml(t.assigned_to || 'Unassigned') + '</div>'
+        + '<div class="comment-list" id="comments-' + t.id + '"></div>';
+      container.appendChild(detail);
+
+      // Render comments if available
+      var comments = t.comments || t.replies || [];
+      if (comments.length) {
+        var cl = detail.querySelector('.comment-list');
+        comments.forEach(function(c) {
+          var ci = document.createElement('div');
+          ci.className = 'comment-item';
+          ci.innerHTML = '<div class="comment-meta">' + escHtml(c.author_type || c.author || 'user') + ' - ' + timeAgo(c.created_at) + '</div>'
+            + '<div class="comment-text">' + escHtml(c.body || c.text || '') + '</div>';
+          cl.appendChild(ci);
+        });
+      }
+    });
+  }
+
+  function toggleDetail(t) {
+    var el = document.getElementById('detail-' + t.id);
+    if (!el) return;
+    if (expandedId === t.id) {
+      el.classList.remove('open');
+      expandedId = null;
+    } else {
+      if (expandedId) {
+        var prev = document.getElementById('detail-' + expandedId);
+        if (prev) prev.classList.remove('open');
+      }
+      el.classList.add('open');
+      expandedId = t.id;
+    }
+  }
+
+  // Init
+  checkAuth();
+  loadTickets();
+})();
 </script>
-<script src="/bridge-nav.js?v=2"></script>
+<script src="/bridge-nav.js?v=2" defer></script>
 </body>
 </html>

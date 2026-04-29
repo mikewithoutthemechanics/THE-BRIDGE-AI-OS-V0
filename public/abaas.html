@@ -1,39 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="description" content="Agent-as-a-Service — deploy specialised AI agents for sales, support, legal, and operations.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/abaas">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/abaas">
+<meta property="og:title" content="ABAAS — Agent-as-a-Service">
+<meta property="og:description" content="Agent-as-a-Service — deploy specialised AI agents for sales, support, legal, and operations.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ABAAS — Agent-as-a-Service">
+<meta name="twitter:description" content="Agent-as-a-Service — deploy specialised AI agents for sales, support, legal, and operations.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ABAAS — Agent-as-a-Service</title>
-<link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  :root{--bg:#050a0f;--surface:#0d1620;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#628ba0;--purple:#a78bfa}
+  :root{--bg:#050a0f;--surface:#0d1620;--border:#1a2d40;--accent:#00c8ff;--green:#00e57b;--red:#ff3c5a;--yellow:#ffd166;--text:#c8dce8;--dim:#4d6678;--purple:#a78bfa}
   body{background:var(--bg);color:var(--text);font-family:system-ui,monospace}
   .container{max-width:1100px;margin:0 auto;padding:1.5rem}
   h1{color:var(--accent);font-size:1.3rem;letter-spacing:.2em}
-  .subtitle{color:var(--dim);font-size:.875rem;margin-bottom:1.5rem}
+  .subtitle{color:var(--dim);font-size:.72rem;margin-bottom:1.5rem}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;margin-top:1rem}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;cursor:pointer;transition:border-color .2s}
   .card:hover{border-color:var(--accent)}
   .card h3{font-size:.85rem;color:var(--accent);margin-bottom:.3rem}
-  .card p{font-size:.875rem;color:var(--dim);line-height:1.5}
+  .card p{font-size:.72rem;color:var(--dim);line-height:1.5}
   .badge{display:inline-block;font-size:.6rem;padding:2px 6px;border-radius:3px;margin-left:.3rem}
   .badge.live{background:rgba(0,229,123,.15);color:var(--green);border:1px solid var(--green)}
   .badge.coming{background:rgba(255,209,102,.15);color:var(--yellow);border:1px solid var(--yellow)}
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-top:1.5rem}
   .stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.8rem;text-align:center}
   .stat .val{font-size:1.5rem;font-weight:700;color:var(--green)}
-  .stat .label{font-size:.75rem;color:var(--dim);letter-spacing:.1em;margin-top:.2rem}
+  .stat .label{font-size:.65rem;color:var(--dim);letter-spacing:.1em;margin-top:.2rem}
   #agent-list{margin-top:1rem}
-  .agent-row{display:flex;align-items:center;gap:.8rem;padding:.5rem .7rem;border-bottom:1px solid #0a1520;font-size:.875rem}
+  .agent-row{display:flex;align-items:center;gap:.8rem;padding:.5rem .7rem;border-bottom:1px solid #0a1520;font-size:.75rem}
   .agent-row .name{font-weight:600;min-width:100px}
   .agent-row .role{color:var(--dim);min-width:100px}
   .agent-row .trust{color:var(--green)}
   .agent-row .tasks{color:var(--accent)}
 </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
 <div class="container">
-<h1>ABAAS <span style="color:var(--dim);font-size:.875rem">Agent-as-a-Service</span></h1>
+<h1>ABAAS <span style="color:var(--dim);font-size:.7rem">Agent-as-a-Service</span></h1>
 <div class="subtitle">Deploy, manage, and monetize autonomous AI agents across the Bridge AI ecosystem</div>
 
 <div class="stats" id="stats"></div>
@@ -67,28 +95,37 @@ async function load() {
     const treasury = await fetch((BRAIN || '') + '/api/treasury/status').then(r=>r.json()).catch(()=>({}));
     const tools = await fetch((BRAIN || '') + '/api/tools').then(r=>r.json()).catch(()=>({count:0}));
 
-    document.getElementById('stats').innerHTML = `
-      <div class="stat"><div class="val">${agents.length}</div><div class="label">AGENTS</div></div>
-      <div class="stat"><div class="val">${agents.filter(a=>a.status==='active').length}</div><div class="label">ACTIVE</div></div>
-      <div class="stat"><div class="val">${tools.count || 0}</div><div class="label">TOOLS</div></div>
-      <div class="stat"><div class="val">$${(treasury.balance||0).toLocaleString()}</div><div class="label">TREASURY</div></div>
-    `;
+    function statEl(val, label) {
+      const s=document.createElement('div');s.className='stat';
+      const v=document.createElement('div');v.className='val';v.textContent=val;
+      const l=document.createElement('div');l.className='label';l.textContent=label;
+      s.appendChild(v);s.appendChild(l);return s;
+    }
+    const statsEl=document.getElementById('stats');statsEl.textContent='';
+    statsEl.appendChild(statEl(agents.length,'AGENTS'));
+    statsEl.appendChild(statEl(agents.filter(a=>a.status==='active').length,'ACTIVE'));
+    statsEl.appendChild(statEl(tools.count||0,'TOOLS'));
+    statsEl.appendChild(statEl('$'+(treasury.balance||0).toLocaleString(),'TREASURY'));
 
-    document.getElementById('agent-list').innerHTML = agents.map(a => `
-      <div class="agent-row">
-        <span class="name">${a.name}</span>
-        <span class="role">${a.role}</span>
-        <span>L${a.layer?.replace('L','') || '?'}</span>
-        <span class="trust">Trust: ${(a.trust*100).toFixed(0)}%</span>
-        <span class="tasks">${a.tasks_done} tasks</span>
-        <span style="color:${a.status==='active'?'var(--green)':'var(--dim)'}">${a.status.toUpperCase()}</span>
-      </div>
-    `).join('');
+    const listEl=document.getElementById('agent-list');listEl.textContent='';
+    agents.forEach(a=>{
+      const row=document.createElement('div');row.className='agent-row';
+      const nm=document.createElement('span');nm.className='name';nm.textContent=a.name||'—';
+      const rl=document.createElement('span');rl.className='role';rl.textContent=a.role||'—';
+      const ly=document.createElement('span');ly.textContent='L'+((a.layer||'').replace('L','')||'?');
+      const tr=document.createElement('span');tr.className='trust';tr.textContent='Trust: '+((a.trust*100)||0).toFixed(0)+'%';
+      const tk=document.createElement('span');tk.className='tasks';tk.textContent=(a.tasks_done||0)+' tasks';
+      const st=document.createElement('span');st.style.color=a.status==='active'?'var(--green)':'var(--dim)';
+      st.textContent=(a.status||'unknown').toUpperCase();
+      row.appendChild(nm);row.appendChild(rl);row.appendChild(ly);row.appendChild(tr);row.appendChild(tk);row.appendChild(st);
+      listEl.appendChild(row);
+    });
   } catch(e) { console.error(e); }
 }
 load();
 setInterval(load, 10000);
 </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

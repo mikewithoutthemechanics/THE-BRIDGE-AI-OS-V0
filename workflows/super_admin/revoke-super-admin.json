@@ -1,0 +1,20 @@
+{
+  "id": "revoke-super-admin",
+  "name": "Revoke super-admin",
+  "description": "Demote a super admin to a lower tier. Cannot revoke the last active super admin (invariant enforced by resolver + DB trigger).",
+  "category": "identity",
+  "required_tier": "super_admin",
+  "required_capability": "settings.revoke_super_admin",
+  "confirmation_required": true,
+  "params": [
+    { "name": "email", "type": "email", "required": true, "label": "User to demote" },
+    { "name": "new_tier", "type": "string", "required": false, "default": "pro", "values": ["free", "pro", "enterprise"] }
+  ],
+  "steps": [
+    { "type": "confirm",   "message": "REVOKE super admin from {email} and downgrade to {new_tier}? Cannot be undone silently — the grant + revoke are both in the audit log." },
+    { "type": "http_post", "path": "/settings/super-admin/revoke", "body": { "email": "{email}", "new_tier": "{new_tier}" } }
+  ],
+  "estimated_duration_s": 1,
+  "audit": true,
+  "audit_action": "super_admin_revoke"
+}

@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<meta name="description" content="Bridge AI OS CRM — contacts, pipeline, campaigns, and AI-driven nurture sequences for closing deals faster.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/crm">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/crm">
+<meta property="og:title" content="BridgeAI · Contact Management">
+<meta property="og:description" content="Bridge AI OS CRM — contacts, pipeline, campaigns, and AI-driven nurture sequences for closing deals faster.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BridgeAI · Contact Management">
+<meta name="twitter:description" content="Bridge AI OS CRM — contacts, pipeline, campaigns, and AI-driven nurture sequences for closing deals faster.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>BridgeAI · Contact Management</title>
 <style>
@@ -100,6 +114,21 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.6rem 
 .modal-actions{display:flex;gap:.65rem;margin-top:1rem;justify-content:flex-end}
 #toast{position:fixed;bottom:1.25rem;right:1.25rem;background:var(--surface);border:1px solid var(--accent);color:var(--accent);font-size:.82rem;padding:.6rem 1.1rem;border-radius:6px;display:none;z-index:999}
 </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
 
@@ -108,8 +137,19 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:.6rem 
   <div class="nav-links">
     <a href="/dashboard">Dashboard</a>
     <a href="/crm" class="active">CRM</a>
-    <a href="/leads">Leads</a>
     <a href="/invoicing">Invoicing</a>
+    <a href="/quotes">Quotes</a>
+    <a href="/customers">Customers</a>
+    <a href="/vendors">Vendors</a>
+    <a href="/leads">Leads</a>
+    <a href="/marketing">Marketing</a>
+    <a href="/leadgen">Lead Gen</a>
+    <a href="/pipeline.html">Pipeline</a>
+    <a href="/tickets">Tickets</a>
+    <a href="/legal">Legal</a>
+    <a href="/legal-ai.html">Legal AI</a>
+    <a href="/workforce">Workforce</a>
+    <a href="/affiliate">Affiliate</a>
     <a href="/agents">Agents</a>
     <a href="/settings">Settings</a>
   </div>
@@ -208,7 +248,7 @@ async function ensureAuth(){
   const r2=await fetch('/api/auth/me',{credentials:'include'});if(r2.ok)return;
   try{const r3=await fetch('/api/auth/dev-login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:DEV_ADDR,secret:DEV_SECRET,role:'admin'})});
   if(r3.ok){const d=await r3.json();if(d.token){_token=d.token;localStorage.setItem('bridge_token',d.token);}return;}}catch{}
-  window.location.href='/login?next=/crm';
+  window.location.href='/join?next=/crm';
 }
 
 let _csrf='';

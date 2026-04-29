@@ -1,0 +1,52 @@
+name: Super Admin Regression
+
+on:
+  pull_request:
+    paths:
+      - 'auth.js'
+      - 'middleware/auth.js'
+      - 'public/auth-callback.html'
+      - 'public/bridge-auth.js'
+      - 'public/onboarding.html'
+      - 'public/onboarding.js'
+      - 'public/admin-auth.js'
+      - 'tests/super-admin-routing.test.js'
+      - '.github/workflows/super-admin-regression.yml'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'auth.js'
+      - 'middleware/auth.js'
+      - 'public/auth-callback.html'
+      - 'public/bridge-auth.js'
+      - 'public/onboarding.html'
+      - 'public/onboarding.js'
+      - 'public/admin-auth.js'
+      - 'tests/super-admin-routing.test.js'
+      - '.github/workflows/super-admin-regression.yml'
+
+jobs:
+  super-admin-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NODE_ENV: test
+      JWT_SECRET: test-jwt-secret-min-32-chars-long!!
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run super-admin regression suite
+        run: npx jest tests/super-admin-routing.test.js --runInBand --forceExit
+

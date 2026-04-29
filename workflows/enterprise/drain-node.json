@@ -1,0 +1,22 @@
+{
+  "id": "drain-node",
+  "name": "Drain node",
+  "description": "Mark a node as draining, redirect new traffic away, wait for in-flight requests to finish, then stop the node's PM2 apps. Use before maintenance.",
+  "category": "operations",
+  "required_tier": "enterprise",
+  "required_capability": null,
+  "confirmation_required": true,
+  "params": [
+    { "name": "node", "type": "string", "required": true, "values_from": "/admin/nodes", "label": "Node to drain" },
+    { "name": "drain_timeout_s", "type": "integer", "default": 60, "min": 10, "max": 600 }
+  ],
+  "steps": [
+    { "type": "confirm",   "message": "Drain node {node} and stop its services after {drain_timeout_s}s?" },
+    { "type": "http_post", "path": "/admin/nodes/{node}/drain", "body": { "timeout_s": "{drain_timeout_s}" } },
+    { "type": "poll",      "path": "/admin/nodes/{node}",        "until": "status=drained", "timeout_s": "{drain_timeout_s}" },
+    { "type": "http_post", "path": "/admin/nodes/{node}/stop" }
+  ],
+  "estimated_duration_s": 90,
+  "audit": true,
+  "audit_action": "node_drain"
+}

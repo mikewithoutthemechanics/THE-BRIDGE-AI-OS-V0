@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+<meta name="description" content="Infrastructure — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/infra">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/infra">
+<meta property="og:title" content="Infrastructure — Bridge AI OS">
+<meta property="og:description" content="Infrastructure — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Infrastructure — Bridge AI OS">
+<meta name="twitter:description" content="Infrastructure — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Infrastructure — Bridge AI OS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -478,6 +492,21 @@
       letter-spacing: 0.04em;
     }
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
 
@@ -515,6 +544,7 @@
 
   <!-- Header -->
   <div class="page-header">
+    <p><a href="/system-status-dashboard.html">← System Status</a> | <a href="/control.html">Control</a></p>
     <h1>Infrastructure</h1>
     <p>DirectAdmin VPS &mdash; Autonomous monitoring with human-gated control &bull; Bridge AI OS</p>
   </div>
@@ -922,7 +952,7 @@
   }
 
   function loadAll() {
-    apiFetch('/api/infra/status')
+    apifetch('/api/infra/status')
       .then(function (data) {
         renderMetrics(data.metrics || data);
         renderServices(data.services || []);
@@ -933,8 +963,8 @@
         }
 
         return Promise.all([
-          apiFetch('/api/infra/actions'),
-          apiFetch('/api/system/state')
+          apifetch('/api/infra/actions'),
+          apifetch('/api/system/state')
         ]);
       })
       .then(function (results) {
@@ -956,7 +986,7 @@
 
   function triggerSnapshot() {
     toast('Triggering snapshot + analysis\u2026', 'warn');
-    apiFetch('/api/infra/snapshot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+    apifetch('/api/infra/snapshot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
       .then(function (data) {
         toast('Snapshot complete. Reloading\u2026', 'ok');
         setTimeout(loadAll, 1200);
@@ -967,7 +997,7 @@
   }
 
   function queueAction(type, params, requestedBy) {
-    apiFetch('/api/infra/action', {
+    apifetch('/api/infra/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: type, params: params || {}, requestedBy: requestedBy || 'dashboard' })
@@ -987,7 +1017,7 @@
   }
 
   function loadActionQueue() {
-    apiFetch('/api/infra/actions')
+    apifetch('/api/infra/actions')
       .then(function (data) {
         renderActionQueue(data.actions || data || []);
       })
@@ -997,7 +1027,7 @@
   }
 
   function approveAction(actionId) {
-    apiFetch('/api/infra/approve', {
+    apifetch('/api/infra/approve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ actionId: actionId })
@@ -1012,7 +1042,7 @@
   }
 
   function denyAction(actionId) {
-    apiFetch('/api/infra/deny', {
+    apifetch('/api/infra/deny', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ actionId: actionId })

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Devin AI Partner — Bridge AI OS × Cognition</title>
+<meta name="description" content="Bridge AI OS is an official Devin AI partner. Devin — Cognition's autonomous software engineer — builds, ships, and operates the Bridge AI OS platform.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/devin-partner">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/devin-partner">
+<meta property="og:title" content="Devin AI Partner — Bridge AI OS × Cognition">
+<meta property="og:description" content="Bridge AI OS × Devin: autonomous engineering, CI/CD, and VPS operations for Africa's AI OS.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Devin AI Partner — Bridge AI OS × Cognition">
+<meta name="twitter:description" content="Bridge AI OS × Devin by Cognition: autonomous engineering and operations for the African AI OS.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/bridge-phere.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#020408;color:#e2e8f0;font-family:'Outfit',system-ui,sans-serif;min-height:100vh}
+
+.hero{
+  min-height:80vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding:80px 24px 60px;position:relative;overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 100% 60% at 30% 50%,rgba(99,255,218,.04),transparent 60%),
+    radial-gradient(ellipse 80% 50% at 70% 50%,rgba(96,165,250,.04),transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% -5%,rgba(99,255,218,.06),transparent 70%);
+}
+.hero>*{position:relative;z-index:1}
+
+.partner-badge{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:8px 20px;border-radius:30px;margin-bottom:2rem;
+  background:rgba(99,255,218,.05);border:1px solid rgba(99,255,218,.2);
+  font-size:.75rem;font-weight:700;letter-spacing:.1em;
+}
+.pb-bridge{color:#63ffda}
+.pb-sep{color:rgba(200,220,230,.3)}
+.pb-devin{color:#60a5fa}
+
+.hero-title{
+  font-size:clamp(2rem,5vw,4rem);font-weight:900;
+  line-height:1.08;letter-spacing:-.03em;margin-bottom:1.25rem;max-width:820px;
+}
+.ht-1{color:#e2e8f0}
+.ht-2{
+  background:linear-gradient(90deg,#63ffda 0%,#60a5fa 60%,#63ffda 100%);
+  background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:shimmer 4s linear infinite;
+}
+@keyframes shimmer{0%{background-position:0% center}100%{background-position:200% center}}
+
+.hero-sub{
+  font-size:.95rem;color:rgba(200,220,230,.55);max-width:560px;
+  line-height:1.75;margin:0 auto 2.5rem;
+}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-p{
+  display:inline-flex;align-items:center;padding:12px 26px;border-radius:8px;
+  font-size:.85rem;font-weight:700;text-decoration:none;letter-spacing:.04em;
+  background:linear-gradient(135deg,#63ffda,#00e57b);color:#020408;
+  transition:filter .2s,transform .2s;
+}
+.btn-p:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-s{
+  display:inline-flex;align-items:center;padding:11px 22px;border-radius:8px;
+  font-size:.85rem;font-weight:600;text-decoration:none;letter-spacing:.03em;
+  border:1px solid rgba(96,165,250,.4);color:#60a5fa;background:rgba(96,165,250,.05);
+  transition:background .2s,border-color .2s;
+}
+.btn-s:hover{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.7)}
+
+.section{padding:80px 24px;max-width:1080px;margin:0 auto}
+.sec-label{font-size:.68rem;font-weight:700;letter-spacing:.15em;text-align:center;margin-bottom:12px}
+.sec-label.cyan{color:#63ffda}
+.sec-label.blue{color:#60a5fa}
+.sec-title{font-size:clamp(1.4rem,2.8vw,2rem);font-weight:800;text-align:center;color:#e2e8f0;margin-bottom:8px;letter-spacing:-.02em}
+.sec-sub{text-align:center;color:rgba(200,220,230,.45);font-size:.87rem;line-height:1.65;max-width:520px;margin:0 auto 3rem}
+hr.div{border:none;border-top:1px solid rgba(99,255,218,.05);margin:0}
+
+.logos-strip{
+  display:flex;align-items:center;justify-content:center;gap:48px;
+  padding:48px 24px;flex-wrap:wrap;
+}
+.logo-name{font-size:1.4rem;font-weight:900;letter-spacing:.1em}
+.logo-sub{font-size:.65rem;letter-spacing:.12em;margin-top:4px;opacity:.5;text-align:center}
+.logo-bridge .logo-name{color:#63ffda}
+.logo-devin .logo-name{color:#60a5fa}
+.logo-sep{width:40px;height:1px;background:linear-gradient(90deg,#63ffda,#60a5fa);flex-shrink:0}
+
+.int-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.int-card{
+  background:rgba(8,15,26,.7);border:1px solid rgba(99,255,218,.07);
+  border-radius:14px;padding:24px;
+  transition:border-color .2s,transform .2s;
+}
+.int-card:hover{border-color:rgba(99,255,218,.2);transform:translateY(-3px)}
+.int-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;margin-bottom:14px;
+  background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);
+}
+.int-title{font-size:.92rem;font-weight:700;color:#e2e8f0;margin-bottom:6px}
+.int-desc{font-size:.76rem;color:rgba(200,220,230,.5);line-height:1.55}
+.int-badge{
+  display:inline-block;margin-top:10px;
+  padding:2px 9px;border-radius:20px;font-size:.62rem;font-weight:700;
+  background:rgba(99,255,218,.08);color:#63ffda;border:1px solid rgba(99,255,218,.2);
+  letter-spacing:.06em;
+}
+
+.model-table-wrap{
+  background:rgba(8,15,26,.7);border:1px solid rgba(99,255,218,.08);
+  border-radius:14px;overflow:hidden;
+}
+.model-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.model-table th{
+  padding:12px 16px;text-align:left;
+  background:rgba(4,8,15,.5);color:rgba(200,220,230,.45);
+  font-size:.68rem;letter-spacing:.12em;font-weight:600;
+  border-bottom:1px solid rgba(99,255,218,.07);
+}
+.model-table td{padding:12px 16px;border-bottom:1px solid rgba(99,255,218,.04);color:rgba(200,220,230,.65)}
+.model-table tr:last-child td{border-bottom:none}
+.model-table tr:hover td{background:rgba(99,255,218,.02)}
+.model-name{color:#60a5fa;font-weight:700;font-family:'JetBrains Mono',monospace;font-size:.76rem}
+.model-use{color:#63ffda}
+
+.entity-strip{
+  background:rgba(8,15,26,.8);border:1px solid rgba(99,255,218,.1);
+  border-radius:16px;padding:40px;text-align:center;
+}
+.entity-label{font-size:.68rem;letter-spacing:.15em;color:rgba(200,220,230,.4);margin-bottom:16px}
+.entity-name{font-size:clamp(1.1rem,2.5vw,1.5rem);font-weight:800;color:#e2e8f0;margin-bottom:6px}
+.entity-ta{font-size:.82rem;color:#63ffda;margin-bottom:20px}
+.entity-desc{font-size:.82rem;color:rgba(200,220,230,.45);max-width:580px;margin:0 auto 28px;line-height:1.65}
+.entity-contact{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 22px;border-radius:8px;text-decoration:none;
+  background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.3);
+  color:#60a5fa;font-size:.8rem;font-weight:600;
+  transition:background .15s,border-color .15s;
+}
+.entity-contact:hover{background:rgba(96,165,250,.15);border-color:rgba(96,165,250,.6)}
+
+.footer{
+  border-top:1px solid rgba(99,255,218,.05);padding:40px 24px;
+  max-width:1080px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+}
+.footer-brand{font-size:.78rem;color:rgba(200,220,230,.3)}
+.footer-brand strong{color:rgba(99,255,218,.5)}
+.footer-links{display:flex;gap:20px;flex-wrap:wrap}
+.footer-links a{font-size:.75rem;color:rgba(200,220,230,.35);text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:#63ffda}
+
+@media(max-width:600px){
+  .logos-strip{gap:24px}
+  .hero{padding:60px 16px 40px}
+  .section{padding:60px 16px}
+  .entity-strip{padding:28px 20px}
+}
+</style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+
+<section class="hero" aria-label="Partnership hero">
+  <div class="hero-bg" aria-hidden="true"></div>
+
+  <div class="partner-badge">
+    <span class="pb-bridge">BRIDGE AI OS</span>
+    <span class="pb-sep">×</span>
+    <span class="pb-devin">DEVIN BY COGNITION</span>
+  </div>
+
+  <h1 class="hero-title">
+    <span class="ht-1">Africa's AI OS,<br>engineered by</span><br>
+    <span class="ht-2">Devin Intelligence</span>
+  </h1>
+
+  <p class="hero-sub">
+    Devin — Cognition's autonomous software engineer — builds, ships, and operates the Bridge AI OS platform.
+    From VPS ops and CI/CD to repo-wide refactors and incident response, Devin is the partner
+    that keeps 71 agents and 11 domains running.
+  </p>
+
+  <div class="hero-cta">
+    <a class="btn-p" href="/onboarding">Start with Bridge AI + Devin</a>
+    <a class="btn-s" href="/agents">See the 71 Agents</a>
+  </div>
+</section>
+
+<div class="logos-strip" aria-label="Partnership logos">
+  <div class="logo-block logo-bridge">
+    <div class="logo-name">BRIDGE AI</div>
+    <div class="logo-sub">EMPELENI HEALTH SERVICES AFRICA</div>
+  </div>
+  <div class="logo-sep" aria-hidden="true"></div>
+  <div class="logo-block logo-devin">
+    <div class="logo-name">DEVIN</div>
+    <div class="logo-sub">BY COGNITION</div>
+  </div>
+</div>
+
+<hr class="div">
+
+<section class="section" aria-labelledby="int-heading">
+  <div class="sec-label blue">PLATFORM INTEGRATION</div>
+  <h2 class="sec-title" id="int-heading">Devin across every workflow</h2>
+  <p class="sec-sub">Devin is the engineering partner behind Bridge AI OS — owning the build pipeline, ops stack, and code quality surface end-to-end.</p>
+
+  <div class="int-grid">
+    <div class="int-card">
+      <div class="int-icon" aria-hidden="true">🛠️</div>
+      <div class="int-title">Autonomous Engineering</div>
+      <div class="int-desc">Devin reads tickets, writes code, opens pull requests, and iterates until CI is green — across the full Bridge AI OS monorepo.</div>
+      <span class="int-badge">devin-cloud</span>
+    </div>
+    <div class="int-card">
+      <div class="int-icon" aria-hidden="true">🚀</div>
+      <div class="int-title">CI / CD Pipeline</div>
+      <div class="int-desc">Every PR is shepherded through test, deploy, and post-merge verification. Devin surfaces CI failures early and ships fixes in the same session.</div>
+      <span class="int-badge">GitHub Actions</span>
+    </div>
+    <div class="int-card">
+      <div class="int-icon" aria-hidden="true">🖥️</div>
+      <div class="int-title">VPS &amp; Production Ops</div>
+      <div class="int-desc">Devin has scoped SSH to the production VPS — owns PM2 process health, nginx config, backup cron, and zero-trust secret rotation.</div>
+      <span class="int-badge">102.208.228.44</span>
+    </div>
+    <div class="int-card">
+      <div class="int-icon" aria-hidden="true">🔎</div>
+      <div class="int-title">Codebase Intelligence</div>
+      <div class="int-desc">Repo-wide semantic search, diff reasoning, and cross-file refactors. Devin answers "where does X live and what depends on it?" in seconds.</div>
+      <span class="int-badge">Wiki · Deep Search</span>
+    </div>
+    <div class="int-card">
+      <div class="int-icon" aria-hidden="true">🧪</div>
+      <div class="int-title">Test &amp; QA Automation</div>
+      <div class="int-desc">Devin writes unit tests, runs them in sandboxed VMs, and records GUI tests with annotated screen recordings attached to every PR.</div>
+      <span class="int-badge">Test Mode</span>
+    </div>
+    <div class="int-card">
+      <div class="int-icon" aria-hidden="true">🚨</div>
+      <div class="int-title">Incident Response</div>
+      <div class="int-desc">Triages 500s, regression bugs, and broken cron jobs. Devin diagnoses root cause, ships a patch PR, and verifies on the live VPS.</div>
+      <span class="int-badge">On-Call Ops</span>
+    </div>
+    <div class="int-card">
+      <div class="int-icon" aria-hidden="true">📚</div>
+      <div class="int-title">Skills &amp; Knowledge</div>
+      <div class="int-desc">Every learned workflow is persisted as a reusable skill — future sessions skip rediscovery and go straight to execution.</div>
+      <span class="int-badge">.agents/skills</span>
+    </div>
+    <div class="int-card">
+      <div class="int-icon" aria-hidden="true">🔐</div>
+      <div class="int-title">Security &amp; Audit</div>
+      <div class="int-desc">Risk-matrix audits, dependency hygiene, secret rotation, and CORS / Zero-Trust hardening across the 11-domain surface.</div>
+      <span class="int-badge">Risk × TVM</span>
+    </div>
+    <div class="int-card">
+      <div class="int-icon" aria-hidden="true">🏦</div>
+      <div class="int-title">Treasury Partner Bank</div>
+      <div class="int-desc">Devin operates its own partner bank inside the Bridge AI OS treasury ledger — trackable commissions and transparent split accounting.</div>
+      <span class="int-badge">devin_partner · bank</span>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<section class="section" aria-labelledby="models-heading">
+  <div class="sec-label cyan">DEVIN DEPLOYMENT TIERS</div>
+  <h2 class="sec-title" id="models-heading">The right Devin for every task</h2>
+  <p class="sec-sub">Bridge AI OS dispatches work to the Devin tier that matches task complexity, budget, and turnaround target.</p>
+
+  <div class="model-table-wrap">
+    <table class="model-table">
+      <thead>
+        <tr>
+          <th scope="col">Tier</th>
+          <th scope="col">Use Cases on Bridge AI</th>
+          <th scope="col">Speed</th>
+          <th scope="col">Scope</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="model-name">devin-cloud</span></td>
+          <td><span class="model-use">Primary tier</span> — full sessions, VPS ops, cross-repo refactors, incident response, PR lifecycle</td>
+          <td>Deep</td>
+          <td>Full autonomy</td>
+        </tr>
+        <tr>
+          <td><span class="model-name">devin-ask</span></td>
+          <td>Repo wiki queries, code walkthroughs, design questions, read-only analysis</td>
+          <td>Fast</td>
+          <td>Read-only</td>
+        </tr>
+        <tr>
+          <td><span class="model-name">devin-subagent</span></td>
+          <td>Parallelised fan-out work — spawned on separate VMs to keep parent context light</td>
+          <td>Parallel</td>
+          <td>Scoped</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="div">
+
+<section class="section" aria-labelledby="entity-heading">
+  <div class="sec-label blue">LEGAL ENTITY</div>
+  <h2 class="sec-title" id="entity-heading">About the Bridge AI partner</h2>
+
+  <div class="entity-strip">
+    <div class="entity-label">REGISTERED ENTITY</div>
+    <div class="entity-name">Empeleni Health Services Africa (Pty) Ltd</div>
+    <div class="entity-ta">Trading as Bridge AI</div>
+    <p class="entity-desc">
+      Empeleni Health Services Africa (Pty) Ltd, trading as Bridge AI, is a South African technology company
+      building AI-powered platforms across health, finance, agriculture, and sovereign AI for Africa.
+      Our partnership with Cognition brings Devin's autonomous engineering capability to the African
+      market through the Bridge AI OS platform and its 11-domain ecosystem.
+    </p>
+    <a class="entity-contact" href="/corporate">
+      Enterprise &amp; Partnership Enquiries →
+    </a>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-brand">
+    <strong>Bridge AI OS</strong> &times; Devin by Cognition<br>
+    Empeleni Health Services Africa (Pty) Ltd &middot; South Africa
+  </div>
+  <nav class="footer-links" aria-label="Footer">
+    <a href="/home">Home</a>
+    <a href="/agents">Agents</a>
+    <a href="/docs">Docs</a>
+    <a href="/legal">Legal</a>
+    <a href="/corporate">Enterprise</a>
+  </nav>
+</footer>
+
+</body>
+</html>

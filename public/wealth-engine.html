@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wealth Engine — Family · Legacy · Dual Economy</title>
+<style>
+:root {
+  --bg: #080b08;
+  --surface: #0d100d;
+  --surface2: #141a14;
+  --border: rgba(16,185,129,.18);
+  --primary: #10b981;
+  --primary-glow: rgba(16,185,129,.3);
+  --gold: #f59e0b;
+  --gold-glow: rgba(245,158,11,.3);
+  --purple: #8b5cf6;
+  --blue: #3b82f6;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --text-muted: #64748b;
+  --font: 'Inter', system-ui, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+.shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;min-height:100vh}
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:17px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-badge{font-size:10px;background:var(--primary);color:#000;padding:2px 8px;border-radius:99px;font-weight:700}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-muted)}
+.kpi{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 12px;display:flex;flex-direction:column;align-items:center}
+.kpi-val{font-size:15px;font-weight:700;color:var(--primary);font-family:monospace}
+.kpi-label{font-size:10px;color:var(--text-muted)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:12px 0;overflow-y:auto}
+.sidebar-section{padding:8px 16px 4px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;transition:all .15s;border-left:2px solid transparent}
+.sidebar-item:hover{background:var(--surface2);border-left-color:var(--border)}
+.sidebar-item.active{background:rgba(16,185,129,.1);border-left-color:var(--primary);color:var(--primary)}
+.sidebar-icon{font-size:14px;width:18px;text-align:center}
+.main{overflow-y:auto;padding:24px}
+.section{display:none}
+.section.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card-title{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px}
+@keyframes slideIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.section.active .card{animation:slideIn .3s ease forwards}
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.kpi-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.kpi-card-val{font-size:22px;font-weight:700;font-family:monospace;margin-bottom:4px}
+.kpi-card-label{font-size:11px;color:var(--text-muted)}
+.kpi-card-delta{font-size:10px;margin-top:4px}
+.delta-up{color:var(--primary)}
+.delta-down{color:var(--red)}
+/* Wealth verbs */
+.wealth-verb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+.wealth-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:11px;transition:all .15s;text-align:center}
+.wealth-chip:hover,.wealth-chip.active{border-color:var(--primary);color:var(--primary);transform:translateY(-1px);box-shadow:0 4px 12px var(--primary-glow)}
+.wealth-chip .wc-code{font-size:9px;color:var(--text-muted);display:block;margin-top:2px}
+.wealth-chip .wc-formula{font-size:9px;color:var(--gold);display:block;font-family:monospace;margin-top:2px}
+/* Group filters */
+.group-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.group-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;transition:all .15s}
+.group-btn.active{background:var(--primary);border-color:var(--primary);color:#000;font-weight:600}
+/* Revenue flows */
+.flow-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px}
+.flow-source{background:rgba(16,185,129,.1);border:1px solid var(--border);border-radius:6px;padding:5px 12px;min-width:120px;text-align:center;font-size:11px}
+.flow-arrow{color:var(--primary);font-size:18px;flex-shrink:0}
+.flow-amount{font-family:monospace;font-size:13px;font-weight:700;color:var(--gold);min-width:80px}
+.flow-period{color:var(--text-muted);font-size:11px}
+/* Family tree */
+.family-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.family-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.family-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 8px}
+.family-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.family-role{font-size:11px;color:var(--text-muted);margin-bottom:8px}
+.family-wealth{font-size:16px;font-weight:700;color:var(--gold);font-family:monospace}
+/* Compound calculator */
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+label{font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px}
+input[type=number],input[type=text],select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:12px;outline:none;width:100%}
+input:focus,select:focus{border-color:var(--primary)}
+textarea{resize:vertical;font-family:monospace}
+.btn-primary{background:var(--primary);border:none;color:#000;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-primary:hover{opacity:.85;transform:translateY(-1px)}
+.btn-gold{background:var(--gold);border:none;color:#000;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-gold:hover{opacity:.85}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:var(--primary);color:var(--primary)}
+.result-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;white-space:pre-wrap;overflow-y:auto;color:var(--primary)}
+.row{display:flex;gap:14px}
+.row>*{flex:1}
+.mt8{margin-top:8px}
+.mt14{margin-top:14px}
+/* Legacy timeline */
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--primary),var(--gold))}
+.tl-item{position:relative;margin-bottom:16px}
+.tl-dot{width:14px;height:14px;border-radius:50%;position:absolute;left:-22px;top:3px;border:2px solid var(--bg)}
+.tl-year{font-size:11px;color:var(--text-muted);margin-bottom:2px}
+.tl-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.tl-desc{font-size:11px;color:var(--text-muted)}
+/* Status */
+.status-row{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text-muted);padding-top:10px;border-top:1px solid var(--border);margin-top:10px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;background:var(--primary)}
+</style>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="topbar">
+  <span class="topbar-logo">&#128184; Wealth Engine</span>
+  <span class="topbar-badge">500 Verbs · Dual Economy</span>
+  <div class="topbar-right">
+    <div class="kpi"><span class="kpi-val" id="hud-mrr">R0</span><span class="kpi-label">MRR</span></div>
+    <div class="kpi"><span class="kpi-val" id="hud-arr">R0</span><span class="kpi-label">ARR</span></div>
+    <div class="kpi"><span class="kpi-val" id="hud-wealth">R0</span><span class="kpi-label">Net Wealth</span></div>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="sidebar-section">Wealth Engine</div>
+  <div class="sidebar-item active" data-section="dashboard" onclick="showSection('dashboard',this)">
+    <span class="sidebar-icon">&#128200;</span> Wealth Dashboard
+  </div>
+  <div class="sidebar-item" data-section="revenue" onclick="showSection('revenue',this)">
+    <span class="sidebar-icon">&#128184;</span> Revenue Model
+  </div>
+  <div class="sidebar-item" data-section="compound" onclick="showSection('compound',this)">
+    <span class="sidebar-icon">&#9650;</span> Compound Calculator
+  </div>
+  <div class="sidebar-section">Family & Legacy</div>
+  <div class="sidebar-item" data-section="family" onclick="showSection('family',this)">
+    <span class="sidebar-icon">&#127968;</span> Family Prosperity
+  </div>
+  <div class="sidebar-item" data-section="legacy" onclick="showSection('legacy',this)">
+    <span class="sidebar-icon">&#127775;</span> Generational Legacy
+  </div>
+  <div class="sidebar-section">Engines</div>
+  <div class="sidebar-item" data-section="agent-income" onclick="showSection('agent-income',this)">
+    <span class="sidebar-icon">&#129504;</span> Agent Income System
+  </div>
+  <div class="sidebar-item" data-section="dual-economy" onclick="showSection('dual-economy',this)">
+    <span class="sidebar-icon">&#128279;</span> Dual Economy
+  </div>
+  <div class="sidebar-item" data-section="wealth-verbs" onclick="showSection('wealth-verbs',this)">
+    <span class="sidebar-icon">&#9654;</span> Wealth Verbs
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- WEALTH DASHBOARD ────────────────────────────────────────────────────── -->
+<div class="section active" id="section-dashboard">
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card"><div class="kpi-card-val" style="color:var(--primary)" id="kpi-mrr">R0</div><div class="kpi-card-label">Monthly Revenue</div><div class="kpi-card-delta delta-up" id="kpi-mrr-d">+0%</div></div>
+    <div class="kpi-card"><div class="kpi-card-val" style="color:var(--gold)" id="kpi-arr">R0</div><div class="kpi-card-label">Annual Run Rate</div><div class="kpi-card-delta delta-up">×12</div></div>
+    <div class="kpi-card"><div class="kpi-card-val" style="color:var(--primary)" id="kpi-customers">0</div><div class="kpi-card-label">Customers</div><div class="kpi-card-delta delta-up" id="kpi-cust-d">+0%</div></div>
+    <div class="kpi-card"><div class="kpi-card-val" style="color:var(--gold)" id="kpi-arpu">R0</div><div class="kpi-card-label">ARPU</div><div class="kpi-card-delta">monthly</div></div>
+    <div class="kpi-card"><div class="kpi-card-val" style="color:var(--primary)" id="kpi-ltv">R0</div><div class="kpi-card-label">LTV</div><div class="kpi-card-delta">avg customer</div></div>
+    <div class="kpi-card"><div class="kpi-card-val" style="color:var(--purple)" id="kpi-wealth">R0</div><div class="kpi-card-label">Net Wealth</div><div class="kpi-card-delta delta-up" id="kpi-w-d">growing</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Quick Wealth Calculations</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+      <div>
+        <label>Monthly Revenue (ZAR)</label>
+        <input type="number" id="dash-mrr" value="50000" oninput="updateDashboard()">
+      </div>
+      <div>
+        <label>Customers</label>
+        <input type="number" id="dash-cust" value="100" oninput="updateDashboard()">
+      </div>
+      <div>
+        <label>Churn Rate (%/mo)</label>
+        <input type="number" id="dash-churn" value="3" oninput="updateDashboard()">
+      </div>
+      <div>
+        <label>Operating Costs (%)</label>
+        <input type="number" id="dash-costs" value="40" oninput="updateDashboard()">
+      </div>
+    </div>
+    <button class="btn-primary" style="margin-top:12px" onclick="runWealthVerb('REVENUE')">&#9658; Run REVENUE Verb</button>
+    <button class="btn-gold" style="margin-top:12px;margin-left:8px" onclick="runWealthVerb('PROFIT')">&#9658; Run PROFIT Verb</button>
+    <div class="result-box" id="dash-result" style="margin-top:10px;min-height:60px">—</div>
+  </div>
+</div>
+
+<!-- REVENUE MODEL ───────────────────────────────────────────────────────── -->
+<div class="section" id="section-revenue">
+  <div class="card">
+    <div class="card-title">Dual-Economy Revenue Streams</div>
+    <div id="revenue-flows"></div>
+    <button class="btn-primary" style="margin-top:12px" onclick="runWealthVerb('MONETIZE')">&#9658; MONETIZE</button>
+    <button class="btn-gold" style="margin-top:12px;margin-left:8px" onclick="runWealthVerb('SUBSCRIBEWEALTH')">&#9658; SUBSCRIBE</button>
+    <div class="result-box" id="revenue-result" style="margin-top:10px;min-height:60px">—</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Revenue Verb Calculator</div>
+    <div class="row">
+      <div>
+        <label>Verb</label>
+        <select id="rev-verb-sel" onchange="onRevVerbChange()">
+          <option value="SELL">SELL — single transaction</option>
+          <option value="SUBSCRIBE_WEALTH">SUBSCRIBE — recurring</option>
+          <option value="UPSELL">UPSELL — increase sale</option>
+          <option value="BUNDLE">BUNDLE — combine offers</option>
+          <option value="COMMISSION">COMMISSION — % of sale</option>
+          <option value="ROYALTY">ROYALTY — passive income</option>
+          <option value="TOKENIZE">TOKENIZE — Web3 asset</option>
+          <option value="COMPOUND_WEALTH">COMPOUND — grow capital</option>
+        </select>
+        <label style="margin-top:8px">Formula</label>
+        <div id="rev-formula" style="font-family:monospace;font-size:12px;color:var(--gold);padding:6px 0">—</div>
+        <label>Input (JSON)</label>
+        <textarea id="rev-input" rows="4">{"amount": 50000, "currency": "ZAR"}</textarea>
+        <button class="btn-primary" style="margin-top:8px;width:100%" onclick="runRevVerb()">&#9658; Calculate</button>
+      </div>
+      <div>
+        <label>Result</label>
+        <div class="result-box" id="rev-result" style="height:200px">—</div>
+        <div class="status-row">
+          <span class="dot"></span><span id="rev-status">Ready</span>
+          <span style="margin-left:auto;font-family:monospace;color:var(--gold)" id="rev-latency"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPOUND CALCULATOR ─────────────────────────────────────────────────── -->
+<div class="section" id="section-compound">
+  <div class="card">
+    <div class="card-title">Compound Wealth Calculator — P × (1+r)^n</div>
+    <div class="calc-grid">
+      <div>
+        <label>Principal (ZAR)</label>
+        <input type="number" id="calc-p" value="100000" oninput="runCompound()">
+        <label style="margin-top:10px">Annual Rate (%)</label>
+        <input type="number" id="calc-r" value="12" oninput="runCompound()">
+        <label style="margin-top:10px">Years</label>
+        <input type="number" id="calc-n" value="10" oninput="runCompound()">
+        <label style="margin-top:10px">Monthly Contribution (ZAR)</label>
+        <input type="number" id="calc-contrib" value="5000" oninput="runCompound()">
+        <button class="btn-primary" style="margin-top:12px;width:100%" onclick="runCompound()">&#9650; Calculate COMPOUND</button>
+        <button class="btn-gold" style="margin-top:8px;width:100%" onclick="runWealthVerb('ACCUMULATE')">&#9650; ACCUMULATE</button>
+      </div>
+      <div>
+        <div style="background:var(--surface2);border-radius:10px;padding:16px;min-height:200px">
+          <div style="text-align:center;margin-bottom:16px">
+            <div style="font-size:11px;color:var(--text-muted)">Final Value</div>
+            <div style="font-size:32px;font-weight:800;color:var(--gold);font-family:monospace" id="compound-result">R0</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
+            <div style="background:var(--bg);border-radius:6px;padding:8px;text-align:center"><div style="color:var(--text-muted)">Invested</div><div id="c-invested" style="font-weight:700;color:var(--primary);font-family:monospace">R0</div></div>
+            <div style="background:var(--bg);border-radius:6px;padding:8px;text-align:center"><div style="color:var(--text-muted)">Interest</div><div id="c-interest" style="font-weight:700;color:var(--gold);font-family:monospace">R0</div></div>
+            <div style="background:var(--bg);border-radius:6px;padding:8px;text-align:center"><div style="color:var(--text-muted)">Gain %</div><div id="c-gain-pct" style="font-weight:700;color:var(--primary);font-family:monospace">0%</div></div>
+            <div style="background:var(--bg);border-radius:6px;padding:8px;text-align:center"><div style="color:var(--text-muted)">Monthly at end</div><div id="c-monthly" style="font-weight:700;color:var(--gold);font-family:monospace">R0</div></div>
+          </div>
+        </div>
+        <div class="result-box" id="compound-verb-result" style="margin-top:10px;min-height:80px">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAMILY PROSPERITY ───────────────────────────────────────────────────── -->
+<div class="section" id="section-family">
+  <div class="card">
+    <div class="card-title">Family Prosperity Protocol</div>
+    <div class="family-grid" id="family-grid"></div>
+    <div class="row mt14">
+      <div>
+        <div class="card-title">Family Wealth Actions</div>
+        <div style="display:grid;gap:8px">
+          <button class="btn-primary" onclick="familyVerb('PROVIDE')">&#128184; PROVIDE — support family</button>
+          <button class="btn-primary" onclick="familyVerb('PROTECT_WEALTH')">&#128737; PROTECT — safeguard assets</button>
+          <button class="btn-gold" onclick="familyVerb('EXPANDFAMILYWEALTH')">&#9650; EXPAND FAMILY WEALTH</button>
+          <button class="btn-gold" onclick="familyVerb('MULTIPLYFAMILYINCOME')">&#215; MULTIPLY FAMILY INCOME</button>
+          <button class="btn-secondary" onclick="familyVerb('ELEVATEFAMILY')">&#11014; ELEVATE FAMILY</button>
+          <button class="btn-secondary" onclick="familyVerb('SECUREFAMILY')">&#128274; SECURE FAMILY</button>
+        </div>
+      </div>
+      <div>
+        <div class="card-title">Family Prosperity Input</div>
+        <label>Monthly Income Target (ZAR)</label>
+        <input type="number" id="fam-income" value="150000" style="margin-bottom:8px">
+        <label>Family Members</label>
+        <input type="number" id="fam-members" value="4" style="margin-bottom:8px">
+        <label>Investment Horizon (years)</label>
+        <input type="number" id="fam-horizon" value="10" style="margin-bottom:8px">
+        <div class="result-box" id="family-result" style="min-height:100px">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GENERATIONAL LEGACY ─────────────────────────────────────────────────── -->
+<div class="section" id="section-legacy">
+  <div class="card">
+    <div class="card-title">Generational Wealth Smart Contract Layer</div>
+    <div class="row">
+      <div>
+        <div class="timeline" id="legacy-timeline"></div>
+      </div>
+      <div>
+        <div class="card-title">Build Your Legacy</div>
+        <label>Trust/Entity Name</label>
+        <input type="text" id="leg-name" value="Cowan Family Trust" style="margin-bottom:8px">
+        <label>Initial Value (ZAR)</label>
+        <input type="number" id="leg-value" value="1000000" style="margin-bottom:8px">
+        <label>Beneficiaries</label>
+        <input type="number" id="leg-bene" value="3" style="margin-bottom:8px">
+        <label>Vision</label>
+        <input type="text" id="leg-vision" value="financial freedom for all Cowans" style="margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+          <button class="btn-primary" onclick="legacyVerb('BUILDLEGACY')">&#127775; BUILD LEGACY</button>
+          <button class="btn-gold" onclick="legacyVerb('GENERATIONALIZE')">&#128257; GENERATIONALIZE</button>
+          <button class="btn-secondary" onclick="legacyVerb('TOKENIZE')">&#128279; TOKENIZE TRUST</button>
+          <button class="btn-secondary" onclick="legacyVerb('PRESERVE')">&#128274; PRESERVE</button>
+        </div>
+        <div class="result-box" id="legacy-result" style="margin-top:10px;min-height:80px">—</div>
+      </div>
+    </div>
+    <div class="card mt14" style="background:var(--surface2)">
+      <div class="card-title">DESTINYWEALTH — Align with your dream</div>
+      <div class="row">
+        <div>
+          <label>Your Vision</label>
+          <textarea id="destiny-vision" rows="2">financial freedom, healthy family, impact through technology</textarea>
+          <label style="margin-top:8px">Current Wealth Score (0-100)</label>
+          <input type="number" id="destiny-score" value="42" min="0" max="100">
+        </div>
+        <div>
+          <button class="btn-gold" style="width:100%;margin-bottom:8px" onclick="runDestinyWealth()">&#11088; DESTINYWEALTH</button>
+          <div class="result-box" id="destiny-result" style="min-height:80px">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AGENT INCOME SYSTEM ─────────────────────────────────────────────────── -->
+<div class="section" id="section-agent-income">
+  <div class="card">
+    <div class="card-title">Agent-Driven Income System</div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Each agent earns revenue autonomously. Configure their income model and watch the numbers grow.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px" id="agent-income-grid"></div>
+    <div class="row">
+      <div>
+        <div class="card-title">Configure Agent Revenue</div>
+        <label>Agent</label>
+        <select id="ai-agent">
+          <option value="treasury_bot">treasury_bot</option>
+          <option value="crm_agent">crm_agent</option>
+          <option value="marketing_agent">marketing_agent</option>
+          <option value="search_agent">search_agent</option>
+        </select>
+        <label style="margin-top:8px">Revenue Model</label>
+        <select id="ai-model">
+          <option value="COMMISSION">COMMISSION — % per deal</option>
+          <option value="ROYALTY">ROYALTY — passive %</option>
+          <option value="SUBSCRIBE_WEALTH">SUBSCRIPTION — monthly</option>
+          <option value="REVENUE">REVENUE SHARE — % of platform</option>
+        </select>
+        <label style="margin-top:8px">Base Amount (ZAR)</label>
+        <input type="number" id="ai-base" value="100000">
+        <label style="margin-top:8px">Rate (%)</label>
+        <input type="number" id="ai-rate" value="10">
+        <button class="btn-primary" style="margin-top:10px;width:100%" onclick="runAgentIncome()">&#9658; Calculate Agent Income</button>
+      </div>
+      <div>
+        <div class="card-title">Income Projection</div>
+        <div class="result-box" id="agent-income-result" style="height:180px">—</div>
+        <div style="margin-top:10px;display:grid;gap:6px">
+          <button class="btn-secondary" onclick="runWealthVerb('REINVEST')">&#8635; REINVEST agent earnings</button>
+          <button class="btn-secondary" onclick="runWealthVerb('YIELD_WEALTH')">&#9650; Calculate YIELD</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DUAL ECONOMY ────────────────────────────────────────────────────────── -->
+<div class="section" id="section-dual-economy">
+  <div class="card">
+    <div class="card-title">Dual Economy — Web2 + Web3</div>
+    <div class="row">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--primary);margin-bottom:10px">&#127760; WEB2 ECONOMY</div>
+        <div style="display:grid;gap:8px">
+          <button class="btn-secondary" onclick="dualEcon('SUBSCRIBE_WEALTH',{plan:'enterprise',price:9999,currency:'ZAR'})">SaaS Subscription R9,999/mo</button>
+          <button class="btn-secondary" onclick="dualEcon('COMMISSION',{base:100000,rate:0.15})">API Commission 15%</button>
+          <button class="btn-secondary" onclick="dualEcon('LICENCE',{base:500000,rate:0.05})">Software Licence 5%</button>
+          <button class="btn-secondary" onclick="dualEcon('UPSELL',{original:9999,new_value:24999})">Upsell R9,999 → R24,999</button>
+          <button class="btn-secondary" onclick="dualEcon('BUNDLE',{items:[{price:9999},{price:4999},{price:2999}],discount:0.2})">Bundle 20% off</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:10px">&#128279; WEB3 ECONOMY</div>
+        <div style="display:grid;gap:8px">
+          <button class="btn-secondary" onclick="dualEcon('TOKENIZE',{asset:'BridgeAI_Platform',value:5000000,supply:1000000,chain:'ethereum'})">Tokenize Platform Asset</button>
+          <button class="btn-secondary" onclick="dualEcon('STAKE_WEALTH',{amount:100000,rate:0.12,until:'2027-01-01'})">Stake R100k @ 12%</button>
+          <button class="btn-secondary" onclick="dualEcon('YIELD_WEALTH',{principal:100000,rate:0.12})">Calculate DeFi Yield</button>
+          <button class="btn-secondary" onclick="dualEcon('COMPOUND_WEALTH',{principal:100000,rate:0.18,periods:5})">Compound 18% × 5yr</button>
+          <button class="btn-secondary" onclick="dualEcon('LIQUIDATE',{asset:'token_pool',value:250000,currency:'ZAR'})">Liquidate Token Pool</button>
+        </div>
+      </div>
+    </div>
+    <div class="result-box" id="dual-result" style="margin-top:14px;min-height:80px">Click a button to execute a dual-economy verb...</div>
+  </div>
+</div>
+
+<!-- WEALTH VERBS ────────────────────────────────────────────────────────── -->
+<div class="section" id="section-wealth-verbs">
+  <div class="card">
+    <div class="card-title">100 Wealth-Creation Verbs (401-500)</div>
+    <div class="group-filter">
+      <button class="group-btn active" onclick="filterWealthGroup('wealth',this)">All 100</button>
+      <button class="group-btn" onclick="filterWealthGroup('value',this)">Value (401-420)</button>
+      <button class="group-btn" onclick="filterWealthGroup('market',this)">Market (421-440)</button>
+      <button class="group-btn" onclick="filterWealthGroup('sales',this)">Sales (441-460)</button>
+      <button class="group-btn" onclick="filterWealthGroup('finance',this)">Finance (461-480)</button>
+      <button class="group-btn" onclick="filterWealthGroup('legacy',this)">Legacy (481-500)</button>
+    </div>
+    <div class="wealth-verb-grid" id="wealth-verb-grid"></div>
+    <div class="row">
+      <div>
+        <div class="card-title" style="margin-top:0">Selected Verb</div>
+        <div id="wv-detail" style="background:var(--surface2);border-radius:10px;padding:12px;font-size:12px"><p style="color:var(--text-muted)">Click a verb above</p></div>
+        <textarea class="mt8" id="wv-input" rows="3" placeholder='{"amount":10000}'>{}</textarea>
+        <button class="btn-primary" style="margin-top:8px;width:100%" onclick="executeWealthVerb()">&#9658; Execute</button>
+      </div>
+      <div>
+        <div class="card-title" style="margin-top:0">Result</div>
+        <div class="result-box" id="wv-result" style="min-height:160px">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('auth_token') || '';
+let VERBS = {};
+let selectedWealthVerb = null;
+
+const REVENUE_FLOWS = [
+  { source:'SaaS Subscriptions', amount:'R250,000', period:'/month', delta:'+8%' },
+  { source:'API Usage Credits', amount:'R85,000', period:'/month', delta:'+15%' },
+  { source:'Agent Commissions', amount:'R42,000', period:'/month', delta:'+22%' },
+  { source:'Digital Twin Licences', amount:'R120,000', period:'/month', delta:'+5%' },
+  { source:'Token Yield (DeFi)', amount:'R18,500', period:'/month', delta:'+0%' },
+  { source:'Marketplace Fees', amount:'R31,000', period:'/month', delta:'+12%' },
+  { source:'Partner Royalties', amount:'R15,000', period:'/month', delta:'+3%' },
+];
+
+const FAMILY_MEMBERS = [
+  { name:'Ryan', icon:'&#128100;', role:'Founder & CEO', color:'#10b981', wealth:'R1.2M' },
+  { name:'Family', icon:'&#127968;', role:'Protected', color:'#f59e0b', wealth:'R280K' },
+  { name:'Trust', icon:'&#127775;', role:'Legacy Vehicle', color:'#8b5cf6', wealth:'R500K' },
+  { name:'Next Gen', icon:'&#127775;', role:'Beneficiary', color:'#06b6d4', wealth:'R120K' },
+];
+
+const LEGACY_TIMELINE = [
+  { year:'2026', title:'Platform Revenue: R500K/mo', desc:'100 clients, agents active', color:'var(--primary)' },
+  { year:'2027', title:'Series A / R10M valuation', desc:'Team of 10, product-market fit', color:'var(--primary)' },
+  { year:'2028', title:'Family Trust funded R1M', desc:'First generational wealth milestone', color:'var(--gold)' },
+  { year:'2030', title:'R100M ARR', desc:'50 enterprise clients, token launched', color:'var(--gold)' },
+  { year:'2035', title:'Generational legacy secured', desc:'Trust holds R10M+ for beneficiaries', color:'var(--gold)' },
+];
+
+const AGENT_INCOME_ITEMS = [
+  { id:'treasury_bot', icon:'&#128184;', mrr:'R42,000', tasks_done:890, commission_pct:15 },
+  { id:'crm_agent', icon:'&#128100;', mrr:'R28,000', tasks_done:1240, commission_pct:8 },
+  { id:'marketing_agent', icon:'&#128227;', mrr:'R19,500', tasks_done:560, commission_pct:12 },
+  { id:'search_agent', icon:'&#128269;', mrr:'R11,000', tasks_done:3200, commission_pct:4 },
+];
+
+const REV_VERB_FORMULAS = {
+  SELL:'exchange_for_money(x)', SUBSCRIBE_WEALTH:'recurring_revenue(x)', UPSELL:'increase_sale(x)',
+  BUNDLE:'combine_offers(x)', COMMISSION:'earn_percentage(x)', ROYALTY:'earn_passive(x)',
+  TOKENIZE:'to_digital_asset(x)', COMPOUND_WEALTH:'P*(1+r)^n',
+};
+
+const REV_VERB_DEFAULTS = {
+  SELL:'{"product":"BridgeAI Pro","buyer":"enterprise_co","price":24999,"currency":"ZAR"}',
+  SUBSCRIBE_WEALTH:'{"plan":"enterprise","price":9999,"currency":"ZAR"}',
+  UPSELL:'{"original":9999,"new_value":24999}',
+  BUNDLE:'{"items":[{"price":9999},{"price":4999},{"price":2999}],"discount":0.2}',
+  COMMISSION:'{"base":100000,"rate":0.15}',
+  ROYALTY:'{"base":500000,"rate":0.05}',
+  TOKENIZE:'{"asset":"BridgeAI_Platform","value":5000000,"supply":1000000,"chain":"ethereum"}',
+  COMPOUND_WEALTH:'{"principal":100000,"rate":0.12,"periods":5}',
+};
+
+(async () => {
+  await fetchToken();
+  await loadVerbs();
+  renderRevenue();
+  renderFamilyGrid();
+  renderLegacyTimeline();
+  renderAgentIncomeGrid();
+  renderWealthVerbGrid(null);
+  updateDashboard();
+  runCompound();
+})();
+
+async function fetchToken() {
+  try { const r=await fetch('/auth/me',{credentials:'include'}); const d=await r.json(); if(d.token){TOKEN=d.token;localStorage.setItem('auth_token',TOKEN);} } catch(e) {}
+}
+async function loadVerbs() {
+  try { const r=await fetch('/api/cognitive/verbs'); const d=await r.json(); if(d.ok) VERBS=d.groups; } catch(e) {}
+}
+
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+function fmt(n) { return 'R'+Math.round(n).toLocaleString('en-ZA'); }
+
+function updateDashboard() {
+  const mrr = parseInt(document.getElementById('dash-mrr').value)||0;
+  const cust = parseInt(document.getElementById('dash-cust').value)||1;
+  const churnPct = parseFloat(document.getElementById('dash-churn').value)||3;
+  const costPct = parseFloat(document.getElementById('dash-costs').value)||40;
+  const arr = mrr * 12;
+  const arpu = cust ? Math.round(mrr / cust) : 0;
+  const churnRate = churnPct / 100;
+  const ltv = churnRate > 0 ? Math.round(arpu / churnRate) : 0;
+  const profit = mrr * (1 - costPct/100);
+  document.getElementById('kpi-mrr').textContent = fmt(mrr);
+  document.getElementById('kpi-arr').textContent = fmt(arr);
+  document.getElementById('kpi-customers').textContent = cust.toLocaleString();
+  document.getElementById('kpi-arpu').textContent = fmt(arpu);
+  document.getElementById('kpi-ltv').textContent = fmt(ltv);
+  document.getElementById('kpi-wealth').textContent = fmt(profit * 24);
+  document.getElementById('hud-mrr').textContent = fmt(mrr);
+  document.getElementById('hud-arr').textContent = fmt(arr);
+  document.getElementById('hud-wealth').textContent = fmt(ltv * cust);
+}
+
+function renderRevenue() {
+  const total = REVENUE_FLOWS.reduce((a,f)=>a+parseInt(f.amount.replace(/[^0-9]/g,'')),0);
+  document.getElementById('revenue-flows').innerHTML = REVENUE_FLOWS.map(f=>`
+    <div class="flow-row">
+      <div class="flow-source">${f.source}</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-amount">${f.amount}</div>
+      <div class="flow-period">${f.period}</div>
+      <div class="kpi-card-delta delta-up" style="font-size:11px;margin-left:8px">${f.delta}</div>
+    </div>`).join('') + `<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px;font-size:13px;font-weight:700;color:var(--gold)">TOTAL MRR: R${total.toLocaleString('en-ZA')} /month</div>`;
+}
+
+function renderFamilyGrid() {
+  document.getElementById('family-grid').innerHTML = FAMILY_MEMBERS.map(m=>`
+    <div class="family-card">
+      <div class="family-avatar" style="background:${m.color}22;color:${m.color}">${m.icon}</div>
+      <div class="family-name">${m.name}</div>
+      <div class="family-role">${m.role}</div>
+      <div class="family-wealth">${m.wealth}</div>
+    </div>`).join('');
+}
+
+function renderLegacyTimeline() {
+  document.getElementById('legacy-timeline').innerHTML = LEGACY_TIMELINE.map(t=>`
+    <div class="tl-item">
+      <div class="tl-dot" style="background:${t.color}"></div>
+      <div class="tl-year">${t.year}</div>
+      <div class="tl-title" style="color:${t.color}">${t.title}</div>
+      <div class="tl-desc">${t.desc}</div>
+    </div>`).join('');
+}
+
+function renderAgentIncomeGrid() {
+  document.getElementById('agent-income-grid').innerHTML = AGENT_INCOME_ITEMS.map(a=>`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:20px;margin-bottom:6px">${a.icon}</div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:2px">${a.id}</div>
+      <div style="font-size:18px;font-weight:700;color:var(--primary);font-family:monospace">${a.mrr}</div>
+      <div style="font-size:10px;color:var(--text-muted)">${a.tasks_done} tasks · ${a.commission_pct}% comm</div>
+    </div>`).join('');
+}
+
+function renderWealthVerbGrid(filterGroup) {
+  const wealth = (VERBS['wealth']||[]).sort((a,b)=>a.code-b.code);
+  const RANGE = { value:[401,420], market:[421,440], sales:[441,460], finance:[461,480], legacy:[481,500] };
+  const filtered = filterGroup && RANGE[filterGroup] ? wealth.filter(v=>v.code>=RANGE[filterGroup][0] && v.code<=RANGE[filterGroup][1]) : wealth;
+  document.getElementById('wealth-verb-grid').innerHTML = filtered.map(v=>`
+    <div class="wealth-chip" id="wc-${v.name}" onclick="selectWealthVerb('${v.name}')">
+      <span>${v.name}</span>
+      <span class="wc-code">#${v.code}</span>
+      <span class="wc-formula">${v.formula}</span>
+    </div>`).join('');
+}
+
+function filterWealthGroup(group, btn) {
+  document.querySelectorAll('.group-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderWealthVerbGrid(group === 'wealth' ? null : group);
+}
+
+function selectWealthVerb(name) {
+  document.querySelectorAll('.wealth-chip').forEach(c=>c.classList.remove('active'));
+  const el = document.getElementById('wc-'+name);
+  if (el) el.classList.add('active');
+  selectedWealthVerb = (VERBS['wealth']||[]).find(v=>v.name===name);
+  if (!selectedWealthVerb) return;
+  document.getElementById('wv-detail').innerHTML = `<div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px">${name}</div><div style="font-family:monospace;color:var(--gold);font-size:11px;margin-bottom:6px">${selectedWealthVerb.formula}</div><div style="font-size:11px;color:var(--text-muted)">${selectedWealthVerb.group} · code ${selectedWealthVerb.code}</div>`;
+  const defaults = { COMPOUND_WEALTH:'{"principal":100000,"rate":0.12,"periods":10}', SELL:'{"product":"BridgeAI","price":24999}', SUBSCRIBE_WEALTH:'{"plan":"pro","price":9999}', TOKENIZE:'{"asset":"platform","value":5000000,"supply":1000000}', BUILDLEGACY:'{"name":"Cowan Trust","value":1000000,"timeline":"20yr"}', DESTINYWEALTH:'{"vision":"financial freedom","score":65}' };
+  document.getElementById('wv-input').value = defaults[name] || '{"amount":10000,"currency":"ZAR"}';
+}
+
+async function callVerb(verb, input) {
+  const r = await fetch('/api/cognitive/execute', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}, body:JSON.stringify({verb,input}) });
+  return r.json();
+}
+
+async function runWealthVerb(verb, extra={}) {
+  const input = { ...extra, currency:'ZAR' };
+  try { const d=await callVerb(verb,input); document.getElementById('dash-result').textContent=JSON.stringify(d.output,null,2); } catch(e) { document.getElementById('dash-result').textContent='Error: '+e.message; }
+}
+
+function onRevVerbChange() {
+  const v = document.getElementById('rev-verb-sel').value;
+  document.getElementById('rev-formula').textContent = REV_VERB_FORMULAS[v] || '—';
+  document.getElementById('rev-input').value = REV_VERB_DEFAULTS[v] || '{"amount":50000}';
+}
+
+async function runRevVerb() {
+  const verb = document.getElementById('rev-verb-sel').value;
+  let input={};
+  try{input=JSON.parse(document.getElementById('rev-input').value||'{}');}catch(e){alert('Invalid JSON');return;}
+  const t0=Date.now();
+  document.getElementById('rev-status').textContent='Calculating...';
+  try{
+    const d=await callVerb(verb,input);
+    document.getElementById('rev-result').textContent=JSON.stringify(d.output,null,2);
+    document.getElementById('rev-status').textContent='OK — '+verb;
+    document.getElementById('rev-latency').textContent=(Date.now()-t0)+'ms';
+  }catch(e){document.getElementById('rev-result').textContent='Error: '+e.message;document.getElementById('rev-status').textContent='Error';}
+}
+
+function runCompound() {
+  const P = parseFloat(document.getElementById('calc-p').value)||0;
+  const r = parseFloat(document.getElementById('calc-r').value)/100||0;
+  const n = parseFloat(document.getElementById('calc-n').value)||0;
+  const c = parseFloat(document.getElementById('calc-contrib').value)||0;
+  // Future value with contributions: P*(1+r)^n + c*((1+r)^n - 1)/r
+  const fv = P*Math.pow(1+r,n) + (r > 0 ? c*12*(Math.pow(1+r,n)-1)/r : c*12*n);
+  const invested = P + c*12*n;
+  const interest = fv - invested;
+  document.getElementById('compound-result').textContent = fmt(fv);
+  document.getElementById('c-invested').textContent = fmt(invested);
+  document.getElementById('c-interest').textContent = fmt(interest);
+  document.getElementById('c-gain-pct').textContent = invested>0?((interest/invested)*100).toFixed(0)+'%':'0%';
+  document.getElementById('c-monthly').textContent = fmt(fv*r/12);
+  // Also fire via API
+  callVerb('COMPOUND_WEALTH',{principal:P,rate:r,periods:n}).then(d=>{ if(d.ok) document.getElementById('compound-verb-result').textContent=JSON.stringify(d.output,null,2); }).catch(()=>{});
+}
+
+async function familyVerb(verb) {
+  const income = parseInt(document.getElementById('fam-income').value)||150000;
+  const members = parseInt(document.getElementById('fam-members').value)||4;
+  const horizon = parseInt(document.getElementById('fam-horizon').value)||10;
+  const input = { current:income, target:income*2, members, horizon:horizon+'yr', factor:2, strategies:['invest','scale','diversify'] };
+  try { const d=await callVerb(verb,input); document.getElementById('family-result').textContent=JSON.stringify(d.output,null,2); } catch(e) { document.getElementById('family-result').textContent='Error: '+e.message; }
+}
+
+async function legacyVerb(verb) {
+  const input = { name:document.getElementById('leg-name').value, value:parseInt(document.getElementById('leg-value').value)||1000000, beneficiaries:parseInt(document.getElementById('leg-bene').value)||3, timeline:'20yr', vehicles:['trust','smart_contract','equity'], vision:document.getElementById('leg-vision').value, supply:1000000, chain:'ethereum' };
+  try { const d=await callVerb(verb,input); document.getElementById('legacy-result').textContent=JSON.stringify(d.output,null,2); } catch(e) { document.getElementById('legacy-result').textContent='Error: '+e.message; }
+}
+
+async function runDestinyWealth() {
+  const input = { vision:document.getElementById('destiny-vision').value, score:parseInt(document.getElementById('destiny-score').value)||50, verbs:['GENERATE','COMPOUND_WEALTH','BUILDLEGACY','SECUREFAMILY'], family_secured:true, legacy_started:true };
+  try { const d=await callVerb('DESTINYWEALTH',input); document.getElementById('destiny-result').textContent=JSON.stringify(d.output,null,2); } catch(e) { document.getElementById('destiny-result').textContent='Error: '+e.message; }
+}
+
+async function runAgentIncome() {
+  const agent = document.getElementById('ai-agent').value;
+  const model = document.getElementById('ai-model').value;
+  const base = parseInt(document.getElementById('ai-base').value)||100000;
+  const rate = parseInt(document.getElementById('ai-rate').value)/100||0.10;
+  try {
+    const d=await callVerb(model, {agent,base,rate,currency:'ZAR',period:'monthly'});
+    const out=d.output||{};
+    const earned = out.earned || out.payment || base*rate;
+    document.getElementById('agent-income-result').textContent = JSON.stringify({...out, mrr_projection:fmt(earned), arr_projection:fmt(earned*12)}, null, 2);
+  } catch(e) { document.getElementById('agent-income-result').textContent='Error: '+e.message; }
+}
+
+async function dualEcon(verb, input) {
+  try { const d=await callVerb(verb,input); document.getElementById('dual-result').textContent=JSON.stringify(d.output,null,2); } catch(e) { document.getElementById('dual-result').textContent='Error: '+e.message; }
+}
+
+async function executeWealthVerb() {
+  if (!selectedWealthVerb) { alert('Select a verb'); return; }
+  let input={};
+  try{input=JSON.parse(document.getElementById('wv-input').value||'{}');}catch(e){alert('Invalid JSON');return;}
+  try { const d=await callVerb(selectedWealthVerb.name,input); document.getElementById('wv-result').textContent=JSON.stringify(d.output,null,2); } catch(e) { document.getElementById('wv-result').textContent='Error: '+e.message; }
+}
+
+document.getElementById('rev-verb-sel').addEventListener('change',onRevVerbChange);
+onRevVerbChange();
+</script>
+</body>
+</html>

@@ -6,12 +6,27 @@
 *******************************************************************************************/
 'use strict';
 
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+
 const http   = require('http');
 const https  = require('https');
 const fs     = require('fs');
 const path   = require('path');
 const os     = require('os');
 const { execSync } = require('child_process');
+
+// ── Orchestration System ──
+let queueManager, taskManager, goalManager, workerOrchestration, observability;
+try {
+  queueManager = require('./lib/queue');
+  taskManager = require('./lib/task-manager');
+  goalManager = require('./lib/goal-manager');
+  workerOrchestration = require('./lib/worker-orchestration');
+  observability = require('./lib/observability');
+} catch (e) {
+  console.warn('[SYSTEM] Orchestration modules not available:', e.message);
+  queueManager = taskManager = goalManager = workerOrchestration = observability = null;
+}
 
 // ─── Environment ─────────────────────────────────────────────────────────────
 const PORT     = parseInt(process.env.PORT, 10) || 3000;
@@ -498,7 +513,7 @@ function fullScan() {
 // ─── CORS origin allowlist (matches gateway.js pattern) ──────────────────────
 const ALLOWED_ORIGINS = new Set([
   'https://wall.bridge-ai-os.com',
-  'https://go.ai-os.co.za',
+  'https://bridge-ai-os.com',
   'http://localhost:3000',
   'http://localhost:8080',
 ]);
@@ -512,6 +527,19 @@ function verifyJWT(req) {
     const jsonwebtoken = require('jsonwebtoken');
     return jsonwebtoken.verify(authHeader.slice(7), JWT_SECRET);
   } catch { return null; }
+}
+
+// ─── NeuroLink Service Setup ──────────────────────────────────────────────────
+let neurolinkService = null;
+try {
+  const { getNeuroLinkService } = require('./api/neurolink/routes');
+  neurolinkService = getNeuroLinkService();
+  if (process.env.NEUROLINK_ENABLED !== 'false') {
+    neurolinkService.start();
+    console.log('  ✓ NeuroLink cognitive service initialized');
+  }
+} catch (e) {
+  console.warn('  ⚠ NeuroLink service not available:', e.message);
 }
 
 // ─── HTTP HANDLER ─────────────────────────────────────────────────────────────
@@ -536,7 +564,32 @@ function handler(req, res) {
   if (url === '/health' || url === '/healthz')
     return json({ status:'ok', uptime:Math.round(process.uptime()), port:PORT, env:NODE_ENV, ts:Date.now() });
 
-  // All /api/* endpoints require JWT authentication
+  // NeuroLink endpoints (no auth required)
+  if (neurolinkService) {
+    if (url === '/api/neurolink/status') return json(neurolinkService.getStatus());
+    if (url === '/api/neurolink/state') {
+      const state = neurolinkService.getState();
+      if (!state) return json({ error: 'NeuroLink not ready' }, 503);
+      return json(state);
+    }
+    if (url === '/api/neurolink/twin') {
+      const emotion = neurolinkService.getEmotion();
+      if (!emotion) return json({ error: 'NeuroLink not ready' }, 503);
+      return json(emotion);
+    }
+    if (url === '/api/neurolink/summary') {
+      return neurolinkService.getTodaySummary().then(summary => {
+        json(summary || { message: 'No data for today' });
+      }).catch(err => json({ error: err.message }, 500));
+    }
+  }
+
+  // Public read-only endpoints (no auth required)
+  if (url === '/api/marketplace/stats') return json(aggregateEconomics());
+  if (url === '/api/economics')         return json(aggregateEconomics());
+  if (url === '/api/status')            return json({ ok: true, ts: Date.now() });
+
+  // All other /api/* endpoints require JWT authentication
   if (url.startsWith('/api/')) {
     const user = verifyJWT(req);
     if (!user) return json({ error: 'Unauthorized — valid Bearer token required' }, 401);
@@ -556,6 +609,67 @@ function handler(req, res) {
   if (url === '/api/ai/status')       return json({ risk: FailureModel.evaluate(Brain.history), agents: AgentSwarm.agents, history: Brain.history.slice(-10) });
   if (url === '/api/agents')          return json(orchestrator.status());
   if (url === '/api/swarms')          return json(orchestrator.swarms);
+
+  // ── Orchestration System Endpoints ──
+  if (url === '/api/orchestration/goals' && req.method === 'GET') {
+    // List user goals
+    return goalManager.getGoalsByUser(user.sub).then(goals => {
+      json({ goals, count: goals.length });
+    }).catch(err => json({ error: err.message }, 500));
+  }
+
+  if (url === '/api/orchestration/goals' && req.method === 'POST') {
+    // Create new goal
+    return parseBody(req).then(body => {
+      if (!body.description) return json({ error: 'description required' }, 400);
+      return goalManager.createGoal(user.sub, body.description, {
+        priority: body.priority,
+        tags: body.tags,
+        metadata: body.metadata,
+      }).then(goal => json({ goal, message: 'Goal created successfully' }));
+    }).catch(err => json({ error: err.message }, 500));
+  }
+
+  if (url.match(/^\/api\/orchestration\/goals\/[^/]+$/)) {
+    const goalId = url.split('/')[4];
+    return goalManager.getGoal(goalId).then(goal => {
+      if (!goal) return json({ error: 'Goal not found' }, 404);
+      if (goal.userId !== user.sub) return json({ error: 'Access denied' }, 403);
+      return goalManager.getTasksForGoal(goalId).then(tasks => {
+        const goalStatus = taskManager.getGoalStatus(goalId);
+        json({ goal: { ...goal, tasks }, status: goalStatus });
+      });
+    }).catch(err => json({ error: err.message }, 500));
+  }
+
+  if (url === '/api/orchestration/queue/stats') {
+    return Promise.all([
+      queueManager.getAllStats(),
+      Promise.resolve(taskManager.getStats()),
+      goalManager.getStats()
+    ]).then(([queueStats, taskStats, goalStats]) => {
+      json({
+        queues: queueStats,
+        tasks: taskStats,
+        goals: goalStats,
+        timestamp: new Date().toISOString()
+      });
+    }).catch(err => json({ error: err.message }, 500));
+  }
+
+  if (url === '/api/orchestration/health') {
+    if (observability) {
+      return json(observability.systemMonitor.healthCheck());
+    }
+    return json({ status: 'observability not available' }, 503);
+  }
+
+  if (url === '/api/orchestration/metrics') {
+    if (observability) {
+      return json(observability.systemMonitor.getMetrics());
+    }
+    return json({ error: 'observability not available' }, 503);
+  }
   if (url === '/api/economics')       return json(aggregateEconomics());
   if (url === '/api/marketplace/stats') return json(aggregateEconomics());
   if (url === '/api/treasury/summary') {
@@ -683,7 +797,22 @@ function onListening() {
   console.log('  REFRESH  →  5s\n');
   log('OK','SERVER',`Listening on ${PROTOCOL}://localhost:${PORT}`);
   // Boot orchestrator after server is ready
-  setTimeout(() => orchestrator.boot(), 500);
+  setTimeout(() => {
+    orchestrator.boot();
+
+    // Initialize worker orchestration system
+    if (workerOrchestration) {
+      workerOrchestration.startWorkerOrchestration().catch(err => {
+        log('ERROR', 'WORKERS', `Failed to start worker orchestration: ${err.message}`);
+      });
+    }
+
+    // Start system monitoring
+    if (observability) {
+      observability.systemMonitor.start();
+      log('OK', 'MONITOR', 'System monitoring started');
+    }
+  }, 500);
 }
 
 server.on('error', err => {
@@ -977,7 +1106,10 @@ setInterval(() => {
   Brain.ingest(m);
   const actions  = Brain.decide(m);
   const riskLevel = FailureModel.evaluate(Brain.history);
-  if (actions.length > 0) log('INFO','AI',`Risk:${riskLevel} actions:[${actions.join(',')}]`);
+  // Only log when risk changes or non-routine actions detected
+  if (riskLevel !== 'STABLE' || actions.some(a => a !== 'cost_downscale')) {
+    log('INFO','AI',`Risk:${riskLevel} actions:[${actions.join(',')}]`);
+  }
   AgentSwarm.execute(actions);
 }, 15000).unref();
 
@@ -1048,7 +1180,7 @@ function aggregateEconomics() {
     type:     'referral',
     currency: 'N/A',
     location: 'C:/bridgeos/vps-referral',
-    base_url: 'https://go.ai-os.co.za',
+    base_url: 'https://bridge-ai-os.com',
     stats:    referralStats,
     status:   'deployed',
   });

@@ -39,6 +39,14 @@ body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,san
 .footer a{color:var(--a);text-decoration:none}
 @media(max-width:600px){.logo{font-size:2rem}.tagline{font-size:1rem}.stat .v{font-size:1.5rem}}
 </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
 </head>
 <body>
 <div class="hero">
@@ -83,7 +91,7 @@ body{background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,san
   <h2>11 LIVE DOMAINS</h2>
   <div class="domains">
     <a class="domain" href="https://ai-os.co.za">ai-os.co.za</a>
-    <a class="domain" href="https://go.ai-os.co.za">go.ai-os.co.za</a>
+    <a class="domain" href="https://bridge-ai-os.com">bridge-ai-os.com</a>
     <a class="domain" href="https://bridge.ai-os.co.za">bridge</a>
     <a class="domain" href="https://ban.ai-os.co.za">ban</a>
     <a class="domain" href="https://supac.ai-os.co.za">supac</a>
@@ -106,5 +114,7 @@ fetch('/api/treasury/status').then(r=>r.json()).then(d=>{
   document.getElementById('s-treasury').textContent='$'+(d.balance||0).toLocaleString(undefined,{maximumFractionDigits:0});
 }).catch(()=>{});
 </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

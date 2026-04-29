@@ -1,0 +1,128 @@
+{
+  "captured_at": "2026-04-19T22:48Z",
+  "host": "bridge-ai-os.com (Nz69TCdf8v, 102.208.228.44)",
+  "operator_source_ip": "196.6.107.184",
+  "nginx": {
+    "managed_by": "scripts/update-nginx.sh",
+    "hand_edit_warning": "config is overwritten on each run of update-nginx.sh — all changes must go to that script",
+    "server_names": {
+      "main": ["bridge-ai-os.com", "www.bridge-ai-os.com", "go.ai-os.co.za", "ai-os.co.za"],
+      "admin": ["admin.bridge-ai-os.com"],
+      "aid": ["aid.ai-os.co.za"]
+    },
+    "tls": {
+      "ssl_protocols": "TLSv1 TLSv1.1 TLSv1.2 TLSv1.3",
+      "ssl_prefer_server_ciphers": "on",
+      "ssl_ciphers": "(default — not explicitly set)",
+      "cert_chain": "/etc/letsencrypt/live/bridge-ai-os.com/fullchain.pem",
+      "ocsp_stapling": "not configured"
+    },
+    "security_headers_present": [],
+    "security_headers_missing": [
+      "Strict-Transport-Security",
+      "X-Frame-Options",
+      "X-Content-Type-Options",
+      "Referrer-Policy",
+      "Permissions-Policy"
+    ],
+    "rate_limiting": {
+      "zones_defined": [
+        "api_limit:10m rate=120r/m",
+        "general_limit:10m rate=120r/m"
+      ],
+      "zones_applied_to_locations": []
+    },
+    "compression": {
+      "gzip": "on, comp_level 6, covers text/js/css/json/svg/wasm",
+      "brotli": "not configured (distro nginx 1.18 lacks ngx_brotli)"
+    },
+    "proxied_upstreams": {
+      "8080": "gateway (/api/, /auth/, /health, brain-live, ehsa-brain, topology, registry)",
+      "8000": "super-brain (/auth/google|github|microsoft|exchange-code, /ws)",
+      "7070": "svg-engine (/svg-engine/)",
+      "5002": "terminal-proxy (/terminal)",
+      "4011": "admin-api (/admin/, /admin)"
+    }
+  },
+  "pm2": {
+    "home": "/etc/.pm2",
+    "apps": [
+      {
+        "name": "bridge-gateway",
+        "pid": 456135,
+        "cwd": "/var/www/bridgeai",
+        "script": "gateway.js",
+        "exec_mode": "fork",
+        "instances": 1,
+        "max_memory_restart": "600M",
+        "autorestart": true,
+        "env_issues": [
+          "GH_PAT is literal placeholder string 'YOUR_GITHUB_PAT' — not a real token",
+          "SSH_CLIENT/SSH_TTY inherited from operator SSH session — harmless but unclean"
+        ]
+      }
+    ],
+    "modules": "(pm2-logrotate NOT installed — log growth unbounded)",
+    "startup_service": "not confirmed — pm2 startup systemd needs one-time run for reboot persistence"
+  },
+  "watchdog": {
+    "script": "/usr/local/bin/bridge-watchdog.sh",
+    "log": "/var/log/bridge-watchdog.log",
+    "interval": "30s",
+    "services_monitored": [
+      {"port": 3030, "name": "bridge-auth", "systemd_unit": "bridge-auth-node", "listening": false, "status": "DOWN"},
+      {"port": 7070, "name": "svg-engine", "restart_via": "pm2", "listening": true},
+      {"port": 8080, "name": "gateway", "restart_via": "pm2", "listening": true},
+      {"port": 5002, "name": "terminal-proxy", "restart_via": "pm2", "listening": true},
+      {"port": 3000, "name": "bridge-os", "restart_via": "pm2", "listening": true},
+      {"port": 8000, "name": "super-brain", "restart_via": "pm2", "listening": true}
+    ],
+    "known_bugs": [
+      "pm2 restart $name runs WITHOUT PM2_HOME=/etc/.pm2 env — falls back to /root/.pm2 (empty), restart silently fails for pm2-managed services"
+    ]
+  },
+  "journald": {
+    "config": "empty (all defaults)",
+    "disk_usage_cap": "none — journal can grow unbounded"
+  },
+  "letsencrypt": {
+    "active_live_dirs": [
+      "bridge-ai-os.com",
+      "live.bridge-ai-os.com",
+      "ai-os.co.za",
+      "aid.ai-os.co.za",
+      "ehsa.ai-os.co.za",
+      "go.ai-os.co.za",
+      "god.ai-os.co.za"
+    ],
+    "cruft_to_clean": [
+      "go.ai-os.co.za-0001",
+      "go.ai-os.co.za-0002"
+    ]
+  },
+  "listening_ports": {
+    "22": "sshd",
+    "80": "nginx",
+    "443": "nginx (17 workers)",
+    "3000": "node bridge-os",
+    "3002": "node (unknown — audit needed)",
+    "4011": "node admin-api",
+    "4012": "node (unknown — audit needed)",
+    "5001": "pm2 node",
+    "5002": "pm2 node terminal-proxy",
+    "5432": "postgres (127.0.0.1 only, good)",
+    "6379": "redis (127.0.0.1 only, good)",
+    "7070": "pm2 svg-engine",
+    "8000": "pm2 super-brain",
+    "8001": "python3 (unknown — audit needed)",
+    "8080": "node gateway",
+    "20241": "cloudflared (127.0.0.1)",
+    "docker_proxy_ports": [3200, 3300, 3400, 3500, 3600, 5433, 6380, 8089]
+  },
+  "load": {
+    "cpu_1m": 4.72,
+    "cpu_5m": 4.17,
+    "cores": 16,
+    "usage_pct": "~29% (healthy headroom)"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "zeon-guardian",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mempool-rescue contract + sentinel bot for BRDG/ERC20 hot-wallet drains on Linea.",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy": "node scripts/deploy-modular-vault.js",
+    "deploy:dry": "node scripts/deploy-modular-vault.js --dry",
+    "sentinel": "node scripts/sentinel.js",
+    "pause": "node scripts/pauser.js pause",
+    "unpause": "node scripts/pauser.js unpause",
+    "status": "node scripts/pauser.js status"
+  },
+  "dependencies": {
+    "ethers": "^6.13.0",
+    "solc": "0.8.20"
+  },
+  "devDependencies": {
+    "hardhat": "^2.22.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "chai": "^4.4.1"
+  }
+}

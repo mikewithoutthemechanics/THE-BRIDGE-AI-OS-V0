@@ -44,6 +44,14 @@
     .dot-yellow{background:var(--yellow)}
     .dot-gray{background:var(--dim)}
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){body{font-size:15px}.desktop-only{display:none!important}}
+@media(max-width:480px){body{font-size:14px}h1{font-size:1.5rem!important}h2{font-size:1.25rem!important}}
+</style>
 </head>
 <body>
 <div class="container">
@@ -189,7 +197,7 @@
 </div>
 <script>
 const domains = [
-  {name:'go',url:'go.ai-os.co.za',ip:'.44',status:'live',desc:'Main gateway + brain'},
+  {name:'go',url:'bridge-ai-os.com',ip:'.44',status:'live',desc:'Main gateway + brain'},
   {name:'ai-os.co.za',url:'ai-os.co.za',ip:'.44',status:'live',desc:'Root domain — HTTPS'},
   {name:'bridge',url:'bridge.ai-os.co.za',ip:'.44',status:'live',desc:'Bridge connector — HTTPS'},
   {name:'ban',url:'ban.ai-os.co.za',ip:'.44',status:'live',desc:'BAN task engine — HTTPS'},
@@ -208,5 +216,7 @@ domains.forEach(d => {
   grid.innerHTML += `<div class="domain-card"><div class="name"><span class="status-dot ${dot}"></span>${d.name}</div><div class="url">${d.url}</div><div class="ip">${d.ip} — ${d.desc}</div></div>`;
 });
 </script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

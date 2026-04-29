@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="description" content="AI-powered leads pipeline — manage, score, and convert leads with intelligent automation and HITL approval gates.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/leads">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/leads">
+<meta property="og:title" content="Bridge AI · Leads Pipeline">
+<meta property="og:description" content="AI-powered leads pipeline — manage, score, and convert leads with intelligent automation and HITL approval gates.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Bridge AI · Leads Pipeline">
+<meta name="twitter:description" content="AI-powered leads pipeline — manage, score, and convert leads with intelligent automation and HITL approval gates.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bridge AI · Leads Pipeline</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f;--surface:#0d1117;--surface2:#161b22;--surface3:#21262d;
+  --border:#21262d;--border2:#30363d;
+  --cyan:#00d4ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --font:'Inter',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+/* ── NAV ── */
+nav{display:flex;align-items:center;gap:1rem;padding:.6rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.nav-brand{font-size:.9rem;font-weight:700;color:var(--cyan);letter-spacing:.5px;text-decoration:none}
+.nav-links{display:flex;gap:.15rem;flex:1}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:.78rem;padding:.3rem .7rem;border-radius:4px;transition:all .15s}
+.nav-links a:hover,.nav-links a.active{color:#fff;background:var(--surface2)}
+.nav-right{display:flex;gap:.5rem;align-items:center}
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:.75rem;padding:.65rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.toolbar-title{font-size:.95rem;font-weight:700;color:#fff;flex:1}
+.search-box{background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.4rem .8rem;color:var(--text);font-size:.82rem;font-family:var(--font);outline:none;width:220px}
+.search-box:focus{border-color:var(--cyan)}
+.filter-sel{background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.38rem .6rem;color:var(--text);font-size:.78rem;font-family:var(--font)}
+.btn{padding:.38rem .9rem;border-radius:5px;border:none;cursor:pointer;font-family:var(--font);font-size:.8rem;font-weight:600;transition:all .15s}
+.btn-primary{background:var(--cyan);color:#000}
+.btn-primary:hover{background:#00b8d9}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-sm{padding:.25rem .6rem;font-size:.73rem}
+/* ── PIPELINE STATS ── */
+.stats-row{display:flex;gap:.75rem;padding:.75rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
+.stat-pill{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:.5rem .9rem;display:flex;flex-direction:column;gap:2px;min-width:110px;cursor:pointer;transition:all .15s}
+.stat-pill:hover{border-color:var(--cyan)}
+.stat-pill.active{border-color:var(--cyan);background:rgba(0,212,255,.06)}
+.stat-num{font-size:1.2rem;font-weight:700;color:#fff}
+.stat-label{font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:1fr 360px;height:calc(100vh - 152px)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.detail-panel{display:none}}
+/* ── LEADS TABLE ── */
+.leads-pane{overflow-y:auto;padding:1rem 1.5rem}
+.leads-table{width:100%;border-collapse:collapse}
+.leads-table th{padding:.55rem .75rem;font-size:.7rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);text-align:left;position:sticky;top:0;background:var(--bg)}
+.leads-table td{padding:.6rem .75rem;font-size:.82rem;border-bottom:1px solid var(--border);vertical-align:middle}
+.leads-table tr:hover td{background:var(--surface2)}
+.leads-table tr.selected td{background:rgba(0,212,255,.05)}
+.lead-name{font-weight:600;color:#fff;cursor:pointer}
+.lead-name:hover{color:var(--cyan)}
+.lead-email{color:var(--text2);font-size:.77rem}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.68rem;font-weight:600;letter-spacing:.04em;text-transform:capitalize}
+.badge-new{background:rgba(56,189,248,.15);color:#38bdf8}
+.badge-contacted{background:rgba(250,204,21,.12);color:#facc15}
+.badge-qualified{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-proposal{background:rgba(188,140,255,.15);color:var(--purple)}
+.badge-closed_won{background:rgba(63,185,80,.25);color:#5af5a0;border:1px solid rgba(63,185,80,.4)}
+.badge-closed_lost{background:rgba(248,81,73,.12);color:var(--red)}
+.score-bar{display:flex;align-items:center;gap:.5rem}
+.score-num{font-size:.78rem;color:var(--text2);width:28px;text-align:right}
+.score-track{flex:1;height:4px;background:var(--surface3);border-radius:2px;min-width:50px}
+.score-fill{height:100%;border-radius:2px;transition:width .3s}
+.action-btns{display:flex;gap:.3rem}
+/* ── DETAIL PANEL ── */
+.detail-panel{border-left:1px solid var(--border);overflow-y:auto;background:var(--surface)}
+.dp-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:.85rem;flex-direction:column;gap:.5rem}
+.dp-header{padding:1.25rem 1.25rem .75rem;border-bottom:1px solid var(--border)}
+.dp-name{font-size:1.05rem;font-weight:700;color:#fff}
+.dp-company{font-size:.8rem;color:var(--text2);margin-top:2px}
+.dp-meta{padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.5rem;border-bottom:1px solid var(--border)}
+.dp-row{display:flex;justify-content:space-between;align-items:center}
+.dp-key{font-size:.75rem;color:var(--text3)}
+.dp-val{font-size:.8rem;color:var(--text);font-weight:500}
+.dp-section{padding:.75rem 1.25rem;border-bottom:1px solid var(--border)}
+.dp-sec-title{font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem}
+.activity-list{display:flex;flex-direction:column;gap:.5rem}
+.activity-item{background:var(--surface2);border-radius:6px;padding:.6rem .75rem;font-size:.78rem}
+.activity-type{display:inline-block;font-size:.67rem;font-weight:700;padding:1px 6px;border-radius:3px;margin-bottom:3px;text-transform:uppercase}
+.type-note{background:rgba(0,212,255,.12);color:var(--cyan)}
+.type-call{background:rgba(63,185,80,.12);color:var(--green)}
+.type-email{background:rgba(188,140,255,.12);color:var(--purple)}
+.type-meeting{background:rgba(250,204,21,.1);color:var(--yellow)}
+.activity-body{color:var(--text2)}
+.activity-ts{font-size:.67rem;color:var(--text3);margin-top:3px}
+.dp-actions{padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.5rem}
+.status-sel{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.4rem .6rem;color:var(--text);font-size:.82rem;font-family:var(--font)}
+.note-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.5rem .7rem;color:var(--text);font-size:.8rem;font-family:var(--font);resize:vertical;min-height:64px;outline:none}
+.note-input:focus{border-color:var(--cyan)}
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:1.5rem;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:1rem;font-weight:700;color:#fff;margin-bottom:1rem}
+.form-group{margin-bottom:.85rem}
+.form-label{display:block;font-size:.75rem;color:var(--text2);margin-bottom:.3rem}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:.45rem .75rem;color:var(--text);font-size:.83rem;font-family:var(--font);outline:none}
+.form-input:focus{border-color:var(--cyan)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;padding:.65rem 1rem;border-radius:7px;font-size:.82rem;font-weight:600;z-index:999;animation:fadeIn .2s;max-width:300px}
+.toast.ok{background:#1a3a2a;border:1px solid var(--green);color:var(--green)}
+.toast.err{background:#3a1a1a;border:1px solid var(--red);color:var(--red)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty-state h3{color:var(--text2);margin-bottom:.5rem;font-size:.95rem}
+</style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
+</head>
+<body>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
+
+<!-- Pipeline Stats -->
+<div class="stats-row" id="statsRow">
+  <div class="stat-pill active" id="sp-all" onclick="filterStatus('')">
+    <div class="stat-num" id="sn-all">—</div>
+    <div class="stat-label">All Leads</div>
+  </div>
+  <div class="stat-pill" id="sp-new" onclick="filterStatus('new')">
+    <div class="stat-num" id="sn-new">—</div>
+    <div class="stat-label">New</div>
+  </div>
+  <div class="stat-pill" id="sp-contacted" onclick="filterStatus('contacted')">
+    <div class="stat-num" id="sn-contacted">—</div>
+    <div class="stat-label">Contacted</div>
+  </div>
+  <div class="stat-pill" id="sp-qualified" onclick="filterStatus('qualified')">
+    <div class="stat-num" id="sn-qualified">—</div>
+    <div class="stat-label">Qualified</div>
+  </div>
+  <div class="stat-pill" id="sp-proposal" onclick="filterStatus('proposal')">
+    <div class="stat-num" id="sn-proposal">—</div>
+    <div class="stat-label">Proposal</div>
+  </div>
+  <div class="stat-pill" id="sp-closed_won" onclick="filterStatus('closed_won')">
+    <div class="stat-num" id="sn-closed_won">—</div>
+    <div class="stat-label">Won</div>
+  </div>
+  <div class="stat-pill" id="sp-closed_lost" onclick="filterStatus('closed_lost')">
+    <div class="stat-num" id="sn-closed_lost">—</div>
+    <div class="stat-label">Lost</div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <span class="toolbar-title">Sales Pipeline</span>
+  <input class="search-box" id="searchBox" placeholder="Search name, email, company…" oninput="onSearch()"/>
+  <select class="filter-sel" id="sortSel" onchange="renderTable()">
+    <option value="score">Sort: Score</option>
+    <option value="created">Sort: Newest</option>
+    <option value="name">Sort: Name</option>
+  </select>
+  <button class="btn btn-ghost btn-sm" onclick="load()">↻ Refresh</button>
+</div>
+
+<div class="layout">
+  <!-- Leads Table -->
+  <div class="leads-pane">
+    <table class="leads-table">
+      <thead>
+        <tr>
+          <th>Name / Email</th>
+          <th>Company</th>
+          <th>Status</th>
+          <th>Score</th>
+          <th>Tags</th>
+          <th style="width:110px"></th>
+        </tr>
+      </thead>
+      <tbody id="leadsBody">
+        <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="detail-panel" id="detailPanel">
+    <div class="dp-empty">
+      <div style="font-size:1.5rem">↖</div>
+      <div>Select a lead to view details</div>
+    </div>
+  </div>
+</div>
+
+<!-- New Lead Modal -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">Add New Lead</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Name *</label>
+        <input class="form-input" id="f-name" placeholder="Full name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input class="form-input" id="f-email" type="email" placeholder="email@example.com"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Company</label>
+        <input class="form-input" id="f-company" placeholder="Company name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-input" id="f-phone" placeholder="+27 …"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-input" id="f-status">
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="qualified">Qualified</option>
+          <option value="proposal">Proposal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lead Score (0–100)</label>
+        <input class="form-input" id="f-score" type="number" min="0" max="100" placeholder="50"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags (comma-separated)</label>
+      <input class="form-input" id="f-tags" placeholder="inbound, esim, pbx, demo-request"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-input note-input" id="f-notes" placeholder="Initial notes about this lead…" style="min-height:72px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createLead()">Create Lead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let _leads = [];
+let _filter = '';
+let _search = '';
+let _selected = null;
+let _activities = [];
+
+// ── API ────────────────────────────────────────────────────────────────────────
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// ── Load all leads ─────────────────────────────────────────────────────────────
+async function load() {
+  try {
+    const [leadsRes, pipeRes] = await Promise.all([
+      api('/api/crm/leads?limit=200'),
+      api('/api/crm/pipeline').catch(() => null),
+    ]);
+    _leads = leadsRes.leads || leadsRes.data || [];
+    updateStats(pipeRes);
+    renderTable();
+  } catch (e) {
+    document.getElementById('leadsBody').innerHTML =
+      `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--red)">Failed to load: ${e.message}</td></tr>`;
+  }
+}
+
+function updateStats(pipeRes) {
+  const counts = {};
+  _leads.forEach(l => { counts[l.status] = (counts[l.status] || 0) + 1; });
+  document.getElementById('sn-all').textContent = _leads.length;
+  ['new','contacted','qualified','proposal','closed_won','closed_lost'].forEach(s => {
+    const el = document.getElementById('sn-' + s);
+    if (el) el.textContent = counts[s] || 0;
+  });
+}
+
+// ── Filter & sort ──────────────────────────────────────────────────────────────
+function filterStatus(s) {
+  _filter = s;
+  document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active'));
+  document.getElementById('sp-' + (s || 'all'))?.classList.add('active');
+  renderTable();
+}
+
+function onSearch() {
+  _search = document.getElementById('searchBox').value.toLowerCase();
+  renderTable();
+}
+
+function renderTable() {
+  const sort = document.getElementById('sortSel').value;
+  let rows = _leads.filter(l => {
+    if (_filter && l.status !== _filter) return false;
+    if (_search) {
+      const hay = `${l.name} ${l.email} ${l.company || ''} ${(l.tags||[]).join(' ')}`.toLowerCase();
+      if (!hay.includes(_search)) return false;
+    }
+    return true;
+  });
+
+  rows.sort((a, b) => {
+    if (sort === 'score')   return (b.score || 0) - (a.score || 0);
+    if (sort === 'created') return new Date(b.created_at) - new Date(a.created_at);
+    if (sort === 'name')    return (a.name||'').localeCompare(b.name||'');
+    return 0;
+  });
+
+  const tbody = document.getElementById('leadsBody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><h3>No leads found</h3><p>Try adjusting your search or filter</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(l => `
+    <tr class="${_selected?.id === l.id ? 'selected' : ''}" onclick="selectLead('${l.id}')">
+      <td>
+        <div class="lead-name">${esc(l.name || '—')}</div>
+        <div class="lead-email">${esc(l.email || '')}</div>
+      </td>
+      <td style="color:var(--text2)">${esc(l.company || '—')}</td>
+      <td><span class="badge badge-${l.status || 'new'}">${(l.status||'new').replace('_',' ')}</span></td>
+      <td>
+        <div class="score-bar">
+          <div class="score-num">${l.score || 0}</div>
+          <div class="score-track"><div class="score-fill" style="width:${l.score||0}%;background:${scoreColor(l.score||0)}"></div></div>
+        </div>
+      </td>
+      <td style="font-size:.72rem;color:var(--text3)">${(l.tags||[]).slice(0,3).join(', ')}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();quickStatus('${l.id}','contacted')" title="Mark contacted">📞</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();quickStatus('${l.id}','qualified')" title="Qualify">✓</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();nurtureWithAI(${JSON.stringify({id:l.id,name:l.name,email:l.email,company:l.company,phone:l.phone||'',status:l.status,score:l.score,tags:l.tags||[],notes:l.notes||''})})" title="AI eSIM Nurture" style="color:var(--cyan);font-size:.72rem">🤖</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function scoreColor(s) {
+  if (s >= 70) return 'var(--green)';
+  if (s >= 40) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Select lead ────────────────────────────────────────────────────────────────
+async function selectLead(id) {
+  _selected = _leads.find(l => l.id === id);
+  if (!_selected) return;
+  renderTable(); // re-render to highlight
+  renderDetail();
+  // load activities
+  try {
+    const res = await api(`/api/crm/activities?lead_id=${id}&limit=20`);
+    _activities = res.activities || [];
+    renderActivities();
+  } catch (_) { _activities = []; }
+}
+
+function renderDetail() {
+  const l = _selected;
+  if (!l) return;
+  const statusOpts = ['new','contacted','qualified','proposal','closed_won','closed_lost']
+    .map(s => `<option value="${s}"${l.status===s?' selected':''}>${s.replace('_',' ')}</option>`).join('');
+
+  document.getElementById('detailPanel').innerHTML = `
+    <div class="dp-header">
+      <div class="dp-name">${esc(l.name||'—')}</div>
+      <div class="dp-company">${esc(l.company||'')} ${l.email ? '· '+esc(l.email) : ''}</div>
+    </div>
+    <div class="dp-meta">
+      <div class="dp-row"><span class="dp-key">Status</span><span class="badge badge-${l.status||'new'}">${(l.status||'new').replace('_',' ')}</span></div>
+      <div class="dp-row"><span class="dp-key">Score</span><span class="dp-val" style="color:${scoreColor(l.score||0)}">${l.score||0} / 100</span></div>
+      <div class="dp-row"><span class="dp-key">Tags</span><span class="dp-val">${(l.tags||[]).join(', ')||'—'}</span></div>
+      <div class="dp-row"><span class="dp-key">Created</span><span class="dp-val">${l.created_at ? new Date(l.created_at).toLocaleDateString() : '—'}</span></div>
+    </div>
+    <div class="dp-actions">
+      <div class="dp-sec-title">Update Status</div>
+      <select class="status-sel" id="dp-status-sel" onchange="updateStatus('${l.id}',this.value)">${statusOpts}</select>
+      <div class="dp-sec-title" style="margin-top:.75rem">Log Activity</div>
+      <select class="status-sel" id="dp-act-type">
+        <option value="note">Note</option>
+        <option value="call">Call</option>
+        <option value="email">Email</option>
+        <option value="meeting">Meeting</option>
+      </select>
+      <textarea class="note-input" id="dp-act-body" placeholder="Describe the activity…"></textarea>
+      <button class="btn btn-primary btn-sm" onclick="logActivity('${l.id}')">Log Activity</button>
+    </div>
+    <div class="dp-section" id="actSection">
+      <div class="dp-sec-title">Activity Log</div>
+      <div class="activity-list" id="actList"><div style="color:var(--text3);font-size:.78rem">Loading…</div></div>
+    </div>
+  `;
+}
+
+function renderActivities() {
+  const list = document.getElementById('actList');
+  if (!list) return;
+  if (!_activities.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:.78rem">No activities yet</div>';
+    return;
+  }
+  list.innerHTML = _activities.map(a => `
+    <div class="activity-item">
+      <div><span class="activity-type type-${a.type||'note'}">${a.type||'note'}</span></div>
+      <div class="activity-body">${esc(a.body || a.subject || '—')}</div>
+      <div class="activity-ts">${a.created_at ? new Date(a.created_at).toLocaleString() : ''}</div>
+    </div>
+  `).join('');
+}
+
+// ── CRUD ───────────────────────────────────────────────────────────────────────
+async function updateStatus(id, status) {
+  try {
+    await api(`/api/crm/leads/${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status }),
+    });
+    const lead = _leads.find(l => l.id === id);
+    if (lead) { lead.status = status; if (_selected?.id === id) _selected.status = status; }
+    renderTable();
+    updateStats();
+    toast('Status updated', 'ok');
+  } catch (e) { toast('Update failed: ' + e.message, 'err'); }
+}
+
+async function quickStatus(id, status) {
+  await updateStatus(id, status);
+}
+
+async function logActivity(leadId) {
+  const type = document.getElementById('dp-act-type')?.value || 'note';
+  const body = document.getElementById('dp-act-body')?.value?.trim();
+  if (!body) { toast('Enter activity description', 'err'); return; }
+  try {
+    await api('/api/crm/activities', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ lead_id: leadId, type, body }),
+    });
+    document.getElementById('dp-act-body').value = '';
+    // Reload activities
+    const res = await api(`/api/crm/activities?lead_id=${leadId}&limit=20`);
+    _activities = res.activities || [];
+    renderActivities();
+    toast('Activity logged', 'ok');
+  } catch (e) { toast('Failed: ' + e.message, 'err'); }
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────────
+function openModal()  { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+
+async function createLead() {
+  const name  = document.getElementById('f-name').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  if (!name || !email) { toast('Name and email required', 'err'); return; }
+  const tags = document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  try {
+    const res = await api('/api/crm/leads', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name, email,
+        company:  document.getElementById('f-company').value.trim(),
+        phone:    document.getElementById('f-phone').value.trim(),
+        status:   document.getElementById('f-status').value,
+        score:    parseInt(document.getElementById('f-score').value) || 50,
+        tags,
+        notes:    document.getElementById('f-notes').value.trim(),
+      }),
+    });
+    closeModal();
+    ['f-name','f-email','f-company','f-phone','f-score','f-tags','f-notes'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    await load();
+    if (res.lead?.id) selectLead(res.lead.id);
+    toast('Lead created', 'ok');
+  } catch (e) { toast('Create failed: ' + e.message, 'err'); }
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ── AI eSIM Nurture ────────────────────────────────────────────────────────────
+let _nurturePanel = null;
+
+async function nurtureWithAI(lead) {
+  toast('🤖 Running AI nurture analysis…', 'ok');
+  try {
+    const res = await api('/api/esim/nurture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lead_id: lead.id,
+        name: lead.name, email: lead.email, company: lead.company,
+        phone: lead.phone, status: lead.status, score: lead.score,
+        tags: lead.tags, notes: lead.notes, source: 'crm_leads',
+      }),
+    });
+
+    // Show result panel
+    const panel = document.createElement('div');
+    panel.style.cssText = 'position:fixed;bottom:1.5rem;left:1.5rem;width:360px;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:1rem;z-index:500;font-size:.78rem;box-shadow:0 10px 40px rgba(0,0,0,.6)';
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <div style="font-weight:700;color:#fff">🤖 AI Nurture — <span style="color:var(--cyan)">${esc(lead.name)}</span></div>
+        <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:1rem">✕</button>
+      </div>
+      <div style="color:var(--text2);margin-bottom:.5rem"><span style="color:var(--cyan);font-weight:700">Score: ${res.ai_score || '—'}/100</span> · ${esc(res.recommended_plan || 'Global Pro')}</div>
+      <div style="color:var(--text2);line-height:1.5;margin-bottom:.5rem">${esc(res.recommendation || '—')}</div>
+      <div style="color:#38bdf8;font-size:.73rem;margin-bottom:.75rem">→ ${esc(res.next_action || '—')}</div>
+      ${res.email_subject ? `
+        <div style="font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3rem">Email Draft</div>
+        <div style="background:#161b22;border-radius:6px;padding:.6rem .75rem;font-size:.75rem;color:#e6edf3;border:1px solid #21262d">
+          <div style="font-weight:700;margin-bottom:.4rem">${esc(res.email_subject)}</div>
+          <div style="white-space:pre-wrap;color:#8b949e;font-size:.71rem;max-height:100px;overflow:hidden">${esc((res.email_body||'').slice(0, 200))}…</div>
+        </div>
+        <button onclick="navigator.clipboard.writeText(${JSON.stringify(res.email_body||'')})" style="margin-top:.5rem;width:100%;padding:.4rem;border-radius:5px;border:1px solid #30363d;background:transparent;color:#00d4ff;font-size:.75rem;cursor:pointer">Copy Email</button>
+      ` : ''}
+      <div style="font-size:.65rem;color:var(--text3);margin-top:.5rem;text-align:right">Model: ${res.model_used || 'AI'} · Conv. prob: ${Math.round((res.conversion_probability||0)*100)}%</div>
+    `;
+    if (_nurturePanel) _nurturePanel.remove();
+    _nurturePanel = panel;
+    document.body.appendChild(panel);
+    setTimeout(() => panel.remove(), 20000);
+  } catch (e) { toast('Nurture failed: ' + e.message, 'err'); }
+}
+
+async function nurtureBulk() {
+  const top10 = _leads.filter(l => l.status !== 'closed_won' && l.status !== 'closed_lost').slice(0, 5);
+  if (!top10.length) return toast('No active leads', 'err');
+  toast(`🤖 Nurturing ${top10.length} leads with AI…`, 'ok');
+  for (const l of top10) {
+    await nurtureWithAI({ id: l.id, name: l.name, email: l.email, company: l.company, phone: '', status: l.status, score: l.score, tags: l.tags || [], notes: '' });
+    await new Promise(r => setTimeout(r, 800));
+  }
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>

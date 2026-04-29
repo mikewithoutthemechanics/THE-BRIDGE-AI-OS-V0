@@ -1,0 +1,22 @@
+# Bridge AI OS — static web + nginx proxy to bridge-api (see docker-compose.vps.yml)
+# Build: docker build -f Dockerfile.frontend -t bridge-ai-os-web:latest .
+
+FROM node:20-bookworm-slim AS webbuilder
+
+WORKDIR /web
+
+COPY web/package*.json ./
+RUN npm ci
+
+COPY web/ ./
+RUN npm run build
+
+FROM nginx:1.26-alpine
+
+COPY --from=webbuilder /web/dist /usr/share/nginx/html
+COPY nginx/nginx.vps.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1

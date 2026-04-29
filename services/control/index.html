@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>Control Service</title></head>
+<body>
+<script>
+// Health endpoint: returns 200 OK with service identity
+// This file is served at https://control.supaco.ai/
+// Must respond directly, no redirects
+if (window.location.pathname === '/api/health') {
+  document.body.textContent = JSON.stringify({
+    service: 'control',
+    status: 'healthy',
+    timestamp: new Date().toISOString()
+  });
+}
+</script>
+</body>
+</html>

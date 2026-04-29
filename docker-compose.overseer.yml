@@ -1,0 +1,209 @@
+version: "3.9"
+
+services:
+  # ============================================================
+  # OVERSEER — Sovereign Authority Layer
+  # Constitutional governor above all modules
+  # ============================================================
+  overseer:
+    build: ./services/overseer
+    container_name: bridge-overseer
+    environment:
+      OVERSEER_ENABLED: "true"
+      OVERSEER_INTERVAL: "2.0"
+      OVERSEER_STATE_PATH: "/var/lib/bridge/state.json"
+      OVERSEER_LOG_PATH: "/var/log/bridge/overseer.log"
+      OVERSEER_METRICS_PORT: "9091"
+    volumes:
+      - bridge_data:/var/lib/bridge
+      - bridge_logs:/var/log/bridge
+      - ./:/app:ro  # Read-only access to codebase
+    ports:
+      - "9091:9091"  # Metrics endpoint
+    networks:
+      - bridge
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:9091/health', (r)=>{if(r.statusCode!==200)process.exit(1)})"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.50'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # ============================================================
+  # OVERSEER EVENT INGESTION
+  # HTTP API for external triggers
+  # ============================================================
+  overseer-events:
+    build: ./services/overseer-events
+    container_name: bridge-overseer-events
+    environment:
+      OVERSEER_STATE_PATH: "/var/lib/bridge/state.json"
+      OVERSEER_LOG_PATH: "/var/log/bridge/overseer.log"
+    volumes:
+      - bridge_data:/var/lib/bridge
+      - bridge_logs:/var/log/bridge
+    ports:
+      - "9092:9092"  # Event ingestion endpoint
+    networks:
+      - bridge
+    depends_on:
+      overseer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9092/overseer/status"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  # ============================================================
+  # BACKEND — FastAPI Task Runner
+  # ============================================================
+  backend:
+    build: ./backend
+    container_name: bridge-backend
+    environment:
+      DEMO_MODE: "true"
+      ALLOWED_ORIGINS: "http://localhost:3000"
+      RATE_LIMIT: "100"
+    volumes:
+      - ./backend:/app
+      - bridge_logs:/app/logs
+    ports:
+      - "8000:8000"
+    networks:
+      - bridge
+    depends_on:
+      overseer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ============================================================
+  # FRONTEND — Nginx Static
+  # ============================================================
+  frontend:
+    build: ./frontend
+    container_name: bridge-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - bridge
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  # ============================================================
+  # PROMETHEUS — Metrics Collection
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: bridge-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - bridge
+    restart: unless-stopped
+
+  # ============================================================
+  # GRAFANA — Visualization
+  # ============================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: bridge-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: ""
+      GF_PATHS_PROVISIONING: "/etc/grafana/provisioning"
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    networks:
+      - bridge
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # ============================================================
+  # LOKI — Log Aggregation
+  # ============================================================
+  loki:
+    image: grafana/loki:latest
+    container_name: bridge-loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./deploy/loki:/etc/loki:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - bridge
+    restart: unless-stopped
+
+  # ============================================================
+  # TEMPO — Distributed Tracing
+  # ============================================================
+  tempo:
+    image: grafana/tempo:latest
+    container_name: bridge-tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./deploy/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/tmp/tempo
+    ports:
+      - "3200:3200"
+    networks:
+      - bridge
+    restart: unless-stopped
+
+# ============================================================
+# VOLUMES
+# ============================================================
+volumes:
+  bridge_data:
+    name: bridge_overseer_data
+  bridge_logs:
+    name: bridge_overseer_logs
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:
+
+# ============================================================
+# NETWORKS
+# ============================================================
+networks:
+  bridge:
+    name: bridge_network
+    driver: bridge

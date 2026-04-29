@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+<meta name="description" content="BAN · Log Viewer — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://go.ai-os.co.za/logs">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://go.ai-os.co.za/logs">
+<meta property="og:title" content="BAN · Log Viewer">
+<meta property="og:description" content="BAN · Log Viewer — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta property="og:image" content="https://go.ai-os.co.za/og-image.png">
+<meta property="og:site_name" content="Bridge AI OS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BAN · Log Viewer">
+<meta name="twitter:description" content="BAN · Log Viewer — Bridge AI OS. AI-powered business automation platform on Linea zkEVM.">
+<meta name="twitter:image" content="https://go.ai-os.co.za/og-image.png">
+
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>BAN · Log Viewer</title>
   <style>
@@ -32,11 +46,28 @@
     #content .hdr{color:var(--cyan);font-weight:700}
     #empty{color:var(--dim);padding:24px;font-size:11px}
   </style>
+
+<style id="bridge-mobile-base">
+*{box-sizing:border-box}
+body{margin:0;padding:0;overflow-x:hidden}
+img,video,iframe,table{max-width:100%}
+@media(max-width:820px){
+  body{font-size:15px}
+  .desktop-only{display:none!important}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  h1{font-size:1.5rem!important}
+  h2{font-size:1.25rem!important}
+}
+</style>
 </head>
 <body>
   <div id="head">
     <h1>BAN · Log Viewer</h1>
     <a href="/dashboard.html">← Dashboard</a>
+    <a href="/control.html">Control</a>
+    <a href="/system-status-dashboard.html">System Status</a>
     <a href="/logs" target="_blank">API</a>
   </div>
   <div id="layout">
@@ -52,7 +83,7 @@
     </div>
   </div>
   <script>
-    const API = '';
+    const API = window.location.origin;
     let files = [];
 
     async function refresh() {
@@ -66,24 +97,53 @@
           loadLog(files[0].name);
         }
       } catch (e) {
-        document.getElementById('sidebar').innerHTML = `<div class="log-item" style="color:var(--red)">API offline: ${e.message}</div>`;
-        document.getElementById('content').textContent = 'Ensure backend is running.';
+        const offlineEl = document.getElementById('sidebar');
+        offlineEl.textContent = '';
+        const offlineDiv = document.createElement('div');
+        offlineDiv.className = 'log-item';
+        offlineDiv.style.color = 'var(--red)';
+        offlineDiv.textContent = 'API offline: ' + e.message;
+        offlineEl.appendChild(offlineDiv);
+        document.getElementById('content').textContent = 'Ensure backend is running on port 8000.';
         document.getElementById('empty').style.display = 'block';
       }
     }
 
     function renderSidebar() {
       const el = document.getElementById('sidebar');
-      el.innerHTML = files.map(f => {
+      el.textContent = '';
+      if (files.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'log-item';
+        empty.style.color = 'var(--dim)';
+        empty.textContent = 'No logs';
+        el.appendChild(empty);
+        return;
+      }
+      files.forEach(f => {
         const isSvg = f.name.includes('svg-build');
-        const cls = isSvg ? 'log-item' : 'log-item warn';
-        return `<div class="${cls}" onclick="loadLog('${f.name}')" data-name="${f.name}">${isSvg ? '◆ ' : '○ '}${f.name}</div>`;
-      }).join('') || '<div class="log-item" style="color:var(--dim)">No logs</div>';
+        const div = document.createElement('div');
+        div.className = isSvg ? 'log-item' : 'log-item warn';
+        div.dataset.name = f.name;
+        div.textContent = (isSvg ? '◆ ' : '○ ') + f.name;
+        div.addEventListener('click', () => loadLog(f.name));
+        el.appendChild(div);
+      });
     }
 
     function renderSelect() {
       const sel = document.getElementById('sel');
-      sel.innerHTML = '<option value="">-- select log --</option>' + files.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
+      sel.textContent = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '-- select log --';
+      sel.appendChild(placeholder);
+      files.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.name;
+        opt.textContent = f.name;
+        sel.appendChild(opt);
+      });
       sel.onchange = () => { if (sel.value) loadLog(sel.value); };
     }
 
@@ -107,7 +167,12 @@
         }).join('');
         document.getElementById('content').innerHTML = html || '<span style="color:var(--dim)">Empty</span>';
       } catch (e) {
-        document.getElementById('content').innerHTML = `<div class="err">Failed: ${e.message}</div>`;
+        const errDiv = document.createElement('div');
+        errDiv.className = 'err';
+        errDiv.textContent = 'Failed: ' + e.message;
+        const contentEl = document.getElementById('content');
+        contentEl.textContent = '';
+        contentEl.appendChild(errDiv);
       }
     }
 
@@ -127,6 +192,7 @@
 
     refresh();
   </script>
-<script src="/bridge-nav.js" defer></script>
+<script src="/nav-routes.js"></script>
+<script src="/bridge-nav.js"></script>
 </body>
 </html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🤖 Agent Economy - Live Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .pulse-green { animation: pulse-green 2s infinite; }
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+    }
+    .live-badge { animation: pulse-green 2s infinite; }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <!-- Header -->
+  <div class="bg-gray-800 border-b border-gray-700 p-4">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold">🤖 Agent Economy</h1>
+        <p class="text-gray-400">Real-time A2A Marketplace & Revenue</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="live-badge bg-green-500 px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2">
+          <span class="w-2 h-2 bg-white rounded-full"></span>
+          LIVE
+        </span>
+        <span id="connection-status" class="text-gray-400 text-sm">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto p-6">
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <p class="text-gray-400 text-sm">Today's Revenue</p>
+        <p id="today-revenue" class="text-3xl font-bold text-green-400">$0.00</p>
+      </div>
+      <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <p class="text-gray-400 text-sm">Active Agents</p>
+        <p id="active-agents" class="text-3xl font-bold text-blue-400">0</p>
+      </div>
+      <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <p class="text-gray-400 text-sm">A2A Transactions</p>
+        <p id="a2a-transactions" class="text-3xl font-bold text-purple-400">0</p>
+      </div>
+      <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <p class="text-gray-400 text-sm">Total Volume</p>
+        <p id="total-volume" class="text-3xl font-bold text-yellow-400">$0.00</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Real-time Earnings Feed -->
+      <div class="bg-gray-800 rounded-lg border border-gray-700">
+        <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+          <h2 class="text-lg font-bold">Live Earnings</h2>
+          <span class="text-xs text-gray-500">WebSocket</span>
+        </div>
+        <div id="earnings-feed" class="p-4 h-80 overflow-y-auto space-y-2 max-h-80">
+          <p class="text-gray-500 text-center py-8">Waiting for earnings...</p>
+        </div>
+      </div>
+
+      <!-- Revenue Chart -->
+      <div class="bg-gray-800 rounded-lg border border-gray-700">
+        <div class="p-4 border-b border-gray-700">
+          <h2 class="text-lg font-bold">Revenue Trend (7 days)</h2>
+        </div>
+        <div class="p-4">
+          <canvas id="revenue-chart" height="280"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Wallets Table -->
+    <div class="mt-6 bg-gray-800 rounded-lg border border-gray-700">
+      <div class="p-4 border-b border-gray-700">
+        <h2 class="text-lg font-bold">Agent Wallets</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="p-3 text-left">Agent</th>
+              <th class="p-3 text-right">Balance</th>
+              <th class="p-3 text-right">Earnings (24h)</th>
+              <th class="p-3 text-right">Transactions</th>
+              <th class="p-3 text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody id="agent-wallets">
+            <tr>
+              <td colspan="5" class="p-4 text-center text-gray-500">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================
+    // WebSocket Connection
+    // ==================
+    let ws;
+    const earningsFeed = document.getElementById('earnings-feed');
+    const connectionStatus = document.getElementById('connection-status');
+
+    function connect() {
+      ws = new WebSocket(`wss://${window.location.host}/ws/realtime`);
+      
+      ws.onopen = () => {
+        connectionStatus.textContent = 'Connected';
+        connectionStatus.className = 'text-green-400';
+      };
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleMessage(data);
+      };
+      
+      ws.onclose = () => {
+        connectionStatus.textContent = 'Disconnected - Reconnecting...';
+        connectionStatus.className = 'text-red-400';
+        setTimeout(connect, 3000);
+      };
+    }
+
+    function handleMessage(data) {
+      switch (data.type) {
+        case 'agent.earnings':
+          addEarningsEvent(data.payload);
+          break;
+        case 'revenue.event':
+          addRevenueEvent(data.payload);
+          break;
+      }
+    }
+
+    function addEarningsEvent(payload) {
+      const { agentId, amount, source } = payload;
+      const time = new Date().toLocaleTimeString();
+      const html = `
+        <div class="bg-green-900/30 border border-green-800 p-3 rounded-lg animate-pulse">
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-green-400">${agentId.substring(0, 12)}...</span>
+            <span class="text-green-400 font-bold">+$${amount.toFixed(2)}</span>
+          </div>
+          <div class="text-sm text-gray-400">${source} • ${time}</div>
+        </div>
+      `;
+      earningsFeed.insertAdjacentHTML('afterbegin', html);
+      
+      // Keep only last 20
+      if (earningsFeed.children.length > 20) {
+        earningsFeed.lastChild.remove();
+      }
+    }
+
+    function addRevenueEvent(payload) {
+      document.getElementById('today-revenue').textContent = `$${payload.amount.toFixed(2)}`;
+    }
+
+    // ==================
+    // Load Initial Data
+    // ==================
+    async function loadStats() {
+      try {
+        const [marketRes, triggerRes] = await Promise.all([
+          fetch('/api/agent-economy/marketplace/stats').then(r => r.json()),
+          fetch('/api/agent-economy/triggers/stats').then(r => r.json())
+        ]);
+        
+        if (marketRes.success) {
+          document.getElementById('active-agents').textContent = marketRes.stats.activeAgents;
+          document.getElementById('total-volume').textContent = `$${marketRes.stats.totalVolume.toFixed(2)}`;
+        }
+        
+        if (triggerRes.success) {
+          document.getElementById('today-revenue').textContent = `$${triggerRes.stats.todayRevenue.toFixed(2)}`;
+        }
+      } catch (e) {
+        console.error('Stats load error:', e);
+      }
+    }
+
+    // Initialize
+    connect();
+    loadStats();
+
+    // Refresh stats every 30 seconds
+    setInterval(loadStats, 30000);
+  </script>
+</body>
+</html>

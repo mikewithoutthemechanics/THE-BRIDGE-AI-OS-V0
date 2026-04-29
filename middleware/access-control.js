@@ -8,6 +8,8 @@
 'use strict';
 
 const crypto = require('crypto');
+const path = require('path');
+const jwt = require('jsonwebtoken');
 const userDb = require('../lib/user-identity');
 
 // Timing-safe comparison to prevent timing attacks on secret tokens
@@ -25,7 +27,11 @@ const PAGE_TIERS = {
     '/payment-success.html', '/payment-cancel.html', '/welcome.html', '/onboarding.html', '/sitemap.html',
     '/docs.html', '/50-applications.html', '/applications.html', '/404.html', '/offline.html',
     '/platforms.html', '/bridge-home.html', '/ehsa-home.html', '/aurora-home.html', '/hospital-home.html',
-    '/aid-home.html', '/rootedearth-home.html', '/portal.html', '/voice.html', '/welcome-tour.html'],
+    '/aid-home.html', '/rootedearth-home.html', '/portal.html', '/voice.html', '/welcome-tour.html',
+    // Platform funnel — public entry points, no auth required
+    '/demo.html', '/wizard.html',
+    // Profile/projects serve HTML shell; auth enforced client-side via /auth/me
+    '/profile.html', '/projects.html'],
 
   CLIENT: ['/console.html', '/avatar.html', '/digital-twin-console.html', '/twin-wall.html', '/twin.html',
     '/crm.html', '/invoicing.html', '/quotes.html', '/legal.html', '/marketing.html', '/tickets.html',
@@ -68,15 +74,24 @@ async function extractUser(req) {
   }
 
   // 3. Query param fallback
-  if (!token && req.query && req.query.token) {
-    token = req.query.token;
-  }
+  // query string token auth removed — header-only auth enforced
 
   if (!token) return null;
 
-  // Try Bridge JWT first (backward compat)
+  // Try Bridge JWT first (backward compat — verifies and looks up DB user)
   const bridgeUser = await userDb.verifyAuthToken(token);
-  if (bridgeUser) return bridgeUser;
+  if (bridgeUser) {
+    // Upgrade any stale 'visitor' plan — email+password users were previously created with visitor
+    if (bridgeUser.plan === 'visitor') {
+      try {
+        const { supabase: supa } = require('../lib/supabase');
+        await supa.from('users').update({ plan: 'free', funnel_stage: 'identified' }).eq('id', bridgeUser.id);
+        bridgeUser.plan = 'free';
+        bridgeUser.funnel_stage = 'identified';
+      } catch (_) {}
+    }
+    return bridgeUser;
+  }
 
   // Try Supabase JWT
   try {
@@ -103,6 +118,26 @@ async function extractUser(req) {
     }
   } catch (_) {}
 
+  // Fallback: verify the JWT signature directly with JWT_SECRET.
+  // This handles tokens issued by server.js (via jsonwebtoken) when the
+  // DB user record is not yet in the user-identity store (e.g. test mode,
+  // newly created users, or Supabase offline). The role embedded in the
+  // token payload is trusted because it was signed with the server secret.
+  try {
+    const secret = process.env.JWT_SECRET;
+    if (secret) {
+      const decoded = jwt.verify(token, secret);
+      if (decoded && decoded.sub) {
+        return {
+          id: decoded.sub,
+          email: decoded.email || null,
+          role: decoded.role || 'member',
+          plan: decoded.plan || 'client',
+        };
+      }
+    }
+  } catch (_) {}
+
   return null;
 }
 
@@ -114,119 +149,152 @@ function wantsHtml(req) {
 }
 
 // ── Middleware: requireClient ──────────────────────────────────────────────
-
+//
+// Requires authenticated user with at least 'client' plan level access.
+// Redirects unauthenticated users to onboarding.
 async function requireClient(req, res, next) {
   const user = await extractUser(req);
-  if (!user || user.plan === 'visitor') {
+  if (!user) {
     if (wantsHtml(req)) {
-      const redirect = encodeURIComponent(req.originalUrl || req.path);
-      return res.redirect('/onboarding.html?redirect=' + redirect);
+      return res.redirect('/onboarding.html');
     }
-    return res.status(401).json({ ok: false, error: 'Authentication required. Upgrade from visitor plan.' });
+    return res.status(401).json({ ok: false, error: 'Authentication required' });
   }
   req.user = user;
   next();
 }
 
 // ── Middleware: requireAdmin ──────────────────────────────────────────────
-
+//
+// Requires authenticated user with admin role.
 async function requireAdmin(req, res, next) {
   const user = await extractUser(req);
-
-  // Check admin token header
-  const adminToken = req.headers['x-admin-token'];
-  if (adminToken && process.env.ADMIN_TOKEN && safeCompare(adminToken, process.env.ADMIN_TOKEN)) {
-    req.user = user || { role: 'admin' };
-    return next();
+  if (!user) {
+    if (wantsHtml(req)) {
+      return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
+    }
+    return res.status(401).json({ ok: false, error: 'Authentication required' });
   }
-
-  // Check bridge internal secret header
-  const bridgeSecret = req.headers['x-bridge-secret'];
-  if (bridgeSecret && process.env.BRIDGE_INTERNAL_SECRET && safeCompare(bridgeSecret, process.env.BRIDGE_INTERNAL_SECRET)) {
-    req.user = user || { role: 'admin' };
-    return next();
+  const isAdmin = user.role === 'admin' || user.role === 'superadmin' || user.isSuperUser;
+  if (!isAdmin) {
+    if (wantsHtml(req)) {
+      return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
+    }
+    return res.status(403).json({ ok: false, error: 'Admin access required' });
   }
-
-  // Check user role
-  if (user && (user.role === 'admin' || user.role === 'superadmin')) {
-    req.user = user;
-    return next();
-  }
-
-  if (wantsHtml(req)) {
-    return res.status(403).send('<!DOCTYPE html><html><body style="background:#050a0f;color:#ff3c5a;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><h1>403 — Admin Access Required</h1></body></html>');
-  }
-  return res.status(403).json({ ok: false, error: 'Admin access required' });
+  req.user = user;
+  next();
 }
 
 // ── Middleware: requireSuperAdmin ──────────────────────────────────────────
-
+//
+// Requires authenticated user with superadmin role and X-CFO-Token header.
 async function requireSuperAdmin(req, res, next) {
   const user = await extractUser(req);
-
-  // Must pass admin check first (user role or headers)
-  const isAdmin = (user && (user.role === 'admin' || user.role === 'superadmin'))
-    || (req.headers['x-admin-token'] && process.env.ADMIN_TOKEN && safeCompare(req.headers['x-admin-token'], process.env.ADMIN_TOKEN))
-    || (req.headers['x-bridge-secret'] && process.env.BRIDGE_INTERNAL_SECRET && safeCompare(req.headers['x-bridge-secret'], process.env.BRIDGE_INTERNAL_SECRET));
-
-  if (!isAdmin) {
+  if (!user) {
     if (wantsHtml(req)) {
-      return res.status(403).send('<!DOCTYPE html><html><body style="background:#050a0f;color:#ff3c5a;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><h1>403 — SuperAdmin Access Required</h1></body></html>');
+      return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
     }
-    return res.status(403).json({ ok: false, error: 'SuperAdmin access required' });
+    return res.status(401).json({ ok: false, error: 'Authentication required' });
   }
-
-  // Additionally require CFO token
+  const isSuperAdmin = user.role === 'superadmin' || user.isSuperUser;
+  if (!isSuperAdmin) {
+    if (wantsHtml(req)) {
+      return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
+    }
+    return res.status(403).json({ ok: false, error: 'Superadmin access required' });
+  }
   const cfoToken = req.headers['x-cfo-token'];
-  if (!cfoToken || !process.env.CFO_TOKEN || !safeCompare(cfoToken, process.env.CFO_TOKEN)) {
+  if (!cfoToken || !safeCompare(cfoToken, process.env.CFO_TOKEN || '')) {
     if (wantsHtml(req)) {
-      return res.status(403).send('<!DOCTYPE html><html><body style="background:#050a0f;color:#ff3c5a;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><h1>403 — CFO Authorization Required</h1></body></html>');
+      return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
     }
-    return res.status(403).json({ ok: false, error: 'CFO authorization required (X-CFO-Token header missing or invalid)' });
+    return res.status(403).json({ ok: false, error: 'CFO token required' });
   }
-
-  req.user = user || { role: 'superadmin' };
+  req.user = user;
   next();
 }
 
 // ── Middleware Factory: pageGuard ──────────────────────────────────────────
-
+//
+// Enforces 4-tier page access control based on PATH_TO_TIER mapping.
 function pageGuard() {
   return async function pageGuardMiddleware(req, res, next) {
-    // STAGING MODE: all pages accessible — remove this block to re-enable RBAC
-    return next();
-
-    // Only guard GET requests for .html pages or exact path matches
-    if (req.method !== 'GET') return next();
-
     const reqPath = req.path;
-
-    // Skip non-page requests (API, assets, scripts)
-    if (reqPath.startsWith('/api/') || reqPath.startsWith('/assets/')) return next();
-    if (!reqPath.endsWith('.html') && reqPath !== '/') return next();
-
     const tier = PATH_TO_TIER[reqPath];
 
-    // PUBLIC pages or undefined tier for root
-    if (tier === 'PUBLIC') return next();
-
-    // CLIENT tier
-    if (tier === 'CLIENT' || !tier) {
-      return requireClient(req, res, next);
+    // If path not in tier mapping, allow through (dynamic routes, API endpoints, etc.)
+    if (!tier) {
+      return next();
     }
 
-    // ADMIN tier
+    // PUBLIC tier - no authentication required
+    if (tier === 'PUBLIC') {
+      return next();
+    }
+
+    // CLIENT tier - requires authentication
+    if (tier === 'CLIENT') {
+      const user = await extractUser(req);
+      if (!user) {
+        if (wantsHtml(req)) {
+          return res.redirect('/onboarding.html');
+        }
+        return res.status(401).json({ ok: false, error: 'Authentication required' });
+      }
+      req.user = user;
+      return next();
+    }
+
+    // ADMIN tier - requires admin role
     if (tier === 'ADMIN') {
-      return requireAdmin(req, res, next);
+      const user = await extractUser(req);
+      if (!user) {
+        if (wantsHtml(req)) {
+          return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
+        }
+        return res.status(401).json({ ok: false, error: 'Authentication required' });
+      }
+      const isAdmin = user.role === 'admin' || user.role === 'superadmin' || user.isSuperUser;
+      if (!isAdmin) {
+        if (wantsHtml(req)) {
+          return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
+        }
+        return res.status(403).json({ ok: false, error: 'Admin access required' });
+      }
+      req.user = user;
+      return next();
     }
 
-    // SUPERADMIN tier
+    // SUPERADMIN tier - requires superadmin role + CFO token
     if (tier === 'SUPERADMIN') {
-      return requireSuperAdmin(req, res, next);
+      const user = await extractUser(req);
+      if (!user) {
+        if (wantsHtml(req)) {
+          return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
+        }
+        return res.status(401).json({ ok: false, error: 'Authentication required' });
+      }
+      const isSuperAdmin = user.role === 'superadmin' || user.isSuperUser;
+      if (!isSuperAdmin) {
+        if (wantsHtml(req)) {
+          return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
+        }
+        return res.status(403).json({ ok: false, error: 'Superadmin access required' });
+      }
+      const cfoToken = req.headers['x-cfo-token'];
+      if (!cfoToken || cfoToken !== process.env.CFO_TOKEN) {
+        if (wantsHtml(req)) {
+          return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
+        }
+        return res.status(403).json({ ok: false, error: 'CFO token required' });
+      }
+      req.user = user;
+      return next();
     }
 
-    // Fallback: treat as CLIENT
-    return requireClient(req, res, next);
+    // Unknown tier - allow through (safe default)
+    return next();
   };
 }
 

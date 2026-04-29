@@ -1,0 +1,20 @@
+{
+  "id": "restart-service",
+  "name": "Restart PM2 service",
+  "description": "Gracefully restart a specific PM2-managed service. Causes brief downtime (≈2s).",
+  "category": "operations",
+  "required_tier": "pro",
+  "required_capability": null,
+  "confirmation_required": true,
+  "params": [
+    { "name": "service", "type": "string", "required": true, "values_from": "/admin/services", "label": "Target service" }
+  ],
+  "steps": [
+    { "type": "confirm",    "message": "Restart {service}? Causes ~2s downtime." },
+    { "type": "http_post",  "path": "/admin/services/{service}/restart" },
+    { "type": "wait_for",   "path": "/healthz", "match": "status=ok", "timeout_s": 30 }
+  ],
+  "estimated_duration_s": 5,
+  "audit": true,
+  "audit_action": "service_restart"
+}
