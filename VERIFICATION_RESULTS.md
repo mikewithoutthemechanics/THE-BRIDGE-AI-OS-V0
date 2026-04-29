@@ -12,7 +12,7 @@
 |--------|--------|-------|
 | **GitHub Repository** | ✅ IN SYNC | Local matches remote |
 | **VPS (37.27.245.219)** | ❌ UNREACHABLE | Timeout on port 3000 |
-| **Supabase Database** | ❌ TABLES MISSING | Migration not run |
+| **Supabase Database** | ✅ COMPLETE | All 5 tables created via MCP |
 | **On-Chain (Linea)** | ⚠️ PARTIAL | Contract OK, missing treasury key & liquidity |
 
 ---
@@ -85,42 +85,22 @@ cd /opt/bridge-os && pm2 start ecosystem.config.js
 
 ---
 
-### 3. Supabase Database ❌
+### 3. Supabase Database ✅
 
 ```
-[SUPABASE] withdrawal_requests: TypeError: fetch failed
-[SUPABASE] agent_claims: TypeError: fetch failed
-[SUPABASE] fiat_payouts: TypeError: fetch failed
-[SUPABASE] withdrawal_claims: TypeError: fetch failed
-[SUPABASE] admin_withdrawals: TypeError: fetch failed
-[SUPABASE] users.wallet_address: Exists
+[SUPABASE] Migration applied via MCP to go.ai-os.co.za (sdkysuvmtqjqopmdpvoz)
 ```
 
-**Issues Found:**
-1. All 5 withdrawal tables do not exist
-2. Supabase connection may not be configured in local .env
-3. Migration has not been run
+**Tables Created:**
+| Table | Rows | RLS | Status |
+|-------|------|-----|--------|
+| `withdrawal_requests` | 0 | ✅ | Created |
+| `agent_claims` | 0 | ✅ | Created |
+| `fiat_payouts` | 0 | ✅ | Created |
+| `withdrawal_claims` | 0 | ✅ | Created |
+| `admin_withdrawals` | 0 | ✅ | Created |
 
-**Good News:**
-- `users.wallet_address` column already exists
-- Supabase infrastructure is accessible
-
-**Required Actions:**
-```bash
-# 1. Ensure .env has Supabase credentials
-cat .env | grep SUPABASE
-
-# Expected output:
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_SERVICE_KEY=your-service-role-key
-
-# 2. Run the migration
-node migrations/apply-withdrawal-system.js
-
-# Or manually in Supabase SQL Editor:
-# https://supabase.com/dashboard/project/_/editor
-# Copy contents of: migrations/013_withdrawal_system.sql
-```
+**Status:** All 5 withdrawal tables created with Row Level Security enabled.
 
 ---
 
@@ -171,17 +151,12 @@ echo "DEPLOYER_PRIVATE_KEY=0xyourprivatekey" >> .env
    JWT_SECRET=your-jwt-secret
    ```
 
-2. **Run Supabase Migration**
-   ```bash
-   node migrations/apply-withdrawal-system.js
-   ```
-
-3. **Fix VPS Connectivity**
+2. **Fix VPS Connectivity**
    - Verify correct VPS IP address
    - Ensure service is running on port 3000
    - Check firewall rules
 
-4. **Deploy to VPS**
+3. **Deploy to VPS**
    ```bash
    ssh root@37.27.245.219 "cd /opt/bridge-os && git pull origin main"
    ssh root@37.27.245.219 "cd /opt/bridge-os && npm install"
@@ -190,7 +165,7 @@ echo "DEPLOYER_PRIVATE_KEY=0xyourprivatekey" >> .env
 
 ### Future (After Core System Working)
 
-5. **Add Swap Pool Liquidity**
+4. **Add Swap Pool Liquidity**
    - Fund SyncSwap BRDG/ETH pool
    - Required for BRDG→ETH swaps
 
@@ -248,10 +223,10 @@ curl "http://37.27.245.219:3000/api/swap/quote?amount=100"
 
 1. ✅ **GitHub** - All code pushed (COMPLETE)
 2. ⚠️ **VPS** - Needs IP/port verification
-3. ⚠️ **Supabase** - Run migration
+3. ✅ **Supabase** - Migration applied via MCP (COMPLETE)
 4. ⚠️ **Environment** - Add TREASURY_PRIVATE_KEY
 5. ⚠️ **On-Chain** - Add swap pool liquidity (admin)
 
-**Estimated time to complete:** 10-15 minutes
+**Estimated time to complete:** 5-10 minutes
 
 See `DEPLOY_NOW.md` for step-by-step instructions.
