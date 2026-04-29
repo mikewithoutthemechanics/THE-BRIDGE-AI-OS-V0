@@ -15,9 +15,5 @@ export default defineConfig(({mode}) => {
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
     },
-    build: {
-      // Force web worker output as .js regardless of source extension
-      workerFileNames: 'assets/[name]-[hash].js',
-    },
   };
 });

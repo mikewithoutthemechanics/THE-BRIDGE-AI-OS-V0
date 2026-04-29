@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { useSimulationWorker, SimulationState } from '../hooks/useSimulationWorker';
+import { useEffect, useState } from 'react';
+import { useSimulationWorker } from '../hooks/useSimulationWorker';
 
 export default function TaskLoop() {
   const { state, isConnected, sendCommand } = useSimulationWorker();
