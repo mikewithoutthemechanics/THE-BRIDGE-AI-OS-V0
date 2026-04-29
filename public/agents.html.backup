@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Control | Bridge AI-OS</title>
+  <meta name="description" content="Bridge AI OS Agent Control Centre — manage and run 10 autonomous AI agents across L1, L2, and L3 layers.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/bridge-tokens.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#060810;color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+    .dashboard{max-width:1100px;margin:0 auto;padding:24px}
+    h1{font-size:1.6rem;font-weight:800;color:#63ffda;margin-bottom:6px}
+    .sub{color:#94a3b8;font-size:0.85rem;margin-bottom:28px}
+    .toolbar{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
+    .btn{padding:9px 20px;border-radius:8px;font-size:0.82rem;font-weight:700;border:none;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s}
+    .btn-primary{background:#63ffda;color:#060810}
+    .btn-primary:hover{background:#00dda8}
+    .btn-secondary{background:#0a0e17;color:#63ffda;border:1px solid rgba(99,255,218,0.2)}
+    .btn-secondary:hover{border-color:#63ffda}
+    .btn:disabled{opacity:0.4;cursor:not-allowed}
+    .run-status{font-size:0.8rem;color:#94a3b8;margin-left:auto}
+    .run-status.running{color:#fbbf24}
+    .run-status.done{color:#4ade80}
+    .agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+    .agent-card{background:#0a0e17;border:1px solid #1a2a3a;border-radius:12px;padding:20px;transition:border-color 0.2s}
+    .agent-card.running{border-color:#fbbf24;animation:pulse 1.5s ease-in-out infinite}
+    .agent-card.done{border-color:#4ade80}
+    .agent-card.error{border-color:#f87171}
+    .agent-card.cached{border-color:rgba(99,255,218,0.25)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+    .agent-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .agent-dot{width:8px;height:8px;border-radius:50%;background:#1a2a3a;flex-shrink:0}
+    .agent-dot.active{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.5)}
+    .agent-dot.cached{background:#63ffda;box-shadow:0 0 6px rgba(99,255,218,0.4)}
+    .agent-dot.running{background:#fbbf24;box-shadow:0 0 6px rgba(251,191,36,0.5)}
+    .agent-dot.error{background:#f87171}
+    .agent-name{font-size:0.92rem;font-weight:700}
+    .agent-layer{font-size:0.7rem;color:#63ffda;background:rgba(99,255,218,0.1);padding:2px 8px;border-radius:10px;margin-left:auto}
+    .agent-output{font-size:0.78rem;color:#94a3b8;line-height:1.5;min-height:40px;margin-bottom:12px;word-break:break-word;max-height:160px;overflow-y:auto}
+    .agent-output.loaded{color:#cbd5e1}
+    .agent-footer{display:flex;align-items:center;gap:8px}
+    .agent-run-btn{padding:5px 14px;font-size:0.75rem;font-weight:700;background:rgba(99,255,218,0.08);border:1px solid rgba(99,255,218,0.2);color:#63ffda;border-radius:6px;cursor:pointer;transition:all 0.15s}
+    .agent-run-btn:hover{background:rgba(99,255,218,0.15)}
+    .agent-run-btn:disabled{opacity:0.3;cursor:not-allowed}
+    .agent-time{font-size:0.7rem;color:#4a5568;margin-left:auto}
+    .input-row{display:flex;gap:8px;margin-bottom:8px}
+    .agent-input{flex:1;padding:6px 10px;background:#111827;border:1px solid #1a2a3a;border-radius:6px;color:#fff;font-size:0.78rem;outline:none}
+    .agent-input:focus{border-color:#63ffda}
+    .stats-bar{background:#0a0e17;border:1px solid #1a2a3a;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+    .t-stat{text-align:center}
+    .t-val{font-size:1.4rem;font-weight:800;color:#63ffda}
+    .t-label{font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+    .auto-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;background:rgba(99,255,218,0.08);border:1px solid rgba(99,255,218,0.2);color:#63ffda;margin-left:auto}
+    .auto-badge .dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:blink 2s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+    .spend-bar{width:100%;height:3px;background:#1e293b;border-radius:2px;margin-top:6px;overflow:hidden}
+    .spend-fill{height:100%;background:linear-gradient(90deg,#63ffda,#fbbf24);border-radius:2px;transition:width 0.5s}
+    @media(max-width:640px){
+      .agents-grid{grid-template-columns:1fr}
+      .dashboard{padding:14px}
+      h1{font-size:1.3rem}
+      .stats-bar{gap:14px}
+    }
+  </style>
+</head>
+<body>
+  <script src="/bridge-nav.js?v=2"></script>
+  <div class="dashboard">
+    <h1>Agent Control Centre</h1>
+    <p class="sub">10 autonomous AI agents — auto-cycle every 6 hours, or run manually</p>
+
+    <div class="stats-bar">
+      <div class="t-stat"><div class="t-val" id="treasury">—</div><div class="t-label">Treasury</div></div>
+      <div class="t-stat"><div class="t-val" id="agentCount">10</div><div class="t-label">Agents</div></div>
+      <div class="t-stat"><div class="t-val" id="tasksRun">0</div><div class="t-label">Tasks Run</div></div>
+      <div class="t-stat" style="min-width:120px">
+        <div class="t-val" id="aiSpend">R0.00</div>
+        <div class="t-label">AI Spend / Month</div>
+        <div class="spend-bar"><div class="spend-fill" id="spendBar" style="width:0%"></div></div>
+      </div>
+      <div class="auto-badge">
+        <span class="dot"></span>
+        <span id="lastRunLabel">Loading…</span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn btn-primary" id="runAllBtn" onclick="runAll()">Run All Agents</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear Outputs</button>
+      <button class="btn btn-secondary" onclick="loadOutputs()">&#8635; Reload Cached</button>
+      <span class="run-status" id="runStatus">Ready</span>
+    </div>
+
+    <div class="agents-grid" id="agentsGrid"></div>
+  </div>
+
+  <script>
+    var agentDefs = [
+      { name: 'QuoteGen AI',     layer: 'L1', desc: 'Generates high-conversion sales quotes' },
+      { name: 'Finance AI',      layer: 'L1', desc: 'Financial forecasting and budget analysis' },
+      { name: 'Growth Hunter',   layer: 'L1', desc: 'Aggressive growth tactics and lead strategy' },
+      { name: 'Intelligence AI', layer: 'L2', desc: 'Competitive intelligence and market signals' },
+      { name: 'Nurture AI',      layer: 'L2', desc: 'Email nurture sequences for prospects' },
+      { name: 'Closer AI',       layer: 'L2', desc: 'Sales closing strategies and objection handling' },
+      { name: 'Campaign AI',     layer: 'L2', desc: 'Paid advertising campaigns and targeting' },
+      { name: 'Creative AI',     layer: 'L3', desc: 'Marketing creative briefs and ad copy' },
+      { name: 'Support AI',      layer: 'L3', desc: 'Support triage and resolution' },
+      { name: 'Supply AI',       layer: 'L3', desc: 'Infrastructure cost optimisation' },
+    ];
+
+    var tasksRun = 0;
+
+    function timeAgo(iso) {
+      if (!iso) return 'never';
+      var s = Math.floor((Date.now() - new Date(iso)) / 1000);
+      if (s < 60) return s + 's ago';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      return Math.floor(s / 86400) + 'd ago';
+    }
+
+    function buildGrid() {
+      var grid = document.getElementById('agentsGrid');
+      agentDefs.forEach(function(a) {
+        var slug = a.name.replace(/\s/g, '-');
+        var card = document.createElement('div');
+        card.className = 'agent-card';
+        card.id = 'card-' + slug;
+
+        var header = document.createElement('div');
+        header.className = 'agent-header';
+
+        var dot = document.createElement('div');
+        dot.className = 'agent-dot active';
+        dot.id = 'dot-' + slug;
+
+        var nameEl = document.createElement('div');
+        nameEl.className = 'agent-name';
+        nameEl.textContent = a.name;
+
+        var layerEl = document.createElement('div');
+        layerEl.className = 'agent-layer';
+        layerEl.textContent = a.layer;
+
+        header.appendChild(dot);
+        header.appendChild(nameEl);
+        header.appendChild(layerEl);
+
+        var output = document.createElement('div');
+        output.className = 'agent-output';
+        output.id = 'out-' + slug;
+        output.textContent = a.desc;
+
+        var inputRow = document.createElement('div');
+        inputRow.className = 'input-row';
+        var inp = document.createElement('input');
+        inp.className = 'agent-input';
+        inp.placeholder = 'Optional context for this agent…';
+        inp.id = 'inp-' + slug;
+        inputRow.appendChild(inp);
+
+        var footer = document.createElement('div');
+        footer.className = 'agent-footer';
+
+        var runBtn = document.createElement('button');
+        runBtn.className = 'agent-run-btn';
+        runBtn.textContent = 'Run';
+        runBtn.id = 'btn-' + slug;
+        runBtn.setAttribute('data-agent', a.name);
+        runBtn.onclick = function() { runAgent(this.getAttribute('data-agent')); };
+
+        var timeEl = document.createElement('div');
+        timeEl.className = 'agent-time';
+        timeEl.id = 'time-' + slug;
+
+        footer.appendChild(runBtn);
+        footer.appendChild(timeEl);
+
+        card.appendChild(header);
+        card.appendChild(output);
+        card.appendChild(inputRow);
+        card.appendChild(footer);
+        grid.appendChild(card);
+      });
+    }
+
+    // Apply cached output to a card
+    function applyOutput(name, entry) {
+      var slug = name.replace(/\s/g, '-');
+      var card = document.getElementById('card-' + slug);
+      var dot  = document.getElementById('dot-'  + slug);
+      var out  = document.getElementById('out-'  + slug);
+      var time = document.getElementById('time-' + slug);
+      if (!card) return;
+      if (entry.error) {
+        out.textContent = 'Last error: ' + entry.error;
+        card.className  = 'agent-card error';
+        dot.className   = 'agent-dot error';
+      } else if (entry.output) {
+        out.textContent = entry.output;
+        out.className   = 'agent-output loaded';
+        card.className  = 'agent-card cached';
+        dot.className   = 'agent-dot cached';
+      }
+      if (entry.timestamp) time.textContent = timeAgo(entry.timestamp);
+    }
+
+    // Status colour map for execution_status field
+    var STATUS_COLOUR = {
+      complete: '#4ade80',
+      partial:  '#fbbf24',
+      failed:   '#f87171',
+      never:    '#64748b',
+      running:  '#fbbf24',
+    };
+
+    async function loadOutputs() {
+      try {
+        // Single source of truth — reads system_state, never triggers execution
+        var res   = await fetch('/api/system/state');
+        var state = await res.json();
+
+        var agents  = state.agents  || {};
+        var aiState = state.ai      || {};
+
+        // Last run + status badge
+        var lbl    = document.getElementById('lastRunLabel');
+        var status = agents.execution_status || 'never';
+        var colour = STATUS_COLOUR[status] || '#64748b';
+        lbl.textContent = agents.last_run
+          ? status.toUpperCase() + ' · ' + timeAgo(agents.last_run)
+          : 'No cycle yet';
+        lbl.style.color = colour;
+        document.querySelector('.auto-badge .dot').style.background = colour;
+
+        // AI spend bar
+        var spend  = aiState.spend  || 0;
+        var budget = aiState.budget || 500;
+        document.getElementById('aiSpend').textContent = 'R' + spend.toFixed(2);
+        var pct = budget > 0 ? Math.min(100, (spend / budget) * 100) : 0;
+        document.getElementById('spendBar').style.width = pct.toFixed(1) + '%';
+
+        // Treasury
+        if (state.treasury && state.treasury.balance) {
+          document.getElementById('treasury').textContent = 'R' + Math.round(state.treasury.balance).toLocaleString();
+        }
+
+        // Apply cached outputs — only value-positive entries exist in state
+        var outputs = agents.outputs || {};
+        Object.keys(outputs).forEach(function(name) {
+          applyOutput(name, outputs[name]);
+        });
+      } catch (_) {}
+    }
+
+    async function runAgent(name) {
+      var slug   = name.replace(/\s/g, '-');
+      var card   = document.getElementById('card-' + slug);
+      var dot    = document.getElementById('dot-' + slug);
+      var out    = document.getElementById('out-' + slug);
+      var btn    = document.getElementById('btn-' + slug);
+      var timeEl = document.getElementById('time-' + slug);
+      var inp    = document.getElementById('inp-' + slug);
+
+      card.className  = 'agent-card running';
+      dot.className   = 'agent-dot running';
+      out.className   = 'agent-output';
+      out.textContent = 'Running…';
+      btn.disabled    = true;
+
+      var t0 = Date.now();
+      try {
+        var r = await fetch('/api/agents/run', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ agentName: name, input: inp.value }),
+        });
+        var data    = await r.json();
+        var elapsed = ((Date.now() - t0) / 1000).toFixed(1) + 's';
+
+        if (data.ok && data.output) {
+          out.textContent  = data.output;
+          out.className    = 'agent-output loaded';
+          card.className   = 'agent-card done';
+          dot.className    = 'agent-dot active';
+          timeEl.textContent = elapsed;
+          tasksRun++;
+          document.getElementById('tasksRun').textContent = tasksRun;
+        } else {
+          out.textContent = 'Error: ' + (data.error || 'Unknown');
+          card.className  = 'agent-card error';
+          dot.className   = 'agent-dot error';
+        }
+      } catch (e) {
+        out.textContent = 'Network error: ' + e.message;
+        card.className  = 'agent-card error';
+        dot.className   = 'agent-dot error';
+      }
+      btn.disabled = false;
+    }
+
+    async function runAll() {
+      var btn      = document.getElementById('runAllBtn');
+      var statusEl = document.getElementById('runStatus');
+      btn.disabled = true;
+      statusEl.className   = 'run-status running';
+      statusEl.textContent = 'Running all agents…';
+      await Promise.all(agentDefs.map(function(a) { return runAgent(a.name); }));
+      btn.disabled = false;
+      statusEl.className   = 'run-status done';
+      statusEl.textContent = 'Cycle complete — reloading state…';
+      loadOutputs(); // pull fresh system_state from Supabase
+      setTimeout(function() {
+        statusEl.className   = 'run-status';
+        statusEl.textContent = 'Ready';
+      }, 5000);
+    }
+
+    function clearAll() {
+      agentDefs.forEach(function(a) {
+        var slug = a.name.replace(/\s/g, '-');
+        document.getElementById('card-' + slug).className = 'agent-card';
+        document.getElementById('dot-'  + slug).className = 'agent-dot active';
+        document.getElementById('out-'  + slug).className = 'agent-output';
+        document.getElementById('out-'  + slug).textContent = a.desc;
+        document.getElementById('time-' + slug).textContent = '';
+      });
+    }
+
+    buildGrid();
+    loadOutputs(); // loads treasury, spend, outputs — all from system_state
+  </script>
+</body>
+</html>

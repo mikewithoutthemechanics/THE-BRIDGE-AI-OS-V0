@@ -49,6 +49,7 @@
     display: flex; align-items: center; gap: 0.6rem; border-left: 3px solid transparent;
     transition: all 0.15s;
   }
+  button.nav-item { width: 100%; border: 0; background: transparent; font: inherit; text-align: left; }
   .nav-item:hover { color: var(--c-text); background: rgba(255,255,255,.03); }
   .nav-item.active { color: var(--c-accent); border-left-color: var(--c-accent); background: rgba(245,158,11,.06); }
   .sidebar-spacer { flex: 1; }
@@ -156,40 +157,40 @@ img,video,iframe,table{max-width:100%}
 
 <div class="layout">
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <nav class="sidebar" aria-label="Carrier admin">
     <div class="sidebar-logo">⚡ BRIDGE CARRIER</div>
     <div class="sidebar-role" id="roleLabel">Loading...</div>
 
     <!-- Root-only items -->
     <div id="rootNav" style="display:none">
-      <div class="nav-item active" onclick="showPage('overview')">📊 Overview</div>
-      <div class="nav-item" onclick="showPage('resellers')">🏢 Resellers</div>
-      <div class="nav-item" onclick="showPage('federation')">🔗 Federation</div>
-      <div class="nav-item" onclick="showPage('numbers')">📞 Numbers</div>
-      <div class="nav-item" onclick="showPage('revenue')">💰 Revenue</div>
-      <div class="nav-item" onclick="showPage('wallet')">👛 Wallet</div>
+      <button type="button" class="nav-item active" onclick="showPage('overview', event)">📊 Overview</button>
+      <button type="button" class="nav-item" onclick="showPage('resellers', event)">🏢 Resellers</button>
+      <button type="button" class="nav-item" onclick="showPage('federation', event)">🔗 Federation</button>
+      <button type="button" class="nav-item" onclick="showPage('numbers', event)">📞 Numbers</button>
+      <button type="button" class="nav-item" onclick="showPage('revenue', event)">💰 Revenue</button>
+      <button type="button" class="nav-item" onclick="showPage('wallet', event)">👛 Wallet</button>
     </div>
 
     <!-- Master reseller items -->
     <div id="masterNav" style="display:none">
-      <div class="nav-item active" onclick="showPage('overview')">📊 Overview</div>
-      <div class="nav-item" onclick="showPage('resellers')">🏢 Sub-Resellers</div>
-      <div class="nav-item" onclick="showPage('numbers')">📞 Numbers</div>
-      <div class="nav-item" onclick="showPage('revenue')">💰 Revenue</div>
-      <div class="nav-item" onclick="showPage('wallet')">👛 Wallet</div>
+      <button type="button" class="nav-item active" onclick="showPage('overview', event)">📊 Overview</button>
+      <button type="button" class="nav-item" onclick="showPage('resellers', event)">🏢 Sub-Resellers</button>
+      <button type="button" class="nav-item" onclick="showPage('numbers', event)">📞 Numbers</button>
+      <button type="button" class="nav-item" onclick="showPage('revenue', event)">💰 Revenue</button>
+      <button type="button" class="nav-item" onclick="showPage('wallet', event)">👛 Wallet</button>
     </div>
 
     <!-- Reseller items -->
     <div id="resellerNav" style="display:none">
-      <div class="nav-item active" onclick="showPage('overview')">📊 Overview</div>
-      <div class="nav-item" onclick="showPage('numbers')">📞 Numbers</div>
-      <div class="nav-item" onclick="showPage('revenue')">💰 Revenue</div>
-      <div class="nav-item" onclick="showPage('wallet')">👛 Wallet</div>
+      <button type="button" class="nav-item active" onclick="showPage('overview', event)">📊 Overview</button>
+      <button type="button" class="nav-item" onclick="showPage('numbers', event)">📞 Numbers</button>
+      <button type="button" class="nav-item" onclick="showPage('revenue', event)">💰 Revenue</button>
+      <button type="button" class="nav-item" onclick="showPage('wallet', event)">👛 Wallet</button>
     </div>
 
     <div class="sidebar-spacer"></div>
     <div class="sidebar-user" id="sidebarUser">—</div>
-  </aside>
+  </nav>
 
   <!-- Main content -->
   <main class="main">
@@ -437,11 +438,12 @@ function deriveRole(u) {
 }
 
 /* ─── Navigation ───────────────────────────────────────────────────────────── */
-function showPage(name) {
+function showPage(name, evt) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
+  var t = evt && evt.currentTarget ? evt.currentTarget : null;
+  if (t) t.classList.add('active');
 
   const loaders = { overview: loadOverview, resellers: loadResellers, federation: loadFederation, numbers: loadNumbers, revenue: loadRevenue, wallet: loadWallet };
   if (loaders[name]) loaders[name]();
@@ -467,7 +469,7 @@ async function loadOverview() {
 
   const carriers = (fedRes.carriers || []).filter(c => c.status === 'active');
   if (!carriers.length) {
-    document.getElementById('carriersBody').innerHTML = '<div class="empty">No active federation carriers. <a href="#" onclick="showPage(\'federation\')" style="color:var(--c-accent)">Connect one →</a></div>';
+    document.getElementById('carriersBody').innerHTML = '<div class="empty">No active federation carriers. <button type="button" class="btn-ghost btn-sm" onclick="showPage(\'federation\', event)" style="color:var(--c-accent);margin-top:.5rem">Connect one →</button></div>';
     return;
   }
   document.getElementById('carriersBody').innerHTML = `

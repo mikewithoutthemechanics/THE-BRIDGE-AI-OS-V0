@@ -9,27 +9,29 @@
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'">
     <title>BRIDGE AI OS — Admin Keys</title>
+    <meta name="description" content="Bridge AI OS admin API key management panel — configure and manage environment keys for all integrations.">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/bridge-design-tokens.css">
     <style>
         :root {
-            --bg-primary: #060810;
-            --bg-secondary: #0a0e17;
-            --bg-tertiary: #111827;
-            --bg-glass: rgba(10, 14, 23, 0.85);
-            --border-color: rgba(99, 255, 218, 0.12);
-            --border-glow: rgba(99, 255, 218, 0.3);
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --accent-cyan: #63ffda;
-            --accent-blue: #38bdf8;
+            --bg-primary: var(--theme-bg-primary);
+            --bg-secondary: var(--theme-bg-secondary);
+            --bg-tertiary: var(--theme-bg-tertiary);
+            --bg-glass: var(--theme-bg-glass);
+            --border-color: var(--theme-border);
+            --border-glow: var(--theme-border-hover);
+            --text-primary: var(--theme-text-primary);
+            --text-secondary: var(--theme-text-secondary);
+            --text-muted: var(--theme-text-muted);
+            --accent-cyan: var(--theme-primary);
+            --accent-blue: var(--theme-secondary);
             --accent-purple: #a78bfa;
             --accent-pink: #f472b6;
             --accent-orange: #fb923c;
             --accent-red: #f87171;
             --accent-green: #4ade80;
-            --gradient-primary: linear-gradient(135deg, #63ffda 0%, #38bdf8 50%, #a78bfa 100%);
+            --gradient-primary: var(--theme-gradient);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,7 +48,7 @@
             position: fixed;
             inset: 0;
             background:
-                radial-gradient(ellipse at 20% 80%, rgba(99, 255, 218, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 80%, var(--theme-primary-glow) 0%, transparent 50%),
                 radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
@@ -72,9 +74,7 @@
         .header h1 {
             font-size: 22px;
             font-weight: 700;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--accent-cyan);
         }
         .header .back {
             color: var(--text-secondary);
@@ -212,7 +212,7 @@
         }
         .key-row input:focus {
             border-color: var(--accent-cyan);
-            box-shadow: 0 0 12px rgba(99, 255, 218, 0.08);
+            box-shadow: 0 0 12px var(--theme-primary-glow);
         }
         .key-row input::placeholder {
             color: var(--text-muted);
@@ -254,7 +254,7 @@
             border: none;
             border-radius: 14px;
             background: var(--gradient-primary);
-            color: #060810;
+            color: var(--theme-bg-void);
             font-family: 'Outfit', sans-serif;
             font-size: 15px;
             font-weight: 700;
@@ -262,11 +262,11 @@
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 4px 24px rgba(99, 255, 218, 0.15);
+            box-shadow: 0 4px 24px var(--theme-primary-glow);
         }
         .btn-save:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(99, 255, 218, 0.25);
+            box-shadow: 0 8px 32px var(--theme-primary-glow);
         }
         .btn-save:disabled {
             opacity: 0.5;
@@ -331,7 +331,7 @@ img,video,iframe,table{max-width:100%}
 }
 </style>
 </head>
-<body>
+<body class="admin-theme">
     <div class="shell">
         <div class="header">
             <h1>API Key Management</h1>

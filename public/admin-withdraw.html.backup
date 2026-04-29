@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRIDGE AI OS — Admin Withdraw</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #060810;
+            --bg-secondary: #0a0e17;
+            --bg-glass: rgba(10, 14, 23, 0.85);
+            --border-color: rgba(99, 255, 218, 0.12);
+            --border-glow: rgba(99, 255, 218, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #63ffda;
+            --accent-purple: #a78bfa;
+            --accent-orange: #fb923c;
+            --accent-red: #f87171;
+            --accent-green: #4ade80;
+            --gradient-primary: linear-gradient(135deg, #63ffda 0%, #38bdf8 50%, #a78bfa 100%);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            font-family: 'Outfit', -apple-system, sans-serif;
+            color: var(--text-primary);
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(99, 255, 218, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .shell {
+            position: relative;
+            z-index: 1;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 32px 20px 60px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .back {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .header .back:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+        .warning-box {
+            padding: 16px 18px;
+            border-radius: 12px;
+            margin-bottom: 28px;
+            background: rgba(248, 113, 113, 0.06);
+            border: 1px solid rgba(248, 113, 113, 0.15);
+            font-size: 13px;
+            color: var(--accent-red);
+            line-height: 1.6;
+        }
+        .warning-box strong { color: #fbbf24; }
+
+        .balances {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .bal-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 18px;
+        }
+        .bal-card .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 4px; }
+        .bal-card .value { font-size: 22px; font-weight: 700; color: var(--accent-cyan); font-variant-numeric: tabular-nums; }
+        .bal-card .value.eth { color: var(--accent-purple); }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+        }
+        .form-group {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent-cyan); }
+        .form-group .hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+        .btn-withdraw {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .btn-withdraw.primary {
+            background: linear-gradient(135deg, #f87171 0%, #fb923c 100%);
+            color: #000;
+        }
+        .btn-withdraw.primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-withdraw:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .status-banner {
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-top: 16px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+            word-break: break-all;
+        }
+        .status-banner.success { display: flex; background: rgba(74, 222, 128, 0.08); border: 1px solid rgba(74, 222, 128, 0.2); color: var(--accent-green); }
+        .status-banner.error { display: flex; background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.2); color: var(--accent-red); }
+        .status-banner.pending { display: flex; background: rgba(251, 146, 60, 0.08); border: 1px solid rgba(251, 146, 60, 0.2); color: var(--accent-orange); }
+
+        .audit-section { margin-top: 32px; }
+        .audit-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .audit-table th { text-align: left; padding: 8px 12px; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border-color); }
+        .audit-table td { padding: 8px 12px; border-bottom: 1px solid rgba(99, 255, 218, 0.05); color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+        .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+        .confirm-overlay.active { display: flex; }
+        .confirm-dialog { background: var(--bg-secondary); border: 1px solid var(--accent-red); border-radius: 16px; padding: 28px; max-width: 420px; width: 90%; text-align: center; }
+        .confirm-dialog h3 { color: var(--accent-red); font-size: 18px; margin-bottom: 12px; }
+        .confirm-dialog p { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; line-height: 1.6; }
+        .confirm-dialog .details { background: var(--bg-primary); border-radius: 10px; padding: 14px; margin-bottom: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; text-align: left; color: var(--text-primary); line-height: 1.8; white-space: pre-line; }
+        .confirm-btns { display: flex; gap: 10px; }
+        .confirm-btns button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .btn-cancel { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+        .btn-confirm { background: linear-gradient(135deg, #f87171 0%, #fb923c 100%); color: #000; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+        @media(max-width:640px){
+            .shell { padding: 20px 14px 40px; }
+            .header h1 { font-size: 18px; }
+            .balances { grid-template-columns: 1fr 1fr; }
+            .bal-card .value { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+<script src="/bridge-nav.js?v=2"></script>
+<div class="shell">
+    <div class="header">
+        <h1>Treasury Withdraw</h1>
+        <a href="/admin" class="back">Admin Panel</a>
+    </div>
+
+    <div class="warning-box">
+        <strong>Admin Only.</strong> Withdrawals are on-chain (Linea mainnet). Every transaction is KeyForge-authorized, audited, and irreversible. Double-check the destination address.
+    </div>
+
+    <div class="balances">
+        <div class="bal-card"><div class="label">Treasury (BRDG)</div><div class="value" id="brdgBal">--</div></div>
+        <div class="bal-card"><div class="label">ETH Balance</div><div class="value eth" id="ethBal">--</div></div>
+        <div class="bal-card"><div class="label">Ops Bucket</div><div class="value" id="opsBal">--</div></div>
+        <div class="bal-card"><div class="label">Reserve</div><div class="value" id="resBal">--</div></div>
+    </div>
+
+    <div class="section-title">1. Authenticate</div>
+    <div class="form-group">
+        <label>Admin Token</label>
+        <input type="password" id="adminToken" placeholder="Enter admin token">
+        <div class="hint">Same token used for other admin operations</div>
+    </div>
+
+    <div class="section-title">2. Withdraw Details</div>
+    <div class="form-group">
+        <label>Rail</label>
+        <select id="rail">
+            <option value="eth">ETH (Linea Mainnet)</option>
+            <option value="brdg">BRDG Token</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Destination Address</label>
+        <input type="text" id="toAddress" placeholder="0x..." spellcheck="false">
+        <div class="hint">Linea-compatible address (0x...)</div>
+    </div>
+    <div class="form-group">
+        <label>Amount</label>
+        <input type="number" id="amount" placeholder="0.00" step="any" min="0">
+        <div class="hint" id="amountHint">ETH amount to withdraw</div>
+    </div>
+    <div class="form-group">
+        <label>Memo (optional)</label>
+        <input type="text" id="memo" placeholder="e.g. Ops payout April 2026">
+    </div>
+
+    <button class="btn-withdraw primary" id="btnWithdraw" onclick="initiateWithdraw()">
+        Authorize &amp; Withdraw
+    </button>
+
+    <div class="status-banner" id="status"></div>
+
+    <div class="audit-section">
+        <div class="section-title">Recent Withdrawals</div>
+        <table class="audit-table">
+            <thead><tr><th>Time</th><th>Rail</th><th>To</th><th>Amount</th><th>Tx</th></tr></thead>
+            <tbody id="auditBody"><tr><td colspan="5" style="color:#555">Loading...</td></tr></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-dialog">
+        <h3>Confirm Withdrawal</h3>
+        <p>This action is irreversible. Funds will be sent on-chain immediately.</p>
+        <div class="details" id="confirmDetails"></div>
+        <div class="confirm-btns">
+            <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+            <button class="btn-confirm" onclick="executeWithdraw()">Confirm &amp; Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const adminToken = () => $('adminToken').value.trim();
+const headers = () => ({ 'Content-Type': 'application/json', 'x-admin-token': adminToken() });
+
+function showStatus(msg, type) {
+    const el = $('status');
+    el.className = 'status-banner ' + type;
+    el.textContent = msg;
+    el.style.display = 'flex';
+}
+
+async function loadBalances() {
+    try {
+        const [treasury, brdg] = await Promise.all([
+            fetch('/api/treasury').then(r => r.json()).catch(() => null),
+            fetch('/api/brdg/token').then(r => r.json()).catch(() => null)
+        ]);
+        if (treasury) {
+            const buckets = treasury.buckets || [];
+            const ops = buckets.find(b => b.name === 'ops');
+            const res = buckets.find(b => b.name === 'ubi');
+            $('opsBal').textContent = ops ? ops.balance.toLocaleString() + ' BRDG' : '--';
+            $('resBal').textContent = res ? res.balance.toLocaleString() + ' BRDG' : '--';
+        }
+        if (brdg && brdg.ok) {
+            $('brdgBal').textContent = Number(brdg.totalSupply || 0).toLocaleString() + ' BRDG';
+            $('ethBal').textContent = (brdg.ethBalance || '0') + ' ETH';
+        }
+    } catch (e) { /* silent */ }
+}
+
+$('rail').addEventListener('change', () => {
+    $('amountHint').textContent = $('rail').value === 'eth'
+        ? 'ETH amount to withdraw' : 'BRDG token amount to withdraw';
+});
+
+function initiateWithdraw() {
+    const to = $('toAddress').value.trim();
+    const amount = $('amount').value.trim();
+    const rail = $('rail').value;
+    const memo = $('memo').value.trim();
+
+    if (!adminToken()) return showStatus('Admin token required', 'error');
+    if (!to || !/^0x[a-fA-F0-9]{40}$/.test(to)) return showStatus('Invalid destination address (must be 0x + 40 hex chars)', 'error');
+    if (!amount || parseFloat(amount) <= 0) return showStatus('Amount must be greater than 0', 'error');
+
+    const details = $('confirmDetails');
+    details.textContent = [
+        'Rail: ' + rail.toUpperCase(),
+        'To: ' + to,
+        'Amount: ' + amount + ' ' + rail.toUpperCase(),
+        memo ? 'Memo: ' + memo : ''
+    ].filter(Boolean).join('\n');
+    $('confirmOverlay').classList.add('active');
+}
+
+function closeConfirm() { $('confirmOverlay').classList.remove('active'); }
+
+async function executeWithdraw() {
+    closeConfirm();
+    const to = $('toAddress').value.trim();
+    const amount = $('amount').value.trim();
+    const rail = $('rail').value;
+    const memo = $('memo').value.trim();
+    const btn = $('btnWithdraw');
+
+    btn.disabled = true;
+    btn.textContent = 'Authorizing...';
+    showStatus('Step 1/2: Requesting KeyForge authorization...', 'pending');
+
+    try {
+        const authRes = await fetch('/api/admin/withdraw/authorize', {
+            method: 'POST', headers: headers()
+        });
+        const authData = await authRes.json();
+        if (!authData.ok) throw new Error(authData.error || 'Authorization failed');
+
+        const kfToken = authData.token;
+        showStatus('Step 2/2: Executing on-chain withdrawal...', 'pending');
+        btn.textContent = 'Sending...';
+
+        const txRes = await fetch('/api/admin/withdraw/execute', {
+            method: 'POST',
+            headers: Object.assign({}, headers(), { 'x-kf-token': kfToken }),
+            body: JSON.stringify({ to, amount, rail, memo })
+        });
+        const txData = await txRes.json();
+        if (!txData.ok) throw new Error(txData.error || 'Transaction failed');
+
+        const shortTo = to.slice(0, 8) + '...' + to.slice(-4);
+        const txHash = txData.tx_hash || 'pending';
+        showStatus('Sent ' + amount + ' ' + rail.toUpperCase() + ' to ' + shortTo + ' | Tx: ' + txHash, 'success');
+        loadBalances();
+        loadAudit();
+        $('amount').value = '';
+        $('toAddress').value = '';
+        $('memo').value = '';
+    } catch (e) {
+        showStatus('Failed: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Authorize & Withdraw';
+    }
+}
+
+function loadAudit() {
+    fetch('/api/admin/withdraw/audit', { headers: headers() })
+        .then(r => r.json())
+        .then(data => {
+            const rows = (data.log || []).slice(-10).reverse();
+            const tbody = $('auditBody');
+            tbody.textContent = '';
+            if (!rows.length) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 5;
+                td.style.color = '#555';
+                td.textContent = 'No withdrawals yet';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+            rows.forEach(r => {
+                const tr = document.createElement('tr');
+                const cells = [
+                    new Date(r.ts * 1000).toLocaleString(),
+                    (r.rail || r.action || '').toUpperCase(),
+                    (r.to || '').slice(0, 8) + '...' + (r.to || '').slice(-4),
+                    r.amount,
+                    (r.tx || r.tx_hash || '--').slice(0, 10) + '...'
+                ];
+                cells.forEach((text, i) => {
+                    const td = document.createElement('td');
+                    td.textContent = text;
+                    if (i === 3) td.style.color = 'var(--accent-orange)';
+                    if (i === 3) td.style.fontWeight = '600';
+                    if (i === 4) td.style.color = 'var(--accent-purple)';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(() => {
+            const tbody = $('auditBody');
+            tbody.textContent = '';
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 5;
+            td.style.color = '#555';
+            td.textContent = 'Auth required to view';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        });
+}
+
+loadBalances();
+setInterval(loadBalances, 30000);
+</script>
+</body>
+</html>

@@ -7,9 +7,21 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bridge AI OS — Admin Site Map</title>
+<link rel="stylesheet" href="/bridge-design-tokens.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#050a0f;--surface:#0a1520;--border:#1a2d40;--cyan:#00c8ff;--green:#00e57b;--purple:#a78bfa;--orange:#fb923c;--red:#ff3c5a;--dim:#4d6678;--text:#e0e8f0}
+:root{
+  --bg:var(--theme-bg-void);
+  --surface:var(--theme-bg-primary);
+  --border:var(--theme-border);
+  --cyan:var(--theme-primary);
+  --green:var(--status-success);
+  --purple:#a78bfa;
+  --orange:#fb923c;
+  --red:var(--status-error);
+  --dim:var(--theme-text-muted);
+  --text:var(--theme-text-primary)
+}
 body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:1rem 1.5rem 4rem;line-height:1.5}
 h1{font-size:1.4rem;font-weight:800;margin-bottom:.3rem}
 .sub{color:var(--dim);font-size:.8rem;margin-bottom:1rem}
@@ -20,7 +32,7 @@ h1{font-size:1.4rem;font-weight:800;margin-bottom:.3rem}
 .section-title .count{background:var(--surface);padding:.1rem .5rem;border-radius:10px;font-size:.65rem}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
 .page-link{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--text);font-size:.8rem;transition:all .15s}
-.page-link:hover{border-color:var(--cyan);background:rgba(0,200,255,.05);text-decoration:none}
+.page-link:hover{border-color:var(--cyan);background:rgba(255,140,0,.05);text-decoration:none}
 .page-link .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .dot-core{background:var(--cyan)}
 .dot-vertical{background:var(--green)}
@@ -53,7 +65,7 @@ img,video,iframe,table{max-width:100%}
 }
 </style>
 </head>
-<body>
+<body class="admin-theme">
 <h1>Admin Site Map</h1>
 <p class="sub">All pages — admin-only navigation hub</p>
 
@@ -191,6 +203,10 @@ const PAGES = {
 const container = document.getElementById('sections');
 const searchInput = document.getElementById('search');
 let allLinks = [];
+const totalPages = Object.values(PAGES).reduce((s, p) => s + p.length, 0);
+document.getElementById('total').textContent = totalPages;
+document.getElementById('visible').textContent = totalPages;
+document.querySelector('.sub').textContent = `All ${totalPages} pages — admin-only navigation hub`;
 
 function render(sections) {
   container.innerHTML = '';

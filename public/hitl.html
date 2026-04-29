@@ -56,6 +56,7 @@
   /* ── Tabs ── */
   .tabs { display: flex; gap: 4px; padding: 16px 24px 0; border-bottom: 1px solid var(--border); }
   .tab { padding: 8px 18px; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); border: 1px solid transparent; border-bottom: none; }
+  button.tab { background: transparent; font: inherit; }
   .tab.active { background: var(--surface); border-color: var(--border); color: var(--text); }
 
   /* ── Main layout ── */
@@ -170,9 +171,9 @@ img,video,iframe,table{max-width:100%}
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('queue', this)">Approval Queue</div>
-  <div class="tab" onclick="switchTab('runs', this)">Pipeline Runs</div>
-  <div class="tab" onclick="switchTab('contacts', this)">Contacts</div>
+  <button type="button" class="tab active" onclick="switchTab('queue', this)">Approval Queue</button>
+  <button type="button" class="tab" onclick="switchTab('runs', this)">Pipeline Runs</button>
+  <button type="button" class="tab" onclick="switchTab('contacts', this)">Contacts</button>
 </div>
 
 <div class="main">
@@ -322,7 +323,7 @@ async function loadQueue() {
       if (item.context?.ai_score)      meta.push(`<span class="meta-pill"><strong>Score</strong> ${item.context.ai_score}/100</span>`);
       if (item.context?.deal_value)    meta.push(`<span class="meta-pill"><strong>Value</strong> ${item.context.deal_value}</span>`);
       if (item.context?.quote_number)  meta.push(`<span class="meta-pill"><strong>Quote</strong> ${item.context.quote_number}</span>`);
-      return `<div class="approval-card priority-${item.priority} ${item.id === selectedId ? 'selected' : ''}" onclick="selectApproval(${JSON.stringify(item).replace(/"/g,'&quot;')})">
+      return `<div class="approval-card priority-${item.priority} ${item.id === selectedId ? 'selected' : ''}" onclick="selectApproval(${JSON.stringify(item).replace(/"/g,'&quot;')}, this)">
         <div class="card-header">
           <span class="card-type-badge type-${item.type}">${item.type.replace(/_/g,' ')}</span>
           <span class="card-title">${item.title}</span>
@@ -335,10 +336,10 @@ async function loadQueue() {
   } catch (e) { console.error('Queue load error:', e); }
 }
 
-function selectApproval(item) {
+function selectApproval(item, el) {
   selectedId = item.id;
   document.querySelectorAll('.approval-card').forEach(c => c.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
+  if (el) el.classList.add('selected');
 
   document.getElementById('detail-empty').style.display = 'none';
   document.getElementById('detail-content').style.display = '';

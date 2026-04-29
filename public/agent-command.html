@@ -34,6 +34,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:12px 0;overflow-y:auto}
 .sidebar-section{padding:8px 16px 4px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase}
 .sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;transition:all .15s;border-left:2px solid transparent}
+button.sidebar-item{width:100%;border:0;background:transparent;font:inherit;text-align:left;color:inherit}
 .sidebar-item:hover{background:var(--surface2);border-left-color:var(--border)}
 .sidebar-item.active{background:rgba(139,92,246,.1);border-left-color:var(--primary);color:var(--primary)}
 .sidebar-icon{font-size:14px;width:18px;text-align:center}
@@ -143,34 +144,34 @@ img,video,iframe,table{max-width:100%}
   </div>
 </header>
 
-<nav class="sidebar">
+<nav class="sidebar" aria-label="Agent command sections">
   <div class="sidebar-section">Protocol</div>
-  <div class="sidebar-item active" data-section="acp" onclick="showSection('acp',this)">
-    <span class="sidebar-icon">&#128279;</span> ACP Overview
-  </div>
-  <div class="sidebar-item" data-section="macl" onclick="showSection('macl',this)">
-    <span class="sidebar-icon">&#128172;</span> MACL Language
-  </div>
-  <div class="sidebar-item" data-section="terminal" onclick="showSection('terminal',this)">
-    <span class="sidebar-icon">&#9654;</span> Command Terminal
-  </div>
+  <button type="button" class="sidebar-item active" data-section="acp" onclick="showSection('acp',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#128279;</span> ACP Overview
+  </button>
+  <button type="button" class="sidebar-item" data-section="macl" onclick="showSection('macl',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#128172;</span> MACL Language
+  </button>
+  <button type="button" class="sidebar-item" data-section="terminal" onclick="showSection('terminal',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#9654;</span> Command Terminal
+  </button>
   <div class="sidebar-section">Agents</div>
-  <div class="sidebar-item" data-section="agents" onclick="showSection('agents',this)">
-    <span class="sidebar-icon">&#129504;</span> Agent Registry
-  </div>
-  <div class="sidebar-item" data-section="negotiation" onclick="showSection('negotiation',this)">
-    <span class="sidebar-icon">&#9878;</span> Negotiation Engine
-  </div>
-  <div class="sidebar-item" data-section="personality" onclick="showSection('personality',this)">
-    <span class="sidebar-icon">&#127774;</span> Personality Matrix
-  </div>
+  <button type="button" class="sidebar-item" data-section="agents" onclick="showSection('agents',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#129504;</span> Agent Registry
+  </button>
+  <button type="button" class="sidebar-item" data-section="negotiation" onclick="showSection('negotiation',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#9878;</span> Negotiation Engine
+  </button>
+  <button type="button" class="sidebar-item" data-section="personality" onclick="showSection('personality',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#127774;</span> Personality Matrix
+  </button>
   <div class="sidebar-section">Grammar</div>
-  <div class="sidebar-item" data-section="grammar" onclick="showSection('grammar',this)">
-    <span class="sidebar-icon">&#128218;</span> User→Agent Grammar
-  </div>
-  <div class="sidebar-item" data-section="executor" onclick="showSection('executor',this)">
-    <span class="sidebar-icon">&#9658;</span> Command Executor
-  </div>
+  <button type="button" class="sidebar-item" data-section="grammar" onclick="showSection('grammar',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#128218;</span> User→Agent Grammar
+  </button>
+  <button type="button" class="sidebar-item" data-section="executor" onclick="showSection('executor',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#9658;</span> Command Executor
+  </button>
 </nav>
 
 <main class="main">

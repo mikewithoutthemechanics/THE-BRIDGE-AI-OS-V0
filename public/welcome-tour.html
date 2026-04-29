@@ -116,7 +116,7 @@ img,video,iframe,table{max-width:100%}
   </div>
 
   <div class="step-card" id="step-card"></div>
-  <a href="/portal.html" id="skip-tour" style="display:inline-block;margin-top:1.5rem;color:var(--dim);font-size:.85rem;text-decoration:underline;transition:color .2s" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--dim)'" onclick="localStorage.setItem('bridge_tour_done','true')">Skip tour</a>
+  <a href="/portal.html" id="skip-tour" style="display:inline-block;margin-top:1.5rem;color:var(--dim);font-size:.85rem;text-decoration:underline;transition:color .2s">Skip tour</a>
 </div>
 
 <script>
@@ -278,6 +278,13 @@ img,video,iframe,table{max-width:100%}
     var row = el('div', 'btn-row');
     var console = el('a', 'btn btn-primary'); console.textContent = 'Go to Console'; console.href = '/portal.html'; row.appendChild(console);
     card.appendChild(row);
+  }
+
+  var skip = document.getElementById('skip-tour');
+  if (skip) {
+    skip.addEventListener('click', function() {
+      localStorage.setItem('bridge_tour_done', 'true');
+    });
   }
 
   renderStep();

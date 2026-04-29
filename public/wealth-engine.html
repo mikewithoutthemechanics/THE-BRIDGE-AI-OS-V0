@@ -34,6 +34,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:12px 0;overflow-y:auto}
 .sidebar-section{padding:8px 16px 4px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase}
 .sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;transition:all .15s;border-left:2px solid transparent}
+button.sidebar-item{width:100%;border:0;background:transparent;font:inherit;text-align:left;color:inherit}
 .sidebar-item:hover{background:var(--surface2);border-left-color:var(--border)}
 .sidebar-item.active{background:rgba(16,185,129,.1);border-left-color:var(--primary);color:var(--primary)}
 .sidebar-icon{font-size:14px;width:18px;text-align:center}
@@ -135,34 +136,34 @@ img,video,iframe,table{max-width:100%}
   </div>
 </header>
 
-<nav class="sidebar">
+<nav class="sidebar" aria-label="Wealth engine sections">
   <div class="sidebar-section">Wealth Engine</div>
-  <div class="sidebar-item active" data-section="dashboard" onclick="showSection('dashboard',this)">
-    <span class="sidebar-icon">&#128200;</span> Wealth Dashboard
-  </div>
-  <div class="sidebar-item" data-section="revenue" onclick="showSection('revenue',this)">
-    <span class="sidebar-icon">&#128184;</span> Revenue Model
-  </div>
-  <div class="sidebar-item" data-section="compound" onclick="showSection('compound',this)">
-    <span class="sidebar-icon">&#9650;</span> Compound Calculator
-  </div>
+  <button type="button" class="sidebar-item active" data-section="dashboard" onclick="showSection('dashboard',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#128200;</span> Wealth Dashboard
+  </button>
+  <button type="button" class="sidebar-item" data-section="revenue" onclick="showSection('revenue',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#128184;</span> Revenue Model
+  </button>
+  <button type="button" class="sidebar-item" data-section="compound" onclick="showSection('compound',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#9650;</span> Compound Calculator
+  </button>
   <div class="sidebar-section">Family & Legacy</div>
-  <div class="sidebar-item" data-section="family" onclick="showSection('family',this)">
-    <span class="sidebar-icon">&#127968;</span> Family Prosperity
-  </div>
-  <div class="sidebar-item" data-section="legacy" onclick="showSection('legacy',this)">
-    <span class="sidebar-icon">&#127775;</span> Generational Legacy
-  </div>
+  <button type="button" class="sidebar-item" data-section="family" onclick="showSection('family',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#127968;</span> Family Prosperity
+  </button>
+  <button type="button" class="sidebar-item" data-section="legacy" onclick="showSection('legacy',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#127775;</span> Generational Legacy
+  </button>
   <div class="sidebar-section">Engines</div>
-  <div class="sidebar-item" data-section="agent-income" onclick="showSection('agent-income',this)">
-    <span class="sidebar-icon">&#129504;</span> Agent Income System
-  </div>
-  <div class="sidebar-item" data-section="dual-economy" onclick="showSection('dual-economy',this)">
-    <span class="sidebar-icon">&#128279;</span> Dual Economy
-  </div>
-  <div class="sidebar-item" data-section="wealth-verbs" onclick="showSection('wealth-verbs',this)">
-    <span class="sidebar-icon">&#9654;</span> Wealth Verbs
-  </div>
+  <button type="button" class="sidebar-item" data-section="agent-income" onclick="showSection('agent-income',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#129504;</span> Agent Income System
+  </button>
+  <button type="button" class="sidebar-item" data-section="dual-economy" onclick="showSection('dual-economy',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#128279;</span> Dual Economy
+  </button>
+  <button type="button" class="sidebar-item" data-section="wealth-verbs" onclick="showSection('wealth-verbs',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#9654;</span> Wealth Verbs
+  </button>
 </nav>
 
 <main class="main">

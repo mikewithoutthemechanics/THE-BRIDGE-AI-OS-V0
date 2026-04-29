@@ -7,22 +7,23 @@
     <meta name="description" content="Bridge AI OS admin treasury withdrawal panel — authorize and execute on-chain ETH and BRDG withdrawals on Linea mainnet.">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/bridge-design-tokens.css">
     <style>
         :root {
-            --bg-primary: #060810;
-            --bg-secondary: #0a0e17;
-            --bg-glass: rgba(10, 14, 23, 0.85);
-            --border-color: rgba(99, 255, 218, 0.12);
-            --border-glow: rgba(99, 255, 218, 0.3);
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --accent-cyan: #63ffda;
+            --bg-primary: var(--theme-bg-primary);
+            --bg-secondary: var(--theme-bg-secondary);
+            --bg-glass: var(--theme-bg-glass);
+            --border-color: var(--theme-border);
+            --border-glow: var(--theme-border-hover);
+            --text-primary: var(--theme-text-primary);
+            --text-secondary: var(--theme-text-secondary);
+            --text-muted: var(--theme-text-muted);
+            --accent-cyan: var(--theme-primary);
             --accent-purple: #a78bfa;
             --accent-orange: #fb923c;
-            --accent-red: #f87171;
-            --accent-green: #4ade80;
-            --gradient-primary: linear-gradient(135deg, #63ffda 0%, #38bdf8 50%, #a78bfa 100%);
+            --accent-red: var(--status-error);
+            --accent-green: var(--status-success);
+            --gradient-primary: var(--theme-gradient);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
@@ -36,7 +37,7 @@
             position: fixed;
             inset: 0;
             background:
-                radial-gradient(ellipse at 20% 80%, rgba(99, 255, 218, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 80%, var(--theme-primary-glow) 0%, transparent 50%),
                 radial-gradient(ellipse at 80% 20%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
             pointer-events: none;
         }
@@ -134,7 +135,7 @@
             outline: none;
             transition: border-color 0.2s;
         }
-        .form-group input:focus, .form-group select:focus { border-color: var(--accent-cyan); outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent-cyan); outline: 2px solid var(--theme-primary-muted); outline-offset: 2px; }
         .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
 
         .btn-withdraw {
@@ -195,40 +196,9 @@
             .bal-card .value { font-size: 18px; }
         }
     </style>
-
-<style id="bridge-mobile-base">
-*{box-sizing:border-box}
-body{margin:0;padding:0;overflow-x:hidden}
-img,video,iframe,table{max-width:100%}
-@media(max-width:820px){
-  body{font-size:15px}
-  .desktop-only{display:none!important}
-}
-@media(max-width:480px){
-  body{font-size:14px}
-  h1{font-size:1.5rem!important}
-  h2{font-size:1.25rem!important}
-}
-</style>
 </head>
-<body>
-<nav style="background:#0f172a;border-bottom:1px solid #1e293b;padding:.75rem 1.5rem;display:flex;gap:1.5rem;align-items:center;position:sticky;top:0;z-index:100">
-  <span style="font-weight:700;color:#38bdf8;font-size:1.1rem;margin-right:auto">Admin</span>
-  <a href="/admin.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Dashboard</a>
-  <a href="/admin-revenue.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Revenue</a>
-  <a href="/admin-withdraw.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Withdrawals</a>
-  <a href="/control.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Control</a>
-  <a href="/system-status-dashboard.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">System Health</a>
-  <a href="/registry.html" style="color:#94a3b8;text-decoration:none;font-size:.85rem;padding:.4rem .8rem;border-radius:6px;transition:all .2s" onmouseover="this.style.color='#fff';this.style.background='#1e293b'" onmouseout="this.style.color='#94a3b8';this.style.background='transparent'">Registry</a>
-</nav>
-<script>
-document.querySelectorAll('nav a').forEach(a => {
-  if (a.getAttribute('href') === window.location.pathname) {
-    a.style.color = '#38bdf8';
-    a.style.background = '#1e293b';
-  }
-});
-</script>
+<body class="admin-theme">
+<script src="/bridge-nav.js?v=2"></script>
 <div class="shell">
     <div class="header">
         <h1>Treasury Withdraw</h1>
@@ -256,10 +226,9 @@ document.querySelectorAll('nav a').forEach(a => {
     <div class="section-title">2. Withdraw Details</div>
     <div class="form-group">
         <label for="rail">Rail</label>
-        <select id="rail" aria-label="Select withdrawal rail" onchange="updateRailHint()">
+        <select id="rail" aria-label="Select withdrawal rail">
             <option value="eth">ETH (Linea Mainnet)</option>
             <option value="brdg">BRDG Token</option>
-            <option value="brdg_to_eth">BRDG → ETH (Swap via SyncSwap)</option>
         </select>
     </div>
     <div class="form-group">
@@ -305,26 +274,8 @@ document.querySelectorAll('nav a').forEach(a => {
 </div>
 
 <script>
-// Admin gate
-(async function checkAdmin() {
-  const _tok = localStorage.getItem('bridge_token') || '';
-  const _opts = { credentials: 'include' };
-  if (_tok) _opts.headers = { Authorization: 'Bearer ' + _tok };
-  const r = await fetch('/auth/me', _opts).then(function(res){ return res.json(); }).catch(function(){ return { ok: false }; });
-  const _role = (r.user && r.user.role) || ''; const _plan = (r.user && r.user.plan) || '';
-  if (!r.ok || !(_role === 'admin' || _role === 'superadmin' || _plan === 'admin' || _plan === 'enterprise')) {
-    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef4444;font-family:monospace;font-size:1.2rem">Access denied — admin only</div>';
-    setTimeout(() => window.location.href = '/portal', 2000);
-    return;
-  }
-  window.__adminUser = r.user;
-  window.__adminToken = localStorage.getItem('bridge_token') || '';
-  initPage();
-})();
-
-function initPage() {
 const $ = id => document.getElementById(id);
-const adminToken = () => window.__adminToken || $('adminToken').value.trim();
+const adminToken = () => $('adminToken').value.trim();
 const headers = () => ({ 'Content-Type': 'application/json', 'x-admin-token': adminToken() });
 
 function showStatus(msg, type) {
@@ -356,17 +307,10 @@ async function loadBalances() {
     } catch (e) { /* silent */ }
 }
 
-function updateRailHint() {
-    const rail = $('rail').value;
-    const hints = {
-        eth: 'ETH amount to withdraw',
-        brdg: 'BRDG token amount to withdraw',
-        brdg_to_eth: 'BRDG amount to swap to ETH (recipient gets ETH)'
-    };
-    $('amountHint').textContent = hints[rail] || 'Amount to withdraw';
-}
-
-$('rail').addEventListener('change', updateRailHint);
+$('rail').addEventListener('change', () => {
+    $('amountHint').textContent = $('rail').value === 'eth'
+        ? 'ETH amount to withdraw' : 'BRDG token amount to withdraw';
+});
 
 function initiateWithdraw() {
     const to = $('toAddress').value.trim();
@@ -379,12 +323,10 @@ function initiateWithdraw() {
     if (!amount || parseFloat(amount) <= 0) return showStatus('Amount must be greater than 0', 'error');
 
     const details = $('confirmDetails');
-    const railLabel = rail === 'brdg_to_eth' ? 'BRDG→ETH SWAP' : rail.toUpperCase();
-    const amountLabel = rail === 'brdg_to_eth' ? amount + ' BRDG → ETH' : amount + ' ' + rail.toUpperCase();
     details.textContent = [
-        'Rail: ' + railLabel,
+        'Rail: ' + rail.toUpperCase(),
         'To: ' + to,
-        'Amount: ' + amountLabel,
+        'Amount: ' + amount + ' ' + rail.toUpperCase(),
         memo ? 'Memo: ' + memo : ''
     ].filter(Boolean).join('\n');
     $('confirmOverlay').classList.add('active');
@@ -425,10 +367,7 @@ async function executeWithdraw() {
 
         const shortTo = to.slice(0, 8) + '...' + to.slice(-4);
         const txHash = txData.tx_hash || 'pending';
-        const successMsg = rail === 'brdg_to_eth' 
-            ? 'Swapped ' + amount + ' BRDG → ETH to ' + shortTo + ' | Tx: ' + txHash
-            : 'Sent ' + amount + ' ' + rail.toUpperCase() + ' to ' + shortTo + ' | Tx: ' + txHash;
-        showStatus(successMsg, 'success');
+        showStatus('Sent ' + amount + ' ' + rail.toUpperCase() + ' to ' + shortTo + ' | Tx: ' + txHash, 'success');
         loadBalances();
         loadAudit();
         $('amount').value = '';
@@ -492,16 +431,8 @@ function loadAudit() {
         });
 }
 
-// Expose to onclick handlers
-window.initiateWithdraw = initiateWithdraw;
-window.closeConfirm = closeConfirm;
-window.executeWithdraw = executeWithdraw;
-
 loadBalances();
 setInterval(loadBalances, 30000);
-} // end initPage
 </script>
-<script src="/nav-routes.js"></script>
-<script src="/bridge-nav.js"></script>
 </body>
 </html>

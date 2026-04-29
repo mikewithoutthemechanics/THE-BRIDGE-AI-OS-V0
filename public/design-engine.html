@@ -38,6 +38,8 @@ a{color:inherit;text-decoration:none}
 .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:16px 0;overflow-y:auto}
 .sidebar-section{padding:8px 16px 4px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase}
 .sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;transition:all .15s;border-left:2px solid transparent}
+button.sidebar-item{width:100%;border:0;background:transparent;font:inherit;text-align:left;color:inherit}
+a.sidebar-item{text-decoration:none;color:inherit}
 .sidebar-item:hover{background:var(--surface2);border-left-color:var(--border)}
 .sidebar-item.active{background:rgba(99,102,241,.1);border-left-color:var(--primary);color:var(--primary)}
 .sidebar-icon{font-size:15px;width:18px;text-align:center}
@@ -84,6 +86,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 /* ── Cinematic Menu ──────────────────────────────────────────────────────── */
 .cinema-nav{background:var(--surface2);border-radius:12px;overflow:hidden;margin-bottom:16px}
 .cinema-nav-item{padding:14px 20px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:12px;font-size:13px;transition:all .2s;position:relative;overflow:hidden}
+button.cinema-nav-item{width:100%;border:0;background:transparent;font:inherit;text-align:left;color:inherit}
 .cinema-nav-item:last-child{border-bottom:none}
 .cinema-nav-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--primary);transform:scaleY(0);transition:transform .3s cubic-bezier(0.4,0,0.2,1)}
 .cinema-nav-item:hover::before,.cinema-nav-item.active::before{transform:scaleY(1)}
@@ -211,34 +214,34 @@ img,video,iframe,table{max-width:100%}
 </header>
 
 <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
-<nav class="sidebar">
+<nav class="sidebar" aria-label="Design engine sections">
   <div class="sidebar-section">Design Engine</div>
-  <div class="sidebar-item active" data-section="design-verbs" onclick="showSection('design-verbs',this)">
-    <span class="sidebar-icon">&#127775;</span> Design Verbs
-  </div>
-  <div class="sidebar-item" data-section="brand-identity" onclick="showSection('brand-identity',this)">
-    <span class="sidebar-icon">&#127849;</span> Brand Identity
-  </div>
-  <div class="sidebar-item" data-section="cinematic-menu" onclick="showSection('cinematic-menu',this)">
-    <span class="sidebar-icon">&#127909;</span> Cinematic Menu
-  </div>
-  <div class="sidebar-item" data-section="neuro-flow" onclick="showSection('neuro-flow',this)">
-    <span class="sidebar-icon">&#129504;</span> Neuro-Aware Flow
-  </div>
+  <button type="button" class="sidebar-item active" data-section="design-verbs" onclick="showSection('design-verbs',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#127775;</span> Design Verbs
+  </button>
+  <button type="button" class="sidebar-item" data-section="brand-identity" onclick="showSection('brand-identity',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#127849;</span> Brand Identity
+  </button>
+  <button type="button" class="sidebar-item" data-section="cinematic-menu" onclick="showSection('cinematic-menu',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#127909;</span> Cinematic Menu
+  </button>
+  <button type="button" class="sidebar-item" data-section="neuro-flow" onclick="showSection('neuro-flow',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#129504;</span> Neuro-Aware Flow
+  </button>
   <div class="sidebar-section">All Verbs</div>
-  <div class="sidebar-item" data-section="unified-table" onclick="showSection('unified-table',this)">
-    <span class="sidebar-icon">&#128203;</span> Unified Registry
-  </div>
-  <div class="sidebar-item" data-section="verb-executor" onclick="showSection('verb-executor',this)">
-    <span class="sidebar-icon">&#9658;</span> Verb Executor
-  </div>
+  <button type="button" class="sidebar-item" data-section="unified-table" onclick="showSection('unified-table',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#128203;</span> Unified Registry
+  </button>
+  <button type="button" class="sidebar-item" data-section="verb-executor" onclick="showSection('verb-executor',this)">
+    <span class="sidebar-icon" aria-hidden="true">&#9658;</span> Verb Executor
+  </button>
   <div class="sidebar-section">Links</div>
-  <div class="sidebar-item" onclick="window.open('/cognitive-os','_blank')">
-    <span class="sidebar-icon">&#129504;</span> Cognitive OS
-  </div>
-  <div class="sidebar-item" onclick="window.open('/twin-search','_blank')">
-    <span class="sidebar-icon">&#128269;</span> Twin Search
-  </div>
+  <a class="sidebar-item" href="/cognitive-os" target="_blank" rel="noopener">
+    <span class="sidebar-icon" aria-hidden="true">&#129504;</span> Cognitive OS
+  </a>
+  <a class="sidebar-item" href="/twin-search" target="_blank" rel="noopener">
+    <span class="sidebar-icon" aria-hidden="true">&#128269;</span> Twin Search
+  </a>
 </nav>
 
 <!-- ── Main ────────────────────────────────────────────────────────────── -->
@@ -355,42 +358,42 @@ img,video,iframe,table{max-width:100%}
       <div>
         <div style="font-size:12px;font-weight:600;margin-bottom:10px;color:var(--text-muted)">NAVIGATION</div>
         <div class="cinema-nav" id="cinema-nav">
-          <div class="cinema-nav-item" onclick="setScene('dashboard')">
+          <button type="button" class="cinema-nav-item" onclick="setScene('dashboard', event)">
             <span class="cinema-item-icon">&#9632;</span>
             <div class="cinema-item-text">
               <div class="cinema-item-label">Dashboard</div>
               <div class="cinema-item-sub">Command centre</div>
             </div>
-          </div>
-          <div class="cinema-nav-item" onclick="setScene('treasury')">
+          </button>
+          <button type="button" class="cinema-nav-item" onclick="setScene('treasury', event)">
             <span class="cinema-item-icon">&#128184;</span>
             <div class="cinema-item-text">
               <div class="cinema-item-label">Treasury</div>
               <div class="cinema-item-sub">Balance &amp; flows</div>
             </div>
             <span class="cinema-item-badge">Live</span>
-          </div>
-          <div class="cinema-nav-item" onclick="setScene('agents')">
+          </button>
+          <button type="button" class="cinema-nav-item" onclick="setScene('agents', event)">
             <span class="cinema-item-icon">&#129504;</span>
             <div class="cinema-item-text">
               <div class="cinema-item-label">Agents</div>
               <div class="cinema-item-sub">AI workforce</div>
             </div>
-          </div>
-          <div class="cinema-nav-item" onclick="setScene('twin')">
+          </button>
+          <button type="button" class="cinema-nav-item" onclick="setScene('twin', event)">
             <span class="cinema-item-icon">&#128100;</span>
             <div class="cinema-item-text">
               <div class="cinema-item-label">Digital Twin</div>
               <div class="cinema-item-sub">Profile matrix</div>
             </div>
-          </div>
-          <div class="cinema-nav-item" onclick="setScene('marketplace')">
+          </button>
+          <button type="button" class="cinema-nav-item" onclick="setScene('marketplace', event)">
             <span class="cinema-item-icon">&#128722;</span>
             <div class="cinema-item-text">
               <div class="cinema-item-label">Marketplace</div>
               <div class="cinema-item-sub">Trade &amp; connect</div>
             </div>
-          </div>
+          </button>
         </div>
         <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text-muted)">TRANSITION VERBS</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -778,7 +781,7 @@ const SCENES = {
   marketplace: { title: 'Marketplace', sub: 'Trade, connect, discover', color: '#ef4444' },
 };
 
-function setScene(key) {
+function setScene(key, evt) {
   const scene = SCENES[key];
   const inner = document.getElementById('scene-inner');
   const preview = document.getElementById('cinema-scene-preview');
@@ -790,7 +793,8 @@ function setScene(key) {
   document.getElementById('scene-title').style.color = scene.color;
   preview.style.boxShadow = `0 0 40px ${scene.color}44`;
   document.querySelectorAll('.cinema-nav-item').forEach(i => i.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  var trigger = evt && evt.currentTarget ? evt.currentTarget : null;
+  if (trigger) trigger.classList.add('active');
 }
 
 async function applyCinematic(verb) {
