@@ -91,8 +91,11 @@ async function handler(_req, res) {
 }
 
 let _isSuperUserEmail = null;
+let _isPrivilegedAdminRole = null;
 try {
-  _isSuperUserEmail = require('./shared/superusers').isSuperUserEmail;
+  const su = require('./shared/superusers');
+  _isSuperUserEmail = su.isSuperUserEmail;
+  _isPrivilegedAdminRole = su.isPrivilegedAdminRole;
 } catch (_) {}
 
 function requireAdmin(req, res, next) {
@@ -100,9 +103,11 @@ function requireAdmin(req, res, next) {
   if (!user) return res.status(403).json({ ok: false, error: 'admin role required' });
   const role = String(user.role || user.authority || '').toLowerCase();
   const plan = String(user.plan || '').toLowerCase();
-  if (role === 'admin' || role === 'superadmin') return next();
-  if (plan === 'admin' || plan === 'enterprise' || plan === 'founder') return next();
+  if (role === 'admin' || role === 'superadmin' || role === 'super_admin' || role === 'owner') return next();
+  if (plan === 'admin' || plan === 'enterprise' || plan === 'founder' || plan === 'infinite') return next();
+  if (_isPrivilegedAdminRole && _isPrivilegedAdminRole(user.role)) return next();
   if (_isSuperUserEmail && user.email && _isSuperUserEmail(user.email)) return next();
+  if (Array.isArray(user.permissions) && user.permissions.includes('*')) return next();
   return res.status(403).json({ ok: false, error: 'admin role required' });
 }
 

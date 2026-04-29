@@ -11,6 +11,13 @@ const crypto = require('crypto');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const userDb = require('../lib/user-identity');
+const {
+  applySuperAdminProfile,
+  isSuperAdminRole,
+  isPrivilegedAdminRole,
+  isSuperUserEmail,
+} = require('../shared/superusers');
+const { isAuthBypassed, bypassJwtUser, logBypassOnce } = require('../shared/auth-bypass');
 
 // Timing-safe comparison to prevent timing attacks on secret tokens
 function safeCompare(a, b) {
@@ -76,6 +83,20 @@ async function extractUser(req) {
   // 3. Query param fallback
   // query string token auth removed — header-only auth enforced
 
+  if (isAuthBypassed()) {
+    logBypassOnce();
+    const j = bypassJwtUser();
+    return applySuperAdminProfile({
+      id: j.sub,
+      email: j.email,
+      name: j.name,
+      role: j.role,
+      plan: j.plan,
+      permissions: j.permissions,
+      tenant: j.tenant,
+    });
+  }
+
   if (!token) return null;
 
   // Try Bridge JWT first (backward compat — verifies and looks up DB user)
@@ -90,7 +111,7 @@ async function extractUser(req) {
         bridgeUser.funnel_stage = 'identified';
       } catch (_) {}
     }
-    return bridgeUser;
+    return applySuperAdminProfile(bridgeUser);
   }
 
   // Try Supabase JWT
@@ -114,7 +135,7 @@ async function extractUser(req) {
           dbUser.funnel_stage = 'lead';
         } catch (_upgradeErr) {}
       }
-      return dbUser;
+      return applySuperAdminProfile(dbUser);
     }
   } catch (_) {}
 
@@ -128,12 +149,15 @@ async function extractUser(req) {
     if (secret) {
       const decoded = jwt.verify(token, secret);
       if (decoded && decoded.sub) {
-        return {
+        return applySuperAdminProfile({
           id: decoded.sub,
           email: decoded.email || null,
           role: decoded.role || 'member',
           plan: decoded.plan || 'client',
-        };
+          permissions: decoded.permissions,
+          tenant: decoded.tenant,
+          name: decoded.name,
+        });
       }
     }
   } catch (_) {}
@@ -175,7 +199,7 @@ async function requireAdmin(req, res, next) {
     }
     return res.status(401).json({ ok: false, error: 'Authentication required' });
   }
-  const isAdmin = user.role === 'admin' || user.role === 'superadmin' || user.isSuperUser;
+  const isAdmin = isPrivilegedAdminRole(user.role) || user.isSuperUser || isSuperUserEmail(user.email);
   if (!isAdmin) {
     if (wantsHtml(req)) {
       return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
@@ -197,12 +221,16 @@ async function requireSuperAdmin(req, res, next) {
     }
     return res.status(401).json({ ok: false, error: 'Authentication required' });
   }
-  const isSuperAdmin = user.role === 'superadmin' || user.isSuperUser;
+  const isSuperAdmin = isSuperAdminRole(user.role) || user.isSuperUser || isSuperUserEmail(user.email);
   if (!isSuperAdmin) {
     if (wantsHtml(req)) {
       return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
     }
     return res.status(403).json({ ok: false, error: 'Superadmin access required' });
+  }
+  if (isSuperUserEmail(user.email) || user.permissions?.includes?.('*')) {
+    req.user = user;
+    return next();
   }
   const cfoToken = req.headers['x-cfo-token'];
   if (!cfoToken || !safeCompare(cfoToken, process.env.CFO_TOKEN || '')) {
@@ -255,7 +283,7 @@ function pageGuard() {
         }
         return res.status(401).json({ ok: false, error: 'Authentication required' });
       }
-      const isAdmin = user.role === 'admin' || user.role === 'superadmin' || user.isSuperUser;
+      const isAdmin = isPrivilegedAdminRole(user.role) || user.isSuperUser || isSuperUserEmail(user.email);
       if (!isAdmin) {
         if (wantsHtml(req)) {
           return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
@@ -275,15 +303,20 @@ function pageGuard() {
         }
         return res.status(401).json({ ok: false, error: 'Authentication required' });
       }
-      const isSuperAdmin = user.role === 'superadmin' || user.isSuperUser;
+      const isSuperAdmin = isSuperAdminRole(user.role) || user.isSuperUser || isSuperUserEmail(user.email);
       if (!isSuperAdmin) {
         if (wantsHtml(req)) {
           return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
         }
         return res.status(403).json({ ok: false, error: 'Superadmin access required' });
       }
+      // Platform super-admins (allowlist / role) bypass CFO hardware token for day-to-day ops
+      if (isSuperUserEmail(user.email) || user.permissions?.includes?.('*')) {
+        req.user = user;
+        return next();
+      }
       const cfoToken = req.headers['x-cfo-token'];
-      if (!cfoToken || cfoToken !== process.env.CFO_TOKEN) {
+      if (!cfoToken || !safeCompare(cfoToken, process.env.CFO_TOKEN || '')) {
         if (wantsHtml(req)) {
           return res.status(403).sendFile(path.join(__dirname, '../public/403.html'));
         }

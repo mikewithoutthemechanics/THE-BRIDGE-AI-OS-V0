@@ -23,12 +23,54 @@ import OrchestrationHub from './pages/OrchestrationHub';
 import HumanAPI from './pages/HumanAPI';
 import MultiagentOrchestration from './pages/MultiagentOrchestration';
 
+function PricingPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-10">
+      <h1 className="text-3xl font-bold text-cyan-400 mb-4">Pricing</h1>
+      <p className="text-slate-300 max-w-xl mb-8">Enterprise and platform tiers. No forced redirect — choose a plan or continue to the app.</p>
+      <div className="flex gap-4">
+        <button type="button" className="px-6 py-3 rounded-lg bg-cyan-600" onClick={() => { window.location.href = '/join'; }}>Get started</button>
+        <button type="button" className="px-6 py-3 rounded-lg border border-slate-600" onClick={() => { window.location.assign('/app'); }}>Open app</button>
+      </div>
+    </div>
+  );
+}
+
+function OnboardingPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-10">
+      <h1 className="text-3xl font-bold text-cyan-400 mb-4">Onboarding</h1>
+      <p className="text-slate-300 max-w-xl mb-8">Continue setup in the guided flow (HTML) or sign in below.</p>
+      <div className="flex gap-4 flex-wrap">
+        <button type="button" className="px-6 py-3 rounded-lg bg-cyan-600" onClick={() => { window.location.href = '/onboarding.html'; }}>Full onboarding</button>
+        <button type="button" className="px-6 py-3 rounded-lg border border-slate-600" onClick={() => { window.location.assign('/join'); }}>Sign in</button>
+      </div>
+    </div>
+  );
+}
+
+function WalletsPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-10">
+      <h1 className="text-3xl font-bold text-cyan-400 mb-4">Wallets &amp; rails</h1>
+      <p className="text-slate-300 max-w-xl mb-6">Treasury actions use the same session as the gateway. Open wallet UI for transfers and withdrawals.</p>
+      <div className="flex flex-col gap-3 max-w-md">
+        <button type="button" className="px-4 py-3 rounded-lg bg-slate-800 border border-slate-600 text-left hover:border-cyan-500" onClick={() => { window.location.href = '/wallet.html'; }}>Bridge wallet (multi-chain)</button>
+        <button type="button" className="px-4 py-3 rounded-lg bg-slate-800 border border-slate-600 text-left hover:border-cyan-500" onClick={() => { window.location.href = '/treasury-dashboard.html'; }}>Treasury dashboard</button>
+        <button type="button" className="px-4 py-3 rounded-lg bg-slate-800 border border-slate-600 text-left hover:border-cyan-500" onClick={() => { window.location.href = '/payment.html'; }}>Stripe / Paystack checkout</button>
+      </div>
+    </div>
+  );
+}
+
 // Route configuration - defines all routes and their access requirements
 const routes: RouteConfig[] = [
   // Public routes
   { path: '/', component: Marketplace, title: 'Bridge AI OS' },
   { path: '/landing', component: Marketplace, title: 'Bridge AI OS' },
   { path: '/docs', component: Documentation, title: 'Documentation' },
+  { path: '/pricing', component: PricingPage, title: 'Pricing' },
+  { path: '/onboarding', component: OnboardingPage, title: 'Onboarding' },
 
   // Auth routes (redirect authenticated users)
   { path: '/join', component: AuthHub, title: 'Join Bridge AI' },
@@ -42,6 +84,7 @@ const routes: RouteConfig[] = [
   { path: '/orchestration', component: OrchestrationHub, requiresAuth: true, title: 'Orchestration Hub' },
   { path: '/human', component: HumanAPI, requiresAuth: true, title: 'Human API' },
   { path: '/multiagent', component: MultiagentOrchestration, requiresAuth: true, title: 'Multiagent Orchestration' },
+  { path: '/wallets', component: WalletsPage, requiresAuth: true, title: 'Wallets' },
 
   // Admin routes (require admin role)
   { path: '/admin', component: AdminControl, requiresAuth: true, requiresAdmin: true, title: 'Admin Control' },
@@ -235,8 +278,12 @@ function AppDashboard() {
           <div className="flex items-center space-x-4">
             {user && (
               <div className="text-sm text-slate-300">
-                <div className="font-semibold">{user.email}</div>
-                <div className="text-xs text-slate-400">Tier: {tier} • Role: {user.role}</div>
+                <div className="font-semibold">{user.name || user.email}</div>
+                <div className="text-xs text-slate-400">{user.email}</div>
+                <div className="text-xs text-slate-400">
+                  Plan: {user.plan || tier}
+                  {(user.display_role || user.role) ? ` · ${user.display_role || user.role}` : ''}
+                </div>
                 {wallet && (
                   <div className="text-xs text-purple-400">
                     Wallet: {wallet.slice(0, 6)}...{wallet.slice(-4)}

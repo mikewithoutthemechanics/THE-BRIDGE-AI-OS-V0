@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { EMAILS: SUPERUSERS, isSuperUserEmail } = require('../shared/superusers');
+const { isAuthBypassed, bypassJwtUser, logBypassOnce } = require('../shared/auth-bypass');
 // Supabase-backed revocation store — shared with auth.js (Vercel cold-start safe)
 const revokedStore = (() => { try { return require('../lib/revoked-tokens'); } catch(_) { return null; } })();
 
@@ -67,6 +68,12 @@ function isTokenRevoked(token) {
 const requireAuth = (requiredAuthority = null) => {
   return async (req, res, next) => {
     try {
+      if (isAuthBypassed()) {
+        logBypassOnce();
+        req.user = bypassJwtUser();
+        req.token = 'bypass';
+        return next();
+      }
       // Support both cookie-based and header-based tokens
       const token = req.cookies?.access_token
         || (req.headers.authorization || '').replace(/^Bearer\s+/, '')

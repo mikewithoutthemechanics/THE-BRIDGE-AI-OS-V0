@@ -26,13 +26,8 @@ const { revokeToken, isTokenRevoked } = require('./middleware/auth');
 // ── Secrets ─────────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || process.env.BRIDGE_SIWE_JWT_SECRET || 'aoe-unified-super-secret-change-in-prod';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'aoe-refresh-secret-change-in-prod';
-const { EMAILS: SUPER_ADMIN_EMAILS, isSuperUserEmail } = require('./shared/superusers');
-const SUPER_ADMIN_IDENTITY = Object.freeze({
-  role: 'superadmin',
-  plan: 'infinite',
-  permissions: ['*'],
-  tenant: 'root',
-});
+const { isSuperUserEmail, applySuperAdminProfile } = require('./shared/superusers');
+const { isAuthBypassed, bypassJwtUser, logBypassOnce } = require('./shared/auth-bypass');
 
 // ── App Setup ───────────────────────────────────────────────────────────────
 const app = express();
@@ -93,15 +88,7 @@ function isSuperAdminEmail(email) {
 }
 
 function withSuperAdminOverrides(user) {
-  if (!user) return user;
-  if (!isSuperAdminEmail(user.email)) return user;
-  return {
-    ...user,
-    role: SUPER_ADMIN_IDENTITY.role,
-    plan: SUPER_ADMIN_IDENTITY.plan,
-    permissions: SUPER_ADMIN_IDENTITY.permissions.slice(),
-    tenant: SUPER_ADMIN_IDENTITY.tenant,
-  };
+  return applySuperAdminProfile(user);
 }
 
 function signAccessToken(user) {
@@ -154,6 +141,13 @@ async function verifyAccess(token) {
 
 // Auth middleware — tries Bridge JWT first, then Supabase JWT (for OAuth users)
 async function authMiddleware(req, res, next) {
+  if (isAuthBypassed()) {
+    logBypassOnce();
+    const j = bypassJwtUser();
+    req.user = j;
+    req.token = 'bypass';
+    return next();
+  }
   const token = extractBearerToken(req);
 
   // Try Bridge JWT
@@ -405,21 +399,25 @@ app.post('/auth/google', async (req, res) => {
   }
 });
 
-// GET /auth/me — AUTH DISABLED on this branch. Returns a synthetic
-// superadmin so client-side gating passes without a token. Restore the
-// authMiddleware + revocation + DB lookup before shipping to prod.
-app.get('/auth/me', async (_req, res) => {
+// GET /auth/me — requires valid Bearer (Bridge JWT or Supabase access token).
+app.get('/auth/me', authMiddleware, async (req, res) => {
+  const pl = req.user;
+  let dbUser = await userDb.getUserById(pl.sub);
+  if (!dbUser && pl.email) dbUser = await userDb.getUserByEmail(pl.email);
+  const merged = dbUser
+    ? withSuperAdminOverrides(dbUser)
+    : withSuperAdminOverrides({
+        id: pl.sub,
+        email: pl.email,
+        name: pl.name,
+        role: pl.role,
+        plan: pl.plan,
+        permissions: pl.permissions,
+        tenant: pl.tenant,
+      });
   res.json({
     ok: true,
-    user: {
-      id: 'system',
-      email: 'ryanpcowan@gmail.com',
-      name: 'System (auth disabled)',
-      plan: 'enterprise',
-      role: 'superadmin',
-      tier: 'super_admin',
-      funnel_stage: 'customer',
-    },
+    user: sanitizeUser(merged),
     nurture_prompt: null,
   });
 });

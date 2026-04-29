@@ -46,7 +46,7 @@ services:
     build: ./services/gateway
     container_name: bridge-v3-gateway
     ports:
-      - "3300:3300"
+      - "8080:8080"
     environment:
       - NODE_ENV=production
       - CONFIG_SERVICE_URL=http://bridge-v3-config-service:8080

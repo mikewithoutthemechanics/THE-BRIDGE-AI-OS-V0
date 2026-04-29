@@ -10,8 +10,12 @@
 var SUPER_ADMIN_EMAIL = 'ryanpcowan@gmail.com';
 
 function isSuperAdminUser(user) {
-  if (!user || !user.email) return false;
-  return String(user.email).trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+  if (!user) return false;
+  if (user.email && String(user.email).trim().toLowerCase() === SUPER_ADMIN_EMAIL) return true;
+  var r = String(user.role || '').toLowerCase().replace(/-/g, '_');
+  if (r === 'superadmin' || r === 'super_admin' || r === 'owner') return true;
+  if (user.permissions && user.permissions.indexOf('*') !== -1) return true;
+  return false;
 }
 
 window.BridgeAuth = {
@@ -94,8 +98,8 @@ window.BridgeAuth = {
    * All post-auth redirects should call this instead of hardcoding a path.
    */
   getPostLoginRoute: function(user, pendingPlan) {
-    // Critical override: super admin must always land on admin dashboard.
-    if (isSuperAdminUser(user)) return '/admin/dashboard';
+    // Critical override: super admin lands on primary app shell (avoid legacy HTML / admin 404 loops).
+    if (isSuperAdminUser(user)) return '/app';
     if (pendingPlan || (user && user.pendingPlan)) {
       return '/checkout?plan=' + (pendingPlan || user.pendingPlan);
     }

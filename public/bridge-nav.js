@@ -237,6 +237,7 @@
     '/esim-pbx.html': ['Home', 'Platforms', 'eSIM', 'PBX'],
     '/claude-partner.html': ['Home', 'Platforms', 'Claude Partner'],
     '/devin-partner.html': ['Home', 'Platforms', 'Devin Partner'],
+    '/marvin-founder.html': ['Home', 'Platforms', 'Marvin Founder'],
 
     // Settings & Utilities
     '/profile': ['Home', 'Profile'],

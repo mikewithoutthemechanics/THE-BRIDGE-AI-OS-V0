@@ -67,7 +67,17 @@ export class AuthService {
       if (response.ok) {
         const data = await response.json();
         if (data && data.ok && data.user) {
-          return data.user;
+          const u = data.user;
+          return {
+            id: u.id,
+            email: u.email,
+            name: u.name,
+            role: u.role,
+            plan: u.plan,
+            permissions: u.permissions,
+            tenant: u.tenant,
+            display_role: u.display_role,
+          };
         }
       }
 
@@ -77,9 +87,12 @@ export class AuthService {
         return {
           id: payload.sub || '',
           email: payload.email || '',
+          name: payload.name,
           role: payload.role || 'user',
           plan: payload.plan || 'free',
           permissions: payload.permissions || [],
+          tenant: payload.tenant,
+          display_role: payload.display_role,
         };
       }
 

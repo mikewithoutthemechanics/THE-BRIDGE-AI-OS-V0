@@ -36,7 +36,7 @@ describe('Super Admin identity enforcement', () => {
     expect(res.body.user).toMatchObject({
       email: SUPER_ADMIN_EMAIL,
       role: 'superadmin',
-      plan: 'infinite',
+      plan: 'enterprise',
       tenant: 'root',
       permissions: ['*'],
     });
@@ -50,7 +50,7 @@ describe('Super Admin identity enforcement', () => {
 
     expect(payload.email).toBe(SUPER_ADMIN_EMAIL);
     expect(payload.role).toBe('superadmin');
-    expect(payload.plan).toBe('infinite');
+    expect(payload.plan).toBe('enterprise');
     expect(payload.tenant).toBe('root');
     expect(payload.permissions).toEqual(['*']);
   });
@@ -64,7 +64,7 @@ describe('Super Admin identity enforcement', () => {
     expect(payload.email).toBe(SUPER_ADMIN_EMAIL);
     expect(payload.type).toBe('refresh');
     expect(payload.role).toBe('superadmin');
-    expect(payload.plan).toBe('infinite');
+    expect(payload.plan).toBe('enterprise');
     expect(payload.tenant).toBe('root');
     expect(payload.permissions).toEqual(['*']);
   });
@@ -81,7 +81,7 @@ describe('Super Admin identity enforcement', () => {
     expect(verify.body.user).toMatchObject({
       email: SUPER_ADMIN_EMAIL,
       role: 'superadmin',
-      plan: 'infinite',
+      plan: 'enterprise',
       tenant: 'root',
       permissions: ['*'],
     });
@@ -99,7 +99,7 @@ describe('Super Admin identity enforcement', () => {
     expect(me.body.user).toMatchObject({
       email: SUPER_ADMIN_EMAIL,
       role: 'superadmin',
-      plan: 'infinite',
+      plan: 'enterprise',
       tenant: 'root',
       permissions: ['*'],
     });

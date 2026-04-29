@@ -205,6 +205,9 @@ img,video,iframe,table{max-width:100%}
 <script>
 const API = '';
 function esc(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML;}
+function apiFetch(url, opts = {}) {
+  return fetch(API + url, { ...opts, credentials: 'include', headers: { ...(opts.headers || {}) } });
+}
 
 function show(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -253,37 +256,37 @@ function parseItems(text) {
 
 async function submitQuote() {
   const items = parseItems(document.getElementById('mq-items').value);
-  await fetch(API + '/api/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client: document.getElementById('mq-client').value, items }) });
+  await apiFetch('/api/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client: document.getElementById('mq-client').value, items }) });
   closeModal(); loadSection('quotes');
 }
 async function submitInvoice() {
   const items = parseItems(document.getElementById('mi-items').value);
-  await fetch(API + '/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client: document.getElementById('mi-client').value, items, notes: document.getElementById('mi-notes').value }) });
+  await apiFetch('/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client: document.getElementById('mi-client').value, items, notes: document.getElementById('mi-notes').value }) });
   closeModal(); loadSection('invoices');
 }
 async function submitDebt() {
-  await fetch(API + '/api/debts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ debtor: document.getElementById('md-debtor').value, amount: parseFloat(document.getElementById('md-amount').value), currency: document.getElementById('md-currency').value, due_date: document.getElementById('md-due').value }) });
+  await apiFetch('/api/debts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ debtor: document.getElementById('md-debtor').value, amount: parseFloat(document.getElementById('md-amount').value), currency: document.getElementById('md-currency').value, due_date: document.getElementById('md-due').value }) });
   closeModal(); loadSection('debtors');
 }
 async function submitContact() {
-  await fetch(API + '/api/crm/contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('mc-name').value, email: document.getElementById('mc-email').value, company: document.getElementById('mc-company').value, type: document.getElementById('mc-type').value }) });
+  await apiFetch('/api/crm/contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('mc-name').value, email: document.getElementById('mc-email').value, company: document.getElementById('mc-company').value, type: document.getElementById('mc-type').value }) });
   closeModal(); loadSection('crm');
 }
 
 async function acceptQuote(id) {
-  await fetch(API + '/api/quotes/' + id + '/accept', { method: 'POST' });
+  await apiFetch('/api/quotes/' + id + '/accept', { method: 'POST' });
   loadSection('quotes'); loadSection('invoices');
 }
 async function markPaid(id) {
-  await fetch(API + '/api/invoices/' + id + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'paid' }) });
+  await apiFetch('/api/invoices/' + id + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'paid' }) });
   loadSection('invoices');
 }
 async function sendReminder(id) {
-  await fetch(API + '/api/debts/' + id + '/remind', { method: 'POST' });
+  await apiFetch('/api/debts/' + id + '/remind', { method: 'POST' });
   loadSection('debtors');
 }
 async function collectDebt(id) {
-  await fetch(API + '/api/debts/' + id + '/pay', { method: 'POST' });
+  await apiFetch('/api/debts/' + id + '/pay', { method: 'POST' });
   loadSection('debtors');
 }
 
@@ -291,11 +294,11 @@ async function loadSection(id) {
   try {
     if (id === 'dashboard') {
       const [treasury, invoices, debts, quotes, analytics] = await Promise.all([
-        fetch(API + '/api/treasury/status').then(r => r.json()),
-        fetch(API + '/api/invoices').then(r => r.json()),
-        fetch(API + '/api/debts').then(r => r.json()),
-        fetch(API + '/api/quotes').then(r => r.json()),
-        fetch(API + '/api/analytics/overview').then(r => r.json()),
+        apiFetch('/api/treasury/status').then(r => r.json()),
+        apiFetch('/api/invoices').then(r => r.json()),
+        apiFetch('/api/debts').then(r => r.json()),
+        apiFetch('/api/quotes').then(r => r.json()),
+        apiFetch('/api/analytics/overview').then(r => r.json()),
       ]);
       document.getElementById('dash-stats').innerHTML = `
         <div class="stat"><div class="v">$${((treasury.balance || 0) / 1000).toFixed(0)}K</div><div class="l">TREASURY</div></div>
@@ -310,40 +313,40 @@ async function loadSection(id) {
       document.getElementById('b-debtors').textContent = (debts.debts || []).length;
       document.getElementById('recent-activity').textContent = 'System active. Treasury: $' + (treasury.balance || 0).toLocaleString();
     } else if (id === 'quotes') {
-      const d = await fetch(API + '/api/quotes').then(r => r.json());
+      const d = await apiFetch('/api/quotes').then(r => r.json());
       document.getElementById('quotes-tbody').innerHTML = (d.quotes || []).map(q => `<tr><td>${esc(q.number || q.id)}</td><td>${esc(q.client)}</td><td>$${(q.total || 0).toFixed(2)}</td><td><span class="status ${q.status}">${q.status}</span></td><td>${q.valid_until || '-'}</td><td>${q.status === 'draft' ? `<button class="btn btn-p" onclick="acceptQuote('${q.id}')">ACCEPT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" style="color:var(--d);text-align:center">No quotes yet</td></tr>';
     } else if (id === 'invoices') {
-      const d = await fetch(API + '/api/invoices').then(r => r.json());
+      const d = await apiFetch('/api/invoices').then(r => r.json());
       document.getElementById('invoices-tbody').innerHTML = (d.invoices || []).map(i => `<tr><td>${esc(i.number || i.id)}</td><td>${esc(i.client)}</td><td>$${(i.total || 0).toFixed(2)}</td><td>$${(i.tax || 0).toFixed(2)}</td><td><span class="status ${i.status}">${i.status}</span></td><td>${i.due_date || '-'}</td><td>${i.status !== 'paid' ? `<button class="btn btn-p" onclick="markPaid('${i.id}')">PAID</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--d);text-align:center">No invoices yet</td></tr>';
     } else if (id === 'debtors') {
-      const d = await fetch(API + '/api/debts').then(r => r.json());
+      const d = await apiFetch('/api/debts').then(r => r.json());
       document.getElementById('debtors-tbody').innerHTML = (d.debts || []).map(db => `<tr><td>${esc(db.debtor)}</td><td>$${(db.amount || 0).toFixed(2)} ${db.currency || ''}</td><td><span class="status ${db.status}">${db.status}</span></td><td>${db.reminders_sent || 0}</td><td>${db.status !== 'paid' ? `<button class="btn btn-s" onclick="sendReminder('${db.id}')">REMIND</button> <button class="btn btn-p" onclick="collectDebt('${db.id}')">COLLECT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No debts</td></tr>';
     } else if (id === 'vendors') {
-      const d = await fetch(API + '/api/vendors').then(r => r.json());
+      const d = await apiFetch('/api/vendors').then(r => r.json());
       document.getElementById('vendors-tbody').innerHTML = (d.vendors || []).map(v => `<tr><td>${esc(v.name)}</td><td>${esc(v.type)}</td><td>${esc(v.contact)}</td><td><span class="status ${v.status}">${v.status}</span></td><td>$${(v.spend_mtd || 0)} ${v.currency || ''}</td></tr>`).join('');
     } else if (id === 'customers') {
-      const d = await fetch(API + '/api/customers').then(r => r.json());
+      const d = await apiFetch('/api/customers').then(r => r.json());
       document.getElementById('customers-tbody').innerHTML = (d.customers || []).map(c => `<tr><td>${esc(c.name || c.id)}</td><td>${esc(c.plan || 'free')}</td><td>$${c.ltv || 0}</td><td>${c.tickets || 0}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--d);text-align:center">No customers yet</td></tr>';
     } else if (id === 'crm') {
-      const d = await fetch(API + '/api/crm/contacts').then(r => r.json());
+      const d = await apiFetch('/api/crm/contacts').then(r => r.json());
       document.getElementById('crm-tbody').innerHTML = (d.contacts || []).map(c => `<tr><td>${c.name}</td><td>${c.email || '-'}</td><td>${c.company || '-'}</td><td>${c.type || '-'}</td><td>${(c.tags || []).join(', ')}</td></tr>`).join('');
     } else if (id === 'tickets') {
-      const d = await fetch(API + '/api/tickets').then(r => r.json());
+      const d = await apiFetch('/api/tickets').then(r => r.json());
       document.getElementById('tickets-tbody').innerHTML = (d.tickets || []).map(t => `<tr><td>${t.id}</td><td>${t.subject}</td><td>${t.priority}</td><td><span class="status ${t.status}">${t.status}</span></td><td>${t.assignee}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No tickets</td></tr>';
     } else if (id === 'legal') {
-      const [docs, compliance] = await Promise.all([fetch(API + '/api/legal/documents').then(r => r.json()), fetch(API + '/api/compliance/status').then(r => r.json())]);
+      const [docs, compliance] = await Promise.all([apiFetch('/api/legal/documents').then(r => r.json()), apiFetch('/api/compliance/status').then(r => r.json())]);
       document.getElementById('legal-content').innerHTML = `<h2>COMPLIANCE</h2>` + (compliance.frameworks || []).map(f => `<div style="margin:.3rem 0;font-size:.72rem"><span class="status ${f.status === 'compliant' ? 'paid' : 'pending'}">${f.status}</span> ${f.name}</div>`).join('') + `<h2>DOCUMENTS</h2>` + (docs.documents || []).map(d => `<div style="margin:.3rem 0;font-size:.72rem">${d.name} (${d.type}) — ${d.jurisdiction}</div>`).join('');
     } else if (id === 'hr') {
-      const d = await fetch(API + '/api/hr/team').then(r => r.json());
+      const d = await apiFetch('/api/hr/team').then(r => r.json());
       document.getElementById('hr-content').innerHTML = (d.team || []).map(t => `<div style="margin:.5rem 0;font-size:.75rem"><b>${t.name}</b> — ${t.role} (${t.type})</div>`).join('') + `<div style="margin-top:1rem;font-size:.7rem;color:var(--d)">AI Agents: ${d.ai_agents || 0} | Human: ${d.human || 0}</div>`;
     } else if (id === 'inventory') {
-      const d = await fetch(API + '/api/inventory').then(r => r.json());
+      const d = await apiFetch('/api/inventory').then(r => r.json());
       document.getElementById('inventory-tbody').innerHTML = (d.items || []).map(i => `<tr><td>${i.sku}</td><td>${i.name}</td><td>${i.qty}</td><td>$${i.unit_cost}</td><td>$${(i.qty * i.unit_cost).toFixed(2)}</td><td>${i.location}</td></tr>`).join('');
     } else if (id === 'marketing') {
-      const [funnel, seo, social] = await Promise.all([fetch(API + '/api/marketing/funnel').then(r => r.json()), fetch(API + '/api/marketing/seo').then(r => r.json()), fetch(API + '/api/marketing/social').then(r => r.json())]);
+      const [funnel, seo, social] = await Promise.all([apiFetch('/api/marketing/funnel').then(r => r.json()), apiFetch('/api/marketing/seo').then(r => r.json()), apiFetch('/api/marketing/social').then(r => r.json())]);
       document.getElementById('marketing-content').innerHTML = `<h2>FUNNEL</h2>` + (funnel.stages || []).map(s => `<div style="margin:.3rem 0;font-size:.72rem">${s.stage}: <b>${s.count}</b></div>`).join('') + `<h2>SEO</h2><div style="font-size:.72rem">DA: ${seo.da} | Pages: ${seo.pages_indexed} | Keywords: ${seo.keywords_ranking} | Traffic: ${seo.organic_traffic_mtd}</div>` + `<h2>SOCIAL</h2>` + (social.channels || []).map(c => `<div style="margin:.3rem 0;font-size:.72rem">${c.platform}: ${c.followers} followers, ${c.engagement * 100}% engagement</div>`).join('');
     } else if (id === 'analytics') {
-      const d = await fetch(API + '/api/analytics/overview').then(r => r.json());
+      const d = await apiFetch('/api/analytics/overview').then(r => r.json());
       document.getElementById('analytics-content').innerHTML = `<div class="stats"><div class="stat"><div class="v">$${(d.revenue?.mtd || 0).toLocaleString()}</div><div class="l">REVENUE MTD</div></div><div class="stat"><div class="v">${d.customers?.total || 0}</div><div class="l">CUSTOMERS</div></div><div class="stat"><div class="v">${d.support?.open_tickets || 0}</div><div class="l">OPEN TICKETS</div></div><div class="stat"><div class="v">${d.agents?.total || 0}</div><div class="l">AGENTS</div></div><div class="stat"><div class="v">${(d.agents?.efficiency * 100 || 0).toFixed(0)}%</div><div class="l">EFFICIENCY</div></div><div class="stat"><div class="v">${d.marketing?.conversion || 0}</div><div class="l">CONVERSION</div></div></div>`;
     }
   } catch (e) { console.error(e); }

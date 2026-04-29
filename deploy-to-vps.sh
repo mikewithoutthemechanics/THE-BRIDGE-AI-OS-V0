@@ -154,7 +154,7 @@ ${DOMAIN} {
 
     # API Gateway
     route /api* {
-        reverse_proxy localhost:3300
+        reverse_proxy localhost:8080
     }
 
     # System Map
