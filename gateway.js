@@ -149,6 +149,14 @@ try {
   console.log('[GATEWAY] Agent Execution Server ACTIVE — 10 specialized agents');
 } catch (e) { console.warn('[GATEWAY] Agent execution failed:', e.message); }
 
+// ── GOVERNANCE API — swarm economy + voting routes ─────────────────────────
+try {
+  const registerGovernance = require('./supaclaw-governance.js');
+  const state = { treasury: { balance: 0, earned: 0 } };
+  registerGovernance(app, state, null);
+  console.log('[GATEWAY] Governance API ACTIVE — dashboard, proposals, leaderboard, policies');
+} catch (e) { console.warn('[GATEWAY] Governance routes failed:', e.message); }
+
 // ── REQUEST LOGGING MIDDLEWARE ────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
   app.use((req, res, next) => {
@@ -3738,6 +3746,11 @@ app.all('/api/*path', async (req, res, next) => {
   // to the brain proxy and 404s. See project memory: aoe server route order.
   const SPECIFIC_PROXY_BASES = ['/api/platform', '/api/siwe', '/api/twin', '/api/config-engine', '/api/uloe'];
   if (SPECIFIC_PROXY_BASES.some(b => req.path === b || req.path.startsWith(b + '/'))) {
+    return next();
+  }
+
+  // Local sitemap handler is mounted before this catch-all; let it through
+  if (req.path === '/api/admin/sitemap') {
     return next();
   }
 

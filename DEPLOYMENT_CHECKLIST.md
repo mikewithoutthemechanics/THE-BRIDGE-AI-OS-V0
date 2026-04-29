@@ -230,9 +230,97 @@ curl -H "x-vercel-cron-secret: $VERCEL_CRON_SECRET" \
 
 ---
 
+## Phase 11: Withdrawal System Deployment ✓ (NEW)
+
+### Pre-Deployment Checklist
+- [ ] Verify `ethers` is in package.json dependencies
+- [ ] Verify `TREASURY_PRIVATE_KEY` is set in .env
+- [ ] Verify `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are set
+- [ ] Run verification script locally:
+  ```bash
+  node scripts/verify-withdrawal-system.js
+  ```
+
+### Deploy to Supabase (Database)
+- [ ] Run migration to create withdrawal tables:
+  ```bash
+  node migrations/apply-withdrawal-system.js
+  ```
+  Or manually in Supabase SQL Editor:
+  - Go to: https://supabase.com/dashboard/project/_/editor
+  - Run: `migrations/013_withdrawal_system.sql`
+
+- [ ] Verify tables created:
+  ```bash
+  curl -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+    "$SUPABASE_URL/rest/v1/withdrawal_requests?limit=1"
+  ```
+
+### Deploy to GitHub
+- [ ] Stage all changes:
+  ```bash
+  git add -A
+  ```
+- [ ] Commit with message:
+  ```bash
+  git commit -m "feat: Complete withdrawal system with auto-healing
+
+  - Add migrations for withdrawal_requests, agent_claims, fiat_payouts,
+    withdrawal_claims, admin_withdrawals tables
+  - Auto-create tables in all withdrawal modules
+  - Add verification and deployment scripts
+  - Daily limits: 10,000 BRDG per user, 10min cooldown"
+  ```
+- [ ] Push to GitHub:
+  ```bash
+  git push origin main
+  ```
+
+### Deploy to VPS
+- [ ] SSH into VPS and pull latest code:
+  ```bash
+  ssh root@37.27.245.219 "cd /opt/bridge-os && git pull origin main"
+  ```
+- [ ] Install dependencies:
+  ```bash
+  ssh root@37.27.245.219 "cd /opt/bridge-os && npm install"
+  ```
+- [ ] Restart services:
+  ```bash
+  ssh root@37.27.245.219 "cd /opt/bridge-os && pm2 reload ecosystem.config.js"
+  ```
+- [ ] Verify health:
+  ```bash
+  curl http://37.27.245.219:3000/health
+  ```
+
+### Post-Deployment Verification
+- [ ] Test withdrawal limits endpoint:
+  ```bash
+  curl http://37.27.245.219:3000/api/user/withdraw/limits
+  ```
+- [ ] Test swap quote endpoint:
+  ```bash
+  curl "http://37.27.245.219:3000/api/swap/quote?amount=100"
+  ```
+- [ ] Test agent claims endpoint (with auth):
+  ```bash
+  curl -H "Authorization: Bearer $TOKEN" \
+    http://37.27.245.219:3000/api/agent/claims
+  ```
+
+### Full Deployment Script (Automated)
+```bash
+# Run complete deployment
+./scripts/deploy-all.sh
+```
+
+---
+
 ## Support
 
 - Supabase Docs: https://supabase.com/docs
 - Zapier Help: https://zapier.com/help
 - Vercel Docs: https://vercel.com/docs
 - Notion API: https://developers.notion.com
+- Linea Docs: https://docs.linea.build
