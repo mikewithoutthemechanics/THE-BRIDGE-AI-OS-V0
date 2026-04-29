@@ -523,15 +523,27 @@ function updateClock() {
 
 // =========== RENDER TREASURY ===========
 function renderTreasury() {
-  document.getElementById('balanceDisplay').textContent = fmt(treasury.balance);
-  document.getElementById('revMtd').textContent = fmt(treasury.revenueMtd);
-  document.getElementById('costMtd').textContent = fmt(treasury.costsMtd);
-  document.getElementById('netMtd').textContent = fmt(treasury.revenueMtd - treasury.costsMtd);
+  if (!treasury) {
+    document.getElementById('balanceDisplay').textContent = '$0.00';
+    document.getElementById('revMtd').textContent = '$0.00';
+    document.getElementById('costMtd').textContent = '$0.00';
+    document.getElementById('netMtd').textContent = '$0.00';
+    renderLedger();
+    return;
+  }
+  document.getElementById('balanceDisplay').textContent = fmt(treasury.balance || 0);
+  document.getElementById('revMtd').textContent = fmt(treasury.revenueMtd || 0);
+  document.getElementById('costMtd').textContent = fmt(treasury.costsMtd || 0);
+  document.getElementById('netMtd').textContent = fmt((treasury.revenueMtd || 0) - (treasury.costsMtd || 0));
   renderLedger();
 }
 
 function renderLedger() {
   const body = document.getElementById('ledgerBody');
+  if (!treasury || !treasury.ledger || !Array.isArray(treasury.ledger)) {
+    body.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim);text-align:center;">No ledger data available</td></tr>';
+    return;
+  }
   body.innerHTML = treasury.ledger.map(tx => {
     const cls = tx.amount >= 0 ? 'green' : 'red';
     const typeClass = tx.type === 'subscription' ? 'badge-green' :
@@ -549,16 +561,19 @@ function renderLedger() {
 
 // =========== CHART ===========
 function initChart() {
-  const ctx = document.getElementById('revenueChart').getContext('2d');
+  const ctx = document.getElementById('revenueChart');
+  if (!ctx) return;
   const months = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
-  revenueChart = new Chart(ctx, {
+  const revenueData = treasury && treasury.monthlyRevenue ? treasury.monthlyRevenue : Array(12).fill(0);
+  const costData = treasury && treasury.monthlyCosts ? treasury.monthlyCosts : Array(12).fill(0);
+  revenueChart = new Chart(ctx.getContext('2d'), {
     type: 'line',
     data: {
       labels: months,
       datasets: [
         {
           label: 'Revenue',
-          data: treasury.monthlyRevenue,
+          data: revenueData,
           borderColor: '#00c8ff',
           backgroundColor: 'rgba(0,200,255,0.08)',
           fill: true,
@@ -568,7 +583,7 @@ function initChart() {
         },
         {
           label: 'Costs',
-          data: treasury.monthlyCosts,
+          data: costData,
           borderColor: '#ff3c5a',
           backgroundColor: 'rgba(255,60,90,0.08)',
           fill: true,
@@ -872,6 +887,10 @@ function toggleUser(idx) {
 }
 
 function exportLedger() {
+  if (!treasury || !treasury.ledger || !Array.isArray(treasury.ledger)) {
+    alert('No ledger data available to export');
+    return;
+  }
   let csv = 'Time,Type,Description,Amount,Balance\n';
   treasury.ledger.forEach(tx => {
     csv += `"${tx.time}","${tx.type}","${tx.desc}",${tx.amount},${tx.balance}\n`;
@@ -934,13 +953,19 @@ function renderAll() {
 async function fetchSeedData() {
   try {
     const endpoints = [
-      { url: '/api/treasury', key: 'treasury' },
       { url: '/api/agents', key: 'agents' },
       { url: '/api/tasks', key: 'tasks' },
       { url: '/api/users', key: 'users' },
       { url: '/api/events', key: 'events' },
     ];
-    const results = await Promise.allSettled(endpoints.map(e => fetch(e.url).then(r => r.ok ? r.json() : null)));
+    const results = await Promise.allSettled(endpoints.map(e => 
+      fetch(e.url)
+        .then(r => {
+          if (!r.ok) return null;
+          return r.json().catch(() => null);
+        })
+        .catch(() => null)
+    ));
     results.forEach((r, i) => {
       if (r.status === 'fulfilled' && r.value) {
         const key = endpoints[i].key;
@@ -956,7 +981,10 @@ async function fetchSeedData() {
         }
       }
     });
-  } catch (e) { /* use defaults */ }
+  } catch (e) { 
+    // Silently use defaults - API endpoints may not be available
+    console.log('Using default seed data (API endpoints unavailable)');
+  }
 }
 
 // =========== INIT ===========
