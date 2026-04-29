@@ -140,6 +140,13 @@ img,video,iframe,table{max-width:100%}
 
     var tasksRun = 0;
 
+    function getAuthToken() {
+      var fromStorage = localStorage.getItem('bridge_token') || localStorage.getItem('bridge_siwe_jwt');
+      if (fromStorage) return fromStorage;
+      var m = document.cookie.match(/(?:^|;\s*)bridge_token=([^;]+)/);
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+
     function timeAgo(iso) {
       if (!iso) return 'never';
       var s = Math.floor((Date.now() - new Date(iso)) / 1000);
@@ -291,6 +298,7 @@ img,video,iframe,table{max-width:100%}
       var btn    = document.getElementById('btn-' + slug);
       var timeEl = document.getElementById('time-' + slug);
       var inp    = document.getElementById('inp-' + slug);
+      var token  = getAuthToken();
 
       card.className  = 'agent-card running';
       dot.className   = 'agent-dot running';
@@ -300,9 +308,13 @@ img,video,iframe,table{max-width:100%}
 
       var t0 = Date.now();
       try {
+        if (!token) throw new Error('Missing auth token. Sign in via Gateway first.');
         var r = await fetch('/api/agents/run', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
           body:    JSON.stringify({ agentName: name, input: inp.value }),
         });
         var data    = await r.json();

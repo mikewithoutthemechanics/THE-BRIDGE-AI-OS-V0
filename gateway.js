@@ -56,6 +56,8 @@ const db = require('./lib/db');
 const { requireAuth: gatewayAuth } = require('./middleware/auth');
 const { requireAdmin, requireSuperAdmin } = require('./middleware/access-control');
 let agents; try { agents = require('./lib/agents'); } catch (_) { agents = null; }
+let handleSiwe = null;
+try { ({ handleSiwe } = require('./api/siwe')); } catch (_) { handleSiwe = null; }
 
 // ── NeuroLink BCI Runtime ──────────────────────────────────────────────────
 let neurolink;
@@ -797,6 +799,7 @@ async function handleAuthMe(req, res) {
     if (!user) {
       return res.status(401).json({ ok: false, error: 'Authentication required' });
     }
+    const perms = Array.isArray(user.permissions) ? user.permissions : [];
     return res.json({
       ok: true,
       user: {
@@ -805,9 +808,13 @@ async function handleAuthMe(req, res) {
         name: user.name || user.email,
         plan: user.plan || 'free',
         role: user.role || 'member',
-        tier: user.role || 'member',
+        tier: user.tenant === 'root' ? 'super_admin' : (user.funnel_stage || user.plan || user.role || 'member'),
+        permissions: perms.length ? perms : (user.isSuperUser ? ['*'] : []),
+        tenant: user.tenant || null,
         funnel_stage: user.funnel_stage || 'identified',
+        display_role: user.displayRole || undefined,
       },
+      nurture_prompt: null,
     });
   } catch (e) {
     return res.status(500).json({ ok: false, error: 'Auth check failed' });
@@ -3834,6 +3841,11 @@ app.all('/api/siwe/*path', async (req, res) => {
     if (req.headers['cookie']) opts.headers['Cookie'] = req.headers['cookie'];
     if (req.method !== 'GET' && req.body) opts.body = JSON.stringify(req.body);
     const r = await fetch(url, opts);
+    // If unified-server returns 5xx for SIWE, fall back to local SIWE handlers.
+    if (r.status >= 500 && handleSiwe) {
+      const handled = await handleSiwe(req, res);
+      if (handled !== null) return;
+    }
     // Forward Set-Cookie headers from the auth response
     const setCookie = r.headers.get('set-cookie');
     if (setCookie) res.setHeader('Set-Cookie', setCookie);
@@ -3841,6 +3853,12 @@ app.all('/api/siwe/*path', async (req, res) => {
     const text = await r.text();
     res.status(r.status).set('Content-Type', ct).send(text);
   } catch (e) {
+    if (handleSiwe) {
+      try {
+        const handled = await handleSiwe(req, res);
+        if (handled !== null) return;
+      } catch (_) {}
+    }
     res.status(502).json({ error: 'unified-server unreachable', path: req.originalUrl, details: e.message });
   }
 });

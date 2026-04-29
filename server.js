@@ -57,7 +57,7 @@ const mail   = require('./lib/mail');
 const da     = require('./lib/directadmin');
 const wp     = require('./lib/wordpress');
 const wpAuth = require('./lib/wp-auth');
-const { isSuperUser } = require('./middleware/auth');
+const { isAuthBypassed, bypassJwtUser, logBypassOnce } = require('./shared/auth-bypass');
 const { requireClient, requireAdmin, pageGuard } = require('./middleware/access-control');
 const { intentMiddleware, semanticRBAC, wrapExecution, logIntent, getIntentLog } = require('./middleware/verb-noun-engine');
 const requireUserJwt = requireClient;
@@ -128,7 +128,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://fonts.googleapis.com https://cdnjs.cloudflare.com",
     "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:",
     "img-src 'self' data: blob: https:",
-    `connect-src 'self' https://openrouter.ai https://api.openai.com https://www.payfast.co.za ${BASE_URL} http://localhost:*`,
+    `connect-src 'self' https://openrouter.ai https://api.openai.com https://www.payfast.co.za https://rpc.linea.build https://go.ai-os.co.za wss://go.ai-os.co.za wss: ${BASE_URL} http://localhost:*`,
     "object-src 'none'",
     "frame-src 'self'",
     "frame-ancestors 'self'",
@@ -1136,6 +1136,11 @@ function requireInternalAdminToken(req, res, next) {
 
 // Authentication middleware for all /api/* endpoints
 function requireAuth(req, res, next) {
+  if (isAuthBypassed()) {
+    logBypassOnce();
+    req.user = bypassJwtUser();
+    return next();
+  }
   // Public endpoints that don't require authentication
   const publicEndpoints = [
     '/api/health',
