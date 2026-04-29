@@ -251,7 +251,7 @@ const PUBLIC_ENDPOINTS = new Set([
 // ═══════════════════════════════════════════════════════════════
 function semanticRBAC(req, res, next) {
   // Exempt public endpoints from semantic RBAC
-  if (PUBLIC_ENDPOINTS.has(req.path)) {
+  if (PUBLIC_ENDPOINTS.has(req.path) || req.path.startsWith('/siwe/')) {
     return next();
   }
   
