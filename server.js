@@ -183,7 +183,10 @@ app.use("/api/ubi/claim",            strictLimiter(20));
 // These four middleware apply to ALL /api/* routes registered below.
 // Must be declared before any /api/* route handler.
 app.use('/api', intentMiddleware);
-app.use('/api', requireClient);  // JWT verification — 401 for unauthenticated callers
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/siwe/')) return next(); // SIWE must stay public for nonce/sign flow
+  return requireClient(req, res, next);
+});  // JWT verification — 401 for unauthenticated callers
 app.use('/api', semanticRBAC);   // Semantic authorization based on verb+noun
 app.use('/api', logIntent);      // Intent telemetry logging for overseer
 app.use('/api', wrapExecution);  // Response wrapping with intent metadata (optional)
