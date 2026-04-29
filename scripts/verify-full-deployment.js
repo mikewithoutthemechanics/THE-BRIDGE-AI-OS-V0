@@ -14,7 +14,7 @@ const path = require('path');
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const VPS_HOST = process.env.VPS_HOST || '37.27.245.219';
+const VPS_HOST = process.env.VPS_HOST || '102.208.228.44';
 const VPS_PORT = process.env.VPS_PORT || '3000';
 const GITHUB_REPO = 'bridgeaios/THE-BRIDGE-AI-OS-V0';
 
