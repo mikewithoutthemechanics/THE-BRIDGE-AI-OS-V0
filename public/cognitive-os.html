@@ -23,7 +23,8 @@
     /* Sidebar */
     .sidebar { background:var(--surface); border-right:1px solid var(--border); padding:1.5rem 1rem; position:sticky; top:64px; height:calc(100vh - 64px); overflow-y:auto; }
     .sidebar-title { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:0.75rem; padding:0 0.5rem; }
-    .sidebar-link { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.75rem; border-radius:var(--radius); cursor:pointer; font-size:0.85rem; color:var(--muted); transition:all 0.15s; margin-bottom:2px; text-decoration:none; }
+    .sidebar-link { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.75rem; border-radius:var(--radius); cursor:pointer; font-size:0.85rem; color:var(--muted); transition:all 0.15s; margin-bottom:2px; text-decoration:none; width:100%; box-sizing:border-box; }
+    button.sidebar-link { border:0; background:transparent; font:inherit; text-align:left; }
     .sidebar-link:hover, .sidebar-link.active { background:rgba(124,106,247,0.12); color:var(--accent); }
     .sidebar-link .icon { width:20px; text-align:center; font-size:1rem; }
     .group-badge { font-size:0.65rem; padding:0.15rem 0.45rem; border-radius:999px; margin-left:auto; }
@@ -160,37 +161,37 @@ img,video,iframe,table{max-width:100%}
 <body>
 <div class="page">
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <nav class="sidebar" aria-label="Cognitive OS">
     <div class="sidebar-title">Navigation</div>
-    <a class="sidebar-link active" data-panel="executor" href="#">
-      <span class="icon">⚡</span> Verb Executor
-    </a>
-    <a class="sidebar-link" data-panel="loop" href="#">
-      <span class="icon">🔄</span> Cognitive Loop
-    </a>
-    <a class="sidebar-link" data-panel="log" href="#">
-      <span class="icon">📋</span> Unified Log
-    </a>
-    <a class="sidebar-link" data-panel="memory" href="#">
-      <span class="icon">🧠</span> Brain Memory
-    </a>
-    <a class="sidebar-link" data-panel="state" href="#">
-      <span class="icon">🌐</span> Cognitive State
-    </a>
-    <a class="sidebar-link" data-panel="verbs" href="#">
-      <span class="icon">📚</span> Verb Registry
-    </a>
+    <button type="button" class="sidebar-link active" data-panel="executor">
+      <span class="icon" aria-hidden="true">⚡</span> Verb Executor
+    </button>
+    <button type="button" class="sidebar-link" data-panel="loop">
+      <span class="icon" aria-hidden="true">🔄</span> Cognitive Loop
+    </button>
+    <button type="button" class="sidebar-link" data-panel="log">
+      <span class="icon" aria-hidden="true">📋</span> Unified Log
+    </button>
+    <button type="button" class="sidebar-link" data-panel="memory">
+      <span class="icon" aria-hidden="true">🧠</span> Brain Memory
+    </button>
+    <button type="button" class="sidebar-link" data-panel="state">
+      <span class="icon" aria-hidden="true">🌐</span> Cognitive State
+    </button>
+    <button type="button" class="sidebar-link" data-panel="verbs">
+      <span class="icon" aria-hidden="true">📚</span> Verb Registry
+    </button>
 
     <div class="sidebar-title" style="margin-top:1.5rem">Quick Execute</div>
-    <a class="sidebar-link" href="#" onclick="quickExec('MONITOR')"><span class="icon">👁</span> MONITOR <span class="group-badge foundation">F</span></a>
-    <a class="sidebar-link" href="#" onclick="quickExec('PREDICT')"><span class="icon">🔮</span> PREDICT <span class="group-badge intelligence">I</span></a>
-    <a class="sidebar-link" href="#" onclick="quickExec('OPTIMIZE')"><span class="icon">🎯</span> OPTIMIZE <span class="group-badge transformation">T</span></a>
-    <a class="sidebar-link" href="#" onclick="quickExec('EVOLVE')"><span class="icon">🌱</span> EVOLVE <span class="group-badge system">S</span></a>
-    <a class="sidebar-link" href="#" onclick="quickExec('AUDIT')"><span class="icon">🔍</span> AUDIT <span class="group-badge system">S</span></a>
-    <a class="sidebar-link" href="#" onclick="runLoop('standard')"><span class="icon">🔁</span> Run Standard Loop</a>
-    <a class="sidebar-link" href="#" onclick="runLoop('self_healing')"><span class="icon">🩹</span> Self-Heal Loop</a>
-    <a class="sidebar-link" href="#" onclick="runLoop('learning')"><span class="icon">📈</span> Learning Loop</a>
-  </aside>
+    <button type="button" class="sidebar-link" onclick="quickExec('MONITOR')"><span class="icon" aria-hidden="true">👁</span> MONITOR <span class="group-badge foundation">F</span></button>
+    <button type="button" class="sidebar-link" onclick="quickExec('PREDICT')"><span class="icon" aria-hidden="true">🔮</span> PREDICT <span class="group-badge intelligence">I</span></button>
+    <button type="button" class="sidebar-link" onclick="quickExec('OPTIMIZE')"><span class="icon" aria-hidden="true">🎯</span> OPTIMIZE <span class="group-badge transformation">T</span></button>
+    <button type="button" class="sidebar-link" onclick="quickExec('EVOLVE')"><span class="icon" aria-hidden="true">🌱</span> EVOLVE <span class="group-badge system">S</span></button>
+    <button type="button" class="sidebar-link" onclick="quickExec('AUDIT')"><span class="icon" aria-hidden="true">🔍</span> AUDIT <span class="group-badge system">S</span></button>
+    <button type="button" class="sidebar-link" onclick="runLoop('standard')"><span class="icon" aria-hidden="true">🔁</span> Run Standard Loop</button>
+    <button type="button" class="sidebar-link" onclick="runLoop('self_healing')"><span class="icon" aria-hidden="true">🩹</span> Self-Heal Loop</button>
+    <button type="button" class="sidebar-link" onclick="runLoop('learning')"><span class="icon" aria-hidden="true">📈</span> Learning Loop</button>
+  </nav>
 
   <!-- Main -->
   <main class="main">
@@ -466,7 +467,7 @@ img,video,iframe,table{max-width:100%}
   function renderVerbBrowser(verbs) {
     var browser = document.getElementById('verbBrowser');
     browser.innerHTML = verbs.slice(0, 60).map(function(v) {
-      return '<div class="verb-item" onclick="selectVerb(\''+v.name+'\')">' +
+      return '<div class="verb-item" onclick="selectVerb(\''+v.name+'\', this)">' +
         '<div class="verb-code">#'+v.code+'</div>'+
         '<div class="verb-name">'+esc(v.name)+'</div>'+
         '<div class="verb-formula">'+esc(v.formula)+'</div>'+
@@ -513,11 +514,11 @@ img,video,iframe,table{max-width:100%}
     }
   });
 
-  window.selectVerb = function(name) {
+  window.selectVerb = function(name, el) {
     document.getElementById('execVerb').value = name;
     document.getElementById('execVerb').dispatchEvent(new Event('change'));
-    document.querySelectorAll('.verb-item').forEach(function(el){el.classList.remove('selected');});
-    event.currentTarget.classList.add('selected');
+    document.querySelectorAll('.verb-item').forEach(function(card){card.classList.remove('selected');});
+    if (el) el.classList.add('selected');
   };
 
   window.selectVerbAndGo = function(name) {

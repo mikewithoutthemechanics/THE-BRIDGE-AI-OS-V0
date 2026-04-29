@@ -169,13 +169,14 @@
   style.textContent = css;
   document.head.appendChild(style);
 
-  var bar = document.createElement('div');
+  var bar = document.createElement('nav');
   bar.className = 'bn-bar';
+  bar.setAttribute('aria-label', 'Bridge AI OS primary');
 
-  var logo = document.createElement('span');
+  var logo = document.createElement('a');
   logo.className = 'bn-logo';
+  logo.href = svcBase + '/50-applications.html';
   logo.textContent = 'BRIDGE AI';
-  logo.onclick = function() { window.location.href = svcBase + '/50-applications.html'; };
   bar.appendChild(logo);
 
   // ── Twin + Avatar pinned control pods ──────────────────────────────────
@@ -199,22 +200,39 @@
 
   var sectionsDiv = document.createElement('div');
   sectionsDiv.className = 'bn-sections';
+  sectionsDiv.id = 'bn-sections';
 
   Object.keys(sections).forEach(function(sectionName) {
+    var slug = sectionName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     var group = document.createElement('div');
     group.className = 'bn-group';
     var btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = 'bn-group-btn';
     btn.textContent = sectionName;
-    btn.onclick = function(e) {
-      e.stopPropagation();
-      document.querySelectorAll('.bn-group').forEach(function(g) { if (g !== group) g.classList.remove('open'); });
-      group.classList.toggle('open');
-    };
-    group.appendChild(btn);
+    btn.setAttribute('aria-haspopup', 'true');
+    btn.setAttribute('aria-expanded', 'false');
 
     var dropdown = document.createElement('div');
     dropdown.className = 'bn-dropdown';
+    dropdown.id = 'bn-dd-' + slug;
+    dropdown.setAttribute('role', 'menu');
+    btn.setAttribute('aria-controls', dropdown.id);
+
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      var wasOpen = group.classList.contains('open');
+      document.querySelectorAll('.bn-group').forEach(function(g) {
+        g.classList.remove('open');
+        var b = g.querySelector('.bn-group-btn');
+        if (b) b.setAttribute('aria-expanded', 'false');
+      });
+      if (!wasOpen) {
+        group.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    };
+    group.appendChild(btn);
     sections[sectionName].forEach(function(item) {
       var a = document.createElement('a');
       a.className = 'bn-link' + (isActive(item) ? ' bn-active' : '');
@@ -227,13 +245,17 @@
   });
 
   var hamburger = document.createElement('button');
+  hamburger.type = 'button';
   hamburger.className = 'bn-hamburger';
   hamburger.textContent = '\\u2630';
   hamburger.setAttribute('aria-label', 'Toggle navigation menu');
+  hamburger.setAttribute('aria-expanded', 'false');
+  hamburger.setAttribute('aria-controls', 'bn-sections');
   hamburger.onclick = function(e) {
     e.stopPropagation();
     var isOpen = sectionsDiv.classList.toggle('open');
     hamburger.textContent = isOpen ? '\\u2715' : '\\u2630';
+    hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   };
   bar.appendChild(hamburger);
 
@@ -247,12 +269,17 @@
   document.body.style.paddingTop = '40px';
 
   document.addEventListener('click', function() {
-    document.querySelectorAll('.bn-group').forEach(function(g) { g.classList.remove('open'); });
+    document.querySelectorAll('.bn-group').forEach(function(g) {
+      g.classList.remove('open');
+      var b = g.querySelector('.bn-group-btn');
+      if (b) b.setAttribute('aria-expanded', 'false');
+    });
     document.querySelectorAll('.bn-fab-panel').forEach(function(p) { p.classList.remove('open'); });
     // Close mobile nav on outside click
     if (sectionsDiv.classList.contains('open')) {
       sectionsDiv.classList.remove('open');
       hamburger.textContent = '\\u2630';
+      hamburger.setAttribute('aria-expanded', 'false');
     }
   });
 

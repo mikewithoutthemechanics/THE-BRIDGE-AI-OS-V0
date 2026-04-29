@@ -72,7 +72,7 @@ img,video,iframe,table{max-width:100%}
 </style>
 </head>
 <body>
-<a class="btn btn-danger logout" href="#" onclick="logout()">LOGOUT</a>
+<button type="button" class="btn btn-danger logout" onclick="logout()">LOGOUT</button>
 <div class="page">
 <div class="welcome">
   <h1>WELCOME TO BRIDGE AI</h1>
@@ -209,7 +209,7 @@ async function load() {
       <div class="row"><span class="label">Google</span><span class="val">${integrations.google?.configured ? '✓ Connected' : '○ Not connected'}</span></div>
       <div class="row"><span class="label">Microsoft</span><span class="val">${integrations.microsoft?.configured ? '✓ Connected' : '○ Not connected'}</span></div>
       <div class="row"><span class="label">GitHub</span><span class="val">${integrations.github?.configured ? '✓ Connected' : '○ Not connected'}</span></div>
-      <div class="row"><span class="label">MFA</span><span class="val">○ Not enabled — <a href="#" onclick="setupMFA()">Enable</a></span></div>
+      <div class="row"><span class="label">MFA</span><span class="val">○ Not enabled — <button type="button" onclick="setupMFA()" style="background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer">Enable</button></span></div>
     `;
   } catch(e) { console.error(e); }
 }

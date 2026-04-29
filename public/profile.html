@@ -51,6 +51,7 @@
     .nav-group{margin-bottom:1.5rem}
     .nav-group-label{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem;padding:0 .5rem}
     .nav-item{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border-radius:.4rem;font-size:.82rem;color:var(--dim);cursor:pointer;transition:all .2s;margin-bottom:.15rem}
+    button.nav-item{width:100%;border:0;background:transparent;font:inherit;text-align:left}
     .nav-item:hover{background:var(--surface2);color:var(--text)}
     .nav-item.active{background:rgba(0,200,255,.08);color:var(--accent);border:1px solid rgba(0,200,255,.15)}
     .nav-item .icon{width:16px;text-align:center;font-size:.9rem}
@@ -245,23 +246,23 @@ img,video,iframe,table{max-width:100%}
 </div>
 
 <div class="layout">
-  <div class="sidebar">
+  <nav class="sidebar" aria-label="Profile sections">
     <div class="nav-group">
       <div class="nav-group-label">Profile</div>
-      <div class="nav-item active" onclick="showSection('overview')"><span class="icon">🏠</span> Overview</div>
-      <div class="nav-item" onclick="showSection('projects')"><span class="icon">📁</span> Projects</div>
-      <div class="nav-item" onclick="showSection('outputs')"><span class="icon">📤</span> Outputs</div>
-      <div class="nav-item" onclick="showSection('integrations')"><span class="icon">🔗</span> Integrations</div>
-      <div class="nav-item" onclick="showSection('analytics')"><span class="icon">📊</span> Analytics</div>
-      <div class="nav-item" onclick="showSection('avatar')"><span class="icon">🎨</span> AI Avatar</div>
+      <button type="button" class="nav-item active" data-section="overview" onclick="showSection('overview')"><span class="icon" aria-hidden="true">🏠</span> Overview</button>
+      <button type="button" class="nav-item" data-section="projects" onclick="showSection('projects')"><span class="icon" aria-hidden="true">📁</span> Projects</button>
+      <button type="button" class="nav-item" data-section="outputs" onclick="showSection('outputs')"><span class="icon" aria-hidden="true">📤</span> Outputs</button>
+      <button type="button" class="nav-item" data-section="integrations" onclick="showSection('integrations')"><span class="icon" aria-hidden="true">🔗</span> Integrations</button>
+      <button type="button" class="nav-item" data-section="analytics" onclick="showSection('analytics')"><span class="icon" aria-hidden="true">📊</span> Analytics</button>
+      <button type="button" class="nav-item" data-section="avatar" onclick="showSection('avatar')"><span class="icon" aria-hidden="true">🎨</span> AI Avatar</button>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">Account</div>
-      <div class="nav-item" onclick="showSection('billing')"><span class="icon">💳</span> Billing</div>
-      <div class="nav-item" onclick="showSection('settings')"><span class="icon">⚙️</span> Settings</div>
-      <div class="nav-item" onclick="logout()" style="color:var(--red)"><span class="icon">↩</span> Sign Out</div>
+      <button type="button" class="nav-item" data-section="billing" onclick="showSection('billing')"><span class="icon" aria-hidden="true">💳</span> Billing</button>
+      <button type="button" class="nav-item" data-section="settings" onclick="showSection('settings')"><span class="icon" aria-hidden="true">⚙️</span> Settings</button>
+      <button type="button" class="nav-item" onclick="logout()" style="color:var(--red)"><span class="icon" aria-hidden="true">↩</span> Sign Out</button>
     </div>
-  </div>
+  </nav>
 
   <div class="main">
     <!-- Overview -->
@@ -457,11 +458,9 @@ async function authFetch(url, opts = {}) {
 
 function showSection(id) {
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.sidebar .nav-item[data-section]').forEach(n => n.classList.remove('active'));
   document.getElementById('section-' + id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.textContent.toLowerCase().includes(id)) n.classList.add('active');
-  });
+  document.querySelectorAll('.sidebar .nav-item[data-section="' + id + '"]').forEach(n => n.classList.add('active'));
 
   if (id === 'outputs') loadOutputs();
   if (id === 'analytics') loadAnalytics();

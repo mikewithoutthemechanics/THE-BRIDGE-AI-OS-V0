@@ -27,8 +27,10 @@ body{background:var(--bg);color:var(--t);font-family:system-ui,monospace}
 .nav-item{display:block;padding:.5rem 1rem;font-size:.72rem;color:var(--d);cursor:pointer;border-left:3px solid transparent;text-decoration:none}
 .nav-item:hover,.nav-item.active{color:var(--a);background:rgba(0,200,255,.03);border-left-color:var(--a)}
 .nav-item .badge{float:right;font-size:.55rem;padding:1px 5px;border-radius:3px;background:rgba(0,200,255,.1);color:var(--a)}
+button.nav-item.tab-trigger{width:100%;border-top:0;border-right:0;border-bottom:0;background:transparent;font:inherit;text-align:left}
 .main{overflow-y:auto;padding:1.5rem}
 .main h1{color:var(--a);font-size:1.2rem;letter-spacing:.15em;margin-bottom:.3rem}
+.panel-heading{color:var(--a);font-size:1.2rem;letter-spacing:.15em;margin-bottom:.3rem}
 .sub{color:var(--d);font-size:.72rem;margin-bottom:1.5rem}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:1.5rem}
 .stat{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.8rem;text-align:center}
@@ -80,28 +82,28 @@ img,video,iframe,table{max-width:100%}
 </head>
 <body>
 <div class="app">
-<div class="sidebar">
+<nav class="sidebar" aria-label="Corporate suite sections">
   <h2>CORPORATE SUITE</h2>
-  <a class="nav-item active" onclick="show('dashboard')">Dashboard</a>
-  <a class="nav-item" onclick="show('quotes')">Quotes <span class="badge" id="b-quotes">0</span></a>
-  <a class="nav-item" onclick="show('invoices')">Invoices <span class="badge" id="b-invoices">0</span></a>
-  <a class="nav-item" onclick="show('creditors')">Creditors</a>
-  <a class="nav-item" onclick="show('debtors')">Debtors <span class="badge" id="b-debtors">0</span></a>
-  <a class="nav-item" onclick="show('vendors')">Vendors/Suppliers</a>
-  <a class="nav-item" onclick="show('customers')">Customers</a>
-  <a class="nav-item" onclick="show('crm')">CRM Contacts</a>
-  <a class="nav-item" onclick="show('tickets')">Support Tickets</a>
-  <a class="nav-item" onclick="show('legal')">Legal/Compliance</a>
-  <a class="nav-item" onclick="show('hr')">HR/Team</a>
-  <a class="nav-item" onclick="show('inventory')">Inventory</a>
-  <a class="nav-item" onclick="show('marketing')">Marketing</a>
-  <a class="nav-item" onclick="show('analytics')">Analytics</a>
+  <button type="button" class="nav-item tab-trigger active" onclick="show('dashboard', event)">Dashboard</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('quotes', event)">Quotes <span class="badge" id="b-quotes">0</span></button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('invoices', event)">Invoices <span class="badge" id="b-invoices">0</span></button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('creditors', event)">Creditors</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('debtors', event)">Debtors <span class="badge" id="b-debtors">0</span></button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('vendors', event)">Vendors/Suppliers</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('customers', event)">Customers</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('crm', event)">CRM Contacts</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('tickets', event)">Support Tickets</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('legal', event)">Legal/Compliance</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('hr', event)">HR/Team</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('inventory', event)">Inventory</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('marketing', event)">Marketing</button>
+  <button type="button" class="nav-item tab-trigger" onclick="show('analytics', event)">Analytics</button>
   <h2>SYSTEM</h2>
   <a class="nav-item" href="/">Back to Dashboard</a>
   <a class="nav-item" href="/brand.html">Brand Assets</a>
   <a class="nav-item" href="/platforms.html">Network</a>
-</div>
-<div class="main">
+</nav>
+<main class="main">
 
 <!-- DASHBOARD -->
 <div class="panel active" id="p-dashboard">
@@ -114,87 +116,87 @@ img,video,iframe,table{max-width:100%}
 
 <!-- QUOTES -->
 <div class="panel" id="p-quotes">
-  <h1>QUOTES & PROPOSALS</h1>
+  <h2 class="panel-heading">QUOTES & PROPOSALS</h2>
   <div class="actions" style="margin-bottom:1rem"><button class="btn btn-p" onclick="openModal('quote')">+ NEW QUOTE</button></div>
   <table><thead><tr><th>NUMBER</th><th>CLIENT</th><th>TOTAL</th><th>STATUS</th><th>VALID UNTIL</th><th>ACTIONS</th></tr></thead><tbody id="quotes-tbody"></tbody></table>
 </div>
 
 <!-- INVOICES -->
 <div class="panel" id="p-invoices">
-  <h1>INVOICES & BILLING</h1>
+  <h2 class="panel-heading">INVOICES & BILLING</h2>
   <div class="actions" style="margin-bottom:1rem"><button class="btn btn-p" onclick="openModal('invoice')">+ NEW INVOICE</button></div>
   <table><thead><tr><th>NUMBER</th><th>CLIENT</th><th>TOTAL</th><th>TAX</th><th>STATUS</th><th>DUE</th><th>ACTIONS</th></tr></thead><tbody id="invoices-tbody"></tbody></table>
 </div>
 
 <!-- CREDITORS -->
 <div class="panel" id="p-creditors">
-  <h1>CREDITORS (What we owe)</h1>
+  <h2 class="panel-heading">CREDITORS (What we owe)</h2>
   <table><thead><tr><th>VENDOR</th><th>AMOUNT</th><th>CURRENCY</th><th>STATUS</th><th>DUE</th></tr></thead><tbody id="creditors-tbody"></tbody></table>
 </div>
 
 <!-- DEBTORS -->
 <div class="panel" id="p-debtors">
-  <h1>DEBTORS (What they owe us)</h1>
+  <h2 class="panel-heading">DEBTORS (What they owe us)</h2>
   <div class="actions" style="margin-bottom:1rem"><button class="btn btn-p" onclick="openModal('debt')">+ LOG DEBT</button></div>
   <table><thead><tr><th>DEBTOR</th><th>AMOUNT</th><th>STATUS</th><th>REMINDERS</th><th>ACTIONS</th></tr></thead><tbody id="debtors-tbody"></tbody></table>
 </div>
 
 <!-- VENDORS -->
 <div class="panel" id="p-vendors">
-  <h1>VENDORS & SUPPLIERS</h1>
+  <h2 class="panel-heading">VENDORS & SUPPLIERS</h2>
   <table><thead><tr><th>NAME</th><th>TYPE</th><th>CONTACT</th><th>STATUS</th><th>SPEND MTD</th></tr></thead><tbody id="vendors-tbody"></tbody></table>
 </div>
 
 <!-- CUSTOMERS -->
 <div class="panel" id="p-customers">
-  <h1>CUSTOMER PROFILES</h1>
+  <h2 class="panel-heading">CUSTOMER PROFILES</h2>
   <table><thead><tr><th>NAME</th><th>PLAN</th><th>LTV</th><th>TICKETS</th></tr></thead><tbody id="customers-tbody"></tbody></table>
 </div>
 
 <!-- CRM -->
 <div class="panel" id="p-crm">
-  <h1>CRM CONTACTS</h1>
+  <h2 class="panel-heading">CRM CONTACTS</h2>
   <div class="actions" style="margin-bottom:1rem"><button class="btn btn-p" onclick="openModal('contact')">+ ADD CONTACT</button></div>
   <table><thead><tr><th>NAME</th><th>EMAIL</th><th>COMPANY</th><th>TYPE</th><th>TAGS</th></tr></thead><tbody id="crm-tbody"></tbody></table>
 </div>
 
 <!-- TICKETS -->
 <div class="panel" id="p-tickets">
-  <h1>SUPPORT TICKETS</h1>
+  <h2 class="panel-heading">SUPPORT TICKETS</h2>
   <table><thead><tr><th>ID</th><th>SUBJECT</th><th>PRIORITY</th><th>STATUS</th><th>ASSIGNEE</th></tr></thead><tbody id="tickets-tbody"></tbody></table>
 </div>
 
 <!-- LEGAL -->
 <div class="panel" id="p-legal">
-  <h1>LEGAL & COMPLIANCE</h1>
+  <h2 class="panel-heading">LEGAL & COMPLIANCE</h2>
   <div id="legal-content"></div>
 </div>
 
 <!-- HR -->
 <div class="panel" id="p-hr">
-  <h1>HR & TEAM</h1>
+  <h2 class="panel-heading">HR & TEAM</h2>
   <div id="hr-content"></div>
 </div>
 
 <!-- INVENTORY -->
 <div class="panel" id="p-inventory">
-  <h1>INVENTORY</h1>
+  <h2 class="panel-heading">INVENTORY</h2>
   <table><thead><tr><th>SKU</th><th>NAME</th><th>QTY</th><th>UNIT COST</th><th>VALUE</th><th>LOCATION</th></tr></thead><tbody id="inventory-tbody"></tbody></table>
 </div>
 
 <!-- MARKETING -->
 <div class="panel" id="p-marketing">
-  <h1>MARKETING</h1>
+  <h2 class="panel-heading">MARKETING</h2>
   <div id="marketing-content"></div>
 </div>
 
 <!-- ANALYTICS -->
 <div class="panel" id="p-analytics">
-  <h1>ANALYTICS</h1>
+  <h2 class="panel-heading">ANALYTICS</h2>
   <div id="analytics-content"></div>
 </div>
 
-</div>
+</main>
 </div>
 
 <!-- MODAL -->
@@ -241,16 +243,34 @@ async function apiRequest(path, options = {}) {
 }
 
 async function apiJson(path, options = {}) {
-  const response = await apiRequest(path, options);
-  if (response.status === 204) return {};
-  return response.json();
+  try {
+    const response = await apiRequest(path, options);
+    if (response.status === 204) return {};
+    return response.json();
+  } catch (err) {
+    if (err?.status === 401) throw err;
+    return { __error: { status: err?.status || 0, path, message: err?.message || 'Request failed' } };
+  }
 }
 
-function show(id) {
+function isApiError(payload) {
+  return !!(payload && payload.__error);
+}
+
+function renderUnavailableRow(tbodyId, colspan, label) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="${colspan}" style="color:var(--r);text-align:center">Service unavailable (${esc(label)})</td></tr>`;
+}
+
+function show(id, evt) {
+  const e = evt || (typeof event !== 'undefined' ? event : null);
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('p-' + id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  event.target.classList.add('active');
+  const panel = document.getElementById('p-' + id);
+  if (panel) panel.classList.add('active');
+  document.querySelectorAll('.tab-trigger').forEach(n => n.classList.remove('active'));
+  const t = e && (e.currentTarget || (e.target && e.target.closest && e.target.closest('.tab-trigger')));
+  if (t) t.classList.add('active');
   loadSection(id);
 }
 
@@ -348,27 +368,37 @@ async function loadSection(id) {
       document.getElementById('b-invoices').textContent = (invoices.invoices || []).length;
       document.getElementById('b-quotes').textContent = (quotes.quotes || []).length;
       document.getElementById('b-debtors').textContent = (debts.debts || []).length;
-      document.getElementById('recent-activity').textContent = 'System active. Treasury: $' + (treasury.balance || 0).toLocaleString();
+      const degraded = [treasury, invoices, debts, quotes, analytics].some(isApiError);
+      document.getElementById('recent-activity').textContent = degraded
+        ? 'Some services are temporarily unavailable (upstream 5xx). Showing partial data.'
+        : 'System active. Treasury: $' + (treasury.balance || 0).toLocaleString();
     } else if (id === 'quotes') {
       const d = await apiJson('/api/quotes');
+      if (isApiError(d)) { renderUnavailableRow('quotes-tbody', 6, 'quotes'); return; }
       document.getElementById('quotes-tbody').innerHTML = (d.quotes || []).map(q => `<tr><td>${esc(q.number || q.id)}</td><td>${esc(q.client)}</td><td>$${(q.total || 0).toFixed(2)}</td><td><span class="status ${q.status}">${q.status}</span></td><td>${q.valid_until || '-'}</td><td>${q.status === 'draft' ? `<button class="btn btn-p" onclick="acceptQuote('${q.id}')">ACCEPT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" style="color:var(--d);text-align:center">No quotes yet</td></tr>';
     } else if (id === 'invoices') {
       const d = await apiJson('/api/invoices');
+      if (isApiError(d)) { renderUnavailableRow('invoices-tbody', 7, 'invoices'); return; }
       document.getElementById('invoices-tbody').innerHTML = (d.invoices || []).map(i => `<tr><td>${esc(i.number || i.id)}</td><td>${esc(i.client)}</td><td>$${(i.total || 0).toFixed(2)}</td><td>$${(i.tax || 0).toFixed(2)}</td><td><span class="status ${i.status}">${i.status}</span></td><td>${i.due_date || '-'}</td><td>${i.status !== 'paid' ? `<button class="btn btn-p" onclick="markPaid('${i.id}')">PAID</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--d);text-align:center">No invoices yet</td></tr>';
     } else if (id === 'debtors') {
       const d = await apiJson('/api/debts');
+      if (isApiError(d)) { renderUnavailableRow('debtors-tbody', 5, 'debts'); return; }
       document.getElementById('debtors-tbody').innerHTML = (d.debts || []).map(db => `<tr><td>${esc(db.debtor)}</td><td>$${(db.amount || 0).toFixed(2)} ${db.currency || ''}</td><td><span class="status ${db.status}">${db.status}</span></td><td>${db.reminders_sent || 0}</td><td>${db.status !== 'paid' ? `<button class="btn btn-s" onclick="sendReminder('${db.id}')">REMIND</button> <button class="btn btn-p" onclick="collectDebt('${db.id}')">COLLECT</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No debts</td></tr>';
     } else if (id === 'vendors') {
       const d = await apiJson('/api/vendors');
+      if (isApiError(d)) { renderUnavailableRow('vendors-tbody', 5, 'vendors'); return; }
       document.getElementById('vendors-tbody').innerHTML = (d.vendors || []).map(v => `<tr><td>${esc(v.name)}</td><td>${esc(v.type)}</td><td>${esc(v.contact)}</td><td><span class="status ${v.status}">${v.status}</span></td><td>$${(v.spend_mtd || 0)} ${v.currency || ''}</td></tr>`).join('');
     } else if (id === 'customers') {
       const d = await apiJson('/api/customers');
+      if (isApiError(d)) { renderUnavailableRow('customers-tbody', 4, 'customers'); return; }
       document.getElementById('customers-tbody').innerHTML = (d.customers || []).map(c => `<tr><td>${esc(c.name || c.id)}</td><td>${esc(c.plan || 'free')}</td><td>$${c.ltv || 0}</td><td>${c.tickets || 0}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--d);text-align:center">No customers yet</td></tr>';
     } else if (id === 'crm') {
       const d = await apiJson('/api/crm/contacts');
+      if (isApiError(d)) { renderUnavailableRow('crm-tbody', 5, 'crm contacts'); return; }
       document.getElementById('crm-tbody').innerHTML = (d.contacts || []).map(c => `<tr><td>${c.name}</td><td>${c.email || '-'}</td><td>${c.company || '-'}</td><td>${c.type || '-'}</td><td>${(c.tags || []).join(', ')}</td></tr>`).join('');
     } else if (id === 'tickets') {
       const d = await apiJson('/api/tickets');
+      if (isApiError(d)) { renderUnavailableRow('tickets-tbody', 5, 'tickets'); return; }
       document.getElementById('tickets-tbody').innerHTML = (d.tickets || []).map(t => `<tr><td>${t.id}</td><td>${t.subject}</td><td>${t.priority}</td><td><span class="status ${t.status}">${t.status}</span></td><td>${t.assignee}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--d);text-align:center">No tickets</td></tr>';
     } else if (id === 'legal') {
       const [docs, compliance] = await Promise.all([apiJson('/api/legal/documents'), apiJson('/api/compliance/status')]);
@@ -394,7 +424,7 @@ async function loadSection(id) {
       setTimeout(() => { window.location.href = '/login.html'; }, 250);
       return;
     }
-    console.error(e);
+    // Swallow non-auth errors to avoid noisy console spam during upstream outages.
   }
 }
 

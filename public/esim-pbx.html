@@ -101,6 +101,8 @@ h1.hero span{color:var(--cyan)}
 .dash-sidebar{background:rgba(11,15,26,.97);border-right:1px solid var(--border);padding:1.25rem 0;display:flex;flex-direction:column;gap:2px}
 .dash-sidebar-header{padding:.5rem 1.25rem 1rem;font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);margin-bottom:.5rem}
 .nav-item{display:flex;align-items:center;gap:.65rem;padding:.55rem 1.25rem;color:var(--text2);cursor:pointer;font-size:.83rem;font-weight:500;transition:all .15s;border-left:2px solid transparent}
+button.nav-item{width:100%;border:0;background:transparent;font:inherit;text-align:left}
+a.nav-item{text-decoration:none}
 .nav-item:hover{color:#fff;background:rgba(255,255,255,.04)}
 .nav-item.active{color:var(--cyan);border-left-color:var(--cyan);background:rgba(0,255,195,.05)}
 .nav-item-icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
@@ -383,7 +385,7 @@ img,video,iframe,table{max-width:100%}
           <div class="cred-row"><span class="cred-key">SIP Domain</span><span class="cred-val">pbx.bridge-ai-os.com</span></div>
           <div class="cred-row"><span class="cred-key">SIP User</span><span class="cred-val" id="c-sip">—</span></div>
         </div>
-        <a href="/esim" class="link-btn" onclick="location.reload()">Open Carrier Dashboard →</a>
+        <button type="button" class="link-btn" onclick="location.reload()">Open Carrier Dashboard →</button>
       </div>
     </div>
   </div>
@@ -394,36 +396,36 @@ img,video,iframe,table{max-width:100%}
   <div class="dash-layout">
 
     <!-- Sidebar -->
-    <aside class="dash-sidebar">
+    <nav class="dash-sidebar" aria-label="Carrier console">
       <div class="dash-sidebar-header">⬡ Carrier Console</div>
-      <div class="nav-item active" onclick="showView('overview')" data-view="overview">
-        <span class="nav-item-icon">📊</span>Overview
-      </div>
+      <button type="button" class="nav-item active" onclick="showView('overview')" data-view="overview">
+        <span class="nav-item-icon" aria-hidden="true">📊</span>Overview
+      </button>
       <div class="sidebar-section">Communication</div>
-      <div class="nav-item" onclick="showView('extensions')" data-view="extensions">
-        <span class="nav-item-icon">☎️</span>Extensions
-      </div>
-      <div class="nav-item" onclick="showView('flows')" data-view="flows">
-        <span class="nav-item-icon">🔀</span>Call Flows
-      </div>
-      <div class="nav-item" onclick="showView('cdr')" data-view="cdr">
-        <span class="nav-item-icon">📋</span>Call History
-      </div>
+      <button type="button" class="nav-item" onclick="showView('extensions')" data-view="extensions">
+        <span class="nav-item-icon" aria-hidden="true">☎️</span>Extensions
+      </button>
+      <button type="button" class="nav-item" onclick="showView('flows')" data-view="flows">
+        <span class="nav-item-icon" aria-hidden="true">🔀</span>Call Flows
+      </button>
+      <button type="button" class="nav-item" onclick="showView('cdr')" data-view="cdr">
+        <span class="nav-item-icon" aria-hidden="true">📋</span>Call History
+      </button>
       <div class="sidebar-section">Account</div>
-      <div class="nav-item" onclick="showView('esims')" data-view="esims">
-        <span class="nav-item-icon">📡</span>eSIM Accounts
-      </div>
-      <div class="nav-item" onclick="showView('wallet')" data-view="wallet">
-        <span class="nav-item-icon">💳</span>Wallet
-      </div>
+      <button type="button" class="nav-item" onclick="showView('esims')" data-view="esims">
+        <span class="nav-item-icon" aria-hidden="true">📡</span>eSIM Accounts
+      </button>
+      <button type="button" class="nav-item" onclick="showView('wallet')" data-view="wallet">
+        <span class="nav-item-icon" aria-hidden="true">💳</span>Wallet
+      </button>
       <div style="flex:1"></div>
-      <div class="nav-item" onclick="location.href='/admin-esim.html'">
-        <span class="nav-item-icon">🛡️</span>Admin Panel
-      </div>
-      <div class="nav-item" onclick="location.href='/marketplace.html'">
-        <span class="nav-item-icon">🛒</span>Marketplace
-      </div>
-    </aside>
+      <a class="nav-item" href="/admin-esim.html">
+        <span class="nav-item-icon" aria-hidden="true">🛡️</span>Admin Panel
+      </a>
+      <a class="nav-item" href="/marketplace.html">
+        <span class="nav-item-icon" aria-hidden="true">🛒</span>Marketplace
+      </a>
+    </nav>
 
     <!-- Main -->
     <main class="dash-main">

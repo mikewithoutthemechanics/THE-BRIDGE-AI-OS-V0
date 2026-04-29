@@ -57,6 +57,7 @@
   .nav-section{padding:6px 0;border-bottom:1px solid var(--border)}
   .nav-header{padding:4px 14px;font-size:9px;letter-spacing:2px;color:var(--dim)}
   .nav-item{display:flex;align-items:center;gap:8px;padding:5px 14px;cursor:pointer;color:var(--text);text-decoration:none;font-size:11px;transition:background .12s,color .12s;border-left:2px solid transparent}
+  button.nav-item{border:0;background:transparent;font:inherit;width:100%;text-align:left}
   .nav-item:hover,.nav-item.active{background:var(--bg3);color:var(--cyan);border-left-color:var(--cyan)}
   .nav-ico{font-size:13px;width:16px;text-align:center}
   .nav-badge{margin-left:auto;font-size:9px;padding:1px 5px;border-radius:4px;background:var(--bg);color:var(--dim)}
@@ -68,6 +69,7 @@
   /* TABS */
   #tabs{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
   .tab{padding:4px 12px;cursor:pointer;font-size:10px;letter-spacing:1px;color:var(--dim);border-bottom:2px solid transparent;transition:color .12s,border-color .12s}
+  button.tab{border:0;background:transparent;font:inherit}
   .tab:hover{color:var(--text)}
   .tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
 
@@ -192,23 +194,23 @@ img,video,iframe,table{max-width:100%}
 <div id="layout">
 
 <!-- SIDEBAR -->
-<div id="sidebar">
+<nav id="sidebar" aria-label="AOE hub">
   <div class="nav-section">
     <div class="nav-header">OVERVIEW</div>
-    <a class="nav-item active" href="#" onclick="sw('overview')"><span class="nav-ico">⬡</span>Live Map<span class="nav-badge live" id="nb-live">●</span></a>
-    <a class="nav-item" href="#" onclick="sw('treasury')"><span class="nav-ico">◈</span>Treasury</a>
-    <a class="nav-item" href="#" onclick="sw('swarm')"><span class="nav-ico">⬢</span>Swarm</a>
+    <button type="button" class="nav-item nav-trigger active" data-sw="overview" onclick="sw('overview')"><span class="nav-ico" aria-hidden="true">⬡</span>Live Map<span class="nav-badge live" id="nb-live" aria-hidden="true">●</span></button>
+    <button type="button" class="nav-item nav-trigger" data-sw="treasury" onclick="sw('treasury')"><span class="nav-ico" aria-hidden="true">◈</span>Treasury</button>
+    <button type="button" class="nav-item nav-trigger" data-sw="swarm" onclick="sw('swarm')"><span class="nav-ico" aria-hidden="true">⬢</span>Swarm</button>
   </div>
   <div class="nav-section">
     <div class="nav-header">SKILLS</div>
-    <a class="nav-item" href="#" onclick="sw('brain')"><span class="nav-ico">🧠</span>Brain Orchestrator<span class="nav-badge live" id="nb-brain">●</span></a>
-    <a class="nav-item" href="#" onclick="sw('skills')"><span class="nav-ico">⚡</span>Skill Registry<span class="nav-badge" id="nb-sk">0</span></a>
-    <a class="nav-item" href="#" onclick="sw('vis')"><span class="nav-ico">◎</span>SVG Visualizer</a>
-    <a class="nav-item" href="#" onclick="sw('yt')"><span class="nav-ico">▶</span>YouTube Discover</a>
+    <button type="button" class="nav-item nav-trigger" data-sw="brain" onclick="sw('brain')"><span class="nav-ico" aria-hidden="true">🧠</span>Brain Orchestrator<span class="nav-badge live" id="nb-brain" aria-hidden="true">●</span></button>
+    <button type="button" class="nav-item nav-trigger" data-sw="skills" onclick="sw('skills')"><span class="nav-ico" aria-hidden="true">⚡</span>Skill Registry<span class="nav-badge" id="nb-sk">0</span></button>
+    <button type="button" class="nav-item nav-trigger" data-sw="vis" onclick="sw('vis')"><span class="nav-ico" aria-hidden="true">◎</span>SVG Visualizer</button>
+    <button type="button" class="nav-item nav-trigger" data-sw="yt" onclick="sw('yt')"><span class="nav-ico" aria-hidden="true">▶</span>YouTube Discover</button>
   </div>
   <div class="nav-section">
     <div class="nav-header">ASSETS · E:\A</div>
-    <a class="nav-item" href="#" onclick="sw('output')"><span class="nav-ico">◆</span>Build Output<span class="nav-badge" id="nb-out">0</span></a>
+    <button type="button" class="nav-item nav-trigger" data-sw="output" onclick="sw('output')"><span class="nav-ico" aria-hidden="true">◆</span>Build Output<span class="nav-badge" id="nb-out">0</span></button>
     <a class="nav-item" href="/output/" target="_blank"><span class="nav-ico">📁</span>Output Dir</a>
     <a class="nav-item" href="/assets/logos/supac_logo.svg" target="_blank"><span class="nav-ico">🖼</span>Logos</a>
     <a class="nav-item" href="/index.json" target="_blank"><span class="nav-ico">🗂</span>SVG Index</a>
@@ -224,24 +226,24 @@ img,video,iframe,table{max-width:100%}
   </div>
   <div class="nav-section">
     <div class="nav-header">ECONOMY</div>
-    <a class="nav-item" href="#" onclick="sw('econ')"><span class="nav-ico">⟁</span>Circuit Breaker</a>
-    <a class="nav-item" href="#" onclick="sw('ubi')"><span class="nav-ico">◐</span>UBI System</a>
+    <button type="button" class="nav-item nav-trigger" data-sw="econ" onclick="sw('econ')"><span class="nav-ico" aria-hidden="true">⟁</span>Circuit Breaker</button>
+    <button type="button" class="nav-item nav-trigger" data-sw="ubi" onclick="sw('ubi')"><span class="nav-ico" aria-hidden="true">◐</span>UBI System</button>
   </div>
-</div>
+</nav>
 
 <!-- MAIN -->
 <div id="main">
-  <div id="tabs">
-    <div class="tab active" id="t-overview" onclick="sw('overview')">LIVE MAP</div>
-    <div class="tab" id="t-treasury"         onclick="sw('treasury')">TREASURY</div>
-    <div class="tab" id="t-brain"            onclick="sw('brain')">🧠 BRAIN</div>
-    <div class="tab" id="t-skills"           onclick="sw('skills')">SKILLS</div>
-    <div class="tab" id="t-vis"              onclick="sw('vis')">SVG VIS</div>
-    <div class="tab" id="t-yt"               onclick="sw('yt')">YOUTUBE</div>
-    <div class="tab" id="t-output"           onclick="sw('output')">BUILD OUTPUT</div>
-    <div class="tab" id="t-swarm"            onclick="sw('swarm')">SWARM</div>
-    <div class="tab" id="t-econ"             onclick="sw('econ')">ECON</div>
-    <div class="tab" id="t-ubi"              onclick="sw('ubi')">UBI</div>
+  <div id="tabs" role="tablist" aria-label="AOE views">
+    <button type="button" role="tab" class="tab active" id="t-overview" aria-selected="true" onclick="sw('overview')">LIVE MAP</button>
+    <button type="button" role="tab" class="tab" id="t-treasury" onclick="sw('treasury')" aria-selected="false">TREASURY</button>
+    <button type="button" role="tab" class="tab" id="t-brain" onclick="sw('brain')" aria-selected="false">🧠 BRAIN</button>
+    <button type="button" role="tab" class="tab" id="t-skills" onclick="sw('skills')" aria-selected="false">SKILLS</button>
+    <button type="button" role="tab" class="tab" id="t-vis" onclick="sw('vis')" aria-selected="false">SVG VIS</button>
+    <button type="button" role="tab" class="tab" id="t-yt" onclick="sw('yt')" aria-selected="false">YOUTUBE</button>
+    <button type="button" role="tab" class="tab" id="t-output" onclick="sw('output')" aria-selected="false">BUILD OUTPUT</button>
+    <button type="button" role="tab" class="tab" id="t-swarm" onclick="sw('swarm')" aria-selected="false">SWARM</button>
+    <button type="button" role="tab" class="tab" id="t-econ" onclick="sw('econ')" aria-selected="false">ECON</button>
+    <button type="button" role="tab" class="tab" id="t-ubi" onclick="sw('ubi')" aria-selected="false">UBI</button>
   </div>
   <div id="content">
     <div id="canvas-area">
@@ -498,10 +500,11 @@ const SR=(l,v,c='')=>`<div class="srow"><span class="slbl">${l}</span><span clas
 // TAB SWITCH
 function sw(id){
   document.querySelectorAll('[id^="pane-"]').forEach(p=>p.style.display='none');
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false');});
+  document.querySelectorAll('#sidebar .nav-trigger').forEach(n=>n.classList.remove('active'));
   const p=document.getElementById('pane-'+id);if(p)p.style.display='';
-  const t=document.getElementById('t-'+id);if(t)t.classList.add('active');
+  const t=document.getElementById('t-'+id);if(t){t.classList.add('active');t.setAttribute('aria-selected','true');}
+  var nb=document.querySelector('#sidebar .nav-trigger[data-sw="'+id+'"]');if(nb)nb.classList.add('active');
   _tab=id;
   if(id==='treasury')loadTr();
   if(id==='skills')loadSk();

@@ -99,6 +99,7 @@ h1{font-size:1.5rem;font-weight:700;color:var(--gold);margin-bottom:4px}
 /* ── ACTION TABS ── */
 .tab-bar{display:flex;gap:2px;margin-bottom:16px;background:rgba(255,255,255,.03);border-radius:8px;padding:3px}
 .tab{flex:1;padding:8px;text-align:center;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border-radius:6px;color:var(--muted);transition:all .2s}
+button.tab{border:0;background:transparent;font:inherit}
 .tab.active{background:rgba(255,180,0,.12);color:var(--gold)}
 .tab-panel{display:none}
 .tab-panel.active{display:block}
@@ -288,11 +289,11 @@ img,video,iframe,table{max-width:100%}
   <div class="sec-title">Treasury Actions</div>
   <div class="card">
     <div class="tab-bar">
-      <div class="tab active" onclick="switchTab('send-brdg')">Send BRDG</div>
-      <div class="tab" onclick="switchTab('send-fiat')">Send Fiat</div>
-      <div class="tab" onclick="switchTab('transfer')">Internal Transfer</div>
-      <div class="tab" onclick="switchTab('withdraw')">Withdraw</div>
-      <div class="tab" onclick="switchTab('swap')">Swap / Convert</div>
+      <button type="button" class="tab active" onclick="switchTab('send-brdg')">Send BRDG</button>
+      <button type="button" class="tab" onclick="switchTab('send-fiat')">Send Fiat</button>
+      <button type="button" class="tab" onclick="switchTab('transfer')">Internal Transfer</button>
+      <button type="button" class="tab" onclick="switchTab('withdraw')">Withdraw</button>
+      <button type="button" class="tab" onclick="switchTab('swap')">Swap / Convert</button>
     </div>
 
     <div class="tab-panel active" id="tab-send-brdg">
