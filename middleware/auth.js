@@ -3,6 +3,8 @@ const { EMAILS: SUPERUSERS, isSuperUserEmail } = require('../shared/superusers')
 const { isAuthBypassed, bypassJwtUser, logBypassOnce } = require('../shared/auth-bypass');
 // Supabase-backed revocation store — shared with auth.js (Vercel cold-start safe)
 const revokedStore = (() => { try { return require('../lib/revoked-tokens'); } catch(_) { return null; } })();
+const { supabaseAdmin } = require('../lib/supabase');
+
 
 /**
  * Returns true if the given email belongs to a superuser.
@@ -68,12 +70,14 @@ function isTokenRevoked(token) {
 const requireAuth = (requiredAuthority = null) => {
   return async (req, res, next) => {
     try {
+      // Development bypass: allow immediate access when feature flag enabled
       if (isAuthBypassed()) {
         logBypassOnce();
         req.user = bypassJwtUser();
         req.token = 'bypass';
         return next();
       }
+
       // Support both cookie-based and header-based tokens
       const token = req.cookies?.access_token
         || (req.headers.authorization || '').replace(/^Bearer\s+/, '')
@@ -83,8 +87,7 @@ const requireAuth = (requiredAuthority = null) => {
         return res.status(401).json({ error: 'Missing auth token' });
       }
 
-      // Check token revocation — three-layer fast-to-slow: Redis → in-memory → Supabase.
-      // The Supabase lookup covers Vercel cold-starts where in-memory state is lost.
+      // Check token revocation (applies to JWT tokens)
       let alreadyRevoked = false;
       if (redisClient) {
         try {
@@ -100,30 +103,56 @@ const requireAuth = (requiredAuthority = null) => {
         try {
           if (await revokedStore.isRevoked(token)) {
             alreadyRevoked = true;
-            // Warm the in-memory store so subsequent checks are instant
             revokedTokens.set(token, Date.now() + 7 * 24 * 3600 * 1000);
           }
         } catch (_) {}
       }
       if (alreadyRevoked) return res.status(401).json({ error: 'Token revoked' });
 
+      // Try JWT verification if secret configured
       const secret = process.env.JWT_SECRET;
-      if (!secret) return res.status(500).json({ error: 'Server misconfigured: JWT_SECRET not set' });
-      const decoded = jwt.verify(token, secret);
+      if (secret) {
+        try {
+          const decoded = jwt.verify(token, secret);
+          req.user = decoded;
+          req.token = token;
 
-      // Attach user context
-      req.user = decoded;
-      req.token = token;
-
-      // Authority enforcement (optional)
-      if (requiredAuthority) {
-        const userAuthority = decoded.authority || decoded.role || null;
-        if (userAuthority !== requiredAuthority) {
-          return res.status(403).json({ error: 'Insufficient authority' });
+          if (requiredAuthority) {
+            const userAuthority = decoded.authority || decoded.role || null;
+            if (userAuthority !== requiredAuthority) {
+              return res.status(403).json({ error: 'Insufficient authority' });
+            }
+          }
+          return next();
+        } catch (err) {
+          // JWT verification failed; continue to Supabase verification
         }
       }
 
-      next();
+      // Supabase token verification
+      try {
+        const { data: { user: supaUser }, error: supErr } = await supabaseAdmin.auth.admin.getUserByToken(token);
+        if (supErr || !supaUser) {
+          return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+        req.user = {
+          id: supaUser.id,
+          email: supaUser.email,
+          role: supaUser.user_metadata?.role || 'user',
+          permissions: supaUser.user_metadata?.permissions || [],
+          tenant: supaUser.user_metadata?.tenant || null,
+        };
+        req.token = token;
+
+        if (requiredAuthority) {
+          if (req.user.role !== requiredAuthority) {
+            return res.status(403).json({ error: 'Insufficient authority' });
+          }
+        }
+        return next();
+      } catch (e) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+      }
     } catch (err) {
       console.log(JSON.stringify({
         event: 'AUTH_FAILURE',

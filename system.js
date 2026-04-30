@@ -41,6 +41,9 @@ const CERTS    = path.join(ROOT, 'certs');
 const LOG_DIR  = path.join(ROOT, 'logs');
 const LOG_FILE = path.join(LOG_DIR, `scan-${new Date().toISOString().slice(0,10)}.jsonl`);
 const JWT_SECRET = process.env.JWT_SECRET;
+// ── Supabase Auth (single source of truth) ───────────────────────────────────
+const { supabaseAdmin } = require('./lib/supabase');
+const authRouter = require('./api/auth/routes.js');
 
 if (!JWT_SECRET) {
   console.log('\x1b[33m⚠ WARNING: JWT_SECRET not set — auth features will be unavailable.\x1b[0m');
@@ -543,8 +546,9 @@ try {
 }
 
 // ─── HTTP HANDLER ─────────────────────────────────────────────────────────────
-function handler(req, res) {
+async function handler(req, res) {
   const url = req.url.split('?')[0];
+  let apiUser = null;
 
   // CORS: allowlisted origins only (no wildcard)
   const origin = req.headers.origin;
@@ -589,11 +593,32 @@ function handler(req, res) {
   if (url === '/api/economics')         return json(aggregateEconomics());
   if (url === '/api/status')            return json({ ok: true, ts: Date.now() });
 
-  // All other /api/* endpoints require JWT authentication
-  if (url.startsWith('/api/')) {
-    const user = verifyJWT(req);
-    if (!user) return json({ error: 'Unauthorized — valid Bearer token required' }, 401);
+  // Auth endpoints: forward to Supabase-backed router (handles its own auth)
+  if (url.startsWith('/api/auth/') || url.startsWith('/auth/')) {
+    return authRouter(req, res);
   }
+
+  // All other /api/* endpoints require Supabase token authentication
+  if (url.startsWith('/api/')) {
+    const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7).trim() : null;
+    if (!token) return json({ error: 'Unauthorized — Bearer token required' }, 401);
+    try {
+      const { data: { user: supaUser }, error: err } = await supabaseAdmin.auth.admin.getUserByToken(token);
+      if (err || !supaUser) return json({ error: 'Invalid or expired token' }, 401);
+      apiUser = {
+        sub: supaUser.id,
+        email: supaUser.email,
+        role: (supaUser.user_metadata && supaUser.user_metadata.role) || 'user',
+        permissions: supaUser.user_metadata?.permissions || [],
+        tenant: supaUser.user_metadata?.tenant || null,
+      };
+    } catch (e) {
+      return json({ error: 'Token verification failed' }, 401);
+    }
+  }
+  // (Auth already validated above; downstream endpoints use apiUser)
+
+
 
   if (url === '/api/full')            return json(fullScan());
   if (url === '/api/scan')            return json(fullScan());
@@ -613,7 +638,7 @@ function handler(req, res) {
   // ── Orchestration System Endpoints ──
   if (url === '/api/orchestration/goals' && req.method === 'GET') {
     // List user goals
-    return goalManager.getGoalsByUser(user.sub).then(goals => {
+    return goalManager.getGoalsByUser(apiUser.sub).then(goals => {
       json({ goals, count: goals.length });
     }).catch(err => json({ error: err.message }, 500));
   }
@@ -622,7 +647,7 @@ function handler(req, res) {
     // Create new goal
     return parseBody(req).then(body => {
       if (!body.description) return json({ error: 'description required' }, 400);
-      return goalManager.createGoal(user.sub, body.description, {
+      return goalManager.createGoal(apiUser.sub, body.description, {
         priority: body.priority,
         tags: body.tags,
         metadata: body.metadata,
@@ -634,7 +659,7 @@ function handler(req, res) {
     const goalId = url.split('/')[4];
     return goalManager.getGoal(goalId).then(goal => {
       if (!goal) return json({ error: 'Goal not found' }, 404);
-      if (goal.userId !== user.sub) return json({ error: 'Access denied' }, 403);
+      if (goal.userId !== apiUser.sub) return json({ error: 'Access denied' }, 403);
       return goalManager.getTasksForGoal(goalId).then(tasks => {
         const goalStatus = taskManager.getGoalStatus(goalId);
         json({ goal: { ...goal, tasks }, status: goalStatus });
@@ -940,8 +965,11 @@ function killSession(sessionId) {
 // ─── RBAC ─────────────────────────────────────────────────────────────────
 const ROLES = {
   admin:    ['*'],
+  superadmin: ['*'],
   operator: ['read', 'exec', 'monitor'],
+  agent:    ['read', 'exec', 'monitor'],
   viewer:   ['read'],
+  user:     ['read'],
 };
 const USERS = {
   root:  { role: 'admin' },
@@ -1244,7 +1272,7 @@ if (WebSocketLib) {
       if (ws.readyState === WebSocketLib.OPEN) ws.send(JSON.stringify(obj));
     }
 
-    ws.on('message', raw => {
+    ws.on('message', async raw => {
       let msg;
       try { msg = JSON.parse(raw); } catch { return; }
       const { type } = msg;
@@ -1254,19 +1282,25 @@ if (WebSocketLib) {
       switch (type) {
 
         case 'auth': {
-          // Support both token-based and user-based auth
+          // Support Supabase token-based and legacy user-based auth
           if (msg.token) {
-            // JWT token verification
+            // Supabase token verification
             try {
-              const jwt = require('jsonwebtoken');
-              if (!JWT_SECRET) { send({ type:'auth_fail', error: 'Server misconfigured: JWT_SECRET not set' }); break; }
-              const decoded = jwt.verify(msg.token, JWT_SECRET);
-              wsUser = decoded.user || decoded.sub || 'token-user';
-              send({ type:'auth_ok', user: wsUser, role: decoded.role || 'operator', method: 'token' });
-              log('INFO','AUTH',`Token auth success for ${wsUser}`);
+              const { data: { user: supaUser }, error: err } = await supabaseAdmin.auth.admin.getUserByToken(msg.token);
+              if (err || !supaUser) {
+                send({ type:'auth_fail', error: 'Invalid or expired token' });
+                log('WARN','AUTH',`Supabase token auth failed: ${err?.message || 'no user'}`);
+                break;
+              }
+              wsUser = supaUser.id;
+              const supaRole = (supaUser.user_metadata && supaUser.user_metadata.role) || 'viewer';
+              // Register user for authorization
+              USERS[wsUser] = { role: supaRole };
+              send({ type:'auth_ok', user: wsUser, role: supaRole, method: 'supabase' });
+              log('INFO','AUTH',`Supabase token auth success for ${wsUser} as ${supaRole}`);
             } catch (e) {
-              send({ type:'auth_fail', error: 'Invalid token' });
-              log('WARN','AUTH',`Token auth failed: ${e.message}`);
+              send({ type:'auth_fail', error: 'Token verification error' });
+              log('WARN','AUTH',`Supabase token auth error: ${e.message}`);
             }
           } else if (msg.user && USERS[msg.user]) {
             // Legacy user-based auth (deprecated - only works locally)

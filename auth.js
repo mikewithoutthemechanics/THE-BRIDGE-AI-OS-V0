@@ -22,6 +22,8 @@ const userDb = require('./lib/user-identity');
 const nurture = require('./lib/nurture-engine');
 const revokedStore = (() => { try { return require('./lib/revoked-tokens'); } catch(_) { return null; } })();
 const { revokeToken, isTokenRevoked } = require('./middleware/auth');
+const { supabaseAdmin, supabaseAnon } = require('./lib/supabase');
+
 
 // ── Secrets ─────────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || process.env.BRIDGE_SIWE_JWT_SECRET || 'aoe-unified-super-secret-change-in-prod';
@@ -222,36 +224,71 @@ app.post('/auth/register', registerLimiter, async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Password must be at least 6 characters' });
     }
 
-    // Check for existing user
-    const existing = await userDb.getUserByEmail(email);
-    if (existing) {
-      return res.status(409).json({ ok: false, error: 'Email already registered' });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Create user via Supabase Auth
+    const { data: { user: supaUser }, error: signupError } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        role: 'user',
+        ...(name && { name }),
+      },
+    });
+
+    if (signupError) {
+      if (signupError.message && signupError.message.toLowerCase().includes('already registered')) {
+        return res.status(409).json({ ok: false, error: 'Email already registered' });
+      }
+      return res.status(500).json({ ok: false, error: signupError.message });
     }
 
-    const user = await userDb.createUser(email, name || null, 'email', null, password);
-    const token = signAccessToken(user);
-    const refreshToken = signRefreshToken(user);
+    // Sign in to obtain session tokens
+    const { data: { session }, error: loginError } = await supabaseAnon.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
 
-    // Auto-advance nurture funnel
+    if (loginError || !session) {
+      return res.status(500).json({ ok: false, error: 'Account created but login failed — please try logging in' });
+    }
+
+    // Ensure user exists in userDb for business logic
     try {
-      const result = nurture.autoAdvance(user);
-      if (result && result.advanced) {
-        await userDb.updateFunnelStage(user.id, result.newStage);
-        if (result.score_delta) await userDb.updateLeadScore(user.id, result.score_delta);
+      let dbUser = await userDb.getUserByEmail(normalizedEmail);
+      if (!dbUser) {
+        dbUser = await userDb.createUser(
+          normalizedEmail,
+          name || null,
+          'supabase',
+          supaUser.id
+        );
       }
-    } catch (_) { /* nurture is best-effort */ }
+    } catch (dbErr) {
+      console.warn('[AUTH] userDb sync error (non-fatal):', dbErr.message);
+    }
 
-    const freshUser = withSuperAdminOverrides(await userDb.getUserById(user.id));
+    const role = (supaUser.user_metadata && supaUser.user_metadata.role) || 'user';
 
     res.status(201).json({
       ok: true,
-      token,
-      refresh_token: refreshToken,
-      user: sanitizeUser(freshUser),
+      token: session.access_token,
+      refresh_token: session.refresh_token,
+      userId: supaUser.id,
+      email: normalizedEmail,
+      role,
+      user: {
+        id: supaUser.id,
+        email: normalizedEmail,
+        role,
+        metadata: supaUser.user_metadata,
+      },
+      expiresAt: new Date(session.expires_in * 1000 + Date.now()).toISOString(),
     });
-  } catch (e) {
-    console.error('[AUTH] register error:', e.message);
-    res.status(500).json({ ok: false, error: e.message });
+  } catch (err) {
+    console.error('[AUTH] register error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
@@ -260,33 +297,55 @@ app.post('/auth/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email) return res.status(400).json({ ok: false, error: 'email is required' });
-    if (!password) return res.status(400).json({ ok: false, error: 'password is required' });
+    if (!email || typeof email !== 'string') return res.status(400).json({ ok: false, error: 'email is required' });
+    if (!password || typeof password !== 'string') return res.status(400).json({ ok: false, error: 'password is required' });
 
-    const user = await userDb.getUserByEmail(email);
-    if (!user) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const valid = userDb.verifyPassword(password, user.password_hash);
-    if (!valid) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
+    const { data: { session, user: supaUser }, error: loginError } = await supabaseAnon.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
 
-    // Upgrade legacy hashes transparently
-    if (userDb.needsRehash && userDb.needsRehash(user.password_hash)) {
-      userDb.upgradePasswordHash(user.id, password).catch(() => {});
+    if (loginError || !session || !supaUser) {
+      return res.status(401).json({ ok: false, error: 'Invalid credentials' });
     }
 
-    const normalizedUser = withSuperAdminOverrides(user);
-    const token = signAccessToken(normalizedUser);
-    const refreshToken = signRefreshToken(user);
+    // Ensure userDb entry
+    try {
+      let dbUser = await userDb.getUserByEmail(normalizedEmail);
+      if (!dbUser) {
+        dbUser = await userDb.createUser(
+          normalizedEmail,
+          supaUser.user_metadata?.name || null,
+          'supabase',
+          supaUser.id
+        );
+      }
+    } catch (dbErr) {
+      console.warn('[AUTH] userDb sync failed (non-fatal):', dbErr.message);
+    }
+
+    const role = (supaUser.user_metadata && supaUser.user_metadata.role) || 'user';
 
     res.json({
       ok: true,
-      token,
-      refresh_token: refreshToken,
-      user: sanitizeUser(normalizedUser),
+      token: session.access_token,
+      refresh_token: session.refresh_token,
+      userId: supaUser.id,
+      email: normalizedEmail,
+      role,
+      user: {
+        id: supaUser.id,
+        email: normalizedEmail,
+        role,
+        metadata: supaUser.user_metadata,
+      },
+      expiresAt: new Date(session.expires_in * 1000 + Date.now()).toISOString(),
     });
-  } catch (e) {
-    console.error('[AUTH] login error:', e.message);
-    res.status(500).json({ ok: false, error: e.message });
+  } catch (err) {
+    console.error('[AUTH] login error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
@@ -295,13 +354,29 @@ app.get('/auth/verify', async (req, res) => {
   const token = extractBearerToken(req);
   if (!token) return res.status(401).json({ ok: false, valid: false, error: 'Missing auth token' });
 
-  const payload = await verifyAccess(token);
-  if (!payload) return res.status(401).json({ ok: false, valid: false, error: 'Invalid or expired token' });
+  const { data: { user: supaUser }, error } = await supabaseAdmin.auth.admin.getUserByToken(token);
+  if (error || !supaUser) return res.status(401).json({ ok: false, valid: false, error: 'Invalid or expired token' });
 
-  const user = withSuperAdminOverrides(await userDb.getUserById(payload.sub));
-  if (!user) return res.status(401).json({ ok: false, valid: false, error: 'User not found' });
+  // Build user object
+  let userObj = {
+    id: supaUser.id,
+    email: supaUser.email,
+    role: supaUser.user_metadata?.role || 'user',
+    metadata: supaUser.user_metadata,
+  };
 
-  res.json({ ok: true, valid: true, user: sanitizeUser(user) });
+  // Enrich with userDb if available
+  try {
+    const dbUser = await userDb.getUserByEmail(supaUser.email);
+    if (dbUser) {
+      userObj = { ...userObj, ...sanitizeUser(dbUser) };
+    }
+  } catch (_) {}
+
+  // Apply superadmin overrides
+  userObj = withSuperAdminOverrides(userObj);
+
+  res.json({ ok: true, valid: true, user: userObj });
 });
 
 // POST /auth/logout
@@ -309,11 +384,9 @@ app.post('/auth/logout', async (req, res) => {
   const token = extractBearerToken(req);
   if (!token) return res.status(401).json({ ok: false, error: 'Bearer token required' });
 
-  const payload = await verifyAccess(token);
-  if (!payload) return res.status(401).json({ ok: false, error: 'Token invalid or already revoked' });
-
-  await revokeToken(token);
-  if (revokedStore) revokedStore.revoke(token).catch(() => {});
+  try {
+    await supabaseAdmin.auth.admin.signOut(token);
+  } catch (e) {}
 
   res.json({ ok: true, status: 'logged_out', ts: Date.now() });
 });
@@ -323,20 +396,21 @@ app.post('/auth/refresh', async (req, res) => {
   const { refresh_token } = req.body;
   if (!refresh_token) return res.status(400).json({ ok: false, error: 'refresh_token is required' });
 
-  let payload;
   try {
-    payload = jwt.verify(refresh_token, JWT_REFRESH_SECRET);
-  } catch (_) {
-    return res.status(401).json({ ok: false, error: 'Invalid or expired refresh token' });
+    const { data: { session }, error } = await supabaseAnon.auth.refreshSession(refresh_token);
+    if (error || !session) {
+      return res.status(401).json({ ok: false, error: 'Refresh token invalid or expired' });
+    }
+
+    res.json({
+      ok: true,
+      token: session.access_token,
+      refresh_token: session.refresh_token,
+      expiresAt: new Date(session.expires_in * 1000 + Date.now()).toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
   }
-
-  const user = await userDb.getUserById(payload.sub);
-  if (!user) return res.status(401).json({ ok: false, error: 'User not found' });
-
-  const newToken = signAccessToken(user);
-  const newRefresh = signRefreshToken(user);
-
-  res.json({ ok: true, token: newToken, refresh_token: newRefresh });
 });
 
 // POST /auth/token-exchange — convert a Supabase access_token to a Bridge JWT
